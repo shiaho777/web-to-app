@@ -382,6 +382,16 @@
                 <action android:name="com.webtoapp.action.PORT_RELEASE" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".core.notification.BridgeAlarmReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.webtoapp.bridge.SCHEDULED_NOTIFICATION" />
+                <action android:name="com.webtoapp.bridge.SCHEDULED_WORKER" />
+            </intent-filter>
+        </receiver>
         
         
         <service
