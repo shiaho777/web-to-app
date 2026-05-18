@@ -5,6 +5,13 @@ This project can build APKs online via GitHub Actions, so your laptop does not d
 Workflow file:
 - `.github/workflows/android-apk-build.yml`
 
+## Verified Result (Your Latest Run)
+
+- Workflow run: `Build APK #1`
+- Status: `succeeded`
+- Total time: `12m 44s`
+- Output quality check: APK installed and all expected NativeBridge methods worked in APK Inspector Pro.
+
 ## 1) Start a Build
 
 1. Open `Actions` tab in your repo.
@@ -44,11 +51,11 @@ That is normal for this repo. Even debug builds may trigger shell/template relea
 On GitHub-hosted runners for this project:
 
 1. First run on a fresh branch:
-   - Usually `25-60 min`
+   - Usually `12-45 min`
 2. Later runs (same workflow, similar code):
-   - Usually `15-35 min`
+   - Usually `10-30 min`
 3. If `release` or `both` selected:
-   - Can be longer (`30-75 min`)
+   - Can be longer (`20-60 min`)
 
 Time depends on:
 1. GitHub runner queue
@@ -73,3 +80,30 @@ Time depends on:
 
 For public repos, standard GitHub-hosted runner usage is free (per GitHub Actions billing docs at the time of writing).
 
+## 8) Methods Confirmed Working In Built APK
+
+Security:
+- `isDeveloperOptionsEnabled`
+- `isAdbEnabled`
+- `isDebuggable`
+- `getSecurityInfo`
+
+Notification/runtime:
+- `requestNotificationPermission`
+- `areNotificationsEnabled`
+- `openNotificationSettings`
+- `createNotificationChannel`
+- `showNotification`
+- `scheduleNotification`
+- `cancelNotification`
+- `cancelAllNotifications`
+- `startForegroundService`
+- `stopForegroundService`
+- `scheduleWorker`
+- `scheduleExactAlarm`
+- `canScheduleExactAlarms`
+- `isDozeMode`
+- `isIgnoringBatteryOptimizations`
+- `openBatteryOptimizationSettings`
+- `getAppState`
+- `isAppInForeground`

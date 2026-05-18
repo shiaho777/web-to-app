@@ -3,6 +3,15 @@
 Project path:
 `C:\phpserver\www\web-to-app`
 
+## Verified Status (2026-05-18)
+
+Cloud build succeeded on GitHub Actions in `12m 44s`, and generated APK was validated in APK Inspector Pro with:
+
+1. Security methods working
+2. Notification methods working
+3. Scheduling/worker/alarm methods working
+4. Runtime state methods working
+
 ## 1. Install Required Tools
 
 1. Install Android Studio (latest stable).
@@ -73,3 +82,12 @@ Or copy APK to your phone and install manually.
 2. Re-sync Gradle.
 3. Install missing SDK/NDK/CMake from `SDK Manager`.
 4. Make sure enough disk space is available (25 GB+ recommended).
+
+## 9. Recommended Build Path For Low-End PCs
+
+Use GitHub Actions build instead of local build:
+
+1. Push your branch to GitHub.
+2. Open `Actions` -> `Build APK`.
+3. Run workflow (`debug`, `release`, or `both`).
+4. Download artifact APK from the successful run.

@@ -2,6 +2,16 @@
 
 Use this every time you add/fix features and want a fresh APK from cloud CI.
 
+## Current Proven Baseline (2026-05-18)
+
+Validated in APK Inspector Pro:
+
+1. Native security detection works (`isDeveloperOptionsEnabled`, `isAdbEnabled`, `isDebuggable`, `getSecurityInfo`).
+2. Notification flow works (foreground, sound, action/deep link, scheduled notification).
+3. Worker/alarm scheduling works (`scheduleWorker`, `scheduleExactAlarm`).
+4. Runtime checks work (`getAppState`, `isAppInForeground`, doze/battery methods).
+5. Bridge method count seen: `56`.
+
 ## A) Normal Update Flow
 
 1. Make code changes locally.
@@ -73,3 +83,9 @@ You can do this with minimal local load:
 
 No local SDK/NDK setup required for this cloud build flow.
 
+## H) What To Do Next
+
+1. Run a `release` cloud build and verify the same tests again.
+2. Comment on upstream PR with your successful APK Inspector results and method count.
+3. Ask maintainer to merge and publish a release/test APK.
+4. After merge, rebase your branch and keep only forward changes.

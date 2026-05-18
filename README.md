@@ -74,6 +74,41 @@ PHP · Python · Go · Image · Video · Gallery · Multi-Web
 
 ---
 
+## Verified NativeBridge Extension Status (2026-05-18)
+
+The custom branch build validated on a physical Android device now includes:
+
+- Security methods:
+  `isDeveloperOptionsEnabled`, `isAdbEnabled`, `isDebuggable`, `getSecurityInfo`
+- Notification and runtime methods:
+  `areNotificationsEnabled`, `openNotificationSettings`, `createNotificationChannel`,
+  `showNotification`, `scheduleNotification`, `cancelNotification`,
+  `cancelAllNotifications`, `startForegroundService`, `stopForegroundService`,
+  `scheduleWorker`, `scheduleExactAlarm`, `canScheduleExactAlarms`, `isDozeMode`,
+  `isIgnoringBatteryOptimizations`, `openBatteryOptimizationSettings`,
+  `getAppState`, `isAppInForeground`
+
+Validation summary from APK Inspector Pro:
+
+- Bridge detected and active in APK mode
+- Native security info returned correct JSON values
+- Notification tests triggered successfully (foreground/sound/action/scheduled)
+- Worker/alarm wakeup requested successfully
+- Runtime state methods returned successfully
+- Bridge method count observed: 56
+
+Cloud build proof:
+
+- GitHub Actions "Build APK" succeeded in 12m 44s
+- Warnings in logs were non-fatal and expected for this repo
+
+Supporting docs:
+
+- `ADDED_FEATURES_AND_RESULTS.md`
+- `GITHUB_ACTIONS_APK_GUIDE.md`
+- `UPDATE_AND_REBUILD_FLOW.md`
+- `how to convert to apk.md`
+
 ## Module Market
 
 The Module Market lets users install community-built JS/CSS extension modules
