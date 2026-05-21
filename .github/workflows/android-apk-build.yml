@@ -1,0 +1,96 @@
+name: Build APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: "Choose which APK to build"
+        required: true
+        default: "debug"
+        type: choice
+        options:
+          - debug
+          - release
+          - both
+  push:
+    branches:
+      - codex/nativebridge-runtime-notification-bridge
+    paths:
+      - ".github/workflows/android-apk-build.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ""
+
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Install Android SDK components
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "cmake;3.22.1" \
+            "ndk;28.2.13676358"
+
+      - name: Ensure gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build Debug APK
+        if: ${{ github.event_name == 'push' || inputs.build_type == 'debug' || inputs.build_type == 'both' }}
+        run: |
+          ./gradlew --no-daemon --no-configuration-cache \
+            -Dkotlin.compiler.execution.strategy=in-process \
+            :app:assembleDebug
+
+      - name: Build Release APK
+        if: ${{ inputs.build_type == 'release' || inputs.build_type == 'both' }}
+        run: |
+          ./gradlew --no-daemon --no-configuration-cache \
+            -Dkotlin.compiler.execution.strategy=in-process \
+            :app:assembleRelease
+
+      - name: Upload Debug APK artifact
+        if: ${{ github.event_name == 'push' || inputs.build_type == 'debug' || inputs.build_type == 'both' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Release APK artifact
+        if: ${{ inputs.build_type == 'release' || inputs.build_type == 'both' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk-${{ github.run_number }}
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 14
