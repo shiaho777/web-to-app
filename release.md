@@ -1,52 +1,47 @@
 # Release Guide for WebToApp
 
-This guide explains how to create a new release for your fork or for the main repository.
+This guide provides the exact values to use when creating a release on GitHub.
 
-## 1. Automated Releases via GitHub Actions
+## GitHub Release Fields
 
-The most efficient way to create a release is to use the provided GitHub Actions workflow.
+| Field | Value |
+| --- | --- |
+| **Tag version** | `v1.9.7-yasin-final` (Select the existing tag) |
+| **Target branch** | `main` or `yasin-final-contribution` |
+| **Release title** | `WebToApp v1.9.7: Enhanced NativeBridge & Cloud Build` |
+| **Description** | (See "Release Description" section below) |
+| **Binaries/Assets** | Upload `app/build/outputs/apk/release/app-release.apk` |
 
-### Steps:
-1. **Push your changes** to your main branch or a release branch.
-2. Go to the **Actions** tab on your GitHub repository.
-3. Select the **Build APK** workflow.
-4. Click **Run workflow**.
-5. Select `release` or `both` in the "Build Type" dropdown.
-6. Once the workflow completes successfully, an APK artifact will be generated.
+## Release Description
 
-### Creating a GitHub Release:
-1. Go to the **Releases** section on your repository homepage.
-2. Click **Draft a new release**.
-3. Create a new tag (e.g., `v1.9.7`).
-4. Give the release a title and description (you can use the commit log for ideas).
-5. **Download the APKs** from the GitHub Actions run and **upload them** as assets to this release.
-6. Click **Publish release**.
+Copy and paste the following into the "Describe this release" field:
 
-## 2. Manual Local Builds
+```markdown
+## 🚀 Major Enhancements by Yasin Ullah
 
-If you prefer to build locally:
+This release introduces critical infrastructure and API improvements to the WebToApp ecosystem.
 
-### Prerequisites:
-- Ensure you have a `keystore` file for signing.
-- Configure `signingConfigs` in `app/build.gradle.kts`.
+### 🛠️ New NativeBridge APIs (56 Methods Verified)
+- **Security Suite:** On-device detection of Developer Options, ADB, and Debug status.
+- **Notification Engine:** Full control over immediate and scheduled notifications with custom channels and sound support.
+- **Runtime & Lifecycle:** Background workers (WorkManager), foreground services, and app state monitoring.
 
-### Commands:
-```bash
-# Clean and build the release APK
-./gradlew clean assembleRelease
+### ☁️ CI/CD & Cloud Build
+- **GitHub Actions Integration:** Build and sign production-ready APKs directly in the cloud without a local Android SDK.
+- **Artifact Management:** Automated packaging and uploading of debug/release builds.
+
+### 📚 Documentation
+- Added a comprehensive **Release Guide**.
+- Updated **NativeBridge Documentation** for developers.
+- Verified validation reports included in the source.
+
+---
+**Build Note:** This APK was built using the new GitHub Actions pipeline and verified on physical hardware.
 ```
 
-The APK will be located in `app/build/outputs/apk/release/`.
-
-## 3. Versioning
-
-Before creating a release, remember to update the version in `app/build.gradle.kts`:
-- `versionCode`: Increment this (integer).
-- `versionName`: Update this (e.g., from `1.9.6` to `1.9.7`).
-
-## 4. Contributors
-
-When publishing a release, it is good practice to credit the major contributors in the release notes.
-
-**Current Major Contributor:**
-- **Yasin Ullah** (@yasinULLAH): Enhanced NativeBridge, GitHub Actions CI, and Documentation.
+## How to Publish
+1. Go to [New Release](https://github.com/yasinULLAH/web-to-app/releases/new).
+2. Select the tag **v1.9.7-yasin-final**.
+3. Fill in the Title and Description as provided above.
+4. Drag and drop the APK from your local path.
+5. Click **Publish release**.
