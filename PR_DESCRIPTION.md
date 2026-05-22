@@ -24,8 +24,8 @@ This PR introduces a major enhancement to the **NativeBridge** API surface and a
 
 #### 4. GitHub Actions Cloud Build
 - Added `.github/workflows/android-apk-build.yml`.
-- Enables building **Debug** and **Release** APKs directly on GitHub.
-- Includes automated artifact uploading.
+- Enables building **Debug APK**, **Release APK**, and **Release AAB** directly on GitHub.
+- Includes automated artifact uploading for both APK and AAB outputs.
 
 #### 5. Documentation & Validation
 - Updated `README.md` with new feature highlights and contributor recognition.
@@ -34,7 +34,7 @@ This PR introduces a major enhancement to the **NativeBridge** API surface and a
 
 ### Validation:
 - All new bridge methods (56 in total) have been verified on physical hardware using APK Inspector Pro.
-- The Cloud Build pipeline has been tested and successfully generates installable APKs in ~12 minutes.
+- The Cloud Build pipeline has been tested and successfully generates installable artifacts in ~12 minutes.
 
 ### Why this is the "Best" PR:
 - **Security-First:** Follows the maintainer's previous feedback on origin validation and input sanitization.

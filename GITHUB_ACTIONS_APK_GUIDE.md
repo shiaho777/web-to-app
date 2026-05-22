@@ -1,4 +1,4 @@
-# GitHub Actions APK Build Guide (Cloud Build)
+# GitHub Actions Android Artifact Build Guide (Cloud Build)
 
 This project can build APKs online via GitHub Actions, so your laptop does not do heavy build work.
 
@@ -7,7 +7,7 @@ Workflow file:
 
 ## Verified Result (Your Latest Run)
 
-- Workflow run: `Build APK #1`
+- Workflow run: `Build Android Artifacts #1`
 - Status: `succeeded`
 - Total time: `12m 44s`
 - Output quality check: APK installed and all expected NativeBridge methods worked in APK Inspector Pro.
@@ -15,7 +15,7 @@ Workflow file:
 ## 1) Start a Build
 
 1. Open `Actions` tab in your repo.
-2. Click workflow: **Build APK**.
+2. Click workflow: **Build Android Artifacts**.
 3. Click **Run workflow**.
 4. Choose build type:
    - `debug`
@@ -32,6 +32,7 @@ After the run is green/success:
 3. Download:
    - `app-debug-apk-<run_number>` for debug build
    - `app-release-apk-<run_number>` for release build
+   - `app-release-aab-<run_number>` for release Android App Bundle
 
 ## 3) What Your Current Logs Mean
 

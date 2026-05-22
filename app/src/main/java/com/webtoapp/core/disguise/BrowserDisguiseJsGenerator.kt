@@ -275,12 +275,45 @@ if(!window.Notification){
 
 // ── navigator.credentials (Credential Management API stub) ──
 try{
+var _wtaCredStoreKey='__wta_credential_store_v1';
+function _wtaReadCred(){try{var r=localStorage.getItem(_wtaCredStoreKey);if(!r)return null;return JSON.parse(r);}catch(e){return null;}}
+function _wtaWriteCred(c){try{if(!c){localStorage.removeItem(_wtaCredStoreKey);return;}localStorage.setItem(_wtaCredStoreKey,JSON.stringify(c));}catch(e){}}
 if(!navigator.credentials){
     Object.defineProperty(navigator,'credentials',{get:_mn(function(){return{
-        create:_mn(function(){return Promise.resolve(null)}),
-        get:_mn(function(){return Promise.resolve(null)}),
+        create:_mn(function(opt){
+            var out={id:'',type:'password',password:'',name:'',iconURL:''};
+            try{
+                var p=(opt&&opt.password)||{};
+                out.id=String(p.id||'');
+                out.password=String(p.password||'');
+                out.name=String(p.name||'');
+                out.iconURL=String(p.iconURL||'');
+            }catch(e){}
+            return Promise.resolve(out);
+        }),
+        get:_mn(function(opt){
+            var cred=_wtaReadCred();
+            if(!cred)return Promise.resolve(null);
+            var allowed=true;
+            try{
+                var ids=opt&&opt.password&&opt.password.id;
+                if(Array.isArray(ids)&&ids.length>0)allowed=ids.indexOf(cred.id)>=0;
+            }catch(e){}
+            return Promise.resolve(allowed?cred:null);
+        }),
         preventSilentAccess:_mn(function(){return Promise.resolve()}),
-        store:_mn(function(){return Promise.resolve()})
+        store:_mn(function(cred){
+            if(cred&&cred.type==='password'){
+                _wtaWriteCred({
+                    id:String(cred.id||''),
+                    type:'password',
+                    password:String(cred.password||''),
+                    name:String(cred.name||''),
+                    iconURL:String(cred.iconURL||'')
+                });
+            }
+            return Promise.resolve(cred||null);
+        })
     }}),enumerable:true,configurable:true});
 }
 }catch(e){}

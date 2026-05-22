@@ -18,8 +18,8 @@ Validated in APK Inspector Pro:
 2. Commit changes.
 3. Push to your branch.
 4. Open GitHub `Actions` tab.
-5. Run **Build APK** workflow manually (`workflow_dispatch`).
-6. Download artifact APK after success.
+5. Run **Build Android Artifacts** workflow manually (`workflow_dispatch`).
+6. Download artifact APK/AAB after success.
 7. Install and test on phone.
 
 ## B) Recommended Branching Pattern
@@ -79,7 +79,7 @@ You can do this with minimal local load:
 1. Edit code
 2. Commit + push
 3. Build in GitHub Actions
-4. Download APK artifact
+4. Download APK/AAB artifact
 
 No local SDK/NDK setup required for this cloud build flow.
 

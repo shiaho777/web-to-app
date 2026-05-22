@@ -36,14 +36,15 @@ Add:
 sdk.dir=C\:\\Users\\Yasin\\AppData\\Local\\Android\\Sdk
 ```
 
-## 4. Build APK In Android Studio
+## 4. Build APK/AAB In Android Studio
 
 1. Go to `Build`.
 2. Click `Build Bundle(s) / APK(s)`.
 3. Click `Build APK(s)`.
 4. Wait until build finishes.
+5. For Android App Bundle, click `Build Bundle(s)` from the same menu.
 
-## 5. Build APK In Terminal (Optional)
+## 5. Build APK/AAB In Terminal (Optional)
 
 Open terminal in project folder and run:
 
@@ -58,13 +59,22 @@ For release build:
 .\gradlew.bat :app:assembleRelease
 ```
 
-## 6. Output APK Location
+For release AAB:
+
+```powershell
+.\gradlew.bat :app:bundleRelease
+```
+
+## 6. Output Artifact Location
 
 Debug APK:
 `C:\phpserver\www\web-to-app\app\build\outputs\apk\debug\app-debug.apk`
 
 Release APK:
 `C:\phpserver\www\web-to-app\app\build\outputs\apk\release\app-release.apk`
+
+Release AAB:
+`C:\phpserver\www\web-to-app\app\build\outputs\bundle\release\app-release.aab`
 
 ## 7. Install APK On Phone
 
@@ -88,6 +98,6 @@ Or copy APK to your phone and install manually.
 Use GitHub Actions build instead of local build:
 
 1. Push your branch to GitHub.
-2. Open `Actions` -> `Build APK`.
+2. Open `Actions` -> `Build Android Artifacts`.
 3. Run workflow (`debug`, `release`, or `both`).
-4. Download artifact APK from the successful run.
+4. Download artifact APK/AAB from the successful run.

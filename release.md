@@ -10,7 +10,7 @@ This guide provides the exact values to use when creating a release on GitHub.
 | **Target branch** | `main` or `yasin-final-contribution` |
 | **Release title** | `WebToApp v1.9.7: Enhanced NativeBridge & Cloud Build` |
 | **Description** | (See "Release Description" section below) |
-| **Binaries/Assets** | Upload `app/build/outputs/apk/release/app-release.apk` |
+| **Binaries/Assets** | Upload `app/build/outputs/apk/release/app-release.apk` and optionally `app/build/outputs/bundle/release/app-release.aab` |
 
 ## Release Description
 
@@ -36,12 +36,12 @@ This release introduces critical infrastructure and API improvements to the WebT
 - Verified validation reports included in the source.
 
 ---
-**Build Note:** This APK was built using the new GitHub Actions pipeline and verified on physical hardware.
+**Build Note:** These artifacts were built using the new GitHub Actions pipeline and verified on physical hardware.
 ```
 
 ## How to Publish
 1. Go to [New Release](https://github.com/yasinULLAH/web-to-app/releases/new).
 2. Select the tag **v1.9.7-yasin-final**.
 3. Fill in the Title and Description as provided above.
-4. Drag and drop the APK from your local path.
+4. Drag and drop the APK (and AAB if needed) from your local path.
 5. Click **Publish release**.

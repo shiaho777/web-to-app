@@ -8,6 +8,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.*
 import androidx.annotation.RequiresApi
@@ -1485,6 +1486,21 @@ class WebViewManager(
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     safeBrowsingEnabled = config.safeBrowsingEnabled
+                } else {
+                    @Suppress("DEPRECATION")
+                    saveFormData = true
+                }
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_YES
+                try {
+                    setAutofillHints(
+                        View.AUTOFILL_HINT_USERNAME,
+                        View.AUTOFILL_HINT_PASSWORD,
+                        View.AUTOFILL_HINT_EMAIL_ADDRESS
+                    )
+                } catch (_: Exception) {
                 }
             }
 

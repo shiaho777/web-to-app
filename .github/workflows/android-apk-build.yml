@@ -1,10 +1,10 @@
-name: Build APK
+name: Build Android Artifacts
 
 on:
   workflow_dispatch:
     inputs:
       build_type:
-        description: "Choose which APK to build"
+        description: "Choose which artifact set to build"
         required: true
         default: "debug"
         type: choice
@@ -14,6 +14,8 @@ on:
           - both
   push:
     branches:
+      - main
+      - yasin-final-contribution
       - codex/nativebridge-runtime-notification-bridge
     paths:
       - ".github/workflows/android-apk-build.yml"
@@ -77,6 +79,13 @@ jobs:
             -Dkotlin.compiler.execution.strategy=in-process \
             :app:assembleRelease
 
+      - name: Build Release AAB
+        if: ${{ inputs.build_type == 'release' || inputs.build_type == 'both' }}
+        run: |
+          ./gradlew --no-daemon --no-configuration-cache \
+            -Dkotlin.compiler.execution.strategy=in-process \
+            :app:bundleRelease
+
       - name: Upload Debug APK artifact
         if: ${{ github.event_name == 'push' || inputs.build_type == 'debug' || inputs.build_type == 'both' }}
         uses: actions/upload-artifact@v4
@@ -92,5 +101,14 @@ jobs:
         with:
           name: app-release-apk-${{ github.run_number }}
           path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Release AAB artifact
+        if: ${{ inputs.build_type == 'release' || inputs.build_type == 'both' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab-${{ github.run_number }}
+          path: app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
           retention-days: 14

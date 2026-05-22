@@ -89,6 +89,10 @@ The custom branch build validated on a physical Android device now includes:
   `scheduleWorker`, `scheduleExactAlarm`, `canScheduleExactAlarms`, `isDozeMode`,
   `isIgnoringBatteryOptimizations`, `openBatteryOptimizationSettings`,
   `getAppState`, `isAppInForeground`
+- Credential/autofill behavior:
+  Android WebView autofill is explicitly enabled, legacy pre-Android-O form save
+  is enabled, and `navigator.credentials` now supports `create/get/store` with
+  local storage backed fallback for compatibility.
 
 Validation summary from APK Inspector Pro:
 
@@ -101,7 +105,7 @@ Validation summary from APK Inspector Pro:
 
 Cloud build proof:
 
-- GitHub Actions "Build APK" succeeded in 12m 44s
+- GitHub Actions cloud pipeline succeeded in 12m 44s
 - Warnings in logs were non-fatal and expected for this repo
 
 Supporting docs:
@@ -110,6 +114,7 @@ Supporting docs:
 - `GITHUB_ACTIONS_APK_GUIDE.md`
 - `UPDATE_AND_REBUILD_FLOW.md`
 - `how to convert to apk.md`
+- `NATIVEBRIDGE_VALIDATION_REPORT.md`
 
 ## Module Market
 
