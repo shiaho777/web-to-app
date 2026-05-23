@@ -1,0 +1,40 @@
+{
+  "id": "wta-auto-scroll",
+  "name": "Auto Scroll",
+  "description": "Smoothly auto-scroll long pages — articles, feeds, manga, web fiction. A floating remote control lets you start, pause, and adjust speed (1× to 10×). Pauses when you scroll manually, resumes when you let go, stops when the tab is backgrounded.",
+  "icon": "swipe_vertical",
+  "category": "NAVIGATION",
+  "tags": ["scroll", "reading", "manga", "feed", "official"],
+  "version": {
+    "code": 1,
+    "name": "1.0.0",
+    "changelog": "Initial release."
+  },
+  "author": {
+    "name": "shiaho",
+    "url": "https://github.com/shiahonb777"
+  },
+  "runAt": "DOCUMENT_END",
+  "urlMatches": [
+    { "pattern": "*", "isRegex": false, "exclude": false }
+  ],
+  "permissions": ["DOM_ACCESS", "CSS_INJECT", "STORAGE", "KEYBOARD"],
+  "configItems": [
+    {
+      "key": "speedLevel",
+      "name": "Default speed level (1-10)",
+      "description": "1 ≈ 30 px/s, 10 ≈ 300 px/s. The floating panel can override this live without changing this saved value.",
+      "type": "NUMBER",
+      "defaultValue": "5",
+      "required": false
+    },
+    {
+      "key": "pauseOnInteract",
+      "name": "Pause on user interaction",
+      "description": "When on, manual scroll / arrow keys / spacebar briefly pause auto-scroll. Resumes after about 1.5 seconds of idle.",
+      "type": "BOOLEAN",
+      "defaultValue": "true",
+      "required": false
+    }
+  ]
+}

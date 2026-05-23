@@ -1,0 +1,55 @@
+{
+  "id": "wta-floating-search",
+  "name": "Floating Search",
+  "description": "Select any text on a page to bring up a floating action bar: search, copy, or open the selection as a URL. Supports five search engines (Google, DuckDuckGo, Bing, Baidu, Wikipedia) and works across SPA navigations.",
+  "icon": "search",
+  "category": "INTERACTION",
+  "tags": ["search", "selection", "tooltip", "official"],
+  "version": {
+    "code": 1,
+    "name": "1.0.0",
+    "changelog": "Initial release."
+  },
+  "author": {
+    "name": "shiaho",
+    "url": "https://github.com/shiahonb777"
+  },
+  "runAt": "DOCUMENT_END",
+  "urlMatches": [
+    { "pattern": "*", "isRegex": false, "exclude": false }
+  ],
+  "permissions": ["DOM_ACCESS", "DOM_OBSERVE", "CSS_INJECT", "CLIPBOARD", "WINDOW_OPEN"],
+  "configItems": [
+    {
+      "key": "engine",
+      "name": "Search engine",
+      "description": "Engine used by the Search button.",
+      "type": "SELECT",
+      "defaultValue": "google",
+      "required": false,
+      "options": [
+        { "value": "google", "label": "Google" },
+        { "value": "duckduckgo", "label": "DuckDuckGo" },
+        { "value": "bing", "label": "Bing" },
+        { "value": "baidu", "label": "Baidu" },
+        { "value": "wikipedia", "label": "Wikipedia" }
+      ]
+    },
+    {
+      "key": "minLength",
+      "name": "Minimum selection length",
+      "description": "Skip very short selections to avoid the bar popping up on accidental taps.",
+      "type": "NUMBER",
+      "defaultValue": "2",
+      "required": false
+    },
+    {
+      "key": "openInNewTab",
+      "name": "Open results in a new tab",
+      "description": "If off, navigation replaces the current page.",
+      "type": "BOOLEAN",
+      "defaultValue": "true",
+      "required": false
+    }
+  ]
+}

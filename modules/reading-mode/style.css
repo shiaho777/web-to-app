@@ -1,0 +1,130 @@
+/*
+ * Reading Mode — official WebToApp sample.
+ *
+ * The CSS targets the reader shell injected by main.js. We use
+ * `html.wta-reading-mode-root` to hide the original page chrome and
+ * `#wta-reading-mode-article` to style the reader surface.
+ *
+ * Three themes (light / sepia / dark) are selected via [data-theme=…];
+ * three font sizes via [data-font-size=…]; three font families via
+ * [data-font-family=…].
+ */
+
+/* Hide the original page when reader is active. We keep the body in the
+   tree so the site's SPA router can still mutate it; we just visually
+   suppress everything that isn't ours. */
+html.wta-reading-mode-root body > *:not(#wta-reading-mode-article) {
+  display: none !important;
+}
+html.wta-reading-mode-root,
+html.wta-reading-mode-root body {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+}
+
+#wta-reading-mode-article {
+  position: relative;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+  line-height: 1.75;
+  letter-spacing: 0.01em;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+#wta-reading-mode-article .wta-rm-header h1 {
+  font-size: 1.75em;
+  font-weight: 700;
+  margin: 0 0 24px;
+  line-height: 1.25;
+}
+
+#wta-reading-mode-article .wta-rm-body {
+  font-weight: 400;
+}
+
+#wta-reading-mode-article p {
+  margin: 0 0 1em;
+}
+
+#wta-reading-mode-article img,
+#wta-reading-mode-article video,
+#wta-reading-mode-article iframe {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 8px;
+  margin: 16px 0;
+}
+
+#wta-reading-mode-article pre,
+#wta-reading-mode-article code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+}
+
+#wta-reading-mode-article pre {
+  padding: 12px 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+#wta-reading-mode-article a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+#wta-reading-mode-article blockquote {
+  border-left: 3px solid currentColor;
+  padding-left: 16px;
+  margin: 16px 0;
+  opacity: 0.8;
+}
+
+/* ── themes ───────────────────────────────────────────────────────── */
+
+#wta-reading-mode-article[data-theme='light'] {
+  background: #ffffff;
+  color: #111827;
+}
+html.wta-reading-mode-root:has(#wta-reading-mode-article[data-theme='light']) {
+  background: #ffffff;
+}
+
+#wta-reading-mode-article[data-theme='sepia'] {
+  background: #f7f1e3;
+  color: #432d12;
+}
+html.wta-reading-mode-root:has(#wta-reading-mode-article[data-theme='sepia']) {
+  background: #f7f1e3;
+}
+
+#wta-reading-mode-article[data-theme='dark'] {
+  background: #15171b;
+  color: #e9eaec;
+}
+html.wta-reading-mode-root:has(#wta-reading-mode-article[data-theme='dark']) {
+  background: #15171b;
+}
+#wta-reading-mode-article[data-theme='dark'] pre {
+  background: #1f2329;
+}
+
+/* ── font sizes ───────────────────────────────────────────────────── */
+
+#wta-reading-mode-article[data-font-size='small'] { font-size: 16px; }
+#wta-reading-mode-article[data-font-size='medium'] { font-size: 18px; }
+#wta-reading-mode-article[data-font-size='large'] { font-size: 21px; }
+
+/* ── font families ────────────────────────────────────────────────── */
+
+#wta-reading-mode-article[data-font-family='serif'] {
+  font-family: 'Iowan Old Style', 'Apple Garamond', Georgia, 'Times New Roman', serif;
+}
+#wta-reading-mode-article[data-font-family='sans'] {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+#wta-reading-mode-article[data-font-family='mono'] {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updatedAt": "2026-05-15T00:00:00Z",
+  "updatedAt": "2026-05-23T00:00:00Z",
   "modules": [
     {
       "id": "wta-hello-world",
@@ -39,6 +39,69 @@
       },
       "runAt": "DOCUMENT_START",
       "permissions": ["CSS_INJECT", "DOM_ACCESS"],
+      "urlMatches": [
+        { "pattern": "*", "isRegex": false, "exclude": false }
+      ],
+      "hasCss": true
+    },
+    {
+      "id": "wta-reading-mode",
+      "path": "reading-mode",
+      "name": "Reading Mode",
+      "description": "Strip a page down to its readable content: hides sidebars, ads, sticky bars and footers, then re-centres the article with comfortable typography. Three themes (light / sepia / dark) and three font sizes. Toggle from the floating panel.",
+      "icon": "menu_book",
+      "category": "READING",
+      "tags": ["reader", "article", "typography", "focus", "official"],
+      "version": "1.0.0",
+      "minAppVersion": 33,
+      "author": {
+        "name": "shiaho",
+        "url": "https://github.com/shiahonb777"
+      },
+      "runAt": "DOCUMENT_END",
+      "permissions": ["DOM_ACCESS", "CSS_INJECT", "STORAGE"],
+      "urlMatches": [
+        { "pattern": "*", "isRegex": false, "exclude": false }
+      ],
+      "hasCss": true
+    },
+    {
+      "id": "wta-floating-search",
+      "path": "floating-search",
+      "name": "Floating Search",
+      "description": "Select any text on a page to bring up a floating action bar: search, copy, or open the selection as a URL. Supports five search engines (Google, DuckDuckGo, Bing, Baidu, Wikipedia) and works across SPA navigations.",
+      "icon": "search",
+      "category": "INTERACTION",
+      "tags": ["search", "selection", "tooltip", "official"],
+      "version": "1.0.0",
+      "minAppVersion": 33,
+      "author": {
+        "name": "shiaho",
+        "url": "https://github.com/shiahonb777"
+      },
+      "runAt": "DOCUMENT_END",
+      "permissions": ["DOM_ACCESS", "DOM_OBSERVE", "CSS_INJECT", "CLIPBOARD", "WINDOW_OPEN"],
+      "urlMatches": [
+        { "pattern": "*", "isRegex": false, "exclude": false }
+      ],
+      "hasCss": true
+    },
+    {
+      "id": "wta-auto-scroll",
+      "path": "auto-scroll",
+      "name": "Auto Scroll",
+      "description": "Smoothly auto-scroll long pages — articles, feeds, manga, web fiction. A floating remote control lets you start, pause, and adjust speed (1x to 10x). Pauses when you scroll manually, resumes when you let go, stops when the tab is backgrounded.",
+      "icon": "swipe_vertical",
+      "category": "NAVIGATION",
+      "tags": ["scroll", "reading", "manga", "feed", "official"],
+      "version": "1.0.0",
+      "minAppVersion": 33,
+      "author": {
+        "name": "shiaho",
+        "url": "https://github.com/shiahonb777"
+      },
+      "runAt": "DOCUMENT_END",
+      "permissions": ["DOM_ACCESS", "CSS_INJECT", "STORAGE", "KEYBOARD"],
       "urlMatches": [
         { "pattern": "*", "isRegex": false, "exclude": false }
       ],

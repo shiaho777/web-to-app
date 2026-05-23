@@ -1,0 +1,79 @@
+{
+  "id": "wta-reading-mode",
+  "name": "Reading Mode",
+  "description": "Strip a page down to its readable content: hides sidebars, ads, sticky bars and footers, then re-centres the article with comfortable typography. Three themes (light / sepia / dark) and three font sizes. Toggle from the floating panel.",
+  "icon": "menu_book",
+  "category": "READING",
+  "tags": ["reader", "article", "typography", "focus", "official"],
+  "version": {
+    "code": 1,
+    "name": "1.0.0",
+    "changelog": "Initial release."
+  },
+  "author": {
+    "name": "shiaho",
+    "url": "https://github.com/shiahonb777"
+  },
+  "runAt": "DOCUMENT_END",
+  "urlMatches": [
+    { "pattern": "*", "isRegex": false, "exclude": false }
+  ],
+  "permissions": ["DOM_ACCESS", "CSS_INJECT", "STORAGE"],
+  "configItems": [
+    {
+      "key": "theme",
+      "name": "Theme",
+      "description": "Background and text colours used in reader mode.",
+      "type": "SELECT",
+      "defaultValue": "light",
+      "required": false,
+      "options": [
+        { "value": "light", "label": "Light" },
+        { "value": "sepia", "label": "Sepia" },
+        { "value": "dark", "label": "Dark" }
+      ]
+    },
+    {
+      "key": "fontSize",
+      "name": "Font size",
+      "description": "Article body font size.",
+      "type": "SELECT",
+      "defaultValue": "medium",
+      "required": false,
+      "options": [
+        { "value": "small", "label": "Small (16px)" },
+        { "value": "medium", "label": "Medium (18px)" },
+        { "value": "large", "label": "Large (21px)" }
+      ]
+    },
+    {
+      "key": "fontFamily",
+      "name": "Font family",
+      "description": "Reading-mode body typeface.",
+      "type": "SELECT",
+      "defaultValue": "serif",
+      "required": false,
+      "options": [
+        { "value": "serif", "label": "Serif (Georgia)" },
+        { "value": "sans", "label": "Sans-serif (System)" },
+        { "value": "mono", "label": "Monospace" }
+      ]
+    },
+    {
+      "key": "maxWidth",
+      "name": "Reading column width (px)",
+      "description": "Maximum article width. 720 is comfortable for most languages; lower for narrower lines.",
+      "type": "NUMBER",
+      "defaultValue": "720",
+      "required": false
+    },
+    {
+      "key": "autoEnter",
+      "name": "Auto-enter on article pages",
+      "description": "Automatically enter reader mode when the page contains a long-form article (>800 words).",
+      "type": "BOOLEAN",
+      "defaultValue": "false",
+      "required": false
+    }
+  ]
+}
