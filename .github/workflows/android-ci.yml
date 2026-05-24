@@ -1,11 +1,11 @@
-name: Auto Check
+name: Android CI Build
 
 on:
   pull_request:
+  workflow_dispatch:
   push:
     branches:
-      - main
-      - master
+      - "**"
 
 permissions:
   contents: read
@@ -54,3 +54,22 @@ jobs:
             -Dkotlin.compiler.execution.strategy=in-process \
             :app:compileDebugKotlin \
             :app:testDebugUnitTest
+
+      - name: Build APKs
+        run: |
+          ./gradlew --no-daemon --no-configuration-cache \
+            -Dkotlin.compiler.execution.strategy=in-process \
+            :app:assembleDebug \
+            :app:assembleRelease \
+            :shell:assembleDebug \
+            :shell:assembleRelease
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apks-${{ github.run_number }}
+          path: |
+            app/build/outputs/apk/**/*.apk
+            shell/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+          retention-days: 14
