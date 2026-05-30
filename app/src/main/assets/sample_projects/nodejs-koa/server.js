@@ -1,3 +1,7 @@
+
+
+
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -51,7 +55,7 @@ const server = http.createServer(async (req, res) => {
   }
   sendJson(res, { error: 'Not Found' }, 404);
 });
-server.listen(PORT, '0.0.0.0', () => console.log('Notes on http:
+server.listen(PORT, '0.0.0.0', () => console.log('Notes on http://0.0.0.0:' + PORT));
 
 function getPage() {
   return `<!DOCTYPE html>

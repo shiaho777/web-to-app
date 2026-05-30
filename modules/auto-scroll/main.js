@@ -1,18 +1,36 @@
+// Auto Scroll — official WebToApp sample.
+//
+// Demonstrates:
+//  - requestAnimationFrame-based smooth scrolling (not setInterval +
+//    scrollBy, which produces visible stuttering on devices)
+//  - Pause-on-touch and pause-on-tab-hidden
+//  - Speed control through a config item
+//  - Floating control panel with start/stop + speed slider
+//  - State persistence with sessionStorage so navigating to a new page on
+//    the same site continues scrolling
+
 (function () {
   var STATE_KEY = 'wta-auto-scroll-active';
   var SPEED_KEY = 'wta-auto-scroll-speed';
 
+  // Speed: pixels-per-second (independent of frame rate). We map the
+  // 1..10 user-visible level to 30..300 px/s; level 5 is a leisurely
+  // article-reading pace.
   function levelToPxPerSec(level) {
     var n = Math.max(1, Math.min(10, level | 0));
     return 30 * n;
   }
 
+  // Read a possibly-overridden speed from sessionStorage first, else the
+  // user's saved config. Lets the floating panel +/- control do live
+  // tuning without polluting the persisted value.
   function getSpeedLevel() {
     var override = sessionStorage.getItem(SPEED_KEY);
     if (override) return parseInt(override, 10) || 5;
     return parseInt(getConfig('speedLevel', '5'), 10) || 5;
   }
 
+  // ── core scroll engine ────────────────────────────────────────────
   var rafId = null;
   var lastTs = 0;
   var paused = false;
@@ -25,13 +43,14 @@
       return;
     }
     if (!lastTs) lastTs = ts;
-    var dt = (ts - lastTs) / 1000;
+    var dt = (ts - lastTs) / 1000; // seconds
     lastTs = ts;
 
     var px = levelToPxPerSec(getSpeedLevel()) * dt;
     var before = window.scrollY;
     window.scrollBy(0, px);
-
+    // If we didn't move (page bottom or scroll-locked), stop — it's
+    // pointless to keep burning frames.
     if (Math.abs(window.scrollY - before) < 0.1) {
       stop();
       return;
@@ -60,6 +79,9 @@
     else stop();
   }
 
+  // ── pause-on-interaction ──────────────────────────────────────────
+  // We pause briefly when the user touches the page (so manual scroll
+  // works), then resume after a short idle period.
   var resumeTimer = null;
   function onUserScroll() {
     if (rafId === null || !stopOnUser) return;
@@ -75,7 +97,7 @@
   window.addEventListener(
     'keydown',
     function (e) {
-
+      // Space / arrows / page down — assume user wants control back.
       if (
         e.key === ' ' ||
         e.key === 'ArrowDown' ||
@@ -89,6 +111,8 @@
     { passive: true }
   );
 
+  // Pause when the tab is backgrounded — saves battery and stops the
+  // scroll position drifting while the user does something else.
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) paused = true;
     else if (rafId !== null) {
@@ -97,6 +121,9 @@
     }
   });
 
+  // ── floating panel ────────────────────────────────────────────────
+  // A tiny remote control: play/pause toggle and speed +/-. Built with
+  // plain DOM so the code reads end-to-end with no framework knowledge.
   var panel = null;
   function ensurePanel() {
     if (panel) return panel;
@@ -138,6 +165,7 @@
     speed.textContent = getSpeedLevel() + '×';
   }
 
+  // ── panel button registration ─────────────────────────────────────
   if (typeof __WTA_MODULE_UI__ !== 'undefined' && __WTA_MODULE_UI__.register) {
     __WTA_MODULE_UI__.register({
       id: __MODULE_INFO__.id,
@@ -153,6 +181,7 @@
     });
   }
 
+  // ── resume after navigation ───────────────────────────────────────
   if (sessionStorage.getItem(STATE_KEY) === '1') {
     ensurePanel();
     refreshPanel();

@@ -1,6 +1,7 @@
+/* global ol */
 'use strict';
 class GeometryTypeControl extends ol.control.Control {
-
+    // Map control to switch type when geometry type is unknown
     constructor(opt_options) {
         const options = opt_options || {};
 
@@ -35,6 +36,7 @@ class GeometryTypeControl extends ol.control.Control {
     }
 }
 
+// TODO: allow deleting individual features (#8972)
 class MapWidget {
     constructor(options) {
         this.map = null;
@@ -42,6 +44,7 @@ class MapWidget {
         this.typeChoices = false;
         this.ready = false;
 
+        // Default options
         this.options = {
             default_lat: 0,
             default_lon: 0,
@@ -49,6 +52,7 @@ class MapWidget {
             is_collection: options.geom_name.includes('Multi') || options.geom_name.includes('Collection')
         };
 
+        // Altering using user-provided options
         for (const property in options) {
             if (options.hasOwnProperty(property)) {
                 this.options[property] = options[property];
@@ -58,6 +62,8 @@ class MapWidget {
             this.options.base_layer = new ol.layer.Tile({source: new ol.source.OSM()});
         }
 
+        // RemovedInDjango51Warning: when the deprecation ends, remove setting
+        // width/height (3 lines below).
         const mapContainer = document.getElementById(this.options.map_id);
         mapContainer.style.width = `${mapContainer.dataset.width}px`;
         mapContainer.style.height = `${mapContainer.dataset.height}px`;
@@ -67,12 +73,13 @@ class MapWidget {
             map: this.map,
             source: new ol.source.Vector({
                 features: this.featureCollection,
-                useSpatialIndex: false
+                useSpatialIndex: false // improve performance
             }),
-            updateWhileAnimating: true,
-            updateWhileInteracting: true
+            updateWhileAnimating: true, // optional, for instant visual feedback
+            updateWhileInteracting: true // optional, for instant visual feedback
         });
 
+        // Populate and set handlers for the feature container
         const self = this;
         this.featureCollection.on('add', function(event) {
             const feature = event.element;
@@ -82,7 +89,7 @@ class MapWidget {
             if (self.ready) {
                 self.serializeFeatures();
                 if (!self.options.is_collection) {
-                    self.disableDrawing();
+                    self.disableDrawing(); // Only allow one feature at a time
                 }
             }
         });
@@ -96,7 +103,7 @@ class MapWidget {
                 this.featureOverlay.getSource().addFeature(feature);
                 ol.extent.extend(extent, feature.getGeometry().getExtent());
             }, this);
-
+            // Center/zoom the map
             this.map.getView().fit(extent, {minResolution: 1});
         } else {
             this.map.getView().setCenter(this.defaultCenter());
@@ -126,7 +133,7 @@ class MapWidget {
     }
 
     createInteractions() {
-
+        // Initialize the modify interaction
         this.interactions.modify = new ol.interaction.Modify({
             features: this.featureCollection,
             deleteCondition: function(event) {
@@ -135,9 +142,10 @@ class MapWidget {
             }
         });
 
+        // Initialize the draw interaction
         let geomType = this.options.geom_name;
         if (geomType === "Geometry" || geomType === "GeometryCollection") {
-
+            // Default to Point, but create icons to switch type
             geomType = "Point";
             this.currentGeometryType = new GeometryTypeControl({widget: this, type: "Point", active: true});
             this.map.addControl(this.currentGeometryType);
@@ -165,7 +173,7 @@ class MapWidget {
     enableDrawing() {
         this.interactions.draw.setActive(true);
         if (this.typeChoices) {
-
+            // Show geometry type icons
             const divs = document.getElementsByClassName("switch-type");
             for (let i = 0; i !== divs.length; i++) {
                 divs[i].style.visibility = "visible";
@@ -177,7 +185,7 @@ class MapWidget {
         if (this.interactions.draw) {
             this.interactions.draw.setActive(false);
             if (this.typeChoices) {
-
+                // Hide geometry type icons
                 const divs = document.getElementsByClassName("switch-type");
                 for (let i = 0; i !== divs.length; i++) {
                     divs[i].style.visibility = "hidden";
@@ -188,13 +196,13 @@ class MapWidget {
 
     clearFeatures() {
         this.featureCollection.clear();
-
+        // Empty textarea widget
         document.getElementById(this.options.id).value = '';
         this.enableDrawing();
     }
 
     serializeFeatures() {
-
+        // Three use cases: GeometryCollection, multigeometries, and single geometry
         let geometry = null;
         const features = this.featureOverlay.getSource().getFeatures();
         if (this.options.is_collection) {

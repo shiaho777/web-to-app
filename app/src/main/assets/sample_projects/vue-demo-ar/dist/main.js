@@ -1,17 +1,18 @@
+// Vue 3 Demo App
 (function() {
     console.log('[Vue Demo] Initializing app...');
-
+    
     if (typeof Vue === 'undefined') {
         console.error('[Vue Demo] Vue is not defined!');
         return;
     }
-
+    
     const App = {
         setup() {
             const count = Vue.ref(0);
             const increment = () => count.value++;
             const decrement = () => count.value--;
-
+            
             return { count, increment, decrement };
         },
         template: `
@@ -22,13 +23,13 @@
                 </svg>
                 <h1>تطبيق Vue</h1>
                 <p>تطبيق Vue 3 تجريبي يعرض وظيفة العداد التفاعلي.</p>
-
+                
                 <div class="counter">
                     <button @click="decrement">−</button>
                     <span>{{ count }}</span>
                     <button @click="increment">+</button>
                 </div>
-
+                
                 <div class="features">
                     <div class="feature">
                         <div class="feature-icon">⚡</div>
@@ -50,7 +51,7 @@
             </div>
         `
     };
-
+    
     try {
         Vue.createApp(App).mount('#app');
         console.log('[Vue Demo] App mounted successfully!');

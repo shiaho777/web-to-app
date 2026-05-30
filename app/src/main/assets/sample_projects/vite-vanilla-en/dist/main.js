@@ -1,3 +1,6 @@
+// Vite Vanilla JS Weather App - Built version
+
+// Mock weather data
 const weatherData = {
     'New York': { temp: 23, icon: '☀️', desc: 'Sunny', humidity: 45, wind: 12, feels: 25 },
     'Los Angeles': { temp: 26, icon: '⛅', desc: 'Cloudy', humidity: 65, wind: 8, feels: 28 },
@@ -11,6 +14,7 @@ const weatherData = {
     'Dubai': { temp: 28, icon: '🌫️', desc: 'Hazy', humidity: 75, wind: 4, feels: 31 }
 };
 
+// DOM elements
 const cityInput = document.getElementById('cityInput');
 const searchBtn = document.getElementById('searchBtn');
 const cityName = document.getElementById('cityName');
@@ -21,9 +25,10 @@ const humidity = document.getElementById('humidity');
 const wind = document.getElementById('wind');
 const feelsLike = document.getElementById('feelsLike');
 
+// Update weather display
 function updateWeather(city) {
     const data = weatherData[city];
-
+    
     if (data) {
         cityName.textContent = city;
         temperature.textContent = `${data.temp}°`;
@@ -32,18 +37,19 @@ function updateWeather(city) {
         humidity.textContent = `${data.humidity}%`;
         wind.textContent = `${data.wind} km/h`;
         feelsLike.textContent = `${data.feels}°`;
-
+        
+        // Add animation effect
         const display = document.querySelector('.weather-display');
         display.style.animation = 'none';
-        display.offsetHeight;
+        display.offsetHeight; // Trigger reflow
         display.style.animation = 'fadeIn 0.5s ease-out';
     } else {
-
+        // Generate random weather data
         const icons = ['☀️', '⛅', '🌤️', '🌧️', '🌫️', '⛈️'];
         const descs = ['Sunny', 'Cloudy', 'Partly Cloudy', 'Showers', 'Overcast', 'Thunderstorm'];
         const randomIndex = Math.floor(Math.random() * icons.length);
         const randomTemp = Math.floor(Math.random() * 20) + 15;
-
+        
         cityName.textContent = city;
         temperature.textContent = `${randomTemp}°`;
         weatherIcon.textContent = icons[randomIndex];
@@ -54,6 +60,7 @@ function updateWeather(city) {
     }
 }
 
+// Event listeners
 searchBtn.addEventListener('click', () => {
     const city = cityInput.value.trim();
     if (city) {
@@ -70,4 +77,5 @@ cityInput.addEventListener('keypress', (e) => {
     }
 });
 
+// Initialize
 console.log('🌤️ Vite Weather App loaded');

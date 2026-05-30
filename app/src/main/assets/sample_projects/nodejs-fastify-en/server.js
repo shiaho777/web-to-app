@@ -1,3 +1,7 @@
+
+
+
+
 const http = require('http');
 const os = require('os');
 const PORT = process.env.PORT || 3000;
@@ -21,7 +25,7 @@ const server = http.createServer((req, res) => {
   if (p === '/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end(getPage()) }
   res.writeHead(404); res.end('Not Found');
 });
-server.listen(PORT, '0.0.0.0', () => console.log('Monitor on http:
+server.listen(PORT, '0.0.0.0', () => console.log('Monitor on http://0.0.0.0:' + PORT));
 
 function getPage() {
   return `<!DOCTYPE html>

@@ -1,10 +1,22 @@
+// Floating Search — official WebToApp sample.
+//
+// Demonstrates:
+//  - Selection event handling that survives SPA navigations
+//  - A floating UI built without any framework
+//  - Clipboard via async navigator.clipboard with a fallback
+//  - Multi-engine search URL building
+//  - Cleaning up listeners — important for modules that hook globals
+//
+// Kept short on purpose. Reading top to bottom should give a contributor
+// a working mental model of how to ship a polished interactive module.
+
 (function () {
   var ENGINES = {
-    google: 'https:
-    duckduckgo: 'https:
-    bing: 'https:
-    baidu: 'https:
-    wikipedia: 'https:
+    google: 'https://www.google.com/search?q=',
+    duckduckgo: 'https://duckduckgo.com/?q=',
+    bing: 'https://www.bing.com/search?q=',
+    baidu: 'https://www.baidu.com/s?wd=',
+    wikipedia: 'https://en.wikipedia.org/wiki/Special:Search?search=',
   };
 
   function getOpts() {
@@ -15,6 +27,8 @@
     };
   }
 
+  // Build the floating bar lazily — first selection event triggers it,
+  // we don't want to add idle DOM nodes to every page load.
   var bar = null;
   function ensureBar() {
     if (bar) return bar;
@@ -30,7 +44,7 @@
       '<button data-action="open" type="button">' +
       '<span class="wta-fs-icon">🔗</span><span>Open</span></button>';
     bar.addEventListener('mousedown', function (e) {
-
+      // Don't let the bar steal selection on click.
       e.preventDefault();
     });
     bar.addEventListener('click', onBarClick);
@@ -78,7 +92,7 @@
   function navigate(url, newTab) {
     if (newTab) {
       var w = window.open(url, '_blank');
-
+      // Some hosts block window.open silently — fall back to current tab.
       if (!w) location.href = url;
     } else {
       location.href = url;
@@ -109,14 +123,17 @@
 
   function looksLikeUrl(s) {
     if (!s) return false;
-    if (/^https?:\/\
+    if (/^https?:\/\//i.test(s)) return true;
     return /^[a-z0-9-]+(\.[a-z0-9-]+)+(\/.*)?$/i.test(s);
   }
 
   function normaliseUrl(s) {
-    return /^https?:\/\
+    return /^https?:\/\//i.test(s) ? s : 'https://' + s;
   }
 
+  // ── selection tracking ────────────────────────────────────────────
+  // Use selectionchange + a tiny debounce so we follow live drag-selects
+  // smoothly without flicker on each mouse move.
   var debounceTimer = null;
   function onSelectionChange() {
     if (debounceTimer) clearTimeout(debounceTimer);
@@ -148,6 +165,7 @@
   document.addEventListener('scroll', hide, { passive: true });
   window.addEventListener('resize', hide);
 
+  // Hide on outside taps so the bar disappears once the user moves on.
   document.addEventListener(
     'pointerdown',
     function (e) {
@@ -156,6 +174,7 @@
     { capture: true }
   );
 
+  // ── panel button: shows engine picker quick-toggle ────────────────
   if (typeof __WTA_MODULE_UI__ !== 'undefined' && __WTA_MODULE_UI__.register) {
     __WTA_MODULE_UI__.register({
       id: __MODULE_INFO__.id,
@@ -164,7 +183,8 @@
       uiConfig: __MODULE_UI_CONFIG__,
       runMode: __MODULE_RUN_MODE__,
       onClick: function () {
-
+        // The runtime opens the module's settings sheet by default if we
+        // don't return anything custom — that's exactly what we want here.
       },
     });
   }

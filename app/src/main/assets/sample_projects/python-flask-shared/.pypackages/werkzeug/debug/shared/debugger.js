@@ -2,7 +2,7 @@ docReady(() => {
   if (!EVALEX_TRUSTED) {
     initPinBox();
   }
-
+  // if we are in console mode, show the console.
   if (CONSOLE_MODE && EVALEX) {
     createInteractiveConsole();
   }
@@ -27,6 +27,7 @@ function addToggleFrameTraceback(frames) {
     });
   })
 }
+
 
 function wrapPlainTraceback() {
   const plainTraceback = document.querySelector("div.plain textarea");
@@ -87,6 +88,9 @@ function promptForPin() {
   }
 }
 
+/**
+ * Helper function for shell initialization
+ */
 function openShell(consoleNode, target, frameID) {
   promptForPin();
   if (consoleNode) {
@@ -126,7 +130,7 @@ function openShell(consoleNode, target, frameID) {
     if (e.key === "l" && e.ctrlKey) {
       output.innerText = "--- screen cleared ---";
     } else if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-
+      // Handle up arrow and down arrow.
       if (e.key === "ArrowUp" && historyPos > 0) {
         e.preventDefault();
         historyPos--;
@@ -145,6 +149,9 @@ function addEventListenersToElements(elements, event, listener) {
   elements.forEach((el) => el.addEventListener(event, listener));
 }
 
+/**
+ * Add extra info
+ */
 function addInfoPrompt(elements) {
   for (let i = 0; i < elements.length; i++) {
     elements[i].innerHTML =
@@ -185,6 +192,9 @@ function slideToggle(target) {
   target.classList.toggle("active");
 }
 
+/**
+ * toggle traceback types on click.
+ */
 function addToggleTraceTypesOnClick(elements) {
   for (let i = 0; i < elements.length; i++) {
     elements[i].addEventListener("click", () => {
@@ -250,7 +260,7 @@ function createInteractiveConsole() {
 }
 
 function handleConsoleSubmit(e, command, frameID) {
-
+  // Prevent page from refreshing.
   e.preventDefault();
 
   return new Promise((resolve) => {
@@ -263,6 +273,8 @@ function handleConsoleSubmit(e, command, frameID) {
         tmp.innerHTML = data;
         resolve(tmp);
 
+        // Handle expandable span for long list outputs.
+        // Example to test: list(range(13))
         let wrapperAdded = false;
         const wrapperSpan = document.createElement("span");
         const expansionButton = createExpansionButtonForConsole();
@@ -285,6 +297,7 @@ function handleConsoleSubmit(e, command, frameID) {
           });
         });
 
+        // Add expansion button at end of wrapper.
         if (wrapperAdded) {
           wrapperSpan.append(expansionButton);
         }

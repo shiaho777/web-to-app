@@ -1,17 +1,18 @@
+// Vue 3 Demo App
 (function() {
     console.log('[Vue Demo] Initializing app...');
-
+    
     if (typeof Vue === 'undefined') {
         console.error('[Vue Demo] Vue is not defined!');
         return;
     }
-
+    
     const App = {
         setup() {
             const count = Vue.ref(0);
             const increment = () => count.value++;
             const decrement = () => count.value--;
-
+            
             return { count, increment, decrement };
         },
         template: `
@@ -22,13 +23,13 @@
                 </svg>
                 <h1>Vue Demo</h1>
                 <p>这是一个 Vue 3 示例应用，展示了响应式计数器功能。</p>
-
+                
                 <div class="counter">
                     <button @click="decrement">−</button>
                     <span>{{ count }}</span>
                     <button @click="increment">+</button>
                 </div>
-
+                
                 <div class="features">
                     <div class="feature">
                         <div class="feature-icon">⚡</div>
@@ -50,7 +51,7 @@
             </div>
         `
     };
-
+    
     try {
         Vue.createApp(App).mount('#app');
         console.log('[Vue Demo] App mounted successfully!');
