@@ -18,21 +18,51 @@ object ZipAligner {
     private const val DEFAULT_ALIGNMENT = 4L
     private const val NATIVE_LIB_ALIGNMENT = 16 * 1024L
 
+    private const val COPY_BUFFER_SIZE = 64 * 1024
+
+    private fun computeCrc(zipIn: ZipFile, entry: ZipEntry): Long {
+        val crc = CRC32()
+        val buffer = ByteArray(COPY_BUFFER_SIZE)
+        zipIn.getInputStream(entry).use { input ->
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                crc.update(buffer, 0, read)
+            }
+        }
+        return crc.value
+    }
+
     fun alignInPlace(apkFile: File): Boolean {
         val tempFile = File(apkFile.parent, apkFile.name + ".aligned")
         return try {
             val result = align(apkFile, tempFile)
-            if (result) {
+            if (result && isValidZip(tempFile)) {
                 apkFile.delete()
                 tempFile.renameTo(apkFile)
                 true
             } else {
+                if (result) {
+                    AppLogger.e(TAG, "Aligned APK is not a valid zip; keeping original unaligned APK")
+                }
                 tempFile.delete()
                 false
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "ZipAlign failed", e)
             tempFile.delete()
+            false
+        }
+    }
+
+    private fun isValidZip(file: File): Boolean {
+        if (!file.exists() || file.length() == 0L) return false
+        return try {
+            ZipFile(file).use { zip ->
+                zip.entries().hasMoreElements()
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Aligned APK validation failed: ${e.message}")
             false
         }
     }
@@ -71,20 +101,16 @@ object ZipAligner {
                                 continue
                             }
 
-                            val data = zipIn.getInputStream(entry).readBytes()
-
                             if (entry.method == ZipEntry.STORED || entry.name == "resources.arsc") {
 
                                 totalStored++
 
+                                val entrySize = entry.size
                                 val newEntry = ZipEntry(entry.name)
                                 newEntry.method = ZipEntry.STORED
-                                newEntry.size = data.size.toLong()
-                                newEntry.compressedSize = data.size.toLong()
-
-                                val crc = CRC32()
-                                crc.update(data)
-                                newEntry.crc = crc.value
+                                newEntry.size = entrySize
+                                newEntry.compressedSize = entrySize
+                                newEntry.crc = if (entry.crc != -1L) entry.crc else computeCrc(zipIn, entry)
 
                                 val nameBytes = entry.name.toByteArray(Charsets.UTF_8)
                                 val currentOffset = countingStream.bytesWritten
@@ -111,7 +137,7 @@ object ZipAligner {
                                 }
 
                                 zipOut.putNextEntry(newEntry)
-                                zipOut.write(data)
+                                zipIn.getInputStream(entry).use { it.copyTo(zipOut, COPY_BUFFER_SIZE) }
                                 zipOut.closeEntry()
 
                             } else {
@@ -119,7 +145,7 @@ object ZipAligner {
                                 val newEntry = ZipEntry(entry.name)
                                 newEntry.method = ZipEntry.DEFLATED
                                 zipOut.putNextEntry(newEntry)
-                                zipOut.write(data)
+                                zipIn.getInputStream(entry).use { it.copyTo(zipOut, COPY_BUFFER_SIZE) }
                                 zipOut.closeEntry()
                             }
                         }

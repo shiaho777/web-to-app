@@ -3284,7 +3284,7 @@ class WebViewManager(
         } else {
             emptyList()
         }
-        val hasAppModules = appModules.any { it.enabled && it.shouldRegisterInPanel() }
+        val hasAppModules = appModules.any { it.shouldRegisterInPanel() }
         val enabledModules = runCatching { extensionManager.getEnabledModules() }.getOrElse { emptyList() }
         val hasGlobalModules = allowGlobalModuleFallback && enabledModules.any { it.shouldRegisterInPanel() }
         return ExtensionPanelEligibility(

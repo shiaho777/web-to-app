@@ -539,6 +539,14 @@ class WebViewActivity : AppCompatActivity() {
                             webViewProvider = { wv }
                         )
                         wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
+
+                        if (previewApp?.translateEnabled == true) {
+                            val translateBridge = com.webtoapp.core.webview.TranslateBridge(wv, lifecycleScope)
+                            wv.addJavascriptInterface(
+                                translateBridge,
+                                com.webtoapp.core.webview.TranslateBridge.JS_INTERFACE_NAME
+                            )
+                        }
                     },
                     onFileChooser = { callback, params ->
                         handleFileChooser(callback, params)
@@ -1907,6 +1915,15 @@ fun WebViewScreen(
                         longPressHandler.injectLongPressEnhancer(it)
                     } else {
                         AppLogger.d("WebViewActivity", "Skip long-press enhancer for strict compatibility host: $url")
+                    }
+
+                    val tc = webApp?.translateConfig
+                    if (webApp?.translateEnabled == true && tc != null) {
+                        com.webtoapp.ui.shell.injectTranslateScript(
+                            it,
+                            tc.targetLanguage.code,
+                            tc.showFloatingButton
+                        )
                     }
                 }
             }
