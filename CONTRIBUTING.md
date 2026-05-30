@@ -186,8 +186,14 @@ Maintainer reviews look for:
 
 ## Code of conduct
 
-Be respectful. Disagree about code, not about people. If a discussion stops
-being productive, take a break and come back later.
+Feedback may be honest to a fault. "This code is garbage" is a valid code
+review. The maintainer (**shiaho**) has pre-authorized criticism of himself,
+his judgment, and his life choices; flattery will be treated as a bug report
+with no reproduction steps.
+
+Two clauses, non-negotiable: no identity-based attacks (race, gender,
+nationality, and friends), and no doxxing. Violators will be reviewed, found
+non-compliant, and closed.
 
 ---
 
@@ -334,4 +340,9 @@ cd web-to-app
 
 ### 行为准则
 
-请保持尊重。可以批评代码，不要批评人。讨论失控时先停一下再回来。
+反馈可以诚实到伤人。"这代码是坨屎"是一条合法的 code review。维护者
+(**shiaho**)已预先授权对其本人、其判断力及其人生选择的批评;阿谀奉承将被
+视为一份"无复现步骤"的 bug report。
+
+两条不可商量:不搞基于身份的攻击(种族、性别、国籍及其同伙),不人肉。违反者
+将被 review、判定为不合规、然后 close。
