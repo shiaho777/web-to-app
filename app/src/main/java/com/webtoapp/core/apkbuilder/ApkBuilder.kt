@@ -26,6 +26,7 @@ import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.getActivationCodeStrings
 import com.webtoapp.ui.components.announcement.toUiTemplate
 import com.webtoapp.ui.shell.buildPackagedHtmlShellEntryUrl
+import com.webtoapp.ui.shell.buildPackagedHtmlFileSchemeEntryUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
