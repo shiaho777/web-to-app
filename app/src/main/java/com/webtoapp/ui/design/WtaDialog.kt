@@ -30,16 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 
-/**
- * Unified dialog for the Wta design system.
- *
- * Why this exists:
- *  - Consistent shape ([WtaRadius.Dialog]) across every dialog in the app.
- *  - Physics-driven entrance: scale-only bounce spring (no fade).
- *  - Icon sits in a tinted rounded plate matching the rest of the design
- *    language, rather than floating unstyled above the title.
- *  - Sensible max width so dialogs never stretch to edge on tablets.
- */
 @Composable
 fun WtaAlertDialog(
     onDismissRequest: () -> Unit,

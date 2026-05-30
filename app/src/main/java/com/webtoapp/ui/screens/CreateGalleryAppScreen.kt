@@ -48,10 +48,6 @@ import java.io.File
 import com.webtoapp.ui.design.WtaBackground
 import com.webtoapp.ui.components.EnhancedElevatedCard
 
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateGalleryAppScreen(
@@ -67,7 +63,6 @@ fun CreateGalleryAppScreen(
     val context = LocalContext.current
     val isEditMode = existingAppId != null
 
-
     var existingApp by remember { mutableStateOf<WebApp?>(null) }
     LaunchedEffect(existingAppId) {
         if (existingAppId != null) {
@@ -79,21 +74,17 @@ fun CreateGalleryAppScreen(
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
-
     var appName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
     var appIconPath by remember { mutableStateOf<String?>(null) }
     var themeType by remember { mutableStateOf("AURORA") }
 
-
     var galleryItems by remember { mutableStateOf<List<GalleryItem>>(emptyList()) }
     var isLoadingMedia by remember { mutableStateOf(false) }
-
 
     var categories by remember { mutableStateOf<List<GalleryCategory>>(emptyList()) }
     var showCategoryDialog by remember { mutableStateOf(false) }
     var editingCategory by remember { mutableStateOf<GalleryCategory?>(null) }
-
 
     var playMode by remember { mutableStateOf(GalleryPlayMode.SEQUENTIAL) }
     var imageInterval by remember { mutableIntStateOf(3) }
@@ -102,7 +93,6 @@ fun CreateGalleryAppScreen(
     var shuffleOnLoop by remember { mutableStateOf(false) }
     var videoAutoNext by remember { mutableStateOf(true) }
     var enableAudio by remember { mutableStateOf(true) }
-
 
     var defaultView by remember { mutableStateOf(GalleryViewMode.GRID) }
     var gridColumns by remember { mutableIntStateOf(3) }
@@ -113,12 +103,10 @@ fun CreateGalleryAppScreen(
     var backgroundColor by remember { mutableStateOf("#000000") }
     var rememberPosition by remember { mutableStateOf(false) }
 
-
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     var selectedItems by remember { mutableStateOf<Set<String>>(emptySet()) }
     var isSelectionMode by remember { mutableStateOf(false) }
     var showItemDetailDialog by remember { mutableStateOf<GalleryItem?>(null) }
-
 
     LaunchedEffect(existingApp) {
         existingApp?.let { app ->
@@ -127,11 +115,9 @@ fun CreateGalleryAppScreen(
             appIconPath = app.iconPath
             themeType = app.themeType
 
-
             app.galleryConfig?.let { config ->
                 galleryItems = config.items
                 categories = config.categories
-
 
                 playMode = config.playMode
                 imageInterval = config.imageInterval
@@ -140,7 +126,6 @@ fun CreateGalleryAppScreen(
                 shuffleOnLoop = config.shuffleOnLoop
                 videoAutoNext = config.videoAutoNext
                 enableAudio = config.enableAudio
-
 
                 defaultView = config.defaultView
                 gridColumns = config.gridColumns
@@ -153,7 +138,6 @@ fun CreateGalleryAppScreen(
             }
         }
     }
-
 
     val mediaPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
@@ -179,7 +163,6 @@ fun CreateGalleryAppScreen(
     val iconPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri -> uri?.let { appIcon = it } }
-
 
     val canCreate = galleryItems.isNotEmpty()
 
@@ -253,7 +236,9 @@ fun CreateGalleryAppScreen(
 
             TabRow(
                 selectedTabIndex = selectedTabIndex,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+
+                containerColor = Color.Transparent
             ) {
                 Tab(
                     selected = selectedTabIndex == 0,
@@ -274,7 +259,6 @@ fun CreateGalleryAppScreen(
                     icon = { Icon(Icons.Outlined.Tune, null) }
                 )
             }
-
 
             when (selectedTabIndex) {
                 0 -> MediaManagementTab(
@@ -379,7 +363,6 @@ fun CreateGalleryAppScreen(
         }
     }
 
-
     if (showCategoryDialog) {
         CategoryEditDialog(
             category = editingCategory,
@@ -396,7 +379,6 @@ fun CreateGalleryAppScreen(
             }
         )
     }
-
 
     showItemDetailDialog?.let { item ->
         MediaItemDetailDialog(
@@ -416,9 +398,6 @@ fun CreateGalleryAppScreen(
     }
         }
 }
-
-
-
 
 @Composable
 private fun MediaManagementTab(
@@ -481,7 +460,6 @@ private fun MediaManagementTab(
         }
         }
 
-
         if (categories.isNotEmpty() || items.isNotEmpty()) {
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -519,7 +497,6 @@ private fun MediaManagementTab(
                 }
             }
         }
-
 
         EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -601,7 +578,6 @@ private fun MediaManagementTab(
             }
         }
 
-
         if (items.isNotEmpty()) {
             EnhancedElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -636,9 +612,6 @@ private fun MediaManagementTab(
     }
 }
 
-
-
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MediaGrid(
@@ -649,7 +622,6 @@ private fun MediaGrid(
     onItemLongClick: (GalleryItem) -> Unit
 ) {
     val context = LocalContext.current
-
 
     val gridHeight = ((items.size + 2) / 3) * 120
 
@@ -692,7 +664,6 @@ private fun MediaGrid(
                     contentScale = ContentScale.Crop
                 )
 
-
                 if (item.type == GalleryItemType.VIDEO) {
                     Box(
                         modifier = Modifier
@@ -722,7 +693,6 @@ private fun MediaGrid(
                     }
                 }
 
-
                 if (isSelectionMode) {
                     Box(
                         modifier = Modifier
@@ -750,9 +720,6 @@ private fun MediaGrid(
         }
     }
 }
-
-
-
 
 @Composable
 private fun PlaybackSettingsTab(
@@ -818,7 +785,6 @@ private fun PlaybackSettingsTab(
             }
         }
 
-
         EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
@@ -826,7 +792,6 @@ private fun PlaybackSettingsTab(
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(modifier = Modifier.height(12.dp))
-
 
                 Text(
                     text = "${Strings.galleryImageInterval}: ${imageInterval}s",
@@ -841,7 +806,6 @@ private fun PlaybackSettingsTab(
                 )
             }
         }
-
 
         EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -872,7 +836,6 @@ private fun PlaybackSettingsTab(
                 }
             }
         }
-
 
         EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -927,9 +890,6 @@ private fun PlaybackSettingsTab(
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -992,7 +952,6 @@ private fun DisplaySettingsTab(
                     )
                 }
 
-
                 AnimatedVisibility(visible = defaultView == GalleryViewMode.GRID) {
                     Column {
                         Spacer(modifier = Modifier.height(16.dp))
@@ -1011,7 +970,6 @@ private fun DisplaySettingsTab(
                 }
             }
         }
-
 
         EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -1053,7 +1011,6 @@ private fun DisplaySettingsTab(
                 }
             }
         }
-
 
         EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
@@ -1099,7 +1056,6 @@ private fun DisplaySettingsTab(
             }
         }
 
-
         EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
@@ -1134,8 +1090,6 @@ private fun DisplaySettingsTab(
         }
     }
 }
-
-
 
 @Composable
 private fun PlayModeOption(
@@ -1265,9 +1219,6 @@ private fun StatItem(
     }
 }
 
-
-
-
 @Composable
 private fun CategoryEditDialog(
     category: GalleryCategory?,
@@ -1358,9 +1309,6 @@ private fun CategoryEditDialog(
     )
 }
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MediaItemDetailDialog(
@@ -1411,7 +1359,6 @@ private fun MediaItemDetailDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-
                 PremiumTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -1420,7 +1367,6 @@ private fun MediaItemDetailDialog(
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
-
 
                 if (categories.isNotEmpty()) {
                     Text(Strings.galleryCategory, style = MaterialTheme.typography.labelMedium)
@@ -1465,7 +1411,6 @@ private fun MediaItemDetailDialog(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
 
                 EnhancedElevatedCard(
                     colors = CardDefaults.cardColors(
@@ -1524,8 +1469,6 @@ private fun MediaItemDetailDialog(
     )
 }
 
-
-
 private fun GallerySortOrder.toDisplayString(): String {
     return when (this) {
         GallerySortOrder.CUSTOM -> Strings.gallerySortCustom
@@ -1546,7 +1489,6 @@ private fun formatFileSize(bytes: Long): String {
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun CreateGalleryAppScreenV2(
@@ -1563,7 +1505,6 @@ fun CreateGalleryAppScreenV2(
     val scope = rememberCoroutineScope()
     val gridState = rememberLazyGridState()
 
-
     var existingApp by remember { mutableStateOf<WebApp?>(null) }
     LaunchedEffect(existingAppId) {
         if (existingAppId != null) {
@@ -1572,7 +1513,6 @@ fun CreateGalleryAppScreenV2(
                 .first()
         }
     }
-
 
     var appName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
@@ -1584,18 +1524,15 @@ fun CreateGalleryAppScreenV2(
     var selectedItems by remember { mutableStateOf<Set<String>>(emptySet()) }
     val isSelectionMode = selectedItems.isNotEmpty()
 
-
     var loop by remember { mutableStateOf(true) }
     var autoPlay by remember { mutableStateOf(false) }
     var imageInterval by remember { mutableIntStateOf(3) }
     var enableAudio by remember { mutableStateOf(true) }
     var videoAutoNext by remember { mutableStateOf(true) }
 
-
     var showAppInfoSection by remember { mutableStateOf(true) }
     var showSettingsSheet by remember { mutableStateOf(false) }
     var previewItem by remember { mutableStateOf<GalleryItem?>(null) }
-
 
     LaunchedEffect(existingApp) {
         existingApp?.let { app ->
@@ -1611,7 +1548,6 @@ fun CreateGalleryAppScreenV2(
             }
         }
     }
-
 
     val mediaPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
@@ -1638,7 +1574,6 @@ fun CreateGalleryAppScreenV2(
     ) { uri -> uri?.let { appIcon = it } }
 
     val canCreate = galleryItems.isNotEmpty()
-
 
     WtaCreateFlowScaffold(
         title = if (isSelectionMode) "${selectedItems.size} ${Strings.galleryItemCount}" else if (existingAppId != null) Strings.editApp else Strings.galleryCreateTitle,
@@ -1745,7 +1680,6 @@ fun CreateGalleryAppScreenV2(
             }
             }
 
-
             if (galleryItems.isNotEmpty()) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
@@ -1760,7 +1694,6 @@ fun CreateGalleryAppScreenV2(
                 }
             }
             }
-
 
             WtaCreateFlowSection(title = Strings.preview, modifier = Modifier.weight(1f)) {
             Box(modifier = Modifier.weight(weight = 1f, fill = true)) {
@@ -1801,7 +1734,6 @@ fun CreateGalleryAppScreenV2(
         }
     }
 
-
     if (showSettingsSheet) {
         ModalBottomSheet(
             onDismissRequest = { showSettingsSheet = false },
@@ -1818,7 +1750,6 @@ fun CreateGalleryAppScreenV2(
         }
     }
 
-
     previewItem?.let { item ->
         MediaPreviewDialog(
             item = item,
@@ -1831,7 +1762,6 @@ fun CreateGalleryAppScreenV2(
         )
     }
 }
-
 
 @Composable
 private fun StatChip(icon: ImageVector, value: Int) {
@@ -1938,8 +1868,6 @@ private fun GallerySettingsSheet(
         PremiumButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) { Text(Strings.btnConfirm) }
     }
 }
-
-
 
 @Composable
 private fun MediaPreviewDialog(item: GalleryItem, onDismiss: () -> Unit, onDelete: () -> Unit) {

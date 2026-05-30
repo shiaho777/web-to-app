@@ -23,11 +23,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.webtoapp.core.i18n.Strings
 
-
-
-
-
-
 @Composable
 private fun runtimeAccentColor(): Color = MaterialTheme.colorScheme.onSurface
 
@@ -38,26 +33,6 @@ private fun runtimeAccentContainer(alpha: Float = 0.08f): Color =
 @Composable
 private fun runtimeMutedContainer(alpha: Float = 0.35f): Color =
     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = alpha)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @Composable
 fun RuntimeSectionHeader(
@@ -84,19 +59,6 @@ fun RuntimeSectionHeader(
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -174,16 +136,6 @@ fun RuntimeHeroSection(
     }
 }
 
-
-
-
-
-
-
-
-
-
-
 @Composable
 fun RuntimeSuccessCard(
     title: String,
@@ -219,12 +171,6 @@ fun RuntimeSuccessCard(
     }
 }
 
-
-
-
-
-
-
 @Composable
 fun RuntimeBrandedLoadingCard(
     creationPhase: String,
@@ -244,11 +190,6 @@ fun RuntimeBrandedLoadingCard(
     }
 }
 
-
-
-
-
-
 @Composable
 fun RuntimeBrandedErrorCard(
     error: String,
@@ -266,12 +207,6 @@ fun RuntimeBrandedErrorCard(
         }
     }
 }
-
-
-
-
-
-
 
 @Composable
 fun RuntimeIconPickerCard(
@@ -315,12 +250,6 @@ fun RuntimeIconPickerCard(
         }
     }
 }
-
-
-
-
-
-
 
 @Composable
 fun RuntimeEnvVarsCard(
@@ -368,11 +297,6 @@ fun RuntimeEnvVarsCard(
     }
 }
 
-
-
-
-
-
 @Composable
 fun RuntimeLoadingCard(creationPhase: String) {
     Card(
@@ -386,9 +310,6 @@ fun RuntimeLoadingCard(creationPhase: String) {
         }
     }
 }
-
-
-
 
 @Composable
 fun RuntimeErrorCard(

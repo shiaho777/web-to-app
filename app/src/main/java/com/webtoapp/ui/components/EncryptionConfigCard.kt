@@ -18,10 +18,6 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.ApkEncryptionConfig
 import androidx.compose.ui.graphics.Color
 
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EncryptionConfigCard(
@@ -87,7 +83,6 @@ fun EncryptionConfigCard(
                 )
             }
 
-
             AnimatedVisibility(visible = config.enabled) {
                 Card(
                     colors = CardDefaults.cardColors(
@@ -116,7 +111,3 @@ fun EncryptionConfigCard(
         }
     }
 }
-
-
-
-

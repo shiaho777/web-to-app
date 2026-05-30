@@ -11,7 +11,6 @@ class ErrorPageManagerTest {
             ErrorPageConfig(mode = ErrorPageMode.DEFAULT)
         )
 
-        // errorCode 0 + description with no errno marker → no diagnostic → system page preserved
         val html = manager.generateErrorPage(0, "generic failure", "https://example.com")
 
         assertThat(html).isNull()
@@ -32,7 +31,7 @@ class ErrorPageManagerTest {
         assertThat(html).isNotNull()
         assertThat(html).contains("无法绑定本机网络地址")
         assertThat(html).contains("EADDRNOTAVAIL")
-        // No mini-game or auto retry countdown in the minimal fallback
+
         assertThat(html).doesNotContain("gameCanvas")
         assertThat(html).doesNotContain("秒后重试")
     }
@@ -59,7 +58,9 @@ class ErrorPageManagerTest {
             ErrorPageConfig(
                 mode = ErrorPageMode.BUILTIN_STYLE,
                 showMiniGame = false,
-                autoRetrySeconds = 0
+                autoRetrySeconds = 0,
+
+                language = "CHINESE"
             )
         )
 
@@ -130,7 +131,9 @@ class ErrorPageManagerTest {
                 showMiniGame = true,
                 miniGameType = MiniGameType.MAZE,
                 retryButtonText = "再试一次",
-                autoRetrySeconds = 5
+                autoRetrySeconds = 5,
+
+                language = "CHINESE"
             )
         )
 

@@ -5,18 +5,10 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-
-
-
-
-
-
-
 class AxmlRebuilder {
 
     companion object {
         private const val TAG = "AxmlRebuilder"
-
 
         private const val CHUNK_AXML_FILE = 0x0003
         private const val CHUNK_STRING_POOL = 0x0001
@@ -26,7 +18,6 @@ class AxmlRebuilder {
         private const val CHUNK_START_ELEMENT = 0x0102
         private const val CHUNK_END_ELEMENT = 0x0103
         private const val CHUNK_TEXT = 0x0104
-
 
         private const val ATTR_NAME = 0x01010003
         private const val ATTR_VERSION_CODE = 0x0101021b
@@ -40,7 +31,6 @@ class AxmlRebuilder {
         private const val ATTR_SCHEME = 0x01010027
         private const val ATTR_HOST = 0x01010028
 
-
         private val CLASS_NAME_REGEX = Regex("^[A-Z][a-zA-Z0-9]*$")
 
         private val BASELINE_RUNTIME_PERMISSIONS = listOf(
@@ -48,16 +38,6 @@ class AxmlRebuilder {
             "android.permission.ACCESS_NETWORK_STATE"
         )
     }
-
-
-
-
-
-
-
-
-
-
 
     fun expandAndModifyWithAliases(
         axmlData: ByteArray,
@@ -74,27 +54,21 @@ class AxmlRebuilder {
                 return axmlData
             }
 
-
             val expansions = findRelativeClassNames(parsed, originalPackage)
             AppLogger.d(TAG, "Found ${expansions.size} relative class names to expand")
-
 
             if (expansions.isNotEmpty()) {
                 expandClassNames(parsed, expansions)
             }
 
-
             replacePackageString(parsed, originalPackage, newPackage)
 
-
             ensureUsesPermissions(parsed, permissions)
-
 
             if (aliasCount > 0) {
                 addActivityAliases(parsed, newPackage, aliasCount, appName)
                 AppLogger.d(TAG, "Added $aliasCount activity-alias entries")
             }
-
 
             val result = rebuildAxml(parsed)
 
@@ -107,32 +81,11 @@ class AxmlRebuilder {
         }
     }
 
-
-
-
     private fun ensureUsesPermissions(parsed: ParsedAxml, permissions: List<String>) {
-        // 已被 applyUsesPermissions 取代。保留为兼容别名，直接转发。
+
         applyUsesPermissions(parsed, permissions)
     }
 
-
-
-
-    /**
-     * 从 AXML 中移除所有 name 不在 allowed 集合内的 <uses-permission> 元素。
-     *
-     * 动机：shell 模板为了支持任意功能组合在 AndroidManifest 里预声明了 50+ 权限；
-     * 但如果用户只启用了一部分功能（比如只需要相机），留下的无关权限会：
-     *   - 在应用商店展示时形成"权限过多"警告
-     *   - 触发 Play Store/应用市场的合规审查
-     *   - 让终端用户在安装/使用过程中看到多余的权限提示
-     *
-     * 因此构建 APK 时必须根据用户勾选和功能开关做"减法"。
-     *
-     * 安全性：单独的 uses-permission 元素在 manifest 中是扁平的（start + end 紧邻，无子节点），
-     * 配对删除 start/end chunks 不会破坏其它 chunk 的结构。字符串池中残留的权限名字符串
-     * 无人引用时对 AXML 的正确性没有影响。
-     */
     private fun pruneUsesPermissions(parsed: ParsedAxml, allowed: Collection<String>) {
         val resourceMap = parsed.resourceMap ?: return
         val nameAttrIndex = resourceMap.indexOf(ATTR_NAME)
@@ -143,7 +96,7 @@ class AxmlRebuilder {
         val allowedSet = allowed.toHashSet()
         val usesPermissionStrIndex = parsed.stringPool.strings.indexOf("uses-permission")
         if (usesPermissionStrIndex < 0) {
-            // Manifest 根本没有 uses-permission，无事可做
+
             return
         }
 
@@ -156,7 +109,7 @@ class AxmlRebuilder {
                 val permName = readUsesPermissionName(parsed, chunk, usesPermissionStrIndex, nameAttrIndex)
                 if (permName != null && permName !in allowedSet) {
                     indicesToRemove += i
-                    // 紧邻的下一个 end element 属于它（uses-permission 是扁平元素，无子节点）
+
                     val next = parsed.chunks.getOrNull(i + 1)
                     if (next != null && next.type == CHUNK_END_ELEMENT) {
                         indicesToRemove += (i + 1)
@@ -164,7 +117,7 @@ class AxmlRebuilder {
                         removedNames += permName
                         continue
                     }
-                    // 如果结构不符合预期，退回保守策略：保留这条，避免破坏 manifest
+
                     indicesToRemove.removeAt(indicesToRemove.lastIndex)
                 }
             }
@@ -173,24 +126,12 @@ class AxmlRebuilder {
 
         if (indicesToRemove.isEmpty()) return
 
-        // 从后往前删除，避免索引失效
         for (idx in indicesToRemove.sortedDescending()) {
             parsed.chunks.removeAt(idx)
         }
         AppLogger.d(TAG, "Pruned ${removedNames.size} uses-permission entries: ${removedNames.joinToString()}")
     }
 
-    /**
-     * 将 AXML 中的 <uses-permission> 集合同步到给定的 [permissions] 白名单：
-     *   1. 确保所有白名单中的权限都存在（缺失的会被追加）
-     *   2. 移除所有不在白名单中的权限
-     *
-     * 调用方传入的 [permissions] 必须是构建时最终想要的完整集合——包括基线权限
-     * (INTERNET/ACCESS_NETWORK_STATE) 和用户勾选的/功能依赖的权限。
-     *
-     * 这取代了之前仅"补齐缺失"的 ensureUsesPermissions，解决模板中预声明的
-     * 大量权限无法根据用户配置剔除的问题。
-     */
     private fun applyUsesPermissions(parsed: ParsedAxml, permissions: List<String>) {
         val resourceMap = parsed.resourceMap ?: return
         val nameAttrIndex = resourceMap.indexOf(ATTR_NAME)
@@ -199,7 +140,6 @@ class AxmlRebuilder {
             return
         }
 
-        // 先裁剪不再需要的，再追加缺失的。
         pruneUsesPermissions(parsed, permissions)
 
         val androidNsIndex = getOrAddString(parsed.stringPool, "http://schemas.android.com/apk/res/android")
@@ -223,10 +163,6 @@ class AxmlRebuilder {
         parsed.chunks.addAll(insertIndex, newChunks)
     }
 
-    /**
-     * 若 chunk 是 <uses-permission android:name="..."> 的 start element，返回其 name 字符串值；
-     * 否则返回 null。仅承认 TYPE_STRING (0x03) 类型的 name 属性——标准 manifest 里都是这个类型。
-     */
     private fun readUsesPermissionName(
         parsed: ParsedAxml,
         chunk: Chunk,
@@ -236,11 +172,11 @@ class AxmlRebuilder {
         if (chunk.data.size < 36) return null
         val buffer = ByteBuffer.wrap(chunk.data).order(ByteOrder.LITTLE_ENDIAN)
         buffer.position(16)
-        buffer.int // line number
+        buffer.int
         val elementName = buffer.int
         if (elementName != usesPermissionStrIndex) return null
 
-        buffer.short // namespace
+        buffer.short
         val attrSize = buffer.short.toInt() and 0xFFFF
         val attrCount = buffer.short.toInt() and 0xFFFF
         if (attrSize == 0 || attrCount == 0) return null
@@ -249,11 +185,11 @@ class AxmlRebuilder {
             val attrOffset = 36 + idx * attrSize
             if (attrOffset + 20 > chunk.data.size) break
             buffer.position(attrOffset)
-            buffer.int // ns
+            buffer.int
             val attrName = buffer.int
-            buffer.int // raw value
-            buffer.short // size
-            buffer.get() // padding
+            buffer.int
+            buffer.short
+            buffer.get()
             val attrValueType = buffer.get().toInt() and 0xFF
             val attrValueData = buffer.int
             if (attrName == nameAttrIndex && attrValueType == 0x03) {
@@ -262,9 +198,6 @@ class AxmlRebuilder {
         }
         return null
     }
-
-
-
 
     private fun hasUsesPermission(parsed: ParsedAxml, permission: String, nameAttrIndex: Int): Boolean {
         for (chunk in parsed.chunks) {
@@ -304,9 +237,6 @@ class AxmlRebuilder {
         return false
     }
 
-
-
-
     private fun findApplicationStartIndex(parsed: ParsedAxml): Int {
         val applicationStrIndex = parsed.stringPool.strings.indexOf("application")
         if (applicationStrIndex < 0) return -1
@@ -324,12 +254,6 @@ class AxmlRebuilder {
         }
         return -1
     }
-
-
-
-
-
-
 
     private fun addActivityAliases(
         parsed: ParsedAxml,
@@ -350,25 +274,19 @@ class AxmlRebuilder {
             return
         }
 
-
         val nameAttrIndex = resourceMap.indexOf(ATTR_NAME)
         val labelAttrIndex = resourceMap.indexOf(ATTR_LABEL)
         val iconAttrIndex = resourceMap.indexOf(ATTR_ICON)
         val exportedAttrIndex = resourceMap.indexOf(ATTR_EXPORTED)
 
-
         var targetActivityAttrIndex = resourceMap.indexOf(ATTR_TARGET_ACTIVITY)
         if (targetActivityAttrIndex < 0) {
 
-
             targetActivityAttrIndex = resourceMap.size
-
 
             parsed.stringPool.strings.add(targetActivityAttrIndex, "targetActivity")
 
-
             updateStringIndicesAfterInsert(parsed, targetActivityAttrIndex)
-
 
             val newResourceMap = resourceMap.copyOf(resourceMap.size + 1)
             newResourceMap[targetActivityAttrIndex] = ATTR_TARGET_ACTIVITY
@@ -383,33 +301,21 @@ class AxmlRebuilder {
 
         AppLogger.d(TAG, "Attribute indices: name=$nameAttrIndex, targetActivity=$targetActivityAttrIndex, label=$labelAttrIndex, icon=$iconAttrIndex, exported=$exportedAttrIndex")
 
-
         val androidNsIndex = getOrAddString(parsed.stringPool, "http://schemas.android.com/apk/res/android")
-
 
         val activityAliasNameIndex = getOrAddString(parsed.stringPool, "activity-alias")
         val intentFilterNameIndex = getOrAddString(parsed.stringPool, "intent-filter")
         val actionNameIndex = getOrAddString(parsed.stringPool, "action")
         val categoryNameIndex = getOrAddString(parsed.stringPool, "category")
 
-
         val mainActionIndex = getOrAddString(parsed.stringPool, "android.intent.action.MAIN")
         val launcherCategoryIndex = getOrAddString(parsed.stringPool, "android.intent.category.LAUNCHER")
-
-
-
 
         val targetActivityValue = "com.webtoapp.ui.shell.ShellActivity"
         val targetActivityValueIndex = getOrAddString(parsed.stringPool, targetActivityValue)
         AppLogger.d(TAG, "targetActivity value: $targetActivityValue (using original class name)")
 
-
-
-
-
-
         val newChunks = mutableListOf<Chunk>()
-
 
         val intentFilterStartTemplate = buildSimpleStartElement(androidNsIndex, intentFilterNameIndex, 0)
         val actionStartTemplate = buildActionOrCategoryElement(
@@ -429,7 +335,6 @@ class AxmlRebuilder {
         val intentFilterEndTemplate = buildEndElement(androidNsIndex, intentFilterNameIndex)
         val aliasEndTemplate = buildEndElement(androidNsIndex, activityAliasNameIndex)
 
-
         if (aliasCount > 100) {
             AppLogger.d(TAG, "Icon Storm: generating $aliasCount aliases (pre-allocated buffer for ${aliasCount * 8} chunks)")
         }
@@ -439,10 +344,8 @@ class AxmlRebuilder {
             val aliasName = ".LauncherAlias$i"
             val aliasNameValueIndex = getOrAddString(parsed.stringPool, aliasName)
 
-
             val aliasLabel = appName
             val aliasLabelIndex = getOrAddString(parsed.stringPool, aliasLabel)
-
 
             val aliasStartChunk = buildActivityAliasStartElement(
                 androidNsIndex = androidNsIndex,
@@ -457,7 +360,6 @@ class AxmlRebuilder {
                 exportedAttrIndex = exportedAttrIndex
             )
 
-
             newChunks.add(aliasStartChunk)
             newChunks.add(intentFilterStartTemplate)
             newChunks.add(actionStartTemplate)
@@ -467,21 +369,16 @@ class AxmlRebuilder {
             newChunks.add(intentFilterEndTemplate)
             newChunks.add(aliasEndTemplate)
 
-
             if (aliasCount >= 500 && i % 500 == 0) {
                 AppLogger.d(TAG, "Icon Storm progress: $i / $aliasCount aliases generated")
             }
         }
-
 
         parsed.chunks.addAll(applicationEndIndex, newChunks)
         AppLogger.d(TAG, "Inserted ${newChunks.size} chunks for $aliasCount activity-alias entries" +
             if (aliasCount >= 100) " (Icon Storm mode)" else ""
         )
     }
-
-
-
 
     private fun findApplicationEndIndex(parsed: ParsedAxml): Int {
         val applicationStrIndex = parsed.stringPool.strings.indexOf("application")
@@ -502,10 +399,6 @@ class AxmlRebuilder {
         return -1
     }
 
-
-
-
-
     private fun addDeepLinkIntentFilter(parsed: ParsedAxml, hosts: List<String>) {
         if (hosts.isEmpty()) return
 
@@ -521,13 +414,11 @@ class AxmlRebuilder {
             return
         }
 
-
         val shellActivityEndIndex = findActivityEndIndex(parsed, "com.webtoapp.ui.shell.ShellActivity")
         if (shellActivityEndIndex < 0) {
             AppLogger.e(TAG, "Cannot find ShellActivity </activity> element for deep link")
             return
         }
-
 
         var schemeAttrIndex = resourceMap.indexOf(ATTR_SCHEME)
         if (schemeAttrIndex < 0) {
@@ -551,7 +442,6 @@ class AxmlRebuilder {
             AppLogger.d(TAG, "Added host to string pool and resource map at index $hostAttrIndex")
         }
 
-
         val currentNameAttrIndex = parsed.resourceMap!!.indexOf(ATTR_NAME)
         val currentSchemeAttrIndex = parsed.resourceMap!!.indexOf(ATTR_SCHEME)
         val currentHostAttrIndex = parsed.resourceMap!!.indexOf(ATTR_HOST)
@@ -570,21 +460,16 @@ class AxmlRebuilder {
 
         val newChunks = mutableListOf<Chunk>()
 
-
         newChunks.add(buildSimpleStartElement(androidNsIndex, intentFilterNameIndex, 0))
-
 
         newChunks.add(buildActionOrCategoryElement(androidNsIndex, actionNameIndex, currentNameAttrIndex, viewActionIndex))
         newChunks.add(buildEndElement(androidNsIndex, actionNameIndex))
 
-
         newChunks.add(buildActionOrCategoryElement(androidNsIndex, categoryNameIndex, currentNameAttrIndex, defaultCategoryIndex))
         newChunks.add(buildEndElement(androidNsIndex, categoryNameIndex))
 
-
         newChunks.add(buildActionOrCategoryElement(androidNsIndex, categoryNameIndex, currentNameAttrIndex, browsableCategoryIndex))
         newChunks.add(buildEndElement(androidNsIndex, categoryNameIndex))
-
 
         for (host in hosts) {
             val hostValueIndex = getOrAddString(parsed.stringPool, host)
@@ -596,10 +481,7 @@ class AxmlRebuilder {
             newChunks.add(buildEndElement(androidNsIndex, dataNameIndex))
         }
 
-
         newChunks.add(buildEndElement(androidNsIndex, intentFilterNameIndex))
-
-
 
         val currentEndIndex = findActivityEndIndex(parsed, "com.webtoapp.ui.shell.ShellActivity")
         if (currentEndIndex >= 0) {
@@ -607,19 +489,6 @@ class AxmlRebuilder {
             AppLogger.d(TAG, "Inserted ${newChunks.size} chunks for deep link intent-filter")
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private fun rewireLauncherToShellActivity(parsed: ParsedAxml, addDirectLauncherToShell: Boolean) {
         val resourceMap = parsed.resourceMap ?: run {
@@ -652,9 +521,6 @@ class AxmlRebuilder {
         }
     }
 
-
-
-
     private fun setExistingBooleanAttributeOnActivity(
         parsed: ParsedAxml,
         activityClassName: String,
@@ -684,7 +550,6 @@ class AxmlRebuilder {
             val attrName = buffer.int
             if (attrName != attrIndex) continue
 
-
             buffer.putInt(attrOffset + 8, -1)
             buffer.putShort(attrOffset + 12, 8)
             buffer.put(attrOffset + 14, 0)
@@ -696,10 +561,6 @@ class AxmlRebuilder {
 
         AppLogger.w(TAG, "Attribute index=$attrIndex not found on $activityClassName, skip patch")
     }
-
-
-
-
 
     private fun addLauncherIntentFilterToShellActivity(parsed: ParsedAxml) {
         val resourceMap = parsed.resourceMap ?: run {
@@ -740,9 +601,6 @@ class AxmlRebuilder {
             AppLogger.d(TAG, "Inserted launcher intent-filter into ShellActivity")
         }
     }
-
-
-
 
     private fun findActivityStartIndex(parsed: ParsedAxml, activityClassName: String): Int {
         val nameAttrIndex = parsed.resourceMap?.indexOf(ATTR_NAME) ?: return -1
@@ -785,9 +643,6 @@ class AxmlRebuilder {
 
         return -1
     }
-
-
-
 
     private fun findActivityEndIndex(parsed: ParsedAxml, activityClassName: String): Int {
         val activityStrIndex = parsed.stringPool.strings.indexOf("activity")
@@ -847,11 +702,6 @@ class AxmlRebuilder {
         return -1
     }
 
-
-
-
-
-
     private fun buildDataElement(
         androidNsIndex: Int,
         elementNameIndex: Int,
@@ -881,7 +731,6 @@ class AxmlRebuilder {
         buffer.putShort(0)
         buffer.putShort(0)
 
-
         buffer.putInt(androidNsIndex)
         buffer.putInt(schemeAttrIndex)
         buffer.putInt(schemeValueIndex)
@@ -889,7 +738,6 @@ class AxmlRebuilder {
         buffer.put(0)
         buffer.put(0x03)
         buffer.putInt(schemeValueIndex)
-
 
         buffer.putInt(androidNsIndex)
         buffer.putInt(hostAttrIndex)
@@ -902,22 +750,12 @@ class AxmlRebuilder {
         return Chunk(CHUNK_START_ELEMENT, 0, chunkSize, buffer.array())
     }
 
-
-
-
     private fun getOrAddString(pool: StringPool, str: String): Int {
         val index = pool.strings.indexOf(str)
         if (index >= 0) return index
         pool.strings.add(str)
         return pool.strings.size - 1
     }
-
-
-
-
-
-
-
 
     private fun buildActivityAliasStartElement(
         androidNsIndex: Int,
@@ -940,15 +778,12 @@ class AxmlRebuilder {
 
         val buffer = ByteBuffer.allocate(chunkSize).order(ByteOrder.LITTLE_ENDIAN)
 
-
         buffer.putShort(CHUNK_START_ELEMENT.toShort())
         buffer.putShort(headerSize.toShort())
         buffer.putInt(chunkSize)
 
-
         buffer.putInt(0)
         buffer.putInt(-1)
-
 
         buffer.putInt(-1)
         buffer.putInt(elementNameIndex)
@@ -959,10 +794,6 @@ class AxmlRebuilder {
         buffer.putShort(0)
         buffer.putShort(0)
 
-
-
-
-
         buffer.putInt(androidNsIndex)
         buffer.putInt(labelAttrIndex)
         buffer.putInt(labelValueIndex)
@@ -970,7 +801,6 @@ class AxmlRebuilder {
         buffer.put(0)
         buffer.put(0x03)
         buffer.putInt(labelValueIndex)
-
 
         buffer.putInt(androidNsIndex)
         buffer.putInt(iconAttrIndex)
@@ -980,7 +810,6 @@ class AxmlRebuilder {
         buffer.put(0x01)
         buffer.putInt(0x7f0d0000)
 
-
         buffer.putInt(androidNsIndex)
         buffer.putInt(nameAttrIndex)
         buffer.putInt(nameValueIndex)
@@ -989,7 +818,6 @@ class AxmlRebuilder {
         buffer.put(0x03)
         buffer.putInt(nameValueIndex)
 
-
         buffer.putInt(androidNsIndex)
         buffer.putInt(exportedAttrIndex)
         buffer.putInt(-1)
@@ -997,7 +825,6 @@ class AxmlRebuilder {
         buffer.put(0)
         buffer.put(0x12)
         buffer.putInt(-1)
-
 
         buffer.putInt(androidNsIndex)
         buffer.putInt(targetActivityAttrIndex)
@@ -1009,9 +836,6 @@ class AxmlRebuilder {
 
         return Chunk(CHUNK_START_ELEMENT, 0, chunkSize, buffer.array())
     }
-
-
-
 
     private fun buildSimpleStartElement(androidNsIndex: Int, elementNameIndex: Int, attrCount: Int): Chunk {
         val attrSize = 20
@@ -1036,9 +860,6 @@ class AxmlRebuilder {
 
         return Chunk(CHUNK_START_ELEMENT, 0, chunkSize, buffer.array())
     }
-
-
-
 
     private fun buildActionOrCategoryElement(
         androidNsIndex: Int,
@@ -1067,7 +888,6 @@ class AxmlRebuilder {
         buffer.putShort(0)
         buffer.putShort(0)
 
-
         buffer.putInt(androidNsIndex)
         buffer.putInt(nameAttrIndex)
         buffer.putInt(nameValueIndex)
@@ -1078,9 +898,6 @@ class AxmlRebuilder {
 
         return Chunk(CHUNK_START_ELEMENT, 0, chunkSize, buffer.array())
     }
-
-
-
 
     private fun buildEndElement(androidNsIndex: Int, elementNameIndex: Int): Chunk {
         val headerSize = 16
@@ -1099,10 +916,6 @@ class AxmlRebuilder {
         return Chunk(CHUNK_END_ELEMENT, 0, chunkSize, buffer.array())
     }
 
-
-
-
-
     private fun updateStringIndicesAfterInsert(parsed: ParsedAxml, insertIndex: Int) {
         for (chunk in parsed.chunks) {
             when (chunk.type) {
@@ -1113,12 +926,8 @@ class AxmlRebuilder {
         }
     }
 
-
-
-
     private fun updateStartElementIndices(chunk: Chunk, insertIndex: Int) {
         val buffer = ByteBuffer.wrap(chunk.data).order(ByteOrder.LITTLE_ENDIAN)
-
 
         val nsOffset = 16
         val ns = buffer.getInt(nsOffset)
@@ -1126,44 +935,35 @@ class AxmlRebuilder {
             buffer.putInt(nsOffset, ns + 1)
         }
 
-
         val nameOffset = 20
         val name = buffer.getInt(nameOffset)
         if (name >= insertIndex) {
             buffer.putInt(nameOffset, name + 1)
         }
 
-
         val attrStart = buffer.getShort(24).toInt() and 0xFFFF
         val attrSize = buffer.getShort(26).toInt() and 0xFFFF
         val attrCount = buffer.getShort(28).toInt() and 0xFFFF
 
-
         for (i in 0 until attrCount) {
             val attrOffset = 16 + attrStart + i * attrSize
-
 
             val attrNs = buffer.getInt(attrOffset)
             if (attrNs >= insertIndex) {
                 buffer.putInt(attrOffset, attrNs + 1)
             }
 
-
-
             val attrName = buffer.getInt(attrOffset + 4)
             if (attrName >= insertIndex) {
                 buffer.putInt(attrOffset + 4, attrName + 1)
             }
-
 
             val rawValue = buffer.getInt(attrOffset + 8)
             if (rawValue >= 0 && rawValue >= insertIndex) {
                 buffer.putInt(attrOffset + 8, rawValue + 1)
             }
 
-
             val valueType = buffer.get(attrOffset + 15).toInt() and 0xFF
-
 
             if (valueType == 0x03) {
                 val valueData = buffer.getInt(attrOffset + 16)
@@ -1174,18 +974,13 @@ class AxmlRebuilder {
         }
     }
 
-
-
-
     private fun updateEndElementIndices(chunk: Chunk, insertIndex: Int) {
         val buffer = ByteBuffer.wrap(chunk.data).order(ByteOrder.LITTLE_ENDIAN)
-
 
         val ns = buffer.getInt(16)
         if (ns >= insertIndex) {
             buffer.putInt(16, ns + 1)
         }
-
 
         val name = buffer.getInt(20)
         if (name >= insertIndex) {
@@ -1193,32 +988,19 @@ class AxmlRebuilder {
         }
     }
 
-
-
-
     private fun updateNamespaceIndices(chunk: Chunk, insertIndex: Int) {
         val buffer = ByteBuffer.wrap(chunk.data).order(ByteOrder.LITTLE_ENDIAN)
-
 
         val prefix = buffer.getInt(16)
         if (prefix >= insertIndex) {
             buffer.putInt(16, prefix + 1)
         }
 
-
         val uri = buffer.getInt(20)
         if (uri >= insertIndex) {
             buffer.putInt(20, uri + 1)
         }
     }
-
-
-
-
-
-
-
-
 
     fun expandAndModify(axmlData: ByteArray, originalPackage: String, newPackage: String): ByteArray {
         return try {
@@ -1228,19 +1010,14 @@ class AxmlRebuilder {
                 return axmlData
             }
 
-
             val expansions = findRelativeClassNames(parsed, originalPackage)
             AppLogger.d(TAG, "Found ${expansions.size} relative class names to expand")
-
 
             if (expansions.isNotEmpty()) {
                 expandClassNames(parsed, expansions)
             }
 
-
-
             replacePackageString(parsed, originalPackage, newPackage)
-
 
             val result = rebuildAxml(parsed)
 
@@ -1252,18 +1029,6 @@ class AxmlRebuilder {
             axmlData
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
     fun expandAndModifyFull(
         axmlData: ByteArray,
@@ -1283,43 +1048,32 @@ class AxmlRebuilder {
                 return axmlData
             }
 
-
             val expansions = findRelativeClassNames(parsed, originalPackage)
             AppLogger.d(TAG, "Found ${expansions.size} relative class names to expand")
-
 
             if (expansions.isNotEmpty()) {
                 expandClassNames(parsed, expansions)
             }
 
-
             replacePackageString(parsed, originalPackage, newPackage)
-
 
             modifyVersionInfo(parsed, versionCode, versionName)
 
-
             stripTestOnlyFlag(parsed)
 
-
             ensureUsesPermissions(parsed, permissions)
-
 
             if (aliasCount > 0 && appName.isNotEmpty()) {
                 addActivityAliases(parsed, newPackage, aliasCount, appName)
                 AppLogger.d(TAG, "Added $aliasCount activity-alias entries for multi-launcher-icons")
             }
 
-
-
             rewireLauncherToShellActivity(parsed, addDirectLauncherToShell = aliasCount == 0)
-
 
             if (deepLinkHosts.isNotEmpty()) {
                 addDeepLinkIntentFilter(parsed, deepLinkHosts)
                 AppLogger.d(TAG, "Added deep link intent-filter for hosts: $deepLinkHosts")
             }
-
 
             val result = rebuildAxml(parsed)
 
@@ -1331,16 +1085,6 @@ class AxmlRebuilder {
             axmlData
         }
     }
-
-
-
-
-
-
-
-
-
-
 
     fun expandAndModifyWithVersion(
         axmlData: ByteArray,
@@ -1357,27 +1101,20 @@ class AxmlRebuilder {
                 return axmlData
             }
 
-
             val expansions = findRelativeClassNames(parsed, originalPackage)
             AppLogger.d(TAG, "Found ${expansions.size} relative class names to expand")
-
 
             if (expansions.isNotEmpty()) {
                 expandClassNames(parsed, expansions)
             }
 
-
             replacePackageString(parsed, originalPackage, newPackage)
-
 
             modifyVersionInfo(parsed, versionCode, versionName)
 
-
             stripTestOnlyFlag(parsed)
 
-
             ensureUsesPermissions(parsed, permissions)
-
 
             val result = rebuildAxml(parsed)
 
@@ -1390,18 +1127,13 @@ class AxmlRebuilder {
         }
     }
 
-
-
-
     private fun modifyVersionInfo(parsed: ParsedAxml, versionCode: Int, versionName: String) {
         val resourceMap = parsed.resourceMap ?: return
-
 
         val versionCodeAttrIndex = resourceMap.indexOf(ATTR_VERSION_CODE)
         val versionNameAttrIndex = resourceMap.indexOf(ATTR_VERSION_NAME)
 
         AppLogger.d(TAG, "Version attr indices: versionCode=$versionCodeAttrIndex, versionName=$versionNameAttrIndex")
-
 
         for (chunk in parsed.chunks) {
             if (chunk.type != CHUNK_START_ELEMENT) continue
@@ -1417,12 +1149,10 @@ class AxmlRebuilder {
 
             if (attrSize == 0 || attrCount == 0) continue
 
-
             val elementNameStr = parsed.stringPool.strings.getOrNull(elementName) ?: continue
             if (elementNameStr != "manifest") continue
 
             AppLogger.d(TAG, "Found manifest element with $attrCount attributes")
-
 
             for (i in 0 until attrCount) {
                 val attrOffset = 36 + i * attrSize
@@ -1457,10 +1187,8 @@ class AxmlRebuilder {
                                 AppLogger.d(TAG, "Added versionName string at index $newIndex: '$versionName'")
                             }
 
-
                             buffer.position(attrOffset + 8)
                             buffer.putInt(newIndex)
-
 
                             buffer.position(attrOffset + 16)
                             buffer.putInt(newIndex)
@@ -1475,15 +1203,8 @@ class AxmlRebuilder {
         }
     }
 
-
-
-
-
-
-
     private fun stripTestOnlyFlag(parsed: ParsedAxml) {
         val resourceMap = parsed.resourceMap ?: return
-
 
         val testOnlyAttrIndex = resourceMap.indexOf(ATTR_TEST_ONLY)
         if (testOnlyAttrIndex < 0) {
@@ -1492,7 +1213,6 @@ class AxmlRebuilder {
         }
 
         AppLogger.d(TAG, "Found testOnly attr index: $testOnlyAttrIndex")
-
 
         for (chunk in parsed.chunks) {
             if (chunk.type != CHUNK_START_ELEMENT) continue
@@ -1508,12 +1228,10 @@ class AxmlRebuilder {
 
             if (attrSize == 0 || attrCount == 0) continue
 
-
             val elementNameStr = parsed.stringPool.strings.getOrNull(elementName) ?: continue
             if (elementNameStr != "application") continue
 
             AppLogger.d(TAG, "Found application element with $attrCount attributes, checking for testOnly")
-
 
             for (i in 0 until attrCount) {
                 val attrOffset = 36 + i * attrSize
@@ -1531,8 +1249,6 @@ class AxmlRebuilder {
                 if (attrName == testOnlyAttrIndex) {
                     AppLogger.d(TAG, "Found testOnly attribute at index $i, type=0x${attrValueType.toString(16)}, value=$attrValueData")
 
-
-
                     if (attrValueType == 0x12 || attrValueType == 0x10) {
                         buffer.position(attrOffset + 16)
                         buffer.putInt(0)
@@ -1542,9 +1258,6 @@ class AxmlRebuilder {
             }
         }
     }
-
-
-
 
     private fun parseAxml(data: ByteArray): ParsedAxml? {
         if (data.size < 8) return null
@@ -1596,9 +1309,6 @@ class AxmlRebuilder {
         return ParsedAxml(fileHeaderSize, stringPool, resourceMap, chunks)
     }
 
-
-
-
     private fun parseStringPool(data: ByteArray, offset: Int): StringPool {
         val buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN)
         buffer.position(offset)
@@ -1614,12 +1324,9 @@ class AxmlRebuilder {
 
         val isUtf8 = (flags and 0x100) != 0
 
-
         val stringOffsets = IntArray(stringCount) { buffer.int }
 
-
         val styleOffsets = IntArray(styleCount) { buffer.int }
-
 
         val stringsDataStart = offset + stringsStart
         val strings = mutableListOf<String>()
@@ -1634,7 +1341,6 @@ class AxmlRebuilder {
             strings.add(str)
         }
 
-
         val stylesData = if (styleCount > 0 && stylesStart > 0) {
             val stylesDataStart = offset + stylesStart
             val stylesDataEnd = offset + chunkSize
@@ -1642,7 +1348,6 @@ class AxmlRebuilder {
         } else {
             null
         }
-
 
         val originalStringsDataSize = if (stylesStart > 0) {
             stylesStart - stringsStart
@@ -1660,9 +1365,6 @@ class AxmlRebuilder {
         )
     }
 
-
-
-
     private fun parseResourceMap(data: ByteArray, offset: Int, size: Int): IntArray {
         val buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN)
         buffer.position(offset + 8)
@@ -1670,20 +1372,15 @@ class AxmlRebuilder {
         return IntArray(count) { buffer.int }
     }
 
-
-
-
     private fun findRelativeClassNames(parsed: ParsedAxml, originalPackage: String): List<ClassNameExpansion> {
         val expansions = mutableListOf<ClassNameExpansion>()
         val resourceMap = parsed.resourceMap ?: return expansions
-
 
         val nameAttrIndex = resourceMap.indexOf(ATTR_NAME)
         if (nameAttrIndex < 0) {
             AppLogger.d(TAG, "android:name attribute not found in resource map")
             return expansions
         }
-
 
         for (chunk in parsed.chunks) {
             if (chunk.type != CHUNK_START_ELEMENT) continue
@@ -1699,12 +1396,10 @@ class AxmlRebuilder {
 
             if (attrSize == 0 || attrCount == 0) continue
 
-
             val elementNameStr = parsed.stringPool.strings.getOrNull(elementName) ?: continue
             if (elementNameStr !in listOf("activity", "service", "receiver", "provider", "application", "activity-alias")) {
                 continue
             }
-
 
             for (i in 0 until attrCount) {
                 val attrOffset = 36 + i * attrSize
@@ -1719,16 +1414,12 @@ class AxmlRebuilder {
                 val attrValueType = buffer.get().toInt() and 0xFF
                 val attrValueData = buffer.int
 
-
                 if (attrName != nameAttrIndex) continue
-
 
                 if (attrValueType != 3) continue
 
-
                 val stringIndex = attrValueData
                 val stringValue = parsed.stringPool.strings.getOrNull(stringIndex) ?: continue
-
 
                 if (stringValue.startsWith(".") || (!stringValue.contains(".") && stringValue.isNotEmpty())) {
                     val absoluteName = if (stringValue.startsWith(".")) {
@@ -1754,9 +1445,6 @@ class AxmlRebuilder {
         return expansions
     }
 
-
-
-
     private fun expandClassNames(parsed: ParsedAxml, expansions: List<ClassNameExpansion>): ParsedAxml {
         val stringPool = parsed.stringPool
 
@@ -1771,14 +1459,11 @@ class AxmlRebuilder {
                 AppLogger.d(TAG, "Added new string at index $newIndex: '${expansion.expandedValue}'")
             }
 
-
             val chunk = parsed.chunks[expansion.chunkIndex]
             val buffer = ByteBuffer.wrap(chunk.data).order(ByteOrder.LITTLE_ENDIAN)
 
-
             buffer.position(expansion.attrOffset + 8)
             buffer.putInt(newIndex)
-
 
             buffer.position(expansion.attrOffset + 16)
             buffer.putInt(newIndex)
@@ -1786,11 +1471,6 @@ class AxmlRebuilder {
 
         return parsed
     }
-
-
-
-
-
 
     private fun replacePackageString(parsed: ParsedAxml, oldPackage: String, newPackage: String) {
         val stringPool = parsed.stringPool
@@ -1804,8 +1484,6 @@ class AxmlRebuilder {
                     stringPool.strings[i] = newPackage
                     AppLogger.d(TAG, "Replaced package at index $i: '$oldPackage' -> '$newPackage'")
                 }
-
-
 
                 str.startsWith("$oldPackage.") -> {
 
@@ -1826,10 +1504,6 @@ class AxmlRebuilder {
         }
     }
 
-
-
-
-
     private fun isLikelyClassName(suffix: String): Boolean {
 
         val lastDotIndex = suffix.lastIndexOf('.')
@@ -1838,7 +1512,6 @@ class AxmlRebuilder {
         } else {
             suffix
         }
-
 
         if (className.isNotEmpty() && className[0].isUpperCase()) {
 
@@ -1855,15 +1528,10 @@ class AxmlRebuilder {
         return false
     }
 
-
-
-
     private fun rebuildAxml(parsed: ParsedAxml): ByteArray {
         val output = ByteArrayOutputStream()
 
-
         val stringPoolData = rebuildStringPool(parsed.stringPool)
-
 
         val resourceMap = parsed.resourceMap
         val resourceMapData = if (resourceMap != null) {
@@ -1872,15 +1540,12 @@ class AxmlRebuilder {
             ByteArray(0)
         }
 
-
         val chunksData = ByteArrayOutputStream()
         for (chunk in parsed.chunks) {
             chunksData.write(chunk.data)
         }
 
-
         val totalSize = parsed.fileHeaderSize + stringPoolData.size + resourceMapData.size + chunksData.size()
-
 
         val header = ByteBuffer.allocate(parsed.fileHeaderSize).order(ByteOrder.LITTLE_ENDIAN)
         header.putShort(CHUNK_AXML_FILE.toShort())
@@ -1888,26 +1553,19 @@ class AxmlRebuilder {
         header.putInt(totalSize)
         output.write(header.array())
 
-
         output.write(stringPoolData)
 
-
         output.write(resourceMapData)
-
 
         chunksData.writeTo(output)
 
         return output.toByteArray()
     }
 
-
-
-
     private fun rebuildStringPool(pool: StringPool): ByteArray {
         val isUtf8 = pool.isUtf8
         val stringCount = pool.strings.size
         val styleCount = pool.styleOffsets.size
-
 
         val stringsBuffer = ByteArrayOutputStream()
         val stringOffsets = IntArray(stringCount)
@@ -1923,16 +1581,13 @@ class AxmlRebuilder {
             }
         }
 
-
         while (stringsBuffer.size() % 4 != 0) {
             stringsBuffer.write(0)
         }
 
         val stringsData = stringsBuffer.toByteArray()
 
-
         val stringsDataSizeDelta = stringsData.size - pool.originalStringsDataSize
-
 
         val headerSize = 28
         val offsetsSize = (stringCount + styleCount) * 4
@@ -1945,9 +1600,7 @@ class AxmlRebuilder {
         val stylesDataSize = pool.stylesData?.size ?: 0
         val chunkSize = stringsStart + stringsData.size + stylesDataSize
 
-
         val result = ByteBuffer.allocate(chunkSize).order(ByteOrder.LITTLE_ENDIAN)
-
 
         result.putShort(CHUNK_STRING_POOL.toShort())
         result.putShort(headerSize.toShort())
@@ -1960,27 +1613,20 @@ class AxmlRebuilder {
         result.putInt(stringsStart)
         result.putInt(stylesStart)
 
-
         for (offset in stringOffsets) {
             result.putInt(offset)
         }
-
 
         for (offset in pool.styleOffsets) {
             result.putInt(offset + stringsDataSizeDelta)
         }
 
-
         result.put(stringsData)
-
 
         pool.stylesData?.let { result.put(it) }
 
         return result.array()
     }
-
-
-
 
     private fun rebuildResourceMap(resourceMap: IntArray): ByteArray {
         val size = 8 + resourceMap.size * 4
@@ -1994,15 +1640,10 @@ class AxmlRebuilder {
         return buffer.array()
     }
 
-
-
-
     private fun simplePackageReplace(data: ByteArray, oldPackage: String, newPackage: String): ByteArray {
         val result = data.copyOf()
 
-
         replacePackageBytes(result, oldPackage, newPackage, Charsets.UTF_8)
-
 
         replacePackageBytes(result, oldPackage, newPackage, Charsets.UTF_16LE)
 
@@ -2060,12 +1701,9 @@ class AxmlRebuilder {
         }
     }
 
-
-
     private fun readUtf8String(data: ByteArray, offset: Int): String {
         if (offset >= data.size) return ""
         var o = offset
-
 
         var charLen = data[o].toInt() and 0x7F
         if (data[o].toInt() and 0x80 != 0) {
@@ -2075,7 +1713,6 @@ class AxmlRebuilder {
         } else {
             o += 1
         }
-
 
         var byteLen = data[o].toInt() and 0x7F
         if (data[o].toInt() and 0x80 != 0) {
@@ -2114,14 +1751,12 @@ class AxmlRebuilder {
         val charLen = str.length
         val byteLen = bytes.size
 
-
         if (charLen > 0x7F) {
             output.write(0x80 or ((charLen shr 8) and 0x7F))
             output.write(charLen and 0xFF)
         } else {
             output.write(charLen)
         }
-
 
         if (byteLen > 0x7F) {
             output.write(0x80 or ((byteLen shr 8) and 0x7F))
@@ -2130,16 +1765,13 @@ class AxmlRebuilder {
             output.write(byteLen)
         }
 
-
         output.write(bytes)
-
 
         output.write(0)
     }
 
     private fun writeUtf16String(output: ByteArrayOutputStream, str: String) {
         val length = str.length
-
 
         if (length > 0x7FFF) {
             output.write(0x80 or ((length shr 24) and 0x7F))
@@ -2151,16 +1783,12 @@ class AxmlRebuilder {
             output.write((length shr 8) and 0xFF)
         }
 
-
         val bytes = str.toByteArray(Charsets.UTF_16LE)
         output.write(bytes)
-
 
         output.write(0)
         output.write(0)
     }
-
-
 
     private data class ParsedAxml(
         val fileHeaderSize: Int,

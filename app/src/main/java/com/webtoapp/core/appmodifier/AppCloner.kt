@@ -31,10 +31,6 @@ import java.util.zip.ZipOutputStream
 import com.webtoapp.core.apkbuilder.ZipUtils
 import com.webtoapp.util.AppConstants
 
-
-
-
-
 class AppCloner(private val context: Context) {
 
     companion object {
@@ -46,10 +42,8 @@ class AppCloner(private val context: Context) {
     private val arscEditor = ArscEditor()
     private val signer = JarSigner(context)
 
-
     private val outputDir = File(context.getExternalFilesDir(null), "cloned_apks").apply { mkdirs() }
     private val tempDir = File(context.cacheDir, "clone_temp").apply { mkdirs() }
-
 
     private val ICON_PATHS = listOf(
         "res/mipmap-mdpi-v4/ic_launcher.png" to 48,
@@ -66,10 +60,6 @@ class AppCloner(private val context: Context) {
         "res/mipmap-xxhdpi-v4/ic_launcher_round.png" to 144,
         "res/mipmap-xxxhdpi-v4/ic_launcher_round.png" to 192
     )
-
-
-
-
 
     suspend fun createModifiedShortcut(
         config: AppModifyConfig,
@@ -89,55 +79,46 @@ class AppCloner(private val context: Context) {
         try {
             safeProgress(10, "准备图标...")
 
-
             val iconBitmap = prepareIcon(config)
             val icon = IconCompat.createWithBitmap(iconBitmap)
 
             safeProgress(50, "创建快捷方式...")
 
+            val payload = AppModifyPayload(
+                targetPackage = config.originalApp.packageName,
+                splashEnabled = config.splashEnabled,
+                splashConfig = config.splashConfig,
+                activationEnabled = config.activationEnabled,
+                activationCodes = config.activationCodes,
+                activationRequireEveryTime = config.activationRequireEveryTime,
+                activationDialogConfig = config.activationDialogConfig,
+                announcementEnabled = config.announcementEnabled,
+                announcement = config.announcement
+            )
 
+            val needsSplashLauncher = payload.needsLauncher() &&
+                run {
 
-            val hasSplash = config.splashEnabled &&
-                           !config.splashPath.isNullOrBlank() &&
-                           java.io.File(config.splashPath).exists()
+                    val sp = config.splashConfig.mediaPath
+                    val splashOk = !config.splashEnabled ||
+                        (!sp.isNullOrBlank() && java.io.File(sp).exists())
+                    splashOk
+                }
 
-            val hasActivation = config.activationEnabled && config.activationCodes.isNotEmpty()
-
-            val hasAnnouncement = config.announcementEnabled && config.announcementTitle.isNotBlank()
-
-            val needsSplashLauncher = hasSplash || hasActivation || hasAnnouncement
-
-            AppLogger.d("AppCloner", "快捷方式配置: hasSplash=$hasSplash, hasActivation=$hasActivation, hasAnnouncement=$hasAnnouncement, needsSplashLauncher=$needsSplashLauncher")
-
+            AppLogger.d(
+                "AppCloner",
+                "Shortcut config: splashEnabled=${config.splashEnabled}, " +
+                    "activationEnabled=${config.activationEnabled} (${config.activationCodes.size} codes), " +
+                    "announcementEnabled=${config.announcementEnabled}, " +
+                    "needsSplashLauncher=$needsSplashLauncher"
+            )
 
             val launchIntent = if (needsSplashLauncher) {
 
                 Intent(context, SplashLauncherActivity::class.java).apply {
 
                     action = Intent.ACTION_VIEW
-                    putExtra(SplashLauncherActivity.EXTRA_TARGET_PACKAGE, config.originalApp.packageName)
-
-                    putExtra(SplashLauncherActivity.EXTRA_SPLASH_TYPE, config.splashType)
-                    putExtra(SplashLauncherActivity.EXTRA_SPLASH_PATH, config.splashPath)
-                    putExtra(SplashLauncherActivity.EXTRA_SPLASH_DURATION, config.splashDuration)
-                    putExtra(SplashLauncherActivity.EXTRA_SPLASH_CLICK_SKIP, config.splashClickToSkip)
-                    putExtra(SplashLauncherActivity.EXTRA_VIDEO_START_MS, config.splashVideoStartMs)
-                    putExtra(SplashLauncherActivity.EXTRA_VIDEO_END_MS, config.splashVideoEndMs)
-                    putExtra(SplashLauncherActivity.EXTRA_SPLASH_LANDSCAPE, config.splashLandscape)
-                    putExtra(SplashLauncherActivity.EXTRA_SPLASH_FILL_SCREEN, config.splashFillScreen)
-                    putExtra(SplashLauncherActivity.EXTRA_SPLASH_ENABLE_AUDIO, config.splashEnableAudio)
-
-                    putExtra(SplashLauncherActivity.EXTRA_ACTIVATION_ENABLED, config.activationEnabled)
-                    putExtra(SplashLauncherActivity.EXTRA_ACTIVATION_CODES, config.activationCodes.joinToString(","))
-                    putExtra(SplashLauncherActivity.EXTRA_ACTIVATION_REQUIRE_EVERY_TIME, config.activationRequireEveryTime)
-
-                    putExtra(SplashLauncherActivity.EXTRA_ANNOUNCEMENT_ENABLED, config.announcementEnabled)
-                    putExtra(SplashLauncherActivity.EXTRA_ANNOUNCEMENT_TITLE, config.announcementTitle)
-                    putExtra(SplashLauncherActivity.EXTRA_ANNOUNCEMENT_CONTENT, config.announcementContent)
-                    putExtra(SplashLauncherActivity.EXTRA_ANNOUNCEMENT_LINK, config.announcementLink)
-                    putExtra(SplashLauncherActivity.EXTRA_ANNOUNCEMENT_TEMPLATE, config.announcementTemplate)
-                    putExtra(SplashLauncherActivity.EXTRA_ANNOUNCEMENT_SHOW_EMOJI, config.announcementShowEmoji)
-                    putExtra(SplashLauncherActivity.EXTRA_ANNOUNCEMENT_ANIMATION, config.announcementAnimationEnabled)
+                    putExtra(SplashLauncherActivity.EXTRA_PAYLOAD_JSON, payload.toJson())
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 }
@@ -149,11 +130,9 @@ class AppCloner(private val context: Context) {
                 } ?: return@withContext AppModifyResult.Error("无法获取应用启动 Intent")
             }
 
-
             if (!ShortcutManagerCompat.isRequestPinShortcutSupported(context)) {
                 return@withContext AppModifyResult.Error("当前启动器不支持创建快捷方式")
             }
-
 
             val shortcutId = "modified_${config.originalApp.packageName}_${System.currentTimeMillis()}"
             val shortcutInfo = ShortcutInfoCompat.Builder(context, shortcutId)
@@ -179,14 +158,11 @@ class AppCloner(private val context: Context) {
             }
 
         } catch (e: Exception) {
-            AppLogger.e("AppCloner", "创建快捷方式失败", e)
+            AppLogger.e("AppCloner", "Failed to create shortcut", e)
             AppLogger.e("AppCloner", "Operation failed", e)
             AppModifyResult.Error(e.message ?: "创建快捷方式失败")
         }
     }
-
-
-
 
     private fun prepareIcon(config: AppModifyConfig): Bitmap {
 
@@ -194,17 +170,12 @@ class AppCloner(private val context: Context) {
             loadBitmapFromPath(path)?.let { return it }
         }
 
-
         config.originalApp.icon?.let { drawable ->
             return drawableToBitmap(drawable)
         }
 
-
         return createDefaultIcon()
     }
-
-
-
 
     private fun loadBitmapFromPath(path: String): Bitmap? {
         return try {
@@ -222,11 +193,6 @@ class AppCloner(private val context: Context) {
         }
     }
 
-
-
-
-
-
     private fun drawableToBitmap(drawable: Drawable): Bitmap {
         val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 192
         val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 192
@@ -239,9 +205,6 @@ class AppCloner(private val context: Context) {
         return bitmap
     }
 
-
-
-
     private fun createDefaultIcon(): Bitmap {
         val size = 192
         return Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888).apply {
@@ -249,10 +212,6 @@ class AppCloner(private val context: Context) {
             canvas.drawColor(0xFF6200EE.toInt())
         }
     }
-
-
-
-
 
     suspend fun cloneAndInstall(
         config: AppModifyConfig,
@@ -270,23 +229,21 @@ class AppCloner(private val context: Context) {
         }
 
         try {
-            AppLogger.d("AppCloner", "开始克隆: ${config.originalApp.packageName}")
+            AppLogger.d("AppCloner", "Starting clone: ${config.originalApp.packageName}")
             safeProgress(0, "准备克隆...")
 
             val sourceApk = File(config.originalApp.apkPath)
             if (!sourceApk.exists()) {
-                AppLogger.e("AppCloner", "源 APK 不存在: ${config.originalApp.apkPath}")
+                AppLogger.e("AppCloner", "Source APK not found: ${config.originalApp.apkPath}")
                 return@withContext AppModifyResult.Error("无法访问原应用 APK")
             }
 
-            AppLogger.d("AppCloner", "源 APK 大小: ${sourceApk.length()} bytes")
-
+            AppLogger.d("AppCloner", "Source APK size: ${sourceApk.length()} bytes")
 
             val newPackageName = generateClonePackageName(config.originalApp.packageName)
-            AppLogger.d("AppCloner", "新包名: $newPackageName")
+            AppLogger.d("AppCloner", "New package name: $newPackageName")
 
             safeProgress(10, "复制 APK...")
-
 
             val unsignedApk = File(tempDir, "clone_unsigned.apk")
             val signedApk = File(outputDir, "${sanitizeFileName(config.newAppName)}_clone.APK")
@@ -296,17 +253,16 @@ class AppCloner(private val context: Context) {
 
             safeProgress(20, "修改包名和应用名...")
 
-
             var iconBitmap: Bitmap? = null
             try {
                 iconBitmap = config.newIconPath?.let { loadBitmapFromPath(it) }
                     ?: config.originalApp.icon?.let { drawableToBitmap(it) }
             } catch (e: Exception) {
-                AppLogger.e("AppCloner", "加载图标失败: ${e.message}")
+                AppLogger.e("AppCloner", "Failed to load icon: ${e.message}")
 
             }
 
-            AppLogger.d("AppCloner", "开始修改 APK...")
+            AppLogger.d("AppCloner", "Modifying APK...")
             modifyApk(
                 sourceApk = sourceApk,
                 outputApk = unsignedApk,
@@ -319,14 +275,13 @@ class AppCloner(private val context: Context) {
 
             }
 
-            AppLogger.d("AppCloner", "APK 修改完成，大小: ${unsignedApk.length()} bytes")
+            AppLogger.d("AppCloner", "APK modification complete, size: ${unsignedApk.length()} bytes")
 
             iconBitmap?.recycle()
 
             safeProgress(70, "签名 APK...")
 
-
-            AppLogger.d("AppCloner", "开始签名...")
+            AppLogger.d("AppCloner", "Signing...")
             val signSuccess = signer.sign(unsignedApk, signedApk)
             if (!signSuccess) {
                 AppLogger.e("AppCloner", "Signing failed")
@@ -334,16 +289,13 @@ class AppCloner(private val context: Context) {
                 return@withContext AppModifyResult.Error("APK 签名失败")
             }
 
-            AppLogger.d("AppCloner", "签名完成，最终大小: ${signedApk.length()} bytes")
-
+            AppLogger.d("AppCloner", "Signing complete, final size: ${signedApk.length()} bytes")
 
             debugApkStructure(signedApk)
 
             safeProgress(90, "准备安装...")
 
-
             unsignedApk.delete()
-
 
             withContext(Dispatchers.Main) {
                 installApk(signedApk)
@@ -353,27 +305,19 @@ class AppCloner(private val context: Context) {
             AppModifyResult.CloneSuccess(signedApk.absolutePath)
 
         } catch (e: Exception) {
-            AppLogger.e("AppCloner", "克隆失败", e)
+            AppLogger.e("AppCloner", "Cloning failed", e)
             AppLogger.e("AppCloner", "Operation failed", e)
             AppModifyResult.Error(e.message ?: "克隆失败: ${e.javaClass.simpleName}")
         }
     }
 
-
-
-
-
-
     private fun generateClonePackageName(originalPackageName: String): String {
 
-
         val maxLen = originalPackageName.length.coerceAtMost(128)
-
 
         val timestamp = System.currentTimeMillis()
         val random = (0..9999).random()
         val uniqueId = ((timestamp xor random.toLong()) and 0x7FFFFFFF).toString(36)
-
 
         val suffixLen = (maxLen - 2).coerceAtLeast(1)
         val rawSuffix = if (uniqueId.length >= suffixLen) {
@@ -387,10 +331,6 @@ class AppCloner(private val context: Context) {
         return "c.$normalizedSuffix"
     }
 
-
-
-
-
     private fun normalizePackageSegment(segment: String): String {
         if (segment.isEmpty()) return "a"
         val chars = segment.lowercase().toCharArray()
@@ -401,9 +341,6 @@ class AppCloner(private val context: Context) {
         }
         return String(chars)
     }
-
-
-
 
     private fun modifyApk(
         sourceApk: File,
@@ -433,13 +370,10 @@ class AppCloner(private val context: Context) {
                          entry.name.endsWith(".DSA") || entry.name == "META-INF/MANIFEST.MF") -> {
                         }
 
-
                         entry.name == "AndroidManifest.xml" -> {
                             try {
                                 val originalData = zipIn.getInputStream(entry).readBytes()
-                                AppLogger.d("AppCloner", "AndroidManifest.xml 原始大小: ${originalData.size} bytes")
-
-
+                                AppLogger.d("AppCloner", "AndroidManifest.xml original size: ${originalData.size} bytes")
 
                                 val modifiedData = if (originalPackageName == "com.webtoapp") {
                                     axmlEditor.modifyPackageName(originalData, newPackageName)
@@ -452,40 +386,37 @@ class AppCloner(private val context: Context) {
                                     )
                                 }
 
-                                AppLogger.d("AppCloner", "AndroidManifest.xml 修改后大小: ${modifiedData.size} bytes")
+                                AppLogger.d("AppCloner", "AndroidManifest.xml size after modification: ${modifiedData.size} bytes")
                                 writeEntryDeflated(zipOut, entry.name, modifiedData)
                             } catch (e: Exception) {
-                                AppLogger.e("AppCloner", "修改 AndroidManifest.xml 失败: ${e.message}", e)
+                                AppLogger.e("AppCloner", "Failed to modify AndroidManifest.xml: ${e.message}", e)
 
                                 copyEntry(zipIn, zipOut, entry)
                             }
                         }
 
-
                         entry.name == "resources.arsc" -> {
                             try {
                                 val originalData = zipIn.getInputStream(entry).readBytes()
-                                AppLogger.d("AppCloner", "resources.arsc 原始大小: ${originalData.size} bytes")
+                                AppLogger.d("AppCloner", "resources.arsc original size: ${originalData.size} bytes")
 
                                 var modifiedData = arscEditor.modifyAppName(
                                     originalData, originalAppName, newAppName
                                 )
                                 modifiedData = arscEditor.modifyIconPathsToPng(modifiedData)
 
-                                AppLogger.d("AppCloner", "resources.arsc 修改后大小: ${modifiedData.size} bytes")
+                                AppLogger.d("AppCloner", "resources.arsc size after modification: ${modifiedData.size} bytes")
                                 writeEntryStored(zipOut, entry.name, modifiedData)
                             } catch (e: Exception) {
-                                AppLogger.e("AppCloner", "修改 resources.arsc 失败: ${e.message}", e)
+                                AppLogger.e("AppCloner", "Failed to modify resources.arsc: ${e.message}", e)
 
                                 copyEntry(zipIn, zipOut, entry)
                             }
                         }
 
-
                         iconBitmap != null && isIconEntry(entry.name) -> {
                             replaceIconEntry(zipOut, entry.name, iconBitmap)
                         }
-
 
                         else -> {
                             copyEntry(zipIn, zipOut, entry)
@@ -502,10 +433,6 @@ class AppCloner(private val context: Context) {
         }
     }
 
-
-
-
-
     private fun modifyManifestPackageName(
         data: ByteArray,
         oldPackage: String,
@@ -513,28 +440,20 @@ class AppCloner(private val context: Context) {
     ): ByteArray {
         val result = data.copyOf()
 
-
         replacePackageBytes(result, oldPackage, newPackage, Charsets.UTF_8)
-
 
         replacePackageBytes(result, oldPackage, newPackage, Charsets.UTF_16LE)
 
         return result
     }
 
-
-
-
     private fun replacePackageBytes(data: ByteArray, oldPkg: String, newPkg: String, charset: java.nio.charset.Charset) {
         val oldBytes = oldPkg.toByteArray(charset)
         val newBytes = newPkg.toByteArray(charset)
 
-
-
         val replacement = if (newBytes.size <= oldBytes.size) {
             newBytes + ByteArray(oldBytes.size - newBytes.size)
         } else {
-
 
             newBytes.copyOf(oldBytes.size)
         }
@@ -557,17 +476,12 @@ class AppCloner(private val context: Context) {
         }
     }
 
-
-
-
-
     private fun isIconEntry(entryName: String): Boolean {
 
         if (ICON_PATHS.any { it.first == entryName } ||
             ROUND_ICON_PATHS.any { it.first == entryName }) {
             return true
         }
-
 
         val iconPatterns = listOf(
             "ic_launcher.png",
@@ -581,15 +495,10 @@ class AppCloner(private val context: Context) {
         }
     }
 
-
-
-
-
     private fun replaceIconEntry(zipOut: ZipOutputStream, entryName: String, bitmap: Bitmap) {
 
         var size = ICON_PATHS.find { it.first == entryName }?.second
             ?: ROUND_ICON_PATHS.find { it.first == entryName }?.second
-
 
         if (size == null) {
             size = when {
@@ -621,26 +530,16 @@ class AppCloner(private val context: Context) {
         writeEntryStored(zipOut, entryName, iconBytes)
     }
 
-
-
-
-
-
-
-
     private fun createAdaptiveForegroundIcon(bitmap: Bitmap, size: Int): ByteArray {
         val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
 
-
         val safeZoneSize = (size * 72f / 108f).toInt()
         val padding = (size - safeZoneSize) / 2f
-
 
         val scale = Math.min(safeZoneSize.toFloat() / bitmap.width, safeZoneSize.toFloat() / bitmap.height)
         val scaledWidth = (bitmap.width * scale).toInt()
         val scaledHeight = (bitmap.height * scale).toInt()
-
 
         val left = padding + (safeZoneSize - scaledWidth) / 2f
         val top = padding + (safeZoneSize - scaledHeight) / 2f
@@ -659,18 +558,13 @@ class AppCloner(private val context: Context) {
         return baos.toByteArray()
     }
 
-
-
-
     private fun scaleBitmapToPng(bitmap: Bitmap, size: Int): ByteArray {
         val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
 
-
         val scale = Math.min(size.toFloat() / bitmap.width, size.toFloat() / bitmap.height)
         val scaledWidth = (bitmap.width * scale).toInt()
         val scaledHeight = (bitmap.height * scale).toInt()
-
 
         val left = (size - scaledWidth) / 2f
         val top = (size - scaledHeight) / 2f
@@ -689,9 +583,6 @@ class AppCloner(private val context: Context) {
         return baos.toByteArray()
     }
 
-
-
-
     private fun createRoundIcon(bitmap: Bitmap, size: Int): ByteArray {
         val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(output)
@@ -700,17 +591,14 @@ class AppCloner(private val context: Context) {
             isFilterBitmap = true
         }
 
-
         val rect = android.graphics.RectF(0f, 0f, size.toFloat(), size.toFloat())
         canvas.drawOval(rect, paint)
 
         paint.xfermode = android.graphics.PorterDuffXfermode(android.graphics.PorterDuff.Mode.SRC_IN)
 
-
         val scale = Math.min(size.toFloat() / bitmap.width, size.toFloat() / bitmap.height)
         val scaledWidth = (bitmap.width * scale).toInt()
         val scaledHeight = (bitmap.height * scale).toInt()
-
 
         val left = (size - scaledWidth) / 2f
         val top = (size - scaledHeight) / 2f
@@ -748,15 +636,9 @@ class AppCloner(private val context: Context) {
         }
     }
 
-
-
-
     private fun sanitizeFileName(name: String): String {
         return name.replace(SANITIZE_FILENAME_REGEX, "_").take(50)
     }
-
-
-
 
     private fun debugApkStructure(apkFile: File) {
         try {
@@ -768,14 +650,14 @@ class AppCloner(private val context: Context) {
             val info = pm.getPackageArchiveInfo(apkFile.absolutePath, flags)
 
             if (info == null) {
-                AppLogger.e("AppCloner", "getPackageArchiveInfo 返回 null，无法解析 APK: ${apkFile.absolutePath}")
+                AppLogger.e("AppCloner", "getPackageArchiveInfo returned null; can't parse APK: ${apkFile.absolutePath}")
             } else {
                 val appInfo = info.applicationInfo
                 val flagsApp = appInfo?.flags ?: 0
                 val isDebuggable = (flagsApp and ApplicationInfo.FLAG_DEBUGGABLE) != 0
                 val isTestOnly = (flagsApp and ApplicationInfo.FLAG_TEST_ONLY) != 0
 
-                AppLogger.d("AppCloner", "解析克隆 APK 成功: packageName=${info.packageName}, " +
+                AppLogger.d("AppCloner", "Parsed cloned APK: packageName=${info.packageName}, " +
                         "versionName=${info.versionName}, " +
                         "activities=${info.activities?.size ?: 0}, " +
                         "services=${info.services?.size ?: 0}, " +
@@ -783,7 +665,7 @@ class AppCloner(private val context: Context) {
                         "debuggable=$isDebuggable, testOnly=$isTestOnly, appFlags=0x${flagsApp.toString(16)}")
             }
         } catch (e: Exception) {
-            AppLogger.e("AppCloner", "调试解析克隆 APK 时发生异常: ${apkFile.absolutePath}", e)
+            AppLogger.e("AppCloner", "Exception while parsing cloned APK: ${apkFile.absolutePath}", e)
         }
     }
 

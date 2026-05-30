@@ -7,20 +7,6 @@ import kotlinx.coroutines.withContext
 import java.io.*
 import java.security.MessageDigest
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 object AdBlockFilterCache {
 
     private const val TAG = "AdBlockFilterCache"
@@ -31,11 +17,6 @@ object AdBlockFilterCache {
     private const val CACHE_VERSION = 1
     private const val URL_CACHE_TTL_MS = 24 * 60 * 60 * 1000L
 
-
-
-
-
-
     suspend fun getCachedUrlContent(context: Context, url: String): String? = withContext(Dispatchers.IO) {
         try {
             val urlHash = md5(url)
@@ -44,7 +25,6 @@ object AdBlockFilterCache {
             val metaFile = File(cacheDir, "$urlHash.meta")
 
             if (!contentFile.exists() || !metaFile.exists()) return@withContext null
-
 
             val meta = metaFile.readText().split("\n")
             val timestamp = meta.getOrNull(1)?.toLongOrNull() ?: 0L
@@ -61,9 +41,6 @@ object AdBlockFilterCache {
         }
     }
 
-
-
-
     suspend fun cacheUrlContent(context: Context, url: String, content: String) = withContext(Dispatchers.IO) {
         try {
             val urlHash = md5(url)
@@ -77,23 +54,6 @@ object AdBlockFilterCache {
             AppLogger.e(TAG, "Failed to cache URL content", e)
         }
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     suspend fun saveCompiledState(
         context: Context,
@@ -115,38 +75,29 @@ object AdBlockFilterCache {
 
                 out.writeInt(CACHE_VERSION)
 
-
                 val hash = computeContentHash(exactHosts, hostsFileHosts)
                 out.writeUTF(hash)
-
 
                 out.writeInt(exactHosts.size)
                 exactHosts.forEach { out.writeUTF(it) }
 
-
                 out.writeInt(hostsFileHosts.size)
                 hostsFileHosts.forEach { out.writeUTF(it) }
-
 
                 out.writeInt(enabledSources.size)
                 enabledSources.forEach { out.writeUTF(it) }
 
-
                 out.writeInt(networkBlockPatterns.size)
                 networkBlockPatterns.forEach { writeNetworkFilter(out, it) }
-
 
                 out.writeInt(networkExceptionPatterns.size)
                 networkExceptionPatterns.forEach { writeNetworkFilter(out, it) }
 
-
                 out.writeInt(cosmeticBlockFilters.size)
                 cosmeticBlockFilters.forEach { writeCosmeticFilter(out, it) }
 
-
                 out.writeInt(cosmeticExceptionFilters.size)
                 cosmeticExceptionFilters.forEach { writeCosmeticFilter(out, it) }
-
 
                 out.writeInt(scriptletRules.size)
                 scriptletRules.forEach { (domains, script) ->
@@ -155,7 +106,6 @@ object AdBlockFilterCache {
                     out.writeUTF(script)
                 }
             }
-
 
             File(cacheDir, CONTENT_HASH_FILE).writeText(computeContentHash(exactHosts, hostsFileHosts))
 
@@ -172,9 +122,6 @@ object AdBlockFilterCache {
             false
         }
     }
-
-
-
 
     suspend fun loadCompiledState(context: Context): CompiledState? = withContext(Dispatchers.IO) {
         try {
@@ -196,41 +143,33 @@ object AdBlockFilterCache {
 
                 val contentHash = input.readUTF()
 
-
                 val exactHostsCount = input.readInt()
                 val exactHosts = LinkedHashSet<String>(exactHostsCount)
                 repeat(exactHostsCount) { exactHosts.add(input.readUTF()) }
-
 
                 val hostsCount = input.readInt()
                 val hostsFileHosts = LinkedHashSet<String>(hostsCount)
                 repeat(hostsCount) { hostsFileHosts.add(input.readUTF()) }
 
-
                 val sourcesCount = input.readInt()
                 val enabledSources = LinkedHashSet<String>(sourcesCount)
                 repeat(sourcesCount) { enabledSources.add(input.readUTF()) }
-
 
                 val blockCount = input.readInt()
                 val networkBlockFilters = ArrayList<SerializableNetworkFilter>(blockCount)
                 repeat(blockCount) { networkBlockFilters.add(readNetworkFilter(input)) }
 
-
                 val exceptionCount = input.readInt()
                 val networkExceptionFilters = ArrayList<SerializableNetworkFilter>(exceptionCount)
                 repeat(exceptionCount) { networkExceptionFilters.add(readNetworkFilter(input)) }
-
 
                 val cosBlockCount = input.readInt()
                 val cosmeticBlockFilters = ArrayList<AdBlocker.CosmeticFilter>(cosBlockCount)
                 repeat(cosBlockCount) { cosmeticBlockFilters.add(readCosmeticFilter(input)) }
 
-
                 val cosExCount = input.readInt()
                 val cosmeticExceptionFilters = ArrayList<AdBlocker.CosmeticFilter>(cosExCount)
                 repeat(cosExCount) { cosmeticExceptionFilters.add(readCosmeticFilter(input)) }
-
 
                 val scriptletCount = input.readInt()
                 val scriptletRules = ArrayList<Pair<Set<String>, String>>(scriptletCount)
@@ -267,9 +206,6 @@ object AdBlockFilterCache {
         }
     }
 
-
-
-
     fun clearCache(context: Context) {
         try {
             File(context.filesDir, CACHE_DIR).deleteRecursively()
@@ -279,16 +215,11 @@ object AdBlockFilterCache {
         }
     }
 
-
-
-
     fun getCacheSize(context: Context): Long {
         val cacheDir = File(context.filesDir, CACHE_DIR)
         if (!cacheDir.exists()) return 0
         return cacheDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
     }
-
-
 
     private fun writeNetworkFilter(out: DataOutputStream, filter: SerializableNetworkFilter) {
         out.writeUTF(filter.pattern)
@@ -374,11 +305,6 @@ object AdBlockFilterCache {
         return digest.digest(input.toByteArray()).joinToString("") { "%02x".format(it) }
     }
 
-
-
-
-
-
     data class SerializableNetworkFilter(
         val pattern: String,
         val isException: Boolean,
@@ -391,9 +317,6 @@ object AdBlockFilterCache {
         val firstPartyOnly: Boolean,
         val anchorDomain: String?
     )
-
-
-
 
     data class CompiledState(
         val contentHash: String,

@@ -9,59 +9,25 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import java.io.*
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class PureBuildEngine(private val context: Context) {
 
     companion object {
         private const val TAG = "PureBuildEngine"
 
-
         private val PACKAGE_JSON_MAIN_REGEX = Regex(""""main"\s*:\s*"([^"]+)"""")
 
-        // buildSimpleBundle - import/export 处理
         private val IMPORT_FROM_REGEX = Regex("""import\s+.*?from\s+['"][^'"]+['"];?\s*""")
         private val IMPORT_SIDE_EFFECT_REGEX = Regex("""import\s+['"][^'"]+['"];?\s*""")
         private val EXPORT_DEFAULT_REGEX = Regex("""export\s+default\s+""")
         private val EXPORT_NAMED_REGEX = Regex("""export\s+\{[^}]*\};?\s*""")
         private val EXPORT_DECLARATION_REGEX = Regex("""export\s+(const|let|var|function|class)\s+""")
 
-        // stripTypeAnnotations
         private val TS_TYPE_IMPORT_REGEX = Regex("""import\s+type\s+.*?;""")
         private val TS_TYPE_ANNOTATION_REGEX = Regex("""\s*:\s*[A-Z][a-zA-Z0-9<>,\s\[\]|&]*(?=\s*[=;,)\]])""")
         private val TS_RETURN_TYPE_REGEX = Regex("""\)\s*:\s*[A-Z][a-zA-Z0-9<>,\s\[\]|&]*\s*(?=\{)""")
         private val TS_GENERICS_REGEX = Regex("""<[A-Z][a-zA-Z0-9<>,\s\[\]|&]*>""")
         private val TS_INTERFACE_TYPE_REGEX = Regex("""(interface|type)\s+\w+\s*[^{]*\{[^}]*\}""")
 
-        // transformJsx
         private val JSX_SELF_CLOSING_REGEX = Regex("""<(\w+)\s*/>""")
         private val JSX_SIMPLE_TAG_REGEX = Regex("""<(\w+)>([^<]*)</\1>""")
     }
@@ -74,14 +40,6 @@ class PureBuildEngine(private val context: Context) {
 
     var allowBuiltinPackagerFallback: Boolean = true
 
-    /**
-     * 构建项目
-     *
-     * 策略：
-     * 1. 如果项目已有 dist 目录，直接使用
-     * 2. 如果有 esbuild，使用 esbuild 构建
-     * 3. 是否允许切到纯 Kotlin 打包器由 allowBuiltinPackagerFallback 决定
-     */
     suspend fun build(
         projectPath: String,
         outputPath: String,
@@ -98,7 +56,6 @@ class PureBuildEngine(private val context: Context) {
                 throw Exception(Strings.pureBuildProjectDirNotFound)
             }
 
-            // Check是否已有构建输出
             val existingDist = findExistingDist(projectDir)
             if (existingDist != null) {
                 log(Strings.pureBuildFoundDist.format(existingDist.name))
@@ -119,13 +76,11 @@ class PureBuildEngine(private val context: Context) {
                 ))
             }
 
-            // Check esbuild 是否可用
             if (NativeNodeEngine.isAvailable(context)) {
                 log(Strings.pureBuildUseEsbuild)
                 return@withContext buildWithEsbuild(projectDir, File(outputPath), onProgress)
             }
 
-            // 尝试初始化 esbuild
             log("初始化构建工具...")
             val initResult = NativeNodeEngine.initialize(context) { step, progress ->
                 log(step)
@@ -143,7 +98,6 @@ class PureBuildEngine(private val context: Context) {
                 )
             }
 
-            // 最后手段：纯 Kotlin 打包
             log("使用内置打包器")
             return@withContext buildWithPureKotlin(projectDir, File(outputPath), onProgress)
 
@@ -155,20 +109,17 @@ class PureBuildEngine(private val context: Context) {
         }
     }
 
-    /**
-     * 查找已有的构建输出
-     */
     private fun findExistingDist(projectDir: File): File? {
         val candidates = listOf("dist", "build", "out", ".output", "public")
 
         for (name in candidates) {
             val dir = File(projectDir, name)
             if (dir.exists() && dir.isDirectory) {
-                // Check是否包含 index.html
+
                 if (File(dir, "index.html").exists()) {
                     return dir
                 }
-                // Check子目录
+
                 dir.listFiles()?.forEach { subDir ->
                     if (subDir.isDirectory && File(subDir, "index.html").exists()) {
                         return subDir
@@ -177,7 +128,6 @@ class PureBuildEngine(private val context: Context) {
             }
         }
 
-        // Check项目根目录是否就是构建输出
         if (File(projectDir, "index.html").exists()) {
             return projectDir
         }
@@ -185,9 +135,6 @@ class PureBuildEngine(private val context: Context) {
         return null
     }
 
-    /**
-     * 使用 esbuild 构建
-     */
     private suspend fun buildWithEsbuild(
         projectDir: File,
         outputDir: File,
@@ -195,7 +142,6 @@ class PureBuildEngine(private val context: Context) {
     ): Result<BuildResult> = withContext(Dispatchers.IO) {
         _state.value = PureBuildState.Building("esbuild", 0f)
 
-        // 检测入口文件
         val entryFile = detectEntryFile(projectDir)
             ?: throw Exception(Strings.pureBuildEntryNotFound)
 
@@ -203,7 +149,6 @@ class PureBuildEngine(private val context: Context) {
 
         outputDir.mkdirs()
 
-        // Build参数
         val args = mutableListOf(
             entryFile.absolutePath,
             "--bundle",
@@ -215,7 +160,6 @@ class PureBuildEngine(private val context: Context) {
             "--sourcemap"
         )
 
-        // If it is JSX/TSX，添加相应 loader
         if (entryFile.extension in listOf("jsx", "tsx")) {
             args.add("--loader:.jsx=jsx")
             args.add("--loader:.tsx=tsx")
@@ -235,10 +179,8 @@ class PureBuildEngine(private val context: Context) {
             throw Exception(Strings.pureBuildEsbuildFailed.format(result.stderr))
         }
 
-        // Generate index.html
         generateIndexHtml(outputDir, entryFile.nameWithoutExtension)
 
-        // Copy静态资源
         copyStaticAssets(projectDir, outputDir)
 
         _state.value = PureBuildState.Success(outputDir.absolutePath)
@@ -252,11 +194,6 @@ class PureBuildEngine(private val context: Context) {
         ))
     }
 
-    /**
-     * 使用纯 Kotlin 打包
-     *
-     * 这是最后的手段，功能有限但不依赖任何外部工具
-     */
     private suspend fun buildWithPureKotlin(
         projectDir: File,
         outputDir: File,
@@ -267,36 +204,30 @@ class PureBuildEngine(private val context: Context) {
 
         outputDir.mkdirs()
 
-        // 检测入口文件
         val entryFile = detectEntryFile(projectDir)
 
         if (entryFile != null) {
-            // 简单打包：收集所有 JS/TS 文件
+
             log("收集源文件...")
             onProgress(Strings.pureBuildCollectFiles, 0.3f)
 
             val sourceFiles = collectSourceFiles(projectDir)
             log(Strings.pureBuildFoundSourceFiles.format(sourceFiles.size))
 
-            // 简单合并（不做真正的模块解析）
             log("打包中...")
             onProgress(Strings.pureBuildPackaging, 0.6f)
 
             val bundleContent = buildSimpleBundle(sourceFiles, entryFile)
 
-            // 写入输出
             File(outputDir, "bundle.js").writeText(bundleContent)
 
-            // Generate index.html
             generateIndexHtml(outputDir, "bundle", isModule = false)
         }
 
-        // Copy静态资源
         log("复制静态资源...")
         onProgress(Strings.pureBuildCopyResources, 0.8f)
         copyStaticAssets(projectDir, outputDir)
 
-        // 如果有 index.html，复制它
         val indexHtml = File(projectDir, "index.html")
         if (indexHtml.exists()) {
             indexHtml.copyTo(File(outputDir, "index.html"), overwrite = true)
@@ -313,9 +244,6 @@ class PureBuildEngine(private val context: Context) {
         ))
     }
 
-    /**
-     * 检测入口文件
-     */
     private fun detectEntryFile(projectDir: File): File? {
         val candidates = listOf(
             "src/main.ts", "src/main.tsx", "src/main.js", "src/main.jsx",
@@ -330,12 +258,11 @@ class PureBuildEngine(private val context: Context) {
             if (file.exists()) return file
         }
 
-        // 从 package.json 读取
         val packageJson = File(projectDir, "package.json")
         if (packageJson.exists()) {
             try {
                 val content = packageJson.readText()
-                // 简单解析 main 字段
+
                 val mainMatch = PACKAGE_JSON_MAIN_REGEX.find(content)
                 mainMatch?.groupValues?.get(1)?.let { main ->
                     val mainFile = File(projectDir, main)
@@ -349,9 +276,6 @@ class PureBuildEngine(private val context: Context) {
         return null
     }
 
-    /**
-     * 收集源文件
-     */
     private fun collectSourceFiles(projectDir: File): List<File> {
         val extensions = setOf("js", "jsx", "ts", "tsx", "mjs")
         val excludeDirs = setOf("node_modules", "dist", "build", ".git", ".cache")
@@ -367,12 +291,6 @@ class PureBuildEngine(private val context: Context) {
             .toList()
     }
 
-    /**
-     * 简单打包
-     *
-     * 注意：这是一个非常简化的实现
-     * 不支持真正的模块解析，只是简单合并
-     */
     private fun buildSimpleBundle(files: List<File>, entryFile: File): String {
         val sb = StringBuilder()
 
@@ -381,7 +299,6 @@ class PureBuildEngine(private val context: Context) {
         sb.appendLine("'use strict';")
         sb.appendLine()
 
-        // 按依赖顺序排序（简单实现：入口文件放最后）
         val sortedFiles = files.sortedBy {
             if (it == entryFile) 1 else 0
         }
@@ -391,7 +308,6 @@ class PureBuildEngine(private val context: Context) {
 
             var content = file.readText()
 
-            // 移除 import/export 语句（简化处理）
             content = content
                 .replace(IMPORT_FROM_REGEX, "")
                 .replace(IMPORT_SIDE_EFFECT_REGEX, "")
@@ -399,12 +315,10 @@ class PureBuildEngine(private val context: Context) {
                 .replace(EXPORT_NAMED_REGEX, "")
                 .replace(EXPORT_DECLARATION_REGEX, "$1 ")
 
-            // 简单的 TypeScript 转换（移除类型注解）
             if (file.extension in listOf("ts", "tsx")) {
                 content = stripTypeAnnotations(content)
             }
 
-            // 简单的 JSX 转换
             if (file.extension in listOf("jsx", "tsx")) {
                 content = transformJsx(content)
             }
@@ -418,37 +332,25 @@ class PureBuildEngine(private val context: Context) {
         return sb.toString()
     }
 
-    /**
-     * 移除 TypeScript 类型注解（简化实现）
-     */
     private fun stripTypeAnnotations(code: String): String {
         var result = code
 
-        // 移除类型导入
         result = result.replace(TS_TYPE_IMPORT_REGEX, "")
 
-        // 移除变量类型注解 (: Type)
         result = result.replace(TS_TYPE_ANNOTATION_REGEX, "")
 
-        // 移除函数返回类型
         result = result.replace(TS_RETURN_TYPE_REGEX, ") ")
 
-        // 移除泛型参数
         result = result.replace(TS_GENERICS_REGEX, "")
 
-        // 移除 interface 和 type 声明
         result = result.replace(TS_INTERFACE_TYPE_REGEX, "")
 
         return result
     }
 
-    /**
-     * 简单的 JSX 转换
-     */
     private fun transformJsx(code: String): String {
         var result = code
 
-        // 自闭合标签: <Component /> -> React.createElement(Component)
         result = result.replace(
             JSX_SELF_CLOSING_REGEX
         ) { match ->
@@ -460,7 +362,6 @@ class PureBuildEngine(private val context: Context) {
             }
         }
 
-        // 简单标签: <div>content</div> -> React.createElement('div', null, 'content')
         result = result.replace(
             JSX_SIMPLE_TAG_REGEX
         ) { match ->
@@ -477,9 +378,6 @@ class PureBuildEngine(private val context: Context) {
         return result
     }
 
-    /**
-     * 生成 index.html
-     */
     private fun generateIndexHtml(outputDir: File, bundleName: String, isModule: Boolean = true) {
         val moduleAttr = if (isModule) """ type="module"""" else ""
         val html = """
@@ -505,14 +403,10 @@ class PureBuildEngine(private val context: Context) {
         }
     }
 
-    /**
-     * 复制静态资源
-     */
     private fun copyStaticAssets(projectDir: File, outputDir: File) {
         val assetDirs = listOf("public", "static", "assets")
         val assetExtensions = setOf("css", "png", "jpg", "jpeg", "gif", "svg", "ico", "woff", "woff2", "ttf", "eot")
 
-        // Copy资源目录
         for (dirName in assetDirs) {
             val dir = File(projectDir, dirName)
             if (dir.exists() && dir.isDirectory) {
@@ -520,14 +414,12 @@ class PureBuildEngine(private val context: Context) {
             }
         }
 
-        // Copy根目录的静态文件
         projectDir.listFiles()?.filter {
             it.isFile && it.extension in assetExtensions
         }?.forEach { file ->
             file.copyTo(File(outputDir, file.name), overwrite = true)
         }
 
-        // Copy src 目录下的 CSS
         val srcDir = File(projectDir, "src")
         if (srcDir.exists()) {
             srcDir.walkTopDown()
@@ -538,9 +430,6 @@ class PureBuildEngine(private val context: Context) {
         }
     }
 
-    /**
-     * 复制目录
-     */
     private fun copyDirectory(src: File, dest: File, onProgress: (Float) -> Unit) {
         if (!src.exists()) return
 
@@ -577,9 +466,6 @@ class PureBuildEngine(private val context: Context) {
     }
 }
 
-/**
- * 构建状态
- */
 sealed class PureBuildState {
     object Idle : PureBuildState()
     object Analyzing : PureBuildState()
@@ -589,9 +475,6 @@ sealed class PureBuildState {
     data class Error(val message: String) : PureBuildState()
 }
 
-/**
- * 构建结果
- */
 data class BuildResult(
     val outputPath: String,
     val method: BuildMethod,
@@ -599,12 +482,9 @@ data class BuildResult(
     val totalSize: Long
 )
 
-/**
- * 构建方法
- */
 enum class BuildMethod {
-    EXISTING_DIST,  // 使用已有的构建输出
-    NODE_PACKAGE_SCRIPT, // 使用真实 Node 包管理器与 package script
-    ESBUILD,        // 使用 esbuild
-    PURE_KOTLIN     // 使用纯 Kotlin 打包器
+    EXISTING_DIST,
+    NODE_PACKAGE_SCRIPT,
+    ESBUILD,
+    PURE_KOTLIN
 }

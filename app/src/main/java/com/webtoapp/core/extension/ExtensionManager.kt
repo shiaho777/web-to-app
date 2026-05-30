@@ -28,11 +28,6 @@ import java.io.InputStreamReader
 import com.google.gson.stream.JsonReader
 import java.io.InputStream
 
-
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 class ExtensionManager private constructor(private val context: Context) {
 
@@ -43,7 +38,6 @@ class ExtensionManager private constructor(private val context: Context) {
         private const val BUILTIN_STATES_FILE = "builtin_states.json"
         private const val MODULE_FILE_EXTENSION = ".wtamod"
         private const val PACKAGE_FILE_EXTENSION = ".wtapkg"
-
 
         private val SAFE_FILENAME_REGEX = Regex("[^a-zA-Z0-9\\u4e00-\\u9fa5]")
 
@@ -56,18 +50,12 @@ class ExtensionManager private constructor(private val context: Context) {
             }
         }
 
-
-
-
-
         fun release() {
             synchronized(this) {
                 INSTANCE = null
             }
         }
     }
-
-
 
     private inline fun <reified T : Enum<T>> enumDeserializer(defaultValue: T): JsonDeserializer<T> {
         return JsonDeserializer { json, _, _ ->
@@ -97,30 +85,21 @@ class ExtensionManager private constructor(private val context: Context) {
         File(context.filesDir, MODULES_DIR).apply { mkdirs() }
     }
 
-
     private val _modules = MutableStateFlow<List<ExtensionModule>>(emptyList())
     val modules: StateFlow<List<ExtensionModule>> = _modules.asStateFlow()
-
 
     private val _builtInModules = MutableStateFlow<List<ExtensionModule>>(emptyList())
     val builtInModules: StateFlow<List<ExtensionModule>> = _builtInModules.asStateFlow()
 
-
     @Volatile
     private var _allModulesCache: List<ExtensionModule> = emptyList()
-
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
-    /**
-     * Suspends until the async module loading has completed.
-     * Safe to call multiple times — returns immediately if already loaded.
-     */
     suspend fun awaitLoaded() {
         isLoading.first { !it }
     }
-
 
     private val _loadError = MutableStateFlow<ExtensionLoadError?>(null)
     val loadError: StateFlow<ExtensionLoadError?> = _loadError.asStateFlow()
@@ -129,14 +108,12 @@ class ExtensionManager private constructor(private val context: Context) {
         _loadError.value = null
     }
 
-
     private val initScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     init {
 
         loadBuiltInModules()
         rebuildAllModulesCache()
-
 
         initScope.launch {
             loadModulesAsync()
@@ -146,21 +123,12 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
-
     private fun rebuildAllModulesCache() {
 
         val userModuleIds = _modules.value.map { it.id }.toSet()
         val filteredBuiltIn = _builtInModules.value.filter { it.id !in userModuleIds }
         _allModulesCache = filteredBuiltIn + _modules.value
     }
-
-
-
-
-
 
     private suspend fun loadModulesAsync() = withContext(Dispatchers.IO) {
         try {
@@ -192,7 +160,6 @@ class ExtensionManager private constructor(private val context: Context) {
                 val modules = loadedModules?.filterNotNull() ?: emptyList()
                 AppLogger.d(TAG, "loadModulesAsync: parsed=${modules.size}, enabled=${modules.count { it.enabled }}, parseFailed=${loadedModules == null}, backup=$backupName")
 
-
                 var needsMigration = false
                 val migratedModules = modules.map { module ->
                     var m = module
@@ -214,12 +181,10 @@ class ExtensionManager private constructor(private val context: Context) {
                     m
                 }
 
-
                 if (needsMigration) {
                     AppLogger.i(TAG, "Migrating ${modules.size} modules: stripping inline code to separate files")
                     file.writeText(gson.toJson(migratedModules))
                 }
-
 
                 _modules.value = migratedModules
                 if (loadedModules != null) {
@@ -238,15 +203,10 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     private fun loadBuiltInModules() {
         val builtInStates = loadBuiltInStates()
 
-
         val standardModules = BuiltInModules.getAll()
-
 
         val chromeExtModules = try {
             BuiltInChromeExtensions.getAll(context)
@@ -266,17 +226,11 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     fun reloadBuiltInModules() {
         loadBuiltInModules()
         rebuildAllModulesCache()
         AppLogger.d(TAG, "Reloaded built-in modules for language change")
     }
-
-
-
 
     private fun loadBuiltInStates(): Map<String, Boolean> {
         return try {
@@ -292,9 +246,6 @@ class ExtensionManager private constructor(private val context: Context) {
             emptyMap()
         }
     }
-
-
-
 
     internal fun parseModulesJson(json: String): List<ExtensionModule>? {
         return try {
@@ -354,11 +305,6 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
-
-
     private suspend fun saveModules() = withContext(Dispatchers.IO) {
         saveMutex.withLock {
             try {
@@ -387,8 +333,6 @@ class ExtensionManager private constructor(private val context: Context) {
             }
         }
     }
-
-
 
     private fun saveModuleCode(moduleId: String, code: String) {
         try {
@@ -440,12 +384,6 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
-
-
-
     private fun saveModuleCodeFiles(moduleId: String, codeFiles: Map<String, String>) {
         try {
             val dir = File(modulesDir, "codefiles_$moduleId")
@@ -463,9 +401,6 @@ class ExtensionManager private constructor(private val context: Context) {
             AppLogger.e(TAG, "Failed to save code files for module $moduleId", e)
         }
     }
-
-
-
 
     private fun loadModuleCodeFiles(moduleId: String): Map<String, String> {
         return try {
@@ -486,11 +421,6 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
-
-
     fun ensureCodeLoaded(module: ExtensionModule): ExtensionModule {
 
         if (module.code.isNotBlank() || module.cssCode.isNotBlank() || module.codeFiles.isNotEmpty()) return module
@@ -506,36 +436,21 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     fun getAllModules(): List<ExtensionModule> {
         return _allModulesCache
     }
-
-
-
 
     fun getEnabledModules(): List<ExtensionModule> {
         return getAllModules().filter { it.enabled }
     }
 
-
-
-
     fun getModulesForUrl(url: String): List<ExtensionModule> {
         return getEnabledModules().filter { it.matchesUrl(url) }
     }
 
-
-
-
     fun getModulesByCategory(category: ModuleCategory): List<ExtensionModule> {
         return getAllModules().filter { it.category == category }
     }
-
-
-
 
     fun searchModules(query: String): List<ExtensionModule> {
         val lowerQuery = query.lowercase()
@@ -546,9 +461,6 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun addModule(module: ExtensionModule): Result<ExtensionModule> {
         return try {
 
@@ -556,7 +468,6 @@ class ExtensionManager private constructor(private val context: Context) {
             if (errors.isNotEmpty()) {
                 return Result.failure(IllegalArgumentException(errors.joinToString("\n")))
             }
-
 
             val existing = _modules.value.find { it.id == module.id }
             val newModule = if (existing != null) {
@@ -578,15 +489,9 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun updateModule(module: ExtensionModule): Result<ExtensionModule> {
         return addModule(module.copy(updatedAt = System.currentTimeMillis()))
     }
-
-
-
 
     suspend fun deleteModule(moduleId: String): Result<Unit> {
         return try {
@@ -601,9 +506,6 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun toggleModule(moduleId: String): Result<Boolean> {
         return try {
 
@@ -616,7 +518,6 @@ class ExtensionManager private constructor(private val context: Context) {
                 saveModules()
                 return Result.success(updatedModule.enabled)
             }
-
 
             val builtInModule = _builtInModules.value.find { it.id == moduleId }
             if (builtInModule != null) {
@@ -638,9 +539,6 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun updateModuleConfig(moduleId: String, configValues: Map<String, String>): Result<Unit> {
         return try {
             val module = _modules.value.find { it.id == moduleId }
@@ -661,17 +559,10 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
-
-
-
     suspend fun exportModule(moduleId: String): Result<File> = withContext(Dispatchers.IO) {
         try {
             val module = getAllModules().find { it.id == moduleId }
                 ?: return@withContext Result.failure(IllegalArgumentException(Strings.errModuleNotFound))
-
 
             val fullModule = ensureCodeLoaded(module)
             val fileName = "${fullModule.name.replace(SAFE_FILENAME_REGEX, "_")}$MODULE_FILE_EXTENSION"
@@ -684,9 +575,6 @@ class ExtensionManager private constructor(private val context: Context) {
             Result.failure(e)
         }
     }
-
-
-
 
     suspend fun exportModulePackage(
         moduleIds: List<String>,
@@ -721,10 +609,6 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
-
     suspend fun importModule(inputStream: InputStream): Result<ExtensionModule> = withContext(Dispatchers.IO) {
         try {
             val module = try {
@@ -735,7 +619,6 @@ class ExtensionManager private constructor(private val context: Context) {
                 AppLogger.e(TAG, "Stream-based parsing failed", e)
                 null
             } ?: return@withContext Result.failure(IllegalArgumentException(Strings.errInvalidModuleFile))
-
 
             val importedModule = module.copy(
                 id = java.util.UUID.randomUUID().toString(),
@@ -750,9 +633,6 @@ class ExtensionManager private constructor(private val context: Context) {
             Result.failure(e)
         }
     }
-
-
-
 
     suspend fun importFromShareCode(shareCode: String): Result<ExtensionModule> {
         return try {
@@ -772,9 +652,6 @@ class ExtensionManager private constructor(private val context: Context) {
             Result.failure(e)
         }
     }
-
-
-
 
     suspend fun importModulePackage(inputStream: InputStream): Result<List<ExtensionModule>> = withContext(Dispatchers.IO) {
         try {
@@ -802,9 +679,6 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     fun shareModule(moduleId: String): Intent? {
         val rawModule = getAllModules().find { it.id == moduleId } ?: return null
         val module = ensureCodeLoaded(rawModule)
@@ -830,9 +704,6 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun shareModuleFile(moduleId: String): Intent? = withContext(Dispatchers.IO) {
         val result = exportModule(moduleId)
         result.getOrNull()?.let { file ->
@@ -849,15 +720,10 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
-
     suspend fun exportModuleToDownloads(moduleId: String): Result<String> = withContext(Dispatchers.IO) {
         try {
             val module = getAllModules().find { it.id == moduleId }
                 ?: return@withContext Result.failure(IllegalArgumentException(Strings.errModuleNotFound))
-
 
             val fullModule = ensureCodeLoaded(module)
             val fileName = "${fullModule.name.replace(SAFE_FILENAME_REGEX, "_")}$MODULE_FILE_EXTENSION"
@@ -877,16 +743,10 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
-
-
     suspend fun exportModuleToUri(moduleId: String, uri: Uri): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             val module = getAllModules().find { it.id == moduleId }
                 ?: return@withContext Result.failure(IllegalArgumentException(Strings.errModuleNotFound))
-
 
             val fullModule = ensureCodeLoaded(module)
             context.contentResolver.openOutputStream(uri)?.use { outputStream ->
@@ -900,22 +760,12 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     fun getModuleExportFileName(moduleId: String): String? {
         val module = getAllModules().find { it.id == moduleId } ?: return null
         return "${module.name.replace(SAFE_FILENAME_REGEX, "_")}$MODULE_FILE_EXTENSION"
     }
 
-
-
-
-
-
-
     fun generateInjectionCode(url: String, runAt: ModuleRunTime): String {
-
 
         val matchingModules = getModulesForUrl(url).filter {
             it.runAt == runAt &&
@@ -939,20 +789,10 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
-
-
-
-
     fun generateInjectionCodeForModules(url: String, runAt: ModuleRunTime, moduleIds: List<String>): String {
         if (moduleIds.isEmpty()) return ""
 
         val allModules = getAllModules()
-
-
-
 
         val targetModules = allModules.filter { module ->
             module.id in moduleIds &&
@@ -979,15 +819,9 @@ class ExtensionManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     fun getModuleById(moduleId: String): ExtensionModule? {
         return getAllModules().find { it.id == moduleId }
     }
-
-
-
 
     fun getModulesByIds(moduleIds: List<String>): List<ExtensionModule> {
         val allModules = getAllModules()
@@ -995,9 +829,6 @@ class ExtensionManager private constructor(private val context: Context) {
             allModules.find { it.id == id }?.let { ensureCodeLoaded(it) }
         }
     }
-
-
-
 
     suspend fun duplicateModule(moduleId: String): Result<ExtensionModule> {
         val module = _modules.value.find { it.id == moduleId }
@@ -1012,9 +843,6 @@ class ExtensionManager private constructor(private val context: Context) {
 
         return addModule(duplicated)
     }
-
-
-
 
     fun getStatistics(): ModuleStatistics {
         val all = getAllModules()
@@ -1033,9 +861,6 @@ class ExtensionManager private constructor(private val context: Context) {
     }
 }
 
-
-
-
 data class ModuleStatistics(
     val totalCount: Int,
     val userCount: Int,
@@ -1043,7 +868,6 @@ data class ModuleStatistics(
     val enabledCount: Int,
     val categoryStats: Map<ModuleCategory, Int>
 )
-
 
 sealed class ExtensionLoadError {
 

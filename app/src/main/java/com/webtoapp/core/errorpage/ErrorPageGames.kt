@@ -2,10 +2,6 @@ package com.webtoapp.core.errorpage
 
 import com.webtoapp.core.i18n.Strings
 
-
-
-
-
 object ErrorPageGames {
 
     fun getGameJs(type: MiniGameType): String = when (type) {
@@ -20,8 +16,6 @@ object ErrorPageGames {
         val games = listOf(MiniGameType.BREAKOUT, MiniGameType.MAZE, MiniGameType.STAR_CATCH, MiniGameType.INK_ZEN)
         return games[(Math.random() * games.size).toInt().coerceIn(0, games.size - 1)]
     }
-
-
 
     private fun breakoutGame() = """
     (function(){
@@ -119,8 +113,6 @@ object ErrorPageGames {
         loop();
     })();
     """.trimIndent()
-
-
 
     private fun mazeGame() = """
     (function(){
@@ -224,8 +216,6 @@ object ErrorPageGames {
     })();
     """.trimIndent()
 
-
-
     private fun starCatchGame() = """
     (function(){
         var C=document.getElementById('gameCanvas'),ctx=C.getContext('2d');
@@ -324,8 +314,6 @@ object ErrorPageGames {
         loop();
     })();
     """.trimIndent()
-
-
 
     private fun inkZenGame() = """
     (function(){

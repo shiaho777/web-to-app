@@ -5,10 +5,6 @@ import org.junit.Test
 
 class ActivationCodeExtendedTest {
 
-
-
-
-
     @Test
     fun `fromJson parses valid JSON object`() {
         val json = """{"code":"ABC123","type":"PERMANENT"}"""
@@ -81,10 +77,6 @@ class ActivationCodeExtendedTest {
         assertThat(code!!.code).isEqualTo("ABC")
     }
 
-
-
-
-
     @Test
     fun `toJson produces valid JSON with code`() {
         val code = ActivationCode(code = "TEST123")
@@ -112,10 +104,6 @@ class ActivationCodeExtendedTest {
         assertThat(restored.note).isEqualTo(original.note)
     }
 
-
-
-
-
     @Test
     fun `fromLegacyString creates PERMANENT code`() {
         val code = ActivationCode.fromLegacyString("OLD_CODE")
@@ -130,10 +118,6 @@ class ActivationCodeExtendedTest {
         assertThat(code.usageLimit).isNull()
         assertThat(code.allowDeviceBinding).isFalse()
     }
-
-
-
-
 
     @Test
     fun `ActivationCodeType has all expected values`() {

@@ -12,8 +12,7 @@ class LegacyHttpUrlMigrationStartup(
 ) {
 
     fun initialize(appScope: CoroutineScope) {
-        // 不再强制迁移 HTTP URL 到 HTTPS。
-        // HTTP 是合法协议，用户保存什么就用什么。
+
     }
 
     private companion object {

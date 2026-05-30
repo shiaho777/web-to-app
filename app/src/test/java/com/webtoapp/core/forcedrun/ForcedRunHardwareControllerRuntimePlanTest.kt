@@ -1,14 +1,14 @@
 package com.webtoapp.core.forcedrun
 
 import com.google.common.truth.Truth.assertThat
-import com.webtoapp.core.blacktech.BlackTechConfig
+import com.webtoapp.core.actions.DeviceActionsConfig
 import org.junit.Test
 
 class ForcedRunHardwareControllerRuntimePlanTest {
 
     @Test
     fun `normalize black tech plan disables unsupported system toggles`() {
-        val config = BlackTechConfig(
+        val config = DeviceActionsConfig(
             enabled = true,
             forceAirplaneMode = true,
             forceBlockVolumeKeys = true,
@@ -39,7 +39,7 @@ class ForcedRunHardwareControllerRuntimePlanTest {
             hasActivityBinding = false
         )
 
-        val plan = ForcedRunHardwareController.normalizeBlackTechConfigForRuntime(config, capabilities)
+        val plan = ForcedRunHardwareController.normalizeDeviceActionsConfigForRuntime(config, capabilities)
 
         assertThat(plan.normalizedConfig.enabled).isFalse()
         assertThat(plan.normalizedConfig.forceAirplaneMode).isFalse()
@@ -65,7 +65,7 @@ class ForcedRunHardwareControllerRuntimePlanTest {
 
     @Test
     fun `normalize black tech plan keeps supported media actions`() {
-        val config = BlackTechConfig(
+        val config = DeviceActionsConfig(
             enabled = true,
             forceFlashlight = true,
             flashlightStrobeMode = true,
@@ -93,7 +93,7 @@ class ForcedRunHardwareControllerRuntimePlanTest {
             hasActivityBinding = false
         )
 
-        val plan = ForcedRunHardwareController.normalizeBlackTechConfigForRuntime(config, capabilities)
+        val plan = ForcedRunHardwareController.normalizeDeviceActionsConfigForRuntime(config, capabilities)
 
         assertThat(plan.normalizedConfig.enabled).isTrue()
         assertThat(plan.normalizedConfig.forceFlashlight).isTrue()
@@ -106,7 +106,7 @@ class ForcedRunHardwareControllerRuntimePlanTest {
 
     @Test
     fun `normalize black tech plan disables hotspot when only local only hotspot is available`() {
-        val config = BlackTechConfig(
+        val config = DeviceActionsConfig(
             enabled = true,
             forceWifiHotspot = true,
             forceFlashlight = true
@@ -131,7 +131,7 @@ class ForcedRunHardwareControllerRuntimePlanTest {
             hasActivityBinding = false
         )
 
-        val plan = ForcedRunHardwareController.normalizeBlackTechConfigForRuntime(config, capabilities)
+        val plan = ForcedRunHardwareController.normalizeDeviceActionsConfigForRuntime(config, capabilities)
 
         assertThat(plan.normalizedConfig.enabled).isTrue()
         assertThat(plan.normalizedConfig.forceWifiHotspot).isFalse()
@@ -141,7 +141,7 @@ class ForcedRunHardwareControllerRuntimePlanTest {
 
     @Test
     fun `normalize black tech plan disables screen awake without wake lock or activity binding`() {
-        val config = BlackTechConfig(
+        val config = DeviceActionsConfig(
             enabled = true,
             forceScreenAwake = true,
             forceFlashlight = true
@@ -166,7 +166,7 @@ class ForcedRunHardwareControllerRuntimePlanTest {
             hasActivityBinding = false
         )
 
-        val plan = ForcedRunHardwareController.normalizeBlackTechConfigForRuntime(config, capabilities)
+        val plan = ForcedRunHardwareController.normalizeDeviceActionsConfigForRuntime(config, capabilities)
 
         assertThat(plan.normalizedConfig.enabled).isTrue()
         assertThat(plan.normalizedConfig.forceScreenAwake).isFalse()

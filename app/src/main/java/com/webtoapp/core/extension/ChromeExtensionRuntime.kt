@@ -10,18 +10,6 @@ import android.webkit.*
 import com.webtoapp.core.logging.AppLogger
 import org.json.JSONObject
 
-
-
-
-
-
-
-
-
-
-
-
-
 class ChromeExtensionRuntime(
     private val context: Context,
     private val extensionId: String,
@@ -39,12 +27,6 @@ class ChromeExtensionRuntime(
     private var isInitialized = false
     @Volatile
     private var popupPathOverride: String? = null
-
-
-
-
-
-
 
     @SuppressLint("SetJavaScriptEnabled")
     fun initialize(mainWebView: WebView) {
@@ -68,12 +50,9 @@ class ChromeExtensionRuntime(
                 }
             }
 
-
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
 
-
             addJavascriptInterface(BackgroundBridge(), JS_BRIDGE_NAME)
-
 
             webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(
@@ -104,13 +83,11 @@ class ChromeExtensionRuntime(
             }
         }
 
-
         val polyfill = ChromeExtensionPolyfill.generatePolyfill(
             extensionId = extensionId,
             manifestJson = manifestJson,
             isBackground = true
         )
-
 
         val html = buildBackgroundHtml(polyfill)
         bgWebView.loadDataWithBaseURL(originUrl, html, "text/html", "UTF-8", null)
@@ -119,9 +96,6 @@ class ChromeExtensionRuntime(
         isInitialized = true
         AppLogger.i(TAG, "Initialized runtime for: $extensionId (origin: $originUrl, script: $backgroundScriptPath)")
     }
-
-
-
 
     private fun buildBackgroundHtml(polyfill: String): String {
         val scriptUrl = "chrome-extension://$extensionId/$backgroundScriptPath"
@@ -138,11 +112,6 @@ $polyfill
 </html>"""
     }
 
-
-
-
-
-
     fun deliverToBackground(msgJson: String) {
         val bgWebView = backgroundWebView ?: return
         val escaped = JSONObject.quote(msgJson)
@@ -153,11 +122,6 @@ $polyfill
             )
         }
     }
-
-
-
-
-
 
     fun deliverToContent(responseJson: String) {
         val mWebView = mainWebView ?: return
@@ -170,10 +134,6 @@ $polyfill
         }
     }
 
-
-
-
-
     fun deliverMessageToContent(msgJson: String) {
         val mWebView = mainWebView ?: return
         val escaped = JSONObject.quote(msgJson)
@@ -184,9 +144,6 @@ $polyfill
             )
         }
     }
-
-
-
 
     fun deliverPortMessageToBackground(msgJson: String) {
         val bgWebView = backgroundWebView ?: return
@@ -199,9 +156,6 @@ $polyfill
         }
     }
 
-
-
-
     fun deliverPortMessageToContent(msgJson: String) {
         val mWebView = mainWebView ?: return
         val escaped = JSONObject.quote(msgJson)
@@ -212,9 +166,6 @@ $polyfill
             )
         }
     }
-
-
-
 
     fun deliverPortDisconnectToBackground(portId: String) {
         val bgWebView = backgroundWebView ?: return
@@ -227,9 +178,6 @@ $polyfill
         }
     }
 
-
-
-
     fun deliverPortDisconnectToContent(portId: String) {
         val mWebView = mainWebView ?: return
         val escaped = JSONObject.quote(portId)
@@ -240,9 +188,6 @@ $polyfill
             )
         }
     }
-
-
-
 
     fun destroy() {
         DeclarativeNetRequestEngine.clearExtension(extensionId)
@@ -280,11 +225,6 @@ $polyfill
         return ChromeExtensionScriptingBridge.removeCss(context, mainWebView, extensionId, injectionJson)
     }
 
-
-
-
-
-
     inner class BackgroundBridge {
         @JavascriptInterface
         fun postMessageToContent(responseJson: String) {
@@ -301,37 +241,21 @@ $polyfill
             }
         }
 
-
-
-
-
-
         @JavascriptInterface
         fun nativeFetch(url: String, method: String, headersJson: String, body: String): String {
             return performNativeFetch(url, method, headersJson, body, originUrl)
         }
-
-
-
-
 
         @JavascriptInterface
         fun getCookies(url: String): String {
             return CookieManager.getInstance().getCookie(url) ?: ""
         }
 
-
-
-
-
-
         @JavascriptInterface
         fun setCookieValue(url: String, cookie: String) {
             CookieManager.getInstance().setCookie(url, cookie)
             CookieManager.getInstance().flush()
         }
-
-
 
         @JavascriptInterface
         fun syncStorageGet(key: String): String {
@@ -382,8 +306,6 @@ $polyfill
         fun storageClear(area: String) {
             ExtensionStorageSync.clear(extensionId, ExtensionStorageSync.Area.fromWireName(area))
         }
-
-
 
         @JavascriptInterface
         fun registerWebRequestFilter(extId: String, urlPatternsJson: String, resourceTypesJson: String, blocking: Boolean) {
@@ -455,8 +377,6 @@ $polyfill
             return extId == extensionId && removeCss(injectionJson)
         }
 
-
-
         @JavascriptInterface
         fun sendMessageToTab(extId: String, msgJson: String) {
             AppLogger.d(TAG, "BG→Tab [$extId]: ${msgJson.take(200)}")
@@ -490,8 +410,6 @@ $polyfill
             }
         }
 
-
-
         @JavascriptInterface
         fun startDownload(url: String, filename: String, headersJson: String): String {
             return try {
@@ -516,11 +434,6 @@ $polyfill
     }
 }
 
-
-
-
-
-
 class ContentExtensionBridge(
     private val runtimes: Map<String, ChromeExtensionRuntime>,
     private val currentWebViewProvider: (() -> WebView?)? = null,
@@ -532,9 +445,6 @@ class ContentExtensionBridge(
         AppLogger.d("ChromeExtRuntime", "Content→BG [$extId]: ${msgJson.take(200)}")
         runtimes[extId]?.deliverToBackground(msgJson)
     }
-
-
-
 
     @JavascriptInterface
     fun nativeFetch(url: String, method: String, headersJson: String, body: String): String {
@@ -551,8 +461,6 @@ class ContentExtensionBridge(
         android.webkit.CookieManager.getInstance().setCookie(url, cookie)
         android.webkit.CookieManager.getInstance().flush()
     }
-
-
 
     @JavascriptInterface
     fun syncStorageGet(key: String): String {
@@ -673,8 +581,6 @@ class ContentExtensionBridge(
     fun storageClearForExt(extId: String, area: String) {
         ExtensionStorageSync.clear(extId, ExtensionStorageSync.Area.fromWireName(area))
     }
-
-
 
     @JavascriptInterface
     fun registerWebRequestFilter(extId: String, urlPatternsJson: String, resourceTypesJson: String, blocking: Boolean) {
@@ -798,8 +704,6 @@ class ContentExtensionBridge(
         return runtimes[extId]?.getEffectivePopupPath().orEmpty()
     }
 
-
-
     @JavascriptInterface
     fun openPort(extId: String, name: String): String {
         val portId = "port_${System.currentTimeMillis()}_${(Math.random() * 10000).toInt()}"
@@ -869,12 +773,6 @@ private fun resultsJson(valueJson: String?): String {
     return """[{"result":$value}]"""
 }
 
-
-
-
-
-
-
 internal fun performNativeFetch(
     url: String,
     method: String,
@@ -889,12 +787,10 @@ internal fun performNativeFetch(
         connection.readTimeout = 30000
         connection.instanceFollowRedirects = true
 
-
         val cookies = android.webkit.CookieManager.getInstance().getCookie(url)
         if (!cookies.isNullOrEmpty()) {
             connection.setRequestProperty("Cookie", cookies)
         }
-
 
         try {
             val headers = org.json.JSONObject(headersJson)
@@ -905,7 +801,6 @@ internal fun performNativeFetch(
             }
         } catch (e: Exception) { AppLogger.w("ChromeExtRuntime", "Failed to parse custom request headers", e) }
 
-
         if (refererOrigin != null) {
             if (connection.getRequestProperty("Referer") == null) {
                 connection.setRequestProperty("Referer", refererOrigin)
@@ -915,7 +810,6 @@ internal fun performNativeFetch(
             }
         }
 
-
         if (body.isNotEmpty() && method.uppercase() in listOf("POST", "PUT", "PATCH")) {
             connection.doOutput = true
             connection.outputStream.use { it.write(body.toByteArray()) }
@@ -924,7 +818,6 @@ internal fun performNativeFetch(
         val status = connection.responseCode
         val statusText = connection.responseMessage ?: ""
 
-
         val respHeaders = org.json.JSONObject()
         connection.headerFields?.forEach { (key, values) ->
             if (key != null && values.isNotEmpty()) {
@@ -932,12 +825,10 @@ internal fun performNativeFetch(
             }
         }
 
-
         val respBody = try {
             (if (status >= 400) connection.errorStream else connection.inputStream)
                 ?.bufferedReader()?.readText() ?: ""
         } catch (_: Exception) { "" }
-
 
         connection.headerFields?.get("Set-Cookie")?.forEach { cookie ->
             android.webkit.CookieManager.getInstance().setCookie(url, cookie)
@@ -964,10 +855,6 @@ internal fun performNativeFetch(
         }.toString()
     }
 }
-
-
-
-
 
 fun deriveOriginUrl(urlMatches: List<UrlMatchRule>): String {
     val firstMatch = urlMatches.firstOrNull { !it.exclude }?.pattern ?: return "about:blank"

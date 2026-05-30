@@ -2,45 +2,31 @@ package com.webtoapp.core.crypto
 
 import android.content.Context
 import android.os.Build
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import java.io.File
 import java.util.zip.ZipFile
-
-
-
-
 
 class IntegrityChecker(private val context: Context) {
 
     companion object {
         private const val TAG = "IntegrityChecker"
 
-
-
         private const val EXPECTED_SIGNATURE_PLACEHOLDER = "SIGNATURE_HASH_PLACEHOLDER_DO_NOT_MODIFY"
     }
 
     private val keyManager = KeyManager.getInstance(context)
 
-
-
-
-
     fun check(): IntegrityResult {
         val results = mutableListOf<CheckItem>()
 
-
         results.add(checkSignature())
-
 
         results.add(checkDebugMode())
 
-
         results.add(checkInstaller())
 
-
         results.add(checkApkIntegrity())
-
 
         results.add(checkEnvironment())
 
@@ -59,16 +45,9 @@ class IntegrityChecker(private val context: Context) {
         )
     }
 
-
-
-
     fun verifyAll(): IntegrityResult {
         return check()
     }
-
-
-
-
 
     fun quickCheck(): Boolean {
 
@@ -79,14 +58,10 @@ class IntegrityChecker(private val context: Context) {
         return checkSignature().passed && checkDebugMode().passed
     }
 
-
-
-
     private fun checkSignature(): CheckItem {
         return try {
             val currentSignature = keyManager.getAppSignature()
             val currentHash = currentSignature.toHexString()
-
 
             if (EXPECTED_SIGNATURE_PLACEHOLDER.contains("PLACEHOLDER")) {
                 AppLogger.d(TAG, "开发版本，跳过签名检查")
@@ -107,13 +82,9 @@ class IntegrityChecker(private val context: Context) {
         }
     }
 
-
-
-
     private fun checkDebugMode(): CheckItem {
         val isDebuggable = (context.applicationInfo.flags and
                 android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
-
 
         val isDebuggerConnected = android.os.Debug.isDebuggerConnected()
 
@@ -130,9 +101,6 @@ class IntegrityChecker(private val context: Context) {
         )
     }
 
-
-
-
     private fun checkInstaller(): CheckItem {
         return try {
             val installer = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -141,7 +109,6 @@ class IntegrityChecker(private val context: Context) {
                 @Suppress("DEPRECATION")
                 context.packageManager.getInstallerPackageName(context.packageName)
             }
-
 
             val allowedInstallers = setOf(
                 "com.android.vending",
@@ -158,16 +125,13 @@ class IntegrityChecker(private val context: Context) {
             CheckItem(
                 name = "installer",
                 passed = passed,
-                message = "安装来源: ${installer ?: "未知"}"
+                message = Strings.integrityInstallerSource.format(installer ?: Strings.integrityInstallerUnknown)
             )
         } catch (e: Exception) {
 
-            CheckItem("installer", true, "无法获取安装来源")
+            CheckItem("installer", true, Strings.integrityInstallerCannotDetect)
         }
     }
-
-
-
 
     private fun checkApkIntegrity(): CheckItem {
         return try {
@@ -177,7 +141,6 @@ class IntegrityChecker(private val context: Context) {
             if (!apkFile.exists()) {
                 return CheckItem("apk_integrity", false, "APK 文件不存在")
             }
-
 
             ZipFile(apkFile).use { zip ->
 
@@ -206,27 +169,20 @@ class IntegrityChecker(private val context: Context) {
         }
     }
 
-
-
-
     private fun checkEnvironment(): CheckItem {
         val issues = mutableListOf<String>()
-
 
         if (isEmulator()) {
             issues.add("模拟器环境")
         }
 
-
         if (isRooted()) {
             issues.add("Root 环境")
         }
 
-
         if (hasXposed()) {
             issues.add("Xposed 框架")
         }
-
 
         if (hasFrida()) {
             issues.add("Frida 检测")
@@ -241,9 +197,6 @@ class IntegrityChecker(private val context: Context) {
         )
     }
 
-
-
-
     private fun isEmulator(): Boolean {
         return (Build.FINGERPRINT.startsWith("generic")
                 || Build.FINGERPRINT.startsWith("unknown")
@@ -256,9 +209,6 @@ class IntegrityChecker(private val context: Context) {
                 || Build.HARDWARE.contains("goldfish")
                 || Build.HARDWARE.contains("ranchu"))
     }
-
-
-
 
     private fun isRooted(): Boolean {
         val rootPaths = arrayOf(
@@ -277,9 +227,6 @@ class IntegrityChecker(private val context: Context) {
         return rootPaths.any { File(it).exists() }
     }
 
-
-
-
     private fun hasXposed(): Boolean {
         return try {
 
@@ -289,9 +236,6 @@ class IntegrityChecker(private val context: Context) {
             false
         }
     }
-
-
-
 
     private fun hasFrida(): Boolean {
 
@@ -306,9 +250,6 @@ class IntegrityChecker(private val context: Context) {
     }
 }
 
-
-
-
 data class IntegrityResult(
     val passed: Boolean,
     val checks: List<CheckItem>,
@@ -317,9 +258,6 @@ data class IntegrityResult(
 ) {
     val isValid: Boolean get() = passed
 }
-
-
-
 
 data class CheckItem(
     val name: String,

@@ -6,7 +6,6 @@ import com.webtoapp.core.crypto.AssetDecryptor
 import com.webtoapp.core.forcedrun.ForcedRunConfig
 import com.webtoapp.core.logging.AppLogger
 
-
 private fun String.escapeForJsSingleQuote(): String =
     this.replace("\\", "\\\\")
         .replace("'", "\\'")
@@ -15,16 +14,12 @@ private fun String.escapeForJsSingleQuote(): String =
         .replace("\u2028", "\\u2028")
         .replace("\u2029", "\\u2029")
 
-
 private fun String.escapeForJsTemplate(): String =
     this.replace("\\", "\\\\")
         .replace("`", "\\`")
         .replace("\${", "\\\${")
         .replace("\n", "\\n")
         .replace("\r", "\\r")
-
-
-
 
 class ShellModeManager(private val context: Context) {
 
@@ -51,17 +46,26 @@ class ShellModeManager(private val context: Context) {
             if (configLoaded) return cachedConfig
 
             configLoaded = true
-            cachedConfig = try {
+            cachedConfig = computeShellConfig()
+            return cachedConfig
+        }
+    }
+
+    private fun computeShellConfig(): ShellConfig? {
+        return try {
             AppLogger.d(TAG, "尝试加载配置文件: $CONFIG_FILE")
 
             val jsonStr = try {
                 assetDecryptor.loadAssetAsString(CONFIG_FILE)
             } catch (e: Exception) {
-                AppLogger.e(TAG, "AssetDecryptor 加载失败，尝试直接读取", e)
+
                 try {
                     context.assets.open(CONFIG_FILE).bufferedReader().use { it.readText() }
+                } catch (e2: java.io.FileNotFoundException) {
+                    AppLogger.d(TAG, "未找到 $CONFIG_FILE，按主 app 模式运行")
+                    return null
                 } catch (e2: Exception) {
-                    AppLogger.e(TAG, "直接读取也失败", e2)
+                    AppLogger.e(TAG, "读取 $CONFIG_FILE 失败", e2)
                     throw e2
                 }
             }
@@ -98,9 +102,6 @@ class ShellModeManager(private val context: Context) {
             AppLogger.e(TAG, "加载配置文件时发生严重错误", e)
             null
         }
-
-            return cachedConfig
-        }
     }
 
     fun reload() {
@@ -111,10 +112,6 @@ class ShellModeManager(private val context: Context) {
         }
     }
 
-
-
-
-
     fun setCustomPassword(password: String?) {
         assetDecryptor.setCustomPassword(password)
 
@@ -123,9 +120,6 @@ class ShellModeManager(private val context: Context) {
             cachedConfig = null
         }
     }
-
-
-
 
     fun requiresCustomPassword(): Boolean {
         return assetDecryptor.requiresCustomPassword()
@@ -148,7 +142,6 @@ data class ShellConfig(
     @SerializedName("versionName")
     val versionName: String = "1.0.0",
 
-
     @SerializedName("activationEnabled")
     val activationEnabled: Boolean = false,
 
@@ -170,13 +163,11 @@ data class ShellConfig(
     @SerializedName("activationDialogButtonText")
     val activationDialogButtonText: String = "",
 
-
     @SerializedName("adBlockEnabled")
     val adBlockEnabled: Boolean = false,
 
     @SerializedName("adBlockRules")
     val adBlockRules: List<String> = emptyList(),
-
 
     @SerializedName("announcementEnabled")
     val announcementEnabled: Boolean = false,
@@ -241,10 +232,8 @@ data class ShellConfig(
     @SerializedName("adSplashId")
     val adSplashId: String = "",
 
-
     @SerializedName("webViewConfig")
     val webViewConfig: WebViewShellConfig = WebViewShellConfig(),
-
 
     @SerializedName("splashEnabled")
     val splashEnabled: Boolean = false,
@@ -257,7 +246,6 @@ data class ShellConfig(
 
     @SerializedName("splashClickToSkip")
     val splashClickToSkip: Boolean = true,
-
 
     @SerializedName("splashVideoStartMs")
     val splashVideoStartMs: Long = 0,
@@ -274,17 +262,14 @@ data class ShellConfig(
     @SerializedName("splashEnableAudio")
     val splashEnableAudio: Boolean = false,
 
-
     @SerializedName("appType")
     val appType: String = "WEB",
 
     @SerializedName("mediaConfig")
     val mediaConfig: MediaShellConfig = MediaShellConfig(),
 
-
     @SerializedName("htmlConfig")
     val htmlConfig: HtmlShellConfig = HtmlShellConfig(),
-
 
     @SerializedName("bgmEnabled")
     val bgmEnabled: Boolean = false,
@@ -307,13 +292,11 @@ data class ShellConfig(
     @SerializedName("bgmLrcTheme")
     val bgmLrcTheme: LrcShellTheme? = null,
 
-
     @SerializedName("themeType")
     val themeType: String = "AURORA",
 
     @SerializedName("darkMode")
     val darkMode: String = "SYSTEM",
-
 
     @SerializedName("translateEnabled")
     val translateEnabled: Boolean = false,
@@ -324,7 +307,6 @@ data class ShellConfig(
     @SerializedName("translateShowButton")
     val translateShowButton: Boolean = true,
 
-
     @SerializedName("extensionEnabled")
     val extensionEnabled: Boolean = false,
 
@@ -334,18 +316,14 @@ data class ShellConfig(
     @SerializedName("extensionModuleIds")
     val extensionModuleIds: List<String> = emptyList(),
 
-
     @SerializedName("embeddedExtensionModules")
     val embeddedExtensionModules: List<EmbeddedShellModule> = emptyList(),
-
 
     @SerializedName("autoStartConfig")
     val autoStartConfig: AutoStartShellConfig? = null,
 
-
     @SerializedName("forcedRunConfig")
     val forcedRunConfig: ForcedRunConfig? = null,
-
 
     @SerializedName("isolationEnabled")
     val isolationEnabled: Boolean = false,
@@ -353,13 +331,11 @@ data class ShellConfig(
     @SerializedName("isolationConfig")
     val isolationConfig: IsolationShellConfig? = null,
 
-
     @SerializedName("backgroundRunEnabled")
     val backgroundRunEnabled: Boolean = false,
 
     @SerializedName("backgroundRunConfig")
     val backgroundRunConfig: BackgroundRunShellConfig? = null,
-
 
     @SerializedName("notificationEnabled")
     val notificationEnabled: Boolean = false,
@@ -367,38 +343,29 @@ data class ShellConfig(
     @SerializedName("notificationConfig")
     val notificationConfig: NotificationShellConfig? = null,
 
-
     @SerializedName("blackTechConfig")
-    val blackTechConfig: com.webtoapp.core.blacktech.BlackTechConfig? = null,
-
+    val blackTechConfig: com.webtoapp.core.actions.DeviceActionsConfig? = null,
 
     @SerializedName("disguiseConfig")
-    val disguiseConfig: com.webtoapp.core.disguise.DisguiseConfig? = null,
-
+    val disguiseConfig: com.webtoapp.core.appearance.DisguiseConfig? = null,
 
     @SerializedName("browserDisguiseConfig")
-    val browserDisguiseConfig: com.webtoapp.core.disguise.BrowserDisguiseConfig? = null,
-
+    val browserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? = null,
 
     @SerializedName("deviceDisguiseConfig")
-    val deviceDisguiseConfig: com.webtoapp.core.disguise.DeviceDisguiseConfig? = null,
-
+    val deviceDisguiseConfig: com.webtoapp.core.appearance.DeviceDisguiseConfig? = null,
 
     @SerializedName("language")
     val language: String = "CHINESE",
 
-
     @SerializedName("galleryConfig")
     val galleryConfig: GalleryShellConfig = GalleryShellConfig(),
-
 
     @SerializedName("wordpressConfig")
     val wordpressConfig: WordPressShellConfig = WordPressShellConfig(),
 
-
     @SerializedName("nodejsConfig")
     val nodejsConfig: NodeJsShellConfig = NodeJsShellConfig(),
-
 
     @SerializedName("deepLinkEnabled")
     val deepLinkEnabled: Boolean = false,
@@ -406,23 +373,18 @@ data class ShellConfig(
     @SerializedName("deepLinkHosts")
     val deepLinkHosts: List<String> = emptyList(),
 
-
     @SerializedName("phpAppConfig")
     val phpAppConfig: PhpAppShellConfig = PhpAppShellConfig(),
-
 
     @SerializedName("pythonAppConfig")
     val pythonAppConfig: PythonAppShellConfig = PythonAppShellConfig(),
 
-
     @SerializedName("goAppConfig")
     val goAppConfig: GoAppShellConfig = GoAppShellConfig(),
-
 
     @SerializedName("multiWebConfig")
     val multiWebConfig: MultiWebShellConfig = MultiWebShellConfig()
 )
-
 
 data class EmbeddedShellModule(
     @SerializedName("id")
@@ -503,14 +465,11 @@ data class EmbeddedShellModule(
         val includeRules = urlMatches.filter { !it.exclude }
         val excludeRules = urlMatches.filter { it.exclude }
 
-
         for (rule in excludeRules) {
             if (matchRule(url, rule)) return false
         }
 
-
         if (includeRules.isEmpty()) return true
-
 
         return includeRules.any { matchRule(url, it) }
     }
@@ -1050,8 +1009,7 @@ data class WebViewShellConfig(
     val statusBarBackgroundAlpha: Float = 1.0f,
 
     @SerializedName("statusBarHeightDp")
-    val statusBarHeightDp: Int = 0,
-
+    val statusBarHeightDp: Int = -1,
 
     @SerializedName("statusBarColorModeDark")
     val statusBarColorModeDark: String = "THEME",
@@ -1072,10 +1030,10 @@ data class WebViewShellConfig(
     val statusBarBackgroundAlphaDark: Float = 1.0f,
 
     @SerializedName("longPressMenuEnabled")
-    val longPressMenuEnabled: Boolean = true,
+    val longPressMenuEnabled: Boolean = false,
 
     @SerializedName("longPressMenuStyle")
-    val longPressMenuStyle: String = "FULL",
+    val longPressMenuStyle: String = "DISABLED",
 
     @SerializedName("adBlockToggleEnabled")
     val adBlockToggleEnabled: Boolean = false,
@@ -1088,7 +1046,6 @@ data class WebViewShellConfig(
 
     @SerializedName("openExternalLinks")
     val openExternalLinks: Boolean = false,
-
 
     @SerializedName("initialScale")
     val initialScale: Int = 0,
@@ -1111,90 +1068,161 @@ data class WebViewShellConfig(
     @SerializedName("enableZoomPolyfill")
     val enableZoomPolyfill: Boolean = true,
 
-
     @SerializedName("enableCrossOriginIsolation")
     val enableCrossOriginIsolation: Boolean = false,
 
     @SerializedName("hideUrlPreview")
     val hideUrlPreview: Boolean = false,
 
-    @SerializedName("disableShields")
-    val disableShields: Boolean = true,
-
     @SerializedName("decodeBase64DeepLinks")
     val decodeBase64DeepLinks: Boolean = false,
 
+    @SerializedName("decodeBase64Mode")
+    val decodeBase64Mode: String = "GESTURE_ONLY",
+
     @SerializedName("mediaAutoplayEnabled")
-    val mediaAutoplayEnabled: Boolean = true,
+    val mediaAutoplayEnabled: Boolean = false,
+
+    @SerializedName("mediaAutoplayScope")
+    val mediaAutoplayScope: String = "VIDEO_ONLY",
 
     @SerializedName("acceptThirdPartyCookies")
-    val acceptThirdPartyCookies: Boolean = true,
+    val acceptThirdPartyCookies: Boolean = false,
+
+    @SerializedName("thirdPartyCookieMode")
+    val thirdPartyCookieMode: String = "SAME_SITE_LAX",
 
     @SerializedName("enableKernelDisguise")
-    val enableKernelDisguise: Boolean = true,
+    val enableKernelDisguise: Boolean = false,
+
+    @SerializedName("kernelDisguiseLevel")
+    val kernelDisguiseLevel: String = "STANDARD",
 
     @SerializedName("enableImageRepair")
-    val enableImageRepair: Boolean = true,
+    val enableImageRepair: Boolean = false,
 
     @SerializedName("enableScrollMemory")
-    val enableScrollMemory: Boolean = true,
-
-    @SerializedName("enableHttpsUpgrade")
-    val enableHttpsUpgrade: Boolean = true,
-
-    @SerializedName("enableOAuthExternalRedirect")
-    val enableOAuthExternalRedirect: Boolean = true,
+    val enableScrollMemory: Boolean = false,
 
     @SerializedName("enableClipboardPolyfill")
-    val enableClipboardPolyfill: Boolean = true,
+    val enableClipboardPolyfill: Boolean = false,
 
     @SerializedName("enableNotificationPolyfill")
-    val enableNotificationPolyfill: Boolean = true,
-
-    @SerializedName("safeBrowsingEnabled")
-    val safeBrowsingEnabled: Boolean = true,
+    val enableNotificationPolyfill: Boolean = false,
 
     @SerializedName("geolocationEnabled")
-    val geolocationEnabled: Boolean = true,
+    val geolocationEnabled: Boolean = false,
+
+    @SerializedName("geolocationAccuracy")
+    val geolocationAccuracy: String = "COARSE",
+
+    @SerializedName("geolocationPolicy")
+    val geolocationPolicy: String = "ALWAYS_ASK",
 
     @SerializedName("enableOrientationPolyfill")
-    val enableOrientationPolyfill: Boolean = true,
+    val enableOrientationPolyfill: Boolean = false,
 
     @SerializedName("enableCompatPolyfills")
-    val enableCompatPolyfills: Boolean = true,
+    val enableCompatPolyfills: Boolean = false,
 
     @SerializedName("enableNativeBridge")
-    val enableNativeBridge: Boolean = true,
+    val enableNativeBridge: Boolean = false,
+
+    @SerializedName("nativeBridgeClipboard")
+    val nativeBridgeClipboard: Boolean = true,
+
+    @SerializedName("nativeBridgeVibration")
+    val nativeBridgeVibration: Boolean = true,
+
+    @SerializedName("nativeBridgeGeolocation")
+    val nativeBridgeGeolocation: Boolean = true,
+
+    @SerializedName("nativeBridgeBrightness")
+    val nativeBridgeBrightness: Boolean = true,
+
+    @SerializedName("nativeBridgeNotification")
+    val nativeBridgeNotification: Boolean = true,
+
+    @SerializedName("nativeBridgeDownload")
+    val nativeBridgeDownload: Boolean = true,
+
+    @SerializedName("nativeBridgePrivateNetwork")
+    val nativeBridgePrivateNetwork: Boolean = true,
+
+    @SerializedName("nativeBridgeScreenWake")
+    val nativeBridgeScreenWake: Boolean = true,
 
     @SerializedName("javaScriptCanOpenWindows")
-    val javaScriptCanOpenWindows: Boolean = true,
+    val javaScriptCanOpenWindows: Boolean = false,
+
+    @SerializedName("jsOpenWindowsPolicy")
+    val jsOpenWindowsPolicy: String = "ALLOW",
 
     @SerializedName("databaseEnabled")
-    val databaseEnabled: Boolean = true,
+    val databaseEnabled: Boolean = false,
 
     @SerializedName("enableCookiePersistence")
-    val enableCookiePersistence: Boolean = true,
+    val enableCookiePersistence: Boolean = false,
 
     @SerializedName("enablePrivateNetworkBridge")
-    val enablePrivateNetworkBridge: Boolean = true,
+    val enablePrivateNetworkBridge: Boolean = false,
+
+    @SerializedName("privateNetworkScope")
+    val privateNetworkScope: String = "LOCAL_ONLY",
 
     @SerializedName("allowMixedContent")
-    val allowMixedContent: Boolean = true,
+    val allowMixedContent: Boolean = false,
 
-    @SerializedName("enableGpc")
-    val enableGpc: Boolean = true,
-
-    @SerializedName("enableCookieConsentBlock")
-    val enableCookieConsentBlock: Boolean = true,
-
-    @SerializedName("enableReferrerPolicy")
-    val enableReferrerPolicy: Boolean = true,
-
-    @SerializedName("enableTrackerBlocking")
-    val enableTrackerBlocking: Boolean = true,
+    @SerializedName("mixedContentMode")
+    val mixedContentMode: String = "COMPATIBILITY",
 
     @SerializedName("enableBlobDownloadInterception")
-    val enableBlobDownloadInterception: Boolean = true,
+    val enableBlobDownloadInterception: Boolean = false,
+
+    @SerializedName("blobInterceptScope")
+    val blobInterceptScope: String = "ALL",
+
+    @SerializedName("blobInterceptThresholdMb")
+    val blobInterceptThresholdMb: Int = 5,
+
+    @SerializedName("enableCloudflareCompat")
+    val enableCloudflareCompat: Boolean = false,
+
+    @SerializedName("cloudflareCompatMode")
+    val cloudflareCompatMode: String = "AUTO_DETECT",
+
+    @SerializedName("primeUserActivation")
+    val primeUserActivation: Boolean = false,
+
+    @SerializedName("primeUserActivationMode")
+    val primeUserActivationMode: String = "SYNTHETIC_TAP",
+
+    @SerializedName("primeUserActivationTiming")
+    val primeUserActivationTiming: String = "ON_PAGE_FINISHED",
+
+    @SerializedName("fullscreenVideoOrientation")
+    val fullscreenVideoOrientation: String = "AUTO_SENSOR_LANDSCAPE",
+
+    @SerializedName("failoverEnabled")
+    val failoverEnabled: Boolean = false,
+
+    @SerializedName("failoverUrls")
+    val failoverUrls: List<String> = emptyList(),
+
+    @SerializedName("failoverTriggerNetworkError")
+    val failoverTriggerNetworkError: Boolean = true,
+
+    @SerializedName("failoverTriggerHttp5xx")
+    val failoverTriggerHttp5xx: Boolean = true,
+
+    @SerializedName("failoverTriggerHttp4xx")
+    val failoverTriggerHttp4xx: Boolean = false,
+
+    @SerializedName("failoverTriggerTimeout")
+    val failoverTriggerTimeout: Boolean = false,
+
+    @SerializedName("failoverTimeoutSeconds")
+    val failoverTimeoutSeconds: Int = 15,
 
     @SerializedName("keepScreenOn")
     val keepScreenOn: Boolean = false,
@@ -1208,21 +1236,17 @@ data class WebViewShellConfig(
     @SerializedName("screenBrightness")
     val screenBrightness: Int = -1,
 
-
     @SerializedName("showFloatingBackButton")
     val showFloatingBackButton: Boolean = false,
 
-
     @SerializedName("keyboardAdjustMode")
     val keyboardAdjustMode: String = "RESIZE",
-
 
     @SerializedName("swipeRefreshEnabled")
     val swipeRefreshEnabled: Boolean = true,
 
     @SerializedName("fullscreenEnabled")
     val fullscreenEnabled: Boolean = true,
-
 
     @SerializedName("performanceOptimization")
     val performanceOptimization: Boolean = false,
@@ -1233,14 +1257,11 @@ data class WebViewShellConfig(
     @SerializedName("pwaOfflineStrategy")
     val pwaOfflineStrategy: String = "NETWORK_FIRST",
 
-
     @SerializedName("errorPageConfig")
     val errorPageConfig: ErrorPageShellConfig = ErrorPageShellConfig(),
 
-
     @SerializedName("floatingWindowConfig")
     val floatingWindowConfig: FloatingWindowShellConfig = FloatingWindowShellConfig(),
-
 
     @SerializedName("proxyMode")
     val proxyMode: String = "NONE",
@@ -1271,7 +1292,6 @@ data class WebViewShellConfig(
 
     @SerializedName("hostsMappings")
     val hostsMappings: List<HostMappingShellEntry> = emptyList(),
-
 
     @SerializedName("dnsMode")
     val dnsMode: String = "SYSTEM",
@@ -1476,39 +1496,39 @@ data class IsolationShellConfig(
     @SerializedName("customScreenHeight")
     val customScreenHeight: Int? = null
 ) {
-    fun toIsolationConfig(): com.webtoapp.core.isolation.IsolationConfig {
-        return com.webtoapp.core.isolation.IsolationConfig(
+    fun toIsolationConfig(): com.webtoapp.core.privacy.IsolationConfig {
+        return com.webtoapp.core.privacy.IsolationConfig(
             enabled = enabled,
-            fingerprintConfig = com.webtoapp.core.isolation.FingerprintConfig(
+            fingerprintConfig = com.webtoapp.core.privacy.FingerprintConfig(
                 randomize = fingerprintConfig.randomize,
                 regenerateOnLaunch = fingerprintConfig.regenerateOnLaunch,
                 customUserAgent = fingerprintConfig.customUserAgent,
                 randomUserAgent = fingerprintConfig.randomUserAgent,
                 fingerprintId = fingerprintConfig.fingerprintId
             ),
-            headerConfig = com.webtoapp.core.isolation.HeaderConfig(
+            headerConfig = com.webtoapp.core.privacy.HeaderConfig(
                 enabled = headerConfig.enabled,
                 randomizeOnRequest = headerConfig.randomizeOnRequest,
                 dnt = headerConfig.dnt,
                 spoofClientHints = headerConfig.spoofClientHints,
                 refererPolicy = try {
-                    com.webtoapp.core.isolation.RefererPolicy.valueOf(headerConfig.refererPolicy)
+                    com.webtoapp.core.privacy.RefererPolicy.valueOf(headerConfig.refererPolicy)
                 } catch (e: Exception) {
-                    com.webtoapp.core.isolation.RefererPolicy.STRICT_ORIGIN
+                    com.webtoapp.core.privacy.RefererPolicy.STRICT_ORIGIN
                 }
             ),
-            ipSpoofConfig = com.webtoapp.core.isolation.IpSpoofConfig(
+            ipSpoofConfig = com.webtoapp.core.privacy.IpSpoofConfig(
                 enabled = ipSpoofConfig.enabled,
                 spoofMethod = try {
-                    com.webtoapp.core.isolation.IpSpoofMethod.valueOf(ipSpoofConfig.spoofMethod)
+                    com.webtoapp.core.privacy.IpSpoofMethod.valueOf(ipSpoofConfig.spoofMethod)
                 } catch (e: Exception) {
-                    com.webtoapp.core.isolation.IpSpoofMethod.HEADER
+                    com.webtoapp.core.privacy.IpSpoofMethod.HEADER
                 },
                 customIp = ipSpoofConfig.customIp,
                 randomIpRange = try {
-                    com.webtoapp.core.isolation.IpRange.valueOf(ipSpoofConfig.randomIpRange)
+                    com.webtoapp.core.privacy.IpRange.valueOf(ipSpoofConfig.randomIpRange)
                 } catch (e: Exception) {
-                    com.webtoapp.core.isolation.IpRange.GLOBAL
+                    com.webtoapp.core.privacy.IpRange.GLOBAL
                 },
                 searchKeyword = ipSpoofConfig.searchKeyword,
                 xForwardedFor = ipSpoofConfig.xForwardedFor,

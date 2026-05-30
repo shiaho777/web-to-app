@@ -27,9 +27,6 @@ import com.webtoapp.core.i18n.LanguageManager
 import com.webtoapp.util.isRunningOnTv
 import kotlinx.coroutines.launch
 
-
-
-
 @Composable
 fun LanguageSelectorButton(
     onLanguageChanged: () -> Unit = {}
@@ -40,7 +37,6 @@ fun LanguageSelectorButton(
 
     val currentLanguage by languageManager.currentLanguageFlow.collectAsState(initial = AppLanguage.CHINESE)
     var showDialog by remember { mutableStateOf(false) }
-
 
     IconButton(
         onClick = { showDialog = true },
@@ -53,7 +49,6 @@ fun LanguageSelectorButton(
             tint = MaterialTheme.colorScheme.onSurface
         )
     }
-
 
     if (showDialog) {
         LanguageSelectionDialog(
@@ -69,9 +64,6 @@ fun LanguageSelectorButton(
         )
     }
 }
-
-
-
 
 @Composable
 fun LanguageSelectionDialog(
@@ -108,9 +100,6 @@ fun LanguageSelectionDialog(
         }
     )
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -189,9 +178,6 @@ private fun LanguageOption(
     }
 }
 
-
-
-
 @Composable
 fun FirstLaunchLanguageScreen(
     onLanguageSelected: () -> Unit
@@ -204,7 +190,6 @@ fun FirstLaunchLanguageScreen(
     val scrollState = rememberScrollState()
     val isTv = isRunningOnTv()
     val confirmFocusRequester = remember { FocusRequester() }
-
 
     val iconSize = if (isTv) 48.dp else 72.dp
     val topSpacing = if (isTv) 12.dp else 24.dp
@@ -236,7 +221,6 @@ fun FirstLaunchLanguageScreen(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-
             Box(
                 modifier = Modifier
                     .size(iconSize + 24.dp)
@@ -254,10 +238,26 @@ fun FirstLaunchLanguageScreen(
 
             Spacer(modifier = Modifier.height(topSpacing))
 
-
+            val welcomeHeadlineStyle = if (isTv) {
+                MaterialTheme.typography.headlineSmall
+            } else {
+                MaterialTheme.typography.headlineMedium
+            }
             Text(
-                text = "Welcome · 欢迎 · مرحبا",
-                style = if (isTv) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.headlineMedium,
+                text = "Welcome",
+                style = welcomeHeadlineStyle,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "欢迎",
+                style = welcomeHeadlineStyle,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = "مرحبا",
+                style = welcomeHeadlineStyle,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -265,14 +265,25 @@ fun FirstLaunchLanguageScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Select Language · 选择语言 · اختر اللغة",
+                text = "Select Language",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "选择语言",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = "اختر اللغة",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(sectionSpacing))
-
 
             Column(
                 modifier = Modifier
@@ -290,7 +301,6 @@ fun FirstLaunchLanguageScreen(
             }
 
             Spacer(modifier = Modifier.height(sectionSpacing))
-
 
             PremiumButton(
                 onClick = {
@@ -319,14 +329,10 @@ fun FirstLaunchLanguageScreen(
                 )
             }
 
-
             Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

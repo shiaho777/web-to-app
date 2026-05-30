@@ -1,24 +1,30 @@
 package com.webtoapp.ui.screens
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,15 +36,6 @@ import com.webtoapp.ui.theme.LocalAppTheme
 import kotlinx.coroutines.launch
 import java.io.File
 
-/**
- * 在创建 PHP / Python / Node 应用屏幕里复用的「在 App 内安装依赖」卡片。
- *
- * 设计要点：
- * - 共用一个 Composable 处理三条线，通过 [DepsKind] 区分要装什么
- * - 检测对应运行时（PHP/Composer 或 Python 或 Node）是否就绪；未就绪时按钮不可点，给出明确指引
- * - 安装过程实时滚动日志（pip / composer / npm 的 stdout / stderr），失败时保留日志方便排查
- * - 安装完成后状态保持，避免用户疑惑"按了没反应"
- */
 enum class DepsKind { PHP, PYTHON, NODE }
 
 @Composable
@@ -52,7 +49,6 @@ fun InstallProjectDepsCard(
     val scope = rememberCoroutineScope()
     val envManager = remember { LinuxEnvironmentManager.getInstance(context) }
 
-    // 运行时就绪状态（每次重组都查询一次，因为用户可能在另一个屏幕装了运行时再回来）
     var phpReady by remember { mutableStateOf(false) }
     var composerReady by remember { mutableStateOf(false) }
     var pythonReady by remember { mutableStateOf(false) }
@@ -68,7 +64,7 @@ fun InstallProjectDepsCard(
                 pythonReady = LocalBuildEnvironment.isPythonReady(context)
             }
             DepsKind.NODE -> {
-                // Node 要装 npm 才能 install；npmReady 已经隐含 nodeReady
+
                 nodeReady = LocalBuildEnvironment.isNpmReady(context)
             }
         }
@@ -89,7 +85,7 @@ fun InstallProjectDepsCard(
             .background(MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
@@ -121,7 +117,6 @@ fun InstallProjectDepsCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // 运行时就绪检查 - 未就绪时显示提示 + 跳转按钮
             val notReadyMessage = when (kind) {
                 DepsKind.PHP -> when {
                     !phpReady -> Strings.phpRuntimeNotReady
@@ -137,7 +132,6 @@ fun InstallProjectDepsCard(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // 主操作按钮
             val canRun = notReadyMessage == null && projectDir != null && !installing
             val buttonLabel = when {
                 installing -> Strings.depsInstalling
@@ -180,7 +174,7 @@ fun InstallProjectDepsCard(
                         success = result.isSuccess
                         if (result.isFailure) {
                             appendLogLine(logs, "[error] ${result.exceptionOrNull()?.message.orEmpty()}")
-                            // 失败时自动展开日志，方便用户立即看到原因
+
                             logsExpanded = true
                         }
                     }
@@ -199,13 +193,21 @@ fun InstallProjectDepsCard(
                 Text(buttonLabel)
             }
 
-            // 结果状态指示
             success?.let { ok ->
                 Spacer(modifier = Modifier.height(12.dp))
                 StatusChip(ok)
+
+                if (!ok) {
+                    val diagnosis = remember(logs.size, logs.lastOrNull()) {
+                        diagnoseInstallFailure(kind, logs)
+                    }
+                    if (diagnosis != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        DiagnosticBanner(diagnosis)
+                    }
+                }
             }
 
-            // 日志展开面板
             if (logs.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 LogsPanel(
@@ -218,9 +220,6 @@ fun InstallProjectDepsCard(
     }
 }
 
-/**
- * 限制日志缓冲到 500 行，防止超长依赖输出（pip 编译信息常常几千行）撑爆内存
- */
 private fun appendLogLine(logs: MutableList<String>, line: String) {
     if (line.isBlank()) return
     if (logs.size >= 500) {
@@ -286,6 +285,8 @@ private fun LogsPanel(
     onToggle: () -> Unit,
 ) {
     val theme = LocalAppTheme.current
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -295,7 +296,7 @@ private fun LogsPanel(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(start = 12.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -303,9 +304,24 @@ private fun LogsPanel(
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
             )
+
+            IconButton(
+                onClick = {
+                    val full = logs.joinToString(separator = "\n")
+                    clipboardManager.setText(AnnotatedString(full))
+                    Toast.makeText(context, Strings.copiedAllLogs, Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.size(36.dp),
+            ) {
+                Icon(
+                    Icons.Outlined.ContentCopy,
+                    contentDescription = Strings.copyAll,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
             IconButton(
                 onClick = onToggle,
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(36.dp),
             ) {
                 Icon(
                     if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
@@ -323,20 +339,134 @@ private fun LogsPanel(
                     .padding(12.dp)
             ) {
                 val scroll = rememberScrollState()
-                // 自动滚动到底部，让用户看到最新输出
+
                 LaunchedEffect(logs.size) {
                     scroll.animateScrollTo(scroll.maxValue)
                 }
-                Column(modifier = Modifier.verticalScroll(scroll)) {
-                    logs.forEach { line ->
-                        Text(
-                            line,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
+
+                SelectionContainer {
+                    Column(modifier = Modifier.verticalScroll(scroll)) {
+                        logs.forEach { line ->
+                            Text(
+                                line,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                     }
                 }
+            }
+        }
+    }
+}
+
+private data class InstallDiagnosis(
+    val title: String,
+    val message: String,
+)
+
+private fun diagnoseInstallFailure(kind: DepsKind, logs: List<String>): InstallDiagnosis? {
+
+    val joined = logs.joinToString(separator = "\n").lowercase()
+
+    val dnsPatterns = listOf(
+        "curl error 6",
+        "could not resolve host",
+        "getaddrinfo failed",
+        "php_network_getaddresses",
+        "name or service not known",
+        "temporary failure in name resolution",
+        "name resolution failure",
+    )
+    if (dnsPatterns.any { joined.contains(it) }) {
+        return InstallDiagnosis(
+            title = Strings.installDiagDnsTitle,
+            message = when (kind) {
+                DepsKind.PHP -> Strings.installDiagDnsPhpMessage
+                DepsKind.PYTHON -> Strings.installDiagDnsPythonMessage
+                DepsKind.NODE -> Strings.installDiagDnsNodeMessage
+            }
+        )
+    }
+
+    val netPatterns = listOf(
+        "curl error 28",
+        "connection timed out",
+        "network is unreachable",
+        "operation timed out",
+        "connection refused",
+        "no route to host",
+        "read timed out",
+    )
+    if (netPatterns.any { joined.contains(it) }) {
+        return InstallDiagnosis(
+            title = Strings.installDiagNetworkTitle,
+            message = Strings.installDiagNetworkMessage,
+        )
+    }
+
+    val sslPatterns = listOf(
+        "curl error 60",
+        "ssl certificate problem",
+        "unable to verify",
+        "certificate has expired",
+        "self signed certificate",
+        "ssl: certificate_verify_failed",
+    )
+    if (sslPatterns.any { joined.contains(it) }) {
+        return InstallDiagnosis(
+            title = Strings.installDiagSslTitle,
+            message = Strings.installDiagSslMessage,
+        )
+    }
+
+    val diskPatterns = listOf(
+        "no space left on device",
+        "enospc",
+        "disk full",
+    )
+    if (diskPatterns.any { joined.contains(it) }) {
+        return InstallDiagnosis(
+            title = Strings.installDiagDiskFullTitle,
+            message = Strings.installDiagDiskFullMessage,
+        )
+    }
+
+    return null
+}
+
+@Composable
+private fun DiagnosticBanner(diagnosis: InstallDiagnosis) {
+    val theme = LocalAppTheme.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(theme.shapes.cornerRadius * 0.5f))
+            .background(MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.55f))
+            .padding(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.Top) {
+            Icon(
+                Icons.Outlined.Lightbulb,
+                null,
+                tint = MaterialTheme.colorScheme.tertiary,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    diagnosis.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    diagnosis.message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
             }
         }
     }

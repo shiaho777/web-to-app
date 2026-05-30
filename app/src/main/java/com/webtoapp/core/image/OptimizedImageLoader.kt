@@ -12,8 +12,8 @@ import okhttp3.OkHttpClient
 object OptimizedImageLoader {
 
     private const val TAG = "OptimizedImageLoader"
-    private const val DISK_CACHE_MAX_SIZE = 256L * 1024 * 1024 // 256MB
-    private const val MEMORY_CACHE_MAX_SIZE = 0.25 // 25% of app memory
+    private const val DISK_CACHE_MAX_SIZE = 256L * 1024 * 1024
+    private const val MEMORY_CACHE_MAX_SIZE = 0.25
 
     private var _loader: ImageLoader? = null
 
@@ -37,7 +37,6 @@ object OptimizedImageLoader {
             }
             .components {
 
-
                 add(VideoFrameDecoder.Factory())
             }
             .memoryCachePolicy(CachePolicy.ENABLED)
@@ -53,9 +52,9 @@ object OptimizedImageLoader {
                     .maxSizeBytes(DISK_CACHE_MAX_SIZE)
                     .build()
             }
-            .crossfade(false) // Default off for list performance; enable per-request where needed
+            .crossfade(false)
             .respectCacheHeaders(true)
-            .logger(null) // Disable debug logging in production
+            .logger(null)
             .build()
     }
 }

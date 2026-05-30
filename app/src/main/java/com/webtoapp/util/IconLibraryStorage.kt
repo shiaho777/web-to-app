@@ -15,9 +15,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
-
-
-
 data class IconLibraryItem(
     val id: String = UUID.randomUUID().toString(),
     val path: String,
@@ -26,18 +23,12 @@ data class IconLibraryItem(
     val createdAt: Long = System.currentTimeMillis()
 )
 
-
-
-
 object IconLibraryStorage {
 
     private const val TAG = "IconLibraryStorage"
     private const val LIBRARY_DIR = "icon_library"
     private val _iconsFlow = MutableStateFlow<List<IconLibraryItem>>(emptyList())
     val iconsFlow: Flow<List<IconLibraryItem>> = _iconsFlow
-
-
-
 
     suspend fun initialize(context: Context) = withContext(Dispatchers.IO) {
         val libraryDir = getLibraryDir(context)
@@ -59,9 +50,6 @@ object IconLibraryStorage {
 
         _iconsFlow.value = icons.sortedByDescending { it.createdAt }
     }
-
-
-
 
     suspend fun saveFromBase64(
         context: Context,
@@ -93,9 +81,6 @@ object IconLibraryStorage {
             null
         }
     }
-
-
-
 
     suspend fun saveFromUri(
         context: Context,
@@ -129,9 +114,6 @@ object IconLibraryStorage {
         }
     }
 
-
-
-
     suspend fun delete(context: Context, item: IconLibraryItem) = withContext(Dispatchers.IO) {
         try {
             File(item.path).delete()
@@ -140,9 +122,6 @@ object IconLibraryStorage {
             AppLogger.e(TAG, "Operation failed", e)
         }
     }
-
-
-
 
     fun getIcons(): List<IconLibraryItem> = _iconsFlow.value
 

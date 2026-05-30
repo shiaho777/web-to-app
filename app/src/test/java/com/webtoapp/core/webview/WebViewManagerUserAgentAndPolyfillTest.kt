@@ -4,13 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.webtoapp.core.extension.ChromeExtensionPolyfill
 import org.junit.Test
 
-
-
-
 class WebViewManagerUserAgentAndPolyfillTest {
-
-
-
 
     @Test
     fun `stripWebViewMarker removes wv marker from standard Android WebView UA`() {
@@ -49,7 +43,6 @@ class WebViewManagerUserAgentAndPolyfillTest {
     @Test
     fun `stripWebViewMarker leaves unrelated wv-like tokens untouched`() {
 
-
         val url = "https://example.wvtest.com/path?x=wvalue"
         val ua = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/130.0.0.0 Mobile Safari/537.36"
 
@@ -61,9 +54,6 @@ class WebViewManagerUserAgentAndPolyfillTest {
     fun `stripWebViewMarker returns empty for empty input`() {
         assertThat(WebViewManager.stripWebViewMarker("")).isEmpty()
     }
-
-
-
 
     @Test
     fun `notification polyfill defines Notification API on window`() {

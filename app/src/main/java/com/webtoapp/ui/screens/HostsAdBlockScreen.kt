@@ -28,10 +28,6 @@ import kotlinx.coroutines.launch
 import com.webtoapp.ui.design.WtaBackground
 import androidx.compose.ui.graphics.Color
 
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HostsAdBlockScreen(
@@ -41,19 +37,15 @@ fun HostsAdBlockScreen(
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-
     val adBlocker = remember { org.koin.java.KoinJavaComponent.get<com.webtoapp.core.adblock.AdBlocker>(com.webtoapp.core.adblock.AdBlocker::class.java) }
 
-
-    var hostsRulesCount by remember { mutableIntStateOf(adBlocker.getHostsFileRuleCount()) }
+    var hostsRulesCount by remember { mutableIntStateOf(adBlocker.getImportedHostsRuleCount()) }
     var isImporting by remember { mutableStateOf(false) }
     var showUrlDialog by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
     var importUrl by remember { mutableStateOf("") }
 
-
     var enabledSources by remember { mutableStateOf(adBlocker.getEnabledHostsSources()) }
-
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -64,7 +56,7 @@ fun HostsAdBlockScreen(
                 val result = adBlocker.importHostsFromFile(context, it)
                 result.fold(
                     onSuccess = { count ->
-                        hostsRulesCount = adBlocker.getHostsFileRuleCount()
+                        hostsRulesCount = adBlocker.getImportedHostsRuleCount()
                         adBlocker.saveHostsRules(context)
                         snackbarHostState.showSnackbar(
                             String.format(java.util.Locale.getDefault(), Strings.importHostsSuccess, count)
@@ -81,10 +73,9 @@ fun HostsAdBlockScreen(
         }
     }
 
-
     LaunchedEffect(Unit) {
         adBlocker.loadHostsRules(context)
-        hostsRulesCount = adBlocker.getHostsFileRuleCount()
+        hostsRulesCount = adBlocker.getImportedHostsRuleCount()
         enabledSources = adBlocker.getEnabledHostsSources()
     }
 
@@ -108,8 +99,9 @@ fun HostsAdBlockScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
+
                     containerColor = Color.Transparent,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+                    scrolledContainerColor = Color.Transparent
                 )
             )
         },
@@ -155,7 +147,7 @@ fun HostsAdBlockScreen(
                             }
                         }
 
-                        if (hostsRulesCount > 0) {
+                        if (hostsRulesCount > 0 || enabledSources.isNotEmpty()) {
                             Icon(
                                 Icons.Outlined.Shield,
                                 contentDescription = null,
@@ -166,7 +158,6 @@ fun HostsAdBlockScreen(
                     }
                 }
             }
-
 
             item {
                 Text(
@@ -206,7 +197,6 @@ fun HostsAdBlockScreen(
                         }
                     }
 
-
                     EnhancedElevatedCard(
                         onClick = { showUrlDialog = true },
                         modifier = Modifier.weight(weight = 1f, fill = true),
@@ -233,7 +223,6 @@ fun HostsAdBlockScreen(
                 }
             }
 
-
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -254,7 +243,7 @@ fun HostsAdBlockScreen(
                             val result = adBlocker.importHostsFromUrl(source.url)
                             result.fold(
                                 onSuccess = { count ->
-                                    hostsRulesCount = adBlocker.getHostsFileRuleCount()
+                                    hostsRulesCount = adBlocker.getImportedHostsRuleCount()
                                     enabledSources = adBlocker.getEnabledHostsSources()
                                     adBlocker.saveHostsRules(context)
                                     snackbarHostState.showSnackbar(
@@ -273,8 +262,7 @@ fun HostsAdBlockScreen(
                 )
             }
 
-
-            if (hostsRulesCount > 0) {
+            if (hostsRulesCount > 0 || enabledSources.isNotEmpty()) {
                 item {
                     Spacer(modifier = Modifier.height(16.dp))
                     PremiumOutlinedButton(
@@ -290,7 +278,6 @@ fun HostsAdBlockScreen(
                     }
                 }
             }
-
 
             item {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -320,7 +307,6 @@ fun HostsAdBlockScreen(
             }
         }
 
-
         if (isImporting) {
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -339,7 +325,6 @@ fun HostsAdBlockScreen(
             }
         }
     }
-
 
     if (showUrlDialog) {
         AlertDialog(
@@ -368,7 +353,7 @@ fun HostsAdBlockScreen(
                                 val result = adBlocker.importHostsFromUrl(importUrl)
                                 result.fold(
                                     onSuccess = { count ->
-                                        hostsRulesCount = adBlocker.getHostsFileRuleCount()
+                                        hostsRulesCount = adBlocker.getImportedHostsRuleCount()
                                         enabledSources = adBlocker.getEnabledHostsSources()
                                         adBlocker.saveHostsRules(context)
                                         snackbarHostState.showSnackbar(
@@ -401,7 +386,6 @@ fun HostsAdBlockScreen(
             }
         )
     }
-
 
     if (showClearDialog) {
         AlertDialog(
@@ -436,9 +420,6 @@ fun HostsAdBlockScreen(
     }
         }
 }
-
-
-
 
 @Composable
 private fun HostsSourceCard(

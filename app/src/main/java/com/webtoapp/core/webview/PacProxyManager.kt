@@ -11,28 +11,10 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class PacProxyManager(private val context: Context) {
 
     companion object {
         private const val TAG = "PacProxyManager"
-
-
-
 
         fun isProxyOverrideSupported(): Boolean {
             return try {
@@ -49,29 +31,15 @@ class PacProxyManager(private val context: Context) {
         .readTimeout(15, TimeUnit.SECONDS)
         .build()
 
-
     @Volatile
     private var cachedPacScript: String? = null
     @Volatile
     private var cachedPacUrl: String? = null
 
-
     @Volatile
     private var currentProxyUsername: String = ""
     @Volatile
     private var currentProxyPassword: String = ""
-
-
-
-
-
-
-
-
-
-
-
-
 
     suspend fun applyProxy(
         proxyMode: String,
@@ -88,10 +56,8 @@ class PacProxyManager(private val context: Context) {
             return
         }
 
-
         currentProxyUsername = username
         currentProxyPassword = password
-
 
         if (username.isNotBlank() && password.isNotBlank()) {
             setupProxyAuthenticator(username, password)
@@ -110,9 +76,6 @@ class PacProxyManager(private val context: Context) {
         }
     }
 
-
-
-
     fun clearProxy() {
         if (!isProxyOverrideSupported()) return
 
@@ -125,19 +88,13 @@ class PacProxyManager(private val context: Context) {
             AppLogger.e(TAG, "Failed to clear proxy", e)
         }
 
-
         currentProxyUsername = ""
         currentProxyPassword = ""
         clearProxyAuthenticator()
 
-
         LocalHttpToSocksBridge.stop()
         LocalHttpHostMappingBridge.stop()
     }
-
-
-
-
 
     private fun setupProxyAuthenticator(username: String, password: String) {
         try {
@@ -155,9 +112,6 @@ class PacProxyManager(private val context: Context) {
         }
     }
 
-
-
-
     private fun clearProxyAuthenticator() {
         try {
             java.net.Authenticator.setDefault(null)
@@ -165,9 +119,6 @@ class PacProxyManager(private val context: Context) {
 
         }
     }
-
-
-
 
     private fun applyStaticProxy(
         host: String,
@@ -185,7 +136,6 @@ class PacProxyManager(private val context: Context) {
         try {
             val upperType = type.uppercase()
             val isSocks = upperType == "SOCKS5" || upperType == "SOCKS"
-
 
             val proxyRule = if (isSocks) {
                 val bridgePort = LocalHttpToSocksBridge.start(
@@ -212,12 +162,10 @@ class PacProxyManager(private val context: Context) {
             val builder = ProxyConfig.Builder()
                 .addProxyRule(proxyRule)
 
-
             builder.addBypassRule("localhost")
             builder.addBypassRule("127.0.0.1")
             builder.addBypassRule("[::1]")
             builder.addBypassRule("10.0.2.2")
-
 
             bypassRules.filter { it.isNotBlank() }.forEach { rule ->
                 builder.addBypassRule(rule)
@@ -233,21 +181,6 @@ class PacProxyManager(private val context: Context) {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     private suspend fun applyPacProxy(pacUrl: String, bypassRules: List<String>) {
         if (pacUrl.isBlank()) {
             AppLogger.w(TAG, "Empty PAC URL")
@@ -262,10 +195,8 @@ class PacProxyManager(private val context: Context) {
                 return
             }
 
-
             cachedPacScript = pacScript
             cachedPacUrl = pacUrl
-
 
             val proxyEntries = parsePacScript(pacScript)
 
@@ -274,7 +205,6 @@ class PacProxyManager(private val context: Context) {
                 clearProxy()
                 return
             }
-
 
             val builder = ProxyConfig.Builder()
 
@@ -311,12 +241,10 @@ class PacProxyManager(private val context: Context) {
                 }
             }
 
-
             builder.addBypassRule("localhost")
             builder.addBypassRule("127.0.0.1")
             builder.addBypassRule("[::1]")
             builder.addBypassRule("10.0.2.2")
-
 
             bypassRules.filter { it.isNotBlank() }.forEach { rule ->
                 builder.addBypassRule(rule)
@@ -334,9 +262,6 @@ class PacProxyManager(private val context: Context) {
             AppLogger.e(TAG, "Failed to apply PAC proxy", e)
         }
     }
-
-
-
 
     private suspend fun downloadPacScript(url: String): String? {
         return withContext(Dispatchers.IO) {
@@ -362,25 +287,9 @@ class PacProxyManager(private val context: Context) {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
     private fun parsePacScript(script: String): List<String> {
         val entries = mutableListOf<String>()
         val seen = mutableSetOf<String>()
-
-
-
-
-
 
         val returnPattern = Regex(
             """(?:return\s+['"])([^'"]+)['"]""",
@@ -390,7 +299,6 @@ class PacProxyManager(private val context: Context) {
         returnPattern.findAll(script).forEach { match ->
             val returnValue = match.groupValues[1].trim()
 
-
             returnValue.split(";").forEach { entry ->
                 val trimmed = entry.trim()
                 if (trimmed.isNotBlank() && trimmed !in seen) {
@@ -399,7 +307,6 @@ class PacProxyManager(private val context: Context) {
                 }
             }
         }
-
 
         if (entries.isEmpty()) {
 
@@ -424,13 +331,7 @@ class PacProxyManager(private val context: Context) {
         return entries
     }
 
-
-
-
     fun getCachedPacUrl(): String? = cachedPacUrl
-
-
-
 
     suspend fun refreshPac(bypassRules: List<String> = emptyList()) {
         val url = cachedPacUrl ?: return

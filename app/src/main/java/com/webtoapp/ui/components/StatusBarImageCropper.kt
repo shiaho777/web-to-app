@@ -35,20 +35,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatusBarImageCropper(
@@ -61,7 +47,6 @@ fun StatusBarImageCropper(
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
 
-
     val screenWidthPx = remember {
         context.resources.displayMetrics.widthPixels
     }
@@ -73,31 +58,25 @@ fun StatusBarImageCropper(
         with(density) { 24.dp.roundToPx() }
     }
 
-
     val targetHeightPx = remember(statusBarHeightDp) {
-        if (statusBarHeightDp > 0) {
+        if (statusBarHeightDp >= 0) {
             with(density) { statusBarHeightDp.dp.roundToPx() }
         } else {
             systemStatusBarHeight
         }
     }
 
-
     val cropAspectRatio = remember(screenWidthPx, targetHeightPx) {
         screenWidthPx.toFloat() / targetHeightPx.toFloat()
     }
-
 
     var originalBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-
     var previewSize by remember { mutableStateOf(IntSize.Zero) }
 
-
     var cropOffsetY by remember { mutableFloatStateOf(0f) }
-
 
     val scaleFactor = remember(originalBitmap, previewSize) {
         originalBitmap?.let { bitmap ->
@@ -107,11 +86,9 @@ fun StatusBarImageCropper(
         } ?: 1f
     }
 
-
     val scaledImageHeight = remember(originalBitmap, scaleFactor) {
         originalBitmap?.let { (it.height * scaleFactor).toInt() } ?: 0
     }
-
 
     val cropBoxHeightPx = remember(previewSize, cropAspectRatio) {
         if (previewSize.width > 0) {
@@ -121,11 +98,9 @@ fun StatusBarImageCropper(
         }
     }
 
-
     val maxOffsetY = remember(scaledImageHeight, cropBoxHeightPx) {
         (scaledImageHeight - cropBoxHeightPx).coerceAtLeast(0).toFloat()
     }
-
 
     LaunchedEffect(imageUri) {
         isLoading = true
@@ -138,7 +113,6 @@ fun StatusBarImageCropper(
                         inJustDecodeBounds = true
                     }
                     BitmapFactory.decodeStream(inputStream, null, options)
-
 
                     context.contentResolver.openInputStream(imageUri)?.use { stream ->
                         val decodeOptions = BitmapFactory.Options().apply {
@@ -165,14 +139,12 @@ fun StatusBarImageCropper(
         isLoading = false
     }
 
-
     LaunchedEffect(originalBitmap, previewSize, cropBoxHeightPx) {
         if (originalBitmap != null && previewSize.width > 0) {
             val scaledHeight = originalBitmap!!.height * (previewSize.width.toFloat() / originalBitmap!!.width.coerceAtLeast(1))
             cropOffsetY = ((scaledHeight - cropBoxHeightPx) / 2).coerceAtLeast(0f)
         }
     }
-
 
     var isCropping by remember { mutableStateOf(false) }
 
@@ -228,7 +200,6 @@ fun StatusBarImageCropper(
                         )
                     }
                 }
-
 
                 Box(
                     modifier = Modifier
@@ -289,7 +260,6 @@ fun StatusBarImageCropper(
                                     contentScale = ContentScale.FillWidth
                                 )
 
-
                                 if (cropOffsetY > 0) {
                                     Box(
                                         modifier = Modifier
@@ -298,7 +268,6 @@ fun StatusBarImageCropper(
                                             .background(Color.Black.copy(alpha = 0.6f))
                                     )
                                 }
-
 
                                 Box(
                                     modifier = Modifier
@@ -311,7 +280,6 @@ fun StatusBarImageCropper(
                                             shape = RoundedCornerShape(0.dp)
                                         )
                                 )
-
 
                                 val bottomMaskTop = cropOffsetY + cropBoxHeightPx
                                 val bottomMaskHeight = (scaledImageHeight - bottomMaskTop).coerceAtLeast(0f)
@@ -328,7 +296,6 @@ fun StatusBarImageCropper(
                         }
                     }
                 }
-
 
                 if (originalBitmap != null) {
                     Card(
@@ -367,7 +334,6 @@ fun StatusBarImageCropper(
                         }
                     }
                 }
-
 
                 if (isCropping) {
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
@@ -411,9 +377,6 @@ fun StatusBarImageCropper(
     )
 }
 
-
-
-
 private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
     val (height: Int, width: Int) = options.run { outHeight to outWidth }
     var inSampleSize = 1
@@ -430,11 +393,6 @@ private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int,
     return inSampleSize
 }
 
-
-
-
-
-
 private suspend fun cropAndSave(
     context: android.content.Context,
     bitmap: Bitmap,
@@ -449,7 +407,6 @@ private suspend fun cropAndSave(
         val originalCropHeight = (targetHeightPx / scaleFactor).toInt()
             .coerceIn(1, bitmap.height - originalY)
 
-
         val croppedBitmap = Bitmap.createBitmap(
             bitmap,
             0,
@@ -458,14 +415,12 @@ private suspend fun cropAndSave(
             originalCropHeight.coerceAtMost(bitmap.height - originalY)
         )
 
-
         val scaledBitmap = Bitmap.createScaledBitmap(
             croppedBitmap,
             targetWidthPx,
             targetHeightPx,
             true
         )
-
 
         val statusBarDir = File(context.filesDir, "statusbar_backgrounds")
         if (!statusBarDir.exists()) {
@@ -476,7 +431,6 @@ private suspend fun cropAndSave(
         FileOutputStream(outputFile).use { out ->
             scaledBitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
         }
-
 
         if (croppedBitmap != bitmap) {
             croppedBitmap.recycle()

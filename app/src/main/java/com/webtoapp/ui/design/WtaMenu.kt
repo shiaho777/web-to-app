@@ -16,15 +16,6 @@ import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
 
-/**
- * Drop-down menu wrapper. The 2024.02 Compose BOM used here does not expose
- * [shape] or [containerColor] on DropdownMenu, so we cannot fully restyle
- * the container - but we can still give every consumer identical offset,
- * haptics and typography by funnelling through this helper.
- *
- * Use [WtaDropdownMenuItem] for the body so items stay consistent across
- * screens.
- */
 @Composable
 fun WtaDropdownMenu(
     expanded: Boolean,

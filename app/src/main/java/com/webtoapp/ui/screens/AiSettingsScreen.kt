@@ -39,9 +39,6 @@ import androidx.compose.ui.graphics.Color
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaSpacing
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AiSettingsScreen(
@@ -51,7 +48,6 @@ fun AiSettingsScreen(
     val scope = rememberCoroutineScope()
     val configManager = remember { AiConfigManager(context) }
     val apiClient = remember { AiApiClient(context) }
-
 
     val apiKeys by configManager.apiKeysFlow.collectAsStateWithLifecycle(initialValue = emptyList())
     val savedModels by configManager.savedModelsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -103,7 +99,6 @@ fun AiSettingsScreen(
                 )
             }
 
-
             item {
                 SavedModelsSection(
                     models = savedModels,
@@ -127,7 +122,6 @@ fun AiSettingsScreen(
             item { Spacer(modifier = Modifier.height(32.dp)) }
         }
 
-
     if (showAddApiKeyDialog) {
         AddApiKeyDialog(
             onDismiss = { showAddApiKeyDialog = false },
@@ -148,7 +142,6 @@ fun AiSettingsScreen(
             }
         )
     }
-
 
     editingApiKey?.let { key ->
         AddApiKeyDialog(
@@ -171,7 +164,6 @@ fun AiSettingsScreen(
             }
         )
     }
-
 
     if (showAddModelDialog && apiKeys.isNotEmpty()) {
         AddModelDialog(
@@ -200,7 +192,6 @@ fun AiSettingsScreen(
         )
     }
 
-
     editingModel?.let { model ->
         EditModelDialog(
             model = model,
@@ -221,9 +212,6 @@ fun AiSettingsScreen(
     }
     }
 }
-
-
-
 
 @Composable
 private fun ApiKeysSection(
@@ -265,9 +253,6 @@ private fun ApiKeysSection(
         }
     }
 }
-
-
-
 
 @Composable
 private fun ApiKeyItem(
@@ -315,7 +300,6 @@ private fun ApiKeyItem(
                 }
             }
 
-
             TextButton(onClick = {
                 scope.launch {
                     testResult = Strings.testing
@@ -349,9 +333,6 @@ private fun ApiKeyItem(
         }
     }
 }
-
-
-
 
 @Composable
 private fun SavedModelsSection(
@@ -418,9 +399,6 @@ private fun SavedModelsSection(
         }
     }
 }
-
-
-
 
 @Composable
 private fun SavedModelItem(
@@ -509,7 +487,6 @@ private fun SavedModelItem(
                 }
             }
 
-
             if (model.capabilities.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -529,7 +506,6 @@ private fun SavedModelItem(
                 }
             }
 
-
             val supportedFeatures = model.getSupportedFeatures()
             if (supportedFeatures.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -544,9 +520,6 @@ private fun SavedModelItem(
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -641,7 +614,6 @@ private fun AddApiKeyDialog(
                     }
                 }
 
-
                 if (selectedProvider.apiKeyUrl.isNotBlank()) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
@@ -669,7 +641,6 @@ private fun AddApiKeyDialog(
                     }
                 }
 
-
                 OutlinedTextField(
                     value = apiKey,
                     onValueChange = { apiKey = it },
@@ -689,7 +660,6 @@ private fun AddApiKeyDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-
                 OutlinedTextField(
                     value = alias,
                     onValueChange = { alias = it },
@@ -698,7 +668,6 @@ private fun AddApiKeyDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-
 
                 if (selectedProvider.allowCustomBaseUrl) {
                     OutlinedTextField(
@@ -710,7 +679,6 @@ private fun AddApiKeyDialog(
                         supportingText = { Text(Strings.openAiCompatibleHint) },
                         modifier = Modifier.fillMaxWidth()
                     )
-
 
                     var formatExpanded by remember { mutableStateOf(false) }
                     ExposedDropdownMenuBox(
@@ -743,7 +711,6 @@ private fun AddApiKeyDialog(
                         }
                     }
 
-
                     TextButton(
                         onClick = { showAdvancedOptions = !showAdvancedOptions },
                         modifier = Modifier.fillMaxWidth()
@@ -756,7 +723,6 @@ private fun AddApiKeyDialog(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(Strings.advancedOptions)
                     }
-
 
                     AnimatedVisibility(visible = showAdvancedOptions) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -782,7 +748,6 @@ private fun AddApiKeyDialog(
                         }
                     }
                 }
-
 
                 testResult?.let {
                     Text(
@@ -856,19 +821,12 @@ private fun AddApiKeyDialog(
     )
 }
 
-
-
-
 private enum class ModelSortType(val displayName: String) {
     NAME(Strings.sortByName),
     CONTEXT(Strings.sortByContext),
     PRICE_LOW(Strings.sortByPriceLow),
     PRICE_HIGH(Strings.sortByPriceHigh)
 }
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -892,7 +850,6 @@ private fun AddModelDialog(
     var isBatchMode by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
-
     val filteredAndSortedModels = remember(models, sortType, searchQuery) {
         val filtered = if (searchQuery.isBlank()) {
             models
@@ -910,7 +867,6 @@ private fun AddModelDialog(
             ModelSortType.PRICE_HIGH -> filtered.sortedByDescending { it.inputPrice }
         }
     }
-
 
     LaunchedEffect(selectedApiKey) {
         isLoading = true
@@ -940,7 +896,6 @@ private fun AddModelDialog(
                 Text(Strings.addModel, style = MaterialTheme.typography.headlineSmall)
 
                 Spacer(modifier = Modifier.height(16.dp))
-
 
                 var apiKeyExpanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
@@ -1037,7 +992,6 @@ private fun AddModelDialog(
                                 )
                             )
 
-
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1064,7 +1018,6 @@ private fun AddModelDialog(
                                 }
                             }
 
-
                             LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                 items(ModelSortType.entries.size) { index ->
                                     val type = ModelSortType.entries[index]
@@ -1077,7 +1030,6 @@ private fun AddModelDialog(
                                 }
                             }
 
-
                             if (isBatchMode && selectedModels.isNotEmpty()) {
                                 Text(
                                     Strings.selectedModelsCount.format(selectedModels.size),
@@ -1085,7 +1037,6 @@ private fun AddModelDialog(
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
-
 
                             if (filteredAndSortedModels.isEmpty() && searchQuery.isNotEmpty()) {
                                 Text(
@@ -1202,7 +1153,6 @@ private fun AddModelDialog(
                             }
                         }
 
-
                         if (!isBatchMode) {
                             HorizontalDivider()
                             Text(Strings.orManualInputModelId, style = MaterialTheme.typography.labelMedium)
@@ -1218,7 +1168,6 @@ private fun AddModelDialog(
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-
                             OutlinedTextField(
                                 value = alias,
                                 onValueChange = { alias = it },
@@ -1226,7 +1175,6 @@ private fun AddModelDialog(
                                 singleLine = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
-
 
                             Text(Strings.capabilityTags, style = MaterialTheme.typography.labelMedium)
                             Text(
@@ -1327,9 +1275,6 @@ private fun AddModelDialog(
     }
 }
 
-
-
-
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun EditModelDialog(
@@ -1382,7 +1327,6 @@ private fun EditModelDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-
                     Text(Strings.capabilityTags, style = MaterialTheme.typography.labelMedium)
 
                     FlowRow(
@@ -1404,7 +1348,6 @@ private fun EditModelDialog(
                             )
                         }
                     }
-
 
                     if (selectedCapabilities.isNotEmpty()) {
                         HorizontalDivider()
@@ -1464,9 +1407,6 @@ private fun EditModelDialog(
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -1547,7 +1487,6 @@ private fun CapabilityFeatureCard(
                         }
                     }
 
-
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1587,9 +1526,6 @@ private fun CapabilityFeatureCard(
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

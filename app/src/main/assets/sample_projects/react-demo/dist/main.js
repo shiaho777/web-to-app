@@ -1,12 +1,11 @@
-// React 18 Demo App
 (function() {
     console.log('[React Demo] Initializing app...');
-    
+
     if (typeof React === 'undefined' || typeof ReactDOM === 'undefined') {
         console.error('[React Demo] React or ReactDOM is not defined!');
         return;
     }
-    
+
     function App() {
         const [todos, setTodos] = React.useState([
             { id: 1, text: '学习 React Hooks', done: true },
@@ -23,7 +22,7 @@
         };
 
         const toggleTodo = (id) => {
-            setTodos(todos.map(todo => 
+            setTodos(todos.map(todo =>
                 todo.id === id ? { ...todo, done: !todo.done } : todo
             ));
         };
@@ -58,12 +57,12 @@
                     }),
                     React.createElement('button', { onClick: addTodo }, '添加')
                 ),
-                todos.length === 0 
+                todos.length === 0
                     ? React.createElement('div', { className: 'empty-state' }, '🎉 没有待办事项')
                     : React.createElement('ul', { className: 'todo-list' },
-                        todos.map(todo => 
-                            React.createElement('li', { 
-                                key: todo.id, 
+                        todos.map(todo =>
+                            React.createElement('li', {
+                                key: todo.id,
                                 className: 'todo-item ' + (todo.done ? 'done' : '')
                             },
                                 React.createElement('input', {
@@ -72,8 +71,8 @@
                                     onChange: () => toggleTodo(todo.id)
                                 }),
                                 React.createElement('span', null, todo.text),
-                                React.createElement('button', { 
-                                    onClick: () => deleteTodo(todo.id) 
+                                React.createElement('button', {
+                                    onClick: () => deleteTodo(todo.id)
                                 }, '删除')
                             )
                         )
@@ -81,7 +80,7 @@
             )
         );
     }
-    
+
     try {
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(React.createElement(App));

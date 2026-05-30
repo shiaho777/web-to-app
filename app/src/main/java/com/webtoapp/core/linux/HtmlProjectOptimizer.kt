@@ -7,22 +7,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-
-
-
-
-
-
-
-
-
-
 object HtmlProjectOptimizer {
 
     private const val TAG = "HtmlProjectOptimizer"
-
-
-
 
     data class OptimizeResult(
         val success: Boolean,
@@ -32,15 +19,6 @@ object HtmlProjectOptimizer {
         val savedBytes: Long = 0,
         val error: String? = null
     )
-
-
-
-
-
-
-
-
-
 
     suspend fun optimizeFiles(
         context: Context,
@@ -54,7 +32,6 @@ object HtmlProjectOptimizer {
 
         try {
             val esbuildAvailable = NativeNodeEngine.isAvailable(context)
-
 
             if (jsFilePath != null) {
                 val jsFile = File(jsFilePath)
@@ -77,7 +54,6 @@ object HtmlProjectOptimizer {
                     }
                 }
             }
-
 
             if (cssFilePath != null) {
                 val cssFile = File(cssFilePath)
@@ -115,14 +91,6 @@ object HtmlProjectOptimizer {
         }
     }
 
-
-
-
-
-
-
-
-
     suspend fun optimizeDirectory(
         context: Context,
         projectDir: String,
@@ -140,7 +108,6 @@ object HtmlProjectOptimizer {
             }
 
             val esbuildAvailable = NativeNodeEngine.isAvailable(context)
-
 
             val jsFiles = mutableListOf<File>()
             val cssFiles = mutableListOf<File>()
@@ -166,7 +133,6 @@ object HtmlProjectOptimizer {
 
             var processedCount = 0
 
-
             if (tsFiles.isNotEmpty() && esbuildAvailable) {
                 onProgress(Strings.htmlOptCompileTs.format(tsFiles.size), 0.1f)
 
@@ -187,7 +153,6 @@ object HtmlProjectOptimizer {
                     )
                 }
             }
-
 
             if (jsFiles.isNotEmpty()) {
                 onProgress(Strings.htmlOptCompressJs.format(jsFiles.size),
@@ -213,7 +178,6 @@ object HtmlProjectOptimizer {
                     )
                 }
             }
-
 
             if (cssFiles.isNotEmpty()) {
                 onProgress(Strings.htmlOptCompressCss.format(cssFiles.size),
@@ -255,11 +219,6 @@ object HtmlProjectOptimizer {
         }
     }
 
-
-
-
-
-
     private suspend fun minifyWithEsbuild(
         context: Context,
         file: File
@@ -298,9 +257,6 @@ object HtmlProjectOptimizer {
         }
     }
 
-
-
-
     private suspend fun compileTypeScriptWithEsbuild(
         context: Context,
         tsFile: File,
@@ -335,12 +291,6 @@ object HtmlProjectOptimizer {
             return false
         }
     }
-
-
-
-
-
-
 
     private fun minifyJsPure(file: File): Boolean {
         try {
@@ -426,10 +376,6 @@ object HtmlProjectOptimizer {
         }
     }
 
-
-
-
-
     private fun minifyCssPure(file: File): Boolean {
         try {
             val content = file.readText()
@@ -457,11 +403,6 @@ object HtmlProjectOptimizer {
             return false
         }
     }
-
-
-
-
-
 
     private fun updateHtmlReferences(projectDir: File, oldName: String, newName: String) {
         projectDir.walkTopDown()

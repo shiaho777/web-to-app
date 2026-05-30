@@ -1,39 +1,24 @@
 package com.webtoapp.core.nodejs
 
 import android.content.Context
+import com.webtoapp.core.i18n.PreviewHtmlSupport.escapeText
+import com.webtoapp.core.i18n.PreviewHtmlSupport.htmlLang
 import com.webtoapp.core.logging.AppLogger
-import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.shell.ShellLogger
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
-
-
-
-
-
-
-
-
-
-
-
 
 class NodeRuntime(private val context: Context) {
 
     companion object {
         private const val TAG = "NodeRuntime"
-        private const val MAX_HEALTH_CHECK_RETRIES = 60
-        private const val HEALTH_CHECK_INTERVAL_MS = 500L
         private val PROJECT_EXCLUDE_DIRS = setOf(".git", ".cache")
     }
-
-
 
     sealed class ServerState {
         object Stopped : ServerState()
@@ -45,33 +30,10 @@ class NodeRuntime(private val context: Context) {
     private val _serverState = MutableStateFlow<ServerState>(ServerState.Stopped)
     val serverState: StateFlow<ServerState> = _serverState
 
+    @Volatile private var currentPort: Int = 0
+    @Volatile private var isRunning = false
 
-    private var nodeThread: Thread? = null
-
-
-    private var currentPort: Int = 0
-
-
-    @Volatile
-    private var isRunning = false
-
-
-
-
-
-
-    fun isNodeAvailable(): Boolean {
-        return NodeDependencyManager.isNodeReady(context)
-    }
-
-
-
-
-
-
-
-
-
+    fun isNodeAvailable(): Boolean = NodeDependencyManager.isNodeReady(context)
 
     suspend fun startServer(
         projectDir: String,
@@ -85,226 +47,78 @@ class NodeRuntime(private val context: Context) {
                 return@withContext -1
             }
 
-            stopServer()
             _serverState.value = ServerState.Starting
 
+            val attempt1 = NodeServiceClient.startServer(
+                context = context,
+                projectDir = projectDir,
+                entryFile = entryFile,
+                portPref = port,
+                envVars = envVars
+            )
 
-            val projectId = File(projectDir).name
-            val serverPort = PortManager.allocateForNodeJs(projectId, port)
-            if (serverPort < 0) {
-                _serverState.value = ServerState.Error("无法分配端口")
-                return@withContext -1
-            }
-            currentPort = serverPort
+            val result = if (attempt1 is NodeServiceClient.StartResult.Failure && attempt1.v8Exhausted) {
 
-
-            val entryFilePath = File(projectDir, entryFile).absolutePath
-            val entryFileObj = File(entryFilePath)
-            if (!entryFileObj.exists()) {
-                _serverState.value = ServerState.Error("入口文件不存在: $entryFile")
-                cleanupFailedStart()
-                return@withContext -1
-            }
-
-
-            AppLogger.i(TAG, "加载 libnode.so...")
-            ShellLogger.i(TAG, "加载 libnode.so...")
-            if (!NodeBridge.loadNode(context)) {
-                val msg = "libnode.so 加载失败"
-                AppLogger.e(TAG, msg)
-                ShellLogger.e(TAG, msg)
-                _serverState.value = ServerState.Error(msg)
-                cleanupFailedStart()
-                return@withContext -1
-            }
-
-            if (NodeBridge.isStarted()) {
-                val msg = "Node.js 已启动过（每个进程只能启动一次），请重启应用"
-                AppLogger.w(TAG, msg)
-                ShellLogger.w(TAG, msg)
-                _serverState.value = ServerState.Error(msg)
-                cleanupFailedStart()
-                return@withContext -1
-            }
-
-
-            setEnvironmentVars(projectDir, serverPort, envVars)
-
-
-            val args = arrayOf("node", entryFilePath)
-
-            AppLogger.i(TAG, "启动 Node.js 服务器 (JNI): ${args.joinToString(" ")}")
-            AppLogger.i(TAG, "工作目录: $projectDir, 端口: $serverPort")
-            ShellLogger.i(TAG, "启动 Node.js 服务器 (JNI): ${args.joinToString(" ")}")
-            ShellLogger.i(TAG, "工作目录: $projectDir, 端口: $serverPort")
-
-
-            isRunning = true
-            val outputCallback = object : NodeBridge.OutputCallback {
-                override fun onOutput(line: String, isError: Boolean) {
-                    if (isError) {
-                        AppLogger.w(TAG, "[Node stderr] $line")
-                        ShellLogger.w(TAG, "[Node stderr] $line")
-                    } else {
-                        AppLogger.d(TAG, "[Node] $line")
-                        ShellLogger.d(TAG, "[Node] $line")
-                    }
-                }
-            }
-
-            nodeThread = Thread({
-                try {
-                    val exitCode = NodeBridge.startNode(args, outputCallback)
-                    if (exitCode == -99) {
-                        AppLogger.e(TAG, "Node.js 异常终止 (SIGABRT 已捕获，应用未崩溃)")
-                        ShellLogger.e(TAG, "Node.js 异常终止: 脚本执行失败，请检查依赖和语法")
-                        _serverState.value = ServerState.Error("Node.js 异常终止，请检查项目配置")
-                    } else {
-                        AppLogger.i(TAG, "Node.js 退出, exitCode=$exitCode")
-                        ShellLogger.i(TAG, "Node.js 退出, exitCode=$exitCode")
-                    }
-                } catch (e: Exception) {
-                    AppLogger.e(TAG, "Node.js 线程异常", e)
-                    ShellLogger.e(TAG, "Node.js 线程异常: ${e.message}")
-                } finally {
-                    isRunning = false
-                    if (currentPort > 0) {
-                        PortManager.release(currentPort)
-                        currentPort = 0
-                    }
-                    _serverState.value = ServerState.Stopped
-                }
-            }, "NodeJS-Runtime").apply {
-                isDaemon = true
-                start()
-            }
-
-
-
-            delay(300)
-
-
-            if (nodeThread?.isAlive != true) {
-                val msg = "Node.js 启动后立即退出"
-                AppLogger.e(TAG, msg)
-                ShellLogger.e(TAG, msg)
-                _serverState.value = ServerState.Error(msg)
-                cleanupFailedStart()
-                return@withContext -1
-            }
-
-            val ready = waitForServerReady(serverPort)
-            if (ready) {
-                _serverState.value = ServerState.Running(serverPort)
-                AppLogger.i(TAG, "Node.js 服务器已启动: 127.0.0.1:$serverPort")
-                ShellLogger.i(TAG, "Node.js 服务器已启动: 127.0.0.1:$serverPort")
-                serverPort
+                AppLogger.w(TAG, "V8 已耗尽（上次脚本崩了），重启 :nodejs 子进程后重试")
+                ShellLogger.w(TAG, "V8 已耗尽，重启 :nodejs 子进程后重试")
+                NodeServiceClient.restartEngine(context)
+                NodeServiceClient.startServer(
+                    context = context,
+                    projectDir = projectDir,
+                    entryFile = entryFile,
+                    portPref = port,
+                    envVars = envVars
+                )
             } else {
-                stopServer()
-                _serverState.value = ServerState.Error("Node.js 服务器启动超时")
-                -1
+                attempt1
+            }
+
+            when (result) {
+                is NodeServiceClient.StartResult.Success -> {
+                    currentPort = result.port
+                    isRunning = true
+                    _serverState.value = ServerState.Running(result.port)
+                    AppLogger.i(TAG, "Node.js 服务器已启动 (子进程): ${result.url}")
+                    ShellLogger.i(TAG, "Node.js 服务器已启动 (子进程): ${result.url}")
+                    result.port
+                }
+                is NodeServiceClient.StartResult.Failure -> {
+                    AppLogger.e(TAG, "Node.js 启动失败: ${result.message}")
+                    ShellLogger.e(TAG, "Node.js 启动失败: ${result.message}")
+                    _serverState.value = ServerState.Error(result.message)
+                    isRunning = false
+                    currentPort = 0
+                    -1
+                }
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "启动 Node.js 服务器失败", e)
             ShellLogger.e(TAG, "启动 Node.js 服务器失败: ${e.message}")
-            cleanupFailedStart()
             _serverState.value = ServerState.Error("启动失败: ${e.message}")
+            isRunning = false
+            currentPort = 0
             -1
         }
     }
 
-    private fun cleanupFailedStart() {
-        nodeThread = null
-        isRunning = false
-        if (currentPort > 0) {
-            PortManager.release(currentPort)
-            currentPort = 0
-        }
-    }
-
-
-
-
-
-    private fun setEnvironmentVars(projectDir: String, port: Int, envVars: Map<String, String>) {
-
-
-
-
-
-
-
-
-
-
-
-
-        try {
-            val envMap = mutableMapOf(
-                "HOME" to context.filesDir.absolutePath,
-                "TMPDIR" to context.cacheDir.absolutePath,
-                "NODE_ENV" to "production",
-                "PORT" to port.toString(),
-                "HOST" to "127.0.0.1",
-                "NODE_PATH" to File(projectDir, "node_modules").absolutePath
-            )
-            envMap.putAll(envVars)
-
-
-            for ((key, value) in envMap) {
-                try {
-                    android.system.Os.setenv(key, value, true)
-                } catch (e: Exception) {
-                    AppLogger.w(TAG, "设置环境变量失败: $key=${value}, ${e.message}")
-                }
-            }
-            AppLogger.d(TAG, "环境变量已设置: PORT=$port, HOME=${context.filesDir.absolutePath}")
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "设置环境变量异常", e)
-        }
-    }
-
-
-
-
-
-
     fun stopServer() {
         try {
-            nodeThread?.let { thread ->
-                if (thread.isAlive) {
-                    thread.interrupt()
-                    thread.join(2000)
-                    AppLogger.i(TAG, "Node.js 服务器已停止")
-                }
+            @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
+            GlobalScope.launch(Dispatchers.IO) {
+                NodeServiceClient.stopServer(context)
             }
         } catch (e: Exception) {
             AppLogger.w(TAG, "停止 Node.js 服务器异常: ${e.message}")
         } finally {
-            if (currentPort > 0) {
-                PortManager.release(currentPort)
-            }
-            nodeThread = null
             currentPort = 0
             isRunning = false
             _serverState.value = ServerState.Stopped
         }
     }
 
-
-
-
-    fun isServerRunning(): Boolean {
-        return isRunning && nodeThread?.isAlive == true
-    }
-
-
-
+    fun isServerRunning(): Boolean = isRunning && currentPort > 0
 
     fun getCurrentPort(): Int = currentPort
-
-
-
 
     fun getServerUrl(): String? {
         return if (isServerRunning() && currentPort > 0) {
@@ -312,14 +126,12 @@ class NodeRuntime(private val context: Context) {
         } else null
     }
 
-
-
-
     fun generatePreviewHtml(projectDir: File, framework: String, entryFile: String): String {
+        val S = com.webtoapp.core.i18n.Strings
         val entryFileObj = File(projectDir, entryFile)
         val sourceCode = if (entryFileObj.exists()) {
-            try { entryFileObj.readText().take(8000) } catch (_: Exception) { "// 无法读取文件内容" }
-        } else { "// 文件不存在: $entryFile" }
+            try { entryFileObj.readText().take(8000) } catch (_: Exception) { "// ${S.previewFileUnreadable}" }
+        } else { "// ${S.previewFileNotFound.replace("%s", entryFile)}" }
 
         val pkgFile = File(projectDir, "package.json")
         val packageJson = if (pkgFile.exists()) {
@@ -335,31 +147,49 @@ class NodeRuntime(private val context: Context) {
         val escapedPkg = packageJson.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         val filesHtml = fileList.joinToString("\n") { "  <li>$it</li>" }
 
+        val nodeReady = isNodeAvailable()
+
+        val statusBadge = buildString {
+            append("<span class=\"badge muted\">${escapeText(S.previewNotRunningBadge)}</span>")
+            if (nodeReady) {
+                append("<span class=\"badge\" style=\"background:#238636\">${escapeText(S.previewRuntimeReadyBadge)}</span>")
+            } else {
+                append("<span class=\"badge warn\">${escapeText(S.previewNodeNeedRuntime)}</span>")
+            }
+        }
+        val footerTip = if (nodeReady) {
+            S.previewNodeTipReady
+        } else {
+            S.previewNodeTipNotReady.replace("%s", frameworkLabel)
+        }
+        val notRunningNote = escapeText(S.previewNotRunningNote)
+        val projectFilesTitle = "${escapeText(S.previewProjectFilesLabel)} (${fileList.size}${if (fileList.size >= 30) "+" else ""})"
+        val lang = htmlLang()
+
         return """<!DOCTYPE html>
-<html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>$frameworkLabel - 项目预览</title>
+<html lang="$lang"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>$frameworkLabel - ${escapeText(S.previewProjectSuffix)}</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,system-ui,sans-serif;background:#0d1117;color:#c9d1d9;padding:16px;line-height:1.6}
 .header{text-align:center;padding:24px 0;border-bottom:1px solid #30363d;margin-bottom:20px}.header h1{font-size:22px;color:#58a6ff;margin-bottom:8px}
-.badge{display:inline-block;background:#1f6feb;color:#fff;padding:4px 12px;border-radius:12px;font-size:13px;margin:4px}.badge.warn{background:#d29922}
+.badge{display:inline-block;background:#1f6feb;color:#fff;padding:4px 12px;border-radius:12px;font-size:13px;margin:4px}.badge.warn{background:#d29922}.badge.muted{background:#6e7681}
 .section{background:#161b22;border:1px solid #30363d;border-radius:8px;margin-bottom:16px;overflow:hidden}
 .section-title{padding:12px 16px;background:#21262d;font-weight:600;font-size:14px;color:#8b949e;border-bottom:1px solid #30363d}
 pre{padding:16px;overflow-x:auto;font-size:13px;font-family:'SF Mono',Consolas,monospace;white-space:pre-wrap;word-break:break-all;color:#c9d1d9;max-height:400px;overflow-y:auto}
 ul{padding:12px 16px 12px 32px;font-size:13px}li{padding:2px 0;color:#8b949e}
 .tip{background:#1a2332;border:1px solid #1f6feb;border-radius:8px;padding:16px;margin-top:16px;font-size:13px;color:#58a6ff}
+.note{background:#21262d;border:1px solid #30363d;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#8b949e}
 </style></head><body>
-<div class="header"><h1>$frameworkLabel Project</h1><span class="badge">$frameworkLabel</span><span class="badge warn">Requires Node.js Runtime</span></div>
+<div class="header"><h1>$frameworkLabel · ${escapeText(S.previewProjectSuffix)}</h1><span class="badge">$frameworkLabel</span>$statusBadge</div>
+<div class="note">$notRunningNote</div>
 <div class="section"><div class="section-title">$entryFile</div><pre>$escapedSource</pre></div>
 ${if (escapedPkg.isNotBlank()) """<div class="section"><div class="section-title">package.json</div><pre>$escapedPkg</pre></div>""" else ""}
-<div class="section"><div class="section-title">Project Files (${fileList.size}${if (fileList.size >= 30) "+" else ""})</div><ul>
+<div class="section"><div class="section-title">$projectFilesTitle</div><ul>
 $filesHtml
 </ul></div>
-<div class="tip">This is a $frameworkLabel backend app. In preview mode, source code is displayed. After building APK with Node.js runtime, it will run normally.</div>
+<div class="tip">${escapeText(footerTip)}</div>
 </body></html>"""
     }
-
-
-
 
     suspend fun createProject(
         projectId: String,
@@ -400,15 +230,9 @@ $filesHtml
         return file.takeIf { it.exists() && it.isDirectory }
     }
 
-
-
-
     fun getProjectDir(projectId: String): File {
         return File(NodeDependencyManager.getNodeProjectsDir(context), projectId)
     }
-
-
-
 
     fun detectEntryFile(projectDir: File): String? {
         val packageJson = File(projectDir, "package.json")
@@ -446,46 +270,5 @@ $filesHtml
         }
 
         return null
-    }
-
-
-
-
-
-
-    private suspend fun waitForServerReady(port: Int): Boolean {
-        repeat(MAX_HEALTH_CHECK_RETRIES) { attempt ->
-            var conn: HttpURLConnection? = null
-            try {
-                val url = URL("http://127.0.0.1:$port/")
-                conn = url.openConnection() as HttpURLConnection
-                conn.connectTimeout = 500
-                conn.readTimeout = 500
-                conn.requestMethod = "GET"
-                val code = conn.responseCode
-
-                if (code in 200..499) {
-                    AppLogger.i(TAG, "Node.js 服务器就绪 (尝试 ${attempt + 1})")
-                    return true
-                }
-            } catch (e: Exception) {
-
-                AppLogger.d(TAG, "Health check attempt failed: ${e.message}")
-            } finally {
-                try { conn?.disconnect() } catch (_: Exception) {}
-            }
-
-
-            if (nodeThread?.isAlive != true) {
-                AppLogger.e(TAG, "Node.js 线程已退出")
-                ShellLogger.e(TAG, "Node.js 线程已退出")
-                return false
-            }
-
-            delay(HEALTH_CHECK_INTERVAL_MS)
-        }
-
-        AppLogger.e(TAG, "Node.js 服务器启动超时 (${MAX_HEALTH_CHECK_RETRIES * HEALTH_CHECK_INTERVAL_MS}ms)")
-        return false
     }
 }

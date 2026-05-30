@@ -40,11 +40,7 @@ import com.webtoapp.core.engine.EngineStatus
 import com.webtoapp.core.engine.EngineType
 import com.webtoapp.core.engine.download.DownloadState
 import com.webtoapp.core.engine.download.GeckoEngineDownloader
-import com.webtoapp.core.engine.shields.BrowserShields
-import com.webtoapp.core.engine.shields.ShieldsConfig
-import com.webtoapp.core.engine.shields.ShieldsReferrerPolicy
-import com.webtoapp.core.engine.shields.SslErrorPolicy
-import com.webtoapp.core.engine.shields.ThirdPartyCookiePolicy
+
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.util.openUrl
 import kotlinx.coroutines.Dispatchers
@@ -60,10 +56,6 @@ import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaChoiceRow
 import com.webtoapp.ui.design.WtaSpacing
 
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BrowserKernelScreen(
@@ -72,12 +64,9 @@ fun BrowserKernelScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-
     var webViewInfo by remember { mutableStateOf<WebViewInfo?>(null) }
 
-
     var installedBrowsers by remember { mutableStateOf<List<BrowserInfo>>(emptyList()) }
-
 
     val engineManager = remember { EngineManager.getInstance(context) }
     val geckoDownloader = remember { GeckoEngineDownloader(context, engineManager.fileManager) }
@@ -86,20 +75,12 @@ fun BrowserKernelScreen(
     var geckoSize by remember { mutableLongStateOf(engineManager.getEngineSize(EngineType.GECKOVIEW)) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-
-    val shields = remember { BrowserShields.getInstance(context) }
-    val shieldsConfig by shields.config.collectAsStateWithLifecycle()
-    val sessionStats by shields.stats.sessionStats.collectAsStateWithLifecycle()
-    var shieldsExpanded by remember { mutableStateOf(false) }
-
-
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             webViewInfo = getWebViewInfo(context)
             installedBrowsers = getInstalledBrowsers(context)
         }
     }
-
 
     LaunchedEffect(downloadState) {
         if (downloadState is DownloadState.Completed) {
@@ -156,32 +137,6 @@ fun BrowserKernelScreen(
             }
             }
 
-
-            item {
-                WtaSection(
-                    title = Strings.shieldsPrivacyProtection,
-                    description = Strings.shieldsPrivacySubtitle
-                ) {
-                ShieldsSettingsCard(
-                    config = shieldsConfig,
-                    sessionStats = sessionStats,
-                    expanded = shieldsExpanded,
-                    onExpandToggle = { shieldsExpanded = !shieldsExpanded },
-                    onToggleEnabled = { shields.setEnabled(it) },
-                    onToggleHttpsUpgrade = { shields.setHttpsUpgrade(it) },
-                    onToggleTrackerBlocking = { shields.setTrackerBlocking(it) },
-                    onToggleCookieConsent = { shields.setCookieConsentBlock(it) },
-                    onToggleGpc = { shields.setGpcEnabled(it) },
-                    onToggleReaderMode = { shields.setReaderMode(it) },
-                    onCookiePolicyChange = { shields.setThirdPartyCookiePolicy(it) },
-                    onReferrerPolicyChange = { shields.setReferrerPolicy(it) },
-                    onSslErrorPolicyChange = { shields.setSslErrorPolicy(it) },
-                    trackerRuleCount = shields.trackerBlocker.getRuleCount()
-                )
-            }
-            }
-
-
             item {
                 WtaSection(
                     title = Strings.currentWebViewInfo
@@ -194,7 +149,6 @@ fun BrowserKernelScreen(
                 )
             }
             }
-
 
             item {
                 WtaSection(
@@ -220,7 +174,6 @@ fun BrowserKernelScreen(
                 }
             }
 
-
             item {
                 WtaSection(
                     title = Strings.recommendedBrowsers,
@@ -242,7 +195,6 @@ fun BrowserKernelScreen(
                 }
             }
 
-
             item {
                 WtaSection(
                     title = Strings.howToEnableDeveloperOptions
@@ -251,12 +203,10 @@ fun BrowserKernelScreen(
                 }
             }
 
-
             item {
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
-
 
         if (showDeleteDialog) {
             AlertDialog(
@@ -283,9 +233,6 @@ fun BrowserKernelScreen(
         }
     }
 }
-
-
-
 
 @Composable
 private fun CurrentWebViewCard(
@@ -354,9 +301,6 @@ private fun CurrentWebViewCard(
     }
 }
 
-
-
-
 @Composable
 private fun InfoRow(
     label: String,
@@ -382,9 +326,6 @@ private fun InfoRow(
     }
 }
 
-
-
-
 @Composable
 private fun SectionHeader(
     title: String,
@@ -408,9 +349,6 @@ private fun SectionHeader(
         }
     }
 }
-
-
-
 
 @Composable
 private fun EngineCard(
@@ -484,9 +422,6 @@ private fun EngineCard(
     }
 }
 
-
-
-
 @Composable
 private fun GeckoViewEngineCard(
     status: EngineStatus,
@@ -518,7 +453,6 @@ private fun GeckoViewEngineCard(
     ) {
         Spacer(modifier = Modifier.height(12.dp))
 
-
         AnimatedVisibility(visible = downloadState is DownloadState.Downloading) {
             val progress = (downloadState as? DownloadState.Downloading)?.progress ?: 0f
             val message = (downloadState as? DownloadState.Downloading)?.message ?: ""
@@ -548,7 +482,6 @@ private fun GeckoViewEngineCard(
                 Spacer(modifier = Modifier.height(4.dp))
             }
         }
-
 
         AnimatedVisibility(visible = downloadState is DownloadState.Error) {
             val errorMsg = (downloadState as? DownloadState.Error)?.message ?: ""
@@ -583,7 +516,6 @@ private fun GeckoViewEngineCard(
             Spacer(modifier = Modifier.height(4.dp))
         }
 
-
         if (status is EngineStatus.DOWNLOADED) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -604,7 +536,6 @@ private fun GeckoViewEngineCard(
             }
             Spacer(modifier = Modifier.height(8.dp))
         }
-
 
         if (downloadState !is DownloadState.Downloading) {
             Row(
@@ -642,9 +573,6 @@ private fun GeckoViewEngineCard(
     }
 }
 
-
-
-
 private fun formatFileSize(bytes: Long): String {
     return when {
         bytes < 1024 -> "$bytes B"
@@ -652,9 +580,6 @@ private fun formatFileSize(bytes: Long): String {
         else -> "%.1f MB".format(bytes / (1024.0 * 1024.0))
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -741,9 +666,6 @@ private fun InstalledBrowserCard(
     }
 }
 
-
-
-
 @Composable
 private fun RecommendedBrowserCard(
     browser: RecommendedBrowser,
@@ -816,7 +738,6 @@ private fun RecommendedBrowserCard(
                         Text(Strings.download, style = MaterialTheme.typography.labelMedium)
                     }
 
-
                     if (browser.downloadUrl.isNotEmpty() && !browser.downloadUrl.startsWith("market://")) {
                         Spacer(modifier = Modifier.width(8.dp))
                         IconButton(
@@ -835,9 +756,6 @@ private fun RecommendedBrowserCard(
         }
     }
 }
-
-
-
 
 @Composable
 private fun HelpCard() {
@@ -886,311 +804,11 @@ private fun HelpCard() {
     }
 }
 
-
-
-
-
-
-@Composable
-private fun ShieldsSettingsCard(
-    config: ShieldsConfig,
-    sessionStats: com.webtoapp.core.engine.shields.SessionStats,
-    expanded: Boolean,
-    onExpandToggle: () -> Unit,
-    onToggleEnabled: (Boolean) -> Unit,
-    onToggleHttpsUpgrade: (Boolean) -> Unit,
-    onToggleTrackerBlocking: (Boolean) -> Unit,
-    onToggleCookieConsent: (Boolean) -> Unit,
-    onToggleGpc: (Boolean) -> Unit,
-    onToggleReaderMode: (Boolean) -> Unit,
-    onCookiePolicyChange: (ThirdPartyCookiePolicy) -> Unit,
-    onReferrerPolicyChange: (ShieldsReferrerPolicy) -> Unit,
-    onSslErrorPolicyChange: (SslErrorPolicy) -> Unit,
-    trackerRuleCount: Int
-) {
-    EnhancedElevatedCard(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(RoundedCornerShape(WtaRadius.Control))
-                        .background(
-                            if (config.enabled) MaterialTheme.colorScheme.primaryContainer
-                            else MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Outlined.Shield,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = if (config.enabled)
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                    Text(
-                        Strings.shieldsMasterSwitch,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        if (config.enabled) Strings.shieldsEnabledWithRules.replace("%d", trackerRuleCount.toString()) else Strings.shieldsDisabled,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                WtaSwitch(
-                    checked = config.enabled,
-                    onCheckedChange = onToggleEnabled
-                )
-            }
-
-
-            if (config.enabled && sessionStats.total > 0) {
-                Spacer(modifier = Modifier.height(12.dp))
-                EnhancedElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        ShieldStatItem(Strings.shieldsStatAds, sessionStats.totalAdsBlocked)
-                        ShieldStatItem(Strings.shieldsStatTrackers, sessionStats.totalTrackersBlocked)
-                        ShieldStatItem("HTTPS↑", sessionStats.totalHttpsUpgrades)
-                        ShieldStatItem("Cookie", sessionStats.totalCookieConsentsBlocked)
-                    }
-                }
-            }
-
-
-            if (config.enabled) {
-                Spacer(modifier = Modifier.height(8.dp))
-                TextButton(
-                    onClick = onExpandToggle,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (expanded) Strings.shieldsCollapseSettings else Strings.shieldsExpandSettings)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Icon(
-                        if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-
-                AnimatedVisibility(visible = expanded) {
-                    Column {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-
-                        ShieldToggleRow(
-                            title = "HTTPS Everywhere",
-                            subtitle = Strings.shieldsHttpsUpgradeDesc,
-                            icon = Icons.Outlined.Lock,
-                            checked = config.httpsUpgrade,
-                            onCheckedChange = onToggleHttpsUpgrade
-                        )
-
-
-                        ShieldPolicySelector(
-                            title = Strings.sslErrorPolicyTitle,
-                            currentValue = config.sslErrorPolicy.displayName,
-                            options = SslErrorPolicy.entries.map { it.displayName },
-                            onSelect = { index ->
-                                onSslErrorPolicyChange(SslErrorPolicy.entries[index])
-                            }
-                        )
-
-
-                        ShieldToggleRow(
-                            title = Strings.shieldsTrackerBlocking,
-                            subtitle = Strings.shieldsTrackerBlockingDesc,
-                            icon = Icons.Outlined.RemoveCircleOutline,
-                            checked = config.trackerBlocking,
-                            onCheckedChange = onToggleTrackerBlocking
-                        )
-
-
-                        ShieldToggleRow(
-                            title = Strings.shieldsCookiePopup,
-                            subtitle = Strings.shieldsCookiePopupDesc,
-                            icon = Icons.Outlined.DoNotDisturbOn,
-                            checked = config.cookieConsentBlock,
-                            onCheckedChange = onToggleCookieConsent
-                        )
-
-
-                        ShieldToggleRow(
-                            title = "Global Privacy Control",
-                            subtitle = Strings.shieldsGpcDesc,
-                            icon = Icons.Outlined.PrivacyTip,
-                            checked = config.gpcEnabled,
-                            onCheckedChange = onToggleGpc
-                        )
-
-
-                        ShieldToggleRow(
-                            title = Strings.shieldsReaderMode,
-                            subtitle = Strings.shieldsReaderModeDesc,
-                            icon = Icons.Outlined.AutoStories,
-                            checked = config.readerModeEnabled,
-                            onCheckedChange = onToggleReaderMode
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
-
-                        ShieldPolicySelector(
-                            title = Strings.shieldsThirdPartyCookiePolicy,
-                            currentValue = config.thirdPartyCookiePolicy.displayName,
-                            options = ThirdPartyCookiePolicy.entries.map { it.displayName },
-                            onSelect = { index ->
-                                onCookiePolicyChange(ThirdPartyCookiePolicy.entries[index])
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-
-                        ShieldPolicySelector(
-                            title = Strings.shieldsReferrerPolicy,
-                            currentValue = config.referrerPolicy.displayName,
-                            options = ShieldsReferrerPolicy.entries.map { it.displayName },
-                            onSelect = { index ->
-                                onReferrerPolicyChange(ShieldsReferrerPolicy.entries[index])
-                            }
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-
-
-@Composable
-private fun ShieldToggleRow(
-    title: String,
-    subtitle: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    WtaSettingRow(
-        title = title,
-        subtitle = subtitle,
-        icon = icon,
-        onClick = { onCheckedChange(!checked) }
-    ) {
-        WtaSwitch(
-            checked = checked,
-            onCheckedChange = onCheckedChange
-        )
-    }
-}
-
-
-
-
-@Composable
-private fun ShieldPolicySelector(
-    title: String,
-    currentValue: String,
-    options: List<String>,
-    onSelect: (Int) -> Unit
-) {
-    var showMenu by remember { mutableStateOf(false) }
-
-    Box(modifier = Modifier.fillMaxWidth()) {
-        WtaChoiceRow(
-            title = title,
-            value = currentValue,
-            icon = Icons.Default.ExpandMore,
-            onClick = { showMenu = true }
-        )
-
-        DropdownMenu(
-            expanded = showMenu,
-            onDismissRequest = { showMenu = false }
-        ) {
-            options.forEachIndexed { index, option ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            option,
-                            fontWeight = if (option == currentValue) FontWeight.SemiBold else FontWeight.Normal
-                        )
-                    },
-                    onClick = {
-                        onSelect(index)
-                        showMenu = false
-                    },
-                    leadingIcon = if (option == currentValue) {
-                        { Icon(Icons.Default.Check, null, modifier = Modifier.size(18.dp)) }
-                    } else null
-                )
-            }
-        }
-    }
-}
-
-
-
-
-@Composable
-private fun ShieldStatItem(label: String, count: Int) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            count.toString(),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-
-
-
-
-
 data class WebViewInfo(
     val providerName: String,
     val version: String,
     val packageName: String
 )
-
-
-
 
 data class BrowserInfo(
     val name: String,
@@ -1200,9 +818,6 @@ data class BrowserInfo(
     val canBeWebViewProvider: Boolean
 )
 
-
-
-
 data class RecommendedBrowser(
     val name: String,
     val packageName: String,
@@ -1210,12 +825,6 @@ data class RecommendedBrowser(
     val downloadUrl: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector
 )
-
-
-
-
-
-
 
 private fun getRecommendedBrowsers(): List<RecommendedBrowser> = listOf(
     RecommendedBrowser(
@@ -1255,11 +864,6 @@ private fun getRecommendedBrowsers(): List<RecommendedBrowser> = listOf(
     )
 )
 
-
-
-
-
-
 private fun getWebViewInfo(context: Context): WebViewInfo {
     return try {
         val webViewPackage = WebViewCompat.getCurrentWebViewPackage(context)
@@ -1285,13 +889,9 @@ private fun getDefaultWebViewInfo(): WebViewInfo {
     )
 }
 
-
-
-
 private fun getInstalledBrowsers(context: Context): List<BrowserInfo> {
     val pm = context.packageManager
     val browsers = mutableListOf<BrowserInfo>()
-
 
     val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com"))
     val resolveInfoList = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -1300,7 +900,6 @@ private fun getInstalledBrowsers(context: Context): List<BrowserInfo> {
         @Suppress("DEPRECATION")
         pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
     }
-
 
     val webViewProviderPackages = setOf(
         "com.android.chrome",
@@ -1316,7 +915,6 @@ private fun getInstalledBrowsers(context: Context): List<BrowserInfo> {
 
     for (resolveInfo in resolveInfoList) {
         val packageName = resolveInfo.activityInfo.packageName
-
 
         if (packageName == context.packageName ||
             packageName == "android" ||
@@ -1354,15 +952,11 @@ private fun getInstalledBrowsers(context: Context): List<BrowserInfo> {
         }
     }
 
-
     return browsers.sortedWith(
         compareByDescending<BrowserInfo> { it.canBeWebViewProvider }
             .thenBy { it.name }
     )
 }
-
-
-
 
 private fun openDeveloperOptions(context: Context) {
     try {
@@ -1379,9 +973,6 @@ private fun openDeveloperOptions(context: Context) {
     }
 }
 
-
-
-
 private fun openApp(context: Context, packageName: String) {
     try {
         val intent = context.packageManager.getLaunchIntentForPackage(packageName)
@@ -1392,9 +983,6 @@ private fun openApp(context: Context, packageName: String) {
 
     }
 }
-
-
-
 
 private fun openPlayStore(context: Context, packageName: String) {
     try {
@@ -1410,9 +998,6 @@ private fun openPlayStore(context: Context, packageName: String) {
         }
     }
 }
-
-
-
 
 private fun openUrl(context: Context, url: String) {
     try {

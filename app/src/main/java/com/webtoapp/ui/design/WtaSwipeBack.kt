@@ -26,27 +26,6 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-/**
- * iOS-style interactive swipe-back gesture.
- *
- * When the user drags from the left edge (~20dp zone), the entire screen
- * follows their finger, revealing the previous screen underneath with a
- * parallax effect. When they release:
- *  - If dragged past 30% of screen width OR velocity is high: trigger pop
- *    with spring physics completing the slide-off.
- *  - Otherwise: spring back to origin, keeping velocity intact so there's
- *    no visible jump.
- *
- * The current screen is NEVER in a frozen "transitioning" state — input
- * flows through continuously.
- *
- * Usage: wrap your screen's root composable:
- * ```
- * WtaSwipeBackContainer(onBack = { navController.popBackStack() }) {
- *     YourScreenContent()
- * }
- * ```
- */
 @Composable
 fun WtaSwipeBackContainer(
     onBack: () -> Unit,
@@ -84,13 +63,11 @@ fun WtaSwipeBackContainer(
                 onHorizontalDrag = { change, dragAmount ->
                     if (!dragStartedFromEdge) return@detectHorizontalDragGestures
 
-                    // Only respond to rightward drags (swipe-back direction).
                     if (dragAmount > 0 || offsetX.value > 0) {
                         change.consume()
                         val next = (offsetX.value + dragAmount).coerceAtLeast(0f)
                         scope.launch { offsetX.snapTo(next) }
 
-                        // Track velocity manually (px / ms).
                         val now = System.nanoTime()
                         val deltaMs = (now - lastTimestamp) / 1_000_000f
                         if (deltaMs > 0f) {
@@ -108,7 +85,7 @@ fun WtaSwipeBackContainer(
 
                     scope.launch {
                         if (shouldDismiss) {
-                            // Complete the slide-off, then invoke onBack.
+
                             offsetX.animateTo(
                                 targetValue = screenWidthPx,
                                 animationSpec = spring(
@@ -119,7 +96,7 @@ fun WtaSwipeBackContainer(
                             )
                             onBack()
                         } else {
-                            // Spring back to origin with velocity preserved.
+
                             offsetX.animateTo(
                                 targetValue = 0f,
                                 animationSpec = spring(
@@ -155,7 +132,7 @@ fun WtaSwipeBackContainer(
             .fillMaxSize()
             .graphicsLayer {
                 translationX = offsetX.value
-                // Slight scale-down as it slides off — adds depth.
+
                 val progress = (offsetX.value / screenWidthPx).coerceIn(0f, 1f)
                 val s = 1f - progress * 0.04f
                 scaleX = s

@@ -6,22 +6,9 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.zip.ZipFile
 
-
-
-
-
-
-
-
-
-
-
 object ApkAnalyzer {
 
     private const val TAG = "ApkAnalyzer"
-
-
-
 
     enum class FileCategory(val displayName: String, val color: String) {
         NATIVE_LIBS("Native Libraries", "#FF6B6B"),
@@ -32,9 +19,6 @@ object ApkAnalyzer {
         KOTLIN("Kotlin Metadata", "#DDA0DD"),
         OTHER("Other", "#95A5A6")
     }
-
-
-
 
     data class FileEntry(
         val path: String,
@@ -49,9 +33,6 @@ object ApkAnalyzer {
             } else 0f
     }
 
-
-
-
     data class CategorySummary(
         val category: FileCategory,
         val totalCompressedSize: Long,
@@ -61,9 +42,6 @@ object ApkAnalyzer {
         val largestFiles: List<FileEntry>
     )
 
-
-
-
     data class OptimizationHint(
         val title: String,
         val description: String,
@@ -72,9 +50,6 @@ object ApkAnalyzer {
     ) {
         enum class Priority { HIGH, MEDIUM, LOW }
     }
-
-
-
 
     data class AnalysisReport(
         val apkFile: File,
@@ -93,13 +68,6 @@ object ApkAnalyzer {
                 1f - (totalSize.toFloat() / totalUncompressedSize.toFloat())
             } else 0f
     }
-
-
-
-
-
-
-
 
     suspend fun analyze(apkFile: File, topN: Int = 15): AnalysisReport = withContext(Dispatchers.IO) {
         val startTime = System.currentTimeMillis()
@@ -121,7 +89,6 @@ object ApkAnalyzer {
                     )
                 )
 
-
                 if (entry.name.startsWith("lib/")) {
                     val abi = entry.name.removePrefix("lib/").substringBefore("/")
                     if (abi.isNotEmpty() && !abi.contains(".")) {
@@ -133,7 +100,6 @@ object ApkAnalyzer {
 
         val totalCompressed = entries.sumOf { it.compressedSize }
         val totalUncompressed = entries.sumOf { it.uncompressedSize }
-
 
         val categoryGroups = entries.groupBy { it.category }
         val categories = FileCategory.entries.mapNotNull { cat ->
@@ -149,9 +115,7 @@ object ApkAnalyzer {
             )
         }.sortedByDescending { it.totalCompressedSize }
 
-
         val topLargest = entries.sortedByDescending { it.compressedSize }.take(topN)
-
 
         val hints = generateHints(entries, categories, architectures, apkFile.length())
 
@@ -170,9 +134,6 @@ object ApkAnalyzer {
             analysisTimeMs = elapsed
         )
     }
-
-
-
 
     fun formatReport(report: AnalysisReport): String = buildString {
         appendLine("═══════════════════════════════════════")
@@ -231,9 +192,6 @@ object ApkAnalyzer {
         appendLine("Analysis completed in ${report.analysisTimeMs}ms")
     }
 
-
-
-
     private fun categorize(path: String): FileCategory = when {
         path.startsWith("lib/") -> FileCategory.NATIVE_LIBS
         path.endsWith(".dex") -> FileCategory.DEX
@@ -244,9 +202,6 @@ object ApkAnalyzer {
         else -> FileCategory.OTHER
     }
 
-
-
-
     private fun generateHints(
         entries: List<FileEntry>,
         categories: List<CategorySummary>,
@@ -254,7 +209,6 @@ object ApkAnalyzer {
         totalSize: Long
     ): List<OptimizationHint> {
         val hints = mutableListOf<OptimizationHint>()
-
 
         if (architectures.size > 1) {
             val nativeLibs = categories.find { it.category == FileCategory.NATIVE_LIBS }
@@ -271,7 +225,6 @@ object ApkAnalyzer {
             ))
         }
 
-
         val largeNativeLibs = entries.filter {
             it.category == FileCategory.NATIVE_LIBS && it.compressedSize > 5 * 1024 * 1024
         }
@@ -285,7 +238,6 @@ object ApkAnalyzer {
                     else OptimizationHint.Priority.MEDIUM
             ))
         }
-
 
         val uncompressedAssets = entries.filter {
             it.category == FileCategory.ASSETS &&
@@ -304,7 +256,6 @@ object ApkAnalyzer {
             ))
         }
 
-
         val kotlinMeta = categories.find { it.category == FileCategory.KOTLIN }
         if (kotlinMeta != null && kotlinMeta.totalCompressedSize > 10 * 1024) {
             hints.add(OptimizationHint(
@@ -316,7 +267,6 @@ object ApkAnalyzer {
             ))
         }
 
-
         val arsc = entries.find { it.path == "resources.arsc" }
         if (arsc != null && arsc.uncompressedSize > 2 * 1024 * 1024) {
             hints.add(OptimizationHint(
@@ -326,7 +276,6 @@ object ApkAnalyzer {
                 priority = OptimizationHint.Priority.MEDIUM
             ))
         }
-
 
         val sizeGroups = entries
             .filter { it.uncompressedSize > 10 * 1024 }
@@ -350,7 +299,6 @@ object ApkAnalyzer {
             }
         }
 
-
         if (totalSize > 100 * 1024 * 1024) {
             hints.add(0, OptimizationHint(
                 title = "APK exceeds 100MB",
@@ -363,9 +311,6 @@ object ApkAnalyzer {
 
         return hints.sortedBy { it.priority.ordinal }
     }
-
-
-
 
     private fun formatSize(bytes: Long): String = when {
         bytes < 1024 -> "${bytes} B"

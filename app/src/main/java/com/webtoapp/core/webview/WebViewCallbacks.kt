@@ -4,9 +4,6 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.webkit.*
 
-
-
-
 interface WebViewCallbacks {
     fun onPageStarted(url: String?)
     fun onPageCommitVisible(url: String?) {}
@@ -26,14 +23,6 @@ interface WebViewCallbacks {
         fileChooserParams: WebChromeClient.FileChooserParams?
     ): Boolean
 
-
-
-
-
-
-
-
-
     fun onDownloadStart(
         url: String,
         userAgent: String,
@@ -42,43 +31,13 @@ interface WebViewCallbacks {
         contentLength: Long
     )
 
-
-
-
-
-
-
-
     fun onLongPress(webView: WebView, x: Float, y: Float): Boolean = false
-
-
-
-
-
-
-
 
     fun onConsoleMessage(level: Int, message: String, sourceId: String, lineNumber: Int) {}
 
-
-
-
-
-
-
     fun onUrlChanged(webView: WebView?, url: String?) {}
 
-
-
-
-
     fun onNewWindow(resultMsg: android.os.Message?) {}
-
-
-
-
-
-
 
     fun onRenderProcessGone(didCrash: Boolean) {}
 }

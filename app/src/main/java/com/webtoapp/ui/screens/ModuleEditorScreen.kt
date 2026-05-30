@@ -50,8 +50,6 @@ import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaRadius
 
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModuleEditorScreen(
@@ -62,7 +60,6 @@ fun ModuleEditorScreen(
     val scope = rememberCoroutineScope()
     val extensionManager = remember { ExtensionManager.getInstance(context) }
 
-
     val decodedModuleId = remember(moduleId) {
         moduleId?.let {
             try {
@@ -72,7 +69,6 @@ fun ModuleEditorScreen(
             }
         }
     }
-
 
     val existingModule = remember(decodedModuleId) {
         decodedModuleId?.let { id ->
@@ -86,7 +82,6 @@ fun ModuleEditorScreen(
             }
         }
     }
-
 
     var name by remember { mutableStateOf(existingModule?.name ?: "") }
     var description by remember { mutableStateOf(existingModule?.description ?: "") }
@@ -270,7 +265,6 @@ fun ModuleEditorScreen(
         }
     }
 
-
     if (showCategoryDialog) {
         AlertDialog(
             onDismissRequest = { showCategoryDialog = false },
@@ -352,7 +346,6 @@ fun ModuleEditorScreen(
             confirmButton = {}
         )
     }
-
 
     if (showRunAtDialog) {
         AlertDialog(
@@ -447,7 +440,6 @@ fun ModuleEditorScreen(
         )
     }
 
-
     if (showRunModeDialog) {
         AlertDialog(
             onDismissRequest = { showRunModeDialog = false },
@@ -533,7 +525,6 @@ fun ModuleEditorScreen(
             confirmButton = {}
         )
     }
-
 
     if (showPermissionsDialog) {
         AlertDialog(
@@ -661,7 +652,6 @@ fun ModuleEditorScreen(
         )
     }
 
-
     if (showIconPicker) {
         IconPickerDialog(
             currentIcon = icon,
@@ -673,7 +663,6 @@ fun ModuleEditorScreen(
         )
     }
 
-
     if (showUrlMatchDialog) {
         UrlMatchDialog(
             urlMatches = urlMatches,
@@ -682,7 +671,6 @@ fun ModuleEditorScreen(
         )
     }
 
-
     if (showConfigItemDialog) {
         ConfigItemsDialog(
             configItems = configItems,
@@ -690,7 +678,6 @@ fun ModuleEditorScreen(
             onDismiss = { showConfigItemDialog = false }
         )
     }
-
 
     if (showTemplateDialog) {
          TemplateSelectionDialog(
@@ -788,7 +775,6 @@ private fun BasicInfoTab(
                     }
                 }
 
-
                 Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                     Text(
                         Strings.moduleNameRequired,
@@ -811,7 +797,6 @@ private fun BasicInfoTab(
                 }
             }
         }
-
 
         Box(
             modifier = Modifier
@@ -864,7 +849,6 @@ private fun BasicInfoTab(
             }
         }
 
-
         Surface(
             onClick = onCategoryClick,
             modifier = Modifier.fillMaxWidth(),
@@ -912,7 +896,6 @@ private fun BasicInfoTab(
                 )
             }
         }
-
 
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -986,7 +969,6 @@ private fun BasicInfoTab(
                 }
             }
         }
-
 
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -1066,11 +1048,9 @@ private fun BasicInfoTab(
             }
         }
 
-
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1113,7 +1093,6 @@ private fun CodeTab(
                 )
             }
 
-
             if (showJsTab) {
                 FilledTonalButton(
                     onClick = { showCodeSnippetSelector = true },
@@ -1131,7 +1110,6 @@ private fun CodeTab(
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-
 
         Box(
             modifier = Modifier
@@ -1184,7 +1162,6 @@ private fun CodeTab(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-
         PremiumTextField(
             value = if (showJsTab) code else cssCode,
             onValueChange = { if (showJsTab) onCodeChange(it) else onCssCodeChange(it) },
@@ -1203,7 +1180,6 @@ private fun CodeTab(
             )
         )
     }
-
 
     if (showCodeSnippetSelector) {
         com.webtoapp.ui.components.CodeSnippetSelectorDialog(
@@ -1295,7 +1271,6 @@ private fun AdvancedTab(
         }
     }
 
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1304,7 +1279,6 @@ private fun AdvancedTab(
     ) {
         val primaryColor = MaterialTheme.colorScheme.primary
         val secondaryColor = MaterialTheme.colorScheme.secondary
-
 
         AdvancedOptionCard(
             title = Strings.runModeLabel,
@@ -1316,7 +1290,6 @@ private fun AdvancedTab(
             onClick = onRunModeClick
         )
 
-
         AdvancedOptionCard(
             title = Strings.runTime,
             subtitle = runAt.getDisplayName(),
@@ -1326,7 +1299,6 @@ private fun AdvancedTab(
             iconTint = secondaryColor,
             onClick = onRunAtClick
         )
-
 
         AdvancedOptionCard(
             title = Strings.requiredPermissions,
@@ -1339,7 +1311,6 @@ private fun AdvancedTab(
             onClick = onPermissionsClick
         )
 
-
         AdvancedOptionCard(
             title = Strings.urlMatchRules,
             subtitle = if (urlMatches.isEmpty()) Strings.matchAllWebsites
@@ -1350,7 +1321,6 @@ private fun AdvancedTab(
             iconTint = primaryColor,
             onClick = onUrlMatchesClick
         )
-
 
         AdvancedOptionCard(
             title = Strings.userConfigItems,
@@ -1363,7 +1333,6 @@ private fun AdvancedTab(
             onClick = onConfigItemsClick
         )
 
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1371,7 +1340,6 @@ private fun AdvancedTab(
                 .height(0.5.dp)
                 .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
         )
-
 
         Box(
             modifier = Modifier
@@ -1421,9 +1389,6 @@ private fun AdvancedTab(
         }
     }
 }
-
-
-
 
 @Composable
 fun IconPickerDialog(
@@ -1496,9 +1461,6 @@ fun IconPickerDialog(
         }
     )
 }
-
-
-
 
 @Composable
 fun UrlMatchDialog(
@@ -1600,7 +1562,6 @@ fun UrlMatchDialog(
                     )
                 }
 
-
                 PremiumTextField(
                     value = newPattern,
                     onValueChange = { newPattern = it },
@@ -1647,9 +1608,6 @@ fun UrlMatchDialog(
         }
     )
 }
-
-
-
 
 @Composable
 fun ConfigItemsDialog(
@@ -1794,7 +1752,6 @@ fun AddConfigItemDialog(
                     singleLine = true
                 )
 
-
                 var expanded by remember { mutableStateOf(false) }
                 ExposedDropdownMenuBox(
                     expanded = expanded,
@@ -1864,10 +1821,6 @@ fun AddConfigItemDialog(
         }
     )
 }
-
-
-
-
 
 @Composable
 fun TemplateSelectionDialog(

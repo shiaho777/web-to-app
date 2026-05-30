@@ -7,19 +7,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 
-/**
- * Refined type scale. Calibrated to feel close to SF Pro's optical sizing:
- *  - Large display text gets tighter tracking to look editorial.
- *  - Body copy gets slightly looser tracking for readability.
- *  - Small labels have deliberate positive tracking so they register as
- *    microcopy instead of shrunken body text.
- *  - Line heights are deliberate: display text has tight leading, body has
- *    generous leading for reading comfort.
- *
- * FontWeight is kept to SemiBold for headings and Medium for titles rather
- * than going all the way to Bold - bolder weights feel harsh in a
- * monochrome palette.
- */
 val WtaTypography: Typography = Typography(
     displayLarge = TextStyle(
         fontFamily = FontFamily.Default,

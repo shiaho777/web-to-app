@@ -8,10 +8,6 @@ import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.repository.WebAppRepository
 import java.io.InputStream
 
-
-
-
-
 class BatchImportService(
     private val context: Context,
     private val repository: WebAppRepository
@@ -22,20 +18,10 @@ class BatchImportService(
 
     private val gson: Gson by lazy { GsonBuilder().setPrettyPrinting().create() }
 
-
-
-
     data class ParsedEntry(
         val name: String,
         val url: String
     )
-
-
-
-
-
-
-
 
     fun parseFromText(text: String): List<ParsedEntry> {
         return text.lines()
@@ -70,10 +56,6 @@ class BatchImportService(
             .distinctBy { it.url }
     }
 
-
-
-
-
     fun parseFromBookmarksHtml(input: InputStream): List<ParsedEntry> {
         return try {
             val html = input.bufferedReader().readText()
@@ -91,9 +73,6 @@ class BatchImportService(
         }
     }
 
-
-
-
     suspend fun importEntries(entries: List<ParsedEntry>): Int {
         if (entries.isEmpty()) return 0
 
@@ -108,9 +87,6 @@ class BatchImportService(
         AppLogger.i(TAG, "批量导入 ${ids.size} 个应用")
         return ids.size
     }
-
-
-
 
     fun exportAsTemplate(app: WebApp): String {
         val template = AppTemplate(
@@ -129,9 +105,6 @@ class BatchImportService(
         return gson.toJson(template)
     }
 
-
-
-
     fun parseTemplate(json: String): AppTemplate? {
         return try {
             gson.fromJson(json, AppTemplate::class.java)
@@ -140,9 +113,6 @@ class BatchImportService(
             null
         }
     }
-
-
-
 
     suspend fun importFromTemplate(template: AppTemplate): Long {
         val app = WebApp(
@@ -155,8 +125,6 @@ class BatchImportService(
         )
         return repository.createWebApp(app)
     }
-
-
 
     private fun String.isValidUrl(): Boolean {
         return startsWith("http://") || startsWith("https://") ||
@@ -180,9 +148,6 @@ class BatchImportService(
         }
     }
 }
-
-
-
 
 data class AppTemplate(
     val name: String,

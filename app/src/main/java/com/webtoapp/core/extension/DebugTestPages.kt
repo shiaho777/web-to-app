@@ -2,15 +2,7 @@ package com.webtoapp.core.extension
 
 import com.webtoapp.core.i18n.Strings
 
-
-
-
-
-
 object DebugTestPages {
-
-
-
 
     fun getAll(): List<TestPage> = listOf(
         basicHtmlPage(),
@@ -22,9 +14,6 @@ object DebugTestPages {
         apiTestPage(),
         styleTestPage()
     )
-
-
-
 
     private fun basicHtmlPage() = TestPage(
         id = "basic-html",
@@ -92,9 +81,6 @@ object DebugTestPages {
 </html>
         """.trimIndent()
     )
-
-
-
 
     private fun formTestPage() = TestPage(
         id = "form-test",
@@ -165,9 +151,6 @@ object DebugTestPages {
         """.trimIndent()
     )
 
-
-
-
     private fun mediaTestPage() = TestPage(
         id = "media-test",
         name = Strings.testPageMedia,
@@ -222,9 +205,6 @@ object DebugTestPages {
 </html>
         """.trimIndent()
     )
-
-
-
 
     private fun adSimulatorPage() = TestPage(
         id = "ad-simulator",
@@ -300,9 +280,6 @@ object DebugTestPages {
         """.trimIndent()
     )
 
-
-
-
     private fun popupTestPage() = TestPage(
         id = "popup-test",
         name = Strings.testPagePopup,
@@ -364,9 +341,6 @@ object DebugTestPages {
         """.trimIndent()
     )
 
-
-
-
     private fun scrollTestPage() = TestPage(
         id = "scroll-test",
         name = Strings.testPageScroll,
@@ -412,9 +386,6 @@ object DebugTestPages {
 </html>
         """.trimIndent()
     )
-
-
-
 
     private fun apiTestPage() = TestPage(
         id = "api-test",
@@ -505,9 +476,6 @@ object DebugTestPages {
         """.trimIndent()
     )
 
-
-
-
     private fun styleTestPage() = TestPage(
         id = "style-test",
         name = Strings.testPageStyle,
@@ -570,9 +538,6 @@ object DebugTestPages {
     )
 }
 
-
-
-
 data class TestPage(
     val id: String,
     val name: String,
@@ -580,8 +545,6 @@ data class TestPage(
     val icon: String,
     val html: String
 ) {
-
-
 
     fun toDataUrl(): String {
         val encoded = android.util.Base64.encodeToString(

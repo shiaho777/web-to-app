@@ -47,17 +47,6 @@ import com.webtoapp.ui.components.EnhancedElevatedCard
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
-
-
-
-
-
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PortManagerScreen(
@@ -86,7 +75,6 @@ fun PortManagerScreen(
         }
     }
 
-
     suspend fun doScan() {
         isScanning = true
         services = ProcessPortScanner.scanAllPorts(context)
@@ -104,16 +92,13 @@ fun PortManagerScreen(
         }
     }
 
-
     LaunchedEffect(Unit) { doScan() }
-
 
     LaunchedEffect(selectedTab) {
         if (selectedTab == 1 && wtaReports.isEmpty() && !isScanningWtaApps) {
             doScanWtaApps()
         }
     }
-
 
     LaunchedEffect(autoRefresh, selectedTab) {
         if (autoRefresh) {
@@ -124,13 +109,11 @@ fun PortManagerScreen(
         }
     }
 
-
     fun refresh() {
         scope.launch {
             if (selectedTab == 0) doScan() else doScanWtaApps()
         }
     }
-
 
     fun killService(service: RunningService) {
         scope.launch {
@@ -147,7 +130,6 @@ fun PortManagerScreen(
         }
     }
 
-
     fun killAllServices() {
         scope.launch {
             val count = ProcessPortScanner.killAllProcesses(context)
@@ -156,7 +138,6 @@ fun PortManagerScreen(
             doScan()
         }
     }
-
 
     fun releaseRemotePort(report: WtaAppPortReport, alloc: RemoteAllocation) {
         scope.launch {
@@ -175,7 +156,6 @@ fun PortManagerScreen(
             }
         }
     }
-
 
     fun openInBrowser(url: String) {
         try {
@@ -243,7 +223,11 @@ fun PortManagerScreen(
             modifier = Modifier.fillMaxSize()
         ) {
 
-            TabRow(selectedTabIndex = selectedTab) {
+            TabRow(
+                selectedTabIndex = selectedTab,
+
+                containerColor = Color.Transparent
+            ) {
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
@@ -278,7 +262,6 @@ fun PortManagerScreen(
         }
     }
 
-
     if (showKillAllDialog) {
         AlertDialog(
             onDismissRequest = { showKillAllDialog = false },
@@ -305,7 +288,6 @@ fun PortManagerScreen(
             }
         )
     }
-
 
     showKillDialog?.let { service ->
         AlertDialog(
@@ -360,9 +342,6 @@ fun PortManagerScreen(
     }
         }
 }
-
-
-
 
 @Composable
 private fun PortStatsCard(
@@ -422,7 +401,6 @@ private fun PortStatsCard(
             if (services.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
 
-
                 val grouped = services.groupBy { it.type }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -433,7 +411,6 @@ private fun PortStatsCard(
                     }
                 }
             }
-
 
             AnimatedVisibility(visible = showRangeStats) {
                 Column(modifier = Modifier.padding(top = 12.dp)) {
@@ -489,9 +466,6 @@ private fun PortStatsCard(
     }
 }
 
-
-
-
 @Composable
 private fun ServiceTypeChip(type: ServiceType, count: Int) {
     Surface(
@@ -517,9 +491,6 @@ private fun ServiceTypeChip(type: ServiceType, count: Int) {
         }
     }
 }
-
-
-
 
 @Composable
 private fun ServiceCard(
@@ -636,7 +607,6 @@ private fun ServiceCard(
                     }
                 }
 
-
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -653,7 +623,6 @@ private fun ServiceCard(
                             .background(statusColor)
                     )
 
-
                     val rotation by animateFloatAsState(
                         if (expanded) 180f else 0f,
                         label = "rotation"
@@ -669,14 +638,12 @@ private fun ServiceCard(
                 }
             }
 
-
             AnimatedVisibility(visible = expanded) {
                 Column(
                     modifier = Modifier.padding(top = 12.dp)
                 ) {
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(12.dp))
-
 
                     DetailRow("URL", service.url)
                     DetailRow("PID", if (service.pid > 0) service.pid.toString() else Strings.portManagerUnknown)
@@ -690,7 +657,6 @@ private fun ServiceCard(
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
-
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -710,7 +676,6 @@ private fun ServiceCard(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(Strings.portManagerOpen)
                         }
-
 
                         PremiumButton(
                             onClick = onKill,
@@ -734,9 +699,6 @@ private fun ServiceCard(
     }
 }
 
-
-
-
 @Composable
 private fun DetailRow(label: String, value: String) {
     Row(
@@ -757,9 +719,6 @@ private fun DetailRow(label: String, value: String) {
         )
     }
 }
-
-
-
 
 @Composable
 private fun EmptyState() {
@@ -792,10 +751,6 @@ private fun EmptyState() {
         }
     }
 }
-
-
-
-// ─── Tab content: 本应用 ───────────────────────────────────────────
 
 @Composable
 private fun ColumnScope.ThisAppTabContent(
@@ -833,9 +788,6 @@ private fun ColumnScope.ThisAppTabContent(
     }
 }
 
-
-// ─── Tab content: 全部 Web2App 应用 ────────────────────────────────
-
 @Composable
 private fun ColumnScope.AllAppsTabContent(
     reports: List<WtaAppPortReport>,
@@ -872,7 +824,6 @@ private fun ColumnScope.AllAppsTabContent(
         }
     }
 }
-
 
 @Composable
 private fun WtaAppPortReportCard(
@@ -975,7 +926,6 @@ private fun WtaAppPortReportCard(
     }
 }
 
-
 @Composable
 private fun RemoteAllocationRow(
     allocation: RemoteAllocation,
@@ -1046,7 +996,6 @@ private fun RemoteAllocationRow(
         }
     }
 }
-
 
 @Composable
 private fun WtaAppsEmptyState() {

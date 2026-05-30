@@ -16,12 +16,6 @@ import com.webtoapp.core.i18n.RandomAppNameGenerator
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaTextField
 
-/**
- * App name input with a built-in dice button that fills the field with a
- * locale-aware random name. Uses [WtaTextField] so it inherits the filled
- * style, focus indicator, and haptic consistent with every other input in
- * the app.
- */
 @Composable
 fun AppNameTextField(
     value: String,

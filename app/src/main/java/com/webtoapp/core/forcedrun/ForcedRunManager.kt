@@ -9,44 +9,20 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
-import com.webtoapp.core.logging.AppLogger
 import android.view.KeyEvent
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.logging.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.security.MessageDigest
 import java.util.Calendar
 
-
-
-
 enum class ProtectionLevel {
     BASIC,
     STANDARD,
     MAXIMUM
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @SuppressLint("StaticFieldLeak")
 class ForcedRunManager(private val context: Context) {
@@ -74,18 +50,15 @@ class ForcedRunManager(private val context: Context) {
         const val EXTRA_APP_ID = "app_id"
         const val PREFS_NAME = "forced_run_prefs"
 
-
         private const val KEY_IS_ACTIVE = "is_active"
         private const val KEY_MODE = "mode"
         private const val KEY_COUNTDOWN_END_TIME = "countdown_end_time"
         private const val KEY_CONFIG_JSON = "config_json"
         private const val KEY_START_TIMESTAMP = "start_timestamp"
 
-
         private const val ALARM_REQUEST_CODE_END = 10001
         private const val ALARM_REQUEST_CODE_START = 10002
         private const val ALARM_REQUEST_CODE_CHECK = 10003
-
 
         private const val CHECK_INTERVAL_NORMAL = 10_000L
         private const val CHECK_INTERVAL_CLOSING = 1_000L
@@ -100,9 +73,6 @@ class ForcedRunManager(private val context: Context) {
             }
         }
 
-
-
-
         fun checkProtectionPermissions(context: Context, level: ProtectionLevel): PermissionStatus {
             val hasAccessibility = ForcedRunAccessibilityService.isAccessibilityServiceEnabled(context)
             val hasUsageStats = ForcedRunGuardService.hasUsageStatsPermission(context)
@@ -111,22 +81,22 @@ class ForcedRunManager(private val context: Context) {
                     level = level,
                     hasAccessibility = hasAccessibility,
                     hasUsageStats = hasUsageStats,
-                    message = "基础防护无需额外权限"
+                    message = Strings.forcedRunProtectionBasicNoExtra
                 )
                 ProtectionLevel.STANDARD -> {
                     PermissionStatus(
                         level = level,
                         hasAccessibility = hasAccessibility,
                         hasUsageStats = hasUsageStats,
-                        if (hasAccessibility) "辅助功能已启用" else "需要启用辅助功能服务"
+                        if (hasAccessibility) Strings.forcedRunAccessibilityEnabled else Strings.forcedRunNeedAccessibility
                     )
                 }
                 ProtectionLevel.MAXIMUM -> {
                     val allGranted = hasAccessibility && hasUsageStats
                     val message = buildString {
-                        if (!hasAccessibility) append("需要启用辅助功能服务\n")
-                        if (!hasUsageStats) append("需要授权使用情况访问权限")
-                        if (allGranted) append("所有权限已授权")
+                        if (!hasAccessibility) append(Strings.forcedRunNeedAccessibility).append('\n')
+                        if (!hasUsageStats) append(Strings.forcedRunNeedUsageStats)
+                        if (allGranted) append(Strings.forcedRunAllPermissionsGranted)
                     }.trim()
                     PermissionStatus(level, hasAccessibility, hasUsageStats, message)
                 }
@@ -159,9 +129,6 @@ class ForcedRunManager(private val context: Context) {
         }
     }
 
-
-
-
     data class PermissionStatus(
         val level: ProtectionLevel,
         val hasAccessibility: Boolean,
@@ -181,7 +148,6 @@ class ForcedRunManager(private val context: Context) {
     private val handler = Handler(Looper.getMainLooper())
     private var wakeLock: PowerManager.WakeLock? = null
 
-
     private val _isInForcedRunMode = MutableStateFlow(false)
     val isInForcedRunMode: StateFlow<Boolean> = _isInForcedRunMode.asStateFlow()
 
@@ -191,11 +157,9 @@ class ForcedRunManager(private val context: Context) {
     private val _currentConfig = MutableStateFlow<ForcedRunConfig?>(null)
     val currentConfig: StateFlow<ForcedRunConfig?> = _currentConfig.asStateFlow()
 
-
     private var countdownEndTimeMs: Long = 0L
     private var countdownCompletedAtMs: Long = 0L
     private var lastCountdownConfigFingerprint: String? = null
-
 
     private val countdownRunnable = object : Runnable {
         override fun run() {
@@ -205,7 +169,6 @@ class ForcedRunManager(private val context: Context) {
             }
         }
     }
-
 
     private val timeCheckRunnable = object : Runnable {
         override fun run() {
@@ -222,9 +185,6 @@ class ForcedRunManager(private val context: Context) {
         }
     }
 
-
-
-
     fun isInForcedRunPeriod(config: ForcedRunConfig): Boolean {
         if (!config.enabled) return false
 
@@ -234,9 +194,6 @@ class ForcedRunManager(private val context: Context) {
             ForcedRunMode.DURATION -> isInAccessPeriod(config)
         }
     }
-
-
-
 
     private fun isInFixedTimePeriod(config: ForcedRunConfig): Boolean {
         val calendar = Calendar.getInstance()
@@ -258,9 +215,6 @@ class ForcedRunManager(private val context: Context) {
         }
     }
 
-
-
-
     private fun isInAccessPeriod(config: ForcedRunConfig): Boolean {
         val calendar = Calendar.getInstance()
         val currentDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK)
@@ -279,9 +233,6 @@ class ForcedRunManager(private val context: Context) {
         }
     }
 
-
-
-
     fun canEnterApp(config: ForcedRunConfig): Boolean {
         if (!config.enabled) return true
 
@@ -291,9 +242,6 @@ class ForcedRunManager(private val context: Context) {
             ForcedRunMode.DURATION -> isInAccessPeriod(config)
         }
     }
-
-
-
 
     fun getTimeUntilNextAccess(config: ForcedRunConfig): Long {
         if (!config.enabled || config.mode != ForcedRunMode.DURATION) return 0
@@ -312,29 +260,18 @@ class ForcedRunManager(private val context: Context) {
         return minutesUntilStart * 60 * 1000L
     }
 
-
     private var targetPackageName: String? = null
     private var targetActivityClass: String? = null
 
-
     private var onStateChangedCallback: ((Boolean, ForcedRunConfig?) -> Unit)? = null
-
-
-
 
     fun setTargetActivity(packageName: String, activityClass: String) {
         targetPackageName = packageName
         targetActivityClass = activityClass
     }
 
-
-
-
     fun getTargetPackageName(): String? = targetPackageName
     fun getTargetActivityClass(): String? = targetActivityClass
-
-
-
 
     fun setOnStateChangedCallback(callback: (Boolean, ForcedRunConfig?) -> Unit) {
         onStateChangedCallback = callback
@@ -373,10 +310,6 @@ class ForcedRunManager(private val context: Context) {
         }
     }
 
-
-
-
-
     fun handleKeyEvent(keyCode: Int): Boolean {
         val config = _currentConfig.value ?: return false
         if (!_isInForcedRunMode.value) return false
@@ -390,9 +323,6 @@ class ForcedRunManager(private val context: Context) {
         }
     }
 
-
-
-
     fun verifyEmergencyPassword(password: String): Boolean {
         val config = _currentConfig.value ?: return false
         if (!config.allowEmergencyExit) return false
@@ -401,21 +331,11 @@ class ForcedRunManager(private val context: Context) {
         return constantTimeEquals(password, expected)
     }
 
-
-
-
-
-
-
-
     private fun constantTimeEquals(a: String, b: String): Boolean {
         val aBytes = a.toByteArray(Charsets.UTF_8)
         val bBytes = b.toByteArray(Charsets.UTF_8)
         return MessageDigest.isEqual(aBytes, bBytes)
     }
-
-
-
 
     fun emergencyExit(password: String): Boolean {
         if (verifyEmergencyPassword(password)) {
@@ -424,9 +344,6 @@ class ForcedRunManager(private val context: Context) {
         }
         return false
     }
-
-
-
 
     fun formatRemainingTime(ms: Long): String {
         val totalSeconds = ms / 1000
@@ -441,18 +358,11 @@ class ForcedRunManager(private val context: Context) {
         }
     }
 
-
-
-
-
-
-
-
     fun startForcedRunMode(config: ForcedRunConfig, remainingMs: Long = -1L) {
         if (config.mode == ForcedRunMode.COUNTDOWN) {
             val fingerprint = countdownFingerprint(config)
             if (remainingMs <= 0 && countdownCompletedAtMs > 0L && lastCountdownConfigFingerprint == fingerprint) {
-                AppLogger.i(TAG, "倒计时模式已在当前配置下结束，跳过重复自动启动")
+                AppLogger.i(TAG, "Countdown mode already ended for current config; skipping duplicate auto-start")
                 return
             }
             lastCountdownConfigFingerprint = fingerprint
@@ -464,14 +374,13 @@ class ForcedRunManager(private val context: Context) {
         _currentConfig.value = config
         _isInForcedRunMode.value = true
 
-
         when (config.mode) {
             ForcedRunMode.COUNTDOWN -> {
                 if (remainingMs > 0) {
 
                     countdownEndTimeMs = System.currentTimeMillis() + remainingMs
                     _remainingTimeMs.value = remainingMs
-                    AppLogger.i(TAG, "从持久化恢复倒计时: 剩余 ${remainingMs / 1000}s")
+                    AppLogger.i(TAG, "Restoring countdown from persisted state: remaining ${remainingMs / 1000}s")
                 } else {
 
                     val totalMs = config.countdownMinutes * 60 * 1000L
@@ -487,17 +396,13 @@ class ForcedRunManager(private val context: Context) {
             }
         }
 
-
         persistState(config)
         applyProtectionState(active = true, config = config)
 
-
         scheduleAlarms(config)
-
 
         handler.removeCallbacks(countdownRunnable)
         handler.post(countdownRunnable)
-
 
         handler.removeCallbacks(timeCheckRunnable)
         handler.post(timeCheckRunnable)
@@ -506,9 +411,6 @@ class ForcedRunManager(private val context: Context) {
         AppLogger.i(TAG, "Forced run mode started: mode=${config.mode}, " +
                 "endTime=${if (config.mode == ForcedRunMode.COUNTDOWN) countdownEndTimeMs else "N/A"}")
     }
-
-
-
 
     fun stopForcedRunMode() {
         val config = _currentConfig.value
@@ -529,9 +431,7 @@ class ForcedRunManager(private val context: Context) {
         handler.removeCallbacks(countdownRunnable)
         handler.removeCallbacks(timeCheckRunnable)
 
-
         clearPersistedState()
-
 
         cancelAlarms()
 
@@ -542,22 +442,15 @@ class ForcedRunManager(private val context: Context) {
         AppLogger.i(TAG, "Forced run mode stopped")
     }
 
-
-
-
-
-
-
-
     fun restoreFromPersistence(): Boolean {
         if (!prefs.getBoolean(KEY_IS_ACTIVE, false)) {
-            AppLogger.d(TAG, "无持久化状态需要恢复")
+            AppLogger.d(TAG, "No persisted state to restore")
             return false
         }
 
         val configJson = prefs.getString(KEY_CONFIG_JSON, null)
         if (configJson == null) {
-            AppLogger.w(TAG, "持久化状态损坏（缺少 config），清除")
+            AppLogger.w(TAG, "Persisted state corrupt (missing config), clearing")
             clearPersistedState()
             return false
         }
@@ -565,13 +458,13 @@ class ForcedRunManager(private val context: Context) {
         val config = try {
             deserializeConfig(configJson)
         } catch (e: Exception) {
-            AppLogger.e(TAG, "反序列化配置失败，清除持久化状态", e)
+            AppLogger.e(TAG, "Config deserialise failed, clearing persisted state", e)
             clearPersistedState()
             return false
         }
 
         if (!config.enabled) {
-            AppLogger.d(TAG, "持久化配置已禁用，清除")
+            AppLogger.d(TAG, "Persisted config disabled, clearing")
             clearPersistedState()
             return false
         }
@@ -582,33 +475,33 @@ class ForcedRunManager(private val context: Context) {
                 val remaining = endTime - System.currentTimeMillis()
 
                 if (remaining <= 0) {
-                    AppLogger.i(TAG, "倒计时已在进程死亡期间过期，清除")
+                    AppLogger.i(TAG, "Countdown expired while process was dead, clearing")
                     clearPersistedState()
                     return false
                 }
 
-                AppLogger.i(TAG, "恢复倒计时: 剩余 ${remaining / 1000}s (原结束时间 $endTime)")
+                AppLogger.i(TAG, "Restoring countdown: remaining ${remaining / 1000}s (original end $endTime)")
                 startForcedRunMode(config, remaining)
                 return true
             }
             ForcedRunMode.FIXED_TIME -> {
                 if (isInFixedTimePeriod(config)) {
-                    AppLogger.i(TAG, "恢复固定时间段强制运行")
+                    AppLogger.i(TAG, "Restoring fixed-window forced-run")
                     startForcedRunMode(config)
                     return true
                 } else {
-                    AppLogger.i(TAG, "固定时间段已过期，清除")
+                    AppLogger.i(TAG, "Fixed window expired, clearing")
                     clearPersistedState()
                     return false
                 }
             }
             ForcedRunMode.DURATION -> {
                 if (isInAccessPeriod(config)) {
-                    AppLogger.i(TAG, "恢复限时模式强制运行")
+                    AppLogger.i(TAG, "Restoring time-bounded forced-run")
                     startForcedRunMode(config)
                     return true
                 } else {
-                    AppLogger.i(TAG, "限时时段已过期，清除")
+                    AppLogger.i(TAG, "Time-bounded window expired, clearing")
                     clearPersistedState()
                     return false
                 }
@@ -616,14 +509,9 @@ class ForcedRunManager(private val context: Context) {
         }
     }
 
-
-
-
-
-
     private fun persistState(config: ForcedRunConfig) {
         if (!config.persistCountdown && config.mode == ForcedRunMode.COUNTDOWN) {
-            AppLogger.d(TAG, "persistCountdown=false，跳过持久化")
+            AppLogger.d(TAG, "persistCountdown=false, skipping persistence")
             return
         }
 
@@ -640,11 +528,8 @@ class ForcedRunManager(private val context: Context) {
             apply()
         }
 
-        AppLogger.d(TAG, "状态已持久化: mode=${config.mode}")
+        AppLogger.d(TAG, "State persisted: mode=${config.mode}")
     }
-
-
-
 
     private fun clearPersistedState() {
         prefs.edit().apply {
@@ -655,11 +540,8 @@ class ForcedRunManager(private val context: Context) {
             remove(KEY_START_TIMESTAMP)
             apply()
         }
-        AppLogger.d(TAG, "持久化状态已清除")
+        AppLogger.d(TAG, "Persisted state cleared")
     }
-
-
-
 
     private fun serializeConfig(config: ForcedRunConfig): String {
         return buildString {
@@ -690,9 +572,6 @@ class ForcedRunManager(private val context: Context) {
             append("}")
         }
     }
-
-
-
 
     private fun deserializeConfig(json: String): ForcedRunConfig {
         fun String.extractString(key: String): String? {
@@ -752,13 +631,6 @@ class ForcedRunManager(private val context: Context) {
         )
     }
 
-
-
-
-
-
-
-
     @SuppressLint("ScheduleExactAlarm")
     private fun scheduleAlarms(config: ForcedRunConfig) {
         when (config.mode) {
@@ -769,7 +641,7 @@ class ForcedRunManager(private val context: Context) {
                     action = ACTION_FORCED_RUN_END,
                     requestCode = ALARM_REQUEST_CODE_END
                 )
-                AppLogger.d(TAG, "已设置倒计时结束闹钟: ${countdownEndTimeMs}")
+                AppLogger.d(TAG, "Countdown end alarm scheduled: ${countdownEndTimeMs}")
             }
             ForcedRunMode.FIXED_TIME -> {
 
@@ -779,7 +651,7 @@ class ForcedRunManager(private val context: Context) {
                     action = ACTION_FORCED_RUN_END,
                     requestCode = ALARM_REQUEST_CODE_END
                 )
-                AppLogger.d(TAG, "已设置固定时间段结束闹钟: $endMs")
+                AppLogger.d(TAG, "Fixed-window end alarm scheduled: $endMs")
             }
             ForcedRunMode.DURATION -> {
 
@@ -789,13 +661,10 @@ class ForcedRunManager(private val context: Context) {
                     action = ACTION_FORCED_RUN_END,
                     requestCode = ALARM_REQUEST_CODE_END
                 )
-                AppLogger.d(TAG, "已设置限时模式结束闹钟: $endMs")
+                AppLogger.d(TAG, "Time-bounded mode end alarm scheduled: $endMs")
             }
         }
     }
-
-
-
 
     @SuppressLint("ScheduleExactAlarm")
     private fun scheduleExactAlarm(triggerAtMs: Long, action: String, requestCode: Int) {
@@ -825,13 +694,10 @@ class ForcedRunManager(private val context: Context) {
             }
         } catch (e: SecurityException) {
 
-            AppLogger.w(TAG, "精确闹钟权限不足，降级使用非精确闹钟", e)
+            AppLogger.w(TAG, "Insufficient permission for exact alarm; falling back to inexact", e)
             alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
         }
     }
-
-
-
 
     private fun cancelAlarms() {
         listOf(
@@ -850,11 +716,8 @@ class ForcedRunManager(private val context: Context) {
             )
             alarmManager.cancel(pendingIntent)
         }
-        AppLogger.d(TAG, "所有闹钟已取消")
+        AppLogger.d(TAG, "All alarms cancelled")
     }
-
-
-
 
     private fun getNextTimeMs(timeStr: String): Long {
         val minutes = parseTimeToMinutes(timeStr)
@@ -915,13 +778,6 @@ class ForcedRunManager(private val context: Context) {
         return if (dayOfWeek == Calendar.SUNDAY) 7 else dayOfWeek - 1
     }
 
-
-
-
-
-
-
-
     private fun updateRemainingTime() {
         val config = _currentConfig.value ?: return
 
@@ -970,9 +826,6 @@ class ForcedRunManager(private val context: Context) {
         }
     }
 
-
-
-
     private fun checkTimeAndUpdateState() {
         val config = _currentConfig.value ?: return
 
@@ -1003,7 +856,7 @@ class ForcedRunManager(private val context: Context) {
         if (runtimeState.isDegraded) {
             AppLogger.w(
                 TAG,
-                "强制运行保护已降级: level=${config.protectionLevel}, " +
+                "Forced-run protection degraded: level=${config.protectionLevel}, " +
                     "accessibility=${runtimeState.accessibilityEnabled}, usageStats=${runtimeState.usageStatsEnabled}"
             )
         }
@@ -1048,9 +901,6 @@ class ForcedRunManager(private val context: Context) {
             config.persistCountdown
         ).joinToString("|")
     }
-
-
-
 
     private fun parseTimeToMinutes(time: String): Int {
         val parts = time.split(":")

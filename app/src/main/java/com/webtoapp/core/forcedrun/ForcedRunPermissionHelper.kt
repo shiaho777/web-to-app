@@ -19,11 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.webtoapp.core.i18n.Strings
 
-
-
-
-
-
 @Composable
 fun ForcedRunPermissionGuide(
     protectionLevel: ProtectionLevel,
@@ -32,26 +27,21 @@ fun ForcedRunPermissionGuide(
 ) {
     val context = LocalContext.current
 
-
     var hasAccessibility by remember { mutableStateOf(false) }
     var hasUsageStats by remember { mutableStateOf(false) }
-
 
     fun refreshPermissions() {
         hasAccessibility = ForcedRunAccessibilityService.isAccessibilityServiceEnabled(context)
         hasUsageStats = ForcedRunGuardService.hasUsageStatsPermission(context)
     }
 
-
     LaunchedEffect(Unit) {
         refreshPermissions()
     }
 
-
     DisposableEffect(Unit) {
         onDispose { }
     }
-
 
     LaunchedEffect(hasAccessibility, hasUsageStats) {
         val allGranted = when (protectionLevel) {
@@ -90,7 +80,6 @@ fun ForcedRunPermissionGuide(
 
             HorizontalDivider()
 
-
             if (protectionLevel != ProtectionLevel.BASIC) {
                 PermissionItem(
                     title = Strings.accessibilityService,
@@ -102,7 +91,6 @@ fun ForcedRunPermissionGuide(
                     onRefresh = { refreshPermissions() }
                 )
             }
-
 
             if (protectionLevel == ProtectionLevel.MAXIMUM) {
                 PermissionItem(
@@ -116,11 +104,9 @@ fun ForcedRunPermissionGuide(
                 )
             }
 
-
             HorizontalDivider()
 
             ProtectionLevelInfo(protectionLevel)
-
 
             OutlinedButton(
                 onClick = { refreshPermissions() },
@@ -153,7 +139,6 @@ private fun PermissionItem(
             modifier = Modifier.size(28.dp)
         )
 
-
         Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
             Text(
                 text = title,
@@ -166,7 +151,6 @@ private fun PermissionItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-
 
         if (!isGranted) {
             FilledTonalButton(
@@ -236,9 +220,6 @@ private fun ProtectionLevelInfo(level: ProtectionLevel) {
         )
     }
 }
-
-
-
 
 @Composable
 fun ForcedRunPermissionDialog(

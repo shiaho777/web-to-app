@@ -10,25 +10,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-
-
-
-
 class AppListProvider(private val context: Context) {
 
     private val packageManager: PackageManager = context.packageManager
-
-
-
-
-
-
 
     suspend fun getInstalledApps(
         filter: AppFilterType = AppFilterType.USER,
         searchQuery: String = ""
     ): List<InstalledAppInfo> = withContext(Dispatchers.IO) {
-
 
         val packageNames = getLaunchablePackageNames()
         val packages = packageNames.mapNotNull { packageName ->
@@ -57,15 +46,9 @@ class AppListProvider(private val context: Context) {
             .sortedBy { it.appName.lowercase() }
     }
 
-
-
-
     suspend fun getAppInfo(packageName: String): InstalledAppInfo? = withContext(Dispatchers.IO) {
         getPackageInfoSafely(packageName)?.toInstalledAppInfo()
     }
-
-
-
 
     private fun PackageInfo.toInstalledAppInfo(): InstalledAppInfo? {
         val appInfo = applicationInfo ?: return null
@@ -112,15 +95,9 @@ class AppListProvider(private val context: Context) {
         )
     }
 
-
-
-
     fun isAppInstalled(packageName: String): Boolean {
         return getPackageInfoSafely(packageName) != null
     }
-
-
-
 
     suspend fun getAppCount(filter: AppFilterType = AppFilterType.USER): Int {
         return getInstalledApps(filter).size

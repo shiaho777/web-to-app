@@ -11,16 +11,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellConfig
 
-
-
-
-
-
-
 object ShellActivityInit {
-
-
-
 
     fun initLogger(activity: AppCompatActivity) {
         try {
@@ -36,15 +27,11 @@ object ShellActivityInit {
             )
             com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "onCreate 开始")
 
-
             com.webtoapp.core.perf.SystemPerfOptimizer.optimizeActivity(activity)
         } catch (e: Exception) {
             AppLogger.e("ShellActivity", "日志系统初始化失败", e)
         }
     }
-
-
-
 
     fun initForcedRunManager(
         activity: AppCompatActivity,
@@ -60,7 +47,6 @@ object ShellActivityInit {
         } catch (e: Exception) {
             com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "硬件控制器初始化失败", e)
         }
-
 
         if (config.forcedRunConfig?.enabled == true) {
             try {
@@ -80,22 +66,16 @@ object ShellActivityInit {
         }
     }
 
-
-
-
-
     fun initAutoStart(activity: AppCompatActivity, config: ShellConfig) {
         config.autoStartConfig?.let { autoStartConfig ->
             try {
                 val autoStartManager = com.webtoapp.core.autostart.AutoStartManager(activity)
-
 
                 autoStartManager.setBootStart(
                     appId = 0L,
                     enabled = autoStartConfig.bootStartEnabled,
                     delayMs = com.webtoapp.core.autostart.AutoStartManager.DEFAULT_BOOT_DELAY_MS
                 )
-
 
                 if (autoStartConfig.scheduledStartEnabled) {
                     autoStartManager.setScheduledStart(
@@ -115,14 +95,11 @@ object ShellActivityInit {
         }
     }
 
-
-
-
     fun initIsolation(activity: AppCompatActivity, config: ShellConfig) {
         if (config.isolationEnabled && config.isolationConfig != null) {
             try {
                 val isolationConfig = config.isolationConfig.toIsolationConfig()
-                val isolationManager = com.webtoapp.core.isolation.IsolationManager.getInstance(activity)
+                val isolationManager = com.webtoapp.core.privacy.IsolationManager.getInstance(activity)
                 isolationManager.initialize(isolationConfig)
                 AppLogger.d("ShellActivity", "独立环境已初始化: enabled=${isolationConfig.enabled}")
                 com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "独立环境已初始化")
@@ -132,9 +109,6 @@ object ShellActivityInit {
             }
         }
     }
-
-
-
 
     fun initBackgroundService(activity: AppCompatActivity, config: ShellConfig) {
         if (config.backgroundRunEnabled) {
@@ -155,9 +129,6 @@ object ShellActivityInit {
             }
         }
     }
-
-
-
 
     fun initNotificationService(activity: AppCompatActivity, config: ShellConfig) {
         if (config.notificationEnabled && config.notificationConfig != null) {
@@ -182,9 +153,6 @@ object ShellActivityInit {
         }
     }
 
-
-
-
     fun setTaskDescription(activity: AppCompatActivity, appName: String) {
         try {
             @Suppress("DEPRECATION")
@@ -193,9 +161,6 @@ object ShellActivityInit {
             com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "setTaskDescription 失败", e)
         }
     }
-
-
-
 
     fun createBackPressedCallback(
         activity: AppCompatActivity,
@@ -230,7 +195,6 @@ object ShellActivityInit {
 
                                     return@evaluateJavascript
                                 }
-
 
                                 ShellWebViewNavigation.goBackOrFinish(activity, wv)
                             }

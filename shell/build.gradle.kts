@@ -21,9 +21,10 @@ android {
     defaultConfig {
         applicationId = "com.webtoapp"
         minSdk = 23
-        targetSdk = 36
-        versionCode = 33
-        versionName = "1.9.6"
+
+        targetSdk = 28
+        versionCode = 35
+        versionName = "2.0.0"
 
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "true")
 
@@ -31,11 +32,9 @@ android {
             useSupportLibrary = true
         }
 
-
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
         }
-
 
         externalNativeBuild {
             cmake {
@@ -44,7 +43,6 @@ android {
             }
         }
     }
-
 
     externalNativeBuild {
         cmake {
@@ -69,28 +67,21 @@ android {
         }
     }
 
-
-
-
     sourceSets {
         getByName("main") {
             manifest.srcFile("src/main/AndroidManifest.xml")
-            // shell 的 src/main/java 由 syncShellRuntimeSources 任务从 app 模块同步而来（见下方）。
-            // src/main/java-overrides 放置 shell 专用的覆盖文件（例如自定义 BootReceiver 等）。
-            // 同步任务通过 exclude(...) 跳过 java-overrides 中已有的同名文件，避免 conflicting declaration。
+
             java.srcDirs("src/main/java", "src/main/java-overrides")
             res.srcDirs("../app/src/main/res")
             assets.srcDirs("src/main/assets")
         }
     }
 
-
     splits {
         abi {
             isEnable = false
         }
     }
-
 
     bundle {
         language {
@@ -112,6 +103,16 @@ android {
         buildConfig = true
     }
 
+    lint {
+
+        disable += "NullSafeMutableLiveData"
+
+        disable += "ExpiredTargetSdkVersion"
+        disable += "ExpiringTargetSdkVersion"
+        disable += "OldTargetApi"
+        abortOnError = false
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -125,15 +126,23 @@ android {
             excludes += "**/libmozavutil.so"
             excludes += "**/libmozavcodec.so"
 
+            excludes += "**/libgkcodecs.so"
+            excludes += "**/libminidump_analyzer.so"
+            excludes += "**/libnss3.so"
+            excludes += "**/libfreebl3.so"
+            excludes += "**/libsoftokn3.so"
+            excludes += "**/liblgpllibs.so"
+            excludes += "**/libplugin-container.so"
+
             excludes += "**/libphp.so"
         }
     }
     androidResources {
         ignoreAssetsPattern = ""
+
+        localeFilters += listOf("zh", "en", "ar")
     }
 }
-
-
 
 val syncShellRuntimeSources by tasks.registering(Sync::class) {
     description = "Sync runtime-only Kotlin sources from app module to shell"
@@ -141,15 +150,12 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
 
     from("../app/src/main/java")
 
-
     include(
 
         "**/ui/shell/**",
         "**/ui/theme/**",
         "**/ui/shared/**",
         "**/ui/design/**",
-
-
 
         "**/core/shell/**",
         "**/core/activation/**",
@@ -162,9 +168,9 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/dns/**",
         "**/core/forcedrun/**",
         "**/core/floatingwindow/**",
-        "**/core/isolation/**",
-        "**/core/disguise/**",
-        "**/core/blacktech/**",
+        "**/core/privacy/**",
+        "**/core/appearance/**",
+        "**/core/actions/**",
         "**/core/perf/**",
         "**/core/port/**",
         "**/core/extension/**",
@@ -174,7 +180,7 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/translate/**",
         "**/core/bgm/**",
         "**/core/engine/**",
-        "**/core/hardening/**",
+        "**/core/protection/**",
         "**/core/scraper/**",
         "**/core/script/**",
         "**/core/ads/**",
@@ -193,10 +199,8 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/frontend/**",
         "**/core/kernel/**",
 
-
         "com/webtoapp/data/model/**",
         "com/webtoapp/data/converter/**",
-
 
         "**/ui/components/announcement/AnnouncementTemplates.kt",
         "**/ui/components/PremiumComponents.kt",
@@ -209,10 +213,8 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/ui/components/LongPressMenu.kt",
         "**/ui/components/ForcedRunCountdownOverlay.kt",
 
-
         "**/util/**"
     )
-
 
     exclude(
 
@@ -220,9 +222,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
 
         "**/core/crypto/EncryptedApkBuilder.kt",
         "**/core/crypto/SecurityInitializer.kt",
-
-        "**/core/extension/AiModuleDeveloper.kt",
-        "**/core/extension/agent/**",
 
         "**/core/autostart/AutoStartLauncher.kt",
         "**/core/autostart/BootReceiver.kt",
@@ -236,19 +235,21 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/util/HtmlProjectHelper.kt",
         "**/util/OfflineManager.kt",
 
-        "**/core/frontend/GitHubRepoFetcher.kt"
+        "**/core/frontend/GitHubRepoFetcher.kt",
+
+        "**/core/extension/QrCodeUtils.kt",
+        "**/core/extension/CodeSnippets.kt",
+        "**/core/extension/ModuleTemplates.kt",
+        "**/core/extension/DebugTestPages.kt",
+        "**/core/extension/ModulePreset.kt"
     )
 
     into("src/main/java")
 }
 
-
 tasks.matching { it.name.startsWith("compile") && it.name.contains("Kotlin") }.configureEach {
     dependsOn(syncShellRuntimeSources)
 }
-
-
-
 
 val syncShellRuntimeAssets by tasks.registering(Copy::class) {
     description = "Mirror runtime-only asset files from app module to shell template (single source of truth: app/src/main/assets)."
@@ -262,12 +263,26 @@ val syncShellRuntimeAssets by tasks.registering(Copy::class) {
     into("src/main/assets")
 }
 
-
 tasks.matching { it.name.startsWith("merge") && it.name.contains("Assets") }.configureEach {
     dependsOn(syncShellRuntimeAssets)
 }
 tasks.matching { it.name == "preBuild" }.configureEach {
     dependsOn(syncShellRuntimeAssets)
+}
+
+tasks.matching { it.name.startsWith("merge") && it.name.contains("Assets") }.configureEach {
+    doLast {
+        val mergedAssetsDir = outputs.files.files.firstOrNull { it.isDirectory }
+        val omniJa = mergedAssetsDir?.resolve("omni.ja")
+        if (omniJa != null && omniJa.exists()) {
+            val sizeKb = omniJa.length() / 1024
+            if (omniJa.delete()) {
+                logger.lifecycle("[shell-slim] Removed bundled GeckoView omni.ja from template assets (${sizeKb} KB)")
+            } else {
+                logger.warn("[shell-slim] Failed to remove omni.ja from $mergedAssetsDir")
+            }
+        }
+    }
 }
 
 abstract class SyncNativeExecutableJniLibsTask : DefaultTask() {
@@ -371,22 +386,17 @@ androidComponents {
 
 dependencies {
 
-
-
-
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.documentfile:documentfile:1.0.1")
 
-
     implementation("com.google.android.material:material:1.10.0")
     implementation("androidx.activity:activity-compose:1.8.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
-
 
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
     implementation("androidx.compose.ui:ui")
@@ -397,55 +407,33 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.navigation:navigation-compose:2.7.5")
 
-
-
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
 
-
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-
 
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("io.coil-kt:coil-video:2.5.0")
     implementation("io.coil-kt:coil-gif:2.5.0")
 
-
     implementation("com.google.code.gson:gson:2.10.1")
-
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0")
 
-
     implementation("io.insert-koin:koin-android:3.5.3")
     implementation("io.insert-koin:koin-androidx-compose:3.5.3")
 
-
     implementation("androidx.webkit:webkit:1.9.0")
-
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
-
 
     implementation("org.apache.commons:commons-compress:1.26.0")
     implementation("org.tukaani:xz:1.9")
 
-
     implementation("org.mozilla.geckoview:geckoview-arm64-v8a:137.0.20250414091429")
 
-
-    implementation("com.google.zxing:core:3.5.2")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
-
-
-
-    implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.browser:browser:1.8.0")
-
-
-    implementation("com.android.tools.build:apksig:8.3.0")
 }

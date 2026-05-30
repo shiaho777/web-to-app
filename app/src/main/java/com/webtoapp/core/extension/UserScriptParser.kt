@@ -2,11 +2,6 @@ package com.webtoapp.core.extension
 
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
-
 object UserScriptParser {
 
     private const val TAG = "UserScriptParser"
@@ -20,20 +15,11 @@ object UserScriptParser {
         """//\s*@(\S+)\s+(.+)"""
     )
 
-
-
-
     data class ParseResult(
         val module: ExtensionModule,
         val isValid: Boolean,
         val warnings: List<String> = emptyList()
     )
-
-
-
-
-
-
 
     fun parse(scriptContent: String, fileName: String = ""): ParseResult {
         val metadataMatch = METADATA_BLOCK_REGEX.find(scriptContent)
@@ -57,7 +43,6 @@ object UserScriptParser {
 
         val metadataBlock = metadataMatch.groupValues[1]
         val warnings = mutableListOf<String>()
-
 
         var name = ""
         var description = ""
@@ -109,9 +94,7 @@ object UserScriptParser {
             name = fileName.removeSuffix(".user.js").removeSuffix(".js").ifBlank { "Unnamed Script" }
         }
 
-
         val urlMatchRules = mutableListOf<UrlMatchRule>()
-
 
         matches.forEach { pattern ->
             urlMatchRules.add(UrlMatchRule(
@@ -120,7 +103,6 @@ object UserScriptParser {
                 exclude = false
             ))
         }
-
 
         includes.forEach { pattern ->
             val (converted, isRegex) = convertIncludePattern(pattern)
@@ -131,7 +113,6 @@ object UserScriptParser {
             ))
         }
 
-
         excludes.forEach { pattern ->
             val (converted, isRegex) = convertIncludePattern(pattern)
             urlMatchRules.add(UrlMatchRule(
@@ -141,7 +122,6 @@ object UserScriptParser {
             ))
         }
 
-
         val moduleRunAt = when (runAt) {
             "document-start" -> ModuleRunTime.DOCUMENT_START
             "document-end" -> ModuleRunTime.DOCUMENT_END
@@ -150,9 +130,7 @@ object UserScriptParser {
             else -> ModuleRunTime.DOCUMENT_IDLE
         }
 
-
         val effectiveGrants = grants.filter { it != "none" && it.isNotBlank() }
-
 
         val module = ExtensionModule(
             name = name,
@@ -187,24 +165,15 @@ object UserScriptParser {
         )
     }
 
-
-
-
     fun isUserScript(content: String): Boolean {
         return METADATA_BLOCK_REGEX.containsMatchIn(content)
     }
-
-
-
 
     private fun convertMatchPattern(pattern: String): String {
         if (pattern == "<all_urls>") return "*"
 
         return pattern
     }
-
-
-
 
     private fun convertIncludePattern(pattern: String): Pair<String, Boolean> {
 
@@ -218,9 +187,6 @@ object UserScriptParser {
 
         return Pair(pattern, false)
     }
-
-
-
 
     fun extractCodeBody(scriptContent: String): String {
         return METADATA_BLOCK_REGEX.replace(scriptContent, "").trim()

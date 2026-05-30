@@ -13,23 +13,11 @@ import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
 object QrCodeUtils {
 
     private const val TAG = "QrCodeUtils"
 
-
-
     private const val QR_MAX_BYTES = 4200
-
-
-
-
-
-
-
 
     fun generateQrCode(
         content: String,
@@ -62,13 +50,6 @@ object QrCodeUtils {
             null
         }
     }
-
-
-
-
-
-
-
 
     fun generateColoredQrCode(
         content: String,
@@ -103,26 +84,13 @@ object QrCodeUtils {
         }
     }
 
-
-
-
-
-
     fun canGenerateQrCode(content: String): Boolean {
         return content.toByteArray(Charsets.UTF_8).size <= QR_MAX_BYTES
     }
 
-
-
-
     fun getContentSize(content: String): Int {
         return content.toByteArray(Charsets.UTF_8).size
     }
-
-
-
-
-
 
     fun decodeQrCode(bitmap: Bitmap): String? {
         return try {

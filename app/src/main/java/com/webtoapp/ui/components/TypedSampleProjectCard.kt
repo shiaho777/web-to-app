@@ -25,12 +25,6 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.sample.TypedSampleProject
 import com.webtoapp.ui.theme.LocalAppTheme
 
-
-
-
-
-
-
 @Composable
 fun TypedSampleProjectsCard(
     title: String,
@@ -122,9 +116,6 @@ fun TypedSampleProjectsCard(
     }
 }
 
-
-
-
 @Composable
 private fun TypedSampleProjectItem(
     sample: TypedSampleProject,
@@ -215,7 +206,6 @@ private fun TypedSampleProjectItem(
         }
 
         Spacer(modifier = Modifier.width(8.dp))
-
 
         Box(
             modifier = Modifier

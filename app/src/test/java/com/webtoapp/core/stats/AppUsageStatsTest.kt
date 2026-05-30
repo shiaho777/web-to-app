@@ -5,10 +5,6 @@ import org.junit.Test
 
 class AppUsageStatsTest {
 
-
-
-
-
     @Test
     fun `formattedTotalUsage shows less than 1m for under 60 seconds`() {
         val stats = AppUsageStats(appId = 1, totalUsageMs = 30_000)
@@ -39,10 +35,6 @@ class AppUsageStatsTest {
         assertThat(stats.formattedTotalUsage).isEqualTo("10h 0m")
     }
 
-
-
-
-
     @Test
     fun `HealthStatus has all expected values`() {
         assertThat(HealthStatus.values()).asList().containsExactly(
@@ -53,10 +45,6 @@ class AppUsageStatsTest {
         )
     }
 
-
-
-
-
     @Test
     fun `AppHealthRecord default status is UNKNOWN`() {
         val record = AppHealthRecord(appId = 1, url = "https://example.com")
@@ -64,10 +52,6 @@ class AppUsageStatsTest {
         assertThat(record.responseTimeMs).isEqualTo(0)
         assertThat(record.httpStatusCode).isEqualTo(0)
     }
-
-
-
-
 
     @Test
     fun `AppHealthSummary holds all fields`() {

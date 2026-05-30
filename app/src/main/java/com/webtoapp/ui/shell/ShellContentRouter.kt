@@ -14,12 +14,6 @@ import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.ui.components.EdgeSwipeRefreshLayout
 
-
-
-
-
-
-
 @Composable
 fun ShellContentRouter(
     appType: String,
@@ -208,10 +202,9 @@ fun ShellContentRouter(
                                     config.extensionModuleIds,
                                     config.embeddedExtensionModules,
                                     config.extensionFabIcon, allowGlobalModuleFallback = false,
+                                    extensionEnabled = config.extensionEnabled,
                                     browserDisguiseConfig = config.browserDisguiseConfig,
                                     deviceDisguiseConfig = config.deviceDisguiseConfig)
-
-
 
                                 var lastTouchX = 0f
                                 var lastTouchY = 0f
@@ -258,10 +251,6 @@ fun ShellContentRouter(
         }
     }
 }
-
-
-
-
 
 @Composable
 fun ShellLocalFileWebView(
@@ -315,9 +304,9 @@ fun ShellLocalFileWebView(
                             config.extensionModuleIds,
                             config.embeddedExtensionModules,
                             config.extensionFabIcon, allowGlobalModuleFallback = false,
+                            extensionEnabled = config.extensionEnabled,
                             browserDisguiseConfig = config.browserDisguiseConfig,
                             deviceDisguiseConfig = config.deviceDisguiseConfig)
-
 
                         settings.apply {
                             javaScriptEnabled = enableJavaScript
@@ -332,8 +321,6 @@ fun ShellLocalFileWebView(
 
                             mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                         }
-
-
 
                         var lastTouchX = 0f
                         var lastTouchY = 0f

@@ -17,11 +17,12 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.i18n.InitializeLanguage
+import com.webtoapp.ui.aicoding.AiCodingScreen
+import com.webtoapp.ui.aicoding.SkillEditorScreen
 import com.webtoapp.ui.screens.AboutScreen
-import com.webtoapp.ui.screens.AiCodingScreen
-import com.webtoapp.ui.screens.AiHtmlCodingScreen
 import com.webtoapp.ui.screens.AiSettingsScreen
 import com.webtoapp.ui.screens.AppModifierScreen
+import com.webtoapp.ui.screens.AppModifyFullScreen
 import com.webtoapp.ui.screens.BrowserKernelScreen
 import com.webtoapp.ui.screens.CreateAppScreen
 import com.webtoapp.ui.screens.CreateFrontendAppScreen
@@ -43,9 +44,9 @@ import com.webtoapp.ui.screens.ModuleEditorScreen
 import com.webtoapp.ui.screens.ModuleMarketScreen
 import com.webtoapp.ui.screens.MoreScreen
 import com.webtoapp.ui.screens.PortManagerScreen
+import com.webtoapp.ui.screens.PlayStoreScreen
 import com.webtoapp.ui.screens.RuntimeDepsScreen
 import com.webtoapp.ui.screens.StatsScreen
-import com.webtoapp.ui.screens.aimodule.AiModuleDeveloperScreen
 import com.webtoapp.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -82,21 +83,22 @@ object Routes {
 
     const val PREVIEW = "preview/{appId}"
     const val APP_MODIFIER = "app_modifier"
+    const val APP_MODIFIER_MODIFY = "app_modifier/modify/{packageName}"
     const val AI_SETTINGS = "ai_settings"
     const val AI_CODING = "ai_coding"
-    const val AI_HTML_CODING = "ai_html_coding"
-    const val AI_CODING_V2 = "ai_coding_v2"
+    const val SKILL_EDITOR_NEW = "skill_editor"
+    const val SKILL_EDITOR_EDIT = "skill_editor/{skillName}"
     const val BROWSER_KERNEL = "browser_kernel"
     const val HOSTS_ADBLOCK = "hosts_adblock"
     const val EXTENSION_MODULES = "extension_modules"
     const val MODULE_MARKET = "module_market"
     const val MODULE_EDITOR = "module_editor"
     const val MODULE_EDITOR_EDIT = "module_editor/{moduleId}"
-    const val AI_MODULE_DEVELOPER = "ai_module_developer"
     const val RUNTIME_DEPS = "runtime_deps"
     const val PORT_MANAGER = "port_manager"
     const val STATS = "stats"
     const val ABOUT = "about"
+    const val PLAY_STORE = "play_store"
 
     fun editApp(appId: Long) = "edit_app/$appId"
     fun editWebApp(appId: Long) = "edit_web_app/$appId"
@@ -111,6 +113,8 @@ object Routes {
     fun editMultiWebApp(appId: Long) = "edit_multi_web_app/$appId"
     fun preview(appId: Long) = "preview/$appId"
     fun editModule(moduleId: String) = "module_editor/$moduleId"
+    fun appModifierModify(packageName: String) = "app_modifier/modify/$packageName"
+    fun editSkill(name: String) = "skill_editor/$name"
 }
 
 @Composable
@@ -178,7 +182,6 @@ fun AppNavigation() {
                         onOpenAppModifier = { navController.navigate(Routes.APP_MODIFIER) },
                         onOpenAiSettings = { navController.navigate(Routes.AI_SETTINGS) },
                         onOpenAiCoding = { navController.navigate(Routes.AI_CODING) },
-                        onOpenAiHtmlCoding = { navController.navigate(Routes.AI_HTML_CODING) },
                         onOpenExtensionModules = { navController.navigate(Routes.EXTENSION_MODULES) },
                         onOpenLinuxEnvironment = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
                         onOpenBrowserKernel = { navController.navigate(Routes.BROWSER_KERNEL) },
@@ -186,7 +189,8 @@ fun AppNavigation() {
                         onOpenRuntimeDeps = { navController.navigate(Routes.RUNTIME_DEPS) },
                         onOpenPortManager = { navController.navigate(Routes.PORT_MANAGER) },
                         onOpenStats = { navController.navigate(Routes.STATS) },
-                        onOpenAbout = { navController.navigate(Routes.ABOUT) }
+                        onOpenAbout = { navController.navigate(Routes.ABOUT) },
+                        onOpenPlayStore = { navController.navigate(Routes.PLAY_STORE) }
                     )
             }
 
@@ -583,74 +587,63 @@ fun AppNavigation() {
             }
 
             composable(Routes.APP_MODIFIER) {
-                AppModifierScreen(onBack = { navController.popBackStack() })
+                AppModifierScreen(
+                    onBack = { navController.popBackStack() },
+                    onSelectApp = { packageName ->
+                        navController.navigate(Routes.appModifierModify(packageName))
+                    }
+                )
+            }
+
+            composable(
+                route = Routes.APP_MODIFIER_MODIFY,
+                arguments = listOf(navArgument("packageName") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val packageName = backStackEntry.arguments?.getString("packageName").orEmpty()
+                AppModifyFullScreen(
+                    packageName = packageName,
+                    onBack = { navController.popBackStack() }
+                )
             }
 
             composable(Routes.AI_SETTINGS) {
                 AiSettingsScreen(onBack = { navController.popBackStack() })
             }
 
-            composable(Routes.AI_HTML_CODING) {
-                AiHtmlCodingScreen(
-                    onBack = { navController.popBackStack() },
-                    onExportToHtmlProject = { files, projectName ->
-                        val navContext = navController.context
-                        val tempDir = java.io.File(navContext.cacheDir, "ai_html_export").apply {
-                            if (exists()) deleteRecursively()
-                            mkdirs()
-                        }
-                        files.forEach { file ->
-                            java.io.File(tempDir, file.name).writeText(file.content)
-                        }
-                        navController.navigate(
-                            "${Routes.CREATE_HTML_APP}?importDir=${java.net.URLEncoder.encode(tempDir.absolutePath, "UTF-8")}&projectName=${java.net.URLEncoder.encode(projectName, "UTF-8")}"
-                        )
-                    },
-                    onNavigateToAiSettings = { navController.navigate(Routes.AI_SETTINGS) }
-                )
-            }
-
             composable(Routes.AI_CODING) {
                 AiCodingScreen(
                     onBack = { navController.popBackStack() },
-                    onExportToProject = { files, projectName, codingType ->
-                        val navContext = navController.context
-                        val tempDir = java.io.File(navContext.cacheDir, "ai_coding_export").apply {
-                            if (exists()) deleteRecursively()
-                            mkdirs()
+                    onOpenAiSettings = { navController.navigate(Routes.AI_SETTINGS) },
+                    onOpenSkillEditor = { name ->
+                        if (name == null) {
+                            navController.navigate(Routes.SKILL_EDITOR_NEW)
+                        } else {
+                            navController.navigate(Routes.editSkill(name))
                         }
+                    }
+                )
+            }
 
-                        files.forEach { file ->
-                            java.io.File(tempDir, file.name).writeText(file.content)
-                        }
+            composable(Routes.SKILL_EDITOR_NEW) {
+                SkillEditorScreen(
+                    skillName = null,
+                    onBack = { navController.popBackStack() }
+                )
+            }
 
-                        when (codingType) {
-                            com.webtoapp.core.ai.coding.AiCodingType.HTML -> {
-                                navController.navigate(
-                                    "${Routes.CREATE_HTML_APP}?importDir=${java.net.URLEncoder.encode(tempDir.absolutePath, "UTF-8")}&projectName=${java.net.URLEncoder.encode(projectName, "UTF-8")}"
-                                )
-                            }
-                            com.webtoapp.core.ai.coding.AiCodingType.FRONTEND -> navController.navigate(Routes.CREATE_FRONTEND_APP)
-                            com.webtoapp.core.ai.coding.AiCodingType.NODEJS -> navController.navigate(Routes.CREATE_NODEJS_APP)
-                            com.webtoapp.core.ai.coding.AiCodingType.WORDPRESS -> navController.navigate(Routes.CREATE_WORDPRESS_APP)
-                            com.webtoapp.core.ai.coding.AiCodingType.PHP -> navController.navigate(Routes.CREATE_PHP_APP)
-                            com.webtoapp.core.ai.coding.AiCodingType.PYTHON -> navController.navigate(Routes.CREATE_PYTHON_APP)
-                            com.webtoapp.core.ai.coding.AiCodingType.GO -> navController.navigate(Routes.CREATE_GO_APP)
-                        }
-                    },
-                    onNavigateToAiSettings = { navController.navigate(Routes.AI_SETTINGS) }
+            composable(
+                route = Routes.SKILL_EDITOR_EDIT,
+                arguments = listOf(navArgument("skillName") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val skillName = backStackEntry.arguments?.getString("skillName")
+                SkillEditorScreen(
+                    skillName = skillName,
+                    onBack = { navController.popBackStack() }
                 )
             }
 
             composable(Routes.BROWSER_KERNEL) {
                 BrowserKernelScreen(onBack = { navController.popBackStack() })
-            }
-
-            composable(Routes.AI_CODING_V2) {
-                com.webtoapp.core.ai.v2.ui.AiCodingV2Screen(
-                    onBack = { navController.popBackStack() },
-                    onOpenAiSettings = { navController.navigate(Routes.AI_SETTINGS) }
-                )
             }
 
             composable(Routes.HOSTS_ADBLOCK) {
@@ -663,6 +656,13 @@ fun AppNavigation() {
 
             composable(Routes.PORT_MANAGER) {
                 PortManagerScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(Routes.PLAY_STORE) {
+                PlayStoreScreen(
+                    onBack = { navController.popBackStack() },
+                    viewModel = viewModel
+                )
             }
 
             composable(Routes.ABOUT) {
@@ -679,7 +679,7 @@ fun AppNavigation() {
                             navController.navigate(Routes.editModule(moduleId))
                         }
                     },
-                    onNavigateToAiDeveloper = { navController.navigate(Routes.AI_MODULE_DEVELOPER) },
+                    onNavigateToAiDeveloper = { navController.navigate(Routes.AI_CODING) },
                     onNavigateToMarket = { navController.navigate(Routes.MODULE_MARKET) }
                 )
             }
@@ -703,14 +703,6 @@ fun AppNavigation() {
                 ModuleEditorScreen(
                     moduleId = moduleId,
                     onNavigateBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(Routes.AI_MODULE_DEVELOPER) {
-                AiModuleDeveloperScreen(
-                    onNavigateBack = { navController.popBackStack() },
-                    onModuleCreated = { navController.popBackStack() },
-                    onNavigateToAiSettings = { navController.navigate(Routes.AI_SETTINGS) }
                 )
             }
         }

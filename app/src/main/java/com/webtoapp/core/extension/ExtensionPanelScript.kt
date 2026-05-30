@@ -1,13 +1,6 @@
 package com.webtoapp.core.extension
 
-
-
-
-
-
-
 object ExtensionPanelScript {
-
 
     private val ICON_SVG_MAP = mapOf(
         "star" to """<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21 12,17.77 5.82,21 7,14.14 2,9.27 8.91,8.26"/></svg>""",
@@ -34,18 +27,10 @@ object ExtensionPanelScript {
 
     private val DEFAULT_SVG = """<svg width="20" height="20" viewBox="0 0 20 20" fill="white"><rect x="1" y="1" width="7.5" height="7.5" rx="2"/><rect x="11.5" y="1" width="7.5" height="7.5" rx="2"/><rect x="1" y="11.5" width="7.5" height="7.5" rx="2"/><rect x="11.5" y="11.5" width="7.5" height="7.5" rx="2"/></svg>"""
 
-
-
-
-
-
     fun getPanelInitScript(fabIcon: String = ""): String {
         val icon = convertFabIconToHtml(fabIcon)
         return getScript(icon)
     }
-
-
-
 
     private fun convertFabIconToHtml(fabIcon: String): String {
         if (fabIcon.isBlank()) return DEFAULT_SVG
@@ -1104,7 +1089,6 @@ object ExtensionPanelScript {
         }
     `;
 
-
     // ==================== UI 类型常量 ====================
     const UI_TYPE = {
         FLOATING_BUTTON: 'FLOATING_BUTTON'  // 统一 FAB 面板按钮（默认）
@@ -1264,7 +1248,7 @@ object ExtensionPanelScript {
                 <div class="wta-panel-header">
                     <span class="wta-panel-title">${'$'}{T.panelTitle}</span>
                     <div class="wta-panel-header-actions">
-                        <div class="wta-panel-close" onclick="__WTA_PANEL__.hidePanel()">
+                        <div class="wta-panel-close" data-wta-action="hidePanel">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                                 <path d="M18 6L6 18M6 6l12 12"/>
                             </svg>
@@ -1274,20 +1258,20 @@ object ExtensionPanelScript {
                 <div class="wta-search-wrap">
                     <div class="wta-search-box">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                        <input type="text" placeholder="${'$'}{T.search}" oninput="__WTA_PANEL__.searchModules(this.value)" id="wta-search-input"/>
+                        <input type="text" placeholder="${'$'}{T.search}" data-wta-action="search" id="wta-search-input"/>
                     </div>
                 </div>
                 <div class="wta-tabs" id="wta-tabs">
-                    <div class="wta-tab active" data-tab="all" onclick="__WTA_PANEL__.switchTab('all')">${'$'}{T.tabAll}<span class="wta-tab-count" id="wta-count-all">0</span></div>
-                    <div class="wta-tab" data-tab="modules" onclick="__WTA_PANEL__.switchTab('modules')">${'$'}{T.tabModules}<span class="wta-tab-count" id="wta-count-modules">0</span></div>
-                    <div class="wta-tab" data-tab="extensions" onclick="__WTA_PANEL__.switchTab('extensions')">${'$'}{T.tabExtensions}<span class="wta-tab-count" id="wta-count-ext">0</span></div>
+                    <div class="wta-tab active" data-tab="all" data-wta-action="switchTab" data-wta-arg="all">${'$'}{T.tabAll}<span class="wta-tab-count" id="wta-count-all">0</span></div>
+                    <div class="wta-tab" data-tab="modules" data-wta-action="switchTab" data-wta-arg="modules">${'$'}{T.tabModules}<span class="wta-tab-count" id="wta-count-modules">0</span></div>
+                    <div class="wta-tab" data-tab="extensions" data-wta-action="switchTab" data-wta-arg="extensions">${'$'}{T.tabExtensions}<span class="wta-tab-count" id="wta-count-ext">0</span></div>
                 </div>
                 <div class="wta-module-list">
                     <div id="wta-module-grid"></div>
                 </div>
                 <div class="wta-module-detail" id="wta-module-detail">
                     <div class="wta-detail-header">
-                        <div class="wta-detail-back" onclick="__WTA_PANEL__.hideModuleDetail()">
+                        <div class="wta-detail-back" data-wta-action="hideModuleDetail">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
                                 <path d="M15 18l-6-6 6-6"/>
                             </svg>
@@ -1320,6 +1304,53 @@ object ExtensionPanelScript {
                     e.stopPropagation();
                 });
             }
+
+            // ==================== CSP 安全的事件委托 ====================
+            // 部分站点（如 x.com）下发 nonce 型 CSP。按 CSP 规范，script-src
+            // 一旦包含 nonce，'unsafe-inline' 即被忽略，所有内联事件处理器
+            // （onclick / oninput 等）都会被拦截 —— 表现为「面板能打开但内部
+            // 所有控件点击无反应」。FAB 之所以能用，是因为它走 addEventListener。
+            //
+            // 这里改用 data-wta-action 属性 + 容器级事件委托：所有控件（包括
+            // updateModules / showModulePanel / launchModuleWindow 动态生成的
+            // 节点）都通过 addEventListener 统一派发，完全绕开内联处理器，
+            // 因此不受任何 CSP 策略影响。
+            this.bindActionDelegation();
+        },
+
+        // 容器级事件委托：把 data-wta-action 映射到面板方法
+        bindActionDelegation() {
+            const self = this;
+            // 委托根用 document：面板容器挂在 <html> 上，而独立模块窗口
+            // （launchModuleWindow）挂在 <body> 上，两者是兄弟节点。只有
+            // document 能同时覆盖。捕获阶段 + closest 过滤，确保只在点中
+            // 自身控件时才介入，不影响页面其它点击。
+            const root = document;
+
+            // 点击类操作
+            root.addEventListener('click', function(e) {
+                var target = e.target && e.target.closest ? e.target.closest('[data-wta-action]') : null;
+                if (!target) return;
+                var action = target.getAttribute('data-wta-action');
+                if (!action || action === 'search') return; // search 走 input 事件
+                var arg = target.getAttribute('data-wta-arg');
+                if (typeof self[action] !== 'function') return;
+                e.preventDefault();
+                e.stopPropagation();
+                try {
+                    if (arg !== null) self[action](arg);
+                    else self[action]();
+                } catch (err) {
+                    console.error('[WTA Panel] action "' + action + '" failed:', err);
+                }
+            }, true);
+
+            // 输入类操作（搜索框）
+            root.addEventListener('input', function(e) {
+                var target = e.target && e.target.closest ? e.target.closest('[data-wta-action="search"]') : null;
+                if (!target) return;
+                self.searchModules(target.value);
+            }, true);
         },
 
         // 初始化FAB拖动功能
@@ -1569,8 +1600,8 @@ object ExtensionPanelScript {
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--wta-outline);cursor:move;user-select:none">
                     <span style="font-size:15px;font-weight:700;color:var(--wta-on-surface)">${"$"}{module.icon || '📦'} ${"$"}{module.name || T.unnamed}</span>
                     <div style="display:flex;gap:6px">
-                        <div style="width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--wta-on-surface-variant);font-size:12px" onclick="__WTA_PANEL__.minimizeModuleWindow('${"$"}{moduleId}')">−</div>
-                        <div style="width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--wta-on-surface-variant);font-size:12px" onclick="__WTA_PANEL__.closeModuleWindow('${"$"}{moduleId}')">×</div>
+                        <div style="width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--wta-on-surface-variant);font-size:12px" data-wta-action="minimizeModuleWindow" data-wta-arg="${"$"}{moduleId}">−</div>
+                        <div style="width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--wta-on-surface-variant);font-size:12px" data-wta-action="closeModuleWindow" data-wta-arg="${"$"}{moduleId}">×</div>
                     </div>
                 </div>
                 <div id="wta-modwin-content-${"$"}{moduleId}" style="flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch">
@@ -1672,7 +1703,7 @@ object ExtensionPanelScript {
             var runModeBadge = moduleRunMode === RUN_MODE.AUTO ?
                 '<span class="wta-type-badge" style="background:#fef3c7;color:#92400e">⚡ ' + T.runModeAuto + '</span>' :
                 '<span class="wta-type-badge" style="background:#dbeafe;color:#1e40af">🖥️ ' + T.runModeInteractive + '</span>';
-            return '<div class="wta-ext-row" onclick="__WTA_PANEL__.onModuleClick(\'' + m.id + '\')">' +
+            return '<div class="wta-ext-row" data-wta-action="onModuleClick" data-wta-arg="' + m.id + '">' +
                 '<div class="wta-ext-row-icon">' + icon + '</div>' +
                 '<div class="wta-ext-row-info">' +
                     '<div class="wta-ext-row-name">' + (m.name || T.unnamed) + '</div>' +
@@ -1924,7 +1955,7 @@ object ExtensionPanelScript {
             } else {
                 // INTERACTIVE 模式：显示启动窗口按钮 + 简单 UI 操作界面
                 var launchBtnHtml = '<div class="wta-detail-section">' +
-                    '<button onclick="__WTA_PANEL__.launchModuleWindow(\'' + moduleId + '\')" ' +
+                    '<button data-wta-action="launchModuleWindow" data-wta-arg="' + moduleId + '" ' +
                     'style="width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:500;cursor:pointer;' +
                     'background:linear-gradient(135deg,var(--wta-primary),#8b5cf6);color:white;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px">' +
                     '<span style="font-size:18px">\ud83d\udda5\ufe0f</span> ' + T.launchWindow + '</button></div>';
@@ -2027,12 +2058,6 @@ object ExtensionPanelScript {
     }
 })();
 """.trimIndent()
-
-
-
-
-
-
 
     fun getModuleHelperScript(): String = """
 (function() {

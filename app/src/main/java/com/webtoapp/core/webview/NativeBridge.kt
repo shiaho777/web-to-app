@@ -1,6 +1,8 @@
 package com.webtoapp.core.webview
 
 import android.app.Activity
+import android.app.ActivityManager
+import android.app.AlarmManager
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -14,6 +16,8 @@ import android.content.pm.PackageManager
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
+import android.os.Process
 import android.provider.Settings
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -26,7 +30,9 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.webtoapp.core.background.BackgroundRunService
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.notification.BridgeAlarmReceiver
 import com.webtoapp.util.MediaSaver
 import com.webtoapp.util.getUrlScheme
 import com.webtoapp.util.isAllowedUrlScheme
@@ -46,16 +52,13 @@ import java.net.URI
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
-
-
-
-
-
-
 class NativeBridge(
     private val context: Context,
     private val scope: CoroutineScope,
-    private val webViewProvider: () -> WebView? = { null }
+    private val webViewProvider: () -> WebView? = { null },
+
+    private val capabilities: com.webtoapp.data.model.NativeBridgeCapabilities =
+        com.webtoapp.data.model.NativeBridgeCapabilities()
 ) {
     companion object {
         const val JS_INTERFACE_NAME = "NativeBridge"
@@ -66,9 +69,6 @@ class NativeBridge(
             "content-length",
             "accept-encoding"
         )
-
-
-
 
         fun getApiDocumentation(): String = """
 ## NativeBridge API 文档
@@ -438,8 +438,6 @@ if (NativeBridge.isFullscreen()) {
             .build()
     }
 
-
-
     @JavascriptInterface
     fun showToast(message: String, duration: String = "short") {
         scope.launch(Dispatchers.Main) {
@@ -450,6 +448,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun vibrate(milliseconds: Long = 100) {
+        if (!capabilities.vibration) return
         try {
             val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val manager = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -466,12 +465,13 @@ if (NativeBridge.isFullscreen()) {
                 vibrator.vibrate(milliseconds)
             }
         } catch (e: Exception) {
-            AppLogger.e("NativeBridge", "震动失败", e)
+            AppLogger.e("NativeBridge", "Vibration failed", e)
         }
     }
 
     @JavascriptInterface
     fun vibratePattern(pattern: String, repeat: Int = -1) {
+        if (!capabilities.vibration) return
         try {
             val timings = pattern.split(",").mapNotNull { it.trim().toLongOrNull() }.toLongArray()
             if (timings.isEmpty()) return
@@ -491,15 +491,13 @@ if (NativeBridge.isFullscreen()) {
                 vibrator.vibrate(timings, repeat)
             }
         } catch (e: Exception) {
-            AppLogger.e("NativeBridge", "模式震动失败", e)
+            AppLogger.e("NativeBridge", "mode vibration failed", e)
         }
     }
 
-
-
-
     @JavascriptInterface
     fun copyToClipboard(text: String): Boolean {
+        if (!capabilities.clipboard) return false
         return try {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("text", text)
@@ -513,16 +511,15 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun getClipboardText(): String {
+        if (!capabilities.clipboard) return ""
         return try {
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             clipboard.primaryClip?.getItemAt(0)?.text?.toString() ?: ""
         } catch (e: Exception) {
-            AppLogger.e("NativeBridge", "获取剪贴板失败", e)
+            AppLogger.e("NativeBridge", "Failed to read clipboard", e)
             ""
         }
     }
-
-
 
     @JavascriptInterface
     fun share(title: String, text: String, url: String = "") {
@@ -554,9 +551,6 @@ if (NativeBridge.isFullscreen()) {
         share(title, imageUrl)
     }
 
-
-
-
     private val ALLOWED_SCHEMES = setOf("http", "https", "tel", "mailto", "sms", "geo")
 
     @JavascriptInterface
@@ -580,7 +574,7 @@ if (NativeBridge.isFullscreen()) {
                 }
                 context.startActivity(intent)
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "打开链接失败", e)
+                AppLogger.e("NativeBridge", "Failed to open link", e)
                 Toast.makeText(context, Strings.cannotOpenLink, Toast.LENGTH_SHORT).show()
             }
         }
@@ -598,15 +592,14 @@ if (NativeBridge.isFullscreen()) {
                 false
             }
         } catch (e: Exception) {
-            AppLogger.e("NativeBridge", "打开应用失败", e)
+            AppLogger.e("NativeBridge", "Failed to open app", e)
             false
         }
     }
 
-
-
     @JavascriptInterface
     fun getNotificationPermissionState(): String {
+        if (!capabilities.notification) return "denied"
         return try {
             if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) {
                 return "denied"
@@ -621,13 +614,14 @@ if (NativeBridge.isFullscreen()) {
                 "granted"
             }
         } catch (e: Exception) {
-            AppLogger.w("NativeBridge", "读取通知权限状态失败", e)
+            AppLogger.w("NativeBridge", "Failed to read notification-permission state", e)
             "default"
         }
     }
 
     @JavascriptInterface
     fun requestNotificationPermission(): String {
+        if (!capabilities.notification) return "denied"
         val current = getNotificationPermissionState()
         if (current == "granted" || current == "denied") return current
 
@@ -642,7 +636,7 @@ if (NativeBridge.isFullscreen()) {
                             9001
                         )
                     } catch (e: Exception) {
-                        AppLogger.w("NativeBridge", "请求通知权限失败", e)
+                        AppLogger.w("NativeBridge", "Notification-permission request failed", e)
                     }
                 }
             }
@@ -652,6 +646,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun showWebNotification(title: String, body: String = "", tag: String = ""): Boolean {
+        if (!capabilities.notification) return false
         return try {
             if (getNotificationPermissionState() != "granted") return false
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -691,20 +686,19 @@ if (NativeBridge.isFullscreen()) {
             try {
                 NotificationManagerCompat.from(context).notify((tag.ifBlank { "$title|$body" }).hashCode(), notification)
             } catch (e: SecurityException) {
-                AppLogger.e("NativeBridge", "通知权限不可用", e)
+                AppLogger.e("NativeBridge", "Notification permission unavailable", e)
                 return false
             }
             true
         } catch (e: Exception) {
-            AppLogger.e("NativeBridge", "显示网页通知失败", e)
+            AppLogger.e("NativeBridge", "Failed to show web notification", e)
             false
         }
     }
 
-
-
     @JavascriptInterface
     fun saveImageToGallery(imageUrl: String, filename: String = "") {
+        if (!capabilities.download) return
         val finalFilename = filename.ifBlank { "IMG_${System.currentTimeMillis()}.jpg" }
 
         scope.launch {
@@ -729,6 +723,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun saveVideoToGallery(videoUrl: String, filename: String = "") {
+        if (!capabilities.download) return
         val finalFilename = filename.ifBlank { "VID_${System.currentTimeMillis()}.mp4" }
 
         scope.launch {
@@ -750,8 +745,6 @@ if (NativeBridge.isFullscreen()) {
             }
         }
     }
-
-
 
     @JavascriptInterface
     fun getDeviceInfo(): String {
@@ -787,8 +780,6 @@ if (NativeBridge.isFullscreen()) {
             "{}"
         }
     }
-
-
 
     @JavascriptInterface
     fun isDeveloperOptionsEnabled(): Boolean {
@@ -856,6 +847,269 @@ if (NativeBridge.isFullscreen()) {
     }
 
     @JavascriptInterface
+    fun areNotificationsEnabled(): Boolean {
+        return try {
+            NotificationManagerCompat.from(context).areNotificationsEnabled()
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to check notification state", e)
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun openNotificationSettings(): Boolean {
+        return try {
+            val intent = Intent().apply {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                } else {
+                    action = "android.settings.APP_NOTIFICATION_SETTINGS"
+                    putExtra("app_package", context.packageName)
+                    putExtra("app_uid", context.applicationInfo.uid)
+                }
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            true
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to open notification settings", e)
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun scheduleNotification(jsonPayload: String): Boolean {
+        return try {
+            val json = org.json.JSONObject(jsonPayload)
+            val title = json.optString("title").ifBlank { getAppLabel() }
+            val body = json.optString("body").ifBlank { "Notification" }
+            val tag = json.optString("tag").ifBlank { "bridge_${System.currentTimeMillis()}" }
+            val channelId = json.optString("channelId").ifBlank { "webapp_bridge_notifications" }
+            val deepLink = json.optString("deepLink", "")
+            val playSound = json.optBoolean("playSound", true)
+            val delaySec = json.optLong("delaySec", 0L)
+            val triggerAt = json.optLong("triggerAt", 0L)
+
+            val triggerAtMillis = when {
+                triggerAt > 10_000_000_000L -> triggerAt
+                triggerAt > 0 -> triggerAt * 1000L
+                delaySec > 0 -> System.currentTimeMillis() + (delaySec * 1000L)
+                else -> System.currentTimeMillis() + 1000L
+            }
+
+            scheduleBridgeAlarm(triggerAtMillis, title, body, tag, channelId, deepLink, playSound)
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to schedule notification", e)
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun cancelNotification(tag: String): Boolean {
+        return try {
+            NotificationManagerCompat.from(context).cancel(tag.hashCode())
+            true
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to cancel notification", e)
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun cancelAllNotifications(): Boolean {
+        return try {
+            NotificationManagerCompat.from(context).cancelAll()
+            true
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to cancel all notifications", e)
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun canScheduleExactAlarms(): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+                alarmManager?.canScheduleExactAlarms() ?: false
+            } else {
+                true
+            }
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to check exact alarm capability", e)
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun startBackgroundService(jsonPayload: String): Boolean {
+        return try {
+            val json = org.json.JSONObject(jsonPayload)
+            val title = json.optString("title").ifBlank { getAppLabel() }
+            val body = json.optString("body").ifBlank { "Running in background" }
+            BackgroundRunService.start(
+                context = context,
+                appName = getAppLabel(),
+                notificationTitle = title,
+                notificationContent = body,
+                showNotification = true,
+                keepCpuAwake = true
+            )
+            true
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to start background service", e)
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun stopBackgroundService(): Boolean {
+        return try {
+            BackgroundRunService.stop(context)
+            true
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to stop background service", e)
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun isBackgroundServiceRunning(): Boolean {
+        return try {
+            BackgroundRunService.isServiceRunning()
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun isDozeMode(): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
+            val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+            powerManager?.isDeviceIdleMode ?: false
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to check doze mode", e)
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun isIgnoringBatteryOptimizations(): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
+            val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+            powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: false
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to check battery optimization state", e)
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun openBatteryOptimizationSettings(): Boolean {
+        return try {
+            val intent = Intent().apply {
+                action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
+                } else {
+                    Settings.ACTION_SETTINGS
+                }
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(intent)
+            true
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to open battery optimization settings", e)
+            false
+        }
+    }
+
+    @JavascriptInterface
+    fun getAppState(): String {
+        return try {
+            if (isAppInForeground()) "foreground" else "background"
+        } catch (e: Exception) {
+            "unknown"
+        }
+    }
+
+    @JavascriptInterface
+    fun isAppInForeground(): Boolean {
+        return try {
+            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+                ?: return false
+            val process = activityManager.runningAppProcesses
+                ?.firstOrNull { it.pid == Process.myPid() && it.processName == context.packageName }
+                ?: return false
+            process.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND ||
+                process.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to check foreground state", e)
+            false
+        }
+    }
+
+    private fun scheduleBridgeAlarm(
+        triggerAtMillis: Long,
+        title: String,
+        body: String,
+        tag: String,
+        channelId: String,
+        deepLink: String,
+        playSound: Boolean
+    ): Boolean {
+        return try {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+                ?: return false
+            val safeTriggerAt = triggerAtMillis.coerceAtLeast(System.currentTimeMillis() + 1000L)
+
+            val receiverIntent = Intent(context, BridgeAlarmReceiver::class.java).apply {
+                action = BridgeAlarmReceiver.ACTION_SCHEDULED_NOTIFICATION
+                putExtra(BridgeAlarmReceiver.EXTRA_TITLE, title)
+                putExtra(BridgeAlarmReceiver.EXTRA_BODY, body)
+                putExtra(BridgeAlarmReceiver.EXTRA_CHANNEL_ID, channelId)
+                putExtra(BridgeAlarmReceiver.EXTRA_TAG, tag)
+                putExtra(BridgeAlarmReceiver.EXTRA_DEEP_LINK, deepLink)
+                putExtra(BridgeAlarmReceiver.EXTRA_PLAY_SOUND, playSound)
+            }
+
+            val requestCode = "$tag|$safeTriggerAt".hashCode()
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                receiverIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
+
+                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, safeTriggerAt, pendingIntent)
+                } else {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, safeTriggerAt, pendingIntent)
+                }
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, safeTriggerAt, pendingIntent)
+            }
+            AppLogger.d("NativeBridge", "Scheduled alarm: tag=$tag, triggerAt=$safeTriggerAt")
+            true
+        } catch (e: Exception) {
+            AppLogger.e("NativeBridge", "Failed to schedule bridge alarm", e)
+            false
+        }
+    }
+
+    private fun getAppLabel(): String {
+        return try {
+            context.applicationInfo.loadLabel(context.packageManager).toString()
+        } catch (_: Exception) {
+            "WebToApp"
+        }
+    }
+
+    @JavascriptInterface
     fun isNetworkAvailable(): Boolean {
         return try {
             val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
@@ -883,13 +1137,11 @@ if (NativeBridge.isFullscreen()) {
         }
     }
 
-
-
-
     private val downloadBridge by lazy { DownloadBridge(context, scope) }
 
     @JavascriptInterface
     fun saveToFile(content: String, filename: String, mimeType: String = "text/plain") {
+        if (!capabilities.download) return
         scope.launch(Dispatchers.IO) {
             try {
                 val base64Data = android.util.Base64.encodeToString(
@@ -898,15 +1150,13 @@ if (NativeBridge.isFullscreen()) {
                 )
                 downloadBridge.saveBase64File(base64Data, filename, mimeType)
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "保存文件失败", e)
+                AppLogger.e("NativeBridge", "Failed to save file", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, Strings.saveFailed, Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
-
-
 
     @JavascriptInterface
     fun log(message: String) {
@@ -915,6 +1165,9 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun httpRequest(requestJson: String): String {
+        if (!capabilities.privateNetwork) {
+            return privateNetworkBridgeError("disabled", "Native private network capability disabled")
+        }
         return try {
             val request = org.json.JSONObject(requestJson)
             val url = request.optString("url").trim()
@@ -1011,8 +1264,6 @@ if (NativeBridge.isFullscreen()) {
         }.toString()
     }
 
-
-
     @Volatile
     private var findQuery: String = ""
     @Volatile
@@ -1079,7 +1330,7 @@ if (NativeBridge.isFullscreen()) {
                 webView.findAllAsync(safeQuery)
                 publishFindState(webView)
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "页内查找失败", e)
+                AppLogger.e("NativeBridge", "In-page find failed", e)
                 findDoneCounting = true
             }
         }
@@ -1097,7 +1348,7 @@ if (NativeBridge.isFullscreen()) {
                     publishFindState(webView)
                 }
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "页内查找跳转失败", e)
+                AppLogger.e("NativeBridge", "In-page find navigation failed", e)
             }
         }
         return buildFindStateJson()
@@ -1116,18 +1367,12 @@ if (NativeBridge.isFullscreen()) {
                 webView.clearMatches()
                 publishFindState(webView)
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "清除页内查找失败", e)
+                AppLogger.e("NativeBridge", "Failed to clear in-page find", e)
             }
         }
 
         return buildFindStateJson()
     }
-
-
-
-
-
-
 
     @JavascriptInterface
     fun setOrientation(orientation: String) {
@@ -1143,16 +1388,12 @@ if (NativeBridge.isFullscreen()) {
                     "reverse_portrait" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
                     else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
                 }
-                AppLogger.d("NativeBridge", "屏幕方向已设置为: $orientation")
+                AppLogger.d("NativeBridge", "Screen orientation set to: $orientation")
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "设置屏幕方向失败", e)
+                AppLogger.e("NativeBridge", "Failed to set screen orientation", e)
             }
         }
     }
-
-
-
-
 
     @JavascriptInterface
     fun getOrientation(): String {
@@ -1168,9 +1409,6 @@ if (NativeBridge.isFullscreen()) {
         }
     }
 
-
-
-
     @JavascriptInterface
     fun lockOrientation() {
         scope.launch(Dispatchers.Main) {
@@ -1182,15 +1420,12 @@ if (NativeBridge.isFullscreen()) {
                 } else {
                     ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                 }
-                AppLogger.d("NativeBridge", "屏幕方向已锁定")
+                AppLogger.d("NativeBridge", "Screen orientation locked")
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "锁定屏幕方向失败", e)
+                AppLogger.e("NativeBridge", "Failed to lock screen orientation", e)
             }
         }
     }
-
-
-
 
     @JavascriptInterface
     fun unlockOrientation() {
@@ -1198,19 +1433,12 @@ if (NativeBridge.isFullscreen()) {
             try {
                 val activity = context as? Activity ?: return@launch
                 activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER
-                AppLogger.d("NativeBridge", "屏幕方向已解锁")
+                AppLogger.d("NativeBridge", "Screen orientation unlocked")
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "解锁屏幕方向失败", e)
+                AppLogger.e("NativeBridge", "Failed to unlock screen orientation", e)
             }
         }
     }
-
-
-
-
-
-
-
 
     @JavascriptInterface
     fun downloadVideo(url: String, filename: String) {
@@ -1232,19 +1460,13 @@ if (NativeBridge.isFullscreen()) {
                     }
                 }
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "下载视频失败", e)
+                AppLogger.e("NativeBridge", "Failed to download video", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, Strings.downloadFailed, Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
-
-
-
-
-
-
 
     @JavascriptInterface
     fun downloadWithHeaders(url: String, filename: String, headersJson: String) {
@@ -1286,14 +1508,9 @@ if (NativeBridge.isFullscreen()) {
         }
     }
 
-
-
-
-
-
-
     @JavascriptInterface
     fun setScreenBrightness(brightness: Float) {
+        if (!capabilities.brightness) return
         scope.launch(Dispatchers.Main) {
             try {
                 val activity = context as? Activity ?: return@launch
@@ -1304,19 +1521,16 @@ if (NativeBridge.isFullscreen()) {
                     brightness.coerceIn(0f, 1f)
                 }
                 activity.window.attributes = layoutParams
-                AppLogger.d("NativeBridge", "屏幕亮度已设置为: $brightness")
+                AppLogger.d("NativeBridge", "Screen brightness set to: $brightness")
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "设置屏幕亮度失败", e)
+                AppLogger.e("NativeBridge", "Failed to set screen brightness", e)
             }
         }
     }
 
-
-
-
-
     @JavascriptInterface
     fun setKeepScreenOn(keepOn: Boolean) {
+        if (!capabilities.screenWake) return
         scope.launch(Dispatchers.Main) {
             try {
                 val activity = context as? Activity ?: return@launch
@@ -1325,17 +1539,12 @@ if (NativeBridge.isFullscreen()) {
                 } else {
                     activity.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
-                AppLogger.d("NativeBridge", "屏幕常亮: $keepOn")
+                AppLogger.d("NativeBridge", "Keep-screen-on: $keepOn")
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "设置屏幕常亮失败", e)
+                AppLogger.e("NativeBridge", "Failed to enable keep-screen-on", e)
             }
         }
     }
-
-
-
-
-
 
     @JavascriptInterface
     fun enterFullscreen() {
@@ -1360,15 +1569,12 @@ if (NativeBridge.isFullscreen()) {
                         or android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                     )
                 }
-                AppLogger.d("NativeBridge", "已进入全屏模式")
+                AppLogger.d("NativeBridge", "Entered fullscreen mode")
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "进入全屏失败", e)
+                AppLogger.e("NativeBridge", "Entering fullscreenfailed", e)
             }
         }
     }
-
-
-
 
     @JavascriptInterface
     fun exitFullscreen() {
@@ -1386,15 +1592,12 @@ if (NativeBridge.isFullscreen()) {
                     @Suppress("DEPRECATION")
                     decorView.systemUiVisibility = android.view.View.SYSTEM_UI_FLAG_VISIBLE
                 }
-                AppLogger.d("NativeBridge", "已退出全屏模式")
+                AppLogger.d("NativeBridge", "Exited fullscreen mode")
             } catch (e: Exception) {
-                AppLogger.e("NativeBridge", "退出全屏失败", e)
+                AppLogger.e("NativeBridge", "Exiting fullscreenfailed", e)
             }
         }
     }
-
-
-
 
     @JavascriptInterface
     fun isFullscreen(): Boolean {

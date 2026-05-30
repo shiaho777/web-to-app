@@ -42,4 +42,3 @@ class ThreadLocalCompatTest {
         assertThat(3_650_000L.toDurationString()).isEqualTo("1:00:50")
     }
 }
-

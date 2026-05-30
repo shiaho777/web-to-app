@@ -24,19 +24,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-
-
-
-
-
-
 class ShellPermissionDelegate(private val activity: AppCompatActivity) {
-
 
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeolocationOrigin: String? = null
     private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
-
 
     private var pendingDownload: PendingDownload? = null
 
@@ -48,22 +40,9 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         val contentLength: Long
     )
 
-
-
-
     private var cameraPhotoUri: Uri? = null
 
-
     private var pendingFilePathCallback: android.webkit.ValueCallback<Array<Uri>>? = null
-
-
-
-
-
-
-
-
-
 
     private val fileChooserActivityLauncher = activity.registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -76,7 +55,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
 
         if (result.resultCode == android.app.Activity.RESULT_OK) {
             val resultUris = mutableListOf<Uri>()
-
 
             val data = result.data
             if (data == null || (data.data == null && data.clipData == null)) {
@@ -104,21 +82,14 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         cameraPhotoUri = null
     }
 
-
     private var pendingFileChooserParams: WebChromeClient.FileChooserParams? = null
     private val cameraForFileChooserPermLauncher = activity.registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
 
-
         launchFileChooserIntent(pendingFileChooserParams)
         pendingFileChooserParams = null
     }
-
-
-
-
-
 
     fun handleFileChooser(
         filePathCallback: android.webkit.ValueCallback<Array<Uri>>?,
@@ -129,7 +100,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         pendingFilePathCallback = filePathCallback
 
         if (filePathCallback == null) return false
-
 
         val needsCamera = isCameraRequired(fileChooserParams)
         val hasCameraPermission = ContextCompat.checkSelfPermission(
@@ -147,15 +117,10 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         return true
     }
 
-
-
-
     private fun isCameraRequired(params: WebChromeClient.FileChooserParams?): Boolean {
         if (params == null) return false
 
-
         if (params.isCaptureEnabled) return true
-
 
         val acceptTypes = params.acceptTypes
         if (acceptTypes == null || acceptTypes.isEmpty() || (acceptTypes.size == 1 && acceptTypes[0].isNullOrBlank())) {
@@ -176,9 +141,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         return false
     }
 
-
-
-
     private fun launchFileChooserIntent(params: WebChromeClient.FileChooserParams?) {
         try {
             val hasCameraPermission = ContextCompat.checkSelfPermission(
@@ -186,7 +148,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             ) == PackageManager.PERMISSION_GRANTED
 
             val extraIntents = mutableListOf<Intent>()
-
 
             if (hasCameraPermission) {
                 try {
@@ -202,11 +163,9 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                         addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                     }
 
-
                     if (cameraIntent.resolveActivity(activity.packageManager) != null) {
                         extraIntents.add(cameraIntent)
                     }
-
 
                     val videoIntent = Intent(MediaStore.ACTION_VIDEO_CAPTURE)
                     if (videoIntent.resolveActivity(activity.packageManager) != null) {
@@ -216,7 +175,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                     AppLogger.e("ShellPermission", "Camera intent creation failed", e)
                 }
             }
-
 
             val rawAcceptTypes = params?.acceptTypes ?: arrayOf("*/*")
 
@@ -242,18 +200,15 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 addCategory(Intent.CATEGORY_OPENABLE)
                 type = mimeType
 
-
                 if (params?.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
                     putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
                 }
-
 
                 if (resolvedMimeTypes.size > 1) {
                     putExtra(Intent.EXTRA_MIME_TYPES, resolvedMimeTypes.toTypedArray())
                     type = "*/*"
                 }
             }
-
 
             val chooserIntent = Intent.createChooser(contentIntent, null).apply {
                 if (extraIntents.isNotEmpty()) {
@@ -271,21 +226,11 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         }
     }
 
-
-
-
     private fun createImageFile(): File {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val imageDir = File(activity.cacheDir, "camera_photos").apply { mkdirs() }
         return File.createTempFile("IMG_${timestamp}_", ".jpg", imageDir)
     }
-
-
-
-
-
-
-
 
     private fun extensionToMimeType(ext: String): String {
         return when (ext) {
@@ -360,17 +305,14 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         }
     }
 
-
     @Deprecated("Use handleFileChooser() instead")
     var onFileChooserResult: ((Array<android.net.Uri>) -> Unit)? = null
-
 
     val fileChooserLauncher = activity.registerForActivityResult(
         ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         onFileChooserResult?.invoke(uris.toTypedArray())
     }
-
 
     private val storagePermissionLauncher = activity.registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -400,7 +342,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         pendingDownload = null
     }
 
-
     private val permissionLauncher = activity.registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -421,7 +362,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         }
     }
 
-
     private val locationPermissionLauncher = activity.registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -430,7 +370,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         pendingGeolocationOrigin = null
         pendingGeolocationCallback = null
     }
-
 
     private val notificationPermissionLauncher = activity.registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -441,11 +380,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             AppLogger.d("ShellActivity", "通知权限被拒绝")
         }
     }
-
-
-
-
-
 
     fun requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -459,13 +393,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             }
         }
     }
-
-
-
-
-
-
-
 
     fun handlePermissionRequest(request: PermissionRequest) {
         val resources = request.resources
@@ -481,7 +408,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                     AppLogger.d("ShellActivity", "Added CAMERA permission request")
                 }
                 PermissionRequest.RESOURCE_AUDIO_CAPTURE -> {
-
 
                     androidPermissions.add(Manifest.permission.RECORD_AUDIO)
                     AppLogger.d("ShellActivity", "Added RECORD_AUDIO permission request (MODIFY_AUDIO_SETTINGS is normal, auto-granted)")
@@ -500,7 +426,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             }
         }
 
-
         val uniquePermissions = androidPermissions.distinct()
 
         AppLogger.d("ShellActivity", "Android permissions to request: ${uniquePermissions.joinToString()}")
@@ -511,7 +436,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             request.grant(resources)
             return
         }
-
 
         val notGranted = uniquePermissions.filter {
             androidx.core.content.ContextCompat.checkSelfPermission(
@@ -531,9 +455,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         }
     }
 
-
-
-
     fun handleGeolocationPermission(origin: String?, callback: GeolocationPermissions.Callback?) {
         pendingGeolocationOrigin = origin
         pendingGeolocationCallback = callback
@@ -542,9 +463,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             Manifest.permission.ACCESS_COARSE_LOCATION
         ))
     }
-
-
-
 
     fun handleDownloadWithPermission(
         url: String,
@@ -643,7 +561,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             """.trimIndent(), null)
         }
 
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             DownloadHelper.handleDownload(
                 context = activity,
@@ -658,7 +575,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             )
             return
         }
-
 
         val hasPermission = ContextCompat.checkSelfPermission(
             activity,

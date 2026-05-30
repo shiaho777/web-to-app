@@ -38,9 +38,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IconGeneratorDialog(
@@ -52,15 +49,12 @@ fun IconGeneratorDialog(
     val configManager = remember { AiConfigManager(context) }
     val aiClient = remember { AiApiClient(context) }
 
-
     val savedModels by configManager.savedModelsFlow.collectAsState(initial = emptyList())
     val apiKeys by configManager.apiKeysFlow.collectAsState(initial = emptyList())
-
 
     val imageGenModels = savedModels.filter { model ->
         model.supportsFeature(AiFeature.ICON_GENERATION)
     }
-
 
     var selectedModel by remember { mutableStateOf<SavedModel?>(null) }
     var prompt by remember { mutableStateOf("") }
@@ -70,13 +64,11 @@ fun IconGeneratorDialog(
     var savedIconPath by remember { mutableStateOf<String?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-
     LaunchedEffect(imageGenModels) {
         if (selectedModel == null && imageGenModels.isNotEmpty()) {
             selectedModel = imageGenModels.first()
         }
     }
-
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
@@ -169,7 +161,6 @@ fun IconGeneratorDialog(
                     }
                 }
 
-
                 Text(Strings.describeIcon, style = MaterialTheme.typography.labelMedium)
                 OutlinedTextField(
                     value = prompt,
@@ -179,7 +170,6 @@ fun IconGeneratorDialog(
                     minLines = 2,
                     maxLines = 4
                 )
-
 
                 Text(
                     Strings.referenceImages,
@@ -242,7 +232,6 @@ fun IconGeneratorDialog(
                     }
                 }
 
-
                 generatedIcon?.let { base64 ->
                     Text(Strings.generationResult, style = MaterialTheme.typography.labelMedium)
                     Box(
@@ -269,7 +258,6 @@ fun IconGeneratorDialog(
                     }
                 }
 
-
                 errorMessage?.let {
                     Text(
                         it,
@@ -277,7 +265,6 @@ fun IconGeneratorDialog(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
-
 
                 if (isGenerating) {
                     Row(

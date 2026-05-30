@@ -16,12 +16,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import java.io.File
 
-
-
-
-
-
-
 @Composable
 fun StatusBarBackground(
     backgroundType: String,
@@ -41,9 +35,7 @@ fun StatusBarBackground(
         24.dp
     }
 
-
-    val actualHeight = if (heightDp > 0) heightDp.dp else systemStatusBarHeight
-
+    val actualHeight = if (heightDp >= 0) heightDp.dp else systemStatusBarHeight
 
     val imageBitmap = remember(backgroundImagePath) {
         if (backgroundType == "IMAGE" && !backgroundImagePath.isNullOrEmpty()) {
@@ -109,14 +101,6 @@ fun StatusBarBackground(
     }
 }
 
-
-
-
-
-
-
-
-
 @Composable
 fun StatusBarOverlay(
     show: Boolean,
@@ -139,9 +123,7 @@ fun StatusBarOverlay(
         24.dp
     }
 
-
-    val actualHeight = if (heightDp > 0) heightDp.dp else systemStatusBarHeight
-
+    val actualHeight = if (heightDp >= 0) heightDp.dp else systemStatusBarHeight
 
     val imageBitmap = remember(backgroundImagePath) {
         if (backgroundType == "IMAGE" && !backgroundImagePath.isNullOrEmpty()) {
@@ -165,7 +147,6 @@ fun StatusBarOverlay(
             null
         }
     }
-
 
     Box(
         modifier = modifier

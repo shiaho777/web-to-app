@@ -28,6 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.webtoapp.ui.components.EnhancedElevatedCard
+import com.webtoapp.ui.components.ExtensionSourceBrowserDialog
 import com.webtoapp.ui.components.PremiumTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -61,9 +62,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
 import com.webtoapp.R
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ExtensionModuleScreen(
@@ -87,15 +85,12 @@ fun ExtensionModuleScreen(
     var searchQuery by remember { mutableStateOf("") }
     var showImportDialog by remember { mutableStateOf(false) }
 
-
     val extensionFileManager = remember { ExtensionFileManager(context) }
     var showUserScriptPreview by remember { mutableStateOf<UserScriptParser.ParseResult?>(null) }
     var showChromeExtPreview by remember { mutableStateOf<ChromeExtensionParser.ParseResult?>(null) }
     var pendingChromeExtDir by remember { mutableStateOf<java.io.File?>(null) }
 
-
     var isImporting by remember { mutableStateOf(false) }
-
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -121,7 +116,6 @@ fun ExtensionModuleScreen(
         }
     }
 
-
     val userScriptPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -140,8 +134,6 @@ fun ExtensionModuleScreen(
             }
         }
     }
-
-
 
     var showJsPackagePreview by remember { mutableStateOf<ExtensionFileManager.ImportResult.JsPackage?>(null) }
 
@@ -170,7 +162,6 @@ fun ExtensionModuleScreen(
         }
     }
 
-
     val jsZipPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -191,7 +182,6 @@ fun ExtensionModuleScreen(
             }
         }
     }
-
 
     val qrCodeImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -223,11 +213,9 @@ fun ExtensionModuleScreen(
         }
     }
 
-
     val allModules = builtInModules + modules
     val extensionModules = allModules.filter { it.sourceType == ModuleSourceType.CUSTOM }
     val userScriptModules = allModules.filter { it.sourceType != ModuleSourceType.CUSTOM }
-
 
     val filteredModules = extensionModules.filter { module ->
         val matchesCategory = selectedCategory == null || module.category == selectedCategory
@@ -273,154 +261,24 @@ fun ExtensionModuleScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.back)
                     }
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToMarket) {
-                        Icon(Icons.Default.Storefront, contentDescription = Strings.moduleMarketTitle)
-                    }
-                    IconButton(onClick = { showImportDialog = true }) {
-                        Icon(Icons.Default.Download, contentDescription = Strings.btnImport)
-                    }
-                    IconButton(onClick = { onNavigateToEditor(null) }) {
-                        Icon(Icons.Default.Add, contentDescription = Strings.add)
-                    }
                 }
+
             )
         },
         floatingActionButton = {
-            var fabExpanded by remember { mutableStateOf(false) }
 
-            Column(horizontalAlignment = Alignment.End) {
-
-                AnimatedVisibility(
-                    visible = fabExpanded,
-                    enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + slideInVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) { it },
-                    exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessHigh)) + slideOutVertically(animationSpec = spring(stiffness = Spring.StiffnessHigh)) { it }
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .padding(bottom = 10.dp)
-                            .clip(RoundedCornerShape(WtaRadius.Card))
-                            .background(MaterialTheme.colorScheme.surface)
-                            .clickable {
-                                fabExpanded = false
-                                onNavigateToAiDeveloper()
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(RoundedCornerShape(WtaRadius.Button))
-                                    .background(
-                                        Brush.linearGradient(
-                                            listOf(
-                                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.15f),
-                                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f)
-                                            )
-                                        )
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.AutoAwesome,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.secondary
-                                )
-                            }
-                            Text(
-                                Strings.aiDevelop,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-
-
-                AnimatedVisibility(
-                    visible = fabExpanded,
-                    enter = fadeIn(animationSpec = spring(stiffness = Spring.StiffnessMediumLow)) + slideInVertically(animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow)) { it },
-                    exit = fadeOut(animationSpec = spring(stiffness = Spring.StiffnessHigh)) + slideOutVertically(animationSpec = spring(stiffness = Spring.StiffnessHigh)) { it }
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .padding(bottom = 10.dp)
-                            .clip(RoundedCornerShape(WtaRadius.Card))
-                            .background(MaterialTheme.colorScheme.surface)
-                            .clickable {
-                                fabExpanded = false
-                                onNavigateToEditor(null)
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(RoundedCornerShape(WtaRadius.Button))
-                                    .background(
-                                        Brush.linearGradient(
-                                            listOf(
-                                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f),
-                                                MaterialTheme.colorScheme.tertiary.copy(alpha = 0.05f)
-                                            )
-                                        )
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Default.Code,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.tertiary
-                                )
-                            }
-                            Text(
-                                Strings.manualCreate,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-
-
-                val fabRotation by animateFloatAsState(
-                    targetValue = if (fabExpanded) 135f else 0f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMediumLow
-                    ),
-                    label = "fabRotation"
+            FloatingActionButton(
+                onClick = { showImportDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 2.dp,
+                    pressedElevation = 0.dp,
+                    focusedElevation = 2.dp,
+                    hoveredElevation = 3.dp
                 )
-                FloatingActionButton(
-                    onClick = { fabExpanded = !fabExpanded },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    elevation = FloatingActionButtonDefaults.elevation(
-                        defaultElevation = 2.dp,
-                        pressedElevation = 0.dp,
-                        focusedElevation = 2.dp,
-                        hoveredElevation = 3.dp
-                    )
-                ) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = Strings.createModule,
-                        modifier = Modifier.graphicsLayer {
-                            rotationZ = fabRotation
-                        }
-                    )
-                }
+            ) {
+                Icon(Icons.Default.Add, contentDescription = Strings.addModule)
             }
         }
     ) { padding ->
@@ -454,13 +312,11 @@ fun ExtensionModuleScreen(
                 shape = RoundedCornerShape(WtaRadius.Button)
             )
 
-
             val pagerState = rememberPagerState(pageCount = { 2 })
             val tabTitles = listOf(
                 Strings.extensionModulesTab,
                 Strings.userScriptsTab
             )
-
 
             Box(
                 modifier = Modifier
@@ -560,7 +416,6 @@ fun ExtensionModuleScreen(
         }
     }
 
-
     if (isImporting) {
         Dialog(onDismissRequest = {  }) {
             Box(
@@ -587,13 +442,68 @@ fun ExtensionModuleScreen(
         }
     }
 
-
     if (showImportDialog) {
         AlertDialog(
             onDismissRequest = { showImportDialog = false },
-            title = { Text(Strings.importModule) },
+
+            title = { Text(Strings.addModule) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+
+                    Text(
+                        Strings.addEntrySectionInstall,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 2.dp)
+                    )
+
+                    AddEntryRow(
+                        icon = Icons.Default.Storefront,
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        title = Strings.moduleMarketTitle,
+                        subtitle = Strings.addEntryFromMarketDesc,
+                        onClick = {
+                            showImportDialog = false
+                            onNavigateToMarket()
+                        }
+                    )
+
+                    AddEntryRow(
+                        icon = Icons.Default.AutoAwesome,
+                        iconTint = MaterialTheme.colorScheme.secondary,
+                        title = Strings.aiDevelop,
+                        subtitle = Strings.addEntryAiDevelopDesc,
+                        onClick = {
+                            showImportDialog = false
+                            onNavigateToAiDeveloper()
+                        }
+                    )
+
+                    AddEntryRow(
+                        icon = Icons.Default.Code,
+                        iconTint = MaterialTheme.colorScheme.tertiary,
+                        title = Strings.manualCreate,
+                        subtitle = Strings.addEntryManualDesc,
+                        onClick = {
+                            showImportDialog = false
+                            onNavigateToEditor(null)
+                        }
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .height(0.5.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                    )
+
+                    Text(
+                        Strings.addEntrySectionImport,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 4.dp, top = 4.dp, bottom = 2.dp)
+                    )
 
                     Box(
                         modifier = Modifier
@@ -643,7 +553,6 @@ fun ExtensionModuleScreen(
                         }
                     }
 
-
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -691,7 +600,6 @@ fun ExtensionModuleScreen(
                             Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
                         }
                     }
-
 
                     Box(
                         modifier = Modifier
@@ -741,16 +649,6 @@ fun ExtensionModuleScreen(
                         }
                     }
 
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                            .height(0.5.dp)
-                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                    )
-
-
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -793,7 +691,6 @@ fun ExtensionModuleScreen(
                             Icon(Icons.Default.ChevronRight, null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
                         }
                     }
-
 
                     Box(
                         modifier = Modifier
@@ -847,7 +744,6 @@ fun ExtensionModuleScreen(
             }
         )
     }
-
 
     showUserScriptPreview?.let { parseResult ->
         AlertDialog(
@@ -910,7 +806,6 @@ fun ExtensionModuleScreen(
                         )
                     }
 
-
                     if (parseResult.module.urlMatches.isNotEmpty()) {
                         Text(
                         "${Strings.matchingSites}: ${parseResult.module.urlMatches.size} ${Strings.matchRules}",
@@ -919,7 +814,6 @@ fun ExtensionModuleScreen(
                         )
                     }
 
-
                     if (parseResult.module.gmGrants.isNotEmpty()) {
                         Text(
                             "${Strings.requiredApis}: ${parseResult.module.gmGrants.joinToString(", ")}",
@@ -927,7 +821,6 @@ fun ExtensionModuleScreen(
                             color = MaterialTheme.colorScheme.tertiary
                         )
                     }
-
 
                     parseResult.warnings.forEach { warning ->
                         Text(
@@ -971,7 +864,6 @@ fun ExtensionModuleScreen(
             }
         )
     }
-
 
     showJsPackagePreview?.let { jsPackage ->
         var editableName by remember(jsPackage) { mutableStateOf(jsPackage.module.name) }
@@ -1022,7 +914,6 @@ fun ExtensionModuleScreen(
                         }
                     }
 
-
                     if (jsPackage.module.codeFiles.isNotEmpty()) {
                         Box(
                             modifier = Modifier
@@ -1049,7 +940,6 @@ fun ExtensionModuleScreen(
                         }
                     }
 
-
                     PremiumTextField(
                         value = editableName,
                         onValueChange = { editableName = it },
@@ -1057,7 +947,6 @@ fun ExtensionModuleScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
-
 
                     if (jsPackage.module.codeFiles.isNotEmpty()) {
                         Text(
@@ -1111,7 +1000,6 @@ fun ExtensionModuleScreen(
                         }
                     }
 
-
                     Text(
                         jsPackage.module.description,
                         style = MaterialTheme.typography.bodySmall,
@@ -1143,7 +1031,6 @@ fun ExtensionModuleScreen(
             }
         )
     }
-
 
     showChromeExtPreview?.let { parseResult ->
         AlertDialog(
@@ -1206,7 +1093,6 @@ fun ExtensionModuleScreen(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-
                     if (parseResult.supportedPermissions.isNotEmpty()) {
                         Text(
                             "${Strings.requiredApis}: ${parseResult.supportedPermissions.joinToString(", ")}",
@@ -1215,7 +1101,6 @@ fun ExtensionModuleScreen(
                         )
                     }
 
-
                     if (parseResult.unsupportedPermissions.isNotEmpty()) {
                         Text(
                             "⚠️ ${Strings.unsupportedApis}: ${parseResult.unsupportedPermissions.joinToString(", ")}",
@@ -1223,7 +1108,6 @@ fun ExtensionModuleScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-
 
                     parseResult.warnings.filter { !it.startsWith("Unsupported permissions") }.forEach { warning ->
                         Text(
@@ -1271,10 +1155,6 @@ fun ExtensionModuleScreen(
         }
 }
 
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModuleCard(
@@ -1290,7 +1170,6 @@ fun ModuleCard(
     var showQrCodeDialog by remember { mutableStateOf(false) }
     var showExportDialog by remember { mutableStateOf(false) }
 
-
     val createFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri: Uri? ->
@@ -1304,7 +1183,6 @@ fun ModuleCard(
             }
         }
     }
-
 
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -1375,7 +1253,6 @@ fun ModuleCard(
                             modifier = Modifier.weight(weight = 1f, fill = false)
                         )
 
-
                         if (module.builtIn) {
                             Box(
                                 modifier = Modifier
@@ -1394,7 +1271,6 @@ fun ModuleCard(
                     }
 
                     Spacer(modifier = Modifier.height(4.dp))
-
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -1417,7 +1293,6 @@ fun ModuleCard(
                         )
                     }
                 }
-
 
                 Box {
                     IconButton(onClick = { showMenu = true }) {
@@ -1456,7 +1331,6 @@ fun ModuleCard(
                 }
             }
 
-
             if (module.description.isNotBlank()) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
@@ -1468,7 +1342,6 @@ fun ModuleCard(
                     lineHeight = 18.sp
                 )
             }
-
 
             if (module.tags.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -1494,7 +1367,6 @@ fun ModuleCard(
                     }
                 }
             }
-
 
             val hasUrlMatches = module.urlMatches.isNotEmpty()
             val dangerousPermissions = module.permissions.filter { it.dangerous }
@@ -1568,7 +1440,6 @@ fun ModuleCard(
         )
     }
 
-
     if (showExportDialog) {
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
@@ -1640,7 +1511,6 @@ fun ModuleCard(
                         }
                     }
 
-
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1695,9 +1565,6 @@ fun ModuleCard(
     }
 }
 
-
-
-
 @Composable
 private fun StatItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -1745,9 +1612,6 @@ private fun StatItem(
     }
 }
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExtensionModulesTabContent(
@@ -1790,7 +1654,6 @@ private fun ExtensionModulesTabContent(
             }
         }
 
-
         val stats = extensionManager.getStatistics()
         Row(
             modifier = Modifier
@@ -1815,7 +1678,6 @@ private fun ExtensionModulesTabContent(
             )
         }
 
-
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1825,7 +1687,6 @@ private fun ExtensionModulesTabContent(
         )
 
         Spacer(modifier = Modifier.height(8.dp))
-
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -1847,7 +1708,6 @@ private fun ExtensionModulesTabContent(
                     },
                 )
             }
-
 
             if (filteredModules.isEmpty() && isLoading && searchQuery.isBlank()) {
                 item {
@@ -1973,9 +1833,6 @@ private fun ExtensionModulesTabContent(
     }
 }
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UserScriptsTabContent(
@@ -2005,7 +1862,6 @@ private fun UserScriptsTabContent(
                 }
             )
         }
-
 
         if (filteredUserScripts.isEmpty()) {
             item {
@@ -2086,9 +1942,6 @@ private fun UserScriptsTabContent(
     }
 }
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun UserScriptCard(
@@ -2154,7 +2007,6 @@ private fun UserScriptCard(
                             modifier = Modifier.weight(weight = 1f, fill = false)
                         )
 
-
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(6.dp))
@@ -2174,7 +2026,6 @@ private fun UserScriptCard(
                     }
 
                     Spacer(modifier = Modifier.height(4.dp))
-
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -2200,7 +2051,6 @@ private fun UserScriptCard(
                     }
                 }
 
-
                 Box {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = Strings.more)
@@ -2225,7 +2075,6 @@ private fun UserScriptCard(
                 }
             }
 
-
             if (module.description.isNotBlank()) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
@@ -2237,7 +2086,6 @@ private fun UserScriptCard(
                     lineHeight = 18.sp
                 )
             }
-
 
             val hasUrlMatches = module.urlMatches.isNotEmpty()
             val hasGmGrants = module.gmGrants.isNotEmpty()
@@ -2298,7 +2146,6 @@ private fun UserScriptCard(
         }
     }
 
-
     if (showSourceDialog) {
         ExtensionSourceBrowserDialog(
             module = module,
@@ -2307,498 +2154,62 @@ private fun UserScriptCard(
     }
 }
 
-
-
-
-private data class FileNode(
-    val name: String,
-    val relativePath: String,
-    val isDirectory: Boolean,
-    val size: Long = 0,
-    val children: MutableList<FileNode> = mutableListOf()
-)
-
-
-
-
-
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ExtensionSourceBrowserDialog(
-    module: ExtensionModule,
-    onDismiss: () -> Unit
-) {
-    val context = LocalContext.current
-    val isChromeExt = module.sourceType == ModuleSourceType.CHROME_EXTENSION && module.chromeExtId.isNotEmpty()
-
-
-    var selectedFilePath by remember { mutableStateOf<String?>(null) }
-    var selectedFileContent by remember { mutableStateOf("") }
-    var selectedFileName by remember { mutableStateOf("") }
-
-
-    val fileTree = remember(module.id) {
-        if (isChromeExt) {
-            buildExtensionFileTree(context, module)
-        } else {
-            null
-        }
-    }
-
-
-    val expandedDirs = remember { mutableStateMapOf<String, Boolean>() }
-
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.85f)
-                .clip(RoundedCornerShape(WtaRadius.Card))
-                .background(MaterialTheme.colorScheme.surface)
-        ) {
-            Column {
-
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(
-                                if (selectedFilePath != null) selectedFileName else module.name,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            if (selectedFilePath != null) {
-                                Text(
-                                    selectedFilePath ?: "",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            if (selectedFilePath != null) {
-                                selectedFilePath = null
-                            } else {
-                                onDismiss()
-                            }
-                        }) {
-                            Icon(
-                                if (selectedFilePath != null) Icons.AutoMirrored.Filled.ArrowBack else Icons.Default.Close,
-                                contentDescription = null
-                            )
-                        }
-                    }
-                )
-
-                if (selectedFilePath != null) {
-
-                    FileContentView(
-                        content = selectedFileContent,
-                        fileName = selectedFileName,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else if (isChromeExt && fileTree != null) {
-
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(vertical = 4.dp)
-                    ) {
-                        fileTree.children.sortedWith(compareBy({ !it.isDirectory }, { it.name })).forEach { node ->
-                            fileTreeItems(
-                                node = node,
-                                depth = 0,
-                                expandedDirs = expandedDirs,
-                                onFileClick = { path, name ->
-                                    val content = readExtensionFile(context, module, path)
-                                    selectedFileContent = content ?: Strings.cannotReadFile
-                                    selectedFileName = name
-                                    selectedFilePath = path
-                                }
-                            )
-                        }
-                    }
-                } else {
-
-                    FileContentView(
-                        content = module.code,
-                        fileName = if (module.sourceType == ModuleSourceType.CHROME_EXTENSION) "content.js" else "${module.name}.user.js",
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            }
-        }
-    }
+private fun formatFileSize(bytes: Long): String = when {
+    bytes < 1024 -> "${bytes}B"
+    bytes < 1024 * 1024 -> "${"%.1f".format(bytes / 1024.0)}KB"
+    else -> "${"%.1f".format(bytes / (1024.0 * 1024.0))}MB"
 }
 
-
-
-
-private fun LazyListScope.fileTreeItems(
-    node: FileNode,
-    depth: Int,
-    expandedDirs: MutableMap<String, Boolean>,
-    onFileClick: (path: String, name: String) -> Unit
-) {
-    val isExpanded = expandedDirs[node.relativePath] ?: (depth == 0)
-
-    item(key = node.relativePath) {
-        FileTreeRow(
-            node = node,
-            depth = depth,
-            isExpanded = isExpanded,
-            onClick = {
-                if (node.isDirectory) {
-                    expandedDirs[node.relativePath] = !isExpanded
-                } else {
-                    onFileClick(node.relativePath, node.name)
-                }
-            }
-        )
-    }
-
-    if (node.isDirectory && isExpanded) {
-        node.children.sortedWith(compareBy({ !it.isDirectory }, { it.name })).forEach { child ->
-            fileTreeItems(child, depth + 1, expandedDirs, onFileClick)
-        }
-    }
-}
-
-
-
-
 @Composable
-private fun FileTreeRow(
-    node: FileNode,
-    depth: Int,
-    isExpanded: Boolean,
-    onClick: () -> Unit
+private fun AddEntryRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: androidx.compose.ui.graphics.Color,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
 ) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(WtaRadius.Card))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
             .clickable(onClick = onClick)
-            .padding(start = (16 + depth * 20).dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
     ) {
-
-        if (node.isDirectory) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                iconTint.copy(alpha = 0.15f),
+                                iconTint.copy(alpha = 0.05f)
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = iconTint)
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+            }
             Icon(
-                if (isExpanded) Icons.Default.FolderOpen else Icons.Default.Folder,
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-        } else {
-            Icon(
-                getFileIcon(node.name),
-                contentDescription = null,
-                modifier = Modifier.size(20.dp),
-                tint = getFileIconColor(node.name)
-            )
-        }
-
-        Spacer(modifier = Modifier.width(10.dp))
-
-
-        Text(
-            node.name,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = if (node.isDirectory) FontWeight.SemiBold else FontWeight.Normal,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(weight = 1f, fill = true)
-        )
-
-
-        if (!node.isDirectory && node.size > 0) {
-            Text(
-                formatFileSize(node.size),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline
-            )
-        }
-
-
-        if (node.isDirectory) {
-            Icon(
-                if (isExpanded) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
+                Icons.Default.ChevronRight,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
             )
         }
-    }
-}
-
-
-
-
-@Composable
-private fun FileContentView(
-    content: String,
-    fileName: String,
-    modifier: Modifier = Modifier
-) {
-    val scrollState = rememberScrollState()
-    val isBinary = content.any { it < ' ' && it != '\n' && it != '\r' && it != '\t' }
-    val isImage = fileName.lowercase().let {
-        it.endsWith(".png") || it.endsWith(".jpg") || it.endsWith(".jpeg") ||
-        it.endsWith(".gif") || it.endsWith(".svg") || it.endsWith(".webp") || it.endsWith(".ico")
-    }
-
-    Column(modifier = modifier.padding(horizontal = 12.dp)) {
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(WtaRadius.Button))
-                .background(
-                    if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) Color.White.copy(alpha = 0.10f)
-                    else Color.White.copy(alpha = 0.72f)
-                )
-                .padding(bottom = 8.dp)
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    getFileIcon(fileName),
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = getFileIconColor(fileName)
-                )
-                Text(
-                    fileName,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.weight(weight = 1f, fill = true))
-                Text(
-                    "${content.length} chars",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
-            }
-        }
-
-
-        if (isImage) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    "🖼️ ${Strings.imageFile}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        } else if (isBinary) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    Strings.binaryFile,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        } else {
-
-            val lines = content.lines()
-            val lineNumWidth = lines.size.toString().length
-
-            Text(
-                buildAnnotatedString(lines, lineNumWidth),
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    fontSize = 11.sp,
-                    lineHeight = 16.sp
-                ),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(scrollState)
-            )
-        }
-    }
-}
-
-
-
-
-private fun buildAnnotatedString(lines: List<String>, lineNumWidth: Int): androidx.compose.ui.text.AnnotatedString {
-    return androidx.compose.ui.text.buildAnnotatedString {
-        val maxLines = 10000
-        lines.take(maxLines).forEachIndexed { index, line ->
-            val lineNum = (index + 1).toString().padStart(lineNumWidth)
-            pushStyle(androidx.compose.ui.text.SpanStyle(
-                color = androidx.compose.ui.graphics.Color.Gray
-            ))
-            append("$lineNum  ")
-            pop()
-            append(line)
-            if (index < lines.size - 1) append("\n")
-        }
-        if (lines.size > maxLines) {
-            append("\n\n... (${lines.size} lines total)")
-        }
-    }
-}
-
-
-
-
-@Composable
-private fun getFileIcon(fileName: String): androidx.compose.ui.graphics.vector.ImageVector {
-    return when {
-        fileName.endsWith(".js") || fileName.endsWith(".mjs") -> Icons.Outlined.Code
-        fileName.endsWith(".ts") || fileName.endsWith(".tsx") -> Icons.Outlined.Code
-        fileName.endsWith(".css") || fileName.endsWith(".scss") -> Icons.Outlined.Palette
-        fileName.endsWith(".html") || fileName.endsWith(".htm") -> Icons.Outlined.Language
-        fileName.endsWith(".json") -> Icons.Outlined.DataObject
-        fileName.endsWith(".md") || fileName.endsWith(".txt") -> Icons.Outlined.Description
-        fileName.endsWith(".png") || fileName.endsWith(".jpg") || fileName.endsWith(".svg") || fileName.endsWith(".gif") || fileName.endsWith(".webp") || fileName.endsWith(".ico") -> Icons.Outlined.Image
-        fileName.endsWith(".woff") || fileName.endsWith(".woff2") || fileName.endsWith(".ttf") -> Icons.Outlined.FontDownload
-        fileName == "manifest.json" -> Icons.Outlined.Settings
-        fileName == "LICENSE" || fileName.startsWith("LICENSE") -> Icons.Outlined.Gavel
-        else -> Icons.Outlined.InsertDriveFile
-    }
-}
-
-
-
-
-@Composable
-private fun getFileIconColor(fileName: String): androidx.compose.ui.graphics.Color {
-    return when {
-        fileName.endsWith(".js") || fileName.endsWith(".mjs") -> MaterialTheme.colorScheme.tertiary
-        fileName.endsWith(".ts") || fileName.endsWith(".tsx") -> MaterialTheme.colorScheme.primary
-        fileName.endsWith(".css") || fileName.endsWith(".scss") -> MaterialTheme.colorScheme.secondary
-        fileName.endsWith(".html") || fileName.endsWith(".htm") -> MaterialTheme.colorScheme.error
-        fileName.endsWith(".json") -> MaterialTheme.colorScheme.primary
-        fileName.endsWith(".png") || fileName.endsWith(".jpg") || fileName.endsWith(".svg") || fileName.endsWith(".gif") -> MaterialTheme.colorScheme.tertiary
-        fileName == "manifest.json" -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-}
-
-
-
-
-private fun formatFileSize(bytes: Long): String {
-    return when {
-        bytes < 1024 -> "${bytes}B"
-        bytes < 1024 * 1024 -> "${"%.1f".format(bytes / 1024.0)}KB"
-        else -> "${"%.1f".format(bytes / (1024.0 * 1024.0))}MB"
-    }
-}
-
-
-
-
-private fun buildExtensionFileTree(context: android.content.Context, module: ExtensionModule): FileNode? {
-    val extId = module.chromeExtId
-    if (extId.isEmpty()) return null
-
-    return if (module.builtIn) {
-
-        buildAssetFileTree(context, "extensions/$extId", extId)
-    } else {
-
-        val extDir = java.io.File(context.filesDir, "extensions/$extId")
-        if (extDir.exists() && extDir.isDirectory) {
-            buildFileSystemTree(extDir, "")
-        } else {
-            null
-        }
-    }
-}
-
-
-
-
-private fun buildAssetFileTree(context: android.content.Context, assetPath: String, name: String): FileNode {
-    val root = FileNode(name = name, relativePath = "", isDirectory = true)
-
-    fun walkAssets(currentPath: String, parent: FileNode) {
-        try {
-            val children = context.assets.list(currentPath) ?: return
-            for (child in children) {
-                val childPath = "$currentPath/$child"
-                val relativePath = childPath.removePrefix("extensions/$name/")
-                val subChildren = context.assets.list(childPath)
-
-                if (subChildren != null && subChildren.isNotEmpty()) {
-
-                    val dirNode = FileNode(name = child, relativePath = relativePath, isDirectory = true)
-                    walkAssets(childPath, dirNode)
-                    parent.children.add(dirNode)
-                } else {
-
-                    val size = try {
-                        context.assets.open(childPath).use { it.available().toLong() }
-                    } catch (e: Exception) { 0L }
-                    parent.children.add(FileNode(name = child, relativePath = relativePath, isDirectory = false, size = size))
-                }
-            }
-        } catch (e: Exception) {
-
-        }
-    }
-
-    walkAssets(assetPath, root)
-    return root
-}
-
-
-
-
-private fun buildFileSystemTree(dir: java.io.File, relativePath: String): FileNode {
-    val root = FileNode(name = dir.name, relativePath = relativePath, isDirectory = true)
-
-    dir.listFiles()?.forEach { file ->
-        val childRelative = if (relativePath.isEmpty()) file.name else "$relativePath/${file.name}"
-        if (file.isDirectory) {
-            root.children.add(buildFileSystemTree(file, childRelative))
-        } else {
-            root.children.add(FileNode(name = file.name, relativePath = childRelative, isDirectory = false, size = file.length()))
-        }
-    }
-
-    return root
-}
-
-
-
-
-private fun readExtensionFile(context: android.content.Context, module: ExtensionModule, relativePath: String): String? {
-    val extId = module.chromeExtId
-
-    return try {
-        if (module.builtIn) {
-            context.assets.open("extensions/$extId/$relativePath").bufferedReader().use { it.readText() }
-        } else {
-            val file = java.io.File(context.filesDir, "extensions/$extId/$relativePath")
-            if (file.exists()) file.readText() else null
-        }
-    } catch (e: Exception) {
-        null
     }
 }

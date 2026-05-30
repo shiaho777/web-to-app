@@ -21,17 +21,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-
-
-
-
-
-
-
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 class DependencyDownloadNotification private constructor(private val context: Context) {
 
@@ -65,8 +54,6 @@ class DependencyDownloadNotification private constructor(private val context: Co
         registerReceiver()
         observeEngine()
     }
-
-
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -103,8 +90,6 @@ class DependencyDownloadNotification private constructor(private val context: Co
         )
     }
 
-
-
     private fun observeEngine() {
         scope.launch {
             DependencyDownloadEngine.state.collectLatest { state ->
@@ -119,8 +104,6 @@ class DependencyDownloadNotification private constructor(private val context: Co
             }
         }
     }
-
-
 
     private fun hasPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -142,7 +125,6 @@ class DependencyDownloadNotification private constructor(private val context: Co
         val speedText = DependencyDownloadEngine.formatSpeed(dl.speedBytesPerSec)
         val etaText = DependencyDownloadEngine.formatEta(dl.etaSeconds)
         val startText = DependencyDownloadEngine.formatTime(dl.startTimeMillis)
-
 
         val details = buildString {
             append("$sizeText · $speedText · ${Strings.depDownloadRemaining} $etaText\n")

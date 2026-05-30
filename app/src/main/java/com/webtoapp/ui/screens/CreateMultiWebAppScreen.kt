@@ -43,9 +43,6 @@ import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 import java.util.UUID
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateMultiWebAppScreen(
@@ -60,17 +57,13 @@ fun CreateMultiWebAppScreen(
 ) {
     val isEdit = existingAppId > 0L
 
-
     var appName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
     var landscapeMode by remember { mutableStateOf(false) }
 
-
     var sites by remember { mutableStateOf<List<MultiWebSite>>(emptyList()) }
 
-
     var displayMode by remember { mutableStateOf("TABS") }
-
 
     var existingApps by remember { mutableStateOf<List<com.webtoapp.data.model.WebApp>>(emptyList()) }
     LaunchedEffect(Unit) {
@@ -80,14 +73,11 @@ fun CreateMultiWebAppScreen(
         repo.allWebApps.collect { existingApps = it }
     }
 
-
     var refreshInterval by remember { mutableStateOf(30) }
-
 
     var showAddSiteDialog by remember { mutableStateOf(false) }
     var editingSite by remember { mutableStateOf<MultiWebSite?>(null) }
     var pendingLocalSiteUri by remember { mutableStateOf<Uri?>(null) }
-
 
     LaunchedEffect(existingAppId) {
         if (existingAppId > 0L) {
@@ -173,7 +163,6 @@ fun CreateMultiWebAppScreen(
                     }
             }
 
-
             WtaCreateFlowSection(title = Strings.appConfig) {
                 EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -212,7 +201,6 @@ fun CreateMultiWebAppScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-
                         AnimatedVisibility(
                             visible = displayMode == "FEED",
                             enter = expandVertically() + fadeIn(),
@@ -237,7 +225,6 @@ fun CreateMultiWebAppScreen(
                     }
                 }
             }
-
 
             WtaCreateFlowSection(title = Strings.preview) {
                 EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -323,7 +310,6 @@ fun CreateMultiWebAppScreen(
                                     )
                                 }
 
-
                                 OutlinedButton(
                                     onClick = {
                                         editingSite = null
@@ -380,10 +366,6 @@ fun CreateMultiWebAppScreen(
     }
 }
 
-
-
-
-
 @Composable
 private fun SiteItem(
     site: MultiWebSite,
@@ -428,7 +410,6 @@ private fun SiteItem(
 
             Spacer(modifier = Modifier.width(10.dp))
 
-
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     site.name.ifBlank { Strings.multiWebTypeExisting },
@@ -455,7 +436,6 @@ private fun SiteItem(
                     )
                 }
             }
-
 
             Box {
                 IconButton(
@@ -516,10 +496,6 @@ private fun SiteItem(
     }
 }
 
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddSiteDialog(
@@ -536,7 +512,6 @@ private fun AddSiteDialog(
 ) {
     val accentColor = MaterialTheme.colorScheme.onSurface
 
-
     if (editingSite != null) {
         EditSiteDialog(
             editingSite = editingSite,
@@ -550,7 +525,6 @@ private fun AddSiteDialog(
         )
         return
     }
-
 
     var sourceType by remember { mutableStateOf("URL") }
     var siteName by remember { mutableStateOf("") }
@@ -571,14 +545,11 @@ private fun AddSiteDialog(
         }
     }
 
-
     val eligibleApps = existingApps.filter { it.appType != com.webtoapp.data.model.AppType.MULTI_WEB }
-
 
     val availableTypes = remember(eligibleApps) {
         eligibleApps.map { it.appType.name }.distinct()
     }
-
 
     var categories by remember { mutableStateOf<List<com.webtoapp.data.model.AppCategory>>(emptyList()) }
     LaunchedEffect(Unit) {
@@ -587,7 +558,6 @@ private fun AddSiteDialog(
         )
         repo.allCategories.collect { categories = it }
     }
-
 
     val filteredApps = remember(eligibleApps, filterType, filterCategoryId) {
         eligibleApps.filter { app ->
@@ -741,7 +711,6 @@ private fun AddSiteDialog(
                     }
                     }
 
-
                     if (eligibleApps.isNotEmpty()) {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -781,7 +750,6 @@ private fun AddSiteDialog(
                     }
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
-
 
                     if (eligibleApps.isEmpty()) {
                     Box(
@@ -978,10 +946,6 @@ private fun AddSiteDialog(
         }
     )
 }
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1188,7 +1152,6 @@ private fun EditSiteDialog(
                     }
                 }
 
-
                 if (showFeedFields) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     Text(
@@ -1239,9 +1202,6 @@ private fun EditSiteDialog(
         }
     )
 }
-
-
-
 
 private fun appTypeFilterInfo(typeName: String): Pair<androidx.compose.ui.graphics.vector.ImageVector, String> {
     return when (typeName) {

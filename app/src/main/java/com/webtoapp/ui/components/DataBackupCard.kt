@@ -45,13 +45,6 @@ import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
 import kotlinx.coroutines.launch
 
-/**
- * Data backup controls. Presents two equally weighted actions: export (to
- * zip file) and import (from zip file). While an action is in flight, a
- * progress strip slides in below the header and the buttons dim; the info
- * hint only shows when the controls are idle so it does not compete with
- * the live progress feedback.
- */
 @Composable
 fun DataBackupCard() {
     val context = LocalContext.current
@@ -82,7 +75,7 @@ fun DataBackupCard() {
                 result.onSuccess { exportResult ->
                     Toast.makeText(
                         context,
-                        Strings.exportSuccess.format(
+                        Strings.backupExportSuccess.format(
                             exportResult.appCount,
                             exportResult.resourceCount
                         ),
@@ -91,7 +84,7 @@ fun DataBackupCard() {
                 }.onFailure { e ->
                     Toast.makeText(
                         context,
-                        Strings.exportFailed.format(e.message),
+                        Strings.backupExportFailed.format(e.message),
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -117,7 +110,7 @@ fun DataBackupCard() {
                 result.onSuccess { importResult ->
                     Toast.makeText(
                         context,
-                        Strings.importSuccess.format(
+                        Strings.backupImportSuccess.format(
                             importResult.importedCount,
                             importResult.totalCount
                         ),
@@ -126,7 +119,7 @@ fun DataBackupCard() {
                 }.onFailure { e ->
                     Toast.makeText(
                         context,
-                        Strings.importFailed.format(e.message),
+                        Strings.backupImportFailed.format(e.message),
                         Toast.LENGTH_LONG
                     ).show()
                 }

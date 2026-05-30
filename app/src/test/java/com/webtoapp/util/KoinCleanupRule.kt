@@ -6,16 +6,6 @@ import org.junit.runners.model.Statement
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.stopKoin
 
-
-
-
-
-
-
-
-
-
-
 class KoinCleanupRule : TestRule {
     override fun apply(base: Statement, description: Description): Statement {
         return object : Statement() {

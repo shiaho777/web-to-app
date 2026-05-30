@@ -1,19 +1,7 @@
 package com.webtoapp.core.errorpage
 
-import com.webtoapp.util.upgradeRemoteHttpToHttps
-
-
-
-
-
 class ErrorPageManager(private val config: ErrorPageConfig) {
 
-    /**
-     * Map a raw WebView error code to a human-friendly short code displayed
-     * in the error pill. We only elevate a handful of well-known codes to a
-     * named constant; anything else is shown as a generic ERR + numeric code
-     * so it remains diagnosable without leaking implementation details.
-     */
     private fun formatErrorCode(code: Int): String {
         return when (code) {
             -1 -> "ERR_UNKNOWN"
@@ -31,30 +19,10 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
         }
     }
 
-
-
-
-
-
-
-
     @Suppress("UNUSED_PARAMETER")
     fun generateErrorPage(errorCode: Int, description: String, failedUrl: String?): String? =
         generateErrorPage(errorCode, description, description, failedUrl)
 
-    /**
-     * Generate an error page HTML string, or `null` to let the system render its default.
-     *
-     * [rawDescription] is the original text from [android.webkit.WebResourceError.description]
-     * before any normalization. Some upstream callers normalize the description (e.g. collapse
-     * "CLEARTEXT ..." into a friendly sentence); keeping the raw copy lets the diagnostics
-     * engine match on `EADDRNOTAVAIL` / `ECONNREFUSED` / `errno` strings which would otherwise
-     * be lost.
-     *
-     * In [ErrorPageMode.DEFAULT] we normally return null (preserve system page), but if the
-     * error matches an actionable diagnostic we build a minimal diagnostic page so the user
-     * gets a remediation hint instead of "bind failed: EADDRNOTAVAIL".
-     */
     @Suppress("UNUSED_PARAMETER")
     fun generateErrorPage(
         errorCode: Int,
@@ -76,8 +44,6 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
         }
     }
 
-
-
     private data class I18nStrings(
         val title: String,
         val subtitle: String,
@@ -93,6 +59,18 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
 
     private fun getStrings(): I18nStrings {
         return when (config.language.uppercase()) {
+            "CHINESE" -> I18nStrings(
+                title = "无法访问此网站",
+                subtitle = "请检查网络连接后重试",
+                retryButton = "重试",
+                autoRetryPrefix = "将在 ",
+                autoRetrySuffix = " 秒后重试",
+                gameLink = "等待时玩个小游戏",
+                gameLabel = "小游戏",
+                gameClose = "关闭",
+                dir = "ltr",
+                langCode = "zh"
+            )
             "ARABIC" -> I18nStrings(
                 title = "تعذّر الوصول إلى الموقع",
                 subtitle = "يُرجى التحقّق من اتصالك بالإنترنت والمحاولة مرة أخرى",
@@ -105,7 +83,8 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
                 dir = "rtl",
                 langCode = "ar"
             )
-            "ENGLISH" -> I18nStrings(
+
+            else -> I18nStrings(
                 title = "This site can\u2019t be reached",
                 subtitle = "Check your internet connection and try again",
                 retryButton = "Retry",
@@ -117,22 +96,8 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
                 dir = "ltr",
                 langCode = "en"
             )
-            else -> I18nStrings(
-                title = "无法访问此网站",
-                subtitle = "请检查网络连接后重试",
-                retryButton = "重试",
-                autoRetryPrefix = "将在 ",
-                autoRetrySuffix = " 秒后重试",
-                gameLink = "等待时玩个小游戏",
-                gameLabel = "小游戏",
-                gameClose = "关闭",
-                dir = "ltr",
-                langCode = "zh"
-            )
         }
     }
-
-
 
     private fun generateBuiltInPage(
         errorCode: Int,
@@ -147,13 +112,11 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
         val gameType = config.miniGameType
         val autoRetry = config.autoRetrySeconds
 
-
         if (style != ErrorPageStyle.MATERIAL) {
             return generateLegacyPage(style, strings, retryBtnText, showGame, gameType, autoRetry, failedUrl, diagnostic)
         }
 
         val safeUrl = failedUrl
-            ?.let { upgradeRemoteHttpToHttps(it) }
             ?.replace("'", "\\'")
             ?.replace("\"", "&quot;")
             ?: ""
@@ -373,8 +336,6 @@ function startGame(){
         """.trimIndent()
     }
 
-
-
     private fun generateLegacyPage(
         style: ErrorPageStyle,
         strings: I18nStrings,
@@ -392,7 +353,6 @@ function startGame(){
         val gameJs = if (showGame) ErrorPageGames.getGameJs(gameType) else ""
 
         val safeUrl = failedUrl
-            ?.let { upgradeRemoteHttpToHttps(it) }
             ?.replace("'", "\\'")
             ?.replace("\"", "&quot;")
             ?: ""
@@ -518,16 +478,12 @@ function startGame(){
         """.trimIndent()
     }
 
-
-
-
     private fun generateMediaPage(failedUrl: String?): String {
         val strings = getStrings()
         val mediaPath = config.customMediaPath ?: ""
         val retryBtnText = config.retryButtonText.ifBlank { strings.retryButton }
         val isVideo = mediaPath.endsWith(".mp4") || mediaPath.endsWith(".webm")
         val safeUrl = failedUrl
-            ?.let { upgradeRemoteHttpToHttps(it) }
             ?.replace("'", "\\'")
             ?.replace("\"", "&quot;")
             ?: ""
@@ -571,11 +527,6 @@ body{
         """.trimIndent()
     }
 
-    // ---------------------------------------------------------------
-    // Diagnostic helpers
-    // ---------------------------------------------------------------
-
-    /** Render the diagnostic card HTML fragment used by both builtin and legacy templates. */
     private fun renderDiagnosticCard(diag: NetworkErrorDiagnostics.Diagnostic): String {
         val severityClass = when (diag.severity) {
             NetworkErrorDiagnostics.Severity.ERROR -> "diag-error"
@@ -592,12 +543,6 @@ body{
         return """<div class="diag-card $severityClass"><div class="diag-head">$head</div><ul class="diag-list">$items</ul></div>"""
     }
 
-    /**
-     * Minimal standalone page used in [ErrorPageMode.DEFAULT] when we have a useful diagnostic.
-     * Kept intentionally small — no animations, no game, no auto-retry — because users who
-     * opted into DEFAULT explicitly asked for the system UI; we only override it to turn
-     * unreadable errno into actionable guidance.
-     */
     private fun generateDiagnosticFallbackPage(
         diag: NetworkErrorDiagnostics.Diagnostic,
         failedUrl: String?,
@@ -605,7 +550,6 @@ body{
         val strings = getStrings()
         val retryBtnText = config.retryButtonText.ifBlank { strings.retryButton }
         val safeUrl = failedUrl
-            ?.let { upgradeRemoteHttpToHttps(it) }
             ?.replace("'", "\\'")
             ?.replace("\"", "&quot;")
             ?: ""

@@ -43,10 +43,6 @@ import androidx.compose.ui.res.painterResource
 import com.webtoapp.R
 import java.util.concurrent.TimeUnit
 
-
-
-
-
 private data class CodeTypeTheme(
     val icon: ImageVector,
     val color: Color,
@@ -56,8 +52,7 @@ private data class CodeTypeTheme(
 @Composable
 private fun getCodeTypeTheme(type: ActivationCodeType): CodeTypeTheme {
     val scheme = androidx.compose.material3.MaterialTheme.colorScheme
-    // In the monochrome palette the activation types are distinguished by icon,
-    // not by hue. Tones stay within the neutral scheme with gentle variation.
+
     return when (type) {
         ActivationCodeType.PERMANENT -> CodeTypeTheme(
             icon = Icons.Outlined.AllInclusive,
@@ -86,13 +81,6 @@ private fun getCodeTypeTheme(type: ActivationCodeType): CodeTypeTheme {
         )
     }
 }
-
-
-
-
-
-
-
 
 @Composable
 fun ActivationCodeCard(
@@ -169,7 +157,6 @@ fun ActivationCodeCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -193,7 +180,6 @@ fun ActivationCodeCard(
                     )
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
 
                 Row(
                     modifier = Modifier
@@ -271,7 +257,6 @@ fun ActivationCodeCard(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -286,7 +271,6 @@ fun ActivationCodeCard(
                         Text(Strings.addActivationCode, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
 
-
                     PremiumOutlinedButton(
                         onClick = { showBatchDialog = true },
                         shape = RoundedCornerShape(12.dp)
@@ -296,7 +280,6 @@ fun ActivationCodeCard(
                         Text(Strings.batchGenerate, maxLines = 1)
                     }
                 }
-
 
                 if (activationCodes.isNotEmpty()) {
                     Row(
@@ -331,7 +314,6 @@ fun ActivationCodeCard(
                     }
                 }
 
-
                 if (activationCodes.isNotEmpty()) {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -353,7 +335,6 @@ fun ActivationCodeCard(
             }
         }
     }
-
 
     if (showAddDialog) {
         AddActivationCodeDialog(
@@ -410,10 +391,6 @@ fun ActivationCodeCard(
     }
 }
 
-
-
-
-
 @Composable
 private fun EmptyActivationCodesState() {
     Surface(
@@ -442,10 +419,6 @@ private fun EmptyActivationCodesState() {
         }
     }
 }
-
-
-
-
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -510,7 +483,6 @@ private fun EnhancedActivationCodeItem(
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.combinedClickable(
@@ -543,7 +515,6 @@ private fun EnhancedActivationCodeItem(
                     }
                 }
 
-
                 IconButton(
                     onClick = onDelete,
                     modifier = Modifier.size(32.dp)
@@ -556,7 +527,6 @@ private fun EnhancedActivationCodeItem(
                     )
                 }
             }
-
 
             val infoChips = buildList {
                 when (code.type) {
@@ -612,10 +582,6 @@ private fun EnhancedActivationCodeItem(
         }
     }
 }
-
-
-
-
 
 @Composable
 private fun AddActivationCodeDialog(
@@ -712,7 +678,6 @@ private fun AddActivationCodeDialog(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -755,7 +720,6 @@ private fun AddActivationCodeDialog(
                     }
                 }
 
-
                 AnimatedVisibility(visible = !useCustomCode) {
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Row(
@@ -784,7 +748,6 @@ private fun AddActivationCodeDialog(
                     }
                 }
 
-
                 AnimatedVisibility(
                     visible = codeType == ActivationCodeType.TIME_LIMITED ||
                         codeType == ActivationCodeType.COMBINED
@@ -809,7 +772,6 @@ private fun AddActivationCodeDialog(
                     )
                 }
 
-
                 AnimatedVisibility(
                     visible = codeType == ActivationCodeType.USAGE_LIMITED ||
                         codeType == ActivationCodeType.COMBINED
@@ -833,7 +795,6 @@ private fun AddActivationCodeDialog(
                         )
                     )
                 }
-
 
                 PremiumTextField(
                     value = note,
@@ -908,10 +869,6 @@ private fun AddActivationCodeDialog(
     )
 }
 
-
-
-
-
 @Composable
 private fun BatchGenerateDialog(
     onDismiss: () -> Unit,
@@ -957,7 +914,6 @@ private fun BatchGenerateDialog(
                         keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
                     )
                 )
-
 
                 Text(
                     text = Strings.activationCodeType,
@@ -1020,7 +976,6 @@ private fun BatchGenerateDialog(
                     }
                 }
 
-
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(
@@ -1048,7 +1003,6 @@ private fun BatchGenerateDialog(
                     )
                 }
 
-
                 AnimatedVisibility(
                     visible = codeType == ActivationCodeType.TIME_LIMITED || codeType == ActivationCodeType.COMBINED
                 ) {
@@ -1064,7 +1018,6 @@ private fun BatchGenerateDialog(
                         )
                     )
                 }
-
 
                 AnimatedVisibility(
                     visible = codeType == ActivationCodeType.USAGE_LIMITED || codeType == ActivationCodeType.COMBINED
@@ -1122,10 +1075,6 @@ private fun BatchGenerateDialog(
         }
     )
 }
-
-
-
-
 
 private fun getActivationTypeName(type: ActivationCodeType): String = when (type) {
     ActivationCodeType.PERMANENT -> Strings.activationTypePermanent

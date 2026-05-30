@@ -5,19 +5,6 @@ import android.content.Context
 import android.content.Intent
 import com.webtoapp.core.logging.AppLogger
 
-/**
- * 跨应用端口释放接收器。
- *
- * 宿主向目标 Web2App 应用发送广播，由目标应用自身释放指定端口对应的进程。
- *
- * Action: [ACTION_PORT_RELEASE]
- * 接收 extras：
- *  - [EXTRA_PORT]   : Int    要释放的端口（>0 时只释放该端口）
- *  - [EXTRA_OWNER]  : String 可选，按 owner 释放
- *  - [EXTRA_RELEASE_ALL] : Boolean 可选，true 时释放本应用全部端口
- *
- * 返回 resultCode 标识是否成功，data 携带释放数量。
- */
 class PortReleaseReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {

@@ -33,7 +33,6 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Groups
-import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.Send
@@ -61,7 +60,6 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.components.DataBackupCard
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
-import com.webtoapp.ui.design.WtaIconTitle
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaSection
 import com.webtoapp.ui.design.WtaSectionHeaderStyle
@@ -100,13 +98,6 @@ fun AboutScreen(onBack: () -> Unit) {
             ContactGrid()
 
             WtaSection(
-                title = Strings.aboutThisApp,
-                headerStyle = WtaSectionHeaderStyle.Quiet
-            ) {
-                LocalOnlyInfoCard()
-            }
-
-            WtaSection(
                 title = Strings.dataBackupTitle,
                 headerStyle = WtaSectionHeaderStyle.Quiet
             ) {
@@ -120,11 +111,6 @@ fun AboutScreen(onBack: () -> Unit) {
     }
 }
 
-/**
- * Hero card. The centerpiece of the About screen: a large avatar, the author
- * name, a subtitle, and a compact version pill that can be tapped to copy
- * the full build string for bug reports.
- */
 @Composable
 private fun AuthorHeroCard(
     versionName: String,
@@ -146,7 +132,7 @@ private fun AuthorHeroCard(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Avatar with subtle ring
+
             Box(
                 modifier = Modifier
                     .size(96.dp)
@@ -155,7 +141,8 @@ private fun AuthorHeroCard(
                 contentAlignment = Alignment.Center
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.avatar_shiaho),
+
+                    painter = painterResource(id = R.drawable.about_avatar),
                     contentDescription = Strings.authorAvatar,
                     modifier = Modifier
                         .size(88.dp)
@@ -261,14 +248,6 @@ private fun VersionPill(
     }
 }
 
-/**
- * Contact grid. A 2x3 grid of social/contact channels. Each tile is a
- * self-contained button that opens the link (or copies the QQ group) with
- * haptic feedback.
- *
- * Links match the canonical set in the README. Kept monochrome on purpose
- * so no single brand color screams for attention.
- */
 @Composable
 private fun ContactGrid() {
     val context = LocalContext.current
@@ -348,7 +327,7 @@ private fun ContactGrid() {
                             }
                         )
                     }
-                    // Pad a trailing empty cell if the last row has only one entry
+
                     if (pair.size == 1) {
                         Spacer(modifier = Modifier.weight(1f))
                     }
@@ -435,59 +414,6 @@ private fun ContactTile(
 }
 
 @Composable
-private fun LocalOnlyInfoCard() {
-    WtaCard(
-        modifier = Modifier.fillMaxWidth(),
-        tone = WtaCardTone.Surface
-    ) {
-        WtaIconTitle(
-            icon = Icons.Outlined.Language,
-            title = localOnlyTitle()
-        )
-        Spacer(Modifier.height(12.dp))
-        Text(
-            text = localOnlySummary(),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(14.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f))
-                .padding(14.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                LocalOnlyBullet(text = localOnlyBulletProjects())
-                LocalOnlyBullet(text = localOnlyBulletRuntime())
-                LocalOnlyBullet(text = localOnlyBulletExport())
-                LocalOnlyBullet(text = localOnlyBulletRemoved())
-            }
-        }
-    }
-}
-
-@Composable
-private fun LocalOnlyBullet(text: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Box(
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .size(4.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.6f))
-        )
-        Text(
-            text = text,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
 private fun LegalTabContent() {
     WtaSection(
         title = Strings.legalDisclaimer,
@@ -548,8 +474,6 @@ private fun MadeWithLoveFooter() {
     }
 }
 
-// ---- Helpers ---------------------------------------------------------------
-
 private fun Context.currentVersionName(): String {
     return try {
         val packageInfo = packageManager.getPackageInfo(packageName, 0)
@@ -591,8 +515,6 @@ private fun Context.openUrl(url: String) {
     }
 }
 
-// ---- Locale-aware strings --------------------------------------------------
-
 @Composable
 private fun aboutAuthorByLine(): String = when (Strings.currentLanguage.value) {
     AppLanguage.CHINESE -> "开发者 Shiaho"
@@ -633,46 +555,4 @@ private fun versionCopiedToast(): String = when (Strings.currentLanguage.value) 
     AppLanguage.CHINESE -> "版本号已复制"
     AppLanguage.ENGLISH -> "Version copied"
     AppLanguage.ARABIC -> "تم نسخ الإصدار"
-}
-
-@Composable
-private fun localOnlyTitle(): String = when (Strings.currentLanguage.value) {
-    AppLanguage.CHINESE -> "当前版本已收缩为纯本地工作流"
-    AppLanguage.ENGLISH -> "Local-only workflow"
-    AppLanguage.ARABIC -> "سير عمل محلي بالكامل"
-}
-
-@Composable
-private fun localOnlySummary(): String = when (Strings.currentLanguage.value) {
-    AppLanguage.CHINESE -> "项目创建、编辑、运行与导出都围绕设备本地资源、本地数据库和本地文件流转。"
-    AppLanguage.ENGLISH -> "Project creation, editing, runtime, and export all revolve around device-local resources, the local database, and local files."
-    AppLanguage.ARABIC -> "إنشاء المشروع وتحريره وتشغيله وتصديره يدور الآن بالكامل حول موارد الجهاز المحلية وقاعدة البيانات المحلية والملفات المحلية."
-}
-
-@Composable
-private fun localOnlyBulletProjects(): String = when (Strings.currentLanguage.value) {
-    AppLanguage.CHINESE -> "所有应用项目数据保存在本地数据库和本地文件中。"
-    AppLanguage.ENGLISH -> "All app project data stays in the local database and local files."
-    AppLanguage.ARABIC -> "جميع بيانات المشاريع تبقى داخل قاعدة البيانات المحلية والملفات المحلية."
-}
-
-@Composable
-private fun localOnlyBulletRuntime(): String = when (Strings.currentLanguage.value) {
-    AppLanguage.CHINESE -> "前端、HTML、媒体、Node.js、PHP、Python、Go 与多站点运行模式都走本地运行时。"
-    AppLanguage.ENGLISH -> "Frontend, HTML, media, Node.js, PHP, Python, Go, and multi-site modes all run through the local runtime."
-    AppLanguage.ARABIC -> "أوضاع الواجهة و HTML والوسائط و Node.js و PHP و Python و Go والمواقع المتعددة تعمل جميعها عبر بيئة تشغيل محلية."
-}
-
-@Composable
-private fun localOnlyBulletExport(): String = when (Strings.currentLanguage.value) {
-    AppLanguage.CHINESE -> "导出的壳应用只包含本地配置与本地运行能力。"
-    AppLanguage.ENGLISH -> "Exported shell apps now contain only local configuration and local runtime capability."
-    AppLanguage.ARABIC -> "تطبيقات الغلاف المصدرة تحتوي الآن على إعدادات محلية وقدرات تشغيل محلية فقط."
-}
-
-@Composable
-private fun localOnlyBulletRemoved(): String = when (Strings.currentLanguage.value) {
-    AppLanguage.CHINESE -> "当前界面只保留本地项目、本地运行、本地备份与本地导出所需入口。"
-    AppLanguage.ENGLISH -> "The interface now keeps only the entry points required for local projects, local runtime, local backup, and local export."
-    AppLanguage.ARABIC -> "تحتفظ الواجهة الآن فقط بالمداخل اللازمة للمشاريع المحلية والتشغيل المحلي والنسخ الاحتياطي المحلي والتصدير المحلي."
 }

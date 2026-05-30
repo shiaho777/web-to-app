@@ -11,9 +11,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.util.Locale
 
-
-
-
 enum class AppLanguage(
     val code: String,
     val displayName: String,
@@ -34,10 +31,6 @@ enum class AppLanguage(
 
 private val Context.languageDataStore by preferencesDataStore(name = "language_settings")
 
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 class LanguageManager(private val context: Context) {
 
@@ -55,16 +48,10 @@ class LanguageManager(private val context: Context) {
         }
     }
 
-
-
-
     val currentLanguageFlow: Flow<AppLanguage> = context.languageDataStore.data.map { prefs ->
         val code = prefs[LANGUAGE_KEY] ?: getSystemLanguageCode()
         AppLanguage.fromCode(code)
     }
-
-
-
 
     private fun getSystemLanguageCode(): String {
         val systemLocale = Locale.getDefault()
@@ -75,22 +62,13 @@ class LanguageManager(private val context: Context) {
         }
     }
 
-
-
-
     val hasSelectedLanguageFlow: Flow<Boolean> = context.languageDataStore.data.map { prefs ->
         prefs[LANGUAGE_SELECTED_KEY] == "true"
     }
 
-
-
-
     suspend fun hasSelectedLanguage(): Boolean {
         return hasSelectedLanguageFlow.first()
     }
-
-
-
 
     suspend fun setLanguage(language: AppLanguage) {
         context.languageDataStore.edit { prefs ->
@@ -99,15 +77,9 @@ class LanguageManager(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun getCurrentLanguage(): AppLanguage {
         return currentLanguageFlow.first()
     }
-
-
-
 
     fun applyLanguage(context: Context, language: AppLanguage): Context {
         val locale = language.locale
@@ -119,9 +91,6 @@ class LanguageManager(private val context: Context) {
 
         return context.createConfigurationContext(config)
     }
-
-
-
 
     fun getPromptManager(): AiPromptManager {
         return AiPromptManager

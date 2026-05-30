@@ -16,14 +16,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
-
-/**
- * Validates that [LocalHttpToSocksBridge.Socks5Connector] emits
- * RFC 1928 / RFC 1929 compliant frames.
- *
- * We run a tiny mock SOCKS5 server on a loopback port that captures every
- * byte sent by the connector and replies with canned success responses.
- */
 class LocalHttpToSocksBridgeTest {
 
     private val servers = mutableListOf<MockSocks5Server>()
@@ -49,13 +41,11 @@ class LocalHttpToSocksBridgeTest {
             assertNotNull("Server must observe a client", capture)
             checkNotNull(capture)
 
-
             assertEquals(0x05, capture.greetingVersion)
             assertTrue(
                 "Greeting must offer the no-auth method (0x00)",
                 capture.greetingMethods.contains(0x00.toByte())
             )
-
 
             assertEquals("example.com", capture.targetHost)
             assertEquals(443, capture.targetPort)
@@ -83,14 +73,12 @@ class LocalHttpToSocksBridgeTest {
             assertNotNull(capture)
             checkNotNull(capture)
 
-
             assertTrue(
                 "Greeting must include user/pass method (0x02)",
                 capture.greetingMethods.contains(0x02.toByte())
             )
             assertEquals("alice", capture.authUsername)
             assertEquals("p@ss w0rd", capture.authPassword)
-
 
             assertEquals("10.20.30.40", capture.targetHost)
             assertEquals(8080, capture.targetPort)
@@ -152,12 +140,6 @@ class LocalHttpToSocksBridgeTest {
     }
 }
 
-
-/**
- * Single-shot in-process SOCKS5 server used purely to verify byte-level framing
- * emitted by the connector under test. Accepts exactly one client and records
- * every relevant field.
- */
 private class MockSocks5Server(
     private val authMode: AuthMode,
     private val connectReplyCode: Int
@@ -213,7 +195,7 @@ private class MockSocks5Server(
                 handleClient(inp, out)
             }
         } catch (_: Exception) {
-            // Server closed or test finished early; ignore.
+
         }
     }
 
@@ -223,7 +205,6 @@ private class MockSocks5Server(
         if (ver < 0 || nMethods <= 0) return
         val methods = readNBytes(inp, nMethods)
 
-
         val chosenMethod: Int = when (authMode) {
             AuthMode.NONE -> if (methods.contains(0x00.toByte())) 0x00 else 0xff
             AuthMode.USERPASS_ACCEPT,
@@ -232,7 +213,6 @@ private class MockSocks5Server(
         out.write(byteArrayOf(0x05.toByte(), chosenMethod.toByte()))
         out.flush()
         if (chosenMethod == 0xff) return
-
 
         var username: String? = null
         var password: String? = null
@@ -251,10 +231,9 @@ private class MockSocks5Server(
             if (authStatus != 0x00) return
         }
 
-
         val cmdVer = inp.read()
         val cmd = inp.read()
-        inp.read() // RSV
+        inp.read()
         val atyp = inp.read()
         if (cmdVer != 0x05 || cmd < 0 || atyp < 0) return
 
@@ -292,7 +271,6 @@ private class MockSocks5Server(
         )
         captureLatch.countDown()
 
-
         val replyCode = connectReplyCode and 0xff
         val reply = byteArrayOf(
             0x05.toByte(),
@@ -304,7 +282,6 @@ private class MockSocks5Server(
         )
         out.write(reply)
         out.flush()
-
 
         if (replyCode == 0x00) {
             try {

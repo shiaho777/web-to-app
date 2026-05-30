@@ -9,14 +9,6 @@ import com.webtoapp.core.announcement.AnnouncementManager
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellModeManager
 
-
-
-
-
-
-
-
-
 class WebToAppApplication : Application() {
 
     private var shellActivationManager: ActivationManager? = null
@@ -35,9 +27,7 @@ class WebToAppApplication : Application() {
             android.util.Log.e("WebToAppApplication", "AppLogger initialization failed", e)
         }
 
-
         initShellRuntime()
-
 
         com.webtoapp.core.perf.SystemPerfOptimizer.initSystem(this)
         com.webtoapp.core.perf.SystemPerfOptimizer.readaheadCriticalFiles(this)

@@ -3,6 +3,7 @@ package com.webtoapp.core.linux
 import android.content.Context
 import com.google.gson.JsonObject
 import com.webtoapp.core.frontend.PackageManager
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.nodejs.NodeDependencyManager
 import com.webtoapp.util.GsonProvider
@@ -82,29 +83,13 @@ object LocalBuildEnvironment {
 
     fun isYarnReady(context: Context): Boolean = getYarnCliPath(context).exists() && isNodeReady(context)
 
-    // ========================================================================
-    // PHP / Python 运行时桥接：直接转发到各自现有的 manager，不重复造轮子
-    // 这些 manager 的下载/初始化逻辑已经被 WordPress / PHP App / Python App 验证过，
-    // LocalBuildEnvironment 把它们包装成统一的"语言运行时"概念给 UI 使用
-    // ========================================================================
-
-    /**
-     * Android 14+ 默认禁止 untrusted_app 执行 app_data 目录下的 ELF（EACCES）。
-     * 唯一可靠的 PHP 二进制位置是 nativeLibraryDir（APK 解压时由系统 +x 标记），
-     * 也就是 build.gradle.kts 里 `downloadPhpBinary` 任务打进 jniLibs/<abi>/libphp.so 的那个。
-     *
-     * 之前 WordPressDependencyManager.isPhpReady 会同时承认下载到 wordpress_deps 目录的
-     * PHP 二进制，但那条路径在新版本 Android 上无法 ProcessBuilder.start。
-     * 因此本门面只承认 nativeLibraryDir 的 libphp.so——下载目录的视为"装了但用不了"。
-     */
-    fun isPhpReady(context: Context): Boolean {
-        val nativePhp = File(context.applicationInfo.nativeLibraryDir, "libphp.so")
-        return nativePhp.exists() && nativePhp.canExecute()
-    }
+    fun isPhpReady(context: Context): Boolean =
+        com.webtoapp.core.wordpress.WordPressDependencyManager.isPhpReady(context)
 
     fun getPhpExecutablePath(context: Context): String? {
-        val nativePhp = File(context.applicationInfo.nativeLibraryDir, "libphp.so")
-        return if (nativePhp.exists() && nativePhp.canExecute()) nativePhp.absolutePath else null
+        return if (isPhpReady(context)) {
+            com.webtoapp.core.wordpress.WordPressDependencyManager.getPhpExecutablePath(context)
+        } else null
     }
 
     fun isPythonReady(context: Context): Boolean =
@@ -115,35 +100,126 @@ object LocalBuildEnvironment {
         return com.webtoapp.core.python.PythonDependencyManager.getPythonExecutablePath(context).takeIf { it.isNotBlank() }
     }
 
-    /**
-     * Composer 是 PHP 项目的依赖管理器（类似 npm）。
-     * 我们以单文件 phar 形式分发：php composer.phar install
-     *
-     * 注意：composer.phar 比较大（约 3.5 MB），按需下载——只在用户点击"安装 composer"时拉
-     */
-    private const val COMPOSER_PHAR_URL = "https://getcomposer.org/download/latest-stable/composer.phar"
+    private const val COMPOSER_VERSION = "2.8.5"
+
+    private val COMPOSER_PHAR_URLS = listOf(
+        "https://getcomposer.org/download/$COMPOSER_VERSION/composer.phar",
+        "https://github.com/composer/composer/releases/download/$COMPOSER_VERSION/composer.phar"
+    )
+
+    private val IGNORED_PLATFORM_REQS = listOf(
+        "ext-session",
+        "ext-fileinfo",
+        "ext-mbstring",
+        "ext-tokenizer",
+        "ext-xml",
+        "ext-dom",
+        "ext-simplexml",
+        "ext-iconv",
+        "ext-bcmath",
+        "ext-gmp",
+        "ext-intl",
+        "ext-zip",
+        "ext-pdo",
+        "ext-pdo_mysql",
+        "ext-pdo_sqlite",
+        "ext-mysqli",
+        "ext-curl",
+        "ext-openssl",
+        "ext-gd",
+        "ext-exif"
+    )
 
     fun getComposerPharPath(context: Context): File =
         File(getToolDir(context), "composer/composer.phar")
 
-    fun isComposerReady(context: Context): Boolean =
-        getComposerPharPath(context).exists() && isPhpReady(context)
+    private fun getComposerVersionMarker(context: Context): File =
+        File(getToolDir(context), "composer/.installed-version")
 
-    /**
-     * 下载 composer.phar 到本地（不下载 PHP 自身——PHP 由 WordPressDependencyManager 管）
-     */
+    fun isComposerReady(context: Context): Boolean {
+        if (!isPhpReady(context)) return false
+        val phar = getComposerPharPath(context)
+        if (!phar.exists()) return false
+        val marker = getComposerVersionMarker(context)
+
+        if (!marker.exists()) return false
+        return runCatching { marker.readText().trim() }.getOrNull() == COMPOSER_VERSION
+    }
+
     suspend fun ensureComposer(
         context: Context,
         onProgress: (String, Float) -> Unit = { _, _ -> }
     ) = withContext(Dispatchers.IO) {
         if (!isPhpReady(context)) {
-            throw IOException("PHP 运行时未就绪，请先安装 PHP 后再装 composer")
+            throw IOException(Strings.composerNeedsPhp)
         }
         val target = getComposerPharPath(context)
-        if (target.exists()) return@withContext
-        onProgress("下载 composer.phar", 0.5f)
-        target.parentFile?.mkdirs()
-        downloadFile(COMPOSER_PHAR_URL, target)
+        val marker = getComposerVersionMarker(context)
+        val installed = runCatching { marker.readText().trim() }.getOrNull()
+
+        if (target.exists() && installed == COMPOSER_VERSION && verifyComposerVersion(context, target)) {
+            return@withContext
+        }
+
+        var lastError: Exception? = null
+        for ((idx, url) in COMPOSER_PHAR_URLS.withIndex()) {
+            val sourceLabel = if (idx == 0) Strings.localBuildComposerSourceOfficial else Strings.localBuildComposerSourceMirror
+            onProgress(Strings.localBuildDownloadComposer.format(COMPOSER_VERSION, sourceLabel), 0.5f)
+            target.parentFile?.mkdirs()
+
+            if (target.exists()) target.delete()
+            marker.delete()
+            try {
+                downloadFile(url, target)
+            } catch (e: Exception) {
+                lastError = e
+                continue
+            }
+            if (target.length() < 1_000_000) {
+                lastError = IOException("$sourceLabel 下载内容过小（${target.length()} bytes），可能是错误页")
+                target.delete()
+                continue
+            }
+
+            if (!verifyComposerVersion(context, target)) {
+                lastError = IOException("$sourceLabel 下载到的 phar 版本不匹配（期望 $COMPOSER_VERSION）")
+                target.delete()
+                continue
+            }
+            marker.writeText(COMPOSER_VERSION)
+            return@withContext
+        }
+        throw IOException(
+            "Composer 下载失败：所有镜像都未能给出 $COMPOSER_VERSION 的 phar。" +
+                (lastError?.message?.let { "（$it）" } ?: "")
+        )
+    }
+
+    private fun verifyComposerVersion(context: Context, phar: File): Boolean {
+        return readComposerVersion(context, phar)?.contains(COMPOSER_VERSION) == true
+    }
+
+    private fun readComposerVersion(context: Context, phar: File): String? {
+        val phpBin = getPhpExecutablePath(context) ?: return null
+        return try {
+            val execPrefix = com.webtoapp.core.wordpress.WordPressDependencyManager.buildPhpExecPrefix(context)
+            val cmd = execPrefix + listOf(phar.absolutePath, "--version")
+            val pb = ProcessBuilder(cmd)
+            pb.redirectErrorStream(true)
+
+            pb.environment()["USE_ZEND_ALLOC"] = "0"
+            pb.environment()["TMPDIR"] = context.cacheDir.absolutePath
+            val proc = pb.start()
+            val out = proc.inputStream.bufferedReader().readText()
+            val finished = proc.waitForCompat(5_000)
+            if (!finished) {
+                proc.destroyForciblyCompat()
+                return null
+            }
+            out.trim().takeIf { it.isNotEmpty() }
+        } catch (_: Exception) {
+            null
+        }
     }
 
     suspend fun ensurePhpRuntime(
@@ -151,12 +227,12 @@ object LocalBuildEnvironment {
         @Suppress("UNUSED_PARAMETER") onProgress: (String, Float) -> Unit = { _, _ -> }
     ) = withContext(Dispatchers.IO) {
         if (isPhpReady(context)) return@withContext
-        // Android 14+ 不允许 untrusted_app 执行 app_data 目录下的 ELF——
-        // 这意味着即使下载 PHP 到 wordpress_deps 也无法 ProcessBuilder.start。
-        // PHP 二进制必须在打 APK 时就放进 jniLibs/<abi>/libphp.so，由系统解压时自动赋 +x。
-        // 当前 APK 内不含 libphp.so（可能是 build.gradle.kts:downloadPhpBinary 没跑），
-        // 用户只能等带有 PHP 的版本——这里直接抛错，UI 会展示给用户看
-        throw IOException("此 APK 不包含 PHP 运行时。需要重装包含 PHP 的完整版 WebToApp（构建时执行 ./gradlew downloadPhpBinary）")
+
+        onProgress(Strings.localBuildDownloadPhp, 0.05f)
+        val success = com.webtoapp.core.wordpress.WordPressDependencyManager.downloadPhpDependency(context)
+        if (!success) {
+            throw IOException(Strings.phpRuntimeDownloadFailed)
+        }
     }
 
     suspend fun ensurePythonRuntime(
@@ -164,55 +240,77 @@ object LocalBuildEnvironment {
         onProgress: (String, Float) -> Unit = { _, _ -> }
     ) = withContext(Dispatchers.IO) {
         if (isPythonReady(context)) return@withContext
-        onProgress("下载 Python 运行时", 0.05f)
+        onProgress(Strings.localBuildDownloadPython, 0.05f)
         val ok = com.webtoapp.core.python.PythonDependencyManager.downloadPythonRuntime(context)
-        if (!ok) throw IOException("Python 运行时下载失败")
+        if (!ok) throw IOException(Strings.pythonRuntimeDownloadFailed)
     }
 
-    /**
-     * 在指定项目目录里执行 `php composer.phar install`。
-     * 调用方负责传入项目目录（包含 composer.json）；如果没有 composer.json 直接返回成功。
-     */
     suspend fun installPhpDependencies(
         context: Context,
         projectDir: File,
         timeout: Long = TimeUnit.MINUTES.toMillis(15),
+        env: Map<String, String> = emptyMap(),
         onOutput: (String) -> Unit = {}
     ): ExecutionResult = withContext(Dispatchers.IO) {
+
+        onOutput(Strings.composerStartInstall.format("BUILD-TAG-2025-05-24-A"))
         val composerJson = File(projectDir, "composer.json")
         if (!composerJson.exists()) {
-            onOutput("composer.json 不存在，跳过 composer 依赖安装")
+            onOutput(Strings.composerNoComposerJson)
             return@withContext ExecutionResult(0, "no composer.json", "", 0)
         }
         val phpBin = getPhpExecutablePath(context)
-            ?: return@withContext ExecutionResult(-1, "", "PHP 运行时未就绪", 0)
+            ?: return@withContext ExecutionResult(-1, "", Strings.composerPhpRuntimeNotReady, 0)
         val composer = getComposerPharPath(context)
         if (!composer.exists()) {
-            return@withContext ExecutionResult(-1, "", "composer.phar 未安装，请先在「本地构建环境」里安装 Composer", 0)
+            return@withContext ExecutionResult(-1, "", Strings.composerPharNotInstalled, 0)
         }
-        onOutput("php composer.phar install --no-interaction --no-progress")
+
+        val phpVersion = readComposerVersion(context, composer)
+        onOutput(Strings.composerCurrentPharVersion.format(phpVersion ?: Strings.composerVersionUnknown))
+        val needUpgrade = phpVersion?.contains(COMPOSER_VERSION) != true
+        if (needUpgrade) {
+            onOutput(Strings.composerUpgradingPhar.format(COMPOSER_VERSION))
+            runCatching { ensureComposer(context) }.onFailure { e ->
+                onOutput(Strings.composerAutoUpgradeFailed.format(e.message ?: ""))
+            }
+        }
+
+        val versionUpgraded = verifyComposerVersion(context, composer)
+        onOutput(Strings.composerUpgradeStatus.format(COMPOSER_VERSION, versionUpgraded))
+        val arguments = buildList {
+            add(composer.absolutePath)
+            add("install")
+            add("--no-interaction")
+            add("--no-progress")
+            add("--no-scripts")
+            add("--prefer-dist")
+
+            for (req in IGNORED_PLATFORM_REQS) {
+                add("--ignore-platform-req=$req")
+            }
+
+        }
+        onOutput("php composer.phar ${arguments.drop(1).joinToString(" ")}")
         executePhp(
             context = context,
-            arguments = listOf(composer.absolutePath, "install", "--no-interaction", "--no-progress"),
+            arguments = arguments,
             workingDir = projectDir,
+            env = env,
             timeout = timeout,
             onOutput = onOutput,
         )
     }
 
-    /**
-     * 在指定项目目录里执行 pip install -r requirements.txt。
-     * 直接复用 PythonDependencyManager 已经验证过的 pip 调用链——它处理了 musl 链接器、
-     * pip 缓存、site-packages 路径等所有 Android 上的特殊情况。
-     */
     suspend fun installPythonDependencies(
         context: Context,
         projectDir: File,
+        env: Map<String, String> = emptyMap(),
         onOutput: (String) -> Unit = {}
     ): ExecutionResult = withContext(Dispatchers.IO) {
         val reqFile = File(projectDir, "requirements.txt")
         if (!reqFile.exists()) {
-            onOutput("requirements.txt 不存在，跳过 pip 依赖安装")
+            onOutput(Strings.pipNoRequirementsTxt)
             return@withContext ExecutionResult(0, "no requirements.txt", "", 0)
         }
         if (!isPythonReady(context)) {
@@ -222,6 +320,7 @@ object LocalBuildEnvironment {
         val ok = com.webtoapp.core.python.PythonDependencyManager.installRequirements(
             context = context,
             projectDir = projectDir,
+            extraEnv = env,
             onOutput = onOutput,
         )
         val duration = System.currentTimeMillis() - start
@@ -233,10 +332,6 @@ object LocalBuildEnvironment {
         )
     }
 
-    /**
-     * 通用 PHP 进程执行器——与 executeNode 对齐，调用方传入 args（含 composer.phar 路径或脚本路径），
-     * 我们组装好 PHP 二进制并启动子进程。
-     */
     suspend fun executePhp(
         context: Context,
         arguments: List<String>,
@@ -248,7 +343,13 @@ object LocalBuildEnvironment {
         val phpBin = getPhpExecutablePath(context)
             ?: return@withContext ExecutionResult(-1, "", "PHP 运行时未就绪", 0)
         val start = System.currentTimeMillis()
-        val command = mutableListOf(phpBin)
+
+        val execPrefix = com.webtoapp.core.wordpress.WordPressDependencyManager.buildPhpExecPrefix(context)
+        val command = mutableListOf<String>()
+        command.addAll(execPrefix)
+        if (env["PHP_INI_OVERRIDES_OFF"] != "1") {
+            command += phpIniArgs()
+        }
         command.addAll(arguments)
 
         val pb = ProcessBuilder(command)
@@ -260,7 +361,17 @@ object LocalBuildEnvironment {
         processEnv["COMPOSER_HOME"] = File(getRootDir(context), "composer").absolutePath
         processEnv["COMPOSER_CACHE_DIR"] = File(getRootDir(context), "cache/composer").absolutePath
         processEnv["COMPOSER_NO_INTERACTION"] = "1"
-        env.forEach { (k, v) -> processEnv[k] = v }
+
+        processEnv["COMPOSER_MEMORY_LIMIT"] = "-1"
+
+        processEnv["COMPOSER_DISABLE_XDEBUG_WARN"] = "1"
+
+        processEnv["COMPOSER_ALLOW_SUPERUSER"] = "1"
+
+        processEnv["USE_ZEND_ALLOC"] = "0"
+        env.forEach { (k, v) ->
+            if (k != "PHP_INI_OVERRIDES_OFF") processEnv[k] = v
+        }
 
         val process = pb.start()
         val stdout = StringBuilder()
@@ -284,6 +395,33 @@ object LocalBuildEnvironment {
         ExecutionResult(exit, stdout.toString(), stderr.toString(), System.currentTimeMillis() - start)
     }
 
+    private fun phpIniArgs(): List<String> {
+        val pairs = listOf(
+
+            "memory_limit" to "2048M",
+
+            "opcache.enable" to "0",
+            "opcache.enable_cli" to "0",
+            "opcache.jit" to "disable",
+            "opcache.jit_buffer_size" to "0",
+
+            "pcre.jit" to "0",
+
+            "zend.max_call_depth" to "0",
+
+            "zend.assertions" to "-1",
+
+            "max_execution_time" to "0",
+
+        )
+        val out = mutableListOf<String>()
+        for ((k, v) in pairs) {
+            out += "-d"
+            out += "$k=$v"
+        }
+        return out
+    }
+
     suspend fun ensureInstalled(
         context: Context,
         onProgress: (String, Float) -> Unit = { _, _ -> }
@@ -301,10 +439,10 @@ object LocalBuildEnvironment {
         onProgress: (String, Float) -> Unit = { _, _ -> }
     ) = withContext(Dispatchers.IO) {
         if (!NodeDependencyManager.isNodeReady(context)) {
-            onProgress("下载 Node.js 运行时", 0.05f)
+            onProgress(Strings.localBuildDownloadNode, 0.05f)
             val success = NodeDependencyManager.downloadNodeRuntime(context)
             if (!success) {
-                throw IOException("Node.js 运行时下载失败")
+                throw IOException(Strings.nodeRuntimeDownloadFailed)
             }
         }
 
@@ -319,8 +457,8 @@ object LocalBuildEnvironment {
             return@withContext
         }
 
-        onProgress("准备 node 启动器", 0.12f)
-        throw IOException("node 启动器未随 APK 打包: ${packagedLauncher.absolutePath}")
+        onProgress(Strings.localBuildPreparingNodeLauncher, 0.12f)
+        throw IOException(Strings.nodeLauncherNotPackaged.format(packagedLauncher.absolutePath))
     }
 
     suspend fun ensureNpm(
@@ -328,7 +466,7 @@ object LocalBuildEnvironment {
         onProgress: (String, Float) -> Unit = { _, _ -> }
     ) = withContext(Dispatchers.IO) {
         if (getNpmCliPath(context).exists()) return@withContext
-        onProgress("安装 npm", 0.35f)
+        onProgress(Strings.localBuildInstallingNpm, 0.35f)
         installTarballPackage(
             context = context,
             tarballUrl = "https://registry.npmjs.org/npm/-/npm-$NPM_VERSION.tgz",
@@ -341,7 +479,7 @@ object LocalBuildEnvironment {
         onProgress: (String, Float) -> Unit = { _, _ -> }
     ) = withContext(Dispatchers.IO) {
         if (getPnpmCliPath(context).exists()) return@withContext
-        onProgress("安装 pnpm", 0.6f)
+        onProgress(Strings.localBuildInstallingPnpm, 0.6f)
         installTarballPackage(
             context = context,
             tarballUrl = "https://registry.npmjs.org/pnpm/-/pnpm-$PNPM_VERSION.tgz",
@@ -354,7 +492,7 @@ object LocalBuildEnvironment {
         onProgress: (String, Float) -> Unit = { _, _ -> }
     ) = withContext(Dispatchers.IO) {
         if (getYarnCliPath(context).exists()) return@withContext
-        onProgress("安装 yarn", 0.8f)
+        onProgress(Strings.localBuildInstallingYarn, 0.8f)
         installTarballPackage(
             context = context,
             tarballUrl = "https://registry.npmjs.org/yarn/-/yarn-$YARN_VERSION.tgz",
@@ -363,11 +501,7 @@ object LocalBuildEnvironment {
     }
 
     suspend fun detectToolVersion(context: Context, tool: BuildTool): String? = withContext(Dispatchers.IO) {
-        // 任何工具版本探测都要包 try-catch：
-        // 这个方法在 LinuxEnvironmentManager.getEnvironmentInfo 里被同步调用，
-        // 而 getEnvironmentInfo 在 Compose LaunchedEffect (AndroidUiDispatcher) 里跑——
-        // 一旦 ProcessBuilder.start 抛 EACCES（如 Android 14+ 禁止执行 app_data 下二进制），
-        // 异常会冒泡到主协程，撑爆 UI 进程导致 crash。
+
         runCatching {
             when (tool) {
                 BuildTool.NODE, BuildTool.NPM, BuildTool.PNPM, BuildTool.YARN -> {
@@ -529,9 +663,7 @@ object LocalBuildEnvironment {
         processEnv["HOME"] = rootDir.absolutePath
         processEnv["TMPDIR"] = context.cacheDir.absolutePath
         processEnv["WTA_NODE_LIB"] = nodeLib
-        // libnode.so 依赖 libc++_shared.so（C++ 标准库），后者在 APK 的 nativeLibraryDir 里。
-        // 当 libnode.so 是运行时下载到 files/nodejs_deps/ 的（而非 APK 内置），
-        // dlopen 的 linker 搜索路径不包含 nativeLibraryDir，必须显式设 LD_LIBRARY_PATH。
+
         val nativeLibDir = context.applicationInfo.nativeLibraryDir
         val existingLdPath = processEnv["LD_LIBRARY_PATH"].orEmpty()
         processEnv["LD_LIBRARY_PATH"] = if (existingLdPath.isBlank()) {

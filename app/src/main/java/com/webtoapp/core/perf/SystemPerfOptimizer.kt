@@ -13,37 +13,6 @@ import android.webkit.WebView
 import com.webtoapp.core.logging.AppLogger
 import kotlinx.coroutines.*
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 object SystemPerfOptimizer {
 
     private const val TAG = "SysPerfOpt"
@@ -57,15 +26,11 @@ object SystemPerfOptimizer {
     @Volatile
     private var isThrottling = false
 
-
     @Volatile
     private var cachedProfile: SystemProfile? = null
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val mainHandler = Handler(Looper.getMainLooper())
-
-
-
 
     data class SystemProfile(
         val numCores: Int,
@@ -90,17 +55,6 @@ object SystemPerfOptimizer {
         val isHighEnd: Boolean get() = performanceTier == 2
     }
 
-
-
-
-
-
-
-
-
-
-
-
     fun initSystem(context: Context) {
         if (initialized) return
         initialized = true
@@ -112,7 +66,6 @@ object SystemPerfOptimizer {
                     val count = NativeSysOptimizer.optimizeSystem()
                     AppLogger.i(TAG, "System optimization: $count items succeeded")
                     systemOptimized = true
-
 
                     cachedProfile = NativeSysOptimizer.getSystemProfile()
                     cachedProfile?.let { prof ->
@@ -127,11 +80,9 @@ object SystemPerfOptimizer {
                     AppLogger.w(TAG, "Native system optimizer not available")
                 }
 
-
                 mainHandler.post {
                     boostUiThread()
                 }
-
 
                 startThermalMonitor()
 
@@ -141,9 +92,6 @@ object SystemPerfOptimizer {
         }
     }
 
-
-
-
     fun optimizeActivity(activity: Activity) {
         try {
 
@@ -151,12 +99,10 @@ object SystemPerfOptimizer {
                 addFlags(WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED)
                 addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
 
-
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     decorView.importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
                 }
             }
-
 
             val profile = cachedProfile
             if (profile != null && profile.isLowEnd) {
@@ -168,7 +114,6 @@ object SystemPerfOptimizer {
                 }
             }
 
-
             if (NativeSysOptimizer.isAvailable()) {
                 NativeSysOptimizer.bindToBigCores()
             }
@@ -179,12 +124,6 @@ object SystemPerfOptimizer {
             AppLogger.w(TAG, "Activity optimization failed", e)
         }
     }
-
-
-
-
-
-
 
     fun optimizeWebViewRuntime(webView: WebView) {
         try {
@@ -221,9 +160,7 @@ object SystemPerfOptimizer {
                 }
             }
 
-
             webView.setLayerType(View.LAYER_TYPE_HARDWARE, null)
-
 
             if (isThrottling) {
                 webView.setLayerType(View.LAYER_TYPE_NONE, null)
@@ -235,14 +172,9 @@ object SystemPerfOptimizer {
         }
     }
 
-
-
-
-
-
-
     private fun startThermalMonitor() {
         scope.launch {
+
             while (isActive) {
                 try {
                     delay(30_000)
@@ -250,19 +182,21 @@ object SystemPerfOptimizer {
                     if (!NativeSysOptimizer.isAvailable()) continue
 
                     val temp = NativeSysOptimizer.getMaxThermalTemp()
-                    if (temp > 0) {
-                        val wasThrottling = isThrottling
-                        isThrottling = temp >= 80
+                    if (temp <= 0) {
+                        AppLogger.d(TAG, "Thermal sysfs unreadable, monitor disabled")
+                        return@launch
+                    }
+                    val wasThrottling = isThrottling
+                    isThrottling = temp >= 80
 
-                        if (isThrottling && !wasThrottling) {
-                            AppLogger.w(TAG, "Thermal throttling ON: ${temp}°C")
+                    if (isThrottling && !wasThrottling) {
+                        AppLogger.w(TAG, "Thermal throttling ON: ${temp}°C")
 
-                            mainHandler.post {
+                        mainHandler.post {
 
-                            }
-                        } else if (!isThrottling && wasThrottling) {
-                            AppLogger.i(TAG, "Thermal throttling OFF: ${temp}°C")
                         }
+                    } else if (!isThrottling && wasThrottling) {
+                        AppLogger.i(TAG, "Thermal throttling OFF: ${temp}°C")
                     }
                 } catch (e: Exception) {
 
@@ -270,9 +204,6 @@ object SystemPerfOptimizer {
             }
         }
     }
-
-
-
 
     private fun boostUiThread() {
         try {
@@ -284,12 +215,6 @@ object SystemPerfOptimizer {
         }
     }
 
-
-
-
-
-
-
     fun getOptimalCacheSize(context: Context): Long {
         val profile = cachedProfile
         val baseSize = when (profile?.performanceTier) {
@@ -299,7 +224,6 @@ object SystemPerfOptimizer {
             else -> 100L * 1024 * 1024
         }
 
-
         return try {
             val cacheDir = context.cacheDir
             val usableSpace = cacheDir.usableSpace
@@ -308,12 +232,6 @@ object SystemPerfOptimizer {
             baseSize
         }
     }
-
-
-
-
-
-
 
     fun readaheadCriticalFiles(context: Context) {
         if (!NativeSysOptimizer.isAvailable()) return
@@ -328,7 +246,6 @@ object SystemPerfOptimizer {
                 } else if (java.io.File(webviewAlt).exists()) {
                     NativeSysOptimizer.readaheadFile(webviewAlt)
                 }
-
 
                 val dbPath = context.getDatabasePath("webtoapp.db")?.absolutePath
                 if (dbPath != null && java.io.File(dbPath).exists()) {
@@ -347,23 +264,14 @@ object SystemPerfOptimizer {
         }
     }
 
-
-
-
     fun getProfile(): SystemProfile? = cachedProfile
-
 
     fun isThermalThrottling(): Boolean = isThrottling
 
-
     fun getPerformanceTier(): Int = cachedProfile?.performanceTier ?: 1
-
-
-
 
     fun release() {
         scope.cancel()
         AppLogger.d(TAG, "SystemPerfOptimizer released")
     }
 }
-

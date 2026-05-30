@@ -39,7 +39,6 @@ import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.util.PermissionPresetStorage
 import com.webtoapp.util.SavedPermissionPreset
 
-
 private val DANGEROUS_PERMISSION_KEYS = setOf(
     "readSms", "sendSms", "receiveSms",
     "callPhone", "processOutgoingCalls",
@@ -48,7 +47,6 @@ private val DANGEROUS_PERMISSION_KEYS = setOf(
     "readPhoneState",
     "systemAlertWindow", "installPackages"
 )
-
 
 private data class PermissionPreset(
     val label: () -> String,
@@ -192,12 +190,7 @@ private val PERMISSION_GROUPS = listOf(
     )
 )
 
-// Flat list for counting utilities
 private val PERMISSION_ITEMS = PERMISSION_GROUPS.flatMap { it.items }
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -225,8 +218,9 @@ fun PermissionConfigScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
+
                     containerColor = Color.Transparent,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+                    scrolledContainerColor = Color.Transparent
                 )
             )
         }
@@ -587,7 +581,7 @@ private fun PermissionGroupCard(
         tonalElevation = 0.dp
     ) {
         Column {
-            // Group header — clickable to expand/collapse
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -612,7 +606,7 @@ private fun PermissionGroupCard(
                     )
                     if (enabledInGroup > 0) {
                         Text(
-                            text = "${enabledInGroup}/${group.items.size} 已启用",
+                            text = Strings.nEnabledOfTotal.format(enabledInGroup, group.items.size),
                             style = MaterialTheme.typography.labelSmall,
                             color = if (hasDangerous) MaterialTheme.colorScheme.error
                             else MaterialTheme.colorScheme.primary
@@ -644,7 +638,6 @@ private fun PermissionGroupCard(
                 )
             }
 
-            // Collapsible content
             AnimatedVisibility(
                 visible = expanded,
                 enter = expandVertically(),
@@ -776,19 +769,16 @@ private fun PermissionSummaryPill(
 private fun detectConflicts(permissions: ApkRuntimePermissions): List<String> {
     val conflicts = mutableListOf<String>()
 
-
     val hasMediaPerm = permissions.readMediaImages || permissions.readMediaVideo || permissions.readMediaAudio
     val hasLegacyStorage = permissions.readExternalStorage || permissions.writeExternalStorage
     if (hasMediaPerm && hasLegacyStorage) {
         conflicts.add(Strings.permissionConflictMediaVsLegacy)
     }
 
-
     val hasSmsPerm = permissions.readSms || permissions.sendSms || permissions.receiveSms
     if (hasSmsPerm) {
         conflicts.add(Strings.permissionConflictSmsRisk)
     }
-
 
     val hasCallPerm = permissions.callPhone || permissions.processOutgoingCalls
     if (hasCallPerm) {

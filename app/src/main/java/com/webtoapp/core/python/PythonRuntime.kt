@@ -1,6 +1,8 @@
 package com.webtoapp.core.python
 
 import android.content.Context
+import com.webtoapp.core.i18n.PreviewHtmlSupport.escapeText
+import com.webtoapp.core.i18n.PreviewHtmlSupport.htmlLang
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.shell.ShellLogger
@@ -16,21 +18,6 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class PythonRuntime(private val context: Context) {
 
     companion object {
@@ -40,8 +27,6 @@ class PythonRuntime(private val context: Context) {
         private const val HEALTH_CHECK_STABILITY_DELAY_MS = 150L
         private const val REQUIRED_HEALTHY_RESPONSES = 2
     }
-
-
 
     sealed class ServerState {
         object Stopped : ServerState()
@@ -59,8 +44,6 @@ class PythonRuntime(private val context: Context) {
     private val pythonOutputBuffer = StringBuffer()
     private val pythonStderrBuffer = StringBuffer()
 
-
-
     fun getProjectsDir(): File {
         return File(context.filesDir, "python_projects").also { it.mkdirs() }
     }
@@ -69,23 +52,9 @@ class PythonRuntime(private val context: Context) {
         return File(getProjectsDir(), projectId)
     }
 
-
-
-
     fun isPythonAvailable(): Boolean {
         return PythonDependencyManager.isPythonReady(context)
     }
-
-
-
-
-
-
-
-
-
-
-
 
     suspend fun startServer(
         projectDir: String,
@@ -109,14 +78,12 @@ class PythonRuntime(private val context: Context) {
             val pythonHome = PythonDependencyManager.getPythonHome(context)
             val muslLinker = PythonDependencyManager.getMuslLinkerPath(context)
 
-            AppLogger.i(TAG, "musl linker: ${muslLinker ?: "(不可用 - Python 可能无法执行)"}")
+            AppLogger.i(TAG, "musl linker: ${muslLinker ?: "(unavailable - Python may not execute)"}")
             ShellLogger.i(TAG, "musl linker: ${muslLinker ?: "(不可用)"}")
 
-
             val binFile = File(pythonBin)
-            AppLogger.i(TAG, "Python 二进制: ${binFile.absolutePath} (${binFile.length() / 1024} KB, executable=${binFile.canExecute()})")
+            AppLogger.i(TAG, "Python binary: ${binFile.absolutePath} (${binFile.length() / 1024} KB, executable=${binFile.canExecute()})")
             ShellLogger.i(TAG, "Python 二进制: ${binFile.absolutePath} (${binFile.length() / 1024} KB)")
-
 
             if (binFile.length() < 1024 * 1024) {
                 val errMsg = "Python 二进制无效: 文件过小 (${binFile.length()} bytes)，请重新下载 Python 运行时或重新构建 APK"
@@ -126,16 +93,14 @@ class PythonRuntime(private val context: Context) {
                 return@withContext -1
             }
 
-
             val stdlibDir = File(pythonHome, "lib/python${PythonDependencyManager.PYTHON_VERSION}")
             if (!stdlibDir.exists()) {
-                AppLogger.w(TAG, "PYTHONHOME 标准库目录不存在: ${stdlibDir.absolutePath}")
+                AppLogger.w(TAG, "PYTHONHOME stdlib directory missing: ${stdlibDir.absolutePath}")
                 ShellLogger.w(TAG, "PYTHONHOME 标准库目录不存在: ${stdlibDir.absolutePath}")
             } else {
                 val fileCount = stdlibDir.walkTopDown().filter { it.isFile }.count()
-                AppLogger.i(TAG, "PYTHONHOME 标准库: ${stdlibDir.absolutePath} ($fileCount 文件)")
+                AppLogger.i(TAG, "PYTHONHOME stdlib: ${stdlibDir.absolutePath} ($fileCount files)")
             }
-
 
             val versionCheck = verifyPythonBinary(pythonBin, pythonHome, muslLinker)
             if (versionCheck == null) {
@@ -147,13 +112,12 @@ class PythonRuntime(private val context: Context) {
                 _serverState.value = ServerState.Error(errMsg)
                 return@withContext -1
             }
-            AppLogger.i(TAG, "Python 版本验证通过: $versionCheck")
+            AppLogger.i(TAG, "Python version check passed: $versionCheck")
             ShellLogger.i(TAG, "Python 版本验证通过: $versionCheck")
-
 
             if (installDeps && File(projDir, "requirements.txt").exists()) {
                 _serverState.value = ServerState.InstallingDeps
-                AppLogger.i(TAG, "安装 Python 依赖...")
+                AppLogger.i(TAG, "Installing Python dependencies...")
                 ShellLogger.i(TAG, "安装 Python 依赖...")
                 val depsInstalled = PythonDependencyManager.installRequirements(context, projDir) { line ->
                     ShellLogger.d(TAG, "[pip] $line")
@@ -163,7 +127,7 @@ class PythonRuntime(private val context: Context) {
                     val sitePackages = File(projDir, ".pypackages")
                     if (PythonDependencyManager.hasInstalledPackages(sitePackages)) {
                         val existingPackages = sitePackages.listFiles()?.size ?: 0
-                        AppLogger.w(TAG, "pip install 失败，但 .pypackages 已携带 ${existingPackages} 个包，继续启动")
+                        AppLogger.w(TAG, "pip install failed but .pypackages already carries ${existingPackages} packages; continuing startup")
                         ShellLogger.w(TAG, "依赖安装失败，使用预打包依赖继续")
                     } else {
                         val errMsg = "Python 依赖安装失败。可能原因：1) 无网络连接 2) requirements.txt 中包含不兼容的包 3) Android 环境不支持该包的安装方式"
@@ -175,7 +139,6 @@ class PythonRuntime(private val context: Context) {
                 }
             }
 
-
             val projectId = projDir.name
             val serverPort = PortManager.allocateForPython(projectId, port)
             if (serverPort < 0) {
@@ -184,7 +147,6 @@ class PythonRuntime(private val context: Context) {
             }
             currentPort = serverPort
 
-
             val entryFilePath = File(projDir, entryFile)
             if (!entryFilePath.exists()) {
                 _serverState.value = ServerState.Error("入口文件不存在: $entryFile")
@@ -192,19 +154,16 @@ class PythonRuntime(private val context: Context) {
                 return@withContext -1
             }
 
-
             createBootstrapScript(projDir, serverPort)
-
 
             val command = buildPythonCommand(pythonBin, framework, entryFile, serverPort, muslLinker, pythonHome)
 
-            AppLogger.i(TAG, "启动 Python 服务器: ${command.joinToString(" ")}")
-            AppLogger.i(TAG, "工作目录: $projectDir, 端口: $serverPort, 框架: $framework")
+            AppLogger.i(TAG, "Starting Python server: ${command.joinToString(" ")}")
+            AppLogger.i(TAG, "Working directory: $projectDir, port: $serverPort, framework: $framework")
             ShellLogger.i(TAG, "启动 Python 服务器: ${command.joinToString(" ")}")
 
             val processBuilder = ProcessBuilder(command)
             processBuilder.directory(projDir)
-
 
             val env = processBuilder.environment()
             env["PYTHONHOME"] = pythonHome
@@ -214,7 +173,6 @@ class PythonRuntime(private val context: Context) {
             env["HOST"] = "127.0.0.1"
             env["FLASK_ENV"] = "production"
             env["DJANGO_SETTINGS_MODULE"] = detectDjangoSettings(projDir)
-
 
             val sitePackages = File(projDir, ".pypackages")
             val pythonPath = buildList {
@@ -226,19 +184,17 @@ class PythonRuntime(private val context: Context) {
             env["PYTHONPATH"] = pythonPath
             env["LD_LIBRARY_PATH"] = "${pythonHome}/lib"
 
-
-            AppLogger.i(TAG, "=== Python 服务器启动诊断 ===")
+            AppLogger.i(TAG, "=== Python server startup diagnostics ===")
             AppLogger.i(TAG, "PYTHONHOME=$pythonHome")
             AppLogger.i(TAG, "PYTHONPATH=$pythonPath")
             AppLogger.i(TAG, "LD_LIBRARY_PATH=${pythonHome}/lib")
             AppLogger.i(TAG, "musl linker=$muslLinker")
-            AppLogger.i(TAG, ".pypackages 存在=${sitePackages.exists()}, 顶层数量=${sitePackages.listFiles()?.size ?: 0}, 含文件=${PythonDependencyManager.hasInstalledPackages(sitePackages)}")
-            AppLogger.i(TAG, "stdlib 存在=${File(pythonHome, "lib/python${PythonDependencyManager.PYTHON_VERSION}").exists()}, 文件数=${File(pythonHome, "lib/python${PythonDependencyManager.PYTHON_VERSION}").walkTopDown().filter { it.isFile }.count()}")
-            AppLogger.i(TAG, "libpython so 存在=${File(pythonHome, "lib/libpython3.12.so.1.0").exists()}, 大小=${File(pythonHome, "lib/libpython3.12.so.1.0").let { if (it.exists()) "${it.length()/1024}KB" else "N/A" }}")
+            AppLogger.i(TAG, ".pypackages exists=${sitePackages.exists()}, top-level count=${sitePackages.listFiles()?.size ?: 0}, has files=${PythonDependencyManager.hasInstalledPackages(sitePackages)}")
+            AppLogger.i(TAG, "stdlib exists=${File(pythonHome, "lib/python${PythonDependencyManager.PYTHON_VERSION}").exists()}, file count=${File(pythonHome, "lib/python${PythonDependencyManager.PYTHON_VERSION}").walkTopDown().filter { it.isFile }.count()}")
+            AppLogger.i(TAG, "libpython so exists=${File(pythonHome, "lib/libpython3.12.so.1.0").exists()}, size=${File(pythonHome, "lib/libpython3.12.so.1.0").let { if (it.exists()) "${it.length()/1024}KB" else "N/A" }}")
             AppLogger.i(TAG, "=========================")
 
             env["PATH"] = "${File(pythonHome, "bin").absolutePath}:${env["PATH"] ?: "/usr/bin"}"
-
 
             envVars.forEach { (k, v) -> env[k] = v }
 
@@ -246,7 +202,6 @@ class PythonRuntime(private val context: Context) {
             pythonStderrBuffer.setLength(0)
             pythonProcess = processBuilder.start()
             attachProcessExitWatcher(pythonProcess!!, framework, serverPort)
-
 
             pythonProcess?.inputStream?.let { stream ->
                 Thread {
@@ -260,7 +215,6 @@ class PythonRuntime(private val context: Context) {
                 }.apply { isDaemon = true; start() }
             }
 
-
             pythonProcess?.errorStream?.let { stream ->
                 Thread {
                     try {
@@ -273,13 +227,12 @@ class PythonRuntime(private val context: Context) {
                 }.apply { isDaemon = true; start() }
             }
 
-
             val ready = waitForServerReady(serverPort, framework)
             if (ready) {
                 val pid = getProcessPid(pythonProcess)
                 pythonProcess?.let { PortManager.registerProcess(serverPort, it, pid) }
                 _serverState.value = ServerState.Running(serverPort, pid)
-                AppLogger.i(TAG, "Python 服务器已启动: 127.0.0.1:$serverPort (PID: $pid)")
+                AppLogger.i(TAG, "Python server started: 127.0.0.1:$serverPort (PID: $pid)")
                 ShellLogger.i(TAG, "Python 服务器已启动: 127.0.0.1:$serverPort")
                 serverPort
             } else {
@@ -288,7 +241,7 @@ class PythonRuntime(private val context: Context) {
                 val processAlive = pythonProcess?.isAliveCompat() == true
                 val exitCode = if (!processAlive) try { pythonProcess?.exitValue() } catch (_: Exception) { null } else null
                 val detail = "processAlive=$processAlive, exitCode=$exitCode\nstdout: ${stdout.ifEmpty { "(无)" }}\nstderr: ${stderr.ifEmpty { "(无)" }}"
-                AppLogger.e(TAG, "Python 服务器启动超时, $detail")
+                AppLogger.e(TAG, "Python server startup timed out, $detail")
                 val errorMsg = if (stderr.isNotEmpty()) {
                     "Python 服务器启动超时\n$stderr"
                 } else if (stdout.isNotEmpty()) {
@@ -301,7 +254,7 @@ class PythonRuntime(private val context: Context) {
                 -1
             }
         } catch (e: Exception) {
-            AppLogger.e(TAG, "启动 Python 服务器失败", e)
+            AppLogger.e(TAG, "Starting Python serverfailed", e)
             ShellLogger.e(TAG, "启动 Python 服务器失败: ${e.message}")
             _serverState.value = ServerState.Error("启动失败: ${e.message}")
             -1
@@ -315,11 +268,11 @@ class PythonRuntime(private val context: Context) {
                     process.destroyGracefullyCompat(timeoutMs = 200L)
                     if (process.isAliveCompat()) process.destroyForciblyCompat()
                 } catch (e: Exception) { AppLogger.d(TAG, "Force kill Python process failed", e) }
-                AppLogger.i(TAG, "Python 服务器已停止")
+                AppLogger.i(TAG, "Python server stopped")
                 ShellLogger.i(TAG, "Python 服务器已停止")
             }
         } catch (e: Exception) {
-            AppLogger.w(TAG, "停止 Python 服务器异常: ${e.message}")
+            AppLogger.w(TAG, "Python server stop raised an exception: ${e.message}")
         } finally {
             if (currentPort > 0) PortManager.release(currentPort)
             pythonProcess = null
@@ -337,8 +290,6 @@ class PythonRuntime(private val context: Context) {
     fun getServerUrl(): String? {
         return if (isServerRunning() && currentPort > 0) "http://127.0.0.1:$currentPort" else null
     }
-
-
 
     fun detectFramework(projectDir: File): String {
         val candidates = listOf("app.py", "main.py", "wsgi.py", "application.py", "run.py")
@@ -406,23 +357,38 @@ class PythonRuntime(private val context: Context) {
                 file.copyTo(destFile, overwrite = true)
                 copiedCount++
             }
-        AppLogger.i(TAG, "Python 项目文件已复制到: ${projectDir.absolutePath} (共 $copiedCount 个文件)")
+        AppLogger.i(TAG, "Python project files copied to: ${projectDir.absolutePath} (total $copiedCount files)")
         if (copiedCount == 0) {
-            AppLogger.w(TAG, "警告: 没有复制到任何文件! sourceDir=${sourceDir.absolutePath}, exists=${sourceDir.exists()}, canRead=${sourceDir.canRead()}, children=${sourceDir.listFiles()?.size ?: -1}")
+            AppLogger.w(TAG, "Warning: no files were copied! sourceDir=${sourceDir.absolutePath}, exists=${sourceDir.exists()}, canRead=${sourceDir.canRead()}, children=${sourceDir.listFiles()?.size ?: -1}")
         }
         return projectDir
     }
 
+    fun syncProjectFromSource(projectId: String, sourceDir: File): File {
+        val projectDir = File(getProjectsDir(), projectId)
+        projectDir.mkdirs()
+        val excludeDirs = setOf("venv", ".venv", "__pycache__", ".git", "node_modules", ".idea", ".mypy_cache", ".pytest_cache", "env")
+        var copiedCount = 0
+        sourceDir.walkTopDown()
+            .filter { file -> !excludeDirs.any { excluded -> file.absolutePath.contains("/$excluded/") || file.absolutePath.endsWith("/$excluded") } }
+            .filter { it.isFile }
+            .forEach { file ->
+                val relativePath = file.relativeTo(sourceDir).path
+                val destFile = File(projectDir, relativePath)
+                destFile.parentFile?.mkdirs()
+                file.copyTo(destFile, overwrite = true)
+                copiedCount++
+            }
+        AppLogger.i(TAG, "Python project resync: ${sourceDir.absolutePath} -> ${projectDir.absolutePath} ($copiedCount files)")
+        return projectDir
+    }
 
-
-
-
-
-
-
-
-
-
+    fun resolveSourceProjectDir(sourceProjectPath: String?): File? {
+        val path = sourceProjectPath?.trim().orEmpty()
+        if (path.isEmpty()) return null
+        val file = File(path)
+        return file.takeIf { it.exists() && it.isDirectory }
+    }
 
     fun createProjectFromUri(projectId: String, treeUri: android.net.Uri, context: Context): File {
         val projectDir = File(getProjectsDir(), projectId)
@@ -431,7 +397,7 @@ class PythonRuntime(private val context: Context) {
 
         val rootDoc = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, treeUri)
         if (rootDoc == null || !rootDoc.exists()) {
-            AppLogger.e(TAG, "SAF 目录无效: $treeUri")
+            AppLogger.e(TAG, "SAF directory invalid: $treeUri")
             return projectDir
         }
 
@@ -456,26 +422,31 @@ class PythonRuntime(private val context: Context) {
                     }
                     copiedCount++
                 } catch (e: Exception) {
-                    AppLogger.w(TAG, "复制文件失败: $destRelPath - ${e.message}")
+                    AppLogger.w(TAG, "Failed to copy file: $destRelPath - ${e.message}")
                 }
             }
         }
 
-
         rootDoc.listFiles().forEach { child -> copyDocTree(child, "") }
 
-        AppLogger.i(TAG, "SAF 项目文件已复制到: ${projectDir.absolutePath} (共 $copiedCount 个文件)")
+        AppLogger.i(TAG, "SAF project files copied to: ${projectDir.absolutePath} (total $copiedCount files)")
         if (copiedCount == 0) {
-            AppLogger.w(TAG, "警告: SAF 未复制到任何文件! treeUri=$treeUri, rootDoc.name=${rootDoc.name}")
+            AppLogger.w(TAG, "Warning: SAF copied no files! treeUri=$treeUri, rootDoc.name=${rootDoc.name}")
         }
         return projectDir
     }
 
-    fun generatePreviewHtml(projectDir: File, framework: String, entryFile: String): String {
+    fun generatePreviewHtml(
+        projectDir: File,
+        framework: String,
+        entryFile: String,
+        startupError: String? = null,
+    ): String {
+        val S = com.webtoapp.core.i18n.Strings
         val entryFileObj = File(projectDir, entryFile)
         val sourceCode = if (entryFileObj.exists()) {
-            try { entryFileObj.readText().take(8000) } catch (_: Exception) { "# 无法读取文件内容" }
-        } else "# 文件不存在: $entryFile"
+            try { entryFileObj.readText().take(8000) } catch (_: Exception) { "# ${S.previewFileUnreadable}" }
+        } else "# ${S.previewFileNotFound.replace("%s", entryFile)}"
         val reqFile = File(projectDir, "requirements.txt")
         val requirements = if (reqFile.exists()) { try { reqFile.readText().trim() } catch (_: Exception) { "" } } else ""
         val fileList = projectDir.walkTopDown().filter { it.isFile }.take(30).map { it.relativeTo(projectDir).path }.toList()
@@ -484,25 +455,38 @@ class PythonRuntime(private val context: Context) {
         val escapedReqs = requirements.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         val filesHtml = fileList.joinToString("\n") { "  <li>$it</li>" }
         val pythonReady = isPythonAvailable()
-        val statusBadge = if (pythonReady) "<span class=\"badge ready\">运行时就绪</span>"
-        else "<span class=\"badge warn\">需要下载 Python 运行时</span>"
+
+        val statusBadge = buildString {
+            append("<span class=\"badge muted\">${escapeText(S.previewNotRunningBadge)}</span>")
+            when {
+                startupError != null -> append("<span class=\"badge fail\">${escapeText(S.previewStartupFailedBadge)}</span>")
+                pythonReady -> append("<span class=\"badge ready\">${escapeText(S.previewRuntimeReadyBadge)}</span>")
+                else -> append("<span class=\"badge warn\">${escapeText(S.previewPythonNeedRuntime)}</span>")
+            }
+        }
+
+        val escapedErr = startupError?.take(1500)
+            ?.replace("&", "&amp;")?.replace("<", "&lt;")?.replace(">", "&gt;")
+        val errSection = if (escapedErr != null) {
+            """<div class="section err"><div class="section-title">⚠️ ${escapeText(S.previewServerStartFailedTitle)}</div><pre>$escapedErr</pre></div>"""
+        } else ""
+        val notRunningNote = escapeText(S.previewNotRunningNote)
+        val backendIntro = escapeText(S.previewBackendAppIntro.replace("%s", frameworkLabel))
+        val runtimeTip = escapeText(if (pythonReady) S.previewPythonTipReady else S.previewPythonTipNotReady)
+        val projectFilesTitle = "${escapeText(S.previewProjectFilesLabel)} (${fileList.size}${if (fileList.size >= 30) "+" else ""})"
         return """<!DOCTYPE html>
-<html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>$frameworkLabel - 项目预览</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,system-ui,sans-serif;background:#0d1117;color:#c9d1d9;padding:16px;line-height:1.6}.header{text-align:center;padding:24px 0;border-bottom:1px solid #30363d;margin-bottom:20px}.header h1{font-size:22px;color:#3776AB;margin-bottom:8px}.badge{display:inline-block;background:#3776AB;color:#fff;padding:4px 12px;border-radius:12px;font-size:13px;margin:4px}.badge.warn{background:#d29922}.badge.ready{background:#2ea043}.section{background:#161b22;border:1px solid #30363d;border-radius:8px;margin-bottom:16px;overflow:hidden}.section-title{padding:12px 16px;background:#21262d;font-weight:600;font-size:14px;color:#8b949e;border-bottom:1px solid #30363d}pre{padding:16px;overflow-x:auto;font-size:13px;font-family:'SF Mono',Consolas,monospace;white-space:pre-wrap;word-break:break-all;color:#c9d1d9;max-height:400px;overflow-y:auto}ul{padding:12px 16px 12px 32px;font-size:13px}li{padding:2px 0;color:#8b949e}.tip{background:#1a2332;border:1px solid #3776AB;border-radius:8px;padding:16px;margin-top:16px;font-size:13px;color:#3776AB}</style></head><body>
-<div class="header"><h1>🐍 $frameworkLabel 项目</h1><span class="badge">$frameworkLabel</span>$statusBadge</div>
+<html lang="${htmlLang()}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>$frameworkLabel - ${escapeText(S.previewProjectSuffix)}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,system-ui,sans-serif;background:#0d1117;color:#c9d1d9;padding:16px;line-height:1.6}.header{text-align:center;padding:24px 0;border-bottom:1px solid #30363d;margin-bottom:20px}.header h1{font-size:22px;color:#3776AB;margin-bottom:8px}.badge{display:inline-block;background:#3776AB;color:#fff;padding:4px 12px;border-radius:12px;font-size:13px;margin:4px}.badge.warn{background:#d29922}.badge.ready{background:#2ea043}.badge.fail{background:#da3633}.badge.muted{background:#6e7681}.section{background:#161b22;border:1px solid #30363d;border-radius:8px;margin-bottom:16px;overflow:hidden}.section.err{border-color:#da3633}.section.err .section-title{background:#3a1414;color:#ff7b72}.section-title{padding:12px 16px;background:#21262d;font-weight:600;font-size:14px;color:#8b949e;border-bottom:1px solid #30363d}pre{padding:16px;overflow-x:auto;font-size:13px;font-family:'SF Mono',Consolas,monospace;white-space:pre-wrap;word-break:break-all;color:#c9d1d9;max-height:400px;overflow-y:auto}ul{padding:12px 16px 12px 32px;font-size:13px}li{padding:2px 0;color:#8b949e}.note{background:#21262d;border:1px solid #30363d;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#8b949e}.tip{background:#1a2332;border:1px solid #3776AB;border-radius:8px;padding:16px;margin-top:16px;font-size:13px;color:#3776AB}</style></head><body>
+<div class="header"><h1>🐍 $frameworkLabel</h1><span class="badge">$frameworkLabel</span>$statusBadge</div>
+<div class="note">$notRunningNote</div>
+$errSection
 <div class="section"><div class="section-title">📄 $entryFile</div><pre>$escapedSource</pre></div>
 ${if (escapedReqs.isNotBlank()) """<div class="section"><div class="section-title">📦 requirements.txt</div><pre>$escapedReqs</pre></div>""" else ""}
-<div class="section"><div class="section-title">📁 项目文件 (${fileList.size}${if (fileList.size >= 30) "+" else ""})</div><ul>$filesHtml</ul></div>
-<div class="tip">💡 此项目是 $frameworkLabel 后端应用。${if (pythonReady) "Python 运行时已就绪，可直接启动服务器。" else "需要先下载 Python 运行时才能运行。"}</div>
+<div class="section"><div class="section-title">📁 $projectFilesTitle</div><ul>$filesHtml</ul></div>
+<div class="tip">💡 $backendIntro$runtimeTip</div>
 </body></html>"""
     }
-
-
-
-
-
-
 
     private fun verifyPythonBinary(pythonBin: String, pythonHome: String, muslLinker: String? = null): String? {
         return try {
@@ -528,22 +512,18 @@ ${if (escapedReqs.isNotBlank()) """<div class="section"><div class="section-titl
             if (exitCode == 0 && output.contains("Python", ignoreCase = true)) {
                 output
             } else if (output.isNotEmpty()) {
-                AppLogger.e(TAG, "Python --version 输出异常: exitCode=$exitCode, output='$output'")
+                AppLogger.e(TAG, "Python --version output is malformed: exitCode=$exitCode, output='$output'")
                 null
             } else {
-                AppLogger.e(TAG, "Python --version 无输出, exitCode=$exitCode" +
-                    (if (muslLinker == null) " (无 musl linker，二进制可能无法直接执行)" else ""))
+                AppLogger.e(TAG, "Python --version produced no output, exitCode=$exitCode" +
+                    (if (muslLinker == null) " (no musl linker, binary may not be directly executable)" else ""))
                 null
             }
         } catch (e: Exception) {
-            AppLogger.e(TAG, "验证 Python 二进制失败", e)
+            AppLogger.e(TAG, "Failed to verify Python binary", e)
             null
         }
     }
-
-
-
-
 
     private fun buildPythonCommand(
         pythonBin: String, framework: String, entryFile: String, port: Int,
@@ -576,12 +556,6 @@ ${if (escapedReqs.isNotBlank()) """<div class="section"><div class="section-titl
 
         return linkerPrefix + pythonArgs
     }
-
-
-
-
-
-
 
     private fun createBootstrapScript(projectDir: File, port: Int) {
         val bootstrapFile = File(projectDir, "_w2a_bootstrap.py")
@@ -657,9 +631,6 @@ else:
         AppLogger.d(TAG, "Created bootstrap script: ${bootstrapFile.absolutePath}")
     }
 
-
-
-
     private fun detectDjangoSettings(projectDir: File): String {
 
         projectDir.listFiles()?.forEach { dir ->
@@ -707,12 +678,12 @@ else:
                 consecutiveSuccesses++
                 AppLogger.i(
                     TAG,
-                    "Python 健康检查成功 (尝试 ${attempt + 1}, path=$successfulPath, code=$successfulCode, consecutive=$consecutiveSuccesses/$REQUIRED_HEALTHY_RESPONSES)"
+                    "Python health check passed (attempt ${attempt + 1}, path=$successfulPath, code=$successfulCode, consecutive=$consecutiveSuccesses/$REQUIRED_HEALTHY_RESPONSES)"
                 )
                 if (consecutiveSuccesses >= REQUIRED_HEALTHY_RESPONSES) {
                     AppLogger.i(
                         TAG,
-                        "Python 服务器就绪 (尝试 ${attempt + 1}, path=$successfulPath, code=$successfulCode, consecutive=$consecutiveSuccesses)"
+                        "Python server ready (attempt ${attempt + 1}, path=$successfulPath, code=$successfulCode, consecutive=$consecutiveSuccesses)"
                     )
                     return true
                 }
@@ -722,7 +693,7 @@ else:
                         val exitCode = try { process.exitValue() } catch (_: Exception) { -1 }
                         val stdout = pythonOutputBuffer.toString().trim().ifEmpty { "(no stdout)" }
                         val stderr = pythonStderrBuffer.toString().trim().ifEmpty { "(no stderr)" }
-                        AppLogger.e(TAG, "Python 进程意外退出, exitCode=$exitCode\nstdout: $stdout\nstderr: $stderr")
+                        AppLogger.e(TAG, "Python process exited unexpectedly, exitCode=$exitCode\nstdout: $stdout\nstderr: $stderr")
                         return false
                     }
                 }
@@ -730,7 +701,7 @@ else:
             }
 
             if (consecutiveSuccesses > 0) {
-                AppLogger.d(TAG, "Python 健康检查稳定性重置: attempt=${attempt + 1}, previousConsecutive=$consecutiveSuccesses")
+                AppLogger.d(TAG, "Python health check stability reset: attempt=${attempt + 1}, previousConsecutive=$consecutiveSuccesses")
                 consecutiveSuccesses = 0
             }
 
@@ -739,13 +710,13 @@ else:
                     val exitCode = try { process.exitValue() } catch (_: Exception) { -1 }
                     val stdout = pythonOutputBuffer.toString().trim().ifEmpty { "(no stdout)" }
                     val stderr = pythonStderrBuffer.toString().trim().ifEmpty { "(no stderr)" }
-                    AppLogger.e(TAG, "Python 进程意外退出, exitCode=$exitCode\nstdout: $stdout\nstderr: $stderr")
+                    AppLogger.e(TAG, "Python process exited unexpectedly, exitCode=$exitCode\nstdout: $stdout\nstderr: $stderr")
                     return false
                 }
             }
             delay(HEALTH_CHECK_INTERVAL_MS)
         }
-        AppLogger.e(TAG, "Python 服务器启动超时 (${MAX_HEALTH_CHECK_RETRIES * HEALTH_CHECK_INTERVAL_MS}ms)")
+        AppLogger.e(TAG, "Python server startup timed out (${MAX_HEALTH_CHECK_RETRIES * HEALTH_CHECK_INTERVAL_MS}ms)")
         return false
     }
 

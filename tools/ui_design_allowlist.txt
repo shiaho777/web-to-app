@@ -101,6 +101,7 @@ app/src/main/java/com/webtoapp/ui/components/UserBadges.kt|raw_surface|4
 app/src/main/java/com/webtoapp/ui/components/VideoTrimmer.kt|raw_surface|1
 app/src/main/java/com/webtoapp/ui/components/VirtualNavigationBar.kt|hardcoded_color|2
 app/src/main/java/com/webtoapp/ui/components/VirtualNavigationBar.kt|raw_surface|1
+app/src/main/java/com/webtoapp/ui/components/WtaCodeEditorDialog.kt|raw_surface|5
 app/src/main/java/com/webtoapp/ui/components/aimodule/CodePreviewPanel.kt|hardcoded_color|30
 app/src/main/java/com/webtoapp/ui/components/aimodule/CodePreviewPanel.kt|raw_corner_shape|5
 app/src/main/java/com/webtoapp/ui/components/aimodule/CodePreviewPanel.kt|raw_surface|7
@@ -140,7 +141,6 @@ app/src/main/java/com/webtoapp/ui/screens/AiModuleDeveloperScreen.kt|raw_corner_
 app/src/main/java/com/webtoapp/ui/screens/AiModuleDeveloperScreen.kt|raw_surface|18
 app/src/main/java/com/webtoapp/ui/screens/AiSettingsScreen.kt|raw_corner_shape|2
 app/src/main/java/com/webtoapp/ui/screens/AiSettingsScreen.kt|raw_surface|10
-app/src/main/java/com/webtoapp/ui/screens/AppModifierScreen.kt|raw_corner_shape|1
 app/src/main/java/com/webtoapp/ui/screens/AppStoreDownloadManager.kt|hardcoded_color|11
 app/src/main/java/com/webtoapp/ui/screens/AppStoreDownloadManager.kt|raw_corner_shape|35
 app/src/main/java/com/webtoapp/ui/screens/AppStoreDownloadManager.kt|raw_surface|30
@@ -187,8 +187,7 @@ app/src/main/java/com/webtoapp/ui/screens/CreateGoAppScreen.kt|hardcoded_color|9
 app/src/main/java/com/webtoapp/ui/screens/CreateGoAppScreen.kt|raw_corner_shape|4
 app/src/main/java/com/webtoapp/ui/screens/CreateGoAppScreen.kt|raw_surface|5
 app/src/main/java/com/webtoapp/ui/screens/CreateHtmlAppScreen.kt|hardcoded_color|17
-app/src/main/java/com/webtoapp/ui/screens/CreateHtmlAppScreen.kt|raw_corner_shape|8
-app/src/main/java/com/webtoapp/ui/screens/CreateHtmlAppScreen.kt|raw_surface|5
+app/src/main/java/com/webtoapp/ui/screens/CreateHtmlAppScreen.kt|raw_corner_shape|5
 app/src/main/java/com/webtoapp/ui/screens/CreateMediaAppScreen.kt|hardcoded_color|3
 app/src/main/java/com/webtoapp/ui/screens/CreateMediaAppScreen.kt|raw_corner_shape|16
 app/src/main/java/com/webtoapp/ui/screens/CreateMediaAppScreen.kt|raw_surface|7

@@ -1,9 +1,5 @@
 package com.webtoapp.core.errorpage
 
-
-
-
-
 object ErrorPageStyles {
 
     fun getStyleCss(style: ErrorPageStyle): String = when (style) {
@@ -23,8 +19,6 @@ object ErrorPageStyles {
         ErrorPageStyle.MINIMAL -> minimalBody(title, subtitle)
         ErrorPageStyle.NEON -> neonBody(title, subtitle)
     }
-
-
 
     private fun satelliteCss() = """
         body { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); }
@@ -83,8 +77,6 @@ object ErrorPageStyles {
         })();
         </script>
     """.trimIndent()
-
-
 
     private fun oceanCss() = """
         body { background: linear-gradient(180deg, #0a1628 0%, #0d2847 40%, #134e6f 100%); }
@@ -148,8 +140,6 @@ object ErrorPageStyles {
         </script>
     """.trimIndent()
 
-
-
     private fun forestCss() = """
         body { background: linear-gradient(180deg, #0a1a0a 0%, #132413 50%, #1a321a 100%); }
         .fireflies { position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden; }
@@ -209,8 +199,6 @@ object ErrorPageStyles {
         </script>
     """.trimIndent()
 
-
-
     private fun minimalCss() = """
         body { background: #fafafa; }
         @media(prefers-color-scheme:dark){ body{background:#0a0a0c;} }
@@ -260,8 +248,6 @@ object ErrorPageStyles {
         <h1 class="error-title">$title</h1>
         <p class="error-subtitle">$subtitle</p>
     """.trimIndent()
-
-
 
     private fun neonCss() = """
         body { background: #0a0a0a; }

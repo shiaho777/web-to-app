@@ -4,12 +4,6 @@ import com.webtoapp.core.activation.ActivationManager
 import com.webtoapp.core.adblock.AdBlocker
 import com.webtoapp.core.announcement.AnnouncementManager
 
-
-
-
-
-
-
 object ShellRuntimeServices {
 
     private var shellModeManager: ShellModeManager? = null

@@ -3,25 +3,9 @@ package com.webtoapp.core.apkbuilder
 import com.webtoapp.core.logging.AppLogger
 import java.io.File
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 object NativeApkOptimizer {
 
     private const val TAG = "NativeApkOptimizer"
-
-
-
 
     data class OptimizeResult(
         val success: Boolean,
@@ -42,10 +26,8 @@ object NativeApkOptimizer {
 
         val totalSavings: Long get() = originalSize - optimizedSize
 
-
         val savingsPercent: Float
             get() = if (originalSize > 0) totalSavings * 100f / originalSize else 0f
-
 
         fun formatReport(): String = buildString {
             appendLine("═══ APK 优化报告 ═══")
@@ -71,9 +53,6 @@ object NativeApkOptimizer {
             else -> String.format("%.1f MB", bytes / (1024.0 * 1024.0))
         }
     }
-
-
-
 
     data class SizeBreakdown(
         val nativeLibs: Long,
@@ -121,15 +100,6 @@ object NativeApkOptimizer {
         }
     }
 
-
-
-
-
-
-
-
-
-
     fun optimizeApk(inputApk: File, outputApk: File): OptimizeResult? {
         if (!isLoaded) {
             AppLogger.w(TAG, "Native optimizer not loaded, skipping")
@@ -159,12 +129,6 @@ object NativeApkOptimizer {
         }
     }
 
-
-
-
-
-
-
     fun analyzeSize(apkFile: File): SizeBreakdown? {
         if (!isLoaded) return null
         if (!apkFile.exists()) return null
@@ -189,11 +153,7 @@ object NativeApkOptimizer {
         }
     }
 
-
-
-
     fun isAvailable(): Boolean = isLoaded
-
 
     private external fun nativeOptimizeApk(inputPath: String, outputPath: String): OptimizeResult?
     private external fun nativeAnalyzeApkSize(apkPath: String): LongArray?

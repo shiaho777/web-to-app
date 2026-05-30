@@ -32,21 +32,17 @@ enum class WtaSectionHeaderStyle {
     Hidden
 }
 
-/**
- * Button visual variants. Matches Material 3 conventions but keeps naming consistent
- * with the rest of the Wta design system.
- */
 @Stable
 enum class WtaButtonVariant {
-    /** High emphasis, filled primary container */
+
     Primary,
-    /** Medium emphasis, tonal background */
+
     Tonal,
-    /** Medium emphasis, outlined */
+
     Outlined,
-    /** Low emphasis, text only */
+
     Text,
-    /** High emphasis but for destructive actions */
+
     Destructive
 }
 
@@ -105,15 +101,15 @@ object WtaSize {
 }
 
 object WtaElevation {
-    /** Flat surface, no shadow */
+
     val Level0: Dp = 0.dp
-    /** Resting card on background */
+
     val Level1: Dp = 1.dp
-    /** Elevated card, interactive surface */
+
     val Level2: Dp = 3.dp
-    /** Floating surface, modal-like */
+
     val Level3: Dp = 6.dp
-    /** Dialog / bottom sheet */
+
     val Level4: Dp = 12.dp
 }
 

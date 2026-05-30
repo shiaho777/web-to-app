@@ -8,9 +8,6 @@ import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.ui.shell.ShellActivity
 
-
-
-
 object AutoStartLauncher {
 
     private const val TAG = "AutoStartLauncher"

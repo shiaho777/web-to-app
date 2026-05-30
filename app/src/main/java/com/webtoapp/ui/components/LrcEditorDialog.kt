@@ -32,12 +32,7 @@ import com.webtoapp.util.BgmStorage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
 private val LRC_PARSE_TIME_REGEX = Regex("""(\d{1,2}):(\d{2})\.(\d{2})""")
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,29 +45,22 @@ fun LrcEditorDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-
     var editingLines by remember {
         mutableStateOf(lrcData.lines.map { EditableLrcLine(it.startTime, it.text) })
     }
 
-
     var selectedLineIndex by remember { mutableIntStateOf(-1) }
-
 
     var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
     var isPlaying by remember { mutableStateOf(false) }
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
 
-
     var currentLineIndex by remember { mutableIntStateOf(-1) }
-
 
     val listState = rememberLazyListState()
 
-
     var hasChanges by remember { mutableStateOf(false) }
-
 
     LaunchedEffect(bgm.path) {
         try {
@@ -92,7 +80,6 @@ fun LrcEditorDialog(
             AppLogger.e("LrcEditor", "初始化播放器失败", e)
         }
     }
-
 
     LaunchedEffect(isPlaying) {
         while (isPlaying) {
@@ -114,14 +101,12 @@ fun LrcEditorDialog(
         }
     }
 
-
     DisposableEffect(Unit) {
         onDispose {
             mediaPlayer?.release()
             mediaPlayer = null
         }
     }
-
 
     fun formatTime(ms: Long): String {
         val totalSeconds = ms / 1000
@@ -131,7 +116,6 @@ fun LrcEditorDialog(
         return "%02d:%02d.%02d".format(minutes, seconds, millis)
     }
 
-
     fun parseTime(timeStr: String): Long? {
         val match = LRC_PARSE_TIME_REGEX.find(timeStr) ?: return null
         val minutes = match.groupValues[1].toLongOrNull() ?: return null
@@ -139,7 +123,6 @@ fun LrcEditorDialog(
         val millis = match.groupValues[3].toLongOrNull() ?: return null
         return minutes * 60000 + seconds * 1000 + millis * 10
     }
-
 
     fun buildLrcData(): LrcData {
         val sortedLines = editingLines.sortedBy { it.startTime }
@@ -201,7 +184,6 @@ fun LrcEditorDialog(
                     }
                 )
 
-
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -229,7 +211,6 @@ fun LrcEditorDialog(
                             )
                         }
 
-
                         FilledTonalIconButton(
                             onClick = {
                                 val newLine = EditableLrcLine(currentPosition, "")
@@ -244,7 +225,6 @@ fun LrcEditorDialog(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-
 
                 LazyColumn(
                     state = listState,
@@ -327,10 +307,8 @@ fun LrcEditorDialog(
                         )
                     }
 
-
                     item { Spacer(modifier = Modifier.height(100.dp)) }
                 }
-
 
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -366,7 +344,6 @@ fun LrcEditorDialog(
                             )
                         }
 
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Center,
@@ -384,7 +361,6 @@ fun LrcEditorDialog(
                             }
 
                             Spacer(modifier = Modifier.width(16.dp))
-
 
                             FilledIconButton(
                                 onClick = {
@@ -408,7 +384,6 @@ fun LrcEditorDialog(
 
                             Spacer(modifier = Modifier.width(16.dp))
 
-
                             IconButton(onClick = {
                                 mediaPlayer?.let { mp ->
                                     val newPos = minOf(mp.duration, mp.currentPosition + 5000)
@@ -426,16 +401,10 @@ fun LrcEditorDialog(
     }
 }
 
-
-
-
 data class EditableLrcLine(
     val startTime: Long,
     val text: String
 )
-
-
-
 
 @Composable
 private fun LrcLineEditor(
@@ -484,7 +453,6 @@ private fun LrcLineEditor(
                     modifier = Modifier.width(24.dp)
                 )
 
-
                 Surface(
                     modifier = Modifier.clickable { onSeekTo() },
                     shape = RoundedCornerShape(4.dp),
@@ -500,7 +468,6 @@ private fun LrcLineEditor(
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
-
 
                 if (isSelected) {
                     OutlinedTextField(
@@ -524,7 +491,6 @@ private fun LrcLineEditor(
                     )
                 }
 
-
                 if (isCurrentPlaying) {
                     Icon(
                         Icons.Default.GraphicEq,
@@ -535,10 +501,8 @@ private fun LrcLineEditor(
                 }
             }
 
-
             if (isSelected) {
                 Spacer(modifier = Modifier.height(12.dp))
-
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -551,14 +515,12 @@ private fun LrcLineEditor(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-
                     FilledTonalIconButton(
                         onClick = { onAdjustTime(-1000) },
                         modifier = Modifier.size(32.dp)
                     ) {
                         Text("-1s", style = MaterialTheme.typography.labelSmall)
                     }
-
 
                     FilledTonalIconButton(
                         onClick = { onAdjustTime(-100) },
@@ -567,14 +529,12 @@ private fun LrcLineEditor(
                         Text("-.1", style = MaterialTheme.typography.labelSmall)
                     }
 
-
                     FilledTonalIconButton(
                         onClick = { onAdjustTime(100) },
                         modifier = Modifier.size(32.dp)
                     ) {
                         Text("+.1", style = MaterialTheme.typography.labelSmall)
                     }
-
 
                     FilledTonalIconButton(
                         onClick = { onAdjustTime(1000) },
@@ -584,7 +544,6 @@ private fun LrcLineEditor(
                     }
 
                     Spacer(modifier = Modifier.weight(weight = 1f, fill = true))
-
 
                     TextButton(
                         onClick = onSetCurrentTime,
@@ -597,7 +556,6 @@ private fun LrcLineEditor(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -613,7 +571,6 @@ private fun LrcLineEditor(
                         }
                     }
 
-
                     if (onMoveDown != null) {
                         OutlinedIconButton(
                             onClick = onMoveDown,
@@ -624,7 +581,6 @@ private fun LrcLineEditor(
                     }
 
                     Spacer(modifier = Modifier.weight(weight = 1f, fill = true))
-
 
                     OutlinedIconButton(
                         onClick = onDelete,

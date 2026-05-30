@@ -23,24 +23,17 @@ import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
-
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 class RuntimeProtection(private val context: Context) {
 
     companion object {
         private const val TAG = "RuntimeProtection"
 
-
         const val THREAT_NONE = 0
         const val THREAT_LOW = 1
         const val THREAT_MEDIUM = 2
         const val THREAT_HIGH = 3
         const val THREAT_CRITICAL = 4
-
 
         private const val CHECK_INTERVAL_MS = 5000L
 
@@ -54,29 +47,20 @@ class RuntimeProtection(private val context: Context) {
         }
     }
 
-
     private val isMonitoring = AtomicBoolean(false)
     private val threatLevel = AtomicInteger(THREAT_NONE)
     private val monitorScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var monitorJob: Job? = null
 
-
     @Volatile
     private var lastCheckResult: ProtectionResult? = null
     private var lastCheckTime = 0L
 
-
     private var onThreatDetected: ((ProtectionResult) -> Unit)? = null
-
-
-
 
     fun setThreatCallback(callback: (ProtectionResult) -> Unit) {
         onThreatDetected = callback
     }
-
-
-
 
     fun startMonitoring() {
         if (isMonitoring.getAndSet(true)) return
@@ -98,21 +82,14 @@ class RuntimeProtection(private val context: Context) {
         AppLogger.d(TAG, "Runtime protection monitoring started")
     }
 
-
-
-
     fun stopMonitoring() {
         isMonitoring.set(false)
         monitorJob?.cancel()
         monitorJob = null
     }
 
-
-
-
     fun performCheck(forceRefresh: Boolean = false): ProtectionResult {
         val now = System.currentTimeMillis()
-
 
         if (!forceRefresh && now - lastCheckTime < 5000) {
             lastCheckResult?.let { return it }
@@ -121,12 +98,10 @@ class RuntimeProtection(private val context: Context) {
         val threats = mutableListOf<ThreatInfo>()
         var maxLevel = THREAT_NONE
 
-
         if (isDebuggerAttached()) {
             threats.add(ThreatInfo("debugger", "调试器已连接", THREAT_HIGH))
             maxLevel = maxOf(maxLevel, THREAT_HIGH)
         }
-
 
         val fridaResult = detectFrida()
         if (fridaResult.detected) {
@@ -134,37 +109,31 @@ class RuntimeProtection(private val context: Context) {
             maxLevel = maxOf(maxLevel, THREAT_CRITICAL)
         }
 
-
         val xposedResult = detectXposed()
         if (xposedResult.detected) {
             threats.add(ThreatInfo("xposed", xposedResult.details, THREAT_MEDIUM))
             maxLevel = maxOf(maxLevel, THREAT_MEDIUM)
         }
 
-
         if (isRooted()) {
             threats.add(ThreatInfo("root", "设备已 Root", THREAT_LOW))
             maxLevel = maxOf(maxLevel, THREAT_LOW)
         }
-
 
         if (isEmulator()) {
             threats.add(ThreatInfo("emulator", "运行在模拟器中", THREAT_LOW))
 
         }
 
-
         if (!verifySignature()) {
             threats.add(ThreatInfo("signature", "签名验证失败", THREAT_HIGH))
             maxLevel = maxOf(maxLevel, THREAT_HIGH)
         }
 
-
         if (!verifyAppIntegrity()) {
             threats.add(ThreatInfo("integrity", "应用完整性检查失败", THREAT_HIGH))
             maxLevel = maxOf(maxLevel, THREAT_HIGH)
         }
-
 
         if (detectMemoryTampering()) {
             threats.add(ThreatInfo("memory", "检测到内存篡改", THREAT_CRITICAL))
@@ -185,9 +154,6 @@ class RuntimeProtection(private val context: Context) {
         return result
     }
 
-
-
-
     fun quickCheck(): Boolean {
 
         if (isEmulator()) {
@@ -197,22 +163,13 @@ class RuntimeProtection(private val context: Context) {
         return !isDebuggerAttached() && !detectFrida().detected
     }
 
-
-
-
     fun getThreatLevel(): Int = threatLevel.get()
-
-
-
-
-
 
     private fun isDebuggerAttached(): Boolean {
 
         if (Debug.isDebuggerConnected()) {
             return true
         }
-
 
         try {
             BufferedReader(FileReader("/proc/self/status")).use { reader ->
@@ -232,7 +189,6 @@ class RuntimeProtection(private val context: Context) {
 
         }
 
-
         val isDebuggable = (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         if (isDebuggable && Debug.isDebuggerConnected()) {
             return true
@@ -241,12 +197,8 @@ class RuntimeProtection(private val context: Context) {
         return false
     }
 
-
-
-
     private fun detectFrida(): DetectionResult {
         val details = mutableListOf<String>()
-
 
         val fridaPorts = listOf(27042, 27043, 27044, 27045)
         for (port in fridaPorts) {
@@ -261,7 +213,6 @@ class RuntimeProtection(private val context: Context) {
 
             }
         }
-
 
         try {
             BufferedReader(FileReader("/proc/self/maps")).use { reader ->
@@ -280,7 +231,6 @@ class RuntimeProtection(private val context: Context) {
 
         }
 
-
         val fridaFiles = listOf(
             "/data/local/tmp/frida-server",
             "/data/local/tmp/re.frida.server",
@@ -292,7 +242,6 @@ class RuntimeProtection(private val context: Context) {
                 return DetectionResult(true, details.joinToString("; "))
             }
         }
-
 
         try {
             val dbus = File("/proc/${Process.myPid()}/fd")
@@ -310,7 +259,6 @@ class RuntimeProtection(private val context: Context) {
         } catch (e: Exception) {
 
         }
-
 
         try {
             val taskDir = File("/proc/self/task")
@@ -335,7 +283,6 @@ class RuntimeProtection(private val context: Context) {
 
         }
 
-
         val extraFridaPaths = listOf(
             "/data/local/tmp/frida-server-arm",
             "/data/local/tmp/frida-server-arm64",
@@ -355,12 +302,8 @@ class RuntimeProtection(private val context: Context) {
         return DetectionResult(false, "")
     }
 
-
-
-
     private fun detectXposed(): DetectionResult {
         val details = mutableListOf<String>()
-
 
         val xposedClasses = listOf(
             "de.robv.android.xposed.XposedBridge",
@@ -377,7 +320,6 @@ class RuntimeProtection(private val context: Context) {
             }
         }
 
-
         val xposedPaths = listOf(
             "/system/framework/XposedBridge.jar",
             "/system/lib/libxposed_art.so",
@@ -393,7 +335,6 @@ class RuntimeProtection(private val context: Context) {
             }
         }
 
-
         try {
             throw Exception("Stack trace check")
         } catch (e: Exception) {
@@ -408,9 +349,6 @@ class RuntimeProtection(private val context: Context) {
 
         return DetectionResult(false, "")
     }
-
-
-
 
     private fun isRooted(): Boolean {
         val rootPaths = listOf(
@@ -430,9 +368,6 @@ class RuntimeProtection(private val context: Context) {
         return rootPaths.any { File(it).exists() }
     }
 
-
-
-
     private fun isEmulator(): Boolean {
         return Build.FINGERPRINT.startsWith("generic") ||
                 Build.FINGERPRINT.startsWith("unknown") ||
@@ -445,9 +380,6 @@ class RuntimeProtection(private val context: Context) {
                 Build.HARDWARE.contains("goldfish") ||
                 Build.HARDWARE.contains("ranchu")
     }
-
-
-
 
     @Suppress("DEPRECATION")
     private fun verifySignature(): Boolean {
@@ -477,20 +409,14 @@ class RuntimeProtection(private val context: Context) {
         }
     }
 
-
-
-
     private fun verifyAppIntegrity(): Boolean {
         return try {
             val apkPath = context.applicationInfo.sourceDir
             val apkFile = File(apkPath)
 
-
             if (!apkFile.exists()) return false
 
-
             if (apkFile.length() < 1024) return false
-
 
             true
         } catch (e: Exception) {
@@ -498,11 +424,6 @@ class RuntimeProtection(private val context: Context) {
             false
         }
     }
-
-
-
-
-
 
     private fun detectMemoryTampering(): Boolean {
         return try {
@@ -521,7 +442,6 @@ class RuntimeProtection(private val context: Context) {
                 return false
             }
 
-
             currentCrc != savedCrc
         } catch (e: Exception) {
             AppLogger.w(TAG, "DEX CRC check failed: ${e.message}")
@@ -529,9 +449,6 @@ class RuntimeProtection(private val context: Context) {
         }
     }
 }
-
-
-
 
 data class ProtectionResult(
     val threatLevel: Int,
@@ -546,17 +463,11 @@ data class ProtectionResult(
         get() = threatLevel >= RuntimeProtection.THREAT_HIGH
 }
 
-
-
-
 data class ThreatInfo(
     val type: String,
     val description: String,
     val level: Int
 )
-
-
-
 
 data class DetectionResult(
     val detected: Boolean,

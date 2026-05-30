@@ -1,13 +1,6 @@
 package com.webtoapp.core.i18n
 
-
-
-
-
 object AiPromptManager {
-
-
-
 
     fun getModuleDevelopmentSystemPrompt(
         language: AppLanguage,
@@ -21,9 +14,6 @@ object AiPromptManager {
             AppLanguage.ARABIC -> getArabicSystemPrompt(categoryHint, existingCodeHint, nativeBridgeApi)
         }
     }
-
-
-
 
     fun getCodeFixPrompt(language: AppLanguage, errorMessages: String, code: String, attempt: Int, maxAttempts: Int): String {
         return when (language) {
@@ -74,9 +64,6 @@ $code
         }
     }
 
-
-
-
     fun getCodeFixSystemPrompt(language: AppLanguage): String {
         return when (language) {
             AppLanguage.CHINESE -> "你是一个 JavaScript 代码修复专家。请修复代码中的语法错误，保持原有功能不变。只输出修复后的代码，不要添加任何解释。"
@@ -84,9 +71,6 @@ $code
             AppLanguage.ARABIC -> "أنت خبير في إصلاح كود JavaScript. يرجى إصلاح أخطاء بناء الجملة في الكود مع الحفاظ على الوظائف الأصلية. أخرج الكود المصحح فقط، لا تضف أي تفسيرات."
         }
     }
-
-
-
 
     fun getUserMessageTemplate(
         language: AppLanguage,
@@ -132,7 +116,6 @@ $code
             }
         }
     }
-
 
     private fun getChineseSystemPrompt(categoryHint: String, existingCodeHint: String, nativeBridgeApi: String): String = """
 你是一个专业的 WebToApp 扩展模块开发专家。你的任务是根据用户需求生成高质量的扩展模块代码。
@@ -217,7 +200,6 @@ $existingCodeHint
 5. 当需要保存图片/视频、分享、复制、震动等原生功能时，使用 NativeBridge API
     """.trimIndent()
 
-
     private fun getEnglishSystemPrompt(categoryHint: String, existingCodeHint: String, nativeBridgeApi: String): String = """
 You are a professional WebToApp extension module development expert. Your task is to generate high-quality extension module code based on user requirements.
 
@@ -301,7 +283,6 @@ Please strictly follow the JSON format below, do not add any other content:
 5. Use NativeBridge API when native features like saving images/videos, sharing, copying, vibration are needed
     """.trimIndent()
 
-
     private fun getArabicSystemPrompt(categoryHint: String, existingCodeHint: String, nativeBridgeApi: String): String = """
 أنت خبير محترف في تطوير وحدات إضافات WebToApp. مهمتك هي إنشاء كود وحدات إضافية عالية الجودة بناءً على متطلبات المستخدم.
 
@@ -384,11 +365,6 @@ $existingCodeHint
 4. config_items للمستخدمين لتخصيص سلوك الوحدة، اترك مصفوفة فارغة إذا لم تكن هناك حاجة لعناصر التكوين
 5. استخدم NativeBridge API عند الحاجة إلى ميزات أصلية مثل حفظ الصور/الفيديو، المشاركة، النسخ، الاهتزاز
     """.trimIndent()
-
-
-
-
-
 
     fun getAiCodingSystemPrompt(
         language: AppLanguage,
@@ -553,11 +529,6 @@ $existingCodeHint
             appendLine("استخدم أداة generate_image لتوليد الصور، تُرجع base64 للاستخدام المباشر في img src")
         }
     }.trimEnd()
-
-
-
-
-
 
     fun getAiCodingSystemPrompt(
         language: AppLanguage,

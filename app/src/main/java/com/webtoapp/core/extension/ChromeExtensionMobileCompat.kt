@@ -1,39 +1,6 @@
 package com.webtoapp.core.extension
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 object ChromeExtensionMobileCompat {
-
-
-
-
 
     fun generateCompatScript(): String = """
 (function() {
@@ -842,16 +809,6 @@ object ChromeExtensionMobileCompat {
 
 })();
 """.trimIndent()
-
-
-
-
-
-
-
-
-
-
 
     fun getPopupOnClickScript(extensionId: String, popupPath: String): String {
         val safeExtId = extensionId.replace("'", "\\'")

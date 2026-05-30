@@ -2,65 +2,43 @@ package com.webtoapp.core.extension
 
 import com.webtoapp.core.i18n.Strings
 
-
-
-
-
-
-
 object CodeSnippets {
-
-
-
 
     fun getAll(): List<CodeSnippetCategory> = listOf(
 
         nativeBridgeOperations(),
 
-
         domOperations(),
         styleOperations(),
         eventListeners(),
-
 
         storageOperations(),
         networkOperations(),
         dataProcessing(),
 
-
         uiComponents(),
         floatingWidgets(),
         notifications(),
-
 
         scrollOperations(),
         formOperations(),
         mediaOperations(),
 
-
         pageEnhance(),
         contentFilter(),
         adBlocker(),
 
-
         utilityFunctions(),
         textProcessing(),
-
 
         interceptors(),
         automation(),
         debugging()
     )
 
-
-
-
     fun getByCategory(categoryId: String): CodeSnippetCategory? {
         return getAll().find { it.id == categoryId }
     }
-
-
-
 
     fun search(query: String): List<CodeSnippet> {
         val lowerQuery = query.lowercase()
@@ -70,9 +48,6 @@ object CodeSnippets {
             snippet.tags.any { it.lowercase().contains(lowerQuery) }
         }
     }
-
-
-
 
     fun getPopular(): List<CodeSnippet> = listOf(
         getByCategory("native")?.snippets?.find { it.id == "native-save-image" },
@@ -84,7 +59,6 @@ object CodeSnippets {
         getByCategory("adblocker")?.snippets?.find { it.id == "ad-hide-common" },
         getByCategory("events")?.snippets?.find { it.id == "event-mutation" }
     ).filterNotNull()
-
 
     private fun nativeBridgeOperations() = CodeSnippetCategory(
         id = "native",
@@ -344,7 +318,6 @@ if (observerTarget instanceof Node) {
         )
     )
 
-
     private fun domOperations() = CodeSnippetCategory(
         id = "dom",
         name = Strings.snippetDom,
@@ -488,7 +461,6 @@ replaceElement('.old-class', '<div class="new-class">新内容</div>');""",
             )
         )
     )
-
 
     private fun styleOperations() = CodeSnippetCategory(
         id = "style",
@@ -665,8 +637,6 @@ document.head.appendChild(style);""",
             )
         )
     )
-
-
 
     private fun eventListeners() = CodeSnippetCategory(
         id = "events",
@@ -859,7 +829,6 @@ document.addEventListener('touchmove', () => {
         )
     )
 
-
     private fun storageOperations() = CodeSnippetCategory(
         id = "storage",
         name = Strings.snippetStorage,
@@ -981,7 +950,6 @@ async function saveToIDB(data) {
             )
         )
     )
-
 
     private fun networkOperations() = CodeSnippetCategory(
         id = "network",
@@ -1110,8 +1078,6 @@ function downloadBlob(blob, filename) {
             )
         )
     )
-
-
 
     private fun dataProcessing() = CodeSnippetCategory(
         id = "data",
@@ -1249,7 +1215,6 @@ const url = buildUrl('https://example.com/search', { q: 'test', page: 1 });""",
             )
         )
     )
-
 
     private fun uiComponents() = CodeSnippetCategory(
         id = "ui",
@@ -1420,7 +1385,6 @@ showSnackbar('文件已删除', '撤销', () => console.log('撤销'));""",
         )
     )
 
-
     private fun floatingWidgets() = CodeSnippetCategory(
         id = "widgets",
         name = Strings.snippetWidget,
@@ -1574,8 +1538,6 @@ createSidebar('<h3>设置</h3><p>这里是侧边栏内容</p>');""",
         )
     )
 
-
-
     private fun notifications() = CodeSnippetCategory(
         id = "notifications",
         name = Strings.snippetNotification,
@@ -1660,7 +1622,6 @@ showBanner('这是一条提示信息', 'success');""",
             )
         )
     )
-
 
     private fun scrollOperations() = CodeSnippetCategory(
         id = "scroll",
@@ -1854,7 +1815,6 @@ setupScrollSpy('nav a', 'section[id]');""",
         )
     )
 
-
     private fun formOperations() = CodeSnippetCategory(
         id = "form",
         name = Strings.snippetForm,
@@ -1996,8 +1956,6 @@ addPasswordToggle('#password');""",
             )
         )
     )
-
-
 
     private fun mediaOperations() = CodeSnippetCategory(
         id = "media",
@@ -2198,7 +2156,6 @@ function videoFullscreen() {
         )
     )
 
-
     private fun pageEnhance() = CodeSnippetCategory(
         id = "enhance",
         name = Strings.snippetEnhance,
@@ -2388,8 +2345,6 @@ highlightText('搜索关键词');""",
         )
     )
 
-
-
     private fun contentFilter() = CodeSnippetCategory(
         id = "filter",
         name = Strings.snippetFilter,
@@ -2475,7 +2430,6 @@ filterSmallImages(100, 100);""",
             )
         )
     )
-
 
     private fun adBlocker() = CodeSnippetCategory(
         id = "adblocker",
@@ -2618,7 +2572,6 @@ if (observerTarget instanceof Node) {
             )
         )
     )
-
 
     private fun utilityFunctions() = CodeSnippetCategory(
         id = "utility",
@@ -2796,8 +2749,6 @@ retry(() => fetch('/api/data').then(r => r.json()), 3, 1000);""",
         )
     )
 
-
-
     private fun textProcessing() = CodeSnippetCategory(
         id = "text",
         name = Strings.snippetText,
@@ -2927,7 +2878,6 @@ console.log(md);""",
         )
     )
 
-
     private fun interceptors() = CodeSnippetCategory(
         id = "intercept",
         name = Strings.snippetIntercept,
@@ -3033,7 +2983,6 @@ XMLHttpRequest.prototype.send = function(body) {
             )
         )
     )
-
 
     private fun automation() = CodeSnippetCategory(
         id = "automation",
@@ -3193,7 +3142,6 @@ checkLoginStatus('.user-avatar', '/login');""",
         )
     )
 
-
     private fun debugging() = CodeSnippetCategory(
         id = "debug",
         name = Strings.snippetDebug,
@@ -3348,9 +3296,6 @@ window.showNetworkLog = () => console.table(networkLog);""",
     )
 }
 
-
-
-
 data class CodeSnippetCategory(
     val id: String,
     val name: String,
@@ -3358,9 +3303,6 @@ data class CodeSnippetCategory(
     val description: String,
     val snippets: List<CodeSnippet>
 )
-
-
-
 
 data class CodeSnippet(
     val id: String,

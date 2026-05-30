@@ -2,12 +2,6 @@ package com.webtoapp.core.apkbuilder
 
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
-
-
 class AxmlEditor {
 
     companion object {
@@ -15,27 +9,15 @@ class AxmlEditor {
         private const val ORIGINAL_PACKAGE = "com.webtoapp"
     }
 
-
-
-
-
-
-
-
-
     fun modifyPackageName(axmlData: ByteArray, newPackageName: String): ByteArray {
         val result = axmlData.copyOf()
-
 
         val utf8Ok = replacePackageInUtf8(result, ORIGINAL_PACKAGE, newPackageName)
         val utf16Ok = replacePackageInUtf16(result, ORIGINAL_PACKAGE, newPackageName)
 
-
         fixDynamicPermissionAndAuthorities(result, newPackageName)
 
-
         restoreComponentClassNames(result, newPackageName)
-
 
         stripTestOnlyFlag(result)
 
@@ -46,10 +28,6 @@ class AxmlEditor {
 
         return result
     }
-
-
-
-
 
     private fun replacePackageInUtf8(data: ByteArray, oldPkg: String, newPkg: String): Boolean {
         val oldBytes = oldPkg.toByteArray(Charsets.UTF_8)
@@ -67,14 +45,6 @@ class AxmlEditor {
 
         return replaceBytesInData(data, oldBytes, replacement)
     }
-
-
-
-
-
-
-
-
 
     private fun fixDynamicPermissionAndAuthorities(data: ByteArray, newPackageName: String) {
         try {
@@ -95,13 +65,8 @@ class AxmlEditor {
         }
     }
 
-
-
-
-
     private fun replaceFullStringInData(data: ByteArray, oldStr: String, newStr: String): Boolean {
         var patched = false
-
 
         run {
             val oldBytes = oldStr.toByteArray(Charsets.UTF_8)
@@ -117,7 +82,6 @@ class AxmlEditor {
                 }
             }
         }
-
 
         run {
             val oldBytes = oldStr.toByteArray(Charsets.UTF_16LE)
@@ -147,12 +111,6 @@ class AxmlEditor {
         }
     }
 
-
-
-
-
-
-
     private fun restoreComponentClassNames(data: ByteArray, newPackageName: String) {
         val suffixes = listOf(
             "WebToAppApplication",
@@ -163,20 +121,16 @@ class AxmlEditor {
 
         var restored = false
 
-
         val padLen = ORIGINAL_PACKAGE.length - newPackageName.length
 
         for (suffix in suffixes) {
 
             val original = "$ORIGINAL_PACKAGE.$suffix"
 
-
-
             if (padLen >= 0) {
 
                 val brokenPrefix = newPackageName + String(CharArray(padLen) { '\u0000' })
                 val broken = "$brokenPrefix.$suffix"
-
 
                 val brokenUtf8 = broken.toByteArray(Charsets.UTF_8)
                 val originalUtf8 = original.toByteArray(Charsets.UTF_8)
@@ -186,7 +140,6 @@ class AxmlEditor {
                         AppLogger.d(TAG, "恢复类名(UTF8): $broken -> $original")
                     }
                 }
-
 
                 val brokenUtf16 = broken.toByteArray(Charsets.UTF_16LE)
                 val originalUtf16 = original.toByteArray(Charsets.UTF_16LE)
@@ -201,10 +154,6 @@ class AxmlEditor {
 
         AppLogger.d(TAG, "restoreComponentClassNames: newPackage=$newPackageName, padLen=$padLen, restored=$restored")
     }
-
-
-
-
 
     private fun replacePackageInUtf16(data: ByteArray, oldPkg: String, newPkg: String): Boolean {
         val oldBytes = oldPkg.toByteArray(Charsets.UTF_16LE)
@@ -222,11 +171,6 @@ class AxmlEditor {
 
         return replaceBytesInData(data, oldBytes, replacement)
     }
-
-
-
-
-
 
     private fun replaceBytesInData(data: ByteArray, pattern: ByteArray, replacement: ByteArray): Boolean {
         var found = false

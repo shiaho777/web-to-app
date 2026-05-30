@@ -5,18 +5,6 @@ import android.content.Context
 import android.webkit.*
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
-
-
-
-
-
-
-
-
 class ExtensionPopupManager(
     private val context: Context,
     private val extensionId: String,
@@ -33,12 +21,6 @@ class ExtensionPopupManager(
 
     private var popupWebView: WebView? = null
 
-
-
-
-
-
-
     @SuppressLint("SetJavaScriptEnabled")
     fun createPopupWebView(): WebView {
         val webView = WebView(context).apply {
@@ -47,7 +29,6 @@ class ExtensionPopupManager(
                 domStorageEnabled = true
                 databaseEnabled = true
             }
-
 
             CookieManager.getInstance().setAcceptThirdPartyCookies(this, true)
 
@@ -60,7 +41,6 @@ class ExtensionPopupManager(
                 ),
                 ChromeExtensionRuntime.JS_BRIDGE_NAME
             )
-
 
             webViewClient = object : WebViewClient() {
                 override fun shouldInterceptRequest(
@@ -83,7 +63,6 @@ class ExtensionPopupManager(
             }
         }
 
-
         val popupUrl = "chrome-extension://$extensionId/$popupPath"
         if (!loadPopupHtmlWithPolyfill(webView, popupUrl)) {
             webView.loadUrl(popupUrl)
@@ -93,9 +72,6 @@ class ExtensionPopupManager(
         AppLogger.d(TAG, "Created popup WebView for: $extensionId ($popupUrl)")
         return webView
     }
-
-
-
 
     private fun injectPolyfill(webView: WebView?) {
         webView ?: return
@@ -137,9 +113,6 @@ class ExtensionPopupManager(
             else -> "$scriptTag$html"
         }
     }
-
-
-
 
     fun destroy() {
         popupWebView?.let { wv ->

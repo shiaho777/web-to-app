@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.HorizontalDivider
 
-
 @Composable
 fun ShimmerBrush(target: @Composable (brush: Brush) -> Unit) {
     val transition = rememberInfiniteTransition(label = "shimmer")
@@ -43,9 +42,7 @@ fun ShimmerBrush(target: @Composable (brush: Brush) -> Unit) {
         label = "shimmerProgress"
     )
     val isDark = com.webtoapp.ui.theme.LocalIsDarkTheme.current
-    // Highlights slightly brighter than the surrounding surface so the shimmer
-    // reads as a subtle sweep rather than a grey stripe. Values hand-picked
-    // for both light and dark mode to sit just above the noise floor.
+
     val baseColor = if (isDark) Color(0x14FFFFFF) else Color(0x14000000)
     val peakColor = if (isDark) Color(0x2EFFFFFF) else Color(0x1F000000)
     val brush = Brush.linearGradient(
@@ -55,7 +52,6 @@ fun ShimmerBrush(target: @Composable (brush: Brush) -> Unit) {
     )
     target(brush)
 }
-
 
 @Composable
 fun PostCardSkeleton(modifier: Modifier = Modifier) {
@@ -104,7 +100,6 @@ fun PostCardSkeleton(modifier: Modifier = Modifier) {
         }
     }
 }
-
 
 @Composable
 fun PostCardSkeletonList(count: Int = 4, modifier: Modifier = Modifier) {

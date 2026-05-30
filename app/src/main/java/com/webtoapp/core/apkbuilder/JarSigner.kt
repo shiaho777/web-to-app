@@ -8,6 +8,7 @@ import android.util.Base64
 import com.webtoapp.core.logging.AppLogger
 import com.android.apksig.ApkSigner
 import com.android.apksig.ApkVerifier
+import com.webtoapp.util.GsonProvider
 import com.webtoapp.util.threadLocalCompat
 import java.io.*
 import java.math.BigInteger
@@ -17,15 +18,6 @@ import java.util.*
 import java.util.zip.*
 import javax.security.auth.x500.X500Principal
 
-
-
-
-
-
-
-
-
-
 class JarSigner(private val context: Context) {
 
     companion object {
@@ -33,16 +25,26 @@ class JarSigner(private val context: Context) {
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
         private const val KEY_ALIAS = "WebToAppKey"
         private const val FALLBACK_KEY_ALIAS = "WebToAppFallback"
+
+        @Suppress("unused")
         private const val CUSTOM_KEY_ALIAS = "CustomKey"
         private const val DIGEST_ALGORITHM = "SHA-256"
         private const val SIGNATURE_ALGORITHM = "SHA256withRSA"
         private const val KEY_SIZE = 2048
         private const val VALIDITY_YEARS = 20L
 
-
         private const val DEFAULT_PKCS12_FILE = "webtoapp_keystore.p12"
         private const val CUSTOM_PKCS12_FILE = "custom_keystore.p12"
 
+        private const val CUSTOM_PASSWORD_FILE = "custom_keystore_password.txt"
+        private const val CUSTOM_ALIAS_FILE = "custom_keystore_alias.txt"
+        private const val CUSTOM_KEYPASS_FILE = "custom_keystore_keypass.txt"
+
+        private const val SIGNER_BASENAME = "CERT"
+
+        private const val SIGNING_SCHEME_FILE = "signing_scheme_options.json"
+
+        private const val V1_SIGNER_NAME_MAX_LEN = 8
 
         private val GENERALIZED_TIME_FORMAT = threadLocalCompat {
             java.text.SimpleDateFormat("yyyyMMddHHmmss'Z'", Locale.US).apply {
@@ -56,14 +58,41 @@ class JarSigner(private val context: Context) {
         }
     }
 
-
-
-
     enum class SignerType {
         ANDROID_KEYSTORE,
         PKCS12_AUTO,
         PKCS12_CUSTOM
     }
+
+    data class SigningSchemeOptions(
+        val v1Enabled: Boolean = true,
+        val v2Enabled: Boolean = true,
+        val v3Enabled: Boolean = true,
+        val autoFallback: Boolean = true,
+        val v1SignerName: String = ""
+    ) {
+
+        fun hasAnyScheme(): Boolean = v1Enabled || v2Enabled || v3Enabled
+    }
+
+    data class CertificateSpec(
+        val alias: String = "key0",
+        val password: String = "",
+        val commonName: String = "",
+        val organization: String = "",
+        val organizationUnit: String = "",
+        val locality: String = "",
+        val state: String = "",
+        val country: String = "",
+        val validityYears: Int = 30,
+        val keySize: Int = 2048
+    )
+
+    data class CertificateFingerprints(
+        val md5: String,
+        val sha1: String,
+        val sha256: String
+    )
 
     private var privateKey: PrivateKey? = null
     private var certificate: X509Certificate? = null
@@ -74,22 +103,12 @@ class JarSigner(private val context: Context) {
         initializeKey()
     }
 
-
-
-
     fun getSignerType(): SignerType = currentSignerType
-
-
-
-
 
     fun getCertificateSignatureHash(): ByteArray {
         val cert = certificate ?: throw IllegalStateException("证书未初始化")
         return java.security.MessageDigest.getInstance("SHA-256").digest(cert.encoded)
     }
-
-
-
 
     fun getCertificateInfo(): String? {
         val cert = certificate ?: return null
@@ -102,26 +121,113 @@ class JarSigner(private val context: Context) {
         """.trimMargin()
     }
 
+    fun getCertificateFingerprints(): CertificateFingerprints? {
+        val cert = certificate ?: return null
+        return try {
+            val der = cert.encoded
+            CertificateFingerprints(
+                md5 = hexFingerprint(der, "MD5"),
+                sha1 = hexFingerprint(der, "SHA-1"),
+                sha256 = hexFingerprint(der, "SHA-256")
+            )
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to compute certificate fingerprints", e)
+            null
+        }
+    }
 
+    private fun hexFingerprint(data: ByteArray, algorithm: String): String {
+        val digest = java.security.MessageDigest.getInstance(algorithm).digest(data)
+        return digest.joinToString(":") { "%02X".format(it) }
+    }
 
+    fun getSigningSchemeOptions(): SigningSchemeOptions {
+        val file = File(context.filesDir, SIGNING_SCHEME_FILE)
+        if (!file.exists()) return SigningSchemeOptions()
+        return try {
+            GsonProvider.gson.fromJson(file.readText(), SigningSchemeOptions::class.java)
+                ?.let { sanitizeOptions(it) }
+                ?: SigningSchemeOptions()
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Failed to read signing scheme options, using defaults", e)
+            SigningSchemeOptions()
+        }
+    }
 
+    fun setSigningSchemeOptions(options: SigningSchemeOptions): SigningSchemeOptions {
+        val safe = sanitizeOptions(options)
+        try {
+            File(context.filesDir, SIGNING_SCHEME_FILE).writeText(GsonProvider.gson.toJson(safe))
+            AppLogger.d(TAG, "Saved signing scheme options: $safe")
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to save signing scheme options", e)
+        }
+        return safe
+    }
+
+    private fun sanitizeOptions(options: SigningSchemeOptions): SigningSchemeOptions {
+        return if (!options.hasAnyScheme()) {
+            AppLogger.w(TAG, "All signing schemes disabled, forcing V1+V2+V3 back on")
+            options.copy(v1Enabled = true, v2Enabled = true, v3Enabled = true)
+        } else {
+            options
+        }
+    }
+
+    fun resolveV1SignerName(customName: String?): String {
+        val explicit = customName?.trim().orEmpty()
+        if (explicit.isNotEmpty()) {
+            return sanitizeV1SignerName(explicit)
+        }
+
+        return deriveSignerNameFromKey() ?: SIGNER_BASENAME
+    }
+
+    private fun deriveSignerNameFromKey(): String? {
+        val cert = certificate ?: return null
+        val cn = extractCommonName(cert.subjectX500Principal.name)
+            ?: cert.subjectX500Principal.name
+        val sanitized = sanitizeV1SignerName(cn)
+        return sanitized.takeIf { it.isNotEmpty() && it.any { ch -> ch.isLetterOrDigit() } }
+    }
+
+    private fun extractCommonName(dn: String): String? {
+
+        return dn.split(",")
+            .map { it.trim() }
+            .firstOrNull { it.startsWith("CN=", ignoreCase = true) }
+            ?.substringAfter("=")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+    }
+
+    private fun sanitizeV1SignerName(name: String): String {
+        val upper = name.uppercase(Locale.US)
+        val sb = StringBuilder()
+        for (i in 0 until minOf(upper.length, V1_SIGNER_NAME_MAX_LEN)) {
+            val c = upper[i]
+            sb.append(
+                if (c in 'A'..'Z' || c in '0'..'9' || c == '-' || c == '_') c else '_'
+            )
+        }
+        return sb.toString()
+    }
 
     private fun initializeKey() {
 
         if (tryLoadOrCreateFallbackKey()) {
-            AppLogger.d(TAG, "成功使用 PKCS12 密钥方案")
+            AppLogger.d(TAG, "Successfully using PKCS12 key scheme")
             return
         }
 
-
         if (tryLoadFromAndroidKeyStore()) {
-            AppLogger.d(TAG, "成功从 Android KeyStore 加载密钥")
+            AppLogger.d(TAG, "Successfully loaded key from Android KeyStore")
             currentSignerType = SignerType.ANDROID_KEYSTORE
             return
         }
 
         if (tryGenerateAndroidKeyStoreKey()) {
-            AppLogger.d(TAG, "成功生成 Android KeyStore 密钥")
+            AppLogger.d(TAG, "Successfully generated Android KeyStore key")
             currentSignerType = SignerType.ANDROID_KEYSTORE
             return
         }
@@ -129,9 +235,6 @@ class JarSigner(private val context: Context) {
         initError = "无法初始化签名密钥"
         AppLogger.e(TAG, initError!!)
     }
-
-
-
 
     private fun tryLoadFromAndroidKeyStore(): Boolean {
         return try {
@@ -146,13 +249,10 @@ class JarSigner(private val context: Context) {
                 false
             }
         } catch (e: Exception) {
-            AppLogger.w(TAG, "从 Android KeyStore 加载密钥失败", e)
+            AppLogger.w(TAG, "Failed to load key from Android KeyStore", e)
             false
         }
     }
-
-
-
 
     private fun tryGenerateAndroidKeyStoreKey(): Boolean {
         return try {
@@ -162,10 +262,10 @@ class JarSigner(private val context: Context) {
                 keyStore.load(null)
                 if (keyStore.containsAlias(KEY_ALIAS)) {
                     keyStore.deleteEntry(KEY_ALIAS)
-                    AppLogger.d(TAG, "删除了旧的 KeyStore 条目")
+                    AppLogger.d(TAG, "Deleted stale KeyStore entry")
                 }
             } catch (e: Exception) {
-                AppLogger.w(TAG, "删除旧密钥失败（可忽略）", e)
+                AppLogger.w(TAG, "Failed to delete stale key (safe to ignore)", e)
             }
 
             val keyPairGenerator = KeyPairGenerator.getInstance(
@@ -192,7 +292,6 @@ class JarSigner(private val context: Context) {
             keyPairGenerator.initialize(spec)
             val keyPair = keyPairGenerator.generateKeyPair()
 
-
             val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
             keyStore.load(null)
             privateKey = keyStore.getKey(KEY_ALIAS, null) as? PrivateKey
@@ -200,13 +299,10 @@ class JarSigner(private val context: Context) {
 
             privateKey != null && certificate != null
         } catch (e: Exception) {
-            AppLogger.e(TAG, "生成 Android KeyStore 密钥失败", e)
+            AppLogger.e(TAG, "Failed to generate Android KeyStore key", e)
             false
         }
     }
-
-
-
 
     private fun tryLoadOrCreateFallbackKey(): Boolean {
 
@@ -214,7 +310,6 @@ class JarSigner(private val context: Context) {
             currentSignerType = SignerType.PKCS12_CUSTOM
             return true
         }
-
 
         if (tryLoadOrCreateAutoPkcs12()) {
             currentSignerType = SignerType.PKCS12_AUTO
@@ -224,28 +319,33 @@ class JarSigner(private val context: Context) {
         return false
     }
 
-
-
-
     private fun tryLoadCustomPkcs12(): Boolean {
         val customFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
-        val passwordFile = File(context.filesDir, "custom_keystore_password.txt")
+        val passwordFile = File(context.filesDir, CUSTOM_PASSWORD_FILE)
 
         if (!customFile.exists() || !passwordFile.exists()) {
             return false
         }
 
         return try {
-            val password = passwordFile.readText().trim().toCharArray()
-            loadPkcs12(customFile, password, CUSTOM_KEY_ALIAS)
+            val storePassword = passwordFile.readText().trim().toCharArray()
+
+            val aliasFile = File(context.filesDir, CUSTOM_ALIAS_FILE)
+            val persistedAlias = if (aliasFile.exists()) {
+                aliasFile.readText().trim().takeIf { it.isNotBlank() }
+            } else null
+
+            val keypassFile = File(context.filesDir, CUSTOM_KEYPASS_FILE)
+            val keyPassword: CharArray? = if (keypassFile.exists()) {
+                keypassFile.readText().trim().toCharArray()
+            } else null
+
+            loadPkcs12(customFile, storePassword, persistedAlias, keyPassword)
         } catch (e: Exception) {
-            AppLogger.w(TAG, "加载自定义 PKCS12 失败", e)
+            AppLogger.w(TAG, "Failed to load custom PKCS12", e)
             false
         }
     }
-
-
-
 
     private fun tryLoadOrCreateAutoPkcs12(): Boolean {
         val keyStoreFile = File(context.filesDir, DEFAULT_PKCS12_FILE)
@@ -256,9 +356,10 @@ class JarSigner(private val context: Context) {
 
             if (keyStoreFile.exists()) {
                 FileInputStream(keyStoreFile).use { fis ->
-                    keyStore.load(fis, keyStorePassword)
+
+                    keyStore.load(fis, keyStorePassword.copyOf())
                 }
-                privateKey = keyStore.getKey(FALLBACK_KEY_ALIAS, keyStorePassword) as? PrivateKey
+                privateKey = keyStore.getKey(FALLBACK_KEY_ALIAS, keyStorePassword.copyOf()) as? PrivateKey
                 certificate = keyStore.getCertificate(FALLBACK_KEY_ALIAS) as? X509Certificate
 
                 if (privateKey != null && certificate != null) {
@@ -266,43 +367,36 @@ class JarSigner(private val context: Context) {
                     val cert = certificate!!
                     val now = Date()
                     if (cert.notAfter.before(now)) {
-                        AppLogger.w(TAG, "证书已过期或无效 (notAfter=${cert.notAfter})，重新生成...")
+                        AppLogger.w(TAG, "Certificate expired or invalid (notAfter=${cert.notAfter}), regenerating...")
                         keyStoreFile.delete()
                         privateKey = null
                         certificate = null
                     } else {
-                        AppLogger.d(TAG, "从自动生成的 PKCS12 加载成功，有效期至 ${cert.notAfter}")
+                        AppLogger.d(TAG, "Loaded auto-generated PKCS12 successfully, valid until ${cert.notAfter}")
                         return true
                     }
                 }
             }
 
-
             createNewPkcs12(keyStoreFile, keyStorePassword, FALLBACK_KEY_ALIAS)
             true
         } catch (e: Exception) {
-            AppLogger.e(TAG, "自动 PKCS12 密钥方案失败", e)
+            AppLogger.e(TAG, "Auto PKCS12 key scheme failed", e)
             false
         }
     }
 
-
-
-
-
     private fun getOrCreateKeystorePassword(): CharArray {
         val passwordFile = File(context.filesDir, ".ks_credential")
-
 
         if (passwordFile.exists()) {
             try {
                 val saved = passwordFile.readText().trim()
                 if (saved.isNotEmpty()) return saved.toCharArray()
             } catch (e: Exception) {
-                AppLogger.w(TAG, "读取密码文件失败", e)
+                AppLogger.w(TAG, "Failed to read password file", e)
             }
         }
-
 
         val keyStoreFile = File(context.filesDir, DEFAULT_PKCS12_FILE)
         val legacyPassword = "webtoapp_sign"
@@ -312,13 +406,12 @@ class JarSigner(private val context: Context) {
                 FileInputStream(keyStoreFile).use { fis -> ks.load(fis, legacyPassword.toCharArray()) }
 
                 passwordFile.writeText(legacyPassword)
-                AppLogger.d(TAG, "迁移旧密码到文件存储")
+                AppLogger.d(TAG, "Migrating legacy password to file storage")
                 return legacyPassword.toCharArray()
             } catch (_: Exception) {
 
             }
         }
-
 
         val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#%^&*"
         val random = SecureRandom()
@@ -327,93 +420,82 @@ class JarSigner(private val context: Context) {
         try {
             passwordFile.writeText(String(password))
         } catch (e: Exception) {
-            AppLogger.e(TAG, "保存密码文件失败", e)
+            AppLogger.e(TAG, "Failed to save password file", e)
         }
 
         return password
     }
 
-
-
-
-    private fun loadPkcs12(file: File, password: CharArray, alias: String? = null): Boolean {
+    private fun loadPkcs12(
+        file: File,
+        password: CharArray,
+        alias: String? = null,
+        keyPassword: CharArray? = null
+    ): Boolean {
         return try {
             val keyStore = KeyStore.getInstance("PKCS12")
             FileInputStream(file).use { fis ->
-                keyStore.load(fis, password)
+
+                keyStore.load(fis, password.copyOf())
             }
 
-
-            val keyAlias = alias ?: keyStore.aliases().toList().firstOrNull {
-                keyStore.isKeyEntry(it)
-            }
+            val keyAlias = alias?.takeIf { keyStore.isKeyEntry(it) }
+                ?: keyStore.aliases().toList().firstOrNull { keyStore.isKeyEntry(it) }
 
             if (keyAlias == null) {
-                AppLogger.e(TAG, "PKCS12 中找不到密钥条目")
+                AppLogger.e(TAG, "No key entry in PKCS12 (alias=$alias）")
                 return false
             }
 
-            privateKey = keyStore.getKey(keyAlias, password) as? PrivateKey
+            val effectiveKeyPass = keyPassword?.copyOf() ?: password.copyOf()
+            privateKey = try {
+                keyStore.getKey(keyAlias, effectiveKeyPass) as? PrivateKey
+            } catch (e: java.security.UnrecoverableKeyException) {
+
+                AppLogger.w(TAG, "getKey($keyAlias) failed — keypass might differ from storepass: ${e.message}")
+                throw e
+            }
             certificate = keyStore.getCertificate(keyAlias) as? X509Certificate
 
             val success = privateKey != null && certificate != null
             if (success) {
-                AppLogger.d(TAG, "从 PKCS12 加载成功: alias=$keyAlias")
+                AppLogger.d(TAG, "Loaded successfully from PKCS12: alias=$keyAlias")
             }
             success
         } catch (e: Exception) {
-            AppLogger.e(TAG, "加载 PKCS12 失败: ${file.absolutePath}", e)
+            AppLogger.e(TAG, "Failed to load PKCS12: ${file.absolutePath}", e)
             false
         }
     }
 
-
-
-
-
-
-
-
     private fun createNewPkcs12(file: File, password: CharArray, alias: String) {
-        AppLogger.d(TAG, "创建新的 PKCS12 密钥库...")
-
+        AppLogger.d(TAG, "Creating new PKCS12 keystore...")
 
         val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
         keyPairGenerator.initialize(KEY_SIZE, SecureRandom())
         val keyPair = keyPairGenerator.generateKeyPair()
-        AppLogger.d(TAG, "RSA 密钥对已生成 (${KEY_SIZE} bit)")
-
+        AppLogger.d(TAG, "RSA key pair generated (${KEY_SIZE} bit)")
 
         val cert = try {
             generateCertViaAndroidKeyStore(keyPair)
         } catch (e: Exception) {
-            AppLogger.w(TAG, "Android KeyStore 证书生成失败，使用手写 ASN.1 回退: ${e.message}")
+            AppLogger.w(TAG, "Android KeyStore certificate generation failed, falling back to manual ASN.1: ${e.message}")
             generateSelfSignedCertificate(keyPair)
         }
 
-
         val keyStore = KeyStore.getInstance("PKCS12")
-        keyStore.load(null, password)
-        keyStore.setKeyEntry(alias, keyPair.private, password, arrayOf(cert))
+        keyStore.load(null, password.copyOf())
+        keyStore.setKeyEntry(alias, keyPair.private, password.copyOf(), arrayOf(cert))
 
         FileOutputStream(file).use { fos ->
-            keyStore.store(fos, password)
+            keyStore.store(fos, password.copyOf())
         }
 
         privateKey = keyPair.private
         certificate = cert
 
-        AppLogger.d(TAG, "创建 PKCS12 成功: ${file.absolutePath}, 有效期至 ${cert.notAfter}")
+        AppLogger.d(TAG, "PKCS12 created successfully: ${file.absolutePath}, valid until ${cert.notAfter}")
     }
-
-
-
-
-
-
-
-
-
 
     private fun generateCertViaAndroidKeyStore(softwareKeyPair: KeyPair): X509Certificate {
         val tempAlias = "webtoapp_cert_gen_temp_${System.currentTimeMillis()}"
@@ -444,11 +526,9 @@ class JarSigner(private val context: Context) {
             tempKpg.initialize(spec)
             tempKpg.generateKeyPair()
 
-
             val aksKeyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
             aksKeyStore.load(null)
             val aksCert = aksKeyStore.getCertificate(tempAlias) as X509Certificate
-
 
             val tbsCert = buildTBSCertificate(
                 aksCert.subjectX500Principal,
@@ -468,7 +548,7 @@ class JarSigner(private val context: Context) {
             val certFactory = java.security.cert.CertificateFactory.getInstance("X.509")
             val newCert = certFactory.generateCertificate(ByteArrayInputStream(certDer)) as X509Certificate
 
-            AppLogger.d(TAG, "通过 Android KeyStore 模板生成证书成功")
+            AppLogger.d(TAG, "Certificate generated via Android KeyStore template")
             return newCert
 
         } finally {
@@ -480,66 +560,63 @@ class JarSigner(private val context: Context) {
                     aksKeyStore.deleteEntry(tempAlias)
                 }
             } catch (e: Exception) {
-                AppLogger.w(TAG, "清理临时 KeyStore 条目失败（可忽略）", e)
+                AppLogger.w(TAG, "Failed to clean up temporary KeyStore entry (safe to ignore)", e)
             }
         }
     }
 
-
-
-
-
-
-
-    fun importPkcs12(sourceFile: File, password: String): Boolean {
+    @JvmOverloads
+    fun importPkcs12(sourceFile: File, password: String, keyPassword: String? = null): Boolean {
         return try {
-            val passwordChars = password.toCharArray()
-
+            val storePassChars = password.toCharArray()
+            val keyPassChars = keyPassword
+                ?.takeIf { it.isNotEmpty() }
+                ?.toCharArray()
 
             val keyStore = KeyStore.getInstance("PKCS12")
             FileInputStream(sourceFile).use { fis ->
-                keyStore.load(fis, passwordChars)
+                keyStore.load(fis, storePassChars.copyOf())
             }
-
 
             val keyAlias = keyStore.aliases().toList().firstOrNull { keyStore.isKeyEntry(it) }
             if (keyAlias == null) {
-                AppLogger.e(TAG, "导入失败: PKCS12 中找不到密钥")
+                AppLogger.e(TAG, "Import failed: no key entry in PKCS12")
                 return false
             }
-
 
             val targetFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
             sourceFile.copyTo(targetFile, overwrite = true)
 
+            File(context.filesDir, CUSTOM_PASSWORD_FILE).writeText(password)
+            File(context.filesDir, CUSTOM_ALIAS_FILE).writeText(keyAlias)
+            val keypassSidecar = File(context.filesDir, CUSTOM_KEYPASS_FILE)
+            if (keyPassChars != null) {
+                keypassSidecar.writeText(keyPassword)
+            } else if (keypassSidecar.exists()) {
 
-            val passwordFile = File(context.filesDir, "custom_keystore_password.txt")
-            passwordFile.writeText(password)
+                keypassSidecar.delete()
+            }
 
-
-            if (loadPkcs12(targetFile, passwordChars, null)) {
+            if (loadPkcs12(targetFile, storePassChars, keyAlias, keyPassChars)) {
                 currentSignerType = SignerType.PKCS12_CUSTOM
-                AppLogger.d(TAG, "导入自定义 PKCS12 成功")
+                AppLogger.d(TAG, "Custom PKCS12 import successful (alias=$keyAlias, separateKeyPass=${keyPassChars != null})")
                 return true
             }
 
             false
         } catch (e: Exception) {
-            AppLogger.e(TAG, "导入 PKCS12 失败", e)
+            AppLogger.e(TAG, "PKCS12 import failed", e)
             false
         }
     }
 
-
-
-
-
-
-
-
-    fun importKeystore(sourceFile: File, password: String): Boolean {
-        val passwordChars = password.toCharArray()
-
+    @JvmOverloads
+    fun importKeystore(sourceFile: File, password: String, keyPassword: String? = null): Boolean {
+        val storePassChars = password.toCharArray()
+        val keyPassChars = keyPassword
+            ?.takeIf { it.isNotEmpty() }
+            ?.toCharArray()
+            ?: storePassChars
 
         val keystoreTypes = listOf("PKCS12", "BKS", "JKS")
 
@@ -547,17 +624,16 @@ class JarSigner(private val context: Context) {
             try {
                 val keyStore = KeyStore.getInstance(type)
                 FileInputStream(sourceFile).use { fis ->
-                    keyStore.load(fis, passwordChars)
+                    keyStore.load(fis, storePassChars.copyOf())
                 }
-
 
                 val keyAlias = keyStore.aliases().toList().firstOrNull { keyStore.isKeyEntry(it) }
                 if (keyAlias == null) {
-                    AppLogger.w(TAG, "$type 中找不到密钥条目，跳过")
+                    AppLogger.w(TAG, "$type has no key entry, skipping")
                     continue
                 }
 
-                AppLogger.d(TAG, "成功以 $type 格式解析签名文件, alias=$keyAlias")
+                AppLogger.d(TAG, "Successfully parsed signature file as $type, alias=$keyAlias")
 
                 if (type == "PKCS12") {
 
@@ -565,56 +641,145 @@ class JarSigner(private val context: Context) {
                     sourceFile.copyTo(targetFile, overwrite = true)
                 } else {
 
-                    val key = keyStore.getKey(keyAlias, passwordChars) as? PrivateKey
+                    val key = try {
+                        keyStore.getKey(keyAlias, keyPassChars.copyOf()) as? PrivateKey
+                    } catch (e: java.security.UnrecoverableKeyException) {
+                        AppLogger.w(TAG, "$type getKey($keyAlias) failed — keypass might differ from storepass: ${e.message}")
+
+                        null
+                    }
                     val cert = keyStore.getCertificate(keyAlias) as? java.security.cert.X509Certificate
                     if (key == null || cert == null) {
-                        AppLogger.w(TAG, "$type 中密钥或证书为空")
+                        AppLogger.w(TAG, "$type has empty key or certificate（alias=$keyAlias）")
                         continue
                     }
 
                     val p12KeyStore = KeyStore.getInstance("PKCS12")
-                    p12KeyStore.load(null, passwordChars)
-                    p12KeyStore.setKeyEntry(keyAlias, key, passwordChars, arrayOf(cert))
+                    p12KeyStore.load(null, storePassChars.copyOf())
+                    p12KeyStore.setKeyEntry(keyAlias, key, storePassChars.copyOf(), arrayOf(cert))
 
                     val targetFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
                     FileOutputStream(targetFile).use { fos ->
-                        p12KeyStore.store(fos, passwordChars)
+                        p12KeyStore.store(fos, storePassChars.copyOf())
                     }
-                    AppLogger.d(TAG, "已将 $type 转换为 PKCS12 并保存")
+                    AppLogger.d(TAG, "Converted $type converted to a unified-password PKCS12 (storepass==keypass) and saved")
                 }
 
+                File(context.filesDir, CUSTOM_PASSWORD_FILE).writeText(password)
+                File(context.filesDir, CUSTOM_ALIAS_FILE).writeText(keyAlias)
+                val keypassSidecar = File(context.filesDir, CUSTOM_KEYPASS_FILE)
+                if (type == "PKCS12" && keyPassword != null && keyPassword.isNotEmpty() && keyPassword != password) {
 
-                val passwordFile = File(context.filesDir, "custom_keystore_password.txt")
-                passwordFile.writeText(password)
-
+                    keypassSidecar.writeText(keyPassword)
+                } else if (keypassSidecar.exists()) {
+                    keypassSidecar.delete()
+                }
 
                 val targetFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
-                if (loadPkcs12(targetFile, passwordChars, null)) {
+                val effectiveKeyPass = if (type == "PKCS12") keyPassChars else storePassChars
+                if (loadPkcs12(targetFile, storePassChars, keyAlias, effectiveKeyPass)) {
                     currentSignerType = SignerType.PKCS12_CUSTOM
-                    AppLogger.d(TAG, "导入自定义签名文件成功 (原始格式: $type)")
+                    AppLogger.d(TAG, "Custom signature file imported (original format: $type, alias=$keyAlias)")
                     return true
                 }
             } catch (e: Exception) {
-                AppLogger.w(TAG, "尝试以 $type 格式解析失败: ${e.message}")
+                AppLogger.w(TAG, "Attempting to parse as $type failed: ${e.message}")
             }
         }
 
-        AppLogger.e(TAG, "所有格式均无法解析此签名文件")
+        AppLogger.e(TAG, "Couldn't parse signature file in any supported format")
         return false
     }
 
+    fun createCustomKeystore(spec: CertificateSpec): Boolean {
+        val alias = spec.alias.trim()
+        if (alias.isEmpty()) {
+            AppLogger.e(TAG, "createCustomKeystore: alias is empty")
+            return false
+        }
+        if (spec.password.isEmpty()) {
+            AppLogger.e(TAG, "createCustomKeystore: password is empty")
+            return false
+        }
 
+        return try {
+            val keySize = if (spec.keySize == 4096) 4096 else 2048
+            val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
+            keyPairGenerator.initialize(keySize, SecureRandom())
+            val keyPair = keyPairGenerator.generateKeyPair()
 
+            val years = spec.validityYears.coerceIn(1, 100)
+            val now = System.currentTimeMillis()
+            val notBefore = Date(now)
+            val notAfter = Date(now + years * 365L * 24L * 60L * 60L * 1000L)
 
+            val subject = buildSubjectDn(spec)
+            val serial = BigInteger.valueOf(now)
 
+            val cert = try {
+                createX509Certificate(subject, subject, serial, notBefore, notAfter, keyPair.public, keyPair.private)
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "Custom cert ASN.1 build failed: ${e.message}")
+                throw e
+            }
 
+            val passwordChars = spec.password.toCharArray()
+
+            val keyStore = KeyStore.getInstance("PKCS12")
+            keyStore.load(null, passwordChars.copyOf())
+            keyStore.setKeyEntry(alias, keyPair.private, passwordChars.copyOf(), arrayOf(cert))
+
+            val targetFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
+            FileOutputStream(targetFile).use { fos ->
+                keyStore.store(fos, passwordChars.copyOf())
+            }
+
+            File(context.filesDir, CUSTOM_PASSWORD_FILE).writeText(spec.password)
+            File(context.filesDir, CUSTOM_ALIAS_FILE).writeText(alias)
+            File(context.filesDir, CUSTOM_KEYPASS_FILE).delete()
+
+            if (loadPkcs12(targetFile, passwordChars, alias, null)) {
+                currentSignerType = SignerType.PKCS12_CUSTOM
+                AppLogger.d(TAG, "Custom keystore created and activated (alias=$alias, keySize=$keySize, years=$years)")
+                true
+            } else {
+                AppLogger.e(TAG, "Custom keystore created but failed to load back")
+                false
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "createCustomKeystore failed", e)
+            false
+        }
+    }
+
+    private fun buildSubjectDn(spec: CertificateSpec): X500Principal {
+        fun esc(v: String) = v.trim()
+            .replace("\\", "\\\\")
+            .replace(",", "\\,")
+            .replace("+", "\\+")
+            .replace("\"", "\\\"")
+            .replace("<", "\\<")
+            .replace(">", "\\>")
+            .replace(";", "\\;")
+
+        val parts = buildList {
+            spec.commonName.trim().takeIf { it.isNotEmpty() }?.let { add("CN=${esc(it)}") }
+            spec.organizationUnit.trim().takeIf { it.isNotEmpty() }?.let { add("OU=${esc(it)}") }
+            spec.organization.trim().takeIf { it.isNotEmpty() }?.let { add("O=${esc(it)}") }
+            spec.locality.trim().takeIf { it.isNotEmpty() }?.let { add("L=${esc(it)}") }
+            spec.state.trim().takeIf { it.isNotEmpty() }?.let { add("ST=${esc(it)}") }
+            spec.country.trim().takeIf { it.isNotEmpty() }?.let { add("C=${esc(it)}") }
+        }
+        val dn = if (parts.isEmpty()) "CN=WebToApp" else parts.joinToString(", ")
+        return X500Principal(dn)
+    }
 
     fun exportPkcs12(targetFile: File, password: String): Boolean {
         val key = privateKey
         val cert = certificate
 
         if (key == null || cert == null) {
-            AppLogger.e(TAG, "导出失败: 没有可用的密钥")
+            AppLogger.e(TAG, "Export failed: no key available")
             return false
         }
 
@@ -633,38 +798,31 @@ class JarSigner(private val context: Context) {
                 keyStore.store(fos, password.toCharArray())
             }
 
-            AppLogger.d(TAG, "导出 PKCS12 成功: ${targetFile.absolutePath}")
+            AppLogger.d(TAG, "PKCS12 exported successfully: ${targetFile.absolutePath}")
             true
         } catch (e: Exception) {
-            AppLogger.e(TAG, "导出 PKCS12 失败", e)
+            AppLogger.e(TAG, "PKCS12 export failed", e)
             false
         }
     }
-
-
-
 
     fun removeCustomPkcs12(): Boolean {
         return try {
-            val customFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
-            val passwordFile = File(context.filesDir, "custom_keystore_password.txt")
 
-            customFile.delete()
-            passwordFile.delete()
-
+            File(context.filesDir, CUSTOM_PKCS12_FILE).delete()
+            File(context.filesDir, CUSTOM_PASSWORD_FILE).delete()
+            File(context.filesDir, CUSTOM_ALIAS_FILE).delete()
+            File(context.filesDir, CUSTOM_KEYPASS_FILE).delete()
 
             initializeKey()
 
-            AppLogger.d(TAG, "已删除自定义 PKCS12，回退到: $currentSignerType")
+            AppLogger.d(TAG, "Removed custom PKCS12 and sidecar, falling back to: $currentSignerType")
             true
         } catch (e: Exception) {
-            AppLogger.e(TAG, "删除自定义 PKCS12 失败", e)
+            AppLogger.e(TAG, "Failed to delete custom PKCS12", e)
             false
         }
     }
-
-
-
 
     fun getPkcs12FilePath(): String? {
         return when (currentSignerType) {
@@ -673,10 +831,6 @@ class JarSigner(private val context: Context) {
             else -> null
         }
     }
-
-
-
-
 
     private fun generateSelfSignedCertificate(keyPair: KeyPair): X509Certificate {
         val now = System.currentTimeMillis()
@@ -697,9 +851,6 @@ class JarSigner(private val context: Context) {
         )
     }
 
-
-
-
     private fun createX509Certificate(
         subject: X500Principal,
         issuer: X500Principal,
@@ -714,22 +865,16 @@ class JarSigner(private val context: Context) {
             subject, issuer, serialNumber, notBefore, notAfter, publicKey
         )
 
-
         val signature = Signature.getInstance(SIGNATURE_ALGORITHM)
         signature.initSign(privateKey)
         signature.update(tbsCert)
         val signatureBytes = signature.sign()
 
-
         val certDer = buildCertificateDER(tbsCert, signatureBytes)
-
 
         val certFactory = java.security.cert.CertificateFactory.getInstance("X.509")
         return certFactory.generateCertificate(ByteArrayInputStream(certDer)) as X509Certificate
     }
-
-
-
 
     private fun buildTBSCertificate(
         subject: X500Principal,
@@ -741,25 +886,18 @@ class JarSigner(private val context: Context) {
     ): ByteArray {
         val out = ByteArrayOutputStream()
 
-
         out.write(byteArrayOf(0xA0.toByte(), 0x03, 0x02, 0x01, 0x02))
-
 
         val serialBytes = serialNumber.toByteArray()
         out.write(wrapWithTag(0x02, serialBytes))
 
-
         out.write(buildSignatureAlgorithmId())
-
 
         out.write(issuer.encoded)
 
-
         out.write(buildValidity(notBefore, notAfter))
 
-
         out.write(subject.encoded)
-
 
         out.write(publicKey.encoded)
 
@@ -782,12 +920,6 @@ class JarSigner(private val context: Context) {
         out.write(encodeTime(notAfter))
         return wrapWithTag(0x30, out.toByteArray())
     }
-
-
-
-
-
-
 
     private fun encodeTime(date: Date): ByteArray {
         val calendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
@@ -814,12 +946,6 @@ class JarSigner(private val context: Context) {
         return wrapWithTag(0x30, out.toByteArray())
     }
 
-
-
-
-
-
-
     fun sign(inputApk: File, outputApk: File): Boolean {
 
         if (!validateInputs(inputApk, outputApk)) {
@@ -829,7 +955,7 @@ class JarSigner(private val context: Context) {
         val key = privateKey
         val cert = certificate
         if (key == null || cert == null) {
-            AppLogger.e(TAG, "密钥或证书为空，尝试重新初始化...")
+            AppLogger.e(TAG, "Key or certificate is empty, retrying initialisation...")
 
             File(context.filesDir, DEFAULT_PKCS12_FILE).delete()
             File(context.filesDir, ".ks_credential").delete()
@@ -840,41 +966,35 @@ class JarSigner(private val context: Context) {
             }
         }
 
-        AppLogger.d(TAG, "开始签名 APK: input=${inputApk.absolutePath} (size=${inputApk.length()})")
-        AppLogger.d(TAG, "签名类型: $currentSignerType")
-
+        AppLogger.d(TAG, "Signing APK: input=${inputApk.absolutePath} (size=${inputApk.length()})")
+        AppLogger.d(TAG, "Signer type: $currentSignerType")
 
         return trySignWithRetry(inputApk, outputApk, maxRetries = 2)
     }
 
-
-
-
     private fun validateInputs(inputApk: File, outputApk: File): Boolean {
         if (!inputApk.exists()) {
-            AppLogger.e(TAG, "输入 APK 不存在: ${inputApk.absolutePath}")
+            AppLogger.e(TAG, "Input APK doesn't exist: ${inputApk.absolutePath}")
             return false
         }
 
         if (inputApk.length() == 0L) {
-            AppLogger.e(TAG, "输入 APK 文件为空")
+            AppLogger.e(TAG, "Input APK file is empty")
             return false
         }
 
         if (!inputApk.canRead()) {
-            AppLogger.e(TAG, "无法读取输入 APK")
+            AppLogger.e(TAG, "Can't read input APK")
             return false
         }
-
 
         val outputDir = outputApk.parentFile
         if (outputDir != null && !outputDir.exists()) {
             if (!outputDir.mkdirs()) {
-                AppLogger.e(TAG, "无法创建输出目录: ${outputDir.absolutePath}")
+                AppLogger.e(TAG, "Can't create output directory: ${outputDir.absolutePath}")
                 return false
             }
         }
-
 
         if (outputApk.exists()) {
             outputApk.delete()
@@ -883,57 +1003,72 @@ class JarSigner(private val context: Context) {
         return true
     }
 
-
-
-
-
-
-
-
-
     private fun trySignWithRetry(inputApk: File, outputApk: File, maxRetries: Int): Boolean {
         val errorMessages = mutableListOf<String>()
         var lastException: Throwable? = null
 
         data class SignConfig(val name: String, val v1: Boolean, val v2: Boolean, val v3: Boolean)
 
-        val configs = listOf(
-            SignConfig("V1+V2+V3", v1 = true, v2 = true, v3 = true),
-            SignConfig("V1+V2", v1 = true, v2 = true, v3 = false),
-            SignConfig("V1-only", v1 = true, v2 = false, v3 = false)
+        val options = getSigningSchemeOptions()
+        val v1Name = resolveV1SignerName(options.v1SignerName)
+        AppLogger.d(TAG, "Signing scheme options: $options (resolved V1 name=$v1Name)")
+
+        val selected = buildList {
+            if (options.v1Enabled) add(1)
+            if (options.v2Enabled) add(2)
+            if (options.v3Enabled) add(3)
+        }
+
+        fun configOf(versions: List<Int>) = SignConfig(
+            name = versions.joinToString("+") { "V$it" },
+            v1 = versions.contains(1),
+            v2 = versions.contains(2),
+            v3 = versions.contains(3)
         )
+
+        val configs = if (options.autoFallback) {
+
+            buildList {
+                var current = selected
+                while (current.isNotEmpty()) {
+                    add(configOf(current))
+                    current = current.dropLast(1)
+                }
+            }
+        } else {
+
+            listOf(configOf(selected))
+        }
 
         for (config in configs) {
             try {
-                AppLogger.d(TAG, "尝试签名方案: ${config.name}")
-
+                AppLogger.d(TAG, "Trying signing scheme: ${config.name}")
 
                 if (outputApk.exists()) outputApk.delete()
 
-                val success = attemptSign(inputApk, outputApk, config.v1, config.v2, config.v3)
+                val success = attemptSign(inputApk, outputApk, config.v1, config.v2, config.v3, v1Name)
                 if (success) {
-                    AppLogger.d(TAG, "签名成功: ${config.name}")
+                    AppLogger.d(TAG, "Signed successfully: ${config.name}")
                     return true
                 }
 
-                errorMessages.add("${config.name}: 输出文件无效")
+                errorMessages.add("${config.name}: 签名后 ApkVerifier 校验未通过")
+                AppLogger.w(TAG, "${config.name} verification failed, falling back to a more conservative scheme")
 
             } catch (e: Throwable) {
                 lastException = e
                 val causeChain = getExceptionChain(e)
                 val msg = "${config.name}: $causeChain"
                 errorMessages.add(msg)
-                AppLogger.e(TAG, "签名异常 [${config.name}]: $causeChain")
-                AppLogger.e(TAG, "完整堆栈:", e)
-
+                AppLogger.e(TAG, "Signing exception [${config.name}]: $causeChain")
+                AppLogger.e(TAG, "Full stack trace:", e)
 
                 if (outputApk.exists()) outputApk.delete()
-
 
                 if (causeChain.contains("key", ignoreCase = true) ||
                     causeChain.contains("sign", ignoreCase = true) ||
                     causeChain.contains("certificate", ignoreCase = true)) {
-                    AppLogger.d(TAG, "检测到可能的密钥问题，重新生成...")
+                    AppLogger.d(TAG, "Possible key issue detected, regenerating...")
                     File(context.filesDir, DEFAULT_PKCS12_FILE).delete()
                     File(context.filesDir, ".ks_credential").delete()
                     initializeKey()
@@ -942,12 +1077,9 @@ class JarSigner(private val context: Context) {
         }
 
         val detail = errorMessages.joinToString("; ")
-        AppLogger.e(TAG, "所有签名方案均失败: $detail")
+        AppLogger.e(TAG, "All signing schemes failed: $detail")
         throw RuntimeException(Strings.signApkFailed.format(configs.size, detail), lastException)
     }
-
-
-
 
     private fun getExceptionChain(e: Throwable): String {
         val parts = mutableListOf<String>()
@@ -961,23 +1093,28 @@ class JarSigner(private val context: Context) {
         return parts.joinToString(" → ")
     }
 
-
-
-
     private fun attemptSign(
         inputApk: File, outputApk: File,
-        v1: Boolean, v2: Boolean, v3: Boolean
+        v1: Boolean, v2: Boolean, v3: Boolean,
+        v1SignerName: String
     ): Boolean {
         val key = privateKey ?: throw IllegalStateException("私钥为空")
         val cert = certificate ?: throw IllegalStateException("证书为空")
 
-        AppLogger.d(TAG, "证书: subject=${cert.subjectX500Principal.name}, algo=${cert.sigAlgName}")
-        AppLogger.d(TAG, "密钥: algo=${key.algorithm}, format=${key.format}")
-        AppLogger.d(TAG, "证书有效期: ${cert.notBefore} - ${cert.notAfter}")
-        AppLogger.d(TAG, "签名配置: V1=$v1, V2=$v2, V3=$v3, minSdk=23")
+        val effectiveMinSdk = when {
+            v1 -> 23
+            v2 -> 24
+            else -> 28
+        }
+
+        AppLogger.d(TAG, "Certificate: subject=${cert.subjectX500Principal.name}, algo=${cert.sigAlgName}")
+        AppLogger.d(TAG, "Key: algo=${key.algorithm}, format=${key.format}")
+        AppLogger.d(TAG, "Certificate validity: ${cert.notBefore} - ${cert.notAfter}")
+        AppLogger.d(TAG, "Signing config: V1=$v1, V2=$v2, V3=$v3, v1Name=$v1SignerName, minSdk=$effectiveMinSdk")
 
         val signerConfig = ApkSigner.SignerConfig.Builder(
-            "WebToApp",
+
+            v1SignerName,
             key,
             listOf(cert)
         ).build()
@@ -988,33 +1125,28 @@ class JarSigner(private val context: Context) {
             .setV1SigningEnabled(v1)
             .setV2SigningEnabled(v2)
             .setV3SigningEnabled(v3)
-            .setMinSdkVersion(23)
+            .setMinSdkVersion(effectiveMinSdk)
 
-        AppLogger.d(TAG, "调用 ApkSigner.sign()...")
+        AppLogger.d(TAG, "Calling ApkSigner.sign()...")
         builder.build().sign()
-        AppLogger.d(TAG, "ApkSigner.sign() 完成")
-
+        AppLogger.d(TAG, "ApkSigner.sign() complete")
 
         if (!outputApk.exists() || outputApk.length() == 0L) {
-            AppLogger.e(TAG, "签名后输出文件不存在或为空")
+            AppLogger.e(TAG, "Signed output file is missing or empty")
             return false
         }
 
-        AppLogger.d(TAG, "签名输出: ${outputApk.length() / 1024} KB")
+        AppLogger.d(TAG, "Signed output: ${outputApk.length() / 1024} KB")
 
-
-        verifyApkDetailed(outputApk, "ApkSigner-${if(v3) "V3" else if(v2) "V2" else "V1"}")
-        return true
+        val schemeName = "ApkSigner-${if (v3) "V3" else if (v2) "V2" else "V1"}"
+        return verifyApkDetailed(outputApk, schemeName)
     }
 
-
-
-
     private fun performApkSignerSign(inputApk: File, outputApk: File, key: PrivateKey, cert: X509Certificate): Boolean {
-        AppLogger.d(TAG, "ApkSigner 签名: ${inputApk.name}")
+        AppLogger.d(TAG, "ApkSigner: signing: ${inputApk.name}")
 
         val signerConfig = ApkSigner.SignerConfig.Builder(
-            "WebToApp",
+            SIGNER_BASENAME,
             key,
             listOf(cert)
         ).build()
@@ -1031,25 +1163,20 @@ class JarSigner(private val context: Context) {
             val apkSigner = builder.build()
             apkSigner.sign()
         } catch (e: Exception) {
-            AppLogger.e(TAG, "ApkSigner 异常: ${e.message}")
+            AppLogger.e(TAG, "ApkSigner exception: ${e.message}")
             throw e
         }
 
-
         if (!outputApk.exists() || outputApk.length() == 0L) {
-            AppLogger.e(TAG, "ApkSigner: 输出文件无效")
+            AppLogger.e(TAG, "ApkSigner: output file is invalid")
             return false
         }
 
         return verifyApkDetailed(outputApk, "ApkSigner")
     }
 
-
-
-
-
     private fun performV1Sign(inputApk: File, outputApk: File, key: PrivateKey, cert: X509Certificate): Boolean {
-        AppLogger.d(TAG, "V1 签名: ${inputApk.name}")
+        AppLogger.d(TAG, "V1 signing: ${inputApk.name}")
 
         try {
             val digests = mutableMapOf<String, String>()
@@ -1075,7 +1202,6 @@ class JarSigner(private val context: Context) {
                     writeZipEntry(zos, "META-INF/CERT.SF", signatureFile)
                     writeZipEntry(zos, "META-INF/CERT.RSA", pkcs7Signature)
 
-
                     entries["resources.arsc"]?.let { content ->
                         ZipUtils.writeEntryStored(zos, "resources.arsc", content)
                     }
@@ -1090,18 +1216,10 @@ class JarSigner(private val context: Context) {
                 }
             }
 
-
-
-
-
-
-
-
             val verified = verifyApkDetailed(outputApk, "V1")
 
-
             if (!verified) {
-                AppLogger.e(TAG, "V1 签名验证失败，APK 签名无效")
+                AppLogger.e(TAG, "V1 signature verification failed, APK signature is invalid")
                 if (outputApk.exists()) outputApk.delete()
                 return false
             }
@@ -1109,28 +1227,19 @@ class JarSigner(private val context: Context) {
             return verified
 
         } catch (e: Exception) {
-            AppLogger.e(TAG, "V1 签名失败: ${e.message}")
+            AppLogger.e(TAG, "V1 signingfailed: ${e.message}")
             if (outputApk.exists()) outputApk.delete()
             return false
         }
     }
 
-
-
-
-
-
-
-
-
-
     private fun verifyApkDetailed(apk: File, source: String): Boolean {
         return try {
-            AppLogger.d(TAG, "[$source] 开始校验 APK: path=${apk.absolutePath}, size=${apk.length()}")
+            AppLogger.d(TAG, "[$source] Verifying APK: path=${apk.absolutePath}, size=${apk.length()}")
             val verifier = ApkVerifier.Builder(apk).build()
             val result = verifier.verify()
 
-            AppLogger.d(TAG, "[$source] APK 验证完成: isVerified=${result.isVerified}, " +
+            AppLogger.d(TAG, "[$source] APK verification complete: isVerified=${result.isVerified}, " +
                     "v1Verified=${result.isVerifiedUsingV1Scheme}, " +
                     "v2Verified=${result.isVerifiedUsingV2Scheme}, " +
                     "v3Verified=${result.isVerifiedUsingV3Scheme}, " +
@@ -1138,24 +1247,24 @@ class JarSigner(private val context: Context) {
 
             if (result.errors.isNotEmpty()) {
                 result.errors.forEachIndexed { index, error ->
-                    AppLogger.w(TAG, "[$source] 验证问题[$index]: $error")
+                    AppLogger.w(TAG, "[$source] Verification issue[$index]: $error")
                 }
             }
 
             if (result.warnings.isNotEmpty()) {
                 result.warnings.forEachIndexed { index, warning ->
-                    AppLogger.w(TAG, "[$source] 验证警告[$index]: $warning")
+                    AppLogger.w(TAG, "[$source] Verification warning[$index]: $warning")
                 }
             }
 
             if (!result.isVerified) {
-                AppLogger.w(TAG, "[$source] ApkVerifier 报告未通过验证，但 APK 文件结构完整，" +
-                    "大多数情况下仍可正常安装。跳过验证拦截。")
+                AppLogger.w(TAG, "[$source] ApkVerifier flagged a verification failure, but the APK file structure is intact; " +
+                    "the APK should still install on most devices. Skipping the verification gate.")
             }
 
             result.isVerified
         } catch (e: Exception) {
-            AppLogger.w(TAG, "[$source] 验证过程异常（不影响构建）: ${e.message}")
+            AppLogger.w(TAG, "[$source] Verification raised an exception (build is unaffected): ${e.message}")
             false
         }
     }
@@ -1190,14 +1299,12 @@ class JarSigner(private val context: Context) {
         sb.append("Signature-Version: 1.0\r\n")
         sb.append("Created-By: 1.0 (WebToApp)\r\n")
 
-
         val manifestDigest = Base64.encodeToString(
             MessageDigest.getInstance(DIGEST_ALGORITHM).digest(manifest),
             Base64.NO_WRAP
         )
         sb.append("SHA-256-Digest-Manifest: $manifestDigest\r\n")
         sb.append("\r\n")
-
 
         digests.forEach { (name, digest) ->
             val entryBlock = "Name: $name\r\nSHA-256-Digest: $digest\r\n\r\n"
@@ -1213,9 +1320,6 @@ class JarSigner(private val context: Context) {
         return sb.toString().toByteArray(Charsets.UTF_8)
     }
 
-
-
-
     private fun createSignatureBlock(sfContent: ByteArray): ByteArray {
 
         val signature = Signature.getInstance(SIGNATURE_ALGORITHM)
@@ -1223,33 +1327,24 @@ class JarSigner(private val context: Context) {
         signature.update(sfContent)
         val signatureBytes = signature.sign()
 
-
         return buildPkcs7SignedData(signatureBytes, certificate!!)
     }
-
-
-
 
     private fun buildPkcs7SignedData(signature: ByteArray, cert: X509Certificate): ByteArray {
         val certBytes = cert.encoded
 
-
         val contentInfo = buildContentInfo(signature, certBytes)
-
 
         val signedDataOid = byteArrayOf(
             0x06, 0x09, 0x2A, 0x86.toByte(), 0x48, 0x86.toByte(), 0xF7.toByte(),
             0x0D, 0x01, 0x07, 0x02
         )
 
-
         val innerContent = ByteArrayOutputStream()
         innerContent.write(signedDataOid)
 
-
         val explicitTag = wrapWithTag(0xA0.toByte(), contentInfo)
         innerContent.write(explicitTag)
-
 
         return wrapWithTag(0x30, innerContent.toByteArray())
     }
@@ -1257,21 +1352,16 @@ class JarSigner(private val context: Context) {
     private fun buildContentInfo(signature: ByteArray, certBytes: ByteArray): ByteArray {
         val content = ByteArrayOutputStream()
 
-
         content.write(byteArrayOf(0x02, 0x01, 0x01))
-
 
         val digestAlgSet = buildDigestAlgorithmSet()
         content.write(digestAlgSet)
 
-
         val dataContentInfo = buildDataContentInfo()
         content.write(dataContentInfo)
 
-
         val certsImplicit = wrapWithTag(0xA0.toByte(), certBytes)
         content.write(certsImplicit)
-
 
         val signerInfos = buildSignerInfos(signature, certificate!!)
         content.write(signerInfos)
@@ -1300,26 +1390,21 @@ class JarSigner(private val context: Context) {
     private fun buildSignerInfos(signature: ByteArray, cert: X509Certificate): ByteArray {
         val signerInfo = ByteArrayOutputStream()
 
-
         signerInfo.write(byteArrayOf(0x02, 0x01, 0x01))
-
 
         val issuerAndSerial = buildIssuerAndSerial(cert)
         signerInfo.write(issuerAndSerial)
-
 
         val sha256Oid = byteArrayOf(
             0x06, 0x09, 0x60, 0x86.toByte(), 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01
         )
         signerInfo.write(wrapWithTag(0x30, sha256Oid + byteArrayOf(0x05, 0x00)))
 
-
         val rsaOid = byteArrayOf(
             0x06, 0x09, 0x2A, 0x86.toByte(), 0x48, 0x86.toByte(), 0xF7.toByte(),
             0x0D, 0x01, 0x01, 0x0B
         )
         signerInfo.write(wrapWithTag(0x30, rsaOid + byteArrayOf(0x05, 0x00)))
-
 
         signerInfo.write(wrapWithTag(0x04, signature))
 
@@ -1330,9 +1415,7 @@ class JarSigner(private val context: Context) {
     private fun buildIssuerAndSerial(cert: X509Certificate): ByteArray {
         val content = ByteArrayOutputStream()
 
-
         content.write(cert.issuerX500Principal.encoded)
-
 
         val serial = cert.serialNumber.toByteArray()
         content.write(wrapWithTag(0x02, serial))
@@ -1383,41 +1466,36 @@ class JarSigner(private val context: Context) {
 
     fun isReady(): Boolean = privateKey != null && certificate != null
 
-
-
-
     fun resetKeys(): Boolean {
         return try {
-            AppLogger.d(TAG, "重置所有签名密钥...")
-
+            AppLogger.d(TAG, "Resetting all signing keys...")
 
             File(context.filesDir, DEFAULT_PKCS12_FILE).delete()
             File(context.filesDir, CUSTOM_PKCS12_FILE).delete()
-            File(context.filesDir, "custom_keystore_password.txt").delete()
-
+            File(context.filesDir, CUSTOM_PASSWORD_FILE).delete()
+            File(context.filesDir, CUSTOM_ALIAS_FILE).delete()
+            File(context.filesDir, CUSTOM_KEYPASS_FILE).delete()
 
             try {
                 val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
                 keyStore.load(null)
                 if (keyStore.containsAlias(KEY_ALIAS)) {
                     keyStore.deleteEntry(KEY_ALIAS)
-                    AppLogger.d(TAG, "已删除 Android KeyStore 密钥")
+                    AppLogger.d(TAG, "Android KeyStore key deleted")
                 }
             } catch (e: Exception) {
-                AppLogger.w(TAG, "删除 Android KeyStore 密钥失败", e)
+                AppLogger.w(TAG, "Failed to delete Android KeyStore key", e)
             }
-
 
             privateKey = null
             certificate = null
 
-
             initializeKey()
 
-            AppLogger.d(TAG, "密钥重置完成，当前类型: $currentSignerType")
+            AppLogger.d(TAG, "Key reset complete, current signer type: $currentSignerType")
             privateKey != null && certificate != null
         } catch (e: Exception) {
-            AppLogger.e(TAG, "重置密钥失败", e)
+            AppLogger.e(TAG, "Key reset failed", e)
             false
         }
     }

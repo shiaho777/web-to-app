@@ -7,13 +7,6 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
 import com.webtoapp.ui.theme.LocalIsDarkTheme
 
-/**
- * Semantic accent colors. These are deliberately kept muted so they work with the
- * monochrome base palette without feeling candy-coloured. Use them for state
- * indicators (success, warning, error, neutral) rather than decoration.
- *
- * Access via [WtaColors.semantic].
- */
 @Stable
 data class WtaSemanticPalette(
     val success: Color,
@@ -96,10 +89,6 @@ private val DarkSemantic = WtaSemanticPalette(
     onNeutralContainer = Color(0xFFDCDCE0),
 )
 
-/**
- * Accessor namespace for Wta design system colors. Mirrors [MaterialTheme.colorScheme]
- * but adds semantic accents on top for states that M3 does not express directly.
- */
 object WtaColors {
     val semantic: WtaSemanticPalette
         @Composable

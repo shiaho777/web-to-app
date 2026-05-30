@@ -6,28 +6,6 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.AiProvider
 import com.webtoapp.data.model.ModelCapability
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class LiteLLMModelRegistry private constructor() {
 
     companion object {
@@ -44,9 +22,7 @@ class LiteLLMModelRegistry private constructor() {
         }
     }
 
-
     private val models = mutableMapOf<String, ModelInfo>()
-
 
     private val providerModels = mutableMapOf<String, MutableList<String>>()
 
@@ -99,29 +75,19 @@ class LiteLLMModelRegistry private constructor() {
         }
     }
 
-
-
-
-
-
-
-
     fun findModel(modelId: String, provider: AiProvider? = null): ModelInfo? {
 
         models[modelId]?.let { return it }
-
 
         val providerPrefix = provider?.let { mapProviderToLiteLLMPrefix(it) }
         if (providerPrefix != null) {
             models["$providerPrefix/$modelId"]?.let { return it }
         }
 
-
         val bareId = if (modelId.contains("/")) modelId.substringAfter("/") else modelId
         if (bareId != modelId) {
             models[bareId]?.let { return it }
         }
-
 
         if (provider != null) {
             val providerName = provider.name
@@ -136,29 +102,17 @@ class LiteLLMModelRegistry private constructor() {
         return null
     }
 
-
-
-
     fun getContextLength(modelId: String, provider: AiProvider? = null): Int? {
         return findModel(modelId, provider)?.maxInputTokens?.takeIf { it > 0 }
     }
-
-
-
 
     fun getInputPrice(modelId: String, provider: AiProvider? = null): Double? {
         return findModel(modelId, provider)?.inputCostPerMillion?.takeIf { it > 0.0 }
     }
 
-
-
-
     fun getOutputPrice(modelId: String, provider: AiProvider? = null): Double? {
         return findModel(modelId, provider)?.outputCostPerMillion?.takeIf { it > 0.0 }
     }
-
-
-
 
     fun getCapabilities(modelId: String, provider: AiProvider? = null): List<ModelCapability>? {
         val info = findModel(modelId, provider) ?: return null
@@ -168,7 +122,6 @@ class LiteLLMModelRegistry private constructor() {
         if (info.supportsFunctionCalling) caps.add(ModelCapability.FUNCTION_CALL)
         if (info.supportsAudioInput || info.supportsAudioOutput) caps.add(ModelCapability.AUDIO)
         if (info.isImageGeneration) caps.add(ModelCapability.IMAGE_GENERATION)
-
 
         val id = modelId.lowercase()
         if (id.contains("code") || id.contains("codestral") || id.contains("starcoder") ||
@@ -180,10 +133,6 @@ class LiteLLMModelRegistry private constructor() {
         return caps
     }
 
-
-
-
-
     fun getDefaultModels(provider: AiProvider): List<String> {
         val providerName = provider.name
         return providerModels[providerName]?.map { key ->
@@ -192,13 +141,9 @@ class LiteLLMModelRegistry private constructor() {
         }?.distinct()?.sorted() ?: emptyList()
     }
 
-
-
-
     fun getRecommendedModels(provider: AiProvider): List<String> {
         val all = getDefaultModels(provider)
         if (all.isEmpty()) return emptyList()
-
 
         val deprecated = listOf("0301", "0314", "0613", "0125", "preview", "experimental")
         return all.filter { modelId ->
@@ -210,20 +155,11 @@ class LiteLLMModelRegistry private constructor() {
         }.take(50)
     }
 
-
-
-
     fun isKnownModel(modelId: String, provider: AiProvider? = null): Boolean {
         return findModel(modelId, provider) != null
     }
 
-
-
-
     fun totalModels(): Int = models.size
-
-
-
 
     private fun mapProviderToLiteLLMPrefix(provider: AiProvider): String? {
         return when (provider) {

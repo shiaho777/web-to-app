@@ -4,36 +4,16 @@ import android.content.Context
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellLogger
 
-
-
-
-
-
-
-
-
-
-
-
 object NodeBridge {
 
     private const val TAG = "NodeBridge"
 
-
     private var jniLoaded = false
-
 
     interface OutputCallback {
 
-
-
-
-
         fun onOutput(line: String, isError: Boolean)
     }
-
-
-
 
     @Synchronized
     fun loadJniBridge(): Boolean {
@@ -50,12 +30,6 @@ object NodeBridge {
         }
     }
 
-
-
-
-
-
-
     fun loadNode(context: Context): Boolean {
         if (!loadJniBridge()) return false
 
@@ -64,17 +38,14 @@ object NodeBridge {
             return true
         }
 
-
         try {
             System.loadLibrary("node")
             AppLogger.i(TAG, "libnode.so 通过 System.loadLibrary 加载成功")
             ShellLogger.i(TAG, "libnode.so 通过 System.loadLibrary 加载成功")
 
-
         } catch (e: UnsatisfiedLinkError) {
             AppLogger.d(TAG, "System.loadLibrary(\"node\") 失败: ${e.message}")
         }
-
 
         val nodePath = NodeDependencyManager.getNodeLibraryPath(context)
         if (nodePath == null) {
@@ -97,13 +68,6 @@ object NodeBridge {
         return result
     }
 
-
-
-
-
-
-
-
     fun startNode(args: Array<String>, callback: OutputCallback? = null): Int {
         if (!nativeIsLoaded()) {
             AppLogger.e(TAG, "libnode.so 未加载，无法启动")
@@ -117,7 +81,6 @@ object NodeBridge {
         AppLogger.i(TAG, "启动 Node.js: ${args.joinToString(" ")}")
         ShellLogger.i(TAG, "启动 Node.js: ${args.joinToString(" ")}")
 
-
         val jniCallback = callback?.let { cb ->
             object : Any() {
                 @Suppress("unused")
@@ -130,21 +93,13 @@ object NodeBridge {
         return nativeStartNode(args, jniCallback)
     }
 
-
-
-
     fun isStarted(): Boolean {
         return jniLoaded && nativeIsStarted()
     }
 
-
-
-
     fun isLoaded(): Boolean {
         return jniLoaded && nativeIsLoaded()
     }
-
-
 
     private external fun nativeLoadNode(nodePath: String): Boolean
     private external fun nativeStartNode(arguments: Array<String>, callback: Any?): Int

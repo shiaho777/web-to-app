@@ -3,45 +3,9 @@ package com.webtoapp.core.webview
 import android.net.Uri
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 object OAuthCompatEngine {
 
     private const val TAG = "OAuthCompatEngine"
-
-
 
     enum class Provider {
 
@@ -61,10 +25,7 @@ object OAuthCompatEngine {
         GENERIC_OAUTH
     }
 
-
-
     private val HOST_TO_PROVIDER: Map<String, Provider> = mapOf(
-
 
         "accounts.google.com" to Provider.GOOGLE,
         "accounts.youtube.com" to Provider.GOOGLE,
@@ -96,8 +57,6 @@ object OAuthCompatEngine {
         "www.amazon.de" to Provider.AMAZON,
         "www.amazon.in" to Provider.AMAZON,
 
-
-
         "api.twitter.com" to Provider.TWITTER,
         "twitter.com" to Provider.TWITTER,
         "api.x.com" to Provider.TWITTER,
@@ -119,8 +78,6 @@ object OAuthCompatEngine {
 
         "id.twitch.tv" to Provider.TWITCH,
         "www.twitch.tv" to Provider.TWITCH,
-
-
 
         "access.line.me" to Provider.LINE,
         "liff.line.me" to Provider.LINE,
@@ -152,8 +109,6 @@ object OAuthCompatEngine {
         "login.yahoo.com" to Provider.YAHOO,
         "api.login.yahoo.com" to Provider.YAHOO,
 
-
-
         "oauth.vk.com" to Provider.VK,
         "id.vk.com" to Provider.VK,
         "login.vk.com" to Provider.VK,
@@ -179,7 +134,6 @@ object OAuthCompatEngine {
         "us04web.zoom.us" to Provider.ZOOM,
         "us05web.zoom.us" to Provider.ZOOM,
 
-
         "www.paypal.com" to Provider.PAYPAL,
         "paypal.com" to Provider.PAYPAL,
         "checkout.stripe.com" to Provider.STRIPE,
@@ -187,16 +141,12 @@ object OAuthCompatEngine {
         "squareup.com" to Provider.SQUARE,
         "checkout.square.site" to Provider.SQUARE,
 
-
         "www.google.com" to Provider.RECAPTCHA,
         "www.gstatic.com" to Provider.RECAPTCHA,
         "hcaptcha.com" to Provider.HCAPTCHA,
         "newassets.hcaptcha.com" to Provider.HCAPTCHA,
         "challenges.cloudflare.com" to Provider.CLOUDFLARE
     )
-
-
-
 
     private val HOST_PATH_RULES: Map<String, List<String>> = mapOf(
 
@@ -208,28 +158,22 @@ object OAuthCompatEngine {
         "www.messenger.com" to listOf("/login"),
         "www.threads.net" to listOf("/login"),
 
-
         "twitter.com" to listOf("/i/oauth2", "/oauth", "/login/oauth", "/i/flow/login"),
         "x.com" to listOf("/i/oauth2", "/oauth", "/login/oauth", "/i/flow/login"),
         "api.twitter.com" to listOf("/oauth", "/oauth2"),
         "api.x.com" to listOf("/oauth", "/oauth2"),
 
-
         "github.com" to listOf("/login/oauth", "/login", "/sessions", "/session"),
-
 
         "discord.com" to listOf("/login", "/oauth2", "/authorize", "/register"),
         "discordapp.com" to listOf("/login", "/oauth2", "/authorize"),
-
 
         "www.reddit.com" to listOf("/login", "/account/login", "/api/v1/authorize"),
         "old.reddit.com" to listOf("/login"),
         "ssl.reddit.com" to listOf("/api/v1/authorize"),
 
-
         "www.linkedin.com" to listOf("/oauth", "/login", "/uas/login", "/checkpoint", "/authwall"),
         "linkedin.com" to listOf("/oauth", "/login", "/uas/login"),
-
 
         "www.amazon.com" to listOf("/ap/signin", "/ap/oa", "/gp/sign-in", "/ap/register"),
         "www.amazon.co.jp" to listOf("/ap/signin", "/ap/oa", "/gp/sign-in"),
@@ -237,36 +181,25 @@ object OAuthCompatEngine {
         "www.amazon.de" to listOf("/ap/signin", "/ap/oa", "/gp/sign-in"),
         "www.amazon.in" to listOf("/ap/signin", "/ap/oa", "/gp/sign-in"),
 
-
         "www.tiktok.com" to listOf("/login", "/auth/authorize", "/auth"),
-
 
         "www.dropbox.com" to listOf("/login", "/oauth2/authorize"),
 
-
         "www.notion.so" to listOf("/login", "/signup"),
-
 
         "slack.com" to listOf("/signin", "/oauth", "/openid/connect"),
         "app.slack.com" to listOf("/auth"),
 
-
         "zoom.us" to listOf("/signin", "/oauth/authorize", "/login"),
-
 
         "www.paypal.com" to listOf("/signin", "/connect", "/webapps/auth", "/checkout"),
         "paypal.com" to listOf("/signin", "/connect", "/webapps/auth"),
 
-
         "www.twitch.tv" to listOf("/login"),
-
 
         "www.google.com" to listOf("/recaptcha"),
         "www.gstatic.com" to listOf("/recaptcha")
     )
-
-
-
 
     private val FULL_DOMAIN_OAUTH_HOSTS: Set<String> = setOf(
 
@@ -315,9 +248,6 @@ object OAuthCompatEngine {
         "hcaptcha.com", "newassets.hcaptcha.com", "challenges.cloudflare.com"
     )
 
-
-
-
     private val GENERIC_OAUTH_PATH_PATTERNS = listOf(
         "/oauth", "/oauth2", "/o/oauth2", "/authorize", "/auth/login",
         "/login/oauth", "/signin/oauth", "/connect/authorize",
@@ -327,31 +257,20 @@ object OAuthCompatEngine {
         "/sso/login", "/saml/login", "/cas/login"
     )
 
-
-
-
     val ALL_OAUTH_HOSTS: Set<String> = HOST_TO_PROVIDER.keys
-
-
-
-
-
 
     fun isOAuthUrl(url: String): Boolean {
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return false
         val host = uri.host?.lowercase() ?: return false
         val path = uri.path?.lowercase() ?: ""
 
-
         if (host in FULL_DOMAIN_OAUTH_HOSTS) return true
-
 
         val pathRules = HOST_PATH_RULES[host]
         if (pathRules != null) {
             if (pathRules.any { prefix -> path.startsWith(prefix) }) return true
             return false
         }
-
 
         if (host.endsWith(".google.com") || host == "google.com") {
             if (path.startsWith("/o/oauth2") || path.startsWith("/signin/oauth") ||
@@ -361,16 +280,13 @@ object OAuthCompatEngine {
             }
         }
 
-
         if (host.endsWith(".qq.com") && (path.startsWith("/oauth") || path.startsWith("/connect"))) {
             return true
         }
 
-
         if (host.endsWith(".alipay.com") && (path.startsWith("/login") || path.startsWith("/oauth") || path.startsWith("/auth"))) {
             return true
         }
-
 
         if (host.endsWith(".yandex.ru") || host.endsWith(".yandex.com")) {
             if (path.startsWith("/passport") || path.startsWith("/oauth") || path.startsWith("/auth")) {
@@ -378,11 +294,9 @@ object OAuthCompatEngine {
             }
         }
 
-
         if (host.endsWith(".myshopify.com") && (path.startsWith("/account/login") || path.startsWith("/account"))) {
             return true
         }
-
 
         if (GENERIC_OAUTH_PATH_PATTERNS.any { pattern -> path.startsWith(pattern) }) {
             val query = uri.query?.lowercase() ?: ""
@@ -396,14 +310,10 @@ object OAuthCompatEngine {
         return false
     }
 
-
-
-
     fun getProviderType(url: String): Provider? {
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return null
         val host = uri.host?.lowercase() ?: return null
         val path = uri.path?.lowercase() ?: ""
-
 
         HOST_TO_PROVIDER[host]?.let { provider ->
             val pathRules = HOST_PATH_RULES[host]
@@ -413,7 +323,6 @@ object OAuthCompatEngine {
             return provider
         }
 
-
         if (host.endsWith(".google.com") || host == "google.com") {
             if (path.startsWith("/recaptcha")) return Provider.RECAPTCHA
             if (path.startsWith("/o/oauth2") || path.startsWith("/signin/oauth") ||
@@ -421,7 +330,6 @@ object OAuthCompatEngine {
                 return Provider.GOOGLE
             }
         }
-
 
         if (host.endsWith(".qq.com")) return Provider.QQ
 
@@ -434,162 +342,6 @@ object OAuthCompatEngine {
         if (isOAuthUrl(url)) return Provider.GENERIC_OAUTH
         return null
     }
-
-
-
-
-
-
-    fun getAntiDetectionJs(url: String): String? {
-        val provider = getProviderType(url) ?: return null
-        AppLogger.d(TAG, "Anti-detection JS for: $provider (${url.take(60)}...)")
-
-        val sb = StringBuilder()
-        sb.append(BASE_ANTI_DETECTION_JS)
-
-        when (provider) {
-
-            Provider.GOOGLE -> sb.append(GOOGLE_ANTI_DETECTION_JS)
-            Provider.FACEBOOK -> sb.append(FACEBOOK_ANTI_DETECTION_JS)
-            Provider.MICROSOFT -> sb.append(MICROSOFT_ANTI_DETECTION_JS)
-            Provider.APPLE -> sb.append(APPLE_ANTI_DETECTION_JS)
-            Provider.AMAZON -> sb.append(AMAZON_ANTI_DETECTION_JS)
-
-            Provider.TWITTER -> sb.append(TWITTER_ANTI_DETECTION_JS)
-            Provider.GITHUB -> sb.append(GITHUB_ANTI_DETECTION_JS)
-            Provider.DISCORD -> sb.append(DISCORD_ANTI_DETECTION_JS)
-            Provider.REDDIT -> sb.append(REDDIT_ANTI_DETECTION_JS)
-            Provider.LINKEDIN -> sb.append(LINKEDIN_ANTI_DETECTION_JS)
-            Provider.SPOTIFY -> sb.append(SPOTIFY_ANTI_DETECTION_JS)
-            Provider.TWITCH -> sb.append(TWITCH_ANTI_DETECTION_JS)
-
-            Provider.LINE, Provider.KAKAO -> sb.append(LINE_KAKAO_ANTI_DETECTION_JS)
-            Provider.NAVER -> sb.append(NAVER_ANTI_DETECTION_JS)
-            Provider.WECHAT, Provider.QQ -> sb.append(WECHAT_QQ_ANTI_DETECTION_JS)
-            Provider.ALIPAY -> sb.append(ALIPAY_ANTI_DETECTION_JS)
-            Provider.TIKTOK -> sb.append(TIKTOK_ANTI_DETECTION_JS)
-            Provider.YAHOO_JAPAN -> sb.append(YAHOO_JP_ANTI_DETECTION_JS)
-
-            Provider.VK -> sb.append(VK_ANTI_DETECTION_JS)
-            Provider.YANDEX -> sb.append(YANDEX_ANTI_DETECTION_JS)
-            Provider.MAILRU -> sb.append(MAILRU_ANTI_DETECTION_JS)
-            Provider.SHOPIFY -> sb.append(SHOPIFY_ANTI_DETECTION_JS)
-            Provider.DROPBOX -> sb.append(DROPBOX_ANTI_DETECTION_JS)
-            Provider.NOTION -> sb.append(NOTION_ANTI_DETECTION_JS)
-            Provider.SLACK -> sb.append(SLACK_ANTI_DETECTION_JS)
-            Provider.ZOOM -> sb.append(ZOOM_ANTI_DETECTION_JS)
-
-            Provider.PAYPAL -> sb.append(PAYPAL_ANTI_DETECTION_JS)
-            Provider.STRIPE -> sb.append(STRIPE_ANTI_DETECTION_JS)
-            Provider.SQUARE -> sb.append(STRIPE_ANTI_DETECTION_JS)
-
-            Provider.RECAPTCHA -> sb.append(RECAPTCHA_ANTI_DETECTION_JS)
-            Provider.HCAPTCHA -> sb.append(HCAPTCHA_ANTI_DETECTION_JS)
-            Provider.CLOUDFLARE -> sb.append(CLOUDFLARE_ANTI_DETECTION_JS)
-
-            Provider.YAHOO -> sb.append(YAHOO_ANTI_DETECTION_JS)
-            Provider.GENERIC_OAUTH -> {  }
-        }
-
-        return sb.toString()
-    }
-
-
-
-
-    fun sanitizeHeaders(url: String, headers: Map<String, String>): Map<String, String> {
-        if (!isOAuthUrl(url)) return headers
-        val clean = headers.toMutableMap()
-        clean.remove("X-Requested-With")
-        clean.remove("x-requested-with")
-        com.webtoapp.core.kernel.BrowserKernel.getCleanUserAgent()?.let { ua ->
-            clean["User-Agent"] = ua
-        }
-        return clean
-    }
-
-
-
-
-    fun isOAuthBlockedError(statusCode: Int, url: String): Boolean {
-        if (!isOAuthUrl(url)) return false
-        return statusCode == 403 || (statusCode == 400 && getProviderType(url) == Provider.GOOGLE)
-    }
-
-
-
-
-
-
-
-    fun shouldRedirectToCustomTab(url: String): Boolean {
-        val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return false
-        val host = uri.host?.lowercase() ?: return false
-        val path = uri.path?.lowercase() ?: ""
-
-        if (host == "accounts.google.com" || host == "accounts.youtube.com" || host == "myaccount.google.com") {
-            if (path.startsWith("/recaptcha") || path.startsWith("/gsi/")) return false
-            return true
-        }
-
-        if ((host.endsWith(".google.com") || host == "google.com") &&
-            (path.startsWith("/o/oauth2") || path.startsWith("/signin/oauth"))) {
-            return true
-        }
-
-        return false
-    }
-
-
-
-
-    fun getOAuthBlockDetectionJs(): String {
-        return """(function(){
-            'use strict';
-            if(window.__wta_oauth_block_check__)return;
-            window.__wta_oauth_block_check__=true;
-            setTimeout(function(){
-                try{
-                    var t=(document.body&&document.body.innerText)||'';
-                    var blocked=
-                        t.indexOf('This browser or app may not be secure')!==-1||
-                        t.indexOf('此浏览器或应用可能不安全')!==-1||
-                        t.indexOf('このブラウザまたはアプリは安全でない可能性があります')!==-1||
-                        t.indexOf('이 브라우저 또는 앱은 안전하지 않을 수 있습니다')!==-1||
-                        t.indexOf('Diese Browser oder App ist möglicherweise nicht sicher')!==-1||
-                        t.indexOf('Ce navigateur ou cette application ne sont peut-être pas sécurisés')!==-1||
-                        t.indexOf('Este navegador o aplicación podría no ser seguro')!==-1||
-                        t.indexOf('Этот браузер или приложение могут быть небезопасными')!==-1||
-                        t.indexOf('Bu tarayıcı veya uygulama güvenli olmayabilir')!==-1||
-                        t.indexOf('هذا المتصفح أو التطبيق قد لا يكون آمنًا')!==-1||
-                        t.indexOf('disallowed_useragent')!==-1||
-                        t.indexOf("Couldn't sign you in")!==-1||
-                        t.indexOf('无法让您登录')!==-1||
-                        t.indexOf('ログインできませんでした')!==-1||
-                        t.indexOf('로그인할 수 없음')!==-1;
-                    if(blocked&&typeof NativeOAuthBridge!=='undefined'){
-                        NativeOAuthBridge.onOAuthBlocked(window.location.href);
-                    }
-                }catch(e){}
-            },1500);
-        })();""".trimIndent()
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private val BASE_ANTI_DETECTION_JS = """(function(){'use strict';
         if(window.__wta_oauth_compat__)return;window.__wta_oauth_compat__=true;
@@ -681,8 +433,6 @@ object OAuthCompatEngine {
         }catch(e){}
     })();""".trimIndent()
 
-
-
     private val GOOGLE_ANTI_DETECTION_JS = """(function(){'use strict';
         // chrome.webstore (已弃用但 Google 仍检测)
         try{if(window.chrome&&!window.chrome.webstore)window.chrome.webstore={onInstallStageChanged:{},onDownloadProgress:{},install:function(){}};}catch(e){}
@@ -756,8 +506,6 @@ object OAuthCompatEngine {
         try{if(!window.localStorage){var _s={};window.localStorage={getItem:function(k){return _s[k]||null},setItem:function(k,v){_s[k]=String(v)},removeItem:function(k){delete _s[k]},clear:function(){_s={}},key:function(i){return Object.keys(_s)[i]||null},get length(){return Object.keys(_s).length}}}}catch(e){}
     })();""".trimIndent()
 
-
-
     private val TWITTER_ANTI_DETECTION_JS = """(function(){'use strict';
         // Twitter/X 使用 React 大量依赖 IntersectionObserver
         try{if(!window.IntersectionObserver){window.IntersectionObserver=function(cb,opt){this.observe=function(){};this.unobserve=function(){};this.disconnect=function(){};this.takeRecords=function(){return[]}};
@@ -822,8 +570,6 @@ object OAuthCompatEngine {
         // Twitch 检测 WebGL
         // (已由 BrowserDisguise 处理)
     })();""".trimIndent()
-
-
 
     private val LINE_KAKAO_ANTI_DETECTION_JS = """(function(){'use strict';
         // Line LIFF bridge 清除
@@ -896,8 +642,6 @@ object OAuthCompatEngine {
         }},enumerable:true,configurable:true})}}catch(e){}
     })();""".trimIndent()
 
-
-
     private val VK_ANTI_DETECTION_JS = """(function(){'use strict';
         // VK App bridge 清除
         try{delete window.vkBridge;delete window.VK;delete window.vkConnect}catch(e){}
@@ -959,8 +703,6 @@ object OAuthCompatEngine {
         try{if(!window.AudioContext&&window.webkitAudioContext)window.AudioContext=window.webkitAudioContext}catch(e){}
     })();""".trimIndent()
 
-
-
     private val PAYPAL_ANTI_DETECTION_JS = """(function(){'use strict';
         // PayPal Checkout SDK 极其严格的环境检测
         // window.name 检查
@@ -989,8 +731,6 @@ object OAuthCompatEngine {
                 generateKey:function(){return Promise.resolve({})},exportKey:function(){return Promise.resolve(new ArrayBuffer(32))}}
         }}catch(e){}
     })();""".trimIndent()
-
-
 
     private val RECAPTCHA_ANTI_DETECTION_JS = """(function(){'use strict';
         // reCAPTCHA v2/v3 检测的关键信号

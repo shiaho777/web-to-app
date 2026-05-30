@@ -30,14 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.*
 
-
-
-
-
-
-
-
-
 private object LiquidPhysics {
 
     val PositionSpring = spring<Float>(
@@ -64,15 +56,6 @@ data class LiquidTabItem(
     val label: String
 )
 
-
-
-
-
-
-
-
-
-
 @Composable
 fun LiquidTabBar(
     tabs: List<LiquidTabItem>,
@@ -82,9 +65,6 @@ fun LiquidTabBar(
     barHeight: Dp = 64.dp,
 ) {
 
-
-
-
     val targetPosition = selectedIndex.toFloat()
     val animatedPosition by animateFloatAsState(
         targetValue = targetPosition,
@@ -92,10 +72,8 @@ fun LiquidTabBar(
         label = "liquidPos"
     )
 
-
     val velocity = abs(animatedPosition - targetPosition)
     val effectiveStretch = (velocity * 2.2f).coerceIn(0f, 1f)
-
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val indicatorColor = MaterialTheme.colorScheme.primaryContainer
@@ -109,7 +87,6 @@ fun LiquidTabBar(
         .navigationBarsPadding()
         .height(barHeight)
     ) {
-
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             Box(
@@ -126,7 +103,6 @@ fun LiquidTabBar(
             )
         }
 
-
         Box(
             Modifier
                 .fillMaxWidth()
@@ -135,7 +111,6 @@ fun LiquidTabBar(
                 .background(outlineVariant.copy(alpha = 0.2f))
         )
 
-
         Canvas(
             Modifier.matchParentSize()
         ) {
@@ -143,10 +118,8 @@ fun LiquidTabBar(
             val centerX = tabWidth * (animatedPosition + 0.5f)
             val centerY = size.height * 0.38f
 
-
             val pillWidth = tabWidth * 0.52f * (1f + effectiveStretch * 0.4f)
             val pillHeight = tabWidth * 0.52f * (1f - effectiveStretch * 0.1f)
-
 
             val indicatorRect = Rect(
                 centerX - pillWidth / 2f,
@@ -177,7 +150,6 @@ fun LiquidTabBar(
             )
         }
 
-
         Row(
             modifier = Modifier
                 .matchParentSize()
@@ -187,7 +159,6 @@ fun LiquidTabBar(
         ) {
             tabs.forEachIndexed { index, tab ->
                 val isSelected = index == selectedIndex
-
 
                 val iconScale by animateFloatAsState(
                     targetValue = if (isSelected) 1.15f else 0.92f,

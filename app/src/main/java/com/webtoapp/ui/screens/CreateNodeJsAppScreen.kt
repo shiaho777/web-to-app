@@ -46,19 +46,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreateNodeJsAppScreen(
@@ -77,10 +64,8 @@ fun CreateNodeJsAppScreen(
     val nodeRuntime = remember(context) { NodeRuntime(context) }
     val isEdit = existingAppId > 0L
 
-
     var appName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
-
 
     var buildMode by remember { mutableStateOf(NodeJsBuildMode.API_BACKEND) }
     var entryFile by remember { mutableStateOf("index.js") }
@@ -89,12 +74,10 @@ fun CreateNodeJsAppScreen(
     var newEnvKey by remember { mutableStateOf("") }
     var newEnvValue by remember { mutableStateOf("") }
 
-
     var selectedProjectDir by remember { mutableStateOf<String?>(null) }
     var detectedFramework by remember { mutableStateOf<String?>(null) }
     var detectedEntryFile by remember { mutableStateOf<String?>(null) }
     var projectId by remember { mutableStateOf<String?>(null) }
-
 
     var packageName by remember { mutableStateOf<String?>(null) }
     var packageVersion by remember { mutableStateOf<String?>(null) }
@@ -106,28 +89,21 @@ fun CreateNodeJsAppScreen(
     var showAllDeps by remember { mutableStateOf(false) }
     var showAllDevDeps by remember { mutableStateOf(false) }
 
-
     var hasTypeScript by remember { mutableStateOf(false) }
-
 
     var enableTsPreCompile by remember { mutableStateOf(false) }
     val esbuildAvailable = remember { NativeNodeEngine.isAvailable(context) }
 
-
     var packageManager by remember { mutableStateOf("npm") }
-
 
     var detectedPort by remember { mutableStateOf<Int?>(null) }
     var customPort by remember { mutableStateOf("") }
 
-
     var nodeEngineVersion by remember { mutableStateOf<String?>(null) }
-
 
     var isCreating by remember { mutableStateOf(false) }
     var creationPhase by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-
 
     LaunchedEffect(existingAppId) {
         if (existingAppId > 0L) {
@@ -157,13 +133,10 @@ fun CreateNodeJsAppScreen(
         }
     }
 
-
     val downloadState by NodeDependencyManager.downloadState.collectAsStateWithLifecycle()
     var showDownloadDialog by remember { mutableStateOf(false) }
 
-
     val accentColor = MaterialTheme.colorScheme.onSurface
-
 
     val iconPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -196,14 +169,12 @@ fun CreateNodeJsAppScreen(
 
                         selectedProjectDir = projectPath
 
-
                         val runtime = NodeRuntime(context)
                         val detected = runtime.detectEntryFile(projectDir)
                         if (detected != null) {
                             detectedEntryFile = detected
                             entryFile = detected
                         }
-
 
                         packageManager = when {
                             File(projectDir, "pnpm-lock.yaml").exists() -> "pnpm"
@@ -212,9 +183,7 @@ fun CreateNodeJsAppScreen(
                             else -> "npm"
                         }
 
-
                         hasTypeScript = File(projectDir, "tsconfig.json").exists()
-
 
                         val packageJson = File(projectDir, "package.json")
                         if (packageJson.exists()) {
@@ -223,18 +192,14 @@ fun CreateNodeJsAppScreen(
                                 val gson = com.google.gson.Gson()
                                 val json = gson.fromJson(content, com.google.gson.JsonObject::class.java)
 
-
                                 json.get("name")?.asString?.let { name ->
                                     packageName = name
                                     if (appName.isBlank()) appName = name
                                 }
 
-
                                 json.get("version")?.asString?.let { packageVersion = it }
 
-
                                 json.get("description")?.asString?.let { packageDescription = it }
-
 
                                 json.getAsJsonObject("scripts")?.let { scripts ->
                                     val scriptMap = mutableMapOf<String, String>()
@@ -251,16 +216,13 @@ fun CreateNodeJsAppScreen(
                                     }
                                 }
 
-
                                 json.getAsJsonObject("engines")?.get("node")?.asString?.let {
                                     nodeEngineVersion = it
                                 }
 
-
                                 val deps = json.getAsJsonObject("dependencies")
                                 val devDeps = json.getAsJsonObject("devDependencies")
                                 val allDeps = mutableSetOf<String>()
-
 
                                 deps?.let { d ->
                                     val depMap = mutableMapOf<String, String>()
@@ -274,7 +236,6 @@ fun CreateNodeJsAppScreen(
                                     devDependencies = devDepMap
                                     allDeps.addAll(dd.keySet())
                                 }
-
 
                                 if (!hasTypeScript && ("typescript" in allDeps || "ts-node" in allDeps)) {
                                     hasTypeScript = true
@@ -291,14 +252,12 @@ fun CreateNodeJsAppScreen(
                                     else -> null
                                 }
 
-
                                 buildMode = when {
                                     "next" in allDeps || "nuxt" in allDeps -> NodeJsBuildMode.FULLSTACK
                                     "express" in allDeps || "fastify" in allDeps || "koa" in allDeps ||
                                     "@nestjs/core" in allDeps || "@hapi/hapi" in allDeps -> NodeJsBuildMode.API_BACKEND
                                     else -> NodeJsBuildMode.STATIC
                                 }
-
 
                                 npmScripts["start"]?.let { startScript ->
                                     val portMatch = Regex("(?:PORT=|--port[= ])(\\d{4,5})").find(startScript)
@@ -322,7 +281,6 @@ fun CreateNodeJsAppScreen(
                                     }
                                 }
 
-
                                 val envExample = File(projectDir, ".env.example")
                                 if (envExample.exists()) {
                                     envExample.readLines().forEach { line ->
@@ -341,7 +299,6 @@ fun CreateNodeJsAppScreen(
                             }
                         }
 
-
                         if (buildMode != NodeJsBuildMode.STATIC && !NodeDependencyManager.isNodeReady(context)) {
                             showDownloadDialog = true
                             val success = NodeDependencyManager.downloadNodeRuntime(context)
@@ -352,7 +309,6 @@ fun CreateNodeJsAppScreen(
                                 return@withContext
                             }
                         }
-
 
                         creationPhase = Strings.copyingProjectFiles
                         val newProjectId = java.util.UUID.randomUUID().toString()
@@ -389,7 +345,6 @@ fun CreateNodeJsAppScreen(
             landscapeMode = landscapeMode
         )
     }
-
 
     val canCreate = projectId != null
 
@@ -459,7 +414,6 @@ fun CreateNodeJsAppScreen(
                     nodeEngineVersion = nodeEngineVersion
                 )
 
-
                 if (!isEdit) {
                 EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -468,7 +422,6 @@ fun CreateNodeJsAppScreen(
                             title = Strings.njsBasicConfig
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-
 
                         PremiumTextField(
                             value = appName,
@@ -480,13 +433,11 @@ fun CreateNodeJsAppScreen(
                     }
                 }
 
-
                 RuntimeIconPickerCard(
                     appIcon = appIcon,
                     onSelectIcon = { iconPickerLauncher.launch("image/*") }
                 )
                 }
-
 
                 EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -559,7 +510,6 @@ fun CreateNodeJsAppScreen(
                     }
                 }
 
-
                 if (selectedProjectDir == null && !isCreating) {
                     TypedSampleProjectsCard(
                         title = Strings.sampleProjects,
@@ -577,20 +527,17 @@ fun CreateNodeJsAppScreen(
                                             val projectDir = File(path)
                                             val runtime = NodeRuntime(context)
 
-
                                             val detected = runtime.detectEntryFile(projectDir)
                                             if (detected != null) {
                                                 detectedEntryFile = detected
                                                 entryFile = detected
                                             }
 
-
                                             packageManager = when {
                                                 File(projectDir, "pnpm-lock.yaml").exists() -> "pnpm"
                                                 File(projectDir, "yarn.lock").exists() -> "yarn"
                                                 else -> "npm"
                                             }
-
 
                                             val packageJson = File(projectDir, "package.json")
                                             if (packageJson.exists()) {
@@ -605,7 +552,6 @@ fun CreateNodeJsAppScreen(
                                                     json.get("version")?.asString?.let { packageVersion = it }
                                                     json.get("description")?.asString?.let { packageDescription = it }
 
-
                                                     json.getAsJsonObject("scripts")?.let { scripts ->
                                                         val scriptMap = mutableMapOf<String, String>()
                                                         scripts.keySet().forEach { key ->
@@ -619,7 +565,6 @@ fun CreateNodeJsAppScreen(
                                                         }
                                                     }
 
-
                                                     val deps = json.getAsJsonObject("dependencies")
                                                     val allDeps = mutableSetOf<String>()
                                                     deps?.let { d ->
@@ -628,7 +573,6 @@ fun CreateNodeJsAppScreen(
                                                         dependencies = depMap
                                                         allDeps.addAll(d.keySet())
                                                     }
-
 
                                                     detectedFramework = when {
                                                         "express" in allDeps -> "Express"
@@ -643,7 +587,6 @@ fun CreateNodeJsAppScreen(
 
                                             appName = sample.name
 
-
                                             if (!NodeDependencyManager.isNodeReady(context)) {
                                                 showDownloadDialog = true
                                                 val success = NodeDependencyManager.downloadNodeRuntime(context)
@@ -654,7 +597,6 @@ fun CreateNodeJsAppScreen(
                                                     return@withContext
                                                 }
                                             }
-
 
                                             creationPhase = Strings.copyingProjectFiles
                                             val newProjectId = java.util.UUID.randomUUID().toString()
@@ -674,10 +616,8 @@ fun CreateNodeJsAppScreen(
                 }
             }
 
-
             WtaCreateFlowSection(title = Strings.appConfig) {
             if (projectId != null) {
-
 
                 if (packageName != null) {
                     NodeJsProjectInfoCard(
@@ -693,7 +633,6 @@ fun CreateNodeJsAppScreen(
                     )
                 }
 
-
                 if (npmScripts.isNotEmpty()) {
                     NodeJsScriptsCard(
                         scripts = npmScripts,
@@ -703,7 +642,6 @@ fun CreateNodeJsAppScreen(
                         accentColor = accentColor
                     )
                 }
-
 
                 EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -752,7 +690,6 @@ fun CreateNodeJsAppScreen(
                             }
                         }
 
-
                         if (buildMode != NodeJsBuildMode.STATIC) {
                             Spacer(modifier = Modifier.height(12.dp))
                             PremiumTextField(
@@ -783,7 +720,6 @@ fun CreateNodeJsAppScreen(
                         }
                     }
                 }
-
 
                 if (hasTypeScript && esbuildAvailable) {
                     EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -830,7 +766,6 @@ fun CreateNodeJsAppScreen(
                     }
                 }
 
-
                 if (buildMode != NodeJsBuildMode.STATIC) {
                     NodeJsPortCard(
                         detectedPort = detectedPort,
@@ -839,7 +774,6 @@ fun CreateNodeJsAppScreen(
                         accentColor = accentColor
                     )
                 }
-
 
                 if (dependencies.isNotEmpty() || devDependencies.isNotEmpty()) {
                     NodeJsDependenciesCard(
@@ -853,9 +787,6 @@ fun CreateNodeJsAppScreen(
                     )
                 }
 
-                // 在 App 内一键 npm/pnpm/yarn install——只在项目有 package.json 时显示
-                // 与前端项目类型不同，Node.js 应用走的是"libnode.so 现场跑源码"的路径，
-                // 没有自动构建步骤，所以需要给用户单独的"装依赖"入口
                 if (selectedProjectDir != null && File(selectedProjectDir!!, "package.json").exists()) {
                     InstallProjectDepsCard(
                         kind = DepsKind.NODE,
@@ -864,7 +795,6 @@ fun CreateNodeJsAppScreen(
                         onOpenBuildEnvScreen = onOpenLinuxEnv,
                     )
                 }
-
 
                 if (buildMode != NodeJsBuildMode.STATIC) {
                     EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -891,7 +821,6 @@ fun CreateNodeJsAppScreen(
                                 }
                             }
                             Spacer(modifier = Modifier.height(12.dp))
-
 
                             envVars.forEach { (key, value) ->
                                 Box(
@@ -939,7 +868,6 @@ fun CreateNodeJsAppScreen(
                                 }
                             }
 
-
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -979,7 +907,6 @@ fun CreateNodeJsAppScreen(
                     }
                 }
 
-
                 if (detectedFramework != null) {
                     NodeJsFrameworkTipsCard(
                         framework = detectedFramework!!,
@@ -989,22 +916,21 @@ fun CreateNodeJsAppScreen(
             }
             }
 
+            if (isCreating || errorMessage != null) {
+                WtaCreateFlowSection(title = Strings.preview) {
+                    if (isCreating) {
+                        RuntimeLoadingCard(creationPhase)
+                    }
 
-            WtaCreateFlowSection(title = Strings.preview) {
-                if (isCreating) {
-                    RuntimeLoadingCard(creationPhase)
-                }
-
-
-                errorMessage?.let { error ->
-                    RuntimeErrorCard(error = error, onDismiss = { errorMessage = null })
+                    errorMessage?.let { error ->
+                        RuntimeErrorCard(error = error, onDismiss = { errorMessage = null })
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
-
 
     if (showDownloadDialog) {
         AlertDialog(
@@ -1055,11 +981,6 @@ fun CreateNodeJsAppScreen(
     }
 }
 
-
-
-
-
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun NodeJsHeroSection(
@@ -1088,9 +1009,6 @@ private fun NodeJsHeroSection(
         tags = tags
     )
 }
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -1150,7 +1068,6 @@ private fun NodeJsProjectInfoCard(
                         }
                     }
 
-
                     packageDescription?.let { desc ->
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
@@ -1165,7 +1082,6 @@ private fun NodeJsProjectInfoCard(
                     Spacer(modifier = Modifier.height(10.dp))
                     HorizontalDivider(color = accentColor.copy(alpha = 0.1f))
                     Spacer(modifier = Modifier.height(10.dp))
-
 
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -1214,9 +1130,6 @@ private fun NodeJsProjectInfoCard(
     }
 }
 
-
-
-
 @Composable
 private fun NjsInfoChip(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -1243,9 +1156,6 @@ private fun NjsInfoChip(
         }
     }
 }
-
-
-
 
 @Composable
 private fun NodeJsScriptsCard(
@@ -1349,9 +1259,6 @@ private fun NodeJsScriptsCard(
     }
 }
 
-
-
-
 @Composable
 private fun NodeJsPortCard(
     detectedPort: Int?,
@@ -1367,7 +1274,6 @@ private fun NodeJsPortCard(
                 brandColor = accentColor
             )
             Spacer(modifier = Modifier.height(12.dp))
-
 
             if (detectedPort != null) {
                 Box(
@@ -1402,7 +1308,6 @@ private fun NodeJsPortCard(
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
-
             PremiumTextField(
                 value = customPort,
                 onValueChange = { newValue ->
@@ -1427,9 +1332,6 @@ private fun NodeJsPortCard(
     }
 }
 
-
-
-
 @Composable
 private fun NodeJsDependenciesCard(
     dependencies: Map<String, String>,
@@ -1448,7 +1350,6 @@ private fun NodeJsDependenciesCard(
                 brandColor = accentColor
             )
             Spacer(modifier = Modifier.height(12.dp))
-
 
             if (dependencies.isNotEmpty()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1514,7 +1415,6 @@ private fun NodeJsDependenciesCard(
                     }
                 }
             }
-
 
             if (devDependencies.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
@@ -1588,9 +1488,6 @@ private fun NodeJsDependenciesCard(
         }
     }
 }
-
-
-
 
 private fun getPathFromUri(uri: Uri): String? {
     return try {

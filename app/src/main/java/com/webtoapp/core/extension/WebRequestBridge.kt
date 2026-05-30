@@ -4,25 +4,9 @@ import com.webtoapp.core.logging.AppLogger
 import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 object WebRequestBridge {
 
     private const val TAG = "WebRequestBridge"
-
-
-
 
     data class WebRequestRule(
         val extensionId: String,
@@ -31,22 +15,11 @@ object WebRequestBridge {
         val blocking: Boolean
     )
 
-
     private val rules = ConcurrentHashMap<String, MutableList<WebRequestRule>>()
-
 
     @Volatile
     var blockedCount: Long = 0
         private set
-
-
-
-
-
-
-
-
-
 
     fun registerFilter(
         extensionId: String,
@@ -86,21 +59,10 @@ object WebRequestBridge {
         }
     }
 
-
-
-
     fun unregisterAll(extensionId: String) {
         rules.remove(extensionId)
         AppLogger.d(TAG, "Unregistered all webRequest filters for $extensionId")
     }
-
-
-
-
-
-
-
-
 
     fun shouldBlock(url: String, resourceType: String = ""): Boolean {
         if (rules.isEmpty()) return false
@@ -109,11 +71,9 @@ object WebRequestBridge {
             for (rule in ruleList) {
                 if (!rule.blocking) continue
 
-
                 if (rule.resourceTypes.isNotEmpty() && resourceType.isNotEmpty()) {
                     if (resourceType !in rule.resourceTypes) continue
                 }
-
 
                 for (pattern in rule.urlPatterns) {
                     if (pattern.matcher(url).matches()) {
@@ -127,29 +87,20 @@ object WebRequestBridge {
         return false
     }
 
-
-
-
     fun getRuleCount(): Int {
         return rules.values.sumOf { it.size }
     }
-
-
-
 
     fun clear() {
         rules.clear()
         blockedCount = 0
     }
 
-
-
     private fun compileUrlPattern(pattern: String): Pattern? {
         return try {
             if (pattern == "<all_urls>") {
                 return Pattern.compile("^https?://.*$")
             }
-
 
             val regex = pattern
                 .replace(".", "\\.")
@@ -176,9 +127,6 @@ object WebRequestBridge {
             null
         }
     }
-
-
-
 
     private fun parseJsonArray(json: String): List<String> {
         val trimmed = json.trim()

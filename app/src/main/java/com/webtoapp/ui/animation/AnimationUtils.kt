@@ -31,21 +31,6 @@ import androidx.compose.ui.unit.dp
 import com.webtoapp.ui.design.WtaMotion
 import kotlinx.coroutines.delay
 
-/**
- * Motion helpers used across the app.
- *
- * Design intent: every entrance animation here leans on [WtaMotion] so that
- * scale/spring/fade parameters stay identical to the rest of the app. Loose
- * bespoke springs used to produce a "jelly" feeling the user disliked; they
- * are replaced with the settle/snap/enter tweens.
- */
-
-/**
- * Stagger-in an item by its index. Each item slides up from below with a
- * spring. No fade — the motion alone communicates arrival. A small stagger
- * delay makes lists look like they are unfolding rather than all appearing
- * at once.
- */
 @Composable
 fun StaggeredAnimatedItem(
     index: Int,
@@ -76,16 +61,6 @@ fun StaggeredAnimatedItem(
     }
 }
 
-/**
- * Subtle breathing / float loop. The previous implementation rotated the
- * element as it moved which looked like a toy bobbing in the breeze. This
- * version drops rotation entirely, halves the travel, and uses a single
- * long easing curve so the element feels alive without being distracting.
- *
- * Kept as a compatibility shim for any screen that still references it; new
- * code should avoid continuous idle animations because they undermine the
- * "considered" feel of the rest of the app.
- */
 @Composable
 fun Modifier.breathingFloat(
     floatAmountDp: Float = 3f,
@@ -107,11 +82,6 @@ fun Modifier.breathingFloat(
     }
 }
 
-/**
- * Dialog content with pure scale-based appearance. No fade — the dialog
- * pops in from a smaller scale with a bouncy spring, which alone conveys
- * arrival. Matches iOS alert controller physics.
- */
 @Composable
 fun AnimatedDialogContent(
     visible: Boolean,
@@ -132,10 +102,6 @@ fun AnimatedDialogContent(
     }
 }
 
-/**
- * Snackbar transitions. Entry springs up from below. Exit drifts down and off.
- * Pure translation, no fade — the spring carries the weight.
- */
 val SnackbarEnterTransition: EnterTransition = slideInVertically(
     initialOffsetY = { it },
     animationSpec = WtaMotion.bouncySpring()
@@ -147,11 +113,6 @@ val SnackbarExitTransition: ExitTransition =
         animationSpec = WtaMotion.settleSpring()
     )
 
-/**
- * Tab transitions. Content slides horizontally from the direction the user
- * navigated, driven by a spring. No fade — tabs are literal physical surfaces
- * sliding past each other.
- */
 fun tabSlideDirection(previousTab: Int, currentTab: Int): Int {
     return if (currentTab > previousTab) 1 else -1
 }
@@ -170,14 +131,6 @@ fun tabExitTransition(direction: Int): ExitTransition {
     )
 }
 
-/**
- * Card expand/collapse transitions used by [CollapsibleCard] and the various
- * settings sections.
- *
- * Pure vertical expansion driven by springs. No fade — the height change
- * alone conveys the reveal. Expansion uses the settle spring; collapse uses
- * the snap spring so content retracts faster than it expands.
- */
 val CardExpandTransition: EnterTransition = expandVertically(
     animationSpec = WtaMotion.settleSpring(),
     expandFrom = androidx.compose.ui.Alignment.Top,

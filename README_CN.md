@@ -40,29 +40,34 @@ WebToApp 把网站、HTML 项目、媒体素材，乃至完整的服务端应用
 打包成可安装的 Android APK。
 
 输入网址、勾选你想要的功能，几秒钟后就拿到一个能装、能分发的 APK。背后是一
-个深度加固的 WebView、五种可选的本地运行时（Node.js / PHP / Python / Go /
-WordPress），以及完全在设备内通过
+个可深度配置的 WebView、四种可选的本地运行时（Node.js / PHP / Python / Go，
+WordPress 跑在本地 PHP 之上），以及完全在设备内通过
 [`com.android.tools.build:apksig`](https://mvnrepository.com/artifact/com.android.tools.build/apksig)
 完成签名打包的 APK 构建器。**不会向任何远程构建服务器发请求。**
 
-**支持的应用类型：** 网站 · HTML · React · Vue · WordPress · Node.js · PHP ·
-Python · Go · 图片 · 视频 · 图库 · 多网站
+**支持的应用类型**（`AppType` 枚举）：网站 · HTML · 前端工程（React / Vue /
+静态构建）· WordPress · Node.js · PHP · Python · Go · 图片 · 视频 · 图库 ·
+多网站。
 
 ## 核心亮点
 
 - **设备端一键打包 APK** —— 编译、签名、安装一台手机搞定，全程不联远程构建
-- **双浏览器引擎** —— 系统 WebView + 可选 GeckoView (Firefox) 后端
+- **双浏览器引擎** —— 系统 WebView + 可选 GeckoView (Firefox) 后端；GeckoView
+  仅提供 arm64-v8a，其原生运行时在首次选用时下载，不打进 APK
 - **GitHub 驱动的模块市场** —— 一键安装社区模块，无需更新 App，目录就在本仓库
 - **真正的 Chrome 扩展运行时** —— 在 WebView 里直接跑未修改的 MV3 扩展，
   内置 BewlyCat 作为示例
 - **本地服务端运行时** —— Node.js / PHP / Python / Go 通过本地 HTTP 服务跑在
-  设备上，WordPress 跑在内置 PHP 之上
-- **深度可定制的 WebView** —— UA 伪装、28 维度指纹伪装、广告拦截、
+  设备上，WordPress 跑在本地 PHP 之上
+- **可定制的 WebView** —— UA 伪装、28 维度指纹伪装、广告拦截、
   DNS-over-HTTPS、JS/CSS 注入、支付协议处理
 - **应用修改器** —— 克隆已安装 APK，修改图标/名称/包名（二进制 AXML 修补 +
   重签名）
-- **AI 助手** —— 生成扩展模块、HTML 项目、APK 图标；agent 架构的 AI Coding V2
-  可以直接写完整网页
+- **设备端 APK 签名** —— 在手机上新建、导入、导出、查看密钥库
+  （MD5 / SHA-1 / SHA-256 指纹）；可选 V1/V2/V3 签名方案与自定义 V1 签名文件名
+- **AI 编程** —— 基于 Skill 的 agent，支持在手机上构建网页、扩展模块以及
+  各类应用类型（HTML、React、Vue、Node、PHP、Python、Go、WordPress 等），
+  内嵌预览并自带图像生成能力
 - **每个 APK 的使用统计** —— Stats 页面 + 健康监测 + Vico 图表
 - **完整三语 UI** —— 中文、英文、阿拉伯语开箱即用
 
@@ -76,15 +81,23 @@ Python · Go · 图片 · 视频 · 图库 · 多网站
 ```
 modules/                                    ← 已发布目录
 ├── registry.json                           ← App 首次拉取的索引
+├── submissions.json                        ← CI 生成：PR / 提交者元数据
 ├── README.md                               ← 贡献者指南
 ├── hello-world/                            ← 示例：浮动横幅
 │   ├── module.json
 │   └── main.js
-└── night-shift/                            ← 示例：暖色护眼
-    ├── module.json
-    ├── main.js
-    └── style.css
+├── night-shift/                            ← 示例：暖色护眼
+│   ├── module.json
+│   ├── main.js
+│   └── style.css
+├── reading-mode/                           ← 阅读模式
+├── floating-search/                        ← 划词操作条
+└── auto-scroll/                            ← 自动滚动遥控
 ```
+
+App 会**同时**拉取 `registry.json` 和 `submissions.json`，只渲染两边都出现的
+模块——以此保证目录只展示 PR 已真正合并的模块（`submissions.json` 由 CI 在每次
+推送 `main` 时重新生成）。
 
 **用户侧：** 打开 App → *扩展模块* 页面 → 点击右上角商店图标。模块发新版本时
 App 会自动检测并提示更新。
@@ -105,25 +118,27 @@ App 会自动检测并提示更新。
 <summary><b>浏览器引擎与网络</b></summary>
 
 - 桌面模式、自定义 User-Agent、`DOCUMENT_START` / `END` / `IDLE` 三时机的
-  JS/CSS 注入
-- 弹窗拦截，新窗口行为可选 `SAME_WINDOW` / `EXTERNAL_BROWSER` / `POPUP_WINDOW`
-  / `BLOCK`
-- HTTP、SOCKS5、PAC 三种代理，支持身份验证和绕过规则
+  JS/CSS 注入（`ScriptRunTime`）
+- 弹窗拦截，新窗口行为（`NewWindowBehavior`）可选 `SAME_WINDOW` /
+  `EXTERNAL_BROWSER` / `POPUP_WINDOW` / `BLOCK`
+- 静态代理（HTTP / HTTPS / SOCKS5）与 PAC，支持身份验证和绕过规则；SOCKS5
+  通过本地 HTTP-to-SOCKS 桥转发
 - DNS-over-HTTPS 七大预设（Cloudflare、Google、AdGuard、NextDNS、CleanBrowsing、
-  Quad9、Mullvad）+ 自定义 endpoint
+  Quad9、Mullvad）+ 自定义 endpoint（`DnsProvider`）
 - PWA 离线支持，可选缓存策略；自定义错误页
 - 每个应用独立的 hosts 文件覆写；支付协议处理
   （`alipay://` / `weixin://` / `paypal://` 等）
-- WebView 兼容/隐私组合（默认全开）：GPC 头、Cookie 同意拦截、追踪器拦截、
-  blob 下载拦截、滚动记忆、图片修复、HTTPS 升级、内核伪装、剪贴板/方向 polyfill、
-  Native Bridge、内网桥接、Referrer Policy
+- 一组按需开启的 WebView 兼容开关（默认全部关闭）：blob 下载拦截、滚动记忆、
+  图片修复、内核伪装（`KernelDisguiseLevel`）、剪贴板 / 方向 / 通知 polyfill、
+  Native Bridge（带逐能力白名单）、内网桥接
 
 </details>
 
 <details>
 <summary><b>浏览器指纹伪装（28 维度）</b></summary>
 
-5 档预设：`Stealth` → `Ghost` → `Phantom` → `Specter` → `Custom`。可伪装：
+5 档预设：`STEALTH` → `GHOST` → `PHANTOM` → `SPECTER` → `CUSTOM`（外加
+`OFF`）。伪装引擎（`BrowserDisguiseConfig`）可伪装：
 
 | 类别 | 维度 |
 | --- | --- |
@@ -134,40 +149,48 @@ App 会自动检测并提示更新。
 | 网络指纹 | Connection、Permissions、Performance Timing、Storage Estimate、Notification、CSS Media |
 | 加固 | `Native.toString` 保护、iframe 伪装传播、错误堆栈清理 |
 
-覆盖率分级：`OFF` → `BASIC` → `MODERATE` → `ADVANCED` → `DEEP` → `MAXIMUM`。
+覆盖率按激活的维度数量分级显示：`OFF` → `BASIC` → `MODERATE` → `ADVANCED` →
+`DEEP` → `MAXIMUM`。
 
 </details>
 
 <details>
 <summary><b>应用内 OAuth（30+ 提供商）</b></summary>
 
-通过逐家反检测脚本，让未修改的 Chrome OAuth 流程能在 WebView 内完成。识别的提
-供商：
+通过逐家反检测脚本，让未修改的 Chrome OAuth 流程能在 WebView 内完成。
+`OAuthCompatEngine.Provider` 枚举识别 32 个品牌提供商：
 
 Google、Facebook、Apple、Microsoft、Amazon、Twitter / X、GitHub、Discord、Reddit、
 LinkedIn、Spotify、Twitch、LINE、Kakao、Naver、微信、QQ、支付宝、TikTok / 抖音、
 Yahoo Japan、Yahoo、VK、Yandex、Mail.ru、Shopify、Dropbox、Notion、Slack、Zoom、
-PayPal、Stripe、Square，加上 reCAPTCHA / hCaptcha / Cloudflare Turnstile 兼容。
+PayPal、Stripe、Square——外加 reCAPTCHA / hCaptcha / Cloudflare Turnstile 兼容
+和一个通用 OAuth 兜底。
 
-Google OAuth 在 WebView 内被拒时，回退到 Chrome Custom Tab（`androidx.browser`）
-共享 cookie 完成登录。
+当识别到的 OAuth 流程无法在 WebView 内完成时，回退到 Chrome Custom Tab
+（`androidx.browser`）共享 cookie 完成登录。
 
 </details>
 
 <details>
 <summary><b>扩展模块</b></summary>
 
-- **11 个内置 JS 模块：** 视频下载、B 站 / 抖音 / 小红书 提取器、视频增强、
-  网页分析、页内查找、暗色模式、隐私保护、内容增强、元素拦截
+- **11 个内置 JS 模块**（`BuiltInModules`）：视频下载、B 站 / 抖音 / 小红书
+  提取器、视频增强、网页分析、页内查找、暗色模式、隐私保护、内容增强、元素拦截
 - **1 个内置 Chrome 扩展**（`assets/extensions/bewlycat/`）：BewlyCat 给 B 站
-  换皮肤，是 MV3 运行时跑真实扩展的活样板
-- **3 种用户模块来源：** 纯 JavaScript、Greasemonkey/Tampermonkey 油猴脚本
-  （`.user.js`）、Chrome MV3 扩展（`manifest.json`）
-- 完整的 `GM_*` 桥接（`GM_setValue`、`GM_xmlhttpRequest` 等），按脚本声明授权
-- MV3 `chrome.declarativeNetRequest` 引擎——block / allow / redirect /
-  modifyHeaders
-- 模块通过分享码或二维码（ZXing）传播
-- AI 模块开发者页面——给一段 prompt，AI 生成可直接安装的模块代码
+  换皮肤，是 MV3 运行时跑真实扩展的活样板（以 ISOLATED + MAIN 两个 world 脚本
+  加载）
+- **3 种模块来源**（`ModuleSourceType`）：纯 JavaScript（`CUSTOM`）、
+  Greasemonkey/Tampermonkey 油猴脚本（`USERSCRIPT`，`.user.js`）、Chrome MV3
+  扩展（`CHROME_EXTENSION`，`manifest.json`）
+- `GM_*` 桥接（`GM_setValue`、`GM_xmlhttpRequest`、`GM_addStyle`、菜单命令、
+  Promise 风格的 `GM.*` 接口等），按脚本声明授权
+- MV3 `chrome.declarativeNetRequest` 引擎（`ActionType`）：block / allow /
+  redirect / upgrade-scheme / allow-all-requests 已生效，modify-headers 规则
+  会被解析但暂未应用；另有一套广泛的 `chrome.*` polyfill（runtime、storage、
+  tabs、scripting 等）支撑 MV3 扩展
+- 模块通过分享码（`WTA1:` gzip+Base64）或二维码（ZXing）传播
+- **AI 编程** agent 可经由 `module-js` / `module-style` / `module-userscript`
+  / `module-chrome-mv3` 这几个 skill，从一段 prompt 生成扩展模块
 - 上文介绍的 **模块市场**
 
 </details>
@@ -175,11 +198,13 @@ Google OAuth 在 WebView 内被拒时，回退到 Chrome Custom Tab（`androidx.
 <details>
 <summary><b>视觉与体验</b></summary>
 
-- Aurora 主题系统，动态色彩生成
+- 单一的精校单色主题（`AppThemes.KimiNoNawa`），含独立的浅色/深色配色；
+  Material You 动态取色为可选项（默认关闭）
 - 自定义启动屏——图片或视频，点击跳过、视频裁剪范围、固定方向
 - 背景音乐播放列表 + LRC 同步，6 种歌词动画（淡入、上滑、左滑、缩放、打字机、
-  卡拉OK），3 种位置，自定义字体/颜色/描边/阴影主题。在线音乐搜索 + 20+ 标签
-- 状态栏主题——颜色、深/浅色图标、透明度、高度，深色模式独立配置
+  卡拉OK），3 种位置（顶 / 中 / 底），自定义字体/颜色/描边/阴影主题。在线音乐
+  搜索 + 20 个曲风标签
+- 状态栏主题——颜色、深/浅色图标、高度，深色模式独立配置
 - 悬浮窗模式——尺寸、透明度、圆角、边缘吸附、位置锁定、自动隐藏标题栏、
   启动即最小化
 - 10 种公告模板（极简、小红书、渐变、毛玻璃、霓虹、可爱、优雅、节日、暗黑、
@@ -193,25 +218,32 @@ Google OAuth 在 WebView 内被拒时，回退到 Chrome Custom Tab（`androidx.
 <summary><b>每个 APK 的使用统计</b></summary>
 
 - Stats 页面，图表用 Vico Compose 绘制
-- 跟踪每个打包应用的打开次数、总时长、最近打开时间、按日使用情况
+- 跟踪每个打包应用的打开次数、总时长、最近打开时间、最近一次会话时长
 - App Health Monitor 定期对每个应用的 URL 做 `HEAD` 请求，标出不可达的站点
+  （`HealthStatus`：UNKNOWN / ONLINE / SLOW / OFFLINE）
 
 </details>
 
 <details>
 <summary><b>本地服务端运行时</b></summary>
 
-- **Node.js** —— 4 种构建模式（静态 / SSR / API 后端 / 全栈），环境变量、npm
-  依赖管理器、示例项目库；底层包装原生 `node_launcher` C++ 可执行文件
-- **PHP** —— 8.4 二进制在构建时从
-  [`pmmp/PHP-Binaries`](https://github.com/pmmp/PHP-Binaries) 下载一次，
-  支持 Composer，可自定义 document root
-- **Python** —— Flask、Django 或内置 HTTP 服务器，支持 pip 依赖解析
-- **Go** —— 设备端二进制编译 + 静态文件服务，底层是 `go_exec_loader` C++ 包装层
-- **WordPress** —— 跑在内置 PHP 之上，支持主题 + 插件
-- **Linux 环境** —— 内置工具链 + 一个统一管理 5 种运行时构建/依赖/端口的页面
-- **端口管理器** —— 通过广播 receiver 实现跨应用端口协调，避免多个打包应用抢
-  同一端口
+- **Node.js** —— 环境变量、npm 依赖管理器、示例项目库（Express / Fastify /
+  Koa）。运行时跑在独立的 `:nodejs` OS 进程里，底层包装原生 `node_launcher`
+  C++ 可执行文件（`dlopen` 加载 `libnode.so`，这样用户脚本崩溃也带不垮宿主）
+- **PHP** —— PHP 8.4，首次使用时从
+  [`pmmp/PHP-Binaries`](https://github.com/pmmp/PHP-Binaries) 下载一次
+  （arm64-v8a），支持 Composer，可自定义 document root
+- **Python** —— Flask、Django、FastAPI（经 uvicorn）、Tornado 或内置 HTTP
+  服务器，支持 pip 依赖解析到 `.pypackages`
+- **Go** —— 设备端 `go build`（支持 `vendor/` 离线构建）+ 静态文件服务，
+  经 `go_exec_loader` C++ 包装层执行
+- **WordPress** —— 跑在本地 PHP 运行时之上，由 SQLite 承载（WordPress 6.9.1 +
+  `sqlite-database-integration` 插件），支持主题 + 插件导入
+- **Linux 环境** —— 一个按需安装工具链、管理 Node / PHP / Python 构建与依赖
+  的页面（Go 和 WordPress 由各自的依赖管理器单独管理）
+- **端口管理器** —— 通过广播 receiver（`PortQueryReceiver` /
+  `PortReleaseReceiver`）实现跨应用端口协调，避免多个打包应用抢同一端口；
+  每种运行时各占一个端口段
 
 </details>
 
@@ -239,7 +271,7 @@ Google OAuth 在 WebView 内被拒时，回退到 Chrome Custom Tab（`androidx.
   LibreTranslate、Lingva、Auto），悬浮按钮切换，加载即翻译
 - **Web `Notification` polyfill** + URL 轮询前台服务（最低 5 分钟间隔），
   支持 JSON 解析以及带自定义 header 的 GET / POST
-- 自定义 URL Scheme，可配置 host 匹配
+- 自定义 URL Scheme（深链），可配置 host 匹配
 - 开机自启（`BOOT_COMPLETED`、`QUICKBOOT_POWERON`、`MY_PACKAGE_REPLACED`、
   时区/时间变化）
 - 通过 `SCHEDULE_EXACT_ALARM` 实现定时启动
@@ -253,19 +285,25 @@ Google OAuth 在 WebView 内被拒时，回退到 Chrome Custom Tab（`androidx.
 下面这些功能作用于 **WebToApp 生成的 APK**。WebToApp 本体（宿主）的权限清单
 是刻意精简的，详见 `AndroidManifest.xml`。
 
-- **APK 加密** —— PBKDF2 10 万次迭代，支持自定义密码
-- **应用隔离** —— 独立数据目录、独立 WebView 进程
+- **APK 加密** —— `PBKDF2WithHmacSHA256` + AES-256-GCM，支持自定义密码；
+  资源加密路径使用 10 万次 PBKDF2 迭代
+- **WebView / 内容隔离**（`IsolationConfig`）—— 存储隔离、WebRTC 屏蔽、
+  Canvas / Audio / WebGL / 字体保护，以及为打包 WebView 做的指纹 / 头 / IP
+  伪装
 - **浏览器与设备指纹伪装** —— 见上文
-- **广告拦截** —— hosts 规则引擎 + cosmetic MutationObserver 过滤；内置 12
+- **广告拦截** —— hosts 规则引擎 + cosmetic MutationObserver 过滤；内置 23
   个社区过滤源（EasyList、EasyPrivacy、uBlock、AdGuard 系列、StevenBlack、
-  Peter Lowe、1Hosts Lite 以及多个区域列表）
-- **激活码门控** —— 每次启动 / 持久；激活码可设为 无限 / 时限 / 设备绑定
-- **应用加固流水线** —— DEX 加密 + 拆分、控制流平坦化、原生 SO 加密、ELF
-  混淆、符号剥离、反 dump
+  AdAway、Peter Lowe、1Hosts Lite、Anti-AD 以及多个区域列表）
+- **激活码门控** —— 每次启动 / 持久；激活码可设为 永久 / 时限 / 次数限制 /
+  设备绑定 / 组合（`ActivationCodeType`）
+- **应用加固流水线** —— 一个总开关，开启后执行 DEX 加密 + 拆分、控制流平坦化、
+  原生 SO 加密、ELF 混淆、符号剥离、反 dump
 - **反逆向** —— 反 Frida / Xposed / Magisk / 调试 / 内存 dump / 截屏；
-  模拟器 / VirtualApp / VPN / USB 调试 检测
-- **代码混淆** —— 字符串加密、类名混淆、不透明谓词、多点签名校验、证书固定
-- **威胁响应** —— 运行时屏障、蜜罐、自毁模式
+  模拟器 / VirtualApp / VPN / USB 调试 / 开发者选项 检测
+- **代码混淆** —— 字符串加密、类名混淆、不透明谓词、调用间接化、多点签名校验、
+  证书固定
+- **威胁响应** —— 运行时屏障（RASP），含蜜罐和自毁模式（`ThreatResponse`：
+  LOG_ONLY / SILENT_EXIT / CRASH_RANDOM / DATA_WIPE / FAKE_DATA）
 
 </details>
 
@@ -277,7 +315,7 @@ Google OAuth 在 WebView 内被拒时，回退到 Chrome Custom Tab（`androidx.
 - **强制运行** —— 三种模式（`FIXED_TIME` / `COUNTDOWN` / `DURATION`）。屏蔽
   系统 UI、返回 / Home / 最近 / 通知。倒计时跨进程持久化。可设密码紧急退出，
   结束前预警
-- **BlackTech** —— `BlackTechConfig` 中声明的每一个开关：
+- **BlackTech**（`DeviceActionsConfig`，序列化字段名 `blackTechConfig`）：
   - 音量控制（强制最大 / 静音 / 屏蔽音量键）
   - 闪光灯模式 —— 频闪、SOS、摩尔斯码（自定义文本和单位时长）、心跳、呼吸、
     紧急、自定义警报模式（可同步震动）
@@ -288,11 +326,11 @@ Google OAuth 在 WebView 内被拒时，回退到 Chrome Custom Tab（`androidx.
     `STEALTH_MODE`
 - **设备伪装** —— 6 种设备类型（手机 / 平板 / 桌面 / 笔记本 / 手表 / 电视）×
   10 种 OS（Android、iOS、HarmonyOS、Windows、macOS、Linux、ChromeOS、
-  watchOS、Wear OS、tvOS）；28 个具体设备预设，包括 iPhone 17 Pro Max、
+  watchOS、Wear OS、tvOS）；49 个具体设备预设，包括 iPhone 17 Pro Max、
   Galaxy S26 Ultra、Pixel 10 Pro XL、Mate 70 Pro+、OnePlus 15、MacBook Pro
   M5、Surface Pro 11、Apple Watch Ultra 3 等
-- **图标风暴 (Icon Storm)** —— 多启动器图标伪装。打包出来的 App 可以拥有
-  从 `2`（Subtle）到 `5000`（Research）个启动器别名，模式包括：
+- **图标风暴 (Icon Storm)**（`IconStormMode`）—— 多启动器图标伪装。打包出来
+  的 App 可以拥有从一个自定义下限直到 `5000` 个启动器别名，模式包括：
   `Subtle Flood (25)`、`Icon Flood (100)`、`Icon Storm (500)`、
   `Extreme Storm (1000)`、`Research (5000)`、自定义。每个别名约 520 字节
   manifest 开销，UI 会实时给出影响估算
@@ -303,13 +341,44 @@ Google OAuth 在 WebView 内被拒时，回退到 Chrome Custom Tab（`androidx.
 <summary><b>APK 导出选项</b></summary>
 
 - 自定义包名、`versionName`、`versionCode`
-- 架构选择：通用 / ARM64 / ARM32
+- 架构选择（`ApkArchitecture`）：通用 / ARM64 / ARM32
 - 性能优化 —— 图片压缩、WebP 转换、代码压缩、懒加载、DNS 预取、preload 提示
 - **打包时按勾选注入子 APK 的运行时权限**（摄像头、麦克风、定位、存储、蓝牙、
   NFC、短信、联系人、日历、传感器、前台服务、wake lock、安装包、系统弹窗）。
   这些**不会**进入宿主 manifest
-- Banner、插屏、开屏 广告，可配置 ID 与时长
+- Banner、插屏、开屏 广告配置（配置与管线已就绪；未捆绑广告 SDK，因此投放为
+  占位实现）
 - 完整应用数据备份/恢复；项目导出/导入
+- AAB 导出（用于 Play 式分发；bundle 的 protobuf 元数据在设备端生成）
+
+</details>
+
+<details>
+<summary><b>APK 签名与密钥库管理</b></summary>
+
+签名全程在设备端由 `JarSigner` 完成，底层驱动
+`com.android.tools.build:apksig`。签名身份是**全局设置**——这里选定的签名会用于
+**所有**新打包的 APK。
+
+- **三种签名身份**（`JarSigner.SignerType`）：`PKCS12_CUSTOM`（你新建或导入的
+  keystore）、`PKCS12_AUTO`（首次运行自动生成）、`ANDROID_KEYSTORE`（系统托管
+  兜底）。每次启动自定义签名优先生效
+- **设备端新建签名**（`createCustomKeystore` / `CertificateSpec`）——生成全新的
+  RSA 密钥对（2048 / 4096）和自签名证书，可填完整 X.500 主题
+  （CN / O / OU / L / ST / C）和有效期（默认 30 年），无需电脑或 `keytool`
+- **导入** PKCS12 / PFX / JKS / BKS（`importKeystore`），支持 JKS /
+  Android Studio「upload key」那种 key 密码与 store 密码不同的情形。非 PKCS12
+  格式会转存为 PKCS12，并把真实 alias 落盘到 sidecar，使自定义签名跨进程重启
+  后依然生效
+- **导出**当前密钥为带密码的 `.p12` 备份（`exportPkcs12`），以及**删除**自定义
+  keystore 回退到自动生成的签名
+- **查看指纹**（`getCertificateFingerprints` → `CertificateFingerprints`）——
+  证书的 MD5 / SHA-1 / SHA-256，点击即可复制
+- **签名方案选择**（`SigningSchemeOptions`）——独立开关 V1（JAR）、V2（完整 APK）、
+  V3（密钥轮换）。一个**自动回退**开关会在旧证书算法与新方案不兼容时，逐级丢弃
+  最新的方案（V3 → V2）并重新校验；关闭后则严格只用你勾选的方案签名
+- **自定义 V1 签名文件名**——设置 `META-INF/<名称>.SF` 与 `META-INF/<名称>.RSA`
+  里的 `<名称>`。留空则自动从签名密钥证书的 CN 派生，并带实时预览
 
 </details>
 
@@ -324,7 +393,9 @@ Google OAuth 在 WebView 内被拒时，回退到 Chrome Custom Tab（`androidx.
 - **Room 2.7.2** + **KSP** —— 数据持久化
 - **OkHttp 4.12.0** + `okhttp-dnsoverhttps` —— 网络层
 - **`com.android.tools.build:apksig` 8.3.0** —— 设备端 APK 签名核心
-- **GeckoView**（Firefox 内核）—— 可选 WebView 替代
+- **`protobuf-javalite` 3.25.5** —— 为设备端 AAB 导出编码元数据
+- **GeckoView**（Firefox 内核，arm64-v8a）—— 可选 WebView 替代，原生运行时
+  在首次选用时下载，不打进 APK
 - **Coil**（`compose` + `video` + `gif`）—— 图片加载
 - **AndroidX Security Crypto** + **AndroidX DataStore** —— 加密存储
 - **Vico** Compose-M3 —— Stats 页面图表
@@ -336,11 +407,18 @@ Google OAuth 在 WebView 内被拒时，回退到 Chrome Custom Tab（`androidx.
 
 完整列表见 [`app/build.gradle.kts`](app/build.gradle.kts)。
 
+> **为什么 `targetSdk = 28`？** WebToApp 需要从 app 存储里 `fork`+`exec`
+> 原生二进制（PHP、Go 等）。Android 10+ 在 SELinux 下禁止 `untrusted_app`
+> 这么做，所以——和 Termux 一样——本 app 把 `targetSdk` 锁在 28，并通过
+> GitHub Releases 而非 Google Play 分发。完整理由见 `app/build.gradle.kts`
+> 里的注释。
+
 ---
 
 ## 从源码构建
 
-**要求：** Android Studio Hedgehog 或更新版本、JDK 17、Gradle 8.14+。
+**要求：** Android Studio Hedgehog 或更新版本、JDK 17。Gradle wrapper 已锁定
+Gradle 9.4.1，无需系统安装 Gradle。
 
 ```bash
 git clone https://github.com/shiahonb777/web-to-app.git
@@ -348,8 +426,9 @@ cd web-to-app
 ./gradlew assembleDebug
 ```
 
-Release 构建请在 `app/build.gradle.kts` 中配置签名。首次 release 构建会下载
-PHP 二进制；可以提前用 `./gradlew :app:downloadPhpBinary` 缓存好。
+Release 构建请在 `app/build.gradle.kts`（经 `local.properties`）中配置签名。
+服务端运行时（PHP、Node.js、Python、Go、GeckoView 引擎）**不会**打进 APK——
+它们在 App 内首次使用时才下载，以保持宿主体积精简。
 
 ---
 

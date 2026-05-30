@@ -8,14 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 
-
-
-
 object TvUtils {
-
-
-
-
 
     fun isTv(context: Context): Boolean {
 
@@ -24,12 +17,10 @@ object TvUtils {
             return true
         }
 
-
         if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK) ||
             context.packageManager.hasSystemFeature("android.software.leanback")) {
             return true
         }
-
 
         @Suppress("DEPRECATION")
         if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEVISION)) {
@@ -39,10 +30,6 @@ object TvUtils {
         return false
     }
 }
-
-
-
-
 
 @Composable
 fun isRunningOnTv(): Boolean {

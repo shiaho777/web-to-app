@@ -20,20 +20,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.webtoapp.core.disguise.BrowserDisguiseConfig
-import com.webtoapp.core.disguise.BrowserDisguisePreset
-import com.webtoapp.core.disguise.WebGLRenderer
-import com.webtoapp.core.disguise.ScreenProfile
+import com.webtoapp.core.appearance.BrowserDisguiseConfig
+import com.webtoapp.core.appearance.BrowserDisguisePreset
+import com.webtoapp.core.appearance.WebGLRenderer
+import com.webtoapp.core.appearance.ScreenProfile
 import com.webtoapp.core.i18n.Strings
-
-
-
-
-
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,11 +35,9 @@ fun BrowserDisguiseConfigCard(
     var expanded by remember { mutableStateOf(config?.enabled == true) }
     var showAdvanced by remember { mutableStateOf(false) }
 
-
     val currentConfig = config ?: BrowserDisguiseConfig.DISABLED
     var enabled by remember(config) { mutableStateOf(currentConfig.enabled) }
     var preset by remember(config) { mutableStateOf(currentConfig.preset) }
-
 
     var canvasNoise by remember(config) { mutableStateOf(currentConfig.canvasNoise) }
     var webglSpoof by remember(config) { mutableStateOf(currentConfig.webglSpoof) }
@@ -135,7 +124,6 @@ fun BrowserDisguiseConfigCard(
         iframeDisguisePropagation = c.iframeDisguisePropagation
         updateConfig()
     }
-
 
     val coverage = BrowserDisguiseConfig.calculateCoverage(buildConfig() ?: BrowserDisguiseConfig.DISABLED)
     val level = BrowserDisguiseConfig.getDisguiseLevel(coverage)
@@ -249,7 +237,6 @@ fun BrowserDisguiseConfigCard(
                             HorizontalDivider()
                             Spacer(modifier = Modifier.height(16.dp))
 
-
                             Text(Strings.browserDisguisePreset, style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 8.dp))
 
                             val presets = BrowserDisguisePreset.entries.filter { it != BrowserDisguisePreset.OFF }
@@ -301,7 +288,6 @@ fun BrowserDisguiseConfigCard(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-
                             CoverageDashboard(
                                 coverage = coverage,
                                 level = level,
@@ -310,7 +296,6 @@ fun BrowserDisguiseConfigCard(
                             )
 
                             Spacer(modifier = Modifier.height(12.dp))
-
 
                             Surface(
                                 modifier = Modifier
@@ -364,7 +349,6 @@ fun BrowserDisguiseConfigCard(
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-
                                     SectionHeader(Strings.browserDisguiseL3Title)
 
                                     VectorSwitch(Strings.browserDisguiseTimezone, Strings.browserDisguiseTimezoneDesc, timezoneSpoof) {
@@ -385,7 +369,6 @@ fun BrowserDisguiseConfigCard(
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-
                                     SectionHeader(Strings.browserDisguiseL4Title)
 
                                     VectorSwitch(Strings.browserDisguiseMediaDevices, Strings.browserDisguiseMediaDevicesDesc, mediaDevicesSpoof) {
@@ -403,7 +386,6 @@ fun BrowserDisguiseConfigCard(
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-
                                     SectionHeader(Strings.browserDisguiseL5Title)
 
                                     VectorSwitch(Strings.browserDisguisePrototype, Strings.browserDisguisePrototypeDesc, nativeToStringProtection) {
@@ -414,7 +396,6 @@ fun BrowserDisguiseConfigCard(
                                     }
                                 }
                             }
-
 
                             Spacer(modifier = Modifier.height(12.dp))
                             Surface(
@@ -524,7 +505,6 @@ private fun CoverageDashboard(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-
 
             LinearProgressIndicator(
                 progress = { coverage },

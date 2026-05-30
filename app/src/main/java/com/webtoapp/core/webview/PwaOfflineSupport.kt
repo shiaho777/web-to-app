@@ -3,25 +3,9 @@ package com.webtoapp.core.webview
 import android.webkit.WebView
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 object PwaOfflineSupport {
 
     private const val TAG = "PwaOfflineSupport"
-
-
-
 
     enum class CacheStrategy {
 
@@ -31,9 +15,6 @@ object PwaOfflineSupport {
 
         STALE_WHILE_REVALIDATE
     }
-
-
-
 
     data class OfflineConfig(
         val enabled: Boolean = false,
@@ -51,10 +32,6 @@ object PwaOfflineSupport {
         "mp3", "mp4", "webm"
     )
 
-
-
-
-
     fun generateServiceWorkerScript(config: OfflineConfig): String {
         val strategyName = when (config.strategy) {
             CacheStrategy.CACHE_FIRST -> "cache-first"
@@ -68,6 +45,13 @@ object PwaOfflineSupport {
         val maxCacheBytes = config.maxCacheSizeMb.toLong() * 1024 * 1024
 
         return """
+            (function() {
+            // 重复注入守卫：SPA 导航 / 多次 evaluateJavascript 会重复注入本脚本。
+            // 此前 WTA_SW_SCRIPT 用顶层 const 声明，第二次注入即抛
+            // "Identifier 'WTA_SW_SCRIPT' has already been declared"。
+            // 包进 IIFE + 标志位后，const 进入函数作用域，重复注入安全跳过。
+            if (window.__WTA_SW_INJECTED__) return;
+            window.__WTA_SW_INJECTED__ = true;
             const WTA_SW_SCRIPT = `
 const CACHE_NAME = 'wta-offline-v1';
 const STRATEGY = '${strategyName}';
@@ -242,12 +226,9 @@ self.addEventListener('fetch', event => {
                         });
                 });
             })();
+            })();
         """.trimIndent()
     }
-
-
-
-
 
     fun injectServiceWorker(webView: WebView, config: OfflineConfig) {
         if (!config.enabled) return
@@ -258,10 +239,6 @@ self.addEventListener('fetch', event => {
         }
         AppLogger.i(TAG, "PWA offline support injected (strategy: ${config.strategy})")
     }
-
-
-
-
 
     fun generateOfflineFallbackHtml(): String = """
         <!DOCTYPE html>

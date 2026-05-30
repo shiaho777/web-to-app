@@ -26,18 +26,6 @@ import androidx.compose.ui.unit.dp
 import com.webtoapp.ui.theme.*
 import androidx.compose.ui.graphics.Color
 
-
-
-
-
-
-
-
-
-
-
-
-
 @Composable
 fun Modifier.liquidGlass(
     cornerRadius: Dp = 20.dp,
@@ -49,12 +37,10 @@ fun Modifier.liquidGlass(
 ): Modifier {
     val isDark = LocalIsDarkTheme.current
 
-
     val fillColor = if (isDark)
         Color.White.copy(alpha = tintAlpha * 0.8f)
     else
         Color.White.copy(alpha = 0.78f)
-
 
     val borderColor = if (isDark)
         Color.White.copy(alpha = borderAlpha * 0.5f)
@@ -87,10 +73,6 @@ fun Modifier.liquidGlass(
         )
 }
 
-
-
-
-
 @Composable
 fun Modifier.glassBackground(): Modifier {
     val theme = LocalAppTheme.current
@@ -117,9 +99,6 @@ fun Modifier.glassBackground(): Modifier {
     )
 }
 
-
-
-
 @Composable
 fun Modifier.pressScale(
     interactionSource: MutableInteractionSource,
@@ -144,9 +123,6 @@ fun Modifier.pressScale(
         scaleY = scale
     }
 }
-
-
-
 
 @Composable
 fun Modifier.fadeSlideIn(
@@ -181,9 +157,6 @@ fun Modifier.fadeSlideIn(
         translationY = offsetY
     }
 }
-
-
-
 
 @Composable
 fun Modifier.staggeredFadeIn(

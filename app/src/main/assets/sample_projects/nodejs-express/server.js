@@ -1,7 +1,3 @@
-
-
-
-
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -36,7 +32,7 @@ function sendJson(res, data, status = 200) {
 }
 
 const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url, `http:
+  const url = new URL(req.url, `http://${req.headers.host}`);
   const p = url.pathname, m = req.method;
 
   if (m === 'GET' && p === '/') {
@@ -72,7 +68,7 @@ const server = http.createServer(async (req, res) => {
   sendJson(res, { error: 'Not Found' }, 404);
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`✅ Todo on http:
+server.listen(PORT, '0.0.0.0', () => console.log(`✅ Todo on http://0.0.0.0:${PORT}`));
 
 function getPage() {
   return `<!DOCTYPE html>

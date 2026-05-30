@@ -46,8 +46,22 @@ class EngineFileManagerTest {
         val abiDir = manager.getAbiDir(EngineType.GECKOVIEW, abi)
         File(abiDir, "libxul.so").writeBytes(byteArrayOf(1, 2, 3))
 
+        assertThat(manager.isAbiDownloaded(EngineType.GECKOVIEW, abi)).isFalse()
+        assertThat(manager.isEngineDownloaded(EngineType.GECKOVIEW)).isFalse()
+
+        manager.getOmniJaFile(EngineType.GECKOVIEW).writeBytes(byteArrayOf(4, 5, 6))
+
         assertThat(manager.isAbiDownloaded(EngineType.GECKOVIEW, abi)).isTrue()
         assertThat(manager.isEngineDownloaded(EngineType.GECKOVIEW)).isTrue()
+    }
+
+    @Test
+    fun `omni ja presence is tracked independently`() {
+        assertThat(manager.isOmniJaDownloaded(EngineType.GECKOVIEW)).isFalse()
+
+        manager.getOmniJaFile(EngineType.GECKOVIEW).writeBytes(byteArrayOf(1, 2, 3))
+
+        assertThat(manager.isOmniJaDownloaded(EngineType.GECKOVIEW)).isTrue()
     }
 
     @Test

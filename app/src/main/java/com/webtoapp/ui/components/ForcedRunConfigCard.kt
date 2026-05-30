@@ -23,9 +23,6 @@ import com.webtoapp.core.forcedrun.ForcedRunConfig
 import com.webtoapp.core.forcedrun.ForcedRunMode
 import com.webtoapp.core.i18n.Strings
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ForcedRunConfigCard(
@@ -36,19 +33,15 @@ fun ForcedRunConfigCard(
     var enabled by remember(config) { mutableStateOf(config?.enabled ?: false) }
     var mode by remember(config) { mutableStateOf(config?.mode ?: ForcedRunMode.FIXED_TIME) }
 
-
     var startTime by remember(config) { mutableStateOf(config?.startTime ?: "08:00") }
     var endTime by remember(config) { mutableStateOf(config?.endTime ?: "12:00") }
     var activeDays by remember(config) { mutableStateOf(config?.activeDays ?: listOf(1, 2, 3, 4, 5, 6, 7)) }
 
-
     var countdownMinutes by remember(config) { mutableIntStateOf(config?.countdownMinutes ?: 60) }
-
 
     var accessStartTime by remember(config) { mutableStateOf(config?.accessStartTime ?: "08:00") }
     var accessEndTime by remember(config) { mutableStateOf(config?.accessEndTime ?: "22:00") }
     var accessDays by remember(config) { mutableStateOf(config?.accessDays ?: listOf(1, 2, 3, 4, 5, 6, 7)) }
-
 
     var blockSystemUI by remember(config) { mutableStateOf(config?.blockSystemUI ?: true) }
     var blockBackButton by remember(config) { mutableStateOf(config?.blockBackButton ?: true) }
@@ -56,7 +49,6 @@ fun ForcedRunConfigCard(
     var showCountdown by remember(config) { mutableStateOf(config?.showCountdown ?: true) }
     var allowEmergencyExit by remember(config) { mutableStateOf(config?.allowEmergencyExit ?: false) }
     var emergencyPassword by remember(config) { mutableStateOf(config?.emergencyPassword ?: "") }
-
 
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
@@ -172,7 +164,6 @@ fun ForcedRunConfigCard(
                             HorizontalDivider()
                             Spacer(modifier = Modifier.height(16.dp))
 
-
                             Text(
                                 Strings.forcedRunMode,
                                 style = MaterialTheme.typography.bodyMedium,
@@ -220,7 +211,6 @@ fun ForcedRunConfigCard(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-
                             when (mode) {
                                 ForcedRunMode.FIXED_TIME -> {
 
@@ -231,7 +221,6 @@ fun ForcedRunConfigCard(
                                     )
 
                                     Spacer(modifier = Modifier.height(12.dp))
-
 
                                     OutlinedCard(
                                         modifier = Modifier
@@ -264,7 +253,6 @@ fun ForcedRunConfigCard(
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-
                                     OutlinedCard(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -295,7 +283,6 @@ fun ForcedRunConfigCard(
                                     }
 
                                     Spacer(modifier = Modifier.height(12.dp))
-
 
                                     Text(
                                         Strings.activeDays,
@@ -338,7 +325,6 @@ fun ForcedRunConfigCard(
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -364,7 +350,6 @@ fun ForcedRunConfigCard(
                                     )
 
                                     Spacer(modifier = Modifier.height(12.dp))
-
 
                                     OutlinedCard(
                                         modifier = Modifier
@@ -397,7 +382,6 @@ fun ForcedRunConfigCard(
 
                                     Spacer(modifier = Modifier.height(8.dp))
 
-
                                     OutlinedCard(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -429,7 +413,6 @@ fun ForcedRunConfigCard(
 
                                     Spacer(modifier = Modifier.height(12.dp))
 
-
                                     Text(
                                         Strings.accessDays,
                                         style = MaterialTheme.typography.bodyMedium,
@@ -450,13 +433,11 @@ fun ForcedRunConfigCard(
                             HorizontalDivider()
                             Spacer(modifier = Modifier.height(16.dp))
 
-
                             Text(
                                 Strings.advancedOptions,
                                 style = MaterialTheme.typography.titleSmall,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
-
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -473,7 +454,6 @@ fun ForcedRunConfigCard(
                                 )
                             }
 
-
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -489,7 +469,6 @@ fun ForcedRunConfigCard(
                                 )
                             }
 
-
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -504,7 +483,6 @@ fun ForcedRunConfigCard(
                                     }
                                 )
                             }
-
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -522,7 +500,6 @@ fun ForcedRunConfigCard(
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
-
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -569,7 +546,6 @@ fun ForcedRunConfigCard(
             }
         }
     }
-
 
     if (showStartTimePicker) {
         TimePickerDialog(
@@ -619,9 +595,6 @@ fun ForcedRunConfigCard(
         )
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

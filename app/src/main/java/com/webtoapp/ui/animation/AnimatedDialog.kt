@@ -17,12 +17,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.window.DialogProperties
 import com.webtoapp.ui.design.WtaMotion
 
-/**
- * AlertDialog with a refined entrance animation. The older implementation
- * scaled from 0.85 which caused an obvious "pop-in" effect - too playful for
- * a confirmation surface. This version uses a gentle scale from 0.96 plus
- * fade, driven by the Wta motion tokens so it matches the rest of the app.
- */
 @Composable
 fun AnimatedAlertDialog(
     onDismissRequest: () -> Unit,

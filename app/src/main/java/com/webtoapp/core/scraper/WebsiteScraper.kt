@@ -1,6 +1,7 @@
 package com.webtoapp.core.scraper
 
 import android.content.Context
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.HtmlFile
 import com.webtoapp.data.model.HtmlFileType
@@ -15,28 +16,10 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.regex.Pattern
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class WebsiteScraper(private val context: Context) {
 
     companion object {
         private const val TAG = "WebsiteScraper"
-
 
         private const val DEFAULT_MAX_DEPTH = 3
         private const val DEFAULT_MAX_FILES = 500
@@ -45,7 +28,6 @@ class WebsiteScraper(private val context: Context) {
         private const val DEFAULT_CONCURRENCY = 6
         private const val CONNECT_TIMEOUT = 15L
         private const val READ_TIMEOUT = 30L
-
 
         private val HTML_SRC_PATTERN = Pattern.compile(
             """(?:src|href|data-src|data-original|poster)\s*=\s*["']([^"'#]+?)["']""",
@@ -64,7 +46,6 @@ class WebsiteScraper(private val context: Context) {
             Pattern.CASE_INSENSITIVE
         )
 
-
         private val DOWNLOADABLE_EXTENSIONS = setOf(
 
             "html", "htm", "css", "js", "mjs", "json", "xml", "svg", "webmanifest",
@@ -78,16 +59,12 @@ class WebsiteScraper(private val context: Context) {
             "txt", "map", "wasm"
         )
 
-
         private val TEXT_CONTENT_TYPES = setOf(
             "text/html", "text/css", "application/javascript", "text/javascript",
             "application/json", "text/xml", "application/xml", "image/svg+xml",
             "application/manifest+json", "text/plain"
         )
     }
-
-
-
 
     data class ScrapeConfig(
         val url: String,
@@ -102,9 +79,6 @@ class WebsiteScraper(private val context: Context) {
         val skipPatterns: List<String> = emptyList(),
         val timeoutSeconds: Int = 30
     )
-
-
-
 
     data class ScrapeProgress(
         val phase: Phase,
@@ -123,9 +97,6 @@ class WebsiteScraper(private val context: Context) {
         }
     }
 
-
-
-
     sealed class ScrapeResult {
         data class Success(
             val projectDir: File,
@@ -139,7 +110,6 @@ class WebsiteScraper(private val context: Context) {
         data class Error(val message: String, val cause: Exception? = null) : ScrapeResult()
     }
 
-
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(CONNECT_TIMEOUT, TimeUnit.SECONDS)
         .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
@@ -148,7 +118,6 @@ class WebsiteScraper(private val context: Context) {
         .connectionPool(ConnectionPool(DEFAULT_CONCURRENCY, 30, TimeUnit.SECONDS))
         .build()
 
-
     private val downloadedUrls = ConcurrentHashMap<String, String>()
     private val pendingUrls = ConcurrentHashMap<String, Int>()
     private val failedUrls = ConcurrentHashMap<String, String>()
@@ -156,17 +125,9 @@ class WebsiteScraper(private val context: Context) {
     private var totalDownloadedBytes = 0L
     private val downloadedBytesLock = Any()
 
-
     private lateinit var projectDir: File
     private lateinit var baseUrl: URL
     private lateinit var baseHost: String
-
-
-
-
-
-
-
 
     suspend fun scrape(
         config: ScrapeConfig,
@@ -179,7 +140,6 @@ class WebsiteScraper(private val context: Context) {
             baseUrl = URL(config.url)
             baseHost = baseUrl.host
 
-
             val projectId = generateProjectId(config.url)
             projectDir = File(context.filesDir, "scraped_sites/$projectId")
             if (projectDir.exists()) projectDir.deleteRecursively()
@@ -187,13 +147,11 @@ class WebsiteScraper(private val context: Context) {
 
             AppLogger.d(TAG, "Starting scrape: url=${config.url}, projectDir=${projectDir.absolutePath}")
 
-
             downloadedUrls.clear()
             pendingUrls.clear()
             failedUrls.clear()
             fileCounter.set(0)
             totalDownloadedBytes = 0L
-
 
             onProgress(ScrapeProgress(
                 phase = ScrapeProgress.Phase.ANALYZING,
@@ -201,14 +159,13 @@ class WebsiteScraper(private val context: Context) {
                 totalDiscovered = 1,
                 downloadedBytes = 0,
                 currentFile = config.url,
-                message = "分析页面结构..."
+                message = Strings.scrapeAnalyzing
             ))
 
             val entryResult = downloadFile(config.url, 0, config)
             if (entryResult == null) {
-                return@withContext ScrapeResult.Error("无法下载入口页面: ${config.url}")
+                return@withContext ScrapeResult.Error(Strings.scrapeEntryDownloadFailed.format(config.url))
             }
-
 
             val semaphore = kotlinx.coroutines.sync.Semaphore(config.concurrency)
             var iteration = 0
@@ -221,7 +178,6 @@ class WebsiteScraper(private val context: Context) {
                 && System.currentTimeMillis() < deadline
             ) {
                 iteration++
-
 
                 val remainingSlots = config.maxFiles - fileCounter.get()
                 val batch = pendingUrls.entries.toList()
@@ -250,7 +206,7 @@ class WebsiteScraper(private val context: Context) {
                                         totalDiscovered = fileCounter.get() + pendingUrls.size + batch.size,
                                         downloadedBytes = totalSize,
                                         currentFile = url.substringAfterLast("/").take(40),
-                                        message = "下载中: ${fileCounter.get()} 个文件..."
+                                        message = Strings.scrapeDownloadingProgress.format(fileCounter.get())
                                     ))
                                     downloadFile(url, depth, config)
                                 }
@@ -268,18 +224,16 @@ class WebsiteScraper(private val context: Context) {
                 AppLogger.w(TAG, "Scrape timed out after ${config.timeoutSeconds}s, ${fileCounter.get()} files downloaded")
             }
 
-
             onProgress(ScrapeProgress(
                 phase = ScrapeProgress.Phase.REWRITING,
                 downloadedFiles = fileCounter.get(),
                 totalDiscovered = fileCounter.get(),
                 downloadedBytes = totalDownloadedBytes,
                 currentFile = "",
-                message = "重写资源路径..."
+                message = Strings.scrapeRewritingPaths
             ))
 
             rewriteUrls()
-
 
             val files = collectHtmlFiles()
             val entryFileName = downloadedUrls[normalizeUrl(config.url)]
@@ -299,7 +253,7 @@ class WebsiteScraper(private val context: Context) {
                 totalDiscovered = files.size,
                 downloadedBytes = totalDownloadedBytes,
                 currentFile = "",
-                message = "完成: ${files.size} 个文件, ${totalDownloadedBytes / 1024} KB"
+                message = Strings.scrapeComplete.format(files.size, totalDownloadedBytes / 1024)
             ))
 
             ScrapeResult.Success(
@@ -319,14 +273,11 @@ class WebsiteScraper(private val context: Context) {
                 totalDiscovered = fileCounter.get(),
                 downloadedBytes = totalDownloadedBytes,
                 currentFile = "",
-                message = "抓取失败: ${e.message}"
+                message = Strings.scrapeFailed.format(e.message ?: "")
             ))
-            ScrapeResult.Error("抓取失败: ${e.message}", e)
+            ScrapeResult.Error(Strings.scrapeFailed.format(e.message ?: ""), e)
         }
     }
-
-
-
 
     private fun downloadFile(
         urlString: String,
@@ -335,16 +286,13 @@ class WebsiteScraper(private val context: Context) {
     ): String? {
         val normalizedUrl = normalizeUrl(urlString)
 
-
         if (downloadedUrls.containsKey(normalizedUrl)) {
             return downloadedUrls[normalizedUrl]
         }
 
-
         if (config.skipPatterns.any { normalizedUrl.matches(Regex(it)) }) {
             return null
         }
-
 
         if (downloadedUrls.putIfAbsent(normalizedUrl, "__pending__") != null) {
             return downloadedUrls[normalizedUrl]?.takeIf { it != "__pending__" }
@@ -377,7 +325,6 @@ class WebsiteScraper(private val context: Context) {
             val contentType = response.header("Content-Type")?.lowercase() ?: ""
             val contentLength = body.contentLength()
 
-
             if (contentLength > config.maxFileSize) {
                 failedUrls[normalizedUrl] = "Too large: ${contentLength / 1024} KB"
                 downloadedUrls.remove(normalizedUrl)
@@ -385,10 +332,8 @@ class WebsiteScraper(private val context: Context) {
                 return null
             }
 
-
             val data = body.bytes()
             response.close()
-
 
             synchronized(downloadedBytesLock) {
                 if (totalDownloadedBytes + data.size > config.maxTotalSize) {
@@ -399,7 +344,6 @@ class WebsiteScraper(private val context: Context) {
                 totalDownloadedBytes += data.size
             }
 
-
             val localPath = urlToLocalPath(normalizedUrl)
             val localFile = File(projectDir, localPath)
             localFile.parentFile?.mkdirs()
@@ -409,7 +353,6 @@ class WebsiteScraper(private val context: Context) {
             downloadedUrls[normalizedUrl] = localPath
 
             AppLogger.d(TAG, "Downloaded: $localPath (${data.size / 1024} KB) depth=$depth")
-
 
             if (depth < config.maxDepth) {
                 val isTextContent = TEXT_CONTENT_TYPES.any { contentType.contains(it) } ||
@@ -433,9 +376,6 @@ class WebsiteScraper(private val context: Context) {
         }
     }
 
-
-
-
     private fun discoverResources(
         content: String,
         sourceUrl: String,
@@ -456,7 +396,6 @@ class WebsiteScraper(private val context: Context) {
             while (matcher.find()) {
                 matcher.group(1)?.let { discoveredUrls.add(it.trim()) }
             }
-
 
             val srcsetMatcher = SRCSET_PATTERN.matcher(content)
             while (srcsetMatcher.find()) {
@@ -481,13 +420,11 @@ class WebsiteScraper(private val context: Context) {
                 }
             }
 
-
             val importMatcher = CSS_IMPORT_PATTERN.matcher(content)
             while (importMatcher.find()) {
                 importMatcher.group(1)?.let { discoveredUrls.add(it.trim()) }
             }
         }
-
 
         for (rawUrl in discoveredUrls) {
             if (rawUrl.isBlank() || rawUrl.startsWith("data:") || rawUrl.startsWith("javascript:") ||
@@ -498,11 +435,9 @@ class WebsiteScraper(private val context: Context) {
             val resolvedUrl = resolveUrl(rawUrl, sourceUrl) ?: continue
             val normalizedResolved = normalizeUrl(resolvedUrl)
 
-
             if (downloadedUrls.containsKey(normalizedResolved) || pendingUrls.containsKey(normalizedResolved)) {
                 continue
             }
-
 
             val resolvedHost = try { URL(normalizedResolved).host } catch (e: Exception) { continue }
             val isSameDomain = resolvedHost == baseHost || resolvedHost.endsWith(".$baseHost")
@@ -510,7 +445,6 @@ class WebsiteScraper(private val context: Context) {
             if (!isSameDomain && !config.downloadCdnResources) {
                 continue
             }
-
 
             val isPageLink = isHtml && rawUrl !in extractResourceUrls(content)
             if (isPageLink && !config.followLinks) {
@@ -520,7 +454,6 @@ class WebsiteScraper(private val context: Context) {
                 continue
             }
 
-
             val ext = normalizedResolved.substringAfterLast(".").substringBefore("?").lowercase()
             val isResource = ext in DOWNLOADABLE_EXTENSIONS || !isPageLink
 
@@ -529,9 +462,6 @@ class WebsiteScraper(private val context: Context) {
             }
         }
     }
-
-
-
 
     private fun extractResourceUrls(htmlContent: String): Set<String> {
         val resources = mutableSetOf<String>()
@@ -555,13 +485,6 @@ class WebsiteScraper(private val context: Context) {
         return resources
     }
 
-
-
-
-
-
-
-
     private fun rewriteUrls() {
         projectDir.walkTopDown().filter { it.isFile }.forEach { file ->
             val ext = file.extension.lowercase()
@@ -570,8 +493,6 @@ class WebsiteScraper(private val context: Context) {
                     var content = file.readText(Charsets.UTF_8)
                     val originalContent = content
                     var modified = false
-
-
 
                     val sortedEntries = downloadedUrls.entries
                         .filter { it.value != "__pending__" }
@@ -585,8 +506,6 @@ class WebsiteScraper(private val context: Context) {
 
                         val fileRelDir = file.relativeTo(projectDir).parent ?: ""
                         val relativePath = calculateRelativePath(fileRelDir, localPath)
-
-
 
                         val urlVariants = generateUrlVariants(url)
                             .sortedByDescending { it.length }
@@ -609,15 +528,8 @@ class WebsiteScraper(private val context: Context) {
         }
     }
 
-
-
-
     private fun generateUrlVariants(url: String): List<String> {
         val variants = mutableListOf(url)
-
-
-
-
 
         if (url.startsWith("https://")) {
             variants.add(url.removePrefix("https:"))
@@ -625,16 +537,12 @@ class WebsiteScraper(private val context: Context) {
             variants.add(url.removePrefix("http:"))
         }
 
-
         if (url.contains("?")) {
             variants.add(url.substringBefore("?"))
         }
 
         return variants
     }
-
-
-
 
     private fun calculateRelativePath(fromDir: String, toPath: String): String {
         if (fromDir.isEmpty()) return toPath
@@ -653,9 +561,6 @@ class WebsiteScraper(private val context: Context) {
 
         return relativeParts.joinToString("/")
     }
-
-
-
 
     private fun collectHtmlFiles(): List<HtmlFile> {
         return projectDir.walkTopDown()
@@ -678,11 +583,6 @@ class WebsiteScraper(private val context: Context) {
             .toList()
     }
 
-
-
-
-
-
     private fun resolveUrl(rawUrl: String, baseUrlString: String): String? {
         return try {
             val base = URI(baseUrlString)
@@ -695,9 +595,6 @@ class WebsiteScraper(private val context: Context) {
         }
     }
 
-
-
-
     private fun normalizeUrl(url: String): String {
         return try {
             val u = URL(url)
@@ -709,15 +606,11 @@ class WebsiteScraper(private val context: Context) {
         }
     }
 
-
-
-
     private fun urlToLocalPath(url: String): String {
         return try {
             val u = URL(url)
             val host = u.host.replace(":", "_")
             var path = u.path?.trimStart('/') ?: ""
-
 
             if (!u.query.isNullOrEmpty()) {
                 val ext = path.substringAfterLast(".", "")
@@ -730,20 +623,15 @@ class WebsiteScraper(private val context: Context) {
                 }
             }
 
-
             if (path.isEmpty() || path.endsWith("/")) {
                 path += "index.html"
             }
-
 
             if (!path.contains(".") || path.substringAfterLast(".").length > 10) {
                 path += ".html"
             }
 
-
             path = path.replace("[^a-zA-Z0-9/_.-]".toRegex(), "_")
-
-
 
             if (u.host == baseHost || u.host.endsWith(".$baseHost")) {
                 path
@@ -755,9 +643,6 @@ class WebsiteScraper(private val context: Context) {
         }
     }
 
-
-
-
     private fun generateProjectId(url: String): String {
         val host = try { URL(url).host } catch (e: Exception) { "unknown" }
         val hash = md5(url).take(8)
@@ -768,9 +653,6 @@ class WebsiteScraper(private val context: Context) {
         val md = MessageDigest.getInstance("MD5")
         return md.digest(input.toByteArray()).joinToString("") { "%02x".format(it) }
     }
-
-
-
 
     fun getScrapedSites(): List<ScrapedSiteInfo> {
         val sitesDir = File(context.filesDir, "scraped_sites")
@@ -793,9 +675,6 @@ class WebsiteScraper(private val context: Context) {
             ?: emptyList()
     }
 
-
-
-
     fun deleteScrapedSite(projectId: String) {
         val siteDir = File(context.filesDir, "scraped_sites/$projectId")
         if (siteDir.exists()) {
@@ -803,18 +682,12 @@ class WebsiteScraper(private val context: Context) {
         }
     }
 
-
-
-
     fun clearAllScrapedSites() {
         val sitesDir = File(context.filesDir, "scraped_sites")
         if (sitesDir.exists()) {
             sitesDir.deleteRecursively()
         }
     }
-
-
-
 
     data class ScrapedSiteInfo(
         val projectId: String,

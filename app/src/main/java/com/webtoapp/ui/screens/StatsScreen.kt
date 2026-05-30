@@ -34,9 +34,6 @@ import com.webtoapp.data.model.WebApp
 import com.webtoapp.ui.design.WtaBackground
 import com.webtoapp.ui.components.EnhancedElevatedCard
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatsScreen(
@@ -80,7 +77,11 @@ fun StatsScreen(
                 modifier = Modifier.fillMaxSize()
             ) {
 
-                TabRow(selectedTabIndex = selectedTab) {
+                TabRow(
+                    selectedTabIndex = selectedTab,
+
+                    containerColor = Color.Transparent
+                ) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
                             selected = selectedTab == index,
@@ -106,9 +107,6 @@ fun StatsScreen(
     }
 }
 
-
-
-
 @Composable
 private fun UsageStatsTab(
     apps: List<WebApp>,
@@ -130,7 +128,6 @@ private fun UsageStatsTab(
         item {
             OverallStatsCard(overallStats)
         }
-
 
         item {
             Text(
@@ -156,7 +153,6 @@ private fun UsageStatsTab(
                 }
             }
         }
-
 
         item {
             Text(
@@ -186,9 +182,6 @@ private fun UsageStatsTab(
         item { Spacer(Modifier.height(32.dp)) }
     }
 }
-
-
-
 
 @Composable
 private fun OverallStatsCard(stats: OverallStats) {
@@ -257,9 +250,6 @@ private fun StatItem(
     }
 }
 
-
-
-
 @Composable
 private fun UsageStatsCard(
     app: WebApp,
@@ -300,11 +290,9 @@ private fun UsageStatsCard(
 
             Spacer(Modifier.width(12.dp))
 
-
             AppIconSmall(app)
 
             Spacer(Modifier.width(12.dp))
-
 
             Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                 Text(
@@ -320,7 +308,6 @@ private fun UsageStatsCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
@@ -338,9 +325,6 @@ private fun UsageStatsCard(
         }
     }
 }
-
-
-
 
 @Composable
 private fun UsageTimeCard(
@@ -388,9 +372,6 @@ private fun UsageTimeCard(
     }
 }
 
-
-
-
 @Composable
 private fun HealthMonitorTab(
     apps: List<WebApp>,
@@ -408,7 +389,6 @@ private fun HealthMonitorTab(
         item {
             HealthOverviewCard(webApps, recordMap)
         }
-
 
         items(webApps) { app ->
             val record = recordMap[app.id]
@@ -437,9 +417,6 @@ private fun HealthMonitorTab(
         item { Spacer(Modifier.height(32.dp)) }
     }
 }
-
-
-
 
 @Composable
 private fun HealthOverviewCard(
@@ -490,9 +467,6 @@ private fun HealthStatItem(count: Int, label: String, color: Color) {
         )
     }
 }
-
-
-
 
 @Composable
 private fun HealthStatusCard(
@@ -552,7 +526,6 @@ private fun HealthStatusCard(
                     )
                 }
 
-
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = statusColor.copy(alpha = 0.12f)
@@ -566,7 +539,6 @@ private fun HealthStatusCard(
                     )
                 }
             }
-
 
             if (record != null && record.status != HealthStatus.UNKNOWN) {
                 Spacer(Modifier.height(8.dp))
@@ -603,9 +575,6 @@ private fun HealthStatusCard(
     }
 }
 
-
-
-
 @Composable
 private fun EmptyStatsCard() {
     EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -632,9 +601,6 @@ private fun EmptyStatsCard() {
         }
     }
 }
-
-
-
 
 @Composable
 private fun AppIconSmall(app: WebApp) {
@@ -668,7 +634,7 @@ private fun AppIconSmall(app: WebApp) {
                 AppType.PHP_APP -> R.drawable.ic_type_php
                 AppType.PYTHON_APP -> R.drawable.ic_type_python
                 AppType.GO_APP -> R.drawable.ic_type_go
-                AppType.MULTI_WEB -> R.drawable.ic_type_web
+                AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
             }
             Icon(
                 painterResource(defaultIconRes), null,

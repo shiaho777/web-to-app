@@ -1,27 +1,6 @@
 package com.webtoapp.core.extension
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 object ChromeExtensionPolyfill {
-
-
-
-
-
-
-
-
 
     fun generatePolyfill(
         extensionId: String,

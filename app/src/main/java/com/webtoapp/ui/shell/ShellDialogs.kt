@@ -17,9 +17,6 @@ import com.webtoapp.ui.components.announcement.toUiTemplate
 import com.webtoapp.ui.splash.ActivationDialog
 import kotlinx.coroutines.launch
 
-
-
-
 @Composable
 fun ShellActivationDialog(
     config: ShellConfig,
@@ -55,9 +52,6 @@ fun ShellActivationDialog(
     )
 }
 
-
-
-
 @Composable
 fun ShellAnnouncementDialog(
     config: ShellConfig,
@@ -65,7 +59,6 @@ fun ShellAnnouncementDialog(
 ) {
     val context = LocalContext.current
     val announcement = WebToAppApplication.announcement
-
 
     val shellAnnouncement = Announcement(
         title = config.announcementTitle,
@@ -111,9 +104,6 @@ fun ShellAnnouncementDialog(
         }
     )
 }
-
-
-
 
 @Composable
 fun ShellForcedRunPermissionDialog(

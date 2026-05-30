@@ -466,7 +466,7 @@ fun WtaChoiceRow(
             )
             Spacer(modifier = Modifier.width(4.dp))
         }
-        // 当 isExpanded 被传入时，箭头带旋转动画（展开 180°）
+
         val rotation by androidx.compose.animation.core.animateFloatAsState(
             targetValue = if (isExpanded == true) 180f else 0f,
             animationSpec = WtaMotion.settleSpring(),

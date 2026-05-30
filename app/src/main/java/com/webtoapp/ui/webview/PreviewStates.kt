@@ -1,8 +1,5 @@
 package com.webtoapp.ui.webview
 
-
-
-
 sealed class WordPressPreviewState {
     object Idle : WordPressPreviewState()
     object CheckingDeps : WordPressPreviewState()
@@ -13,9 +10,6 @@ sealed class WordPressPreviewState {
     data class Error(val message: String) : WordPressPreviewState()
 }
 
-
-
-
 sealed class PhpAppPreviewState {
     object Idle : PhpAppPreviewState()
     object CheckingDeps : PhpAppPreviewState()
@@ -24,9 +18,6 @@ sealed class PhpAppPreviewState {
     data class Ready(val url: String) : PhpAppPreviewState()
     data class Error(val message: String) : PhpAppPreviewState()
 }
-
-
-
 
 sealed class PythonAppPreviewState {
     object Idle : PythonAppPreviewState()
@@ -37,18 +28,14 @@ sealed class PythonAppPreviewState {
     data class Error(val message: String) : PythonAppPreviewState()
 }
 
-
-
-
 sealed class NodeJsAppPreviewState {
     object Idle : NodeJsAppPreviewState()
     object Starting : NodeJsAppPreviewState()
+
+    object StartingServer : NodeJsAppPreviewState()
     data class Ready(val url: String) : NodeJsAppPreviewState()
     data class Error(val message: String) : NodeJsAppPreviewState()
 }
-
-
-
 
 sealed class GoAppPreviewState {
     object Idle : GoAppPreviewState()
@@ -57,9 +44,6 @@ sealed class GoAppPreviewState {
     data class Ready(val url: String) : GoAppPreviewState()
     data class Error(val message: String) : GoAppPreviewState()
 }
-
-
-
 
 fun formatWpBytes(bytes: Long): String {
     if (bytes <= 0) return "0 B"

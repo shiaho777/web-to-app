@@ -5,10 +5,6 @@ import org.junit.Test
 
 class PwaAnalyzerTest {
 
-
-
-
-
     @Test
     fun `extractHost returns host from https URL`() {
         assertThat(PwaAnalyzer.extractHost("https://www.example.com/path")).isEqualTo("www.example.com")
@@ -34,10 +30,6 @@ class PwaAnalyzerTest {
     fun `extractHost auto-prepends https for bare domain`() {
         assertThat(PwaAnalyzer.extractHost("example.com")).isEqualTo("example.com")
     }
-
-
-
-
 
     @Test
     fun `suggestDeepLinkHosts includes original URL host`() {

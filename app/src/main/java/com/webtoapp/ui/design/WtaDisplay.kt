@@ -34,10 +34,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/**
- * A compact chip for metadata: category tags, versions, counters. Replaces InfoChip
- * variants across the app.
- */
 @Composable
 fun WtaInfoChip(
     label: String,
@@ -74,9 +70,6 @@ fun WtaInfoChip(
     }
 }
 
-/**
- * A stat block for dashboards: big number + small label on a tinted background.
- */
 @Composable
 fun WtaStatItem(
     value: String,
@@ -106,9 +99,6 @@ fun WtaStatItem(
     }
 }
 
-/**
- * Icon plate + title: used as a card header or section lead. Replaces IconTitleRow.
- */
 @Composable
 fun WtaIconTitle(
     icon: ImageVector,
@@ -157,9 +147,6 @@ fun WtaIconTitle(
     }
 }
 
-/**
- * Full-screen loading state. Replaces LoadingPlaceholder.
- */
 @Composable
 fun WtaLoadingState(
     modifier: Modifier = Modifier,
@@ -187,9 +174,6 @@ fun WtaLoadingState(
     }
 }
 
-/**
- * Full-screen error state with retry. Replaces ErrorPlaceholder.
- */
 @Composable
 fun WtaErrorState(
     message: String,
@@ -240,9 +224,6 @@ fun WtaErrorState(
     }
 }
 
-/**
- * Full-screen empty state (in-content, not a card). Replaces EmptyStatePlaceholder.
- */
 @Composable
 fun WtaFullEmptyState(
     title: String,
@@ -298,10 +279,6 @@ fun WtaFullEmptyState(
     }
 }
 
-/**
- * 1px divider with themed alpha. A consistent alternative to HorizontalDivider call
- * sites sprinkled across screens.
- */
 @Composable
 fun WtaDivider(
     modifier: Modifier = Modifier,

@@ -10,21 +10,6 @@ import java.net.URLEncoder
 import org.json.JSONArray
 import org.json.JSONObject
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class TranslateBridge(
     private val webView: WebView,
     private val scope: CoroutineScope
@@ -33,7 +18,6 @@ class TranslateBridge(
         private const val TAG = "TranslateBridge"
         const val JS_INTERFACE_NAME = "_nativeTranslate"
 
-
         enum class TranslateEngine(val displayName: String) {
             GOOGLE("Google Translate"),
             MYMEMORY("MyMemory"),
@@ -41,12 +25,10 @@ class TranslateBridge(
             LINGVA("Lingva Translate");
         }
 
-
         private const val GOOGLE_API = "https://translate.googleapis.com/translate_a/single"
         private const val MYMEMORY_API = "https://api.mymemory.translated.net/get"
         private const val LIBRE_API = "https://libretranslate.com/translate"
         private const val LINGVA_API = "https://lingva.ml/api/v1"
-
 
         private const val ENGINE_FAILURE_THRESHOLD = 3
 
@@ -56,28 +38,18 @@ class TranslateBridge(
         private const val RETRY_DELAY_MS = 200L
     }
 
-
     @Volatile
     private var activeEngineIndex = 0
 
-
     private val failureCounts = IntArray(TranslateEngine.entries.size)
-
 
     private val engines = TranslateEngine.entries.toTypedArray()
 
-
     private fun currentEngine(): TranslateEngine = engines[activeEngineIndex]
-
-
-
 
     private fun recordSuccess(engine: TranslateEngine) {
         failureCounts[engine.ordinal] = 0
     }
-
-
-
 
     private fun recordFailure(engine: TranslateEngine) {
         failureCounts[engine.ordinal]++
@@ -88,19 +60,12 @@ class TranslateBridge(
         }
     }
 
-
-
-
-
-
-
     @JavascriptInterface
     fun translate(textsJson: String, targetLang: String, callbackId: String) {
         scope.launch(Dispatchers.IO) {
             try {
                 val texts = JSONArray(textsJson)
                 val results = mutableListOf<String>()
-
 
                 val batchSize = 10
                 for (i in 0 until texts.length() step batchSize) {
@@ -111,7 +76,6 @@ class TranslateBridge(
                     val translated = translateBatchWithFallback(batch, targetLang)
                     results.addAll(translated)
                 }
-
 
                 val resultsJson = JSONArray(results).toString()
                     .replace("\\", "\\\\")
@@ -137,9 +101,6 @@ class TranslateBridge(
         }
     }
 
-
-
-
     @JavascriptInterface
     fun getEngineStatus(): String {
         val status = JSONObject().apply {
@@ -157,9 +118,6 @@ class TranslateBridge(
         return status.toString()
     }
 
-
-
-
     @JavascriptInterface
     fun setEngine(engineName: String) {
         val engine = engines.find {
@@ -173,12 +131,8 @@ class TranslateBridge(
         }
     }
 
-
-
-
     private suspend fun translateBatchWithFallback(texts: List<String>, targetLang: String): List<String> {
         if (texts.isEmpty()) return emptyList()
-
 
         val attemptOrder = (0 until engines.size).map { offset ->
             engines[(activeEngineIndex + offset) % engines.size]
@@ -206,14 +160,9 @@ class TranslateBridge(
             }
         }
 
-
         AppLogger.e(TAG, "所有翻译引擎均失败，返回原文")
         return texts
     }
-
-
-
-
 
     private fun translateViaGoogle(texts: List<String>, targetLang: String): List<String> {
         val combined = texts.joinToString("\n")
@@ -248,10 +197,8 @@ class TranslateBridge(
                 sb.append(item.getString(0))
             }
 
-
             val parts = sb.toString().split("\n")
             results.addAll(parts)
-
 
             while (results.size < expectedCount) {
                 results.add("")
@@ -263,12 +210,7 @@ class TranslateBridge(
         return results
     }
 
-
-
-
-
     private fun translateViaMyMemory(texts: List<String>, targetLang: String): List<String> {
-
 
         val combined = texts.joinToString("\n")
         val encoded = URLEncoder.encode(combined, "UTF-8")
@@ -308,10 +250,6 @@ class TranslateBridge(
         }
         return results
     }
-
-
-
-
 
     private fun translateViaLibre(texts: List<String>, targetLang: String): List<String> {
         val combined = texts.joinToString("\n")
@@ -359,10 +297,6 @@ class TranslateBridge(
         }
         return results
     }
-
-
-
-
 
     private fun translateViaLingva(texts: List<String>, targetLang: String): List<String> {
         val combined = texts.joinToString("\n")

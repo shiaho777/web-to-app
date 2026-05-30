@@ -1,0 +1,46 @@
+<!--
+  网站离线包图标。
+  视觉语义：云朵 + 向下箭头，对应"把整站从网上抓下来打包"。
+  风格：与 ic_type_html 等同款细笔触线条，保持"纸质感"。
+
+  约束：
+  - 只用 strokeColor，fillColor 一律透明 —— 让 Compose 的 Icon(tint=...)
+    能正确单色化，不会出现实心黑块。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- ========= 云朵轮廓 =========
+         由 4 段弧组成的标准云型，左右各一个小弧 + 中间两个大弧。 -->
+    <path
+        android:pathData="
+            M 14 32
+            A 6 6 0 0 1 14 20
+            A 8 8 0 0 1 28 18
+            A 6 6 0 0 1 36 22
+            A 5 5 0 0 1 36 32
+            Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.6"
+        android:strokeLineJoin="round"/>
+
+    <!-- ========= 向下箭头（贴在云朵下方） =========
+         竖线 + V 形箭头尖 -->
+    <path
+        android:pathData="M 25 28 V 40"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M 20 35 L 25 40 L 30 35"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"/>
+</vector>

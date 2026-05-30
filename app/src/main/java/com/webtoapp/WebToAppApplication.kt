@@ -32,9 +32,6 @@ import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.logger.Level
 
-
-
-
 class WebToAppApplication : Application(), ImageLoaderFactory {
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -43,7 +40,6 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
     private var shellAnnouncementManager: AnnouncementManager? = null
     private var shellAdBlocker: AdBlocker? = null
     private var shellModeManagerLocal: ShellModeManager? = null
-
 
     val database: AppDatabase by inject()
     val webAppRepository: WebAppRepository by inject()
@@ -60,12 +56,21 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
         instance = this
         Strings.initialize(this)
 
+        if (isNodeJsProcess()) {
+            try {
+                AppLogger.init(this)
+                AppLogger.system("Application", ":nodejs 子进程 onCreate (跳过宿主重型 init)")
+            } catch (e: Exception) {
+                android.util.Log.e("WebToAppApplication", ":nodejs 子进程 logger init 失败", e)
+            }
+            return
+        }
+
         if (BuildConfig.SHELL_RUNTIME_ONLY) {
             initShellRuntime()
             AppLogger.system("Application", "onCreate completed (shell)")
             return
         }
-
 
         if (GlobalContext.getOrNull() == null) {
             startKoin {
@@ -134,9 +139,6 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
         }
     }
 
-
-
-
     private fun clearAppCaches() {
         if (BuildConfig.SHELL_RUNTIME_ONLY) {
             try {
@@ -151,9 +153,6 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
 
         appStartupManager?.clearCaches()
     }
-
-
-
 
     private fun cleanupSingletons() {
         try {
@@ -186,8 +185,23 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
         }
     }
 
-
-
+    private fun isNodeJsProcess(): Boolean {
+        return try {
+            val processName = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                Application.getProcessName()
+            } else {
+                runCatching {
+                    val am = getSystemService(android.content.Context.ACTIVITY_SERVICE)
+                        as android.app.ActivityManager
+                    val pid = android.os.Process.myPid()
+                    am.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName
+                }.getOrNull()
+            }
+            processName?.endsWith(":nodejs") == true
+        } catch (_: Exception) {
+            false
+        }
+    }
 
     override fun newImageLoader(): ImageLoader = OptimizedImageLoader.get(this)
 
@@ -195,9 +209,6 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
         private lateinit var instance: WebToAppApplication
 
         fun getInstance(): WebToAppApplication = instance
-
-
-
 
         @Deprecated("编辑器侧请使用 Koin 注入: val repo: WebAppRepository by inject()", ReplaceWith("org.koin.java.KoinJavaComponent.get(WebAppRepository::class.java)"))
         val repository: WebAppRepository

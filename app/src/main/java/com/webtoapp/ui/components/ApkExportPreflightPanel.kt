@@ -8,6 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import com.webtoapp.core.apkbuilder.ApkExportPreflightReport
 import com.webtoapp.core.apkbuilder.ApkExportPreflightSeverity
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaRowTone
 import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaSettingCard
@@ -23,13 +24,13 @@ fun ApkExportPreflightPanel(report: ApkExportPreflightReport) {
         else -> WtaStatusTone.Success
     }
     val message = when {
-        report.hasErrors -> "发现 ${report.errors.size} 个阻塞问题，修复后才能开始构建。"
-        report.warnings.isNotEmpty() -> "发现 ${report.warnings.size} 个非阻塞提醒，可以继续构建。"
-        else -> "导出前检查通过。"
+        report.hasErrors -> Strings.apkExportPreflightBlocked.format(report.errors.size)
+        report.warnings.isNotEmpty() -> Strings.apkExportPreflightWarnings.format(report.warnings.size)
+        else -> Strings.apkExportPreflightPassed
     }
 
     WtaStatusBanner(
-        title = "导出前检查",
+        title = Strings.apkExportPreflightTitle,
         message = message,
         tone = tone
     )
@@ -53,7 +54,11 @@ fun ApkExportPreflightPanel(report: ApkExportPreflightReport) {
                     }
                 ) {
                     Text(
-                        text = if (issue.severity == ApkExportPreflightSeverity.Error) "阻塞" else "提醒",
+                        text = if (issue.severity == ApkExportPreflightSeverity.Error) {
+                            Strings.apkExportPreflightSeverityBlocking
+                        } else {
+                            Strings.apkExportPreflightSeverityNotice
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = if (issue.severity == ApkExportPreflightSeverity.Error) {
                             MaterialTheme.colorScheme.error

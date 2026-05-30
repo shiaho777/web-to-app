@@ -13,50 +13,15 @@ import kotlinx.coroutines.withContext
 import java.io.*
 import java.util.zip.*
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 object PerformanceOptimizer {
 
     private const val TAG = "PerformanceOptimizer"
 
-
     private const val CACHE_DIR = "perf_optimize_cache"
-
 
     private const val IMAGE_COMPRESS_THRESHOLD = 10 * 1024L
 
-
     private const val CODE_MINIFY_THRESHOLD = 512L
-
-
-
 
     data class OptimizeConfig(
 
@@ -67,22 +32,16 @@ object PerformanceOptimizer {
         val minifySvg: Boolean = true,
         val removeUnusedResources: Boolean = true,
 
-
         val parallelProcessing: Boolean = true,
         val enableCache: Boolean = true,
-
 
         val injectPreloadHints: Boolean = true,
         val injectLazyLoading: Boolean = true,
         val optimizeScripts: Boolean = true,
         val injectDnsPrefetch: Boolean = true,
 
-
         val injectPerformanceScript: Boolean = true
     )
-
-
-
 
     data class OptimizeStats(
         val originalSize: Long = 0,
@@ -98,12 +57,6 @@ object PerformanceOptimizer {
         val savedBytes: Long get() = originalSize - optimizedSize
         val savedPercent: Float get() = if (originalSize > 0) (savedBytes * 100f / originalSize) else 0f
     }
-
-
-
-
-
-
 
     suspend fun optimizeResources(
         context: Context,
@@ -134,7 +87,6 @@ object PerformanceOptimizer {
 
         val esbuildAvailable = NativeNodeEngine.isAvailable(context)
 
-
         val imageFiles = mutableListOf<File>()
         val jsFiles = mutableListOf<File>()
         val cssFiles = mutableListOf<File>()
@@ -151,7 +103,6 @@ object PerformanceOptimizer {
                 "html", "htm" -> htmlFiles.add(file)
             }
         }
-
 
         if (config.compressImages && imageFiles.isNotEmpty()) {
             onProgress("${Strings.perfCompressImages} (${imageFiles.size})...", 0.1f)
@@ -191,7 +142,6 @@ object PerformanceOptimizer {
             }
         }
 
-
         if (config.minifyCode) {
             onProgress(Strings.perfCompressCode, 0.4f)
 
@@ -230,7 +180,6 @@ object PerformanceOptimizer {
             }
         }
 
-
         if (config.minifySvg && svgFiles.isNotEmpty()) {
             onProgress(Strings.perfOptimizeSvg, 0.7f)
             for (svgFile in svgFiles) {
@@ -242,7 +191,6 @@ object PerformanceOptimizer {
             }
         }
 
-
         if (htmlFiles.isNotEmpty()) {
             onProgress(Strings.perfOptimizeHtml, 0.8f)
             for (htmlFile in htmlFiles) {
@@ -253,7 +201,6 @@ object PerformanceOptimizer {
                 }
             }
         }
-
 
         optimizedSize = allFiles.filter { it.exists() }.sumOf { it.length() }
 
@@ -269,10 +216,6 @@ object PerformanceOptimizer {
             errors = errors
         )
     }
-
-
-
-
 
     suspend fun optimizeFileForApk(
         context: Context,
@@ -311,10 +254,6 @@ object PerformanceOptimizer {
         }
     }
 
-
-
-
-
     suspend fun optimizeBytesForApk(
         context: Context,
         fileName: String,
@@ -352,33 +291,19 @@ object PerformanceOptimizer {
         }
     }
 
-
-
-
-
-
     fun getCacheDir(context: Context): File {
         return File(context.cacheDir, CACHE_DIR).apply { mkdirs() }
     }
-
-
-
 
     fun isCached(context: Context, file: File): Boolean {
         val cacheFile = getCachedFile(context, file)
         return cacheFile.exists() && cacheFile.lastModified() >= file.lastModified()
     }
 
-
-
-
     private fun getCachedFile(context: Context, file: File): File {
         val hash = "${file.absolutePath.hashCode()}_${file.length()}_${file.lastModified()}"
         return File(getCacheDir(context), hash)
     }
-
-
-
 
     fun clearCache(context: Context): Long {
         val cacheDir = getCacheDir(context)
@@ -387,9 +312,6 @@ object PerformanceOptimizer {
         cacheDir.mkdirs()
         return size
     }
-
-
-
 
     fun getRemovableEntries(entryName: String, appType: String): Boolean {
 
@@ -402,11 +324,9 @@ object PerformanceOptimizer {
             }
         }
 
-
         if (entryName.startsWith("assets/template/") && appType != "FRONTEND") {
             return true
         }
-
 
         if (entryName.startsWith("assets/bgm/default") && appType != "WEB") {
             return true
@@ -414,12 +334,6 @@ object PerformanceOptimizer {
 
         return false
     }
-
-
-
-
-
-
 
     fun generatePerformanceScript(): String {
         return """
@@ -543,12 +457,8 @@ object PerformanceOptimizer {
 """.trimIndent()
     }
 
-
-
-
     fun generatePreloadHead(htmlContent: String): String {
         val hints = StringBuilder()
-
 
         val urlRegex = Regex("""(https?://[^/"'\s>]+)""")
         val domains = urlRegex.findAll(htmlContent)
@@ -560,7 +470,6 @@ object PerformanceOptimizer {
             hints.appendLine("""<link rel="dns-prefetch" href="$domain">""")
             hints.appendLine("""<link rel="preconnect" href="$domain" crossorigin>""")
         }
-
 
         val fontRegex = Regex("""url\(['"]?([^'")\s]+\.woff2?)['"]?\)""")
         val fonts = fontRegex.findAll(htmlContent)
@@ -575,13 +484,9 @@ object PerformanceOptimizer {
         return hints.toString()
     }
 
-
-
-
     private fun optimizeHtml(htmlFile: File, config: OptimizeConfig): Boolean {
         val content = htmlFile.readText()
         var modified = content
-
 
         if (config.injectDnsPrefetch) {
             val preloadHead = generatePreloadHead(content)
@@ -593,16 +498,13 @@ object PerformanceOptimizer {
             }
         }
 
-
         if (config.injectLazyLoading) {
             modified = injectLazyLoading(modified)
         }
 
-
         if (config.optimizeScripts) {
             modified = optimizeScriptTags(modified)
         }
-
 
         if (!modified.contains("viewport", ignoreCase = true)) {
             val headIdx = modified.indexOf("<head>", ignoreCase = true)
@@ -619,9 +521,6 @@ object PerformanceOptimizer {
         }
         return false
     }
-
-
-
 
     private fun injectLazyLoading(html: String): String {
 
@@ -642,9 +541,6 @@ object PerformanceOptimizer {
         }
     }
 
-
-
-
     private fun optimizeScriptTags(html: String): String {
         val scriptRegex = Regex("""<script([^>]*)\ssrc=["']([^"']+)["']([^>]*)>""", RegexOption.IGNORE_CASE)
         return scriptRegex.replace(html) { match ->
@@ -664,15 +560,8 @@ object PerformanceOptimizer {
         }
     }
 
-
-
-
-
-
-
     private fun compressImage(file: File, config: OptimizeConfig): Long {
         val originalSize = file.length()
-
 
         val options = BitmapFactory.Options().apply {
             inSampleSize = 1
@@ -686,7 +575,6 @@ object PerformanceOptimizer {
 
         try {
             val tempFile = File(file.parent, "${file.nameWithoutExtension}_opt.${file.extension}")
-
 
             var format: Bitmap.CompressFormat
             var quality: Int
@@ -708,7 +596,6 @@ object PerformanceOptimizer {
                     webpFile.delete()
                 }
             }
-
 
             format = when (file.extension.lowercase()) {
                 "png" -> Bitmap.CompressFormat.PNG
@@ -733,9 +620,6 @@ object PerformanceOptimizer {
         }
     }
 
-
-
-
     private fun compressImageBytes(data: ByteArray, ext: String, config: OptimizeConfig): ByteArray? {
         val bitmap = BitmapFactory.decodeByteArray(data, 0, data.size) ?: return null
         try {
@@ -752,9 +636,6 @@ object PerformanceOptimizer {
             bitmap.recycle()
         }
     }
-
-
-
 
     private suspend fun minifyWithEsbuild(context: Context, file: File): Boolean {
         val tempOutput = File(file.parentFile, "${file.nameWithoutExtension}.min.${file.extension}")
@@ -785,9 +666,6 @@ object PerformanceOptimizer {
         }
     }
 
-
-
-
     private suspend fun minifyCodeBytes(
         context: Context,
         data: ByteArray,
@@ -813,7 +691,6 @@ object PerformanceOptimizer {
             }
         }
 
-
         val minified = when (type) {
             "js" -> minifyJsContent(content)
             "css" -> minifyCssContent(content)
@@ -825,9 +702,6 @@ object PerformanceOptimizer {
         }
     }
 
-
-
-
     private fun minifyJsFallback(file: File): Boolean {
         val content = file.readText()
         val minified = minifyJsContent(content) ?: return false
@@ -838,9 +712,6 @@ object PerformanceOptimizer {
         return false
     }
 
-
-
-
     private fun minifyCssFallback(file: File): Boolean {
         val content = file.readText()
         val minified = minifyCssContent(content) ?: return false
@@ -850,9 +721,6 @@ object PerformanceOptimizer {
         }
         return false
     }
-
-
-
 
     private fun minifyJsContent(content: String): String? {
         if (content.length < 100) return null
@@ -868,9 +736,6 @@ object PerformanceOptimizer {
         return result.trim()
     }
 
-
-
-
     private fun minifyCssContent(content: String): String? {
         if (content.length < 100) return null
         var result = content
@@ -884,9 +749,6 @@ object PerformanceOptimizer {
         result = result.replace(Regex(""";}"""), "}")
         return result.trim()
     }
-
-
-
 
     private fun minifySvg(file: File): Boolean {
         val content = file.readText()

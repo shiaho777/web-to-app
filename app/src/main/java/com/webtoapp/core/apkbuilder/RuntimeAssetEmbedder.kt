@@ -5,19 +5,7 @@ import com.webtoapp.util.TextFileClassifier
 import java.io.File
 import java.util.zip.ZipOutputStream
 
-
-
-
-
-
-
-
-
-
 object RuntimeAssetEmbedder {
-
-
-
 
     data class EmbedConfig(
         val runtimeName: String,
@@ -25,17 +13,8 @@ object RuntimeAssetEmbedder {
         val excludeDirs: Set<String>,
         val runtimeType: String? = null,
 
-
-
-
-
         val fileHook: ((zipOut: ZipOutputStream, assetPath: String, file: File) -> Boolean)? = null
     )
-
-
-
-
-
 
     fun embedProjectFiles(
         zipOut: ZipOutputStream,
@@ -59,7 +38,6 @@ object RuntimeAssetEmbedder {
                 } else {
                     try {
                         val assetPath = "${config.assetPrefix}$relativePath"
-
 
                         val handled = config.fileHook?.invoke(zipOut, assetPath, file) ?: false
                         if (!handled) {
@@ -86,8 +64,6 @@ object RuntimeAssetEmbedder {
 
         return fileCount to totalSize
     }
-
-
 
     fun nodeJsConfig(): EmbedConfig = EmbedConfig(
         runtimeName = "nodejs",
@@ -139,11 +115,6 @@ object RuntimeAssetEmbedder {
         excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
         runtimeType = "nodejs"
     )
-
-
-
-
-
 
     fun embedPythonStdlib(
         zipOut: ZipOutputStream,

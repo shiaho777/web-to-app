@@ -45,9 +45,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun BgmSelectorDialog(
@@ -58,65 +55,46 @@ fun BgmSelectorDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-
     var availableBgm by remember { mutableStateOf<List<BgmItem>>(emptyList()) }
-
 
     var selectedPlaylist by remember { mutableStateOf(currentConfig.playlist) }
 
-
     var playMode by remember { mutableStateOf(currentConfig.playMode) }
-
 
     var volume by remember { mutableFloatStateOf(currentConfig.volume) }
 
-
     var autoPlay by remember { mutableStateOf(currentConfig.autoPlay) }
-
 
     var showLyrics by remember { mutableStateOf(currentConfig.showLyrics) }
 
-
     var selectedTheme by remember { mutableStateOf(currentConfig.lrcTheme ?: PresetLrcThemes.themes.first()) }
-
 
     var previewingBgm by remember { mutableStateOf<BgmItem?>(null) }
     var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
 
-
     var showUploadDialog by remember { mutableStateOf(false) }
-
 
     var showOnlineMusicDialog by remember { mutableStateOf(false) }
 
-
     var selectedTagFilter by remember { mutableStateOf<BgmTag?>(null) }
-
 
     var editingTagsBgm by remember { mutableStateOf<BgmItem?>(null) }
 
-
     var showThemeDialog by remember { mutableStateOf(false) }
-
 
     var showLrcPreviewDialog by remember { mutableStateOf(false) }
     var previewLrcBgm by remember { mutableStateOf<BgmItem?>(null) }
 
-
     var showManualAlignerDialog by remember { mutableStateOf(false) }
     var manualAlignerBgm by remember { mutableStateOf<BgmItem?>(null) }
-
 
     var showLrcEditorDialog by remember { mutableStateOf(false) }
     var lrcEditorBgm by remember { mutableStateOf<BgmItem?>(null) }
 
-
     var draggedItemIndex by remember { mutableIntStateOf(-1) }
     var draggedOverItemIndex by remember { mutableIntStateOf(-1) }
 
-
     val snackbarHostState = remember { SnackbarHostState() }
-
 
     val refreshBgmList: () -> Unit = {
         scope.launch {
@@ -130,20 +108,17 @@ fun BgmSelectorDialog(
         }
     }
 
-
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             availableBgm = BgmStorage.scanAllBgm(context)
         }
     }
 
-
     DisposableEffect(Unit) {
         onDispose {
             mediaPlayer?.release()
         }
     }
-
 
     fun previewBgm(bgm: BgmItem) {
         if (previewingBgm == bgm) {
@@ -218,7 +193,6 @@ fun BgmSelectorDialog(
                         }
                     }
                 )
-
 
                 Column(
                     modifier = Modifier
@@ -296,7 +270,6 @@ fun BgmSelectorDialog(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -329,7 +302,6 @@ fun BgmSelectorDialog(
                             }
                         }
                     }
-
 
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -452,7 +424,6 @@ fun BgmSelectorDialog(
                     }
                 }
 
-
                 HorizontalDivider()
                 Column(
                     modifier = Modifier
@@ -487,7 +458,6 @@ fun BgmSelectorDialog(
                         }
                     }
 
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -506,7 +476,6 @@ fun BgmSelectorDialog(
                         )
                     }
 
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -516,7 +485,6 @@ fun BgmSelectorDialog(
                         WtaSwitch(checked = autoPlay, onCheckedChange = { autoPlay = it })
                     }
 
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -525,7 +493,6 @@ fun BgmSelectorDialog(
                         Text(Strings.showLyrics, style = MaterialTheme.typography.bodyMedium)
                         WtaSwitch(checked = showLyrics, onCheckedChange = { showLyrics = it })
                     }
-
 
                     if (showLyrics) {
                         Row(
@@ -549,7 +516,6 @@ fun BgmSelectorDialog(
                 }
                 }
 
-
                 SnackbarHost(
                     hostState = snackbarHostState,
                     modifier = Modifier
@@ -572,7 +538,6 @@ fun BgmSelectorDialog(
         }
     }
 
-
     if (showUploadDialog) {
         UploadBgmDialog(
             onDismiss = { showUploadDialog = false },
@@ -587,7 +552,6 @@ fun BgmSelectorDialog(
         )
     }
 
-
     if (showOnlineMusicDialog) {
         OnlineMusicSearchDialog(
             onDismiss = { showOnlineMusicDialog = false },
@@ -600,7 +564,6 @@ fun BgmSelectorDialog(
             }
         )
     }
-
 
     editingTagsBgm?.let { bgm ->
         EditTagsDialog(
@@ -618,7 +581,6 @@ fun BgmSelectorDialog(
         )
     }
 
-
     if (showThemeDialog) {
         LrcThemeDialog(
             currentTheme = selectedTheme,
@@ -629,7 +591,6 @@ fun BgmSelectorDialog(
             }
         )
     }
-
 
     if (showLrcPreviewDialog && previewLrcBgm != null) {
         LrcPreviewDialog(
@@ -647,7 +608,6 @@ fun BgmSelectorDialog(
             }
         )
     }
-
 
     if (showManualAlignerDialog && manualAlignerBgm != null) {
         ManualLrcAlignerDialog(
@@ -679,7 +639,6 @@ fun BgmSelectorDialog(
         )
     }
 
-
     if (showLrcEditorDialog && lrcEditorBgm != null && lrcEditorBgm!!.lrcData != null) {
         LrcEditorDialog(
             bgm = lrcEditorBgm!!,
@@ -710,9 +669,6 @@ fun BgmSelectorDialog(
         )
     }
 }
-
-
-
 
 @Composable
 private fun SelectedBgmItem(
@@ -760,9 +716,6 @@ private fun SelectedBgmItem(
         }
     }
 }
-
-
-
 
 @Composable
 private fun SelectedBgmItemWithReorder(
@@ -891,9 +844,6 @@ private fun SelectedBgmItemWithReorder(
     }
 }
 
-
-
-
 @Composable
 private fun AvailableBgmItem(
     bgm: BgmItem,
@@ -988,9 +938,6 @@ private fun AvailableBgmItem(
     }
 }
 
-
-
-
 @Composable
 private fun BgmCover(bgm: BgmItem, context: android.content.Context, modifier: Modifier) {
     Surface(
@@ -1026,9 +973,6 @@ private fun BgmCover(bgm: BgmItem, context: android.content.Context, modifier: M
         }
     }
 }
-
-
-
 
 @Composable
 private fun BgmCoverAdaptive(bgm: BgmItem, context: android.content.Context, modifier: Modifier) {
@@ -1066,9 +1010,6 @@ private fun BgmCoverAdaptive(bgm: BgmItem, context: android.content.Context, mod
         }
     }
 }
-
-
-
 
 @Composable
 private fun UploadBgmDialog(
@@ -1211,9 +1152,6 @@ private fun UploadBgmDialog(
     )
 }
 
-
-
-
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun EditTagsDialog(
@@ -1279,9 +1217,6 @@ private fun EditTagsDialog(
     )
 }
 
-
-
-
 @Composable
 private fun LrcThemeDialog(
     currentTheme: LrcTheme,
@@ -1337,9 +1272,6 @@ private fun LrcThemeDialog(
         }
     }
 }
-
-
-
 
 @Composable
 private fun LrcThemePreviewCard(
@@ -1427,10 +1359,6 @@ private fun LrcThemePreviewCard(
     }
 }
 
-
-
-
-
 @Composable
 private fun LrcPreviewDialog(
     bgm: BgmItem,
@@ -1440,17 +1368,14 @@ private fun LrcPreviewDialog(
     val context = LocalContext.current
     val lrcData = bgm.lrcData ?: return onDismiss()
 
-
     var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
     var isPlaying by remember { mutableStateOf(false) }
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
     var currentLineIndex by remember { mutableIntStateOf(-1) }
 
-
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
-
 
     LaunchedEffect(bgm.path) {
         try {
@@ -1471,12 +1396,10 @@ private fun LrcPreviewDialog(
         }
     }
 
-
     LaunchedEffect(isPlaying) {
         while (isPlaying) {
             mediaPlayer?.let { mp ->
                 currentPosition = mp.currentPosition.toLong()
-
 
                 val newIndex = lrcData.lines.indexOfLast { it.startTime <= currentPosition }
                 if (newIndex != currentLineIndex && newIndex >= 0) {
@@ -1493,7 +1416,6 @@ private fun LrcPreviewDialog(
             delay(100)
         }
     }
-
 
     DisposableEffect(Unit) {
         onDispose {
@@ -1559,7 +1481,6 @@ private fun LrcPreviewDialog(
 
                 HorizontalDivider()
 
-
                 LazyColumn(
                     state = listState,
                     modifier = Modifier
@@ -1590,7 +1511,6 @@ private fun LrcPreviewDialog(
                 }
 
                 HorizontalDivider()
-
 
                 Column(
                     modifier = Modifier
@@ -1625,7 +1545,6 @@ private fun LrcPreviewDialog(
                         )
                     }
 
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center
@@ -1642,7 +1561,6 @@ private fun LrcPreviewDialog(
                         }
 
                         Spacer(modifier = Modifier.width(16.dp))
-
 
                         FilledIconButton(
                             onClick = {
@@ -1666,7 +1584,6 @@ private fun LrcPreviewDialog(
 
                         Spacer(modifier = Modifier.width(16.dp))
 
-
                         IconButton(onClick = {
                             mediaPlayer?.let { mp ->
                                 val newPos = minOf(mp.duration, mp.currentPosition + 10000)
@@ -1682,9 +1599,6 @@ private fun LrcPreviewDialog(
         }
     }
 }
-
-
-
 
 private fun formatTime(millis: Long): String {
     val totalSeconds = millis / 1000

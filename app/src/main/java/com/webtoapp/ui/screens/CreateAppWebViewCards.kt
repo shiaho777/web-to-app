@@ -1,9 +1,13 @@
 package com.webtoapp.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -23,11 +27,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
+import coil.compose.AsyncImage
 import com.webtoapp.R
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.*
@@ -36,6 +43,8 @@ import com.webtoapp.ui.design.*
 import com.webtoapp.ui.viewmodel.EditState
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.util.MediaStorage
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -111,7 +120,6 @@ fun LongPressMenuCard(
                             )
                         }
                     }
-
 
                     Crossfade(
                         targetState = selectedOption,
@@ -713,13 +721,12 @@ fun BrowserAdvancedConfigCard(
                         )
                     }
 
-
                     WtaSection(
                         title = Strings.proxySectionTitle,
                         description = Strings.proxySectionSubtitle,
                         headerStyle = WtaSectionHeaderStyle.Quiet
                     ) {
-                        // 代理模式选择
+
                         WtaSettingCard {
                             Column(
                                 modifier = Modifier.padding(
@@ -761,7 +768,6 @@ fun BrowserAdvancedConfigCard(
                             }
                         }
 
-                        // 静态代理配置
                         AnimatedVisibility(
                             visible = config.proxyMode == "STATIC",
                             enter = CardExpandTransition,
@@ -887,7 +893,6 @@ fun BrowserAdvancedConfigCard(
                             }
                         }
 
-                        // PAC 代理配置
                         AnimatedVisibility(
                             visible = config.proxyMode == "PAC",
                             enter = CardExpandTransition,
@@ -943,7 +948,6 @@ fun BrowserAdvancedConfigCard(
                             }
                         }
 
-                        // Hosts 映射
                         var hostsMappingsText by remember(config.hostsMappings) {
                             mutableStateOf(
                                 config.hostsMappings.joinToString("\n") { "${it.ip} ${it.host}" }
@@ -1056,7 +1060,6 @@ private fun normalizeIpv4(raw: String): String? {
     return normalized.joinToString(".")
 }
 
-
 @Composable
 fun ApkExportSettingsCard(
     config: ApkExportConfig,
@@ -1064,7 +1067,7 @@ fun ApkExportSettingsCard(
     onOpenPermissionConfig: (() -> Unit)? = null
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)) {
-        // ── 深度链接 ──────────────────────────────────────────
+
         WtaSection(
             title = Strings.sectionNavigation,
             headerStyle = WtaSectionHeaderStyle.Quiet
@@ -1124,7 +1127,6 @@ fun ApkExportSettingsCard(
             }
         }
 
-        // ── APK 导出核心配置 ──────────────────────────────────────────
         ApkExportSection(
             config = config,
             onConfigChange = onConfigChange,
@@ -1132,9 +1134,6 @@ fun ApkExportSettingsCard(
         )
     }
 }
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -1510,7 +1509,6 @@ fun UserAgentCard(
     }
 }
 
-
 @Composable
 fun HideBrowserToolbarCard(
     enabled: Boolean,
@@ -1525,7 +1523,6 @@ fun HideBrowserToolbarCard(
         )
     }
 }
-
 
 @Composable
 fun FullscreenModeCard(
@@ -1644,9 +1641,6 @@ fun FullscreenModeCard(
             }
     }
 }
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -1834,7 +1828,6 @@ fun LandscapeModeCard(
     }
 }
 
-
 @Composable
 private fun OrientationModeItem(
     icon: ImageVector,
@@ -2008,7 +2001,6 @@ fun KeepScreenOnCard(
                         )
                     }
 
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -2046,7 +2038,6 @@ fun KeepScreenOnCard(
                         )
                     }
 
-
                     AnimatedVisibility(
                         visible = screenBrightness >= 0,
                         enter = fadeIn(animationSpec = tween(200)) + expandVertically(animationSpec = tween(300)),
@@ -2079,7 +2070,6 @@ fun KeepScreenOnCard(
                         }
                     }
 
-
                     WtaStatusBanner(
                         message = when (screenAwakeMode) {
                             com.webtoapp.data.model.ScreenAwakeMode.ALWAYS -> Strings.screenAwakeBatteryWarning
@@ -2099,9 +2089,6 @@ fun KeepScreenOnCard(
             }
     }
 }
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -2149,7 +2136,6 @@ fun KeyboardAdjustModeCard(
                     }
                 }
 
-
                 val hintText = when (mode) {
                     com.webtoapp.data.model.KeyboardAdjustMode.RESIZE -> Strings.keyboardAdjustResizeHint
                     com.webtoapp.data.model.KeyboardAdjustMode.NOTHING -> Strings.keyboardAdjustNothingHint
@@ -2182,11 +2168,6 @@ fun KeyboardAdjustModeCard(
         }
     }
 }
-
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -2226,7 +2207,6 @@ fun ErrorPageConfigCard(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -2245,7 +2225,6 @@ fun ErrorPageConfigCard(
                             )
                         }
                     }
-
 
                     AnimatedVisibility(
                         visible = config.mode == com.webtoapp.core.errorpage.ErrorPageMode.BUILTIN_STYLE,
@@ -2285,7 +2264,6 @@ fun ErrorPageConfigCard(
                                 }
                             }
 
-
                             Spacer(modifier = Modifier.height(12.dp))
 
                             SettingsSwitch(
@@ -2294,7 +2272,6 @@ fun ErrorPageConfigCard(
                                 checked = config.showMiniGame,
                                 onCheckedChange = { onConfigChange(config.copy(showMiniGame = it)) }
                             )
-
 
                             AnimatedVisibility(
                                 visible = config.showMiniGame,
@@ -2329,7 +2306,6 @@ fun ErrorPageConfigCard(
                         }
                     }
 
-
                     AnimatedVisibility(
                         visible = config.mode == com.webtoapp.core.errorpage.ErrorPageMode.CUSTOM_HTML,
                         enter = CardExpandTransition,
@@ -2337,20 +2313,12 @@ fun ErrorPageConfigCard(
                     ) {
                         Column {
                             Spacer(modifier = Modifier.height(12.dp))
-                            PremiumTextField(
-                                value = config.customHtml ?: "",
-                                onValueChange = { onConfigChange(config.copy(customHtml = it)) },
-                                label = { Text(Strings.errorPageModeCustomHtml) },
-                                placeholder = { Text(Strings.errorPageCustomHtmlHint) },
-                                leadingIcon = { Icon(Icons.Outlined.Code, null) },
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 4,
-                                maxLines = 8,
-                                singleLine = false
+                            CustomHtmlEditorRow(
+                                customHtml = config.customHtml,
+                                onCustomHtmlChange = { onConfigChange(config.copy(customHtml = it)) }
                             )
                         }
                     }
-
 
                     AnimatedVisibility(
                         visible = config.mode == com.webtoapp.core.errorpage.ErrorPageMode.CUSTOM_MEDIA,
@@ -2359,18 +2327,12 @@ fun ErrorPageConfigCard(
                     ) {
                         Column {
                             Spacer(modifier = Modifier.height(12.dp))
-                            PremiumTextField(
-                                value = config.customMediaPath ?: "",
-                                onValueChange = { onConfigChange(config.copy(customMediaPath = it)) },
-                                label = { Text(Strings.errorPageModeCustomMedia) },
-                                placeholder = { Text(Strings.errorPageCustomMediaHint) },
-                                leadingIcon = { Icon(Icons.Outlined.Image, null) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
+                            CustomMediaPickerRow(
+                                customMediaPath = config.customMediaPath,
+                                onCustomMediaPathChange = { onConfigChange(config.copy(customMediaPath = it)) }
                             )
                         }
                     }
-
 
                     Spacer(modifier = Modifier.height(12.dp))
 
@@ -2418,13 +2380,7 @@ fun ErrorPageConfigCard(
     }
 }
 
-
-/**
- * 特殊设置卡片（抽屉式）：
- * - 默认收起，只显示标题行 + 图标
- * - 点击展开后显示 25 个开关，按逻辑分组
- * - 与 BrowserAdvancedConfigCard 的交互模式完全一致
- */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SpecialSettingsCard(
     config: com.webtoapp.data.model.WebViewConfig,
@@ -2456,52 +2412,11 @@ fun SpecialSettingsCard(
                     verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
                 ) {
 
-                    // ── 链接与导航 ──────────────────────────────────────────
                     WtaSection(
-                        title = Strings.specialSectionLinksNav,
+                        title = Strings.specialBasicSectionTitle,
                         headerStyle = WtaSectionHeaderStyle.Quiet
                     ) {
                         WtaSettingCard {
-                            WtaToggleRow(
-                                title = Strings.decodeBase64DeepLinksTitle,
-                                subtitle = Strings.decodeBase64DeepLinksDesc,
-                                icon = Icons.Outlined.Link,
-                                checked = config.decodeBase64DeepLinks,
-                                onCheckedChange = { onConfigChange(config.copy(decodeBase64DeepLinks = it)) }
-                            )
-                            WtaSectionDivider()
-                            WtaToggleRow(
-                                title = Strings.oauthExternalTitle,
-                                subtitle = Strings.oauthExternalDesc,
-                                icon = Icons.Outlined.OpenInNew,
-                                checked = config.enableOAuthExternalRedirect,
-                                onCheckedChange = { onConfigChange(config.copy(enableOAuthExternalRedirect = it)) }
-                            )
-                            WtaSectionDivider()
-                            WtaToggleRow(
-                                title = Strings.jsCanOpenWindowsTitle,
-                                subtitle = Strings.jsCanOpenWindowsDesc,
-                                icon = Icons.Outlined.OpenInBrowser,
-                                checked = config.javaScriptCanOpenWindows,
-                                onCheckedChange = { onConfigChange(config.copy(javaScriptCanOpenWindows = it)) }
-                            )
-                        }
-                    }
-
-                    // ── 媒体与内容 ──────────────────────────────────────────
-                    WtaSection(
-                        title = Strings.specialSectionMedia,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
-                    ) {
-                        WtaSettingCard {
-                            WtaToggleRow(
-                                title = Strings.mediaAutoplayTitle,
-                                subtitle = Strings.mediaAutoplayDesc,
-                                icon = Icons.Outlined.PlayCircle,
-                                checked = config.mediaAutoplayEnabled,
-                                onCheckedChange = { onConfigChange(config.copy(mediaAutoplayEnabled = it)) }
-                            )
-                            WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.imageRepairTitle,
                                 subtitle = Strings.imageRepairDesc,
@@ -2517,109 +2432,13 @@ fun SpecialSettingsCard(
                                 checked = config.enableScrollMemory,
                                 onCheckedChange = { onConfigChange(config.copy(enableScrollMemory = it)) }
                             )
-                        }
-                    }
-
-                    // ── 安全与网络 ──────────────────────────────────────────
-                    WtaSection(
-                        title = Strings.specialSectionSecurity,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
-                    ) {
-                        WtaSettingCard {
-                            WtaToggleRow(
-                                title = Strings.kernelDisguiseTitle,
-                                subtitle = Strings.kernelDisguiseDesc,
-                                icon = Icons.Outlined.Security,
-                                checked = config.enableKernelDisguise,
-                                onCheckedChange = { onConfigChange(config.copy(enableKernelDisguise = it)) }
-                            )
                             WtaSectionDivider()
                             WtaToggleRow(
-                                title = Strings.httpsUpgradeTitle,
-                                subtitle = Strings.httpsUpgradeDesc,
-                                icon = Icons.Outlined.Lock,
-                                checked = config.enableHttpsUpgrade,
-                                onCheckedChange = { onConfigChange(config.copy(enableHttpsUpgrade = it)) }
-                            )
-                            WtaSectionDivider()
-                            WtaToggleRow(
-                                title = Strings.safeBrowsingTitle,
-                                subtitle = Strings.safeBrowsingDesc,
-                                icon = Icons.Outlined.Shield,
-                                checked = config.safeBrowsingEnabled,
-                                onCheckedChange = { onConfigChange(config.copy(safeBrowsingEnabled = it)) }
-                            )
-                            WtaSectionDivider()
-                            WtaToggleRow(
-                                title = Strings.mixedContentTitle,
-                                subtitle = Strings.mixedContentDesc,
-                                icon = Icons.Outlined.Http,
-                                checked = config.allowMixedContent,
-                                onCheckedChange = { onConfigChange(config.copy(allowMixedContent = it)) }
-                            )
-                            WtaSectionDivider()
-                            WtaToggleRow(
-                                title = Strings.privateNetworkBridgeTitle,
-                                subtitle = Strings.privateNetworkBridgeDesc,
-                                icon = Icons.Outlined.Lan,
-                                checked = config.enablePrivateNetworkBridge,
-                                onCheckedChange = { onConfigChange(config.copy(enablePrivateNetworkBridge = it)) }
-                            )
-                        }
-                    }
-
-                    // ── 隐私保护 ──────────────────────────────────────────
-                    WtaSection(
-                        title = Strings.specialSectionPrivacy,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
-                    ) {
-                        WtaSettingCard {
-                            WtaToggleRow(
-                                title = Strings.gpcTitle,
-                                subtitle = Strings.gpcDesc,
-                                icon = Icons.Outlined.PrivacyTip,
-                                checked = config.enableGpc,
-                                onCheckedChange = { onConfigChange(config.copy(enableGpc = it)) }
-                            )
-                            WtaSectionDivider()
-                            WtaToggleRow(
-                                title = Strings.cookieConsentBlockTitle,
-                                subtitle = Strings.cookieConsentBlockDesc,
-                                icon = Icons.Outlined.DoNotDisturb,
-                                checked = config.enableCookieConsentBlock,
-                                onCheckedChange = { onConfigChange(config.copy(enableCookieConsentBlock = it)) }
-                            )
-                            WtaSectionDivider()
-                            WtaToggleRow(
-                                title = Strings.referrerPolicyTitle,
-                                subtitle = Strings.referrerPolicyDesc,
-                                icon = Icons.Outlined.Policy,
-                                checked = config.enableReferrerPolicy,
-                                onCheckedChange = { onConfigChange(config.copy(enableReferrerPolicy = it)) }
-                            )
-                            WtaSectionDivider()
-                            WtaToggleRow(
-                                title = Strings.trackerBlockingTitle,
-                                subtitle = Strings.trackerBlockingDesc,
-                                icon = Icons.Outlined.RemoveCircleOutline,
-                                checked = config.enableTrackerBlocking,
-                                onCheckedChange = { onConfigChange(config.copy(enableTrackerBlocking = it)) }
-                            )
-                        }
-                    }
-
-                    // ── Cookie 与存储 ──────────────────────────────────────────
-                    WtaSection(
-                        title = Strings.specialSectionStorage,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
-                    ) {
-                        WtaSettingCard {
-                            WtaToggleRow(
-                                title = Strings.thirdPartyCookiesTitle,
-                                subtitle = Strings.thirdPartyCookiesDesc,
-                                icon = Icons.Outlined.Cookie,
-                                checked = config.acceptThirdPartyCookies,
-                                onCheckedChange = { onConfigChange(config.copy(acceptThirdPartyCookies = it)) }
+                                title = Strings.cookiePersistenceTitle,
+                                subtitle = Strings.cookiePersistenceDesc,
+                                icon = Icons.Outlined.Save,
+                                checked = config.enableCookiePersistence,
+                                onCheckedChange = { onConfigChange(config.copy(enableCookiePersistence = it)) }
                             )
                             WtaSectionDivider()
                             WtaToggleRow(
@@ -2630,22 +2449,6 @@ fun SpecialSettingsCard(
                                 onCheckedChange = { onConfigChange(config.copy(databaseEnabled = it)) }
                             )
                             WtaSectionDivider()
-                            WtaToggleRow(
-                                title = Strings.cookiePersistenceTitle,
-                                subtitle = Strings.cookiePersistenceDesc,
-                                icon = Icons.Outlined.Save,
-                                checked = config.enableCookiePersistence,
-                                onCheckedChange = { onConfigChange(config.copy(enableCookiePersistence = it)) }
-                            )
-                        }
-                    }
-
-                    // ── 兼容性与补丁 ──────────────────────────────────────────
-                    WtaSection(
-                        title = Strings.specialSectionPolyfills,
-                        headerStyle = WtaSectionHeaderStyle.Quiet
-                    ) {
-                        WtaSettingCard {
                             WtaToggleRow(
                                 title = Strings.clipboardPolyfillTitle,
                                 subtitle = Strings.clipboardPolyfillDesc,
@@ -2677,40 +2480,815 @@ fun SpecialSettingsCard(
                                 checked = config.enableCompatPolyfills,
                                 onCheckedChange = { onConfigChange(config.copy(enableCompatPolyfills = it)) }
                             )
-                            WtaSectionDivider()
-                            WtaToggleRow(
-                                title = Strings.nativeBridgeTitle,
-                                subtitle = Strings.nativeBridgeDesc,
-                                icon = Icons.Outlined.Api,
-                                checked = config.enableNativeBridge,
-                                onCheckedChange = { onConfigChange(config.copy(enableNativeBridge = it)) }
-                            )
                         }
                     }
 
-                    // ── 其他 ──────────────────────────────────────────
                     WtaSection(
-                        title = Strings.specialSectionMisc,
+                        title = Strings.specialAdvancedSectionTitle,
                         headerStyle = WtaSectionHeaderStyle.Quiet
                     ) {
-                        WtaSettingCard {
-                            WtaToggleRow(
-                                title = Strings.geolocationTitle,
-                                subtitle = Strings.geolocationDesc,
-                                icon = Icons.Outlined.LocationOn,
-                                checked = config.geolocationEnabled,
-                                onCheckedChange = { onConfigChange(config.copy(geolocationEnabled = it)) }
-                            )
-                            WtaSectionDivider()
-                            WtaToggleRow(
-                                title = Strings.blobDownloadTitle,
-                                subtitle = Strings.blobDownloadDesc,
-                                icon = Icons.Outlined.CloudDownload,
-                                checked = config.enableBlobDownloadInterception,
-                                onCheckedChange = { onConfigChange(config.copy(enableBlobDownloadInterception = it)) }
+
+                        SpecialAdvancedRow(
+                            title = Strings.decodeBase64DeepLinksTitle,
+                            subtitle = Strings.decodeBase64DeepLinksDesc,
+                            icon = Icons.Outlined.Link,
+                            checked = config.decodeBase64DeepLinks,
+                            onCheckedChange = { onConfigChange(config.copy(decodeBase64DeepLinks = it)) }
+                        ) {
+                            ChoiceChipRow(
+                                label = Strings.base64ModeLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.Base64DeepLinkMode.GESTURE_ONLY to Strings.base64ModeGesture,
+                                    com.webtoapp.data.model.Base64DeepLinkMode.ALWAYS to Strings.base64ModeAlways
+                                ),
+                                selected = config.decodeBase64Mode,
+                                onSelect = { onConfigChange(config.copy(decodeBase64Mode = it)) }
                             )
                         }
+
+                        SpecialAdvancedRow(
+                            title = Strings.jsCanOpenWindowsTitle,
+                            subtitle = Strings.jsCanOpenWindowsDesc,
+                            icon = Icons.Outlined.OpenInBrowser,
+                            checked = config.javaScriptCanOpenWindows,
+                            onCheckedChange = { onConfigChange(config.copy(javaScriptCanOpenWindows = it)) }
+                        ) {
+                            ChoiceChipRow(
+                                label = Strings.jsOpenPolicyLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.JsOpenWindowsPolicy.ALLOW to Strings.jsOpenPolicyAllow,
+                                    com.webtoapp.data.model.JsOpenWindowsPolicy.BLOCK to Strings.jsOpenPolicyBlock,
+                                    com.webtoapp.data.model.JsOpenWindowsPolicy.PROMPT to Strings.jsOpenPolicyPrompt
+                                ),
+                                selected = config.jsOpenWindowsPolicy,
+                                onSelect = { onConfigChange(config.copy(jsOpenWindowsPolicy = it)) }
+                            )
+                        }
+
+                        SpecialAdvancedRow(
+                            title = Strings.mediaAutoplayTitle,
+                            subtitle = Strings.mediaAutoplayDesc,
+                            icon = Icons.Outlined.PlayCircle,
+                            checked = config.mediaAutoplayEnabled,
+                            onCheckedChange = { onConfigChange(config.copy(mediaAutoplayEnabled = it)) }
+                        ) {
+                            ChoiceChipRow(
+                                label = Strings.mediaAutoplayScopeLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.MediaAutoplayScope.VIDEO_ONLY to Strings.mediaAutoplayScopeVideoOnly,
+                                    com.webtoapp.data.model.MediaAutoplayScope.AUDIO_ONLY to Strings.mediaAutoplayScopeAudioOnly,
+                                    com.webtoapp.data.model.MediaAutoplayScope.BOTH to Strings.mediaAutoplayScopeBoth
+                                ),
+                                selected = config.mediaAutoplayScope,
+                                onSelect = { onConfigChange(config.copy(mediaAutoplayScope = it)) }
+                            )
+                        }
+
+                        SpecialAdvancedRow(
+                            title = Strings.kernelDisguiseTitle,
+                            subtitle = Strings.kernelDisguiseDesc,
+                            icon = Icons.Outlined.Security,
+                            checked = config.enableKernelDisguise,
+                            onCheckedChange = { onConfigChange(config.copy(enableKernelDisguise = it)) }
+                        ) {
+                            ChoiceChipRow(
+                                label = Strings.kernelDisguiseLevelLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.KernelDisguiseLevel.BASIC to Strings.kernelDisguiseLevelBasic,
+                                    com.webtoapp.data.model.KernelDisguiseLevel.STANDARD to Strings.kernelDisguiseLevelStandard,
+                                    com.webtoapp.data.model.KernelDisguiseLevel.DEEP to Strings.kernelDisguiseLevelDeep
+                                ),
+                                selected = config.kernelDisguiseLevel,
+                                onSelect = { onConfigChange(config.copy(kernelDisguiseLevel = it)) }
+                            )
+                        }
+
+                        SpecialAdvancedRow(
+                            title = Strings.cloudflareCompatTitle,
+                            subtitle = Strings.cloudflareCompatDesc,
+                            icon = Icons.Outlined.VerifiedUser,
+                            checked = config.enableCloudflareCompat,
+                            onCheckedChange = { onConfigChange(config.copy(enableCloudflareCompat = it)) }
+                        ) {
+                            ChoiceChipRow(
+                                label = Strings.cloudflareCompatModeLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.CloudflareCompatMode.AUTO_DETECT to Strings.cloudflareCompatModeAuto,
+                                    com.webtoapp.data.model.CloudflareCompatMode.ALWAYS_ON to Strings.cloudflareCompatModeAlways
+                                ),
+                                selected = config.cloudflareCompatMode,
+                                onSelect = { onConfigChange(config.copy(cloudflareCompatMode = it)) }
+                            )
+                        }
+
+                        SpecialAdvancedRow(
+                            title = Strings.mixedContentTitle,
+                            subtitle = Strings.mixedContentDesc,
+                            icon = Icons.Outlined.Http,
+                            checked = config.allowMixedContent,
+                            onCheckedChange = { onConfigChange(config.copy(allowMixedContent = it)) }
+                        ) {
+                            ChoiceChipRow(
+                                label = Strings.mixedContentModeLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.MixedContentMode.NEVER to Strings.mixedContentModeNever,
+                                    com.webtoapp.data.model.MixedContentMode.COMPATIBILITY to Strings.mixedContentModeCompat,
+                                    com.webtoapp.data.model.MixedContentMode.ALWAYS to Strings.mixedContentModeAlways
+                                ),
+                                selected = config.mixedContentMode,
+                                onSelect = { onConfigChange(config.copy(mixedContentMode = it)) }
+                            )
+                        }
+
+                        SpecialAdvancedRow(
+                            title = Strings.privateNetworkBridgeTitle,
+                            subtitle = Strings.privateNetworkBridgeDesc,
+                            icon = Icons.Outlined.Lan,
+                            checked = config.enablePrivateNetworkBridge,
+                            onCheckedChange = { onConfigChange(config.copy(enablePrivateNetworkBridge = it)) }
+                        ) {
+                            ChoiceChipRow(
+                                label = Strings.privateNetworkScopeLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.PrivateNetworkScope.LOCAL_ONLY to Strings.privateNetworkScopeLocal,
+                                    com.webtoapp.data.model.PrivateNetworkScope.ALL to Strings.privateNetworkScopeAll
+                                ),
+                                selected = config.privateNetworkScope,
+                                onSelect = { onConfigChange(config.copy(privateNetworkScope = it)) }
+                            )
+                        }
+
+                        SpecialAdvancedRow(
+                            title = Strings.thirdPartyCookiesTitle,
+                            subtitle = Strings.thirdPartyCookiesDesc,
+                            icon = Icons.Outlined.Cookie,
+                            checked = config.acceptThirdPartyCookies,
+                            onCheckedChange = { onConfigChange(config.copy(acceptThirdPartyCookies = it)) }
+                        ) {
+                            ChoiceChipRow(
+                                label = Strings.thirdPartyCookieModeLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.ThirdPartyCookieMode.NONE to Strings.thirdPartyCookieModeNone,
+                                    com.webtoapp.data.model.ThirdPartyCookieMode.SAME_SITE_LAX to Strings.thirdPartyCookieModeSameSite,
+                                    com.webtoapp.data.model.ThirdPartyCookieMode.ALL to Strings.thirdPartyCookieModeAll
+                                ),
+                                selected = config.thirdPartyCookieMode,
+                                onSelect = { onConfigChange(config.copy(thirdPartyCookieMode = it)) }
+                            )
+                        }
+
+                        SpecialAdvancedRow(
+                            title = Strings.nativeBridgeTitle,
+                            subtitle = Strings.nativeBridgeDesc,
+                            icon = Icons.Outlined.Api,
+                            checked = config.enableNativeBridge,
+                            onCheckedChange = { onConfigChange(config.copy(enableNativeBridge = it)) }
+                        ) {
+                            val caps = config.nativeBridgeCapabilities
+                            Text(
+                                text = Strings.nativeBridgeCapabilitiesTitle,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+                            )
+
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                FilterChip(
+                                    selected = caps.clipboard,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(clipboard = !caps.clipboard))) },
+                                    label = { Text(Strings.nativeBridgeCapsClipboard) }
+                                )
+                                FilterChip(
+                                    selected = caps.vibration,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(vibration = !caps.vibration))) },
+                                    label = { Text(Strings.nativeBridgeCapsVibration) }
+                                )
+                                FilterChip(
+                                    selected = caps.geolocation,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(geolocation = !caps.geolocation))) },
+                                    label = { Text(Strings.nativeBridgeCapsGeolocation) }
+                                )
+                                FilterChip(
+                                    selected = caps.brightness,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(brightness = !caps.brightness))) },
+                                    label = { Text(Strings.nativeBridgeCapsBrightness) }
+                                )
+                                FilterChip(
+                                    selected = caps.notification,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(notification = !caps.notification))) },
+                                    label = { Text(Strings.nativeBridgeCapsNotification) }
+                                )
+                                FilterChip(
+                                    selected = caps.download,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(download = !caps.download))) },
+                                    label = { Text(Strings.nativeBridgeCapsDownload) }
+                                )
+                                FilterChip(
+                                    selected = caps.privateNetwork,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(privateNetwork = !caps.privateNetwork))) },
+                                    label = { Text(Strings.nativeBridgeCapsPrivateNetwork) }
+                                )
+                                FilterChip(
+                                    selected = caps.screenWake,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(screenWake = !caps.screenWake))) },
+                                    label = { Text(Strings.nativeBridgeCapsScreenWake) }
+                                )
+                            }
+                        }
+
+                        SpecialAdvancedRow(
+                            title = Strings.geolocationTitle,
+                            subtitle = Strings.geolocationDesc,
+                            icon = Icons.Outlined.LocationOn,
+                            checked = config.geolocationEnabled,
+                            onCheckedChange = { onConfigChange(config.copy(geolocationEnabled = it)) }
+                        ) {
+                            ChoiceChipRow(
+                                label = Strings.geolocationAccuracyLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.GeolocationAccuracy.COARSE to Strings.geolocationAccuracyCoarse,
+                                    com.webtoapp.data.model.GeolocationAccuracy.FINE to Strings.geolocationAccuracyFine
+                                ),
+                                selected = config.geolocationAccuracy,
+                                onSelect = { onConfigChange(config.copy(geolocationAccuracy = it)) }
+                            )
+                            ChoiceChipRow(
+                                label = Strings.geolocationPolicyLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.GeolocationPolicy.ALWAYS_ASK to Strings.geolocationPolicyAlwaysAsk,
+                                    com.webtoapp.data.model.GeolocationPolicy.REMEMBER_PER_HOST to Strings.geolocationPolicyRemember,
+                                    com.webtoapp.data.model.GeolocationPolicy.DENY_ALL to Strings.geolocationPolicyDeny
+                                ),
+                                selected = config.geolocationPolicy,
+                                onSelect = { onConfigChange(config.copy(geolocationPolicy = it)) }
+                            )
+                        }
+
+                        SpecialAdvancedRow(
+                            title = Strings.blobDownloadTitle,
+                            subtitle = Strings.blobDownloadDesc,
+                            icon = Icons.Outlined.CloudDownload,
+                            checked = config.enableBlobDownloadInterception,
+                            onCheckedChange = { onConfigChange(config.copy(enableBlobDownloadInterception = it)) }
+                        ) {
+                            ChoiceChipRow(
+                                label = Strings.blobInterceptScopeLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.BlobInterceptScope.ALL to Strings.blobInterceptScopeAll,
+                                    com.webtoapp.data.model.BlobInterceptScope.SIZE_OVER_THRESHOLD to Strings.blobInterceptScopeOver
+                                ),
+                                selected = config.blobInterceptScope,
+                                onSelect = { onConfigChange(config.copy(blobInterceptScope = it)) }
+                            )
+                            if (config.blobInterceptScope == com.webtoapp.data.model.BlobInterceptScope.SIZE_OVER_THRESHOLD) {
+                                IntegerField(
+                                    label = Strings.blobInterceptThresholdLabel,
+                                    value = config.blobInterceptThresholdMb,
+                                    minValue = 1,
+                                    maxValue = 1024,
+                                    onValueChange = { onConfigChange(config.copy(blobInterceptThresholdMb = it)) }
+                                )
+                            }
+                        }
+
+                        SpecialAdvancedRow(
+                            title = Strings.primeUserActivationTitle,
+                            subtitle = Strings.primeUserActivationDesc,
+                            icon = Icons.Outlined.TouchApp,
+                            checked = config.primeUserActivation,
+                            onCheckedChange = { onConfigChange(config.copy(primeUserActivation = it)) }
+                        ) {
+                            ChoiceChipRow(
+                                label = Strings.primeActivationModeLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.PrimeUserActivationMode.SYNTHETIC_TAP to Strings.primeActivationModeTap,
+                                    com.webtoapp.data.model.PrimeUserActivationMode.DPAD_OK to Strings.primeActivationModeDpad,
+                                    com.webtoapp.data.model.PrimeUserActivationMode.BOTH to Strings.primeActivationModeBoth
+                                ),
+                                selected = config.primeUserActivationMode,
+                                onSelect = { onConfigChange(config.copy(primeUserActivationMode = it)) }
+                            )
+                            ChoiceChipRow(
+                                label = Strings.primeActivationTimingLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.PrimeUserActivationTiming.ON_PAGE_FINISHED to Strings.primeActivationTimingFinished,
+                                    com.webtoapp.data.model.PrimeUserActivationTiming.ON_FIRST_VISIBLE to Strings.primeActivationTimingVisible
+                                ),
+                                selected = config.primeUserActivationTiming,
+                                onSelect = { onConfigChange(config.copy(primeUserActivationTiming = it)) }
+                            )
+                        }
+
+                        SpecialAdvancedRow(
+                            title = Strings.fullscreenVideoOrientationTitle,
+                            subtitle = Strings.fullscreenVideoOrientationDesc,
+                            icon = Icons.Outlined.ScreenRotation,
+                            checked = config.fullscreenVideoOrientation != com.webtoapp.data.model.FullscreenVideoOrientation.KEEP_CURRENT,
+                            onCheckedChange = { enabled ->
+                                onConfigChange(
+                                    config.copy(
+                                        fullscreenVideoOrientation = if (enabled) {
+                                            com.webtoapp.data.model.FullscreenVideoOrientation.AUTO_SENSOR_LANDSCAPE
+                                        } else {
+                                            com.webtoapp.data.model.FullscreenVideoOrientation.KEEP_CURRENT
+                                        }
+                                    )
+                                )
+                            }
+                        ) {
+
+                            ChoiceChipRow(
+                                label = Strings.fullscreenVideoOrientationModeLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.FullscreenVideoOrientation.AUTO_SENSOR_LANDSCAPE
+                                        to Strings.fullscreenVideoOrientationModeAuto,
+                                    com.webtoapp.data.model.FullscreenVideoOrientation.FORCE_LANDSCAPE
+                                        to Strings.fullscreenVideoOrientationModeForce
+                                ),
+                                selected = if (config.fullscreenVideoOrientation == com.webtoapp.data.model.FullscreenVideoOrientation.KEEP_CURRENT) {
+                                    com.webtoapp.data.model.FullscreenVideoOrientation.AUTO_SENSOR_LANDSCAPE
+                                } else config.fullscreenVideoOrientation,
+                                onSelect = { onConfigChange(config.copy(fullscreenVideoOrientation = it)) }
+                            )
+                        }
+
+                        FailoverAdvancedRow(
+                            config = config,
+                            onConfigChange = onConfigChange
+                        )
                     }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SpecialAdvancedRow(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    WtaSettingCard {
+        Column {
+            WtaToggleRow(
+                title = title,
+                subtitle = subtitle,
+                icon = icon,
+                checked = checked,
+                onCheckedChange = onCheckedChange
+            )
+            AnimatedVisibility(
+                visible = checked,
+                enter = CardExpandTransition,
+                exit = CardCollapseTransition
+            ) {
+                Column(
+                    modifier = Modifier.padding(
+                        start = WtaSpacing.RowHorizontal,
+                        end = WtaSpacing.RowHorizontal,
+                        top = 4.dp,
+                        bottom = 12.dp
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    content = content
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun <T> ChoiceChipRow(
+    label: String,
+    options: List<Pair<T, String>>,
+    selected: T,
+    onSelect: (T) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            options.forEach { (value, text) ->
+                FilterChip(
+                    selected = selected == value,
+                    onClick = { onSelect(value) },
+                    label = { Text(text) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun IntegerField(
+    label: String,
+    value: Int,
+    minValue: Int,
+    maxValue: Int,
+    onValueChange: (Int) -> Unit,
+) {
+    var raw by remember(value) { mutableStateOf(value.toString()) }
+    OutlinedTextField(
+        value = raw,
+        onValueChange = { input ->
+            raw = input.filter { it.isDigit() }.take(6)
+            raw.toIntOrNull()?.coerceIn(minValue, maxValue)?.let { onValueChange(it) }
+        },
+        label = { Text(label) },
+        singleLine = true,
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+        ),
+        modifier = Modifier.fillMaxWidth()
+    )
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun FailoverAdvancedRow(
+    config: com.webtoapp.data.model.WebViewConfig,
+    onConfigChange: (com.webtoapp.data.model.WebViewConfig) -> Unit,
+) {
+    var showAddDialog by remember { mutableStateOf(false) }
+
+    SpecialAdvancedRow(
+        title = Strings.failoverTitle,
+        subtitle = Strings.failoverDesc,
+        icon = Icons.Outlined.SwapHoriz,
+        checked = config.failoverEnabled,
+        onCheckedChange = { onConfigChange(config.copy(failoverEnabled = it)) }
+    ) {
+        Text(
+            text = Strings.failoverUrlsLabel,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+        )
+
+        com.webtoapp.ui.components.WtaReorderableUrlList(
+            items = config.failoverUrls,
+            onItemsChange = { onConfigChange(config.copy(failoverUrls = it)) },
+            onAddRequest = { showAddDialog = true },
+            emptyHint = Strings.failoverEmptyHint,
+            addButtonText = Strings.failoverAddUrl,
+        )
+
+        Spacer(Modifier.height(12.dp))
+
+        Text(
+            text = Strings.failoverTriggersLabel,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            val triggers = config.failoverTriggers
+            FilterChip(
+                selected = triggers.networkError,
+                onClick = {
+                    onConfigChange(config.copy(failoverTriggers = triggers.copy(networkError = !triggers.networkError)))
+                },
+                label = { Text(Strings.failoverTriggerNetworkError) }
+            )
+            FilterChip(
+                selected = triggers.http5xx,
+                onClick = {
+                    onConfigChange(config.copy(failoverTriggers = triggers.copy(http5xx = !triggers.http5xx)))
+                },
+                label = { Text(Strings.failoverTriggerHttp5xx) }
+            )
+            FilterChip(
+                selected = triggers.http4xx,
+                onClick = {
+                    onConfigChange(config.copy(failoverTriggers = triggers.copy(http4xx = !triggers.http4xx)))
+                },
+                label = { Text(Strings.failoverTriggerHttp4xx) }
+            )
+            FilterChip(
+                selected = triggers.timeout,
+                onClick = {
+                    onConfigChange(config.copy(failoverTriggers = triggers.copy(timeout = !triggers.timeout)))
+                },
+                label = { Text(Strings.failoverTriggerTimeout) }
+            )
+        }
+
+        if (config.failoverTriggers.timeout) {
+            Spacer(Modifier.height(8.dp))
+            IntegerField(
+                label = Strings.failoverTimeoutSecondsLabel,
+                value = config.failoverTimeoutSeconds,
+                minValue = 5,
+                maxValue = 60,
+                onValueChange = { onConfigChange(config.copy(failoverTimeoutSeconds = it)) }
+            )
+        }
+    }
+
+    if (showAddDialog) {
+        FailoverAddUrlDialog(
+            existingUrls = config.failoverUrls,
+            onDismiss = { showAddDialog = false },
+            onConfirm = { url ->
+                onConfigChange(config.copy(failoverUrls = config.failoverUrls + url))
+                showAddDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun FailoverAddUrlDialog(
+    existingUrls: List<String>,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var input by remember { mutableStateOf("") }
+    var errorText by remember { mutableStateOf<String?>(null) }
+
+    com.webtoapp.ui.design.WtaAlertDialog(
+        onDismissRequest = onDismiss,
+        title = Strings.failoverAddUrl,
+        content = {
+            com.webtoapp.ui.design.WtaTextField(
+                value = input,
+                onValueChange = {
+                    input = it
+                    errorText = null
+                },
+                placeholder = Strings.failoverUrlInputHint,
+                isError = errorText != null,
+                supportingText = errorText,
+                singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri,
+                    autoCorrect = false
+                )
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val trimmed = input.trim()
+                val lower = trimmed.lowercase()
+                when {
+                    !(lower.startsWith("http://") || lower.startsWith("https://")) -> {
+                        errorText = Strings.failoverUrlInvalid
+                    }
+                    existingUrls.any { it.equals(trimmed, ignoreCase = true) } -> {
+                        errorText = Strings.failoverUrlDuplicate
+                    }
+                    else -> onConfirm(trimmed)
+                }
+            }) { Text(Strings.confirm) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(Strings.cancel) }
+        }
+    )
+}
+
+@Composable
+private fun CustomHtmlEditorRow(
+    customHtml: String?,
+    onCustomHtmlChange: (String?) -> Unit,
+) {
+    var showEditor by remember { mutableStateOf(false) }
+    val hasContent = !customHtml.isNullOrBlank()
+    val lineCount = customHtml?.count { it == '\n' }?.plus(1) ?: 0
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (hasContent) {
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(WtaRadius.Card))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                        RoundedCornerShape(WtaRadius.Card)
+                    )
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Outlined.Code,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(WtaSize.Icon)
+                )
+                Spacer(Modifier.width(WtaSpacing.Small))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = Strings.errorPageHtmlSummary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "$lineCount ${if (lineCount == 1) "line" else "lines"}, ${customHtml?.length ?: 0} chars",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                IconButton(onClick = { onCustomHtmlChange(null) }) {
+                    Icon(
+                        Icons.Outlined.Close,
+                        contentDescription = Strings.errorPageClearMedia,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(WtaSize.IconSmall)
+                    )
+                }
+            }
+        } else {
+            Text(
+                text = Strings.errorPageHtmlEmpty,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        WtaCard(
+            onClick = { showEditor = true },
+            tone = WtaCardTone.Surface,
+            contentPadding = PaddingValues(vertical = WtaSpacing.Medium, horizontal = WtaSpacing.Large),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    Icons.Outlined.Code,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(WtaSize.IconSmall)
+                )
+                Spacer(Modifier.width(WtaSpacing.Small))
+                Text(
+                    text = if (hasContent) Strings.errorPageEditCodeAgain else Strings.errorPageOpenCodeEditor,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+
+    if (showEditor) {
+        WtaCodeEditorDialog(
+            language = "HTML",
+            initialContent = customHtml ?: "",
+            placeholder = Strings.errorPageCustomHtmlHint,
+
+            canSaveEmpty = true,
+            onSave = { content ->
+                onCustomHtmlChange(content.takeIf { it.isNotBlank() })
+                showEditor = false
+            },
+            onDismiss = { showEditor = false }
+        )
+    }
+}
+
+@Composable
+private fun CustomMediaPickerRow(
+    customMediaPath: String?,
+    onCustomMediaPathChange: (String?) -> Unit,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val hasContent = !customMediaPath.isNullOrBlank()
+
+    val mediaPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri ?: return@rememberLauncherForActivityResult
+        scope.launch {
+
+            val mimeType = context.contentResolver.getType(uri) ?: ""
+            val isVideo = mimeType.startsWith("video/")
+            val savedPath = MediaStorage.saveMedia(context, uri, isVideo = isVideo)
+            if (savedPath != null) {
+
+                if (hasContent) MediaStorage.deleteMedia(customMediaPath)
+                onCustomMediaPathChange(savedPath)
+            }
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (hasContent) {
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(WtaRadius.Card))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                        RoundedCornerShape(WtaRadius.Card)
+                    )
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)
+            ) {
+                AsyncImage(
+                    model = customMediaPath,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(width = 80.dp, height = 56.dp)
+                        .clip(RoundedCornerShape(WtaRadius.Chip)),
+                    contentScale = ContentScale.Crop
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = Strings.errorPageMediaSelected,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = customMediaPath?.substringAfterLast('/') ?: "",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                IconButton(onClick = { mediaPickerLauncher.launch("*/*") }) {
+                    Icon(
+                        Icons.Outlined.Edit,
+                        contentDescription = Strings.errorPageReplaceMedia,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(WtaSize.IconSmall)
+                    )
+                }
+                IconButton(onClick = {
+                    MediaStorage.deleteMedia(customMediaPath)
+                    onCustomMediaPathChange(null)
+                }) {
+                    Icon(
+                        Icons.Outlined.Close,
+                        contentDescription = Strings.errorPageClearMedia,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(WtaSize.IconSmall)
+                    )
+                }
+            }
+        } else {
+            Text(
+                text = Strings.errorPageMediaEmpty,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            WtaCard(
+                onClick = { mediaPickerLauncher.launch("*/*") },
+                tone = WtaCardTone.Surface,
+                contentPadding = PaddingValues(vertical = WtaSpacing.Medium, horizontal = WtaSpacing.Large),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.Image,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(WtaSize.IconSmall)
+                    )
+                    Spacer(Modifier.width(WtaSpacing.Small))
+                    Text(
+                        text = Strings.errorPagePickMedia,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }

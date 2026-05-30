@@ -4,23 +4,6 @@ import android.content.Context
 import com.webtoapp.core.logging.AppLogger
 import java.security.SecureRandom
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 object NativeCryptoOptimized {
 
     private const val TAG = "NativeCryptoOpt"
@@ -57,25 +40,9 @@ object NativeCryptoOptimized {
         }
     }
 
-
-
-
     fun isAvailable(): Boolean = isAvailable
 
-
-
-
     fun hasHardwareAes(): Boolean = hasHwAes
-
-
-
-
-
-
-
-
-
-
 
     fun encrypt(plaintext: ByteArray, key: ByteArray, aad: ByteArray? = null): ByteArray? {
         if (!isAvailable) return null
@@ -99,14 +66,6 @@ object NativeCryptoOptimized {
         }
     }
 
-
-
-
-
-
-
-
-
     fun decrypt(data: ByteArray, key: ByteArray, aad: ByteArray? = null): ByteArray? {
         if (!isAvailable) return null
         if (key.size != 32) return null
@@ -122,22 +81,6 @@ object NativeCryptoOptimized {
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     fun pbkdf2(password: ByteArray, salt: ByteArray, iterations: Int, keyLength: Int = 32): ByteArray? {
         if (!isAvailable) return null
         return try {
@@ -147,15 +90,6 @@ object NativeCryptoOptimized {
             null
         }
     }
-
-
-
-
-
-
-
-
-
 
     fun hkdf(ikm: ByteArray, salt: ByteArray? = null, info: ByteArray = ByteArray(0), length: Int = 32): ByteArray? {
         if (!isAvailable) return null
@@ -167,11 +101,6 @@ object NativeCryptoOptimized {
         }
     }
 
-
-
-
-
-
     fun sha256(data: ByteArray): ByteArray? {
         if (!isAvailable) return null
         return try {
@@ -181,9 +110,6 @@ object NativeCryptoOptimized {
             null
         }
     }
-
-
-
 
     fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray? {
         if (!isAvailable) return null
@@ -195,34 +121,17 @@ object NativeCryptoOptimized {
         }
     }
 
-
-
-
-
-
-
     fun encryptWithKey(plainData: ByteArray, keyBytes: ByteArray, associatedData: ByteArray? = null): ByteArray? {
         return encrypt(plainData, keyBytes, associatedData)
     }
-
-
-
-
 
     fun decryptWithKey(encryptedPackage: ByteArray, keyBytes: ByteArray, associatedData: ByteArray? = null): ByteArray? {
         return decrypt(encryptedPackage, keyBytes, associatedData)
     }
 
-
-
-
     fun deriveKeyFromPackage(packageName: String, signature: ByteArray, iterations: Int = CryptoConstants.PBKDF2_ITERATIONS): ByteArray? {
         return deriveKeyFromPackage(packageName, signature, iterations, null)
     }
-
-
-
-
 
     fun deriveKeyFromPackage(packageName: String, signature: ByteArray, iterations: Int, customPassword: String?): ByteArray? {
         if (!isAvailable) return null
@@ -234,7 +143,6 @@ object NativeCryptoOptimized {
             (packageName + ":" + sigHash.toHexString()).toByteArray()
         }
 
-
         val saltInput = if (!customPassword.isNullOrBlank()) {
             packageName.toByteArray() + sigHash + customPassword.toByteArray()
         } else {
@@ -244,8 +152,6 @@ object NativeCryptoOptimized {
 
         return pbkdf2(password, salt, iterations, 32)
     }
-
-
 
     private external fun nativeInit(): Boolean
     private external fun nativeHasHwAes(): Boolean

@@ -1,0 +1,94 @@
+<!--
+  多站点应用类型图标 = 网页图标 × 3。
+  视觉：上方 1 个 + 下方 2 个，三角排布，三个独立小地球。
+
+  关键约束（避免重蹈"实心黑团"覆辙）：
+  - 全部 path 只用 strokeColor，fillColor 一律透明（#00000000）。
+    Compose 的 Icon(painter, tint=...) 会把整个矢量当 alpha 蒙板单色化，
+    任何 fillColor 都会被渲染成实心，必须避免。
+  - 三个圆完全不重叠，省掉 evenOdd 之类的拼图技巧。
+
+  线条权重 / "纸质化"调校：
+  - 同样的 24×24 等效区域里，单地球图标只有一个圆+几条线；这里塞了 3 个，
+    总墨量是单图标的 3 倍。如果用一样的线宽（1.6）会显得整体偏黑。
+  - 降到 1.0 描边（外圆）/ 0.9（内部纹），靠近系统级线条图标的密度。
+  - 半径也缩到 5.6（之前 7），给三角形留出更多负空间。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- ========= 地球 1：上方中央，圆心 (24, 13)，半径 5.6 ========= -->
+    <path
+        android:pathData="M 24 13 m -5.6 0 a 5.6 5.6 0 1 0 11.2 0 a 5.6 5.6 0 1 0 -11.2 0 z"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.0"/>
+    <path
+        android:pathData="M 18.4 13 H 29.6"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="0.9"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M 24 7.4 V 18.6"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="0.9"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M 24 7.4 C 21.2 9.5 21.2 16.5 24 18.6 C 26.8 16.5 26.8 9.5 24 7.4 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="0.9"/>
+
+    <!-- ========= 地球 2：左下，圆心 (14, 33)，半径 5.6 ========= -->
+    <path
+        android:pathData="M 14 33 m -5.6 0 a 5.6 5.6 0 1 0 11.2 0 a 5.6 5.6 0 1 0 -11.2 0 z"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.0"/>
+    <path
+        android:pathData="M 8.4 33 H 19.6"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="0.9"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M 14 27.4 V 38.6"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="0.9"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M 14 27.4 C 11.2 29.5 11.2 36.5 14 38.6 C 16.8 36.5 16.8 29.5 14 27.4 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="0.9"/>
+
+    <!-- ========= 地球 3：右下，圆心 (34, 33)，半径 5.6 ========= -->
+    <path
+        android:pathData="M 34 33 m -5.6 0 a 5.6 5.6 0 1 0 11.2 0 a 5.6 5.6 0 1 0 -11.2 0 z"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="1.0"/>
+    <path
+        android:pathData="M 28.4 33 H 39.6"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="0.9"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M 34 27.4 V 38.6"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="0.9"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M 34 27.4 C 31.2 29.5 31.2 36.5 34 38.6 C 36.8 36.5 36.8 29.5 34 27.4 Z"
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="0.9"/>
+</vector>

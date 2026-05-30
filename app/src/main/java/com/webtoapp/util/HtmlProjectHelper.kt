@@ -7,18 +7,9 @@ import com.webtoapp.data.model.HtmlFileType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-
-
-
-
-
-
 object HtmlProjectHelper {
 
     private const val TAG = "HtmlProjectHelper"
-
-
-
 
     fun detectFileType(fileName: String): HtmlFileType = when {
         fileName.endsWith(".html", ignoreCase = true) ||
@@ -27,15 +18,6 @@ object HtmlProjectHelper {
         fileName.endsWith(".js", ignoreCase = true) -> HtmlFileType.JS
         else -> HtmlFileType.OTHER
     }
-
-
-
-
-
-
-
-
-
 
     suspend fun processAndSaveFiles(
         context: Context,
@@ -62,7 +44,6 @@ object HtmlProjectHelper {
 
         AppLogger.d(TAG, "HTML file classification: HTML=${htmlFiles.size}, CSS=${cssFiles.size}, JS=${jsFiles.size}, Other=${otherFiles.size}")
 
-
         val maxInlineSize = 2L * 1024 * 1024
         val totalContentSize = (cssFiles + jsFiles + htmlFiles).sumOf { java.io.File(it.path).let { f -> if (f.exists()) f.length() else 0L } }
         val hasLargeFile = (cssFiles + jsFiles + htmlFiles).any {
@@ -76,8 +57,6 @@ object HtmlProjectHelper {
             return@withContext saveAllWithoutInlining(files, context, projectId)
         }
 
-
-
         val cssContent = cssFiles.mapNotNull { cssFile ->
             try {
                 val file = java.io.File(cssFile.path)
@@ -90,7 +69,6 @@ object HtmlProjectHelper {
             }
         }.joinToString("\n\n")
 
-
         val jsContent = jsFiles.mapNotNull { jsFile ->
             try {
                 val file = java.io.File(jsFile.path)
@@ -102,7 +80,6 @@ object HtmlProjectHelper {
                 null
             }
         }.joinToString("\n\n")
-
 
         val processedHtmlFiles = htmlFiles.mapNotNull { htmlFile ->
             try {
@@ -134,8 +111,6 @@ object HtmlProjectHelper {
             }
         }
 
-
-
         val savedCssFiles = cssFiles.mapNotNull { file ->
             try {
                 val savedPath = HtmlStorage.saveFromTempFile(context, file.path, file.name, projectId)
@@ -148,7 +123,6 @@ object HtmlProjectHelper {
                 null
             }
         }
-
 
         val savedJsFiles = jsFiles.mapNotNull { file ->
             try {
@@ -163,7 +137,6 @@ object HtmlProjectHelper {
             }
         }
 
-
         val savedOtherFiles = otherFiles.mapNotNull { file ->
             val savedPath = HtmlStorage.saveFromTempFile(context, file.path, file.name, projectId)
             if (savedPath != null) file.copy(path = savedPath) else null
@@ -171,10 +144,6 @@ object HtmlProjectHelper {
 
         processedHtmlFiles + savedCssFiles + savedJsFiles + savedOtherFiles
     }
-
-
-
-
 
     fun saveAllWithoutInlining(
         files: List<HtmlFile>,
@@ -197,9 +166,6 @@ object HtmlProjectHelper {
             }
         }
     }
-
-
-
 
     suspend fun copyBuildOutputToStorage(
         context: Context,

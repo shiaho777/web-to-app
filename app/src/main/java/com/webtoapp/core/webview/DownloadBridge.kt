@@ -17,21 +17,11 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
-
-
-
-
-
-
-
-
-
 class DownloadBridge(
     private val context: Context,
     private val scope: CoroutineScope
 ) {
     private val notificationManager = DownloadNotificationManager.getInstance(context)
-
 
     private data class ChunkedDownload(
         val filename: String,
@@ -47,12 +37,7 @@ class DownloadBridge(
     companion object {
         const val JS_INTERFACE_NAME = "AndroidDownload"
 
-
         private val UNSAFE_FILENAME_CHARS_REGEX = Regex("[/\\\\:*?\"<>|]")
-
-
-
-
 
         fun getInjectionScript(): String {
 
@@ -174,6 +159,23 @@ class DownloadBridge(
                 // 对 250MB+ 的导出来说，1MB 分块叠加 JS 字符串 + base64 临时内存会压垮 V8 heap
                 const CHUNK_SIZE = 512 * 1024;
 
+                // ────────────────────────────────────────────────────────
+                // 「Blob 下载拦截 → 范围 / 阈值」运行时调度
+                // - window.__wta_blob_intercept_scope__ 由 caller 在注入时塞进去
+                //     'ALL'（默认）：拦截所有 blob 下载
+                //     'SIZE_OVER_THRESHOLD'：仅当 blob.size > 阈值才拦截，否则放行给浏览器原生下载
+                // - window.__wta_blob_intercept_threshold_bytes__：阈值（字节）。
+                //   未设置时退化为 0，等价于 ALL（不拦截被覆盖到 SIZE_OVER_THRESHOLD 时全部放行）。
+                function shouldInterceptBlob(blob) {
+                    var scope = (typeof window.__wta_blob_intercept_scope__ === 'string')
+                        ? window.__wta_blob_intercept_scope__ : 'ALL';
+                    if (scope === 'ALL') return true;
+                    var threshold = (typeof window.__wta_blob_intercept_threshold_bytes__ === 'number')
+                        ? window.__wta_blob_intercept_threshold_bytes__ : 0;
+                    return !!(blob && typeof blob.size === 'number' && blob.size > threshold);
+                }
+                // ────────────────────────────────────────────────────────
+
                 // Handle Blob URL 下载 - 优化版本，支持大文件分块处理
                 async function handleBlobDownload(blobUrl, filename) {
                     try {
@@ -201,6 +203,24 @@ class DownloadBridge(
                         }
 
                         console.log('[DownloadBridge] Blob obtained, type:', blob.type, 'size:', blob.size);
+
+                        // 「Blob 下载拦截 → 范围」门禁：阈值之下时直接放行让浏览器原生处理。
+                        if (!shouldInterceptBlob(blob)) {
+                            console.log('[DownloadBridge] Below intercept threshold, deferring to native download');
+                            try {
+                                var a = document.createElement('a');
+                                a.href = blobUrl;
+                                a.download = filename || '';
+                                a.style.display = 'none';
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                            } catch (e) {
+                                console.warn('[DownloadBridge] Native fallback failed', e);
+                            }
+                            return;
+                        }
+
                         const mimeType = blob.type || getMimeTypeFromFilename(filename) || 'application/octet-stream';
 
                         // 小文件直接处理，大文件分块处理
@@ -416,24 +436,12 @@ class DownloadBridge(
         }
     }
 
-
-
-
     @JavascriptInterface
     fun showToast(message: String) {
         scope.launch(Dispatchers.Main) {
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
     }
-
-
-
-
-
-
-
-
-
 
     @JavascriptInterface
     fun startChunkedDownload(filename: String, mimeType: String, totalSize: Long): String {
@@ -445,7 +453,6 @@ class DownloadBridge(
             val tempDir = context.cacheDir
             val tempFile = File(tempDir, "download_${downloadId}_$safeFilename")
             val outputStream = java.io.FileOutputStream(tempFile)
-
 
             val notificationId = notificationManager.showIndeterminateProgress(safeFilename)
 
@@ -471,18 +478,9 @@ class DownloadBridge(
         }
     }
 
-
-
-
-
-
-
-
     @JavascriptInterface
     fun appendChunk(downloadId: String, base64Chunk: String, chunkIndex: Int, totalChunks: Int) {
-        // 同步执行 IO 写入：这里运行在 WebView 的 JS binder 线程，
-        // 这样 JS 端 setTimeout(next, 0) 只有等 appendChunk 返回后才发下一块，
-        // 形成天然背压，避免协程队列堆积大量 1MB+ base64 字符串导致 OOM。
+
         try {
             val download = chunkedDownloads[downloadId] ?: run {
                 AppLogger.e("DownloadBridge", "Download task not found: $downloadId")
@@ -498,7 +496,6 @@ class DownloadBridge(
 
             val progress = ((download.receivedChunks.toFloat() / totalChunks) * 100).toInt()
 
-            // 进度通知放到协程里异步更新，不阻塞 JS 线程
             if (progress % 5 == 0 || progress == 100) {
                 scope.launch(Dispatchers.Main) {
                     notificationManager.updateProgress(download.notificationId, download.filename, progress)
@@ -506,16 +503,12 @@ class DownloadBridge(
             }
         } catch (e: Exception) {
             AppLogger.e("DownloadBridge", "Failed to write chunk $chunkIndex/$totalChunks", e)
-            // 清理放到协程里，避免 JS 线程等锁
+
             scope.launch(Dispatchers.IO) {
                 cleanupChunkedDownload(downloadId, false)
             }
         }
     }
-
-
-
-
 
     @JavascriptInterface
     fun finishChunkedDownload(downloadId: String) {
@@ -526,15 +519,11 @@ class DownloadBridge(
                     return@launch
                 }
 
-
                 download.outputStream.flush()
                 download.outputStream.close()
 
                 AppLogger.d("DownloadBridge", "Chunked download complete, saving file: ${download.filename}")
 
-
-                // 流式保存：绝不把整个文件读进内存。
-                // 250MB+ 的 JSON/数据导出，readBytes() + saveFromBytes() 会直接 OOM。
                 if (com.webtoapp.util.MediaSaver.isMediaFile(download.mimeType, download.filename)) {
 
                     val result = com.webtoapp.util.MediaSaver.saveFromFile(
@@ -581,7 +570,6 @@ class DownloadBridge(
                     }
                 }
 
-
                 cleanupChunkedDownload(downloadId, true)
 
             } catch (e: Exception) {
@@ -595,15 +583,11 @@ class DownloadBridge(
         }
     }
 
-
-
-
     private fun cleanupChunkedDownload(downloadId: String, success: Boolean) {
         chunkedDownloads.remove(downloadId)?.let { download ->
             try {
                 download.outputStream.close()
             } catch (e: Exception) {  }
-
 
             if (download.file.exists()) {
                 download.file.delete()
@@ -612,13 +596,6 @@ class DownloadBridge(
             AppLogger.d("DownloadBridge", "Chunked download cleanup complete: $downloadId, success=$success")
         }
     }
-
-
-
-
-
-
-
 
     @JavascriptInterface
     fun saveBase64File(base64Data: String, filename: String, mimeType: String) {
@@ -630,9 +607,7 @@ class DownloadBridge(
 
                 val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
 
-
                 val safeFilename = sanitizeFilename(filename)
-
 
                 if (com.webtoapp.util.MediaSaver.isMediaFile(mimeType, safeFilename)) {
 
@@ -646,7 +621,6 @@ class DownloadBridge(
                                 val isImage = mimeType.startsWith("image/")
                                 val typeText = if (isImage) Strings.image else Strings.video
                                 Toast.makeText(context, Strings.savedToGallery.replace("%s", typeText), Toast.LENGTH_SHORT).show()
-
 
                                 notificationManager.showMediaSaveComplete(
                                     fileName = safeFilename,
@@ -669,7 +643,6 @@ class DownloadBridge(
                     withContext(Dispatchers.Main) {
                         if (savedFile != null) {
                             Toast.makeText(context, Strings.savedTo.replace("%s", savedFile.name), Toast.LENGTH_LONG).show()
-
 
                             notificationManager.showSaveComplete(
                                 fileName = savedFile.name,
@@ -694,11 +667,6 @@ class DownloadBridge(
         }
     }
 
-
-
-
-
-
     private fun saveToDownloadsInternal(bytes: ByteArray, filename: String): File? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 
@@ -709,10 +677,6 @@ class DownloadBridge(
         }
     }
 
-    /**
-     * 流式版保存：直接从临时文件拷贝到目标位置，不经过 ByteArray。
-     * 用于大文件（几十 MB ~ 几百 MB），避免 OutOfMemoryError。
-     */
     private fun saveToDownloadsInternalFromFile(sourceFile: File, filename: String): File? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             saveToDownloadsMediaStoreFromFile(sourceFile, filename)
@@ -809,9 +773,6 @@ class DownloadBridge(
         }
     }
 
-
-
-
     @RequiresApi(Build.VERSION_CODES.Q)
     private fun saveToDownloadsMediaStore(bytes: ByteArray, filename: String): File? {
         try {
@@ -831,7 +792,6 @@ class DownloadBridge(
                 outputStream.write(bytes)
             }
 
-
             contentValues.clear()
             contentValues.put(android.provider.MediaStore.Downloads.IS_PENDING, 0)
             context.contentResolver.update(uri, contentValues, null, null)
@@ -847,17 +807,12 @@ class DownloadBridge(
         }
     }
 
-
-
-
     private fun saveToDownloadsLegacy(bytes: ByteArray, filename: String): File? {
         val downloadDir = getPublicDownloadsDir()
-
 
         if (!downloadDir.exists()) {
             downloadDir.mkdirs()
         }
-
 
         var targetFile = File(downloadDir, filename)
         var counter = 1
@@ -868,7 +823,6 @@ class DownloadBridge(
             targetFile = File(downloadDir, "${nameWithoutExt}_$counter$ext")
             counter++
         }
-
 
         return try {
             FileOutputStream(targetFile).use { fos ->
@@ -882,18 +836,13 @@ class DownloadBridge(
         }
     }
 
-
-
-
     private fun saveToAppPrivateDir(bytes: ByteArray, filename: String): File? {
         val downloadDir = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
             ?: context.filesDir
 
-
         if (!downloadDir.exists()) {
             downloadDir.mkdirs()
         }
-
 
         var targetFile = File(downloadDir, filename)
         var counter = 1
@@ -904,7 +853,6 @@ class DownloadBridge(
             targetFile = File(downloadDir, "${nameWithoutExt}_$counter$ext")
             counter++
         }
-
 
         return try {
             FileOutputStream(targetFile).use { fos ->
@@ -917,9 +865,6 @@ class DownloadBridge(
             null
         }
     }
-
-
-
 
     private fun getMimeType(filename: String): String {
         val ext = filename.substringAfterLast(".", "").lowercase()
@@ -945,21 +890,11 @@ class DownloadBridge(
         }
     }
 
-
-
-
-
-
     @JavascriptInterface
     fun saveTextFile(content: String, filename: String) {
         val base64Data = Base64.encodeToString(content.toByteArray(Charsets.UTF_8), Base64.DEFAULT)
         saveBase64File(base64Data, filename, "text/plain")
     }
-
-
-
-
-
 
     @JavascriptInterface
     fun saveJsonFile(jsonContent: String, filename: String) {
@@ -968,34 +903,21 @@ class DownloadBridge(
         saveBase64File(base64Data, safeFilename, "application/json")
     }
 
-
-
-
     @JavascriptInterface
     fun isAvailable(): Boolean = true
-
-
-
 
     @JavascriptInterface
     fun getDownloadPath(): String {
         return getPublicDownloadsDir().absolutePath
     }
 
-
-
-
     @Suppress("DEPRECATION")
     private fun getPublicDownloadsDir(): File =
         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
 
-
-
-
     private fun sanitizeFilename(filename: String): String {
 
         var safe = filename.replace(UNSAFE_FILENAME_CHARS_REGEX, "_")
-
 
         if (safe.length > 200) {
             val ext = safe.substringAfterLast(".", "")
@@ -1006,7 +928,6 @@ class DownloadBridge(
                 name.take(200)
             }
         }
-
 
         if (safe.isBlank()) {
             safe = "download_${System.currentTimeMillis()}"

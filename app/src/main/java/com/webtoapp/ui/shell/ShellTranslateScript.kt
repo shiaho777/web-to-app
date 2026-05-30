@@ -1,19 +1,5 @@
 package com.webtoapp.ui.shell
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 internal fun injectTranslateScript(webView: android.webkit.WebView, targetLanguage: String, showButton: Boolean) {
     val translateScript = """
         (function() {

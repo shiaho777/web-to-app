@@ -40,15 +40,11 @@ import com.webtoapp.ui.theme.CircularRevealOverlay
 import com.webtoapp.ui.theme.LocalThemeRevealState
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.ui.theme.rememberThemeRevealState
-
-
-
+import com.webtoapp.ui.webview.WebViewActivity
 
 class MainActivity : ComponentActivity() {
 
-
     private var showLanguageSelection by mutableStateOf(true)
-
 
     private var showShortcutPermissionDialog by mutableStateOf(false)
     private var shortcutPermissionMessage by mutableStateOf("")
@@ -63,6 +59,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         AppLogger.lifecycle("MainActivity", "onCreate", "savedInstanceState=${savedInstanceState != null}")
 
+        if (!isTaskRoot &&
+            intent?.action == Intent.ACTION_MAIN &&
+            intent?.hasCategory(Intent.CATEGORY_LAUNCHER) == true
+        ) {
+            AppLogger.i(
+                "MainActivity",
+                "Spurious launcher relaunch detected (task root exists), finishing to let system bring existing task forward"
+            )
+            finish()
+            return
+        }
 
         val isShell = try {
             val shellManager = WebToAppApplication.shellMode
@@ -89,8 +96,12 @@ class MainActivity : ComponentActivity() {
 
             }
         }
-        AppLogger.i("MainActivity", "Normal mode, showing main UI")
 
+        if (handleIncomingUrlIntent(intent)) {
+            return
+        }
+
+        AppLogger.i("MainActivity", "Normal mode, showing main UI")
 
         try {
             enableEdgeToEdge()
@@ -100,9 +111,7 @@ class MainActivity : ComponentActivity() {
 
         requestNecessaryPermissions()
 
-
         checkShortcutPermission()
-
 
         try {
             WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -120,10 +129,8 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(isDarkTheme, themeColors.background) {
                     val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
 
-
                     window.statusBarColor = android.graphics.Color.TRANSPARENT
                     windowInsetsController.isAppearanceLightStatusBars = !isDarkTheme
-
 
                     window.navigationBarColor = android.graphics.Color.TRANSPARENT
                     windowInsetsController.isAppearanceLightNavigationBars = !isDarkTheme
@@ -132,7 +139,6 @@ class MainActivity : ComponentActivity() {
                 val context = LocalContext.current
                 val languageManager = remember { LanguageManager.getInstance(context) }
                 val hasSelectedLanguage by languageManager.hasSelectedLanguageFlow.collectAsState(initial = true)
-
 
                 CompositionLocalProvider(
                     LocalThemeRevealState provides themeRevealState
@@ -154,11 +160,9 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-
                         CircularRevealOverlay(revealState = themeRevealState)
                     }
                 }
-
 
                 if (showShortcutPermissionDialog) {
                     AlertDialog(
@@ -188,9 +192,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
-
-
     private fun checkShortcutPermission() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -202,9 +203,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-
-
 
     private fun buildShortcutPermissionMessage(): String {
         val manufacturer = Build.MANUFACTURER.lowercase()
@@ -233,9 +231,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
-
-
 
     private fun openAppSettings() {
         try {
@@ -302,9 +297,6 @@ class MainActivity : ComponentActivity() {
         AppLogger.lifecycle("MainActivity", "onNewIntent")
         setIntent(intent)
 
-
-
-
         val isShell = try {
             WebToAppApplication.shellMode.isShellMode()
         } catch (e: Exception) {
@@ -331,7 +323,46 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        handleIncomingUrlIntent(intent)
+    }
 
+    private fun handleIncomingUrlIntent(intent: Intent?): Boolean {
+        if (intent == null) return false
+
+        val url: String? = when (intent.action) {
+            Intent.ACTION_VIEW -> {
+
+                intent.data?.toString()
+            }
+            Intent.ACTION_SEND -> {
+
+                val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+                extractUrlFromText(sharedText)
+            }
+            else -> null
+        }
+
+        if (!url.isNullOrBlank() && (url.startsWith("http://") || url.startsWith("https://"))) {
+            AppLogger.i("MainActivity", "Handling incoming URL intent: $url")
+            WebViewActivity.startWithUrl(this, url)
+
+            return true
+        }
+
+        return false
+    }
+
+    private fun extractUrlFromText(text: String?): String? {
+        if (text.isNullOrBlank()) return null
+
+        val trimmed = text.trim()
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+
+            return trimmed.split("\\s".toRegex()).firstOrNull()
+        }
+
+        val urlPattern = Regex("https?://[^\\s]+")
+        return urlPattern.find(text)?.value
     }
 
     override fun onDestroy() {

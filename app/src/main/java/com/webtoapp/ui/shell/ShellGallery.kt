@@ -30,10 +30,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-
-
-
-
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ShellGalleryPlayer(
@@ -44,7 +40,6 @@ fun ShellGalleryPlayer(
     val scope = rememberCoroutineScope()
     val assetDecryptor = remember { com.webtoapp.core.crypto.AssetDecryptor(context) }
 
-
     val items = remember(galleryConfig) {
         when (galleryConfig.playMode) {
             "SHUFFLE" -> galleryConfig.items.shuffled()
@@ -52,7 +47,6 @@ fun ShellGalleryPlayer(
         }
     }
     var effectiveItems by remember { mutableStateOf(items) }
-
 
     LaunchedEffect(items) {
         effectiveItems = if (items.isNotEmpty()) {
@@ -73,20 +67,16 @@ fun ShellGalleryPlayer(
         return
     }
 
-
     val pagerState = androidx.compose.foundation.pager.rememberPagerState(
         initialPage = 0,
         pageCount = { effectiveItems.size }
     )
 
-
     val currentIndex by remember { derivedStateOf { pagerState.settledPage } }
     val currentItem = effectiveItems.getOrNull(currentIndex)
 
-
     var showControls by remember { mutableStateOf(true) }
     var isPlaying by remember { mutableStateOf(galleryConfig.autoPlay) }
-
 
     LaunchedEffect(currentIndex, isPlaying) {
         if (isPlaying && currentItem?.type == "IMAGE" && !pagerState.isScrollInProgress) {
@@ -101,14 +91,12 @@ fun ShellGalleryPlayer(
         }
     }
 
-
     LaunchedEffect(showControls) {
         if (showControls) {
             kotlinx.coroutines.delay(3000)
             showControls = false
         }
     }
-
 
     val bgColor = remember(galleryConfig.backgroundColor) {
         try {
@@ -171,7 +159,6 @@ fun ShellGalleryPlayer(
             }
         }
 
-
         AnimatedVisibility(
             visible = showControls && galleryConfig.showMediaInfo,
             enter = fadeIn() + slideInVertically(),
@@ -216,7 +203,6 @@ fun ShellGalleryPlayer(
                         )
                     }
 
-
                     currentItem?.let { item ->
                         Icon(
                             if (item.type == "VIDEO") Icons.Outlined.Videocam
@@ -229,7 +215,6 @@ fun ShellGalleryPlayer(
                 }
             }
         }
-
 
         if (currentItem?.type == "IMAGE") {
             AnimatedVisibility(
@@ -256,7 +241,6 @@ fun ShellGalleryPlayer(
                 }
             }
         }
-
 
         AnimatedVisibility(
             visible = showControls && currentIndex > 0,
@@ -314,10 +298,6 @@ fun ShellGalleryPlayer(
     }
 }
 
-
-
-
-
 private fun deriveGalleryItemsFromAssets(
     context: android.content.Context
 ): List<com.webtoapp.core.shell.GalleryShellItem> {
@@ -367,9 +347,6 @@ private fun deriveGalleryItemsFromAssets(
     }
 }
 
-
-
-
 @Composable
 fun ShellGalleryImageViewer(
     item: com.webtoapp.core.shell.GalleryShellItem,
@@ -379,7 +356,6 @@ fun ShellGalleryImageViewer(
     val context = LocalContext.current
     var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var isLoading by remember { mutableStateOf(true) }
-
 
     LaunchedEffect(item.assetPath) {
         isLoading = true
@@ -417,9 +393,6 @@ fun ShellGalleryImageViewer(
     }
 }
 
-
-
-
 @Composable
 fun ShellGalleryVideoPlayer(
     item: com.webtoapp.core.shell.GalleryShellItem,
@@ -443,7 +416,6 @@ fun ShellGalleryVideoPlayer(
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
     val isEncrypted = remember(item.assetPath) { assetDecryptor.isEncrypted(item.assetPath) }
-
 
     DisposableEffect(item.assetPath, isEncrypted) {
         val mediaPlayer = android.media.MediaPlayer()
@@ -481,7 +453,6 @@ fun ShellGalleryVideoPlayer(
                     } catch (e: Exception) {
                         AppLogger.w("ShellGallery", "openFd failed, fallback to stream copy: ${item.assetPath}", e)
                     }
-
 
                     val ext = item.assetPath.substringAfterLast('.', "mp4")
                     val tempFile = java.io.File(context.cacheDir, "gallery_video_${System.currentTimeMillis()}.$ext")
@@ -533,7 +504,6 @@ fun ShellGalleryVideoPlayer(
         }
     }
 
-
     LaunchedEffect(isPlaying, isPrepared, isCurrentPage) {
         player?.let { mp ->
             if (isPrepared) {
@@ -546,7 +516,6 @@ fun ShellGalleryVideoPlayer(
         }
     }
 
-
     LaunchedEffect(enableAudio, isPrepared) {
         player?.let { mp ->
             if (isPrepared) {
@@ -557,7 +526,6 @@ fun ShellGalleryVideoPlayer(
             }
         }
     }
-
 
     LaunchedEffect(isPlaying, isPrepared) {
         while (isPlaying && isPrepared) {
@@ -613,7 +581,6 @@ fun ShellGalleryVideoPlayer(
             modifier = Modifier.fillMaxSize()
         )
 
-
         AnimatedVisibility(
             visible = showControls,
             enter = fadeIn(),
@@ -664,7 +631,6 @@ fun ShellGalleryVideoPlayer(
                         )
                     }
 
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
@@ -683,7 +649,6 @@ fun ShellGalleryVideoPlayer(
                             )
                         }
 
-
                         IconButton(
                             onClick = { onPlayStateChange(!isPlaying) },
                             modifier = Modifier.size(56.dp)
@@ -695,7 +660,6 @@ fun ShellGalleryVideoPlayer(
                                 tint = Color.White
                             )
                         }
-
 
                         IconButton(onClick = {
                             player?.let { mp ->

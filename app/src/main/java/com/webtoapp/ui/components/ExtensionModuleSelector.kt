@@ -24,11 +24,6 @@ import com.webtoapp.core.i18n.Strings
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
-
-
-
-
-
 @Composable
 fun ExtensionModuleSelectorCard(
     selectedModuleIds: Set<String>,
@@ -100,7 +95,6 @@ fun ExtensionModuleSelectorCard(
                 }
             }
 
-
             if (expanded && enabledModules.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 HorizontalDivider()
@@ -150,7 +144,6 @@ fun ExtensionModuleSelectorCard(
                 }
             }
 
-
             if (enabledModules.isEmpty() && expanded) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Surface(
@@ -179,7 +172,6 @@ fun ExtensionModuleSelectorCard(
         }
     }
 
-
     if (showModuleDialog) {
         ModuleSelectionDialog(
             allModules = allModules,
@@ -189,9 +181,6 @@ fun ExtensionModuleSelectorCard(
         )
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -203,7 +192,6 @@ fun ModuleSelectionDialog(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<ModuleCategory?>(null) }
-
 
     val filteredModules = allModules.filter { module ->
         val matchesSearch = searchQuery.isBlank() ||
@@ -230,7 +218,6 @@ fun ModuleSelectionDialog(
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
-
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -272,7 +259,6 @@ fun ModuleSelectionDialog(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-
 
                 LazyColumn(
                     modifier = Modifier.heightIn(max = 400.dp),
@@ -381,9 +367,6 @@ fun ModuleSelectionDialog(
     )
 }
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickModuleSelector(
@@ -394,7 +377,6 @@ fun QuickModuleSelector(
     val context = LocalContext.current
     val extensionManager = remember { ExtensionManager.getInstance(context) }
     val builtInModules by extensionManager.builtInModules.collectAsStateWithLifecycle()
-
 
     val quickModules = builtInModules.take(5)
 

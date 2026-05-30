@@ -4,9 +4,6 @@ import com.webtoapp.data.dao.AppCategoryDao
 import com.webtoapp.data.model.AppCategory
 import kotlinx.coroutines.flow.Flow
 
-
-
-
 class AppCategoryRepository(private val categoryDao: AppCategoryDao) {
 
     val allCategories: Flow<List<AppCategory>> = categoryDao.getAllCategories()

@@ -3,14 +3,12 @@ package com.webtoapp.ui.shell
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import com.webtoapp.core.crypto.AssetDecryptor
+import com.webtoapp.core.crypto.CryptoConstants
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.util.ensureWebUrlScheme
 import com.webtoapp.util.normalizeExternalIntentUrl
-import com.webtoapp.util.upgradeRemoteHttpToHttps
 import java.io.File
-
-
-
 
 internal fun formatTimeMs(ms: Long): String {
     val seconds = (ms / 1000) % 60
@@ -28,7 +26,7 @@ internal fun normalizeShellTargetUrlForSecurity(rawUrl: String): String {
 
     val withScheme = if (!trimmed.startsWith("http://", ignoreCase = true) &&
                           !trimmed.startsWith("https://", ignoreCase = true)) {
-        // 没有协议头时默认 http，不做假设
+
         "http://$trimmed"
     } else {
         trimmed
@@ -46,15 +44,6 @@ internal fun buildPackagedHtmlShellEntryUrl(packageName: String, entryFile: Stri
     return "${buildPackagedHtmlShellBaseUrl(packageName)}/${android.net.Uri.encode(normalizedEntry, "/")}"
 }
 
-
-
-
-
-
-
-
-
-
 internal fun validateDeepLinkUrl(url: String, allowedHosts: List<String>, targetUrl: String): String {
     if (allowedHosts.isEmpty()) return url
 
@@ -70,7 +59,6 @@ internal fun validateDeepLinkUrl(url: String, allowedHosts: List<String>, target
         return targetUrl
     }
 
-
     val configHost = try {
         java.net.URL(normalizeShellTargetUrlForSecurity(targetUrl)).host?.lowercase()
     } catch (e: Exception) { null }
@@ -79,7 +67,6 @@ internal fun validateDeepLinkUrl(url: String, allowedHosts: List<String>, target
         addAll(allowedHosts.map { it.lowercase() })
         configHost?.let { add(it) }
     }
-
 
     val isAllowed = allAllowed.any { allowedHost ->
         urlHost == allowedHost || urlHost.endsWith(".$allowedHost")
@@ -152,6 +139,15 @@ internal fun buildExtractionToken(
 }
 
 internal fun extractAssetsRecursive(context: Context, assetPath: String, destDir: File) {
+    extractAssetsRecursive(context, assetPath, destDir, AssetDecryptor(context))
+}
+
+private fun extractAssetsRecursive(
+    context: Context,
+    assetPath: String,
+    destDir: File,
+    decryptor: AssetDecryptor
+) {
     AppLogger.d("extractAssets", "提取: assetPath='$assetPath' -> destDir='${destDir.absolutePath}'")
     destDir.mkdirs()
     val children = context.assets.list(assetPath)
@@ -163,13 +159,11 @@ internal fun extractAssetsRecursive(context: Context, assetPath: String, destDir
 
     if (children.isEmpty()) {
 
-        context.assets.open(assetPath).use { input ->
-            val destFile = File(destDir.parentFile, destDir.name)
-            destFile.outputStream().use { output ->
-                val bytes = input.copyTo(output)
-                AppLogger.d("extractAssets", "  文件(叶子): $assetPath -> ${destFile.absolutePath} ($bytes bytes)")
-            }
-        }
+        val parent = destDir.parentFile ?: destDir
+
+        val leafFinalName = destDir.name.removeSuffix(CryptoConstants.ENCRYPTED_EXTENSION)
+        val destFile = File(parent, leafFinalName)
+        writeAssetFile(context, assetPath, destFile, decryptor)
         return
     }
 
@@ -177,23 +171,55 @@ internal fun extractAssetsRecursive(context: Context, assetPath: String, destDir
     var extractedDirs = 0
     for (child in children) {
         val childAssetPath = "$assetPath/$child"
-        val childDest = File(destDir, child)
-
 
         val subList = context.assets.list(childAssetPath)
         if (subList != null && subList.isNotEmpty()) {
             extractedDirs++
-            extractAssetsRecursive(context, childAssetPath, childDest)
+
+            extractAssetsRecursive(context, childAssetPath, File(destDir, child), decryptor)
         } else {
 
-            context.assets.open(childAssetPath).use { input ->
-                childDest.outputStream().use { output ->
-                    val bytes = input.copyTo(output)
-                    extractedFiles++
-                    AppLogger.d("extractAssets", "  文件: $child ($bytes bytes)")
-                }
-            }
+            val finalName = child.removeSuffix(CryptoConstants.ENCRYPTED_EXTENSION)
+            val childDest = File(destDir, finalName)
+            writeAssetFile(context, childAssetPath, childDest, decryptor)
+            extractedFiles++
         }
     }
     AppLogger.i("extractAssets", "'$assetPath' 提取完成: $extractedFiles 个文件, $extractedDirs 个子目录")
+}
+
+private fun writeAssetFile(
+    context: Context,
+    assetPath: String,
+    destFile: File,
+    decryptor: AssetDecryptor
+) {
+    val isEncrypted = assetPath.endsWith(CryptoConstants.ENCRYPTED_EXTENSION)
+
+    if (isEncrypted) {
+        try {
+            val encryptedBytes = context.assets.open(assetPath).use { it.readBytes() }
+            val decrypted = decryptor.decrypt(encryptedBytes)
+            destFile.outputStream().use { it.write(decrypted) }
+            AppLogger.d(
+                "extractAssets",
+                "  解密文件: $assetPath -> ${destFile.name} (${decrypted.size} bytes)"
+            )
+            return
+        } catch (e: Exception) {
+            AppLogger.e(
+                "extractAssets",
+                "解密 asset 失败，回退到原样拷贝: $assetPath",
+                e
+            )
+
+        }
+    }
+
+    context.assets.open(assetPath).use { input ->
+        destFile.outputStream().use { output ->
+            val bytes = input.copyTo(output)
+            AppLogger.d("extractAssets", "  文件: ${destFile.name} ($bytes bytes)")
+        }
+    }
 }

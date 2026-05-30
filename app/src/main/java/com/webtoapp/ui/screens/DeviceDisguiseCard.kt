@@ -20,11 +20,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.webtoapp.core.disguise.DeviceDisguiseConfig
-import com.webtoapp.core.disguise.DeviceType
-import com.webtoapp.core.disguise.DeviceOS
-import com.webtoapp.core.disguise.DeviceBrand
-import com.webtoapp.core.disguise.DevicePresets
+import com.webtoapp.core.appearance.DeviceDisguiseConfig
+import com.webtoapp.core.appearance.DeviceType
+import com.webtoapp.core.appearance.DeviceOS
+import com.webtoapp.core.appearance.DeviceBrand
+import com.webtoapp.core.appearance.DevicePresets
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
@@ -32,20 +32,6 @@ import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.SettingsSwitch
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -56,7 +42,6 @@ fun DeviceDisguiseCard(
     var expanded by remember { mutableStateOf(false) }
     var showCustomUA by remember { mutableStateOf(false) }
     var showCustomDevice by remember { mutableStateOf(false) }
-
 
     var customModelName by remember { mutableStateOf("") }
     var customModelId by remember { mutableStateOf("") }
@@ -120,7 +105,6 @@ fun DeviceDisguiseCard(
                 )
             }
 
-
             AnimatedVisibility(
                 visible = expanded,
                 enter = CardExpandTransition,
@@ -159,7 +143,6 @@ fun DeviceDisguiseCard(
                         Column {
                             Spacer(modifier = Modifier.height(12.dp))
 
-
                             Surface(
                                 color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
                                 shape = RoundedCornerShape(10.dp)
@@ -185,7 +168,6 @@ fun DeviceDisguiseCard(
                             }
 
                             Spacer(modifier = Modifier.height(16.dp))
-
 
                             Text(
                                 text = Strings.deviceQuickSelect,
@@ -222,7 +204,6 @@ fun DeviceDisguiseCard(
 
                                     Surface(
                                         onClick = {
-
 
                                             val presets = DevicePresets.getPresetsForType(type)
                                             if (presets.isNotEmpty()) {
@@ -262,7 +243,6 @@ fun DeviceDisguiseCard(
                             Spacer(modifier = Modifier.height(16.dp))
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                             Spacer(modifier = Modifier.height(12.dp))
-
 
                             Text(
                                 text = Strings.devicePopularPresets,
@@ -343,7 +323,6 @@ fun DeviceDisguiseCard(
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                             Spacer(modifier = Modifier.height(12.dp))
 
-
                             if (config.deviceModelName.isNotBlank()) {
                                 Text(
                                     text = Strings.deviceCurrentDisguise,
@@ -382,7 +361,6 @@ fun DeviceDisguiseCard(
                                         }
                                         Spacer(modifier = Modifier.height(10.dp))
 
-
                                         val ua = config.generateUserAgent()
                                         if (ua.isNotBlank()) {
                                             Surface(
@@ -409,7 +387,6 @@ fun DeviceDisguiseCard(
                                             }
                                         }
 
-
                                         if (config.screenWidth > 0 && config.screenHeight > 0) {
                                             Spacer(modifier = Modifier.height(8.dp))
                                             Row(
@@ -431,7 +408,6 @@ fun DeviceDisguiseCard(
                                 Spacer(modifier = Modifier.height(12.dp))
                             }
 
-
                             if (config.deviceType !in listOf(DeviceType.DESKTOP, DeviceType.LAPTOP)) {
                                 SettingsSwitch(
                                     title = Strings.deviceDesktopViewport,
@@ -443,7 +419,6 @@ fun DeviceDisguiseCard(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
-
 
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                             Spacer(modifier = Modifier.height(8.dp))
@@ -482,7 +457,6 @@ fun DeviceDisguiseCard(
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
 
-
                                     PremiumTextField(
                                         value = customModelId,
                                         onValueChange = { customModelId = it },
@@ -492,7 +466,6 @@ fun DeviceDisguiseCard(
                                         singleLine = true
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
-
 
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -517,7 +490,6 @@ fun DeviceDisguiseCard(
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
 
-
                                     PremiumTextField(
                                         value = customDensity,
                                         onValueChange = { customDensity = it },
@@ -527,7 +499,6 @@ fun DeviceDisguiseCard(
                                         singleLine = true
                                     )
                                     Spacer(modifier = Modifier.height(12.dp))
-
 
                                     FilledTonalButton(
                                         onClick = {
@@ -556,7 +527,6 @@ fun DeviceDisguiseCard(
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
-
 
                             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                             Spacer(modifier = Modifier.height(8.dp))

@@ -7,15 +7,10 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-
-
-
-
 class BuildLogger(private val context: Context) {
 
     private val logDir = File(context.getExternalFilesDir(null), "build_logs").apply { mkdirs() }
     private var currentLogFile: File? = null
-
 
     private fun dateFormat() = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
     private fun fileNameFormat() = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
@@ -25,9 +20,6 @@ class BuildLogger(private val context: Context) {
         private const val MAX_LOG_FILES = 10
         private val SAFE_FILENAME_REGEX = Regex("[^a-zA-Z0-9\\u4e00-\\u9fa5]")
     }
-
-
-
 
     fun startNewLog(appName: String): File {
 
@@ -46,18 +38,12 @@ class BuildLogger(private val context: Context) {
         return currentLogFile!!
     }
 
-
-
-
     fun log(message: String) {
         val timestamp = dateFormat().format(Date())
         val logLine = "[$timestamp] INFO: $message"
         writeToFile(logLine)
         AppLogger.d(TAG, message)
     }
-
-
-
 
     fun debug(message: String) {
         val timestamp = dateFormat().format(Date())
@@ -66,18 +52,12 @@ class BuildLogger(private val context: Context) {
         AppLogger.d(TAG, message)
     }
 
-
-
-
     fun warn(message: String) {
         val timestamp = dateFormat().format(Date())
         val logLine = "[$timestamp] WARN: $message"
         writeToFile(logLine)
         AppLogger.w(TAG, message)
     }
-
-
-
 
     fun error(message: String, throwable: Throwable? = null) {
         val timestamp = dateFormat().format(Date())
@@ -95,24 +75,15 @@ class BuildLogger(private val context: Context) {
         AppLogger.e(TAG, message, throwable)
     }
 
-
-
-
     fun section(title: String) {
         log("----------------------------------------")
         log(">>> $title")
         log("----------------------------------------")
     }
 
-
-
-
     fun logKeyValue(key: String, value: Any?) {
         log("  $key = $value")
     }
-
-
-
 
     fun logList(title: String, items: List<Any?>) {
         log("  $title (${items.size} ${Strings.buildLogItems}):")
@@ -120,9 +91,6 @@ class BuildLogger(private val context: Context) {
             log("    [$index] $item")
         }
     }
-
-
-
 
     fun endLog(success: Boolean, message: String = "") {
         log("========================================")
@@ -135,13 +103,7 @@ class BuildLogger(private val context: Context) {
         log("========================================")
     }
 
-
-
-
     fun getCurrentLogPath(): String? = currentLogFile?.absolutePath
-
-
-
 
     fun readLogContent(path: String?, maxChars: Int = 20000): String? {
         if (path.isNullOrBlank()) return null
@@ -163,9 +125,6 @@ class BuildLogger(private val context: Context) {
             null
         }
     }
-
-
-
 
     fun getAllLogFiles(): List<File> {
         return logDir.listFiles()

@@ -22,15 +22,6 @@ import com.webtoapp.util.FaviconFetcher
 import kotlinx.coroutines.launch
 import java.io.File
 
-
-
-
-
-
-
-
-
-
 @Composable
 fun IconPickerWithLibrary(
     iconUri: Uri? = null,
@@ -45,9 +36,7 @@ fun IconPickerWithLibrary(
     var showAiGeneratorDialog by remember { mutableStateOf(false) }
     var isFetchingFavicon by remember { mutableStateOf(false) }
 
-
     val hasIcon = iconUri != null || iconPath != null
-
 
     val canFetchFavicon = !websiteUrl.isNullOrBlank() &&
         (websiteUrl.contains(".") || websiteUrl.startsWith("http"))
@@ -124,7 +113,6 @@ fun IconPickerWithLibrary(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -167,7 +155,6 @@ fun IconPickerWithLibrary(
                     }
                 }
 
-
                 FilledTonalButton(
                     onClick = { showLibraryDialog = true },
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
@@ -185,7 +172,6 @@ fun IconPickerWithLibrary(
         }
     }
 
-
     if (showLibraryDialog) {
         IconLibraryDialog(
             onDismiss = { showLibraryDialog = false },
@@ -196,7 +182,6 @@ fun IconPickerWithLibrary(
             onOpenAiGenerator = { showAiGeneratorDialog = true }
         )
     }
-
 
     if (showAiGeneratorDialog) {
         IconGeneratorDialog(

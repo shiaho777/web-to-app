@@ -23,9 +23,6 @@ data class BuildInputPreflightRequest(
     val multiWebProjectDir: File? = null,
     val networkTrustConfig: NetworkTrustConfig = NetworkTrustConfig(),
 
-
-
-
     val phpBinaryPath: String? = null,
     val nodeBinaryPath: String? = null,
     val pythonBinaryPath: String? = null,
@@ -363,7 +360,6 @@ object BuildInputPreflight {
             )
         }
     }
-
 
     private fun MutableList<BuildInputIssue>.requireReadableDirectory(
         key: String,

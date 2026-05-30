@@ -1,9 +1,5 @@
 package com.webtoapp.core.pwa
 
-
-
-
-
 data class PwaManifest(
     val name: String? = null,
     val shortName: String? = null,
@@ -19,18 +15,12 @@ data class PwaManifest(
     val dir: String? = null
 )
 
-
-
-
 data class PwaIcon(
     val src: String,
     val sizes: String? = null,
     val type: String? = null,
     val purpose: String? = null
 ) {
-
-
-
 
     val maxSizePixels: Int
         get() {
@@ -42,9 +32,6 @@ data class PwaIcon(
                 .maxOrNull() ?: 0
         }
 }
-
-
-
 
 data class PwaAnalysisResult(
 
@@ -73,17 +60,11 @@ data class PwaAnalysisResult(
     val errorMessage: String? = null
 )
 
-
-
-
 enum class PwaDataSource {
     MANIFEST,
     META_TAGS,
     NONE
 }
-
-
-
 
 sealed class PwaAnalysisState {
     data object Idle : PwaAnalysisState()

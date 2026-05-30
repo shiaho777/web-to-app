@@ -41,11 +41,7 @@ import com.webtoapp.core.i18n.Strings
 import java.io.File
 import java.io.FileOutputStream
 
-
 private val SAFE_MODULE_FILENAME_REGEX = Regex("[^a-zA-Z0-9\u4e00-\u9fa5_-]")
-
-
-
 
 @Composable
 fun QrCodeShareDialog(
@@ -55,14 +51,11 @@ fun QrCodeShareDialog(
 ) {
     val context = LocalContext.current
 
-
     val canGenerate = QrCodeUtils.canGenerateQrCode(shareCode)
     val contentSize = QrCodeUtils.getContentSize(shareCode)
 
-
     val scanText = Strings.scanToImportModule
     val subtitleText = Strings.extensionModuleSubtitle
-
 
     val posterBitmap = remember(shareCode, module, scanText, subtitleText) {
         if (canGenerate) {
@@ -135,7 +128,6 @@ fun QrCodeShareDialog(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -156,7 +148,6 @@ fun QrCodeShareDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(Strings.savePoster)
                         }
-
 
                         PremiumButton(
                             onClick = {
@@ -179,7 +170,6 @@ fun QrCodeShareDialog(
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
-
 
                     Text(
                         text = Strings.scanQrToImport,
@@ -221,7 +211,6 @@ fun QrCodeShareDialog(
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-
                         PremiumButton(
                             onClick = {
                                 shareModuleFile(context, module)
@@ -253,12 +242,8 @@ fun QrCodeShareDialog(
     }
 }
 
-
-
-
 private fun generatePoster(module: ExtensionModule, shareCode: String, scanText: String, subtitleText: String): Bitmap? {
     val qrCodeBitmap = QrCodeUtils.generateQrCode(shareCode, 400) ?: return null
-
 
     val posterWidth = 720
     val posterHeight = 1080
@@ -266,10 +251,8 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
     val poster = Bitmap.createBitmap(posterWidth, posterHeight, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(poster)
 
-
     val categoryColor = getCategoryColor(module.category)
     val categoryColorLight = adjustAlpha(categoryColor, 0.15f)
-
 
     val bgGradient = LinearGradient(
         0f, 0f, posterWidth.toFloat(), posterHeight.toFloat(),
@@ -286,7 +269,6 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
     }
     canvas.drawRect(0f, 0f, posterWidth.toFloat(), posterHeight.toFloat(), bgPaint)
 
-
     val headerPaint = Paint().apply {
         shader = LinearGradient(
             0f, 0f, posterWidth.toFloat(), 0f,
@@ -297,7 +279,6 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
     }
     canvas.drawRect(0f, 0f, posterWidth.toFloat(), 8f, headerPaint)
 
-
     val categoryY = 60f
     val categoryPaint = Paint().apply {
         isAntiAlias = true
@@ -305,7 +286,6 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
         textSize = 48f
         typeface = Typeface.DEFAULT_BOLD
     }
-
 
     val categoryBgPaint = Paint().apply {
         isAntiAlias = true
@@ -321,10 +301,8 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
     )
     canvas.drawRoundRect(categoryRect, 32f, 32f, categoryBgPaint)
 
-
     categoryPaint.textAlign = Paint.Align.CENTER
     canvas.drawText(categoryText, posterWidth / 2f, categoryY + 46f, categoryPaint)
-
 
     val namePaint = Paint().apply {
         isAntiAlias = true
@@ -334,14 +312,12 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
         textAlign = Paint.Align.CENTER
     }
 
-
     val nameLines = wrapText(module.name, namePaint, posterWidth - 80f)
     var nameY = 180f
     for (line in nameLines) {
         canvas.drawText(line, posterWidth / 2f, nameY, namePaint)
         nameY += 68f
     }
-
 
     if (module.description.isNotBlank()) {
         val descPaint = Paint().apply {
@@ -359,11 +335,9 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
         }
     }
 
-
     val qrSize = 320
     val qrX = (posterWidth - qrSize) / 2
     val qrY = 420
-
 
     val cardPaint = Paint().apply {
         isAntiAlias = true
@@ -376,9 +350,7 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
     )
     canvas.drawRoundRect(cardRect, 24f, 24f, cardPaint)
 
-
     canvas.drawBitmap(qrCodeBitmap, qrX.toFloat(), qrY.toFloat(), null)
-
 
     val scanPaint = Paint().apply {
         isAntiAlias = true
@@ -388,7 +360,6 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
         textAlign = Paint.Align.CENTER
     }
     canvas.drawText(scanText, posterWidth / 2f, qrY + qrSize + 80f, scanPaint)
-
 
     if (module.tags.isNotEmpty()) {
         val tagPaint = Paint().apply {
@@ -417,10 +388,8 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
                 break
             }
 
-
             val tagRect = RectF(tagX, tagY, tagX + tagWidth, tagY + tagHeight)
             canvas.drawRoundRect(tagRect, tagHeight / 2, tagHeight / 2, tagBgPaint)
-
 
             canvas.drawText(tagText, tagX + tagPadding, tagY + 30f, tagPaint)
 
@@ -429,16 +398,13 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
         }
     }
 
-
     val bottomY = posterHeight - 100f
-
 
     val linePaint = Paint().apply {
         color = Color.parseColor("#e0e0e0")
         strokeWidth = 1f
     }
     canvas.drawLine(60f, bottomY - 40f, posterWidth - 60f, bottomY - 40f, linePaint)
-
 
     val brandPaint = Paint().apply {
         isAntiAlias = true
@@ -448,7 +414,6 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
         textAlign = Paint.Align.CENTER
     }
     canvas.drawText("WebToApp", posterWidth / 2f, bottomY + 10f, brandPaint)
-
 
     val subtitlePaint = Paint().apply {
         isAntiAlias = true
@@ -460,9 +425,6 @@ private fun generatePoster(module: ExtensionModule, shareCode: String, scanText:
 
     return poster
 }
-
-
-
 
 private fun wrapText(text: String, paint: Paint, maxWidth: Float, maxLines: Int = 2): List<String> {
     val lines = mutableListOf<String>()
@@ -484,9 +446,6 @@ private fun wrapText(text: String, paint: Paint, maxWidth: Float, maxLines: Int 
 
     return lines
 }
-
-
-
 
 private fun getCategoryColor(category: ModuleCategory): Int {
     return when (category) {
@@ -516,16 +475,10 @@ private fun getCategoryColor(category: ModuleCategory): Int {
     }
 }
 
-
-
-
 private fun adjustAlpha(color: Int, factor: Float): Int {
     val alpha = (Color.alpha(color) * factor).toInt().coerceIn(0, 255)
     return Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color))
 }
-
-
-
 
 private fun savePosterToGallery(context: Context, bitmap: Bitmap, moduleName: String) {
     try {
@@ -567,9 +520,6 @@ private fun savePosterToGallery(context: Context, bitmap: Bitmap, moduleName: St
     }
 }
 
-
-
-
 private fun sharePoster(context: Context, bitmap: Bitmap, moduleName: String) {
     try {
         val cacheDir = File(context.cacheDir, "share_poster")
@@ -601,9 +551,6 @@ private fun sharePoster(context: Context, bitmap: Bitmap, moduleName: String) {
     }
 }
 
-
-
-
 private fun shareModuleFile(context: Context, module: ExtensionModule) {
     try {
 
@@ -612,10 +559,8 @@ private fun shareModuleFile(context: Context, module: ExtensionModule) {
             cacheDir.mkdirs()
         }
 
-
         val safeFileName = module.name.replace(SAFE_MODULE_FILENAME_REGEX, "_")
         val file = File(cacheDir, "${safeFileName}.wtamod")
-
 
         file.writeText(module.toJson())
 

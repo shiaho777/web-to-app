@@ -5,33 +5,10 @@ import com.webtoapp.core.crypto.EncryptionConfig
 import java.io.File
 import java.util.zip.ZipOutputStream
 
-
-
-
-
-
-
-
-
-
-
-
 interface AppContentEmbedder {
-
-
-
-
-
-
-
 
     fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult
 }
-
-
-
-
-
 
 class EmbedContext(
     val config: ApkConfig,
@@ -56,17 +33,11 @@ class EmbedContext(
     val fnAddGoAppFiles: (ZipOutputStream, File) -> Unit
 )
 
-
-
-
 data class EmbedResult(
     val success: Boolean,
     val itemCount: Int = 0,
     val message: String = ""
 )
-
-
-
 
 object AppContentEmbedderFactory {
 
@@ -88,11 +59,6 @@ object AppContentEmbedderFactory {
     }
 }
 
-
-
-
-
-
 class MediaContentEmbedder : AppContentEmbedder {
     override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
         val mediaPath = ctx.mediaContentPath ?: return EmbedResult(false, message = "No media content path")
@@ -102,9 +68,6 @@ class MediaContentEmbedder : AppContentEmbedder {
         return EmbedResult(true, 1, "Media content embedded")
     }
 }
-
-
-
 
 class HtmlContentEmbedder : AppContentEmbedder {
     override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
@@ -135,9 +98,6 @@ class HtmlContentEmbedder : AppContentEmbedder {
     }
 }
 
-
-
-
 class GalleryContentEmbedder : AppContentEmbedder {
     override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
         if (ctx.galleryItems.isEmpty()) {
@@ -150,9 +110,6 @@ class GalleryContentEmbedder : AppContentEmbedder {
         return EmbedResult(true, ctx.galleryItems.size, "${ctx.galleryItems.size} gallery items embedded")
     }
 }
-
-
-
 
 class WordPressContentEmbedder : AppContentEmbedder {
     override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
@@ -167,9 +124,6 @@ class WordPressContentEmbedder : AppContentEmbedder {
     }
 }
 
-
-
-
 class NodeJsContentEmbedder : AppContentEmbedder {
     override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
         val dir = ctx.projectDir
@@ -182,9 +136,6 @@ class NodeJsContentEmbedder : AppContentEmbedder {
         return EmbedResult(true, message = "Node.js files embedded")
     }
 }
-
-
-
 
 class FrontendContentEmbedder : AppContentEmbedder {
     override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
@@ -205,9 +156,6 @@ class FrontendContentEmbedder : AppContentEmbedder {
     }
 }
 
-
-
-
 class PhpAppContentEmbedder : AppContentEmbedder {
     override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
         val dir = ctx.projectDir
@@ -221,9 +169,6 @@ class PhpAppContentEmbedder : AppContentEmbedder {
     }
 }
 
-
-
-
 class PythonAppContentEmbedder : AppContentEmbedder {
     override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
         val dir = ctx.projectDir
@@ -236,9 +181,6 @@ class PythonAppContentEmbedder : AppContentEmbedder {
         return EmbedResult(true, message = "Python app files embedded")
     }
 }
-
-
-
 
 class GoAppContentEmbedder : AppContentEmbedder {
     override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {

@@ -22,26 +22,12 @@ import android.provider.Settings
 import com.webtoapp.core.logging.AppLogger
 import androidx.core.app.NotificationCompat
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 class ForcedRunGuardService : Service() {
 
     companion object {
         private const val TAG = "ForcedRunGuardService"
         private const val NOTIFICATION_ID = 19527
         private const val CHANNEL_ID = "forced_run_guard"
-
 
         private const val CHECK_INTERVAL_AGGRESSIVE = 200L
         private const val CHECK_INTERVAL_NORMAL = 500L
@@ -54,7 +40,6 @@ class ForcedRunGuardService : Service() {
         var isRunning = false
             private set
 
-
         @Volatile
         var targetPackageName: String? = null
 
@@ -64,15 +49,8 @@ class ForcedRunGuardService : Service() {
         @Volatile
         var checkInterval: Long = CHECK_INTERVAL_AGGRESSIVE
 
-
         @Volatile
         var remainingTimeMs: Long = 0L
-
-
-
-
-
-
 
         fun start(
             context: Context,
@@ -94,17 +72,11 @@ class ForcedRunGuardService : Service() {
             }
         }
 
-
-
-
         fun stop(context: Context) {
             targetPackageName = null
             targetActivityClass = null
             context.stopService(Intent(context, ForcedRunGuardService::class.java))
         }
-
-
-
 
         fun hasUsageStatsPermission(context: Context): Boolean {
             val usageStatsManager = context.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
@@ -119,9 +91,6 @@ class ForcedRunGuardService : Service() {
 
             return stats != null && stats.isNotEmpty()
         }
-
-
-
 
         fun openUsageAccessSettings(context: Context) {
             val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
@@ -162,7 +131,6 @@ class ForcedRunGuardService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         AppLogger.i(TAG, "守护服务启动")
 
-
         val notification = createNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
@@ -172,10 +140,8 @@ class ForcedRunGuardService : Service() {
             startForeground(NOTIFICATION_ID, notification)
         }
 
-
         handler.removeCallbacks(checkRunnable)
         handler.post(checkRunnable)
-
 
         return START_STICKY
     }
@@ -192,9 +158,6 @@ class ForcedRunGuardService : Service() {
         handler.removeCallbacksAndMessages(null)
         releaseWakeLock()
     }
-
-
-
 
     private fun checkAndBringBack() {
         val target = targetPackageName ?: return
@@ -214,13 +177,6 @@ class ForcedRunGuardService : Service() {
             }
         }
     }
-
-
-
-
-
-
-
 
     private fun getCurrentForegroundPackage(): String? {
 
@@ -248,7 +204,6 @@ class ForcedRunGuardService : Service() {
             AppLogger.w(TAG, "UsageStatsManager 查询失败", e)
         }
 
-
         try {
             @Suppress("DEPRECATION")
             val tasks = activityManager?.getRunningTasks(1)
@@ -261,9 +216,6 @@ class ForcedRunGuardService : Service() {
 
         return null
     }
-
-
-
 
     private fun bringAppToFront() {
         val pkg = targetPackageName ?: return
@@ -289,7 +241,6 @@ class ForcedRunGuardService : Service() {
             }
 
             intent?.let { startActivity(it) }
-
 
             try {
                 val tasks = activityManager?.appTasks
@@ -343,12 +294,6 @@ class ForcedRunGuardService : Service() {
             .build()
     }
 
-
-
-
-
-
-
     private fun acquireWakeLock() {
         try {
             val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -374,11 +319,6 @@ class ForcedRunGuardService : Service() {
             AppLogger.e(TAG, "WakeLock 获取失败", e)
         }
     }
-
-
-
-
-
 
     fun refreshWakeLock() {
         releaseWakeLock()

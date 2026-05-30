@@ -8,16 +8,6 @@ import androidx.compose.ui.platform.LocalContext
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.webview.LongPressHandler
 
-
-
-
-
-
-
-
-
-
-
 @Composable
 fun ShellLongPressMenu(
     menuStyle: String,

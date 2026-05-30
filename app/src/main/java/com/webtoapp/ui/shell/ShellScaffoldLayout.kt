@@ -25,11 +25,6 @@ import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
 
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BoxScope.ShellScaffoldLayout(
@@ -74,14 +69,10 @@ fun BoxScope.ShellScaffoldLayout(
 ) {
     val context = LocalContext.current
 
-
     val showToolbar = (!hideToolbar || config.webViewConfig.showToolbarInFullscreen) && !hideBrowserToolbar
 
     Scaffold(
 
-        // 键盘适配由 WindowHelper.applyKeyboardMode 统一处理（通过 contentView padding），
-        // 此处不再重复设置 WindowInsets.ime，避免与 WindowHelper 以及网页自身的键盘适配代码
-        // 产生叠加，导致输入框被推到键盘两倍高度的位置。
         contentWindowInsets = ScaffoldDefaults.contentWindowInsets,
         modifier = Modifier,
         topBar = {
@@ -98,7 +89,6 @@ fun BoxScope.ShellScaffoldLayout(
         }
     ) { padding ->
 
-
         val density = LocalDensity.current
 
         val topInsetPx = WindowInsets.statusBars.getTop(density)
@@ -108,8 +98,7 @@ fun BoxScope.ShellScaffoldLayout(
             24.dp
         }
 
-
-        val actualStatusBarPadding = if (statusBarHeightDp > 0) statusBarHeightDp.dp else systemStatusBarHeightDp
+        val actualStatusBarPadding = if (statusBarHeightDp >= 0) statusBarHeightDp.dp else systemStatusBarHeightDp
 
         val contentModifier = when {
             hideToolbar && showToolbar -> {
@@ -117,7 +106,6 @@ fun BoxScope.ShellScaffoldLayout(
                 Modifier.fillMaxSize().padding(padding)
             }
             hideToolbar && config.webViewConfig.showStatusBarInFullscreen -> {
-
 
                 Modifier.fillMaxSize().padding(top = actualStatusBarPadding)
             }
@@ -133,9 +121,6 @@ fun BoxScope.ShellScaffoldLayout(
 
         Box(modifier = contentModifier) {
 
-            // Thin Safari-style top progress. Sits flush at the top of the
-            // content area, grows with the page load, then fades out once
-            // loading finishes rather than abruptly disappearing.
             WebViewLoadingBar(
                 visible = isLoading,
                 progress = loadProgress / 100f,
@@ -143,8 +128,6 @@ fun BoxScope.ShellScaffoldLayout(
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
             )
-
-
 
             ShellContentArea(
                 config = config,
@@ -167,9 +150,7 @@ fun BoxScope.ShellScaffoldLayout(
                 onActivityFinish = onActivityFinish
             )
 
-
             ShellLyricsOverlay(config = config, bgmState = bgmState)
-
 
             ShellForcedRunOverlay(
                 config = config,
@@ -177,13 +158,11 @@ fun BoxScope.ShellScaffoldLayout(
                 forcedRunRemainingMs = forcedRunRemainingMs
             )
 
-
             ShellErrorCard(
                 errorMessage = errorMessage,
                 forcedRunActive = forcedRunActive,
                 onDismiss = onErrorDismiss
             )
-
 
             ShellVirtualNavBar(
                 appType = appType,
@@ -194,7 +173,6 @@ fun BoxScope.ShellScaffoldLayout(
                 webViewRef = webViewRef
             )
 
-
             ShellAdBlockToggle(
                 config = config,
                 forcedRunActive = forcedRunActive,
@@ -203,9 +181,6 @@ fun BoxScope.ShellScaffoldLayout(
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -264,30 +239,23 @@ private fun ShellTopAppBar(
             )
         },
         colors = TopAppBarDefaults.topAppBarColors(
+
             containerColor = androidx.compose.ui.graphics.Color.Transparent,
-            scrolledContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            scrolledContainerColor = androidx.compose.ui.graphics.Color.Transparent,
             titleContentColor = MaterialTheme.colorScheme.onSurface
         )
     )
 }
 
-/**
- * Hide the scheme + common tracking noise from the toolbar url label and
- * truncate each segment softly so the URL stays readable.
- */
 private fun String.shortenForShellToolbar(): String {
     val withoutScheme = when {
         startsWith("https://") -> substring(8)
         startsWith("http://") -> substring(7)
         else -> this
     }
-    // Strip querystring for visual clarity; most URLs still identify well
-    // from the path alone.
+
     return withoutScheme.substringBefore('?').substringBefore('#')
 }
-
-
-
 
 @Composable
 private fun ShellContentArea(
@@ -377,19 +345,6 @@ private fun ShellContentArea(
     }
 }
 
-
-/**
- * Safari-style thin loading indicator.
- *
- * Behaviour:
- *  - Animates from 0 to the latest reported `progress` with the settle spring
- *    so the fill always feels physical rather than snapping.
- *  - When visibility flips off, the bar first finishes to full, then fades
- *    over ~240ms. This avoids the "bar disappears halfway" feel of the raw
- *    LinearProgressIndicator that was previously used.
- *  - Height is 2dp, no trailing track (we draw only the fill), so it reads as
- *    a restrained affordance rather than a loud control.
- */
 @Composable
 private fun WebViewLoadingBar(
     visible: Boolean,

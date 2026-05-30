@@ -29,10 +29,6 @@ import com.webtoapp.ui.components.*
 import com.webtoapp.ui.design.*
 import com.webtoapp.ui.viewmodel.EditState
 
-
-
-
-
 fun checkMediaExists(context: android.content.Context, uri: android.net.Uri?, savedPath: String?): Boolean {
 
     if (!savedPath.isNullOrEmpty()) {
@@ -50,9 +46,6 @@ fun checkMediaExists(context: android.content.Context, uri: android.net.Uri?, sa
     return false
 }
 
-
-
-
 @Composable
 fun SplashScreenCard(
     editState: EditState,
@@ -67,16 +60,49 @@ fun SplashScreenCard(
     onVideoTrimChange: (startMs: Long, endMs: Long, totalDurationMs: Long) -> Unit,
     onClearMedia: () -> Unit
 ) {
+    SplashScreenCard(
+        enabled = editState.splashEnabled,
+        splashConfig = editState.splashConfig,
+        splashMediaUri = editState.splashMediaUri,
+        savedSplashPath = editState.savedSplashPath,
+        onEnabledChange = onEnabledChange,
+        onSelectImage = onSelectImage,
+        onSelectVideo = onSelectVideo,
+        onDurationChange = onDurationChange,
+        onClickToSkipChange = onClickToSkipChange,
+        onOrientationChange = onOrientationChange,
+        onFillScreenChange = onFillScreenChange,
+        onEnableAudioChange = onEnableAudioChange,
+        onVideoTrimChange = onVideoTrimChange,
+        onClearMedia = onClearMedia
+    )
+}
+
+@Composable
+fun SplashScreenCard(
+    enabled: Boolean,
+    splashConfig: SplashConfig,
+    splashMediaUri: Uri?,
+    savedSplashPath: String?,
+    onEnabledChange: (Boolean) -> Unit,
+    onSelectImage: () -> Unit,
+    onSelectVideo: () -> Unit,
+    onDurationChange: (Int) -> Unit,
+    onClickToSkipChange: (Boolean) -> Unit,
+    onOrientationChange: (SplashOrientation) -> Unit,
+    onFillScreenChange: (Boolean) -> Unit,
+    onEnableAudioChange: (Boolean) -> Unit,
+    onVideoTrimChange: (startMs: Long, endMs: Long, totalDurationMs: Long) -> Unit,
+    onClearMedia: () -> Unit
+) {
     val context = LocalContext.current
 
-
-    val mediaExists = remember(editState.splashMediaUri, editState.savedSplashPath) {
-        checkMediaExists(context, editState.splashMediaUri, editState.savedSplashPath)
+    val mediaExists = remember(splashMediaUri, savedSplashPath) {
+        checkMediaExists(context, splashMediaUri, savedSplashPath)
     }
 
-
-    LaunchedEffect(mediaExists, editState.splashMediaUri) {
-        if (!mediaExists && editState.splashMediaUri != null) {
+    LaunchedEffect(mediaExists, splashMediaUri) {
+        if (!mediaExists && splashMediaUri != null) {
             onClearMedia()
         }
     }
@@ -88,12 +114,12 @@ fun SplashScreenCard(
                 icon = Icons.Outlined.Wallpaper,
                 title = Strings.splashScreen,
                 subtitle = null,
-                checked = editState.splashEnabled,
+                checked = enabled,
                 onCheckedChange = onEnabledChange
             )
 
             AnimatedVisibility(
-                visible = editState.splashEnabled,
+                visible = enabled,
                 enter = CardExpandTransition,
                 exit = CardCollapseTransition
             ) {
@@ -101,8 +127,8 @@ fun SplashScreenCard(
                   modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal),
                   verticalArrangement = Arrangement.spacedBy(12.dp)
               ) {
-                if (editState.splashMediaUri != null && mediaExists) {
-                    if (editState.splashConfig.type == SplashType.VIDEO) {
+                if (splashMediaUri != null && mediaExists) {
+                    if (splashConfig.type == SplashType.VIDEO) {
 
                         Column {
                             Row(
@@ -122,10 +148,10 @@ fun SplashScreenCard(
                             }
 
                             VideoTrimmer(
-                                videoPath = editState.savedSplashPath ?: editState.splashMediaUri.toString(),
-                                startMs = editState.splashConfig.videoStartMs,
-                                endMs = editState.splashConfig.videoEndMs,
-                                videoDurationMs = editState.splashConfig.videoDurationMs,
+                                videoPath = savedSplashPath ?: splashMediaUri.toString(),
+                                startMs = splashConfig.videoStartMs,
+                                endMs = splashConfig.videoEndMs,
+                                videoDurationMs = splashConfig.videoDurationMs,
                                 onTrimChange = onVideoTrimChange
                             )
                         }
@@ -146,7 +172,7 @@ fun SplashScreenCard(
                             Box(modifier = Modifier.fillMaxSize()) {
                                 AsyncImage(
                                     model = ImageRequest.Builder(context)
-                                        .data(editState.splashMediaUri)
+                                        .data(splashMediaUri)
                                         .crossfade(true)
                                         .build(),
                                     contentDescription = Strings.splashPreview,
@@ -204,7 +230,6 @@ fun SplashScreenCard(
                     }
                 }
 
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -227,35 +252,32 @@ fun SplashScreenCard(
                     }
                 }
 
+                if (splashMediaUri != null && mediaExists) {
 
-                if (editState.splashMediaUri != null && mediaExists) {
-
-                    if (editState.splashConfig.type == SplashType.IMAGE) {
+                    if (splashConfig.type == SplashType.IMAGE) {
                         WtaSliderRow(
                             title = Strings.displayDuration,
-                            subtitle = Strings.displayDurationSeconds.replace("%d", editState.splashConfig.duration.toString()),
-                            value = editState.splashConfig.duration.toFloat(),
+                            subtitle = Strings.displayDurationSeconds.replace("%d", splashConfig.duration.toString()),
+                            value = splashConfig.duration.toFloat(),
                             onValueChange = { onDurationChange(it.toInt()) },
-                            valueLabel = "${editState.splashConfig.duration}s",
+                            valueLabel = "${splashConfig.duration}s",
                             valueRange = 1f..5f
                         )
                     }
-
 
                     WtaToggleRow(
                         title = Strings.allowSkip,
                         subtitle = Strings.allowSkipHint,
                         icon = Icons.Outlined.TouchApp,
-                        checked = editState.splashConfig.clickToSkip,
+                        checked = splashConfig.clickToSkip,
                         onCheckedChange = onClickToSkipChange
                     )
-
 
                     WtaToggleRow(
                         title = Strings.landscapeDisplay,
                         subtitle = Strings.landscapeDisplayHint,
                         icon = Icons.Outlined.ScreenRotation,
-                        checked = editState.splashConfig.orientation == SplashOrientation.LANDSCAPE,
+                        checked = splashConfig.orientation == SplashOrientation.LANDSCAPE,
                         onCheckedChange = { isLandscape ->
                             onOrientationChange(
                                 if (isLandscape) SplashOrientation.LANDSCAPE
@@ -264,22 +286,20 @@ fun SplashScreenCard(
                         }
                     )
 
-
                     WtaToggleRow(
                         title = Strings.fillScreen,
                         subtitle = Strings.fillScreenHint,
                         icon = Icons.Outlined.AspectRatio,
-                        checked = editState.splashConfig.fillScreen,
+                        checked = splashConfig.fillScreen,
                         onCheckedChange = onFillScreenChange
                     )
 
-
-                    if (editState.splashConfig.type == SplashType.VIDEO) {
+                    if (splashConfig.type == SplashType.VIDEO) {
                         WtaToggleRow(
                             title = Strings.enableAudio,
                             subtitle = Strings.enableAudioHint,
                             icon = Icons.AutoMirrored.Outlined.VolumeUp,
-                            checked = editState.splashConfig.enableAudio,
+                            checked = splashConfig.enableAudio,
                             onCheckedChange = onEnableAudioChange
                         )
                     }

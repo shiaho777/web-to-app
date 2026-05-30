@@ -77,9 +77,6 @@ import com.webtoapp.core.stats.AppUsageTracker
 import androidx.compose.ui.text.style.TextOverflow
 import com.webtoapp.ui.components.announcement.toUiTemplate
 
-
-
-
 class WebViewActivity : AppCompatActivity() {
 
     companion object {
@@ -101,18 +98,11 @@ class WebViewActivity : AppCompatActivity() {
             })
         }
 
-
-
-
-
         fun startPreview(context: Context, webAppJson: String) {
             context.startActivity(Intent(context, WebViewActivity::class.java).apply {
                 putExtra(EXTRA_PREVIEW_APP_JSON, webAppJson)
             })
         }
-
-
-
 
         fun startForTest(context: Context, testUrl: String, moduleIds: List<String>) {
             context.startActivity(Intent(context, WebViewActivity::class.java).apply {
@@ -127,7 +117,6 @@ class WebViewActivity : AppCompatActivity() {
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
 
-
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeolocationOrigin: String? = null
     private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
@@ -136,9 +125,7 @@ class WebViewActivity : AppCompatActivity() {
     private var showStatusBarInFullscreen: Boolean = false
     internal var showNavigationBarInFullscreen: Boolean = false
 
-
     private var originalOrientationBeforeFullscreen: Int = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-
 
     private var statusBarColorMode: com.webtoapp.data.model.StatusBarColorMode = com.webtoapp.data.model.StatusBarColorMode.THEME
     private var statusBarCustomColor: String? = null
@@ -175,7 +162,6 @@ class WebViewActivity : AppCompatActivity() {
         )
     }
 
-
     private var cameraPhotoUri: android.net.Uri? = null
 
     private val fileChooserActivityLauncher = registerForActivityResult(
@@ -204,7 +190,6 @@ class WebViewActivity : AppCompatActivity() {
         filePathCallback = null
         cameraPhotoUri = null
     }
-
 
     private var pendingFileChooserParams: android.webkit.WebChromeClient.FileChooserParams? = null
     private val cameraForChooserPermLauncher = registerForActivityResult(
@@ -236,9 +221,6 @@ class WebViewActivity : AppCompatActivity() {
         return true
     }
 
-
-
-
     private fun isCameraRequiredForChooser(params: android.webkit.WebChromeClient.FileChooserParams?): Boolean {
         if (params == null) return false
         if (params.isCaptureEnabled) return true
@@ -258,9 +240,6 @@ class WebViewActivity : AppCompatActivity() {
 
         return false
     }
-
-
-
 
     private fun extensionToMimeTypeForChooser(ext: String): String {
         return when (ext) {
@@ -333,7 +312,6 @@ class WebViewActivity : AppCompatActivity() {
                 }
             }
 
-
             val rawAcceptTypes = params?.acceptTypes ?: arrayOf("*/*")
             val resolvedMimeTypes = rawAcceptTypes
                 .filter { !it.isNullOrBlank() }
@@ -370,7 +348,6 @@ class WebViewActivity : AppCompatActivity() {
         }
     }
 
-
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -385,7 +362,6 @@ class WebViewActivity : AppCompatActivity() {
         }
     }
 
-
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -394,7 +370,6 @@ class WebViewActivity : AppCompatActivity() {
         pendingGeolocationOrigin = null
         pendingGeolocationCallback = null
     }
-
 
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -405,9 +380,6 @@ class WebViewActivity : AppCompatActivity() {
             AppLogger.d("WebViewActivity", "Notification permission denied")
         }
     }
-
-
-
 
     private fun requestNotificationPermissionIfNeeded() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -422,13 +394,6 @@ class WebViewActivity : AppCompatActivity() {
         }
     }
 
-
-
-
-
-
-
-
     fun handlePermissionRequest(request: PermissionRequest) {
         val resources = request.resources
         val androidPermissions = mutableListOf<String>()
@@ -439,7 +404,6 @@ class WebViewActivity : AppCompatActivity() {
                     androidPermissions.add(android.Manifest.permission.CAMERA)
                 }
                 PermissionRequest.RESOURCE_AUDIO_CAPTURE -> {
-
 
                     androidPermissions.add(android.Manifest.permission.RECORD_AUDIO)
                 }
@@ -460,7 +424,6 @@ class WebViewActivity : AppCompatActivity() {
             return
         }
 
-
         val notGranted = uniquePermissions.filter {
             androidx.core.content.ContextCompat.checkSelfPermission(
                 this, it
@@ -477,9 +440,6 @@ class WebViewActivity : AppCompatActivity() {
         }
     }
 
-
-
-
     fun handleGeolocationPermission(origin: String?, callback: GeolocationPermissions.Callback?) {
         pendingGeolocationOrigin = origin
         pendingGeolocationCallback = callback
@@ -488,7 +448,6 @@ class WebViewActivity : AppCompatActivity() {
             android.Manifest.permission.ACCESS_COARSE_LOCATION
         ))
     }
-
 
     private var usageTracker: AppUsageTracker? = null
     private var trackedAppId: Long = -1
@@ -503,16 +462,12 @@ class WebViewActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
 
-
         requestNotificationPermissionIfNeeded()
-
-
 
         immersiveFullscreenEnabled = false
         applyImmersiveFullscreen(immersiveFullscreenEnabled)
 
         val appId = intent.getLongExtra(EXTRA_APP_ID, -1)
-
 
         if (appId > 0) {
             trackedAppId = appId
@@ -525,10 +480,8 @@ class WebViewActivity : AppCompatActivity() {
         }
         val directUrl = intent.getStringExtra(EXTRA_URL)
 
-
         val testUrl = intent.getStringExtra(EXTRA_TEST_URL)
         val testModuleIds = intent.getStringArrayListExtra(EXTRA_TEST_MODULE_IDS)
-
 
         val previewAppJson = intent.getStringExtra(EXTRA_PREVIEW_APP_JSON)
         val previewApp: com.webtoapp.data.model.WebApp? = if (!previewAppJson.isNullOrBlank()) {
@@ -574,14 +527,17 @@ class WebViewActivity : AppCompatActivity() {
                     onWebViewCreated = { wv ->
                         webView = wv
 
-
                         wv.onResume()
                         wv.resumeTimers()
 
                         val downloadBridge = com.webtoapp.core.webview.DownloadBridge(this@WebViewActivity, lifecycleScope)
                         wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
 
-                        val nativeBridge = com.webtoapp.core.webview.NativeBridge(this@WebViewActivity, lifecycleScope) { wv }
+                        val nativeBridge = com.webtoapp.core.webview.NativeBridge(
+                            context = this@WebViewActivity,
+                            scope = lifecycleScope,
+                            webViewProvider = { wv }
+                        )
                         wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
                     },
                     onFileChooser = { callback, params ->
@@ -605,7 +561,6 @@ class WebViewActivity : AppCompatActivity() {
             }
         }
 
-
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 when {
@@ -628,9 +583,6 @@ class WebViewActivity : AppCompatActivity() {
 
                                     return@evaluateJavascript
                                 }
-
-
-
 
                                 ShellWebViewNavigation.goBackOrFinish(this@WebViewActivity, wv)
                             }
@@ -704,9 +656,6 @@ class WebViewActivity : AppCompatActivity() {
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
 
-
-
-
         if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             com.webtoapp.core.logging.AppLogger.w("WebViewActivity", "Memory pressure (level=$level), skipped manual GC")
         }
@@ -715,8 +664,6 @@ class WebViewActivity : AppCompatActivity() {
     override fun onLowMemory() {
         super.onLowMemory()
 
-
-
         com.webtoapp.core.logging.AppLogger.w("WebViewActivity", "Low memory, skipped manual GC")
     }
 
@@ -724,12 +671,9 @@ class WebViewActivity : AppCompatActivity() {
 
         if (trackedAppId > 0) usageTracker?.trackClose(trackedAppId)
 
-
         android.webkit.CookieManager.getInstance().flush()
         webView?.let { wv ->
             wv.stopLoading()
-
-
 
             wv.onPause()
             wv.webChromeClient = null
@@ -738,7 +682,6 @@ class WebViewActivity : AppCompatActivity() {
             wv.destroy()
         }
         webView = null
-
 
         try {
             com.webtoapp.core.webview.PacProxyManager(this).clearProxy()
@@ -783,9 +726,7 @@ fun WebViewScreen(
     val announcement = WebToAppApplication.announcement
     val adBlocker = WebToAppApplication.adBlock
 
-
     val isTestMode = !testUrl.isNullOrBlank()
-
 
     var webApp by remember { mutableStateOf<WebApp?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -805,23 +746,17 @@ fun WebViewScreen(
     var canGoForward by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
     var adCapabilityNoticeShown by remember { mutableStateOf(false) }
-    var strictHostFallbackTriggered by remember { mutableStateOf(false) }
-
 
     var showSplash by remember { mutableStateOf(false) }
     var splashCountdown by remember { mutableIntStateOf(0) }
     var originalOrientation by remember { mutableIntStateOf(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) }
 
-
     val bgmPlayer = remember { BgmPlayer(context) }
-
 
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
 
-
     val jsScrollTop = remember { AtomicInteger(0) }
     val scrollBridge: WtaScrollBridge = remember { WtaScrollBridge { y -> jsScrollTop.set(y) } }
-
 
     var showLongPressMenu by remember { mutableStateOf(false) }
     var longPressResult by remember { mutableStateOf<LongPressHandler.LongPressResult?>(null) }
@@ -830,10 +765,8 @@ fun WebViewScreen(
     val scope = rememberCoroutineScope()
     val longPressHandler = remember { LongPressHandler(context, scope) }
 
-
     var showConsole by remember { mutableStateOf(false) }
     var consoleMessages by remember { mutableStateOf<List<ConsoleLogEntry>>(emptyList()) }
-
 
     var statusBarBackgroundType by remember { mutableStateOf("COLOR") }
     var statusBarBackgroundColor by remember { mutableStateOf<String?>(null) }
@@ -846,36 +779,30 @@ fun WebViewScreen(
     var statusBarBackgroundImageDark by remember { mutableStateOf<String?>(null) }
     var statusBarBackgroundAlphaDark by remember { mutableFloatStateOf(1.0f) }
 
-
     var wordPressPreviewState by remember { mutableStateOf<WordPressPreviewState>(WordPressPreviewState.Idle) }
     val phpRuntime = remember { WordPressPhpRuntime(context) }
     val wpDownloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
     var wpRetryTrigger by remember { mutableIntStateOf(0) }
-
 
     var phpAppPreviewState by remember { mutableStateOf<PhpAppPreviewState>(PhpAppPreviewState.Idle) }
     val phpAppRuntime = remember { PhpAppRuntime(context) }
     val phpAppDownloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
     var phpAppRetryTrigger by remember { mutableIntStateOf(0) }
 
-
     var pythonAppPreviewState by remember { mutableStateOf<PythonAppPreviewState>(PythonAppPreviewState.Idle) }
     val pythonRuntime = remember { com.webtoapp.core.python.PythonRuntime(context) }
     val pythonHttpServer = remember { com.webtoapp.core.webview.LocalHttpServer(context) }
     var pythonAppRetryTrigger by remember { mutableIntStateOf(0) }
-
 
     var nodeJsAppPreviewState by remember { mutableStateOf<NodeJsAppPreviewState>(NodeJsAppPreviewState.Idle) }
     val nodeRuntime = remember { com.webtoapp.core.nodejs.NodeRuntime(context) }
     val nodeHttpServer = remember { com.webtoapp.core.webview.LocalHttpServer(context) }
     var nodeJsAppRetryTrigger by remember { mutableIntStateOf(0) }
 
-
     var goAppPreviewState by remember { mutableStateOf<GoAppPreviewState>(GoAppPreviewState.Idle) }
     val goRuntime = remember { com.webtoapp.core.golang.GoRuntime(context) }
     val goHttpServer = remember { com.webtoapp.core.webview.LocalHttpServer(context) }
     var goAppRetryTrigger by remember { mutableIntStateOf(0) }
-
 
     LaunchedEffect(webApp) {
         webApp?.let { app ->
@@ -924,7 +851,6 @@ fun WebViewScreen(
         }
     }
 
-
     LaunchedEffect(appId, directUrl, testUrl, previewApp) {
 
         if (isTestMode) {
@@ -933,19 +859,15 @@ fun WebViewScreen(
             return@LaunchedEffect
         }
 
-
-
         if (previewApp != null) {
             webApp = previewApp
             isActivated = true
             isActivationChecked = true
 
-
             if (previewApp.adBlockEnabled) {
-                adBlocker.initialize(previewApp.adBlockRules, useDefaultRules = true)
+                adBlocker.initialize(previewApp.adBlockRules, useDefaultRules = false)
                 adBlocker.setEnabled(true)
             }
-
 
             when (previewApp.webViewConfig.orientationMode) {
                 com.webtoapp.data.model.OrientationMode.LANDSCAPE -> {
@@ -976,14 +898,12 @@ fun WebViewScreen(
                 }
             }
 
-
             if (previewApp.webViewConfig.screenAwakeMode == com.webtoapp.data.model.ScreenAwakeMode.ALWAYS) {
                 activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             }
 
             return@LaunchedEffect
         }
-
 
         if (!directUrl.isNullOrBlank()) {
             isActivated = true
@@ -997,10 +917,9 @@ fun WebViewScreen(
             if (app != null) {
 
                 if (app.adBlockEnabled) {
-                    adBlocker.initialize(app.adBlockRules, useDefaultRules = true)
+                    adBlocker.initialize(app.adBlockRules, useDefaultRules = false)
                     adBlocker.setEnabled(true)
                 }
-
 
                 if (app.activationEnabled) {
 
@@ -1023,7 +942,6 @@ fun WebViewScreen(
                     isActivationChecked = true
                 }
 
-
                 if (app.announcementEnabled && isActivated && app.announcement?.triggerOnLaunch == true) {
                     val shouldShow = announcement.shouldShowAnnouncementForTrigger(
                         appId,
@@ -1033,13 +951,11 @@ fun WebViewScreen(
                     showAnnouncementDialog = shouldShow
                 }
 
-
                 if (app.splashEnabled && app.splashConfig != null && isActivated) {
                     val mediaPath = app.splashConfig.mediaPath
                     if (mediaPath != null && File(mediaPath).exists()) {
                         showSplash = true
                         splashCountdown = app.splashConfig.duration
-
 
                         if (app.splashConfig.orientation == SplashOrientation.LANDSCAPE) {
                             originalOrientation = activity.requestedOrientation
@@ -1048,11 +964,9 @@ fun WebViewScreen(
                     }
                 }
 
-
                 if (app.bgmEnabled && app.bgmConfig != null && isActivated) {
                     bgmPlayer.initialize(app.bgmConfig)
                 }
-
 
                 when (app.webViewConfig.orientationMode) {
                     com.webtoapp.data.model.OrientationMode.LANDSCAPE -> {
@@ -1086,7 +1000,6 @@ fun WebViewScreen(
                     }
                 }
 
-
                 val awakeMode = app.webViewConfig.screenAwakeMode
                 when (awakeMode) {
                     com.webtoapp.data.model.ScreenAwakeMode.ALWAYS -> {
@@ -1109,7 +1022,6 @@ fun WebViewScreen(
                     }
                 }
 
-
                 val brightness = app.webViewConfig.screenBrightness
                 if (brightness in 0..100) {
                     val lp = activity.window.attributes
@@ -1128,7 +1040,6 @@ fun WebViewScreen(
         }
     }
 
-
     DisposableEffect(Unit) {
 
         if (webApp?.announcementEnabled == true && webApp?.announcement?.triggerOnNoNetwork == true) {
@@ -1140,7 +1051,6 @@ fun WebViewScreen(
             announcement.stopNetworkMonitoring()
         }
     }
-
 
     val networkAvailable by announcement.isNetworkAvailable.collectAsStateWithLifecycle()
     var lastNetworkState by remember { mutableStateOf(true) }
@@ -1163,14 +1073,12 @@ fun WebViewScreen(
         lastNetworkState = networkAvailable
     }
 
-
     LaunchedEffect(webApp, isActivated) {
         val app = webApp ?: return@LaunchedEffect
         if (!isActivated) return@LaunchedEffect
 
         val intervalMinutes = app.announcement?.triggerIntervalMinutes ?: 0
         if (!app.announcementEnabled || intervalMinutes <= 0) return@LaunchedEffect
-
 
         if (app.announcement?.triggerIntervalIncludeLaunch == true) {
             announcement.resetIntervalTrigger(appId)
@@ -1196,7 +1104,6 @@ fun WebViewScreen(
         }
     }
 
-
     LaunchedEffect(showSplash, splashCountdown) {
 
         if (webApp?.splashConfig?.type == SplashType.VIDEO) return@LaunchedEffect
@@ -1214,14 +1121,12 @@ fun WebViewScreen(
         }
     }
 
-
     LaunchedEffect(webApp, isActivated, isActivationChecked, wpRetryTrigger) {
         val app = webApp ?: return@LaunchedEffect
         if (app.appType != com.webtoapp.data.model.AppType.WORDPRESS) return@LaunchedEffect
         if (!isActivated || !isActivationChecked) return@LaunchedEffect
 
         wordPressPreviewState = WordPressPreviewState.CheckingDeps
-
 
         if (!WordPressDependencyManager.isAllReady(context)) {
             wordPressPreviewState = WordPressPreviewState.Downloading
@@ -1232,13 +1137,17 @@ fun WebViewScreen(
             }
         }
 
-
         var projectId = app.wordpressConfig?.projectId ?: ""
         val projectDir = if (projectId.isNotEmpty()) {
             WordPressManager.getProjectDir(context, projectId)
         } else null
 
-        if (projectDir == null || !projectDir.exists() || !File(projectDir, "wp-includes/version.php").exists()) {
+        val needsCreate = projectDir == null ||
+            !projectDir.exists() ||
+            !projectDir.isDirectory ||
+            !File(projectDir, "wp-includes/version.php").exists()
+
+        if (needsCreate) {
             wordPressPreviewState = WordPressPreviewState.CreatingProject
             val newId = WordPressManager.createProject(
                 context = context,
@@ -1257,9 +1166,15 @@ fun WebViewScreen(
             webApp = app.copy(wordpressConfig = updatedConfig)
         }
 
-
         wordPressPreviewState = WordPressPreviewState.StartingServer
         val wpDir = WordPressManager.getProjectDir(context, projectId)
+
+        if (!wpDir.exists() || !wpDir.isDirectory) {
+            wordPressPreviewState = WordPressPreviewState.Error(
+                "WordPress 项目目录意外丢失: ${wpDir.absolutePath}"
+            )
+            return@LaunchedEffect
+        }
         WordPressManager.ensureDbPhpExists(context, wpDir)
         val port = phpRuntime.startServer(wpDir.absolutePath, app.wordpressConfig?.phpPort ?: 0)
 
@@ -1291,31 +1206,28 @@ fun WebViewScreen(
         }
     }
 
-
     DisposableEffect(phpRuntime) {
         onDispose {
             phpRuntime.stopServer()
         }
     }
 
-
     LaunchedEffect(webApp, isActivated, isActivationChecked, phpAppRetryTrigger) {
         val app = webApp ?: return@LaunchedEffect
         if (app.appType != com.webtoapp.data.model.AppType.PHP_APP) return@LaunchedEffect
         if (!isActivated || !isActivationChecked) return@LaunchedEffect
 
-        AppLogger.i("PhpAppPreview", "开始 PHP 应用预览流程, appId=$appId, phpAppConfig=${app.phpAppConfig}")
+        AppLogger.i("PhpAppPreview", "Starting PHP app preview flow, appId=$appId, phpAppConfig=${app.phpAppConfig}")
 
         val config = app.phpAppConfig
         if (config == null) {
-            AppLogger.e("PhpAppPreview", "phpAppConfig 为 null，无法启动预览")
+            AppLogger.e("PhpAppPreview", "phpAppConfig is null, can't start preview")
             phpAppPreviewState = PhpAppPreviewState.Error(Strings.phpAppProjectNotFound)
             return@LaunchedEffect
         }
 
         phpAppPreviewState = PhpAppPreviewState.CheckingDeps
-        AppLogger.i("PhpAppPreview", "检查 PHP 依赖, isPhpReady=${WordPressDependencyManager.isPhpReady(context)}")
-
+        AppLogger.i("PhpAppPreview", "Checking PHP runtime, isPhpReady=${WordPressDependencyManager.isPhpReady(context)}")
 
         if (!WordPressDependencyManager.isPhpReady(context)) {
             phpAppPreviewState = PhpAppPreviewState.Downloading
@@ -1326,51 +1238,45 @@ fun WebViewScreen(
             }
         }
 
-
         val projectId = config.projectId
         AppLogger.i("PhpAppPreview", "projectId='$projectId', docRoot='${config.documentRoot}', entry='${config.entryFile}'")
         if (projectId.isBlank()) {
-            AppLogger.e("PhpAppPreview", "projectId 为空")
+            AppLogger.e("PhpAppPreview", "projectId is empty")
             phpAppPreviewState = PhpAppPreviewState.Error(Strings.phpAppProjectNotFound)
             return@LaunchedEffect
         }
         val projectDir = phpAppRuntime.getProjectDir(projectId)
-        AppLogger.i("PhpAppPreview", "项目目录: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
+        AppLogger.i("PhpAppPreview", "Project directory: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
         if (!projectDir.exists()) {
             phpAppPreviewState = PhpAppPreviewState.Error(Strings.phpAppProjectNotFound)
             return@LaunchedEffect
         }
 
-
         projectDir.listFiles()?.take(20)?.forEach { file ->
             AppLogger.d("PhpAppPreview", "  - ${file.name} (${if (file.isDirectory) "dir" else "${file.length()} bytes"})")
         }
 
-
         var actualDocRoot = config.documentRoot
         var actualEntryFile = config.entryFile
-
 
         var actualProjectDir = projectDir
         val docRootDir = if (actualDocRoot.isNotBlank()) File(projectDir, actualDocRoot) else projectDir
         if (!File(docRootDir, actualEntryFile).exists()) {
-            AppLogger.i("PhpAppPreview", "入口文件不存在，尝试自动检测框架...")
-
+            AppLogger.i("PhpAppPreview", "Entry file missing, attempting auto-detection...")
 
             var detectedFramework = phpAppRuntime.detectFramework(projectDir)
             var detectedDocRoot = phpAppRuntime.detectDocumentRoot(projectDir, detectedFramework)
             var detectedEntry = phpAppRuntime.detectEntryFile(projectDir, detectedDocRoot)
 
-
             val detectedDocRootDir = if (detectedDocRoot.isNotBlank()) File(projectDir, detectedDocRoot) else projectDir
             if (!File(detectedDocRootDir, detectedEntry).exists()) {
-                AppLogger.i("PhpAppPreview", "根目录未找到入口文件，扫描子目录...")
+                AppLogger.i("PhpAppPreview", "No entry file at root, scanning subdirectories...")
                 val phpSubDir = projectDir.listFiles()
                     ?.filter { it.isDirectory && it.name != "__MACOSX" && !it.name.startsWith("._") }
                     ?.firstOrNull { sub -> sub.listFiles()?.any { it.isFile && it.extension == "php" } == true }
 
                 if (phpSubDir != null) {
-                    AppLogger.i("PhpAppPreview", "找到 PHP 子目录: ${phpSubDir.name}")
+                    AppLogger.i("PhpAppPreview", "Found PHP subdirectory: ${phpSubDir.name}")
                     actualProjectDir = phpSubDir
                     detectedFramework = phpAppRuntime.detectFramework(phpSubDir)
                     detectedDocRoot = phpAppRuntime.detectDocumentRoot(phpSubDir, detectedFramework)
@@ -1378,14 +1284,13 @@ fun WebViewScreen(
                 }
             }
 
-            AppLogger.i("PhpAppPreview", "自动检测: framework=$detectedFramework, docRoot='$detectedDocRoot', entry='$detectedEntry', projectDir=${actualProjectDir.name}")
+            AppLogger.i("PhpAppPreview", "Auto-detected: framework=$detectedFramework, docRoot='$detectedDocRoot', entry='$detectedEntry', projectDir=${actualProjectDir.name}")
             actualDocRoot = detectedDocRoot
             actualEntryFile = detectedEntry
         }
 
-
         phpAppPreviewState = PhpAppPreviewState.StartingServer
-        AppLogger.i("PhpAppPreview", "启动 PHP 服务器: docRoot='$actualDocRoot', entry='$actualEntryFile'")
+        AppLogger.i("PhpAppPreview", "Starting PHP server: docRoot='$actualDocRoot', entry='$actualEntryFile'")
         val port = phpAppRuntime.startServer(
             projectDir = actualProjectDir.absolutePath,
             documentRoot = actualDocRoot,
@@ -1396,12 +1301,12 @@ fun WebViewScreen(
 
         if (port > 0) {
             val url = "http://127.0.0.1:$port/"
-            AppLogger.i("PhpAppPreview", "PHP 服务器已启动: $url")
+            AppLogger.i("PhpAppPreview", "PHP server started: $url")
             phpAppPreviewState = PhpAppPreviewState.Ready(url)
             delay(200)
             webViewRef?.loadUrl(url)
         } else {
-            AppLogger.e("PhpAppPreview", "PHP 服务器启动失败, port=$port, serverState=${phpAppRuntime.serverState.value}")
+            AppLogger.e("PhpAppPreview", "PHP server failed to start, port=$port, serverState=${phpAppRuntime.serverState.value}")
             val errorDetail = when (val state = phpAppRuntime.serverState.value) {
                 is PhpAppRuntime.ServerState.Error -> state.message
                 else -> Strings.phpAppServerError
@@ -1410,13 +1315,11 @@ fun WebViewScreen(
         }
     }
 
-
     DisposableEffect(phpAppRuntime) {
         onDispose {
             phpAppRuntime.stopServer()
         }
     }
-
 
     LaunchedEffect(webApp, isActivated, isActivationChecked, pythonAppRetryTrigger) {
         val app = webApp ?: return@LaunchedEffect
@@ -1425,53 +1328,82 @@ fun WebViewScreen(
 
         val config = app.pythonAppConfig
         if (config == null) {
-            AppLogger.e("PythonAppPreview", "pythonAppConfig 为 null")
+            AppLogger.e("PythonAppPreview", "pythonAppConfig is null")
             pythonAppPreviewState = PythonAppPreviewState.Error(Strings.pyProjectNotFound)
             return@LaunchedEffect
         }
 
-        AppLogger.i("PythonAppPreview", "开始 Python 应用预览流程, appId=$appId, config=$config")
+        AppLogger.i("PythonAppPreview", "Starting Python app preview flow, appId=$appId, config=$config")
         pythonAppPreviewState = PythonAppPreviewState.Starting
-
 
         val projectId = config.projectId
         AppLogger.i("PythonAppPreview", "projectId='$projectId', framework='${config.framework}', entry='${config.entryFile}'")
         if (projectId.isBlank()) {
-            AppLogger.e("PythonAppPreview", "projectId 为空")
+            AppLogger.e("PythonAppPreview", "projectId is empty")
             pythonAppPreviewState = PythonAppPreviewState.Error(Strings.pyProjectNotFound)
             return@LaunchedEffect
         }
+
+        config.sourceProjectPath
+            .takeIf { it.isNotBlank() }
+            ?.let { srcPath ->
+                val sampleRoot = File(context.filesDir, "sample_projects")
+                val srcFile = File(srcPath)
+                if (srcFile.absolutePath.startsWith(sampleRoot.absolutePath + File.separator)) {
+                    val sampleId = srcFile.name
+                    try {
+                        com.webtoapp.core.sample.SampleProjectExtractor
+                            .extractSampleProject(context, sampleId)
+                        AppLogger.d(
+                            "PythonAppPreview",
+                            "Re-extracted sample $sampleId before sync (cache key checked)"
+                        )
+                    } catch (e: Exception) {
+                        AppLogger.w("PythonAppPreview", "Sample re-extract failed for $sampleId", e)
+                    }
+                }
+            }
+        config.sourceProjectPath
+            .takeIf { it.isNotBlank() }
+            ?.let(pythonRuntime::resolveSourceProjectDir)
+            ?.takeIf { it.absolutePath != pythonRuntime.getProjectDir(projectId).absolutePath }
+            ?.let { sourceDir ->
+                try {
+                    pythonRuntime.syncProjectFromSource(projectId, sourceDir)
+                    AppLogger.i("PythonAppPreview", "Synced Python project from source: ${sourceDir.absolutePath}")
+                } catch (e: Exception) {
+                    AppLogger.w("PythonAppPreview", "Sync source failed: ${sourceDir.absolutePath}", e)
+                }
+            }
+
         val projectDir = pythonRuntime.getProjectDir(projectId)
-        AppLogger.i("PythonAppPreview", "项目目录: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
+        AppLogger.i("PythonAppPreview", "Project directory: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
         if (!projectDir.exists()) {
             pythonAppPreviewState = PythonAppPreviewState.Error(Strings.pyProjectNotFound)
             return@LaunchedEffect
         }
 
-
         projectDir.listFiles()?.take(20)?.forEach { file ->
             AppLogger.d("PythonAppPreview", "  - ${file.name} (${if (file.isDirectory) "dir" else "${file.length()} bytes"})")
         }
-
 
         var actualProjectDir = projectDir
         var actualEntryFile = config.entryFile.ifBlank { "app.py" }
         var actualFramework = config.framework.ifBlank { "raw" }
 
         if (!File(actualProjectDir, actualEntryFile).exists()) {
-            AppLogger.i("PythonAppPreview", "入口文件不存在: $actualEntryFile，尝试自动检测...")
-
+            AppLogger.i("PythonAppPreview", "Entry file missing: $actualEntryFile, attempting auto-detection...")
 
             val detectedFramework = pythonRuntime.detectFramework(projectDir)
             val detectedEntry = pythonRuntime.detectEntryFile(projectDir, detectedFramework)
 
             if (File(projectDir, detectedEntry).exists()) {
-                AppLogger.i("PythonAppPreview", "自动检测到: framework=$detectedFramework, entry=$detectedEntry")
+                AppLogger.i("PythonAppPreview", "Auto-detected: framework=$detectedFramework, entry=$detectedEntry")
                 actualFramework = detectedFramework
                 actualEntryFile = detectedEntry
             } else {
 
-                AppLogger.i("PythonAppPreview", "根目录未找到入口文件，扫描子目录...")
+                AppLogger.i("PythonAppPreview", "No entry file at root, scanning subdirectories...")
                 val pySubDir = projectDir.listFiles()
                     ?.filter { it.isDirectory && it.name != "__MACOSX" && it.name != "__pycache__" && !it.name.startsWith("._") && it.name != "venv" && it.name != ".venv" && it.name != ".git" }
                     ?.firstOrNull { sub ->
@@ -1479,17 +1411,16 @@ fun WebViewScreen(
                     }
 
                 if (pySubDir != null) {
-                    AppLogger.i("PythonAppPreview", "找到 Python 子目录: ${pySubDir.name}")
+                    AppLogger.i("PythonAppPreview", "Found Python subdirectory: ${pySubDir.name}")
                     actualProjectDir = pySubDir
                     actualFramework = pythonRuntime.detectFramework(pySubDir)
                     actualEntryFile = pythonRuntime.detectEntryFile(pySubDir, actualFramework)
-                    AppLogger.i("PythonAppPreview", "子目录检测: framework=$actualFramework, entry=$actualEntryFile")
+                    AppLogger.i("PythonAppPreview", "Subdirectory detection: framework=$actualFramework, entry=$actualEntryFile")
                 }
             }
         }
 
-        AppLogger.i("PythonAppPreview", "最终配置: projectDir=${actualProjectDir.absolutePath}, framework=$actualFramework, entry=$actualEntryFile")
-
+        AppLogger.i("PythonAppPreview", "Final configuration: projectDir=${actualProjectDir.absolutePath}, framework=$actualFramework, entry=$actualEntryFile")
 
         try {
             val candidates = listOf("dist", "build", "public", "static", "www", "templates", "")
@@ -1497,23 +1428,23 @@ fun WebViewScreen(
             for (dir in candidates) {
                 val candidate = if (dir.isEmpty()) actualProjectDir else File(actualProjectDir, dir)
                 val hasIndex = File(candidate, "index.html").exists()
-                AppLogger.d("PythonAppPreview", "检查候选: '$dir' -> ${candidate.absolutePath}, isDir=${candidate.isDirectory}, hasIndex=$hasIndex")
+                AppLogger.d("PythonAppPreview", "Checking candidate: '$dir' -> ${candidate.absolutePath}, isDir=${candidate.isDirectory}, hasIndex=$hasIndex")
                 if (candidate.isDirectory && hasIndex) {
                     docRoot = candidate
-                    AppLogger.i("PythonAppPreview", "找到 docRoot: ${candidate.absolutePath}")
+                    AppLogger.i("PythonAppPreview", "Found docRoot: ${candidate.absolutePath}")
                     break
                 }
             }
 
             if (docRoot != null) {
                 val url = pythonHttpServer.start(docRoot)
-                AppLogger.i("PythonAppPreview", "LocalHttpServer 已启动: $url")
+                AppLogger.i("PythonAppPreview", "LocalHttpServer started: $url")
                 pythonAppPreviewState = PythonAppPreviewState.Ready(url)
                 delay(200)
                 webViewRef?.loadUrl(url)
             } else if (pythonRuntime.isPythonAvailable()) {
 
-                AppLogger.i("PythonAppPreview", "Python 运行时可用，启动后端服务器")
+                AppLogger.i("PythonAppPreview", "Python runtime available, starting backend server")
                 pythonAppPreviewState = PythonAppPreviewState.StartingServer
 
                 val serverPort = pythonRuntime.startServer(
@@ -1527,19 +1458,24 @@ fun WebViewScreen(
 
                 if (serverPort > 0) {
                     val serverUrl = "http://127.0.0.1:$serverPort"
-                    AppLogger.i("PythonAppPreview", "Python 服务器已启动: $serverUrl")
+                    AppLogger.i("PythonAppPreview", "Python server started: $serverUrl")
                     pythonAppPreviewState = PythonAppPreviewState.Ready(serverUrl)
                     delay(200)
                     webViewRef?.loadUrl(serverUrl)
                 } else {
-                    AppLogger.e("PythonAppPreview", "Python 服务器启动失败，回退到预览模式")
+
+                    val errMsg = (pythonRuntime.serverState.value as? com.webtoapp.core.python.PythonRuntime.ServerState.Error)
+                        ?.message
+                        ?: "Python server failed to start"
+                    AppLogger.e("PythonAppPreview", "Python server failed: $errMsg")
 
                     val url = pythonHttpServer.start(actualProjectDir)
                     File(actualProjectDir, "_preview_.html").delete()
                     val previewHtml = pythonRuntime.generatePreviewHtml(
                         projectDir = actualProjectDir,
                         framework = actualFramework,
-                        entryFile = actualEntryFile
+                        entryFile = actualEntryFile,
+                        startupError = errMsg,
                     )
                     val previewFile = File(actualProjectDir, "_preview_.html")
                     previewFile.writeText(previewHtml)
@@ -1550,7 +1486,7 @@ fun WebViewScreen(
                 }
             } else {
 
-                AppLogger.w("PythonAppPreview", "Python 运行时不可用，生成项目预览页面")
+                AppLogger.w("PythonAppPreview", "Python runtime unavailable, generating project preview page")
                 val url = pythonHttpServer.start(actualProjectDir)
                 File(actualProjectDir, "_preview_.html").delete()
 
@@ -1576,11 +1512,10 @@ fun WebViewScreen(
                 }
             }
         } catch (e: Exception) {
-            AppLogger.e("PythonAppPreview", "启动预览失败", e)
+            AppLogger.e("PythonAppPreview", "Failed to start preview", e)
             pythonAppPreviewState = PythonAppPreviewState.Error(e.message ?: Strings.pyPreviewFailed)
         }
     }
-
 
     DisposableEffect(pythonHttpServer) {
         onDispose {
@@ -1589,7 +1524,6 @@ fun WebViewScreen(
         }
     }
 
-
     LaunchedEffect(webApp, isActivated, isActivationChecked, nodeJsAppRetryTrigger) {
         val app = webApp ?: return@LaunchedEffect
         if (app.appType != com.webtoapp.data.model.AppType.NODEJS_APP) return@LaunchedEffect
@@ -1597,23 +1531,42 @@ fun WebViewScreen(
 
         val config = app.nodejsConfig
         if (config == null) {
-            AppLogger.e("NodeJsAppPreview", "nodejsConfig 为 null")
+            AppLogger.e("NodeJsAppPreview", "nodejsConfig is null")
             nodeJsAppPreviewState = NodeJsAppPreviewState.Error(Strings.nodeProjectNotFound)
             return@LaunchedEffect
         }
 
-        AppLogger.i("NodeJsAppPreview", "开始 Node.js 应用预览流程, appId=$appId, config=$config")
+        AppLogger.i("NodeJsAppPreview", "Starting Node.js app preview flow, appId=$appId, config=$config")
         nodeJsAppPreviewState = NodeJsAppPreviewState.Starting
-
 
         val projectId = config.projectId
         AppLogger.i("NodeJsAppPreview", "projectId='$projectId', framework='${config.framework}', entry='${config.entryFile}'")
         if (projectId.isBlank()) {
-            AppLogger.e("NodeJsAppPreview", "projectId 为空")
+            AppLogger.e("NodeJsAppPreview", "projectId is empty")
             nodeJsAppPreviewState = NodeJsAppPreviewState.Error(Strings.nodeProjectNotFound)
             return@LaunchedEffect
         }
         val internalProjectPath = nodeRuntime.getProjectDir(projectId).absolutePath
+
+        config.sourceProjectPath
+            .takeIf { it.isNotBlank() }
+            ?.let { srcPath ->
+                val sampleRoot = File(context.filesDir, "sample_projects")
+                val srcFile = File(srcPath)
+                if (srcFile.absolutePath.startsWith(sampleRoot.absolutePath + File.separator)) {
+                    val sampleId = srcFile.name
+                    try {
+                        com.webtoapp.core.sample.SampleProjectExtractor
+                            .extractSampleProject(context, sampleId)
+                        AppLogger.d(
+                            "NodeJsAppPreview",
+                            "Re-extracted sample $sampleId before sync (cache key checked)"
+                        )
+                    } catch (e: Exception) {
+                        AppLogger.w("NodeJsAppPreview", "Sample re-extract failed for $sampleId", e)
+                    }
+                }
+            }
         config.sourceProjectPath
             .takeIf { it.isNotBlank() }
             ?.let(nodeRuntime::resolveSourceProjectDir)
@@ -1621,24 +1574,22 @@ fun WebViewScreen(
             ?.let { sourceDir ->
                 try {
                     nodeRuntime.syncProjectFromSource(projectId, sourceDir)
-                    AppLogger.i("NodeJsAppPreview", "已从源目录同步 Node 项目: ${sourceDir.absolutePath}")
+                    AppLogger.i("NodeJsAppPreview", "Synced Node.js project from source directory: ${sourceDir.absolutePath}")
                 } catch (e: Exception) {
-                    AppLogger.w("NodeJsAppPreview", "同步源项目失败: ${sourceDir.absolutePath}", e)
+                    AppLogger.w("NodeJsAppPreview", "Failed to sync source project: ${sourceDir.absolutePath}", e)
                 }
             }
 
         val projectDir = nodeRuntime.getProjectDir(projectId)
-        AppLogger.i("NodeJsAppPreview", "项目目录: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
+        AppLogger.i("NodeJsAppPreview", "Project directory: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
         if (!projectDir.exists()) {
             nodeJsAppPreviewState = NodeJsAppPreviewState.Error(Strings.nodeProjectNotFound)
             return@LaunchedEffect
         }
 
-
         projectDir.listFiles()?.take(20)?.forEach { file ->
             AppLogger.d("NodeJsAppPreview", "  - ${file.name} (${if (file.isDirectory) "dir" else "${file.length()} bytes"})")
         }
-
 
         try {
             val candidates = listOf("dist", "build", "public", "static", "www", "")
@@ -1646,10 +1597,10 @@ fun WebViewScreen(
             for (dir in candidates) {
                 val candidate = if (dir.isEmpty()) projectDir else File(projectDir, dir)
                 val hasIndex = File(candidate, "index.html").exists()
-                AppLogger.d("NodeJsAppPreview", "检查候选: '$dir' -> ${candidate.absolutePath}, isDir=${candidate.isDirectory}, hasIndex=$hasIndex")
+                AppLogger.d("NodeJsAppPreview", "Checking candidate: '$dir' -> ${candidate.absolutePath}, isDir=${candidate.isDirectory}, hasIndex=$hasIndex")
                 if (candidate.isDirectory && hasIndex) {
                     foundDocRoot = candidate
-                    AppLogger.i("NodeJsAppPreview", "找到 docRoot: ${candidate.absolutePath}")
+                    AppLogger.i("NodeJsAppPreview", "Found docRoot: ${candidate.absolutePath}")
                     break
                 }
             }
@@ -1657,31 +1608,64 @@ fun WebViewScreen(
             val docRoot = foundDocRoot
             if (docRoot != null) {
                 val url = nodeHttpServer.start(docRoot)
-                AppLogger.i("NodeJsAppPreview", "LocalHttpServer 已启动: $url")
+                AppLogger.i("NodeJsAppPreview", "LocalHttpServer started: $url")
                 nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(url)
                 delay(200)
                 webViewRef?.loadUrl(url)
+            } else if (nodeRuntime.isNodeAvailable()) {
+
+                AppLogger.i("NodeJsAppPreview", "Node.js runtime available, starting backend server")
+                nodeJsAppPreviewState = NodeJsAppPreviewState.StartingServer
+
+                val serverPort = nodeRuntime.startServer(
+                    projectDir = projectDir.absolutePath,
+                    entryFile = config.entryFile.ifBlank { "index.js" },
+                    port = config.serverPort,
+                    envVars = config.envVars,
+                )
+
+                if (serverPort > 0) {
+                    val serverUrl = "http://127.0.0.1:$serverPort"
+                    AppLogger.i("NodeJsAppPreview", "Node server started: $serverUrl")
+                    nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(serverUrl)
+                    delay(200)
+                    webViewRef?.loadUrl(serverUrl)
+                } else {
+                    AppLogger.e("NodeJsAppPreview", "Node server failed to start, falling back to preview mode")
+
+                    val url = nodeHttpServer.start(projectDir)
+                    File(projectDir, "_preview_.html").delete()
+                    val previewHtml = nodeRuntime.generatePreviewHtml(
+                        projectDir = projectDir,
+                        framework = config.framework,
+                        entryFile = config.entryFile,
+                    )
+                    val previewFile = File(projectDir, "_preview_.html")
+                    previewFile.writeText(previewHtml)
+                    val targetUrl = "$url/_preview_.html"
+                    nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(targetUrl)
+                    delay(200)
+                    webViewRef?.loadUrl(targetUrl)
+                }
             } else {
 
-                AppLogger.w("NodeJsAppPreview", "未找到 index.html，尝试在项目根启动 HTTP 服务器")
+                AppLogger.w("NodeJsAppPreview", "index.html not found, trying HTTP server at project root")
                 val url = nodeHttpServer.start(projectDir)
-                AppLogger.i("NodeJsAppPreview", "LocalHttpServer 在项目根启动: $url")
-
+                AppLogger.i("NodeJsAppPreview", "LocalHttpServer started at project root: $url")
 
                 File(projectDir, "_preview_.html").delete()
-
 
                 val htmlFiles = projectDir.walkTopDown().filter { it.extension == "html" && it.name != "_preview_.html" }.take(1).toList()
                 if (htmlFiles.isNotEmpty()) {
                     val relPath = htmlFiles.first().relativeTo(projectDir).path
                     val targetUrl = "$url/$relPath"
-                    AppLogger.i("NodeJsAppPreview", "找到 HTML 文件: $relPath, URL=$targetUrl")
+                    AppLogger.i("NodeJsAppPreview", "Found HTML file: $relPath, URL=$targetUrl")
                     nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(targetUrl)
                     delay(200)
                     webViewRef?.loadUrl(targetUrl)
                 } else {
 
-                    AppLogger.i("NodeJsAppPreview", "无静态 HTML，生成项目预览页面")
+                    AppLogger.i("NodeJsAppPreview", "No static HTML, generating project preview page")
                     val previewHtml = nodeRuntime.generatePreviewHtml(
                         projectDir = projectDir,
                         framework = config.framework,
@@ -1690,25 +1674,23 @@ fun WebViewScreen(
                     val previewFile = File(projectDir, "_preview_.html")
                     previewFile.writeText(previewHtml)
                     val targetUrl = "$url/_preview_.html"
-                    AppLogger.i("NodeJsAppPreview", "预览页面已生成: $targetUrl")
+                    AppLogger.i("NodeJsAppPreview", "Preview page generated: $targetUrl")
                     nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(targetUrl)
                     delay(200)
                     webViewRef?.loadUrl(targetUrl)
                 }
             }
         } catch (e: Exception) {
-            AppLogger.e("NodeJsAppPreview", "启动预览失败", e)
+            AppLogger.e("NodeJsAppPreview", "Failed to start preview", e)
             nodeJsAppPreviewState = NodeJsAppPreviewState.Error(e.message ?: Strings.nodePreviewFailed)
         }
     }
-
 
     DisposableEffect(nodeHttpServer) {
         onDispose {
             nodeHttpServer.stop()
         }
     }
-
 
     LaunchedEffect(webApp, isActivated, isActivationChecked, goAppRetryTrigger) {
         val app = webApp ?: return@LaunchedEffect
@@ -1717,34 +1699,31 @@ fun WebViewScreen(
 
         val config = app.goAppConfig
         if (config == null) {
-            AppLogger.e("GoAppPreview", "goAppConfig 为 null")
+            AppLogger.e("GoAppPreview", "goAppConfig is null")
             goAppPreviewState = GoAppPreviewState.Error(Strings.goProjectNotFound)
             return@LaunchedEffect
         }
 
-        AppLogger.i("GoAppPreview", "开始 Go 应用预览流程, appId=$appId, config=$config")
+        AppLogger.i("GoAppPreview", "Starting Go app preview flow, appId=$appId, config=$config")
         goAppPreviewState = GoAppPreviewState.Starting
-
 
         val projectId = config.projectId
         AppLogger.i("GoAppPreview", "projectId='$projectId', framework='${config.framework}', binary='${config.binaryName}'")
         if (projectId.isBlank()) {
-            AppLogger.e("GoAppPreview", "projectId 为空")
+            AppLogger.e("GoAppPreview", "projectId is empty")
             goAppPreviewState = GoAppPreviewState.Error(Strings.goProjectNotFound)
             return@LaunchedEffect
         }
         val projectDir = goRuntime.getProjectDir(projectId)
-        AppLogger.i("GoAppPreview", "项目目录: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
+        AppLogger.i("GoAppPreview", "Project directory: ${projectDir.absolutePath}, exists=${projectDir.exists()}")
         if (!projectDir.exists()) {
             goAppPreviewState = GoAppPreviewState.Error(Strings.goProjectNotFound)
             return@LaunchedEffect
         }
 
-
         projectDir.listFiles()?.take(20)?.forEach { file ->
             AppLogger.d("GoAppPreview", "  - ${file.name} (${if (file.isDirectory) "dir" else "${file.length()} bytes"})")
         }
-
 
         try {
             val candidates = listOf("dist", "build", "public", "static", "web", "www", "")
@@ -1752,10 +1731,10 @@ fun WebViewScreen(
             for (dir in candidates) {
                 val candidate = if (dir.isEmpty()) projectDir else File(projectDir, dir)
                 val hasIndex = File(candidate, "index.html").exists()
-                AppLogger.d("GoAppPreview", "检查候选: '$dir' -> ${candidate.absolutePath}, isDir=${candidate.isDirectory}, hasIndex=$hasIndex")
+                AppLogger.d("GoAppPreview", "Checking candidate: '$dir' -> ${candidate.absolutePath}, isDir=${candidate.isDirectory}, hasIndex=$hasIndex")
                 if (candidate.isDirectory && hasIndex) {
                     foundDocRoot = candidate
-                    AppLogger.i("GoAppPreview", "找到 docRoot: ${candidate.absolutePath}")
+                    AppLogger.i("GoAppPreview", "Found docRoot: ${candidate.absolutePath}")
                     break
                 }
             }
@@ -1763,77 +1742,107 @@ fun WebViewScreen(
             val docRoot = foundDocRoot
             if (docRoot != null) {
                 val url = goHttpServer.start(docRoot)
-                AppLogger.i("GoAppPreview", "LocalHttpServer 已启动: $url")
+                AppLogger.i("GoAppPreview", "LocalHttpServer started: $url")
                 goAppPreviewState = GoAppPreviewState.Ready(url)
                 delay(200)
                 webViewRef?.loadUrl(url)
-            } else if (config.binaryName.isNotBlank() || goRuntime.detectBinary(projectDir) != null) {
-
-                AppLogger.i("GoAppPreview", "启动 Go 后端服务器（仅使用预编译二进制）")
-                goAppPreviewState = GoAppPreviewState.StartingServer
-
-                val serverPort = goRuntime.startServer(
-                    projectDir = projectDir.absolutePath,
-                    binaryName = config.binaryName,
-                    port = config.serverPort,
-                    envVars = config.envVars
-                )
-
-                if (serverPort > 0) {
-                    val serverUrl = "http://127.0.0.1:$serverPort"
-                    AppLogger.i("GoAppPreview", "Go 服务器已启动: $serverUrl")
-                    goAppPreviewState = GoAppPreviewState.Ready(serverUrl)
-                    delay(200)
-                    webViewRef?.loadUrl(serverUrl)
-                } else {
-                    AppLogger.e("GoAppPreview", "Go 服务器启动失败，回退到预览模式")
-                    val url = goHttpServer.start(projectDir)
-                    File(projectDir, "_preview_.html").delete()
-                    val previewHtml = goRuntime.generatePreviewHtml(
-                        projectDir = projectDir,
-                        framework = config.framework,
-                        binaryName = config.binaryName
-                    )
-                    val previewFile = File(projectDir, "_preview_.html")
-                    previewFile.writeText(previewHtml)
-                    val targetUrl = "$url/_preview_.html"
-                    goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
-                    delay(200)
-                    webViewRef?.loadUrl(targetUrl)
-                }
             } else {
 
-                AppLogger.w("GoAppPreview", "无可执行二进制，生成项目预览页面")
-                val url = goHttpServer.start(projectDir)
-                File(projectDir, "_preview_.html").delete()
+                val goMod = File(projectDir, "go.mod")
+                val toolchainReady = com.webtoapp.core.golang.GoDependencyManager.isGoToolchainReady(context)
+                val needsBuild = config.binaryName.isBlank()
+                    && goRuntime.detectBinary(projectDir) == null
+                    && goMod.exists()
+                    && toolchainReady
 
-                val htmlFiles = projectDir.walkTopDown().filter { it.extension == "html" && it.name != "_preview_.html" }.take(1).toList()
-                if (htmlFiles.isNotEmpty()) {
-                    val relPath = htmlFiles.first().relativeTo(projectDir).path
-                    val targetUrl = "$url/$relPath"
-                    goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
-                    delay(200)
-                    webViewRef?.loadUrl(targetUrl)
-                } else {
-                    val previewHtml = goRuntime.generatePreviewHtml(
-                        projectDir = projectDir,
-                        framework = config.framework,
-                        binaryName = config.binaryName
+                if (needsBuild) {
+                    AppLogger.i("GoAppPreview", "No binary, but go.mod + 工具链就绪 → 自动应用内 build")
+                    goAppPreviewState = GoAppPreviewState.StartingServer
+                    val targetName = config.binaryName.ifBlank { projectDir.name }
+                    val produced = try {
+                        com.webtoapp.core.golang.GoBuildEnvironment.buildProject(
+                            context = context,
+                            projectDir = projectDir,
+                            binaryName = targetName,
+                            onOutput = { line -> AppLogger.d("GoAppPreview", "[build] $line") },
+                        )
+                    } catch (e: Exception) {
+                        AppLogger.e("GoAppPreview", "应用内 build 异常", e)
+                        null
+                    }
+                    if (produced != null) {
+                        AppLogger.i("GoAppPreview", "Build 成功 → ${produced.absolutePath}")
+                    } else {
+                        AppLogger.w("GoAppPreview", "Build 失败 / 工具链网络受限，回退到预览页")
+                    }
+                }
+
+                val hasBinary = config.binaryName.isNotBlank() || goRuntime.detectBinary(projectDir) != null
+                if (hasBinary) {
+                    AppLogger.i("GoAppPreview", "Starting Go backend server")
+                    goAppPreviewState = GoAppPreviewState.StartingServer
+
+                    val serverPort = goRuntime.startServer(
+                        projectDir = projectDir.absolutePath,
+                        binaryName = config.binaryName,
+                        port = config.serverPort,
+                        envVars = config.envVars
                     )
-                    val previewFile = File(projectDir, "_preview_.html")
-                    previewFile.writeText(previewHtml)
-                    val targetUrl = "$url/_preview_.html"
-                    goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
-                    delay(200)
-                    webViewRef?.loadUrl(targetUrl)
+
+                    if (serverPort > 0) {
+                        val serverUrl = "http://127.0.0.1:$serverPort"
+                        AppLogger.i("GoAppPreview", "Go server started: $serverUrl")
+                        goAppPreviewState = GoAppPreviewState.Ready(serverUrl)
+                        delay(200)
+                        webViewRef?.loadUrl(serverUrl)
+                    } else {
+                        AppLogger.e("GoAppPreview", "Go server failed to start, falling back to preview mode")
+                        val url = goHttpServer.start(projectDir)
+                        File(projectDir, "_preview_.html").delete()
+                        val previewHtml = goRuntime.generatePreviewHtml(
+                            projectDir = projectDir,
+                            framework = config.framework,
+                            binaryName = config.binaryName
+                        )
+                        val previewFile = File(projectDir, "_preview_.html")
+                        previewFile.writeText(previewHtml)
+                        val targetUrl = "$url/_preview_.html"
+                        goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
+                        delay(200)
+                        webViewRef?.loadUrl(targetUrl)
+                    }
+                } else {
+                    AppLogger.w("GoAppPreview", "No executable binary, generating project preview page")
+                    val url = goHttpServer.start(projectDir)
+                    File(projectDir, "_preview_.html").delete()
+
+                    val htmlFiles = projectDir.walkTopDown().filter { it.extension == "html" && it.name != "_preview_.html" }.take(1).toList()
+                    if (htmlFiles.isNotEmpty()) {
+                        val relPath = htmlFiles.first().relativeTo(projectDir).path
+                        val targetUrl = "$url/$relPath"
+                        goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
+                        delay(200)
+                        webViewRef?.loadUrl(targetUrl)
+                    } else {
+                        val previewHtml = goRuntime.generatePreviewHtml(
+                            projectDir = projectDir,
+                            framework = config.framework,
+                            binaryName = config.binaryName
+                        )
+                        val previewFile = File(projectDir, "_preview_.html")
+                        previewFile.writeText(previewHtml)
+                        val targetUrl = "$url/_preview_.html"
+                        goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
+                        delay(200)
+                        webViewRef?.loadUrl(targetUrl)
+                    }
                 }
             }
         } catch (e: Exception) {
-            AppLogger.e("GoAppPreview", "启动预览失败", e)
+            AppLogger.e("GoAppPreview", "Failed to start preview", e)
             goAppPreviewState = GoAppPreviewState.Error(e.message ?: Strings.goPreviewFailed)
         }
     }
-
 
     DisposableEffect(goHttpServer) {
         onDispose {
@@ -1842,81 +1851,20 @@ fun WebViewScreen(
         }
     }
 
-    fun scheduleStrictHostFallbackProbe(url: String?, source: String, delayMs: Long) {
-        if (!STRICT_HOST_AUTO_EXTERNAL_FALLBACK_ENABLED) return
-        if (strictHostFallbackTriggered || !shouldSkipLongPressEnhancer(url)) return
-        val expectedUrl = url
-
-        webViewRef?.postDelayed({
-            val activeWebView = webViewRef ?: return@postDelayed
-            if (strictHostFallbackTriggered) return@postDelayed
-
-            val current = activeWebView.url
-            if (expectedUrl != null && expectedUrl != current) return@postDelayed
-
-            val probeScript = """
-                (function() {
-                    try {
-                        var body = document.body;
-                        var root = document.documentElement;
-                        if (!body) return JSON.stringify({blank:true, reason:'no-body'});
-                        var text = (body.innerText || '').replace(/\s+/g, '');
-                        var textLength = text.length;
-                        var height = Math.max(body.scrollHeight || 0, root ? (root.scrollHeight || 0) : 0);
-                        var nodeCount = body.querySelectorAll('*').length;
-                        var videoCount = document.querySelectorAll('video').length;
-                        var imgCount = document.images ? document.images.length : 0;
-                        var blank = height < 900 && textLength < 80 && nodeCount < 120 && videoCount === 0 && imgCount < 5;
-                        return JSON.stringify({
-                            blank: blank,
-                            height: height,
-                            textLength: textLength,
-                            nodeCount: nodeCount,
-                            videoCount: videoCount,
-                            imgCount: imgCount
-                        });
-                    } catch (e) {
-                        return JSON.stringify({blank:false, error:String(e)});
-                    }
-                })();
-            """.trimIndent()
-
-            activeWebView.evaluateJavascript(probeScript) { raw ->
-                if (strictHostFallbackTriggered) return@evaluateJavascript
-                val decoded = decodeEvaluateJavascriptString(raw)
-                if (!shouldFallbackToExternalForStrictHost(decoded)) return@evaluateJavascript
-                strictHostFallbackTriggered = true
-                AppLogger.w("WebViewActivity", "Strict host blank-page probe ($source) triggered external fallback: $expectedUrl metrics=$decoded")
-                val fallbackUrl = expectedUrl ?: activeWebView.url.orEmpty()
-                if (fallbackUrl.isNotBlank()) {
-                    val safeUrl = normalizeExternalUrlForIntent(fallbackUrl)
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(safeUrl))
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                }
-            }
-        }, delayMs)
-    }
-
-
     val webViewCallbacks = remember {
         object : WebViewCallbacks {
             override fun onPageStarted(url: String?) {
-
 
                 if (url == "about:blank") return
                 isLoading = true
                 currentUrl = url ?: ""
                 jsScrollTop.set(0)
-                if (!shouldSkipLongPressEnhancer(url)) {
-                    strictHostFallbackTriggered = false
+                if (!false) {
                 } else {
-                    scheduleStrictHostFallbackProbe(url, "page_started", 5500L)
                 }
             }
 
             override fun onPageCommitVisible(url: String?) {
-                scheduleStrictHostFallbackProbe(url, "commit_visible", 2200L)
             }
 
             override fun onUrlChanged(webView: WebView?, url: String?) {
@@ -1937,7 +1885,6 @@ fun WebViewScreen(
                     canGoBack = it.canGoBack()
                     canGoForward = it.canGoForward()
 
-
                     it.evaluateJavascript("""
                         (function(){
                             if(window._wtaScrollTrackerInstalled) return;
@@ -1956,14 +1903,12 @@ fun WebViewScreen(
                         })();
                     """.trimIndent(), null)
 
-
-                    if (!shouldSkipLongPressEnhancer(url)) {
+                    if (!false) {
                         longPressHandler.injectLongPressEnhancer(it)
                     } else {
                         AppLogger.d("WebViewActivity", "Skip long-press enhancer for strict compatibility host: $url")
                     }
                 }
-                scheduleStrictHostFallbackProbe(url, "page_finished", 1200L)
             }
 
             override fun onProgressChanged(progress: Int) {
@@ -2043,7 +1988,6 @@ fun WebViewScreen(
                 contentLength: Long
             ) {
 
-
                 DownloadHelper.handleDownload(
                     context = context,
                     url = url,
@@ -2056,7 +2000,6 @@ fun WebViewScreen(
                     onBlobDownload = { blobUrl, filename ->
                         val safeBlobUrl = org.json.JSONObject.quote(blobUrl)
                         val safeFilename = org.json.JSONObject.quote(filename)
-
 
                         webViewRef?.evaluateJavascript("""
                             (function() {
@@ -2146,24 +2089,20 @@ fun WebViewScreen(
 
             override fun onLongPress(webView: WebView, x: Float, y: Float): Boolean {
 
-
                 val hitResult = webView.hitTestResult
                 val hitType = hitResult.type
                 val isLink = hitType == WebView.HitTestResult.SRC_ANCHOR_TYPE ||
                              hitType == WebView.HitTestResult.ANCHOR_TYPE
-
 
                 val menuEnabled = webApp?.webViewConfig?.longPressMenuEnabled ?: true
                 if (!menuEnabled) {
                     return isLink
                 }
 
-
                 if (hitType == WebView.HitTestResult.EDIT_TEXT_TYPE ||
                     hitType == WebView.HitTestResult.UNKNOWN_TYPE) {
                     return false
                 }
-
 
                 longPressHandler.getLongPressDetails(webView, x, y) { result ->
                     when (result) {
@@ -2179,12 +2118,9 @@ fun WebViewScreen(
                         is LongPressHandler.LongPressResult.Text,
                         is LongPressHandler.LongPressResult.None -> {
 
-
-
                         }
                     }
                 }
-
 
                 return when (hitType) {
                     WebView.HitTestResult.IMAGE_TYPE,
@@ -2220,8 +2156,6 @@ fun WebViewScreen(
 
                 webViewRecreationKey++
 
-
-
                 val app = webApp
                 when (app?.appType) {
                     com.webtoapp.data.model.AppType.PHP_APP -> phpAppRetryTrigger++
@@ -2237,9 +2171,7 @@ fun WebViewScreen(
 
     val webViewManager = remember { WebViewManager(context, adBlocker) }
 
-
     val localHttpServer = remember { LocalHttpServer.getInstance(context) }
-
 
     val targetUrl = remember(directUrl, webApp, testUrl) {
         val app = webApp
@@ -2279,7 +2211,6 @@ fun WebViewScreen(
                 val entryFile = app.htmlConfig?.getValidEntryFile() ?: "index.html"
                 val htmlDir = File(context.filesDir, "html_projects/$projectId")
 
-
                 AppLogger.d("WebViewActivity", "========== HTML App Debug Info ==========")
                 AppLogger.d("WebViewActivity", "projectId: '$projectId'")
                 AppLogger.d("WebViewActivity", "entryFile: '$entryFile'")
@@ -2288,18 +2219,16 @@ fun WebViewScreen(
                 AppLogger.d("WebViewActivity", "htmlConfig: ${app.htmlConfig}")
                 AppLogger.d("WebViewActivity", "htmlConfig.files: ${app.htmlConfig?.files}")
 
-
                 if (htmlDir.exists()) {
                     val files = htmlDir.listFiles()
-                    AppLogger.d("WebViewActivity", "目录文件列表 (${files?.size ?: 0} 个):")
+                    AppLogger.d("WebViewActivity", "Directory file list (${files?.size ?: 0}):")
                     files?.forEach { file ->
                         AppLogger.d("WebViewActivity", "  - ${file.name} (${file.length()} bytes)")
                     }
 
-
                     val entryFilePath = File(htmlDir, entryFile)
-                    AppLogger.d("WebViewActivity", "入口文件路径: ${entryFilePath.absolutePath}")
-                    AppLogger.d("WebViewActivity", "入口文件存在: ${entryFilePath.exists()}")
+                    AppLogger.d("WebViewActivity", "Entry file path: ${entryFilePath.absolutePath}")
+                    AppLogger.d("WebViewActivity", "Entry file exists: ${entryFilePath.exists()}")
                 }
                 AppLogger.d("WebViewActivity", "=========================================")
 
@@ -2313,15 +2242,15 @@ fun WebViewScreen(
                             enableCrossOriginIsolation = enableLocalIsolation
                         )
                         val targetUrl = "$baseUrl/$entryFile"
-                        AppLogger.d("WebViewActivity", "目标 URL: $targetUrl, crossOriginIsolation=$enableLocalIsolation")
+                        AppLogger.d("WebViewActivity", "Target URL: $targetUrl, crossOriginIsolation=$enableLocalIsolation")
                         targetUrl
                     } catch (e: Exception) {
-                        AppLogger.e("WebViewActivity", "启动本地服务器失败", e)
+                        AppLogger.e("WebViewActivity", "Failed to start local server", e)
 
                         "file://${htmlDir.absolutePath}/$entryFile"
                     }
                 } else {
-                    AppLogger.w("WebViewActivity", "HTML项目目录不存在: ${htmlDir.absolutePath}")
+                    AppLogger.w("WebViewActivity", "HTML project directory does not exist: ${htmlDir.absolutePath}")
                     ""
                 }
             }
@@ -2329,14 +2258,11 @@ fun WebViewScreen(
         }
     }
 
-
     DisposableEffect(Unit) {
         onDispose {
 
-
         }
     }
-
 
     val hideToolbar = !isTestMode && webApp?.webViewConfig?.hideToolbar == true
 
@@ -2351,10 +2277,8 @@ fun WebViewScreen(
         onFullscreenModeChanged(hideToolbar)
     }
 
-
     Box(modifier = Modifier.fillMaxSize()) {
     Scaffold(
-
 
         contentWindowInsets = if (hideToolbar && !showToolbarInPreview) WindowInsets(0) else if (hideToolbar && showToolbarInPreview) WindowInsets(0) else ScaffoldDefaults.contentWindowInsets,
         modifier = if (hideToolbar && !showToolbarInPreview) Modifier.fillMaxSize() else if (hideToolbar) Modifier.fillMaxSize() else Modifier,
@@ -2482,7 +2406,6 @@ fun WebViewScreen(
         }
     ) { padding ->
 
-
         val density = LocalDensity.current
 
         val topInsetPx = WindowInsets.statusBars.getTop(density)
@@ -2492,8 +2415,7 @@ fun WebViewScreen(
             24.dp
         }
 
-
-        val actualStatusBarPadding = if (statusBarHeightDp > 0) statusBarHeightDp.dp else systemStatusBarHeightDp
+        val actualStatusBarPadding = if (statusBarHeightDp >= 0) statusBarHeightDp.dp else systemStatusBarHeightDp
 
         val contentModifier = when {
             hideToolbar && showToolbarInPreview -> {
@@ -2501,7 +2423,6 @@ fun WebViewScreen(
                 Modifier.fillMaxSize().padding(padding)
             }
             hideToolbar && webApp?.webViewConfig?.showStatusBarInFullscreen == true -> {
-
 
                 Modifier.fillMaxSize().padding(top = actualStatusBarPadding)
             }
@@ -2527,7 +2448,6 @@ fun WebViewScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
-
 
             if (!isActivationChecked && webApp?.activationEnabled == true) {
                 Box(
@@ -2628,7 +2548,6 @@ fun WebViewScreen(
                 }
             } else if (targetUrl.isNotEmpty() && isActivationChecked) {
 
-
                 key(webViewRecreationKey) {
 
                 var isConsoleExpanded by remember { mutableStateOf(false) }
@@ -2670,6 +2589,12 @@ fun WebViewScreen(
                                     } else {
                                         webApp?.extensionModuleIds ?: emptyList()
                                     }
+
+                                    val extensionMasterEnabled = if (isTestMode && !testModuleIds.isNullOrEmpty()) {
+                                        true
+                                    } else {
+                                        webApp?.extensionEnabled == true
+                                    }
                                     webViewManager.configureWebView(
                                         this,
                                         webApp?.webViewConfig ?: com.webtoapp.data.model.WebViewConfig(),
@@ -2678,9 +2603,30 @@ fun WebViewScreen(
                                         emptyList(),
                                         webApp?.extensionFabIcon.orEmpty(),
                                         allowGlobalModuleFallback = false,
+                                        extensionEnabled = extensionMasterEnabled,
                                         browserDisguiseConfig = webApp?.browserDisguiseConfig,
                                         deviceDisguiseConfig = webApp?.deviceDisguiseConfig
                                     )
+
+                                    val effectiveWebApp = webApp
+                                    if (effectiveWebApp != null) {
+                                        if (effectiveWebApp.webViewConfig.enableNativeBridge) {
+                                            val nb = com.webtoapp.core.webview.NativeBridge(
+                                                context = context,
+                                                scope = scope,
+                                                webViewProvider = { this },
+                                                capabilities = effectiveWebApp.webViewConfig.nativeBridgeCapabilities
+                                            )
+                                            addJavascriptInterface(
+                                                nb,
+                                                com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME
+                                            )
+                                        } else {
+                                            removeJavascriptInterface(
+                                                com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME
+                                            )
+                                        }
+                                    }
 
                                     val currentApp = webApp
                                     if (currentApp?.appType == com.webtoapp.data.model.AppType.HTML) {
@@ -2695,8 +2641,6 @@ fun WebViewScreen(
                                             domStorageEnabled = currentApp.htmlConfig?.enableLocalStorage ?: true
                                         }
                                     }
-
-
 
                                     var lastTouchX = 0f
                                     var lastTouchY = 0f
@@ -2718,15 +2662,7 @@ fun WebViewScreen(
                                     addJavascriptInterface(scrollBridge, "_wtaScrollBridge")
                                     onWebViewCreated(this)
 
-                                    if (shouldSkipLongPressEnhancer(targetUrl)) {
-                                        webViewManager.applyPreloadPolicyForUrl(this, targetUrl)
-                                        AppLogger.d("WebViewActivity", "Strict host pre-load policy applied for $targetUrl")
-                                    }
-
                                     webViewRef = this
-
-
-
 
                                     loadUrl(targetUrl)
                                 }
@@ -2743,7 +2679,6 @@ fun WebViewScreen(
                         },
                         modifier = Modifier.weight(weight = 1f, fill = true)
                     )
-
 
                     AnimatedVisibility(
                         visible = showConsole,
@@ -2781,7 +2716,6 @@ fun WebViewScreen(
                 }
             }
 
-
             val isWordPressLoading = webApp?.appType == com.webtoapp.data.model.AppType.WORDPRESS &&
                 wordPressPreviewState !is WordPressPreviewState.Ready &&
                 wordPressPreviewState !is WordPressPreviewState.Idle
@@ -2792,7 +2726,6 @@ fun WebViewScreen(
                     onRetry = { wpRetryTrigger++ }
                 )
             }
-
 
             val isPhpAppLoading = webApp?.appType == com.webtoapp.data.model.AppType.PHP_APP &&
                 phpAppPreviewState !is PhpAppPreviewState.Ready &&
@@ -2805,7 +2738,6 @@ fun WebViewScreen(
                 )
             }
 
-
             val isPythonAppLoading = webApp?.appType == com.webtoapp.data.model.AppType.PYTHON_APP &&
                 pythonAppPreviewState !is PythonAppPreviewState.Ready &&
                 pythonAppPreviewState !is PythonAppPreviewState.Idle
@@ -2815,7 +2747,6 @@ fun WebViewScreen(
                     onRetry = { pythonAppRetryTrigger++ }
                 )
             }
-
 
             val isGoAppLoading = webApp?.appType == com.webtoapp.data.model.AppType.GO_APP &&
                 goAppPreviewState !is GoAppPreviewState.Ready &&
@@ -2828,9 +2759,6 @@ fun WebViewScreen(
                     onRetry = { goAppRetryTrigger++ }
                 )
             }
-
-
-
 
             if (webApp?.webViewConfig?.showFloatingBackButton == true &&
                 ((hideToolbar && !showToolbarInPreview) || hideBrowserToolbar) &&
@@ -2875,7 +2803,6 @@ fun WebViewScreen(
                 }
             }
 
-
             errorMessage?.let { error ->
                 Card(
                     modifier = Modifier
@@ -2903,11 +2830,8 @@ fun WebViewScreen(
                 }
             }
 
-
         }
     }
-
-
 
     if (hideToolbar && webApp?.webViewConfig?.showStatusBarInFullscreen == true) {
         com.webtoapp.ui.components.StatusBarOverlay(
@@ -2921,7 +2845,6 @@ fun WebViewScreen(
         )
     }
     }
-
 
     if (showActivationDialog) {
         val activationStatus by androidx.compose.runtime.produceState<com.webtoapp.core.activation.ActivationStatus?>(initialValue = null) {
@@ -2945,7 +2868,6 @@ fun WebViewScreen(
             customButtonText = webApp?.activationDialogConfig?.buttonText ?: ""
         )
 
-
         LaunchedEffect(Unit) {
             activation.isActivated(appId).collect { activated ->
                 if (activated) {
@@ -2960,7 +2882,6 @@ fun WebViewScreen(
             }
         }
     }
-
 
     if (showAnnouncementDialog && webApp?.announcement != null) {
         val ann = webApp!!.announcement!!
@@ -3002,7 +2923,6 @@ com.webtoapp.ui.components.announcement.AnnouncementDialog(
         )
     }
 
-
     val closeSplash = {
         showSplash = false
 
@@ -3011,7 +2931,6 @@ com.webtoapp.ui.components.announcement.AnnouncementDialog(
             originalOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         }
     }
-
 
     AnimatedVisibility(
         visible = showSplash,
@@ -3029,7 +2948,6 @@ com.webtoapp.ui.components.announcement.AnnouncementDialog(
             )
         }
     }
-
 
     if (showLongPressMenu && longPressResult != null) {
         WebViewLongPressMenu(

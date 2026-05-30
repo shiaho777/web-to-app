@@ -6,10 +6,6 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.webtoapp.data.model.WebApp
 
-
-
-
-
 @Entity(
     tableName = "app_usage_stats",
     indices = [
@@ -49,7 +45,6 @@ data class AppUsageStats(
             }
         }
 
-
     val formattedLastUsed: String
         get() {
             if (lastUsedAt == 0L) return "从未使用"
@@ -67,18 +62,12 @@ data class AppUsageStats(
         }
 }
 
-
-
-
 enum class HealthStatus {
     UNKNOWN,
     ONLINE,
     SLOW,
     OFFLINE
 }
-
-
-
 
 @Entity(
     tableName = "app_health_records",
@@ -106,9 +95,6 @@ data class AppHealthRecord(
     val errorMessage: String? = null,
     val checkedAt: Long = System.currentTimeMillis()
 )
-
-
-
 
 data class AppHealthSummary(
     val appId: Long,

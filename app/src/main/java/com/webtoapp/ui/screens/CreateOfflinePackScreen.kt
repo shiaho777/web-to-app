@@ -24,15 +24,6 @@ import com.webtoapp.ui.components.*
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 
-
-
-
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateOfflinePackScreen(
@@ -60,7 +51,6 @@ fun CreateOfflinePackScreen(
     var skipPatterns by remember { mutableStateOf("") }
     var timeoutSeconds by remember { mutableIntStateOf(30) }
     var showAdvanced by remember { mutableStateOf(false) }
-
 
     var isScraping by remember { mutableStateOf(false) }
     var scrapeProgress by remember { mutableStateOf<WebsiteScraper.ScrapeProgress?>(null) }
@@ -132,7 +122,6 @@ fun CreateOfflinePackScreen(
                     )
                 )
 
-
                 PremiumTextField(
                     value = appName,
                     onValueChange = { appName = it },
@@ -147,7 +136,6 @@ fun CreateOfflinePackScreen(
                 }
             }
         }
-
 
         WtaCreateFlowSection(title = Strings.scrapeStrategy) {
                 EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -169,7 +157,6 @@ fun CreateOfflinePackScreen(
                         }
 
                         Spacer(Modifier.height(12.dp))
-
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -196,7 +183,6 @@ fun CreateOfflinePackScreen(
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -220,7 +206,6 @@ fun CreateOfflinePackScreen(
                         }
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -246,7 +231,6 @@ fun CreateOfflinePackScreen(
                     }
                 }
         }
-
 
         WtaCreateFlowSection(title = Strings.advancedConfig) {
                 EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -311,7 +295,6 @@ fun CreateOfflinePackScreen(
 
                                 HorizontalDivider()
 
-
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
@@ -337,7 +320,6 @@ fun CreateOfflinePackScreen(
 
                                 HorizontalDivider()
 
-
                                 PremiumTextField(
                                     value = skipPatterns,
                                     onValueChange = { skipPatterns = it },
@@ -350,7 +332,6 @@ fun CreateOfflinePackScreen(
                                 )
 
                                 HorizontalDivider()
-
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -385,7 +366,6 @@ fun CreateOfflinePackScreen(
                 }
         }
 
-
                 if (!isScraping) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
@@ -411,7 +391,6 @@ fun CreateOfflinePackScreen(
                         }
                     }
                 }
-
 
                 if (isScraping && scrapeProgress != null) {
                     val progress = scrapeProgress!!
@@ -496,7 +475,6 @@ fun CreateOfflinePackScreen(
                         }
                     }
                 }
-
 
                 if (!isScraping) {
                     PremiumButton(

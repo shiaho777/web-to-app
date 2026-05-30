@@ -26,12 +26,6 @@ import com.webtoapp.data.model.BgmConfig
 import com.webtoapp.data.model.BgmPlayMode
 import com.webtoapp.ui.design.*
 
-
-
-
-
-
-
 @Composable
 fun BgmCard(
     enabled: Boolean,
@@ -40,7 +34,6 @@ fun BgmCard(
     onConfigChange: (BgmConfig) -> Unit
 ) {
     var showSelectorDialog by remember { mutableStateOf(false) }
-
 
     WtaSettingCard {
         Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)) {
@@ -109,7 +102,6 @@ fun BgmCard(
                                 }
                             }
 
-
                             if (config.playlist.size > 3) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
@@ -125,7 +117,6 @@ fun BgmCard(
                                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                             )
                             Spacer(modifier = Modifier.height(8.dp))
-
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -145,13 +136,11 @@ fun BgmCard(
                                     }
                                 )
 
-
                                 StatusChip(
                                     icon = if (config.volume > 0.5f) Icons.AutoMirrored.Outlined.VolumeUp
                                            else Icons.AutoMirrored.Outlined.VolumeDown,
                                     label = "${(config.volume * 100).toInt()}%"
                                 )
-
 
                                 if (config.showLyrics) {
                                     StatusChip(
@@ -163,7 +152,6 @@ fun BgmCard(
                         }
                     }
                 }
-
 
                 PremiumOutlinedButton(
                     onClick = { showSelectorDialog = true },
@@ -182,7 +170,6 @@ fun BgmCard(
         }
     }
 
-
     if (showSelectorDialog) {
         BgmSelectorDialog(
             currentConfig = config,
@@ -194,9 +181,6 @@ fun BgmCard(
         )
     }
 }
-
-
-
 
 @Composable
 private fun StatusChip(

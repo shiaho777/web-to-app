@@ -26,12 +26,6 @@ import com.webtoapp.util.TvUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
-
-
-
-
-
-
 @SuppressLint("SetJavaScriptEnabled")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,7 +43,7 @@ fun ShellScreen(
     statusBarBackgroundColor: String? = null,
     statusBarBackgroundImage: String? = null,
     statusBarBackgroundAlpha: Float = 1.0f,
-    statusBarHeightDp: Int = 0,
+    statusBarHeightDp: Int = -1,
 
     statusBarBackgroundTypeDark: String = "COLOR",
     statusBarBackgroundColorDark: String? = null,
@@ -69,11 +63,9 @@ fun ShellScreen(
     val forcedRunBlocked = forcedRunState.forcedRunBlocked
     val forcedRunBlockedMessage = forcedRunState.forcedRunBlockedMessage
 
-
     val appType = config.appType.trim().uppercase()
 
     AppLogger.d("ShellScreen", "appType='${config.appType}' (normalized='$appType'), targetUrl='${config.targetUrl}'")
-
 
     var isLoading by remember { mutableStateOf(true) }
     var loadProgress by remember { mutableIntStateOf(0) }
@@ -82,7 +74,6 @@ fun ShellScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showActivationDialog by remember { mutableStateOf(false) }
     var showAnnouncementDialog by remember { mutableStateOf(false) }
-
 
     var isActivated by remember { mutableStateOf(!config.activationEnabled) }
 
@@ -93,20 +84,16 @@ fun ShellScreen(
     var canGoForward by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
 
-
-
     val splashMediaExists = remember {
         if (config.splashEnabled) {
             val extension = if (config.splashType == "VIDEO") "mp4" else "png"
             val assetPath = "splash_media.$extension"
             val encryptedPath = "$assetPath.enc"
 
-
             val hasEncrypted = try {
                 context.assets.open(encryptedPath).close()
                 true
             } catch (e: Exception) { false }
-
 
             val hasNormal = try {
                 context.assets.open(assetPath).close()
@@ -119,11 +106,9 @@ fun ShellScreen(
         } else false
     }
 
-
     var showSplash by remember { mutableStateOf(config.splashEnabled && splashMediaExists) }
     var splashCountdown by remember { mutableIntStateOf(if (config.splashEnabled && splashMediaExists) config.splashDuration else 0) }
     var originalOrientation by remember { mutableIntStateOf(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) }
-
 
     LaunchedEffect(showSplash) {
         if (showSplash && config.splashLandscape) {
@@ -132,16 +117,13 @@ fun ShellScreen(
         }
     }
 
-
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
-
 
     var showLongPressMenu by remember { mutableStateOf(false) }
     var longPressResult by remember { mutableStateOf<LongPressHandler.LongPressResult?>(null) }
     var longPressTouchX by remember { mutableFloatStateOf(0f) }
     var longPressTouchY by remember { mutableFloatStateOf(0f) }
     val longPressHandler = remember { LongPressHandler(context, scope) }
-
 
     LaunchedEffect(Unit) {
 
@@ -157,12 +139,10 @@ fun ShellScreen(
             AppLogger.e("ShellActivity", "设置语言失败", e)
         }
 
-
         if (config.adBlockEnabled) {
-            adBlocker.initialize(config.adBlockRules, useDefaultRules = true)
+            adBlocker.initialize(config.adBlockRules, useDefaultRules = false)
             adBlocker.setEnabled(true)
         }
-
 
         if (config.activationEnabled) {
 
@@ -182,7 +162,6 @@ fun ShellScreen(
             }
         }
 
-
         if (config.announcementEnabled && isActivated && config.announcementTitle.isNotEmpty()) {
             val ann = Announcement(
                 title = config.announcementTitle,
@@ -193,22 +172,12 @@ fun ShellScreen(
             showAnnouncementDialog = announcement.shouldShowAnnouncement(-1L, ann)
         }
 
-
-
-
-
-
-
-
-
-
         val validOrientationModes = setOf("PORTRAIT", "LANDSCAPE", "REVERSE_PORTRAIT", "REVERSE_LANDSCAPE", "SENSOR_PORTRAIT", "SENSOR_LANDSCAPE", "AUTO")
         val orientModeFromConfig = config.webViewConfig.orientationMode.uppercase()
         val resolvedOrientationMode = if (orientModeFromConfig in validOrientationModes && orientModeFromConfig != "PORTRAIT") {
 
             orientModeFromConfig
         } else {
-
 
             val typeSpecificLandscape = when (appType) {
                 "HTML", "FRONTEND" -> config.htmlConfig.landscapeMode
@@ -257,11 +226,9 @@ fun ShellScreen(
             }
         }
 
-
         AppLogger.d("ShellActivity", "LaunchedEffect: showSplash=$showSplash, splashCountdown=$splashCountdown")
 
     }
-
 
     ForcedRunEffects(
         state = forcedRunState,
@@ -270,7 +237,6 @@ fun ShellScreen(
         context = context,
         onForcedRunStateChanged = onForcedRunStateChanged
     )
-
 
     LaunchedEffect(showSplash, splashCountdown) {
 
@@ -289,9 +255,7 @@ fun ShellScreen(
         }
     }
 
-
     val bgmState = rememberBgmPlayerState(context, config)
-
 
     val webViewCallbacks = remember {
         createShellWebViewCallbacks(
@@ -320,13 +284,11 @@ fun ShellScreen(
         )
     }
 
-
     val webViewConfig = buildWebViewConfig(config)
 
     val webViewManager = remember {
         com.webtoapp.core.webview.WebViewManager(context, adBlocker)
     }
-
 
     val hideToolbar = config.webViewConfig.hideToolbar
 
@@ -338,7 +300,6 @@ fun ShellScreen(
         onFullscreenModeChanged(hideToolbar)
     }
 
-
     val closeSplash = {
         showSplash = false
 
@@ -348,10 +309,7 @@ fun ShellScreen(
         }
     }
 
-
-
     Box(modifier = Modifier.fillMaxSize()) {
-
 
     ShellScaffoldLayout(
         config = config,
@@ -389,7 +347,6 @@ fun ShellScreen(
         statusBarHeightDp = statusBarHeightDp
     )
 
-
     if (showActivationDialog) {
         ShellActivationDialog(
             config = config,
@@ -411,14 +368,12 @@ fun ShellScreen(
         )
     }
 
-
     if (showAnnouncementDialog && config.announcementTitle.isNotEmpty()) {
         ShellAnnouncementDialog(
             config = config,
             onDismiss = { showAnnouncementDialog = false }
         )
     }
-
 
     if (forcedRunState.showForcedRunPermissionDialog && config.forcedRunConfig != null) {
         ShellForcedRunPermissionDialog(
@@ -427,7 +382,6 @@ fun ShellScreen(
             onDismiss = { forcedRunState.showForcedRunPermissionDialog = false }
         )
     }
-
 
     AnimatedVisibility(
         visible = showSplash,
@@ -448,7 +402,6 @@ fun ShellScreen(
         )
     }
 
-
     if (showLongPressMenu && longPressResult != null) {
         ShellLongPressMenu(
             menuStyle = config.webViewConfig.longPressMenuStyle,
@@ -462,9 +415,6 @@ fun ShellScreen(
             }
         )
     }
-
-
-
 
     val isDarkTheme = com.webtoapp.ui.theme.LocalIsDarkTheme.current
     val effectiveBgType = if (isDarkTheme) statusBarBackgroundTypeDark else statusBarBackgroundType
@@ -486,16 +436,30 @@ fun ShellScreen(
 
         val view = activity.window.decorView
         val insetsController = androidx.core.view.WindowInsetsControllerCompat(activity.window, view)
-        val isLightOverlay = effectiveBgType == "COLOR" && effectiveBgColor != null && run {
-            try {
-                val color = android.graphics.Color.parseColor(effectiveBgColor)
-                val luminance = (0.299 * android.graphics.Color.red(color) +
-                        0.587 * android.graphics.Color.green(color) +
-                        0.114 * android.graphics.Color.blue(color)) / 255.0
-                luminance > 0.5
-            } catch (e: Exception) { false }
+
+        val explicitDarkIcons = if (isDarkTheme) {
+            config.webViewConfig.statusBarDarkIconsDark
+        } else {
+            config.webViewConfig.statusBarDarkIcons
+        }
+        val isLightOverlay = explicitDarkIcons ?: when (effectiveBgType) {
+            "COLOR" -> {
+                val colorHex = effectiveBgColor
+                if (colorHex.isNullOrBlank()) {
+                    !isDarkTheme
+                } else try {
+                    val color = android.graphics.Color.parseColor(colorHex)
+                    val luminance = (0.299 * android.graphics.Color.red(color) +
+                            0.587 * android.graphics.Color.green(color) +
+                            0.114 * android.graphics.Color.blue(color)) / 255.0
+                    luminance > 0.5
+                } catch (_: Exception) { !isDarkTheme }
+            }
+
+            else -> !isDarkTheme
         }
         insetsController.isAppearanceLightStatusBars = isLightOverlay
+        insetsController.isAppearanceLightNavigationBars = isLightOverlay
     }
 
     }

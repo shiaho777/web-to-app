@@ -17,11 +17,6 @@ import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaRadius
 
-/**
- * Legacy name for a default [WtaCard]. Behaviour is identical to the surface-toned
- * Wta card with no inner padding (legacy call sites supply their own padding).
- * Retained as a thin alias so existing screens do not need to be edited.
- */
 @Composable
 fun EnhancedElevatedCard(
     modifier: Modifier = Modifier,
@@ -63,9 +58,6 @@ fun EnhancedElevatedCard(
     )
 }
 
-/**
- * Legacy name for a [WtaCard] with [WtaCardTone.Elevated]. Retained as an alias.
- */
 @Composable
 fun EnhancedOutlinedCard(
     onClick: () -> Unit,

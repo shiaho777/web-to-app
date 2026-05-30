@@ -24,9 +24,6 @@ import com.webtoapp.ui.components.ForcedRunCountdownOverlay
 import com.webtoapp.ui.components.VirtualNavigationBar
 import com.webtoapp.core.forcedrun.ForcedRunManager
 
-
-
-
 @Composable
 fun BoxScope.ShellLyricsOverlay(
     config: ShellConfig,
@@ -68,9 +65,6 @@ fun BoxScope.ShellLyricsOverlay(
     }
 }
 
-
-
-
 @Composable
 fun BoxScope.ShellForcedRunOverlay(
     config: ShellConfig,
@@ -93,9 +87,6 @@ fun BoxScope.ShellForcedRunOverlay(
         )
     }
 }
-
-
-
 
 @Composable
 fun BoxScope.ShellErrorCard(
@@ -132,9 +123,6 @@ fun BoxScope.ShellErrorCard(
     }
 }
 
-
-
-
 @Composable
 fun BoxScope.ShellVirtualNavBar(
     appType: String,
@@ -169,9 +157,6 @@ fun BoxScope.ShellVirtualNavBar(
         modifier = Modifier.align(Alignment.BottomCenter)
     )
 }
-
-
-
 
 @Composable
 fun BoxScope.ShellAdBlockToggle(

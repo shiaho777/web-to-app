@@ -9,9 +9,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
-
-
-
 object SplashStorage {
 
     private const val TAG = "SplashStorage"
@@ -19,15 +16,9 @@ object SplashStorage {
     private const val MAX_IMAGE_SIZE = 1920
     private const val BUFFER_SIZE = 8192
 
-
     private val VIDEO_EXTENSIONS = setOf("mp4", "webm", "3gp", "mkv", "avi", "mov")
 
     private val IMAGE_EXTENSIONS = setOf("png", "jpg", "jpeg", "gif", "webp", "bmp")
-
-
-
-
-
 
     fun saveMediaFromUri(context: Context, uri: Uri, isVideo: Boolean): String? {
         return try {
@@ -44,9 +35,6 @@ object SplashStorage {
             null
         }
     }
-
-
-
 
     private fun saveVideoFromUri(context: Context, uri: Uri, splashDir: File): String? {
 
@@ -68,29 +56,22 @@ object SplashStorage {
         }
     }
 
-
-
-
     private fun saveImageFromUri(context: Context, uri: Uri, splashDir: File): String? {
 
         val options = BitmapFactory.Options().apply {
             inJustDecodeBounds = true
         }
 
-
         context.contentResolver.openInputStream(uri)?.use { input ->
             BitmapFactory.decodeStream(input, null, options)
         }
 
-
         options.inSampleSize = calculateInSampleSize(options, MAX_IMAGE_SIZE, MAX_IMAGE_SIZE)
         options.inJustDecodeBounds = false
-
 
         val bitmap = context.contentResolver.openInputStream(uri)?.use { input ->
             BitmapFactory.decodeStream(input, null, options)
         } ?: return null
-
 
         val fileName = "splash_${UUID.randomUUID()}.png"
         val imageFile = File(splashDir, fileName)
@@ -101,7 +82,6 @@ object SplashStorage {
             FileOutputStream(imageFile).use { out ->
                 scaledBitmap.compress(Bitmap.CompressFormat.PNG, 90, out)
             }
-
 
             if (scaledBitmap !== bitmap) {
                 bitmap.recycle()
@@ -116,9 +96,6 @@ object SplashStorage {
             null
         }
     }
-
-
-
 
     private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
         val (height, width) = options.outHeight to options.outWidth
@@ -136,9 +113,6 @@ object SplashStorage {
         return inSampleSize
     }
 
-
-
-
     fun deleteMedia(mediaPath: String?): Boolean {
         if (mediaPath.isNullOrBlank()) return false
         return try {
@@ -153,9 +127,6 @@ object SplashStorage {
         }
     }
 
-
-
-
     fun deleteMediaFiles(mediaPaths: List<String?>): Int {
         var deletedCount = 0
         mediaPaths.forEach { path ->
@@ -163,9 +134,6 @@ object SplashStorage {
         }
         return deletedCount
     }
-
-
-
 
     fun mediaExists(mediaPath: String?): Boolean {
         if (mediaPath.isNullOrBlank()) return false
@@ -176,24 +144,15 @@ object SplashStorage {
         }
     }
 
-
-
-
     fun isVideoFile(path: String): Boolean {
         val extension = path.substringAfterLast('.', "").lowercase()
         return extension in VIDEO_EXTENSIONS
     }
 
-
-
-
     fun isImageFile(path: String): Boolean {
         val extension = path.substringAfterLast('.', "").lowercase()
         return extension in IMAGE_EXTENSIONS
     }
-
-
-
 
     private fun getSplashDir(context: Context): File {
         val splashDir = File(context.filesDir, SPLASH_DIR)
@@ -202,9 +161,6 @@ object SplashStorage {
         }
         return splashDir
     }
-
-
-
 
     fun getStorageStats(context: Context): StorageStats {
         val splashDir = File(context.filesDir, SPLASH_DIR)
@@ -225,9 +181,6 @@ object SplashStorage {
         return StorageStats(imageCount, videoCount, totalSize)
     }
 
-
-
-
     fun cleanupUnusedMedia(context: Context, usedMediaPaths: Set<String>): Int {
         val splashDir = File(context.filesDir, SPLASH_DIR)
         if (!splashDir.exists()) return 0
@@ -240,9 +193,6 @@ object SplashStorage {
         }
         return deletedCount
     }
-
-
-
 
     private fun scaleBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
         val width = bitmap.width
@@ -259,9 +209,6 @@ object SplashStorage {
         return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
     }
 
-
-
-
     fun clearAll(context: Context): Boolean {
         return try {
             val splashDir = File(context.filesDir, SPLASH_DIR)
@@ -270,9 +217,6 @@ object SplashStorage {
             false
         }
     }
-
-
-
 
     data class StorageStats(
         val imageCount: Int,

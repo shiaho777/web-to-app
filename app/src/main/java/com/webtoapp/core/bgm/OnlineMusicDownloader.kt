@@ -11,25 +11,13 @@ import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
 
-
-
-
-
 object OnlineMusicDownloader {
 
     private const val TAG = "OnlineMusicDownloader"
 
-
     private val SAFE_NAME_REGEX = Regex("[^a-zA-Z0-9\u4e00-\u9fa5_-]")
 
     private val client get() = NetworkModule.downloadClient
-
-
-
-
-
-
-
 
     suspend fun downloadMusic(
         context: Context,
@@ -41,24 +29,19 @@ object OnlineMusicDownloader {
                 val bgmDir = BgmStorage.getBgmDir(context)
                 val safeName = generateSafeFileName(track.name, track.id)
 
-
                 val playUrl = track.playUrl
                 if (playUrl.isNullOrBlank()) {
                     AppLogger.e(TAG, "无播放链接")
                     return@withContext null
                 }
 
-
                 val ext = detectExtension(playUrl)
                 val musicFile = File(bgmDir, "$safeName.$ext")
-
 
                 if (musicFile.exists() && musicFile.length() > 0) {
                     AppLogger.i(TAG, "音乐文件已存在: ${musicFile.absolutePath}")
                     return@withContext createBgmItem(track, musicFile, bgmDir, safeName)
                 }
-
-
 
                 AppLogger.i(TAG, "开始下载音乐: $playUrl")
                 val downloadSuccess = downloadFile(playUrl, musicFile) { progress ->
@@ -69,7 +52,6 @@ object OnlineMusicDownloader {
                     AppLogger.e(TAG, "音乐下载失败")
                     return@withContext null
                 }
-
 
                 var coverFile: File? = null
                 if (!track.coverUrl.isNullOrBlank()) {
@@ -83,7 +65,6 @@ object OnlineMusicDownloader {
                         coverFile = null
                     }
                 }
-
 
                 if (!track.lrcText.isNullOrBlank()) {
                     try {
@@ -103,9 +84,6 @@ object OnlineMusicDownloader {
             }
         }
     }
-
-
-
 
     private fun downloadFile(
         url: String,
@@ -152,17 +130,11 @@ object OnlineMusicDownloader {
         }
     }
 
-
-
-
     private fun generateSafeFileName(name: String, id: String): String {
         val safeName = name.replace(SAFE_NAME_REGEX, "_").take(50)
         val safeId = id.replace(SAFE_NAME_REGEX, "_").take(20)
         return "${safeName}_$safeId"
     }
-
-
-
 
     private fun createBgmItem(
         track: OnlineMusicTrack,
@@ -186,9 +158,6 @@ object OnlineMusicDownloader {
         )
     }
 
-
-
-
     private fun detectExtension(url: String): String {
         val path = try {
             java.net.URL(url).path
@@ -207,9 +176,6 @@ object OnlineMusicDownloader {
 
     private val MUSIC_EXTENSIONS = listOf("mp3", "m4a", "aac", "ogg", "flac", "wav")
 
-
-
-
     fun isMusicDownloaded(context: Context, track: OnlineMusicTrack): Boolean {
         val bgmDir = BgmStorage.getBgmDir(context)
         val safeName = generateSafeFileName(track.name, track.id)
@@ -218,9 +184,6 @@ object OnlineMusicDownloader {
             file.exists() && file.length() > 0
         }
     }
-
-
-
 
     fun getDownloadedMusicPath(context: Context, track: OnlineMusicTrack): String? {
         val bgmDir = BgmStorage.getBgmDir(context)

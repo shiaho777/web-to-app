@@ -4,9 +4,9 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.runtime.Stable
 import com.webtoapp.core.activation.ActivationCode
-import com.webtoapp.core.blacktech.BlackTechConfig
-import com.webtoapp.core.disguise.DeviceDisguiseConfig
-import com.webtoapp.core.disguise.DisguiseConfig
+import com.webtoapp.core.actions.DeviceActionsConfig
+import com.webtoapp.core.appearance.DeviceDisguiseConfig
+import com.webtoapp.core.appearance.DisguiseConfig
 import com.webtoapp.core.forcedrun.ForcedRunConfig
 import com.webtoapp.data.model.ActivationDialogConfig
 import com.webtoapp.data.model.AdConfig
@@ -32,7 +32,6 @@ data class EditState(
     val appType: AppType = AppType.WEB,
     val mediaConfig: MediaConfig? = null,
     val htmlConfig: HtmlConfig? = null,
-    val allowHttp: Boolean = false,
     val activationEnabled: Boolean = false,
     val activationCodes: List<String> = emptyList(),
     val activationCodeList: List<ActivationCode> = emptyList(),
@@ -60,7 +59,7 @@ data class EditState(
     val extensionFabIcon: String = "",
     val autoStartConfig: AutoStartConfig? = null,
     val forcedRunConfig: ForcedRunConfig? = null,
-    val blackTechConfig: BlackTechConfig? = null,
+    val blackTechConfig: DeviceActionsConfig? = null,
     val disguiseConfig: DisguiseConfig? = null,
     val deviceDisguiseConfig: DeviceDisguiseConfig = DeviceDisguiseConfig(),
 )

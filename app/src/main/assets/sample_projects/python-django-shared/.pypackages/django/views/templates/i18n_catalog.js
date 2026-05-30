@@ -17,8 +17,6 @@
   django.pluralidx = function(count) { return (count == 1) ? 0 : 1; };
   {% endif %}
 
-  /* gettext library */
-
   django.catalog = django.catalog || {};
   {% if catalog_str %}
   const newcatalog = {{ catalog_str }};
@@ -72,9 +70,6 @@
       }
     };
 
-
-    /* formatting library */
-
     django.formats = {{ formats_str }};
 
     django.get_format = function(format_type) {
@@ -86,7 +81,6 @@
       }
     };
 
-    /* add to global namespace */
     globals.pluralidx = django.pluralidx;
     globals.gettext = django.gettext;
     globals.ngettext = django.ngettext;

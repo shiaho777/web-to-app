@@ -5,15 +5,6 @@ import android.content.Context
 import android.content.Intent
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
-
-
-
-
-
 class ForcedRunReceiver : BroadcastReceiver() {
 
     companion object {
@@ -51,20 +42,13 @@ class ForcedRunReceiver : BroadcastReceiver() {
         }
     }
 
-
-
-
-
-
     private fun handleForcedRunStart(context: Context) {
         val manager = ForcedRunManager.getInstance(context)
-
 
         if (manager.isInForcedRunMode.value) {
             AppLogger.d(TAG, "强制运行已在运行中，忽略启动请求")
             return
         }
-
 
         val restored = manager.restoreFromPersistence()
         if (restored) {
@@ -76,9 +60,6 @@ class ForcedRunReceiver : BroadcastReceiver() {
         }
     }
 
-
-
-
     private fun handleForcedRunEnd(context: Context) {
         val manager = ForcedRunManager.getInstance(context)
 
@@ -89,13 +70,6 @@ class ForcedRunReceiver : BroadcastReceiver() {
             AppLogger.d(TAG, "强制运行未在运行中，忽略结束请求")
         }
     }
-
-
-
-
-
-
-
 
     private fun handleForcedRunCheck(context: Context) {
         val manager = ForcedRunManager.getInstance(context)
@@ -112,11 +86,6 @@ class ForcedRunReceiver : BroadcastReceiver() {
         }
     }
 
-
-
-
-
-
     private fun handleBootCompleted(context: Context) {
         val manager = ForcedRunManager.getInstance(context)
 
@@ -128,9 +97,6 @@ class ForcedRunReceiver : BroadcastReceiver() {
             AppLogger.d(TAG, "开机恢复：无需恢复的强制运行状态")
         }
     }
-
-
-
 
     private fun bringTargetActivityToFront(context: Context, manager: ForcedRunManager) {
         val packageName = manager.getTargetPackageName()

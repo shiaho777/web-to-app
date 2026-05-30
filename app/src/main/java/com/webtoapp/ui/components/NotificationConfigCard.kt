@@ -17,10 +17,6 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.NotificationExportConfig
 import com.webtoapp.data.model.NotificationType
 
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationConfigCard(
@@ -84,7 +80,6 @@ fun NotificationConfigCard(
                 )
             }
 
-
             AnimatedVisibility(visible = enabled) {
                 Column(
                     modifier = Modifier.padding(top = 16.dp),
@@ -112,7 +107,6 @@ fun NotificationConfigCard(
                         )
                     }
 
-
                     if (config.type == NotificationType.WEB_API) {
                         Card(
                             colors = CardDefaults.cardColors(
@@ -129,7 +123,6 @@ fun NotificationConfigCard(
                         }
                     }
 
-
                     if (config.type == NotificationType.POLLING) {
 
                         PremiumTextField(
@@ -140,7 +133,6 @@ fun NotificationConfigCard(
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
                         )
-
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -174,7 +166,6 @@ fun NotificationConfigCard(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-
 
                         TextButton(
                             onClick = { expanded = !expanded },
@@ -211,7 +202,6 @@ fun NotificationConfigCard(
                                     }
                                 }
 
-
                                 PremiumTextField(
                                     value = config.pollHeaders,
                                     onValueChange = { onConfigChange(config.copy(pollHeaders = it)) },
@@ -221,7 +211,6 @@ fun NotificationConfigCard(
                                     minLines = 2,
                                     maxLines = 4
                                 )
-
 
                                 PremiumTextField(
                                     value = config.clickUrl,

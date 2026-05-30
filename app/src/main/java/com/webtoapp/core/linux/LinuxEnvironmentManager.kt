@@ -13,29 +13,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 class LinuxEnvironmentManager private constructor(private val context: Context) {
 
@@ -58,7 +35,6 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
         }
     }
 
-
     private val _state = MutableStateFlow<EnvironmentState>(EnvironmentState.NotInstalled)
     val state: StateFlow<EnvironmentState> = _state
 
@@ -66,25 +42,13 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
     val installProgress: StateFlow<InstallProgress> = _progress
     private val initializeMutex = Mutex()
 
-
     private val buildEngine by lazy { NodeProjectBuilder(context) }
 
-
-
-
     fun isInstalled(): Boolean = LocalBuildEnvironment.isNodeReady(context) && LocalBuildEnvironment.isNpmReady(context)
-
-
-
 
     suspend fun checkEnvironment() = withContext(Dispatchers.IO) {
         _state.value = resolveEnvironmentState()
     }
-
-
-
-
-
 
     suspend fun initialize(
         onProgress: (String, Float) -> Unit = { _, _ -> }
@@ -96,9 +60,9 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
                 }
                 AppLogger.d(TAG, "开始初始化构建环境")
 
-                _state.value = EnvironmentState.Installing("准备本地构建环境", 0f)
-                _progress.value = InstallProgress("准备本地构建环境", 0f)
-                onProgress("准备本地构建环境", 0f)
+                _state.value = EnvironmentState.Installing(Strings.preparingBuildEnv, 0f)
+                _progress.value = InstallProgress(Strings.preparingBuildEnv, 0f)
+                onProgress(Strings.preparingBuildEnv, 0f)
                 LocalBuildEnvironment.ensureInstalled(context) { step, progress ->
                     _state.value = EnvironmentState.Installing(step, progress)
                     _progress.value = InstallProgress(step, progress)
@@ -126,25 +90,24 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
                     AppLogger.d(TAG, "构建环境初始化完成")
                     Result.success(Unit)
                 } else {
-                    val message = buildString {
-                        append("构建环境未完全就绪")
-                        if (!info.nodeReady) append("，Node 启动器不可用")
-                        if (!info.npmReady) append("，npm 不可用")
+
+                    val parts = buildList {
+                        add(Strings.buildEnvNotFullyReady)
+                        if (!info.nodeReady) add(Strings.nodeLauncherUnavailable)
+                        if (!info.npmReady) add(Strings.npmUnavailable)
                     }
+                    val message = parts.joinToString(separator = ", ")
                     _state.value = EnvironmentState.Error(message, recoverable = true)
                     Result.failure(IllegalStateException(message))
                 }
 
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Initialization failed", e)
-                _state.value = EnvironmentState.Error(e.message ?: "未知错误", recoverable = true)
+                _state.value = EnvironmentState.Error(e.message ?: Strings.unknownError, recoverable = true)
                 Result.failure(e)
             }
         }
     }
-
-
-
 
     suspend fun buildProject(
         projectPath: String,
@@ -152,7 +115,7 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
         onProgress: (String, Float) -> Unit = { _, _ -> }
     ): Result<BuildResult> = withContext(Dispatchers.IO) {
         if (!isInstalled()) {
-            return@withContext Result.failure(IllegalStateException("本地构建环境未就绪"))
+            return@withContext Result.failure(IllegalStateException(Strings.localBuildEnvNotReady))
         }
         val result = buildEngine.buildProject(
             projectPath = projectPath,
@@ -176,16 +139,11 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
         }
     }
 
-
-
-
     suspend fun getEnvironmentInfo(): EnvironmentInfo = withContext(Dispatchers.IO) {
-        // 整体降级保护：任何运行时探测失败都不应让 Compose 主协程崩溃。
-        // detectToolVersion 内部已经 runCatching 兜底，这里再外包一层是为了防御
-        // 未来加新工具时漏写 try-catch、或 isXReady 调用本身抛 IO 异常的极端情况。
+
         runCatching { computeEnvironmentInfo() }.getOrElse { e ->
             AppLogger.e(TAG, "getEnvironmentInfo failed, returning safe defaults", e)
-            // 返回一个全 false 的 EnvironmentInfo，让 UI 看到"什么都没装"的安全状态
+
             EnvironmentInfo(
                 isInstalled = false,
                 nodeReady = false,
@@ -248,7 +206,7 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
             phpReady = phpReady,
             composerReady = composerReady,
             pythonReady = pythonReady,
-            pipReady = pythonReady, // pip 与 python 同生命周期
+            pipReady = pythonReady,
             phpVersion = phpVersion,
             composerVersion = composerVersion,
             pythonVersion = pythonVersion,
@@ -259,9 +217,6 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
         )
     }
 
-    /**
-     * 安装 PHP 运行时（由 WordPressDependencyManager 实际下载二进制）
-     */
     suspend fun installPhpRuntime(
         onProgress: (String, Float) -> Unit = { _, _ -> }
     ): Result<Unit> = withContext(Dispatchers.IO) {
@@ -274,9 +229,6 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
         }
     }
 
-    /**
-     * 下载 composer.phar（依赖 PHP 已就绪）
-     */
     suspend fun installComposer(
         onProgress: (String, Float) -> Unit = { _, _ -> }
     ): Result<Unit> = withContext(Dispatchers.IO) {
@@ -301,49 +253,59 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
         }
     }
 
-    /**
-     * 在指定项目目录里跑 composer install（PHP 项目依赖安装）
-     */
     suspend fun installPhpProjectDependencies(
         projectDir: File,
         onOutput: (String) -> Unit = {},
     ): Result<ExecutionResult> = withContext(Dispatchers.IO) {
+
+        val proxyEnv = LocalDnsBridgeProxy.start().let { port ->
+            if (port > 0) LocalDnsBridgeProxy.proxyEnvFor(port) else emptyMap()
+        }
         try {
-            val result = LocalBuildEnvironment.installPhpDependencies(context, projectDir, onOutput = onOutput)
+            val result = LocalBuildEnvironment.installPhpDependencies(
+                context, projectDir,
+                env = proxyEnv,
+                onOutput = onOutput
+            )
             if (result.exitCode == 0) Result.success(result) else Result.failure(IllegalStateException(result.stderr))
         } catch (e: Exception) {
             Result.failure(e)
+        } finally {
+            LocalDnsBridgeProxy.stop()
         }
     }
 
-    /**
-     * 在指定项目目录里跑 pip install -r requirements.txt
-     */
     suspend fun installPythonProjectDependencies(
         projectDir: File,
         onOutput: (String) -> Unit = {},
     ): Result<ExecutionResult> = withContext(Dispatchers.IO) {
+
+        val proxyEnv = LocalDnsBridgeProxy.start().let { port ->
+            if (port > 0) LocalDnsBridgeProxy.proxyEnvFor(port) else emptyMap()
+        }
         try {
-            val result = LocalBuildEnvironment.installPythonDependencies(context, projectDir, onOutput)
+            val result = LocalBuildEnvironment.installPythonDependencies(
+                context, projectDir,
+                env = proxyEnv,
+                onOutput = onOutput
+            )
             if (result.exitCode == 0) Result.success(result) else Result.failure(IllegalStateException(result.stderr))
         } catch (e: Exception) {
             Result.failure(e)
+        } finally {
+            LocalDnsBridgeProxy.stop()
         }
     }
 
-    /**
-     * 在指定项目目录里跑 npm/pnpm/yarn install。
-     * 复用 LocalBuildEnvironment.installDependencies——这条链路已经被前端构建（NodeProjectBuilder）验证。
-     * 这里和它的区别仅在于：装完就停，不接着跑 build 脚本。
-     *
-     * 包管理器自动嗅探：根据项目里的锁文件决定（pnpm-lock.yaml / yarn.lock / bun.lockb / 默认 npm），
-     * 与 ProjectDetector.detectPackageManager 的逻辑完全一致。
-     */
     suspend fun installNodeProjectDependencies(
         projectDir: File,
         cleanInstall: Boolean = false,
         onOutput: (String) -> Unit = {},
     ): Result<ExecutionResult> = withContext(Dispatchers.IO) {
+
+        val proxyEnv = LocalDnsBridgeProxy.start().let { port ->
+            if (port > 0) LocalDnsBridgeProxy.proxyEnvFor(port) else emptyMap()
+        }
         try {
             if (!File(projectDir, "package.json").exists()) {
                 return@withContext Result.failure(IllegalStateException("package.json 不存在"))
@@ -352,7 +314,7 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
                 return@withContext Result.failure(IllegalStateException("Node.js 运行时未就绪"))
             }
             val pm = com.webtoapp.core.frontend.ProjectDetector.detectPackageManager(projectDir)
-            // bun 我们当前没装，回退到 npm（行为与 NodeProjectBuilder 一致）
+
             val effectivePm = if (pm == com.webtoapp.core.frontend.PackageManager.BUN) {
                 com.webtoapp.core.frontend.PackageManager.NPM
             } else pm
@@ -362,17 +324,16 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
                 packageManager = effectivePm,
                 cleanInstall = cleanInstall,
                 timeout = java.util.concurrent.TimeUnit.MINUTES.toMillis(20),
-                env = emptyMap(),
+                env = proxyEnv,
                 onOutput = onOutput,
             )
             if (result.exitCode == 0) Result.success(result) else Result.failure(IllegalStateException(result.stderr.ifBlank { "${effectivePm.name.lowercase()} install failed" }))
         } catch (e: Exception) {
             Result.failure(e)
+        } finally {
+            LocalDnsBridgeProxy.stop()
         }
     }
-
-
-
 
     suspend fun clearCache(): Result<Long> = withContext(Dispatchers.IO) {
         try {
@@ -388,9 +349,6 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
         }
     }
 
-
-
-
     suspend fun reset(): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             NativeNodeEngine.reset(context)
@@ -401,9 +359,6 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
             Result.failure(e)
         }
     }
-
-
-
 
     suspend fun executeCommand(
         command: String,
@@ -446,8 +401,6 @@ class LinuxEnvironmentManager private constructor(private val context: Context) 
     }
 }
 
-
-
 sealed class EnvironmentState {
     object NotInstalled : EnvironmentState()
     object NodeNotInstalled : EnvironmentState()
@@ -476,7 +429,7 @@ data class EnvironmentInfo(
     val yarnVersion: String?,
     val pnpmVersion: String?,
     val esbuildAvailable: Boolean = false,
-    // PHP / Python 运行时（来自各自的 DependencyManager，由 LocalBuildEnvironment 桥接）
+
     val phpReady: Boolean = false,
     val composerReady: Boolean = false,
     val pythonReady: Boolean = false,

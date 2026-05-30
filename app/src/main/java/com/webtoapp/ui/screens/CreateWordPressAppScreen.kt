@@ -46,19 +46,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import com.webtoapp.ui.components.EnhancedElevatedCard
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreateWordPressAppScreen(
@@ -73,13 +60,10 @@ fun CreateWordPressAppScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-
     val accentColor = MaterialTheme.colorScheme.onSurface
-
 
     var appName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
-
 
     var siteTitle by remember { mutableStateOf(Strings.wpDefaultSiteTitle) }
     var adminUser by remember { mutableStateOf("admin") }
@@ -88,12 +72,9 @@ fun CreateWordPressAppScreen(
     var landscapeMode by remember { mutableStateOf(false) }
     var sourceType by remember { mutableStateOf("BLANK") }
 
-
     var permalink by remember { mutableStateOf("postname") }
 
-
     var siteLanguage by remember { mutableStateOf(Strings.wpDefaultSiteLanguageCode) }
-
 
     var detectedThemes by remember { mutableStateOf<List<String>>(emptyList()) }
     var activeTheme by remember { mutableStateOf<String?>(null) }
@@ -102,16 +83,13 @@ fun CreateWordPressAppScreen(
     var wpVersion by remember { mutableStateOf<String?>(null) }
     var isImportMode by remember { mutableStateOf(false) }
 
-
     var isCreating by remember { mutableStateOf(false) }
     var creationPhase by remember { mutableStateOf("") }
     var projectId by remember { mutableStateOf<String?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-
     val downloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
     var showDownloadDialog by remember { mutableStateOf(false) }
-
 
     val iconPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -140,7 +118,6 @@ fun CreateWordPressAppScreen(
                         }
                     }
 
-
                     creationPhase = Strings.wpCreatingProject
                     val newProjectId = WordPressManager.createProject(context, siteTitle, adminUser, adminEmail)
 
@@ -151,7 +128,6 @@ fun CreateWordPressAppScreen(
                             projectId = newProjectId
                             sourceType = "ZIP"
                             creationPhase = Strings.wpProjectReady
-
 
                             val metadata = withContext(Dispatchers.IO) { WordPressManager.inspectProject(context, newProjectId) }
                             detectedThemes = metadata.themes
@@ -174,7 +150,6 @@ fun CreateWordPressAppScreen(
         }
     }
 
-
     fun createNewSite() {
         scope.launch {
             isCreating = true
@@ -194,7 +169,6 @@ fun CreateWordPressAppScreen(
                         return@launch
                     }
                 }
-
 
                 creationPhase = Strings.wpCreatingProject
                 val newProjectId = WordPressManager.createProject(context, siteTitle, adminUser, adminEmail)
@@ -219,7 +193,6 @@ fun CreateWordPressAppScreen(
             }
         }
     }
-
 
     val canCreate = projectId != null
 
@@ -269,7 +242,6 @@ fun CreateWordPressAppScreen(
                         wpVersion = wpVersion
                     )
 
-
             if (projectId == null && !isCreating) {
                 TypedSampleProjectsCard(
                     title = Strings.sampleProjects,
@@ -304,7 +276,6 @@ fun CreateWordPressAppScreen(
                                         siteTitle = sample.name
                                         sourceType = "SAMPLE"
 
-
                                         withContext(Dispatchers.IO) {
                                             try {
                                                 val metadata = WordPressManager.inspectProject(context, newProjectId)
@@ -332,7 +303,6 @@ fun CreateWordPressAppScreen(
                 )
             }
 
-
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     RuntimeSectionHeader(
@@ -342,7 +312,6 @@ fun CreateWordPressAppScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-
                     PremiumTextField(
                         value = appName,
                         onValueChange = { appName = it },
@@ -351,7 +320,6 @@ fun CreateWordPressAppScreen(
                         singleLine = true
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-
 
                     PremiumTextField(
                         value = siteTitle,
@@ -363,7 +331,6 @@ fun CreateWordPressAppScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -374,7 +341,6 @@ fun CreateWordPressAppScreen(
                     }
                 }
             }
-
 
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -411,7 +377,6 @@ fun CreateWordPressAppScreen(
                 }
             }
 
-
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     RuntimeSectionHeader(
@@ -427,7 +392,6 @@ fun CreateWordPressAppScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-
                     PremiumOutlinedButton(
                         onClick = { zipPickerLauncher.launch("application/zip") },
                         enabled = !isCreating,
@@ -439,7 +403,6 @@ fun CreateWordPressAppScreen(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -456,7 +419,6 @@ fun CreateWordPressAppScreen(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-
 
                     PremiumButton(
                         onClick = { createNewSite() },
@@ -479,10 +441,8 @@ fun CreateWordPressAppScreen(
             }
             }
 
-
             WtaCreateFlowSection(title = Strings.appConfig) {
             if (projectId != null && !isCreating) {
-
 
                 WpAdminConfigCard(
                     adminUser = adminUser,
@@ -494,14 +454,12 @@ fun CreateWordPressAppScreen(
                     accentColor = accentColor
                 )
 
-
                 WpThemeCard(
                     themes = detectedThemes,
                     activeTheme = activeTheme,
                     onActiveThemeChange = { activeTheme = it },
                     accentColor = accentColor
                 )
-
 
                 WpPluginCard(
                     plugins = detectedPlugins,
@@ -516,13 +474,11 @@ fun CreateWordPressAppScreen(
                     accentColor = accentColor
                 )
 
-
                 WpPermalinkCard(
                     selected = permalink,
                     onSelect = { permalink = it },
                     accentColor = accentColor
                 )
-
 
                 WpLanguageCard(
                     selected = siteLanguage,
@@ -530,36 +486,33 @@ fun CreateWordPressAppScreen(
                     accentColor = accentColor
                 )
 
-
                 WpDbInfoCard(accentColor = accentColor)
             }
             }
 
+            if (isCreating || errorMessage != null || projectId != null) {
+                WtaCreateFlowSection(title = Strings.preview) {
+                    if (isCreating) {
+                        RuntimeBrandedLoadingCard(creationPhase = creationPhase, brandColor = accentColor)
+                    }
 
-            WtaCreateFlowSection(title = Strings.preview) {
-                if (isCreating) {
-                    RuntimeBrandedLoadingCard(creationPhase = creationPhase, brandColor = accentColor)
-                }
+                    errorMessage?.let { error ->
+                        RuntimeBrandedErrorCard(error = error, onDismiss = { errorMessage = null })
+                    }
 
-
-                errorMessage?.let { error ->
-                    RuntimeBrandedErrorCard(error = error, onDismiss = { errorMessage = null })
-                }
-
-
-                if (projectId != null && !isCreating) {
-                    RuntimeSuccessCard(
-                        title = Strings.wpProjectReady,
-                        subtitle = "ID: $projectId",
-                        brandColor = accentColor
-                    )
+                    if (projectId != null && !isCreating) {
+                        RuntimeSuccessCard(
+                            title = Strings.wpProjectReady,
+                            subtitle = "ID: $projectId",
+                            brandColor = accentColor
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
-
 
     if (showDownloadDialog) {
         AlertDialog(
@@ -617,11 +570,6 @@ fun CreateWordPressAppScreen(
     }
 }
 
-
-
-
-
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun WpHeroSection(
@@ -642,9 +590,6 @@ private fun WpHeroSection(
         tags = tags
     )
 }
-
-
-
 
 @Composable
 private fun WpAdminConfigCard(
@@ -699,9 +644,6 @@ private fun WpAdminConfigCard(
         }
     }
 }
-
-
-
 
 @Composable
 private fun WpThemeCard(
@@ -836,9 +778,6 @@ private fun WpThemeCard(
     }
 }
 
-
-
-
 @Composable
 private fun WpPluginCard(
     plugins: List<String>,
@@ -936,9 +875,6 @@ private fun WpPluginCard(
     }
 }
 
-
-
-
 @Composable
 private fun WpPermalinkCard(
     selected: String,
@@ -995,9 +931,6 @@ private fun WpPermalinkCard(
     }
 }
 
-
-
-
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun WpLanguageCard(
@@ -1043,9 +976,6 @@ private fun WpLanguageCard(
         }
     }
 }
-
-
-
 
 @Composable
 private fun WpDbInfoCard(accentColor: Color) {

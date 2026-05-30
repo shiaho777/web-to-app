@@ -19,11 +19,6 @@ import androidx.core.app.NotificationCompat
 import com.webtoapp.R
 import com.webtoapp.core.i18n.Strings
 
-
-
-
-
-
 class BackgroundRunService : Service() {
 
     companion object {
@@ -45,9 +40,6 @@ class BackgroundRunService : Service() {
         private const val EXTRA_KEEP_CPU_AWAKE = "keep_cpu_awake"
 
         private var isRunning = false
-
-
-
 
         fun start(
             context: Context,
@@ -82,9 +74,6 @@ class BackgroundRunService : Service() {
             }
         }
 
-
-
-
         fun stop(context: Context) {
             try {
                 clearPersistedConfig(context)
@@ -96,14 +85,7 @@ class BackgroundRunService : Service() {
             }
         }
 
-
-
-
         fun isServiceRunning(): Boolean = isRunning
-
-
-
-
 
         fun requestIgnoreBatteryOptimizations(context: Context) {
             try {
@@ -275,7 +257,6 @@ class BackgroundRunService : Service() {
         cancelRestart(this)
         allowAutoRestart = true
 
-
         try {
             val notification = createNotification(
                 title = notificationTitle ?: (if (appName.isNotEmpty()) appName else Strings.genericAppLabel) + " ${Strings.appRunningInBackground}",
@@ -295,7 +276,6 @@ class BackgroundRunService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-
 
         if (keepCpuAwake) {
             acquireWakeLock()
@@ -359,7 +339,6 @@ class BackgroundRunService : Service() {
             )
         } else null
 
-
         val stopIntent = Intent(this, BackgroundRunService::class.java).apply {
             action = ACTION_STOP
         }
@@ -410,9 +389,6 @@ class BackgroundRunService : Service() {
             }
         }
     }
-
-
-
 
     private fun renewWakeLock() {
         try {

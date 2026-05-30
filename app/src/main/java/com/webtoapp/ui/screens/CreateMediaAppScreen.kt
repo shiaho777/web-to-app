@@ -37,19 +37,6 @@ import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 import kotlinx.coroutines.flow.first
 import com.webtoapp.ui.components.EnhancedElevatedCard
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreateMediaAppScreen(
@@ -67,7 +54,6 @@ fun CreateMediaAppScreen(
     val context = LocalContext.current
     val isEditMode = existingAppId != null
 
-
     var existingApp by remember { mutableStateOf<com.webtoapp.data.model.WebApp?>(null) }
     LaunchedEffect(existingAppId) {
         if (existingAppId != null) {
@@ -77,17 +63,13 @@ fun CreateMediaAppScreen(
         }
     }
 
-
     var appName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
     var appIconPath by remember { mutableStateOf<String?>(null) }
 
-
     var mediaType by remember { mutableStateOf(AppType.IMAGE) }
 
-
     var mediaUri by remember { mutableStateOf<Uri?>(null) }
-
 
     var enableAudio by remember { mutableStateOf(true) }
     var loop by remember { mutableStateOf(true) }
@@ -96,36 +78,28 @@ fun CreateMediaAppScreen(
     var orientation by remember { mutableStateOf(SplashOrientation.PORTRAIT) }
     var backgroundColor by remember { mutableStateOf("#000000") }
 
-
     var fileName by remember { mutableStateOf<String?>(null) }
     var fileSize by remember { mutableStateOf<Long?>(null) }
     var fileMimeType by remember { mutableStateOf<String?>(null) }
-
 
     var brightness by remember { mutableFloatStateOf(1.0f) }
     var contrast by remember { mutableFloatStateOf(1.0f) }
     var saturation by remember { mutableFloatStateOf(1.0f) }
 
-
     var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
 
-
     var keepScreenOn by remember { mutableStateOf(true) }
-
 
     var swipeDismiss by remember { mutableStateOf(true) }
     var doubleTapZoom by remember { mutableStateOf(true) }
 
-
     var themeType by remember { mutableStateOf("AURORA") }
-
 
     val accentColor = MaterialTheme.colorScheme.onSurface
     val accentGradient = listOf(
         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
         MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
     )
-
 
     LaunchedEffect(existingApp) {
         existingApp?.let { app ->
@@ -153,7 +127,6 @@ fun CreateMediaAppScreen(
         }
     }
 
-
     fun readFileMetadata(uri: Uri) {
         try {
             context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
@@ -170,7 +143,6 @@ fun CreateMediaAppScreen(
         }
     }
 
-
     val imagePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri -> uri?.let { mediaUri = it; readFileMetadata(it) } }
@@ -182,7 +154,6 @@ fun CreateMediaAppScreen(
     val iconPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri -> uri?.let { appIcon = it } }
-
 
     val canCreate = mediaUri != null
 
@@ -233,7 +204,6 @@ fun CreateMediaAppScreen(
                 fileMimeType = fileMimeType
             )
 
-
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
@@ -275,7 +245,6 @@ fun CreateMediaAppScreen(
                     }
                 }
             }
-
 
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -385,7 +354,6 @@ fun CreateMediaAppScreen(
                         }
                     }
 
-
                     if (mediaUri != null && (fileSize != null || fileMimeType != null)) {
                         Spacer(modifier = Modifier.height(8.dp))
                         MediaFileInfoRow(
@@ -397,7 +365,6 @@ fun CreateMediaAppScreen(
                 }
             }
             }
-
 
             WtaCreateFlowSection(title = Strings.appConfig) {
             if (!isEditMode) {
@@ -429,7 +396,6 @@ fun CreateMediaAppScreen(
             }
             }
 
-
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -450,7 +416,6 @@ fun CreateMediaAppScreen(
                         )
                     }
 
-
                     if (!isEditMode) {
                     SettingsRow(title = Strings.landscapeMode, subtitle = Strings.landscapeModeHint) {
                         WtaSwitch(
@@ -461,7 +426,6 @@ fun CreateMediaAppScreen(
                         )
                     }
                     }
-
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                     SettingsRow(title = Strings.mediaScreenLock, subtitle = Strings.mediaScreenLockHint) {
@@ -496,7 +460,6 @@ fun CreateMediaAppScreen(
                 }
             }
 
-
             if (mediaType == AppType.VIDEO && mediaUri != null) {
                 MediaPlaybackSpeedCard(
                     speed = playbackSpeed,
@@ -504,7 +467,6 @@ fun CreateMediaAppScreen(
                     accentColor = accentColor
                 )
             }
-
 
             if (mediaType == AppType.IMAGE && mediaUri != null) {
                 MediaImageAdjustCard(
@@ -519,7 +481,6 @@ fun CreateMediaAppScreen(
                 )
             }
 
-
             if (mediaUri != null) {
                 MediaBackgroundColorCard(
                     selected = backgroundColor,
@@ -527,7 +488,6 @@ fun CreateMediaAppScreen(
                     accentColor = accentColor
                 )
             }
-
 
             if (mediaUri != null) {
                 MediaGestureCard(
@@ -540,7 +500,6 @@ fun CreateMediaAppScreen(
                 )
             }
             }
-
 
             WtaCreateFlowSection(title = Strings.preview) {
             EnhancedElevatedCard(
@@ -569,11 +528,6 @@ fun CreateMediaAppScreen(
         }
     }
 }
-
-
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -669,9 +623,6 @@ private fun MediaHeroSection(
     }
 }
 
-
-
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MediaFileInfoRow(
@@ -714,9 +665,6 @@ private fun MediaFileInfoRow(
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -764,9 +712,6 @@ private fun MediaPlaybackSpeedCard(
     }
 }
 
-
-
-
 @Composable
 private fun MediaImageAdjustCard(
     brightness: Float,
@@ -801,7 +746,6 @@ private fun MediaImageAdjustCard(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-
             MediaSliderRow(
                 label = Strings.mediaBrightness,
                 value = brightness,
@@ -828,9 +772,6 @@ private fun MediaImageAdjustCard(
         }
     }
 }
-
-
-
 
 @Composable
 private fun MediaSliderRow(
@@ -866,9 +807,6 @@ private fun MediaSliderRow(
         )
     }
 }
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -934,9 +872,6 @@ private fun MediaBackgroundColorCard(
     }
 }
 
-
-
-
 @Composable
 private fun MediaGestureCard(
     swipeDismiss: Boolean,
@@ -977,9 +912,6 @@ private fun MediaGestureCard(
         }
     }
 }
-
-
-
 
 @Composable
 fun MediaTypeOption(
@@ -1026,9 +958,6 @@ fun MediaTypeOption(
     }
 }
 
-
-
-
 @Composable
 fun SettingsRow(
     title: String,
@@ -1053,9 +982,6 @@ fun SettingsRow(
         trailing()
     }
 }
-
-
-
 
 private fun formatFileSize(bytes: Long): String {
     return when {

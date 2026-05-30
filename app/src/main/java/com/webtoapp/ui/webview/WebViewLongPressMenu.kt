@@ -10,9 +10,6 @@ import com.webtoapp.core.webview.LongPressHandler
 import com.webtoapp.data.model.LongPressMenuStyle
 import com.webtoapp.ui.components.LongPressMenuSheet
 
-
-
-
 @Composable
 fun WebViewLongPressMenu(
     menuStyle: LongPressMenuStyle,

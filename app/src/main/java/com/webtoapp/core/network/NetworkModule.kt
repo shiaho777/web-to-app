@@ -5,21 +5,11 @@ import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
 
-
-
-
-
-
-
-
-
-
 object NetworkModule {
 
     private const val DEFAULT_USER_AGENT = "WebToApp/1.0 (Android)"
 
     private val sharedConnectionPool = ConnectionPool(8, 60, TimeUnit.SECONDS)
-
 
     private val userAgentInterceptor = Interceptor { chain ->
         chain.proceed(
@@ -28,10 +18,6 @@ object NetworkModule {
                 .build()
         )
     }
-
-
-
-
 
     val defaultClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
@@ -45,10 +31,6 @@ object NetworkModule {
             .build()
     }
 
-
-
-
-
     val streamingClient: OkHttpClient by lazy {
         defaultClient.newBuilder()
             .connectTimeout(90, TimeUnit.SECONDS)
@@ -57,10 +39,6 @@ object NetworkModule {
             .build()
     }
 
-
-
-
-
     val downloadClient: OkHttpClient by lazy {
         defaultClient.newBuilder()
             .connectTimeout(60, TimeUnit.SECONDS)
@@ -68,10 +46,6 @@ object NetworkModule {
             .writeTimeout(60, TimeUnit.SECONDS)
             .build()
     }
-
-
-
-
 
     fun customClient(configure: OkHttpClient.Builder.() -> Unit): OkHttpClient {
         return defaultClient.newBuilder().apply(configure).build()

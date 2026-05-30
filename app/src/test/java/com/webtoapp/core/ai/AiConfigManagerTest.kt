@@ -16,12 +16,6 @@ import org.robolectric.annotation.Config
 
 class TestApplication : Application()
 
-
-
-
-
-
-
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33], application = TestApplication::class)
 class AiConfigManagerTest {
@@ -32,8 +26,6 @@ class AiConfigManagerTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         return AiConfigManager(context)
     }
-
-
 
     @Test
     fun `test parseApiKeyConfigs roundtrip`() {
@@ -136,8 +128,6 @@ class AiConfigManagerTest {
         println("✅ All ${ApiFormat.entries.size} API formats serialize/deserialize OK")
     }
 
-
-
     @Test
     fun `test Base64 NO_WRAP vs DEFAULT with binary data`() {
 
@@ -149,11 +139,9 @@ class AiConfigManagerTest {
 
         val encodedNoWrap = Base64.encodeToString(combined, Base64.NO_WRAP)
 
-
         val decodedCorrect = Base64.decode(encodedNoWrap, Base64.NO_WRAP)
         assertArrayEquals("NO_WRAP→NO_WRAP should match", combined, decodedCorrect)
         println("✅ Base64 NO_WRAP roundtrip OK")
-
 
         val decodedOld = Base64.decode(encodedNoWrap, Base64.DEFAULT)
         val matches = combined.contentEquals(decodedOld)
@@ -161,16 +149,12 @@ class AiConfigManagerTest {
         println("  (Robolectric 中可能兼容, 真机行为可能不同)")
     }
 
-
-
-
     @Test
     fun `test DataStore full save and retrieve end-to-end`() = runTest {
         val context: Context = ApplicationProvider.getApplicationContext()
         val manager = AiConfigManager(context)
 
         println("=== DataStore E2E Test ===")
-
 
         val key1 = ApiKeyConfig(id = "k1", provider = AiProvider.GOOGLE, apiKey = "google-key")
         val key2 = ApiKeyConfig(
@@ -199,7 +183,6 @@ class AiConfigManagerTest {
         assertEquals(ApiFormat.ANTHROPIC, keys[2].apiFormat)
         assertEquals("/api/models", keys[2].customModelsEndpoint)
         println("✅ Step 1: API Keys save/read OK")
-
 
         val model1 = SavedModel(
             id = "m1",
@@ -236,7 +219,6 @@ class AiConfigManagerTest {
         assertEquals(1, models[1].featureMappings.size)
         println("✅ Step 2: Models with featureMappings save/read OK")
 
-
         val foundKey = manager.getApiKeyById("k1")
         val foundModel = manager.getSavedModelById("m1")
         assertNotNull("Should find key k1", foundKey)
@@ -245,7 +227,6 @@ class AiConfigManagerTest {
         assertEquals("Gemini 2.0 Flash", foundModel!!.model.name)
         println("✅ Step 3: Find by ID OK")
 
-
         val updatedModel = model1.copy(alias = "My Gemini", isDefault = false)
         manager.updateSavedModel(updatedModel)
         val modelsAfterUpdate = manager.savedModelsFlow.first()
@@ -253,20 +234,17 @@ class AiConfigManagerTest {
         assertFalse(modelsAfterUpdate[0].isDefault)
         println("✅ Step 4: Update model OK")
 
-
         manager.deleteSavedModel("m2")
         val modelsAfterDelete = manager.savedModelsFlow.first()
         assertEquals(1, modelsAfterDelete.size)
         assertEquals("m1", modelsAfterDelete[0].id)
         println("✅ Step 5: Delete model OK")
 
-
         manager.deleteApiKey("k3")
         val keysAfterDelete = manager.apiKeysFlow.first()
         assertEquals(2, keysAfterDelete.size)
         assertTrue(keysAfterDelete.none { it.id == "k3" })
         println("✅ Step 6: Delete API key OK")
-
 
         val manager2 = AiConfigManager(context)
         val keys2 = manager2.apiKeysFlow.first()

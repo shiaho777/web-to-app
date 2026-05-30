@@ -6,10 +6,6 @@ import android.os.Build
 import com.webtoapp.core.engine.EngineType
 import java.io.File
 
-
-
-
-
 class EngineFileManager(private val context: Context) {
 
     companion object {
@@ -17,16 +13,14 @@ class EngineFileManager(private val context: Context) {
         private const val KEY_VERSION_PREFIX = "engine_version_"
         private const val KEY_DOWNLOAD_TIME_PREFIX = "engine_download_time_"
 
-
         private const val GECKO_ENGINE_DIR = "gecko_engine"
+
+        const val GECKO_OMNI_JA = "omni.ja"
     }
 
     private val prefs: SharedPreferences by lazy {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
-
-
-
 
     fun getEngineDir(type: EngineType): File {
         val dirName = when (type) {
@@ -36,16 +30,9 @@ class EngineFileManager(private val context: Context) {
         return File(context.filesDir, dirName).apply { mkdirs() }
     }
 
-
-
-
-
     fun getAbiDir(type: EngineType, abi: String): File {
         return File(getEngineDir(type), "lib/$abi").apply { mkdirs() }
     }
-
-
-
 
     fun isEngineDownloaded(type: EngineType): Boolean {
         if (!type.requiresDownload) return true
@@ -53,36 +40,38 @@ class EngineFileManager(private val context: Context) {
         val libDir = File(engineDir, "lib")
         if (!libDir.exists()) return false
 
+        if (type == EngineType.GECKOVIEW && !getOmniJaFile(type).exists()) return false
 
         return libDir.listFiles()?.any { abiDir ->
             abiDir.isDirectory && abiDir.listFiles()?.any { it.extension == "so" } == true
         } == true
     }
 
-
-
-
     fun isAbiDownloaded(type: EngineType, abi: String): Boolean {
         val abiDir = getAbiDir(type, abi)
-        return abiDir.exists() && abiDir.listFiles()?.any { it.extension == "so" } == true
+        val hasSo = abiDir.exists() && abiDir.listFiles()?.any { it.extension == "so" } == true
+
+        if (type == EngineType.GECKOVIEW) {
+            return hasSo && getOmniJaFile(type).exists()
+        }
+        return hasSo
     }
 
+    fun getOmniJaFile(type: EngineType): File {
+        return File(getEngineDir(type), GECKO_OMNI_JA)
+    }
 
-
+    fun isOmniJaDownloaded(type: EngineType): Boolean {
+        return getOmniJaFile(type).exists() && getOmniJaFile(type).length() > 0
+    }
 
     fun getDevicePrimaryAbi(): String {
         return Build.SUPPORTED_ABIS.firstOrNull() ?: "arm64-v8a"
     }
 
-
-
-
     fun getDownloadedVersion(type: EngineType): String? {
         return prefs.getString("${KEY_VERSION_PREFIX}${type.name}", null)
     }
-
-
-
 
     fun setDownloadedVersion(type: EngineType, version: String) {
         prefs.edit()
@@ -91,17 +80,11 @@ class EngineFileManager(private val context: Context) {
             .apply()
     }
 
-
-
-
     fun getEngineSize(type: EngineType): Long {
         val dir = getEngineDir(type)
         if (!dir.exists()) return 0
         return dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
     }
-
-
-
 
     fun deleteEngineFiles(type: EngineType): Boolean {
         val dir = getEngineDir(type)
@@ -114,10 +97,6 @@ class EngineFileManager(private val context: Context) {
         }
         return deleted
     }
-
-
-
-
 
     fun listEngineNativeLibs(type: EngineType): Map<String, List<File>> {
         val result = mutableMapOf<String, List<File>>()

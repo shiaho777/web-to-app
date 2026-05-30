@@ -22,9 +22,6 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AppCategory
 import com.webtoapp.data.model.WebApp
 
-
-
-
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryTabRow(
@@ -55,7 +52,6 @@ fun CategoryTabRow(
             )
         }
 
-
         item {
             com.webtoapp.ui.design.WtaChip(
                 selected = selectedCategoryId == -1L,
@@ -64,7 +60,6 @@ fun CategoryTabRow(
                 showSelectedCheck = false
             )
         }
-
 
         items(categories, key = { it.id }) { category ->
             Box {
@@ -86,7 +81,6 @@ fun CategoryTabRow(
                             onLongClick = { showCategoryMenu = category }
                         )
                 )
-
 
                 DropdownMenu(
                     expanded = showCategoryMenu == category,
@@ -118,10 +112,8 @@ fun CategoryTabRow(
             }
         }
 
-
         item {
-            // "Add category" tile blends into the neutral chip row but uses a
-            // muted tone so it reads as an action rather than a tag.
+
             Row(
                 modifier = Modifier
                     .clip(androidx.compose.foundation.shape.RoundedCornerShape(com.webtoapp.ui.design.WtaRadius.Chip))
@@ -144,7 +136,6 @@ fun CategoryTabRow(
             }
         }
     }
-
 
     showDeleteConfirm?.let { category ->
         com.webtoapp.ui.design.WtaAlertDialog(
@@ -174,9 +165,6 @@ fun CategoryTabRow(
         )
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -269,9 +257,6 @@ fun CategoryEditorDialog(
         }
     )
 }
-
-
-
 
 @Composable
 fun MoveToCategoryDialog(

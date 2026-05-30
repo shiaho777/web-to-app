@@ -56,7 +56,7 @@ You'll need:
 
 - Android Studio Hedgehog or newer
 - JDK 17
-- Gradle 8.14+ (the wrapper handles this)
+- The Gradle wrapper pins Gradle 9.4.1 — no system Gradle install required
 
 ```bash
 git clone https://github.com/shiahonb777/web-to-app.git
@@ -76,14 +76,17 @@ Run the project's checks before submitting:
 WebToApp leans on Kotlin idioms and Jetpack Compose patterns already in the
 codebase. A few rules worth calling out:
 
-- **Match the surrounding style.** The project mixes a few generations of UI
-  components (`Premium*`, `Wta*`). When you touch a screen, use whatever's
-  already used there rather than reaching for something else.
+- **Build new UI on the Wta design system.** Everything renders through
+  `com.webtoapp.ui.design` (see [`ui/design/README.md`](app/src/main/java/com/webtoapp/ui/design/README.md)).
+  The older `Premium*` / `Enhanced*` / `Settings*` components are retained as
+  permanent alias layers over the Wta internals — don't add new ones, but you
+  don't need to rip them out either.
 - **Reuse the design tokens** in `ui/design/WtaTokens.kt` for spacing, radius,
   alpha, and elevation. Don't hard-code numbers.
 - **Strings live in `core/i18n/Strings.kt`.** Add the new string to all three
   language branches (Chinese, English, Arabic). If you can't translate, add
-  the English text to all three and flag it in the PR.
+  the English text to all three and flag it in the PR. A translation-parity
+  unit test guards this.
 - **No new top-level singletons** unless you discuss it first. The DI graph
   in `di/AppModule.kt` is the source of truth.
 - **Avoid catching `Exception` to silence errors.** If recovery is impossible,
@@ -176,7 +179,7 @@ being productive, take a break and come back later.
 
 - Android Studio Hedgehog 或更新版本
 - JDK 17
-- Gradle 8.14+（项目自带 wrapper）
+- Gradle wrapper 已锁定 Gradle 9.4.1，无需系统安装 Gradle
 
 ```bash
 git clone https://github.com/shiahonb777/web-to-app.git
@@ -193,10 +196,14 @@ cd web-to-app
 
 **代码风格**
 
-- 跟随你修改的文件周围的现有风格——项目里 `Premium*` 和 `Wta*` 两套组件并存，
-  在哪个屏幕里就用哪一套
+- 新 UI 一律构建在 Wta 设计系统之上——所有界面都通过
+  `com.webtoapp.ui.design` 渲染（见
+  [`ui/design/README.md`](app/src/main/java/com/webtoapp/ui/design/README.md)）。
+  旧的 `Premium*` / `Enhanced*` / `Settings*` 组件作为 Wta 内部实现的永久
+  别名层保留——不要再新增，但也无需强行替换
 - 复用 `ui/design/WtaTokens.kt` 里的设计 token，别硬编码数字
-- 字符串统一加到 `core/i18n/Strings.kt`，三种语言（中、英、阿拉伯）都要补
+- 字符串统一加到 `core/i18n/Strings.kt`，三种语言（中、英、阿拉伯）都要补；
+  有一个翻译一致性单元测试在守这一点
 - 引入新的全局单例前请先讨论
 - 不要 catch 然后吞掉异常；用 `AppLogger` 记录后重新抛出或返回失败的 `Result`
 

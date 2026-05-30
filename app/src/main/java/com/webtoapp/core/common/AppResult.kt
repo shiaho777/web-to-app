@@ -1,21 +1,5 @@
 package com.webtoapp.core.common
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 sealed class AppResult<out T> {
 
     data class Success<T>(val data: T) : AppResult<T>()
@@ -29,48 +13,30 @@ sealed class AppResult<out T> {
     val isSuccess: Boolean get() = this is Success
     val isError: Boolean get() = this is Error
 
-
-
-
     fun getOrNull(): T? = when (this) {
         is Success -> data
         is Error -> null
     }
-
-
-
 
     fun getOrDefault(default: @UnsafeVariance T): T = when (this) {
         is Success -> data
         is Error -> default
     }
 
-
-
-
     fun getOrThrow(): T = when (this) {
         is Success -> data
         is Error -> throw cause ?: RuntimeException(userMessage)
     }
-
-
-
 
     inline fun <R> map(transform: (T) -> R): AppResult<R> = when (this) {
         is Success -> Success(transform(data))
         is Error -> this
     }
 
-
-
-
     inline fun onSuccess(action: (T) -> Unit): AppResult<T> {
         if (this is Success) action(data)
         return this
     }
-
-
-
 
     inline fun onError(action: (Error) -> Unit): AppResult<T> {
         if (this is Error) action(this)
@@ -78,8 +44,6 @@ sealed class AppResult<out T> {
     }
 
     companion object {
-
-
 
         inline fun <T> runCatching(
             errorMessage: String = "Operation failed",
@@ -95,9 +59,6 @@ sealed class AppResult<out T> {
                 )
             }
         }
-
-
-
 
         suspend inline fun <T> suspendRunCatching(
             errorMessage: String = "Operation failed",
@@ -115,9 +76,6 @@ sealed class AppResult<out T> {
         }
     }
 }
-
-
-
 
 enum class ErrorCode {
     UNKNOWN,

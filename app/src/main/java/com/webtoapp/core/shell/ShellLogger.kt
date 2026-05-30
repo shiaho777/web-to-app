@@ -10,17 +10,6 @@ import java.io.StringWriter
 import java.text.SimpleDateFormat
 import java.util.*
 
-
-
-
-
-
-
-
-
-
-
-
 object ShellLogger {
 
     private const val TAG = "ShellLogger"
@@ -37,12 +26,6 @@ object ShellLogger {
         return SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault()).format(Date())
     }
 
-
-
-
-
-
-
     @Synchronized
     fun init(context: Context, appName: String = "ShellApp", appVersion: String = "1.0.0") {
         if (isInitialized) return
@@ -51,8 +34,6 @@ object ShellLogger {
             this.appName = appName
             this.appVersion = appVersion
             this.packageName = context.packageName
-
-
 
             val externalDir = context.getExternalFilesDir(null)
             val logDir = if (externalDir != null) {
@@ -66,17 +47,13 @@ object ShellLogger {
                 logDir.mkdirs()
             }
 
-
             logFile = File(logDir, LOG_FILE_NAME)
-
 
             checkAndTruncateLog()
 
             isInitialized = true
 
-
             setupCrashHandler(context)
-
 
             logAppStart(context)
 
@@ -87,24 +64,15 @@ object ShellLogger {
         }
     }
 
-
-
-
     fun i(tag: String, message: String) {
         log("INFO", tag, message)
         Log.i(tag, message)
     }
 
-
-
-
     fun d(tag: String, message: String) {
         log("DEBUG", tag, message)
         Log.d(tag, message)
     }
-
-
-
 
     fun w(tag: String, message: String, throwable: Throwable? = null) {
         log("WARN", tag, message, throwable)
@@ -115,9 +83,6 @@ object ShellLogger {
         }
     }
 
-
-
-
     fun e(tag: String, message: String, throwable: Throwable? = null) {
         log("ERROR", tag, message, throwable)
         if (throwable != null) {
@@ -126,9 +91,6 @@ object ShellLogger {
             Log.e(tag, message)
         }
     }
-
-
-
 
     fun logFeature(feature: String, action: String, details: String = "") {
         val message = buildString {
@@ -139,9 +101,6 @@ object ShellLogger {
         }
         log("FEATURE", "FeatureTrack", message)
     }
-
-
-
 
     fun logWebView(action: String, url: String = "", details: String = "") {
         val message = buildString {
@@ -156,22 +115,13 @@ object ShellLogger {
         log("WEBVIEW", "WebView", message)
     }
 
-
-
-
     fun logLifecycle(component: String, event: String) {
         log("LIFECYCLE", component, "Event: $event")
     }
 
-
-
-
     fun getLogFilePath(): String? {
         return logFile?.absolutePath
     }
-
-
-
 
     fun getLogContent(maxLines: Int = 500): String {
         return try {
@@ -189,9 +139,6 @@ object ShellLogger {
         }
     }
 
-
-
-
     fun clearLog() {
         try {
             logFile?.let { file ->
@@ -204,8 +151,6 @@ object ShellLogger {
             Log.e(TAG, "清空日志失败", e)
         }
     }
-
-
 
     private fun log(level: String, tag: String, message: String, throwable: Throwable? = null) {
         if (!isInitialized || logFile == null) return
@@ -290,13 +235,9 @@ object ShellLogger {
                 Log.e(TAG, "记录崩溃日志失败", e)
             }
 
-
             defaultHandler?.uncaughtException(thread, throwable)
         }
     }
-
-
-
 
     private fun checkAndTruncateLog() {
         try {
@@ -323,9 +264,6 @@ object ShellLogger {
             Log.e(TAG, "截断日志文件失败", e)
         }
     }
-
-
-
 
     fun getLogFileLocationHint(): String {
         return "Android/data/$packageName/files/logs/$LOG_FILE_NAME"

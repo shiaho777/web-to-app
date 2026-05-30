@@ -74,8 +74,12 @@ class LinuxEnvironmentManagerTest {
     }
 
     private fun prepareNodeRuntime() {
-        File(NodeDependencyManager.getNodeDir(context), NodeDependencyManager.NODE_BINARY_NAME).apply {
-            parentFile?.mkdirs()
+
+        val nativeLibDir = File(context.cacheDir, "test-native-lib").apply {
+            mkdirs()
+        }
+        context.applicationInfo.nativeLibraryDir = nativeLibDir.absolutePath
+        File(nativeLibDir, NodeDependencyManager.NODE_BINARY_NAME).apply {
             writeBytes(ByteArray(1024))
         }
     }

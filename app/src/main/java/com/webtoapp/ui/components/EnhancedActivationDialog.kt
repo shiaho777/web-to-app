@@ -32,9 +32,6 @@ import com.webtoapp.util.threadLocalCompat
 import java.text.SimpleDateFormat
 import java.util.*
 
-
-
-
 @Composable
 fun EnhancedActivationDialog(
     onDismiss: () -> Unit,
@@ -70,13 +67,11 @@ fun EnhancedActivationDialog(
                     result = activationResult
                 )
 
-
                 activationStatus?.let { status ->
                     if (status.isActivated) {
                         EnhancedActivationStatusCard(status = status)
                     }
                 }
-
 
                 AnimatedVisibility(
                     visible = activationResult !is ActivationResult.Success,
@@ -107,7 +102,6 @@ fun EnhancedActivationDialog(
                         enabled = !isLoading
                     )
                 }
-
 
                 activationResult?.let { result ->
                     ActivationResultCard(result = result)
@@ -161,7 +155,6 @@ fun EnhancedActivationDialog(
         }
     )
 
-
     LaunchedEffect(isLoading) {
         if (isLoading && code.isNotBlank()) {
             val result = onActivate(code)
@@ -175,10 +168,6 @@ fun EnhancedActivationDialog(
         }
     }
 }
-
-
-
-
 
 @Composable
 private fun ActivationDialogHeader(
@@ -255,7 +244,6 @@ private fun ActivationDialogHeader(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-
         Text(
             text = when (result) {
                 is ActivationResult.Success -> Strings.activationSuccess
@@ -268,7 +256,6 @@ private fun ActivationDialogHeader(
         )
 
         Spacer(modifier = Modifier.height(4.dp))
-
 
         Text(
             text = when (result) {
@@ -283,10 +270,6 @@ private fun ActivationDialogHeader(
         )
     }
 }
-
-
-
-
 
 @Composable
 private fun ActivationResultCard(result: ActivationResult) {
@@ -383,7 +366,6 @@ private fun ActivationResultCard(result: ActivationResult) {
                     lineHeight = 18.sp
                 )
 
-
                 suggestion?.let { sug ->
                     HorizontalDivider(
                         color = contentColor.copy(alpha = 0.15f),
@@ -411,10 +393,6 @@ private fun ActivationResultCard(result: ActivationResult) {
         }
     }
 }
-
-
-
-
 
 @Composable
 private fun EnhancedActivationStatusCard(status: ActivationStatus) {
@@ -457,7 +435,6 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
                     )
                 }
 
-
                 status.codeType?.let { type ->
                     Surface(
                         shape = RoundedCornerShape(8.dp),
@@ -474,7 +451,6 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
                 }
             }
 
-
             status.activatedTime?.let { time ->
                 StatusInfoRow(
                     icon = Icons.Outlined.CalendarMonth,
@@ -483,7 +459,6 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
                     color = primaryColor
                 )
             }
-
 
             status.expireTime?.let {
                 val remaining = status.remainingTimeMs
@@ -523,7 +498,6 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
                 }
             }
 
-
             status.usageLimit?.let { limit ->
                 val remaining = status.remainingUsage ?: 0
                 StatusInfoRow(
@@ -543,7 +517,6 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
                     trackColor = primaryColor.copy(alpha = 0.1f)
                 )
             }
-
 
             status.deviceId?.let {
                 StatusInfoRow(
@@ -591,10 +564,6 @@ private fun StatusInfoRow(
         }
     }
 }
-
-
-
-
 
 private data class ResultCardData(
     val icon: ImageVector,

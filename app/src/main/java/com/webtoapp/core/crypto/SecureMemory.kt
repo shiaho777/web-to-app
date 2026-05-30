@@ -9,15 +9,9 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.Collections
 
-
-
-
-
-
 object SecureMemory {
 
     private const val TAG = "SecureMemory"
-
 
     private val trackedMemory = ConcurrentHashMap<Int, ByteArray>()
     private val referenceQueue = ReferenceQueue<Any>()
@@ -53,29 +47,18 @@ object SecureMemory {
         cleanerThread.start()
     }
 
-
-
-
-
     fun secureWipe(data: ByteArray) {
 
         data.fill(0)
 
-
         secureRandom.nextBytes(data)
 
-
         data.fill(0)
-
 
         data.fill(0xFF.toByte())
 
-
         data.fill(0)
     }
-
-
-
 
     fun secureWipe(data: CharArray) {
         data.fill('\u0000')
@@ -84,10 +67,6 @@ object SecureMemory {
         }
         data.fill('\u0000')
     }
-
-
-
-
 
     fun allocateSecure(size: Int, owner: Any? = null): ByteArray {
         val data = ByteArray(size)
@@ -101,12 +80,8 @@ object SecureMemory {
         return data
     }
 
-
-
-
     fun release(data: ByteArray) {
         secureWipe(data)
-
 
         val iterator = trackedMemory.entries.iterator()
         while (iterator.hasNext()) {
@@ -118,16 +93,10 @@ object SecureMemory {
         }
     }
 
-
-
-
     fun releaseAll() {
         trackedMemory.values.forEach { secureWipe(it) }
         trackedMemory.clear()
     }
-
-
-
 
     fun shutdown() {
         isRunning.set(false)
@@ -135,10 +104,6 @@ object SecureMemory {
         releaseAll()
     }
 }
-
-
-
-
 
 class SecureBytes private constructor(
     @PublishedApi internal val data: ByteArray
@@ -150,28 +115,17 @@ class SecureBytes private constructor(
 
     companion object {
 
-
-
         fun wrap(data: ByteArray): SecureBytes {
             return SecureBytes(data.copyOf())
         }
-
-
-
 
         fun fromString(str: String): SecureBytes {
             return SecureBytes(str.toByteArray(Charsets.UTF_8))
         }
 
-
-
-
         fun allocate(size: Int): SecureBytes {
             return SecureBytes(ByteArray(size))
         }
-
-
-
 
         fun random(size: Int): SecureBytes {
             val data = ByteArray(size)
@@ -180,34 +134,21 @@ class SecureBytes private constructor(
         }
     }
 
-
-
-
     fun get(): ByteArray {
         check(!isCleared) { "SecureBytes has been cleared" }
         return data.copyOf()
     }
-
-
-
-
 
     inline fun <R> use(block: (ByteArray) -> R): R {
         check(!isCleared) { "SecureBytes has been cleared" }
         return block(data)
     }
 
-
-
-
     val size: Int
         get() {
             check(!isCleared) { "SecureBytes has been cleared" }
             return data.size
         }
-
-
-
 
     override fun close() {
         if (!isCleared) {
@@ -220,9 +161,6 @@ class SecureBytes private constructor(
         close()
     }
 }
-
-
-
 
 class SecureString private constructor(
     @PublishedApi internal val chars: CharArray
@@ -242,16 +180,10 @@ class SecureString private constructor(
         }
     }
 
-
-
-
     inline fun <R> use(block: (CharArray) -> R): R {
         check(!isCleared) { "SecureString has been cleared" }
         return block(chars)
     }
-
-
-
 
     fun toBytes(): SecureBytes {
         check(!isCleared) { "SecureString has been cleared" }
@@ -276,10 +208,6 @@ class SecureString private constructor(
     }
 }
 
-
-
-
-
 class SensitiveData<T>(
     private val data: T,
     private val encryptedStorage: ByteArray? = null
@@ -291,9 +219,6 @@ class SensitiveData<T>(
     @Volatile
     private var isCleared = false
 
-
-
-
     fun access(): T {
         check(!isCleared) { "Data has been cleared" }
         val count = accessCount.incrementAndGet()
@@ -301,16 +226,12 @@ class SensitiveData<T>(
         return data
     }
 
-
-
-
     fun remainingAccess(): Int = maxAccess - accessCount.get()
 
     override fun close() {
         if (!isCleared) {
 
             encryptedStorage?.let { SecureMemory.secureWipe(it) }
-
 
             when (data) {
                 is ByteArray -> SecureMemory.secureWipe(data)

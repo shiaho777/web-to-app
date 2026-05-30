@@ -6,18 +6,10 @@ import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.Strings
 import java.io.File
 
-
-
-
-
-
 object SampleProjectManager {
 
     private const val TAG = "SampleProjectManager"
     private const val SAMPLES_DIR = "sample_projects"
-
-
-
 
     private fun getLanguageSuffix(): String {
         return when (Strings.currentLanguage.value) {
@@ -26,9 +18,6 @@ object SampleProjectManager {
             AppLanguage.ARABIC -> "-ar"
         }
     }
-
-
-
 
     fun getSampleProjects(): List<SampleProject> {
         val suffix = getLanguageSuffix()
@@ -60,11 +49,6 @@ object SampleProjectManager {
         )
     }
 
-
-
-
-
-
     suspend fun extractSampleProject(
         context: Context,
         projectId: String,
@@ -73,11 +57,9 @@ object SampleProjectManager {
         return try {
             val outputDir = File(context.filesDir, "sample_projects/$projectId")
 
-
             val versionFile = File(outputDir, ".version")
             val currentVersion = getAppVersionCode(context)
             val cachedVersion = if (versionFile.exists()) versionFile.readText().trim().toLongOrNull() else null
-
 
             val cachedEntry = File(outputDir, "dist/index.html")
             if (!forceRefresh &&
@@ -91,14 +73,11 @@ object SampleProjectManager {
 
             AppLogger.i(TAG, "重新解压示例项目 (版本: $cachedVersion -> $currentVersion)")
 
-
             outputDir.deleteRecursively()
             outputDir.mkdirs()
 
-
             val assetPath = "$SAMPLES_DIR/$projectId"
             copyAssetFolder(context, assetPath, outputDir)
-
 
             versionFile.writeText(currentVersion.toString())
 
@@ -110,9 +89,6 @@ object SampleProjectManager {
             Result.failure(e)
         }
     }
-
-
-
 
     private fun getAppVersionCode(context: Context): Long {
         return try {
@@ -128,9 +104,6 @@ object SampleProjectManager {
         }
     }
 
-
-
-
     suspend fun getSampleDistPath(
         context: Context,
         projectId: String
@@ -140,9 +113,6 @@ object SampleProjectManager {
             "$projectPath/dist"
         }
     }
-
-
-
 
     private fun copyAssetFolder(context: Context, assetPath: String, targetDir: File) {
         val assetManager = context.assets
@@ -169,9 +139,6 @@ object SampleProjectManager {
         }
     }
 
-
-
-
     fun clearExtractedProjects(context: Context) {
         val samplesDir = File(context.filesDir, "sample_projects")
         if (samplesDir.exists()) {
@@ -179,9 +146,6 @@ object SampleProjectManager {
         }
     }
 }
-
-
-
 
 data class SampleProject(
     val id: String,

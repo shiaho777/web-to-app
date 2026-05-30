@@ -17,9 +17,6 @@ import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.StorageController
 import org.mozilla.geckoview.WebResponse
 
-
-
-
 data class ProxyConfig(
     val mode: String = "NONE",
     val host: String = "",
@@ -29,16 +26,6 @@ data class ProxyConfig(
     val username: String = "",
     val password: String = ""
 )
-
-
-
-
-
-
-
-
-
-
 
 class GeckoViewEngine(
     private val context: Context
@@ -73,9 +60,6 @@ class GeckoViewEngine(
         fun applyProxyConfig(config: ProxyConfig) {
             currentProxyConfig = config
 
-
-
-
             val runtime = sharedRuntime
             if (runtime != null && config.mode != "NONE") {
                 AppLogger.w(TAG, "GeckoView proxy set after runtime creation — proxy will take effect on next runtime creation")
@@ -83,17 +67,12 @@ class GeckoViewEngine(
             AppLogger.d(TAG, "Proxy config stored: mode=${config.mode}, type=${config.type}, host=${config.host}:${config.port}")
         }
 
-
-
-
-
         private fun buildProxyArgs(config: ProxyConfig): List<String> {
             if (config.mode == "NONE") return emptyList()
             val args = mutableListOf<String>()
             when (config.mode) {
                 "STATIC" -> {
                     if (config.host.isBlank() || config.port <= 0) return emptyList()
-
 
                     args.add("--pref=network.proxy.type=1")
 
@@ -142,9 +121,6 @@ class GeckoViewEngine(
                 return
             }
 
-
-
-
             val trrMode = if (config.dohMode == "strict" || config.bypassSystemDns) {
                 GeckoRuntimeSettings.TRR_MODE_ONLY
             } else {
@@ -162,16 +138,13 @@ class GeckoViewEngine(
                 .javaScriptEnabled(true)
                 .consoleOutput(true)
                 .contentBlocking(
+
                     ContentBlocking.Settings.Builder()
-                        .antiTracking(
-                            ContentBlocking.AntiTracking.DEFAULT
-                                    or ContentBlocking.AntiTracking.STP
-                        )
-                        .safeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
-                        .cookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_NON_TRACKERS)
+                        .antiTracking(ContentBlocking.AntiTracking.NONE)
+                        .safeBrowsing(ContentBlocking.SafeBrowsing.NONE)
+                        .cookieBehavior(ContentBlocking.CookieBehavior.ACCEPT_ALL)
                         .build()
                 )
-
 
             currentDnsConfig?.let { config ->
                 val dohUrl = config.effectiveDohUrl
@@ -185,7 +158,6 @@ class GeckoViewEngine(
                     settingsBuilder.trustedRecursiveResolverUri(dohUrl)
                 }
             }
-
 
             currentProxyConfig?.let { config ->
                 val proxyArgs = buildProxyArgs(config)
@@ -209,7 +181,6 @@ class GeckoViewEngine(
     private var canGoBackFlag = false
     private var canGoForwardFlag = false
 
-
     private var lastConfig: WebViewConfig? = null
     private var lastGeckoUaMode: Int = GeckoSessionSettings.USER_AGENT_MODE_MOBILE
     private var lastUserAgentOverride: String? = null
@@ -224,7 +195,6 @@ class GeckoViewEngine(
 
         val runtime = getRuntime(context)
 
-
         val geckoUaMode = when (config.userAgentMode) {
             UserAgentMode.CHROME_DESKTOP, UserAgentMode.SAFARI_DESKTOP,
             UserAgentMode.FIREFOX_DESKTOP, UserAgentMode.EDGE_DESKTOP -> GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
@@ -234,7 +204,7 @@ class GeckoViewEngine(
 
         val sessionSettings = GeckoSessionSettings.Builder()
             .usePrivateMode(false)
-            .useTrackingProtection(true)
+            .useTrackingProtection(false)
             .userAgentMode(geckoUaMode)
             .build()
 
@@ -247,7 +217,6 @@ class GeckoViewEngine(
         val view = GeckoView(context)
         view.setSession(newSession)
         geckoView = view
-
 
         val effectiveUserAgent = when (config.userAgentMode) {
             UserAgentMode.DEFAULT -> null
@@ -262,9 +231,6 @@ class GeckoViewEngine(
 
         return view
     }
-
-
-
 
     private fun setupDelegates(session: GeckoSession, callback: BrowserEngineCallback) {
         setupContentDelegate(session, callback)
@@ -333,20 +299,10 @@ class GeckoViewEngine(
             ): GeckoResult<AllowOrDeny>? {
                 val uri = request.uri
 
-
-
-
-                if (isGoogleOAuthUrl(uri)) {
-                    AppLogger.d("GeckoViewEngine", "Google OAuth detected — allowing in-GeckoView with kernel disguise: $uri")
-
-                    return GeckoResult.fromValue(AllowOrDeny.ALLOW)
-                }
-
                 if (uri.startsWith("tel:") || uri.startsWith("mailto:") || uri.startsWith("intent:")) {
                     callback.onExternalLink(uri)
                     return GeckoResult.fromValue(AllowOrDeny.DENY)
                 }
-
 
                 return GeckoResult.fromValue(AllowOrDeny.ALLOW)
             }
@@ -367,12 +323,6 @@ class GeckoViewEngine(
 
                 callback.onPageStarted(url)
 
-
-                OAuthCompatEngine.getAntiDetectionJs(url)?.let { js ->
-                    val provider = OAuthCompatEngine.getProviderType(url)
-                    AppLogger.d(TAG, "Injecting OAuth anti-detection JS [$provider] (GeckoView) for: $url")
-                    evaluateJavascript(js, null)
-                }
             }
 
             override fun onPageStop(session: GeckoSession, success: Boolean) {
@@ -392,14 +342,6 @@ class GeckoViewEngine(
         }
     }
 
-
-
-
-
-
-
-
-
     private fun attemptCrashRecovery() {
         val view = geckoView ?: return
         val cb = callback ?: return
@@ -414,7 +356,7 @@ class GeckoViewEngine(
 
             val sessionSettings = GeckoSessionSettings.Builder()
                 .usePrivateMode(false)
-                .useTrackingProtection(true)
+                .useTrackingProtection(false)
                 .userAgentMode(lastGeckoUaMode)
                 .build()
 
@@ -422,14 +364,12 @@ class GeckoViewEngine(
             setupDelegates(newSession, cb)
             newSession.open(runtime)
 
-
             lastUserAgentOverride?.let {
                 newSession.settings.userAgentOverride = it
             }
 
             view.setSession(newSession)
             session = newSession
-
 
             if (!urlToRestore.isNullOrBlank() && urlToRestore != "about:blank") {
                 newSession.loadUri(urlToRestore)
@@ -443,20 +383,9 @@ class GeckoViewEngine(
         }
     }
 
-
-
-
-
     override fun loadUrl(url: String) {
         session?.loadUri(url)
     }
-
-
-
-
-
-
-
 
     override fun evaluateJavascript(script: String, resultCallback: ((String?) -> Unit)?) {
         val s = session
@@ -464,8 +393,6 @@ class GeckoViewEngine(
             resultCallback?.invoke(null)
             return
         }
-
-
 
         try {
             val encoded = android.util.Base64.encodeToString(
@@ -488,7 +415,6 @@ class GeckoViewEngine(
                 AppLogger.e(TAG, "evaluateJavascript fallback also failed", ex)
             }
         }
-
 
         resultCallback?.invoke(null)
     }
@@ -532,21 +458,4 @@ class GeckoViewEngine(
         }
     }
 
-
-
-    private fun isGoogleOAuthUrl(url: String): Boolean = OAuthCompatEngine.isOAuthUrl(url)
-
-    private fun openInSystemBrowser(url: String) {
-        try {
-            val intent = android.content.Intent(
-                android.content.Intent.ACTION_VIEW,
-                android.net.Uri.parse(url)
-            ).apply {
-                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to open system browser for OAuth: $url", e)
-        }
-    }
 }

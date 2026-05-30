@@ -26,10 +26,6 @@ import com.webtoapp.data.model.SplashType
 import kotlinx.coroutines.delay
 import java.io.File
 
-
-
-
-
 @Composable
 fun SplashOverlay(
     splashConfig: SplashConfig,
@@ -40,12 +36,10 @@ fun SplashOverlay(
     val context = LocalContext.current
     val mediaPath = splashConfig.mediaPath ?: return
 
-
     val videoStartMs = splashConfig.videoStartMs
     val videoEndMs = splashConfig.videoEndMs
     val videoDurationMs = videoEndMs - videoStartMs
     val contentScaleMode = if (splashConfig.fillScreen) ContentScale.Crop else ContentScale.Fit
-
 
     var videoRemainingMs by remember { mutableLongStateOf(videoDurationMs) }
 
@@ -84,8 +78,6 @@ fun SplashOverlay(
 
                 var mediaPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
                 var isPlayerReady by remember { mutableStateOf(false) }
-
-
 
                 LaunchedEffect(isPlayerReady) {
                     if (!isPlayerReady) return@LaunchedEffect
@@ -150,7 +142,6 @@ fun SplashOverlay(
                     modifier = Modifier.fillMaxSize()
                 )
 
-
                 DisposableEffect(Unit) {
                     onDispose {
                         mediaPlayer?.release()
@@ -159,8 +150,6 @@ fun SplashOverlay(
                 }
             }
         }
-
-
 
         val displayTime = if (splashConfig.type == SplashType.VIDEO) {
             ((videoRemainingMs + 999) / 1000).toInt()
@@ -205,9 +194,6 @@ fun SplashOverlay(
         }
     }
 }
-
-
-
 
 @Composable
 fun ActivationDialog(

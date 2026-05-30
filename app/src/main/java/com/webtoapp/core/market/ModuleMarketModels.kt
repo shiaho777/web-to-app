@@ -4,17 +4,10 @@ import com.google.gson.annotations.SerializedName
 import com.webtoapp.core.extension.ModuleAuthor
 import com.webtoapp.core.extension.UrlMatchRule
 
-/**
- * Lightweight entry returned by `registry.json` — enough to render the market
- * listing without downloading every module's full source.
- *
- * The contract lives in https://github.com/shiahonb777/web-to-app/blob/main/modules/README.md
- */
 data class ModuleMarketEntry(
     @SerializedName("id")
     val id: String,
 
-    /** Folder name under `modules/` in the GitHub repo. */
     @SerializedName("path")
     val path: String,
 
@@ -36,7 +29,6 @@ data class ModuleMarketEntry(
     @SerializedName("version")
     val version: String = "1.0.0",
 
-    /** Minimum WebToApp `versionCode` required. Older clients hide the entry. */
     @SerializedName("minAppVersion")
     val minAppVersion: Int = 0,
 
@@ -52,14 +44,57 @@ data class ModuleMarketEntry(
     @SerializedName("urlMatches")
     val urlMatches: List<UrlMatchRule> = emptyList(),
 
-    /** Whether the module ships a `style.css` next to `main.js`. */
     @SerializedName("hasCss")
-    val hasCss: Boolean = false
+    val hasCss: Boolean = false,
+
+    @SerializedName("iconUrl")
+    val iconUrl: String? = null
 )
 
-/**
- * Wire format of `registry.json`.
- */
+data class ModuleSubmission(
+
+    @SerializedName("prNumber")
+    val prNumber: Int? = null,
+
+    @SerializedName("prUrl")
+    val prUrl: String? = null,
+
+    @SerializedName("submittedAt")
+    val submittedAt: String? = null,
+
+    @SerializedName("direct")
+    val direct: Boolean = false,
+
+    @SerializedName("submitter")
+    val submitter: ModuleSubmitter? = null
+)
+
+data class ModuleSubmitter(
+
+    @SerializedName("login")
+    val login: String = "",
+
+    @SerializedName("name")
+    val name: String = "",
+
+    @SerializedName("avatarUrl")
+    val avatarUrl: String = "",
+
+    @SerializedName("profileUrl")
+    val profileUrl: String = ""
+)
+
+data class ModuleSubmissionsRegistry(
+    @SerializedName("schema")
+    val schema: Int = 1,
+
+    @SerializedName("generatedAt")
+    val generatedAt: String = "",
+
+    @SerializedName("submissions")
+    val submissions: Map<String, ModuleSubmission> = emptyMap()
+)
+
 data class ModuleMarketRegistry(
     @SerializedName("schema")
     val schema: Int = 1,
@@ -71,22 +106,17 @@ data class ModuleMarketRegistry(
     val modules: List<ModuleMarketEntry> = emptyList()
 )
 
-/**
- * Indicates whether a market entry is already present in the user's local
- * extension manager and, if so, whether the remote version is newer.
- */
 enum class MarketInstallState {
     NotInstalled,
     UpToDate,
     UpdateAvailable
 }
 
-/**
- * UI-friendly view of a market entry combined with local state.
- */
 data class MarketModuleView(
     val entry: ModuleMarketEntry,
     val state: MarketInstallState,
-    /** The version currently installed on this device, when applicable. */
-    val installedVersion: String? = null
+
+    val installedVersion: String? = null,
+
+    val submission: ModuleSubmission? = null
 )

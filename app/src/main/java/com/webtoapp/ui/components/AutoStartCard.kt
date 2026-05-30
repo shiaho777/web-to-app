@@ -27,19 +27,6 @@ import com.webtoapp.core.autostart.AutoStartManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AutoStartConfig
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutoStartCard(
@@ -55,9 +42,7 @@ fun AutoStartCard(
     var scheduledDays by remember(config) { mutableStateOf(config?.scheduledDays ?: listOf(1,2,3,4,5,6,7)) }
     var bootDelay by remember(config) { mutableStateOf(config?.bootDelay ?: AutoStartManager.DEFAULT_BOOT_DELAY_MS) }
 
-
     var showTimePicker by remember { mutableStateOf(false) }
-
 
     val nextTriggerDisplay by remember(scheduledStartEnabled, scheduledTime, scheduledDays) {
         mutableStateOf(
@@ -88,7 +73,6 @@ fun AutoStartCard(
         )
     }
 
-
     var canScheduleExact by remember { mutableStateOf(true) }
     var ignoringBatteryOpt by remember { mutableStateOf(true) }
 
@@ -106,7 +90,6 @@ fun AutoStartCard(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
-
 
     val oemBrandName = remember { AutoStartManager(context).getOemBrandName() }
     val oemAutoStartIntent = remember { AutoStartManager(context).getOemAutoStartIntent() }
@@ -183,8 +166,6 @@ fun AutoStartCard(
             AnimatedVisibility(visible = expanded) {
                 Column(modifier = Modifier.padding(top = 16.dp)) {
 
-
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -209,7 +190,6 @@ fun AutoStartCard(
                             }
                         )
                     }
-
 
                     AnimatedVisibility(visible = bootStartEnabled) {
                         Column(modifier = Modifier.padding(top = 8.dp)) {
@@ -244,9 +224,6 @@ fun AutoStartCard(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(16.dp))
 
-
-
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -271,7 +248,6 @@ fun AutoStartCard(
                             }
                         )
                     }
-
 
                     AnimatedVisibility(visible = scheduledStartEnabled) {
                         Column(modifier = Modifier.padding(top = 12.dp)) {
@@ -307,7 +283,6 @@ fun AutoStartCard(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-
                             Text(
                                 Strings.launchDate,
                                 style = MaterialTheme.typography.bodyMedium,
@@ -341,7 +316,6 @@ fun AutoStartCard(
                                 }
                             }
 
-
                             nextTriggerDisplay?.let { display ->
                                 Spacer(modifier = Modifier.height(12.dp))
                                 Surface(
@@ -370,12 +344,8 @@ fun AutoStartCard(
                         }
                     }
 
-
-
-
                     if (bootStartEnabled || scheduledStartEnabled) {
                         Spacer(modifier = Modifier.height(12.dp))
-
 
                         if (oemBrandName != null && oemAutoStartIntent != null) {
                             Surface(
@@ -426,7 +396,6 @@ fun AutoStartCard(
                             Spacer(modifier = Modifier.height(8.dp))
                         }
 
-
                         if (!canScheduleExact && scheduledStartEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                             Surface(
                                 color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
@@ -469,7 +438,6 @@ fun AutoStartCard(
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                         }
-
 
                         if (!ignoringBatteryOpt) {
                             Surface(
@@ -519,7 +487,6 @@ fun AutoStartCard(
                             Spacer(modifier = Modifier.height(8.dp))
                         }
 
-
                         if (canScheduleExact && ignoringBatteryOpt) {
                             Surface(
                                 color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
@@ -546,7 +513,6 @@ fun AutoStartCard(
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
-
 
                     Spacer(modifier = Modifier.height(4.dp))
                     Surface(
@@ -576,7 +542,6 @@ fun AutoStartCard(
         }
     }
 
-
     if (showTimePicker) {
         TimePickerDialog(
             initialTime = scheduledTime,
@@ -589,9 +554,6 @@ fun AutoStartCard(
         )
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

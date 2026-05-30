@@ -7,11 +7,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-
-
-
-
-
 class ExtensionPanelBridge(
     private val context: Context,
     private val scope: CoroutineScope
@@ -20,17 +15,11 @@ class ExtensionPanelBridge(
         const val JS_INTERFACE_NAME = "ExtensionPanel"
     }
 
-
     private val registeredModules = mutableMapOf<String, ModuleUIInfo>()
-
 
     private var activeModuleId: String? = null
 
-
     private var webViewRef: WebView? = null
-
-
-
 
     data class ModuleUIInfo(
         val id: String,
@@ -45,13 +34,6 @@ class ExtensionPanelBridge(
         webViewRef = webView
     }
 
-
-
-
-
-
-
-
     @JavascriptInterface
     fun registerModule(moduleId: String, name: String, icon: String, color: String) {
         scope.launch(Dispatchers.Main) {
@@ -64,12 +46,6 @@ class ExtensionPanelBridge(
             updatePanelUI()
         }
     }
-
-
-
-
-
-
 
     @JavascriptInterface
     fun registerModuleWithConfig(
@@ -87,11 +63,6 @@ class ExtensionPanelBridge(
         }
     }
 
-
-
-
-
-
     @JavascriptInterface
     fun registerModulePanel(moduleId: String, panelHtml: String) {
         scope.launch(Dispatchers.Main) {
@@ -100,9 +71,6 @@ class ExtensionPanelBridge(
             }
         }
     }
-
-
-
 
     @JavascriptInterface
     fun showModulePanel(moduleId: String) {
@@ -115,9 +83,6 @@ class ExtensionPanelBridge(
         }
     }
 
-
-
-
     @JavascriptInterface
     fun hidePanel() {
         scope.launch(Dispatchers.Main) {
@@ -125,9 +90,6 @@ class ExtensionPanelBridge(
             webViewRef?.evaluateJavascript("__WTA_PANEL__.hidePanel()", null)
         }
     }
-
-
-
 
     @JavascriptInterface
     fun showToast(message: String, duration: Int = 2000) {
@@ -139,17 +101,9 @@ class ExtensionPanelBridge(
         }
     }
 
-
-
-
-
-
     private fun updatePanelUI() {
         webViewRef?.evaluateJavascript("__WTA_PANEL__.updateModules()", null)
     }
-
-
-
 
     @JavascriptInterface
     fun setFabVisible(visible: Boolean) {
@@ -161,9 +115,6 @@ class ExtensionPanelBridge(
         }
     }
 
-
-
-
     @JavascriptInterface
     fun setFabPosition(bottom: Int, right: Int) {
         scope.launch(Dispatchers.Main) {
@@ -174,9 +125,6 @@ class ExtensionPanelBridge(
         }
     }
 
-
-
-
     @JavascriptInterface
     fun getRegisteredModules(): String {
         val modules = registeredModules.values.map { info ->
@@ -184,9 +132,6 @@ class ExtensionPanelBridge(
         }
         return "[${modules.joinToString(",")}]"
     }
-
-
-
 
     @JavascriptInterface
     fun getSupportedUITypes(): String {

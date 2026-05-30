@@ -14,11 +14,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
-
-
-
-
-
 object MediaStorage {
 
     private const val TAG = "MediaStorage"
@@ -26,16 +21,9 @@ object MediaStorage {
     private const val GALLERY_DIR = "gallery_apps"
     private const val THUMBNAIL_DIR = "thumbnails"
 
-
     private const val THUMBNAIL_WIDTH = 300
     private const val THUMBNAIL_HEIGHT = 300
     private const val THUMBNAIL_QUALITY = 80
-
-
-
-
-
-
 
     fun saveMedia(context: Context, uri: Uri, isVideo: Boolean): String? {
         return try {
@@ -61,9 +49,6 @@ object MediaStorage {
         }
     }
 
-
-
-
     fun deleteMedia(path: String?): Boolean {
         if (path.isNullOrBlank()) return false
         return try {
@@ -73,19 +58,11 @@ object MediaStorage {
         }
     }
 
-
-
-
     fun getMediaFile(path: String?): File? {
         if (path.isNullOrBlank()) return null
         val file = File(path)
         return if (file.exists()) file else null
     }
-
-
-
-
-
 
     private fun getGalleryDir(context: Context): File {
         val dir = File(context.filesDir, GALLERY_DIR)
@@ -93,18 +70,11 @@ object MediaStorage {
         return dir
     }
 
-
-
-
     private fun getThumbnailDir(context: Context): File {
         val dir = File(context.filesDir, THUMBNAIL_DIR)
         if (!dir.exists()) dir.mkdirs()
         return dir
     }
-
-
-
-
 
     suspend fun saveGalleryMedia(
         context: Context,
@@ -114,11 +84,9 @@ object MediaStorage {
         try {
             val galleryDir = getGalleryDir(context)
 
-
             val extension = getExtensionFromUri(context, uri, type)
             val fileName = "gallery_${UUID.randomUUID()}.$extension"
             val destFile = File(galleryDir, fileName)
-
 
             context.contentResolver.openInputStream(uri)?.use { input ->
                 FileOutputStream(destFile).use { output ->
@@ -126,9 +94,7 @@ object MediaStorage {
                 }
             } ?: return@withContext null
 
-
             val mediaInfo = getMediaInfo(destFile, type)
-
 
             val thumbnailPath = generateThumbnail(context, destFile, type)
 
@@ -145,10 +111,6 @@ object MediaStorage {
             null
         }
     }
-
-
-
-
 
     suspend fun saveGalleryMediaBatch(
         context: Context,
@@ -177,19 +139,14 @@ object MediaStorage {
         }
     }
 
-
-
-
     fun deleteGalleryMedia(item: GalleryItem): Boolean {
         var success = true
-
 
         try {
             File(item.path).delete()
         } catch (e: Exception) {
             success = false
         }
-
 
         item.thumbnailPath?.let { path ->
             try {
@@ -202,9 +159,6 @@ object MediaStorage {
         return success
     }
 
-
-
-
     fun deleteGalleryMediaBatch(items: List<GalleryItem>): Int {
         var count = 0
         items.forEach { item ->
@@ -212,12 +166,6 @@ object MediaStorage {
         }
         return count
     }
-
-
-
-
-
-
 
     private fun generateThumbnail(
         context: Context,
@@ -246,9 +194,6 @@ object MediaStorage {
         }
     }
 
-
-
-
     private fun generateImageThumbnail(file: File): Bitmap? {
 
         val options = BitmapFactory.Options().apply {
@@ -256,21 +201,15 @@ object MediaStorage {
         }
         BitmapFactory.decodeFile(file.absolutePath, options)
 
-
         val sampleSize = calculateInSampleSize(options.outWidth, options.outHeight)
-
 
         val decodeOptions = BitmapFactory.Options().apply {
             inSampleSize = sampleSize
         }
         val bitmap = BitmapFactory.decodeFile(file.absolutePath, decodeOptions) ?: return null
 
-
         return scaleBitmap(bitmap)
     }
-
-
-
 
     private fun generateVideoThumbnail(file: File): Bitmap? {
         val retriever = MediaMetadataRetriever()
@@ -292,9 +231,6 @@ object MediaStorage {
         }
     }
 
-
-
-
     private fun calculateInSampleSize(width: Int, height: Int): Int {
         var inSampleSize = 1
         if (height > THUMBNAIL_HEIGHT || width > THUMBNAIL_WIDTH) {
@@ -307,9 +243,6 @@ object MediaStorage {
         }
         return inSampleSize
     }
-
-
-
 
     private fun scaleBitmap(bitmap: Bitmap): Bitmap {
         val ratio = minOf(
@@ -326,20 +259,12 @@ object MediaStorage {
         return scaled
     }
 
-
-
-
-
-
     private fun getMediaInfo(file: File, type: GalleryItemType): MediaInfo {
         return when (type) {
             GalleryItemType.IMAGE -> getImageInfo(file)
             GalleryItemType.VIDEO -> getVideoInfo(file)
         }
     }
-
-
-
 
     private fun getImageInfo(file: File): MediaInfo {
         val options = BitmapFactory.Options().apply {
@@ -352,9 +277,6 @@ object MediaStorage {
             duration = 0
         )
     }
-
-
-
 
     private fun getVideoInfo(file: File): MediaInfo {
         val retriever = MediaMetadataRetriever()
@@ -378,11 +300,6 @@ object MediaStorage {
         }
     }
 
-
-
-
-
-
     private fun getExtensionFromUri(
         context: Context,
         uri: Uri,
@@ -405,15 +322,11 @@ object MediaStorage {
             }
         }
 
-
         return extension ?: when (type) {
             GalleryItemType.IMAGE -> "jpg"
             GalleryItemType.VIDEO -> "mp4"
         }
     }
-
-
-
 
     private fun getDisplayNameFromUri(context: Context, uri: Uri): String {
 
@@ -434,28 +347,18 @@ object MediaStorage {
             }
         }
 
-
         return uri.lastPathSegment?.substringBeforeLast(".") ?: "Media"
     }
-
-
-
 
     fun isVideoUri(context: Context, uri: Uri): Boolean {
         val mimeType = context.contentResolver.getType(uri)
         return mimeType?.startsWith("video/") == true
     }
 
-
-
-
     fun isImageUri(context: Context, uri: Uri): Boolean {
         val mimeType = context.contentResolver.getType(uri)
         return mimeType?.startsWith("image/") == true
     }
-
-
-
 
     fun getMediaType(context: Context, uri: Uri): GalleryItemType? {
         return when {
@@ -465,17 +368,11 @@ object MediaStorage {
         }
     }
 
-
-
-
     fun clearAllGalleryFiles(context: Context) {
         getGalleryDir(context).deleteRecursively()
         getThumbnailDir(context).deleteRecursively()
     }
 }
-
-
-
 
 data class SavedMediaInfo(
     val path: String,
@@ -485,9 +382,6 @@ data class SavedMediaInfo(
     val duration: Long,
     val fileSize: Long
 )
-
-
-
 
 private data class MediaInfo(
     val width: Int,

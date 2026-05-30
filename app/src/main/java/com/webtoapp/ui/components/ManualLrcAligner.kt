@@ -40,10 +40,6 @@ import com.webtoapp.util.BgmStorage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManualLrcAlignerDialog(
@@ -55,24 +51,19 @@ fun ManualLrcAlignerDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-
     var currentStep by remember { mutableIntStateOf(if (existingLrc != null) 2 else 1) }
-
 
     var lyricsText by remember {
         mutableStateOf(existingLrc?.lines?.joinToString("\n") { it.text } ?: "")
     }
 
-
     var lyricLines by remember {
         mutableStateOf<List<String>>(existingLrc?.lines?.map { it.text } ?: emptyList())
     }
 
-
     var timestamps by remember {
         mutableStateOf<List<Long>>(existingLrc?.lines?.map { it.startTime } ?: emptyList())
     }
-
 
     var alignedIndices by remember {
         mutableStateOf<Set<Int>>(
@@ -80,14 +71,11 @@ fun ManualLrcAlignerDialog(
         )
     }
 
-
     var currentAlignIndex by remember { mutableIntStateOf(0) }
-
 
     data class AlignState(val timestamps: List<Long>, val currentIndex: Int, val aligned: Set<Int>)
     var historyStack by remember { mutableStateOf(listOf<AlignState>()) }
     var historyIndex by remember { mutableIntStateOf(-1) }
-
 
     fun saveToHistory() {
         val newState = AlignState(timestamps.toList(), currentAlignIndex, alignedIndices.toSet())
@@ -101,7 +89,6 @@ fun ManualLrcAlignerDialog(
         historyIndex = historyStack.size - 1
     }
 
-
     fun undo() {
         if (historyIndex > 0) {
             historyIndex--
@@ -111,7 +98,6 @@ fun ManualLrcAlignerDialog(
             alignedIndices = state.aligned
         }
     }
-
 
     fun redo() {
         if (historyIndex < historyStack.size - 1) {
@@ -123,15 +109,12 @@ fun ManualLrcAlignerDialog(
         }
     }
 
-
     var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
     var isPlaying by remember { mutableStateOf(false) }
     var currentPosition by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
 
-
     val listState = rememberLazyListState()
-
 
     LaunchedEffect(bgm.path) {
         try {
@@ -152,7 +135,6 @@ fun ManualLrcAlignerDialog(
         }
     }
 
-
     LaunchedEffect(isPlaying) {
         while (isPlaying) {
             mediaPlayer?.let { mp ->
@@ -164,14 +146,12 @@ fun ManualLrcAlignerDialog(
         }
     }
 
-
     DisposableEffect(Unit) {
         onDispose {
             mediaPlayer?.release()
             mediaPlayer = null
         }
     }
-
 
     fun formatTime(ms: Long): String {
         val totalSeconds = ms / 1000
@@ -180,7 +160,6 @@ fun ManualLrcAlignerDialog(
         val millis = (ms % 1000) / 10
         return "%02d:%02d.%02d".format(minutes, seconds, millis)
     }
-
 
     fun onAlignClick() {
         if (currentAlignIndex < lyricLines.size) {
@@ -197,7 +176,6 @@ fun ManualLrcAlignerDialog(
 
             alignedIndices = alignedIndices + currentAlignIndex
 
-
             if (currentAlignIndex < lyricLines.size - 1) {
                 currentAlignIndex++
 
@@ -206,11 +184,9 @@ fun ManualLrcAlignerDialog(
                 }
             }
 
-
             saveToHistory()
         }
     }
-
 
     fun buildLrcData(): LrcData {
         val lines = lyricLines.mapIndexed { index, text ->
@@ -291,7 +267,6 @@ fun ManualLrcAlignerDialog(
                             }
                         }
 
-
                         when (currentStep) {
                             1 -> {
                                 val lineCount = lyricsText.lines().filter { it.trim().isNotEmpty() }.size
@@ -345,7 +320,6 @@ fun ManualLrcAlignerDialog(
                     }
                 )
 
-
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -379,7 +353,6 @@ fun ManualLrcAlignerDialog(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-
 
                 when (currentStep) {
                     1 -> {
@@ -487,9 +460,6 @@ fun ManualLrcAlignerDialog(
     }
 }
 
-
-
-
 @Composable
 private fun LyricsInputStep(
     lyricsText: String,
@@ -504,7 +474,6 @@ private fun LyricsInputStep(
         )
 
         Spacer(modifier = Modifier.height(8.dp))
-
 
         OutlinedTextField(
             value = lyricsText,
@@ -523,7 +492,6 @@ private fun LyricsInputStep(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-
         val lineCount = lyricsText.lines().filter { it.trim().isNotEmpty() }.size
         Text(
             com.webtoapp.core.i18n.Strings.totalLinesCount.format(lineCount),
@@ -534,9 +502,6 @@ private fun LyricsInputStep(
         Spacer(modifier = Modifier.height(8.dp))
     }
 }
-
-
-
 
 @Composable
 private fun AlignmentStep(
@@ -571,7 +536,6 @@ private fun AlignmentStep(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-
         val scope = rememberCoroutineScope()
         var playingLineIndex by remember { mutableIntStateOf(-1) }
 
@@ -595,7 +559,6 @@ private fun AlignmentStep(
                 }
             }
         }
-
 
         LazyColumn(
             state = listState,
@@ -625,7 +588,6 @@ private fun AlignmentStep(
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -658,7 +620,6 @@ private fun AlignmentStep(
                     )
                 }
 
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
@@ -679,11 +640,9 @@ private fun AlignmentStep(
                         )
                     }
 
-
                     IconButton(onClick = onRewind) {
                         Icon(Icons.Default.Replay, com.webtoapp.core.i18n.Strings.rewind3s)
                     }
-
 
                     FilledIconButton(
                         onClick = onPlay,
@@ -695,7 +654,6 @@ private fun AlignmentStep(
                             modifier = Modifier.size(28.dp)
                         )
                     }
-
 
                     val buttonScale by animateFloatAsState(
                         targetValue = if (isPlaying) 1.1f else 1f,
@@ -727,7 +685,6 @@ private fun AlignmentStep(
                         Text(com.webtoapp.core.i18n.Strings.tap, fontWeight = FontWeight.SemiBold)
                     }
 
-
                     val currentTimestamp = timestamps.getOrElse(currentAlignIndex) { 0L }
                     IconButton(
                         onClick = { onEditTimestamp(currentAlignIndex, 0L) },
@@ -743,7 +700,6 @@ private fun AlignmentStep(
                         )
                     }
 
-
                     IconButton(
                         onClick = onRedo,
                         enabled = canRedo
@@ -758,7 +714,6 @@ private fun AlignmentStep(
                         )
                     }
                 }
-
 
                 Spacer(modifier = Modifier.height(4.dp))
                 LinearProgressIndicator(
@@ -777,9 +732,6 @@ private fun AlignmentStep(
         Spacer(modifier = Modifier.height(8.dp))
     }
 }
-
-
-
 
 @Composable
 private fun AlignmentLineItem(
@@ -822,7 +774,6 @@ private fun AlignmentLineItem(
                 modifier = Modifier.width(24.dp)
             )
 
-
             Surface(
                 shape = RoundedCornerShape(4.dp),
                 color = if (isAligned)
@@ -843,7 +794,6 @@ private fun AlignmentLineItem(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-
             Text(
                 line,
                 style = MaterialTheme.typography.bodyMedium,
@@ -857,7 +807,6 @@ private fun AlignmentLineItem(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(weight = 1f, fill = true)
             )
-
 
             when {
                 isPlayingLine -> {
@@ -889,9 +838,6 @@ private fun AlignmentLineItem(
     }
 }
 
-
-
-
 @Composable
 private fun PreviewStep(
     lrcData: LrcData,
@@ -907,9 +853,7 @@ private fun PreviewStep(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-
     var currentLineIndex by remember { mutableIntStateOf(-1) }
-
 
     LaunchedEffect(currentPosition) {
         val newIndex = lrcData.lines.indexOfLast { it.startTime <= currentPosition }
@@ -929,7 +873,6 @@ private fun PreviewStep(
         )
 
         Spacer(modifier = Modifier.height(8.dp))
-
 
         LazyColumn(
             state = listState,
@@ -963,7 +906,6 @@ private fun PreviewStep(
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-
 
         Card(
             modifier = Modifier.fillMaxWidth(),

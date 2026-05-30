@@ -7,15 +7,15 @@ import com.google.gson.annotations.SerializedName
 import java.io.InputStream
 import javax.crypto.SecretKey
 
-
-
-
-
 class AssetDecryptor(private val context: Context) {
 
     companion object {
         private const val TAG = "AssetDecryptor"
         private const val ENCRYPTION_META_FILE = "encryption_meta.json"
+
+        private val sharedPasswordLock = Any()
+        @Volatile
+        private var sharedCustomPassword: String? = null
     }
 
     private val gson = com.webtoapp.util.GsonProvider.gson
@@ -25,32 +25,20 @@ class AssetDecryptor(private val context: Context) {
     @Volatile
     private var cachedMetadata: EncryptionMetadataRuntime? = null
 
-
-    @Volatile
-    private var customPassword: String? = null
-
-
-
-
-
+    private val customPassword: String?
+        get() = sharedCustomPassword
 
     fun setCustomPassword(password: String?) {
-        customPassword = password
+        synchronized(sharedPasswordLock) {
+            sharedCustomPassword = password
+        }
         cachedKey = null
     }
-
-
-
 
     fun requiresCustomPassword(): Boolean {
         val metadata = loadEncryptionMetadata()
         return metadata?.usesCustomPassword == true && customPassword.isNullOrBlank()
     }
-
-
-
-
-
 
     private fun getKey(): SecretKey {
         cachedKey?.let { return it }
@@ -61,12 +49,9 @@ class AssetDecryptor(private val context: Context) {
             val key = try {
                 val metadata = loadEncryptionMetadata()
 
-
                 if (metadata?.usesCustomPassword == true && customPassword.isNullOrBlank()) {
                     throw CryptoException(Strings.cryptoCustomPasswordRequired)
                 }
-
-
 
                 if (metadata != null && metadata.signatureHash.isNotBlank()) {
 
@@ -96,9 +81,6 @@ class AssetDecryptor(private val context: Context) {
         }
     }
 
-
-
-
     private fun loadEncryptionMetadata(): EncryptionMetadataRuntime? {
         cachedMetadata?.let { return it }
 
@@ -116,9 +98,6 @@ class AssetDecryptor(private val context: Context) {
         }
     }
 
-
-
-
     private fun String.hexToByteArray(): ByteArray {
         if (length % 2 != 0) {
             AppLogger.w(TAG, "十六进制字符串长度不是偶数: $length")
@@ -132,19 +111,12 @@ class AssetDecryptor(private val context: Context) {
         }
     }
 
-
-
-
-
-
-
     fun decrypt(encryptedData: ByteArray): ByteArray {
         return try {
 
             val (assetPath, encrypted) = parseEncryptedAsset(encryptedData)
 
             AppLogger.d(TAG, "解密资源: $assetPath")
-
 
             val decrypted = AesCryptoEngine.decryptWithKey(
                 encryptedPackage = encrypted,
@@ -163,23 +135,13 @@ class AssetDecryptor(private val context: Context) {
         }
     }
 
-
-
-
     fun decryptToString(encryptedData: ByteArray): String {
         return String(decrypt(encryptedData), Charsets.UTF_8)
     }
 
-
-
-
-
-
-
     fun loadAsset(assetPath: String): ByteArray {
 
         val encryptedPath = assetPath + CryptoConstants.ENCRYPTED_EXTENSION
-
 
         val hasEncrypted = try {
             context.assets.open(encryptedPath).close()
@@ -213,41 +175,31 @@ class AssetDecryptor(private val context: Context) {
             }
         }
 
-
         AppLogger.d(TAG, "加载原始资源: $assetPath")
         return loadOriginalAsset(assetPath)
     }
 
-
-
-
     private fun loadOriginalAsset(assetPath: String): ByteArray {
         return try {
             context.assets.open(assetPath).use { it.readBytes() }
+        } catch (e: java.io.FileNotFoundException) {
+
+            AppLogger.d(TAG, "Resource not found: $assetPath")
+            throw CryptoException("Resource not found: $assetPath", e)
         } catch (e: Exception) {
-            AppLogger.e(TAG, "Resource not found: $assetPath", e)
+            AppLogger.e(TAG, "Failed to load asset: $assetPath", e)
             throw CryptoException("Resource not found: $assetPath", e)
         }
     }
-
-
-
 
     fun loadAssetAsString(assetPath: String): String {
         return String(loadAsset(assetPath), Charsets.UTF_8)
     }
 
-
-
-
-
     fun openAsset(assetPath: String): InputStream {
         val data = loadAsset(assetPath)
         return data.inputStream()
     }
-
-
-
 
     fun assetExists(assetPath: String): Boolean {
         return try {
@@ -263,9 +215,6 @@ class AssetDecryptor(private val context: Context) {
         }
     }
 
-
-
-
     fun isEncrypted(assetPath: String): Boolean {
         return try {
             context.assets.open(assetPath + CryptoConstants.ENCRYPTED_EXTENSION).close()
@@ -275,15 +224,10 @@ class AssetDecryptor(private val context: Context) {
         }
     }
 
-
-
-
-
     private fun parseEncryptedAsset(data: ByteArray): Pair<String, ByteArray> {
         if (data.size < 4) {
             throw CryptoException("加密数据太短")
         }
-
 
         val pathLength = ((data[0].toInt() and 0xFF) shl 24) or
                 ((data[1].toInt() and 0xFF) shl 16) or
@@ -298,18 +242,13 @@ class AssetDecryptor(private val context: Context) {
             throw CryptoException("加密数据不完整")
         }
 
-
         val pathBytes = data.copyOfRange(4, 4 + pathLength)
         val assetPath = String(pathBytes, Charsets.UTF_8)
-
 
         val encryptedData = data.copyOfRange(4 + pathLength, data.size)
 
         return assetPath to encryptedData
     }
-
-
-
 
     fun clearCache() {
         cachedKey = null
@@ -318,9 +257,6 @@ class AssetDecryptor(private val context: Context) {
     }
 }
 
-
-
-
 data class EncryptionMetadataRuntime(
     @SerializedName("version")
     val version: Int = 1,
@@ -328,10 +264,8 @@ data class EncryptionMetadataRuntime(
     @SerializedName("packageName")
     val packageName: String = "",
 
-
     @SerializedName("signatureHash")
     val signatureHash: String = "",
-
 
     @SerializedName("usesCustomPassword")
     val usesCustomPassword: Boolean = false

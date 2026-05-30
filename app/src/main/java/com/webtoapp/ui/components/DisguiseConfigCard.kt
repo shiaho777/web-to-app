@@ -21,18 +21,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.webtoapp.core.disguise.DisguiseConfig
-import com.webtoapp.core.disguise.DisguiseConfig.IconStormMode
+import com.webtoapp.core.appearance.DisguiseConfig
+import com.webtoapp.core.appearance.DisguiseConfig.IconStormMode
 import com.webtoapp.core.i18n.Strings
-
-
-
-
-
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +33,6 @@ fun DisguiseConfigCard(
 ) {
     var expanded by remember { mutableStateOf(config?.enabled == true) }
     var enabled by remember(config) { mutableStateOf(config?.enabled ?: false) }
-
 
     var multiLauncherIcons by remember(config) { mutableIntStateOf(config?.multiLauncherIcons ?: 1) }
     var iconStormMode by remember(config) { mutableStateOf(config?.iconStormMode ?: IconStormMode.NORMAL) }
@@ -62,7 +52,6 @@ fun DisguiseConfigCard(
             ))
         }
     }
-
 
     val impactLevel = DisguiseConfig.assessImpactLevel(multiLauncherIcons)
     val impactColor by animateColorAsState(
@@ -170,13 +159,11 @@ fun DisguiseConfigCard(
                             HorizontalDivider()
                             Spacer(modifier = Modifier.height(16.dp))
 
-
                             Text(
                                 Strings.iconStormMode,
                                 style = MaterialTheme.typography.titleSmall,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
-
 
                             val modes = IconStormMode.entries.toList()
                             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -251,7 +238,6 @@ fun DisguiseConfigCard(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-
                             Text(
                                 Strings.disguiseIconCountTitle,
                                 style = MaterialTheme.typography.titleSmall,
@@ -263,7 +249,6 @@ fun DisguiseConfigCard(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
-
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -298,7 +283,6 @@ fun DisguiseConfigCard(
                                 )
                             }
 
-
                             Spacer(modifier = Modifier.height(12.dp))
                             ImpactDashboard(
                                 count = multiLauncherIcons,
@@ -306,9 +290,7 @@ fun DisguiseConfigCard(
                                 impactColor = impactColor
                             )
 
-
                             Spacer(modifier = Modifier.height(12.dp))
-
 
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -335,7 +317,6 @@ fun DisguiseConfigCard(
                                 )
                             }
 
-
                             AnimatedVisibility(visible = !randomizeNames) {
                                 Column(modifier = Modifier.padding(top = 8.dp)) {
                                     PremiumTextField(
@@ -351,7 +332,6 @@ fun DisguiseConfigCard(
                                     )
                                 }
                             }
-
 
                             Spacer(modifier = Modifier.height(12.dp))
                             Surface(
@@ -376,7 +356,6 @@ fun DisguiseConfigCard(
                                     )
                                 }
                             }
-
 
                             AnimatedVisibility(visible = impactLevel >= 3) {
                                 Column {
@@ -412,9 +391,6 @@ fun DisguiseConfigCard(
         }
     }
 }
-
-
-
 
 @Composable
 private fun IconStormModeChip(
@@ -463,9 +439,6 @@ private fun IconStormModeChip(
         }
     }
 }
-
-
-
 
 @Composable
 private fun ImpactDashboard(
@@ -519,7 +492,6 @@ private fun ImpactDashboard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -551,7 +523,6 @@ private fun ImpactDashboard(
                     )
                 }
             }
-
 
             Spacer(modifier = Modifier.height(4.dp))
             Text(

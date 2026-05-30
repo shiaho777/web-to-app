@@ -5,18 +5,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
-
-
-
-
-
-
-
-
 object SvgIconMapper {
-
-
-
 
     fun getIcon(iconId: String): ImageVector = when (iconId) {
 
@@ -26,7 +15,6 @@ object SvgIconMapper {
         "clipboard", "📋"     -> Icons.Outlined.Assignment
         "search", "🔍", "🔎"  -> Icons.Outlined.Search
         "settings"            -> Icons.Outlined.Settings
-
 
         "code", "📝"          -> Icons.Outlined.Code
         "book", "📖"          -> Icons.Outlined.MenuBook
@@ -38,20 +26,17 @@ object SvgIconMapper {
         "keyboard", "⌨️"     -> Icons.Outlined.Keyboard
         "mouse", "🖱️"        -> Icons.Outlined.Mouse
 
-
         "globe", "🌐"         -> Icons.Outlined.Language
         "antenna", "📡"       -> Icons.Outlined.SettingsInputAntenna
         "wifi"                -> Icons.Outlined.Wifi
         "cloud"               -> Icons.Outlined.Cloud
         "link", "🔗"          -> Icons.Outlined.Link
 
-
         "shield", "🛡️"       -> Icons.Outlined.Shield
         "lock", "🔒"          -> Icons.Outlined.Lock
         "key"                 -> Icons.Outlined.Key
         "warning", "⚠️"      -> Icons.Outlined.Warning
         "block", "🚫"         -> Icons.Outlined.Block
-
 
         "robot", "🤖"         -> Icons.Outlined.SmartToy
         "smart_toy"           -> Icons.Outlined.SmartToy
@@ -66,13 +51,11 @@ object SvgIconMapper {
         "cat", "🐱"           -> Icons.Outlined.Pets
         "help", "❓"          -> Icons.Outlined.Help
 
-
         "priority_high", "🔴" -> Icons.Filled.Circle
         "priority_medium", "🟡" -> Icons.Filled.Circle
         "priority_low", "🟢"  -> Icons.Filled.Circle
         "error"               -> Icons.Outlined.Error
         "check", "✅"         -> Icons.Outlined.CheckCircle
-
 
         "play", "▶"           -> Icons.Filled.PlayArrow
         "pause", "⏸"         -> Icons.Filled.Pause
@@ -81,7 +64,6 @@ object SvgIconMapper {
         "movie", "🎬"         -> Icons.Outlined.Movie
         "image", "🖼️"        -> Icons.Outlined.Image
         "volume", "🔊"        -> Icons.Outlined.VolumeUp
-
 
         "dark_mode", "🌙"     -> Icons.Outlined.DarkMode
         "font_download", "🔤" -> Icons.Outlined.FontDownload
@@ -93,7 +75,6 @@ object SvgIconMapper {
         "analytics", "📊"     -> Icons.Outlined.Analytics
         "notifications_off", "🔕" -> Icons.Outlined.NotificationsOff
         "cookie", "🍪"        -> Icons.Outlined.Cookie
-
 
         "star", "⭐"          -> Icons.Outlined.Star
         "heart", "❤️"         -> Icons.Outlined.Favorite
@@ -110,18 +91,15 @@ object SvgIconMapper {
         "eco", "🌿"           -> Icons.Outlined.Spa
         "cocktail", "🍸"      -> Icons.Outlined.LocalBar
 
-
         "python", "🐍"        -> Icons.Outlined.Code
         "php", "🐘"           -> Icons.Outlined.Storage
         "golang", "🔷"        -> Icons.Outlined.Hexagon
         "nodejs", "node"      -> Icons.Outlined.Javascript
         "html"                -> Icons.Outlined.Html
 
-
         "leaf", "🍃"          -> Icons.Outlined.Spa
         "flower", "🌸", "🌱"  -> Icons.Outlined.LocalFlorist
         "nature"              -> Icons.Outlined.Nature
-
 
         "chat", "💬"          -> Icons.Outlined.Chat
         "info"                -> Icons.Outlined.Info
@@ -173,7 +151,6 @@ object SvgIconMapper {
         "edit_note", "📝"    -> Icons.Outlined.EditNote
         "build", "🩹"        -> Icons.Outlined.Build
 
-
         "tv", "📺"            -> Icons.Outlined.Tv
         "menu_book", "📕"     -> Icons.Outlined.MenuBook
         "check_circle"        -> Icons.Outlined.CheckCircle
@@ -195,12 +172,8 @@ object SvgIconMapper {
         "bolt"                -> Icons.Outlined.Bolt
         "package"             -> Icons.Outlined.Inventory2
 
-
         else                  -> Icons.Outlined.HelpOutline
     }
-
-
-
 
     fun getFilledIcon(iconId: String): ImageVector = when (iconId) {
         "package", "📦"       -> Icons.Filled.Inventory2
@@ -216,10 +189,6 @@ object SvgIconMapper {
         "pause", "⏸"         -> Icons.Filled.Pause
         else                  -> getIcon(iconId)
     }
-
-
-
-
 
     fun normalizeIconId(emojiOrId: String): String = when (emojiOrId) {
         "📦" -> "package"
@@ -303,9 +272,6 @@ object SvgIconMapper {
         "📢" -> "campaign"
         else -> emojiOrId
     }
-
-
-
 
     fun isEmoji(value: String): Boolean {
         return value.isNotBlank() && value.any { it.code > 127 }

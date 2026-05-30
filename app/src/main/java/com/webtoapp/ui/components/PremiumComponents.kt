@@ -31,19 +31,6 @@ import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.rememberHapticClick
 import com.webtoapp.ui.design.wtaPressScale
 
-/**
- * Legacy name aliases over the Wta design system primitives. These are not
- * deprecated in the usual "please migrate away" sense any more - they have
- * fully converged onto Wta internals so keeping them is cost-free. The
- * original flexible Material-style API is preserved so older screens that
- * compose their own slot content (icons + text, complex labels, labeled text
- * fields) do not need to be touched.
- *
- * Prefer [com.webtoapp.ui.design.WtaTextField], [com.webtoapp.ui.design.WtaButton]
- * and [com.webtoapp.ui.design.WtaChip] in new code where their more opinionated
- * APIs simplify the call site.
- */
-
 @Composable
 fun PremiumTextField(
     value: String,
@@ -106,9 +93,7 @@ fun PremiumFilterChip(
     enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)? = null,
 ) {
-    // WtaChip's strongly-typed leadingIcon takes an ImageVector but callers
-    // here supply a composable slot. Rather than drop the icon (a regression)
-    // we inline it inside the label so it still renders inline with the text.
+
     WtaChip(
         selected = selected,
         onClick = onClick,

@@ -6,7 +6,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -36,19 +38,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
 import java.io.File
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreateGoAppScreen(
@@ -65,10 +54,8 @@ fun CreateGoAppScreen(
     val scope = rememberCoroutineScope()
     val isEdit = existingAppId > 0L
 
-
     var appName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
-
 
     var binaryName by remember { mutableStateOf("") }
     var staticDir by remember { mutableStateOf("") }
@@ -77,32 +64,39 @@ fun CreateGoAppScreen(
     var newEnvKey by remember { mutableStateOf("") }
     var newEnvValue by remember { mutableStateOf("") }
 
-
     var selectedProjectDir by remember { mutableStateOf<String?>(null) }
     var detectedFramework by remember { mutableStateOf<String?>(null) }
     var projectId by remember { mutableStateOf<String?>(null) }
-
 
     var goModulePath by remember { mutableStateOf<String?>(null) }
     var goVersion by remember { mutableStateOf<String?>(null) }
     var goDeps by remember { mutableStateOf<List<Pair<String, String>>>(emptyList()) }
     var showAllDeps by remember { mutableStateOf(false) }
 
-
     var binarySize by remember { mutableStateOf<Long?>(null) }
     var binaryDetected by remember { mutableStateOf(false) }
 
+    var goToolchainReady by remember {
+        mutableStateOf(com.webtoapp.core.golang.GoDependencyManager.isGoToolchainReady(context))
+    }
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                goToolchainReady = com.webtoapp.core.golang.GoDependencyManager.isGoToolchainReady(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     var targetArch by remember { mutableStateOf("arm64") }
 
-
     var healthCheckEndpoint by remember { mutableStateOf("/health") }
-
 
     var isCreating by remember { mutableStateOf(false) }
     var creationPhase by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-
 
     LaunchedEffect(existingAppId) {
         if (existingAppId > 0L) {
@@ -118,7 +112,8 @@ fun CreateGoAppScreen(
                     envVars = config.envVars.toMutableMap()
                     detectedFramework = config.framework
                     projectId = config.projectId
-                    selectedProjectDir = config.projectName
+
+                    selectedProjectDir = GoRuntime(context).getProjectDir(config.projectId).absolutePath
                     targetArch = config.targetArch
                     binaryDetected = config.binaryName.isNotBlank()
                 }
@@ -163,7 +158,6 @@ fun CreateGoAppScreen(
                         val framework = runtime.detectFramework(projectDir)
                         detectedFramework = framework
 
-
                         val detectedBinary = runtime.detectBinary(projectDir)
                         if (detectedBinary != null) {
                             binaryName = detectedBinary
@@ -179,12 +173,10 @@ fun CreateGoAppScreen(
                             }
                         }
 
-
                         val detectedStaticDir = runtime.detectStaticDir(projectDir)
                         if (detectedStaticDir.isNotEmpty()) {
                             staticDir = detectedStaticDir
                         }
-
 
                         val goMod = File(projectDir, "go.mod")
                         if (goMod.exists()) {
@@ -192,17 +184,14 @@ fun CreateGoAppScreen(
                                 val content = goMod.readText()
                                 val lines = content.lines()
 
-
                                 lines.firstOrNull { it.startsWith("module ") }?.let { line ->
                                     goModulePath = line.substringAfter("module ").trim()
                                     if (appName.isBlank()) appName = goModulePath!!.substringAfterLast("/")
                                 }
 
-
                                 lines.firstOrNull { it.startsWith("go ") }?.let { line ->
                                     goVersion = line.substringAfter("go ").trim()
                                 }
-
 
                                 var inRequire = false
                                 val deps = mutableListOf<Pair<String, String>>()
@@ -236,7 +225,6 @@ fun CreateGoAppScreen(
                             } catch (e: Exception) { android.util.Log.w("CreateGoApp", "Failed to parse go.mod", e) }
                         }
 
-
                         creationPhase = Strings.copyingProjectFiles
                         val newProjectId = java.util.UUID.randomUUID().toString()
                         runtime.createProject(newProjectId, projectDir)
@@ -253,7 +241,6 @@ fun CreateGoAppScreen(
     }
 
     val canCreate = projectId != null
-
 
     val accentColor = MaterialTheme.colorScheme.onSurface
 
@@ -299,7 +286,6 @@ fun CreateGoAppScreen(
                 goVersion = goVersion
             )
 
-
             if (selectedProjectDir == null) {
                 TypedSampleProjectsCard(
                     title = Strings.sampleProjects,
@@ -340,7 +326,6 @@ fun CreateGoAppScreen(
                 )
             }
 
-
             if (!isEdit) {
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -359,13 +344,11 @@ fun CreateGoAppScreen(
                 }
             }
 
-
             RuntimeIconPickerCard(
                 appIcon = appIcon,
                 onSelectIcon = { iconPickerLauncher.launch("image/*") }
             )
             }
-
 
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -431,10 +414,8 @@ fun CreateGoAppScreen(
             }
             }
 
-
             WtaCreateFlowSection(title = Strings.appConfig) {
             if (projectId != null) {
-
 
                 if (goModulePath != null) {
                     GoModuleInfoCard(
@@ -445,15 +426,30 @@ fun CreateGoAppScreen(
                     )
                 }
 
-
                 GoBinaryDetectionCard(
                     binaryDetected = binaryDetected,
                     binaryName = binaryName,
                     binarySize = binarySize,
                     onBinaryNameChange = { binaryName = it },
-                    accentColor = accentColor
+                    accentColor = accentColor,
+
+                    toolchainReady = goToolchainReady,
                 )
 
+                if (selectedProjectDir != null) {
+                    GoBuildInAppCard(
+                        projectDir = selectedProjectDir!!,
+                        binaryName = binaryName,
+                        appName = appName,
+                        accentColor = accentColor,
+                        toolchainReady = goToolchainReady,
+                        onBuildComplete = { newBinaryName, newBinarySize ->
+                            binaryName = newBinaryName
+                            binarySize = newBinarySize
+                            binaryDetected = true
+                        }
+                    )
+                }
 
                 GoTargetArchCard(
                     targetArch = targetArch,
@@ -461,18 +457,15 @@ fun CreateGoAppScreen(
                     accentColor = accentColor
                 )
 
-
                 GoStaticFilesCard(
                     staticDir = staticDir,
                     onStaticDirChange = { staticDir = it }
                 )
 
-
                 GoHealthCheckCard(
                     endpoint = healthCheckEndpoint,
                     onEndpointChange = { healthCheckEndpoint = it }
                 )
-
 
                 if (goDeps.isNotEmpty()) {
                     GoDepsCard(
@@ -483,9 +476,7 @@ fun CreateGoAppScreen(
                     )
                 }
 
-
                 GoFrameworkTipCard(framework = detectedFramework)
-
 
                 RuntimeEnvVarsCard(
                     envVars = envVars,
@@ -504,14 +495,15 @@ fun CreateGoAppScreen(
             }
             }
 
+            if (isCreating || errorMessage != null) {
+                WtaCreateFlowSection(title = Strings.preview) {
+                    if (isCreating) {
+                        RuntimeLoadingCard(creationPhase)
+                    }
 
-            WtaCreateFlowSection(title = Strings.preview) {
-                if (isCreating) {
-                    RuntimeLoadingCard(creationPhase)
-                }
-
-                errorMessage?.let { error ->
-                    RuntimeErrorCard(error = error, onDismiss = { errorMessage = null })
+                    errorMessage?.let { error ->
+                        RuntimeErrorCard(error = error, onDismiss = { errorMessage = null })
+                    }
                 }
             }
 
@@ -519,11 +511,6 @@ fun CreateGoAppScreen(
         }
     }
 }
-
-
-
-
-
 
 @Composable
 private fun GoHeroSection(
@@ -547,9 +534,6 @@ private fun GoHeroSection(
         tags = tags
     )
 }
-
-
-
 
 @Composable
 private fun GoModuleInfoCard(
@@ -604,17 +588,18 @@ private fun GoModuleInfoCard(
     }
 }
 
-
-
-
 @Composable
 private fun GoBinaryDetectionCard(
     binaryDetected: Boolean,
     binaryName: String,
     binarySize: Long?,
     onBinaryNameChange: (String) -> Unit,
-    accentColor: Color
+    accentColor: Color,
+    toolchainReady: Boolean,
 ) {
+
+    val showManualPrompt = !binaryDetected && !toolchainReady
+
     EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             RuntimeSectionHeader(
@@ -623,26 +608,51 @@ private fun GoBinaryDetectionCard(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
+            val containerColor = when {
+                binaryDetected -> accentColor.copy(alpha = 0.06f)
+                toolchainReady -> accentColor.copy(alpha = 0.04f)
+                else -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+            }
+            val iconTint = when {
+                binaryDetected -> accentColor
+                toolchainReady -> MaterialTheme.colorScheme.onSurfaceVariant
+                else -> MaterialTheme.colorScheme.error
+            }
+            val statusText = when {
+                binaryDetected -> Strings.goBinaryFound
+                toolchainReady -> Strings.goBinaryPendingBuild
+                else -> Strings.goBinaryNotFound
+            }
+            val statusTextColor = when {
+                binaryDetected -> accentColor
+                toolchainReady -> MaterialTheme.colorScheme.onSurface
+                else -> MaterialTheme.colorScheme.error
+            }
+            val statusIcon = when {
+                binaryDetected -> Icons.Outlined.CheckCircle
+                toolchainReady -> Icons.Outlined.Build
+                else -> Icons.Outlined.Warning
+            }
+
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
-                color = if (binaryDetected) accentColor.copy(alpha = 0.06f)
-                else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                color = containerColor
             ) {
                 Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        if (binaryDetected) Icons.Outlined.CheckCircle else Icons.Outlined.Warning,
+                        statusIcon,
                         null,
-                        tint = if (binaryDetected) accentColor else MaterialTheme.colorScheme.error,
+                        tint = iconTint,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                         Text(
-                            if (binaryDetected) Strings.goBinaryFound else Strings.goBinaryNotFound,
+                            statusText,
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = if (binaryDetected) accentColor else MaterialTheme.colorScheme.error
+                            color = statusTextColor
                         )
                         if (binaryDetected && binarySize != null) {
                             Text(
@@ -651,24 +661,31 @@ private fun GoBinaryDetectionCard(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                        if (binaryDetected && binaryName.isNotBlank()) {
+                            Text(
+                                binaryName,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            PremiumTextField(
-                value = binaryName,
-                onValueChange = onBinaryNameChange,
-                label = { Text(Strings.goSelectBinary) },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            if (showManualPrompt) {
+                Spacer(modifier = Modifier.height(8.dp))
+                PremiumTextField(
+                    value = binaryName,
+                    onValueChange = onBinaryNameChange,
+                    label = { Text(Strings.goSelectBinary) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+            }
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -710,9 +727,6 @@ private fun GoTargetArchCard(
     }
 }
 
-
-
-
 @Composable
 private fun GoStaticFilesCard(
     staticDir: String,
@@ -743,9 +757,6 @@ private fun GoStaticFilesCard(
     }
 }
 
-
-
-
 @Composable
 private fun GoHealthCheckCard(
     endpoint: String,
@@ -769,9 +780,6 @@ private fun GoHealthCheckCard(
         }
     }
 }
-
-
-
 
 @Composable
 private fun GoDepsCard(
@@ -834,9 +842,6 @@ private fun GoDepsCard(
     }
 }
 
-
-
-
 @Composable
 private fun GoFrameworkTipCard(framework: String?) {
     data class Tip(val tip: String, val color: Color)
@@ -876,13 +881,203 @@ private fun GoFrameworkTipCard(framework: String?) {
     }
 }
 
-
-
-
 private fun formatFileSize(bytes: Long): String {
     return when {
         bytes >= 1024 * 1024 -> String.format(java.util.Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024.0))
         bytes >= 1024 -> String.format(java.util.Locale.getDefault(), "%.1f KB", bytes / 1024.0)
         else -> "$bytes B"
     }
+}
+
+@Composable
+private fun GoBuildInAppCard(
+    projectDir: String,
+    binaryName: String,
+    appName: String,
+    accentColor: Color,
+    toolchainReady: Boolean,
+    onBuildComplete: (newBinaryName: String, newBinarySize: Long) -> Unit,
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    var building by remember { mutableStateOf(false) }
+    val buildLog = remember { androidx.compose.runtime.mutableStateListOf<String>() }
+    var lastResult by remember { mutableStateOf<Pair<Boolean, String?>?>(null) }
+
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            RuntimeSectionHeader(
+                icon = Icons.Outlined.Build,
+                title = Strings.goBuildInAppTitle
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = Strings.goBuildInAppDesc,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (!toolchainReady) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Outlined.Warning, null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = Strings.goBuildToolchainNotReady,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+            } else {
+                PremiumButton(
+                    onClick = {
+                        if (building) return@PremiumButton
+                        building = true
+                        buildLog.clear()
+                        lastResult = null
+                        scope.launch {
+                            val projDir = File(projectDir)
+
+                            val rawCandidate = binaryName.ifBlank { appName }.ifBlank { projDir.name }
+                            val targetName = sanitizeGoBinaryName(rawCandidate)
+                            val produced = withContext(Dispatchers.IO) {
+                                com.webtoapp.core.golang.GoBuildEnvironment.buildProject(
+                                    context = context,
+                                    projectDir = projDir,
+                                    binaryName = targetName,
+                                    onOutput = { line ->
+
+                                        scope.launch(Dispatchers.Main.immediate) {
+                                            if (buildLog.size > 200) buildLog.removeAt(0)
+                                            buildLog.add(line)
+                                        }
+                                    }
+                                )
+                            }
+                            building = false
+                            if (produced != null) {
+                                lastResult = true to null
+                                onBuildComplete(produced.name, produced.length())
+                            } else {
+
+                                val errLine = buildLog.lastOrNull { it.startsWith("[stderr]") }
+                                    ?: buildLog.lastOrNull { !it.startsWith("[go]") }
+                                    ?: buildLog.lastOrNull()
+                                lastResult = false to (errLine ?: "go build failed")
+                            }
+                        }
+                    },
+                    enabled = !building,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    if (building) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(Strings.goBuildInProgress)
+                    } else {
+                        Icon(Icons.Outlined.Build, null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(Strings.goBuildButtonLabel)
+                    }
+                }
+
+                lastResult?.let { (ok, errMsg) ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (ok) accentColor.copy(alpha = 0.06f)
+                        else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                if (ok) Icons.Outlined.CheckCircle else Icons.Outlined.Warning,
+                                null,
+                                tint = if (ok) accentColor else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (ok) Strings.goBuildSuccess
+                                else "${Strings.goBuildFailed}${errMsg?.let { ": $it" } ?: ""}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (ok) accentColor else MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+
+                if (buildLog.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    ) {
+
+                        val scrollState = rememberScrollState()
+                        Column(
+                            modifier = Modifier
+                                .padding(12.dp)
+                                .heightIn(max = 280.dp)
+                                .verticalScroll(scrollState)
+                        ) {
+                            buildLog.takeLast(120).forEach { line ->
+                                Text(
+                                    text = line,
+                                    style = MaterialTheme.typography.bodySmall.copy(
+                                        fontFamily = FontFamily.Monospace
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        LaunchedEffect(buildLog.size) {
+                            if (buildLog.isNotEmpty()) {
+                                scrollState.animateScrollTo(scrollState.maxValue)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun sanitizeGoBinaryName(raw: String): String {
+    if (raw.isBlank()) return "app"
+    val replaced = buildString {
+        raw.forEach { ch ->
+            when {
+                ch in 'a'..'z' || ch in 'A'..'Z' || ch in '0'..'9' -> append(ch)
+                ch == '_' || ch == '-' || ch == '.' -> append(ch)
+                else -> append('_')
+            }
+        }
+    }
+    val collapsed = replaced.replace(Regex("_+"), "_")
+        .trim('_', '-', '.')
+    return collapsed.ifBlank { "app" }
 }

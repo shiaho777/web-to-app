@@ -3,13 +3,8 @@ package com.webtoapp.core.stats
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 
-
-
-
 @Dao
 interface AppUsageStatsDao {
-
-
 
     @Query("SELECT * FROM app_usage_stats WHERE appId = :appId")
     suspend fun getStatsByAppId(appId: Long): AppUsageStats?
@@ -38,18 +33,12 @@ interface AppUsageStatsDao {
     @Query("DELETE FROM app_usage_stats WHERE appId = :appId")
     suspend fun deleteByAppId(appId: Long)
 
-
-
-
     @Query("""
         UPDATE app_usage_stats
         SET launchCount = launchCount + 1, lastUsedAt = :timestamp
         WHERE appId = :appId
     """)
     suspend fun incrementLaunchCount(appId: Long, timestamp: Long = System.currentTimeMillis())
-
-
-
 
     @Query("""
         UPDATE app_usage_stats
@@ -60,25 +49,14 @@ interface AppUsageStatsDao {
     """)
     suspend fun addUsageDuration(appId: Long, durationMs: Long, timestamp: Long = System.currentTimeMillis())
 
-
-
-
     @Query("SELECT COALESCE(SUM(launchCount), 0) FROM app_usage_stats")
     suspend fun getTotalLaunchCount(): Int
-
-
-
 
     @Query("SELECT COALESCE(SUM(totalUsageMs), 0) FROM app_usage_stats")
     suspend fun getTotalUsageMs(): Long
 
-
-
-
     @Query("SELECT COUNT(*) FROM app_usage_stats WHERE launchCount > 0")
     suspend fun getActiveAppCount(): Int
-
-
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHealthRecord(record: AppHealthRecord): Long
@@ -95,9 +73,6 @@ interface AppUsageStatsDao {
     @Query("SELECT * FROM app_health_records WHERE appId = :appId ORDER BY checkedAt DESC LIMIT :limit")
     suspend fun getRecentHealthRecords(appId: Long, limit: Int = 50): List<AppHealthRecord>
 
-
-
-
     @Query("""
         SELECT h.* FROM app_health_records h
         INNER JOIN (
@@ -108,14 +83,8 @@ interface AppUsageStatsDao {
     """)
     fun getAllLatestHealthRecords(): Flow<List<AppHealthRecord>>
 
-
-
-
     @Query("DELETE FROM app_health_records WHERE checkedAt < :before")
     suspend fun cleanupOldRecords(before: Long)
-
-
-
 
     @Query("""
         SELECT CAST(

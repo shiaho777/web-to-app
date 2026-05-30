@@ -10,11 +10,6 @@ import com.webtoapp.data.model.BgmItem
 import com.webtoapp.data.model.BgmPlayMode
 import java.io.File
 
-
-
-
-
-
 class BgmPlayer(private val context: Context) {
 
     companion object {
@@ -27,17 +22,13 @@ class BgmPlayer(private val context: Context) {
     private var shuffledIndices: List<Int> = emptyList()
     private var isReleased = false
 
-
     private val assetDecryptor by lazy { AssetDecryptor(context) }
 
-
     private val tempFileCache = mutableMapOf<String, File>()
-
 
     private var onTrackChangedListener: ((BgmItem?) -> Unit)? = null
     private var onProgressListener: ((Long, Long) -> Unit)? = null
     private var onPlayStateChangedListener: ((Boolean) -> Unit)? = null
-
 
     private val progressHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private val progressRunnable = object : Runnable {
@@ -55,36 +46,23 @@ class BgmPlayer(private val context: Context) {
         }
     }
 
-
-
-
     fun setOnTrackChangedListener(listener: ((BgmItem?) -> Unit)?) {
         onTrackChangedListener = listener
     }
-
-
-
 
     fun setOnProgressListener(listener: ((Long, Long) -> Unit)?) {
         onProgressListener = listener
     }
 
-
-
-
     fun setOnPlayStateChangedListener(listener: ((Boolean) -> Unit)?) {
         onPlayStateChangedListener = listener
     }
-
-
-
 
     fun initialize(bgmConfig: BgmConfig) {
         if (bgmConfig.playlist.isEmpty()) return
 
         config = bgmConfig
         currentIndex = 0
-
 
         if (bgmConfig.playMode == BgmPlayMode.SHUFFLE) {
             shuffledIndices = bgmConfig.playlist.indices.shuffled()
@@ -94,9 +72,6 @@ class BgmPlayer(private val context: Context) {
             playCurrentTrack()
         }
     }
-
-
-
 
     private fun playCurrentTrack() {
         val cfg = config ?: return
@@ -121,25 +96,19 @@ class BgmPlayer(private val context: Context) {
                     setDataSource(bgmItem.path)
                 }
 
-
                 setVolume(cfg.volume, cfg.volume)
 
-
                 isLooping = cfg.playMode == BgmPlayMode.LOOP && cfg.playlist.size == 1
-
 
                 setOnCompletionListener {
                     onTrackCompleted()
                 }
 
-
                 prepare()
                 start()
 
-
                 onTrackChangedListener?.invoke(bgmItem)
                 onPlayStateChangedListener?.invoke(true)
-
 
                 startProgressUpdates()
             }
@@ -151,9 +120,6 @@ class BgmPlayer(private val context: Context) {
             }
         }
     }
-
-
-
 
     private fun onTrackCompleted() {
         val cfg = config ?: return
@@ -184,15 +150,11 @@ class BgmPlayer(private val context: Context) {
         }
     }
 
-
-
-
     fun playNext() {
         val cfg = config ?: return
         if (cfg.playlist.isEmpty()) return
 
         currentIndex = (currentIndex + 1) % cfg.playlist.size
-
 
         if (cfg.playMode == BgmPlayMode.SHUFFLE && currentIndex == 0) {
             shuffledIndices = cfg.playlist.indices.shuffled()
@@ -201,9 +163,6 @@ class BgmPlayer(private val context: Context) {
         playCurrentTrack()
     }
 
-
-
-
     fun playPrevious() {
         val cfg = config ?: return
         if (cfg.playlist.isEmpty()) return
@@ -211,9 +170,6 @@ class BgmPlayer(private val context: Context) {
         currentIndex = if (currentIndex > 0) currentIndex - 1 else cfg.playlist.size - 1
         playCurrentTrack()
     }
-
-
-
 
     fun play() {
         if (mediaPlayer == null && config != null) {
@@ -225,17 +181,11 @@ class BgmPlayer(private val context: Context) {
         }
     }
 
-
-
-
     fun pause() {
         mediaPlayer?.pause()
         onPlayStateChangedListener?.invoke(false)
         stopProgressUpdates()
     }
-
-
-
 
     fun stop() {
         mediaPlayer?.stop()
@@ -243,9 +193,6 @@ class BgmPlayer(private val context: Context) {
         stopProgressUpdates()
         releaseMediaPlayer()
     }
-
-
-
 
     fun seekTo(positionMs: Long) {
         try {
@@ -255,9 +202,6 @@ class BgmPlayer(private val context: Context) {
         }
     }
 
-
-
-
     fun getCurrentPosition(): Long {
         return try {
             mediaPlayer?.currentPosition?.toLong() ?: 0L
@@ -265,9 +209,6 @@ class BgmPlayer(private val context: Context) {
             0L
         }
     }
-
-
-
 
     fun getDuration(): Long {
         return try {
@@ -277,9 +218,6 @@ class BgmPlayer(private val context: Context) {
         }
     }
 
-
-
-
     private fun startProgressUpdates() {
         progressHandler.removeCallbacks(progressRunnable)
         if (onProgressListener != null) {
@@ -287,15 +225,9 @@ class BgmPlayer(private val context: Context) {
         }
     }
 
-
-
-
     private fun stopProgressUpdates() {
         progressHandler.removeCallbacks(progressRunnable)
     }
-
-
-
 
     fun isPlaying(): Boolean {
         return try {
@@ -305,16 +237,10 @@ class BgmPlayer(private val context: Context) {
         }
     }
 
-
-
-
     fun setVolume(volume: Float) {
         config = config?.copy(volume = volume)
         mediaPlayer?.setVolume(volume, volume)
     }
-
-
-
 
     fun getCurrentTrack(): BgmItem? {
         val cfg = config ?: return null
@@ -324,9 +250,6 @@ class BgmPlayer(private val context: Context) {
         }
         return cfg.playlist.getOrNull(actualIndex)
     }
-
-
-
 
     private fun releaseMediaPlayer() {
         try {
@@ -342,9 +265,6 @@ class BgmPlayer(private val context: Context) {
         mediaPlayer = null
     }
 
-
-
-
     private fun setAssetDataSource(player: MediaPlayer, assetPath: String) {
 
         val encryptedPath = "$assetPath.enc"
@@ -357,7 +277,6 @@ class BgmPlayer(private val context: Context) {
         if (hasEncrypted) {
 
             AppLogger.d(TAG, "检测到加密BGM: $encryptedPath")
-
 
             val cachedFile = tempFileCache[assetPath]
             if (cachedFile != null && cachedFile.exists()) {
@@ -393,9 +312,6 @@ class BgmPlayer(private val context: Context) {
         }
     }
 
-
-
-
     private fun clearTempFiles() {
         tempFileCache.values.forEach { file ->
             try {
@@ -408,9 +324,6 @@ class BgmPlayer(private val context: Context) {
         }
         tempFileCache.clear()
     }
-
-
-
 
     fun release() {
         isReleased = true

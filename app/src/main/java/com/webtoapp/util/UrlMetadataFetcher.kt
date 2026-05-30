@@ -7,24 +7,13 @@ import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.net.URI
 
-
-
-
-
-
-
-
-
 object UrlMetadataFetcher {
 
     private const val TAG = "UrlMetadataFetcher"
 
-
     private const val MAX_HTML_SIZE = 2 * 1024 * 1024
 
-
     private const val USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-
 
     private val META_OG_TITLE_REGEX = Regex(
         """<meta[^>]*property\s*=\s*["']og:title["'][^>]*content\s*=\s*["']([^"']+)["'][^>]*>""",
@@ -64,20 +53,11 @@ object UrlMetadataFetcher {
 
     private val client get() = NetworkModule.defaultClient
 
-
-
-
     data class Metadata(
         val title: String = "",
         val faviconUrl: String = "",
         val themeColor: String = ""
     )
-
-
-
-
-
-
 
     suspend fun fetch(url: String): Metadata = withContext(Dispatchers.IO) {
         val normalizedUrl = normalizeUrl(url)
@@ -131,18 +111,12 @@ object UrlMetadataFetcher {
         }
     }
 
-
-
-
     private fun extractTitle(html: String): String {
         META_OG_TITLE_REGEX.find(html)?.groupValues?.get(1)?.takeIf { it.isNotBlank() }?.let { return decodeHtmlEntities(it) }
         META_OG_TITLE_REGEX_2.find(html)?.groupValues?.get(1)?.takeIf { it.isNotBlank() }?.let { return decodeHtmlEntities(it) }
         TITLE_TAG_REGEX.find(html)?.groupValues?.get(1)?.takeIf { it.isNotBlank() }?.let { return decodeHtmlEntities(it.trim()) }
         return ""
     }
-
-
-
 
     private fun extractThemeColor(html: String): String {
         META_THEME_COLOR_REGEX.find(html)?.groupValues?.get(1)?.takeIf { it.isNotBlank() }?.let { return it.trim() }
@@ -151,9 +125,6 @@ object UrlMetadataFetcher {
         META_OG_COLOR_REGEX_2.find(html)?.groupValues?.get(1)?.takeIf { it.isNotBlank() }?.let { return it.trim() }
         return ""
     }
-
-
-
 
     private fun extractFaviconUrl(html: String, baseUrl: String): String {
 
@@ -178,7 +149,6 @@ object UrlMetadataFetcher {
                 }
             }
 
-
             if (size == 0) {
                 size = guessSizeFromFilename(href)
             }
@@ -186,15 +156,10 @@ object UrlMetadataFetcher {
             icons.add(resolved to size)
         }
 
-
         icons.maxByOrNull { it.second }?.let { return it.first }
-
 
         return "$baseUrl/favicon.ico"
     }
-
-
-
 
     private fun guessSizeFromFilename(href: String): Int {
         val lower = href.lowercase()
@@ -215,9 +180,6 @@ object UrlMetadataFetcher {
         }
     }
 
-
-
-
     private fun resolveIconUrl(baseUrl: String, href: String): String {
         return when {
             href.startsWith("http://") || href.startsWith("https://") -> upgradeHttpToHttps(href)
@@ -227,9 +189,6 @@ object UrlMetadataFetcher {
         }
     }
 
-
-
-
     private fun normalizeUrl(url: String): String {
         var normalized = url.trim()
         if (!normalized.startsWith("http://") && !normalized.startsWith("https://")) {
@@ -237,9 +196,6 @@ object UrlMetadataFetcher {
         }
         return upgradeHttpToHttps(normalized)
     }
-
-
-
 
     private fun getBaseUrl(url: String): String {
         return try {
@@ -259,9 +215,6 @@ object UrlMetadataFetcher {
         }
     }
 
-
-
-
     private fun upgradeHttpToHttps(url: String): String {
         if (!url.startsWith("http://")) return url
         return try {
@@ -278,9 +231,6 @@ object UrlMetadataFetcher {
             url
         }
     }
-
-
-
 
     private fun decodeHtmlEntities(str: String): String {
         return str

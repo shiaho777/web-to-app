@@ -48,9 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 
-
 private data class FabPresetIcon(val id: String, val icon: ImageVector)
-
 
 private val PRESET_ICONS = listOf(
     "package", "book", "shield", "movie", "wrench", "dark_mode", "bolt", "target",
@@ -81,12 +79,6 @@ private val PRESET_FAB_ICONS = listOf(
     FabPresetIcon("puzzle", Icons.Filled.Extension),
 )
 
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExtensionModuleCard(
@@ -103,16 +95,12 @@ fun ExtensionModuleCard(
     val userModules by extensionManager.modules.collectAsStateWithLifecycle()
     val builtInModules by extensionManager.builtInModules.collectAsStateWithLifecycle()
 
-
     val allModules = builtInModules + userModules
-    val availableModules = allModules
-
 
     val selectedModules = allModules.filter { it.id in selectedModuleIds }
 
     var showModuleSelector by remember { mutableStateOf(false) }
     var showTestDialog by remember { mutableStateOf(false) }
-
 
     val presetManager = remember { ModulePresetManager.getInstance(context) }
     var showPresetSelector by remember { mutableStateOf(false) }
@@ -121,7 +109,7 @@ fun ExtensionModuleCard(
     EnhancedElevatedCard(modifier = modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
 
             Row(
@@ -129,13 +117,16 @@ fun ExtensionModuleCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Box(
                         modifier = Modifier
                             .size(40.dp)
                             .clip(RoundedCornerShape(12.dp))
                             .background(
-                                if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                                if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
                                 else MaterialTheme.colorScheme.surfaceVariant
                             ),
                         contentAlignment = Alignment.Center
@@ -149,10 +140,29 @@ fun ExtensionModuleCard(
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = Strings.extensionModule,
-                        style = MaterialTheme.typography.titleMedium
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = Strings.extensionModule,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        if (enabled) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = if (selectedModules.isEmpty()) {
+                                    Strings.extensionModuleNoneSelectedSubtitle
+                                } else {
+                                    Strings.selectedModulesCount.format(selectedModules.size)
+                                },
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (selectedModules.isEmpty())
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                else
+                                    MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 }
                 WtaSwitch(
                     checked = enabled,
@@ -160,152 +170,72 @@ fun ExtensionModuleCard(
                 )
             }
 
-
             AnimatedVisibility(
                 visible = enabled,
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = Strings.addCustomFeatures,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
 
-
-                    PresetQuickSelect(
-                        presetManager = presetManager,
-                        selectedModuleIds = selectedModuleIds,
-                        onApplyPreset = { preset ->
-                            onModuleIdsChange(preset.moduleIds.toSet())
-                            Toast.makeText(context, "${Strings.appliedPreset}: ${preset.name}", Toast.LENGTH_SHORT).show()
-                        }
-                    )
-
-                    HorizontalDivider()
-
-
-                    if (availableModules.isNotEmpty()) {
-                        Text(
-                            text = Strings.quickSelect,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    if (selectedModules.isEmpty()) {
+                        ExtensionEmptyState(
+                            onBrowse = { showModuleSelector = true },
+                            onPickScheme = { showPresetSelector = true }
                         )
-                        QuickModuleChips(
-                            allModules = availableModules.take(6),
-                            selectedIds = selectedModuleIds,
-                            onToggle = { moduleId ->
-                                onModuleIdsChange(
-                                    if (moduleId in selectedModuleIds) {
-                                        selectedModuleIds - moduleId
-                                    } else {
-                                        selectedModuleIds + moduleId
-                                    }
-                                )
-                            }
+                    } else {
+                        SelectedModulesSection(
+                            selectedModules = selectedModules,
+                            onRemove = { id ->
+                                onModuleIdsChange(selectedModuleIds - id)
+                            },
+                            onClearAll = { onModuleIdsChange(emptySet()) },
+                            onSavePreset = { showSavePresetDialog = true }
                         )
-                    }
-
-
-                    if (selectedModules.isNotEmpty()) {
-                        HorizontalDivider()
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = Strings.selectedModulesCount.format(selectedModules.size),
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Row {
-
-                                TextButton(
-                                    onClick = { showSavePresetDialog = true },
-                                    contentPadding = PaddingValues(horizontal = 8.dp)
-                                ) {
-                                    Icon(Icons.Outlined.Save, null, Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(Strings.saveAsScheme, style = MaterialTheme.typography.labelSmall)
-                                }
-
-                                TextButton(
-                                    onClick = { onModuleIdsChange(emptySet()) },
-                                    contentPadding = PaddingValues(horizontal = 8.dp)
-                                ) {
-                                    Text(Strings.clearAll, style = MaterialTheme.typography.labelSmall)
-                                }
-                            }
-                        }
-
-                        selectedModules.forEach { module ->
-                            SelectedModuleItem(
-                                module = module,
-                                onRemove = {
-                                    onModuleIdsChange(selectedModuleIds - module.id)
-                                }
-                            )
-                        }
-                    }
-
-
-                    HorizontalDivider()
-                    FabIconSelector(
-                        selectedIcon = extensionFabIcon,
-                        onIconChange = onFabIconChange
-                    )
-
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-
-                        PremiumOutlinedButton(
-                            onClick = { showModuleSelector = true },
-                            modifier = Modifier.weight(weight = 1f, fill = true)
-                        ) {
-                            Icon(
-                                Icons.Outlined.Apps,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(Strings.selectModules)
-                        }
-
-
-                        PremiumOutlinedButton(
-                            onClick = { showPresetSelector = true }
-                        ) {
-                            Icon(
-                                Icons.Outlined.Bookmarks,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-
-
-                        if (selectedModuleIds.isNotEmpty()) {
-                            PremiumOutlinedButton(
-                                onClick = { showTestDialog = true }
+                            PremiumButton(
+                                onClick = { showModuleSelector = true },
+                                modifier = Modifier.weight(weight = 1f, fill = true)
                             ) {
                                 Icon(
-                                    Icons.Outlined.Science,
+                                    Icons.Outlined.Add,
                                     contentDescription = null,
                                     modifier = Modifier.size(18.dp)
                                 )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(Strings.extensionAddMoreModules)
                             }
+
+                            ExtensionIconAction(
+                                icon = Icons.Outlined.Bookmarks,
+                                contentDescription = Strings.moduleSchemes,
+                                onClick = { showPresetSelector = true }
+                            )
+
+                            ExtensionIconAction(
+                                icon = Icons.Outlined.Science,
+                                contentDescription = Strings.testModule,
+                                onClick = { showTestDialog = true }
+                            )
                         }
+
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+
+                        FabIconSelector(
+                            selectedIcon = extensionFabIcon,
+                            onIconChange = onFabIconChange
+                        )
                     }
                 }
             }
         }
     }
-
 
     if (showPresetSelector) {
         PresetSelectorDialog(
@@ -319,7 +249,6 @@ fun ExtensionModuleCard(
         )
     }
 
-
     if (showSavePresetDialog) {
         SavePresetDialog(
             moduleIds = selectedModuleIds,
@@ -332,7 +261,6 @@ fun ExtensionModuleCard(
         )
     }
 
-
     if (showModuleSelector) {
         ExtensionModuleSelectorDialog(
             allModules = allModules,
@@ -342,7 +270,6 @@ fun ExtensionModuleCard(
         )
     }
 
-
     if (showTestDialog) {
         ModuleTestDialog(
             selectedModules = selectedModules,
@@ -351,47 +278,167 @@ fun ExtensionModuleCard(
     }
 }
 
-
-
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ExtensionEmptyState(
+    onBrowse: () -> Unit,
+    onPickScheme: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
+        ),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                Icons.Outlined.Extension,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(28.dp)
+            )
+            Text(
+                text = Strings.extensionEmptyTitle,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = Strings.extensionEmptyDesc,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                PremiumButton(
+                    onClick = onBrowse,
+                    modifier = Modifier.weight(weight = 1f, fill = true)
+                ) {
+                    Icon(
+                        Icons.Outlined.Apps,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(Strings.selectModules)
+                }
+                PremiumOutlinedButton(
+                    onClick = onPickScheme
+                ) {
+                    Icon(
+                        Icons.Outlined.Bookmarks,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(Strings.moduleSchemes)
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun QuickModuleChips(
-    allModules: List<ExtensionModule>,
-    selectedIds: Set<String>,
-    onToggle: (String) -> Unit
+private fun SelectedModulesSection(
+    selectedModules: List<ExtensionModule>,
+    onRemove: (String) -> Unit,
+    onClearAll: () -> Unit,
+    onSavePreset: () -> Unit
 ) {
-    LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(allModules, key = { it.id }) { module ->
-            val isSelected = module.id in selectedIds
-            PremiumFilterChip(
-                selected = isSelected,
-                onClick = { onToggle(module.id) },
-                label = {
-                    Text(
-                        module.name,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = Strings.extensionEnabledModulesLabel,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = onSavePreset,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Outlined.BookmarkAdd,
+                        contentDescription = Strings.saveAsScheme,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                },
-                leadingIcon = if (isSelected) {
-                    { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                } else {
-                    { ModuleIcon(iconId = module.icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface) }
                 }
+                IconButton(
+                    onClick = onClearAll,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Outlined.DeleteSweep,
+                        contentDescription = Strings.clearAll,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        selectedModules.forEach { module ->
+            SelectedModuleItem(
+                module = module,
+                onRemove = { onRemove(module.id) }
             )
         }
     }
 }
 
-
-
-
-
-
-
+@Composable
+private fun ExtensionIconAction(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current)
+            Color.White.copy(alpha = 0.10f)
+        else
+            Color.White.copy(alpha = 0.72f),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Box(
+            modifier = Modifier.size(48.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = contentDescription,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -418,7 +465,6 @@ private fun SelectedModuleItem(
             )
             Spacer(modifier = Modifier.width(10.dp))
 
-
             Column(modifier = Modifier.weight(1f)) {
 
                 Text(
@@ -430,7 +476,6 @@ private fun SelectedModuleItem(
                 )
 
                 Spacer(modifier = Modifier.height(3.dp))
-
 
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -465,7 +510,6 @@ private fun SelectedModuleItem(
                 }
             }
 
-
             IconButton(
                 onClick = onRemove,
                 modifier = Modifier.size(32.dp)
@@ -480,9 +524,6 @@ private fun SelectedModuleItem(
         }
     }
 }
-
-
-
 
 @Composable
 private fun CompactBadge(
@@ -504,10 +545,6 @@ private fun CompactBadge(
     }
 }
 
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FabIconSelector(
@@ -516,10 +553,8 @@ private fun FabIconSelector(
 ) {
     val context = LocalContext.current
 
-
     var pendingBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var pendingBase64 by remember { mutableStateOf<String?>(null) }
-
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -548,7 +583,6 @@ private fun FabIconSelector(
         }
     }
 
-
     val customBitmap = remember(selectedIcon) {
         if (selectedIcon.startsWith("custom:")) {
             try {
@@ -559,7 +593,6 @@ private fun FabIconSelector(
     }
 
     val isCustomSelected = selectedIcon.startsWith("custom:")
-
 
     if (pendingBitmap != null && pendingBase64 != null) {
         AlertDialog(
@@ -690,7 +723,6 @@ private fun FabIconSelector(
             }
         }
 
-
         item {
             Box(
                 modifier = Modifier
@@ -699,7 +731,6 @@ private fun FabIconSelector(
                     .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             )
         }
-
 
         items(PRESET_FAB_ICONS) { preset ->
             val isSelected = selectedIcon == preset.id
@@ -733,7 +764,6 @@ private fun FabIconSelector(
             }
         }
     }
-
 
     if (selectedIcon.isNotBlank()) {
         Spacer(modifier = Modifier.height(6.dp))
@@ -770,9 +800,6 @@ private fun FabIconSelector(
     }
 }
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExtensionModuleSelectorDialog(
@@ -784,7 +811,6 @@ fun ExtensionModuleSelectorDialog(
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<ModuleCategory?>(null) }
 
-
     val filteredModules = allModules.filter { module ->
         val matchesSearch = searchQuery.isBlank() ||
             module.name.contains(searchQuery, ignoreCase = true) ||
@@ -793,7 +819,6 @@ fun ExtensionModuleSelectorDialog(
         val matchesCategory = selectedCategory == null || module.category == selectedCategory
         matchesSearch && matchesCategory
     }
-
 
     val groupedModules = filteredModules.groupBy { it.category }
 
@@ -849,7 +874,6 @@ fun ExtensionModuleSelectorDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -878,7 +902,6 @@ fun ExtensionModuleSelectorDialog(
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
-
 
                     LazyColumn(
                         modifier = Modifier.weight(weight = 1f, fill = true),
@@ -964,9 +987,6 @@ fun ExtensionModuleSelectorDialog(
     }
 }
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ModuleSelectItem(
@@ -1015,7 +1035,6 @@ private fun ModuleSelectItem(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-
             Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
 
                 Text(
@@ -1027,7 +1046,6 @@ private fun ModuleSelectItem(
                 )
 
                 Spacer(modifier = Modifier.height(3.dp))
-
 
                 @OptIn(ExperimentalLayoutApi::class)
                 FlowRow(
@@ -1065,7 +1083,6 @@ private fun ModuleSelectItem(
                     )
                 }
 
-
                 if (module.tags.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1086,7 +1103,6 @@ private fun ModuleSelectItem(
                 }
             }
 
-
             Checkbox(
                 checked = isSelected,
                 onCheckedChange = { onToggle() }
@@ -1094,10 +1110,6 @@ private fun ModuleSelectItem(
         }
     }
 }
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1171,7 +1183,6 @@ fun ModuleTestDialog(
                         }
                     }
 
-
                     Text(
                         Strings.selectTestPageTitle,
                         style = MaterialTheme.typography.titleSmall,
@@ -1193,7 +1204,6 @@ fun ModuleTestDialog(
                         }
                     }
 
-
                     selectedTestPage?.let { page ->
                         Text(
                             page.description,
@@ -1203,7 +1213,6 @@ fun ModuleTestDialog(
                     }
 
                     Spacer(modifier = Modifier.weight(weight = 1f, fill = true))
-
 
                     PremiumButton(
                         onClick = {
@@ -1225,7 +1234,6 @@ fun ModuleTestDialog(
                         Text(Strings.startTestBtn)
                     }
 
-
                     Text(
                         Strings.testPageHintText,
                         style = MaterialTheme.typography.bodySmall,
@@ -1236,9 +1244,6 @@ fun ModuleTestDialog(
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1289,7 +1294,6 @@ fun ModuleDetailDialog(
                         )
                     }
 
-
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
@@ -1299,7 +1303,6 @@ fun ModuleDetailDialog(
                             InfoChip(Strings.builtInModule)
                         }
                     }
-
 
                     if (module.tags.isNotEmpty()) {
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1319,7 +1322,6 @@ fun ModuleDetailDialog(
                     }
 
                     HorizontalDivider()
-
 
                     if (module.configItems.isNotEmpty()) {
                         Text(
@@ -1341,7 +1343,6 @@ fun ModuleDetailDialog(
                             }
                         }
                     }
-
 
                     if (module.permissions.isNotEmpty()) {
                         Text(
@@ -1373,7 +1374,6 @@ fun ModuleDetailDialog(
                     }
 
                     Spacer(modifier = Modifier.weight(weight = 1f, fill = true))
-
 
                     PremiumButton(
                         onClick = {
@@ -1407,40 +1407,6 @@ private fun InfoChip(text: String) {
     }
 }
 
-
-
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PresetQuickSelect(
-    presetManager: ModulePresetManager,
-    selectedModuleIds: Set<String>,
-    onApplyPreset: (ModulePreset) -> Unit
-) {
-    val presets = remember { presetManager.getBuiltInPresets() }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        presets.forEach { preset ->
-            val isApplied = preset.moduleIds.toSet() == selectedModuleIds
-            FilterChip(
-                selected = isApplied,
-                onClick = { onApplyPreset(preset) },
-                label = { Text(preset.name) },
-                leadingIcon = {
-                    Icon(
-                        presetIconFromKey(preset.icon),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            )
-        }
-    }
-}
-
 @Composable
 private fun presetIconFromKey(key: String): ImageVector = when (key) {
     "auto_stories" -> Icons.Outlined.MenuBook
@@ -1450,9 +1416,6 @@ private fun presetIconFromKey(key: String): ImageVector = when (key) {
     "dark_mode" -> Icons.Outlined.DarkMode
     else -> Icons.Outlined.Extension
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1513,7 +1476,6 @@ fun PresetSelectorDialog(
                         )
                     }
 
-
                     if (userPresets.isNotEmpty()) {
                         item {
                             Spacer(modifier = Modifier.height(8.dp))
@@ -1542,9 +1504,6 @@ fun PresetSelectorDialog(
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1600,9 +1559,6 @@ private fun PresetItem(
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1660,7 +1616,6 @@ fun SavePresetDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-
 
                 if (showIconPicker) {
                     HorizontalDivider()

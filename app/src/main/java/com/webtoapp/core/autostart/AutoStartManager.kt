@@ -12,21 +12,6 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class AutoStartManager(private val context: Context) {
 
     companion object {
@@ -44,18 +29,13 @@ class AutoStartManager(private val context: Context) {
         const val KEY_LAST_TRIGGER_TIME = "last_trigger_time"
         const val KEY_TRIGGER_COUNT = "trigger_count"
 
-
         const val DEFAULT_BOOT_DELAY_MS = 5000L
-
 
         const val MIN_BOOT_DELAY_MS = 1000L
 
-
         const val MAX_BOOT_DELAY_MS = 30000L
 
-
         private const val MIN_ALARM_INTERVAL_MS = 60_000L
-
 
         private const val SCHEDULE_DEBOUNCE_MS = 1000L
     }
@@ -63,17 +43,8 @@ class AutoStartManager(private val context: Context) {
     private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-
     @Volatile
     private var lastScheduleTimestamp = 0L
-
-
-
-
-
-
-
-
 
     fun setBootStart(appId: Long, enabled: Boolean, delayMs: Long = DEFAULT_BOOT_DELAY_MS) {
         val safeDelay = delayMs.coerceIn(MIN_BOOT_DELAY_MS, MAX_BOOT_DELAY_MS)
@@ -90,31 +61,13 @@ class AutoStartManager(private val context: Context) {
         AppLogger.d(TAG, "开机自启动 ${if (enabled) "已启用 (delay=${safeDelay}ms)" else "已禁用"}, appId=$appId")
     }
 
-
-
-
     fun getBootStartAppId(): Long {
         return prefs.getLong(KEY_BOOT_START_APP_ID, -1L)
     }
 
-
-
-
     fun getBootDelay(): Long {
         return prefs.getLong(KEY_BOOT_DELAY_MS, DEFAULT_BOOT_DELAY_MS)
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
     fun setScheduledStart(
         appId: Long,
@@ -153,9 +106,6 @@ class AutoStartManager(private val context: Context) {
         AppLogger.d(TAG, "定时自启动 ${if (enabled) "已启用" else "已禁用"}, appId=$appId, time=$time, times=${times}, days=$days")
     }
 
-
-
-
     fun getScheduledStartConfig(): ScheduledStartConfig? {
         val appId = prefs.getLong(KEY_SCHEDULED_START_APP_ID, -1L)
         if (appId == -1L) return null
@@ -168,17 +118,6 @@ class AutoStartManager(private val context: Context) {
 
         return ScheduledStartConfig(appId, time, days, times)
     }
-
-
-
-
-
-
-
-
-
-
-
 
     fun calculateNextTriggerTime(times: List<String>, days: List<Int>): Calendar? {
         if (days.isEmpty() || times.isEmpty()) return null
@@ -198,9 +137,6 @@ class AutoStartManager(private val context: Context) {
         return earliest
     }
 
-
-
-
     fun calculateNextTriggerTime(time: String, days: List<Int>): Calendar? {
         return calculateNextTriggerTime(listOf(time), days)
     }
@@ -209,7 +145,6 @@ class AutoStartManager(private val context: Context) {
         val parts = time.split(":")
         val hour = parts.getOrNull(0)?.toIntOrNull() ?: 8
         val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
-
 
         for (dayOffset in 0..7) {
             val candidate = Calendar.getInstance().apply {
@@ -220,11 +155,9 @@ class AutoStartManager(private val context: Context) {
                 set(Calendar.MILLISECOND, 0)
             }
 
-
             if (candidate.timeInMillis <= now.timeInMillis + MIN_ALARM_INTERVAL_MS) {
                 if (dayOffset == 0) continue
             }
-
 
             val calendarDow = candidate.get(Calendar.DAY_OF_WEEK)
             val ourDow = if (calendarDow == Calendar.SUNDAY) 7 else calendarDow - 1
@@ -236,10 +169,6 @@ class AutoStartManager(private val context: Context) {
 
         return null
     }
-
-
-
-
 
     fun getNextTriggerTimeDisplay(): String? {
         val config = getScheduledStartConfig() ?: return null
@@ -261,9 +190,6 @@ class AutoStartManager(private val context: Context) {
             }
         }
     }
-
-
-
 
     private fun scheduleNextAlarm(appId: Long, times: List<String>, days: List<Int>) {
 
@@ -291,7 +217,6 @@ class AutoStartManager(private val context: Context) {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-
 
         try {
             if (canScheduleExactAlarms()) {
@@ -326,13 +251,9 @@ class AutoStartManager(private val context: Context) {
         }
     }
 
-
     private fun scheduleNextAlarm(appId: Long, time: String, days: List<Int>) {
         scheduleNextAlarm(appId, listOf(time), days)
     }
-
-
-
 
     private fun cancelAlarm() {
         val intent = Intent(context, ScheduledStartReceiver::class.java).apply {
@@ -350,9 +271,6 @@ class AutoStartManager(private val context: Context) {
         AppLogger.d(TAG, "定时闹钟已取消")
     }
 
-
-
-
     fun rescheduleAfterTrigger() {
 
         recordTrigger()
@@ -361,18 +279,11 @@ class AutoStartManager(private val context: Context) {
         scheduleNextAlarm(config.appId, effectiveTimes, config.days)
     }
 
-
-
-
     fun rescheduleAlarmIfNeeded() {
         val config = getScheduledStartConfig() ?: return
         val effectiveTimes = config.times.ifEmpty { listOf(config.time) }
         scheduleNextAlarm(config.appId, effectiveTimes, config.days)
     }
-
-
-
-
 
     private fun recordTrigger() {
         prefs.edit().apply {
@@ -382,29 +293,15 @@ class AutoStartManager(private val context: Context) {
         }
     }
 
-
-
-
     fun getLastTriggerDisplay(): String? {
         val lastTrigger = prefs.getLong(KEY_LAST_TRIGGER_TIME, 0)
         if (lastTrigger == 0L) return null
         return SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date(lastTrigger))
     }
 
-
-
-
     fun getTriggerCount(): Long {
         return prefs.getLong(KEY_TRIGGER_COUNT, 0)
     }
-
-
-
-
-
-
-
-
 
     fun canScheduleExactAlarms(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -414,19 +311,10 @@ class AutoStartManager(private val context: Context) {
         }
     }
 
-
-
-
     fun isIgnoringBatteryOptimizations(): Boolean {
         val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         return pm.isIgnoringBatteryOptimizations(context.packageName)
     }
-
-
-
-
-
-
 
     fun getOemAutoStartIntent(): Intent? {
         val manufacturer = Build.MANUFACTURER.lowercase(Locale.ROOT)
@@ -502,9 +390,6 @@ class AutoStartManager(private val context: Context) {
         }
     }
 
-
-
-
     fun getOemBrandName(): String? {
         val manufacturer = Build.MANUFACTURER.lowercase(Locale.ROOT)
         return when {
@@ -519,13 +404,6 @@ class AutoStartManager(private val context: Context) {
         }
     }
 
-
-
-
-
-
-
-
     private fun normalizeTime(time: String): String {
         val parts = time.split(":")
         val hour = parts.getOrNull(0)?.toIntOrNull()?.coerceIn(0, 23) ?: 8
@@ -537,10 +415,6 @@ class AutoStartManager(private val context: Context) {
         return SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(date)
     }
 }
-
-
-
-
 
 data class ScheduledStartConfig(
     val appId: Long,

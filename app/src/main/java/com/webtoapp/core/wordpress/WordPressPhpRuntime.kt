@@ -15,28 +15,15 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
-
-
-
-
-
-
-
-
-
 class WordPressPhpRuntime(private val context: Context) {
 
     companion object {
         private const val TAG = "WordPressPhpRuntime"
 
-
         private const val MAX_HEALTH_CHECK_RETRIES = 30
-
 
         private const val HEALTH_CHECK_INTERVAL_MS = 500L
     }
-
-
 
     sealed class ServerState {
         object Stopped : ServerState()
@@ -48,41 +35,21 @@ class WordPressPhpRuntime(private val context: Context) {
     private val _serverState = MutableStateFlow<ServerState>(ServerState.Stopped)
     val serverState: StateFlow<ServerState> = _serverState
 
-
     private var phpProcess: Process? = null
-
 
     private var currentPort: Int = 0
 
-
     private val phpOutputBuffer = StringBuffer()
 
-
     private var routerScriptPath: String? = null
-
-
-
-
-
-
 
     fun getPhpBinaryPath(): String {
         return WordPressDependencyManager.getPhpExecutablePath(context)
     }
 
-
-
-
     fun isPhpAvailable(): Boolean {
         return WordPressDependencyManager.isPhpReady(context)
     }
-
-
-
-
-
-
-
 
     suspend fun startServer(documentRoot: String, port: Int = 0): Int = withContext(Dispatchers.IO) {
         try {
@@ -92,11 +59,17 @@ class WordPressPhpRuntime(private val context: Context) {
                 return@withContext -1
             }
 
+            val docRootDir = java.io.File(documentRoot)
+            if (!docRootDir.exists() || !docRootDir.isDirectory) {
+                val msg = "WordPress 项目目录不存在或被删除: $documentRoot"
+                AppLogger.e(TAG, msg)
+                _serverState.value = ServerState.Error(msg)
+                return@withContext -1
+            }
 
             stopServer()
 
             _serverState.value = ServerState.Starting
-
 
             val projectId = File(documentRoot).name
             val serverPort = PortManager.allocateForPhp("wp:$projectId", port)
@@ -106,18 +79,18 @@ class WordPressPhpRuntime(private val context: Context) {
             }
             currentPort = serverPort
 
-
-
             val phpBinary = getPhpBinaryPath()
             val routerScript = extractRouterScript()
-            val command = buildPhpCommand(phpBinary, serverPort, documentRoot, routerScript)
+            val command = buildPhpCommand(
+                WordPressDependencyManager.buildPhpExecPrefix(context),
+                serverPort, documentRoot, routerScript
+            )
 
             AppLogger.i(TAG, "启动 PHP 服务器: ${command.joinToString(" ")}")
 
             val processBuilder = ProcessBuilder(command)
             processBuilder.directory(File(documentRoot))
             processBuilder.redirectErrorStream(false)
-
 
             val env = processBuilder.environment()
             env["HOME"] = context.filesDir.absolutePath
@@ -126,7 +99,6 @@ class WordPressPhpRuntime(private val context: Context) {
 
             phpOutputBuffer.setLength(0)
             phpProcess = processBuilder.start()
-
 
             phpProcess?.inputStream?.let { stream ->
                 Thread {
@@ -141,7 +113,6 @@ class WordPressPhpRuntime(private val context: Context) {
                 }.apply { isDaemon = true; start() }
             }
 
-
             phpProcess?.errorStream?.let { stream ->
                 Thread {
                     try {
@@ -154,7 +125,6 @@ class WordPressPhpRuntime(private val context: Context) {
                     } catch (e: Exception) { AppLogger.d(TAG, "PHP stderr reader ended", e) }
                 }.apply { isDaemon = true; start() }
             }
-
 
             val ready = waitForServerReady(serverPort)
             if (ready) {
@@ -175,9 +145,6 @@ class WordPressPhpRuntime(private val context: Context) {
             -1
         }
     }
-
-
-
 
     fun stopServer() {
         try {
@@ -203,9 +170,6 @@ class WordPressPhpRuntime(private val context: Context) {
         }
     }
 
-
-
-
     fun isServerRunning(): Boolean {
         val process = phpProcess ?: return false
         return try {
@@ -215,25 +179,13 @@ class WordPressPhpRuntime(private val context: Context) {
         }
     }
 
-
-
-
     fun getCurrentPort(): Int = currentPort
-
-
-
 
     fun getServerUrl(): String? {
         return if (isServerRunning() && currentPort > 0) {
             "http://127.0.0.1:$currentPort"
         } else null
     }
-
-
-
-
-
-
 
     private fun extractRouterScript(): String {
         routerScriptPath?.let { if (File(it).exists()) return it }
@@ -253,23 +205,15 @@ class WordPressPhpRuntime(private val context: Context) {
         return scriptFile.absolutePath
     }
 
-
-
-
-
-
-
-
-    private fun buildPhpCommand(phpBinary: String, serverPort: Int, documentRoot: String, routerScript: String): List<String> {
+    private fun buildPhpCommand(execPrefix: List<String>, serverPort: Int, documentRoot: String, routerScript: String): List<String> {
         val tmpDir = context.cacheDir.absolutePath
         val sessionDir = File(context.filesDir, "wordpress_deps/php/sessions")
         sessionDir.mkdirs()
 
-        val phpArgs = mutableListOf(
-            phpBinary,
-            "-n"
-        )
+        val phpArgs = mutableListOf<String>()
 
+        phpArgs.addAll(execPrefix)
+        phpArgs.add("-n")
 
         val iniSettings = linkedMapOf(
             "error_reporting" to "22527",
@@ -296,14 +240,16 @@ class WordPressPhpRuntime(private val context: Context) {
             "opcache.memory_consumption" to "64",
             "opcache.interned_strings_buffer" to "8",
             "opcache.max_accelerated_files" to "4000",
-            "opcache.validate_timestamps" to "0"
+            "opcache.validate_timestamps" to "0",
+
+            "opcache.jit" to "disable",
+            "opcache.jit_buffer_size" to "0"
         )
 
         iniSettings.forEach { (key, value) ->
             phpArgs.add("-d")
             phpArgs.add("$key=$value")
         }
-
 
         phpArgs.add(routerScript)
         phpArgs.add(serverPort.toString())
@@ -312,9 +258,6 @@ class WordPressPhpRuntime(private val context: Context) {
 
         return phpArgs
     }
-
-
-
 
     private suspend fun waitForServerReady(port: Int): Boolean {
         repeat(MAX_HEALTH_CHECK_RETRIES) { attempt ->
@@ -339,7 +282,6 @@ class WordPressPhpRuntime(private val context: Context) {
                 try { conn?.disconnect() } catch (_: Exception) {}
             }
 
-
             phpProcess?.let { process ->
                 if (!process.isAliveCompat()) {
                     val exitCode = try { process.exitValue() } catch (_: Exception) { -1 }
@@ -355,9 +297,6 @@ class WordPressPhpRuntime(private val context: Context) {
         AppLogger.e(TAG, "PHP 服务器启动超时 (${MAX_HEALTH_CHECK_RETRIES * HEALTH_CHECK_INTERVAL_MS}ms)")
         return false
     }
-
-
-
 
     private fun getProcessPid(process: Process?): Long {
         if (process == null) return -1

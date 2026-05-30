@@ -8,31 +8,6 @@ import com.webtoapp.core.logging.AppLogger
 import org.json.JSONArray
 import org.json.JSONObject
 
-/**
- * 跨应用端口查询接收器。
- *
- * 宿主（Web2App 主应用）通过定向广播查询每个 Web2App 构建产物当前的端口分配，
- * 接收器把本进程内 [PortManager] 的分配状态序列化为 JSON 写入 ResultExtras 返回。
- *
- * Action: [ACTION_PORT_QUERY]
- * 返回 extras：
- *  - [EXTRA_PROTOCOL_VERSION] : Int   协议版本
- *  - [EXTRA_PACKAGE]          : String 当前应用包名
- *  - [EXTRA_PROCESS_PID]      : Int   当前进程 PID
- *  - [EXTRA_ALLOCATIONS]      : String JSON 数组，元素结构见下方
- *
- * Allocation JSON 结构（每个元素）：
- *   {
- *     "port": 18000,
- *     "owner": "nodejs:demo",
- *     "range": "NODEJS",
- *     "allocatedAt": 1715600000000,
- *     "pid": 12345,
- *     "alive": true
- *   }
- *
- * 该接收器仅响应有 [PERMISSION_QUERY] 自定义权限的调用方（即宿主），不导出公网。
- */
 class PortQueryReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -63,7 +38,7 @@ class PortQueryReceiver : BroadcastReceiver() {
 
             pendingResult.resultCode = RESULT_CODE_OK
             pendingResult.resultData = arr.toString()
-            // setResultExtras 没有对应 getter，不能用属性赋值语法。
+
             pendingResult.setResultExtras(bundle)
         } catch (e: Exception) {
             AppLogger.w(TAG, "PortQueryReceiver failed: ${e.message}")

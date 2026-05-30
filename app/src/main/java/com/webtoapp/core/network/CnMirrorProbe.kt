@@ -14,24 +14,11 @@ import okhttp3.Request
 import java.util.concurrent.TimeUnit
 import kotlin.system.measureTimeMillis
 
-
-/**
- * Probes CN GitHub accelerator proxies and keeps them ordered by observed latency.
- *
- * Why: the hardcoded order in GITHUB_CN_PROXIES can go stale — a proxy that used
- * to be fastest may time out today. On first use we fire a background probe and
- * subsequent calls return the freshly-ordered list; probes are cached for 10
- * minutes and broken proxies are dropped from the rotation.
- *
- * Scope: only the CN (Chinese) mirror path uses this — international/Arabic
- * users hit origin servers directly and bypass this object entirely.
- */
 object CnMirrorProbe {
 
     private const val TAG = "CnMirrorProbe"
     private const val CACHE_TTL_MS = 10L * 60 * 1000
 
-    // A tiny, always-present GitHub file we can HEAD through every proxy.
     private const val PROBE_SUFFIX = "https://raw.githubusercontent.com/github/gitignore/main/README.md"
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -55,16 +42,11 @@ object CnMirrorProbe {
         }
     }
 
-    /**
-     * Returns proxies in best-to-worst order. If no probe has been run yet
-     * or the cache is stale, kicks off an async probe and returns the given
-     * baseline order so the first caller isn't blocked.
-     */
     fun getOrderedProxies(baseList: List<String>): List<String> {
         val now = System.currentTimeMillis()
         val fresh = cachedOrder.isNotEmpty() && (now - cachedAt) < CACHE_TTL_MS
         if (fresh) {
-            // Preserve any proxies added to baseList since last probe at the tail.
+
             val extras = baseList.filter { it !in cachedOrder }
             return cachedOrder + extras
         }
@@ -74,11 +56,6 @@ object CnMirrorProbe {
         return baseList
     }
 
-    /**
-     * Performs a parallel HEAD across all proxies. Proxies that fail (timeout,
-     * non-2xx, connection error) are dropped. Successful proxies are sorted
-     * ascending by round-trip time. Result is cached.
-     */
     suspend fun probe(baseList: List<String>) {
         mutex.withLock {
             if (probing) return@withLock
@@ -106,9 +83,6 @@ object CnMirrorProbe {
         }
     }
 
-    /**
-     * Returns round-trip time in ms, or -1 on failure.
-     */
     private fun measureProxy(proxy: String): Long {
         val url = "$proxy$PROBE_SUFFIX"
         return try {

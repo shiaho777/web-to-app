@@ -9,12 +9,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
-
-
-
-
-
-
 val LrcAlignIcon: ImageVector
     get() = _lrcAlignIcon ?: ImageVector.Builder(
         name = "LrcAlign",
@@ -35,7 +29,6 @@ val LrcAlignIcon: ImageVector
             lineTo(5f, 14f)
         }
 
-
         path(
             fill = SolidColor(Color.Black),
             stroke = null
@@ -48,7 +41,6 @@ val LrcAlignIcon: ImageVector
             close()
         }
 
-
         path(
             fill = null,
             stroke = SolidColor(Color.Black),
@@ -59,7 +51,6 @@ val LrcAlignIcon: ImageVector
             moveTo(5f, 4f)
             curveTo(5f, 4f, 8f, 5f, 8f, 7.5f)
         }
-
 
         path(
             fill = null,
@@ -78,7 +69,6 @@ val LrcAlignIcon: ImageVector
             lineTo(17f, 13.5f)
         }
 
-
         path(
             fill = null,
             stroke = SolidColor(Color.Black),
@@ -88,7 +78,6 @@ val LrcAlignIcon: ImageVector
             moveTo(2f, 19.5f)
             lineTo(22f, 19.5f)
         }
-
 
         path(
             fill = SolidColor(Color.Black),
@@ -110,7 +99,6 @@ val LrcAlignIcon: ImageVector
             arcTo(1f, 1f, 0f, isMoreThanHalf = true, isPositiveArc = true, x1 = 18.5f, y1 = 19.5f)
             close()
         }
-
 
         path(
             fill = null,

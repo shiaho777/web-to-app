@@ -27,9 +27,6 @@ import kotlinx.coroutines.withContext
 import com.webtoapp.ui.design.WtaBackground
 import androidx.compose.ui.graphics.Color
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WordPressSettingsScreen(
@@ -39,13 +36,11 @@ fun WordPressSettingsScreen(
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
-
     var phpReady by remember { mutableStateOf(WordPressDependencyManager.isPhpReady(context)) }
     var wpReady by remember { mutableStateOf(WordPressDependencyManager.isWordPressReady(context)) }
     var sqliteReady by remember { mutableStateOf(WordPressDependencyManager.isSqlitePluginReady(context)) }
     var cacheSize by remember { mutableLongStateOf(0L) }
     var mirrorRegion by remember { mutableStateOf(WordPressDependencyManager.getMirrorRegion()) }
-
 
     LaunchedEffect(Unit) {
         cacheSize = withContext(Dispatchers.IO) { WordPressDependencyManager.getCacheSize(context) }
@@ -115,7 +110,6 @@ fun WordPressSettingsScreen(
                 }
             }
 
-
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -141,7 +135,6 @@ fun WordPressSettingsScreen(
                     }
                     Spacer(modifier = Modifier.height(12.dp))
 
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -158,7 +151,6 @@ fun WordPressSettingsScreen(
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
-
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -198,7 +190,6 @@ fun WordPressSettingsScreen(
                     }
                 }
             }
-
 
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {

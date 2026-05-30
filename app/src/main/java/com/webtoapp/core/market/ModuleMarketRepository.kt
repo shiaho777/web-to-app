@@ -25,27 +25,6 @@ import okhttp3.Request
 import java.io.File
 import java.io.IOException
 
-/**
- * Pulls the community module catalog straight from
- * `github.com/shiahonb777/web-to-app/tree/main/modules` and feeds it into
- * the in-app Module Market UI.
- *
- * The flow is intentionally simple to keep this server-less:
- *
- * ```
- * registry.json   ─►  in-memory list  ─►  user picks a module
- *                                              │
- *                                              ▼
- *                                  module.json + main.js (+ optional style.css)
- *                                              │
- *                                              ▼
- *                                  ExtensionManager.addModule(...)
- * ```
- *
- * GitHub raw is the primary source. jsDelivr CDN is a fallback that mirrors
- * GitHub content with HTTPS-friendly caching, which is helpful for users in
- * regions where `raw.githubusercontent.com` is flaky.
- */
 class ModuleMarketRepository private constructor(
     private val context: Context,
     private val extensionManager: ExtensionManager
@@ -54,18 +33,16 @@ class ModuleMarketRepository private constructor(
     companion object {
         private const val TAG = "ModuleMarket"
 
-        // GitHub repo coordinates. Kept as constants so a future fork can swap
-        // them via a single edit.
         private const val OWNER = "shiahonb777"
         private const val REPO = "web-to-app"
         private const val BRANCH = "main"
         private const val MODULES_DIR = "modules"
 
-        /** Cache TTL for the registry index. */
-        private const val REGISTRY_TTL_MS = 60 * 60 * 1000L // 1 hour
+        private const val REGISTRY_TTL_MS = 60 * 60 * 1000L
 
         private const val CACHE_DIR_NAME = "module_market"
         private const val REGISTRY_CACHE_FILE = "registry.json"
+        private const val SUBMISSIONS_CACHE_FILE = "submissions.json"
 
         @Volatile
         private var INSTANCE: ModuleMarketRepository? = null
@@ -76,14 +53,9 @@ class ModuleMarketRepository private constructor(
             }
         }
 
-        /**
-         * Sources tried in order. Each is a base URL; concrete file URLs are
-         * built by appending the relative path under `modules/`.
-         */
         private val SOURCES: List<String> = listOf(
             "https://raw.githubusercontent.com/$OWNER/$REPO/$BRANCH/$MODULES_DIR",
-            // jsDelivr proxies GitHub with global CDN caching — useful where
-            // raw.githubusercontent is throttled or blocked.
+
             "https://cdn.jsdelivr.net/gh/$OWNER/$REPO@$BRANCH/$MODULES_DIR"
         )
     }
@@ -98,75 +70,92 @@ class ModuleMarketRepository private constructor(
     private val _state = MutableStateFlow<MarketState>(MarketState.Idle)
     val state: StateFlow<MarketState> = _state.asStateFlow()
 
-    /**
-     * Combined view: the registry entries enriched with each module's local
-     * install state. Recomputes whenever the registry refreshes or the user's
-     * extension list changes.
-     */
     val views: kotlinx.coroutines.flow.Flow<List<MarketModuleView>> =
         combine(_state, extensionManager.modules, extensionManager.builtInModules) { st, user, builtIn ->
-            val entries = (st as? MarketState.Loaded)?.entries ?: emptyList()
+            val loaded = st as? MarketState.Loaded
+            val entries = loaded?.entries ?: emptyList()
+            val submissions = loaded?.submissions ?: emptyMap()
             val installed = (user + builtIn).associateBy { it.id }
-            entries.map { entry ->
+            entries.mapNotNull { entry ->
+
+                val submission = submissions[entry.id] ?: return@mapNotNull null
+
                 val local = installed[entry.id]
                 if (local == null) {
-                    MarketModuleView(entry, MarketInstallState.NotInstalled, null)
+                    MarketModuleView(entry, MarketInstallState.NotInstalled, null, submission)
                 } else {
                     val cmp = compareSemver(entry.version, local.version.name)
                     val state = if (cmp > 0) MarketInstallState.UpdateAvailable else MarketInstallState.UpToDate
-                    MarketModuleView(entry, state, local.version.name)
+                    MarketModuleView(entry, state, local.version.name, submission)
                 }
             }
         }
 
-    /**
-     * Fetch the registry. Uses a cached copy if it is fresh, otherwise hits
-     * the network. Pass `force = true` for pull-to-refresh.
-     */
     suspend fun refresh(force: Boolean = false) = withContext(Dispatchers.IO) {
-        val cached = readCachedRegistry()
-        if (!force && cached != null && cacheAgeMs() < REGISTRY_TTL_MS) {
-            _state.value = MarketState.Loaded(filterEntries(cached.modules), fromCache = true)
+        val cachedRegistry = readCachedRegistry()
+        val cachedSubmissions = readCachedSubmissions()
+        if (!force && cachedRegistry != null && cachedSubmissions != null && cacheAgeMs() < REGISTRY_TTL_MS) {
+            _state.value = MarketState.Loaded(
+                entries = filterEntries(cachedRegistry.modules),
+                submissions = cachedSubmissions.submissions,
+                fromCache = true
+            )
             return@withContext
         }
 
         _state.value = MarketState.Loading
-        val raw = fetchRaw("registry.json")
-        if (raw == null) {
-            // Network failed — fall back to whatever we cached previously so
-            // the user at least sees stale data instead of an empty screen.
-            if (cached != null) {
-                _state.value = MarketState.Loaded(filterEntries(cached.modules), fromCache = true)
+        val rawRegistry = fetchRaw("registry.json")
+
+        val rawSubmissions = fetchRaw("submissions.json")
+
+        if (rawRegistry == null) {
+            if (cachedRegistry != null && cachedSubmissions != null) {
+                _state.value = MarketState.Loaded(
+                    entries = filterEntries(cachedRegistry.modules),
+                    submissions = cachedSubmissions.submissions,
+                    fromCache = true
+                )
             } else {
                 _state.value = MarketState.Error("Could not reach the module market. Check your network and try again.")
             }
             return@withContext
         }
 
-        val parsed = try {
-            gson.fromJson(raw, ModuleMarketRegistry::class.java)
+        val parsedRegistry = try {
+            gson.fromJson(rawRegistry, ModuleMarketRegistry::class.java)
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to parse registry.json", e)
             null
         }
 
-        if (parsed == null) {
+        if (parsedRegistry == null) {
             _state.value = MarketState.Error("Module registry was malformed.")
             return@withContext
         }
 
-        writeCachedRegistry(raw)
-        _state.value = MarketState.Loaded(filterEntries(parsed.modules), fromCache = false)
+        val parsedSubmissions: ModuleSubmissionsRegistry = if (rawSubmissions != null) {
+            try {
+                gson.fromJson(rawSubmissions, ModuleSubmissionsRegistry::class.java)
+                    ?: ModuleSubmissionsRegistry()
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Failed to parse submissions.json", e)
+                cachedSubmissions ?: ModuleSubmissionsRegistry()
+            }
+        } else {
+
+            cachedSubmissions ?: ModuleSubmissionsRegistry()
+        }
+
+        writeCachedRegistry(rawRegistry)
+        if (rawSubmissions != null) writeCachedSubmissions(rawSubmissions)
+
+        _state.value = MarketState.Loaded(
+            entries = filterEntries(parsedRegistry.modules),
+            submissions = parsedSubmissions.submissions,
+            fromCache = false
+        )
     }
 
-    /**
-     * Download a module's full payload, build an [ExtensionModule], and hand
-     * it to [ExtensionManager]. Re-installing an existing module overwrites
-     * it (used to apply updates).
-     *
-     * When updating an already-installed module, we preserve the user's saved
-     * `configValues` so a version bump doesn't reset their settings.
-     */
     suspend fun install(entry: ModuleMarketEntry): Result<ExtensionModule> = withContext(Dispatchers.IO) {
         try {
             val manifestRaw = fetchRaw("${entry.path}/module.json")
@@ -181,9 +170,6 @@ class ModuleMarketRepository private constructor(
                 return@withContext Result.failure(IllegalStateException("module.json is malformed", e))
             }
 
-            // If a module with this id is already installed, carry its saved
-            // config values forward. Drop keys the new manifest no longer
-            // declares so we don't accumulate stale settings.
             val effectiveId = manifest.id?.takeIf { it.isNotBlank() } ?: entry.id
             val existing = extensionManager.getAllModules().firstOrNull { it.id == effectiveId }
             val preservedConfig: Map<String, String> = if (existing != null) {
@@ -201,8 +187,6 @@ class ModuleMarketRepository private constructor(
                 preservedConfig = preservedConfig
             )
 
-            // Reuse `addModule` which already handles upsert by id, validation,
-            // and persistence — so updating a module is just installing again.
             extensionManager.addModule(module)
         } catch (e: Exception) {
             AppLogger.e(TAG, "Install failed for ${entry.id}", e)
@@ -210,19 +194,20 @@ class ModuleMarketRepository private constructor(
         }
     }
 
-    /**
-     * Builds a public GitHub URL pointing at the module's source folder, for
-     * a "View on GitHub" link in the UI.
-     */
     fun githubUrl(entry: ModuleMarketEntry): String =
         "https://github.com/$OWNER/$REPO/tree/$BRANCH/$MODULES_DIR/${entry.path}"
 
-    /** URL of the contributing guide (the README in the modules directory). */
+    fun resolveIconUrl(entry: ModuleMarketEntry): String? {
+        val raw = entry.iconUrl?.trim().orEmpty()
+        if (raw.isEmpty()) return null
+        if (raw.startsWith("https://") || raw.startsWith("http://")) return raw
+
+        val normalised = raw.removePrefix("./").removePrefix("/")
+        return "${SOURCES.first()}/${entry.path}/$normalised"
+    }
+
     val contributingUrl: String =
         "https://github.com/$OWNER/$REPO/blob/$BRANCH/$MODULES_DIR/README.md"
-
-
-    // ─── HTTP plumbing ──────────────────────────────────────────────────────
 
     private fun fetchRaw(relativePath: String): String? {
         for (base in SOURCES) {
@@ -264,6 +249,24 @@ class ModuleMarketRepository private constructor(
         }
     }
 
+    private fun readCachedSubmissions(): ModuleSubmissionsRegistry? {
+        val file = File(cacheDir, SUBMISSIONS_CACHE_FILE)
+        if (!file.exists()) return null
+        return try {
+            gson.fromJson(file.readText(), ModuleSubmissionsRegistry::class.java)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun writeCachedSubmissions(raw: String) {
+        try {
+            File(cacheDir, SUBMISSIONS_CACHE_FILE).writeText(raw)
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Failed to write submissions cache: ${e.message}")
+        }
+    }
+
     private fun cacheAgeMs(): Long {
         val file = File(cacheDir, REGISTRY_CACHE_FILE)
         if (!file.exists()) return Long.MAX_VALUE
@@ -271,12 +274,9 @@ class ModuleMarketRepository private constructor(
     }
 
     private fun filterEntries(entries: List<ModuleMarketEntry>): List<ModuleMarketEntry> {
-        // Drop entries that require a newer client than the user has installed.
+
         return entries.filter { it.minAppVersion <= BuildConfig.VERSION_CODE }
     }
-
-
-    // ─── Remote manifest schema (mirrors `module.json`) ─────────────────────
 
     private data class RemoteManifest(
         val id: String? = null,
@@ -330,22 +330,17 @@ class ModuleMarketRepository private constructor(
     }
 }
 
-/**
- * Top-level state of the market screen.
- */
 sealed class MarketState {
     object Idle : MarketState()
     object Loading : MarketState()
-    data class Loaded(val entries: List<ModuleMarketEntry>, val fromCache: Boolean) : MarketState()
+    data class Loaded(
+        val entries: List<ModuleMarketEntry>,
+        val submissions: Map<String, ModuleSubmission>,
+        val fromCache: Boolean
+    ) : MarketState()
     data class Error(val message: String) : MarketState()
 }
 
-/**
- * Compares two semver-ish version strings ("1.2.3"). Falls back to lexical
- * comparison when either input is not strictly numeric.
- *
- * Returns a positive number when `a` is newer than `b`.
- */
 internal fun compareSemver(a: String, b: String): Int {
     val ap = a.split(".").mapNotNull { it.toIntOrNull() }
     val bp = b.split(".").mapNotNull { it.toIntOrNull() }
@@ -359,7 +354,5 @@ internal fun compareSemver(a: String, b: String): Int {
     return 0
 }
 
-// Suppress unused for ConfigItemType import — it's actually used via reflection
-// inside the Gson deserializer for `configItems`, so keep the import alive.
 @Suppress("unused")
 private val configItemTypeAnchor: Class<ConfigItemType> = ConfigItemType::class.java

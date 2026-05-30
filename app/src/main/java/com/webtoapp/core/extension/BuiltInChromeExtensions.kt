@@ -4,26 +4,12 @@ import android.content.Context
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
-
-
-
-
-
-
-
 object BuiltInChromeExtensions {
 
     private const val TAG = "BuiltInChromeExtensions"
 
-
     private const val BEWLYCAT_EXT_ID = "bewlycat"
     private const val BEWLYCAT_VERSION = "1.5.7"
-
-
 
     private val BILIBILI_URL_MATCHES = listOf(
         UrlMatchRule("*://www.bilibili.com/*"),
@@ -39,12 +25,6 @@ object BuiltInChromeExtensions {
         UrlMatchRule("*://music.bilibili.com/*")
     )
 
-
-
-
-
-
-
     fun getAll(context: Context): List<ExtensionModule> {
         return try {
             bewlyCat(context)
@@ -54,17 +34,9 @@ object BuiltInChromeExtensions {
         }
     }
 
-
-
-
-
-
-
-
     private fun bewlyCat(context: Context): List<ExtensionModule> {
         val modules = mutableListOf<ExtensionModule>()
         val manifestJson = loadAsset(context, "extensions/bewlycat/manifest.json").orEmpty()
-
 
         val contentJs = loadAsset(context, "extensions/bewlycat/content.js")
         val contentCss = loadAsset(context, "extensions/bewlycat/style.css")
@@ -101,7 +73,6 @@ object BuiltInChromeExtensions {
             AppLogger.w(TAG, "BewlyCat content.js not found in assets")
         }
 
-
         val injectJs = loadAsset(context, "extensions/bewlycat/inject.js")
 
         if (injectJs != null) {
@@ -132,9 +103,6 @@ object BuiltInChromeExtensions {
         AppLogger.i(TAG, "Loaded BewlyCat: ${modules.size} modules")
         return modules
     }
-
-
-
 
     private fun loadAsset(context: Context, path: String): String? {
         return try {

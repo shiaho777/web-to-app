@@ -22,26 +22,11 @@ import kotlinx.coroutines.delay
 import kotlin.math.*
 import kotlin.random.Random
 
-
-
-
-
-
-
-
-
-
-
 private const val ANIMATION_FRAME_DELAY_MS = 33L
 private const val ANIMATION_FRAME_SCALE = ANIMATION_FRAME_DELAY_MS / 16f
 
-
-
 fun getSpringSpec(style: AnimationStyle, speedMultiplier: Float = 1f): SpringSpec<Float> {
-    // The style parameter is preserved for source compatibility but all styles
-    // now map onto the same physical spring tuned by the Wta motion tokens.
-    // This removes the jarring hop that SNAPPY/BOUNCY/DRAMATIC used to
-    // produce, while still respecting the user's animation speed preference.
+
     val baseStiffness = when (style) {
         AnimationStyle.SMOOTH -> 320f
         AnimationStyle.BOUNCY -> 280f
@@ -63,9 +48,6 @@ fun getSpringSpec(style: AnimationStyle, speedMultiplier: Float = 1f): SpringSpe
         stiffness = baseStiffness / speedMultiplier.coerceAtLeast(0.1f)
     )
 }
-
-
-
 
 fun getSpringSpecDp(style: AnimationStyle, speedMultiplier: Float = 1f): SpringSpec<Dp> {
     val baseStiffness = when (style) {
@@ -90,12 +72,8 @@ fun getSpringSpecDp(style: AnimationStyle, speedMultiplier: Float = 1f): SpringS
     )
 }
 
-
-
-
 fun getTweenSpec(style: AnimationStyle, speedMultiplier: Float = 1f): TweenSpec<Float> {
-    // Durations tuned to feel close to Apple's standards: quick enough not to
-    // block interaction, slow enough to preserve a sense of physical motion.
+
     val duration = when (style) {
         AnimationStyle.SMOOTH -> 280
         AnimationStyle.BOUNCY -> 260
@@ -118,12 +96,8 @@ fun getTweenSpec(style: AnimationStyle, speedMultiplier: Float = 1f): TweenSpec<
     )
 }
 
-
-
-
 fun getPressedScale(style: AnimationStyle): Float {
-    // Apple-style interactions never scale below 0.94. Larger shrinks read as
-    // rubber-band/toy feedback rather than a deliberate press.
+
     return when (style) {
         AnimationStyle.SMOOTH -> 0.97f
         AnimationStyle.BOUNCY -> 0.95f
@@ -133,9 +107,6 @@ fun getPressedScale(style: AnimationStyle): Float {
         AnimationStyle.DRAMATIC -> 0.95f
     }
 }
-
-
-
 
 fun getEasing(style: AnimationStyle): Easing {
     return when (style) {
@@ -147,9 +118,6 @@ fun getEasing(style: AnimationStyle): Easing {
         AnimationStyle.DRAMATIC -> CubicBezierEasing(0.68f, -0.55f, 0.265f, 1.55f)
     }
 }
-
-
-
 
 val EaseOutBounce = Easing { fraction ->
     val n1 = 7.5625f
@@ -178,11 +146,6 @@ val EaseOutBack = Easing { fraction ->
     1f + c3 * (fraction - 1f).pow(3) + c1 * (fraction - 1f).pow(2)
 }
 
-
-
-
-
-
 fun Modifier.pulseGlow(
     color: Color,
     enabled: Boolean = true,
@@ -209,9 +172,6 @@ fun Modifier.pulseGlow(
         )
     }
 }
-
-
-
 
 fun Modifier.shimmer(
     colors: List<Color>,
@@ -242,9 +202,6 @@ fun Modifier.shimmer(
     }
 }
 
-
-
-
 fun Modifier.floatingAnimation(
     enabled: Boolean = true,
     offsetY: Dp = 8.dp
@@ -268,9 +225,6 @@ fun Modifier.floatingAnimation(
     this.offset(y = (offset * offsetPx / density.density).dp)
 }
 
-
-
-
 fun Modifier.breathingScale(
     enabled: Boolean = true,
     minScale: Float = 0.98f,
@@ -291,9 +245,6 @@ fun Modifier.breathingScale(
 
     this.scale(scale)
 }
-
-
-
 
 fun Modifier.rotatingGlow(
     colors: List<Color>,
@@ -324,9 +275,6 @@ fun Modifier.rotatingGlow(
         }
     }
 }
-
-
-
 
 @Composable
 fun RippleBackground(
@@ -375,11 +323,6 @@ fun RippleBackground(
     }
 }
 
-
-
-
-
-
 data class Particle(
     var x: Float,
     var y: Float,
@@ -390,9 +333,6 @@ data class Particle(
     var life: Float,
     var maxLife: Float
 )
-
-
-
 
 @Composable
 fun ParticleBackground(
@@ -453,13 +393,11 @@ private fun updateParticle(particle: Particle, width: Float, height: Float, delt
         life = particle.life + deltaScale
     )
 
-
     if (newParticle.life > newParticle.maxLife ||
         newParticle.x < 0 || newParticle.x > width ||
         newParticle.y < 0 || newParticle.y > height) {
         newParticle = createParticle(width, height)
     }
-
 
     val lifeRatio = newParticle.life / newParticle.maxLife
     newParticle = newParticle.copy(
@@ -468,9 +406,6 @@ private fun updateParticle(particle: Particle, width: Float, height: Float, delt
 
     return newParticle
 }
-
-
-
 
 @Composable
 fun StarfieldBackground(
@@ -527,9 +462,6 @@ fun StarfieldBackground(
         }
     }
 }
-
-
-
 
 @Composable
 fun SakuraPetalsBackground(
@@ -604,16 +536,8 @@ fun SakuraPetalsBackground(
     }
 }
 
-
-
-
-
-
 fun getEnterTransition(style: AnimationStyle): EnterTransition {
-    // All entrance transitions fade in with a slight upward slide. The extra
-    // scale work the old implementation did made the UI feel like it was
-    // always making an entrance; small drifts read as "content arriving"
-    // while giving the system a sense of continuity.
+
     val duration = when (style) {
         AnimationStyle.SMOOTH -> 280
         AnimationStyle.BOUNCY -> 260

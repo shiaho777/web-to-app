@@ -14,14 +14,6 @@ import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-
-
-
-
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 class LocalHttpServer(
     private val context: Context,
@@ -76,7 +68,6 @@ class LocalHttpServer(
     private val isRunning = AtomicBoolean(false)
     private val acceptThreadName = "LocalHttpServer-Accept"
 
-
     private var rootDirectory: File? = null
     private var crossOriginIsolationEnabled: Boolean = false
 
@@ -93,14 +84,8 @@ class LocalHttpServer(
         return executor
     }
 
-
     var actualPort: Int = 0
         private set
-
-
-
-
-
 
     @Synchronized
     fun start(rootDir: File, enableCrossOriginIsolation: Boolean = false): String {
@@ -108,7 +93,6 @@ class LocalHttpServer(
 
             return buildLoopbackBaseUrl(actualPort)
         }
-
 
         stop()
 
@@ -123,12 +107,6 @@ class LocalHttpServer(
                 PortManager.allocateForLocalHttp(rootDir.name)
             }
 
-
-
-            // 显式绑定到 IPv4 127.0.0.1，与 buildLoopbackBaseUrl 拼出的 URL 一致。
-            // InetAddress.getLoopbackAddress() 在某些设备/Emulator（开启 IPv6 优先）上会返回 ::1，
-            // ServerSocket 就只监听 IPv6 loopback，而 WebView 仍按 "http://127.0.0.1:..." 连接，
-            // 导致 ERR_CONNECTION_REFUSED——服务器启动成功却看似不可达。
             val bindAddress = java.net.Inet4Address.getByName(LOOPBACK_HOST)
             serverSocket = ServerSocket(allocatedPort, 50, bindAddress)
             actualPort = serverSocket?.localPort ?: allocatedPort
@@ -136,12 +114,6 @@ class LocalHttpServer(
 
             AppLogger.i(TAG, "服务器启动在端口 $actualPort, 根目录: ${rootDir.absolutePath}")
 
-            // ServerSocket 构造返回时，内核已经完成 bind()+listen()，
-            // 从同进程用 loopback 连接一定会进入 TCP backlog（默认 50），不会被 RST。
-            // accept 线程只是消费 backlog；即使它晚几毫秒开始 accept，客户端 connect 也不会失败。
-            //
-            // 关键约束：本方法常在主线程或 UI 调度器里被调用（Compose LaunchedEffect 默认 Main），
-            // 因此禁止在这里做任何阻塞式网络 IO（会抛 NetworkOnMainThreadException）。
             Thread({
                 while (isRunning.get()) {
                     try {
@@ -161,9 +133,6 @@ class LocalHttpServer(
             throw e
         }
     }
-
-
-
 
     @Synchronized
     fun stop() {
@@ -185,9 +154,6 @@ class LocalHttpServer(
         }
     }
 
-
-
-
     private fun handleClient(socket: Socket) {
         try {
             socket.soTimeout = 30000
@@ -195,10 +161,8 @@ class LocalHttpServer(
             val input = BufferedReader(InputStreamReader(socket.getInputStream()))
             val output = socket.getOutputStream()
 
-
             val requestLine = input.readLine() ?: return
             AppLogger.d(TAG, "请求: $requestLine")
-
 
             val parts = requestLine.split(" ")
             if (parts.size < 2) return
@@ -206,36 +170,28 @@ class LocalHttpServer(
             val method = parts[0]
             var path = parts[1]
 
-
             if (method != "GET") {
                 sendError(output, 405, "Method Not Allowed")
                 return
             }
-
 
             while (true) {
                 val line = input.readLine()
                 if (line.isNullOrEmpty()) break
             }
 
-
             path = URLDecoder.decode(path, "UTF-8")
-
 
             val queryIndex = path.indexOf('?')
             if (queryIndex > 0) {
                 path = path.substring(0, queryIndex)
             }
 
-
             if (path == "/" || path.isEmpty()) {
                 path = "/index.html"
             }
 
-
             val file = File(rootDirectory, path.removePrefix("/"))
-
-
 
             val rootCanonical = (rootDirectory ?: return).canonicalPath
             val fileCanonical = file.canonicalPath
@@ -246,7 +202,6 @@ class LocalHttpServer(
             }
 
             if (!file.exists()) {
-
 
                 val requestPath = path.removePrefix("/")
                 val hasFileExtension = requestPath.substringAfterLast('/', requestPath).contains('.')
@@ -287,13 +242,6 @@ class LocalHttpServer(
         }
     }
 
-
-
-
-
-
-
-
     private val STREAM_THRESHOLD = 1 * 1024 * 1024L
 
     private fun sendFile(output: OutputStream, file: File) {
@@ -324,7 +272,6 @@ class LocalHttpServer(
 
         output.write(headers.toByteArray())
 
-
         if (fileLength > STREAM_THRESHOLD) {
             file.inputStream().buffered().use { input ->
                 val buffer = ByteArray(8192)
@@ -341,9 +288,6 @@ class LocalHttpServer(
         AppLogger.d(TAG, "发送文件: ${file.name} ($fileLength bytes, $mimeType)")
     }
 
-
-
-
     private fun sendError(output: OutputStream, code: Int, message: String) {
         val body = "<html><body><h1>$code $message</h1></body></html>"
         val bodyBytes = body.toByteArray(Charsets.UTF_8)
@@ -359,9 +303,6 @@ class LocalHttpServer(
         output.write(bodyBytes)
         output.flush()
     }
-
-
-
 
     private fun getMimeType(fileName: String): String {
         val extension = fileName.substringAfterLast('.', "").lowercase()

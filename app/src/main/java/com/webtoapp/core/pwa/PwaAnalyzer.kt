@@ -1,5 +1,6 @@
 package com.webtoapp.core.pwa
 
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.network.NetworkModule
 import kotlinx.coroutines.Dispatchers
@@ -80,7 +81,7 @@ object PwaAnalyzer {
             if (html.isBlank()) {
                 AppLogger.w(TAG, "HTML download returned an empty document for ${htmlResult.finalUrl}")
                 return@withContext PwaAnalysisResult(
-                    errorMessage = "站点返回了空页面，无法完成分析"
+                    errorMessage = Strings.pwaAnalyzeEmptyPage
                 )
             }
 
@@ -117,7 +118,7 @@ object PwaAnalyzer {
         } catch (e: Exception) {
             AppLogger.e(TAG, "PWA analysis failed", e)
             PwaAnalysisResult(
-                errorMessage = "分析失败: ${e.message ?: "未知错误"}"
+                errorMessage = Strings.pwaAnalyzeFailed.format(e.message ?: Strings.pwaAnalyzeUnknownError)
             )
         }
     }

@@ -16,22 +16,11 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-
-
-
-
-
-
-
-
-
-
 object EnhancedCrypto {
 
     private const val TAG = "EnhancedCrypto"
     private const val KEYSTORE_ALIAS = "WebToApp_MasterKey"
     private const val ANDROID_KEYSTORE = "AndroidKeyStore"
-
 
     private const val AES_GCM_ALGORITHM = "AES/GCM/NoPadding"
     private const val HMAC_ALGORITHM = "HmacSHA256"
@@ -39,21 +28,12 @@ object EnhancedCrypto {
     private const val IV_SIZE = 12
     private const val TAG_SIZE = 128
 
-
     private const val STREAM_CHUNK_SIZE = 64 * 1024
 
     private val secureRandom = SecureRandom()
 
-
-
-
-
     object HKDF {
         private const val HASH_LEN = 32
-
-
-
-
 
         fun extract(salt: ByteArray?, ikm: ByteArray): ByteArray {
             val actualSalt = salt ?: ByteArray(HASH_LEN)
@@ -61,10 +41,6 @@ object EnhancedCrypto {
             mac.init(SecretKeySpec(actualSalt, HMAC_ALGORITHM))
             return mac.doFinal(ikm)
         }
-
-
-
-
 
         fun expand(prk: ByteArray, info: ByteArray, length: Int): ByteArray {
             require(length <= 255 * HASH_LEN) { "Output length too large" }
@@ -89,9 +65,6 @@ object EnhancedCrypto {
             return output.toByteArray().copyOf(length)
         }
 
-
-
-
         fun derive(
             ikm: ByteArray,
             salt: ByteArray? = null,
@@ -102,10 +75,6 @@ object EnhancedCrypto {
             return expand(prk, info, length)
         }
     }
-
-
-
-
 
     class SecureKeyContainer(private val keyBytes: ByteArray) : AutoCloseable {
         @Volatile
@@ -134,14 +103,10 @@ object EnhancedCrypto {
         }
     }
 
-
-
-
     fun getOrCreateMasterKey(context: Context): SecretKey? {
         return try {
             val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
             keyStore.load(null)
-
 
             if (keyStore.containsAlias(KEYSTORE_ALIAS)) {
                 val entry = keyStore.getEntry(KEYSTORE_ALIAS, null) as? KeyStore.SecretKeyEntry
@@ -171,10 +136,6 @@ object EnhancedCrypto {
         }
     }
 
-
-
-
-
     fun deriveAppKey(
         packageName: String,
         signature: ByteArray,
@@ -187,20 +148,14 @@ object EnhancedCrypto {
             additionalEntropy?.let { write(it) }
         }.toByteArray()
 
-
         val salt = "WebToApp:KeyDerivation:v2".toByteArray()
 
-
         val info = "AES-256-GCM:AppEncryption".toByteArray()
-
 
         val keyBytes = HKDF.derive(ikm, salt, info, 32)
 
         return SecureKeyContainer(keyBytes)
     }
-
-
-
 
     fun deriveSubKey(
         masterKey: ByteArray,
@@ -217,9 +172,6 @@ object EnhancedCrypto {
         return SecureKeyContainer(keyBytes)
     }
 
-
-
-
     fun encrypt(
         plaintext: ByteArray,
         key: SecretKey,
@@ -235,12 +187,8 @@ object EnhancedCrypto {
 
         val ciphertext = cipher.doFinal(plaintext)
 
-
         return iv + ciphertext
     }
-
-
-
 
     fun decrypt(
         ciphertext: ByteArray,
@@ -261,10 +209,6 @@ object EnhancedCrypto {
         return cipher.doFinal(encrypted)
     }
 
-
-
-
-
     fun encryptStream(
         input: InputStream,
         output: OutputStream,
@@ -273,7 +217,6 @@ object EnhancedCrypto {
         onProgress: ((Long, Long) -> Unit)? = null
     ): Long {
         val iv = ByteArray(IV_SIZE).also { secureRandom.nextBytes(it) }
-
 
         output.write(iv)
 
@@ -287,7 +230,6 @@ object EnhancedCrypto {
         var totalRead = 0L
         var bytesRead: Int
 
-
         val totalSize = input.available().toLong()
 
         while (input.read(buffer).also { bytesRead = it } != -1) {
@@ -299,18 +241,11 @@ object EnhancedCrypto {
             onProgress?.invoke(totalRead, totalSize)
         }
 
-
         val finalBlock = cipher.doFinal()
         output.write(finalBlock)
 
         return totalRead
     }
-
-
-
-
-
-
 
     fun decryptStream(
         input: InputStream,
@@ -330,7 +265,6 @@ object EnhancedCrypto {
 
         associatedData?.let { cipher.updateAAD(it) }
 
-
         val encryptedData = input.readBytes()
         val maxDecryptSize = 50L * 1024 * 1024
         require(encryptedData.size <= maxDecryptSize) {
@@ -345,17 +279,11 @@ object EnhancedCrypto {
         return decrypted.size.toLong()
     }
 
-
-
-
     fun hmac(key: ByteArray, data: ByteArray): ByteArray {
         val mac = Mac.getInstance(HMAC_ALGORITHM)
         mac.init(SecretKeySpec(key, HMAC_ALGORITHM))
         return mac.doFinal(data)
     }
-
-
-
 
     fun secureEquals(a: ByteArray, b: ByteArray): Boolean {
         if (a.size != b.size) return false
@@ -367,15 +295,9 @@ object EnhancedCrypto {
         return result == 0
     }
 
-
-
-
     fun randomBytes(size: Int): ByteArray {
         return ByteArray(size).also { secureRandom.nextBytes(it) }
     }
-
-
-
 
     fun secureWipe(data: ByteArray) {
         data.fill(0)
@@ -385,16 +307,9 @@ object EnhancedCrypto {
     }
 }
 
-
-
-
-
 class KeyWrapper(private val context: Context) {
 
     private val masterKey: SecretKey? = EnhancedCrypto.getOrCreateMasterKey(context)
-
-
-
 
     fun wrap(keyToWrap: SecretKey): ByteArray? {
         val master = masterKey ?: return null
@@ -406,7 +321,6 @@ class KeyWrapper(private val context: Context) {
             val iv = cipher.iv
             val wrapped = cipher.wrap(keyToWrap)
 
-
             ByteArray(1 + iv.size + wrapped.size).apply {
                 this[0] = iv.size.toByte()
                 System.arraycopy(iv, 0, this, 1, iv.size)
@@ -417,9 +331,6 @@ class KeyWrapper(private val context: Context) {
             null
         }
     }
-
-
-
 
     fun unwrap(wrappedKey: ByteArray): SecretKey? {
         val master = masterKey ?: return null
@@ -440,10 +351,6 @@ class KeyWrapper(private val context: Context) {
         }
     }
 }
-
-
-
-
 
 data class EncryptedFileHeader(
     val magic: Int = MAGIC,
@@ -494,34 +401,27 @@ data class EncryptedFileHeader(
     fun toByteArray(): ByteArray {
         val result = ByteArray(HEADER_SIZE + metadata.size)
 
-
         result[0] = (magic shr 24).toByte()
         result[1] = (magic shr 16).toByte()
         result[2] = (magic shr 8).toByte()
         result[3] = magic.toByte()
 
-
         result[4] = (version shr 8).toByte()
         result[5] = version.toByte()
-
 
         result[6] = (algorithm shr 8).toByte()
         result[7] = algorithm.toByte()
 
-
         result[8] = (flags shr 8).toByte()
         result[9] = flags.toByte()
-
 
         result[10] = (metadata.size shr 24).toByte()
         result[11] = (metadata.size shr 16).toByte()
         result[12] = (metadata.size shr 8).toByte()
         result[13] = metadata.size.toByte()
 
-
         result[14] = 0
         result[15] = 0
-
 
         if (metadata.isNotEmpty()) {
             System.arraycopy(metadata, 0, result, HEADER_SIZE, metadata.size)

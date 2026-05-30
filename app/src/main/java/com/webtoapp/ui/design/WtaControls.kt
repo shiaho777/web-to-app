@@ -48,15 +48,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 
-/**
- * Text input with a filled, edgeless look that replaces the default M3
- * outlined field. Instead of a loud rectangular outline, we use a subtle
- * filled container plus a bottom accent line that animates in when focused.
- * This keeps focus state crystal clear without adding visual noise.
- *
- * The ghost border only appears in error state (where the user really needs
- * to notice).
- */
 @Composable
 fun WtaTextField(
     value: String,
@@ -142,18 +133,6 @@ fun WtaTextField(
     )
 }
 
-/**
- * Toggle primitive that replaces the M3 Switch with iOS-style physics.
- *
- * The key to the iOS switch feel:
- *  - On press: thumb stretches horizontally ~15% (squish effect)
- *  - On toggle: thumb slides with a bouncy spring that overshoots slightly
- *  - On release: thumb snaps back to circle with elastic spring
- *
- * We use M3 Switch as the base but layer spring-driven scale animations
- * on top to achieve the physical feel without reimplementing the entire
- * accessibility and state management layer.
- */
 @Composable
 fun WtaSwitch(
     checked: Boolean,
@@ -172,7 +151,6 @@ fun WtaSwitch(
         onCheckedChange(next)
     }
 
-    // Thumb stretches wider on press (iOS squish effect)
     val stretchX by animateFloatAsState(
         targetValue = if (isPressed) 1.12f else 1f,
         animationSpec = if (isPressed) WtaMotion.pressSpring() else WtaMotion.bouncySpring(),
@@ -209,11 +187,6 @@ fun WtaSwitch(
     )
 }
 
-/**
- * Selectable chip with a soft filled container on selection rather than an
- * outlined border. Looks closer to iOS segmented controls and plays nicer
- * with a monochrome palette than tinted-outline chips.
- */
 @Composable
 fun WtaChip(
     selected: Boolean,

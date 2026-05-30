@@ -5,10 +5,6 @@ import org.junit.Test
 
 class WebViewShellConfigDarkModeTest {
 
-
-
-
-
     @Test
     fun `WebViewShellConfig dark mode status bar fields have correct defaults`() {
         val config = WebViewShellConfig()

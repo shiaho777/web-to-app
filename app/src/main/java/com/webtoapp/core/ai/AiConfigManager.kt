@@ -25,10 +25,6 @@ import javax.crypto.spec.GCMParameterSpec
 
 private val Context.aiConfigDataStore: DataStore<Preferences> by preferencesDataStore(name = "ai_config")
 
-
-
-
-
 class AiConfigManager(private val context: Context) {
 
     companion object {
@@ -37,7 +33,6 @@ class AiConfigManager(private val context: Context) {
         private val KEY_API_KEYS_BACKUP = stringPreferencesKey("api_keys_backup")
         private val KEY_SAVED_MODELS = stringPreferencesKey("saved_models")
         private val KEY_DEFAULT_MODEL = stringPreferencesKey("default_model")
-
 
         private val gson get() = GsonProvider.gson
 
@@ -48,7 +43,6 @@ class AiConfigManager(private val context: Context) {
         private const val GCM_TAG_BITS = 128
         private const val GCM_IV_BYTES = 12
     }
-
 
     val apiKeysFlow: Flow<List<ApiKeyConfig>> = context.aiConfigDataStore.data.map { prefs ->
 
@@ -76,7 +70,6 @@ class AiConfigManager(private val context: Context) {
         emptyList()
     }
 
-
     val savedModelsFlow: Flow<List<SavedModel>> = context.aiConfigDataStore.data.map { prefs ->
         val json = prefs[KEY_SAVED_MODELS] ?: "[]"
         val result = parseSavedModels(json)
@@ -88,13 +81,9 @@ class AiConfigManager(private val context: Context) {
         }
     }
 
-
     val defaultModelIdFlow: Flow<String?> = context.aiConfigDataStore.data.map { prefs ->
         prefs[KEY_DEFAULT_MODEL]
     }
-
-
-
 
     suspend fun addApiKey(config: ApiKeyConfig): Boolean {
         return try {
@@ -118,9 +107,6 @@ class AiConfigManager(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun updateApiKey(config: ApiKeyConfig): Boolean {
         return try {
             context.aiConfigDataStore.edit { prefs ->
@@ -141,9 +127,6 @@ class AiConfigManager(private val context: Context) {
             false
         }
     }
-
-
-
 
     suspend fun deleteApiKey(id: String): Boolean {
         return try {
@@ -166,9 +149,6 @@ class AiConfigManager(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun saveModel(model: SavedModel): Boolean {
         return try {
             context.aiConfigDataStore.edit { prefs ->
@@ -183,9 +163,6 @@ class AiConfigManager(private val context: Context) {
             false
         }
     }
-
-
-
 
     suspend fun updateSavedModel(model: SavedModel): Boolean {
         return try {
@@ -202,9 +179,6 @@ class AiConfigManager(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun deleteSavedModel(id: String): Boolean {
         return try {
             context.aiConfigDataStore.edit { prefs ->
@@ -220,9 +194,6 @@ class AiConfigManager(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun setDefaultModel(modelId: String?) {
         context.aiConfigDataStore.edit { prefs ->
             if (modelId != null) {
@@ -233,26 +204,17 @@ class AiConfigManager(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun getModelsByCapability(capability: ModelCapability): Flow<List<SavedModel>> {
         return savedModelsFlow.map { models ->
             models.filter { it.capabilities.contains(capability) }
         }
     }
 
-
-
-
     fun getModelsByFeature(feature: AiFeature): Flow<List<SavedModel>> {
         return savedModelsFlow.map { models ->
             models.filter { it.supportsFeature(feature) }
         }
     }
-
-
-
 
     fun getDefaultModelForFeature(feature: AiFeature): Flow<SavedModel?> {
         return savedModelsFlow.map { models ->
@@ -262,24 +224,16 @@ class AiConfigManager(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun getApiKeyById(id: String): ApiKeyConfig? {
 
         val prefs = context.aiConfigDataStore.data.first()
         return (getApiKeys(prefs) ?: emptyList()).find { it.id == id }
     }
 
-
-
-
     suspend fun getSavedModelById(id: String): SavedModel? {
         val prefs = context.aiConfigDataStore.data.first()
         return getSavedModels(prefs).find { it.id == id }
     }
-
-
 
     private fun getApiKeys(prefs: Preferences): List<ApiKeyConfig>? {
         val stored = prefs[KEY_API_KEYS]

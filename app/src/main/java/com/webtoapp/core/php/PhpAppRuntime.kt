@@ -16,28 +16,15 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
-
-
-
-
-
-
-
-
-
 class PhpAppRuntime(private val context: Context) {
 
     companion object {
         private const val TAG = "PhpAppRuntime"
 
-
         private const val MAX_HEALTH_CHECK_RETRIES = 30
-
 
         private const val HEALTH_CHECK_INTERVAL_MS = 500L
     }
-
-
 
     sealed class ServerState {
         object Stopped : ServerState()
@@ -49,59 +36,30 @@ class PhpAppRuntime(private val context: Context) {
     private val _serverState = MutableStateFlow<ServerState>(ServerState.Stopped)
     val serverState: StateFlow<ServerState> = _serverState
 
-
     private var phpProcess: Process? = null
 
-
     private var currentPort: Int = 0
-
 
     private val phpOutputBuffer = StringBuffer()
     private val phpStderrBuffer = StringBuffer()
 
-
     private var routerScriptPath: String? = null
-
-
-
-
-
-
 
     fun getPhpBinaryPath(): String {
         return WordPressDependencyManager.getPhpExecutablePath(context)
     }
 
-
-
-
     fun isPhpAvailable(): Boolean {
         return WordPressDependencyManager.isPhpReady(context)
     }
-
-
-
 
     fun getPhpProjectsDir(): File {
         return File(context.filesDir, "php_projects").also { it.mkdirs() }
     }
 
-
-
-
     fun getProjectDir(projectId: String): File {
         return File(getPhpProjectsDir(), projectId)
     }
-
-
-
-
-
-
-
-
-
-
 
     suspend fun startServer(
         projectDir: String,
@@ -116,11 +74,17 @@ class PhpAppRuntime(private val context: Context) {
                 return@withContext -1
             }
 
+            val projectDirFile = File(projectDir)
+            if (!projectDirFile.exists() || !projectDirFile.isDirectory) {
+                val msg = "PHP 项目目录不存在: $projectDir"
+                AppLogger.e(TAG, msg)
+                _serverState.value = ServerState.Error(msg)
+                return@withContext -1
+            }
 
             stopServer()
 
             _serverState.value = ServerState.Starting
-
 
             val actualDocRoot = if (documentRoot.isNotBlank()) {
                 File(projectDir, documentRoot).absolutePath
@@ -128,19 +92,16 @@ class PhpAppRuntime(private val context: Context) {
                 projectDir
             }
 
-
             if (!File(actualDocRoot).isDirectory) {
                 _serverState.value = ServerState.Error("Document root 不存在: $actualDocRoot")
                 return@withContext -1
             }
-
 
             val entryFilePath = File(actualDocRoot, entryFile)
             if (!entryFilePath.exists()) {
                 _serverState.value = ServerState.Error("入口文件不存在: $entryFile")
                 return@withContext -1
             }
-
 
             val projectId = File(projectDir).name
             val serverPort = PortManager.allocateForPhp(projectId, port)
@@ -150,15 +111,14 @@ class PhpAppRuntime(private val context: Context) {
             }
             currentPort = serverPort
 
-
             val phpBinary = getPhpBinaryPath()
-
 
             val routerScript = extractRouterScript()
 
-
-            val command = buildPhpCommand(phpBinary, serverPort, actualDocRoot, routerScript, entryFile)
-
+            val command = buildPhpCommand(
+                com.webtoapp.core.wordpress.WordPressDependencyManager.buildPhpExecPrefix(context),
+                serverPort, actualDocRoot, routerScript, entryFile
+            )
 
             AppLogger.i(TAG, "PHP 二进制: $phpBinary")
             AppLogger.i(TAG, "执行命令: ${command.take(3).joinToString(" ")} ... (共 ${command.size} 个参数)")
@@ -168,9 +128,6 @@ class PhpAppRuntime(private val context: Context) {
             val processBuilder = ProcessBuilder(command)
             processBuilder.directory(File(projectDir))
 
-
-
-
             val env = processBuilder.environment()
             env["HOME"] = context.filesDir.absolutePath
             env["TMPDIR"] = context.cacheDir.absolutePath
@@ -178,13 +135,11 @@ class PhpAppRuntime(private val context: Context) {
             env["APP_ENV"] = "production"
             env["APP_DEBUG"] = "false"
 
-
             envVars.forEach { (k, v) -> env[k] = v }
 
             phpOutputBuffer.setLength(0)
             phpStderrBuffer.setLength(0)
             phpProcess = processBuilder.start()
-
 
             phpProcess?.inputStream?.let { stream ->
                 Thread {
@@ -199,7 +154,6 @@ class PhpAppRuntime(private val context: Context) {
                 }.apply { isDaemon = true; start() }
             }
 
-
             phpProcess?.errorStream?.let { stream ->
                 Thread {
                     try {
@@ -212,7 +166,6 @@ class PhpAppRuntime(private val context: Context) {
                     } catch (e: Exception) { AppLogger.d(TAG, "PHP stderr reader ended", e) }
                 }.apply { isDaemon = true; start() }
             }
-
 
             val ready = waitForServerReady(serverPort)
             if (ready) {
@@ -233,9 +186,6 @@ class PhpAppRuntime(private val context: Context) {
             -1
         }
     }
-
-
-
 
     fun stopServer() {
         try {
@@ -261,9 +211,6 @@ class PhpAppRuntime(private val context: Context) {
         }
     }
 
-
-
-
     fun isServerRunning(): Boolean {
         val process = phpProcess ?: return false
         return try {
@@ -273,22 +220,13 @@ class PhpAppRuntime(private val context: Context) {
         }
     }
 
-
-
-
     fun getCurrentPort(): Int = currentPort
-
-
-
 
     fun getServerUrl(): String? {
         return if (isServerRunning() && currentPort > 0) {
             "http://127.0.0.1:$currentPort"
         } else null
     }
-
-
-
 
     suspend fun createProject(
         projectId: String,
@@ -314,11 +252,6 @@ class PhpAppRuntime(private val context: Context) {
         AppLogger.i(TAG, "PHP 项目文件已复制到: ${projectDir.absolutePath}")
         projectDir
     }
-
-
-
-
-
 
     fun detectFramework(projectDir: File): String {
 
@@ -351,9 +284,6 @@ class PhpAppRuntime(private val context: Context) {
         return "raw"
     }
 
-
-
-
     fun detectDocumentRoot(projectDir: File, framework: String): String {
         return when (framework) {
             "laravel", "thinkphp", "codeigniter", "slim" -> {
@@ -370,9 +300,6 @@ class PhpAppRuntime(private val context: Context) {
         }
     }
 
-
-
-
     fun detectEntryFile(projectDir: File, documentRoot: String): String {
         val docRoot = if (documentRoot.isNotBlank()) File(projectDir, documentRoot) else projectDir
         val candidates = listOf("index.php", "app.php", "main.php", "server.php")
@@ -382,17 +309,9 @@ class PhpAppRuntime(private val context: Context) {
         return "index.php"
     }
 
-
-
-
     fun hasComposerJson(projectDir: File): Boolean {
         return File(projectDir, "composer.json").exists()
     }
-
-
-
-
-
 
     private fun extractRouterScript(): String {
         routerScriptPath?.let { if (File(it).exists()) return it }
@@ -412,23 +331,15 @@ class PhpAppRuntime(private val context: Context) {
         return scriptFile.absolutePath
     }
 
-
-
-
-
-
-
-
-    private fun buildPhpCommand(phpBinary: String, serverPort: Int, documentRoot: String, routerScript: String, entryFile: String): List<String> {
+    private fun buildPhpCommand(execPrefix: List<String>, serverPort: Int, documentRoot: String, routerScript: String, entryFile: String): List<String> {
         val tmpDir = context.cacheDir.absolutePath
         val sessionDir = File(context.filesDir, "php_app_deps/sessions")
         sessionDir.mkdirs()
 
+        val phpArgs = mutableListOf<String>()
 
-        val phpArgs = mutableListOf(
-            "-n"
-        )
-
+        phpArgs.addAll(execPrefix)
+        phpArgs.add("-n")
 
         val iniSettings = linkedMapOf(
             "error_reporting" to "22527",
@@ -456,6 +367,8 @@ class PhpAppRuntime(private val context: Context) {
             "opcache.max_accelerated_files" to "4000",
             "opcache.validate_timestamps" to "0",
 
+            "opcache.jit" to "disable",
+            "opcache.jit_buffer_size" to "0",
 
             "disable_functions" to "header,headers_list,headers_sent,header_remove,setcookie,setrawcookie"
         )
@@ -465,17 +378,13 @@ class PhpAppRuntime(private val context: Context) {
             phpArgs.add("$key=$value")
         }
 
-
         phpArgs.add(routerScript)
         phpArgs.add(serverPort.toString())
         phpArgs.add(documentRoot)
         phpArgs.add(entryFile.ifBlank { "index.php" })
 
-        return mutableListOf(phpBinary).apply { addAll(phpArgs) }
+        return phpArgs
     }
-
-
-
 
     private suspend fun waitForServerReady(port: Int): Boolean {
         repeat(MAX_HEALTH_CHECK_RETRIES) { attempt ->
@@ -516,9 +425,6 @@ class PhpAppRuntime(private val context: Context) {
         AppLogger.e(TAG, "PHP 服务器启动超时 (${MAX_HEALTH_CHECK_RETRIES * HEALTH_CHECK_INTERVAL_MS}ms)")
         return false
     }
-
-
-
 
     private fun getProcessPid(process: Process?): Long {
         if (process == null) return -1

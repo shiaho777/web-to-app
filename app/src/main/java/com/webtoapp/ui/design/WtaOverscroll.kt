@@ -18,24 +18,6 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
 
-/**
- * iOS-style overscroll effect: when content reaches its scroll limit and the
- * user continues to drag, the entire content stretches with rubber-band
- * resistance. On release, it springs back to its resting position.
- *
- * Unlike the default Android glow overscroll, this feels like a real elastic
- * surface — you can feel the tension build up and release when you let go.
- *
- * Usage:
- * ```
- * val overscroll = rememberWtaOverscroll()
- * Column(
- *     modifier = Modifier
- *         .verticalScroll(scrollState, overscrollEffect = overscroll)
- *         .overscroll(overscroll)
- * ) { ... }
- * ```
- */
 @OptIn(ExperimentalFoundationApi::class)
 class WtaOverscrollEffect(
     private val scope: CoroutineScope,
@@ -60,8 +42,6 @@ class WtaOverscrollEffect(
         val currentOffset = overscrollOffset.value
         val sameDirection = sign(delta.y) == sign(currentOffset)
 
-        // If there's an active overscroll that opposes the drag, consume drag
-        // to reduce it first before letting the list scroll.
         val consumedByPreScroll = if (currentOffset != 0f && !sameDirection) {
             val newOffset = (currentOffset + delta.y).let {
                 if (sign(it) != sign(currentOffset)) 0f else it
@@ -77,7 +57,6 @@ class WtaOverscrollEffect(
         val consumedByScroll = performScroll(remainingDelta)
         val leftover = remainingDelta - consumedByScroll
 
-        // User is dragging past the scroll limit: apply rubber-band offset.
         if (source == NestedScrollSource.Drag && leftover.y != 0f) {
             val next = overscrollOffset.value + leftover.y * 0.5f
             val clamped = rubberBandClamp(next, maxStretchPx)
@@ -94,7 +73,6 @@ class WtaOverscrollEffect(
         val consumed = performFling(velocity)
         val leftover = velocity - consumed
 
-        // Spring back to zero with any leftover velocity preserved.
         overscrollOffset.animateTo(
             targetValue = 0f,
             animationSpec = spring(

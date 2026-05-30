@@ -19,31 +19,18 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 
-
-
-
-
 class AiApiClient(private val context: Context) {
 
     private val gson = com.webtoapp.util.GsonProvider.gson
     private val registry by lazy { LiteLLMModelRegistry.getInstance(context) }
 
-
-
-
     private fun String.sanitize(): String = this.replace("\n", "").replace("\r", "").trim()
 
     private val client get() = NetworkModule.streamingClient
 
-
-
-
     private fun buildApiUrl(baseUrl: String, endpoint: String): String {
         val trimmedBase = baseUrl.trimEnd('/')
         val trimmedEndpoint = endpoint.trimStart('/')
-
-
-
 
         val endpointParts = trimmedEndpoint.split("/").filter { it.isNotEmpty() }
         if (endpointParts.isNotEmpty()) {
@@ -57,9 +44,6 @@ class AiApiClient(private val context: Context) {
 
         return "$trimmedBase/$trimmedEndpoint"
     }
-
-
-
 
     suspend fun testConnection(apiKey: ApiKeyConfig): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
@@ -130,7 +114,6 @@ class AiApiClient(private val context: Context) {
                 val errorBody = response.body?.string() ?: ""
                 AppLogger.e("AiApiClient", "API connection test FAILED: code=$responseCode, body=$errorBody")
 
-
                 val errorMsg = when (responseCode) {
                     400 -> "请求参数错误 (400): $errorBody"
                     401 -> "API Key 无效或已过期 (401)"
@@ -147,9 +130,6 @@ class AiApiClient(private val context: Context) {
             Result.failure(e)
         }
     }
-
-
-
 
     suspend fun fetchModels(apiKey: ApiKeyConfig): Result<List<AiModel>> = withContext(Dispatchers.IO) {
         try {
@@ -249,9 +229,6 @@ class AiApiClient(private val context: Context) {
         }
     }
 
-
-
-
     private fun getRegistryFallbackModels(provider: AiProvider): List<AiModel> {
         val modelIds = registry.getRecommendedModels(provider)
         return modelIds.mapNotNull { modelId ->
@@ -267,9 +244,6 @@ class AiApiClient(private val context: Context) {
             )
         }
     }
-
-
-
 
     private fun enrichModelWithRegistry(model: AiModel, provider: AiProvider): AiModel {
         val info = registry.findModel(model.id, provider) ?: return model
@@ -288,9 +262,6 @@ class AiApiClient(private val context: Context) {
             else model.capabilities
         )
     }
-
-
-
 
     private fun parseModelsResponse(provider: AiProvider, response: String): List<AiModel> {
         return try {
@@ -469,10 +440,6 @@ class AiApiClient(private val context: Context) {
         }
     }
 
-
-
-
-
     private fun inferCapabilities(modelId: String, provider: AiProvider? = null): List<ModelCapability> {
 
         registry.getCapabilities(modelId, provider)?.let { return it }
@@ -480,13 +447,11 @@ class AiApiClient(private val context: Context) {
         val id = modelId.lowercase()
         val capabilities = mutableListOf(ModelCapability.TEXT)
 
-
         if (id.contains("audio") || id.contains("whisper") ||
             id.contains("gemini-1.5") || id.contains("gemini-2") || id.contains("gemini-3") ||
             id.contains("gpt-4o") || id.contains("realtime")) {
             capabilities.add(ModelCapability.AUDIO)
         }
-
 
         if (id.contains("vision") || id.contains("gpt-4o") || id.contains("gpt-5") ||
             id.contains("gemini") || id.contains("claude-3") || id.contains("claude-4") ||
@@ -500,14 +465,12 @@ class AiApiClient(private val context: Context) {
             capabilities.add(ModelCapability.IMAGE)
         }
 
-
         if (id.contains("code") || id.contains("codex") ||
             id.contains("deepseek-coder") || id.contains("codestral") ||
             id.contains("starcoder") || id.contains("codegemma") ||
             id.contains("codellama") || id.contains("codeqwen")) {
             capabilities.add(ModelCapability.CODE)
         }
-
 
         if (id.contains("dall-e") || id.contains("imagen") ||
             id.contains("image-generation") || id.contains("gpt-image") ||
@@ -518,10 +481,6 @@ class AiApiClient(private val context: Context) {
 
         return capabilities
     }
-
-
-
-
 
     private fun inferContextLength(modelId: String, provider: AiProvider? = null): Int {
 
@@ -591,10 +550,6 @@ class AiApiClient(private val context: Context) {
             else -> 8192
         }
     }
-
-
-
-
 
     private fun inferInputPrice(modelId: String, provider: AiProvider? = null): Double {
 
@@ -671,9 +626,6 @@ class AiApiClient(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun generateAppIcon(
         context: Context,
         prompt: String,
@@ -684,7 +636,6 @@ class AiApiClient(private val context: Context) {
         try {
             val baseUrl = apiKey.baseUrl ?: apiKey.provider.baseUrl
             val iconPrompt = buildIconPrompt(prompt)
-
 
             val imageDataList = referenceImages.take(3).mapNotNull { path ->
                 try {
@@ -830,7 +781,6 @@ class AiApiClient(private val context: Context) {
                 ?.getAsJsonObject("message")
                 ?.get("content")?.asString ?: ""
 
-
             val base64Regex = "data:image/[^;]+;base64,([A-Za-z0-9+/=]+)".toRegex()
             val match = base64Regex.find(content)
             if (match != null) {
@@ -842,16 +792,6 @@ class AiApiClient(private val context: Context) {
             Result.failure(e)
         }
     }
-
-
-
-
-
-
-
-
-
-
 
     suspend fun chat(
         apiKey: ApiKeyConfig,
@@ -880,9 +820,6 @@ class AiApiClient(private val context: Context) {
             Result.failure(e)
         }
     }
-
-
-
 
     private fun chatWithGemini(
         baseUrl: String,
@@ -963,9 +900,6 @@ class AiApiClient(private val context: Context) {
         }
     }
 
-
-
-
     private fun chatWithAnthropic(
         baseUrl: String,
         apiKey: String,
@@ -1026,9 +960,6 @@ class AiApiClient(private val context: Context) {
         }
     }
 
-
-
-
     private fun chatWithGLM(
         baseUrl: String,
         apiKey: String,
@@ -1066,9 +997,6 @@ class AiApiClient(private val context: Context) {
         }
     }
 
-
-
-
     private fun chatWithVolcano(
         baseUrl: String,
         apiKey: String,
@@ -1105,9 +1033,6 @@ class AiApiClient(private val context: Context) {
             Result.failure(Exception(Strings.aiRequestFailed.format(response.code, response.body?.string())))
         }
     }
-
-
-
 
     private fun chatWithOllama(
         baseUrl: String,
@@ -1156,9 +1081,6 @@ class AiApiClient(private val context: Context) {
         }
     }
 
-
-
-
     private fun chatWithCohere(
         baseUrl: String,
         apiKey: String,
@@ -1205,9 +1127,6 @@ class AiApiClient(private val context: Context) {
             Result.failure(Exception(Strings.aiRequestFailed.format(response.code, response.body?.string())))
         }
     }
-
-
-
 
     private fun chatWithOpenAICompatible(
         baseUrl: String,
@@ -1262,12 +1181,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
     }
 
-
-
-
-
-
-
     fun chatStream(
         apiKey: ApiKeyConfig,
         model: AiModel,
@@ -1284,7 +1197,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                 return@callbackFlow
             }
         }
-
 
         val request = when (apiKey.provider) {
             AiProvider.GOOGLE -> buildGeminiStreamRequest(baseUrl, apiKey.apiKey.trim(), model.id, messages, temperature)
@@ -1317,7 +1229,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                 if (!response.isSuccessful) {
                     val errorBody = response.body?.string() ?: ""
                     response.body?.close()
-
 
                     val errorMsg = when (response.code) {
                         400 -> {
@@ -1375,7 +1286,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                         try {
                             val json = gson.fromJson(payload, JsonObject::class.java)
 
-
                             val error = json.getAsJsonObject("error")
                             if (error != null) {
                                 val errorMsg = error.get("message")?.asString ?: "API返回错误"
@@ -1383,7 +1293,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                                 close()
                                 return
                             }
-
 
                             when (apiKey.provider) {
                                 AiProvider.GOOGLE -> {
@@ -1451,7 +1360,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                                             AppLogger.d("AiApiClient", "🔍 StreamChat Space Debug - charCodes: ${content.map { "${it}(${it.code})" }}")
                                         }
 
-
                                         val shouldAppend = if (contentBuilder.isEmpty()) content.any { !it.isWhitespace() } else true
                                         if (shouldAppend) {
                                             contentBuilder.append(content)
@@ -1509,7 +1417,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                         flushEvent()
                     }
 
-
                     if (!doneSent) {
                         if (contentBuilder.isEmpty()) {
                             val debugInfo = if (!hasReceivedData) {
@@ -1537,9 +1444,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
 
         awaitClose { call.cancel() }
     }
-
-
-
 
     private fun buildGeminiStreamRequest(
         baseUrl: String,
@@ -1586,16 +1490,12 @@ val json = gson.fromJson(body, JsonObject::class.java)
             })
         }
 
-
         return Request.Builder()
             .url("$baseUrl/v1beta/models/$modelId:streamGenerateContent?alt=sse&key=$apiKey")
             .header("Content-Type", "application/json")
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
             .build()
     }
-
-
-
 
     private fun buildAnthropicStreamRequest(
         baseUrl: String,
@@ -1634,9 +1534,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
             .build()
     }
 
-
-
-
     private fun buildOpenAIStreamRequest(
         baseUrl: String,
         apiKey: ApiKeyConfig,
@@ -1660,7 +1557,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
             addProperty("stream", true)
         }
 
-
         val streamEndpoint = apiKey.getEffectiveChatEndpoint()
 
         AppLogger.d("AiApiClient", "Building stream request: baseUrl=$baseUrl, endpoint=$streamEndpoint")
@@ -1673,9 +1569,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
             .build()
     }
-
-
-
 
     private fun buildOllamaStreamRequest(
         baseUrl: String,
@@ -1712,12 +1605,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
         return builder.build()
     }
 
-
-
-
-
-
-
     suspend fun chatWithTools(
         apiKey: ApiKeyConfig,
         model: AiModel,
@@ -1741,9 +1628,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
             Result.failure(e)
         }
     }
-
-
-
 
     private fun chatWithToolsOpenAI(
         baseUrl: String,
@@ -1789,9 +1673,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
     }
 
-
-
-
     private fun parseOpenAIToolResponse(body: String): Result<ToolCallResponse> {
         return try {
             val json = gson.fromJson(body, JsonObject::class.java)
@@ -1824,9 +1705,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
     }
 
-
-
-
     private fun chatWithToolsGemini(
         baseUrl: String,
         apiKey: String,
@@ -1855,7 +1733,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                 })
             }
         }
-
 
         val geminiTools = com.google.gson.JsonArray()
         val functionDeclarations = com.google.gson.JsonArray()
@@ -1904,9 +1781,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
     }
 
-
-
-
     private fun parseGeminiToolResponse(body: String): Result<ToolCallResponse> {
         return try {
             val json = gson.fromJson(body, JsonObject::class.java)
@@ -1921,11 +1795,9 @@ val json = gson.fromJson(body, JsonObject::class.java)
             parts?.forEach { part ->
                 val partObj = part.asJsonObject
 
-
                 partObj.get("text")?.asString?.let {
                     textContent += it
                 }
-
 
                 partObj.getAsJsonObject("functionCall")?.let { fc ->
                     val name = fc.get("name")?.asString ?: return@let
@@ -1949,9 +1821,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
     }
 
-
-
-
     private fun chatWithToolsAnthropic(
         baseUrl: String,
         apiKey: String,
@@ -1970,7 +1839,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                 addProperty("content", msg["content"])
             })
         }
-
 
         val anthropicTools = com.google.gson.JsonArray()
         tools.forEach { tool ->
@@ -2006,9 +1874,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
             Result.failure(Exception(Strings.aiRequestFailed.format(response.code, response.body?.string())))
         }
     }
-
-
-
 
     private fun parseAnthropicToolResponse(body: String): Result<ToolCallResponse> {
         return try {
@@ -2046,12 +1911,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
     }
 
-
-
-
-
-
-
     fun chatStreamWithTools(
         apiKey: ApiKeyConfig,
         model: AiModel,
@@ -2068,7 +1927,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                 return@callbackFlow
             }
         }
-
 
         val request = buildOpenAIStreamWithToolsRequest(baseUrl, apiKey, model.id, messages, tools, temperature)
 
@@ -2096,7 +1954,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                 if (!response.isSuccessful) {
                     val errorBody = response.body?.string() ?: ""
                     response.body?.close()
-
 
                     val errorMsg = when (response.code) {
                         400 -> {
@@ -2133,13 +1990,11 @@ val json = gson.fromJson(body, JsonObject::class.java)
                     val textBuilder = StringBuilder()
                     val thinkingBuilder = StringBuilder()
 
-
                     val toolCallsMap = mutableMapOf<Int, ToolCallState>()
                     val completedToolCalls = mutableListOf<ToolCallInfo>()
 
                     var doneSent = false
                     val dataBuffer = StringBuilder()
-
 
                     fun processStreamChunk(
                         json: JsonObject,
@@ -2165,7 +2020,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
 
                         AppLogger.d("AiApiClient", "📝 Delta: ${delta?.toString()?.take(200) ?: "null"}, finishReason: $finishReason")
 
-
                         delta?.get("content")?.let { contentElem ->
                             if (!contentElem.isJsonNull) {
                                 val content = contentElem.asString
@@ -2185,8 +2039,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                             }
                         }
 
-
-
                         val thinkingContent = delta?.get("reasoning_content")?.let {
                             if (!it.isJsonNull) it.asString else null
                         } ?: delta?.get("reasoning")?.let {
@@ -2200,8 +2052,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                             AppLogger.d("AiApiClient", "ThinkingDelta: ${thinkingContent.take(50)}...")
                             trySend(ToolStreamEvent.ThinkingDelta(thinkingContent, thinkingBuilder.toString()))
                         }
-
-
 
                         delta?.getAsJsonArray("tool_calls")?.forEach { tc ->
                             val tcObj = tc.asJsonObject
@@ -2239,7 +2089,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                             }
                         }
 
-
                         if (toolCallsMap.isEmpty()) {
                             delta?.getAsJsonObject("function_call")?.let { funcCall ->
                                 AppLogger.d("AiApiClient", "Tool call chunk (delta.function_call): $funcCall")
@@ -2266,7 +2115,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                                 }
                             }
                         }
-
 
                         if (toolCallsMap.isEmpty()) {
                             choiceObj.getAsJsonObject("message")?.let { message ->
@@ -2300,7 +2148,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                                     }
                                 }
 
-
                                 message.getAsJsonObject("function_call")?.let { funcCall ->
                                     AppLogger.d("AiApiClient", "Tool call chunk (message.function_call): $funcCall")
 
@@ -2324,8 +2171,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                                 }
                             }
                         }
-
-
 
                         if (finishReason == "tool_calls" || finishReason == "function_call" || finishReason == "stop") {
                             AppLogger.d("AiApiClient", "Finish reason: $finishReason, toolCallsMap size: ${toolCallsMap.size}")
@@ -2360,7 +2205,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
 
                                     dataBuffer.append(data)
 
-
                                     val fullPayload = dataBuffer.toString()
                                     try {
                                         val json = gson.fromJson(fullPayload, JsonObject::class.java)
@@ -2393,7 +2237,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                         }
                     }
 
-
                     if (dataBuffer.isNotEmpty() && !doneSent) {
                         val payload = dataBuffer.toString().trim()
                         dataBuffer.setLength(0)
@@ -2412,7 +2255,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                         trySend(ToolStreamEvent.Done(textBuilder.toString(), completedToolCalls))
                     }
 
-
                     response.body?.close()
                     close()
                 } catch (e: Exception) {
@@ -2426,17 +2268,11 @@ val json = gson.fromJson(body, JsonObject::class.java)
         awaitClose { call.cancel() }
     }
 
-
-
-
     private class ToolCallState {
         var id: String = ""
         var name: String = ""
         val arguments = StringBuilder()
     }
-
-
-
 
     private fun buildOpenAIStreamWithToolsRequest(
         baseUrl: String,
@@ -2474,9 +2310,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
             addProperty("max_tokens", 16384)
             addProperty("stream", true)
 
-
-
-
             if (tools.isNotEmpty()) {
                 val modelLower = modelId.lowercase()
                 val providerName = apiKey.provider.name.lowercase()
@@ -2501,7 +2334,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                 addProperty("tool_choice", toolChoice)
             }
 
-
             val modelLower = modelId.lowercase()
             when {
 
@@ -2521,7 +2353,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
                 }
             }
 
-
             add("stream_options", JsonObject().apply {
                 addProperty("include_usage", true)
             })
@@ -2532,7 +2363,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
             AiProvider.VOLCANO -> "/v3/chat/completions"
             else -> "/v1/chat/completions"
         }
-
 
         val requestBodyJson = gson.toJson(body)
         AppLogger.d("AiApiClient", "🔧 Tool calling request URL: $baseUrl$streamEndpoint")
@@ -2548,12 +2378,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
             .post(requestBodyJson.toRequestBody("application/json".toMediaType()))
             .build()
     }
-
-
-
-
-
-
 
     suspend fun generateImage(
         context: Context,
@@ -2586,9 +2410,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
             Result.failure(e)
         }
     }
-
-
-
 
     private fun generateImageWithDallE(
         baseUrl: String,
@@ -2623,9 +2444,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
             Result.failure(Exception(Strings.aiImageGenerationFailed.format(response.code, errorBody)))
         }
     }
-
-
-
 
     private fun generateImageWithGemini(
         baseUrl: String,
@@ -2664,9 +2482,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
     }
 
-
-
-
     private fun generateImageWithOpenAICompatible(
         baseUrl: String,
         apiKey: String,
@@ -2678,9 +2493,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
 
         return generateImageWithDallE(baseUrl, apiKey, modelId, prompt, width, height)
     }
-
-
-
 
     private fun parseImageFromDallEResponse(body: String): Result<String> {
         return try {
@@ -2704,9 +2516,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
     }
 
-
-
-
     private fun parseImageFromGeminiImageResponse(body: String): Result<String> {
         return try {
             val json = gson.fromJson(body, JsonObject::class.java)
@@ -2729,9 +2538,6 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
     }
 
-
-
-
     private fun downloadImageAsBase64(url: String): Result<String> {
         return try {
             val request = Request.Builder().url(url).get().build()
@@ -2751,4 +2557,3 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
     }
 }
-

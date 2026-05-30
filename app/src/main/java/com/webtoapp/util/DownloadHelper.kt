@@ -16,61 +16,39 @@ import kotlinx.coroutines.launch
 import java.io.UnsupportedEncodingException
 import java.net.URLDecoder
 
-
-
-
 object DownloadHelper {
 
     private const val TAG = "DownloadHelper"
-
 
     private const val MAX_RETRY_COUNT = 3
     private const val RETRY_DELAY_MS = 1000L
     private val DOWNLOAD_ALLOWED_SCHEMES = setOf("http", "https")
 
-
     private val RFC5987_REGEX = Regex("""filename\*\s*=\s*([^']*)'([^']*)'(.+)""", RegexOption.IGNORE_CASE)
     private val QUOTED_FILENAME_REGEX = Regex("""filename\s*=\s*"([^"]+)""""", RegexOption.IGNORE_CASE)
     private val UNQUOTED_FILENAME_REGEX = Regex("""filename\s*=\s*([^;\s]+)""", RegexOption.IGNORE_CASE)
 
-
     private val retryCountMap = mutableMapOf<String, Int>()
-
-
-
-
 
     fun parseFileName(url: String, contentDisposition: String?, mimeType: String?): String {
         var fileName: String? = null
-
 
         if (!contentDisposition.isNullOrBlank()) {
             fileName = parseContentDisposition(contentDisposition)
         }
 
-
         if (fileName.isNullOrBlank()) {
             fileName = parseFileNameFromUrl(url)
         }
-
 
         if (fileName.isNullOrBlank()) {
             fileName = URLUtil.guessFileName(url, contentDisposition, mimeType) ?: "download"
         }
 
-
         fileName = ensureExtension(fileName, mimeType)
 
         return fileName
     }
-
-
-
-
-
-
-
-
 
     private fun parseContentDisposition(contentDisposition: String): String? {
 
@@ -86,14 +64,12 @@ object DownloadHelper {
             }
         }
 
-
         QUOTED_FILENAME_REGEX.find(contentDisposition)?.let { match ->
             val name = match.groupValues[1]
             if (name.isNotBlank()) {
                 return decodeFileName(name)
             }
         }
-
 
         UNQUOTED_FILENAME_REGEX.find(contentDisposition)?.let { match ->
             val name = match.groupValues[1]
@@ -104,9 +80,6 @@ object DownloadHelper {
 
         return null
     }
-
-
-
 
     private fun decodeFileName(name: String): String {
         var decoded = name
@@ -122,18 +95,13 @@ object DownloadHelper {
         return decoded.trim().removeSurrounding("\"").removeSurrounding("'")
     }
 
-
-
-
     private fun parseFileNameFromUrl(url: String): String? {
         try {
             val uri = Uri.parse(url)
             val path = uri.path ?: return null
 
-
             val lastSegment = path.substringAfterLast('/')
             if (lastSegment.isBlank()) return null
-
 
             if (lastSegment.contains('.') && !lastSegment.startsWith('.')) {
                 val decoded = try {
@@ -152,9 +120,6 @@ object DownloadHelper {
         return null
     }
 
-
-
-
     private fun ensureExtension(fileName: String, mimeType: String?): String {
 
         val lastDot = fileName.lastIndexOf('.')
@@ -165,7 +130,6 @@ object DownloadHelper {
                 return fileName
             }
         }
-
 
         if (!mimeType.isNullOrBlank()) {
             val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)
@@ -178,27 +142,10 @@ object DownloadHelper {
         return fileName
     }
 
-
-
-
     enum class DownloadMethod {
         DOWNLOAD_MANAGER,
         BROWSER
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     fun handleDownload(
         context: Context,
@@ -226,7 +173,6 @@ object DownloadHelper {
             return
         }
 
-
         if (url.startsWith("data:")) {
             val filename = parseFileName(url, contentDisposition, mimeType)
             if (onBlobDownload != null) {
@@ -247,7 +193,6 @@ object DownloadHelper {
 
         val fileName = parseFileName(safeUrl, contentDisposition, mimeType)
 
-
         if (saveToGallery && MediaSaver.isMediaFile(mimeType, fileName) && scope != null) {
             saveMediaToGallery(context, safeUrl, fileName, mimeType, scope)
             return
@@ -262,9 +207,6 @@ object DownloadHelper {
             }
         }
     }
-
-
-
 
     private fun saveMediaToGallery(
         context: Context,
@@ -302,7 +244,6 @@ object DownloadHelper {
                     }
                     Toast.makeText(context, savedMsg, Toast.LENGTH_SHORT).show()
 
-
                     notificationManager.showMediaSaveComplete(
                         fileName = fileName,
                         uri = result.uri,
@@ -318,9 +259,6 @@ object DownloadHelper {
             }
         }
     }
-
-
-
 
     fun downloadWithManager(
         context: Context,
@@ -347,21 +285,16 @@ object DownloadHelper {
 
                 addRequestHeader("User-Agent", userAgent)
 
-
-
                 CookieManager.getInstance().getCookie(safeUrl)?.let { cookie ->
                     if (cookie.isNotBlank()) {
                         addRequestHeader("Cookie", cookie)
                     }
                 }
 
-
-
                 originHeader?.let { origin ->
                     addRequestHeader("Origin", origin)
                     addRequestHeader("Referer", "$origin/")
                 }
-
 
                 if (showEnhancedNotification) {
 
@@ -372,15 +305,12 @@ object DownloadHelper {
                 setTitle(fileName)
                 setDescription("正在下载...")
 
-
                 setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-
 
                 setAllowedNetworkTypes(
                     DownloadManager.Request.NETWORK_WIFI or
                     DownloadManager.Request.NETWORK_MOBILE
                 )
-
 
                 if (mimeType.isNotBlank()) {
                     setMimeType(mimeType)
@@ -390,12 +320,10 @@ object DownloadHelper {
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             val downloadId = downloadManager.enqueue(request)
 
-
             if (showEnhancedNotification) {
                 val notificationManager = DownloadNotificationManager.getInstance(context)
                 notificationManager.trackDownload(downloadId, fileName, mimeType)
             }
-
 
             retryCountMap.remove(safeUrl)
 
@@ -403,7 +331,6 @@ object DownloadHelper {
 
         } catch (e: Exception) {
             AppLogger.e(TAG, "Operation failed", e)
-
 
             if (retryOnFailure) {
                 val currentRetry = retryCountMap[safeUrl] ?: 0
@@ -415,7 +342,6 @@ object DownloadHelper {
                         Toast.LENGTH_SHORT
                     ).show()
 
-
                     android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                         downloadWithManager(context, safeUrl, userAgent, contentDisposition, mimeType, showEnhancedNotification, true)
                     }, RETRY_DELAY_MS * (currentRetry + 1))
@@ -423,15 +349,11 @@ object DownloadHelper {
                 }
             }
 
-
             retryCountMap.remove(safeUrl)
             Toast.makeText(context, Strings.downloadFailedTryBrowser, Toast.LENGTH_SHORT).show()
             openInBrowser(context, safeUrl)
         }
     }
-
-
-
 
     fun openInBrowser(context: Context, url: String) {
         try {
@@ -460,16 +382,12 @@ object DownloadHelper {
         }
     }
 
-
-
-
     fun guessExtension(url: String, mimeType: String?): String {
 
         mimeType?.let {
             val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(it)
             if (!ext.isNullOrBlank()) return ".$ext"
         }
-
 
         val path = Uri.parse(url).path ?: return ""
         val lastDot = path.lastIndexOf('.')

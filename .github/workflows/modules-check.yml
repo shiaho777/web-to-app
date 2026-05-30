@@ -10,6 +10,7 @@ on:
     paths:
       - 'modules/**'
       - 'tools/ci/validate_modules.py'
+      - 'tools/ci/generate_submissions.py'
       - '.github/workflows/modules-check.yml'
   push:
     branches:
@@ -17,6 +18,7 @@ on:
     paths:
       - 'modules/**'
       - 'tools/ci/validate_modules.py'
+      - 'tools/ci/generate_submissions.py'
       - '.github/workflows/modules-check.yml'
   # Manual run from the Actions tab — handy when adjusting the validator
   # rules without a real catalog change to push.

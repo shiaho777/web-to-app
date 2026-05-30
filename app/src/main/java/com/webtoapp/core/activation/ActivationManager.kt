@@ -17,11 +17,6 @@ import kotlinx.coroutines.flow.map
 import java.security.MessageDigest
 import java.security.SecureRandom
 
-
-
-
-
-
 private val Context.activationDataStore: DataStore<Preferences> by preferencesDataStore(name = "activation")
 
 class ActivationManager(private val context: Context) {
@@ -32,9 +27,7 @@ class ActivationManager(private val context: Context) {
         private const val MAX_FAILED_ATTEMPTS = 5
         private const val LOCKOUT_DURATION_MS = 2 * 60 * 1000L
 
-
         private const val CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-
 
         const val MIN_CODE_LENGTH = 4
         const val MAX_CODE_LENGTH = 16
@@ -42,18 +35,6 @@ class ActivationManager(private val context: Context) {
     }
 
     private val secureRandom = SecureRandom()
-
-
-
-
-
-
-
-
-
-
-
-
 
     suspend fun verifyActivationCode(
         appId: Long,
@@ -74,16 +55,12 @@ class ActivationManager(private val context: Context) {
 
         val normalizedInput = normalizeCode(inputCode)
 
-
         val parsedCodes = validCodes.map { raw ->
             ActivationCode.fromJson(raw) ?: ActivationCode.fromLegacyString(raw)
         }
 
         return verifyAgainstCodes(appId, normalizedInput, parsedCodes)
     }
-
-
-
 
     suspend fun verifyActivationCodeWithObjects(
         appId: Long,
@@ -105,9 +82,6 @@ class ActivationManager(private val context: Context) {
         val normalizedInput = normalizeCode(inputCode)
         return verifyAgainstCodes(appId, normalizedInput, validActivationCodes)
     }
-
-
-
 
     private suspend fun verifyAgainstCodes(
         appId: Long,
@@ -133,13 +107,11 @@ class ActivationManager(private val context: Context) {
             }
         }
 
-
         val currentStatus = getActivationStatus(appId)
         if (currentStatus.isActivated && currentStatus.isValid) {
             AppLogger.i(TAG, "Already activated: app=$appId")
             return ActivationResult.AlreadyActivated
         }
-
 
         val deviceId = DeviceIdGenerator.getDeviceId(context)
         val validationResult = validateActivationCode(matchedCode, appId, deviceId)
@@ -155,20 +127,12 @@ class ActivationManager(private val context: Context) {
         return validationResult
     }
 
-
-
-
-
-
-
-
     private suspend fun validateActivationCode(
         code: ActivationCode,
         appId: Long,
         deviceId: String
     ): ActivationResult {
         val currentStatus = getActivationStatus(appId)
-
 
         if (currentStatus.isActivated) {
             if (currentStatus.isExpired) {
@@ -185,13 +149,11 @@ class ActivationManager(private val context: Context) {
             }
         }
 
-
         if (code.type == ActivationCodeType.DEVICE_BOUND && code.allowDeviceBinding) {
             if (currentStatus.deviceId != null && currentStatus.deviceId != deviceId) {
                 return ActivationResult.DeviceMismatch
             }
         }
-
 
         if (code.type == ActivationCodeType.TIME_LIMITED ||
             code.type == ActivationCodeType.COMBINED
@@ -200,7 +162,6 @@ class ActivationManager(private val context: Context) {
                 return ActivationResult.Invalid(Strings.invalidTimeLimitConfig)
             }
         }
-
 
         if (code.type == ActivationCodeType.USAGE_LIMITED ||
             code.type == ActivationCodeType.COMBINED
@@ -212,13 +173,6 @@ class ActivationManager(private val context: Context) {
 
         return ActivationResult.Success
     }
-
-
-
-
-
-
-
 
     fun isActivated(appId: Long): Flow<Boolean> {
         return context.activationDataStore.data.map { preferences ->
@@ -232,17 +186,11 @@ class ActivationManager(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun getActivationStatus(appId: Long): ActivationStatus {
         return context.activationDataStore.data.first().let { preferences ->
             getActivationStatusSync(appId, preferences)
         }
     }
-
-
-
 
     private fun getActivationStatusSync(appId: Long, preferences: Preferences): ActivationStatus {
         val isActivated = preferences[booleanPreferencesKey("activated_$appId")] ?: false
@@ -271,13 +219,6 @@ class ActivationManager(private val context: Context) {
         )
     }
 
-
-
-
-
-
-
-
     suspend fun saveActivationStatus(appId: Long, code: ActivationCode, deviceId: String) {
         val currentTime = System.currentTimeMillis()
         val expireTime = when (code.type) {
@@ -305,9 +246,6 @@ class ActivationManager(private val context: Context) {
         AppLogger.i(TAG, "Activation status saved: app=$appId, type=${code.type}")
     }
 
-
-
-
     suspend fun saveActivationStatus(appId: Long, activated: Boolean) {
         context.activationDataStore.edit { preferences ->
             preferences[booleanPreferencesKey("activated_$appId")] = activated
@@ -318,18 +256,12 @@ class ActivationManager(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun incrementUsageCount(appId: Long) {
         context.activationDataStore.edit { preferences ->
             val currentCount = preferences[intPreferencesKey("usage_count_$appId")] ?: 0
             preferences[intPreferencesKey("usage_count_$appId")] = currentCount + 1
         }
     }
-
-
-
 
     suspend fun resetActivation(appId: Long) {
         context.activationDataStore.edit { preferences ->
@@ -346,14 +278,6 @@ class ActivationManager(private val context: Context) {
         AppLogger.i(TAG, "Activation reset: app=$appId")
     }
 
-
-
-
-
-
-
-
-
     fun generateActivationCode(
         length: Int = DEFAULT_CODE_LENGTH,
         @Suppress("UNUSED_PARAMETER") seed: String = ""
@@ -362,9 +286,6 @@ class ActivationManager(private val context: Context) {
         val chars = CharArray(safeLen) { CODE_CHARS[secureRandom.nextInt(CODE_CHARS.length)] }
         return String(chars)
     }
-
-
-
 
     fun generateActivationCode(
         type: ActivationCodeType = ActivationCodeType.PERMANENT,
@@ -384,15 +305,9 @@ class ActivationManager(private val context: Context) {
         )
     }
 
-
-
-
     fun generateActivationCodes(count: Int, length: Int = DEFAULT_CODE_LENGTH): List<String> {
         return (1..count).map { generateActivationCode(length) }
     }
-
-
-
 
     fun generateActivationCodes(
         count: Int,
@@ -412,13 +327,6 @@ class ActivationManager(private val context: Context) {
         }
     }
 
-
-
-
-
-
-
-
     private fun normalizeCode(code: String): String {
         return code.replace("-", "")
             .replace(" ", "")
@@ -426,17 +334,11 @@ class ActivationManager(private val context: Context) {
             .trim()
     }
 
-
-
-
     private fun sha256Hash(input: String): String {
         val bytes = MessageDigest.getInstance("SHA-256")
             .digest((input + SALT).toByteArray())
         return bytes.joinToString("") { "%02x".format(it) }
     }
-
-
-
 
     private fun constantTimeEquals(a: String, b: String): Boolean {
         if (a.length != b.length) return false
@@ -446,10 +348,6 @@ class ActivationManager(private val context: Context) {
         }
         return result == 0
     }
-
-
-
-
 
     private suspend fun getLockoutRemainingMs(appId: Long): Long {
         val now = System.currentTimeMillis()
@@ -481,7 +379,6 @@ class ActivationManager(private val context: Context) {
             }
         }
 
-
         return getLockoutRemainingMs(appId)
     }
 
@@ -505,9 +402,6 @@ class ActivationManager(private val context: Context) {
         }
     }
 }
-
-
-
 
 sealed class ActivationResult {
     data object Success : ActivationResult()

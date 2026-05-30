@@ -47,14 +47,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URL
 
-
-
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MultiWebShellMode(
@@ -69,7 +61,6 @@ fun MultiWebShellMode(
 ) {
     val multiWebConfig = config.multiWebConfig
     val sites = multiWebConfig.sites.filter { it.enabled && (it.url.isNotBlank() || it.localFilePath.isNotBlank()) }
-
 
     val hasLocalSites = sites.any { (it.type == "LOCAL" || (it.type == "EXISTING" && it.localFilePath.isNotBlank())) && it.localFilePath.isNotBlank() }
     val context = LocalContext.current
@@ -135,10 +126,6 @@ fun MultiWebShellMode(
         else -> TabsMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
     }
 }
-
-
-
-
 
 @Composable
 private fun TabsMode(
@@ -220,7 +207,6 @@ private fun TabsMode(
                 .padding(padding)
         ) {
 
-
             AndroidView(
                 factory = { ctx ->
                     android.widget.FrameLayout(ctx).apply {
@@ -256,6 +242,7 @@ private fun TabsMode(
                                             this, webViewConfig, webViewCallbacks,
                                             config.extensionModuleIds, config.embeddedExtensionModules,
                                             config.extensionFabIcon, allowGlobalModuleFallback = false,
+                                            extensionEnabled = config.extensionEnabled,
                                             browserDisguiseConfig = config.browserDisguiseConfig,
                                             deviceDisguiseConfig = config.deviceDisguiseConfig
                                         )
@@ -308,10 +295,6 @@ private fun TabsMode(
         }
     }
 }
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -379,6 +362,7 @@ private fun CardsMode(
                                 this, webViewConfig, webViewCallbacks,
                                 config.extensionModuleIds, config.embeddedExtensionModules,
                                 config.extensionFabIcon, allowGlobalModuleFallback = false,
+                                extensionEnabled = config.extensionEnabled,
                                 browserDisguiseConfig = config.browserDisguiseConfig,
                                 deviceDisguiseConfig = config.deviceDisguiseConfig
                             )
@@ -490,7 +474,6 @@ private fun CardsHomeGrid(
                 }
             }
 
-
             val chunked = categorySites.chunked(2)
             items(chunked) { pair ->
                 Row(
@@ -596,10 +579,6 @@ private fun SiteCard(
     }
 }
 
-
-
-
-
 data class FeedItem(
     val title: String,
     val url: String,
@@ -628,7 +607,6 @@ private fun FeedMode(
     var isLoading by remember { mutableStateOf(true) }
     var openUrl by remember { mutableStateOf<String?>(null) }
     var openTitle by remember { mutableStateOf("") }
-
 
     LaunchedEffect(sites) {
         isLoading = true
@@ -683,6 +661,7 @@ private fun FeedMode(
                                 this, webViewConfig, webViewCallbacks,
                                 config.extensionModuleIds, config.embeddedExtensionModules,
                                 config.extensionFabIcon, allowGlobalModuleFallback = false,
+                                extensionEnabled = config.extensionEnabled,
                                 browserDisguiseConfig = config.browserDisguiseConfig,
                                 deviceDisguiseConfig = config.deviceDisguiseConfig
                             )
@@ -851,7 +830,6 @@ private fun FeedItemCard(
             }
             Spacer(modifier = Modifier.height(6.dp))
 
-
             Text(
                 item.title,
                 style = MaterialTheme.typography.bodyLarge,
@@ -862,7 +840,6 @@ private fun FeedItemCard(
             )
             Spacer(modifier = Modifier.height(4.dp))
 
-
             Text(
                 extractDomain(item.url),
                 style = MaterialTheme.typography.bodySmall,
@@ -871,10 +848,6 @@ private fun FeedItemCard(
         }
     }
 }
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -940,7 +913,6 @@ private fun DrawerMode(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(vertical = 8.dp)
@@ -963,7 +935,6 @@ private fun DrawerMode(
     ) {
 
         val currentSite = selectedSite ?: sites.firstOrNull()
-
 
         val webViews = remember { mutableStateMapOf<String, WebView>() }
 
@@ -1033,6 +1004,7 @@ private fun DrawerMode(
                                                 this, webViewConfig, webViewCallbacks,
                                                 config.extensionModuleIds, config.embeddedExtensionModules,
                                                 config.extensionFabIcon, allowGlobalModuleFallback = false,
+                                                extensionEnabled = config.extensionEnabled,
                                                 browserDisguiseConfig = config.browserDisguiseConfig,
                                                 deviceDisguiseConfig = config.deviceDisguiseConfig
                                             )
@@ -1191,10 +1163,6 @@ private fun DrawerSiteItem(
     }
 }
 
-
-
-
-
 private fun extractDomain(url: String): String {
     return try {
         if (url.startsWith("http")) URL(url).host.removePrefix("www.") else url.substringAfterLast("/")
@@ -1202,10 +1170,6 @@ private fun extractDomain(url: String): String {
         url.removePrefix("https://").removePrefix("http://").substringBefore("/")
     }
 }
-
-
-
-
 
 private fun fetchFeedItems(sites: List<MultiWebSiteShellConfig>): List<FeedItem> {
     val allItems = mutableListOf<FeedItem>()
@@ -1222,7 +1186,6 @@ private fun fetchFeedItems(sites: List<MultiWebSiteShellConfig>): List<FeedItem>
             val html = connection.getInputStream().bufferedReader().readText()
 
             if (site.cssSelector.isNotBlank()) {
-
 
                 val elements = extractElementsByCss(html, site.cssSelector)
                 elements.forEach { element ->
@@ -1269,10 +1232,6 @@ private fun fetchFeedItems(sites: List<MultiWebSiteShellConfig>): List<FeedItem>
     return allItems.distinctBy { it.title }.take(100)
 }
 
-
-
-
-
 private fun extractElementsByCss(html: String, selector: String): List<String> {
 
     val parts = selector.trim().split(Regex("\\s+"))
@@ -1303,7 +1262,6 @@ private fun extractElementsByCss(html: String, selector: String): List<String> {
     }
 
     val results = mutableListOf<String>()
-
 
     val tagPattern = tag ?: "[a-zA-Z][a-zA-Z0-9]*"
     val attrPattern = buildString {

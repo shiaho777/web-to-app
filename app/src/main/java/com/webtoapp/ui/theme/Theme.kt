@@ -10,15 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 
-
-
-
-
-
 val LocalAppTheme = staticCompositionLocalOf { AppThemes.Default }
-
-
-
 
 data class AnimationSettings(
     val enabled: Boolean = true,
@@ -29,9 +21,6 @@ data class AnimationSettings(
 )
 
 val LocalAnimationSettings = staticCompositionLocalOf { AnimationSettings() }
-
-
-
 
 private val LightColorScheme = lightColorScheme(
     primary = Color(0xFF111113),
@@ -60,7 +49,6 @@ private val LightColorScheme = lightColorScheme(
     outlineVariant = Color(0xFFE4E4E7)
 )
 
-
 private val DarkColorScheme = darkColorScheme(
     primary = Color(0xFFF2F2F4),
     onPrimary = Color(0xFF111113),
@@ -86,16 +74,7 @@ private val DarkColorScheme = darkColorScheme(
     outlineVariant = Color(0xFF2B2B2F)
 )
 
-
-
-
-
-
 val LocalIsDarkTheme = staticCompositionLocalOf { false }
-
-
-
-
 
 @Composable
 fun WebToAppTheme(
@@ -108,11 +87,6 @@ fun WebToAppTheme(
     }
 }
 
-
-
-
-
-
 @Composable
 fun WebToAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -122,7 +96,6 @@ fun WebToAppTheme(
     val context = LocalContext.current
     val themeManager = remember { ThemeManager.getInstance(context) }
 
-
     val themeType by themeManager.themeTypeFlow.collectAsStateWithLifecycle()
     val darkModeSetting by themeManager.darkModeFlow.collectAsStateWithLifecycle()
     val enableAnimations by themeManager.enableAnimationsFlow.collectAsStateWithLifecycle()
@@ -131,16 +104,13 @@ fun WebToAppTheme(
     val enableSound by themeManager.enableSoundFlow.collectAsStateWithLifecycle()
     val animationSpeed by themeManager.animationSpeedFlow.collectAsStateWithLifecycle()
 
-
     val useDarkTheme = when (darkModeSetting) {
         ThemeManager.DarkModeSettings.SYSTEM -> darkTheme
         ThemeManager.DarkModeSettings.LIGHT -> false
         ThemeManager.DarkModeSettings.DARK -> true
     }
 
-
     val currentTheme = AppThemes.getTheme(themeType)
-
 
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
@@ -151,7 +121,6 @@ fun WebToAppTheme(
         else -> currentTheme.lightColors
     }
 
-
     val animationSettings = AnimationSettings(
         enabled = enableAnimations,
         particlesEnabled = enableParticles,
@@ -160,17 +129,16 @@ fun WebToAppTheme(
         speedMultiplier = animationSpeed.multiplier
     )
 
-
     val themeShapes = Shapes(
-        // extraSmall: chips and small pills
+
         extraSmall = RoundedCornerShape(6.dp),
-        // small: buttons and compact inputs
+
         small = RoundedCornerShape(10.dp),
-        // medium: inner surfaces
+
         medium = RoundedCornerShape(12.dp),
-        // large: cards and bottom sheets
+
         large = RoundedCornerShape(14.dp),
-        // extraLarge: dialogs and modals
+
         extraLarge = RoundedCornerShape(20.dp)
     )
 
@@ -187,9 +155,6 @@ fun WebToAppTheme(
         )
     }
 }
-
-
-
 
 @Composable
 fun WebToAppThemeSimple(
@@ -210,10 +175,6 @@ fun WebToAppThemeSimple(
     }
 }
 
-
-
-
-
 @Composable
 fun ShellTheme(
     themeTypeName: String = "KIMI_NO_NAWA",
@@ -222,13 +183,11 @@ fun ShellTheme(
 ) {
     val systemDarkTheme = isSystemInDarkTheme()
 
-
     val themeType = try {
         AppThemeType.valueOf(themeTypeName)
     } catch (e: Exception) {
         AppThemeType.KIMI_NO_NAWA
     }
-
 
     val useDarkTheme = when (darkModeSetting) {
         "LIGHT" -> false
@@ -236,12 +195,9 @@ fun ShellTheme(
         else -> systemDarkTheme
     }
 
-
     val currentTheme = AppThemes.getTheme(themeType)
 
-
     val colorScheme = if (useDarkTheme) currentTheme.darkColors else currentTheme.lightColors
-
 
     val animationSettings = AnimationSettings(
         enabled = true,
@@ -251,15 +207,15 @@ fun ShellTheme(
     )
 
     val themeShapes = Shapes(
-        // extraSmall: chips and small pills
+
         extraSmall = RoundedCornerShape(6.dp),
-        // small: buttons and compact inputs
+
         small = RoundedCornerShape(10.dp),
-        // medium: inner surfaces
+
         medium = RoundedCornerShape(12.dp),
-        // large: cards and bottom sheets
+
         large = RoundedCornerShape(14.dp),
-        // extraLarge: dialogs and modals
+
         extraLarge = RoundedCornerShape(20.dp)
     )
 

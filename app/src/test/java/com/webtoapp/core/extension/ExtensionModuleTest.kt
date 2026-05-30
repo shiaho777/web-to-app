@@ -89,4 +89,3 @@ class ExtensionModuleTest {
         assertThat(executable).contains("window.__flag = getConfig('flag', 'off')")
     }
 }
-

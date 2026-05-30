@@ -5,10 +5,6 @@ import org.junit.Test
 
 class ForcedRunConfigTest {
 
-
-
-
-
     @Test
     fun `DISABLED preset has enabled false`() {
         assertThat(ForcedRunConfig.DISABLED.enabled).isFalse()
@@ -18,10 +14,6 @@ class ForcedRunConfigTest {
     fun `DISABLED preset uses FIXED_TIME mode by default`() {
         assertThat(ForcedRunConfig.DISABLED.mode).isEqualTo(ForcedRunMode.FIXED_TIME)
     }
-
-
-
-
 
     @Test
     fun `STUDY_MODE preset is enabled`() {
@@ -50,10 +42,6 @@ class ForcedRunConfigTest {
         assertThat(ForcedRunConfig.STUDY_MODE.showCountdown).isTrue()
     }
 
-
-
-
-
     @Test
     fun `FOCUS_MODE preset is enabled`() {
         assertThat(ForcedRunConfig.FOCUS_MODE.enabled).isTrue()
@@ -73,10 +61,6 @@ class ForcedRunConfigTest {
     fun `FOCUS_MODE allows emergency exit`() {
         assertThat(ForcedRunConfig.FOCUS_MODE.allowEmergencyExit).isTrue()
     }
-
-
-
-
 
     @Test
     fun `KIDS_MODE preset is enabled`() {
@@ -106,10 +90,6 @@ class ForcedRunConfigTest {
         assertThat(ForcedRunConfig.KIDS_MODE.accessDays).containsExactly(1, 2, 3, 4, 5, 6, 7)
     }
 
-
-
-
-
     @Test
     fun `ForcedRunMode has all expected modes`() {
         assertThat(ForcedRunMode.values()).asList().containsExactly(
@@ -119,19 +99,11 @@ class ForcedRunConfigTest {
         )
     }
 
-
-
-
-
     @Test
     fun `default config has MAXIMUM protection level`() {
         val config = ForcedRunConfig(enabled = true)
         assertThat(config.protectionLevel).isEqualTo(ProtectionLevel.MAXIMUM)
     }
-
-
-
-
 
     @Test
     fun `config can be copied with modifications`() {

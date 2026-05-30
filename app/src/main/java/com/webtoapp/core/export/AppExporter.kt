@@ -26,9 +26,6 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
-
-
-
 class AppExporter(private val context: Context) {
 
     companion object {
@@ -36,24 +33,17 @@ class AppExporter(private val context: Context) {
         private const val SHORTCUT_ICON_SIZE = 192
         private const val BUFFER_SIZE = 8192
 
-
         private val gson: Gson by lazy {
             GsonBuilder().setPrettyPrinting().create()
         }
 
-
         private val SANITIZE_FILENAME_REGEX = Regex("[^a-zA-Z0-9_\\-\\u4e00-\\u9fa5]")
         private val SANITIZE_PACKAGE_REGEX = Regex("[^a-z0-9]")
-
 
         private val dateFormat: ThreadLocal<SimpleDateFormat> = threadLocalCompat {
             SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
         }
     }
-
-
-
-
 
     fun createShortcut(webApp: WebApp): ShortcutResult {
         return try {
@@ -65,14 +55,12 @@ class AppExporter(private val context: Context) {
                 IconCompat.createWithResource(context, android.R.drawable.sym_def_app_icon)
             }
 
-
             val launchIntent = Intent(context, WebViewActivity::class.java).apply {
                 action = Intent.ACTION_VIEW
                 putExtra("app_id", webApp.id)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
-
 
             when {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
@@ -89,9 +77,6 @@ class AppExporter(private val context: Context) {
         }
     }
 
-
-
-
     private fun createShortcutApi26(
         webApp: WebApp,
         icon: IconCompat,
@@ -105,7 +90,6 @@ class AppExporter(private val context: Context) {
             )
         }
 
-
         val shortcutInfo = ShortcutInfoCompat.Builder(context, "webapp_${webApp.id}")
             .setShortLabel(webApp.name.take(10))
             .setLongLabel(webApp.name.take(25))
@@ -113,7 +97,6 @@ class AppExporter(private val context: Context) {
             .setIntent(launchIntent)
             .setAlwaysBadged()
             .build()
-
 
         val callbackIntent = Intent(ACTION_SHORTCUT_CREATED).apply {
             `package` = context.packageName
@@ -124,7 +107,6 @@ class AppExporter(private val context: Context) {
             callbackIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-
 
         val result = ShortcutManagerCompat.requestPinShortcut(
             context,
@@ -139,9 +121,6 @@ class AppExporter(private val context: Context) {
             checkAndRequestPermission()
         }
     }
-
-
-
 
     @Suppress("DEPRECATION")
     private fun createShortcutLegacy(
@@ -169,13 +148,8 @@ class AppExporter(private val context: Context) {
 
         context.sendBroadcast(shortcutIntent)
 
-
         return ShortcutResult.Pending("快捷方式请求已发送，请检查桌面")
     }
-
-
-
-
 
     private fun prepareIconBitmap(webApp: WebApp): Bitmap? {
         webApp.iconPath?.let { path ->
@@ -223,9 +197,6 @@ class AppExporter(private val context: Context) {
         return null
     }
 
-
-
-
     private fun checkAndRequestPermission(): ShortcutResult {
         val manufacturer = Build.MANUFACTURER.lowercase()
 
@@ -256,9 +227,6 @@ class AppExporter(private val context: Context) {
         return ShortcutResult.PermissionRequired(message)
     }
 
-
-
-
     private fun tryOpenShortcutSettings(): ShortcutResult? {
         return try {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
@@ -272,9 +240,6 @@ class AppExporter(private val context: Context) {
         }
     }
 
-
-
-
     fun exportConfig(webApp: WebApp): ExportResult {
         return try {
             val exportDir = getExportDirectory()
@@ -286,13 +251,11 @@ class AppExporter(private val context: Context) {
             val fileName = "${webApp.name}_config_$timestamp.json"
             val file = File(exportDir, fileName)
 
-
             val exportData = AppExportData(
                 version = 1,
                 exportTime = System.currentTimeMillis(),
                 app = webApp.toExportFormat()
             )
-
 
             FileOutputStream(file).buffered(BUFFER_SIZE).use { stream ->
                 stream.write(gson.toJson(exportData).toByteArray())
@@ -304,9 +267,6 @@ class AppExporter(private val context: Context) {
         }
     }
 
-
-
-
     fun exportAsTemplate(webApp: WebApp): ExportResult {
         return try {
             val exportDir = getExportDirectory()
@@ -317,7 +277,6 @@ class AppExporter(private val context: Context) {
             }
             projectDir.mkdirs()
 
-
             createTemplateProject(projectDir, webApp)
 
             ExportResult.Success(projectDir.absolutePath)
@@ -326,9 +285,6 @@ class AppExporter(private val context: Context) {
         }
     }
 
-
-
-
     private fun getExportDirectory(): File {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             File(context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "WebToApp")
@@ -336,9 +292,6 @@ class AppExporter(private val context: Context) {
             File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "WebToApp")
         }
     }
-
-
-
 
     private fun createTemplateProject(projectDir: File, webApp: WebApp) {
 
@@ -350,18 +303,14 @@ class AppExporter(private val context: Context) {
         File(appDir, "res/raw").mkdirs()
         File(appDir, "res/mipmap-xxxhdpi").mkdirs()
 
-
         File(projectDir, "build.gradle.kts").writeText(generateRootBuildGradle())
         File(projectDir, "settings.gradle.kts").writeText(generateSettingsGradle(webApp.name))
         File(projectDir, "app/build.gradle.kts").writeText(generateAppBuildGradle(webApp))
 
-
         File(appDir, "AndroidManifest.xml").writeText(generateManifest())
-
 
         File(appDir, "java/com/webtoapp/generated/AppConfig.kt")
             .writeText(generateAppConfig(webApp))
-
 
         File(appDir, "res/values/strings.xml").writeText(generateStrings(webApp))
         File(appDir, "res/xml/network_security_config.xml")
@@ -371,7 +320,6 @@ class AppExporter(private val context: Context) {
         ).forEach { entry ->
             entry.sourceFile.copyTo(File(appDir, "res/raw/${entry.resourceName}.cer"), overwrite = true)
         }
-
 
         webApp.iconPath?.let { path ->
             try {
@@ -385,7 +333,6 @@ class AppExporter(private val context: Context) {
 
             }
         }
-
 
         File(projectDir, "README.md").writeText(generateReadme(webApp))
     }
@@ -567,34 +514,22 @@ object AppConfig {
     )
 }
 
-
-
-
 data class AppExportData(
     val version: Int,
     val exportTime: Long,
     val app: Map<String, Any?>
 )
 
-
-
-
 sealed class ShortcutResult {
 
     data object Success : ShortcutResult()
 
-
     data class Pending(val message: String) : ShortcutResult()
-
 
     data class PermissionRequired(val message: String) : ShortcutResult()
 
-
     data class Error(val message: String) : ShortcutResult()
 }
-
-
-
 
 sealed class ExportResult {
     data class Success(val path: String) : ExportResult()

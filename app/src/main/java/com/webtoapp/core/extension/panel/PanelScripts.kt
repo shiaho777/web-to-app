@@ -1,10 +1,5 @@
 package com.webtoapp.core.extension.panel
 
-
-
-
-
-
 object PanelScripts {
     fun buildPanelScript(fabIcon: String): String = """
 (function() {
@@ -1543,7 +1538,6 @@ object PanelScripts {
             gap: 8px;
         }
     `;
-
 
     // ==================== UI 类型常量 ====================
     const UI_TYPE = {

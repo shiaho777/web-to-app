@@ -12,10 +12,6 @@ import kotlinx.coroutines.*
 import java.io.File
 import java.io.FileOutputStream
 
-
-
-
-
 class WebsiteScreenshotService(private val context: Context) {
 
     companion object {
@@ -50,9 +46,6 @@ class WebsiteScreenshotService(private val context: Context) {
     fun hasScreenshot(appId: Long): Boolean {
         return File(getScreenshotPath(appId)).exists()
     }
-
-
-
 
     suspend fun captureScreenshot(appId: Long, url: String): String? {
         val scheme = android.net.Uri.parse(url).scheme?.lowercase(java.util.Locale.ROOT)
@@ -99,7 +92,6 @@ class WebsiteScreenshotService(private val context: Context) {
                     }
                 }
 
-
                 webView.measure(
                     View.MeasureSpec.makeMeasureSpec(SCREENSHOT_WIDTH, View.MeasureSpec.EXACTLY),
                     View.MeasureSpec.makeMeasureSpec(SCREENSHOT_HEIGHT, View.MeasureSpec.EXACTLY)
@@ -139,7 +131,6 @@ class WebsiteScreenshotService(private val context: Context) {
                 Log.i("ScreenshotFlow", loadMessage)
                 webView.loadUrl(url)
 
-
                 val loadCompleted = withTimeoutOrNull(LOAD_TIMEOUT_MS) {
                     pageLoaded.await()
                 }
@@ -147,9 +138,7 @@ class WebsiteScreenshotService(private val context: Context) {
                 AppLogger.i("ScreenshotFlow", waitMessage)
                 Log.i("ScreenshotFlow", waitMessage)
 
-
                 delay(RENDER_DELAY_MS)
-
 
                 val path = doCapture(webView, appId)
                 destroyWebView(webView)
@@ -167,9 +156,6 @@ class WebsiteScreenshotService(private val context: Context) {
         }
     }
 
-
-
-
     private fun doCapture(webView: WebView, appId: Long): String? {
         return try {
 
@@ -182,7 +168,6 @@ class WebsiteScreenshotService(private val context: Context) {
             val bitmap = Bitmap.createBitmap(SCREENSHOT_WIDTH, SCREENSHOT_HEIGHT, Bitmap.Config.ARGB_8888)
             val canvas = android.graphics.Canvas(bitmap)
             webView.draw(canvas)
-
 
             val pixel = bitmap.getPixel(SCREENSHOT_WIDTH / 2, SCREENSHOT_HEIGHT / 2)
             if (pixel == android.graphics.Color.WHITE.toInt()) {

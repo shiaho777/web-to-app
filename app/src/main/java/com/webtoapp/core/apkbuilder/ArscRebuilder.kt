@@ -4,55 +4,21 @@ import com.webtoapp.core.logging.AppLogger
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
-
-
-
-
-
-
-
-
-
 class ArscRebuilder {
 
     companion object {
         private const val TAG = "ArscRebuilder"
 
-
         private const val RES_TABLE_TYPE: Short = 0x0002
         private const val RES_STRING_POOL_TYPE: Short = 0x0001
         private const val RES_TABLE_PACKAGE_TYPE: Short = 0x0200
 
-
         private const val UTF8_FLAG = 0x00000100
     }
-
-
-
-
-
-
-
 
     fun rebuildWithNewAppName(arscData: ByteArray, targetAppName: String): ByteArray {
         return rebuildWithNewAppNameAndIcons(arscData, targetAppName, replaceIcons = false)
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     fun rebuildWithNewAppNameAndIcons(
         arscData: ByteArray,
@@ -63,7 +29,6 @@ class ArscRebuilder {
 
         try {
             val buffer = ByteBuffer.wrap(arscData).order(ByteOrder.LITTLE_ENDIAN)
-
 
             val tableType = buffer.short
             val tableHeaderSize = buffer.short
@@ -76,7 +41,6 @@ class ArscRebuilder {
             }
 
             AppLogger.d(TAG, "Table header: size=$tableSize, packages=$packageCount")
-
 
             val stringPoolStart = tableHeaderSize.toInt()
             buffer.position(stringPoolStart)
@@ -98,12 +62,10 @@ class ArscRebuilder {
             val isUtf8 = (poolFlags and UTF8_FLAG) != 0
             AppLogger.d(TAG, "String pool: count=$stringCount, utf8=$isUtf8, size=$poolSize")
 
-
             val stringOffsets = IntArray(stringCount)
             for (i in 0 until stringCount) {
                 stringOffsets[i] = buffer.int
             }
-
 
             buffer.position(buffer.position() + styleCount * 4)
 
@@ -118,15 +80,11 @@ class ArscRebuilder {
             val afterStringPool = stringPoolStart + poolSize
             val remainingData = arscData.copyOfRange(afterStringPool, arscData.size)
 
-
-
-
             if (replaceIcons) {
                 val iconPaths = findIconPathIndices(remainingData, strings)
                 _lastDiscoveredIconPaths = iconPaths.map { (idx, _) -> strings[idx] }.toSet()
                 AppLogger.d(TAG, "Discovered old icon paths (for ZIP replacement): $_lastDiscoveredIconPaths")
             }
-
 
             var modified = false
             val appNamePatterns = listOf(
@@ -172,22 +130,17 @@ class ArscRebuilder {
 
             }
 
-
             val newStringPool = buildStringPool(strings, isUtf8, styleCount, poolFlags)
-
 
             val newArsc = ByteBuffer.allocate(tableHeaderSize + newStringPool.size + remainingData.size)
                 .order(ByteOrder.LITTLE_ENDIAN)
-
 
             newArsc.putShort(tableType)
             newArsc.putShort(tableHeaderSize)
             newArsc.putInt(tableHeaderSize + newStringPool.size + remainingData.size)
             newArsc.putInt(packageCount)
 
-
             newArsc.put(newStringPool)
-
 
             newArsc.put(remainingData)
 
@@ -200,22 +153,8 @@ class ArscRebuilder {
         }
     }
 
-
     private var _lastDiscoveredIconPaths = emptySet<String>()
     fun getLastDiscoveredIconPaths(): Set<String> = _lastDiscoveredIconPaths
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private fun findIconPathIndices(
         packageData: ByteArray,
@@ -225,7 +164,6 @@ class ArscRebuilder {
 
         try {
             val buf = ByteBuffer.wrap(packageData).order(ByteOrder.LITTLE_ENDIAN)
-
 
             val pkgType = buf.short
             val pkgHeaderSize = buf.short.toInt() and 0xFFFF
@@ -237,7 +175,6 @@ class ArscRebuilder {
                 return result
             }
 
-
             buf.position(buf.position() + 256)
 
             val typeStringsOffset = buf.int
@@ -245,22 +182,17 @@ class ArscRebuilder {
             val keyStringsOffset = buf.int
             val lastPublicKey = buf.int
 
-
             val typeStrPoolPos = typeStringsOffset
             buf.position(typeStrPoolPos)
             val typeStrings = readStringPool(buf, packageData)
-
 
             buf.position(keyStringsOffset)
             val keyStrings = readStringPool(buf, packageData)
 
             AppLogger.d(TAG, "Package types: ${typeStrings.joinToString()}")
 
-
-
             val mipmapTypeId = typeStrings.indexOfFirst { it == "mipmap" } + 1
             val drawableTypeId = typeStrings.indexOfFirst { it == "drawable" } + 1
-
 
             val icLauncherKeyIdx = keyStrings.indexOf("ic_launcher")
             val icLauncherRoundKeyIdx = keyStrings.indexOf("ic_launcher_round")
@@ -273,9 +205,6 @@ class ArscRebuilder {
                 AppLogger.w(TAG, "mipmap/drawable types not found in package")
                 return result
             }
-
-
-
 
             var pos = pkgHeaderSize
             var typeChunkCount = 0
@@ -293,7 +222,6 @@ class ArscRebuilder {
                     break
                 }
 
-
                 if (chunkType == 0x0201) {
                     typeChunkCount++
                     val typeId = buf.get().toInt() and 0xFF
@@ -309,14 +237,11 @@ class ArscRebuilder {
                         AppLogger.d(TAG, "Type chunk #$typeChunkCount: typeId=$typeId, entryCount=$entryCount, entriesStart=$entriesStart, chunkHeaderSize=$chunkHeaderSize, pos=$pos")
                     }
 
-
-
                     buf.position(pos + chunkHeaderSize)
                     val entryOffsets = IntArray(entryCount)
                     for (i in 0 until entryCount) {
                         entryOffsets[i] = buf.int
                     }
-
 
                     if (isInteresting) {
 
@@ -347,7 +272,6 @@ class ArscRebuilder {
                             continue
                         }
 
-
                         if (entryPos + entrySize + 8 > packageData.size) continue
                         val valueSize = buf.short.toInt() and 0xFFFF
                         buf.get()
@@ -360,16 +284,10 @@ class ArscRebuilder {
                             AppLogger.d(TAG, "  Entry $entryIdx: keyIndex=$entryKeyIndex('$keyName'), valueType=0x${valueType.toString(16)}, valueData=$valueData, path='$pathStr'")
                         }
 
-
                         if (valueType != 0x03) continue
 
                         val globalStrIdx = valueData
                         if (globalStrIdx < 0 || globalStrIdx >= globalStrings.size) continue
-
-
-
-
-
 
                         if (typeId == mipmapTypeId) {
                             if (entryKeyIndex == icLauncherKeyIdx || entryKeyIndex == icLauncherRoundKeyIdx) {
@@ -378,8 +296,6 @@ class ArscRebuilder {
                                 AppLogger.d(TAG, "Found mipmap/$keyName → '$oldPath' (adaptive icon XML, KEEPING)")
                             }
                         }
-
-
 
                         if (typeId == drawableTypeId) {
                             if (entryKeyIndex == icLauncherFgKeyIdx) {
@@ -399,12 +315,8 @@ class ArscRebuilder {
             AppLogger.e(TAG, "Failed to find icon path indices", e)
         }
 
-
         return result.distinctBy { it.first }
     }
-
-
-
 
     private fun readStringPool(buf: ByteBuffer, fullData: ByteArray): List<String> {
         val startPos = buf.position()
@@ -416,9 +328,7 @@ class ArscRebuilder {
         val flags = buf.int
         val strStart = buf.int
 
-
         val isUtf8 = (flags and UTF8_FLAG) != 0
-
 
         buf.position(startPos + poolHeaderSize)
 
@@ -433,13 +343,9 @@ class ArscRebuilder {
             result.add(readStringAt(fullData, stringsDataStart + offsets[i], isUtf8))
         }
 
-
         buf.position(startPos + poolSize)
         return result
     }
-
-
-
 
     private fun readStringAt(data: ByteArray, offset: Int, isUtf8: Boolean): String {
         return if (isUtf8) {
@@ -449,13 +355,8 @@ class ArscRebuilder {
         }
     }
 
-
-
-
-
     private fun readUtf8String(data: ByteArray, offset: Int): String {
         var pos = offset
-
 
         var charLen = data[pos].toInt() and 0xFF
         pos++
@@ -464,7 +365,6 @@ class ArscRebuilder {
             pos++
         }
 
-
         var byteLen = data[pos].toInt() and 0xFF
         pos++
         if ((byteLen and 0x80) != 0) {
@@ -472,17 +372,11 @@ class ArscRebuilder {
             pos++
         }
 
-
         return String(data, pos, byteLen, Charsets.UTF_8)
     }
 
-
-
-
-
     private fun readUtf16String(data: ByteArray, offset: Int): String {
         var pos = offset
-
 
         var charLen = (data[pos].toInt() and 0xFF) or ((data[pos + 1].toInt() and 0xFF) shl 8)
         pos += 2
@@ -494,18 +388,13 @@ class ArscRebuilder {
             pos += 2
         }
 
-
         val bytes = ByteArray(charLen * 2)
         System.arraycopy(data, pos, bytes, 0, charLen * 2)
         return String(bytes, Charsets.UTF_16LE)
     }
 
-
-
-
     private fun buildStringPool(strings: List<String>, isUtf8: Boolean, styleCount: Int, flags: Int): ByteArray {
         val stringCount = strings.size
-
 
         val stringDataList = mutableListOf<ByteArray>()
         for (str in strings) {
@@ -517,21 +406,17 @@ class ArscRebuilder {
             stringDataList.add(encoded)
         }
 
-
         val headerSize = 28
         val offsetsSize = (stringCount + styleCount) * 4
         val stringsDataSize = stringDataList.sumOf { it.size }
 
-
         val stringsStart = headerSize + offsetsSize
-
 
         val alignedStringsDataSize = (stringsDataSize + 3) and 0x7FFFFFFC.toInt()
 
         val totalSize = stringsStart + alignedStringsDataSize
 
         val buffer = ByteBuffer.allocate(totalSize).order(ByteOrder.LITTLE_ENDIAN)
-
 
         buffer.putShort(RES_STRING_POOL_TYPE)
         buffer.putShort(headerSize.toShort())
@@ -542,23 +427,19 @@ class ArscRebuilder {
         buffer.putInt(stringsStart)
         buffer.putInt(0)
 
-
         var currentOffset = 0
         for (data in stringDataList) {
             buffer.putInt(currentOffset)
             currentOffset += data.size
         }
 
-
         for (i in 0 until styleCount) {
             buffer.putInt(0)
         }
 
-
         for (data in stringDataList) {
             buffer.put(data)
         }
-
 
         while (buffer.position() < totalSize) {
             buffer.put(0)
@@ -567,21 +448,16 @@ class ArscRebuilder {
         return buffer.array()
     }
 
-
-
-
     private fun encodeUtf8String(str: String): ByteArray {
         val utf8Bytes = str.toByteArray(Charsets.UTF_8)
         val charLen = str.length
         val byteLen = utf8Bytes.size
-
 
         val charLenSize = if (charLen > 0x7F) 2 else 1
         val byteLenSize = if (byteLen > 0x7F) 2 else 1
 
         val result = ByteArray(charLenSize + byteLenSize + byteLen + 1)
         var pos = 0
-
 
         if (charLen > 0x7F) {
             result[pos++] = (0x80 or ((charLen shr 8) and 0x7F)).toByte()
@@ -590,7 +466,6 @@ class ArscRebuilder {
             result[pos++] = charLen.toByte()
         }
 
-
         if (byteLen > 0x7F) {
             result[pos++] = (0x80 or ((byteLen shr 8) and 0x7F)).toByte()
             result[pos++] = (byteLen and 0xFF).toByte()
@@ -598,29 +473,22 @@ class ArscRebuilder {
             result[pos++] = byteLen.toByte()
         }
 
-
         System.arraycopy(utf8Bytes, 0, result, pos, byteLen)
         pos += byteLen
-
 
         result[pos] = 0
 
         return result
     }
 
-
-
-
     private fun encodeUtf16String(str: String): ByteArray {
         val utf16Bytes = str.toByteArray(Charsets.UTF_16LE)
         val charLen = str.length
-
 
         val lenSize = if (charLen > 0x7FFF) 4 else 2
 
         val result = ByteArray(lenSize + utf16Bytes.size + 2)
         var pos = 0
-
 
         if (charLen > 0x7FFF) {
             val high = 0x8000 or ((charLen shr 16) and 0x7FFF)
@@ -634,10 +502,8 @@ class ArscRebuilder {
             result[pos++] = ((charLen shr 8) and 0xFF).toByte()
         }
 
-
         System.arraycopy(utf16Bytes, 0, result, pos, utf16Bytes.size)
         pos += utf16Bytes.size
-
 
         result[pos++] = 0
         result[pos] = 0

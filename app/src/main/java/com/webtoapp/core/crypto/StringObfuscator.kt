@@ -6,12 +6,6 @@ import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
-
-
-
-
-
-
 object StringObfuscator {
 
     private const val ALGORITHM = "AES/GCM/NoPadding"
@@ -19,15 +13,8 @@ object StringObfuscator {
     private const val IV_SIZE = 12
     private const val TAG_SIZE = 128
 
-
     @Volatile
     private var obfuscationKey: ByteArray? = null
-
-
-
-
-
-
 
     fun initialize(packageName: String, signature: ByteArray) {
 
@@ -40,13 +27,6 @@ object StringObfuscator {
         )
     }
 
-
-
-
-
-
-
-
     fun obfuscate(plaintext: String, key: ByteArray): String {
         val iv = ByteArray(IV_SIZE).also { SecureRandom().nextBytes(it) }
 
@@ -57,16 +37,9 @@ object StringObfuscator {
 
         val encrypted = cipher.doFinal(plaintext.toByteArray(Charsets.UTF_8))
 
-
         val result = iv + encrypted
         return Base64.encodeToString(result, Base64.NO_WRAP)
     }
-
-
-
-
-
-
 
     fun deobfuscate(obfuscated: String): String {
         val key = obfuscationKey ?: throw IllegalStateException("StringObfuscator not initialized")
@@ -86,9 +59,6 @@ object StringObfuscator {
         return String(decrypted, Charsets.UTF_8)
     }
 
-
-
-
     fun xorObfuscate(plaintext: String, key: ByteArray): ByteArray {
         val bytes = plaintext.toByteArray(Charsets.UTF_8)
         val result = ByteArray(bytes.size)
@@ -100,9 +70,6 @@ object StringObfuscator {
         return result
     }
 
-
-
-
     fun xorDeobfuscate(obfuscated: ByteArray, key: ByteArray): String {
         val result = ByteArray(obfuscated.size)
 
@@ -112,10 +79,6 @@ object StringObfuscator {
 
         return String(result, Charsets.UTF_8)
     }
-
-
-
-
 
     fun generateObfuscatedCode(varName: String, plaintext: String, key: ByteArray): String {
         val obfuscated = xorObfuscate(plaintext, key)
@@ -132,10 +95,6 @@ object StringObfuscator {
     }
 }
 
-
-
-
-
 class ObfuscatedString private constructor(
     private val obfuscatedData: String
 ) {
@@ -144,24 +103,16 @@ class ObfuscatedString private constructor(
 
     companion object {
 
-
-
         fun of(obfuscated: String): ObfuscatedString {
             return ObfuscatedString(obfuscated)
         }
     }
-
-
-
 
     fun get(): String {
         return cachedValue ?: StringObfuscator.deobfuscate(obfuscatedData).also {
             cachedValue = it
         }
     }
-
-
-
 
     fun clear() {
         cachedValue = null

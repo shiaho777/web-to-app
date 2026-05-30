@@ -5,9 +5,6 @@ import com.webtoapp.data.model.UserAgentMode
 import com.webtoapp.data.model.UserAgentVersions
 import org.junit.Test
 
-
-
-
 class UserAgentVersionsTest {
 
     @Test

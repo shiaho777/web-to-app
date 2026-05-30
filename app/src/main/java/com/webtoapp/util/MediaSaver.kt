@@ -15,68 +15,35 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.net.URL
 
-
-
-
-
 object MediaSaver {
 
     private const val APP_FOLDER = "WebToApp"
     private const val DEFAULT_BUFFER_SIZE = 8192
-
-
-
 
     enum class MediaType {
         IMAGE,
         VIDEO
     }
 
-
-
-
     sealed class SaveResult {
         data class Success(val uri: Uri, val path: String) : SaveResult()
         data class Error(val message: String) : SaveResult()
     }
 
-
-
-
     interface ProgressCallback {
-
-
-
-
-
 
         fun onProgress(bytesDownloaded: Long, totalBytes: Long, progress: Int)
 
-
-
-
         fun onStart(totalBytes: Long) {}
 
-
-
-
         fun onComplete() {}
-
-
-
 
         fun onError(message: String) {}
     }
 
-
-
-
     fun interface SimpleProgressCallback {
         fun onProgress(progress: Int)
     }
-
-
-
 
     private fun SimpleProgressCallback.toProgressCallback(): ProgressCallback {
         return object : ProgressCallback {
@@ -86,9 +53,6 @@ object MediaSaver {
         }
     }
 
-
-
-
     fun getMediaType(mimeType: String?): MediaType? {
         return when {
             mimeType?.startsWith("image/") == true -> MediaType.IMAGE
@@ -96,9 +60,6 @@ object MediaSaver {
             else -> null
         }
     }
-
-
-
 
     fun getMediaTypeByExtension(fileName: String): MediaType? {
         val extension = fileName.substringAfterLast('.', "").lowercase()
@@ -108,9 +69,6 @@ object MediaSaver {
             else -> null
         }
     }
-
-
-
 
     suspend fun saveFromUrl(
         context: Context,
@@ -140,9 +98,6 @@ object MediaSaver {
         }
     }
 
-
-
-
     suspend fun saveFromUrl(
         context: Context,
         url: String,
@@ -150,9 +105,6 @@ object MediaSaver {
         mimeType: String? = null,
         onProgress: SimpleProgressCallback
     ): SaveResult = saveFromUrl(context, url, fileName, mimeType, onProgress.toProgressCallback())
-
-
-
 
     suspend fun saveFromUrlWithHeaders(
         context: Context,
@@ -168,11 +120,9 @@ object MediaSaver {
             connection.readTimeout = 30000
             connection.requestMethod = "GET"
 
-
             headers.forEach { (key, value) ->
                 connection.setRequestProperty(key, value)
             }
-
 
             if (!headers.containsKey("User-Agent")) {
                 connection.setRequestProperty("User-Agent",
@@ -201,9 +151,6 @@ object MediaSaver {
         }
     }
 
-
-
-
     suspend fun saveFromFile(
         context: Context,
         file: File,
@@ -227,9 +174,6 @@ object MediaSaver {
         }
     }
 
-
-
-
     suspend fun saveFromBytes(
         context: Context,
         bytes: ByteArray,
@@ -248,10 +192,6 @@ object MediaSaver {
         }
     }
 
-
-
-
-
     private fun saveToGallery(
         context: Context,
         inputStream: InputStream,
@@ -261,9 +201,6 @@ object MediaSaver {
     ): SaveResult {
         return saveToGalleryWithProgress(context, inputStream, fileName, mimeType, mediaType, -1, null)
     }
-
-
-
 
     private fun saveToGalleryWithProgress(
         context: Context,
@@ -280,9 +217,6 @@ object MediaSaver {
             saveToGalleryLegacyWithProgress(context, inputStream, fileName, mimeType, mediaType, totalBytes, progressCallback)
         }
     }
-
-
-
 
     private fun copyWithProgress(
         inputStream: InputStream,
@@ -306,7 +240,6 @@ object MediaSaver {
                     -1
                 }
 
-
                 if (progress != lastReportedProgress) {
                     progressCallback.onProgress(totalBytesRead, totalBytes, progress)
                     lastReportedProgress = progress
@@ -316,9 +249,6 @@ object MediaSaver {
 
         return totalBytesRead
     }
-
-
-
 
     private fun saveToGalleryQWithProgress(
         context: Context,
@@ -357,7 +287,6 @@ object MediaSaver {
                 copyWithProgress(inputStream, outputStream, totalBytes, progressCallback)
             } ?: return SaveResult.Error("Cannot write file")
 
-
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 contentValues.clear()
                 contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0)
@@ -373,9 +302,6 @@ object MediaSaver {
             SaveResult.Error("Write failed: ${e.message}")
         }
     }
-
-
-
 
     private fun saveToGalleryLegacyWithProgress(
         context: Context,
@@ -396,7 +322,6 @@ object MediaSaver {
             appDir.mkdirs()
         }
 
-
         var targetFile = File(appDir, fileName)
         var counter = 1
         val nameWithoutExt = fileName.substringBeforeLast(".")
@@ -412,7 +337,6 @@ object MediaSaver {
             targetFile.outputStream().use { outputStream ->
                 copyWithProgress(inputStream, outputStream, totalBytes, progressCallback)
             }
-
 
             val contentUri = when (mediaType) {
                 MediaType.IMAGE -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
@@ -443,9 +367,6 @@ object MediaSaver {
         }
     }
 
-
-
-
     private fun guessMimeType(fileName: String): String {
         val extension = fileName.substringAfterLast('.', "").lowercase()
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension)
@@ -469,9 +390,6 @@ object MediaSaver {
             contentLength.toLong()
         }
     }
-
-
-
 
     fun isMediaFile(mimeType: String?, fileName: String? = null): Boolean {
         if (getMediaType(mimeType) != null) return true

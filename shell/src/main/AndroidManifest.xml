@@ -157,6 +157,14 @@
         </intent>
     </queries>
 
+    <!--
+    ==========================================================================
+    android:enableOnBackInvokedCallback="true"
+    Android 13+ predictive back 兼容开关。详见宿主 manifest 同名注释。
+    打开后所有 OnBackPressedCallback 自动收到 OEM 侧边手势 / 三角键的返回
+    事件，子 APK 在 webapp 内滑边返回会回退网页历史，而不是退到桌面。
+    ==========================================================================
+    -->
     <application
         android:name=".WebToAppApplication"
         android:allowBackup="false"
@@ -167,6 +175,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WebToApp"
         android:usesCleartextTraffic="true"
+        android:enableOnBackInvokedCallback="true"
+        android:pageSizeCompat="enabled"
         tools:targetApi="31">
 
         
@@ -250,6 +260,19 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
+
+        <!--
+            NodeService - 子 APK 里跑用户 Node.js 项目的独立子进程。
+            为什么独立进程详见 app/src/main/AndroidManifest.xml 同名条目的注释。
+            子 APK 上保持完全相同的配置，否则 Node 子 APK 就退化回主进程嵌入式
+            模式（V8 无法重启）的旧行为。
+        -->
+        <service
+            android:name=".core.nodejs.NodeService"
+            android:enabled="true"
+            android:exported="false"
+            android:process=":nodejs"
+            android:stopWithTask="true" />
 
         
         <receiver

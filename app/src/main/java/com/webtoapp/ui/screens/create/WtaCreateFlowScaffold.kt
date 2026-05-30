@@ -21,16 +21,6 @@ import androidx.compose.ui.unit.dp
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaSpacing
 
-/**
- * Unified scaffold for every "create app" flow. Internally delegates to
- * [WtaScreen] so every create page inherits:
- *  - the edge-swipe-to-go-back gesture
- *  - the scroll-aware top bar with hairline divider
- *  - the transparent background layer
- *  - consistent title typography and padding
- *
- * This is the single source of truth for create-flow top-level layout.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WtaCreateFlowScaffold(
@@ -40,6 +30,7 @@ fun WtaCreateFlowScaffold(
     actions: @Composable RowScope.() -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
     floatingActionButtonPosition: FabPosition = FabPosition.End,
+    bottomBar: @Composable () -> Unit = {},
     contentScrollEnabled: Boolean = true,
     content: @Composable () -> Unit
 ) {
@@ -51,7 +42,8 @@ fun WtaCreateFlowScaffold(
         onBack = onBack,
         actions = actions,
         floatingActionButton = floatingActionButton,
-        floatingActionButtonPosition = floatingActionButtonPosition
+        floatingActionButtonPosition = floatingActionButtonPosition,
+        bottomBar = bottomBar
     ) { _ ->
         Column(
             modifier = Modifier

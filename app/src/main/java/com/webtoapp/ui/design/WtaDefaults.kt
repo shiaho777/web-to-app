@@ -8,22 +8,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-/**
- * Shared defaults for Material 3 primitives used across the app.
- *
- * M3 does not expose a CompositionLocal for default OutlinedTextField or
- * TextField colours, so we provide canonical colour sets here. Call sites
- * that cannot easily migrate to [WtaTextField] (for example, ones using
- * `prefix`, `suffix`, or custom `interactionSource`) should pass
- * `colors = WtaDefaults.outlinedTextFieldColors()` instead of relying on
- * the bare Material defaults.
- *
- * The colour scheme mirrors [WtaTextField]:
- *  - Outline is soft, ~35% alpha unfocused, primary on focus, error on error.
- *  - Container is fully transparent so the field sits cleanly on any card.
- *  - Labels shift from `onSurfaceVariant` to `onSurface` on focus for a
- *    subtle weight change that matches iOS-style inputs.
- */
 object WtaDefaults {
 
     @Composable
@@ -62,10 +46,6 @@ object WtaDefaults {
         )
     }
 
-    /**
-     * Filled variant, used by [WtaTextField]. Exposed for call sites that
-     * need the same visual but cannot use the Wta wrapper directly.
-     */
     @Composable
     @OptIn(ExperimentalMaterial3Api::class)
     fun filledTextFieldColors(): TextFieldColors {

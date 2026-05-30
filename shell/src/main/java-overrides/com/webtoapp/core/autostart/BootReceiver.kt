@@ -5,11 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.PowerManager
 import com.webtoapp.WebToAppApplication
-import com.webtoapp.core.forcedrun.ForcedRunReceiver
+import com.webtoapp.core.forcedrun.ForcedRunManager
 import com.webtoapp.core.logging.AppLogger
-
-
-
 
 class BootReceiver : BroadcastReceiver() {
 
@@ -61,9 +58,12 @@ class BootReceiver : BroadcastReceiver() {
                 )
             }
             autoStartManager.rescheduleAlarmIfNeeded()
-            context.sendBroadcast(Intent(context, ForcedRunReceiver::class.java).apply {
-                action = Intent.ACTION_BOOT_COMPLETED
-            })
+
+            try {
+                ForcedRunManager.getInstance(context).restoreFromPersistence()
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "恢复强制运行状态失败", e)
+            }
         } catch (e: Exception) {
             AppLogger.e(TAG, "开机自启动处理异常", e)
         } finally {

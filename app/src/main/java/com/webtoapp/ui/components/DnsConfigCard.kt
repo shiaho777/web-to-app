@@ -17,10 +17,6 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.DnsConfig
 import com.webtoapp.data.model.DnsProvider
 
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DnsConfigCard(
@@ -83,7 +79,6 @@ fun DnsConfigCard(
                 )
             }
 
-
             AnimatedVisibility(visible = enabled) {
                 Column(
                     modifier = Modifier.padding(top = 16.dp),
@@ -95,7 +90,6 @@ fun DnsConfigCard(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
 
                     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                         DnsProvider.entries.chunked(3).forEach { row ->
@@ -119,7 +113,6 @@ fun DnsConfigCard(
                         }
                     }
 
-
                     if (dnsConfig.provider == "custom") {
                         PremiumTextField(
                             value = dnsConfig.customDohUrl,
@@ -130,7 +123,6 @@ fun DnsConfigCard(
                             singleLine = true
                         )
                     }
-
 
                     Text(
                         Strings.dohModeLabel,
@@ -153,7 +145,6 @@ fun DnsConfigCard(
                         )
                     }
 
-
                     Card(
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
@@ -167,7 +158,6 @@ fun DnsConfigCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),

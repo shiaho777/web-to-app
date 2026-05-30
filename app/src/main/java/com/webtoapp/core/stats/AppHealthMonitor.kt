@@ -11,10 +11,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
 
-
-
-
-
 class AppHealthMonitor(
     private val context: Context,
     private val repository: AppStatsRepository
@@ -45,11 +41,7 @@ class AppHealthMonitor(
         .followSslRedirects(true)
         .build()
 
-
     val allHealthRecords: Flow<List<AppHealthRecord>> = repository.getAllLatestHealthRecords()
-
-
-
 
     suspend fun checkUrl(appId: Long, url: String): AppHealthRecord {
         return withContext(Dispatchers.IO) {
@@ -97,15 +89,11 @@ class AppHealthMonitor(
         }
     }
 
-
-
-
     suspend fun checkApps(apps: List<WebApp>) {
         val webApps = apps.filter { it.appType == AppType.WEB && it.url.startsWith("http") }
         if (webApps.isEmpty()) return
 
         AppLogger.i(TAG, "开始批量健康检测: ${webApps.size} 个应用")
-
 
         val semaphore = kotlinx.coroutines.sync.Semaphore(5)
         coroutineScope {
@@ -118,13 +106,9 @@ class AppHealthMonitor(
             }.awaitAll()
         }
 
-
         repository.cleanupOldHealthRecords()
         AppLogger.i(TAG, "批量健康检测完成")
     }
-
-
-
 
     fun startMonitoring(appsFlow: Flow<List<WebApp>>) {
         stopMonitoring()
@@ -138,25 +122,15 @@ class AppHealthMonitor(
         AppLogger.i(TAG, "健康监控已启动")
     }
 
-
-
-
     fun stopMonitoring() {
         monitorJob?.cancel()
         monitorJob = null
     }
 
-
-
-
-
     fun destroy() {
         stopMonitoring()
         scope.coroutineContext[kotlinx.coroutines.Job]?.cancel()
     }
-
-
-
 
     suspend fun getHealthSummary(appId: Long): AppHealthSummary? {
         val latest = repository.getRecentHealthRecords(appId, 1).firstOrNull() ?: return null

@@ -18,19 +18,12 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.webtoapp.data.model.GalleryConfig
 import com.webtoapp.data.model.SplashOrientation
 
-
-
-
-
 class GalleryPlayerActivity : ComponentActivity() {
 
     companion object {
         private const val EXTRA_CONFIG = "gallery_config"
         private const val EXTRA_START_INDEX = "start_index"
         private val gson = com.webtoapp.util.GsonProvider.gson
-
-
-
 
         fun launch(
             context: Context,
@@ -51,7 +44,6 @@ class GalleryPlayerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-
         val configJson = intent.getStringExtra(EXTRA_CONFIG)
         config = configJson?.let {
             try {
@@ -68,15 +60,12 @@ class GalleryPlayerActivity : ComponentActivity() {
             return
         }
 
-
         requestedOrientation = when (galleryConfig.orientation) {
             SplashOrientation.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             SplashOrientation.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         }
 
-
         setupImmersiveMode()
-
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 

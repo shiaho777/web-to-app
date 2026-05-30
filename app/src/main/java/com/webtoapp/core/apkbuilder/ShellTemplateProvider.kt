@@ -5,49 +5,18 @@ import com.webtoapp.core.logging.AppLogger
 import java.io.File
 import java.io.FileOutputStream
 
-
-
-
-
-
-
-
-
-
-
 interface ShellTemplateProvider {
-
-
-
-
 
     fun getTemplate(): File?
 
-
-
-
     val sourceName: String
-
-
-
-
 
     val estimatedSize: Long get() = -1
 
     fun supports(config: ApkConfig): Boolean = true
 
-
-
-
-
     val allowFallbackOnMissing: Boolean get() = true
 }
-
-
-
-
-
-
 
 class SelfAsTemplateProvider(private val context: Context) : ShellTemplateProvider {
 
@@ -70,12 +39,6 @@ class SelfAsTemplateProvider(private val context: Context) : ShellTemplateProvid
         }
     }
 }
-
-
-
-
-
-
 
 class AssetTemplateProvider(
     private val context: Context,
@@ -120,9 +83,6 @@ class AssetTemplateProvider(
     }
 }
 
-
-
-
 class CompositeTemplateProvider(
     private val providers: List<ShellTemplateProvider>
 ) : ShellTemplateProvider {
@@ -157,8 +117,6 @@ class CompositeTemplateProvider(
     }
 
     companion object {
-
-
 
         fun default(context: Context): CompositeTemplateProvider {
             return CompositeTemplateProvider(

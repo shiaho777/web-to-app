@@ -7,12 +7,7 @@ import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 
-
-
-
 class AppResultTest {
-
-
 
     @Test
     fun `Success wraps data correctly`() {
@@ -39,8 +34,6 @@ class AppResultTest {
         val result: AppResult<String> = AppResult.Success("ok")
         assertThat(result.getOrThrow()).isEqualTo("ok")
     }
-
-
 
     @Test
     fun `Error wraps message and cause`() {
@@ -69,8 +62,6 @@ class AppResultTest {
         val result: AppResult<Int> = AppResult.Error("fail")
         result.getOrThrow()
     }
-
-
 
     @Test
     fun `map transforms success data`() {
@@ -115,8 +106,6 @@ class AppResultTest {
         assertThat(invoked).isFalse()
     }
 
-
-
     @Test
     fun `runCatching returns Success on normal execution`() {
         val result = AppResult.runCatching { 42 }
@@ -135,8 +124,6 @@ class AppResultTest {
         assertThat(error.errorCode).isEqualTo(ErrorCode.IO_ERROR)
     }
 
-
-
     @Test
     fun `suspendRunCatching returns Success`() = runTest {
         val result = AppResult.suspendRunCatching { "async data" }
@@ -151,8 +138,6 @@ class AppResultTest {
         assertThat(result.isError).isTrue()
         assertThat((result as AppResult.Error).errorCode).isEqualTo(ErrorCode.NETWORK_ERROR)
     }
-
-
 
     @Test
     fun `ErrorCode maps SocketTimeoutException to NETWORK_TIMEOUT`() {
@@ -188,8 +173,6 @@ class AppResultTest {
     fun `ErrorCode maps unknown exception to UNKNOWN`() {
         assertThat(ErrorCode.fromException(NullPointerException())).isEqualTo(ErrorCode.UNKNOWN)
     }
-
-
 
     @Test
     fun `chaining onSuccess and onError works`() {

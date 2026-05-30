@@ -23,9 +23,6 @@ import com.webtoapp.core.stats.BatchImportService
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
 
-
-
-
 @Composable
 fun BatchImportDialog(
     importService: BatchImportService,
@@ -40,7 +37,6 @@ fun BatchImportDialog(
     var isImporting by remember { mutableStateOf(false) }
     var importResult by remember { mutableStateOf<Int?>(null) }
     var selectedTab by remember { mutableIntStateOf(0) }
-
 
     val bookmarkLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -63,7 +59,11 @@ fun BatchImportDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
 
-                TabRow(selectedTabIndex = selectedTab) {
+                TabRow(
+                    selectedTabIndex = selectedTab,
+
+                    containerColor = Color.Transparent
+                ) {
                     Tab(
                         selected = selectedTab == 0,
                         onClick = { selectedTab = 0 },
@@ -106,7 +106,6 @@ fun BatchImportDialog(
                         }
                     }
                 }
-
 
                 if (parsedEntries.isNotEmpty()) {
                     HorizontalDivider()
@@ -160,7 +159,6 @@ fun BatchImportDialog(
                         }
                     }
                 }
-
 
                 if (importResult != null) {
                     Surface(

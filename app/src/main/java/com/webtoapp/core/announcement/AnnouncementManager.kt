@@ -18,9 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 
-
-
-
 private val Context.announcementDataStore: DataStore<Preferences> by preferencesDataStore(name = "announcement")
 
 class AnnouncementManager(private val context: Context) {
@@ -29,10 +26,8 @@ class AnnouncementManager(private val context: Context) {
         private const val TAG = "AnnouncementManager"
     }
 
-
     private val _isNetworkAvailable = MutableStateFlow(true)
     val isNetworkAvailable: StateFlow<Boolean> = _isNetworkAvailable
-
 
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
@@ -40,18 +35,12 @@ class AnnouncementManager(private val context: Context) {
         checkNetworkStatus()
     }
 
-
-
-
     private fun checkNetworkStatus() {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork
         val capabilities = connectivityManager.getNetworkCapabilities(network)
         _isNetworkAvailable.value = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
     }
-
-
-
 
     fun startNetworkMonitoring() {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -81,9 +70,6 @@ class AnnouncementManager(private val context: Context) {
         }
     }
 
-
-
-
     fun stopNetworkMonitoring() {
         networkCallback?.let {
             try {
@@ -96,24 +82,9 @@ class AnnouncementManager(private val context: Context) {
         networkCallback = null
     }
 
-
-
-
-
-
-
     suspend fun shouldShowAnnouncement(appId: Long, announcement: Announcement?): Boolean {
         return shouldShowAnnouncementForTrigger(appId, announcement, isLaunch = true, isNoNetwork = false)
     }
-
-
-
-
-
-
-
-
-
 
     suspend fun shouldShowAnnouncementForTrigger(
         appId: Long,
@@ -130,11 +101,9 @@ class AnnouncementManager(private val context: Context) {
             return false
         }
 
-
         if (isNeverShow(appId)) {
             return false
         }
-
 
         val shouldTrigger = when {
             isLaunch -> announcement.triggerOnLaunch
@@ -147,7 +116,6 @@ class AnnouncementManager(private val context: Context) {
             return false
         }
 
-
         if (announcement.showOnce) {
             val shownVersion = getShownVersion(appId)
             return shownVersion < announcement.version
@@ -155,12 +123,6 @@ class AnnouncementManager(private val context: Context) {
 
         return true
     }
-
-
-
-
-
-
 
     suspend fun shouldTriggerIntervalAnnouncement(appId: Long, announcement: Announcement?): Boolean {
         if (announcement == null || !announcement.enabled) {
@@ -171,7 +133,6 @@ class AnnouncementManager(private val context: Context) {
         if (intervalMinutes <= 0) {
             return false
         }
-
 
         if (isNeverShow(appId)) {
             return false
@@ -199,17 +160,11 @@ class AnnouncementManager(private val context: Context) {
         return (lastTriggerTime + intervalMs - System.currentTimeMillis()).coerceAtLeast(0L)
     }
 
-
-
-
     private suspend fun getLastIntervalTriggerTime(appId: Long): Long {
         return context.announcementDataStore.data.first()[
             longPreferencesKey("announcement_interval_trigger_$appId")
         ] ?: 0L
     }
-
-
-
 
     suspend fun markIntervalTrigger(appId: Long) {
         context.announcementDataStore.edit { preferences ->
@@ -217,17 +172,11 @@ class AnnouncementManager(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun resetIntervalTrigger(appId: Long) {
         context.announcementDataStore.edit { preferences ->
             preferences.remove(longPreferencesKey("announcement_interval_trigger_$appId"))
         }
     }
-
-
-
 
     private suspend fun isNeverShow(appId: Long): Boolean {
         return context.announcementDataStore.data.first()[
@@ -235,17 +184,11 @@ class AnnouncementManager(private val context: Context) {
         ] ?: false
     }
 
-
-
-
     suspend fun markNeverShow(appId: Long) {
         context.announcementDataStore.edit { preferences ->
             preferences[booleanPreferencesKey("announcement_never_show_$appId")] = true
         }
     }
-
-
-
 
     private suspend fun getShownVersion(appId: Long): Int {
         return context.announcementDataStore.data.first()[
@@ -253,26 +196,17 @@ class AnnouncementManager(private val context: Context) {
         ] ?: 0
     }
 
-
-
-
     suspend fun markAnnouncementShown(appId: Long, version: Int) {
         context.announcementDataStore.edit { preferences ->
             preferences[intPreferencesKey("announcement_shown_$appId")] = version
         }
     }
 
-
-
-
     suspend fun resetAnnouncementStatus(appId: Long) {
         context.announcementDataStore.edit { preferences ->
             preferences.remove(intPreferencesKey("announcement_shown_$appId"))
         }
     }
-
-
-
 
     fun createAnnouncement(
         title: String,

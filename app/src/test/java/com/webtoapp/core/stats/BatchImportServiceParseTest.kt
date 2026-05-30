@@ -3,10 +3,6 @@ package com.webtoapp.core.stats
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-
-
-
-
 class BatchImportServiceParseTest {
 
     private fun parseFromText(text: String): List<TestParsedEntry> {
@@ -53,10 +49,6 @@ class BatchImportServiceParseTest {
 
     data class TestParsedEntry(val name: String, val url: String)
 
-
-
-
-
     @Test
     fun `parseFromText parses single URL`() {
         val result = parseFromText("https://example.com")
@@ -92,10 +84,6 @@ class BatchImportServiceParseTest {
         assertThat(result).hasSize(3)
     }
 
-
-
-
-
     @Test
     fun `parseFromText skips comment lines starting with hash`() {
         val text = """
@@ -123,10 +111,6 @@ class BatchImportServiceParseTest {
         assertThat(result).hasSize(2)
     }
 
-
-
-
-
     @Test
     fun `parseFromText deduplicates URLs`() {
         val text = """
@@ -136,10 +120,6 @@ class BatchImportServiceParseTest {
         val result = parseFromText(text)
         assertThat(result).hasSize(1)
     }
-
-
-
-
 
     @Test
     fun `parseFromText returns empty for non-URL text`() {
@@ -158,10 +138,6 @@ class BatchImportServiceParseTest {
         val result = parseFromText("My App|not-a-url")
         assertThat(result).isEmpty()
     }
-
-
-
-
 
     @Test
     fun `extractName removes www prefix and TLD`() {

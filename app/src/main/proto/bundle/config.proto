@@ -1,0 +1,194 @@
+syntax = "proto3";
+
+package android.bundle;
+
+option java_package = "com.android.bundle";
+option java_multiple_files = false;
+option java_outer_classname = "Config";
+
+message BundleConfig {
+  Bundletool bundletool = 1;
+  Optimizations optimizations = 2;
+  Compression compression = 3;
+  MasterResources master_resources = 4;
+  ApexConfig apex_config = 5;
+  repeated UnsignedEmbeddedApkConfig unsigned_embedded_apk_config = 6;
+  AssetModulesConfig asset_modules_config = 7;
+
+  enum BundleType {
+    REGULAR = 0;
+    APEX = 1;
+    ASSET_ONLY = 2;
+  }
+  BundleType type = 8;
+
+  Locales locales = 9;
+}
+
+message Bundletool {
+  reserved 1;
+  string version = 2;
+}
+
+message Compression {
+  repeated string uncompressed_glob = 1;
+
+  enum AssetModuleCompression {
+    UNSPECIFIED = 0;
+    UNCOMPRESSED = 1;
+    COMPRESSED = 2;
+  }
+  AssetModuleCompression install_time_asset_module_default_compression = 2;
+
+  enum ApkCompressionAlgorithm {
+    DEFAULT_APK_COMPRESSION_ALGORITHM = 0;
+    P7ZIP = 1;
+  }
+  ApkCompressionAlgorithm apk_compression_algorithm = 3;
+}
+
+message MasterResources {
+  repeated int32 resource_ids = 1;
+  repeated string resource_names = 2;
+}
+
+message Optimizations {
+  enum InjectMinSdkSetting {
+    UNSPECIFIED = 0;
+    DISABLED = 1;
+    ENABLED = 2;
+  }
+
+  SplitsConfig splits_config = 1;
+  UncompressNativeLibraries uncompress_native_libraries = 2;
+  UncompressDexFiles uncompress_dex_files = 3;
+  StandaloneConfig standalone_config = 4;
+  ResourceOptimizations resource_optimizations = 5;
+  StoreArchive store_archive = 6;
+  bool inject_min_sdk = 7 [deprecated = true];
+  InjectMinSdkSetting inject_min_sdk_setting = 8;
+}
+
+message ResourceOptimizations {
+  enum SparseEncoding {
+    reserved 1;
+    reserved "ENFORCED";
+    UNSPECIFIED = 0;
+    VARIANT_FOR_SDK_32 = 2;
+    DISABLED = 3;
+  }
+
+  message ResourceTypeAndName {
+    string type = 1;
+    string name = 2;
+  }
+
+  message CollapsedResourceNames {
+    bool collapse_resource_names = 1;
+    repeated ResourceTypeAndName no_collapse_resources = 2;
+    repeated string no_collapse_resource_types = 4;
+    bool deduplicate_resource_entries = 3;
+  }
+
+  SparseEncoding sparse_encoding = 1;
+  CollapsedResourceNames collapsed_resource_names = 2;
+}
+
+message UncompressNativeLibraries {
+  bool enabled = 1;
+
+  enum PageAlignment {
+    PAGE_ALIGNMENT_UNSPECIFIED = 0;
+    PAGE_ALIGNMENT_4K = 1;
+    PAGE_ALIGNMENT_16K = 2;
+    PAGE_ALIGNMENT_64K = 3;
+  }
+  PageAlignment alignment = 2;
+}
+
+message UncompressDexFiles {
+  bool enabled = 1;
+  UncompressedDexTargetSdk uncompressed_dex_target_sdk = 2;
+
+  enum UncompressedDexTargetSdk {
+    UNSPECIFIED = 0;
+    SDK_31 = 1;
+    SDK_33 = 3;
+    reserved 2;
+  }
+}
+
+message StoreArchive {
+  bool enabled = 1;
+}
+
+message Locales {
+  bool inject_locale_config = 1;
+}
+
+message SplitsConfig {
+  repeated SplitDimension split_dimension = 1;
+}
+
+message StandaloneConfig {
+  repeated SplitDimension split_dimension = 1;
+  bool strip_64_bit_libraries = 2;
+  DexMergingStrategy dex_merging_strategy = 3;
+
+  enum DexMergingStrategy {
+    MERGE_IF_NEEDED = 0;
+    NEVER_MERGE = 1;
+  }
+
+  FeatureModulesMode feature_modules_mode = 4;
+
+  enum FeatureModulesMode {
+    FUSED_FEATURE_MODULES = 0;
+    SEPARATE_FEATURE_MODULES = 1;
+  }
+}
+
+message SplitDimension {
+  enum Value {
+    UNSPECIFIED_VALUE = 0;
+    ABI = 1;
+    SCREEN_DENSITY = 2;
+    LANGUAGE = 3;
+    TEXTURE_COMPRESSION_FORMAT = 4;
+    DEVICE_TIER = 6 [deprecated = true];
+    COUNTRY_SET = 7;
+    AI_MODEL_VERSION = 8;
+    DEVICE_GROUP = 9;
+  }
+  Value value = 1;
+  bool negate = 2;
+  SuffixStripping suffix_stripping = 3;
+}
+
+message SuffixStripping {
+  bool enabled = 1;
+  string default_suffix = 2;
+}
+
+message ApexConfig {
+  repeated ApexEmbeddedApkConfig apex_embedded_apk_config = 1;
+  repeated SupportedAbiSet supported_abi_set = 2;
+}
+
+message SupportedAbiSet {
+  repeated string abi = 1;
+}
+
+message ApexEmbeddedApkConfig {
+  string package_name = 1;
+  string path = 2;
+}
+
+message UnsignedEmbeddedApkConfig {
+  string path = 1;
+}
+
+message AssetModulesConfig {
+  repeated int64 app_version = 1;
+  string asset_version_tag = 2;
+}

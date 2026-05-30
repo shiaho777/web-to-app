@@ -9,7 +9,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
-import java.nio.file.Files
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -48,31 +47,67 @@ class WordPressPhpRuntimeTest {
     }
 
     @Test
-    fun `php ready becomes true when downloaded php binary exists and is executable`() {
-        val phpBinary = File(WordPressDependencyManager.getPhpDir(context), "php").apply {
-            parentFile?.mkdirs()
+    fun `php ready becomes true when nativeLibraryDir libphp_so is present and executable`() {
+
+        val tempNativeDir = File(context.cacheDir, "test-native-lib").apply {
+            deleteRecursively()
+            mkdirs()
+        }
+        context.applicationInfo.nativeLibraryDir = tempNativeDir.absolutePath
+        val nativePhp = File(tempNativeDir, "libphp.so").apply {
+
             writeBytes(ByteArray(1024))
-            setExecutable(true)
+            setExecutable(true, false)
         }
 
-        assertThat(WordPressDependencyManager.isPhpReady(context)).isTrue()
-        assertThat(WordPressDependencyManager.getPhpExecutablePath(context)).isEqualTo(phpBinary.absolutePath)
+        try {
+            assertThat(WordPressDependencyManager.isPhpReady(context)).isTrue()
+            assertThat(WordPressDependencyManager.getPhpExecutablePath(context))
+                .isEqualTo(nativePhp.absolutePath)
+        } finally {
+            tempNativeDir.deleteRecursively()
+        }
     }
 
     @Test
-    fun `php ready repairs non executable downloaded php binary`() {
-        val phpBinary = File(WordPressDependencyManager.getPhpDir(context), "php").apply {
+    fun `php downloaded into app data dir is treated as ready when nativeLib is empty`() {
+
+        val emptyNativeDir = File(context.cacheDir, "test-native-lib-empty").apply {
+            deleteRecursively()
+            mkdirs()
+        }
+        context.applicationInfo.nativeLibraryDir = emptyNativeDir.absolutePath
+
+        val downloadedPhp = File(WordPressDependencyManager.getPhpDir(context), "bin/php").apply {
             parentFile?.mkdirs()
-            writeBytes(ByteArray(1024))
-            setReadable(true, false)
-            setExecutable(false, false)
+
+            writeBytes(ByteArray(1024 * 1024 + 1) { 0 })
+            setExecutable(true, false)
         }
 
-        Files.getPosixFilePermissions(phpBinary.toPath())
+        try {
+            assertThat(downloadedPhp.canExecute()).isTrue()
+            assertThat(WordPressDependencyManager.isPhpReady(context)).isTrue()
+            assertThat(WordPressDependencyManager.getPhpExecutablePath(context))
+                .isEqualTo(downloadedPhp.absolutePath)
+        } finally {
+            emptyNativeDir.deleteRecursively()
+        }
+    }
 
-        assertThat(phpBinary.canExecute()).isFalse()
-        assertThat(WordPressDependencyManager.isPhpReady(context)).isTrue()
-        assertThat(WordPressDependencyManager.getPhpExecutablePath(context)).isEqualTo(phpBinary.absolutePath)
-        assertThat(phpBinary.canExecute()).isTrue()
+    @Test
+    fun `php is not ready when neither nativeLib nor downloaded binary exists`() {
+        val emptyNativeDir = File(context.cacheDir, "test-native-lib-none").apply {
+            deleteRecursively()
+            mkdirs()
+        }
+        context.applicationInfo.nativeLibraryDir = emptyNativeDir.absolutePath
+        WordPressDependencyManager.getPhpDir(context).deleteRecursively()
+
+        try {
+            assertThat(WordPressDependencyManager.isPhpReady(context)).isFalse()
+        } finally {
+            emptyNativeDir.deleteRecursively()
+        }
     }
 }

@@ -2,17 +2,6 @@ package com.webtoapp.core.perf
 
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
-
-
-
-
-
-
-
 object NativeSysOptimizer {
 
     private const val TAG = "NativeSysOpt"
@@ -34,10 +23,6 @@ object NativeSysOptimizer {
 
     fun isAvailable(): Boolean = available
 
-
-
-
-
     fun optimizeSystem(): Int {
         if (!available) return 0
         return try {
@@ -48,9 +33,6 @@ object NativeSysOptimizer {
         }
     }
 
-
-
-
     fun bindToBigCores(): Boolean {
         if (!available) return false
         return try {
@@ -59,11 +41,6 @@ object NativeSysOptimizer {
             false
         }
     }
-
-
-
-
-
 
     fun boostThread(tid: Int = 0, nice: Int = -8): Boolean {
         if (!available) return false
@@ -74,9 +51,6 @@ object NativeSysOptimizer {
         }
     }
 
-
-
-
     fun readaheadFile(path: String) {
         if (!available) return
         try {
@@ -86,9 +60,6 @@ object NativeSysOptimizer {
         }
     }
 
-
-
-
     fun getMaxThermalTemp(): Int {
         if (!available) return 0
         return try {
@@ -97,9 +68,6 @@ object NativeSysOptimizer {
             0
         }
     }
-
-
-
 
     fun getSystemProfile(): SystemPerfOptimizer.SystemProfile? {
         if (!available) return null
@@ -123,10 +91,6 @@ object NativeSysOptimizer {
         }
     }
 
-
-
-
-
     fun getCpuTopology(): String? {
         if (!available) return null
         return try {
@@ -136,10 +100,6 @@ object NativeSysOptimizer {
         }
     }
 
-
-
-
-
     fun getThermalInfo(): String? {
         if (!available) return null
         return try {
@@ -148,8 +108,6 @@ object NativeSysOptimizer {
             null
         }
     }
-
-
 
     private external fun nativeOptimizeSystem(): Int
     private external fun nativeBindToBigCores(): Boolean

@@ -24,8 +24,6 @@ import com.webtoapp.core.pwa.PwaDataSource
 import android.content.Context
 import com.webtoapp.util.HtmlProjectHelper
 import com.webtoapp.util.ensureWebUrlScheme
-import com.webtoapp.util.isInsecureRemoteHttpUrl
-import com.webtoapp.util.upgradeRemoteHttpToHttps
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
@@ -36,9 +34,6 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
-
-
-
 @OptIn(FlowPreview::class)
 class MainViewModel(
     application: Application,
@@ -46,48 +41,35 @@ class MainViewModel(
     private val categoryRepository: AppCategoryRepository
 ) : AndroidViewModel(application) {
 
-
     val webApps: StateFlow<List<WebApp>> = repository.allWebApps
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
 
     val webAppSummaries: StateFlow<List<WebAppSummary>> = repository.allWebAppSummaries
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-
     val categories: StateFlow<List<AppCategory>> = categoryRepository.allCategories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
 
     private val _selectedCategoryId = MutableStateFlow<Long?>(null)
     val selectedCategoryId: StateFlow<Long?> = _selectedCategoryId.asStateFlow()
 
-
     private val _currentApp = MutableStateFlow<WebApp?>(null)
     val currentApp: StateFlow<WebApp?> = _currentApp.asStateFlow()
-
 
     private val _editState = MutableStateFlow(EditState())
     val editState: StateFlow<EditState> = _editState.asStateFlow()
 
-
     private val _hasUnsavedChanges = MutableStateFlow(false)
     val hasUnsavedChanges: StateFlow<Boolean> = _hasUnsavedChanges.asStateFlow()
-
 
     private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
-
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-
     private val _pwaAnalysisState = MutableStateFlow<PwaAnalysisState>(PwaAnalysisState.Idle)
     val pwaAnalysisState: StateFlow<PwaAnalysisState> = _pwaAnalysisState.asStateFlow()
-
-
-
 
     override fun onCleared() {
         super.onCleared()
@@ -105,13 +87,11 @@ class MainViewModel(
     ) { apps, query, categoryId ->
         var filtered = apps
 
-
         filtered = when (categoryId) {
             null -> filtered
             -1L -> filtered.filter { it.categoryId == null }
             else -> filtered.filter { it.categoryId == categoryId }
         }
-
 
         if (query.isNotBlank()) {
             filtered = filtered.filter {
@@ -122,7 +102,6 @@ class MainViewModel(
 
         filtered
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
 
     val filteredSummaries: StateFlow<List<WebAppSummary>> = combine(
         webAppSummaries,
@@ -147,9 +126,7 @@ class MainViewModel(
         filtered
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-
     suspend fun getWebApp(id: Long): WebApp? = repository.getWebApp(id)
-
 
     fun deleteAppById(id: Long) {
         viewModelScope.launch {
@@ -167,7 +144,6 @@ class MainViewModel(
         }
     }
 
-
     fun moveAppToCategoryById(id: Long, categoryId: Long?) {
         viewModelScope.launch {
             try {
@@ -179,9 +155,6 @@ class MainViewModel(
         }
     }
 
-
-
-
     fun createNewApp() {
         _editState.value = EditState()
         _currentApp.value = null
@@ -189,16 +162,11 @@ class MainViewModel(
         _hasUnsavedChanges.value = false
     }
 
-
-
-
     fun editApp(webApp: WebApp) {
         _currentApp.value = webApp
         _uiState.value = UiState.Idle
         _editState.value = webApp.toEditState()
         _hasUnsavedChanges.value = false
-
-
 
         if (webApp.webViewConfig.injectScripts.any {
             com.webtoapp.core.script.UserScriptStorage.isFileReference(it.code)
@@ -217,20 +185,10 @@ class MainViewModel(
         }
     }
 
-
-
-
     fun updateEditState(update: EditState.() -> EditState) {
         _editState.value = _editState.value.update()
         _hasUnsavedChanges.value = true
     }
-
-
-
-
-
-
-
 
     fun analyzePwa(url: String) {
         if (url.isBlank()) return
@@ -252,9 +210,6 @@ class MainViewModel(
         }
     }
 
-
-
-
     fun applyPwaResult(result: PwaAnalysisResult) {
         viewModelScope.launch {
 
@@ -263,7 +218,6 @@ class MainViewModel(
                     updateEditState { copy(name = name) }
                 }
             }
-
 
             result.suggestedIconUrl?.let { iconUrl ->
                 try {
@@ -279,7 +233,6 @@ class MainViewModel(
                 }
             }
 
-
             result.suggestedThemeColor?.let { color ->
                 updateEditState {
                     copy(
@@ -290,7 +243,6 @@ class MainViewModel(
                     )
                 }
             }
-
 
             result.suggestedOrientation?.let { orientation ->
                 val mode = when (orientation.lowercase()) {
@@ -305,7 +257,6 @@ class MainViewModel(
                     }
                 }
             }
-
 
             result.suggestedDisplay?.let { display ->
                 when (display.lowercase()) {
@@ -323,13 +274,11 @@ class MainViewModel(
                 }
             }
 
-
             if (result.source == PwaDataSource.MANIFEST) {
                 updateEditState {
                     copy(webViewConfig = webViewConfig.copy(pwaOfflineEnabled = true))
                 }
             }
-
 
             val hosts = PwaAnalyzer.suggestDeepLinkHosts(result, _editState.value.url)
             if (hosts.isNotEmpty()) {
@@ -340,7 +289,6 @@ class MainViewModel(
                     ))
                 }
             }
-
 
             result.startUrl?.let { startUrl ->
                 val currentUrl = _editState.value.url.trim()
@@ -356,15 +304,9 @@ class MainViewModel(
         }
     }
 
-
-
-
     fun resetPwaState() {
         _pwaAnalysisState.value = PwaAnalysisState.Idle
     }
-
-
-
 
     private fun downloadAndSaveIcon(iconUrl: String): String? {
         return try {
@@ -387,9 +329,6 @@ class MainViewModel(
         }
     }
 
-
-
-
     fun handleIconSelected(uri: Uri) {
         viewModelScope.launch {
             val oldPath = _editState.value.savedIconPath
@@ -411,9 +350,6 @@ class MainViewModel(
             }
         }
     }
-
-
-
 
     fun handleSplashMediaSelected(uri: Uri, isVideo: Boolean) {
         viewModelScope.launch {
@@ -438,9 +374,6 @@ class MainViewModel(
         }
     }
 
-
-
-
     fun clearSplashMedia() {
         viewModelScope.launch {
             val oldPath = _editState.value.savedSplashPath
@@ -456,13 +389,9 @@ class MainViewModel(
         }
     }
 
-
-
-
     fun saveApp() {
         viewModelScope.launch {
             var state = _editState.value
-
 
             if (!validateInput(state)) return@launch
 
@@ -504,9 +433,6 @@ class MainViewModel(
         }
     }
 
-
-
-
     fun deleteApp(webApp: WebApp) {
         viewModelScope.launch {
             try {
@@ -524,22 +450,13 @@ class MainViewModel(
         }
     }
 
-
-
-
     fun search(query: String) {
         _searchQuery.value = query
     }
 
-
-
-
     fun resetUiState() {
         _uiState.value = UiState.Idle
     }
-
-
-
 
     private fun resetEditState() {
         _editState.value = EditState()
@@ -547,18 +464,8 @@ class MainViewModel(
         _hasUnsavedChanges.value = false
     }
 
-
-
-
-
-
-
-
-
-
     suspend fun saveAndPreview(): Long? {
         val state = _editState.value
-
 
         if (state.name.isBlank() && state.url.isBlank()) return null
 
@@ -591,9 +498,6 @@ class MainViewModel(
         }
     }
 
-
-
-
     private fun validateInput(state: EditState): Boolean {
         return when {
             state.name.isBlank() -> {
@@ -610,15 +514,6 @@ class MainViewModel(
                 false
             }
 
-
-
-
-            state.appType == AppType.WEB && isInsecureRemoteHttpUrl(state.url) && !state.allowHttp -> {
-                AppLogger.w("MainViewModel", "Auto-allowing insecure HTTP URL: ${state.url}")
-                _editState.value = state.copy(allowHttp = true)
-                true
-            }
-
             state.appType == AppType.HTML && (state.htmlConfig?.files?.isEmpty() != false) -> {
                 _uiState.value = UiState.Error(Strings.pleaseSelectHtmlFile)
                 false
@@ -632,11 +527,6 @@ class MainViewModel(
         }
     }
 
-
-
-
-
-
     private fun isValidUrl(url: String): Boolean {
         val trimmed = url.trim()
         if (trimmed.isBlank()) return false
@@ -647,7 +537,6 @@ class MainViewModel(
                 !uri.host.isNullOrBlank()
             } else {
 
-
                 val host = trimmed.split("/").first()
                 host.isNotBlank() && !host.contains(" ") &&
                     (host.contains(".") || host == "localhost" || isIpAddress(host))
@@ -657,9 +546,6 @@ class MainViewModel(
         }
     }
 
-
-
-
     private fun isIpAddress(host: String): Boolean {
         val parts = host.split(".")
         if (parts.size != 4) return false
@@ -668,22 +554,11 @@ class MainViewModel(
         }
     }
 
-
-
-
-
-
-    private fun normalizeUrl(url: String, appType: AppType, allowHttp: Boolean = false): String {
+    private fun normalizeUrl(url: String, appType: AppType): String {
         val trimmed = url.trim()
         if (appType != AppType.WEB) return trimmed
 
-
-        return if (allowHttp && trimmed.startsWith("http://", ignoreCase = true)) {
-            trimmed
-        } else {
-            val withScheme = ensureWebUrlScheme(trimmed)
-            upgradeRemoteHttpToHttps(withScheme)
-        }
+        return ensureWebUrlScheme(trimmed)
     }
 
     private suspend fun buildDraftWebApp(
@@ -707,7 +582,7 @@ class MainViewModel(
         }
 
         val payload = state.toDraftPayload(
-            normalizedUrl = normalizeUrl(state.url, state.appType, state.allowHttp),
+            normalizedUrl = normalizeUrl(state.url, state.appType),
             iconPath = iconPath,
             extensionModuleIds = state.extensionModuleIds,
             currentThemeType = currentThemeType,
@@ -723,19 +598,10 @@ class MainViewModel(
         )
     }
 
-
-
-
-
-
     private suspend fun getCurrentThemeType(): String {
         val themeManager = ThemeManager.getInstance(getApplication())
         return themeManager.themeTypeFlow.first().name
     }
-
-
-
-
 
     private suspend fun saveIconIfPresent(iconUri: Uri?): String? {
         return iconUri?.let { uri ->
@@ -744,15 +610,6 @@ class MainViewModel(
             }
         }
     }
-
-
-
-
-
-
-
-
-
 
     private fun createApp(
         typeName: String,
@@ -778,15 +635,6 @@ class MainViewModel(
         }
     }
 
-
-
-
-
-
-
-
-
-
     private fun updateApp(
         appId: Long,
         typeName: String,
@@ -811,9 +659,6 @@ class MainViewModel(
             }
         }
     }
-
-
-
 
     fun saveMediaApp(
         name: String,
@@ -848,9 +693,6 @@ class MainViewModel(
         )
     }
 
-
-
-
     fun saveGalleryApp(
         name: String,
         galleryConfig: GalleryConfig?,
@@ -879,7 +721,6 @@ class MainViewModel(
         }
     }
 
-
     private suspend fun processAndSaveHtmlFiles(
         context: Context,
         files: List<HtmlFile>,
@@ -898,11 +739,6 @@ class MainViewModel(
                 java.io.File(file.path).let { it.exists() && it.isFile && it.canRead() && it.length() > 0L }
         }
     }
-
-
-
-
-
 
     fun saveHtmlApp(
         name: String,
@@ -944,12 +780,6 @@ class MainViewModel(
         )
     }
 
-
-
-
-
-
-
     fun saveZipHtmlApp(
         name: String,
         extractedDir: String,
@@ -969,7 +799,6 @@ class MainViewModel(
             _uiState.value = UiState.Error(Strings.saveFailedNoHtmlInZip)
             return@createApp null
         }
-
 
         withContext(Dispatchers.IO) { com.webtoapp.util.ZipProjectImporter.cleanupTempFiles(context) }
         AppLogger.d("MainViewModel", "ZIP HTML app saved: projectId=$projectId, files=${savedFiles.size}, entry=$entryFile")
@@ -996,11 +825,6 @@ class MainViewModel(
             categoryId = categoryId
         )
     }
-
-
-
-
-
 
     fun saveFrontendApp(
         name: String,
@@ -1040,9 +864,6 @@ class MainViewModel(
         )
     }
 
-
-
-
     fun saveWordPressApp(
         name: String,
         wordpressConfig: WordPressConfig,
@@ -1064,9 +885,6 @@ class MainViewModel(
             categoryId = categoryId
         )
     }
-
-
-
 
     fun saveNodeJsApp(
         name: String,
@@ -1090,9 +908,6 @@ class MainViewModel(
         )
     }
 
-
-
-
     fun updateNodeJsApp(
         appId: Long,
         name: String,
@@ -1107,9 +922,6 @@ class MainViewModel(
             updatedAt = System.currentTimeMillis()
         )
     }
-
-
-
 
     fun savePhpApp(
         name: String,
@@ -1128,9 +940,6 @@ class MainViewModel(
         )
     }
 
-
-
-
     fun savePythonApp(
         name: String,
         pythonAppConfig: PythonAppConfig,
@@ -1147,9 +956,6 @@ class MainViewModel(
             categoryId = categoryId
         )
     }
-
-
-
 
     fun saveGoApp(
         name: String,
@@ -1168,9 +974,6 @@ class MainViewModel(
         )
     }
 
-
-
-
     fun updatePhpApp(
         appId: Long,
         name: String,
@@ -1185,9 +988,6 @@ class MainViewModel(
             updatedAt = System.currentTimeMillis()
         )
     }
-
-
-
 
     fun updatePythonApp(
         appId: Long,
@@ -1204,9 +1004,6 @@ class MainViewModel(
         )
     }
 
-
-
-
     fun updateGoApp(
         appId: Long,
         name: String,
@@ -1222,9 +1019,6 @@ class MainViewModel(
         )
     }
 
-
-
-
     fun saveMultiWebApp(
         name: String,
         multiWebConfig: MultiWebConfig,
@@ -1239,7 +1033,6 @@ class MainViewModel(
         } else if (existingHtmlSites.isNotEmpty() && localSites.isEmpty() && multiWebConfig.projectId.isBlank()) {
             existingHtmlSites.first().sourceProjectId
         } else multiWebConfig.projectId.ifBlank { if (localSites.isNotEmpty()) HtmlStorage.generateProjectId() else "" }
-
 
         val updatedSites = multiWebConfig.sites.map { site ->
             when {
@@ -1273,9 +1066,6 @@ class MainViewModel(
         )
     }
 
-
-
-
     fun updateMultiWebApp(
         appId: Long,
         name: String,
@@ -1289,7 +1079,6 @@ class MainViewModel(
         val projectId = multiWebConfig.projectId.ifBlank {
             existingApp.multiWebConfig?.projectId ?: if (existingHtmlSites.isNotEmpty()) existingHtmlSites.first().sourceProjectId else ""
         }
-
 
         val updatedSites = multiWebConfig.sites.map { site ->
             when {
@@ -1353,9 +1142,6 @@ class MainViewModel(
             }
     }
 
-
-
-
     fun updateFrontendApp(
         appId: Long,
         name: String,
@@ -1391,9 +1177,6 @@ class MainViewModel(
         )
     }
 
-
-
-
     fun updateMediaApp(
         appId: Long,
         name: String,
@@ -1405,7 +1188,6 @@ class MainViewModel(
     ) = updateApp(appId, "Media", iconUri) { existingApp, savedIconPath ->
         val context = getApplication<Application>()
         val isVideo = appType == AppType.VIDEO
-
 
         val savedMediaPath = mediaUri?.let { uri ->
             withContext(Dispatchers.IO) { MediaStorage.saveMedia(context, uri, isVideo) }
@@ -1420,9 +1202,6 @@ class MainViewModel(
             updatedAt = System.currentTimeMillis()
         )
     }
-
-
-
 
     fun updateGalleryApp(
         appId: Long,
@@ -1445,12 +1224,6 @@ class MainViewModel(
         }
     }
 
-
-
-
-
-
-
     fun updateHtmlApp(
         appId: Long,
         name: String,
@@ -1460,24 +1233,31 @@ class MainViewModel(
     ) = updateApp(appId, "HTML", iconUri) { existingApp, savedIconPath ->
         val context = getApplication<Application>()
 
-
         val finalHtmlConfig = if (htmlConfig != null && htmlConfig != existingApp.htmlConfig) {
             AppLogger.d("MainViewModel", "HTML files changed, re-processing...")
 
-
-            existingApp.htmlConfig?.projectId?.let { oldProjectId ->
-                withContext(Dispatchers.IO) { HtmlStorage.deleteProject(context, oldProjectId) }
-            }
-
+            // ⚠ 顺序很重要:不能先删旧项目目录再处理文件。
+            // 编辑界面恢复出来的 htmlConfig.files,其 path 往往直接指向**旧项目目录**
+            // (html_projects/<oldProjectId>/...)。如果先删旧目录,processAndSaveHtmlFiles
+            // 读取这些源文件时就会全部失败,导致 savedHtmlFiles 为空 → 抛
+            // saveFailedCannotProcessHtml 并把新目录也删掉 → 最终一个项目目录都不剩,
+            // 应用还能打开是因为 DB 里的 config 没回滚,但缩略图解析(依赖目录存在)
+            // 就会失败,表现为“保存后缩略图过一会消失、无法刷新”。
+            // 正确做法:先把文件写进新目录,确认成功后再删旧目录。
+            val oldProjectId = existingApp.htmlConfig?.projectId
 
             val projectId = HtmlStorage.generateProjectId()
             val savedHtmlFiles = processAndSaveHtmlFiles(context, htmlConfig.files, projectId)
-
 
             if (savedHtmlFiles.none { it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) }) {
                 AppLogger.e("MainViewModel", "No HTML files were saved successfully in update")
                 withContext(Dispatchers.IO) { HtmlStorage.deleteProject(context, projectId) }
                 throw Exception(Strings.saveFailedCannotProcessHtml)
+            }
+
+            // 新项目目录已成功写好,此时再安全地删除旧目录(且避免误删 == 新目录的情况)。
+            if (!oldProjectId.isNullOrBlank() && oldProjectId != projectId) {
+                withContext(Dispatchers.IO) { HtmlStorage.deleteProject(context, oldProjectId) }
             }
 
             withContext(Dispatchers.IO) { HtmlStorage.clearTempFiles(context) }
@@ -1493,22 +1273,6 @@ class MainViewModel(
             updatedAt = System.currentTimeMillis()
         )
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     fun saveScrapedWebsiteApp(
         name: String,
@@ -1552,7 +1316,6 @@ class MainViewModel(
                         val savedIconPath = saveIconIfPresent(iconUri)
                         val categoryId = _selectedCategoryId.value?.takeIf { it > 0 }
 
-
                         val projectId = HtmlStorage.generateProjectId()
                         val savedFiles = copyBuildOutputToStorage(
                             context,
@@ -1592,7 +1355,6 @@ class MainViewModel(
 
                         withContext(Dispatchers.IO) { repository.createWebApp(webApp) }
 
-
                         scraper.deleteScrapedSite(result.projectDir.name)
 
                         val sizeKb = result.totalSize / 1024
@@ -1611,18 +1373,9 @@ class MainViewModel(
         }
     }
 
-
-
-
-
-
-
     fun selectCategory(categoryId: Long?) {
         _selectedCategoryId.value = categoryId
     }
-
-
-
 
     fun createCategory(name: String, icon: String = "folder", color: String = "#6200EE") {
         viewModelScope.launch {
@@ -1640,9 +1393,6 @@ class MainViewModel(
         }
     }
 
-
-
-
     fun updateCategory(category: AppCategory) {
         viewModelScope.launch {
             try {
@@ -1652,10 +1402,6 @@ class MainViewModel(
             }
         }
     }
-
-
-
-
 
     fun deleteCategory(category: AppCategory) {
         viewModelScope.launch {
@@ -1673,9 +1419,6 @@ class MainViewModel(
             }
         }
     }
-
-
-
 
     fun moveAppToCategory(webApp: WebApp, categoryId: Long?) {
         viewModelScope.launch {

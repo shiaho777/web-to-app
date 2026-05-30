@@ -8,9 +8,6 @@ import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.logging.AppLogger
 import java.util.Calendar
 
-
-
-
 class ScheduledStartReceiver : BroadcastReceiver() {
 
     companion object {

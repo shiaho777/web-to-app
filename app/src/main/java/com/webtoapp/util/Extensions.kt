@@ -14,12 +14,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-
-
-
-
-
-
 fun Context.toast(message: String, duration: Int = Toast.LENGTH_SHORT) {
     Toast.makeText(this, message, duration).show()
 }
@@ -30,9 +24,6 @@ fun Context.isNetworkAvailable(): Boolean {
     val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
     return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
 }
-
-
-
 
 fun Context.isWifiConnected(): Boolean {
     val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -71,15 +62,9 @@ fun Context.shareText(text: String, title: String = "Share") {
     startActivity(Intent.createChooser(intent, title))
 }
 
-
-
-
 fun Context.getCacheDirSize(): Long {
     return cacheDir.calculateDirSize() + (externalCacheDir?.calculateDirSize() ?: 0L)
 }
-
-
-
 
 fun Context.clearCache(): Boolean {
     return try {
@@ -90,8 +75,6 @@ fun Context.clearCache(): Boolean {
         false
     }
 }
-
-
 
 fun String.isValidUrl(): Boolean {
     return try {
@@ -127,30 +110,18 @@ fun String.extractDomain(): String? {
     }
 }
 
-
-
-
 fun String.truncate(maxLength: Int, ellipsis: String = "..."): String {
     return if (length <= maxLength) this
     else take(maxLength - ellipsis.length) + ellipsis
 }
 
-
-
-
 fun String.toIntOrDefault(default: Int = 0): Int {
     return toIntOrNull() ?: default
 }
 
-
-
-
 fun String.toLongOrDefault(default: Long = 0L): Long {
     return toLongOrNull() ?: default
 }
-
-
-
 
 private val dateFormatCache = object : ThreadLocal<MutableMap<String, SimpleDateFormat>>() {
     override fun initialValue() = mutableMapOf<String, SimpleDateFormat>()
@@ -164,9 +135,6 @@ fun Long.toDateString(pattern: String = "yyyy-MM-dd HH:mm"): String {
     return formatter.format(Date(this))
 }
 
-
-
-
 fun Long.toFileSizeString(): String {
     return when {
         this < 1024 -> "$this B"
@@ -175,9 +143,6 @@ fun Long.toFileSizeString(): String {
         else -> String.format(java.util.Locale.getDefault(), "%.2f GB", this / (1024.0 * 1024 * 1024))
     }
 }
-
-
-
 
 fun Long.toDurationString(): String {
     val seconds = this / 1000
@@ -192,11 +157,6 @@ fun Long.toDurationString(): String {
     }
 }
 
-
-
-
-
-
 fun File.calculateDirSize(): Long {
     if (!exists()) return 0L
     if (isFile) return length()
@@ -206,9 +166,6 @@ fun File.calculateDirSize(): Long {
         .sumOf { it.length() }
 }
 
-
-
-
 fun File.safeDelete(): Boolean {
     return try {
         if (isDirectory) deleteRecursively() else delete()
@@ -217,29 +174,15 @@ fun File.safeDelete(): Boolean {
     }
 }
 
-
-
-
 fun File.getExtension(): String {
     return name.substringAfterLast('.', "").lowercase()
 }
 
-
-
 fun <T> List<T>.safeGet(index: Int): T? = getOrNull(index)
-
-
-
 
 fun <T> List<T>.safeFirst(): T? = firstOrNull()
 
-
-
-
 fun <T> List<T>.safeLast(): T? = lastOrNull()
-
-
-
 
 inline fun <T> List<T>.forEachBatch(batchSize: Int, action: (List<T>) -> Unit) {
     chunked(batchSize).forEach(action)

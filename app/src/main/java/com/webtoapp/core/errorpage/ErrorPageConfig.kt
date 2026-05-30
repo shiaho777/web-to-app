@@ -1,8 +1,5 @@
 package com.webtoapp.core.errorpage
 
-
-
-
 enum class ErrorPageMode {
 
     DEFAULT,
@@ -14,9 +11,6 @@ enum class ErrorPageMode {
     CUSTOM_MEDIA
 }
 
-
-
-
 enum class ErrorPageStyle(val displayName: String) {
     MATERIAL("Material Design"),
     SATELLITE("深空卫星"),
@@ -26,9 +20,6 @@ enum class ErrorPageStyle(val displayName: String) {
     NEON("赛博霓虹")
 }
 
-
-
-
 enum class MiniGameType(val displayName: String) {
     RANDOM("随机"),
     BREAKOUT("弹球消消"),
@@ -36,9 +27,6 @@ enum class MiniGameType(val displayName: String) {
     INK_ZEN("水墨禅境"),
     STAR_CATCH("星空收集")
 }
-
-
-
 
 data class ErrorPageConfig(
 
@@ -58,5 +46,5 @@ data class ErrorPageConfig(
 
     val autoRetrySeconds: Int = 15,
 
-    val language: String = "CHINESE"
+    val language: String = "ENGLISH"
 )

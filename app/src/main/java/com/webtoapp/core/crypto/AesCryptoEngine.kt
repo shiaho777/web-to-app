@@ -15,10 +15,6 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
-
-
-
-
 object AesCryptoEngine {
 
     private const val TAG = "AesCryptoEngine"
@@ -26,15 +22,11 @@ object AesCryptoEngine {
     private const val KEY_ALGORITHM = "AES"
     private const val PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA256"
 
-
     private val keyCache = ConcurrentHashMap<String, CachedKey>()
     private const val KEY_CACHE_TTL_MS = 5 * 60 * 1000L
     private const val MAX_CACHE_SIZE = 10
 
     private val secureRandom = SecureRandom()
-
-
-
 
     private data class CachedKey(
         val key: SecretKey,
@@ -42,14 +34,6 @@ object AesCryptoEngine {
     ) {
         fun isExpired(): Boolean = System.currentTimeMillis() - createdAt > KEY_CACHE_TTL_MS
     }
-
-
-
-
-
-
-
-
 
     fun encrypt(
         plainData: ByteArray,
@@ -61,20 +45,15 @@ object AesCryptoEngine {
             val salt = ByteArray(16).also { secureRandom.nextBytes(it) }
             val iv = ByteArray(CryptoConstants.AES_GCM_IV_SIZE).also { secureRandom.nextBytes(it) }
 
-
             val secretKey = deriveKey(password, salt)
-
 
             val cipher = Cipher.getInstance(ALGORITHM)
             val gcmSpec = GCMParameterSpec(CryptoConstants.AES_GCM_TAG_SIZE, iv)
             cipher.init(Cipher.ENCRYPT_MODE, secretKey, gcmSpec)
 
-
             associatedData?.let { cipher.updateAAD(it) }
 
-
             val encryptedData = cipher.doFinal(plainData)
-
 
             return buildEncryptedPackage(salt, iv, encryptedData, associatedData != null)
 
@@ -83,14 +62,6 @@ object AesCryptoEngine {
             throw CryptoException(Strings.cryptoEncryptFailed.format(e.message), e)
         }
     }
-
-
-
-
-
-
-
-
 
     fun decrypt(
         encryptedPackage: ByteArray,
@@ -101,22 +72,17 @@ object AesCryptoEngine {
 
             val (salt, iv, encryptedData, hasAAD) = parseEncryptedPackage(encryptedPackage)
 
-
             if (hasAAD && associatedData == null) {
                 throw CryptoException("缺少关联数据")
             }
 
-
             val secretKey = deriveKey(password, salt)
-
 
             val cipher = Cipher.getInstance(ALGORITHM)
             val gcmSpec = GCMParameterSpec(CryptoConstants.AES_GCM_TAG_SIZE, iv)
             cipher.init(Cipher.DECRYPT_MODE, secretKey, gcmSpec)
 
-
             associatedData?.let { cipher.updateAAD(it) }
-
 
             return cipher.doFinal(encryptedData)
 
@@ -127,9 +93,6 @@ object AesCryptoEngine {
             throw CryptoException(Strings.cryptoDecryptFailed.format(e.message), e)
         }
     }
-
-
-
 
     fun encryptWithKey(
         plainData: ByteArray,
@@ -147,7 +110,6 @@ object AesCryptoEngine {
 
             val encryptedData = cipher.doFinal(plainData)
 
-
             return ByteArrayOutputStream().use { baos ->
                 DataOutputStream(baos).use { dos ->
                     dos.write(iv)
@@ -160,9 +122,6 @@ object AesCryptoEngine {
             throw CryptoException(Strings.cryptoEncryptFailed.format(e.message), e)
         }
     }
-
-
-
 
     fun decryptWithKey(
         encryptedPackage: ByteArray,
@@ -192,15 +151,9 @@ object AesCryptoEngine {
         }
     }
 
-
-
-
     fun deriveKey(password: String, salt: ByteArray): SecretKey {
         return deriveKey(password, salt, CryptoConstants.PBKDF2_ITERATIONS)
     }
-
-
-
 
     fun deriveKey(password: String, salt: ByteArray, iterations: Int): SecretKey {
         val spec = PBEKeySpec(
@@ -220,17 +173,11 @@ object AesCryptoEngine {
         }
     }
 
-
-
-
-
     fun deriveKeyWithCache(password: String, salt: ByteArray): SecretKey {
 
         val cacheKey = (password + ":" + salt.toHexString()).toByteArray().sha256().toHexString()
 
-
         cleanExpiredCache()
-
 
         keyCache[cacheKey]?.let { cached ->
             if (!cached.isExpired()) {
@@ -239,9 +186,7 @@ object AesCryptoEngine {
             keyCache.remove(cacheKey)
         }
 
-
         val key = deriveKey(password, salt)
-
 
         if (keyCache.size < MAX_CACHE_SIZE) {
             keyCache.putIfAbsent(cacheKey, CachedKey(key))
@@ -249,9 +194,6 @@ object AesCryptoEngine {
 
         return key
     }
-
-
-
 
     private fun cleanExpiredCache() {
         val expiredKeys = keyCache.entries
@@ -261,30 +203,17 @@ object AesCryptoEngine {
         expiredKeys.forEach { keyCache.remove(it) }
     }
 
-
-
-
     fun clearKeyCache() {
         keyCache.clear()
     }
-
-
-
 
     fun deriveKeyFromPackage(packageName: String, signature: ByteArray): SecretKey {
         return deriveKeyFromPackage(packageName, signature, CryptoConstants.PBKDF2_ITERATIONS, null)
     }
 
-
-
-
     fun deriveKeyFromPackage(packageName: String, signature: ByteArray, iterations: Int): SecretKey {
         return deriveKeyFromPackage(packageName, signature, iterations, null)
     }
-
-
-
-
 
     fun deriveKeyFromPackage(
         packageName: String,
@@ -293,14 +222,11 @@ object AesCryptoEngine {
         customPassword: String?
     ): SecretKey {
 
-
         val password = if (!customPassword.isNullOrBlank()) {
             packageName + ":" + signature.toHexString() + ":" + customPassword
         } else {
             packageName + ":" + signature.toHexString()
         }
-
-
 
         val saltInput = if (!customPassword.isNullOrBlank()) {
             packageName.toByteArray() + signature + customPassword.toByteArray()
@@ -311,9 +237,6 @@ object AesCryptoEngine {
 
         return deriveKey(password, salt, iterations)
     }
-
-
-
 
     fun isEncrypted(data: ByteArray): Boolean {
         if (data.size < 8) return false
@@ -329,10 +252,6 @@ object AesCryptoEngine {
             false
         }
     }
-
-
-
-
 
     private fun buildEncryptedPackage(
         salt: ByteArray,
@@ -361,9 +280,6 @@ object AesCryptoEngine {
         }
     }
 
-
-
-
     private fun parseEncryptedPackage(data: ByteArray): EncryptedPackage {
         return ByteArrayInputStream(data).use { bais ->
             DataInputStream(bais).use { dis ->
@@ -373,16 +289,13 @@ object AesCryptoEngine {
                     throw CryptoException("无效的加密文件格式")
                 }
 
-
                 val version = dis.readByte().toInt()
                 if (version > CryptoConstants.ENCRYPTED_HEADER_VERSION) {
                     throw CryptoException(Strings.cryptoUnsupportedVersion.format(version))
                 }
 
-
                 val flags = dis.readByte().toInt()
                 val hasAAD = (flags and 1) != 0
-
 
                 val saltLen = dis.readShort().toInt()
                 if (saltLen < 0 || saltLen > 64) {
@@ -391,14 +304,12 @@ object AesCryptoEngine {
                 val salt = ByteArray(saltLen)
                 dis.readFully(salt)
 
-
                 val ivLen = dis.readShort().toInt()
                 if (ivLen < 0 || ivLen > 32) {
                     throw CryptoException("Invalid IV length: $ivLen (expected 0-32)")
                 }
                 val iv = ByteArray(ivLen)
                 dis.readFully(iv)
-
 
                 val encryptedData = dis.readBytes()
 
@@ -415,13 +326,7 @@ object AesCryptoEngine {
     )
 }
 
-
-
-
 class CryptoException(message: String, cause: Throwable? = null) : Exception(message, cause)
-
-
-
 
 fun ByteArray.toHexString(): String = joinToString("") { "%02x".format(it) }
 

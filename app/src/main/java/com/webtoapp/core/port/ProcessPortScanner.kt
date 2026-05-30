@@ -10,25 +10,11 @@ import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
 
-
-
-
-
-
-
-
-
-
-
 object ProcessPortScanner {
 
     private const val TAG = "ProcessPortScanner"
 
-
     private const val HEALTH_CHECK_TIMEOUT_MS = 800
-
-
-
 
     data class RunningService(
         val port: Int,
@@ -42,9 +28,6 @@ object ProcessPortScanner {
         val responseTimeMs: Long = -1
     )
 
-
-
-
     enum class ServiceType(val label: String, val color: Long) {
         LOCAL_HTTP("静态服务", 0xFF4CAF50),
         NODEJS("Node.js", 0xFF8BC34A),
@@ -54,24 +37,15 @@ object ProcessPortScanner {
         UNKNOWN("未知", 0xFF9E9E9E)
     }
 
-
-
-
     private data class HealthCheckResult(
         val port: Int,
         val responding: Boolean,
         val responseTimeMs: Long
     )
 
-
-
-
-
-
     suspend fun scanAllPorts(context: Context): List<RunningService> = withContext(Dispatchers.IO) {
         val allocations = PortManager.getAllAllocations()
         if (allocations.isEmpty()) return@withContext emptyList()
-
 
         val healthResults: Map<Int, HealthCheckResult> = coroutineScope {
             allocations.keys.map { port ->
@@ -99,9 +73,6 @@ object ProcessPortScanner {
         }.sortedBy { it.port }
     }
 
-
-
-
     private fun getProcessNameFromType(type: ServiceType): String {
         return when (type) {
             ServiceType.NODEJS -> "node"
@@ -112,9 +83,6 @@ object ProcessPortScanner {
             ServiceType.UNKNOWN -> ""
         }
     }
-
-
-
 
     private fun checkPortHealth(port: Int): HealthCheckResult {
         var conn: HttpURLConnection? = null
@@ -137,9 +105,6 @@ object ProcessPortScanner {
         }
     }
 
-
-
-
     private fun inferServiceType(owner: String): ServiceType {
         return when {
             owner.startsWith("localhttp:") -> ServiceType.LOCAL_HTTP
@@ -151,17 +116,9 @@ object ProcessPortScanner {
         }
     }
 
-
-
-
     private fun extractOwnerName(owner: String): String {
         return owner.substringAfter(":", owner)
     }
-
-
-
-
-
 
     suspend fun killProcess(port: Int): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -174,13 +131,9 @@ object ProcessPortScanner {
         }
     }
 
-
-
-
     suspend fun killAllProcesses(context: Context): Int = withContext(Dispatchers.IO) {
         val allocations = PortManager.getAllAllocations()
         val count = allocations.size
-
 
         PortManager.releaseAll()
 

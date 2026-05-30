@@ -5,10 +5,6 @@ import org.junit.Test
 
 class ActivationStatusTest {
 
-
-
-
-
     @Test
     fun `isValid returns false when not activated`() {
         val status = ActivationStatus(isActivated = false)
@@ -59,10 +55,6 @@ class ActivationStatusTest {
         assertThat(status.isValid).isTrue()
     }
 
-
-
-
-
     @Test
     fun `isExpired returns false when no expireTime`() {
         val status = ActivationStatus(isActivated = true)
@@ -81,10 +73,6 @@ class ActivationStatusTest {
         assertThat(status.isExpired).isFalse()
     }
 
-
-
-
-
     @Test
     fun `isUsageExceeded returns false when no usageLimit`() {
         val status = ActivationStatus(usageCount = 100)
@@ -102,10 +90,6 @@ class ActivationStatusTest {
         val status = ActivationStatus(usageCount = 5, usageLimit = 10)
         assertThat(status.isUsageExceeded).isFalse()
     }
-
-
-
-
 
     @Test
     fun `remainingTimeMs returns null when no expireTime`() {
@@ -126,10 +110,6 @@ class ActivationStatusTest {
         val status = ActivationStatus(expireTime = past)
         assertThat(status.remainingTimeMs).isEqualTo(0L)
     }
-
-
-
-
 
     @Test
     fun `remainingUsage returns null when no usageLimit`() {

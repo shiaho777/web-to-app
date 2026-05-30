@@ -23,19 +23,6 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.FloatingBorderStyle
 import com.webtoapp.data.model.FloatingWindowConfig
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 class FloatingWindowManager(private val context: Context) {
 
     companion object {
@@ -43,7 +30,6 @@ class FloatingWindowManager(private val context: Context) {
         private const val PREFS_NAME = "floating_window_prefs"
         private const val KEY_POS_X = "position_x"
         private const val KEY_POS_Y = "position_y"
-
 
         private const val TITLE_BAR_HEIGHT_DP = 40
 
@@ -54,6 +40,40 @@ class FloatingWindowManager(private val context: Context) {
         private const val EDGE_SNAP_THRESHOLD_PX = 60
 
         private const val AUTO_HIDE_TITLE_DELAY_MS = 3000L
+
+        private const val IME_BRIDGE_NAME = "__WTA_FW_IME__"
+
+        private const val IME_FOCUS_TRACKER_JS = """
+            (function() {
+              if (window.__WTA_FW_IME_INSTALLED__) return;
+              window.__WTA_FW_IME_INSTALLED__ = true;
+              var bridge = window.__WTA_FW_IME__;
+              if (!bridge) return;
+              function isEditable(el) {
+                if (!el || el.nodeType !== 1) return false;
+                if (el.isContentEditable) return true;
+                var tag = el.tagName;
+                if (tag === 'INPUT') {
+                  var t = (el.type || '').toLowerCase();
+                  return t !== 'button' && t !== 'submit' && t !== 'reset'
+                      && t !== 'checkbox' && t !== 'radio' && t !== 'file'
+                      && t !== 'image' && t !== 'color' && t !== 'range'
+                      && t !== 'hidden';
+                }
+                return tag === 'TEXTAREA' || tag === 'SELECT';
+              }
+              document.addEventListener('focusin', function(e) {
+                if (isEditable(e.target)) {
+                  try { bridge.onEditableFocus(); } catch (err) {}
+                }
+              }, true);
+              document.addEventListener('focusout', function(e) {
+                if (isEditable(e.target)) {
+                  try { bridge.onEditableBlur(); } catch (err) {}
+                }
+              }, true);
+            })();
+        """
     }
 
     private data class WindowBounds(
@@ -66,7 +86,6 @@ class FloatingWindowManager(private val context: Context) {
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val handler = Handler(Looper.getMainLooper())
-
 
     private var floatingView: View? = null
 
@@ -91,7 +110,6 @@ class FloatingWindowManager(private val context: Context) {
     private var isShowing: Boolean = false
     private var isTitleBarHidden: Boolean = false
 
-
     private val autoHideTitleRunnable = Runnable {
         if (config.autoHideTitleBar && config.showTitleBar && !isTitleBarHidden) {
             titleBarView?.animate()?.alpha(0f)?.translationY(-titleBarView!!.height.toFloat())
@@ -101,13 +119,23 @@ class FloatingWindowManager(private val context: Context) {
         }
     }
 
-
     var onWebViewCreated: ((WebView) -> Unit)? = null
     var onWebViewPageFinished: ((WebView, String?) -> Unit)? = null
     var onDismiss: (() -> Unit)? = null
 
+    var onWebViewConfigure: ((WebView) -> Unit)? = null
 
+    private inner class ImeFocusBridge {
+        @android.webkit.JavascriptInterface
+        fun onEditableFocus() {
+            handler.post { grantImeFocus() }
+        }
 
+        @android.webkit.JavascriptInterface
+        fun onEditableBlur() {
+            handler.post { releaseImeFocus() }
+        }
+    }
 
     @SuppressLint("ClickableViewAccessibility")
     fun show(config: FloatingWindowConfig, appName: String = "", url: String = "") {
@@ -117,7 +145,6 @@ class FloatingWindowManager(private val context: Context) {
         isFullscreen = false
         savedWindowBounds = null
 
-
         val displayMetrics = context.resources.displayMetrics
         val screenWidth = displayMetrics.widthPixels
         val screenHeight = displayMetrics.heightPixels
@@ -125,7 +152,6 @@ class FloatingWindowManager(private val context: Context) {
         val effectiveHeight = if (config.heightPercent != config.windowSizePercent) config.heightPercent else config.windowSizePercent
         val width = (screenWidth * effectiveWidth / 100)
         val height = (screenHeight * effectiveHeight / 100)
-
 
         val overlayType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -138,11 +164,16 @@ class FloatingWindowManager(private val context: Context) {
             width,
             height,
             overlayType,
-            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or
                 WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.TOP or Gravity.START
+
+            softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+                WindowManager.LayoutParams.SOFT_INPUT_STATE_HIDDEN
 
             if (config.rememberPosition) {
                 x = prefs.getInt(KEY_POS_X, (screenWidth - width) / 2)
@@ -154,25 +185,20 @@ class FloatingWindowManager(private val context: Context) {
             alpha = config.opacity / 100f
         }
 
-
         floatingView = createFloatingLayout(appName)
-
 
         try {
             windowManager.addView(floatingView, windowParams)
             isShowing = true
             isMinimized = false
 
-
             if (url.isNotBlank()) {
                 webView?.loadUrl(url)
             }
 
-
             if (config.startMinimized) {
                 minimize()
             }
-
 
             scheduleAutoHideTitleBar()
 
@@ -182,13 +208,7 @@ class FloatingWindowManager(private val context: Context) {
         }
     }
 
-
-
-
     fun getWebView(): WebView? = webView
-
-
-
 
     @SuppressLint("ClickableViewAccessibility", "SetJavaScriptEnabled")
     private fun createFloatingLayout(appName: String): View {
@@ -196,18 +216,22 @@ class FloatingWindowManager(private val context: Context) {
         val titleBarHeight = (TITLE_BAR_HEIGHT_DP * density).toInt()
         val cornerRadius = (config.cornerRadius * density)
 
-
         val rootLayout = FrameLayout(context).apply {
             background = createStyledBackground(cornerRadius)
             clipToOutline = true
             elevation = 8 * density
-        }
 
+            setOnTouchListener { _, event ->
+                if (event.action == MotionEvent.ACTION_OUTSIDE) {
+                    releaseImeFocus()
+                }
+                false
+            }
+        }
 
         val contentLayout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
         }
-
 
         if (config.showTitleBar) {
             val titleBar = createTitleBar(appName, titleBarHeight, density)
@@ -218,26 +242,35 @@ class FloatingWindowManager(private val context: Context) {
             ))
         }
 
-
         val webViewContainer = FrameLayout(context)
         webView = WebView(context).apply {
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.setSupportZoom(true)
-            settings.builtInZoomControls = true
-            settings.displayZoomControls = false
-            webViewClient = object : WebViewClient() {
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    super.onPageFinished(view, url)
-                    updateNavigationButtons()
-                    view?.let { onWebViewPageFinished?.invoke(it, url) }
-                }
 
-                override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
-                    super.doUpdateVisitedHistory(view, url, isReload)
-                    updateNavigationButtons()
+            val externalConfigurator = onWebViewConfigure
+            if (externalConfigurator != null) {
+                externalConfigurator.invoke(this)
+
+            } else {
+                settings.javaScriptEnabled = true
+                settings.domStorageEnabled = true
+                settings.setSupportZoom(true)
+                settings.builtInZoomControls = true
+                settings.displayZoomControls = false
+                webViewClient = object : WebViewClient() {
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        super.onPageFinished(view, url)
+                        updateNavigationButtons()
+                        view?.evaluateJavascript(IME_FOCUS_TRACKER_JS, null)
+                        view?.let { onWebViewPageFinished?.invoke(it, url) }
+                    }
+
+                    override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+                        super.doUpdateVisitedHistory(view, url, isReload)
+                        updateNavigationButtons()
+                    }
                 }
             }
+
+            addJavascriptInterface(ImeFocusBridge(), IME_BRIDGE_NAME)
 
             setOnTouchListener { _, event ->
                 if (event.action == MotionEvent.ACTION_DOWN) {
@@ -266,7 +299,6 @@ class FloatingWindowManager(private val context: Context) {
             FrameLayout.LayoutParams.MATCH_PARENT
         ))
 
-
         if (config.showResizeHandle) {
             val resizeHandle = createResizeHandle(density)
             val handleSize = (RESIZE_HANDLE_SIZE_DP * density).toInt()
@@ -277,14 +309,10 @@ class FloatingWindowManager(private val context: Context) {
             rootLayout.addView(resizeHandle, handleLp)
         }
 
-
         webView?.let { onWebViewCreated?.invoke(it) }
 
         return rootLayout
     }
-
-
-
 
     @SuppressLint("ClickableViewAccessibility")
     private fun createTitleBar(appName: String, height: Int, density: Float): View {
@@ -295,13 +323,11 @@ class FloatingWindowManager(private val context: Context) {
             setPadding((12 * density).toInt(), 0, (4 * density).toInt(), 0)
         }
 
-
         val trafficLightContainer = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(0, 0, (10 * density).toInt(), 0)
         }
-
 
         val closeBtn = createTrafficLightButton("✕", 0xFFFF5F57.toInt(), 0x99000000.toInt(), density, Strings.close) {
             dismiss()
@@ -310,14 +336,12 @@ class FloatingWindowManager(private val context: Context) {
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply { setMargins(0, 0, (8 * density).toInt(), 0) })
 
-
         val minimizeBtn = createTrafficLightButton("─", 0xFFFFBD2E.toInt(), 0x99000000.toInt(), density, Strings.floatingWindowMinimize) {
             minimize()
         }
         trafficLightContainer.addView(minimizeBtn, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT
         ).apply { setMargins(0, 0, (8 * density).toInt(), 0) })
-
 
         fullscreenButtonView = createTrafficLightButton("↗", 0xFF28C840.toInt(), 0x99000000.toInt(), density, Strings.floatingWindowEnterFullscreen) {
             toggleFullscreen()
@@ -328,7 +352,6 @@ class FloatingWindowManager(private val context: Context) {
 
         titleBar.addView(trafficLightContainer)
 
-
         val dragIndicator = TextView(context).apply {
             text = "⠿"
             setTextColor(0x99AAAACC.toInt())
@@ -336,7 +359,6 @@ class FloatingWindowManager(private val context: Context) {
             setPadding(0, 0, (6 * density).toInt(), 0)
         }
         titleBar.addView(dragIndicator)
-
 
         val titleText = TextView(context).apply {
             text = appName.ifBlank { "WebToApp" }
@@ -361,16 +383,12 @@ class FloatingWindowManager(private val context: Context) {
         updateNavigationButtons()
         updateFullscreenButton()
 
-
         if (!config.lockPosition) {
             setupDragHandler(titleBar)
         }
 
         return titleBar
     }
-
-
-
 
     private fun createTitleButton(
         symbol: String,
@@ -392,10 +410,6 @@ class FloatingWindowManager(private val context: Context) {
             setOnClickListener { onClick() }
         }
     }
-
-
-
-
 
     @SuppressLint("ClickableViewAccessibility")
     private fun createTrafficLightButton(
@@ -426,9 +440,6 @@ class FloatingWindowManager(private val context: Context) {
             setOnClickListener { onClick() }
         }
     }
-
-
-
 
     @SuppressLint("ClickableViewAccessibility")
     private fun createResizeHandle(density: Float): View {
@@ -491,9 +502,6 @@ class FloatingWindowManager(private val context: Context) {
         return handle
     }
 
-
-
-
     @SuppressLint("ClickableViewAccessibility")
     private fun setupDragHandler(dragView: View) {
         var initialX = 0
@@ -513,12 +521,13 @@ class FloatingWindowManager(private val context: Context) {
 
                     restoreTitleBarIfHidden()
                     scheduleAutoHideTitleBar()
+
+                    releaseImeFocus()
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val dx = event.rawX - initialTouchX
                     val dy = event.rawY - initialTouchY
-
 
                     if (!isDragging && (dx * dx + dy * dy > 100)) {
                         isDragging = true
@@ -553,9 +562,6 @@ class FloatingWindowManager(private val context: Context) {
         }
     }
 
-
-
-
     private fun performEdgeSnap() {
         val params = windowParams ?: return
         val dm = context.resources.displayMetrics
@@ -567,7 +573,6 @@ class FloatingWindowManager(private val context: Context) {
         var snapX = params.x
         var snapY = params.y
         var didSnap = false
-
 
         if (params.x < EDGE_SNAP_THRESHOLD_PX) {
             snapX = 0
@@ -612,9 +617,6 @@ class FloatingWindowManager(private val context: Context) {
         }
     }
 
-
-
-
     private fun savePosition() {
         prefs.edit()
             .putInt(KEY_POS_X, windowParams?.x ?: 0)
@@ -622,18 +624,12 @@ class FloatingWindowManager(private val context: Context) {
             .apply()
     }
 
-
-
-
     private fun scheduleAutoHideTitleBar() {
         handler.removeCallbacks(autoHideTitleRunnable)
         if (config.autoHideTitleBar && config.showTitleBar) {
             handler.postDelayed(autoHideTitleRunnable, AUTO_HIDE_TITLE_DELAY_MS)
         }
     }
-
-
-
 
     private fun restoreTitleBarIfHidden() {
         if (isTitleBarHidden && titleBarView != null) {
@@ -645,6 +641,34 @@ class FloatingWindowManager(private val context: Context) {
                     isTitleBarHidden = false
                 }
                 .start()
+        }
+    }
+
+    private fun grantImeFocus() {
+        val params = windowParams ?: return
+        val view = floatingView ?: return
+        if ((params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) == 0) return
+        params.flags = params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
+        try {
+            windowManager.updateViewLayout(view, params)
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "授予 IME 焦点失败", e)
+        }
+    }
+
+    private fun releaseImeFocus() {
+        val params = windowParams ?: return
+        val view = floatingView ?: return
+        if ((params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) != 0) return
+        params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+        try {
+
+            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE)
+                as? android.view.inputmethod.InputMethodManager
+            imm?.hideSoftInputFromWindow(view.windowToken, 0)
+            windowManager.updateViewLayout(view, params)
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "释放 IME 焦点失败", e)
         }
     }
 
@@ -660,6 +684,14 @@ class FloatingWindowManager(private val context: Context) {
         if (!currentWebView.canGoForward()) return
         currentWebView.goForward()
         currentWebView.postDelayed({ updateNavigationButtons() }, 120)
+    }
+
+    fun notifyNavigationStateChanged() {
+        handler.post { updateNavigationButtons() }
+    }
+
+    fun reinjectImeFocusTracker() {
+        webView?.evaluateJavascript(IME_FOCUS_TRACKER_JS, null)
     }
 
     private fun updateNavigationButtons() {
@@ -722,13 +754,11 @@ class FloatingWindowManager(private val context: Context) {
         }
     }
 
-
-
-
     @SuppressLint("ClickableViewAccessibility")
     fun minimize() {
         if (isMinimized || !isShowing) return
 
+        releaseImeFocus()
 
         floatingView?.animate()?.scaleX(0.1f)?.scaleY(0.1f)?.alpha(0f)
             ?.setDuration(200)?.withEndAction {
@@ -740,7 +770,6 @@ class FloatingWindowManager(private val context: Context) {
 
         val density = context.resources.displayMetrics.density
         val buttonSize = (MINI_BUTTON_SIZE_DP * density).toInt()
-
 
         val overlayType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -768,7 +797,6 @@ class FloatingWindowManager(private val context: Context) {
             windowManager.addView(miniButton, miniParams)
             isMinimized = true
 
-
             miniButton?.scaleX = 0f
             miniButton?.scaleY = 0f
             miniButton?.animate()?.scaleX(1f)?.scaleY(1f)
@@ -780,9 +808,6 @@ class FloatingWindowManager(private val context: Context) {
             AppLogger.e(TAG, "最小化失败", e)
         }
     }
-
-
-
 
     @SuppressLint("ClickableViewAccessibility")
     private fun createMiniButton(size: Int, density: Float): View {
@@ -802,9 +827,7 @@ class FloatingWindowManager(private val context: Context) {
             FrameLayout.LayoutParams.MATCH_PARENT
         ))
 
-
         button.setOnClickListener { restore() }
-
 
         var initialX = 0
         var initialY = 0
@@ -859,12 +882,8 @@ class FloatingWindowManager(private val context: Context) {
         return button
     }
 
-
-
-
     fun restore() {
         if (!isMinimized || !isShowing) return
-
 
         miniButton?.animate()?.scaleX(0f)?.scaleY(0f)?.alpha(0f)
             ?.setDuration(150)?.withEndAction {
@@ -874,10 +893,8 @@ class FloatingWindowManager(private val context: Context) {
                 miniButton = null
             }?.start()
 
-
         windowParams?.x = miniParams?.x ?: windowParams?.x ?: 0
         windowParams?.y = miniParams?.y ?: windowParams?.y ?: 0
-
 
         floatingView?.visibility = View.VISIBLE
         floatingView?.scaleX = 0.1f
@@ -898,9 +915,6 @@ class FloatingWindowManager(private val context: Context) {
         AppLogger.d(TAG, "悬浮窗已恢复")
     }
 
-
-
-
     fun updateSize(percent: Int) {
         val clamped = percent.coerceIn(30, 100)
         config = config.copy(widthPercent = clamped, heightPercent = clamped, windowSizePercent = clamped)
@@ -918,9 +932,6 @@ class FloatingWindowManager(private val context: Context) {
         }
     }
 
-
-
-
     fun updateOpacity(opacity: Int) {
         val clamped = opacity.coerceIn(30, 100)
         config = config.copy(opacity = clamped)
@@ -936,12 +947,10 @@ class FloatingWindowManager(private val context: Context) {
         }
     }
 
-
-
-
     fun dismiss() {
         if (!isShowing) return
 
+        releaseImeFocus()
 
         handler.removeCallbacks(autoHideTitleRunnable)
 
@@ -950,7 +959,6 @@ class FloatingWindowManager(private val context: Context) {
             if (config.rememberPosition) {
                 savePosition()
             }
-
 
             webView?.let { wv ->
                 wv.stopLoading()
@@ -967,10 +975,8 @@ class FloatingWindowManager(private val context: Context) {
             savedWindowBounds = null
             isFullscreen = false
 
-
             miniButton?.let { windowManager.removeView(it) }
             miniButton = null
-
 
             floatingView?.let { windowManager.removeView(it) }
             floatingView = null
@@ -986,20 +992,9 @@ class FloatingWindowManager(private val context: Context) {
         }
     }
 
-
-
-
     fun isShowing(): Boolean = isShowing
 
-
-
-
     fun isMinimized(): Boolean = isMinimized
-
-
-
-
-
 
     private fun createStyledBackground(cornerRadius: Float): android.graphics.drawable.Drawable {
         return android.graphics.drawable.GradientDrawable().apply {
@@ -1021,9 +1016,6 @@ class FloatingWindowManager(private val context: Context) {
             }
         }
     }
-
-
-
 
     private fun createCircleBackground(): android.graphics.drawable.Drawable {
         return android.graphics.drawable.GradientDrawable().apply {

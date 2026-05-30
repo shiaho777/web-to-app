@@ -27,10 +27,6 @@ import com.webtoapp.data.model.GoAppConfig
 import com.webtoapp.data.model.MultiWebConfig
 import com.webtoapp.core.activation.ActivationCode
 
-
-
-
-
 class Converters {
 
     companion object {
@@ -54,13 +50,7 @@ class Converters {
                 .create()
         }
 
-
-
-
         fun <T> toJson(value: T?): String = gson.toJson(value)
-
-
-
 
         inline fun <reified T> fromJson(value: String): T? {
             return try {
@@ -71,13 +61,8 @@ class Converters {
             }
         }
 
-
-
         @PublishedApi
         internal val defaultJsonCache = java.util.concurrent.ConcurrentHashMap<Class<*>, JsonElement>()
-
-
-
 
         inline fun <reified T> fromJsonOrDefault(value: String, default: T): T {
             return try {
@@ -93,10 +78,6 @@ class Converters {
             }
         }
 
-
-
-
-
         @PublishedApi
         internal fun mergeMissingDefaults(defaults: JsonElement, current: JsonElement?): JsonElement {
             if (!defaults.isJsonObject) {
@@ -106,11 +87,9 @@ class Converters {
             val merged = JsonObject()
             val currentObj = if (current != null && current.isJsonObject) current.asJsonObject else JsonObject()
 
-
             currentObj.entrySet().forEach { (key, value) ->
                 merged.add(key, value)
             }
-
 
             defaults.asJsonObject.entrySet().forEach { (key, defaultValue) ->
                 val currentValue = if (merged.has(key)) merged.get(key) else null
@@ -127,11 +106,6 @@ class Converters {
             return merged
         }
 
-
-
-
-
-
         private fun isTypeCompatible(default: JsonElement, current: JsonElement): Boolean {
             if (default.isJsonObject && !current.isJsonObject) return false
             if (default.isJsonArray && !current.isJsonArray) return false
@@ -140,7 +114,6 @@ class Converters {
             return true
         }
     }
-
 
     @TypeConverter
     fun fromStringList(value: List<String>?): String {
@@ -165,20 +138,17 @@ class Converters {
         }
     }
 
-
     @TypeConverter
     fun fromAdConfig(value: AdConfig?): String = toJson(value)
 
     @TypeConverter
     fun toAdConfig(value: String): AdConfig? = fromJson(value)
 
-
     @TypeConverter
     fun fromAnnouncement(value: Announcement?): String = toJson(value)
 
     @TypeConverter
     fun toAnnouncement(value: String): Announcement? = fromJson(value)
-
 
     @TypeConverter
     fun fromWebViewConfig(value: WebViewConfig): String = toJson(value)
@@ -187,7 +157,6 @@ class Converters {
     fun toWebViewConfig(value: String): WebViewConfig {
         val config = fromJsonOrDefault(value, WebViewConfig())
 
-
         return if (config.landscapeMode && config.orientationMode == com.webtoapp.data.model.OrientationMode.PORTRAIT) {
             config.copy(orientationMode = com.webtoapp.data.model.OrientationMode.LANDSCAPE)
         } else {
@@ -195,13 +164,11 @@ class Converters {
         }
     }
 
-
     @TypeConverter
     fun fromSplashConfig(value: SplashConfig?): String = toJson(value)
 
     @TypeConverter
     fun toSplashConfig(value: String): SplashConfig? = fromJson(value)
-
 
     @TypeConverter
     fun fromAppType(value: AppType): String = value.name
@@ -213,13 +180,11 @@ class Converters {
         AppType.WEB
     }
 
-
     @TypeConverter
     fun fromMediaConfig(value: MediaConfig?): String = toJson(value)
 
     @TypeConverter
     fun toMediaConfig(value: String): MediaConfig? = fromJson(value)
-
 
     @TypeConverter
     fun fromGalleryConfig(value: GalleryConfig?): String = toJson(value)
@@ -227,13 +192,11 @@ class Converters {
     @TypeConverter
     fun toGalleryConfig(value: String): GalleryConfig? = fromJson(value)
 
-
     @TypeConverter
     fun fromBgmConfig(value: BgmConfig?): String = toJson(value)
 
     @TypeConverter
     fun toBgmConfig(value: String): BgmConfig? = fromJson(value)
-
 
     @TypeConverter
     fun fromHtmlConfig(value: HtmlConfig?): String = toJson(value)
@@ -241,20 +204,17 @@ class Converters {
     @TypeConverter
     fun toHtmlConfig(value: String): HtmlConfig? = fromJson(value)
 
-
     @TypeConverter
     fun fromApkExportConfig(value: ApkExportConfig?): String = toJson(value)
 
     @TypeConverter
     fun toApkExportConfig(value: String): ApkExportConfig? = fromJson(value)
 
-
     @TypeConverter
     fun fromTranslateConfig(value: TranslateConfig?): String = toJson(value)
 
     @TypeConverter
     fun toTranslateConfig(value: String): TranslateConfig? = fromJson(value)
-
 
     @TypeConverter
     fun fromActivationCodeList(value: List<ActivationCode>?): String {
@@ -280,13 +240,11 @@ class Converters {
         }
     }
 
-
     @TypeConverter
     fun fromActivationDialogConfig(value: ActivationDialogConfig?): String = toJson(value)
 
     @TypeConverter
     fun toActivationDialogConfig(value: String): ActivationDialogConfig? = fromJson(value)
-
 
     @TypeConverter
     fun fromAutoStartConfig(value: AutoStartConfig?): String = toJson(value)
@@ -294,41 +252,35 @@ class Converters {
     @TypeConverter
     fun toAutoStartConfig(value: String): AutoStartConfig? = fromJson(value)
 
-
     @TypeConverter
     fun fromForcedRunConfig(value: com.webtoapp.core.forcedrun.ForcedRunConfig?): String = toJson(value)
 
     @TypeConverter
     fun toForcedRunConfig(value: String): com.webtoapp.core.forcedrun.ForcedRunConfig? = fromJson(value)
 
+    @TypeConverter
+    fun fromDeviceActionsConfig(value: com.webtoapp.core.actions.DeviceActionsConfig?): String = toJson(value)
 
     @TypeConverter
-    fun fromBlackTechConfig(value: com.webtoapp.core.blacktech.BlackTechConfig?): String = toJson(value)
+    fun toDeviceActionsConfig(value: String): com.webtoapp.core.actions.DeviceActionsConfig? = fromJson(value)
 
     @TypeConverter
-    fun toBlackTechConfig(value: String): com.webtoapp.core.blacktech.BlackTechConfig? = fromJson(value)
-
-
-    @TypeConverter
-    fun fromDisguiseConfig(value: com.webtoapp.core.disguise.DisguiseConfig?): String = toJson(value)
+    fun fromDisguiseConfig(value: com.webtoapp.core.appearance.DisguiseConfig?): String = toJson(value)
 
     @TypeConverter
-    fun toDisguiseConfig(value: String): com.webtoapp.core.disguise.DisguiseConfig? = fromJson(value)
-
-
-    @TypeConverter
-    fun fromBrowserDisguiseConfig(value: com.webtoapp.core.disguise.BrowserDisguiseConfig?): String = toJson(value)
+    fun toDisguiseConfig(value: String): com.webtoapp.core.appearance.DisguiseConfig? = fromJson(value)
 
     @TypeConverter
-    fun toBrowserDisguiseConfig(value: String): com.webtoapp.core.disguise.BrowserDisguiseConfig? = fromJson(value)
-
-
-    @TypeConverter
-    fun fromDeviceDisguiseConfig(value: com.webtoapp.core.disguise.DeviceDisguiseConfig?): String = toJson(value)
+    fun fromBrowserDisguiseConfig(value: com.webtoapp.core.appearance.BrowserDisguiseConfig?): String = toJson(value)
 
     @TypeConverter
-    fun toDeviceDisguiseConfig(value: String): com.webtoapp.core.disguise.DeviceDisguiseConfig? = fromJson(value)
+    fun toBrowserDisguiseConfig(value: String): com.webtoapp.core.appearance.BrowserDisguiseConfig? = fromJson(value)
 
+    @TypeConverter
+    fun fromDeviceDisguiseConfig(value: com.webtoapp.core.appearance.DeviceDisguiseConfig?): String = toJson(value)
+
+    @TypeConverter
+    fun toDeviceDisguiseConfig(value: String): com.webtoapp.core.appearance.DeviceDisguiseConfig? = fromJson(value)
 
     @TypeConverter
     fun fromWordPressConfig(value: WordPressConfig?): String = toJson(value)
@@ -336,13 +288,11 @@ class Converters {
     @TypeConverter
     fun toWordPressConfig(value: String): WordPressConfig? = fromJson(value)
 
-
     @TypeConverter
     fun fromNodeJsConfig(value: NodeJsConfig?): String = toJson(value)
 
     @TypeConverter
     fun toNodeJsConfig(value: String): NodeJsConfig? = fromJson(value)
-
 
     @TypeConverter
     fun fromPhpAppConfig(value: PhpAppConfig?): String = toJson(value)
@@ -350,20 +300,17 @@ class Converters {
     @TypeConverter
     fun toPhpAppConfig(value: String): PhpAppConfig? = fromJson(value)
 
-
     @TypeConverter
     fun fromPythonAppConfig(value: PythonAppConfig?): String = toJson(value)
 
     @TypeConverter
     fun toPythonAppConfig(value: String): PythonAppConfig? = fromJson(value)
 
-
     @TypeConverter
     fun fromGoAppConfig(value: GoAppConfig?): String = toJson(value)
 
     @TypeConverter
     fun toGoAppConfig(value: String): GoAppConfig? = fromJson(value)
-
 
     @TypeConverter
     fun fromMultiWebConfig(value: MultiWebConfig?): String = toJson(value)

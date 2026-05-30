@@ -4,22 +4,23 @@
 
     <!--
     ==========================================================================
-    权限声明策略（2026 年修订）
+    权限声明策略（2026-05 修订）
     ==========================================================================
-    本 manifest 只声明「宿主 app 本体」运行需要的权限。用户打包的子 APK
-    如需 SMS / 通话 / 通讯录 / 日历 / 定位 / 传感器 / NFC / USB / 后台服务
-    等高危能力，由 ApkBuilder 在打包时按用户勾选动态注入到**子包**的
-    manifest，**不能**也**不应该**预先声明在宿主 manifest 里。
+    本 manifest 只声明「宿主 app 本体」运行需要的权限和组件。
 
-    此前宿主 manifest 把所有可能被子 APK 用到的权限都声明了一遍，导致：
-      - 权限聚合特征命中多家国产安全引擎的木马家族特征码
-      - 用户安装宿主时系统弹出密集权限清单（印象分极差）
-      - 宿主自己并没有代码在用这些权限（grep 已核验）
+    设计原则：
+      1. 用户打包的子 APK 如需 SMS / 通话 / 通讯录 / 日历 / 定位 / 传感器 /
+         NFC / USB / 后台服务 等高危能力，由 ApkBuilder 在打包时按用户勾选
+         动态注入到**子包**的 manifest，不预声明在宿主 manifest 里。
+      2. 仅供子 APK 使用的运行时组件（强制运行 / 无障碍服务 / 强制运行守护
+         前台服务等）只在 shell 模板 manifest 中声明，不混入宿主 manifest。
+         宿主自身不会实例化这些组件，预声明只会让国产安全引擎做"组件指纹
+         聚合"时把宿主误判为驻留型可疑应用。
 
-    若有新的宿主功能真的需要某个高危权限，请：
-      1. 在本文件添加该权限并注释"宿主使用：xxx 功能"
+    若有新的宿主功能真的需要某个权限/组件，请：
+      1. 在本文件添加并注释"宿主使用：xxx 功能"
       2. 在代码里能被 grep 到对应 API 调用
-    禁止再把"给子 APK 准备"的权限写进本文件。
+    禁止再把"给子 APK 准备"的权限/组件写进本文件。
     ==========================================================================
     -->
 
@@ -48,16 +49,16 @@
     <!-- ====== 相机（宿主使用：扫码导入网址）====== -->
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <!-- ====== 音频（宿主使用：ForcedRun 模式强制音量控制）====== -->
+    <!-- ====== 音频（宿主使用：录音、媒体回放音量调整）====== -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
-    <!-- ====== WiFi（宿主使用：ForcedRunHardwareController WiFi 控制、热点）====== -->
+    <!-- ====== WiFi（宿主使用：网络状态查询、WiFi 扫描；写权限留给子 APK 注入）====== -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
 
-    <!-- ====== 蓝牙（宿主使用：ForcedRun 模式蓝牙开关控制）====== -->
+    <!-- ====== 蓝牙（宿主使用：基本扫描/连接）====== -->
     <uses-permission android:name="android.permission.BLUETOOTH"
         android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
@@ -68,28 +69,29 @@
     <!-- ====== 生物识别（宿主使用：应用锁、隐私保护）====== -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 
-    <!-- ====== 悬浮窗（宿主使用：FloatingWindowService 悬浮小窗模式）====== -->
+    <!-- ====== 悬浮窗（宿主使用：FloatingWindowService 悬浮小窗预览模式）====== -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-    <!-- ====== 电池 / 勿扰（宿主使用：打包任务防杀后台、ForcedRun 勿扰模式）====== -->
+    <!-- ====== 电池 / 勿扰（宿主使用：打包任务防杀后台、勿扰模式）====== -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
-    <!-- ====== 前台服务（宿主必需：打包任务 + 悬浮窗服务）====== -->
+    <!-- ====== 前台服务（宿主必需：打包任务 + 悬浮窗预览）====== -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
-    <!-- ====== 硬件控制（宿主使用：ForcedRun 模式振动、闪光灯、亮度、热点）====== -->
-    <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.FLASHLIGHT" />
-    <uses-permission android:name="android.permission.WRITE_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
+    <!--
+        ====== 已删除（仅子 APK 使用，宿主自己不会调用）======
+        FLASHLIGHT       - 仅强制运行/特殊场景使用，由 ApkBuilder 注入到子 APK
+        WRITE_SETTINGS   - 仅强制运行模式控制亮度使用，由 ApkBuilder 注入到子 APK
+        VIBRATE          - 仅子 APK 强制运行/警报模式使用
+    -->
 
     <!-- ====== 系统运行（宿主必需：打包 / 启动等长任务保持唤醒）====== -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- ====== 自启动（宿主使用：BootReceiver 开机拉起用户指定的子应用）====== -->
+    <!-- ====== 自启动（宿主使用：BootReceiver 开机拉起用户指定的子应用、定时启动）====== -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
@@ -197,6 +199,25 @@
         </intent>
     </queries>
 
+    <!--
+    ==========================================================================
+    android:enableOnBackInvokedCallback="true"
+    ==========================================================================
+    Android 13+ 的「可预测返回手势」(predictive back) 要求 app 显式声明这个
+    flag，否则 OEM（华为 / 小米 / OPPO / 三星等）的侧边返回手势 / 三角形
+    返回键会**绕过**老的 OnBackPressedDispatcher，默认行为是 finish() 当前
+    Activity，于是用户在 webapp 里滑边返回会**直接退到桌面**而不是回退到
+    上一个网页。
+
+    打开这个 flag 后，AndroidX activity 1.8+ 的 OnBackPressedDispatcher 会
+    自动桥接到系统的 OnBackInvokedDispatcher——所有现有的
+    OnBackPressedCallback / BackHandler 不需要改动，就能在 Android 13+
+    收到手势/三角键的返回事件，按已实现的 WebView.goBack() 逻辑做网页历史
+    回退。
+
+    Android 12 及以下忽略此 flag，行为与原本完全一致。
+    ==========================================================================
+    -->
     <application
         android:name=".WebToAppApplication"
         android:allowBackup="true"
@@ -207,6 +228,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.WebToApp"
         android:usesCleartextTraffic="true"
+        android:enableOnBackInvokedCallback="true"
+        android:pageSizeCompat="enabled"
         tools:targetApi="31">
 
         
@@ -231,7 +254,8 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            
+
+            <!-- OAuth callback -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -239,6 +263,22 @@
                 <data
                     android:scheme="com.webtoapp"
                     android:host="oauth2callback" />
+            </intent-filter>
+
+            <!-- Browser intent: handle http/https URLs so Android offers WebToApp as a browser -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+            </intent-filter>
+
+            <!-- Share intent: receive text/URLs from other apps via share sheet -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
 
@@ -315,34 +355,54 @@
         
         
         <service
-            android:name=".core.ai.AiGenerationService"
+            android:name=".core.aicoding.runtime.AgentService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
+        <!--
+            NodeService - Node.js 嵌入式运行时的独立子进程容器。
+            
+            为什么单独开一个 OS 进程：
+              libnode.so 一旦 dlopen + V8 init 就**永远 reset 不了**。如果跑在主进程：
+                1) 用户 server.js 抛 SyntaxError / 调 process.exit 会让宿主进程死
+                2) 切换项目 / 上次崩了想重试都没法做，必须用户从最近任务列表把
+                   App 划掉再重开——非常糟糕的用户体验
+              把它关到 :nodejs 子进程后，V8 死活都关在子进程里，主进程稳如磐石。
+              要重启 V8 时主进程让子进程自杀，Android Framework 自动重建——零感知。
+            
+            android:process=":nodejs"  → 同 APK 内的独立 OS 进程（前导冒号表示
+                                          private process，跟 webtoapp 共享 UID
+                                          但有独立的 zygote-fork 出来的进程）
+            isolatedProcess=false      → 我们要访问 filesDir / nativeLibraryDir，
+                                          isolatedProcess 模式下连这些都拿不到
+            stopWithTask=false         → 用户从最近任务划掉 App 时仍然让子进程
+                                          一起死（true 是默认值，写出来是为了
+                                          清楚——避免误以为子进程会比主进程
+                                          活更久）
+        -->
         <service
-            android:name=".core.ai.v2.runtime.AgentService"
+            android:name=".core.nodejs.NodeService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="dataSync" />
+            android:process=":nodejs"
+            android:stopWithTask="true" />
 
-        
-        
+        <!--
+            BootReceiver / ScheduledStartReceiver
+            宿主使用：用户在 host 内可配置"开机自启某个 webapp"和"定时启动"；
+                    BootReceiver 同时也兼容 shell 子 APK（同源代码同步过来）。
+        -->
         <receiver
             android:name=".core.autostart.BootReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
-                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                <action android:name="android.intent.action.TIME_SET" />
-                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
-        
-        
+
         <receiver
             android:name=".core.autostart.ScheduledStartReceiver"
             android:enabled="true"
@@ -351,20 +411,12 @@
                 <action android:name="com.webtoapp.ACTION_SCHEDULED_START" />
             </intent-filter>
         </receiver>
-        
-        
-        <receiver
-            android:name=".core.forcedrun.ForcedRunReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.webtoapp.ACTION_FORCED_RUN_START" />
-                <action android:name="com.webtoapp.ACTION_FORCED_RUN_END" />
-                <action android:name="com.webtoapp.ACTION_FORCED_RUN_CHECK" />
-            </intent-filter>
-        </receiver>
-        
-        
+
+        <!--
+            Port query / release receivers
+            宿主使用：跨 webapp 端口协调（Node/PHP/Python/Go 多运行时共存时）。
+            exported=true 是因为多个由 WebToApp 打包出的 APK 之间需要互相广播查询端口。
+        -->
         <receiver
             android:name=".core.port.PortQueryReceiver"
             android:enabled="true"
@@ -382,32 +434,37 @@
                 <action android:name="com.webtoapp.action.PORT_RELEASE" />
             </intent-filter>
         </receiver>
-        
-        
-        <service
-            android:name=".core.forcedrun.ForcedRunAccessibilityService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+
+        <!--
+            BridgeAlarmReceiver - 宿主使用：通知调度（页内 Web Notification.scheduleNotification）
+        -->
+        <receiver
+            android:name=".core.notification.BridgeAlarmReceiver"
+            android:enabled="true"
             android:exported="false">
             <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
+                <action android:name="com.webtoapp.bridge.SCHEDULED_NOTIFICATION" />
             </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
-        </service>
-        
-        
-        <service
-            android:name=".core.forcedrun.ForcedRunGuardService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="forced_run_guard" />
-        </service>
-        
-        
+        </receiver>
+
+        <!--
+            ====== 已从宿主 manifest 删除（仅子 APK 使用）======
+            <service .core.forcedrun.ForcedRunAccessibilityService>
+                无障碍服务，仅子 APK 强制运行模式使用。无障碍服务的存在本身就会触发
+                国产安全引擎的 PUA 启发式（金山/腾讯系），且宿主代码路径里不会进入
+                ForcedRun 模式（grep ForcedRunManager 调用方仅出现在 ShellActivity）。
+
+            <service .core.forcedrun.ForcedRunGuardService>
+                specialUse 前台服务，强制运行守护进程。同上，仅子 APK 使用。
+
+            <receiver .core.forcedrun.ForcedRunReceiver>
+                强制运行启停广播接收器。同上，仅子 APK 使用。
+
+            上述三者依然在 shell/src/main/AndroidManifest.xml 中声明，子 APK 打包时随
+            模板带入；ApkBuilder 通过 buildRequiredPermissions/applyUsesPermissions
+            按用户配置裁剪。
+        -->
+
         <service
             android:name=".core.background.BackgroundRunService"
             android:enabled="true"

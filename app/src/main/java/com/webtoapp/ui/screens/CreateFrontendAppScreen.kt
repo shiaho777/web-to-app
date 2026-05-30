@@ -4,6 +4,7 @@ import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.PremiumOutlinedButton
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -13,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -43,13 +45,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 
-
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateFrontendAppScreen(
@@ -68,19 +63,15 @@ fun CreateFrontendAppScreen(
     val scope = rememberCoroutineScope()
     val isEditMode = existingAppId != null
 
-
     val linuxEnv = remember { LinuxEnvironmentManager.getInstance(context) }
     val linuxState by linuxEnv.state.collectAsStateWithLifecycle()
 
-
     var buildMode by remember { mutableStateOf(BuildMode.IMPORT_DIST) }
-
 
     var projectPath by remember { mutableStateOf<String?>(null) }
     var projectName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
     var existingApp by remember { mutableStateOf<com.webtoapp.data.model.WebApp?>(null) }
-
 
     LaunchedEffect(existingAppId) {
         if (existingAppId != null) {
@@ -101,10 +92,8 @@ fun CreateFrontendAppScreen(
         }
     }
 
-
     var detectionResult by remember { mutableStateOf<ProjectDetectionResult?>(null) }
     var isDetecting by remember { mutableStateOf(false) }
-
 
     val importBuilder = remember { FrontendProjectBuilder(context) }
     val nodeBuilder = remember { NodeProjectBuilder(context) }
@@ -115,7 +104,6 @@ fun CreateFrontendAppScreen(
 
     val nodeBuildState by nodeBuilder.buildState.collectAsStateWithLifecycle()
     val nodeBuildLogs by nodeBuilder.buildLogs.collectAsStateWithLifecycle()
-
 
     val currentBuildState = if (buildMode == BuildMode.FULL_BUILD) {
         when (val state = nodeBuildState) {
@@ -134,20 +122,16 @@ fun CreateFrontendAppScreen(
 
     val currentLogs = if (buildMode == BuildMode.FULL_BUILD) nodeBuildLogs else importLogs
 
-
     var showLogsDialog by remember { mutableStateOf(false) }
     var showErrorReportDialog by remember { mutableStateOf(false) }
-
 
     LaunchedEffect(Unit) {
         linuxEnv.checkEnvironment()
     }
 
-
     val iconPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri -> uri?.let { appIcon = it } }
-
 
     val folderPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
@@ -158,7 +142,6 @@ fun CreateFrontendAppScreen(
                 projectPath = path
                 projectName = File(path).name
 
-
                 scope.launch {
                     isDetecting = true
                     detectionResult = ProjectDetector.detectProject(path)
@@ -167,7 +150,6 @@ fun CreateFrontendAppScreen(
             }
         }
     }
-
 
     val canImport = projectPath != null &&
                    detectionResult != null &&
@@ -198,8 +180,6 @@ fun CreateFrontendAppScreen(
                 BuildModeSelector(
                 )
 
-
-
                 GitHubImportCard(
                     fetcher = githubFetcher,
                     onFetched = { result ->
@@ -220,7 +200,6 @@ fun CreateFrontendAppScreen(
                     }
                 )
 
-
                 SampleProjectsCard(
                     onSelectSample = { sample ->
                         scope.launch {
@@ -235,7 +214,6 @@ fun CreateFrontendAppScreen(
                         }
                     }
                 )
-
 
                 EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -309,7 +287,6 @@ fun CreateFrontendAppScreen(
                 }
             }
 
-
             WtaCreateFlowSection(title = Strings.appConfig) {
                 AnimatedVisibility(visible = isDetecting || detectionResult != null) {
                     EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -329,7 +306,6 @@ fun CreateFrontendAppScreen(
 
                             if (detectionResult != null) {
                                 Spacer(modifier = Modifier.height(16.dp))
-
 
                                 DetectionInfoRow(
                                     icon = Icons.Outlined.Code,
@@ -361,7 +337,6 @@ fun CreateFrontendAppScreen(
                                 )
                                 }
 
-
                                 val totalDeps = detectionResult!!.dependencies.size +
                                                detectionResult!!.devDependencies.size
                                 if (totalDeps > 0) {
@@ -372,14 +347,11 @@ fun CreateFrontendAppScreen(
                                     )
                                 }
 
-
                                 DetectionInfoRow(
                                     icon = Icons.Outlined.FolderOpen,
                                     label = Strings.outputDirLabel,
                                     value = File(detectionResult!!.outputDir).name
                                 )
-
-
 
                                 if (detectionResult!!.issues.isNotEmpty()) {
                                     Spacer(modifier = Modifier.height(12.dp))
@@ -408,7 +380,6 @@ fun CreateFrontendAppScreen(
                     }
                 }
 
-
                 if (!isEditMode) {
                     AnimatedVisibility(visible = detectionResult != null &&
                         detectionResult?.issues?.none { it.severity == IssueSeverity.ERROR } == true) {
@@ -422,14 +393,12 @@ fun CreateFrontendAppScreen(
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
-
                                 AppNameTextFieldSimple(
                                     value = projectName,
                                     onValueChange = { projectName = it }
                                 )
 
                                 Spacer(modifier = Modifier.height(12.dp))
-
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
@@ -454,7 +423,6 @@ fun CreateFrontendAppScreen(
                 }
             }
 
-
             AnimatedVisibility(visible = currentBuildState !is BuildState.Idle) {
                 WtaCreateFlowSection(title = Strings.preview) {
                     BuildStatusCard(currentBuildState, currentLogs.size) {
@@ -463,9 +431,7 @@ fun CreateFrontendAppScreen(
                 }
             }
 
-
             Spacer(modifier = Modifier.height(8.dp))
-
 
             WtaCreateFlowSection(title = Strings.save) {
                 if (isEditMode && currentBuildState is BuildState.Idle) {
@@ -599,7 +565,6 @@ fun CreateFrontendAppScreen(
             Spacer(modifier = Modifier.height(32.dp))
         }
 
-
     if (showLogsDialog) {
         BuildLogsDialog(
             logs = currentLogs,
@@ -623,10 +588,6 @@ fun CreateFrontendAppScreen(
     }
     }
 }
-
-
-
-
 
 @Composable
 private fun BuildModeSelector(
@@ -665,13 +626,11 @@ private fun BuildModeSelector(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-
             WtaStatusBanner(
                 title = Strings.usageSteps,
                 message = Strings.usageStepsContent,
                 tone = WtaStatusTone.Info
             )
-
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -682,9 +641,6 @@ private fun BuildModeSelector(
         }
     }
 }
-
-
-
 
 @Composable
 private fun DetectionInfoRow(
@@ -720,9 +676,6 @@ private fun DetectionInfoRow(
         )
     }
 }
-
-
-
 
 @Composable
 private fun IssueItem(issue: ProjectIssue) {
@@ -761,9 +714,6 @@ private fun IssueItem(issue: ProjectIssue) {
         }
     }
 }
-
-
-
 
 @Composable
 private fun BuildStatusCard(
@@ -909,45 +859,57 @@ private fun BuildStatusCard(
     }
 }
 
-
-
-
-
 @Composable
 private fun BuildLogsDialog(
     logs: List<BuildLogEntry>,
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(Strings.importLogs) },
         text = {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
-            ) {
-                items(logs) { entry ->
-                    val color = when (entry.level) {
-                        LogLevel.ERROR -> MaterialTheme.colorScheme.onSurface
-                        LogLevel.WARNING -> MaterialTheme.colorScheme.onSurface
-                        LogLevel.INFO -> MaterialTheme.colorScheme.onSurface
-                        LogLevel.DEBUG -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
 
-                    Text(
-                        text = entry.message,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                        color = color,
-                        modifier = Modifier.padding(vertical = 2.dp)
-                    )
+            SelectionContainer {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp)
+                ) {
+                    items(logs) { entry ->
+                        val color = when (entry.level) {
+                            LogLevel.ERROR -> MaterialTheme.colorScheme.onSurface
+                            LogLevel.WARNING -> MaterialTheme.colorScheme.onSurface
+                            LogLevel.INFO -> MaterialTheme.colorScheme.onSurface
+                            LogLevel.DEBUG -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+
+                        Text(
+                            text = entry.message,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace,
+                            color = color,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
+                    }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text(Strings.close)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = {
+                val full = logs.joinToString(separator = "\n") { "[${it.level}] ${it.message}" }
+                clipboardManager.setText(AnnotatedString(full))
+                Toast.makeText(context, Strings.copiedAllLogs, Toast.LENGTH_SHORT).show()
+            }) {
+                Icon(Icons.Outlined.ContentCopy, null, modifier = Modifier.size(16.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(Strings.copyAll)
             }
         }
     )
@@ -1053,9 +1015,6 @@ private fun FullErrorReportDialog(
     )
 }
 
-
-
-
 private fun getFrameworkDisplayName(framework: FrontendFramework): String {
     return when (framework) {
         FrontendFramework.VUE -> "Vue.js"
@@ -1069,18 +1028,10 @@ private fun getFrameworkDisplayName(framework: FrontendFramework): String {
     }
 }
 
-
-
-
-
 private fun getAccentColor(framework: FrontendFramework): Color {
-    // All frameworks share the same neutral accent in the monochrome theme.
-    // Call sites rely on the presence of an accent hook, not a specific color.
+
     return com.webtoapp.ui.theme.AppColors.NeutralAccent
 }
-
-
-
 
 private fun getPathFromUri(@Suppress("UNUSED_PARAMETER") context: android.content.Context, uri: Uri): String? {
     return try {
@@ -1100,9 +1051,6 @@ private fun getPathFromUri(@Suppress("UNUSED_PARAMETER") context: android.conten
         uri.path
     }
 }
-
-
-
 
 @Composable
 private fun GitHubImportCard(
@@ -1249,27 +1197,43 @@ private fun GitHubImportCard(
     }
 
     if (showLogs) {
+
+        val context = LocalContext.current
+        val clipboardManager = LocalClipboardManager.current
         AlertDialog(
             onDismissRequest = { showLogs = false },
             title = { Text(Strings.logs) },
             text = {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 360.dp)
-                ) {
-                    items(fetchLogs) { line ->
-                        Text(
-                            line,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
-                            modifier = Modifier.padding(vertical = 2.dp)
-                        )
+                SelectionContainer {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 360.dp)
+                    ) {
+                        items(fetchLogs) { line ->
+                            Text(
+                                line,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = FontFamily.Monospace,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            )
+                        }
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showLogs = false }) { Text(Strings.close) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    val full = fetchLogs.joinToString(separator = "\n")
+                    clipboardManager.setText(AnnotatedString(full))
+                    Toast.makeText(context, Strings.copiedAllLogs, Toast.LENGTH_SHORT).show()
+                }) {
+                    Icon(Icons.Outlined.ContentCopy, null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(Strings.copyAll)
+                }
             }
         )
     }

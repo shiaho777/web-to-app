@@ -4,14 +4,7 @@ import android.content.Context
 import android.webkit.JavascriptInterface
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
 class ShareBridge(private val context: Context) {
-
-
-
 
     @JavascriptInterface
     fun shareText(title: String?, text: String?, url: String?) {
@@ -37,9 +30,6 @@ class ShareBridge(private val context: Context) {
             AppLogger.e("ShareBridge", "Share failed", e)
         }
     }
-
-
-
 
     @JavascriptInterface
     fun canShare(): Boolean = true

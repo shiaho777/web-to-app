@@ -10,20 +10,11 @@ import kotlinx.coroutines.withContext
 import com.webtoapp.util.toFileSizeString
 import java.io.File
 
-
-
-
-
 object CacheManager {
 
     private const val TAG = "CacheManager"
 
-
     private const val CACHE_SIZE_THRESHOLD = 500L * 1024 * 1024
-
-
-
-
 
     suspend fun autoCleanIfNeeded(context: Context, threshold: Long = CACHE_SIZE_THRESHOLD): Boolean {
         val cacheInfo = getCacheInfo(context)
@@ -34,9 +25,6 @@ object CacheManager {
         }
         return false
     }
-
-
-
 
     data class CacheInfo(
         val webViewCacheSize: Long,
@@ -49,9 +37,6 @@ object CacheManager {
         fun formatAppCacheSize(): String = formatSize(appCacheSize)
         fun formatDatabaseSize(): String = formatSize(databaseSize)
     }
-
-
-
 
     suspend fun getCacheInfo(context: Context): CacheInfo = withContext(Dispatchers.IO) {
         val webViewCacheSize = getDirectorySize(File(context.cacheDir, "WebView"))
@@ -66,17 +51,12 @@ object CacheManager {
         )
     }
 
-
-
-
     suspend fun clearAllCache(context: Context): Boolean = withContext(Dispatchers.IO) {
         try {
 
             clearWebViewCache(context)
 
-
             clearDirectory(context.cacheDir)
-
 
             context.externalCacheDir?.let { clearDirectory(it) }
 
@@ -86,10 +66,6 @@ object CacheManager {
             false
         }
     }
-
-
-
-
 
     suspend fun clearWebViewCache(context: Context) {
         try {
@@ -105,9 +81,6 @@ object CacheManager {
         }
     }
 
-
-
-
     fun clearCookies() {
         try {
             val cookieManager = CookieManager.getInstance()
@@ -119,9 +92,6 @@ object CacheManager {
         }
     }
 
-
-
-
     fun clearWebStorage() {
         try {
             WebStorage.getInstance().deleteAllData()
@@ -130,9 +100,6 @@ object CacheManager {
             AppLogger.e(TAG, "清除 WebStorage 失败", e)
         }
     }
-
-
-
 
     fun clearCookiesForDomain(domain: String) {
         try {
@@ -154,9 +121,6 @@ object CacheManager {
         }
     }
 
-
-
-
     fun clearHistory(webView: WebView) {
         try {
             webView.clearHistory()
@@ -165,9 +129,6 @@ object CacheManager {
             AppLogger.e(TAG, "清除历史记录失败", e)
         }
     }
-
-
-
 
     @Suppress("DEPRECATION")
     fun clearFormData(webView: WebView) {
@@ -178,9 +139,6 @@ object CacheManager {
             AppLogger.e(TAG, "清除表单数据失败", e)
         }
     }
-
-
-
 
     private fun getDirectorySize(directory: File?): Long {
         if (directory == null || !directory.exists()) return 0
@@ -197,9 +155,6 @@ object CacheManager {
         }
         return size
     }
-
-
-
 
     private fun clearDirectory(directory: File): Boolean {
         if (!directory.exists()) return true
@@ -218,10 +173,6 @@ object CacheManager {
             false
         }
     }
-
-
-
-
 
     private fun formatSize(bytes: Long): String = bytes.toFileSizeString()
 }

@@ -1,6 +1,8 @@
 package com.webtoapp.core.golang
 
 import android.content.Context
+import com.webtoapp.core.i18n.PreviewHtmlSupport.escapeText
+import com.webtoapp.core.i18n.PreviewHtmlSupport.htmlLang
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.shell.ShellLogger
@@ -15,12 +17,6 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
-
-
-
-
-
-
 
 class GoRuntime(private val context: Context) {
 
@@ -45,8 +41,6 @@ class GoRuntime(private val context: Context) {
     private val goOutputBuffer = StringBuffer()
     private val goStderrBuffer = StringBuffer()
 
-
-
     fun getProjectsDir(): File = File(context.filesDir, "go_projects").also { it.mkdirs() }
 
     fun getProjectDir(projectId: String): File = File(getProjectsDir(), projectId)
@@ -61,9 +55,24 @@ class GoRuntime(private val context: Context) {
         }
 
         GoDependencyManager.detectAnyCompatibleBinary(projectDir)?.let { return@withContext it.absolutePath }
+
+        if (GoToolchainManager.isGoReady(context) && File(projectDir, "go.mod").exists()) {
+            AppLogger.i(TAG, "${projectDir.name} 没有预编译产物，触发应用内 go build...")
+            val targetName = explicitName.ifBlank { projectDir.name }
+            val produced = GoBuildEnvironment.buildProject(
+                context = context,
+                projectDir = projectDir,
+                binaryName = targetName,
+                onOutput = { line -> AppLogger.d(TAG, "[go build] $line") }
+            )
+            if (produced != null) {
+                AppLogger.i(TAG, "应用内构建成功: ${produced.absolutePath}")
+                return@withContext produced.absolutePath
+            }
+            AppLogger.w(TAG, "应用内构建失败，将报告 binary 不可用")
+        }
         null
     }
-
 
     suspend fun startServer(
         projectDir: String,
@@ -88,7 +97,6 @@ class GoRuntime(private val context: Context) {
                 return@withContext -1
             }
 
-
             val projectId = projDir.name
             val serverPort = PortManager.allocateForGo(projectId, port)
             if (serverPort < 0) {
@@ -111,7 +119,6 @@ class GoRuntime(private val context: Context) {
             val processBuilder = ProcessBuilder(command)
             processBuilder.directory(projDir)
 
-
             val env = processBuilder.environment()
             GoDependencyManager.configureGoBinaryEnvironment(
                 context = context,
@@ -123,13 +130,11 @@ class GoRuntime(private val context: Context) {
             env["ADDR"] = "127.0.0.1:$serverPort"
             env["GIN_MODE"] = "release"
 
-
             envVars.forEach { (k, v) -> env[k] = v }
 
             goOutputBuffer.setLength(0)
             goStderrBuffer.setLength(0)
             goProcess = processBuilder.start()
-
 
             goProcess?.inputStream?.let { stream ->
                 Thread {
@@ -143,7 +148,6 @@ class GoRuntime(private val context: Context) {
                 }.apply { isDaemon = true; start() }
             }
 
-
             goProcess?.errorStream?.let { stream ->
                 Thread {
                     try {
@@ -155,7 +159,6 @@ class GoRuntime(private val context: Context) {
                     } catch (e: Exception) { AppLogger.d(TAG, "Go stderr reader ended", e) }
                 }.apply { isDaemon = true; start() }
             }
-
 
             val ready = waitForServerReady(serverPort)
             if (ready) {
@@ -208,21 +211,12 @@ class GoRuntime(private val context: Context) {
         return if (isServerRunning() && currentPort > 0) "http://127.0.0.1:$currentPort" else null
     }
 
-
-
-
-
-
-
     fun detectBinary(projectDir: File): String? {
         val binary = GoDependencyManager.detectAnyCompatibleBinary(projectDir) ?: return null
         val elfInfo = GoDependencyManager.parseElf(binary)
         AppLogger.i(TAG, "检测到 Go 二进制: ${binary.name} (${elfInfo.abiName})")
         return binary.name
     }
-
-
-
 
     fun detectFramework(projectDir: File): String {
         val goMod = File(projectDir, "go.mod")
@@ -254,9 +248,6 @@ class GoRuntime(private val context: Context) {
         return "raw"
     }
 
-
-
-
     fun detectStaticDir(projectDir: File): String {
         val candidates = listOf("static", "public", "web", "dist", "assets", "www")
         for (dir in candidates) {
@@ -268,13 +259,11 @@ class GoRuntime(private val context: Context) {
         return ""
     }
 
-
-
-
     fun createProject(projectId: String, sourceDir: File): File {
         val projectDir = File(getProjectsDir(), projectId)
         projectDir.mkdirs()
-        val excludeDirs = setOf(".git", "node_modules", ".idea", "vendor", "tmp", ".cache")
+
+        val excludeDirs = setOf(".git", "node_modules", ".idea", "tmp", ".cache")
         sourceDir.walkTopDown()
             .filter { file ->
                 !excludeDirs.any { excluded ->
@@ -292,21 +281,19 @@ class GoRuntime(private val context: Context) {
         return projectDir
     }
 
-
-
-
     fun generatePreviewHtml(projectDir: File, framework: String, binaryName: String): String {
+        val S = com.webtoapp.core.i18n.Strings
         val goMod = File(projectDir, "go.mod")
         val goModContent = if (goMod.exists()) {
-            try { goMod.readText().take(4000) } catch (_: Exception) { "# 无法读取" }
-        } else "# 无 go.mod"
+            try { goMod.readText().take(4000) } catch (_: Exception) { "# ${S.previewFileUnreadable}" }
+        } else "# ${S.previewGoNoGoMod}"
 
         val mainGo = listOf("main.go", "server.go", "app.go")
             .map { File(projectDir, it) }
             .firstOrNull { it.exists() }
         val sourceCode = if (mainGo != null) {
-            try { mainGo.readText().take(8000) } catch (_: Exception) { "// 无法读取" }
-        } else "// 未找到入口文件"
+            try { mainGo.readText().take(8000) } catch (_: Exception) { "// ${S.previewFileUnreadable}" }
+        } else "// ${S.previewEntryNotFound}"
 
         val fileList = projectDir.walkTopDown()
             .filter { it.isFile }
@@ -320,33 +307,37 @@ class GoRuntime(private val context: Context) {
         val escapedGoMod = goModContent.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         val filesHtml = fileList.joinToString("\n") { "  <li>$it</li>" }
 
-        val statusBadge = if (binaryDetected != null) {
-            """<span class="badge ready">可运行二进制已就绪: $binaryDetected</span>"""
-        } else {
-            """<span class="badge warn">缺少预编译二进制</span>"""
+        val statusBadge = buildString {
+            append("""<span class="badge muted">${escapeText(S.previewNotRunningBadge)}</span>""")
+            if (binaryDetected != null) {
+                append("""<span class="badge ready">${escapeText(S.previewGoBinaryReadyBadge.replace("%s", binaryDetected))}</span>""")
+            } else {
+                append("""<span class="badge warn">${escapeText(S.previewGoBinaryMissingBadge)}</span>""")
+            }
         }
 
         val entryFileName = mainGo?.name ?: "main.go"
         val fileCount = "${fileList.size}${if (fileList.size >= 30) "+" else ""}"
-        val tipText = if (binaryDetected != null) {
-            "已检测到可运行二进制 ($binaryDetected)，可直接启动服务器。"
-        } else {
-            "当前 GO_APP 仅支持运行预编译二进制。请先为目标 ABI 构建可执行文件。"
-        }
+        val tipText = escapeText(
+            if (binaryDetected != null) S.previewGoTipReady.replace("%s", binaryDetected)
+            else S.previewGoTipNotReady
+        )
+        val backendIntro = escapeText(S.previewBackendAppIntro.replace("%s", "$frameworkLabel Go"))
+        val notRunningNote = escapeText(S.previewNotRunningNote)
+        val projectFilesTitle = "${escapeText(S.previewProjectFilesLabel)} ($fileCount)"
 
         return """<!DOCTYPE html>
-<html lang="zh"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>$frameworkLabel - Go 项目预览</title>
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,system-ui,sans-serif;background:#0d1117;color:#c9d1d9;padding:16px;line-height:1.6}.header{text-align:center;padding:24px 0;border-bottom:1px solid #30363d;margin-bottom:20px}.header h1{font-size:22px;color:#00ADD8;margin-bottom:8px}.badge{display:inline-block;background:#00ADD8;color:#fff;padding:4px 12px;border-radius:12px;font-size:13px;margin:4px}.badge.warn{background:#d29922}.badge.ready{background:#2ea043}.section{background:#161b22;border:1px solid #30363d;border-radius:8px;margin-bottom:16px;overflow:hidden}.section-title{padding:12px 16px;background:#21262d;font-weight:600;font-size:14px;color:#8b949e;border-bottom:1px solid #30363d}pre{padding:16px;overflow-x:auto;font-size:13px;font-family:'SF Mono',Consolas,monospace;white-space:pre-wrap;word-break:break-all;color:#c9d1d9;max-height:400px;overflow-y:auto}ul{padding:12px 16px 12px 32px;font-size:13px}li{padding:2px 0;color:#8b949e}.tip{background:#1a2332;border:1px solid #00ADD8;border-radius:8px;padding:16px;margin-top:16px;font-size:13px;color:#00ADD8}</style></head><body>
-<div class="header"><h1>🔵 $frameworkLabel Go 项目</h1><span class="badge">$frameworkLabel</span>$statusBadge</div>
+<html lang="${htmlLang()}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>$frameworkLabel - Go ${escapeText(S.previewProjectSuffix)}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,system-ui,sans-serif;background:#0d1117;color:#c9d1d9;padding:16px;line-height:1.6}.header{text-align:center;padding:24px 0;border-bottom:1px solid #30363d;margin-bottom:20px}.header h1{font-size:22px;color:#00ADD8;margin-bottom:8px}.badge{display:inline-block;background:#00ADD8;color:#fff;padding:4px 12px;border-radius:12px;font-size:13px;margin:4px}.badge.warn{background:#d29922}.badge.ready{background:#2ea043}.badge.muted{background:#6e7681}.section{background:#161b22;border:1px solid #30363d;border-radius:8px;margin-bottom:16px;overflow:hidden}.section-title{padding:12px 16px;background:#21262d;font-weight:600;font-size:14px;color:#8b949e;border-bottom:1px solid #30363d}pre{padding:16px;overflow-x:auto;font-size:13px;font-family:'SF Mono',Consolas,monospace;white-space:pre-wrap;word-break:break-all;color:#c9d1d9;max-height:400px;overflow-y:auto}ul{padding:12px 16px 12px 32px;font-size:13px}li{padding:2px 0;color:#8b949e}.note{background:#21262d;border:1px solid #30363d;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:#8b949e}.tip{background:#1a2332;border:1px solid #00ADD8;border-radius:8px;padding:16px;margin-top:16px;font-size:13px;color:#00ADD8}</style></head><body>
+<div class="header"><h1>🔵 $frameworkLabel Go</h1><span class="badge">$frameworkLabel</span>$statusBadge</div>
+<div class="note">$notRunningNote</div>
 <div class="section"><div class="section-title">📄 $entryFileName</div><pre>$escapedSource</pre></div>
 <div class="section"><div class="section-title">📦 go.mod</div><pre>$escapedGoMod</pre></div>
-<div class="section"><div class="section-title">📁 项目文件 ($fileCount)</div><ul>$filesHtml</ul></div>
-<div class="tip">💡 此项目是 $frameworkLabel Go 后端应用。$tipText</div>
+<div class="section"><div class="section-title">📁 $projectFilesTitle</div><ul>$filesHtml</ul></div>
+<div class="tip">💡 $backendIntro$tipText</div>
 </body></html>"""
     }
-
-
 
     private suspend fun waitForServerReady(port: Int): Boolean {
         repeat(MAX_HEALTH_CHECK_RETRIES) { attempt ->

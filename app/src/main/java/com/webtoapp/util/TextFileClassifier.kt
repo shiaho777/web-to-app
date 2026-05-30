@@ -1,26 +1,15 @@
 package com.webtoapp.util
 
-
-
-
-
-
-
-
-
 object TextFileClassifier {
-
 
     private val COMMON_TEXT_EXTENSIONS = setOf(
         "html", "htm", "css", "js", "json", "xml", "txt", "svg", "md",
         "csv", "map", "ts", "tsx", "jsx", "log", "cfg"
     )
 
-
     private val COMMON_CONFIG_EXTENSIONS = setOf(
         "yml", "yaml", "toml", "ini", "env", "lock", "sql", "sh", "bat", "cmd"
     )
-
 
     private val RUNTIME_TEXT_EXTENSIONS: Map<String, Set<String>> = mapOf(
         "nodejs" to setOf(
@@ -38,14 +27,6 @@ object TextFileClassifier {
             "go", "mod", "sum", "tmpl", "tpl"
         )
     )
-
-
-
-
-
-
-
-
 
     fun isTextFile(fileName: String, runtimeType: String? = null): Boolean {
         val ext = fileName.substringAfterLast('.', "").lowercase()

@@ -9,9 +9,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
-
-
-
 object IconStorage {
 
     private const val TAG = "IconStorage"
@@ -19,25 +16,17 @@ object IconStorage {
     private const val DEFAULT_ICON_SIZE = 512
     private const val BUFFER_SIZE = 8192
 
-
-
-
-
-
     fun saveIconFromUri(context: Context, uri: Uri): String? {
         return try {
             val iconsDir = getIconsDir(context)
-
 
             val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
             context.contentResolver.openInputStream(uri)?.use { stream ->
                 BitmapFactory.decodeStream(stream, null, options)
             }
 
-
             options.inSampleSize = calculateInSampleSize(options, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE)
             options.inJustDecodeBounds = false
-
 
             val bitmap = context.contentResolver.openInputStream(uri)?.use { stream ->
                 BitmapFactory.decodeStream(stream, null, options)
@@ -63,9 +52,6 @@ object IconStorage {
         }
     }
 
-
-
-
     fun saveIconFromBitmap(context: Context, bitmap: Bitmap): String? {
         return try {
             val iconsDir = getIconsDir(context)
@@ -88,9 +74,6 @@ object IconStorage {
         }
     }
 
-
-
-
     fun saveIconFromBytes(context: Context, bytes: ByteArray): String? {
         return try {
             val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
@@ -102,9 +85,6 @@ object IconStorage {
             null
         }
     }
-
-
-
 
     fun deleteIcon(iconPath: String?): Boolean {
         if (iconPath.isNullOrBlank()) return false
@@ -120,9 +100,6 @@ object IconStorage {
         }
     }
 
-
-
-
     fun deleteIcons(iconPaths: List<String?>): Int {
         var deletedCount = 0
         iconPaths.forEach { path ->
@@ -130,9 +107,6 @@ object IconStorage {
         }
         return deletedCount
     }
-
-
-
 
     fun iconExists(iconPath: String?): Boolean {
         if (iconPath.isNullOrBlank()) return false
@@ -143,9 +117,6 @@ object IconStorage {
         }
     }
 
-
-
-
     private fun getIconsDir(context: Context): File {
         val iconsDir = File(context.filesDir, ICONS_DIR)
         if (!iconsDir.exists()) {
@@ -153,9 +124,6 @@ object IconStorage {
         }
         return iconsDir
     }
-
-
-
 
     fun getStorageStats(context: Context): StorageStats {
         val iconsDir = File(context.filesDir, ICONS_DIR)
@@ -167,9 +135,6 @@ object IconStorage {
         val totalSize = files.sumOf { it.length() }
         return StorageStats(files.size, totalSize)
     }
-
-
-
 
     fun cleanupUnusedIcons(context: Context, usedIconPaths: Set<String>): Int {
         val iconsDir = File(context.filesDir, ICONS_DIR)
@@ -184,9 +149,6 @@ object IconStorage {
         return deletedCount
     }
 
-
-
-
     fun clearAll(context: Context): Boolean {
         return try {
             val iconsDir = File(context.filesDir, ICONS_DIR)
@@ -195,10 +157,6 @@ object IconStorage {
             false
         }
     }
-
-
-
-
 
     private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
         val (height, width) = options.outHeight to options.outWidth
@@ -212,9 +170,6 @@ object IconStorage {
         }
         return inSampleSize
     }
-
-
-
 
     private fun scaleBitmap(bitmap: Bitmap, maxSize: Int): Bitmap {
         val width = bitmap.width
@@ -230,9 +185,6 @@ object IconStorage {
 
         return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
     }
-
-
-
 
     data class StorageStats(
         val fileCount: Int,

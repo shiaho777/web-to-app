@@ -13,25 +13,10 @@ import java.net.InetAddress
 import java.net.UnknownHostException
 import java.util.concurrent.ConcurrentHashMap
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class DnsManager(private val context: Context) {
 
     companion object {
         private const val TAG = "DnsManager"
-
 
         fun isDohSupported(): Boolean {
             return try {
@@ -45,20 +30,12 @@ class DnsManager(private val context: Context) {
 
     private val client = OkHttpClient.Builder().build()
 
-
     private val dnsCache = ConcurrentHashMap<String, List<InetAddress>>()
-
 
     @Volatile
     private var currentConfig: DnsConfig? = null
 
-
     private var networkCallback: ConnectivityManager.NetworkCallback? = null
-
-
-
-
-
 
     fun applyDnsConfig(config: DnsConfig) {
         val previousConfig = currentConfig
@@ -71,16 +48,12 @@ class DnsManager(private val context: Context) {
 
         AppLogger.d(TAG, "Applying DoH config: provider=${config.provider}, mode=${config.dohMode}")
 
-
         if (config.bypassSystemDns) {
             setupBypassSystemDns()
         } else if (previousConfig?.bypassSystemDns == true) {
             clearBypassSystemDns()
         }
     }
-
-
-
 
     fun clearDnsConfig() {
         currentConfig = null
@@ -89,24 +62,12 @@ class DnsManager(private val context: Context) {
         AppLogger.d(TAG, "DNS config cleared, using system default")
     }
 
-
-
-
     fun getCurrentDohUrl(): String? {
         val config = currentConfig ?: return null
         return config.effectiveDohUrl.takeIf { it.isNotBlank() }
     }
 
-
-
-
     fun getCurrentConfig(): DnsConfig? = currentConfig
-
-
-
-
-
-
 
     fun resolveWithDoh(hostname: String): List<InetAddress> {
         val config = currentConfig ?: throw UnknownHostException("No DoH config set")
@@ -115,7 +76,6 @@ class DnsManager(private val context: Context) {
         if (dohUrl.isBlank()) {
             throw UnknownHostException("DoH URL is blank")
         }
-
 
         dnsCache[hostname]?.let { return it }
 
@@ -144,10 +104,6 @@ class DnsManager(private val context: Context) {
         return result
     }
 
-
-
-
-
     fun createDohOkHttpClient(): OkHttpClient {
         val config = currentConfig ?: return OkHttpClient.Builder().build()
         val dohUrl = config.effectiveDohUrl
@@ -167,28 +123,17 @@ class DnsManager(private val context: Context) {
             .build()
     }
 
-
-
-
-
     private fun setupBypassSystemDns() {
         try {
             val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-
             clearBypassSystemDns()
-
-
-
 
             AppLogger.d(TAG, "Bypass system DNS enabled — all DNS queries will use DoH")
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to setup bypass system DNS", e)
         }
     }
-
-
-
 
     private fun clearBypassSystemDns() {
         networkCallback?.let {
@@ -201,9 +146,6 @@ class DnsManager(private val context: Context) {
             networkCallback = null
         }
     }
-
-
-
 
     fun clearCache() {
         dnsCache.clear()

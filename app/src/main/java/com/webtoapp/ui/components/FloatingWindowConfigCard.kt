@@ -36,11 +36,6 @@ import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
 import kotlin.math.roundToInt
 
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FloatingWindowConfigCard(
@@ -50,7 +45,6 @@ fun FloatingWindowConfigCard(
 ) {
     var showAdvanced by remember { mutableStateOf(false) }
     val primary = MaterialTheme.colorScheme.primary
-
 
     val arrowRotation by animateFloatAsState(
         targetValue = if (showAdvanced) 180f else 0f,
@@ -107,7 +101,6 @@ fun FloatingWindowConfigCard(
                 )
             }
 
-
             AnimatedVisibility(
                 visible = config.enabled,
                 enter = CardExpandTransition,
@@ -115,14 +108,10 @@ fun FloatingWindowConfigCard(
             ) {
                 Column(modifier = Modifier.padding(top = 16.dp)) {
 
-
-
-
                     SectionHeader(
                         icon = Icons.Outlined.Straighten,
                         title = Strings.fwSectionSize
                     )
-
 
                     SliderWithLabel(
                         label = Strings.fwWidthLabel,
@@ -145,7 +134,6 @@ fun FloatingWindowConfigCard(
                         }
                     )
 
-
                     AnimatedVisibility(
                         visible = !config.lockAspectRatio,
                         enter = fadeIn(tween(200)) + expandVertically(tween(300)),
@@ -161,7 +149,6 @@ fun FloatingWindowConfigCard(
                             }
                         )
                     }
-
 
                     Row(
                         modifier = Modifier
@@ -203,14 +190,10 @@ fun FloatingWindowConfigCard(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                     Spacer(Modifier.height(16.dp))
 
-
-
-
                     SectionHeader(
                         icon = Icons.Outlined.Palette,
                         title = Strings.fwSectionAppearance
                     )
-
 
                     SliderWithLabel(
                         label = Strings.floatingWindowOpacity,
@@ -220,7 +203,6 @@ fun FloatingWindowConfigCard(
                         onValueChange = { onConfigChange(config.copy(opacity = it)) }
                     )
 
-
                     SliderWithLabel(
                         label = Strings.fwCornerRadius,
                         value = config.cornerRadius,
@@ -229,7 +211,6 @@ fun FloatingWindowConfigCard(
                         suffix = "dp",
                         onValueChange = { onConfigChange(config.copy(cornerRadius = it)) }
                     )
-
 
                     Spacer(Modifier.height(4.dp))
                     Text(
@@ -273,14 +254,10 @@ fun FloatingWindowConfigCard(
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                     Spacer(Modifier.height(16.dp))
 
-
-
-
                     SectionHeader(
                         icon = Icons.Outlined.Tune,
                         title = Strings.fwSectionBehavior
                     )
-
 
                     ToggleRow(
                         title = Strings.floatingWindowShowTitleBar,
@@ -288,7 +265,6 @@ fun FloatingWindowConfigCard(
                         checked = config.showTitleBar,
                         onCheckedChange = { onConfigChange(config.copy(showTitleBar = it)) }
                     )
-
 
                     AnimatedVisibility(
                         visible = config.showTitleBar,
@@ -304,7 +280,6 @@ fun FloatingWindowConfigCard(
                         )
                     }
 
-
                     ToggleRow(
                         title = Strings.fwEdgeSnapping,
                         subtitle = Strings.fwEdgeSnappingDesc,
@@ -312,14 +287,12 @@ fun FloatingWindowConfigCard(
                         onCheckedChange = { onConfigChange(config.copy(edgeSnapping = it)) }
                     )
 
-
                     ToggleRow(
                         title = Strings.fwResizeHandle,
                         subtitle = Strings.fwResizeHandleDesc,
                         checked = config.showResizeHandle,
                         onCheckedChange = { onConfigChange(config.copy(showResizeHandle = it)) }
                     )
-
 
                     Spacer(Modifier.height(8.dp))
                     Surface(
@@ -353,7 +326,6 @@ fun FloatingWindowConfigCard(
                         }
                     }
 
-
                     AnimatedVisibility(
                         visible = showAdvanced,
                         enter = fadeIn(tween(200)) + expandVertically(tween(300)),
@@ -371,14 +343,12 @@ fun FloatingWindowConfigCard(
                                 onCheckedChange = { onConfigChange(config.copy(startMinimized = it)) }
                             )
 
-
                             ToggleRow(
                                 title = Strings.floatingWindowRememberPosition,
                                 subtitle = Strings.floatingWindowRememberPositionDesc,
                                 checked = config.rememberPosition,
                                 onCheckedChange = { onConfigChange(config.copy(rememberPosition = it)) }
                             )
-
 
                             ToggleRow(
                                 title = Strings.fwLockPosition,
@@ -393,13 +363,6 @@ fun FloatingWindowConfigCard(
         }
     }
 }
-
-
-
-
-
-
-
 
 @Composable
 private fun SliderWithLabel(
@@ -444,9 +407,6 @@ private fun SliderWithLabel(
     }
 }
 
-
-
-
 @Composable
 private fun ToggleRow(
     title: String,
@@ -480,9 +440,6 @@ private fun ToggleRow(
         )
     }
 }
-
-
-
 
 @Composable
 private fun SectionHeader(

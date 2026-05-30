@@ -22,9 +22,6 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 
-
-
-
 data class PresetColor(
     val hex: String,
     val name: String
@@ -56,9 +53,6 @@ val baseColors = listOf(
     PresetColor("#FFFBFE", Strings.colorLightTheme),
     PresetColor("#00000000", Strings.colorTransparent)
 )
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,7 +99,6 @@ fun ColorPickerDialog(
 
                 HorizontalDivider()
 
-
                 Text(
                     text = Strings.presetColors,
                     style = MaterialTheme.typography.labelMedium,
@@ -131,7 +124,6 @@ fun ColorPickerDialog(
                 }
 
                 HorizontalDivider()
-
 
                 Text(
                     text = Strings.customColor,
@@ -182,9 +174,6 @@ fun ColorPickerDialog(
     )
 }
 
-
-
-
 @Composable
 private fun ColorItem(
     color: String,
@@ -228,9 +217,6 @@ private fun ColorItem(
     }
 }
 
-
-
-
 fun parseColor(colorString: String): Color {
     return try {
         val hex = colorString.removePrefix("#")
@@ -243,9 +229,6 @@ fun parseColor(colorString: String): Color {
         Color.Gray
     }
 }
-
-
-
 
 fun isColorLight(color: Color): Boolean {
     val luminance = 0.299 * color.red + 0.587 * color.green + 0.114 * color.blue

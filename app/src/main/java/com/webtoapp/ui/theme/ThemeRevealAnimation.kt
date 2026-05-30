@@ -26,55 +26,29 @@ import kotlinx.coroutines.launch
 import kotlin.math.hypot
 import kotlin.math.max
 
-
-
-
-
-
-
-
-
-
-
 class ThemeRevealState {
 
     var isAnimating by mutableStateOf(false)
         internal set
 
-
     var snapshot: ImageBitmap? by mutableStateOf(null)
         internal set
 
-
     val animationProgress = Animatable(0f)
-
 
     var revealCenter by mutableStateOf(Offset.Zero)
         internal set
 
-
     var toDark by mutableStateOf(false)
         internal set
-
 
     var maxRadius by mutableFloatStateOf(0f)
         internal set
 
-
     internal var currentAnimationJob: Job? = null
-
 
     var revealGeneration by mutableIntStateOf(0)
         internal set
-
-
-
-
-
-
-
-
-
 
     fun triggerReveal(
         center: Offset,
@@ -90,7 +64,6 @@ class ThemeRevealState {
         revealCenter = center
         toDark = switchToDark
 
-
         val w = view.width.toFloat()
         val h = view.height.toFloat()
         maxRadius = max(
@@ -98,9 +71,7 @@ class ThemeRevealState {
             max(hypot(center.x, h - center.y), hypot(w - center.x, h - center.y))
         )
 
-
         revealGeneration++
-
 
         captureScreen(view, window) { bitmap ->
             snapshot = bitmap.asImageBitmap()
@@ -108,9 +79,6 @@ class ThemeRevealState {
             onCaptureDone()
         }
     }
-
-
-
 
     private fun captureScreen(view: View, window: Window?, onCaptured: (Bitmap) -> Unit) {
         val width = view.width
@@ -155,9 +123,6 @@ class ThemeRevealState {
         }
     }
 
-
-
-
     internal fun cleanup() {
         isAnimating = false
         snapshot = null
@@ -165,27 +130,12 @@ class ThemeRevealState {
     }
 }
 
-
-
-
 @Composable
 fun rememberThemeRevealState(): ThemeRevealState {
     return remember { ThemeRevealState() }
 }
 
-
 val LocalThemeRevealState = staticCompositionLocalOf<ThemeRevealState?> { null }
-
-
-
-
-
-
-
-
-
-
-
 
 @Composable
 fun CircularRevealOverlay(
@@ -197,15 +147,11 @@ fun CircularRevealOverlay(
     val snap = revealState.snapshot ?: return
     val coroutineScope = rememberCoroutineScope()
 
-
     LaunchedEffect(revealState.revealGeneration) {
         revealState.animationProgress.snapTo(0f)
 
-
         val job = coroutineScope.launch {
-            // Reveal easing matches the rest of the app: quick to kick off,
-            // slow to settle. The old FastOutSlowInEasing felt like the
-            // new theme was punching through the screen.
+
             revealState.animationProgress.animateTo(
                 targetValue = 1f,
                 animationSpec = tween(
@@ -226,7 +172,6 @@ fun CircularRevealOverlay(
     val center = revealState.revealCenter
     val maxR = revealState.maxRadius
 
-
     val currentRadius = maxR * progress
 
     Canvas(modifier = Modifier.fillMaxSize()) {
@@ -241,11 +186,6 @@ fun CircularRevealOverlay(
             )
         }
 
-        // During the reveal the old snapshot sits on top; the new theme is
-        // already painted beneath it. We clip OUT the growing circle so the
-        // new theme shows through where the circle expands. A soft
-        // feathered edge (via reduced alpha on the outer ring) prevents the
-        // hard-line artifact you otherwise get at the clip boundary.
         clipPath(circlePath, clipOp = ClipOp.Difference) {
             drawImage(snap)
         }

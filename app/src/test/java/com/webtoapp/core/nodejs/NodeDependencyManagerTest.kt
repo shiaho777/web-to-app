@@ -83,15 +83,45 @@ class NodeDependencyManagerTest {
     }
 
     @Test
-    fun `node runtime becomes ready when downloaded library exists`() {
-        val lib = File(NodeDependencyManager.getNodeDir(context), NodeDependencyManager.NODE_BINARY_NAME).apply {
+    fun `node runtime becomes ready when libnode_so is in nativeLibraryDir`() {
+
+        val nativeLibDir = File(context.cacheDir, "test-native-lib").apply {
+            deleteRecursively()
+            mkdirs()
+        }
+        context.applicationInfo.nativeLibraryDir = nativeLibDir.absolutePath
+        val nativeLib = File(nativeLibDir, NodeDependencyManager.NODE_BINARY_NAME).apply {
+            writeBytes(byteArrayOf(1))
+        }
+
+        try {
+            assertThat(NodeDependencyManager.isNodeReady(context)).isTrue()
+            assertThat(NodeDependencyManager.getNodeLibraryPath(context)).isEqualTo(nativeLib.absolutePath)
+        } finally {
+            nativeLibDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `node downloaded into deps dir is not treated as ready when nativeLibraryDir is empty`() {
+
+        val nativeLibDir = File(context.cacheDir, "test-native-lib-empty").apply {
+            deleteRecursively()
+            mkdirs()
+        }
+        context.applicationInfo.nativeLibraryDir = nativeLibDir.absolutePath
+
+        val downloaded = File(NodeDependencyManager.getNodeDir(context), NodeDependencyManager.NODE_BINARY_NAME).apply {
             parentFile?.mkdirs()
             writeBytes(byteArrayOf(1))
         }
 
-        val path = NodeDependencyManager.getNodeLibraryPath(context)
-
-        assertThat(NodeDependencyManager.isNodeReady(context)).isTrue()
-        assertThat(path).isEqualTo(lib.absolutePath)
+        try {
+            assertThat(downloaded.exists()).isTrue()
+            assertThat(NodeDependencyManager.isNodeReady(context)).isFalse()
+            assertThat(NodeDependencyManager.getNodeLibraryPath(context)).isNull()
+        } finally {
+            nativeLibDir.deleteRecursively()
+        }
     }
 }

@@ -44,7 +44,10 @@ fun StatusBarConfigCard(
         24
     }
 
-    val currentHeightDp = if (config.statusBarHeightDp > 0) config.statusBarHeightDp else systemStatusBarHeight
+    val currentHeightDp = when {
+        config.statusBarHeightDp >= 0 -> config.statusBarHeightDp
+        else -> systemStatusBarHeight
+    }
 
     var pendingImageUri by remember { mutableStateOf<Uri?>(null) }
     var showCropper by remember { mutableStateOf(false) }
@@ -205,10 +208,12 @@ private fun HeightSlider(currentHeight: Int, systemDefaultHeight: Int, onHeightC
             Text(Strings.statusBarHeight, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("${currentHeight}dp", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
         }
-        Slider(value = currentHeight.toFloat(), onValueChange = { onHeightChange(it.toInt()) }, valueRange = 16f..48f, steps = 31, modifier = Modifier.fillMaxWidth())
+
+        Slider(value = currentHeight.toFloat(), onValueChange = { onHeightChange(it.toInt()) }, valueRange = 0f..48f, steps = 47, modifier = Modifier.fillMaxWidth())
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("16dp", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick = { onHeightChange(systemDefaultHeight) }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
+            Text("0dp", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            TextButton(onClick = { onHeightChange(-1) }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
                 Text("${Strings.restoreDefault} (${systemDefaultHeight}dp)", fontSize = 12.sp)
             }
             Text("48dp", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

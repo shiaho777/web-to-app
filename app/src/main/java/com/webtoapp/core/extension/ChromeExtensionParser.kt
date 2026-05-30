@@ -5,20 +5,9 @@ import org.json.JSONObject
 import java.io.File
 import java.util.UUID
 
-
-
-
-
-
-
-
-
 object ChromeExtensionParser {
 
     private const val TAG = "ChromeExtensionParser"
-
-
-
 
     private val PERMISSION_MAP = mapOf(
         "activeTab" to ModulePermission.DOM_ACCESS,
@@ -37,9 +26,6 @@ object ChromeExtensionParser {
         "contextMenus" to ModulePermission.DOM_ACCESS
     )
 
-
-
-
     private val UNSUPPORTED_PERMISSIONS = setOf(
         "nativeMessaging", "debugger", "proxy",
         "webRequestBlocking", "management",
@@ -48,9 +34,6 @@ object ChromeExtensionParser {
         "tabCapture", "desktopCapture", "pageCapture",
         "browsingData", "fontSettings", "privacy"
     )
-
-
-
 
     data class ParseResult(
         val extensionName: String,
@@ -69,13 +52,6 @@ object ChromeExtensionParser {
         val enabled: Boolean,
         val path: String
     )
-
-
-
-
-
-
-
 
     fun parseFromDirectory(extensionDir: File, overrideExtensionId: String? = null): ParseResult {
         val warnings = mutableListOf<String>()
@@ -107,7 +83,6 @@ object ChromeExtensionParser {
             val optionsPagePath = extractOptionsPagePath(manifest)
             val backgroundScript = extractBackgroundScript(manifest)
             val staticRuleResources = extractStaticRuleResources(manifest)
-
 
             val contentScripts = manifest.optJSONArray("content_scripts")
             if (contentScripts == null || contentScripts.length() == 0) {
@@ -158,16 +133,12 @@ object ChromeExtensionParser {
 
             val modules = mutableListOf<ExtensionModule>()
 
-
-
             val extensionId = overrideExtensionId?.takeIf { it.isNotBlank() }
                 ?: extensionDir.name.takeIf { it.isNotBlank() && it != "." }
                 ?: UUID.randomUUID().toString().take(8)
 
-
             for (i in 0 until contentScripts.length()) {
                 val cs = contentScripts.getJSONObject(i)
-
 
                 val matches = mutableListOf<String>()
                 cs.optJSONArray("matches")?.let { arr ->
@@ -179,18 +150,15 @@ object ChromeExtensionParser {
                     for (j in 0 until arr.length()) excludeMatches.add(arr.getString(j))
                 }
 
-
                 val jsFiles = mutableListOf<String>()
                 cs.optJSONArray("js")?.let { arr ->
                     for (j in 0 until arr.length()) jsFiles.add(arr.getString(j))
                 }
 
-
                 val cssFiles = mutableListOf<String>()
                 cs.optJSONArray("css")?.let { arr ->
                     for (j in 0 until arr.length()) cssFiles.add(arr.getString(j))
                 }
-
 
                 val runAt = when (cs.optString("run_at", "document_idle")) {
                     "document_start" -> ModuleRunTime.DOCUMENT_START
@@ -199,14 +167,11 @@ object ChromeExtensionParser {
                     else -> ModuleRunTime.DOCUMENT_IDLE
                 }
 
-
                 val allFrames = cs.optBoolean("all_frames", false)
-
 
                 val world = cs.optString("world", "ISOLATED").uppercase().let {
                     if (it == "MAIN") "MAIN" else "ISOLATED"
                 }
-
 
                 val jsCode = StringBuilder()
                 jsFiles.forEach { jsPath ->
@@ -220,7 +185,6 @@ object ChromeExtensionParser {
                     }
                 }
 
-
                 val cssCode = StringBuilder()
                 cssFiles.forEach { cssPath ->
                     val cssFile = extensionDir.resolve(cssPath)
@@ -233,12 +197,10 @@ object ChromeExtensionParser {
                     }
                 }
 
-
                 if (jsCode.isBlank() && cssCode.isBlank()) {
                     warnings.add("content_scripts[$i] has no JS or CSS content, skipped")
                     continue
                 }
-
 
                 val urlMatchRules = mutableListOf<UrlMatchRule>()
                 matches.forEach { pattern ->
@@ -255,7 +217,6 @@ object ChromeExtensionParser {
                         exclude = true
                     ))
                 }
-
 
                 val moduleName = if (contentScripts.length() == 1) {
                     name
@@ -285,7 +246,6 @@ object ChromeExtensionParser {
                     noframes = !allFrames
                 ))
             }
-
 
             buildParseResult(
                 extensionName = name,
@@ -428,20 +388,11 @@ object ChromeExtensionParser {
         )
     }
 
-
-
-
-
-
     private fun convertChromeMatchPattern(pattern: String): String {
         if (pattern == "<all_urls>") return "*"
 
         return pattern
     }
-
-
-
-
 
     fun isCrxFile(file: File): Boolean {
         if (!file.exists() || file.length() < 4) return false
@@ -459,14 +410,6 @@ object ChromeExtensionParser {
             false
         }
     }
-
-
-
-
-
-
-
-
 
     fun getCrxZipOffset(file: File): Long {
         return try {

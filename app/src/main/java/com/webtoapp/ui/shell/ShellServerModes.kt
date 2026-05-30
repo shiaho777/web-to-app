@@ -28,9 +28,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.File
 
-
-
-
 @Composable
 fun WordPressShellMode(
     config: ShellConfig,
@@ -45,7 +42,6 @@ fun WordPressShellMode(
 ) {
     val context = LocalContext.current
 
-
     var phase by remember { mutableStateOf("extracting") }
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var serverUrl by remember { mutableStateOf<String?>(null) }
@@ -53,27 +49,19 @@ fun WordPressShellMode(
 
     val phpRuntime = remember { com.webtoapp.core.wordpress.WordPressPhpRuntime(context) }
 
-
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             try {
 
-
-
-                val nativePhp = File(context.applicationInfo.nativeLibraryDir, "libphp.so")
-                if (!nativePhp.exists()) {
-                    val abi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
-                    val phpDir = com.webtoapp.core.wordpress.WordPressDependencyManager.getPhpDir(context)
-                    val phpBinary = File(phpDir, "php")
-                    if (!phpBinary.exists() || !phpBinary.canExecute()) {
-                        AppLogger.i("WordPressShell", "提取 PHP 二进制: assets/php/$abi/php")
-                        context.assets.open("php/$abi/php").use { input ->
-                            phpBinary.outputStream().use { output -> input.copyTo(output) }
-                        }
-                        phpBinary.setExecutable(true)
-                    }
+                if (!com.webtoapp.core.wordpress.WordPressDependencyManager.isPhpReady(context)) {
+                    AppLogger.e(
+                        "WordPressShell",
+                        "PHP runtime missing: nativeLibraryDir=${context.applicationInfo.nativeLibraryDir}"
+                    )
+                    phase = "error"
+                    errorMsg = Strings.phpStartFailed
+                    return@withContext
                 }
-
 
                 val wpDir = File(context.filesDir, "wordpress_site")
                 val marker = File(wpDir, ".wp_extracted")
@@ -85,12 +73,11 @@ fun WordPressShellMode(
                 )
 
                 if (shouldReextractAssets(marker, extractionToken)) {
-                    AppLogger.i("WordPressShell", "提取 WordPress 文件到 ${wpDir.absolutePath}")
+                    AppLogger.i("WordPressShell", "Extracting WordPress files to ${wpDir.absolutePath}")
                     wpDir.deleteRecursively()
                     extractAssetsRecursive(context, "wordpress", wpDir)
                     writeExtractionMarker(marker, extractionToken)
                 }
-
 
                 phase = "starting"
                 val requestPort = config.wordpressConfig.phpPort
@@ -120,24 +107,22 @@ fun WordPressShellMode(
                         activePlugins = config.wordpressConfig.activePlugins
                     )
                     phase = "ready"
-                    AppLogger.i("WordPressShell", "WordPress 就绪: $serverUrl")
+                    AppLogger.i("WordPressShell", "WordPress ready: $serverUrl")
                 } else {
                     phase = "error"
                     errorMsg = Strings.phpStartFailed
                 }
             } catch (e: Exception) {
-                AppLogger.e("WordPressShell", "WordPress Shell 启动失败", e)
+                AppLogger.e("WordPressShell", "WordPress Shell Launch failed", e)
                 phase = "error"
                 errorMsg = e.message ?: Strings.unknownError
             }
         }
     }
 
-
     DisposableEffect(phpRuntime) {
         onDispose { phpRuntime.stopServer() }
     }
-
 
     Box(modifier = Modifier.fillMaxSize()) {
         when (phase) {
@@ -176,12 +161,12 @@ fun WordPressShellMode(
                                         config.extensionModuleIds,
                                         config.embeddedExtensionModules,
                                         config.extensionFabIcon, allowGlobalModuleFallback = false,
+                                        extensionEnabled = config.extensionEnabled,
                                         browserDisguiseConfig = config.browserDisguiseConfig,
                                         deviceDisguiseConfig = config.deviceDisguiseConfig)
 
                                     settings.mixedContentMode =
                                         android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-
 
                                     var lastTouchX = 0f
                                     var lastTouchY = 0f
@@ -264,11 +249,6 @@ fun WordPressShellMode(
     }
 }
 
-
-
-
-
-
 @Composable
 fun HtmlFrontendShellMode(
     config: ShellConfig,
@@ -297,7 +277,6 @@ fun HtmlFrontendShellMode(
         onDispose { httpServer.stop() }
     }
 
-
     val effectiveEntryFile = config.htmlConfig.getValidEntryFile()
 
     LaunchedEffect(config.versionCode, effectiveEntryFile, config.webViewConfig.enableCrossOriginIsolation) {
@@ -314,7 +293,7 @@ fun HtmlFrontendShellMode(
                 )
 
                 if (shouldReextractAssets(marker, extractionToken)) {
-                    AppLogger.i("HtmlShell", "提取 HTML 资源到 ${siteDir.absolutePath}")
+                    AppLogger.i("HtmlShell", "Extracting HTML assets to ${siteDir.absolutePath}")
                     siteDir.deleteRecursively()
                     extractAssetsRecursive(context, "html", siteDir)
                     writeExtractionMarker(marker, extractionToken)
@@ -330,10 +309,10 @@ fun HtmlFrontendShellMode(
 
                 AppLogger.i(
                     "HtmlShell",
-                    "HTML Shell 就绪: url=$targetUrl, entry=$resolvedEntry, port=$stableHttpPort, crossOriginIsolation=$shouldEnableIsolation"
+                    "HTML Shell ready: url=$targetUrl, entry=$resolvedEntry, port=$stableHttpPort, crossOriginIsolation=$shouldEnableIsolation"
                 )
             } catch (e: Exception) {
-                AppLogger.e("HtmlShell", "HTML Shell 启动失败", e)
+                AppLogger.e("HtmlShell", "HTML Shell Launch failed", e)
                 phase = "error"
                 errorMsg = e.message ?: Strings.serverStartFailed
             }
@@ -362,10 +341,7 @@ fun HtmlFrontendShellMode(
             }
 
             "extracting", "starting" -> {
-                // HTML 本质上是"网页被打包成 App"，用户不该看到"Starting server"这种技术词。
-                // 本地 HTTP 服务通常 50-300ms 就绪，远短于眼睛的注意阈值。
-                // 这里用 600ms 延迟门：只有真的慢的设备才显示一个无文字的纯 spinner，
-                // 让正常路径下从 splash 到内容感觉无缝衔接、像原生 App。
+
                 var showLoadingUi by remember { mutableStateOf(false) }
                 LaunchedEffect(phase) {
                     delay(600)
@@ -379,7 +355,7 @@ fun HtmlFrontendShellMode(
                         CircularProgressIndicator()
                     }
                 }
-                // 否则保持空白（继承窗口背景色），与 splash 视觉无缝过渡
+
             }
 
             "error" -> {
@@ -432,10 +408,6 @@ private fun buildLocalHttpTargetUrl(baseUrl: String, relativePath: String): Stri
     return "$baseUrl/${Uri.encode(normalizedPath, "/")}"
 }
 
-
-
-
-
 @Composable
 fun NodeJsShellMode(
     config: com.webtoapp.core.shell.ShellConfig,
@@ -457,7 +429,6 @@ fun NodeJsShellMode(
 
     val nodeRuntime = remember { com.webtoapp.core.nodejs.NodeRuntime(context) }
 
-
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             try {
@@ -467,16 +438,15 @@ fun NodeJsShellMode(
                 com.webtoapp.core.shell.ShellLogger.i("NodeJsShell", "nativeLibraryDir: ${context.applicationInfo.nativeLibraryDir}")
 
                 if (nodePath == null) {
-                    AppLogger.e("NodeJsShell", "libnode.so 未找到")
+                    AppLogger.e("NodeJsShell", "libnode.so not found")
                     com.webtoapp.core.shell.ShellLogger.e("NodeJsShell", "libnode.so 未找到")
                     phase = "error"
                     errorMsg = Strings.nodeRuntimeNotFound
                     return@withContext
                 }
 
-                AppLogger.i("NodeJsShell", "libnode.so 路径: $nodePath (size=${java.io.File(nodePath).length()})")
+                AppLogger.i("NodeJsShell", "libnode.so path: $nodePath (size=${java.io.File(nodePath).length()})")
                 com.webtoapp.core.shell.ShellLogger.i("NodeJsShell", "libnode.so 路径: $nodePath (size=${java.io.File(nodePath).length()})")
-
 
                 val projectDir = File(context.filesDir, "nodejs_site")
                 val marker = File(projectDir, ".nodejs_extracted")
@@ -488,20 +458,18 @@ fun NodeJsShellMode(
                 )
 
                 if (shouldReextractAssets(marker, extractionToken)) {
-                    AppLogger.i("NodeJsShell", "提取 Node.js 项目文件到 ${projectDir.absolutePath}")
+                    AppLogger.i("NodeJsShell", "Extracting Node.js project files to ${projectDir.absolutePath}")
                     com.webtoapp.core.shell.ShellLogger.i("NodeJsShell", "提取 Node.js 项目文件到 ${projectDir.absolutePath}")
                     projectDir.deleteRecursively()
                     extractAssetsRecursive(context, "nodejs_app", projectDir)
                     writeExtractionMarker(marker, extractionToken)
                 }
 
-
                 val envVars = config.nodejsConfig.envVars.toMutableMap()
                 val requestPort = config.nodejsConfig.port.takeIf { it > 0 }
                 if (requestPort != null && !envVars.containsKey("PORT")) {
                     envVars["PORT"] = requestPort.toString()
                 }
-
 
                 phase = "starting"
                 val entryFile = config.nodejsConfig.entryFile.ifEmpty { "index.js" }
@@ -515,7 +483,7 @@ fun NodeJsShellMode(
                 if (port > 0) {
                     serverUrl = "http://127.0.0.1:$port"
                     phase = "ready"
-                    AppLogger.i("NodeJsShell", "Node.js 就绪: $serverUrl")
+                    AppLogger.i("NodeJsShell", "Node.js ready: $serverUrl")
                     com.webtoapp.core.shell.ShellLogger.i("NodeJsShell", "Node.js 就绪: $serverUrl")
                 } else {
                     phase = "error"
@@ -525,7 +493,7 @@ fun NodeJsShellMode(
                     com.webtoapp.core.shell.ShellLogger.e("NodeJsShell", "Node.js 服务器启动失败")
                 }
             } catch (e: Exception) {
-                AppLogger.e("NodeJsShell", "Node.js Shell 启动失败", e)
+                AppLogger.e("NodeJsShell", "Node.js Shell Launch failed", e)
                 com.webtoapp.core.shell.ShellLogger.e("NodeJsShell", "Node.js Shell 启动失败", e)
                 phase = "error"
                 errorMsg = e.message ?: Strings.unknownError
@@ -533,11 +501,9 @@ fun NodeJsShellMode(
         }
     }
 
-
     DisposableEffect(nodeRuntime) {
         onDispose { nodeRuntime.stopServer() }
     }
-
 
     Box(modifier = Modifier.fillMaxSize()) {
         when (phase) {
@@ -573,6 +539,7 @@ fun NodeJsShellMode(
                                         this, webViewConfig, webViewCallbacks,
                                         config.extensionModuleIds, config.embeddedExtensionModules,
                                         config.extensionFabIcon, allowGlobalModuleFallback = false,
+                                        extensionEnabled = config.extensionEnabled,
                                         browserDisguiseConfig = config.browserDisguiseConfig,
                                         deviceDisguiseConfig = config.deviceDisguiseConfig)
                                     settings.mixedContentMode =
@@ -657,9 +624,6 @@ fun NodeJsShellMode(
     }
 }
 
-
-
-
 @Composable
 fun PhpAppShellMode(
     config: com.webtoapp.core.shell.ShellConfig,
@@ -683,22 +647,15 @@ fun PhpAppShellMode(
         withContext(Dispatchers.IO) {
             try {
 
-
-
-                val nativePhp = File(context.applicationInfo.nativeLibraryDir, "libphp.so")
-                if (!nativePhp.exists()) {
-
-                    val abi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
-                    val phpDir = com.webtoapp.core.wordpress.WordPressDependencyManager.getPhpDir(context)
-                    val phpBinary = File(phpDir, "php")
-                    if (!phpBinary.exists() || !phpBinary.canExecute()) {
-                        context.assets.open("php/$abi/php").use { input ->
-                            phpBinary.outputStream().use { output -> input.copyTo(output) }
-                        }
-                        phpBinary.setExecutable(true)
-                    }
+                if (!com.webtoapp.core.wordpress.WordPressDependencyManager.isPhpReady(context)) {
+                    AppLogger.e(
+                        "PhpAppShell",
+                        "PHP runtime missing: nativeLibraryDir=${context.applicationInfo.nativeLibraryDir}"
+                    )
+                    phase = "error"
+                    errorMsg = Strings.phpStartFailed
+                    return@withContext
                 }
-
 
                 val phpProjectDir = File(context.filesDir, "php_app_site")
                 val marker = File(phpProjectDir, ".php_extracted")
@@ -713,7 +670,6 @@ fun PhpAppShellMode(
                     extractAssetsRecursive(context, "php_app", phpProjectDir)
                     writeExtractionMarker(marker, extractionToken)
                 }
-
 
                 phase = "starting"
                 val docRoot = config.phpAppConfig.documentRoot
@@ -766,7 +722,7 @@ fun PhpAppShellMode(
                                 }
                                 val createdWebView = WebView(ctx).apply {
                                     layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-                                    webViewManager.configureWebView(this, webViewConfig, webViewCallbacks, config.extensionModuleIds, config.embeddedExtensionModules, config.extensionFabIcon, allowGlobalModuleFallback = false, browserDisguiseConfig = config.browserDisguiseConfig, deviceDisguiseConfig = config.deviceDisguiseConfig)
+                                    webViewManager.configureWebView(this, webViewConfig, webViewCallbacks, config.extensionModuleIds, config.embeddedExtensionModules, config.extensionFabIcon, allowGlobalModuleFallback = false, extensionEnabled = config.extensionEnabled, browserDisguiseConfig = config.browserDisguiseConfig, deviceDisguiseConfig = config.deviceDisguiseConfig)
                                     settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                                     var lastTouchX = 0f; var lastTouchY = 0f
                                     setOnTouchListener { view, event ->
@@ -821,9 +777,6 @@ fun PhpAppShellMode(
     }
 }
 
-
-
-
 @Composable
 fun PythonAppShellMode(
     config: com.webtoapp.core.shell.ShellConfig,
@@ -848,20 +801,18 @@ fun PythonAppShellMode(
             try {
                 val pyConfig = config.pythonAppConfig
 
-
-
                 val pythonHome = com.webtoapp.core.python.PythonDependencyManager.getPythonDir(context)
                 val runtimeMarker = File(pythonHome, ".runtime_extracted")
                 if (!runtimeMarker.exists()) {
-                    AppLogger.i("PythonShell", "首次运行，提取 Python 标准库到 ${pythonHome.absolutePath}")
+                    AppLogger.i("PythonShell", "First run, extracting Python stdlib to ${pythonHome.absolutePath}")
                     try {
                         val assetChildren = context.assets.list("python_runtime")
                         if (assetChildren != null && assetChildren.isNotEmpty()) {
                             extractAssetsRecursive(context, "python_runtime", pythonHome)
                             runtimeMarker.writeText("extracted")
-                            AppLogger.i("PythonShell", "Python 标准库提取完成")
+                            AppLogger.i("PythonShell", "Python stdlib extraction complete")
                         } else {
-                            AppLogger.w("PythonShell", "assets/python_runtime 不存在或为空，尝试 legacy assets/python/ 路径")
+                            AppLogger.w("PythonShell", "assets/python_runtime missing or empty, trying legacy assets/python/ path")
 
                             val abi = com.webtoapp.core.python.PythonDependencyManager.getDeviceAbi()
                             try {
@@ -873,22 +824,21 @@ fun PythonAppShellMode(
                                         pythonBin.outputStream().use { output -> input.copyTo(output) }
                                     }
                                     pythonBin.setExecutable(true)
-                                    AppLogger.i("PythonShell", "Legacy: Python 二进制已提取到 ${pythonBin.absolutePath}")
+                                    AppLogger.i("PythonShell", "Legacy: Python binary extracted to ${pythonBin.absolutePath}")
                                 }
                             } catch (e: Exception) {
-                                AppLogger.w("PythonShell", "Legacy Python 二进制提取失败: ${e.message}")
+                                AppLogger.w("PythonShell", "Legacy Python binary extraction failed: ${e.message}")
                             }
                         }
                     } catch (e: Exception) {
-                        AppLogger.e("PythonShell", "提取 Python 标准库失败", e)
+                        AppLogger.e("PythonShell", "Failed to extract Python stdlib", e)
                     }
                 } else {
-                    AppLogger.i("PythonShell", "Python 标准库已提取，跳过")
+                    AppLogger.i("PythonShell", "Python stdlib already extracted, skipping")
                 }
 
-
                 if (!pythonRuntime.isPythonAvailable()) {
-                    AppLogger.w("PythonShell", "Python 运行时不可用，回退到预览模式")
+                    AppLogger.w("PythonShell", "Python runtime unavailable, falling back to preview mode")
 
                     val projectDir = File(context.filesDir, "python_app_site")
                     projectDir.mkdirs()
@@ -897,15 +847,14 @@ fun PythonAppShellMode(
                     if (previewHtml.exists()) {
                         serverUrl = "file://${previewHtml.absolutePath}"
                         phase = "ready"
-                        AppLogger.i("PythonShell", "回退到预览模式: $serverUrl")
+                        AppLogger.i("PythonShell", "Falling back to preview mode: $serverUrl")
                     } else {
                         phase = "error"
                         errorMsg = Strings.pythonRuntimeNotFound
                     }
                     return@withContext
                 }
-                AppLogger.i("PythonShell", "Python 运行时已就绪")
-
+                AppLogger.i("PythonShell", "Python runtime ready")
 
                 val projectDir = File(context.filesDir, "python_app_site")
                 val marker = File(projectDir, ".python_extracted")
@@ -917,14 +866,13 @@ fun PythonAppShellMode(
                 )
 
                 if (shouldReextractAssets(marker, extractionToken)) {
-                    AppLogger.i("PythonShell", "提取 Python 项目文件到 ${projectDir.absolutePath}")
+                    AppLogger.i("PythonShell", "Extracting Python project files to ${projectDir.absolutePath}")
                     projectDir.deleteRecursively()
                     extractAssetsRecursive(context, "python_app", projectDir)
                     writeExtractionMarker(marker, extractionToken)
                 } else {
-                    AppLogger.i("PythonShell", "已存在提取标记, 跳过提取")
+                    AppLogger.i("PythonShell", "Extraction marker exists, skipping extraction")
                 }
-
 
                 phase = "starting"
                 val entryFile = pyConfig.entryFile.ifEmpty { "app.py" }
@@ -942,16 +890,16 @@ fun PythonAppShellMode(
                     delay(200)
                     serverUrl = "http://127.0.0.1:$port"
                     phase = "ready"
-                    AppLogger.i("PythonShell", "Python 服务器就绪: $serverUrl")
+                    AppLogger.i("PythonShell", "Python server ready: $serverUrl")
                 } else {
                     phase = "error"
                     errorMsg = (pythonRuntime.serverState.value as? com.webtoapp.core.python.PythonRuntime.ServerState.Error)
                         ?.message
                         ?: Strings.pythonServerStartFailed
-                    AppLogger.e("PythonShell", "Python 服务器启动失败: $errorMsg")
+                    AppLogger.e("PythonShell", "Python server failed to start: $errorMsg")
                 }
             } catch (e: Exception) {
-                AppLogger.e("PythonShell", "Python Shell 启动失败", e)
+                AppLogger.e("PythonShell", "Python Shell Launch failed", e)
                 phase = "error"
                 errorMsg = e.message ?: Strings.unknownError
             }
@@ -990,7 +938,7 @@ fun PythonAppShellMode(
                                         ViewGroup.LayoutParams.MATCH_PARENT,
                                         ViewGroup.LayoutParams.MATCH_PARENT
                                     )
-                                    webViewManager.configureWebView(this, webViewConfig, webViewCallbacks, config.extensionModuleIds, config.embeddedExtensionModules, config.extensionFabIcon, allowGlobalModuleFallback = false, browserDisguiseConfig = config.browserDisguiseConfig, deviceDisguiseConfig = config.deviceDisguiseConfig)
+                                    webViewManager.configureWebView(this, webViewConfig, webViewCallbacks, config.extensionModuleIds, config.embeddedExtensionModules, config.extensionFabIcon, allowGlobalModuleFallback = false, extensionEnabled = config.extensionEnabled, browserDisguiseConfig = config.browserDisguiseConfig, deviceDisguiseConfig = config.deviceDisguiseConfig)
                                     settings.apply {
                                         mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                                         javaScriptEnabled = true
@@ -1078,9 +1026,6 @@ fun PythonAppShellMode(
     }
 }
 
-
-
-
 @Composable
 fun GoAppShellMode(
     config: com.webtoapp.core.shell.ShellConfig,
@@ -1105,7 +1050,6 @@ fun GoAppShellMode(
             try {
                 val goConfig = config.goAppConfig
 
-
                 val projectDir = File(context.filesDir, "go_app_site")
                 val marker = File(projectDir, ".go_extracted")
                 val extractionToken = buildExtractionToken(
@@ -1116,12 +1060,12 @@ fun GoAppShellMode(
                 )
 
                 if (shouldReextractAssets(marker, extractionToken)) {
-                    AppLogger.i("GoShell", "提取 Go 项目文件到 ${projectDir.absolutePath}")
+                    AppLogger.i("GoShell", "Extracting Go project files to ${projectDir.absolutePath}")
                     projectDir.deleteRecursively()
                     extractAssetsRecursive(context, "go_app", projectDir)
                     writeExtractionMarker(marker, extractionToken)
                 } else {
-                    AppLogger.i("GoShell", "已存在提取标记, 跳过提取")
+                    AppLogger.i("GoShell", "Extraction marker exists, skipping extraction")
                 }
 
                 projectDir.walkTopDown()
@@ -1133,25 +1077,23 @@ fun GoAppShellMode(
                         }
                     }
 
-
                 val binaryName = goConfig.binaryName.ifEmpty {
                     goRuntime.detectBinary(projectDir) ?: ""
                 }
                 if (binaryName.isEmpty()) {
-                    AppLogger.w("GoShell", "未检测到 Go 二进制，回退到预览模式")
+                    AppLogger.w("GoShell", "Go binary not detected, falling back to preview mode")
                     val previewHtml = File(projectDir, "_preview_.html")
                     if (previewHtml.exists()) {
                         serverUrl = "file://${previewHtml.absolutePath}"
                         phase = "ready"
-                        AppLogger.i("GoShell", "回退到预览模式: $serverUrl")
+                        AppLogger.i("GoShell", "Falling back to preview mode: $serverUrl")
                     } else {
                         phase = "error"
                         errorMsg = Strings.goBinaryNotFound
                     }
                     return@withContext
                 }
-                AppLogger.i("GoShell", "检测到 Go 二进制: $binaryName")
-
+                AppLogger.i("GoShell", "Go binary detected: $binaryName")
 
                 phase = "starting"
                 val port = goRuntime.startServer(
@@ -1164,16 +1106,16 @@ fun GoAppShellMode(
                 if (port > 0) {
                     serverUrl = "http://127.0.0.1:$port"
                     phase = "ready"
-                    AppLogger.i("GoShell", "Go 服务器就绪: $serverUrl")
+                    AppLogger.i("GoShell", "Go server ready: $serverUrl")
                 } else {
                     phase = "error"
                     errorMsg = (goRuntime.serverState.value as? com.webtoapp.core.golang.GoRuntime.ServerState.Error)
                         ?.message
                         ?: Strings.goServerStartFailed
-                    AppLogger.e("GoShell", "Go 服务器启动失败: $errorMsg")
+                    AppLogger.e("GoShell", "Go server failed to start: $errorMsg")
                 }
             } catch (e: Exception) {
-                AppLogger.e("GoShell", "Go Shell 启动失败", e)
+                AppLogger.e("GoShell", "Go Shell Launch failed", e)
                 phase = "error"
                 errorMsg = e.message ?: Strings.unknownError
             }
@@ -1212,7 +1154,7 @@ fun GoAppShellMode(
                                         ViewGroup.LayoutParams.MATCH_PARENT,
                                         ViewGroup.LayoutParams.MATCH_PARENT
                                     )
-                                    webViewManager.configureWebView(this, webViewConfig, webViewCallbacks, config.extensionModuleIds, config.embeddedExtensionModules, config.extensionFabIcon, allowGlobalModuleFallback = false, browserDisguiseConfig = config.browserDisguiseConfig, deviceDisguiseConfig = config.deviceDisguiseConfig)
+                                    webViewManager.configureWebView(this, webViewConfig, webViewCallbacks, config.extensionModuleIds, config.embeddedExtensionModules, config.extensionFabIcon, allowGlobalModuleFallback = false, extensionEnabled = config.extensionEnabled, browserDisguiseConfig = config.browserDisguiseConfig, deviceDisguiseConfig = config.deviceDisguiseConfig)
                                     settings.apply {
                                         mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                                         javaScriptEnabled = true
@@ -1282,10 +1224,6 @@ fun GoAppShellMode(
     }
 }
 
-
-
-
-
 @Composable
 fun ServerAppShellMode(
     appType: String,
@@ -1324,40 +1262,38 @@ fun ServerAppShellMode(
                     }
                 )
 
-                AppLogger.i("ServerAppShellMode", "========== $appType Shell 启动 ==========")
+                AppLogger.i("ServerAppShellMode", "========== $appType Shell start ==========")
                 AppLogger.i("ServerAppShellMode", "assetDir=$assetDir, siteDir=${siteDir.absolutePath}")
                 AppLogger.i("ServerAppShellMode", "marker exists=${marker.exists()}")
 
                 if (appType == "PYTHON_APP") {
                     val pyConfig = config.pythonAppConfig
-                    AppLogger.i("ServerAppShellMode", "Python配置: framework=${pyConfig.framework}, entryFile=${pyConfig.entryFile}, entryModule=${pyConfig.entryModule}, serverType=${pyConfig.serverType}, port=${pyConfig.port}")
-                    AppLogger.i("ServerAppShellMode", "Python环境变量: ${pyConfig.envVars}")
+                    AppLogger.i("ServerAppShellMode", "Python config: framework=${pyConfig.framework}, entryFile=${pyConfig.entryFile}, entryModule=${pyConfig.entryModule}, serverType=${pyConfig.serverType}, port=${pyConfig.port}")
+                    AppLogger.i("ServerAppShellMode", "Python env vars: ${pyConfig.envVars}")
                 } else {
                     val goConfig = config.goAppConfig
-                    AppLogger.i("ServerAppShellMode", "Go配置: framework=${goConfig.framework}, binaryName=${goConfig.binaryName}, port=${goConfig.port}, staticDir=${goConfig.staticDir}")
+                    AppLogger.i("ServerAppShellMode", "Go config: framework=${goConfig.framework}, binaryName=${goConfig.binaryName}, port=${goConfig.port}, staticDir=${goConfig.staticDir}")
                 }
-
 
                 try {
                     val assetChildren = context.assets.list(assetDir)
-                    AppLogger.i("ServerAppShellMode", "assets/$assetDir 内容 (${assetChildren?.size ?: 0} 项): ${assetChildren?.joinToString()}")
+                    AppLogger.i("ServerAppShellMode", "assets/$assetDir contents (${assetChildren?.size ?: 0} items): ${assetChildren?.joinToString()}")
                     if (assetChildren.isNullOrEmpty()) {
-                        AppLogger.e("ServerAppShellMode", "assets/$assetDir 为空或不存在!")
+                        AppLogger.e("ServerAppShellMode", "assets/$assetDir is empty or missing!")
                     }
                 } catch (e: Exception) {
-                    AppLogger.e("ServerAppShellMode", "列出 assets/$assetDir 失败", e)
+                    AppLogger.e("ServerAppShellMode", "Listing assets/$assetDir failed", e)
                 }
 
                 if (shouldReextractAssets(marker, extractionToken)) {
-                    AppLogger.i("ServerAppShellMode", "首次提取: 删除旧目录并从 assets 提取...")
+                    AppLogger.i("ServerAppShellMode", "First extract: removing old directory and extracting from assets...")
                     siteDir.deleteRecursively()
                     extractAssetsRecursive(context, assetDir, siteDir)
                     writeExtractionMarker(marker, extractionToken)
-                    AppLogger.i("ServerAppShellMode", "提取完成, marker 已创建")
+                    AppLogger.i("ServerAppShellMode", "Extraction complete, marker created")
                 } else {
-                    AppLogger.i("ServerAppShellMode", "已存在提取标记, 跳过提取")
+                    AppLogger.i("ServerAppShellMode", "Extraction marker exists, skipping extraction")
                 }
-
 
                 val fileList = StringBuilder()
                 siteDir.walkTopDown().take(30).forEach { f ->
@@ -1366,10 +1302,9 @@ fun ServerAppShellMode(
                     fileList.appendLine("  $rel $info")
                 }
                 val totalFiles = siteDir.walkTopDown().filter { it.isFile }.count()
-                AppLogger.i("ServerAppShellMode", "提取后目录结构 ($totalFiles 个文件):\n$fileList")
+                AppLogger.i("ServerAppShellMode", "Post-extraction directory structure ($totalFiles files):\n$fileList")
 
                 phase = "starting"
-
 
                 val candidates = listOf("dist", "build", "public", "static", "www", "")
                 var docRoot: File? = null
@@ -1377,10 +1312,10 @@ fun ServerAppShellMode(
                     val candidate = if (dir.isEmpty()) siteDir else File(siteDir, dir)
                     val indexExists = File(candidate, "index.html").exists()
                     val isDir = candidate.isDirectory
-                    AppLogger.d("ServerAppShellMode", "检查候选目录: '$dir' -> ${candidate.absolutePath}, isDir=$isDir, hasIndex=$indexExists")
+                    AppLogger.d("ServerAppShellMode", "Checking candidate directory: '$dir' -> ${candidate.absolutePath}, isDir=$isDir, hasIndex=$indexExists")
                     if (isDir && indexExists) {
                         docRoot = candidate
-                        AppLogger.i("ServerAppShellMode", "找到 docRoot: ${candidate.absolutePath}")
+                        AppLogger.i("ServerAppShellMode", "Found docRoot: ${candidate.absolutePath}")
                         break
                     }
                 }
@@ -1388,27 +1323,27 @@ fun ServerAppShellMode(
                 if (docRoot != null) {
                     serverUrl = httpServer.start(docRoot)
                     phase = "ready"
-                    AppLogger.i("ServerAppShellMode", "LocalHttpServer 已启动, URL=$serverUrl")
+                    AppLogger.i("ServerAppShellMode", "LocalHttpServer started, URL=$serverUrl")
                 } else {
-                    AppLogger.w("ServerAppShellMode", "所有候选目录均未找到 index.html")
+                    AppLogger.w("ServerAppShellMode", "No candidate directory contains index.html")
 
                     serverUrl = "file://${siteDir.absolutePath}/index.html"
                     if (File(siteDir, "index.html").exists()) {
                         phase = "ready"
-                        AppLogger.i("ServerAppShellMode", "回退到 file:// 模式: $serverUrl")
+                        AppLogger.i("ServerAppShellMode", "Falling back to file:// mode: $serverUrl")
                     } else {
                         phase = "error"
                         errorMsg = Strings.serverStartFailed
-                        AppLogger.e("ServerAppShellMode", "最终失败: siteDir 中也没有 index.html")
-                        AppLogger.e("ServerAppShellMode", "Python/Go 后端应用需要对应运行时才能提供页面，当前实现仅支持静态前端产物")
+                        AppLogger.e("ServerAppShellMode", "Final failure: siteDir also lacks index.html")
+                        AppLogger.e("ServerAppShellMode", "Python/Go backend apps need their runtime to serve pages; this implementation only supports static frontend artefacts")
                     }
                 }
 
-                AppLogger.i("ServerAppShellMode", "========== 最终状态: phase=$phase, serverUrl=$serverUrl, error=$errorMsg ==========")
+                AppLogger.i("ServerAppShellMode", "========== Final status: phase=$phase, serverUrl=$serverUrl, error=$errorMsg ==========")
             } catch (e: Exception) {
                 phase = "error"
                 errorMsg = e.message ?: Strings.serverStartFailed
-                AppLogger.e("ServerAppShellMode", "启动异常", e)
+                AppLogger.e("ServerAppShellMode", "Start exception", e)
             }
         }
     }
@@ -1417,7 +1352,7 @@ fun ServerAppShellMode(
         when (phase) {
             "ready" -> {
                 val url = serverUrl ?: return@Box
-                AppLogger.i("ServerAppShellMode", "WebView ready, 即将加载 URL: $url")
+                AppLogger.i("ServerAppShellMode", "WebView ready, about to load URL: $url")
                 var swipeChildWebView: WebView? = null
                 key(webViewRecreationKey) {
                     AndroidView(
@@ -1438,7 +1373,7 @@ fun ServerAppShellMode(
                                 }
                                 val createdWebView = WebView(ctx).apply {
                                     layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-                                    webViewManager.configureWebView(this, webViewConfig, webViewCallbacks, config.extensionModuleIds, config.embeddedExtensionModules, config.extensionFabIcon, allowGlobalModuleFallback = false, browserDisguiseConfig = config.browserDisguiseConfig, deviceDisguiseConfig = config.deviceDisguiseConfig)
+                                    webViewManager.configureWebView(this, webViewConfig, webViewCallbacks, config.extensionModuleIds, config.embeddedExtensionModules, config.extensionFabIcon, allowGlobalModuleFallback = false, extensionEnabled = config.extensionEnabled, browserDisguiseConfig = config.browserDisguiseConfig, deviceDisguiseConfig = config.deviceDisguiseConfig)
                                     settings.mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                                     settings.apply {
                                         allowFileAccess = true

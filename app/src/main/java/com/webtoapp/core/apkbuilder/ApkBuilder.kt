@@ -36,19 +36,6 @@ import javax.crypto.SecretKey
 import com.webtoapp.util.AppConstants
 import com.webtoapp.util.TextFileClassifier
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 class ApkBuilder(private val context: Context) {
 
     companion object {
@@ -68,17 +55,11 @@ class ApkBuilder(private val context: Context) {
     private val encryptedApkBuilder = EncryptedApkBuilder(context)
     private val keyManager = KeyManager.getInstance(context)
 
-
     private val outputDir = File(context.getExternalFilesDir(null), "built_apks").apply { mkdirs() }
     private val tempDir = File(context.cacheDir, "apk_build_temp").apply { mkdirs() }
 
-
     private val originalAppName = "WebToApp"
     private val originalPackageName = "com.webtoapp"
-
-
-
-
 
     fun cleanTempFiles() {
         try {
@@ -95,15 +76,9 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
     fun getTempDirSize(): Long {
         return tempDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
     }
-
-
-
 
     fun cleanOldBuilds(keepCount: Int = 5) {
         try {
@@ -122,12 +97,6 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
-
-
-
     suspend fun buildApk(
         webApp: WebApp,
         onProgress: (Int, String) -> Unit = { _, _ -> }
@@ -142,21 +111,17 @@ class ApkBuilder(private val context: Context) {
         try {
             onProgress(0, "Preparing build...")
 
-
             val encryptionConfig = webApp.apkExportConfig?.encryptionConfig?.toEncryptionConfig()
                 ?: EncryptionConfig.DISABLED
 
-
             val hardeningConfig = webApp.apkExportConfig?.hardeningConfig
                 ?: com.webtoapp.data.model.AppHardeningConfig()
-
 
             val perfOptEnabled = webApp.apkExportConfig?.performanceOptimization == true
             val perfConfig = if (perfOptEnabled) {
                 webApp.apkExportConfig?.performanceConfig?.toOptimizerConfig()
                     ?: com.webtoapp.core.linux.PerformanceOptimizer.OptimizeConfig()
             } else null
-
 
             logger.section("WebApp Config")
             logger.logKeyValue("appName", webApp.name)
@@ -173,18 +138,15 @@ class ApkBuilder(private val context: Context) {
 
             logger.logKeyValue("performanceOptimization", perfOptEnabled)
 
-
             logger.section("APK Export Config")
             logger.logKeyValue("customPackageName", webApp.apkExportConfig?.customPackageName)
             logger.logKeyValue("customVersionCode", webApp.apkExportConfig?.customVersionCode)
             logger.logKeyValue("customVersionName", webApp.apkExportConfig?.customVersionName)
 
-
             val architecture = webApp.apkExportConfig?.architecture
                 ?: com.webtoapp.data.model.ApkArchitecture.UNIVERSAL
             logger.logKeyValue("architecture", architecture.name)
             logger.logKeyValue("abiFilters", architecture.abiFilters.joinToString(", "))
-
 
             logger.section("WebView Config")
             logger.logKeyValue("hideToolbar", webApp.webViewConfig.hideToolbar)
@@ -195,11 +157,9 @@ class ApkBuilder(private val context: Context) {
             logger.logKeyValue("customUserAgent", webApp.webViewConfig.customUserAgent)
             logger.logKeyValue("userAgent(legacy)", webApp.webViewConfig.userAgent)
 
-
             logger.section("Media Config")
             logger.logKeyValue("mediaConfig", webApp.mediaConfig)
             logger.logKeyValue("mediaConfig.mediaPath", webApp.mediaConfig?.mediaPath)
-
 
             if (webApp.appType == com.webtoapp.data.model.AppType.HTML) {
                 logger.section("HTML Config")
@@ -212,23 +172,19 @@ class ApkBuilder(private val context: Context) {
                 }
             }
 
-
             logger.section("Splash Screen Config")
             logger.logKeyValue("splashEnabled", webApp.splashEnabled)
             logger.logKeyValue("splashConfig.type", webApp.splashConfig?.type)
             logger.logKeyValue("splashConfig.mediaPath", webApp.splashConfig?.mediaPath)
             logger.logKeyValue("splashMediaPath (getSplashMediaPath)", webApp.getSplashMediaPath())
 
-
             logger.section("BGM Config")
             logger.logKeyValue("bgmEnabled", webApp.bgmEnabled)
             logger.logKeyValue("bgmConfig.playlist.size", webApp.bgmConfig?.playlist?.size ?: 0)
 
-
             AppLogger.d("ApkBuilder", "Build started - WebApp config:")
             AppLogger.d("ApkBuilder", "  appName=${webApp.name}")
             AppLogger.d("ApkBuilder", "  appType=${webApp.appType}")
-
 
             logger.section("Generate Package Name")
             val customPkg = webApp.apkExportConfig?.customPackageName?.takeIf {
@@ -248,7 +204,6 @@ class ApkBuilder(private val context: Context) {
             logger.logKeyValue("versionName", config.versionName)
             logger.logKeyValue("embeddedExtensionModules.size", config.embeddedExtensionModules.size)
 
-
             config.embeddedExtensionModules.forEachIndexed { index, module ->
                 logger.log("  embeddedModule[$index]: id=${module.id}, name=${module.name}, enabled=${module.enabled}, runAt=${module.runAt}, codeLength=${module.code.length}")
             }
@@ -265,9 +220,6 @@ class ApkBuilder(private val context: Context) {
 
             unsignedApk.delete()
             signedApk.delete()
-
-
-
 
             val prepStartTime = System.currentTimeMillis()
             currentStage = BuildStage.RESOURCE_PREP
@@ -294,7 +246,6 @@ class ApkBuilder(private val context: Context) {
                     getOrCreateTemplate(config)
                 }
 
-
                 val encKeyDeferred = async {
                     if (encryptionConfig.enabled) {
                         val signatureHash = signer.getCertificateSignatureHash()
@@ -304,7 +255,6 @@ class ApkBuilder(private val context: Context) {
                         )
                     } else null
                 }
-
 
                 val wpDirDeferred = async {
                     if (webApp.appType == com.webtoapp.data.model.AppType.WORDPRESS) {
@@ -353,7 +303,6 @@ class ApkBuilder(private val context: Context) {
                     } else null
                 }
 
-
                 val mediaContentPath = if (webApp.appType == com.webtoapp.data.model.AppType.IMAGE ||
                                            webApp.appType == com.webtoapp.data.model.AppType.VIDEO) webApp.url else null
                 val htmlFiles = if (webApp.appType == com.webtoapp.data.model.AppType.HTML ||
@@ -363,7 +312,6 @@ class ApkBuilder(private val context: Context) {
                 val bgmLrcDataList = if (webApp.bgmEnabled) webApp.bgmConfig?.playlist?.map { it.lrcData } ?: emptyList() else emptyList()
                 val galleryItems = if (webApp.appType == com.webtoapp.data.model.AppType.GALLERY) webApp.galleryConfig?.items ?: emptyList() else emptyList()
                 val frontendProjectDir = if (webApp.appType == com.webtoapp.data.model.AppType.FRONTEND) webApp.htmlConfig?.projectDir?.let { File(it) } else null
-
 
                 PreparedResources(
                     templateApk = templateDeferred.await(),
@@ -384,7 +332,6 @@ class ApkBuilder(private val context: Context) {
 
             val prepElapsed = System.currentTimeMillis() - prepStartTime
             logger.log("Parallel resource preparation completed in ${prepElapsed}ms")
-
 
             val templateApk = prepared.templateApk
             if (templateApk == null) {
@@ -415,7 +362,6 @@ class ApkBuilder(private val context: Context) {
             val goAppProjectDir = prepared.goAppProjectDir
             val frontendProjectDir = prepared.frontendProjectDir
             val encryptionKey = prepared.encryptionKey
-
 
             logger.section("Prepared Resources")
             logger.logKeyValue("mediaContentPath", mediaContentPath)
@@ -449,7 +395,6 @@ class ApkBuilder(private val context: Context) {
 
             logger.section("Build Input Preflight")
             currentStage = BuildStage.INPUT_PRECHECK
-
 
             val phpBinaryPath = if (config.appType in setOf("PHP_APP", "WORDPRESS")) {
                 com.webtoapp.core.wordpress.WordPressDependencyManager.getPhpExecutablePath(context)
@@ -550,7 +495,6 @@ class ApkBuilder(private val context: Context) {
 
             onProgress(70, "Signing APK...")
 
-
             if (!unsignedApk.exists() || unsignedApk.length() == 0L) {
                 return@withContext failBuild(
                     stage = BuildStage.MODIFY_APK,
@@ -616,11 +560,9 @@ class ApkBuilder(private val context: Context) {
                 )
             }
 
-
             logger.section("Sign APK")
             currentStage = BuildStage.SIGN
             logger.logKeyValue("signerType", signer.getSignerType().name)
-
 
             val signSuccess = try {
                 signer.sign(unsignedApk, signedApk)
@@ -637,7 +579,6 @@ class ApkBuilder(private val context: Context) {
                     )
                 )
             }
-
 
             if (!signedApk.exists() || signedApk.length() == 0L) {
                 if (signedApk.exists()) signedApk.delete()
@@ -657,7 +598,6 @@ class ApkBuilder(private val context: Context) {
 
             if (!signSuccess) {
 
-
                 logger.warn("ApkVerifier reported issues, but signed APK file is valid (${signedApk.length() / 1024} KB). Continuing build.")
             }
 
@@ -673,7 +613,6 @@ class ApkBuilder(private val context: Context) {
 
             onProgress(90, "Analyzing & cleaning up...")
             currentStage = BuildStage.ANALYZE_CLEANUP
-
 
             val analysisReport = coroutineScope {
                 val analysisDeferred = async {
@@ -752,11 +691,6 @@ class ApkBuilder(private val context: Context) {
         )
     }
 
-
-
-
-
-
     private fun getOrCreateTemplate(config: ApkConfig): File? {
         return try {
             val sourceTemplate = templateProvider.getTemplateFor(config) ?: return null
@@ -779,17 +713,6 @@ class ApkBuilder(private val context: Context) {
             null
         }
     }
-
-
-
-
-
-
-
-
-
-
-
 
     private suspend fun modifyApk(
         sourceApk: File,
@@ -823,7 +746,6 @@ class ApkBuilder(private val context: Context) {
         val replacedIconPaths = mutableSetOf<String>()
         var discoveredOldIconPaths = emptySet<String>()
 
-
         val assetEncryptor = if (encryptionConfig.enabled && encryptionKey != null) {
             AssetEncryptor(encryptionKey)
         } else null
@@ -849,20 +771,9 @@ class ApkBuilder(private val context: Context) {
 
                         }
 
-
                         entry.name.startsWith("assets/splash_media.") -> {
                             AppLogger.d("ApkBuilder", "Skipping old splash media: ${entry.name}")
                         }
-
-
-
-
-
-
-
-
-
-
 
                         entry.name == "AndroidManifest.xml" -> {
                             val originalData = zipIn.getInputStream(entry).readBytes()
@@ -885,15 +796,11 @@ class ApkBuilder(private val context: Context) {
                                 logger.log("Added $aliasCount activity-alias (multi desktop icons)")
                                 if (aliasCount >= 100) {
                                     val overheadKb = (aliasCount * 520L) / 1024
-                                    val impactLevel = com.webtoapp.core.disguise.DisguiseConfig.assessImpactLevel(aliasCount + 1)
+                                    val impactLevel = com.webtoapp.core.appearance.DisguiseConfig.assessImpactLevel(aliasCount + 1)
                                     logger.log("⚡ Icon Storm mode: $aliasCount aliases, ~${overheadKb}KB manifest overhead, impact level $impactLevel")
                                 }
                             }
                         }
-
-
-
-
 
                         entry.name == "resources.arsc" -> {
                             val originalData = zipIn.getInputStream(entry).readBytes()
@@ -908,26 +815,18 @@ class ApkBuilder(private val context: Context) {
                             writeEntryStored(zipOut, entry.name, modifiedData)
                         }
 
-
                         entry.name == ApkTemplate.CONFIG_PATH -> {
                             hasConfigFile = true
                             writeConfigEntry(zipOut, config, assetEncryptor, encryptionConfig)
                         }
 
-
                         iconBitmap != null && (isIconEntry(entry.name) || discoveredOldIconPaths.contains(entry.name)) -> {
-
-
-
 
                             val iconBytes = template.createAdaptiveForegroundIcon(iconBitmap, 432)
                             writeEntryDeflated(zipOut, entry.name, iconBytes)
                             replacedIconPaths.add(entry.name)
                             AppLogger.d("ApkBuilder", "Replaced icon entry: ${entry.name} (${iconBytes.size} bytes)")
                         }
-
-
-
 
                         entry.name.startsWith("lib/") -> {
                             val abi = entry.name.removePrefix("lib/").substringBefore("/")
@@ -951,22 +850,18 @@ class ApkBuilder(private val context: Context) {
                             }
                         }
 
-
                         entry.name.startsWith("kotlin/") || entry.name == "DebugProbesKt.bin" -> {
 
                         }
-
 
                         isEditorOnlyAsset(entry.name, config.appType, config.engineType) -> {
                             AppLogger.d("ApkBuilder", "APK slim: stripped editor asset: ${entry.name}")
                         }
 
-
                         perfConfig != null && perfConfig.removeUnusedResources &&
                         com.webtoapp.core.linux.PerformanceOptimizer.getRemovableEntries(entry.name, config.appType) -> {
                             AppLogger.d("ApkBuilder", "Perf: removed unused resource: ${entry.name}")
                         }
-
 
                         perfConfig != null && entry.name.startsWith("assets/") && isOptimizableAsset(entry.name) -> {
                             val originalData = zipIn.getInputStream(entry).readBytes()
@@ -979,21 +874,17 @@ class ApkBuilder(private val context: Context) {
                             }
                         }
 
-
                         else -> {
                             copyEntry(zipIn, zipOut, entry)
                         }
                     }
                 }
 
-
                 if (!hasConfigFile) {
                     writeConfigEntry(zipOut, config, assetEncryptor, encryptionConfig)
                 }
 
-
                 ensureRequiredRuntimeAssets(zipOut, config.appType, entryNames)
-
 
                 if (encryptionConfig.enabled) {
 
@@ -1002,12 +893,11 @@ class ApkBuilder(private val context: Context) {
                     logger.log("Encryption metadata written")
                 }
 
-
                 if (hardeningConfig.enabled) {
                     onProgress(78, "Applying hardening...")
                     logger.section("App Hardening")
                     logger.log("Hardening: maximum protection enabled")
-                    val hardeningEngine = com.webtoapp.core.hardening.AppHardeningEngine(context)
+                    val hardeningEngine = com.webtoapp.core.protection.AppHardeningEngine(context)
                     val signatureHash = signer.getCertificateSignatureHash()
                     val hardeningResult = hardeningEngine.performHardening(
                         config = hardeningConfig,
@@ -1029,7 +919,6 @@ class ApkBuilder(private val context: Context) {
                     logger.log("App hardening completed: ${hardeningResult.protectedFeatures.size} features protected")
                 }
 
-
                 if (perfConfig != null && perfConfig.injectPerformanceScript) {
                     onProgress(82, "Injecting performance assets...")
                     logger.section("Performance Optimization")
@@ -1042,7 +931,6 @@ class ApkBuilder(private val context: Context) {
                         "lazy=${perfConfig.injectLazyLoading}, scripts=${perfConfig.optimizeScripts}")
                 }
 
-
                 if (iconBitmap != null && replacedIconPaths.isEmpty()) {
                     addIconsToApk(zipOut, iconBitmap)
                     logger.log("Added PNG mipmap icons (no existing PNG icons found in template)")
@@ -1050,16 +938,9 @@ class ApkBuilder(private val context: Context) {
                     logger.log("Replaced ${replacedIconPaths.size} existing PNG icon entries")
                 }
 
-
-
                 if (iconBitmap != null) {
                     addAdaptiveIconPngs(zipOut, iconBitmap, entryNames)
                 }
-
-
-
-
-
 
                 AppLogger.d("ApkBuilder", "Splash config: splashEnabled=${config.splashEnabled}, splashMediaPath=$splashMediaPath, splashType=${config.splashType}")
                 onProgress(86, "Embedding app assets...")
@@ -1069,18 +950,14 @@ class ApkBuilder(private val context: Context) {
                     AppLogger.w("ApkBuilder", "Skipping splash embed: splashEnabled=${config.splashEnabled}, splashMediaPath=$splashMediaPath")
                 }
 
-
                 if (config.statusBarBackgroundType == "IMAGE" && !config.statusBarBackgroundImage.isNullOrEmpty()) {
-                    addStatusBarBackgroundToAssets(zipOut, config.statusBarBackgroundImage)
+                    addStatusBarBackgroundToAssets(zipOut, config.statusBarBackgroundImage!!)
                 }
-
 
                 if (config.bgmEnabled && bgmPlaylistPaths.isNotEmpty()) {
                     logger.log("Embedding BGM: ${bgmPlaylistPaths.size} files")
                     addBgmToAssets(zipOut, bgmPlaylistPaths, bgmLrcDataList, assetEncryptor, encryptionConfig)
                 }
-
-
 
                 val projectDir = when (config.appType) {
                     "WORDPRESS" -> wordPressProjectDir
@@ -1128,15 +1005,13 @@ class ApkBuilder(private val context: Context) {
                     logger.log("Content embedding [${config.appType}]: ${result.message}")
                 }
 
-
                 if (config.engineType == "GECKOVIEW") {
                     onProgress(98, "Injecting native runtime...")
-                    logger.section("Inject GeckoView Native Libraries")
-                    injectGeckoViewNativeLibs(zipOut, abiFilters)
+                    logger.section("Inject GeckoView Runtime (native libs + omni.ja)")
+                    injectGeckoViewRuntime(zipOut, abiFilters)
                 }
             }
         }
-
 
         if (strippedNativeLibSize > 0) {
             val savedMb = strippedNativeLibSize / 1024 / 1024
@@ -1147,52 +1022,27 @@ class ApkBuilder(private val context: Context) {
         iconBitmap?.recycle()
     }
 
-
-
-
-
-
-
-
-
-
-
-
     private fun isRequiredNativeLib(libName: String, appType: String, engineType: String): Boolean {
 
         if (libName == "libcrypto_engine.so" || libName == "libc++_shared.so") {
             return true
         }
 
-
-
-
         if (libName == "libapk_optimizer.so" || libName == "libcrypto_optimized.so" || libName == "libperf_engine.so" || libName == "libbrowser_kernel.so") {
             return false
         }
-
-
-
-
-
-
-
-
 
         if (libName == "libphp.so") {
             return appType in setOf("WORDPRESS", "PHP_APP")
         }
 
-
         if (libName == "libnode_bridge.so" || libName == "libnode.so") {
             return appType == "NODEJS_APP"
         }
 
-
         if (libName == "libpython3.so" || libName == "libmusl-linker.so") {
             return appType == "PYTHON_APP"
         }
-
 
         val geckoViewLibs = setOf(
             "libgkcodecs.so",
@@ -1200,27 +1050,25 @@ class ApkBuilder(private val context: Context) {
             "libnss3.so",
             "libfreebl3.so",
             "libsoftokn3.so",
-            "liblgpllibs.so"
+            "liblgpllibs.so",
+            "libplugin-container.so"
         )
         if (libName in geckoViewLibs) {
-            return engineType == "GECKOVIEW"
-        }
 
+            return false
+        }
 
         return true
     }
 
-
-
-
-
-    private fun injectGeckoViewNativeLibs(
+    private fun injectGeckoViewRuntime(
         zipOut: ZipOutputStream,
         abiFilters: List<String>
     ) {
         try {
             val engineFileManager = com.webtoapp.core.engine.download.EngineFileManager(context)
-            val nativeLibs = engineFileManager.listEngineNativeLibs(com.webtoapp.core.engine.EngineType.GECKOVIEW)
+            val engineType = com.webtoapp.core.engine.EngineType.GECKOVIEW
+            val nativeLibs = engineFileManager.listEngineNativeLibs(engineType)
 
             if (nativeLibs.isEmpty()) {
                 logger.warn("GeckoView engine selected but no native libs found! Make sure engine is downloaded.")
@@ -1244,19 +1092,24 @@ class ApkBuilder(private val context: Context) {
             }
 
             logger.logKeyValue("geckoNativeLibsInjected", totalInjected)
+
+            val omniJa = engineFileManager.getOmniJaFile(engineType)
+            if (omniJa.exists() && omniJa.length() > 0) {
+                writeEntryStoredStreaming(zipOut, "assets/omni.ja", omniJa)
+                logger.log("Injecting: assets/omni.ja (" + (omniJa.length() / 1024) + " KB)")
+                logger.logKeyValue("geckoOmniJaInjected", true)
+            } else {
+
+                logger.error("GeckoView omni.ja missing at ${omniJa.absolutePath} — engine not fully downloaded")
+                throw IllegalStateException(
+                    "GeckoView omni.ja not found. The Firefox engine must be fully downloaded before building."
+                )
+            }
         } catch (e: Exception) {
-            logger.error("Failed to inject GeckoView native libs", e)
+            logger.error("Failed to inject GeckoView runtime", e)
+            throw e
         }
     }
-
-
-
-
-
-
-
-
-
 
     private fun addSplashMediaToAssets(
         zipOut: ZipOutputStream,
@@ -1283,7 +1136,6 @@ class ApkBuilder(private val context: Context) {
             AppLogger.e("ApkBuilder", "Splash media file is empty: $mediaPath")
             return
         }
-
 
         val extension = if (splashType == "VIDEO") "mp4" else "png"
         val assetPath = "splash_media.$extension"
@@ -1324,9 +1176,6 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
     private fun addStatusBarBackgroundToAssets(
         zipOut: ZipOutputStream,
         imagePath: String
@@ -1351,7 +1200,6 @@ class ApkBuilder(private val context: Context) {
                 return
             }
 
-
             writeEntryDeflated(zipOut, "assets/statusbar_background.png", imageBytes)
             AppLogger.d("ApkBuilder", "Status bar background embedded: assets/statusbar_background.png (${imageBytes.size} bytes)")
         } catch (e: Exception) {
@@ -1359,24 +1207,13 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
-
     private fun writeEntryStoredSimple(zipOut: ZipOutputStream, name: String, data: ByteArray) {
         ZipUtils.writeEntryStoredSimple(zipOut, name, data)
     }
 
-
-
-
-
-
     private fun writeEntryStoredStreaming(zipOut: ZipOutputStream, name: String, file: File) {
         ZipUtils.writeEntryStoredStreaming(zipOut, name, file)
     }
-
-
 
     private fun ensureAligned16kNativeLib(sourceFile: File, displayName: String): File {
         if (displayName == com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME) {
@@ -1397,12 +1234,6 @@ class ApkBuilder(private val context: Context) {
             sourceFile
         }
     }
-
-
-
-
-
-
 
     private fun addMediaContentToAssets(
         zipOut: ZipOutputStream,
@@ -1429,7 +1260,6 @@ class ApkBuilder(private val context: Context) {
             AppLogger.e("ApkBuilder", "Media file is empty: $mediaPath")
             return
         }
-
 
         val extension = if (isVideo) "mp4" else "png"
         val assetName = "media_content.$extension"
@@ -1470,11 +1300,6 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
-
-
     private fun addGalleryItemsToAssets(
         zipOut: ZipOutputStream,
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
@@ -1501,7 +1326,6 @@ class ApkBuilder(private val context: Context) {
                 val fileSize = mediaFile.length()
                 val largeFileThreshold = 10 * 1024 * 1024L
 
-
                 if (encryptionConfig.enabled && encryptor != null) {
                     if (isVideo && fileSize > largeFileThreshold) {
                         val encryptedData = encryptLargeFile(mediaFile, assetName, encryptor)
@@ -1520,7 +1344,6 @@ class ApkBuilder(private val context: Context) {
                     }
                     AppLogger.d("ApkBuilder", "Gallery item embedded(STORED): assets/$assetName (${fileSize / 1024} KB)")
                 }
-
 
                 item.thumbnailPath?.let { thumbPath ->
                     val thumbFile = File(thumbPath)
@@ -1542,11 +1365,6 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
-
-
     private fun addWordPressFilesToAssets(
         zipOut: ZipOutputStream,
         projectDir: File
@@ -1555,7 +1373,6 @@ class ApkBuilder(private val context: Context) {
 
         var fileCount = 0
         var totalSize = 0L
-
 
         fun addDirRecursive(dir: File, basePath: String) {
             dir.listFiles()?.forEach { file ->
@@ -1583,9 +1400,6 @@ class ApkBuilder(private val context: Context) {
         logger.logKeyValue("wordpressFilesEmbedded", fileCount)
         logger.logKeyValue("wordpressTotalSize", "${totalSize / 1024} KB")
 
-
-
-
         val phpBinary = resolvePhpBinary()
         if (phpBinary != null && phpBinary.canRead()) {
             try {
@@ -1595,8 +1409,6 @@ class ApkBuilder(private val context: Context) {
                 writeEntryStoredStreaming(zipOut, "lib/$abi/libphp.so", alignedPhpBinary)
                 logger.log("PHP binary injected as native lib: lib/$abi/libphp.so (${alignedPhpBinary.length() / 1024} KB)")
 
-                writeEntryStoredSimple(zipOut, "assets/php/$abi/php", alignedPhpBinary.readBytes())
-                logger.log("PHP binary also embedded as asset: assets/php/$abi/php")
             } catch (e: Exception) {
                 logger.error("Failed to embed PHP binary", e)
             }
@@ -1605,20 +1417,12 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
-
-
     private fun addNodeJsFilesToAssets(
         zipOut: ZipOutputStream,
         projectDir: File
     ) {
 
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.nodeJsConfig(), logger)
-
-
-
 
         val nodeDir = com.webtoapp.core.nodejs.NodeDependencyManager.getNodeDir(context)
         val nodeBinary = File(nodeDir, com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME)
@@ -1639,20 +1443,12 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
-
-
     private fun addPhpAppFilesToAssets(
         zipOut: ZipOutputStream,
         projectDir: File
     ) {
 
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.phpConfig(), logger)
-
-
-
 
         val phpBinary = resolvePhpBinary()
         if (phpBinary != null && phpBinary.canRead()) {
@@ -1663,8 +1459,6 @@ class ApkBuilder(private val context: Context) {
                 writeEntryStoredStreaming(zipOut, "lib/$abi/libphp.so", alignedPhpBinary)
                 logger.log("PHP binary injected as native lib: lib/$abi/libphp.so (${alignedPhpBinary.length() / 1024} KB)")
 
-                writeEntryStoredSimple(zipOut, "assets/php/$abi/php", alignedPhpBinary.readBytes())
-                logger.log("PHP binary also embedded as asset: assets/php/$abi/php")
             } catch (e: Exception) {
                 logger.error("Failed to embed PHP binary for PHP app", e)
             }
@@ -1673,38 +1467,33 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
     private fun resolvePhpBinary(): File? {
 
         val nativePhp = File(context.applicationInfo.nativeLibraryDir, "libphp.so")
-        if (nativePhp.exists()) {
+        if (nativePhp.exists() && nativePhp.canExecute()) {
             AppLogger.d("ApkBuilder", "Using nativeLibraryDir PHP: ${nativePhp.absolutePath}")
             return nativePhp
         }
 
-        val phpDir = com.webtoapp.core.wordpress.WordPressDependencyManager.getPhpDir(context)
-        val downloaded = File(phpDir, "php")
-        if (downloaded.exists()) {
+        val downloaded = com.webtoapp.core.wordpress.WordPressDependencyManager
+            .getPhpExecutablePath(context)
+            ?.let { File(it) }
+        if (downloaded != null && downloaded.exists() && downloaded.canRead()) {
             AppLogger.d("ApkBuilder", "Using downloaded PHP: ${downloaded.absolutePath}")
             return downloaded
         }
-        AppLogger.w("ApkBuilder", "PHP binary not found in nativeLibraryDir or download cache")
+        AppLogger.w(
+            "ApkBuilder",
+            "PHP binary missing in nativeLibraryDir and wordpress_deps; " +
+                "user should install PHP via 运行时管理 first"
+        )
         return null
     }
-
-
-
-
 
     private fun addPythonAppFilesToAssets(
         zipOut: ZipOutputStream,
         projectDir: File
     ) {
-
-
-
 
         val reqFile = File(projectDir, "requirements.txt")
         val sitePackages = File(projectDir, ".pypackages")
@@ -1741,12 +1530,7 @@ class ApkBuilder(private val context: Context) {
             logger.log("Python .pypackages already exists (${sitePackages.listFiles()?.size ?: 0} packages), skipping pre-install")
         }
 
-
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.pythonConfig(), logger)
-
-
-
-
 
         val sitecustomizeContent = """
 import os, sys, builtins
@@ -1800,7 +1584,6 @@ builtins.__import__ = _w2a_import
             logger.warn("Failed to embed sitecustomize.py: ${e.message}")
         }
 
-
         val pythonHome = com.webtoapp.core.python.PythonDependencyManager.getPythonDir(context)
         var pythonBinary312 = File(pythonHome, "bin/python3.12")
         var pythonBinary3 = File(pythonHome, "bin/python3")
@@ -1809,7 +1592,6 @@ builtins.__import__ = _w2a_import
             pythonBinary3.exists() && pythonBinary3.length() > 1024 * 1024 -> pythonBinary3
             else -> null
         }
-
 
         if (pythonBinary == null) {
             logger.warn("Python binary not found locally, attempting auto-download...")
@@ -1852,7 +1634,6 @@ builtins.__import__ = _w2a_import
             logger.warn("Python binary not found or too small: python3.12=${pythonBinary312.let { "${it.exists()}/${it.length()}" }}, python3=${pythonBinary3.let { "${it.exists()}/${it.length()}" }}")
         }
 
-
         val muslLinkerName = com.webtoapp.core.python.PythonDependencyManager.getMuslLinkerName(abi)
         val muslLinkerFile = File(pythonHome, "lib/$muslLinkerName")
         if (muslLinkerFile.exists() && muslLinkerFile.canRead()) {
@@ -1867,14 +1648,9 @@ builtins.__import__ = _w2a_import
             logger.warn("musl linker not found: ${muslLinkerFile.absolutePath} - Python may not execute in exported APK")
         }
 
-
         val pythonLibDir = File(pythonHome, "lib")
         RuntimeAssetEmbedder.embedPythonStdlib(zipOut, pythonLibDir, logger)
     }
-
-
-
-
 
     private fun addGoAppFilesToAssets(
         zipOut: ZipOutputStream,
@@ -1902,11 +1678,6 @@ builtins.__import__ = _w2a_import
         )
     }
 
-
-
-
-
-
     private fun addFrontendFilesToAssets(
         zipOut: ZipOutputStream,
         projectDir: File,
@@ -1914,12 +1685,6 @@ builtins.__import__ = _w2a_import
     ) {
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.frontendConfig(), logger)
     }
-
-
-
-
-
-
 
     private fun encryptLargeFile(file: File, assetName: String, encryptor: AssetEncryptor): ByteArray {
         val fileSize = file.length()
@@ -1932,18 +1697,9 @@ builtins.__import__ = _w2a_import
         return encryptor.encrypt(mediaBytes, assetName)
     }
 
-
-
-
     private fun isTextFile(fileName: String): Boolean {
         return TextFileClassifier.isTextFile(fileName)
     }
-
-
-
-
-
-
 
     private fun addBgmToAssets(
         zipOut: ZipOutputStream,
@@ -1995,7 +1751,6 @@ builtins.__import__ = _w2a_import
                     }
                 }
 
-
                 val lrcData = lrcDataList.getOrNull(index)
                 if (lrcData != null && lrcData.lines.isNotEmpty()) {
                     val lrcContent = convertLrcDataToLrcString(lrcData)
@@ -2017,18 +1772,6 @@ builtins.__import__ = _w2a_import
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
     private fun addHtmlFilesToAssets(
         zipOut: ZipOutputStream,
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
@@ -2037,11 +1780,9 @@ builtins.__import__ = _w2a_import
     ): Int {
         AppLogger.d("ApkBuilder", "Preparing to embed ${htmlFiles.size} HTML project files")
 
-
         htmlFiles.forEachIndexed { index, file ->
             AppLogger.d("ApkBuilder", "  [$index] name=${file.name}, path=${file.path}, type=${file.type}")
         }
-
 
         val htmlFilesList = htmlFiles.filter {
             it.type == com.webtoapp.data.model.HtmlFileType.HTML ||
@@ -2063,7 +1804,6 @@ builtins.__import__ = _w2a_import
 
         AppLogger.d("ApkBuilder", "File categories: HTML=${htmlFilesList.size}, CSS=${cssFilesList.size}, JS=${jsFilesList.size}, Other=${otherFiles.size}")
 
-
         val isComplexProject = isComplexHtmlProject(htmlFiles, htmlFilesList, jsFilesList, otherFiles)
 
         if (isComplexProject) {
@@ -2071,11 +1811,9 @@ builtins.__import__ = _w2a_import
             return addHtmlFilesPreserveStructure(zipOut, htmlFiles, encryptor, encryptionConfig)
         }
 
-
         AppLogger.d("ApkBuilder", "Simple project — using INLINE mode")
 
         var successCount = 0
-
 
         val cssContent = cssFilesList.mapNotNull { cssFile ->
             try {
@@ -2089,7 +1827,6 @@ builtins.__import__ = _w2a_import
                 null
             }
         }.joinToString("\n\n")
-
 
         val jsContent = jsFilesList.mapNotNull { jsFile ->
             try {
@@ -2106,7 +1843,6 @@ builtins.__import__ = _w2a_import
 
         AppLogger.d("ApkBuilder", "CSS content length: ${cssContent.length}, JS content length: ${jsContent.length}")
 
-
         htmlFilesList.forEach { htmlFile ->
             try {
                 val sourceFile = File(htmlFile.path)
@@ -2122,7 +1858,6 @@ builtins.__import__ = _w2a_import
                     return@forEach
                 }
 
-
                 val encoding = detectFileEncoding(sourceFile)
                 var htmlContent = com.webtoapp.util.HtmlProjectProcessor.readFileWithEncoding(sourceFile, encoding)
 
@@ -2131,14 +1866,12 @@ builtins.__import__ = _w2a_import
                     return@forEach
                 }
 
-
                 htmlContent = com.webtoapp.util.HtmlProjectProcessor.processHtmlContent(
                     htmlContent = htmlContent,
                     cssContent = cssContent.takeIf { it.isNotBlank() },
                     jsContent = jsContent.takeIf { it.isNotBlank() },
                     fixPaths = true
                 )
-
 
                 val assetPath = "assets/html/${htmlFile.name}"
                 val htmlBytes = htmlContent.toByteArray(Charsets.UTF_8)
@@ -2158,7 +1891,6 @@ builtins.__import__ = _w2a_import
             }
         }
 
-
         otherFiles.forEach { otherFile ->
             try {
                 val sourceFile = File(otherFile.path)
@@ -2167,7 +1899,6 @@ builtins.__import__ = _w2a_import
                     if (fileBytes.isNotEmpty()) {
                         val assetPath = "assets/html/${otherFile.name}"
                         val assetName = "html/${otherFile.name}"
-
 
                         if (encryptionConfig.enabled && encryptor != null) {
                             val encryptedData = encryptor.encrypt(fileBytes, assetName)
@@ -2189,18 +1920,6 @@ builtins.__import__ = _w2a_import
         return successCount
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
     private fun isComplexHtmlProject(
         allFiles: List<com.webtoapp.data.model.HtmlFile>,
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
@@ -2214,12 +1933,10 @@ builtins.__import__ = _w2a_import
             return true
         }
 
-
         if (jsFiles.size > 3) {
             AppLogger.d("ApkBuilder", "Complex project indicator: ${jsFiles.size} JS files (>3)")
             return true
         }
-
 
         val chunkPattern = Regex("""(chunk|vendor|main|runtime|polyfill)[.\-][a-f0-9]{6,}\.js""", RegexOption.IGNORE_CASE)
         val hasChunkedJs = jsFiles.any { chunkPattern.containsMatchIn(it.name) }
@@ -2227,7 +1944,6 @@ builtins.__import__ = _w2a_import
             AppLogger.d("ApkBuilder", "Complex project indicator: chunked JS filenames detected")
             return true
         }
-
 
         val htmlUsesModules = htmlFiles.any { htmlFile ->
             try {
@@ -2244,9 +1960,7 @@ builtins.__import__ = _w2a_import
             return true
         }
 
-
         val hasSourceMaps = allFiles.any { it.name.endsWith(".map", ignoreCase = true) }
-
 
         val hasManifest = allFiles.any {
             it.name.equals("asset-manifest.json", ignoreCase = true) ||
@@ -2258,12 +1972,10 @@ builtins.__import__ = _w2a_import
             return true
         }
 
-
         if (allFiles.size > 10 && hasSourceMaps) {
             AppLogger.d("ApkBuilder", "Complex project indicator: ${allFiles.size} files with source maps")
             return true
         }
-
 
         val jsUsesModules = jsFiles.take(2).any { jsFile ->
             try {
@@ -2282,17 +1994,6 @@ builtins.__import__ = _w2a_import
 
         return false
     }
-
-
-
-
-
-
-
-
-
-
-
 
     private fun addHtmlFilesPreserveStructure(
         zipOut: ZipOutputStream,
@@ -2330,7 +2031,6 @@ builtins.__import__ = _w2a_import
                              htmlFile.name.endsWith(".map", ignoreCase = true) ||
                              htmlFile.name.endsWith(".txt", ignoreCase = true)
 
-
                 val finalBytes = if (isHtml) {
                     var content = String(fileBytes, Charsets.UTF_8)
                     if (!content.contains("viewport", ignoreCase = true)) {
@@ -2346,7 +2046,6 @@ builtins.__import__ = _w2a_import
                 } else {
                     fileBytes
                 }
-
 
                 val shouldEncrypt = when {
                     isHtml && encryptionConfig.enabled && encryptor != null -> true
@@ -2377,13 +2076,9 @@ builtins.__import__ = _w2a_import
         return successCount
     }
 
-
-
-
     private fun detectFileEncoding(file: File): String {
         return try {
             val bytes = file.readBytes().take(1000).toByteArray()
-
 
             when {
                 bytes.size >= 3 && bytes[0] == 0xEF.toByte() && bytes[1] == 0xBB.toByte() && bytes[2] == 0xBF.toByte() -> "UTF-8"
@@ -2401,25 +2096,19 @@ builtins.__import__ = _w2a_import
         }
     }
 
-
-
-
     private fun convertLrcDataToLrcString(lrcData: LrcData): String {
         val sb = StringBuilder()
-
 
         lrcData.title?.let { sb.appendLine("[ti:$it]") }
         lrcData.artist?.let { sb.appendLine("[ar:$it]") }
         lrcData.album?.let { sb.appendLine("[al:$it]") }
         sb.appendLine()
 
-
         lrcData.lines.forEach { line ->
             val minutes = line.startTime / 60000
             val seconds = (line.startTime % 60000) / 1000
             val centiseconds = (line.startTime % 1000) / 10
             sb.appendLine("[%02d:%02d.%02d]%s".format(minutes, seconds, centiseconds, line.text))
-
 
             line.translation?.let { translation ->
                 sb.appendLine("[%02d:%02d.%02d]%s".format(minutes, seconds, centiseconds, translation))
@@ -2428,10 +2117,6 @@ builtins.__import__ = _w2a_import
 
         return sb.toString()
     }
-
-
-
-
 
     private fun debugApkStructure(apkFile: File): Boolean {
         return try {
@@ -2465,23 +2150,16 @@ builtins.__import__ = _w2a_import
         }
     }
 
-
-
-
-
     private fun generateDefaultIcon(appName: String, themeType: String = "AURORA"): Bitmap {
         val size = 512
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-
         val bgColor = getThemePrimaryColor(themeType)
-
 
         val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = bgColor }
         val radius = size * 0.22f
         canvas.drawRoundRect(RectF(0f, 0f, size.toFloat(), size.toFloat()), radius, radius, bgPaint)
-
 
         val initial = appName.firstOrNull()?.uppercase() ?: "A"
 
@@ -2500,9 +2178,6 @@ builtins.__import__ = _w2a_import
         return bitmap
     }
 
-
-
-
     private fun getThemePrimaryColor(themeType: String): Int = when (themeType) {
         "AURORA"     -> 0xFF7B68EE.toInt()
         "CYBERPUNK"  -> 0xFFFF00FF.toInt()
@@ -2519,19 +2194,12 @@ builtins.__import__ = _w2a_import
         else         -> 0xFF7B68EE.toInt()
     }
 
-
-
-
     private fun getThemeOnPrimaryColor(themeType: String): Int = when (themeType) {
         "CYBERPUNK"  -> 0xFF000000.toInt()
         "SAKURA"     -> 0xFF4A1C2B.toInt()
         "FROST"      -> 0xFF00344A.toInt()
         else         -> 0xFFFFFFFF.toInt()
     }
-
-
-
-
 
     private fun addIconsToApk(zipOut: ZipOutputStream, bitmap: Bitmap) {
 
@@ -2540,20 +2208,11 @@ builtins.__import__ = _w2a_import
             writeEntryDeflated(zipOut, path, iconBytes)
         }
 
-
         ApkTemplate.ROUND_ICON_PATHS.forEach { (path, size) ->
             val iconBytes = template.createRoundIcon(bitmap, size)
             writeEntryDeflated(zipOut, path, iconBytes)
         }
     }
-
-
-
-
-
-
-
-
 
     private fun addAdaptiveIconPngs(
         zipOut: ZipOutputStream,
@@ -2570,8 +2229,6 @@ builtins.__import__ = _w2a_import
             "res/drawable-anydpi-v24/ic_launcher_foreground_new"
         )
 
-
-
         val iconBytes = template.createAdaptiveForegroundIcon(bitmap, 432)
 
         bases.forEach { base ->
@@ -2583,23 +2240,11 @@ builtins.__import__ = _w2a_import
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
     private fun addAdaptiveIconReplacementPngs(zipOut: ZipOutputStream, bitmap: Bitmap) {
 
         val iconPng = template.scaleBitmapToPng(bitmap, 512)
         writeEntryDeflated(zipOut, "res/mipmap-anydpi-v26/ic_launcher.png", iconPng)
         AppLogger.d("ApkBuilder", "Added replacement icon: res/mipmap-anydpi-v26/ic_launcher.png (512px, ${iconPng.size} bytes)")
-
 
         val roundPng = template.createRoundIcon(bitmap, 512)
         writeEntryDeflated(zipOut, "res/mipmap-anydpi-v26/ic_launcher_round.png", roundPng)
@@ -2608,23 +2253,13 @@ builtins.__import__ = _w2a_import
         logger.log("Added PNG icons at mipmap-anydpi-v26 paths (512px, replacing adaptive icon XMLs)")
     }
 
-
-
-
     private fun writeEntryDeflated(zipOut: ZipOutputStream, name: String, data: ByteArray) {
         ZipUtils.writeEntryDeflated(zipOut, name, data)
     }
 
-
-
-
-
     private fun writeEntryStored(zipOut: ZipOutputStream, name: String, data: ByteArray) {
         ZipUtils.writeEntryStored(zipOut, name, data)
     }
-
-
-
 
     private fun writeConfigEntry(
         zipOut: ZipOutputStream,
@@ -2641,8 +2276,6 @@ builtins.__import__ = _w2a_import
             val encryptedData = encryptor.encryptJson(configJson, "app_config.json")
             writeEntryDeflated(zipOut, ApkTemplate.CONFIG_PATH + ".enc", encryptedData)
 
-
-
             val stubJson = template.createEncryptedStubJson(config)
             val stubData = stubJson.toByteArray(Charsets.UTF_8)
             writeEntryDeflated(zipOut, ApkTemplate.CONFIG_PATH, stubData)
@@ -2655,23 +2288,15 @@ builtins.__import__ = _w2a_import
         }
     }
 
-
-
-
     private fun isOptimizableAsset(entryName: String): Boolean {
         val ext = entryName.substringAfterLast('.', "").lowercase()
         return ext in setOf("png", "jpg", "jpeg", "js", "css", "svg")
     }
 
-
-
-
-
     private fun runtimeAssetsRequiredFor(appType: String): List<String> = when (appType) {
         "PHP_APP", "WORDPRESS" -> listOf("php_router_server.php")
         else -> emptyList()
     }
-
 
     private fun ensureRequiredRuntimeAssets(
         zipOut: ZipOutputStream,
@@ -2697,7 +2322,6 @@ builtins.__import__ = _w2a_import
         }
     }
 
-
     private fun isEditorOnlyAsset(entryName: String, appType: String, engineType: String): Boolean {
 
         if (entryName.startsWith("assets/template/")) return true
@@ -2709,39 +2333,26 @@ builtins.__import__ = _w2a_import
 
         if (entryName.startsWith("assets/extensions/")) return true
 
-        if (entryName == "assets/omni.ja" && engineType != "GECKOVIEW") return true
+        if (entryName == "assets/omni.ja") return true
 
         if (entryName == "assets/php_router_server.php" && appType !in setOf("WORDPRESS", "PHP_APP")) return true
 
-
-
-
         if (entryName.startsWith("assets/python_runtime/") && appType != "PYTHON_APP") return true
-
 
         if (entryName.startsWith("assets/go_runtime/") && appType != "GO_APP") return true
 
-
         if (entryName.startsWith("assets/help/")) return true
-
 
         if (entryName.startsWith("assets/schemas/")) return true
 
-
         if (entryName == "assets/default_config.json") return true
 
-
         if (entryName.startsWith("assets/frontend_tools/") && appType != "FRONTEND") return true
-
 
         if (entryName.startsWith("assets/nodejs_runtime/") && appType != "NODEJS_APP") return true
 
         return false
     }
-
-
-
-
 
     private fun isIconEntry(entryName: String): Boolean {
 
@@ -2750,12 +2361,9 @@ builtins.__import__ = _w2a_import
             return true
         }
 
-
-
         val iconPatterns = listOf(
             "ic_launcher.png",
             "ic_launcher_round.png"
-
 
         )
         return iconPatterns.any { pattern ->
@@ -2764,29 +2372,7 @@ builtins.__import__ = _w2a_import
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     private fun isAdaptiveIconEntry(entryName: String): Boolean {
-
-
-
-
 
         if ((entryName.contains("drawable")) &&
             (entryName.contains("ic_launcher_foreground") || entryName.contains("ic_launcher_foreground_new")) &&
@@ -2796,28 +2382,16 @@ builtins.__import__ = _w2a_import
         return false
     }
 
-
-
-
-
-
-
-
     private fun isAdaptiveIconDefinition(entryName: String): Boolean {
         return entryName.startsWith("res/mipmap-anydpi") &&
             (entryName.contains("ic_launcher") || entryName.contains("ic_launcher_round")) &&
             entryName.endsWith(".xml")
     }
 
-
-
-
-
     private fun replaceIconEntry(zipOut: ZipOutputStream, entryName: String, bitmap: Bitmap) {
 
         var size = ApkTemplate.ICON_PATHS.find { it.first == entryName }?.second
             ?: ApkTemplate.ROUND_ICON_PATHS.find { it.first == entryName }?.second
-
 
         if (size == null) {
             size = when {
@@ -2849,21 +2423,9 @@ builtins.__import__ = _w2a_import
         writeEntryDeflated(zipOut, entryName, iconBytes)
     }
 
-
-
-
-
     private fun copyEntry(zipIn: ZipFile, zipOut: ZipOutputStream, entry: ZipEntry) {
         ZipUtils.copyEntry(zipIn, zipOut, entry)
     }
-
-
-
-
-
-
-
-
 
     private fun generatePackageName(appName: String): String {
 
@@ -2876,11 +2438,6 @@ builtins.__import__ = _w2a_import
         return "com.w2a.$segment"
     }
 
-
-
-
-
-
     private fun normalizePackageSegment(segment: String): String {
         if (segment.isEmpty()) return "a"
 
@@ -2892,26 +2449,21 @@ builtins.__import__ = _w2a_import
             else -> 'a'
         }
 
-
         return String(chars)
     }
-
-
-
 
     private fun sanitizeFileName(name: String): String {
         return name.replace(SANITIZE_FILENAME_REGEX, "_").take(50)
     }
 
     private fun buildRequiredPermissions(config: ApkConfig): List<String> {
-        // 基线：WebView 应用运行必需，用户看不到也不需要选择
+
         val permissions = linkedSetOf(
             "android.permission.INTERNET",
             "android.permission.ACCESS_NETWORK_STATE"
         )
 
         val rp = config.runtimePermissions
-
 
         if (rp.camera) {
             permissions += "android.permission.CAMERA"
@@ -2927,7 +2479,6 @@ builtins.__import__ = _w2a_import
         if (rp.notifications) {
             permissions += "android.permission.POST_NOTIFICATIONS"
         }
-
 
         if (rp.readExternalStorage) {
             permissions += "android.permission.READ_EXTERNAL_STORAGE"
@@ -2945,7 +2496,6 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.READ_MEDIA_AUDIO"
         }
 
-
         if (rp.bluetooth) {
             permissions += "android.permission.BLUETOOTH"
             permissions += "android.permission.BLUETOOTH_ADMIN"
@@ -2961,7 +2511,6 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.CHANGE_WIFI_STATE"
         }
 
-
         if (rp.bodySensors) {
             permissions += "android.permission.BODY_SENSORS"
             permissions += "android.permission.BODY_SENSORS_BACKGROUND"
@@ -2969,7 +2518,6 @@ builtins.__import__ = _w2a_import
         if (rp.activityRecognition) {
             permissions += "android.permission.ACTIVITY_RECOGNITION"
         }
-
 
         if (rp.readPhoneState) {
             permissions += "android.permission.READ_PHONE_STATE"
@@ -3008,7 +2556,6 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.PROCESS_OUTGOING_CALLS"
         }
 
-
         if (rp.foregroundService) {
             permissions += "android.permission.FOREGROUND_SERVICE"
             permissions += "android.permission.FOREGROUND_SERVICE_DATA_SYNC"
@@ -3036,11 +2583,6 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.SYSTEM_ALERT_WINDOW"
         }
 
-        // ============================================================
-        // 功能依赖权限 —— 根据用户启用的功能自动推导，无需在权限面板勾选
-        // 只有功能开启时才加对应权限，保证 APK 的 AndroidManifest 最小化
-        // ============================================================
-
         val needsForegroundService = config.backgroundRunEnabled ||
             config.notificationEnabled ||
             config.floatingWindowEnabled ||
@@ -3051,7 +2593,7 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
         }
         if (rp.foregroundService) {
-            // 用户显式勾选时再加更细的 FGS 子类型
+
             permissions += "android.permission.FOREGROUND_SERVICE_DATA_SYNC"
         }
         if (rp.location || rp.foregroundService) {
@@ -3067,7 +2609,6 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
         }
 
-        // 后台保活 / 屏幕常亮 / CPU 唤醒
         if (config.backgroundRunEnabled ||
             config.screenAwakeMode.uppercase() != "OFF" ||
             config.keepScreenOn ||
@@ -3079,7 +2620,6 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
         }
 
-        // 自启动 / 定时启动 / 开机启动
         if (config.bootStartEnabled || config.autoStartEnabled || rp.bootCompleted) {
             permissions += "android.permission.RECEIVE_BOOT_COMPLETED"
         }
@@ -3088,20 +2628,17 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.USE_EXACT_ALARM"
         }
 
-        // 下载（网页 download 下载）- shell 运行时默认总是启用下载
         permissions += "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"
 
-        // 激活码（指纹/生物识别）
         if (config.activationEnabled) {
             permissions += "android.permission.USE_BIOMETRIC"
             permissions += "android.permission.USE_FINGERPRINT"
         }
 
-        // BlackTech：闪光灯 / 震动 / 改系统设置 / WiFi 控制
         val bt = config.blackTechConfig
         if (bt?.forceFlashlight == true) {
             permissions += "android.permission.FLASHLIGHT"
-            // 需要相机权限才能开手电
+
             permissions += "android.permission.CAMERA"
         }
         if (bt?.forceMaxVibration == true || rp.vibration) {
@@ -3123,30 +2660,20 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.CHANGE_NETWORK_STATE"
         }
 
-        // 悬浮窗隐含 SYSTEM_ALERT_WINDOW
         if (config.floatingWindowEnabled) {
             permissions += "android.permission.SYSTEM_ALERT_WINDOW"
         }
 
-        // 强制运行需要无障碍服务权限（声明即可，用户运行时手动授权）
-        // BIND_ACCESSIBILITY_SERVICE 属于受保护权限，只在 service 标签上使用，
-        // 不以 uses-permission 形式出现，因此这里不加。
-
-        // 蓝牙相关的 NEARBY_WIFI_DEVICES（Android 13+ 用于蓝牙扫描）
         if (rp.bluetooth) {
             permissions += "android.permission.NEARBY_WIFI_DEVICES"
         }
 
-        // 传感器：HIGH_SAMPLING_RATE_SENSORS 在 Android 12+ 对 >200Hz 的采样需要
         if (rp.bodySensors) {
             permissions += "android.permission.HIGH_SAMPLING_RATE_SENSORS"
         }
 
         return permissions.toList()
     }
-
-
-
 
     fun installApk(apkFile: File): Boolean {
         return try {
@@ -3174,163 +2701,209 @@ builtins.__import__ = _w2a_import
         }
     }
 
-
-
-
     fun getBuiltApks(): List<File> {
         return outputDir.listFiles()?.filter { it.extension == "apk" } ?: emptyList()
     }
 
-
-
-
     fun deleteApk(apkFile: File): Boolean {
         return apkFile.delete()
     }
-
-
-
 
     fun clearAll() {
         outputDir.listFiles()?.forEach { it.delete() }
         tempDir.listFiles()?.forEach { it.delete() }
     }
 
-
-
-
     fun getBuildLogs(): List<File> {
         return logger.getAllLogFiles()
     }
-
-
-
 
     fun getLogDirectory(): String {
         return File(context.getExternalFilesDir(null), "build_logs").absolutePath
     }
 }
 
-
-
-
 fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = null): ApkConfig {
+    val effectiveTargetUrl = computeEffectiveTargetUrl(packageName)
+    return ApkConfig(
+        meta = buildMetaBlock(packageName, effectiveTargetUrl),
+        activation = buildActivationBlock(),
+        adBlock = buildAdBlockBlock(),
+        announcement = buildAnnouncementBlock(),
+        ads = buildAdsBlock(),
+        webView = buildWebViewBlock(context),
+        webViewBehavior = buildWebViewBehaviorBlock(),
+        screenAwake = buildScreenAwakeBlock(),
+        statusBar = buildStatusBarBlock(),
+        floatingWindow = buildFloatingWindowBlock(),
+        proxy = buildProxyBlock(),
+        dns = buildDnsBlock(),
+        errorPage = buildErrorPageBlock(),
+        splash = buildSplashBlock(),
+        media = buildMediaBlock(),
+        html = buildHtmlBlock(),
+        gallery = buildGalleryBlock(),
+        bgm = buildBgmBlock(),
+        translate = buildTranslateBlock(),
+        extension = buildExtensionBlock(),
+        autoStart = buildAutoStartBlock(),
+        optionalServices = buildOptionalServicesBlock(),
+        disguise = buildDisguiseBlock(),
+        deepLink = buildDeepLinkBlock(),
+        wordpress = buildWordpressBlock(),
+        nodejs = buildNodejsBlock(),
+        phpApp = buildPhpAppBlock(),
+        pythonApp = buildPythonAppBlock(),
+        goApp = buildGoAppBlock(),
+        multiWeb = buildMultiWebBlock()
+    )
+}
 
-    val effectiveTargetUrl = when (appType) {
-        com.webtoapp.data.model.AppType.HTML -> {
-            val entryFile = htmlConfig?.getValidEntryFile() ?: "index.html"
-            buildPackagedHtmlShellEntryUrl(packageName, entryFile)
+private fun WebApp.computeEffectiveTargetUrl(packageName: String): String = when (appType) {
+    com.webtoapp.data.model.AppType.HTML -> {
+        val entryFile = htmlConfig?.getValidEntryFile() ?: "index.html"
+        buildPackagedHtmlShellEntryUrl(packageName, entryFile)
+    }
+    com.webtoapp.data.model.AppType.IMAGE,
+    com.webtoapp.data.model.AppType.VIDEO -> "asset://media_content"
+    com.webtoapp.data.model.AppType.GALLERY -> "gallery://content"
+    com.webtoapp.data.model.AppType.WORDPRESS -> "wordpress://localhost"
+    com.webtoapp.data.model.AppType.NODEJS_APP -> when (nodejsConfig?.buildMode) {
+        com.webtoapp.data.model.NodeJsBuildMode.STATIC ->
+            "file:///android_asset/nodejs_app/dist/index.html"
+        com.webtoapp.data.model.NodeJsBuildMode.API_BACKEND,
+        com.webtoapp.data.model.NodeJsBuildMode.FULLSTACK ->
+            "nodejs://localhost"
+        else -> "file:///android_asset/nodejs_app/index.html"
+    }
+    com.webtoapp.data.model.AppType.FRONTEND -> {
+        val entryFile = htmlConfig?.getValidEntryFile() ?: "index.html"
+        buildPackagedHtmlShellEntryUrl(packageName, entryFile)
+    }
+    com.webtoapp.data.model.AppType.PHP_APP -> "phpapp://localhost"
+    com.webtoapp.data.model.AppType.PYTHON_APP -> "pythonapp://localhost"
+    com.webtoapp.data.model.AppType.GO_APP -> "goapp://localhost"
+    com.webtoapp.data.model.AppType.MULTI_WEB -> "multiweb://localhost"
+    else -> url
+}
+
+private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
+    var result = apkExportConfig?.runtimePermissions ?: ApkRuntimePermissions()
+    if (apkExportConfig?.backgroundRunEnabled == true) {
+        result = result.copy(
+            foregroundService = true,
+            wakeLock = true,
+            notifications = true,
+            requestIgnoreBatteryOptimizations = true
+        )
+    }
+    if (apkExportConfig?.notificationEnabled == true) {
+        result = result.copy(notifications = true, foregroundService = true)
+    }
+    if (autoStartConfig?.bootStartEnabled == true) {
+        result = result.copy(bootCompleted = true)
+    }
+    if (webViewConfig.floatingWindowConfig.enabled) {
+        result = result.copy(systemAlertWindow = true)
+    }
+    if (forcedRunConfig?.enabled == true) {
+        result = result.copy(foregroundService = true, wakeLock = true)
+    }
+    return result
+}
+
+private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: String): MetaBlock = MetaBlock(
+    appName = name,
+    packageName = packageName,
+    targetUrl = effectiveTargetUrl,
+    versionCode = apkExportConfig?.customVersionCode ?: 1,
+    versionName = apkExportConfig?.customVersionName?.takeIf { it.isNotBlank() } ?: "1.0.0",
+    iconPath = iconPath,
+    runtimePermissions = buildEffectiveRuntimePermissions(),
+    networkTrustConfig = apkExportConfig?.networkTrustConfig ?: com.webtoapp.data.model.NetworkTrustConfig(),
+    appType = appType.name,
+    themeType = themeType,
+    darkMode = "SYSTEM",
+    language = com.webtoapp.core.i18n.Strings.currentLanguage.value.name,
+    engineType = apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW"
+)
+
+private fun WebApp.buildActivationBlock(): ActivationBlock = ActivationBlock(
+    enabled = activationEnabled,
+    codes = getActivationCodeStrings(),
+    requireEveryTime = activationRequireEveryTime,
+    dialogTitle = activationDialogConfig?.title ?: "",
+    dialogSubtitle = activationDialogConfig?.subtitle ?: "",
+    dialogInputLabel = activationDialogConfig?.inputLabel ?: "",
+    dialogButtonText = activationDialogConfig?.buttonText ?: ""
+)
+
+private fun WebApp.buildAdBlockBlock(): AdBlockBlock = AdBlockBlock(
+    enabled = adBlockEnabled,
+    rules = adBlockRules
+)
+
+private fun WebApp.buildAnnouncementBlock(): AnnouncementBlock = AnnouncementBlock(
+    enabled = announcementEnabled,
+    title = announcement?.title ?: "",
+    content = announcement?.content ?: "",
+    link = announcement?.linkUrl ?: "",
+    linkText = announcement?.linkText ?: "",
+    template = announcement?.template?.toUiTemplate()?.type?.name ?: AnnouncementTemplateType.MINIMAL.name,
+    showEmoji = announcement?.showEmoji ?: true,
+    animationEnabled = announcement?.animationEnabled ?: true,
+    showOnce = announcement?.showOnce ?: true,
+    requireConfirmation = announcement?.requireConfirmation ?: false,
+    allowNeverShow = announcement?.allowNeverShow ?: false,
+    triggerOnLaunch = announcement?.triggerOnLaunch ?: true,
+    triggerOnNoNetwork = announcement?.triggerOnNoNetwork ?: false,
+    triggerIntervalMinutes = announcement?.triggerIntervalMinutes ?: 0
+)
+
+private fun WebApp.buildAdsBlock(): AdsBlock = AdsBlock(
+    enabled = adsEnabled,
+    bannerEnabled = adConfig?.bannerEnabled ?: false,
+    bannerId = adConfig?.bannerId ?: "",
+    interstitialEnabled = adConfig?.interstitialEnabled ?: false,
+    interstitialId = adConfig?.interstitialId ?: "",
+    splashEnabled = adConfig?.splashEnabled ?: false,
+    splashId = adConfig?.splashId ?: ""
+)
+
+private fun WebApp.buildWebViewBlock(context: android.content.Context?): WebViewBlock {
+    val resolvedInjectScripts = buildList {
+
+        if (webViewConfig.enableKernelDisguise) {
+            add(com.webtoapp.data.model.UserScript(
+                name = "__kernel__",
+                code = com.webtoapp.core.kernel.BrowserKernel.getBuildTimeKernelJs(),
+                enabled = true,
+                runAt = com.webtoapp.data.model.ScriptRunTime.DOCUMENT_START
+            ))
         }
-        com.webtoapp.data.model.AppType.IMAGE, com.webtoapp.data.model.AppType.VIDEO -> "asset://media_content"
-        com.webtoapp.data.model.AppType.GALLERY -> "gallery://content"
-        com.webtoapp.data.model.AppType.WORDPRESS -> "wordpress://localhost"
-        com.webtoapp.data.model.AppType.NODEJS_APP -> {
-            val config = nodejsConfig
-            when (config?.buildMode) {
-                com.webtoapp.data.model.NodeJsBuildMode.STATIC -> {
-
-                    "file:///android_asset/nodejs_app/dist/index.html"
-                }
-                com.webtoapp.data.model.NodeJsBuildMode.API_BACKEND,
-                com.webtoapp.data.model.NodeJsBuildMode.FULLSTACK -> {
-
-                    "nodejs://localhost"
-                }
-                else -> "file:///android_asset/nodejs_app/index.html"
-            }
+        add(com.webtoapp.data.model.UserScript(
+            name = "__perf_start__",
+            code = com.webtoapp.core.perf.NativePerfEngine.getPerfJsStart(),
+            enabled = true,
+            runAt = com.webtoapp.data.model.ScriptRunTime.DOCUMENT_START
+        ))
+        add(com.webtoapp.data.model.UserScript(
+            name = "__perf_end__",
+            code = com.webtoapp.core.perf.NativePerfEngine.getPerfJsEnd(),
+            enabled = true,
+            runAt = com.webtoapp.data.model.ScriptRunTime.DOCUMENT_END
+        ))
+        val userScripts = if (context != null && webViewConfig.injectScripts.any {
+                com.webtoapp.core.script.UserScriptStorage.isFileReference(it.code)
+            }) {
+            com.webtoapp.core.script.UserScriptStorage.internalizeScripts(context, webViewConfig.injectScripts)
+        } else {
+            webViewConfig.injectScripts
         }
-        com.webtoapp.data.model.AppType.FRONTEND -> {
-
-            val entryFile = htmlConfig?.getValidEntryFile() ?: "index.html"
-            buildPackagedHtmlShellEntryUrl(packageName, entryFile)
-        }
-        com.webtoapp.data.model.AppType.PHP_APP -> "phpapp://localhost"
-        com.webtoapp.data.model.AppType.PYTHON_APP -> "pythonapp://localhost"
-        com.webtoapp.data.model.AppType.GO_APP -> "goapp://localhost"
-        com.webtoapp.data.model.AppType.MULTI_WEB -> "multiweb://localhost"
-        else -> url
+        addAll(userScripts)
     }
 
-    return ApkConfig(
-        appName = name,
-        packageName = packageName,
-        targetUrl = effectiveTargetUrl,
-        versionCode = apkExportConfig?.customVersionCode ?: 1,
-        versionName = apkExportConfig?.customVersionName?.takeIf { it.isNotBlank() } ?: "1.0.0",
-        iconPath = iconPath,
-        runtimePermissions = (apkExportConfig?.runtimePermissions ?: ApkRuntimePermissions()).let { rp ->
-            var result = rp
-
-
-            if (apkExportConfig?.backgroundRunEnabled == true) {
-                result = result.copy(
-                    foregroundService = true,
-                    wakeLock = true,
-                    notifications = true,
-                    requestIgnoreBatteryOptimizations = true
-                )
-            }
-
-
-            if (apkExportConfig?.notificationEnabled == true) {
-                result = result.copy(
-                    notifications = true,
-                    foregroundService = true
-                )
-            }
-
-
-            if (autoStartConfig?.bootStartEnabled == true) {
-                result = result.copy(bootCompleted = true)
-            }
-
-
-            if (webViewConfig.floatingWindowConfig.enabled) {
-                result = result.copy(systemAlertWindow = true)
-            }
-
-
-            if (forcedRunConfig?.enabled == true) {
-                result = result.copy(
-                    foregroundService = true,
-                    wakeLock = true
-                )
-            }
-
-            result
-        },
-        networkTrustConfig = apkExportConfig?.networkTrustConfig ?: com.webtoapp.data.model.NetworkTrustConfig(),
-        activationEnabled = activationEnabled,
-        activationCodes = getActivationCodeStrings(),
-        activationRequireEveryTime = activationRequireEveryTime,
-        activationDialogTitle = activationDialogConfig?.title ?: "",
-        activationDialogSubtitle = activationDialogConfig?.subtitle ?: "",
-        activationDialogInputLabel = activationDialogConfig?.inputLabel ?: "",
-        activationDialogButtonText = activationDialogConfig?.buttonText ?: "",
-        adBlockEnabled = adBlockEnabled,
-        adBlockRules = adBlockRules,
-        announcementEnabled = announcementEnabled,
-        announcementTitle = announcement?.title ?: "",
-        announcementContent = announcement?.content ?: "",
-        announcementLink = announcement?.linkUrl ?: "",
-        announcementLinkText = announcement?.linkText ?: "",
-        announcementTemplate = announcement?.template?.toUiTemplate()?.type?.name ?: AnnouncementTemplateType.MINIMAL.name,
-        announcementShowEmoji = announcement?.showEmoji ?: true,
-        announcementAnimationEnabled = announcement?.animationEnabled ?: true,
-        announcementShowOnce = announcement?.showOnce ?: true,
-        announcementRequireConfirmation = announcement?.requireConfirmation ?: false,
-        announcementAllowNeverShow = announcement?.allowNeverShow ?: false,
-        announcementTriggerOnLaunch = announcement?.triggerOnLaunch ?: true,
-        announcementTriggerOnNoNetwork = announcement?.triggerOnNoNetwork ?: false,
-        announcementTriggerIntervalMinutes = announcement?.triggerIntervalMinutes ?: 0,
-
-        adsEnabled = adsEnabled,
-        adBannerEnabled = adConfig?.bannerEnabled ?: false,
-        adBannerId = adConfig?.bannerId ?: "",
-        adInterstitialEnabled = adConfig?.interstitialEnabled ?: false,
-        adInterstitialId = adConfig?.interstitialId ?: "",
-        adSplashEnabled = adConfig?.splashEnabled ?: false,
-        adSplashId = adConfig?.splashId ?: "",
+    return WebViewBlock(
         javaScriptEnabled = webViewConfig.javaScriptEnabled,
         domStorageEnabled = webViewConfig.domStorageEnabled,
         allowFileAccess = webViewConfig.allowFileAccess,
@@ -3341,8 +2914,6 @@ fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = 
         userAgent = webViewConfig.userAgent,
         userAgentMode = webViewConfig.userAgentMode.name,
         customUserAgent = webViewConfig.customUserAgent,
-
-
         hideToolbar = webViewConfig.hideToolbar,
         hideBrowserToolbar = webViewConfig.hideBrowserToolbar,
         showStatusBarInFullscreen = webViewConfig.showStatusBarInFullscreen,
@@ -3350,373 +2921,397 @@ fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = 
         showToolbarInFullscreen = webViewConfig.showToolbarInFullscreen,
         landscapeMode = webViewConfig.landscapeMode,
         orientationMode = webViewConfig.orientationMode.name,
-
-
-
-        injectScripts = buildList {
-
-            add(com.webtoapp.data.model.UserScript(
-                name = "__kernel__",
-                code = com.webtoapp.core.kernel.BrowserKernel.getBuildTimeKernelJs(),
-                enabled = true,
-                runAt = com.webtoapp.data.model.ScriptRunTime.DOCUMENT_START
-            ))
-
-            add(com.webtoapp.data.model.UserScript(
-                name = "__perf_start__",
-                code = com.webtoapp.core.perf.NativePerfEngine.getPerfJsStart(),
-                enabled = true,
-                runAt = com.webtoapp.data.model.ScriptRunTime.DOCUMENT_START
-            ))
-
-            add(com.webtoapp.data.model.UserScript(
-                name = "__perf_end__",
-                code = com.webtoapp.core.perf.NativePerfEngine.getPerfJsEnd(),
-                enabled = true,
-                runAt = com.webtoapp.data.model.ScriptRunTime.DOCUMENT_END
-            ))
-
-            val resolvedScripts = if (context != null && webViewConfig.injectScripts.any {
-                com.webtoapp.core.script.UserScriptStorage.isFileReference(it.code)
-            }) {
-                com.webtoapp.core.script.UserScriptStorage.internalizeScripts(context, webViewConfig.injectScripts)
-            } else {
-                webViewConfig.injectScripts
-            }
-            addAll(resolvedScripts)
-        },
-
-        statusBarColorMode = webViewConfig.statusBarColorMode.name,
-        statusBarColor = webViewConfig.statusBarColor,
-        statusBarDarkIcons = webViewConfig.statusBarDarkIcons,
-        statusBarBackgroundType = webViewConfig.statusBarBackgroundType.name,
-        statusBarBackgroundImage = webViewConfig.statusBarBackgroundImage,
-        statusBarBackgroundAlpha = webViewConfig.statusBarBackgroundAlpha,
-        statusBarHeightDp = webViewConfig.statusBarHeightDp,
-
-        statusBarColorModeDark = webViewConfig.statusBarColorModeDark.name,
-        statusBarColorDark = webViewConfig.statusBarColorDark,
-        statusBarDarkIconsDark = webViewConfig.statusBarDarkIconsDark,
-        statusBarBackgroundTypeDark = webViewConfig.statusBarBackgroundTypeDark.name,
-        statusBarBackgroundImageDark = webViewConfig.statusBarBackgroundImageDark,
-        statusBarBackgroundAlphaDark = webViewConfig.statusBarBackgroundAlphaDark,
+        injectScripts = resolvedInjectScripts,
         longPressMenuEnabled = webViewConfig.longPressMenuEnabled,
         longPressMenuStyle = webViewConfig.longPressMenuStyle.name,
         adBlockToggleEnabled = webViewConfig.adBlockToggleEnabled,
         popupBlockerEnabled = webViewConfig.popupBlockerEnabled,
         popupBlockerToggleEnabled = webViewConfig.popupBlockerToggleEnabled,
         openExternalLinks = webViewConfig.openExternalLinks,
-
-        initialScale = webViewConfig.initialScale,
-        viewportMode = webViewConfig.viewportMode.name,
-        customViewportWidth = webViewConfig.customViewportWidth,
-        newWindowBehavior = webViewConfig.newWindowBehavior.name,
-        enablePaymentSchemes = webViewConfig.enablePaymentSchemes,
-        enableShareBridge = webViewConfig.enableShareBridge,
-        enableZoomPolyfill = webViewConfig.enableZoomPolyfill,
-        enableCrossOriginIsolation = webViewConfig.enableCrossOriginIsolation,
-        disableShields = webViewConfig.disableShields,
-        decodeBase64DeepLinks = webViewConfig.decodeBase64DeepLinks,
-        mediaAutoplayEnabled = webViewConfig.mediaAutoplayEnabled,
-        acceptThirdPartyCookies = webViewConfig.acceptThirdPartyCookies,
-        enableKernelDisguise = webViewConfig.enableKernelDisguise,
-        enableImageRepair = webViewConfig.enableImageRepair,
-        enableScrollMemory = webViewConfig.enableScrollMemory,
-        enableHttpsUpgrade = webViewConfig.enableHttpsUpgrade,
-        enableOAuthExternalRedirect = webViewConfig.enableOAuthExternalRedirect,
-        enableClipboardPolyfill = webViewConfig.enableClipboardPolyfill,
-        enableNotificationPolyfill = webViewConfig.enableNotificationPolyfill,
-        safeBrowsingEnabled = webViewConfig.safeBrowsingEnabled,
-        geolocationEnabled = webViewConfig.geolocationEnabled,
-        enableOrientationPolyfill = webViewConfig.enableOrientationPolyfill,
-        enableCompatPolyfills = webViewConfig.enableCompatPolyfills,
-        enableNativeBridge = webViewConfig.enableNativeBridge,
-        javaScriptCanOpenWindows = webViewConfig.javaScriptCanOpenWindows,
-        databaseEnabled = webViewConfig.databaseEnabled,
-        enableCookiePersistence = webViewConfig.enableCookiePersistence,
-        enablePrivateNetworkBridge = webViewConfig.enablePrivateNetworkBridge,
-        allowMixedContent = webViewConfig.allowMixedContent,
-        enableGpc = webViewConfig.enableGpc,
-        enableCookieConsentBlock = webViewConfig.enableCookieConsentBlock,
-        enableReferrerPolicy = webViewConfig.enableReferrerPolicy,
-        enableTrackerBlocking = webViewConfig.enableTrackerBlocking,
-        enableBlobDownloadInterception = webViewConfig.enableBlobDownloadInterception,
-        keepScreenOn = webViewConfig.keepScreenOn,
-        screenAwakeMode = webViewConfig.screenAwakeMode.name,
-        screenAwakeTimeoutMinutes = webViewConfig.screenAwakeTimeoutMinutes,
-        screenBrightness = webViewConfig.screenBrightness,
-        keyboardAdjustMode = webViewConfig.keyboardAdjustMode.name,
         showFloatingBackButton = webViewConfig.showFloatingBackButton,
         swipeRefreshEnabled = webViewConfig.swipeRefreshEnabled,
         fullscreenEnabled = webViewConfig.fullscreenEnabled,
         performanceOptimization = webViewConfig.performanceOptimization,
         pwaOfflineEnabled = webViewConfig.pwaOfflineEnabled,
         pwaOfflineStrategy = webViewConfig.pwaOfflineStrategy,
-
-        proxyMode = webViewConfig.proxyMode,
-        proxyHost = webViewConfig.proxyHost,
-        proxyPort = webViewConfig.proxyPort,
-        proxyType = webViewConfig.proxyType,
-        pacUrl = webViewConfig.pacUrl,
-        proxyBypassRules = webViewConfig.proxyBypassRules,
-        proxyUsername = webViewConfig.proxyUsername,
-        proxyPassword = webViewConfig.proxyPassword,
-        hostsMappingEnabled = webViewConfig.hostsMappingEnabled,
-        hostsMappings = webViewConfig.hostsMappings,
-
-        dnsMode = webViewConfig.dnsMode,
-        dnsConfig = DnsApkConfig(
-            provider = webViewConfig.dnsConfig.provider,
-            customDohUrl = webViewConfig.dnsConfig.customDohUrl,
-            dohMode = webViewConfig.dnsConfig.dohMode,
-            bypassSystemDns = webViewConfig.dnsConfig.bypassSystemDns
-        ),
-
-        errorPageMode = webViewConfig.errorPageConfig.mode.name,
-        errorPageBuiltInStyle = webViewConfig.errorPageConfig.builtInStyle.name,
-        errorPageShowMiniGame = webViewConfig.errorPageConfig.showMiniGame,
-        errorPageMiniGameType = webViewConfig.errorPageConfig.miniGameType.name,
-        errorPageAutoRetrySeconds = webViewConfig.errorPageConfig.autoRetrySeconds,
-        errorPageCustomHtml = webViewConfig.errorPageConfig.customHtml ?: "",
-        errorPageCustomMediaPath = webViewConfig.errorPageConfig.customMediaPath ?: "",
-        errorPageRetryButtonText = webViewConfig.errorPageConfig.retryButtonText,
-
-        floatingWindowEnabled = webViewConfig.floatingWindowConfig.enabled,
-        floatingWindowSizePercent = webViewConfig.floatingWindowConfig.windowSizePercent,
-        floatingWindowWidthPercent = webViewConfig.floatingWindowConfig.widthPercent,
-        floatingWindowHeightPercent = webViewConfig.floatingWindowConfig.heightPercent,
-        floatingWindowLockAspectRatio = webViewConfig.floatingWindowConfig.lockAspectRatio,
-        floatingWindowOpacity = webViewConfig.floatingWindowConfig.opacity,
-        floatingWindowCornerRadius = webViewConfig.floatingWindowConfig.cornerRadius,
-        floatingWindowBorderStyle = webViewConfig.floatingWindowConfig.borderStyle.name,
-        floatingWindowShowTitleBar = webViewConfig.floatingWindowConfig.showTitleBar,
-        floatingWindowAutoHideTitleBar = webViewConfig.floatingWindowConfig.autoHideTitleBar,
-        floatingWindowStartMinimized = webViewConfig.floatingWindowConfig.startMinimized,
-        floatingWindowRememberPosition = webViewConfig.floatingWindowConfig.rememberPosition,
-        floatingWindowEdgeSnapping = webViewConfig.floatingWindowConfig.edgeSnapping,
-        floatingWindowShowResizeHandle = webViewConfig.floatingWindowConfig.showResizeHandle,
-        floatingWindowLockPosition = webViewConfig.floatingWindowConfig.lockPosition,
-        splashEnabled = splashEnabled,
-        splashType = splashConfig?.type?.name ?: "IMAGE",
-        splashDuration = splashConfig?.duration ?: 3,
-        splashClickToSkip = splashConfig?.clickToSkip ?: true,
-        splashVideoStartMs = splashConfig?.videoStartMs ?: 0L,
-        splashVideoEndMs = splashConfig?.videoEndMs ?: 5000L,
-        splashLandscape = splashConfig?.orientation == com.webtoapp.data.model.SplashOrientation.LANDSCAPE,
-        splashFillScreen = splashConfig?.fillScreen ?: true,
-        splashEnableAudio = splashConfig?.enableAudio ?: false,
-
-        appType = appType.name,
-        mediaEnableAudio = mediaConfig?.enableAudio ?: true,
-        mediaLoop = mediaConfig?.loop ?: true,
-        mediaAutoPlay = mediaConfig?.autoPlay ?: true,
-        mediaFillScreen = mediaConfig?.fillScreen ?: true,
-        mediaLandscape = mediaConfig?.orientation == com.webtoapp.data.model.SplashOrientation.LANDSCAPE,
-        mediaKeepScreenOn = mediaConfig?.keepScreenOn ?: true,
-
-
-        htmlEntryFile = htmlConfig?.getValidEntryFile() ?: "index.html",
-        htmlEnableJavaScript = htmlConfig?.enableJavaScript ?: true,
-        htmlEnableLocalStorage = htmlConfig?.enableLocalStorage ?: true,
-        htmlLandscapeMode = htmlConfig?.landscapeMode ?: false,
-
-
-        galleryItems = galleryConfig?.items?.mapIndexed { index, item ->
-            val ext = if (item.type == com.webtoapp.data.model.GalleryItemType.VIDEO) "mp4" else "png"
-            GalleryShellItemConfig(
-                id = item.id,
-                assetPath = "gallery/item_$index.$ext",
-                type = item.type.name,
-                name = item.name,
-                duration = item.duration,
-                thumbnailPath = if (item.thumbnailPath != null) "gallery/thumb_$index.jpg" else null
-            )
-        } ?: emptyList(),
-        galleryPlayMode = galleryConfig?.playMode?.name ?: "SEQUENTIAL",
-        galleryImageInterval = galleryConfig?.imageInterval ?: 3,
-        galleryLoop = galleryConfig?.loop ?: true,
-        galleryAutoPlay = galleryConfig?.autoPlay ?: false,
-        galleryBackgroundColor = galleryConfig?.backgroundColor ?: "#000000",
-        galleryShowThumbnailBar = galleryConfig?.showThumbnailBar ?: true,
-        galleryShowMediaInfo = galleryConfig?.showMediaInfo ?: true,
-        galleryOrientation = galleryConfig?.orientation?.name ?: "PORTRAIT",
-        galleryEnableAudio = galleryConfig?.enableAudio ?: true,
-        galleryVideoAutoNext = galleryConfig?.videoAutoNext ?: true,
-        galleryShuffleOnLoop = galleryConfig?.shuffleOnLoop ?: false,
-        galleryDefaultView = galleryConfig?.defaultView?.name ?: "GRID",
-        galleryGridColumns = galleryConfig?.gridColumns ?: 3,
-        gallerySortOrder = galleryConfig?.sortOrder?.name ?: "CUSTOM",
-        galleryRememberPosition = galleryConfig?.rememberPosition ?: true,
-
-
-        bgmEnabled = bgmEnabled,
-        bgmPlaylist = bgmConfig?.playlist?.mapIndexed { index, item ->
-            BgmShellItem(
-                id = item.id,
-                name = item.name,
-                assetPath = "bgm/bgm_$index.mp3",
-                lrcAssetPath = if (item.lrcData != null) "bgm/bgm_$index.lrc" else null,
-                sortOrder = item.sortOrder
-            )
-        } ?: emptyList(),
-        bgmPlayMode = bgmConfig?.playMode?.name ?: "LOOP",
-        bgmVolume = bgmConfig?.volume ?: 0.5f,
-        bgmAutoPlay = bgmConfig?.autoPlay ?: true,
-        bgmShowLyrics = bgmConfig?.showLyrics ?: true,
-        bgmLrcTheme = bgmConfig?.lrcTheme?.let { theme ->
-            LrcShellTheme(
-                id = theme.id,
-                name = theme.name,
-                fontSize = theme.fontSize,
-                textColor = theme.textColor,
-                highlightColor = theme.highlightColor,
-                backgroundColor = theme.backgroundColor,
-                animationType = theme.animationType.name,
-                position = theme.position.name
-            )
-        },
-
-        themeType = themeType,
-        darkMode = "SYSTEM",
-
-        translateEnabled = translateEnabled,
-        translateTargetLanguage = translateConfig?.targetLanguage?.code ?: "zh-CN",
-        translateShowButton = translateConfig?.showFloatingButton ?: true,
-
-        extensionEnabled = extensionEnabled,
-        extensionFabIcon = extensionFabIcon ?: "",
-        extensionModuleIds = extensionModuleIds,
-
-        bootStartEnabled = autoStartConfig?.bootStartEnabled ?: false,
-        scheduledStartEnabled = autoStartConfig?.scheduledStartEnabled ?: false,
-        scheduledTime = autoStartConfig?.scheduledTime ?: "08:00",
-        scheduledDays = autoStartConfig?.scheduledDays ?: listOf(1, 2, 3, 4, 5, 6, 7),
-
-        forcedRunConfig = forcedRunConfig,
-
-        isolationEnabled = apkExportConfig?.isolationConfig?.enabled ?: false,
-        isolationConfig = apkExportConfig?.isolationConfig,
-
-        backgroundRunEnabled = apkExportConfig?.backgroundRunEnabled ?: false,
-        backgroundRunConfig = apkExportConfig?.backgroundRunConfig?.let {
-            BackgroundRunConfig(
-                notificationTitle = it.notificationTitle,
-                notificationContent = it.notificationContent,
-                showNotification = it.showNotification,
-                keepCpuAwake = it.keepCpuAwake
-            )
-        },
-
-        notificationEnabled = apkExportConfig?.notificationEnabled ?: false,
-        notificationConfig = apkExportConfig?.notificationConfig?.let {
-            NotificationConfig(
-                type = it.type.key,
-                pollUrl = it.pollUrl,
-                pollIntervalMinutes = it.pollIntervalMinutes,
-                pollMethod = it.pollMethod,
-                pollHeaders = it.pollHeaders,
-                clickUrl = it.clickUrl
-            )
-        },
-
-        blackTechConfig = blackTechConfig,
-
-        disguiseConfig = disguiseConfig,
-
-        browserDisguiseConfig = browserDisguiseConfig,
-
-        deviceDisguiseConfig = deviceDisguiseConfig,
-
-        language = com.webtoapp.core.i18n.Strings.currentLanguage.value.name,
-
-        engineType = apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW",
-
-        deepLinkEnabled = apkExportConfig?.deepLinkEnabled ?: false,
-        deepLinkHosts = buildOAuthReturnHosts(
-            url = url,
-            customHosts = apkExportConfig?.customDeepLinkHosts ?: emptyList(),
-            includeCustomHosts = apkExportConfig?.deepLinkEnabled == true
-        ),
-
-        wordpressSiteTitle = wordpressConfig?.siteTitle ?: "",
-        wordpressAdminUser = wordpressConfig?.adminUser ?: "admin",
-        wordpressAdminEmail = wordpressConfig?.adminEmail ?: "",
-        wordpressAdminPassword = wordpressConfig?.adminPassword ?: "admin",
-        wordpressThemeName = wordpressConfig?.themeName ?: "",
-        wordpressPlugins = wordpressConfig?.plugins ?: emptyList(),
-        wordpressActivePlugins = wordpressConfig?.activePlugins ?: emptyList(),
-        wordpressPermalinkStructure = wordpressConfig?.permalinkStructure ?: "/%postname%/",
-        wordpressSiteLanguage = wordpressConfig?.siteLanguage ?: "zh_CN",
-        wordpressAutoInstall = wordpressConfig?.autoInstall ?: true,
-        wordpressPhpPort = wordpressConfig?.phpPort ?: 0,
-        wordpressLandscapeMode = wordpressConfig?.landscapeMode ?: false,
-
-
-        nodejsMode = nodejsConfig?.buildMode?.name ?: "STATIC",
-        nodejsPort = nodejsConfig?.serverPort ?: 0,
-        nodejsEntryFile = nodejsConfig?.entryFile ?: "",
-        nodejsEnvVars = nodejsConfig?.envVars ?: emptyMap(),
-        nodejsLandscapeMode = nodejsConfig?.landscapeMode ?: false,
-
-
-        phpAppFramework = phpAppConfig?.framework ?: "",
-        phpAppDocumentRoot = phpAppConfig?.documentRoot ?: "",
-        phpAppEntryFile = phpAppConfig?.entryFile ?: "index.php",
-        phpAppPort = phpAppConfig?.phpPort ?: 0,
-        phpAppEnvVars = phpAppConfig?.envVars ?: emptyMap(),
-        phpAppLandscapeMode = phpAppConfig?.landscapeMode ?: false,
-
-
-        pythonAppFramework = pythonAppConfig?.framework ?: "",
-        pythonAppEntryFile = pythonAppConfig?.entryFile ?: "app.py",
-        pythonAppEntryModule = pythonAppConfig?.entryModule ?: "",
-        pythonAppServerType = pythonAppConfig?.serverType ?: "builtin",
-        pythonAppPort = pythonAppConfig?.serverPort ?: 0,
-        pythonAppEnvVars = pythonAppConfig?.envVars ?: emptyMap(),
-        pythonAppLandscapeMode = pythonAppConfig?.landscapeMode ?: false,
-
-
-        goAppFramework = goAppConfig?.framework ?: "",
-        goAppBinaryName = goAppConfig?.binaryName ?: "",
-        goAppTargetArch = goAppConfig?.targetArch ?: "arm64-v8a",
-        goAppPort = goAppConfig?.serverPort ?: 0,
-        goAppStaticDir = goAppConfig?.staticDir ?: "",
-        goAppEnvVars = goAppConfig?.envVars ?: emptyMap(),
-        goAppLandscapeMode = goAppConfig?.landscapeMode ?: false,
-
-
-        multiWebSites = multiWebConfig?.sites?.map { site ->
-            com.webtoapp.core.shell.MultiWebSiteShellConfig(
-                id = site.id,
-                name = site.name,
-                url = site.url,
-                type = site.type,
-                localFilePath = site.localFilePath,
-                iconEmoji = site.iconEmoji,
-                category = site.category,
-                cssSelector = site.cssSelector,
-                linkSelector = site.linkSelector,
-                enabled = site.enabled
-            )
-        } ?: emptyList(),
-        multiWebDisplayMode = multiWebConfig?.displayMode ?: "TABS",
-        multiWebRefreshInterval = multiWebConfig?.refreshInterval ?: 30,
-        multiWebShowSiteIcons = multiWebConfig?.showSiteIcons ?: true,
-        multiWebLandscapeMode = multiWebConfig?.landscapeMode ?: false,
-        multiWebProjectId = multiWebConfig?.projectId ?: ""
+        keyboardAdjustMode = webViewConfig.keyboardAdjustMode.name
     )
 }
 
+private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBehaviorBlock(
+    initialScale = webViewConfig.initialScale,
+    viewportMode = webViewConfig.viewportMode.name,
+    customViewportWidth = webViewConfig.customViewportWidth,
+    newWindowBehavior = webViewConfig.newWindowBehavior.name,
+    enablePaymentSchemes = webViewConfig.enablePaymentSchemes,
+    enableShareBridge = webViewConfig.enableShareBridge,
+    enableZoomPolyfill = webViewConfig.enableZoomPolyfill,
+    enableCrossOriginIsolation = webViewConfig.enableCrossOriginIsolation,
+    decodeBase64DeepLinks = webViewConfig.decodeBase64DeepLinks,
+    decodeBase64Mode = webViewConfig.decodeBase64Mode.name,
+    mediaAutoplayEnabled = webViewConfig.mediaAutoplayEnabled,
+    mediaAutoplayScope = webViewConfig.mediaAutoplayScope.name,
+    acceptThirdPartyCookies = webViewConfig.acceptThirdPartyCookies,
+    thirdPartyCookieMode = webViewConfig.thirdPartyCookieMode.name,
+    enableKernelDisguise = webViewConfig.enableKernelDisguise,
+    kernelDisguiseLevel = webViewConfig.kernelDisguiseLevel.name,
+    enableImageRepair = webViewConfig.enableImageRepair,
+    enableScrollMemory = webViewConfig.enableScrollMemory,
+    enableClipboardPolyfill = webViewConfig.enableClipboardPolyfill,
+    enableNotificationPolyfill = webViewConfig.enableNotificationPolyfill,
+    geolocationEnabled = webViewConfig.geolocationEnabled,
+    geolocationAccuracy = webViewConfig.geolocationAccuracy.name,
+    geolocationPolicy = webViewConfig.geolocationPolicy.name,
+    enableOrientationPolyfill = webViewConfig.enableOrientationPolyfill,
+    enableCompatPolyfills = webViewConfig.enableCompatPolyfills,
+    enableNativeBridge = webViewConfig.enableNativeBridge,
+    nativeBridgeClipboard = webViewConfig.nativeBridgeCapabilities.clipboard,
+    nativeBridgeVibration = webViewConfig.nativeBridgeCapabilities.vibration,
+    nativeBridgeGeolocation = webViewConfig.nativeBridgeCapabilities.geolocation,
+    nativeBridgeBrightness = webViewConfig.nativeBridgeCapabilities.brightness,
+    nativeBridgeNotification = webViewConfig.nativeBridgeCapabilities.notification,
+    nativeBridgeDownload = webViewConfig.nativeBridgeCapabilities.download,
+    nativeBridgePrivateNetwork = webViewConfig.nativeBridgeCapabilities.privateNetwork,
+    nativeBridgeScreenWake = webViewConfig.nativeBridgeCapabilities.screenWake,
+    javaScriptCanOpenWindows = webViewConfig.javaScriptCanOpenWindows,
+    jsOpenWindowsPolicy = webViewConfig.jsOpenWindowsPolicy.name,
+    databaseEnabled = webViewConfig.databaseEnabled,
+    enableCookiePersistence = webViewConfig.enableCookiePersistence,
+    enablePrivateNetworkBridge = webViewConfig.enablePrivateNetworkBridge,
+    privateNetworkScope = webViewConfig.privateNetworkScope.name,
+    allowMixedContent = webViewConfig.allowMixedContent,
+    mixedContentMode = webViewConfig.mixedContentMode.name,
+    enableBlobDownloadInterception = webViewConfig.enableBlobDownloadInterception,
+    blobInterceptScope = webViewConfig.blobInterceptScope.name,
+    blobInterceptThresholdMb = webViewConfig.blobInterceptThresholdMb,
+    enableCloudflareCompat = webViewConfig.enableCloudflareCompat,
+    cloudflareCompatMode = webViewConfig.cloudflareCompatMode.name,
+    primeUserActivation = webViewConfig.primeUserActivation,
+    primeUserActivationMode = webViewConfig.primeUserActivationMode.name,
+    primeUserActivationTiming = webViewConfig.primeUserActivationTiming.name,
+    fullscreenVideoOrientation = webViewConfig.fullscreenVideoOrientation.name,
+    failoverEnabled = webViewConfig.failoverEnabled,
+    failoverUrls = webViewConfig.failoverUrls,
+    failoverTriggerNetworkError = webViewConfig.failoverTriggers.networkError,
+    failoverTriggerHttp5xx = webViewConfig.failoverTriggers.http5xx,
+    failoverTriggerHttp4xx = webViewConfig.failoverTriggers.http4xx,
+    failoverTriggerTimeout = webViewConfig.failoverTriggers.timeout,
+    failoverTimeoutSeconds = webViewConfig.failoverTimeoutSeconds
+)
 
+private fun WebApp.buildScreenAwakeBlock(): ScreenAwakeBlock = ScreenAwakeBlock(
+    keepScreenOn = webViewConfig.keepScreenOn,
+    mode = webViewConfig.screenAwakeMode.name,
+    timeoutMinutes = webViewConfig.screenAwakeTimeoutMinutes,
+    brightness = webViewConfig.screenBrightness
+)
 
+private fun WebApp.buildStatusBarBlock(): StatusBarBlock = StatusBarBlock(
+    colorMode = webViewConfig.statusBarColorMode.name,
+    color = webViewConfig.statusBarColor,
+    darkIcons = webViewConfig.statusBarDarkIcons,
+    backgroundType = webViewConfig.statusBarBackgroundType.name,
+    backgroundImage = webViewConfig.statusBarBackgroundImage,
+    backgroundAlpha = webViewConfig.statusBarBackgroundAlpha,
+    heightDp = webViewConfig.statusBarHeightDp,
+    colorModeDark = webViewConfig.statusBarColorModeDark.name,
+    colorDark = webViewConfig.statusBarColorDark,
+    darkIconsDark = webViewConfig.statusBarDarkIconsDark,
+    backgroundTypeDark = webViewConfig.statusBarBackgroundTypeDark.name,
+    backgroundImageDark = webViewConfig.statusBarBackgroundImageDark,
+    backgroundAlphaDark = webViewConfig.statusBarBackgroundAlphaDark
+)
 
+private fun WebApp.buildFloatingWindowBlock(): FloatingWindowBlock {
+    val fw = webViewConfig.floatingWindowConfig
+    return FloatingWindowBlock(
+        enabled = fw.enabled,
+        windowSizePercent = fw.windowSizePercent,
+        widthPercent = fw.widthPercent,
+        heightPercent = fw.heightPercent,
+        lockAspectRatio = fw.lockAspectRatio,
+        opacity = fw.opacity,
+        cornerRadius = fw.cornerRadius,
+        borderStyle = fw.borderStyle.name,
+        showTitleBar = fw.showTitleBar,
+        autoHideTitleBar = fw.autoHideTitleBar,
+        startMinimized = fw.startMinimized,
+        rememberPosition = fw.rememberPosition,
+        edgeSnapping = fw.edgeSnapping,
+        showResizeHandle = fw.showResizeHandle,
+        lockPosition = fw.lockPosition
+    )
+}
 
+private fun WebApp.buildProxyBlock(): ProxyBlock = ProxyBlock(
+    mode = webViewConfig.proxyMode,
+    host = webViewConfig.proxyHost,
+    port = webViewConfig.proxyPort,
+    type = webViewConfig.proxyType,
+    pacUrl = webViewConfig.pacUrl,
+    bypassRules = webViewConfig.proxyBypassRules,
+    username = webViewConfig.proxyUsername,
+    password = webViewConfig.proxyPassword,
+    hostsMappingEnabled = webViewConfig.hostsMappingEnabled,
+    hostsMappings = webViewConfig.hostsMappings
+)
 
+private fun WebApp.buildDnsBlock(): DnsBlock = DnsBlock(
+    mode = webViewConfig.dnsMode,
+    config = DnsApkConfig(
+        provider = webViewConfig.dnsConfig.provider,
+        customDohUrl = webViewConfig.dnsConfig.customDohUrl,
+        dohMode = webViewConfig.dnsConfig.dohMode,
+        bypassSystemDns = webViewConfig.dnsConfig.bypassSystemDns
+    )
+)
 
+private fun WebApp.buildErrorPageBlock(): ErrorPageBlock {
+    val ep = webViewConfig.errorPageConfig
+    return ErrorPageBlock(
+        mode = ep.mode.name,
+        builtInStyle = ep.builtInStyle.name,
+        showMiniGame = ep.showMiniGame,
+        miniGameType = ep.miniGameType.name,
+        autoRetrySeconds = ep.autoRetrySeconds,
+        customHtml = ep.customHtml ?: "",
+        customMediaPath = ep.customMediaPath ?: "",
+        retryButtonText = ep.retryButtonText
+    )
+}
 
+private fun WebApp.buildSplashBlock(): SplashBlock = SplashBlock(
+    enabled = splashEnabled,
+    type = splashConfig?.type?.name ?: "IMAGE",
+    duration = splashConfig?.duration ?: 3,
+    clickToSkip = splashConfig?.clickToSkip ?: true,
+    videoStartMs = splashConfig?.videoStartMs ?: 0L,
+    videoEndMs = splashConfig?.videoEndMs ?: 5000L,
+    landscape = splashConfig?.orientation == com.webtoapp.data.model.SplashOrientation.LANDSCAPE,
+    fillScreen = splashConfig?.fillScreen ?: true,
+    enableAudio = splashConfig?.enableAudio ?: false
+)
 
+private fun WebApp.buildMediaBlock(): MediaBlock = MediaBlock(
+    enableAudio = mediaConfig?.enableAudio ?: true,
+    loop = mediaConfig?.loop ?: true,
+    autoPlay = mediaConfig?.autoPlay ?: true,
+    fillScreen = mediaConfig?.fillScreen ?: true,
+    landscape = mediaConfig?.orientation == com.webtoapp.data.model.SplashOrientation.LANDSCAPE,
+    keepScreenOn = mediaConfig?.keepScreenOn ?: true
+)
 
+private fun WebApp.buildHtmlBlock(): HtmlBlock = HtmlBlock(
+    entryFile = htmlConfig?.getValidEntryFile() ?: "index.html",
+    enableJavaScript = htmlConfig?.enableJavaScript ?: true,
+    enableLocalStorage = htmlConfig?.enableLocalStorage ?: true,
+    landscapeMode = htmlConfig?.landscapeMode ?: false
+)
 
+private fun WebApp.buildGalleryBlock(): GalleryBlock {
+    val items = galleryConfig?.items?.mapIndexed { index, item ->
+        val ext = if (item.type == com.webtoapp.data.model.GalleryItemType.VIDEO) "mp4" else "png"
+        GalleryShellItemConfig(
+            id = item.id,
+            assetPath = "gallery/item_$index.$ext",
+            type = item.type.name,
+            name = item.name,
+            duration = item.duration,
+            thumbnailPath = if (item.thumbnailPath != null) "gallery/thumb_$index.jpg" else null
+        )
+    } ?: emptyList()
+    return GalleryBlock(
+        items = items,
+        playMode = galleryConfig?.playMode?.name ?: "SEQUENTIAL",
+        imageInterval = galleryConfig?.imageInterval ?: 3,
+        loop = galleryConfig?.loop ?: true,
+        autoPlay = galleryConfig?.autoPlay ?: false,
+        backgroundColor = galleryConfig?.backgroundColor ?: "#000000",
+        showThumbnailBar = galleryConfig?.showThumbnailBar ?: true,
+        showMediaInfo = galleryConfig?.showMediaInfo ?: true,
+        orientation = galleryConfig?.orientation?.name ?: "PORTRAIT",
+        enableAudio = galleryConfig?.enableAudio ?: true,
+        videoAutoNext = galleryConfig?.videoAutoNext ?: true,
+        shuffleOnLoop = galleryConfig?.shuffleOnLoop ?: false,
+        defaultView = galleryConfig?.defaultView?.name ?: "GRID",
+        gridColumns = galleryConfig?.gridColumns ?: 3,
+        sortOrder = galleryConfig?.sortOrder?.name ?: "CUSTOM",
+        rememberPosition = galleryConfig?.rememberPosition ?: true
+    )
+}
+
+private fun WebApp.buildBgmBlock(): BgmBlock {
+    val playlist = bgmConfig?.playlist?.mapIndexed { index, item ->
+        BgmShellItem(
+            id = item.id,
+            name = item.name,
+            assetPath = "bgm/bgm_$index.mp3",
+            lrcAssetPath = if (item.lrcData != null) "bgm/bgm_$index.lrc" else null,
+            sortOrder = item.sortOrder
+        )
+    } ?: emptyList()
+    val theme = bgmConfig?.lrcTheme?.let {
+        LrcShellTheme(
+            id = it.id,
+            name = it.name,
+            fontSize = it.fontSize,
+            textColor = it.textColor,
+            highlightColor = it.highlightColor,
+            backgroundColor = it.backgroundColor,
+            animationType = it.animationType.name,
+            position = it.position.name
+        )
+    }
+    return BgmBlock(
+        enabled = bgmEnabled,
+        playlist = playlist,
+        playMode = bgmConfig?.playMode?.name ?: "LOOP",
+        volume = bgmConfig?.volume ?: 0.5f,
+        autoPlay = bgmConfig?.autoPlay ?: true,
+        showLyrics = bgmConfig?.showLyrics ?: true,
+        lrcTheme = theme
+    )
+}
+
+private fun WebApp.buildTranslateBlock(): TranslateBlock = TranslateBlock(
+    enabled = translateEnabled,
+    targetLanguage = translateConfig?.targetLanguage?.code ?: "zh-CN",
+    showButton = translateConfig?.showFloatingButton ?: true
+)
+
+private fun WebApp.buildExtensionBlock(): ExtensionBlock = ExtensionBlock(
+    enabled = extensionEnabled,
+    moduleIds = extensionModuleIds,
+    embeddedModules = emptyList(),
+    fabIcon = extensionFabIcon ?: ""
+)
+
+private fun WebApp.buildAutoStartBlock(): AutoStartBlock = AutoStartBlock(
+    enabled = false,
+    bootStartEnabled = autoStartConfig?.bootStartEnabled ?: false,
+    scheduledStartEnabled = autoStartConfig?.scheduledStartEnabled ?: false,
+    scheduledTime = autoStartConfig?.scheduledTime ?: "08:00",
+    scheduledDays = autoStartConfig?.scheduledDays ?: listOf(1, 2, 3, 4, 5, 6, 7)
+)
+
+private fun WebApp.buildOptionalServicesBlock(): OptionalServicesBlock = OptionalServicesBlock(
+    forcedRunConfig = forcedRunConfig,
+    isolationEnabled = apkExportConfig?.isolationConfig?.enabled ?: false,
+    isolationConfig = apkExportConfig?.isolationConfig,
+    backgroundRunEnabled = apkExportConfig?.backgroundRunEnabled ?: false,
+    backgroundRunConfig = apkExportConfig?.backgroundRunConfig?.let {
+        BackgroundRunConfig(
+            notificationTitle = it.notificationTitle,
+            notificationContent = it.notificationContent,
+            showNotification = it.showNotification,
+            keepCpuAwake = it.keepCpuAwake
+        )
+    },
+    notificationEnabled = apkExportConfig?.notificationEnabled ?: false,
+    notificationConfig = apkExportConfig?.notificationConfig?.let {
+        NotificationConfig(
+            type = it.type.key,
+            pollUrl = it.pollUrl,
+            pollIntervalMinutes = it.pollIntervalMinutes,
+            pollMethod = it.pollMethod,
+            pollHeaders = it.pollHeaders,
+            clickUrl = it.clickUrl
+        )
+    }
+)
+
+private fun WebApp.buildDisguiseBlock(): DisguiseBlock = DisguiseBlock(
+    blackTechConfig = blackTechConfig,
+    disguiseConfig = disguiseConfig,
+    browserDisguiseConfig = browserDisguiseConfig,
+    deviceDisguiseConfig = deviceDisguiseConfig
+)
+
+private fun WebApp.buildDeepLinkBlock(): DeepLinkBlock = DeepLinkBlock(
+    enabled = apkExportConfig?.deepLinkEnabled ?: false,
+    hosts = buildOAuthReturnHosts(
+        url = url,
+        customHosts = apkExportConfig?.customDeepLinkHosts ?: emptyList(),
+        includeCustomHosts = apkExportConfig?.deepLinkEnabled == true
+    )
+)
+
+private fun WebApp.buildWordpressBlock(): WordpressBlock = WordpressBlock(
+    siteTitle = wordpressConfig?.siteTitle ?: "",
+    adminUser = wordpressConfig?.adminUser ?: "admin",
+    adminEmail = wordpressConfig?.adminEmail ?: "",
+    adminPassword = wordpressConfig?.adminPassword ?: "admin",
+    themeName = wordpressConfig?.themeName ?: "",
+    plugins = wordpressConfig?.plugins ?: emptyList(),
+    activePlugins = wordpressConfig?.activePlugins ?: emptyList(),
+    permalinkStructure = wordpressConfig?.permalinkStructure ?: "/%postname%/",
+    siteLanguage = wordpressConfig?.siteLanguage ?: "zh_CN",
+    autoInstall = wordpressConfig?.autoInstall ?: true,
+    phpPort = wordpressConfig?.phpPort ?: 0,
+    landscapeMode = wordpressConfig?.landscapeMode ?: false
+)
+
+private fun WebApp.buildNodejsBlock(): NodejsBlock = NodejsBlock(
+    mode = nodejsConfig?.buildMode?.name ?: "STATIC",
+    port = nodejsConfig?.serverPort ?: 0,
+    entryFile = nodejsConfig?.entryFile ?: "",
+    envVars = nodejsConfig?.envVars ?: emptyMap(),
+    landscapeMode = nodejsConfig?.landscapeMode ?: false
+)
+
+private fun WebApp.buildPhpAppBlock(): PhpAppBlock = PhpAppBlock(
+    framework = phpAppConfig?.framework ?: "",
+    documentRoot = phpAppConfig?.documentRoot ?: "",
+    entryFile = phpAppConfig?.entryFile ?: "index.php",
+    port = phpAppConfig?.phpPort ?: 0,
+    envVars = phpAppConfig?.envVars ?: emptyMap(),
+    landscapeMode = phpAppConfig?.landscapeMode ?: false
+)
+
+private fun WebApp.buildPythonAppBlock(): PythonAppBlock = PythonAppBlock(
+    framework = pythonAppConfig?.framework ?: "",
+    entryFile = pythonAppConfig?.entryFile ?: "app.py",
+    entryModule = pythonAppConfig?.entryModule ?: "",
+    serverType = pythonAppConfig?.serverType ?: "builtin",
+    port = pythonAppConfig?.serverPort ?: 0,
+    envVars = pythonAppConfig?.envVars ?: emptyMap(),
+    landscapeMode = pythonAppConfig?.landscapeMode ?: false
+)
+
+private fun WebApp.buildGoAppBlock(): GoAppBlock = GoAppBlock(
+    framework = goAppConfig?.framework ?: "",
+    binaryName = goAppConfig?.binaryName ?: "",
+    targetArch = goAppConfig?.targetArch ?: "arm64-v8a",
+    port = goAppConfig?.serverPort ?: 0,
+    staticDir = goAppConfig?.staticDir ?: "",
+    envVars = goAppConfig?.envVars ?: emptyMap(),
+    landscapeMode = goAppConfig?.landscapeMode ?: false
+)
+
+private fun WebApp.buildMultiWebBlock(): MultiWebBlock {
+    val sites = multiWebConfig?.sites?.map { site ->
+        com.webtoapp.core.shell.MultiWebSiteShellConfig(
+            id = site.id,
+            name = site.name,
+            url = site.url,
+            type = site.type,
+            localFilePath = site.localFilePath,
+            iconEmoji = site.iconEmoji,
+            category = site.category,
+            cssSelector = site.cssSelector,
+            linkSelector = site.linkSelector,
+            enabled = site.enabled
+        )
+    } ?: emptyList()
+    return MultiWebBlock(
+        sites = sites,
+        displayMode = multiWebConfig?.displayMode ?: "TABS",
+        refreshInterval = multiWebConfig?.refreshInterval ?: 30,
+        showSiteIcons = multiWebConfig?.showSiteIcons ?: true,
+        landscapeMode = multiWebConfig?.landscapeMode ?: false,
+        projectId = multiWebConfig?.projectId ?: ""
+    )
+}
 
 private fun extractHostsFromUrl(url: String, customHosts: List<String> = emptyList()): List<String> {
 
@@ -3770,7 +3365,6 @@ private fun extractHostsFromUrl(url: String, customHosts: List<String> = emptyLi
         }
     } catch (_: Exception) { }
 
-
     customHosts.forEach { custom ->
         val trimmed = custom.trim().lowercase()
         if (trimmed.isNotBlank() && trimmed.contains(".")) {
@@ -3792,23 +3386,14 @@ private fun buildOAuthReturnHosts(
     )
 }
 
-
-
-
-
-
 fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.Context): ApkConfig {
     val baseConfig = toApkConfig(packageName, context)
     val extensionFileManager = com.webtoapp.core.extension.ExtensionFileManager(context)
-
 
     val embeddedModules = if (extensionModuleIds.isNotEmpty()) {
         try {
             val extensionManager = com.webtoapp.core.extension.ExtensionManager.getInstance(context)
 
-            // Ensure async module loading has completed before resolving IDs.
-            // Without this, user-added modules (userscripts, Chrome extensions) may not
-            // yet be in the cache, causing them to be silently dropped from the APK.
             kotlinx.coroutines.runBlocking {
                 kotlinx.coroutines.withTimeoutOrNull(5000L) {
                     extensionManager.awaitLoaded()
@@ -3837,7 +3422,6 @@ fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.
                 module.resources.forEach { (name, url) ->
                     resolvedResources[name] = extensionFileManager.getCachedResource(name, url) ?: url
                 }
-
 
                 val resolvedCode: String
                 val resolvedCss: String
@@ -3902,7 +3486,6 @@ fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.
                     resources = resolvedResources,
                     noframes = module.noframes,
 
-
                     enabled = true
                 )
             }
@@ -3915,17 +3498,13 @@ fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.
     }
 
     return baseConfig.copy(
-        embeddedExtensionModules = embeddedModules
+        extension = baseConfig.extension.copy(embeddedModules = embeddedModules)
     )
 }
-
-
-
 
 fun WebApp.getSplashMediaPath(): String? {
     return if (splashEnabled) splashConfig?.mediaPath else null
 }
-
 
 enum class BuildStage(val label: String) {
     PREPARE("Preparing build"),
@@ -3939,7 +3518,6 @@ enum class BuildStage(val label: String) {
     ANALYZE_CLEANUP("Analyzing and cleaning up")
 }
 
-
 enum class BuildFailureCause {
     TEMPLATE_UNAVAILABLE,
     INPUT_PRECHECK_FAILED,
@@ -3950,15 +3528,11 @@ enum class BuildFailureCause {
     UNHANDLED_EXCEPTION
 }
 
-
 data class BuildDiagnostic(
     val stage: BuildStage,
     val cause: BuildFailureCause,
     val details: Map<String, Any?> = emptyMap()
 )
-
-
-
 
 sealed class BuildResult {
     data class Success(

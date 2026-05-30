@@ -2,15 +2,7 @@ package com.webtoapp.core.extension
 
 import com.webtoapp.core.i18n.Strings
 
-
-
-
-
-
 object ModuleTemplates {
-
-
-
 
     fun getAll(): List<ModuleTemplate> = listOf(
 
@@ -19,13 +11,11 @@ object ModuleTemplates {
         popupBlocker(),
         cookieBannerRemover(),
 
-
         cssInjector(),
         darkModeForce(),
         fontChanger(),
         colorTheme(),
         layoutFixer(),
-
 
         autoClicker(),
         formFiller(),
@@ -35,35 +25,26 @@ object ModuleTemplates {
         autoRefresh(),
         scrollToTop(),
 
-
         dataExtractor(),
         linkCollector(),
         imageGrabber(),
-
 
         videoEnhancer(),
         imageZoomer(),
         audioController(),
 
-
         notificationBlocker(),
         trackingBlocker(),
         fingerprintProtector(),
-
 
         consoleLogger(),
         networkMonitor(),
         domInspector()
     )
 
-
-
-
     fun getByCategory(category: ModuleCategory): List<ModuleTemplate> {
         return getAll().filter { it.category == category }
     }
-
-
 
     private fun elementHider() = ModuleTemplate(
         id = "template-element-hider",
@@ -264,8 +245,6 @@ if (observerTarget instanceof Node) {
         cssCode = ""
     )
 
-
-
     private fun cssInjector() = ModuleTemplate(
         id = "template-css-injector",
         name = Strings.tplCssInjector,
@@ -418,8 +397,6 @@ document.head.appendChild(style);
 body > * { max-width: var(--max-width, 1200px) !important; margin-left: auto !important; margin-right: auto !important; }
         """.trimIndent()
     )
-
-
 
     private fun autoClicker() = ModuleTemplate(
         id = "template-auto-clicker",
@@ -711,8 +688,6 @@ window.addEventListener('scroll', () => {
         cssCode = ""
     )
 
-
-
     private fun dataExtractor() = ModuleTemplate(
         id = "template-data-extractor",
         name = Strings.templateDataExtractor,
@@ -809,8 +784,6 @@ window.__grabbedImages = images;
         """.trimIndent(),
         cssCode = ""
     )
-
-
 
     private fun videoEnhancer() = ModuleTemplate(
         id = "template-video-enhancer",
@@ -936,8 +909,6 @@ if (observerTarget instanceof Node) {
         cssCode = ""
     )
 
-
-
     private fun notificationBlocker() = ModuleTemplate(
         id = "template-notification-blocker",
         name = Strings.templateNotificationBlocker,
@@ -1008,8 +979,6 @@ Object.defineProperty(screen, 'height', { get: () => 1080 + Math.floor(Math.rand
         """.trimIndent(),
         cssCode = ""
     )
-
-
 
     private fun consoleLogger() = ModuleTemplate(
         id = "template-console-logger",
@@ -1136,9 +1105,6 @@ document.addEventListener('mouseout', e => {
     )
 }
 
-
-
-
 data class ModuleTemplate(
     val id: String,
     val name: String,
@@ -1150,8 +1116,6 @@ data class ModuleTemplate(
     val cssCode: String,
     val uiConfig: ModuleUiConfig = ModuleUiConfig()
 ) {
-
-
 
     fun toModule(
         moduleName: String = name,

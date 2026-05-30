@@ -6,26 +6,11 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.webtoapp.core.apkbuilder.ApkConfig
 import com.webtoapp.core.apkbuilder.ApkConfigJsonFactory
+import com.webtoapp.core.apkbuilder.ErrorPageBlock
+import com.webtoapp.core.apkbuilder.MetaBlock
 import com.webtoapp.core.shell.ErrorPageShellConfig
 import org.junit.Test
 
-
-/**
- * Regression test for issue #76 (Custom Offline Page custom HTML lost in
- * generated APK).
- *
- * The Custom Offline Page feature stores the user-provided HTML in
- * [ErrorPageConfig.customHtml] in the WebToApp creator. Before this fix the
- * APK build pipeline silently dropped `customHtml`, `customMediaPath` and
- * `retryButtonText` in three places (the [ApkConfig] data class, the
- * `errorPageConfigPayload()` JSON serializer and the `ErrorPageShellConfig`
- * Gson wrapper used at runtime in the generated APK), so a generated APK
- * always loaded `customHtml = null` and fell back to the Chromium default
- * net::ERR_INTERNET_DISCONNECTED page.
- *
- * This test asserts that the values survive a full round-trip through the
- * pipeline, so any future omission of those fields will fail the test.
- */
 class ErrorPageApkRoundTripTest {
 
     private val customHtml = """
@@ -39,9 +24,11 @@ class ErrorPageApkRoundTripTest {
     @Test
     fun `customHtml survives full ApkConfig - JSON - shell pipeline`() {
         val apkConfig = newApkConfig().copy(
-            errorPageMode = "CUSTOM_HTML",
-            errorPageCustomHtml = customHtml,
-            errorPageRetryButtonText = "Try Again"
+            errorPage = ErrorPageBlock(
+                mode = "CUSTOM_HTML",
+                customHtml = customHtml,
+                retryButtonText = "Try Again"
+            )
         )
 
         val webViewBlock = extractWebViewConfig(apkConfig)
@@ -50,7 +37,6 @@ class ErrorPageApkRoundTripTest {
         assertThat(errorPageBlock.get("mode").asString).isEqualTo("CUSTOM_HTML")
         assertThat(errorPageBlock.get("customHtml").asString).isEqualTo(customHtml)
         assertThat(errorPageBlock.get("retryButtonText").asString).isEqualTo("Try Again")
-
 
         val shellConfig = Gson().fromJson(errorPageBlock, ErrorPageShellConfig::class.java)
         assertThat(shellConfig.mode).isEqualTo("CUSTOM_HTML")
@@ -63,9 +49,11 @@ class ErrorPageApkRoundTripTest {
     fun `customMediaPath survives full ApkConfig - JSON - shell pipeline`() {
         val mediaPath = "/storage/emulated/0/MyApp/offline.mp4"
         val apkConfig = newApkConfig().copy(
-            errorPageMode = "CUSTOM_MEDIA",
-            errorPageCustomMediaPath = mediaPath,
-            errorPageRetryButtonText = "Reload"
+            errorPage = ErrorPageBlock(
+                mode = "CUSTOM_MEDIA",
+                customMediaPath = mediaPath,
+                retryButtonText = "Reload"
+            )
         )
 
         val errorPageBlock = extractWebViewConfig(apkConfig).getAsJsonObject("errorPageConfig")
@@ -82,7 +70,6 @@ class ErrorPageApkRoundTripTest {
     fun `default ApkConfig still serializes empty error page custom fields`() {
         val apkConfig = newApkConfig()
         val errorPageBlock = extractWebViewConfig(apkConfig).getAsJsonObject("errorPageConfig")
-
 
         assertThat(errorPageBlock.has("customHtml")).isTrue()
         assertThat(errorPageBlock.has("customMediaPath")).isTrue()
@@ -112,13 +99,14 @@ class ErrorPageApkRoundTripTest {
         assertThat(rendered).isEqualTo(customHtml)
     }
 
-
     private fun newApkConfig(): ApkConfig = ApkConfig(
-        appName = "OfflineFixtureApp",
-        packageName = "com.example.test",
-        targetUrl = "https://offline.test/",
-        versionCode = 1,
-        versionName = "1.0"
+        meta = MetaBlock(
+            appName = "OfflineFixtureApp",
+            packageName = "com.example.test",
+            targetUrl = "https://offline.test/",
+            versionCode = 1,
+            versionName = "1.0"
+        )
     )
 
     private fun extractWebViewConfig(config: ApkConfig): JsonObject {

@@ -67,7 +67,6 @@ fun CreateAppScreen(
     val scrollState = rememberScrollState()
     var showDiscardDialog by remember { mutableStateOf(false) }
 
-
     LaunchedEffect(uiState) {
         if (uiState is UiState.Success) {
             onSaved()
@@ -79,7 +78,6 @@ fun CreateAppScreen(
         showDiscardDialog = true
     }
 
-
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -88,7 +86,6 @@ fun CreateAppScreen(
         }
     }
 
-
     val splashImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -96,7 +93,6 @@ fun CreateAppScreen(
             viewModel.handleSplashMediaSelected(it, isVideo = false)
         }
     }
-
 
     val splashVideoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -182,8 +178,6 @@ fun CreateAppScreen(
                     editState = editState
                 )
             }
-
-            // ── 显示与交互 ──────────────────────────────────────────
 
             ActivationCodeCard(
                 enabled = editState.activationEnabled,
@@ -319,8 +313,6 @@ fun CreateAppScreen(
                 }
             )
 
-            // ── 启动与多媒体 ────────────────────────────────────────
-
             SplashScreenCard(
                 editState = editState,
                 onEnabledChange = { viewModel.updateEditState { copy(splashEnabled = it) } },
@@ -376,8 +368,6 @@ fun CreateAppScreen(
                 onAnnouncementChange = { viewModel.updateEditState { copy(announcement = it) } }
             )
 
-            // ── 内容增强 ────────────────────────────────────────────
-
             TranslateCard(
                 enabled = editState.translateEnabled,
                 config = editState.translateConfig,
@@ -409,8 +399,6 @@ fun CreateAppScreen(
                 }
             )
 
-            // ── 安全与访问控制 ──────────────────────────────────────
-
             com.webtoapp.ui.components.DisguiseConfigCard(
                 config = editState.disguiseConfig,
                 onConfigChange = { viewModel.updateEditState { copy(disguiseConfig = it) } }
@@ -425,8 +413,6 @@ fun CreateAppScreen(
                 }
             )
 
-            // ── 系统控制 ────────────────────────────────────────────
-
             AutoStartCard(
                 config = editState.autoStartConfig,
                 onConfigChange = { viewModel.updateEditState { copy(autoStartConfig = it) } }
@@ -437,12 +423,10 @@ fun CreateAppScreen(
                 onConfigChange = { viewModel.updateEditState { copy(forcedRunConfig = it) } }
             )
 
-            com.webtoapp.ui.components.BlackTechConfigCard(
+            com.webtoapp.ui.components.DeviceActionsConfigCard(
                 config = editState.blackTechConfig,
                 onConfigChange = { viewModel.updateEditState { copy(blackTechConfig = it) } }
             )
-
-            // ── 高级与导出 ──────────────────────────────────────────
 
             BrowserAdvancedConfigCard(
                 config = editState.webViewConfig,
@@ -462,7 +446,6 @@ fun CreateAppScreen(
             Spacer(modifier = Modifier.height(24.dp))
         }
     }
-
 
     if (showDiscardDialog) {
         AlertDialog(
@@ -636,9 +619,6 @@ private fun LegacyAdCapabilityWarningCard() {
 
 }
 
-
-
-
 @Composable
 fun BasicInfoCard(
     editState: EditState,
@@ -664,12 +644,10 @@ fun BasicInfoCard(
                     onSelectFromLibrary = onSelectIconFromLibrary
                 )
 
-
                 AppNameTextField(
                     value = editState.name,
                     onValueChange = onNameChange
                 )
-
 
                 when (editState.appType) {
                     AppType.WEB -> {
@@ -787,10 +765,6 @@ private fun BasicInfoSummaryRow(
     )
 }
 
-
-
-
-
 @Composable
 fun PwaAnalysisSection(
     viewModel: MainViewModel,
@@ -798,7 +772,6 @@ fun PwaAnalysisSection(
 ) {
     val pwaState by viewModel.pwaAnalysisState.collectAsStateWithLifecycle()
     var showResultCard by remember { mutableStateOf(false) }
-
 
     LaunchedEffect(pwaState) {
         if (pwaState is PwaAnalysisState.Success) {
@@ -833,7 +806,6 @@ fun PwaAnalysisSection(
             }
         }
 
-
         AnimatedVisibility(
             visible = pwaState is PwaAnalysisState.Error,
             enter = fadeIn() + expandVertically(),
@@ -846,7 +818,6 @@ fun PwaAnalysisSection(
                 tone = WtaStatusTone.Error
             )
         }
-
 
         AnimatedVisibility(
             visible = showResultCard && pwaState is PwaAnalysisState.Success,
@@ -871,9 +842,6 @@ fun PwaAnalysisSection(
         }
     }
 }
-
-
-
 
 @Composable
 private fun PwaResultCard(
@@ -925,7 +893,6 @@ private fun PwaResultCard(
                 }
             }
 
-
             Text(
                 text = when (result.source) {
                     PwaDataSource.MANIFEST -> Strings.pwaSourceManifest
@@ -937,7 +904,6 @@ private fun PwaResultCard(
             )
 
             WtaSectionDivider(modifier = Modifier.padding(horizontal = 0.dp))
-
 
             result.suggestedName?.let { name ->
                 PwaInfoRow(label = Strings.pwaName, value = name)
@@ -992,7 +958,6 @@ private fun PwaResultCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-
             FilledTonalButton(
                 onClick = onApply,
                 modifier = Modifier.fillMaxWidth(),
@@ -1005,9 +970,6 @@ private fun PwaResultCard(
         }
     }
 }
-
-
-
 
 @Composable
 private fun PwaInfoRow(label: String, value: String) {
@@ -1028,8 +990,6 @@ private fun PwaInfoRow(label: String, value: String) {
         )
     }
 }
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1132,9 +1092,6 @@ fun AppThemeCard(
     }
 }
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TranslateCard(
@@ -1146,9 +1103,7 @@ fun TranslateCard(
     var langExpanded by remember { mutableStateOf(false) }
     var engineExpanded by remember { mutableStateOf(false) }
 
-
     val languageOptions = TranslateLanguage.entries.toList()
-
 
     val engineOptions = TranslateEngine.entries.toList()
 
@@ -1207,7 +1162,6 @@ fun TranslateCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-
                 ExposedDropdownMenuBox(
                     expanded = langExpanded,
                     onExpandedChange = { langExpanded = it }
@@ -1260,7 +1214,6 @@ fun TranslateCard(
                     }
                 }
 
-
                 ExposedDropdownMenuBox(
                     expanded = engineExpanded,
                     onExpandedChange = { engineExpanded = it }
@@ -1301,7 +1254,6 @@ fun TranslateCard(
                     }
                 }
 
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -1320,7 +1272,6 @@ fun TranslateCard(
                         onCheckedChange = { onConfigChange(config.copy(showFloatingButton = it)) }
                     )
                 }
-
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),

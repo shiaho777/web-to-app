@@ -70,7 +70,8 @@ class ExportSecurityRegressionTest {
 
         assertThat(permissions).containsExactly(
             "android.permission.INTERNET",
-            "android.permission.ACCESS_NETWORK_STATE"
+            "android.permission.ACCESS_NETWORK_STATE",
+            "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"
         ).inOrder()
     }
 
@@ -108,7 +109,11 @@ class ExportSecurityRegressionTest {
             "android.permission.MODIFY_AUDIO_SETTINGS",
             "android.permission.ACCESS_COARSE_LOCATION",
             "android.permission.ACCESS_FINE_LOCATION",
-            "android.permission.POST_NOTIFICATIONS"
+            "android.permission.POST_NOTIFICATIONS",
+            "android.permission.FOREGROUND_SERVICE_LOCATION",
+            "android.permission.FOREGROUND_SERVICE_CAMERA",
+            "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+            "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"
         ).inOrder()
     }
 }

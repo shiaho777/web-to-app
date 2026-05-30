@@ -2,9 +2,6 @@ package com.webtoapp.core.activation
 
 import com.google.gson.annotations.SerializedName
 
-
-
-
 enum class ActivationCodeType(val displayName: String, val description: String) {
     PERMANENT("Permanent", "Valid permanently after activation, no restrictions"),
     TIME_LIMITED("Time Limited", "Valid within specified time after activation"),
@@ -12,9 +9,6 @@ enum class ActivationCodeType(val displayName: String, val description: String) 
     DEVICE_BOUND("Device Bound", "Bound to current device after activation"),
     COMBINED("Combined", "Supports both time and usage limits")
 }
-
-
-
 
 data class ActivationCode(
     @SerializedName("code")
@@ -41,9 +35,6 @@ data class ActivationCode(
     companion object {
         private val gson = com.webtoapp.util.GsonProvider.gson
 
-
-
-
         fun fromJson(json: String): ActivationCode? {
             return try {
                 if (json.trimStart().startsWith("{")) {
@@ -56,9 +47,6 @@ data class ActivationCode(
             }
         }
 
-
-
-
         fun fromLegacyString(code: String): ActivationCode {
             return ActivationCode(
                 code = code,
@@ -66,9 +54,6 @@ data class ActivationCode(
             )
         }
     }
-
-
-
 
     fun toJson(): String {
         return gson.toJson(this)

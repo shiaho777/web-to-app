@@ -21,11 +21,6 @@ import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
-/**
- * A loopback HTTP proxy that rewires selected hosts to fixed IPs while preserving
- * the original Host header and HTTPS CONNECT target. This gives WebView a
- * hosts-like mapping layer without rewriting page URLs.
- */
 object LocalHttpHostMappingBridge {
 
     private const val TAG = "LocalHttpHostMappingBridge"
@@ -52,8 +47,11 @@ object LocalHttpHostMappingBridge {
     @Synchronized
     fun start(config: Config, dnsManager: DnsManager?): Int {
         val preparedMappings = buildNormalizedMappings(config.mappings)
-        if (preparedMappings.isEmpty()) {
-            AppLogger.w(TAG, "No valid hosts mappings, skip bridge startup")
+        val dohEnabled = config.dnsMode != "SYSTEM" &&
+            config.dnsConfig.effectiveDohUrl.isNotBlank() &&
+            dnsManager != null
+        if (preparedMappings.isEmpty() && !dohEnabled) {
+            AppLogger.w(TAG, "No valid hosts mappings or DoH config, skip bridge startup")
             return -1
         }
         val normalizedConfig = config.copy(mappings = preparedMappings.entries.map { HostMappingEntry(it.key, it.value) })
@@ -87,7 +85,14 @@ object LocalHttpHostMappingBridge {
             acceptThread = accept
             accept.start()
 
-            AppLogger.i(TAG, "Hosts mapping proxy listening on 127.0.0.1:$listenPort with ${preparedMappings.size} rules")
+            val modeLabel = if (dohEnabled && preparedMappings.isEmpty()) {
+                "DoH"
+            } else if (dohEnabled) {
+                "hosts mapping + DoH"
+            } else {
+                "hosts mapping"
+            }
+            AppLogger.i(TAG, "$modeLabel proxy listening on 127.0.0.1:$listenPort with ${preparedMappings.size} host rules")
             return listenPort
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to start hosts mapping bridge", e)
@@ -416,9 +421,9 @@ object LocalHttpHostMappingBridge {
                 output.flush()
             }
         } catch (_: SocketTimeoutException) {
-            // Ignore idle timeout on one side.
+
         } catch (_: Exception) {
-            // Connection closed; ignore.
+
         }
     }
 

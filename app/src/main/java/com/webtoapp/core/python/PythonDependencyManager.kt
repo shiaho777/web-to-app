@@ -14,18 +14,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.Locale
 
-
-
-
-
-
-
-
-
-
-
-
-
 object PythonDependencyManager {
 
     private const val TAG = "PythonDependencyManager"
@@ -39,48 +27,21 @@ object PythonDependencyManager {
         RegexOption.IGNORE_CASE
     )
 
-
-
-
-
-
-
-
-
-
     const val PYTHON_VERSION = "3.12"
     const val PYTHON_FULL_VERSION = "3.12.12"
     private const val PYTHON_BUILD_TAG = "20260211"
 
-
     private const val MUSL_VERSION = "1.2.5-r11"
     private const val MUSL_ALPINE_BRANCH = "v3.21"
 
-
-
     enum class MirrorRegion { CN, GLOBAL }
 
-
-    // CN mirror proxies verified reachable on 2026-05-05. ghproxy.cc was removed
-    // because its DNS no longer resolves. If you add more proxies, preserve the
-    // trailing slash: `${proxy}${original_github_url}`.
     private val GITHUB_CN_PROXIES = listOf(
         "https://ghfast.top/",
         "https://gh-proxy.com/"
     )
 
-
-
-
-
-
-
-
-
-
-
     private fun getPythonUrl(abi: String): String {
-
 
         val tripleMap = mapOf(
             "arm64-v8a"   to "aarch64-unknown-linux-musl",
@@ -93,10 +54,6 @@ object PythonDependencyManager {
         return "https://github.com/astral-sh/python-build-standalone/releases/download/$PYTHON_BUILD_TAG/cpython-${PYTHON_FULL_VERSION}+${PYTHON_BUILD_TAG}-${triple}-install_only_stripped.tar.gz"
     }
 
-
-
-
-
     private fun getMuslLinkerUrl(abi: String): String? {
         val archMap = mapOf(
             "arm64-v8a"   to "aarch64",
@@ -106,9 +63,6 @@ object PythonDependencyManager {
         val arch = archMap[abi] ?: return null
         return "https://dl-cdn.alpinelinux.org/alpine/$MUSL_ALPINE_BRANCH/main/$arch/musl-$MUSL_VERSION.apk"
     }
-
-
-
 
     fun getMuslLinkerName(abi: String): String {
         val archMap = mapOf(
@@ -142,11 +96,8 @@ object PythonDependencyManager {
         )
     }
 
-
     private const val MAX_RETRY_PER_URL = 2
     private const val RETRY_DELAY_MS = 2000L
-
-
 
     sealed class DownloadState {
         object Idle : DownloadState()
@@ -161,8 +112,6 @@ object PythonDependencyManager {
     val downloadState: StateFlow<DownloadState> = _downloadState
 
     private var _userMirrorRegion: MirrorRegion? = null
-
-
 
     fun setMirrorRegion(region: MirrorRegion?) {
         _userMirrorRegion = region
@@ -226,49 +175,39 @@ object PythonDependencyManager {
     }
 
     private fun resolveBuilderMuslLinker(context: Context): File? {
+
         val nativeLinker = File(context.applicationInfo.nativeLibraryDir, "libmusl-linker.so")
         if (nativeLinker.exists() && nativeLinker.length() > 1024 && nativeLinker.canExecute()) {
             return nativeLinker
         }
+
+        val abi = getDeviceAbi()
+        val linkerName = getMuslLinkerName(abi)
+        val downloadedLinker = File(getPythonDir(context), "lib/$linkerName")
+        if (downloadedLinker.exists() && downloadedLinker.length() > 1024 && downloadedLinker.canExecute()) {
+            return downloadedLinker
+        }
         return null
     }
-
-
-
-
-
 
     fun isPythonReady(context: Context): Boolean {
         return resolvePythonBinary(context) != null && resolveMuslLinker(context) != null
     }
 
-
-
-
-
     fun getPythonExecutablePath(context: Context): String {
         resolvePythonBinary(context)?.let { pythonBinary ->
-            AppLogger.d(TAG, "使用 Python: ${pythonBinary.absolutePath} (${pythonBinary.length() / 1024} KB)")
+            AppLogger.d(TAG, "Using Python: ${pythonBinary.absolutePath} (${pythonBinary.length() / 1024} KB)")
             return pythonBinary.absolutePath
         }
 
         val fallback = File(getPythonDir(context), "bin/python3")
-        AppLogger.d(TAG, "使用下载目录 Python (fallback): ${fallback.absolutePath}")
+        AppLogger.d(TAG, "Using downloaded Python (fallback): ${fallback.absolutePath}")
         return fallback.absolutePath
     }
-
-
-
 
     fun getPythonHome(context: Context): String {
         return getPythonDir(context).absolutePath
     }
-
-
-
-
-
-
 
     fun getMuslLinkerPath(context: Context): String? {
         return resolveMuslLinker(context)?.absolutePath
@@ -277,9 +216,6 @@ object PythonDependencyManager {
     fun getBuilderMuslLinkerPath(context: Context): String? {
         return resolveBuilderMuslLinker(context)?.absolutePath
     }
-
-
-
 
     fun getPipPath(context: Context): String {
         return File(getPythonDir(context), "bin/pip3").absolutePath
@@ -291,9 +227,6 @@ object PythonDependencyManager {
             .drop(1)
             .any { it.isFile }
     }
-
-
-
 
     suspend fun downloadPythonRuntime(context: Context): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -336,34 +269,31 @@ object PythonDependencyManager {
             }
 
             markComplete()
-            AppLogger.i(TAG, "Python 运行时下载完成")
+            AppLogger.i(TAG, "Python runtime download complete")
             true
         } catch (e: Exception) {
-            AppLogger.e(TAG, "下载 Python 运行时失败", e)
+            AppLogger.e(TAG, "Downloading Python runtimefailed", e)
             markError(e.message ?: "未知错误")
             false
         }
     }
 
-
-
-
     suspend fun installRequirements(
         context: Context,
         projectDir: File,
+        extraEnv: Map<String, String> = emptyMap(),
         onOutput: ((String) -> Unit)? = null
     ): Boolean = withContext(Dispatchers.IO) {
         val reqFile = File(projectDir, "requirements.txt")
         if (!reqFile.exists()) {
-            AppLogger.i(TAG, "无 requirements.txt，跳过依赖安装")
+            AppLogger.i(TAG, "No requirements.txt, skipping dependency install")
             return@withContext true
         }
-
 
         val sitePackages = File(projectDir, ".pypackages")
         if (hasInstalledPackages(sitePackages)) {
             val existingPackages = sitePackages.listFiles()?.size ?: 0
-            AppLogger.i(TAG, ".pypackages 已存在 (${existingPackages} items)，跳过 pip install")
+            AppLogger.i(TAG, ".pypackages Already exists (${existingPackages} items)，skipping pip install")
             onOutput?.invoke("依赖已就绪，跳过安装")
             return@withContext true
         }
@@ -380,36 +310,25 @@ object PythonDependencyManager {
             if (muslLinker == null) {
                 AppLogger.w(
                     TAG,
-                    "构建阶段缺少可执行 musl linker，无法预安装 Python 依赖: nativeLibraryDir=${context.applicationInfo.nativeLibraryDir}"
+                    "musl linker missing at build time, can't pre-install Python dependencies: nativeLibraryDir=${context.applicationInfo.nativeLibraryDir}"
                 )
                 onOutput?.invoke("本机构建器缺少可执行 musl linker，无法预安装依赖")
                 return@withContext false
             }
 
-
-
-
-
-
-
-
-
-
-
-
             val result = runPipWithWrapper(context, projectDir, pythonBin, pythonHome, muslLinker,
-                sitePackages, installReqFile, onOutput)
+                sitePackages, installReqFile, extraEnv, onOutput)
 
             if (result) {
-                AppLogger.i(TAG, "Python 依赖安装成功")
+                AppLogger.i(TAG, "Python dependency install succeeded")
                 onOutput?.invoke("依赖安装完成")
             } else {
-                AppLogger.e(TAG, "Python 依赖安装失败")
+                AppLogger.e(TAG, "Python dependency install failed")
                 onOutput?.invoke("依赖安装失败")
             }
             result
         } catch (e: Exception) {
-            AppLogger.e(TAG, "安装 Python 依赖异常", e)
+            AppLogger.e(TAG, "Python dependency install exception", e)
             onOutput?.invoke("安装异常: ${e.message}")
             false
         } finally {
@@ -435,7 +354,7 @@ object PythonDependencyManager {
         tempFile.writeText(sanitized)
         AppLogger.w(
             TAG,
-            "检测到 Android 不兼容的 Python 依赖，已改用清洗后的 requirements: ${tempFile.absolutePath} (project=${projectDir.absolutePath})"
+            "Detected Android-incompatible Python dependencies; using sanitised requirements: ${tempFile.absolutePath} (project=${projectDir.absolutePath})"
         )
         onOutput?.invoke("已自动调整 Android 不兼容依赖")
         return tempFile
@@ -470,14 +389,6 @@ object PythonDependencyManager {
         }
     }
 
-
-
-
-
-
-
-
-
     private fun runPipWithWrapper(
         context: Context,
         projectDir: File,
@@ -486,21 +397,17 @@ object PythonDependencyManager {
         muslLinker: String,
         sitePackages: File,
         reqFile: File,
+        extraEnv: Map<String, String>,
         onOutput: ((String) -> Unit)?
     ): Boolean {
         val cacheDir = context.cacheDir
-
 
         val wrapperScript = File(cacheDir, "python_wrapper.sh")
         wrapperScript.writeText("""#!/system/bin/sh
 exec "$muslLinker" --library-path "$pythonHome/lib" "$pythonBin" "${'$'}@"
 """)
         wrapperScript.setExecutable(true, false)
-        AppLogger.d(TAG, "创建 Python wrapper: ${wrapperScript.absolutePath}")
-
-
-
-
+        AppLogger.d(TAG, "Creating Python wrapper: ${wrapperScript.absolutePath}")
 
         val bootstrapScript = File(cacheDir, "pip_bootstrap.py")
         bootstrapScript.writeText("""
@@ -561,7 +468,6 @@ from pip._internal.cli.main import main
 sys.exit(main())
 """.trimIndent())
 
-
         val pipArgs = listOf(
             "install",
             "--target", sitePackages.absolutePath,
@@ -574,21 +480,19 @@ sys.exit(main())
             "-r", reqFile.absolutePath
         )
 
-
         val command = listOf(
             muslLinker, "--library-path", "$pythonHome/lib",
             pythonBin, bootstrapScript.absolutePath
         ) + pipArgs
 
-        AppLogger.i(TAG, "安装 Python 依赖 (wrapper模式): ${command.joinToString(" ")}")
+        AppLogger.i(TAG, "Installing Python dependencies (wrapper mode): ${command.joinToString(" ")}")
 
         val exitCode = executeCommand(command, projectDir, pythonBin, pythonHome, muslLinker,
-            wrapperScript.absolutePath, context, onOutput)
+            wrapperScript.absolutePath, context, extraEnv, onOutput)
 
         if (exitCode == 0) return true
 
-
-        AppLogger.w(TAG, "pip --only-binary 失败 (exitCode=$exitCode)，重试不限制...")
+        AppLogger.w(TAG, "pip --only-binary failed (exitCode=$exitCode), retrying without restrictions...")
         onOutput?.invoke("正在重试依赖安装...")
         sitePackages.deleteRecursively()
         sitePackages.mkdirs()
@@ -609,14 +513,11 @@ sys.exit(main())
             pythonBin, bootstrapScript.absolutePath
         ) + retryArgs
 
-        AppLogger.i(TAG, "安装 Python 依赖 (wrapper模式-重试): ${retryCommand.joinToString(" ")}")
+        AppLogger.i(TAG, "Installing Python dependencies (wrapper-mode retry): ${retryCommand.joinToString(" ")}")
 
         return executeCommand(retryCommand, projectDir, pythonBin, pythonHome, muslLinker,
-            wrapperScript.absolutePath, context, onOutput) == 0
+            wrapperScript.absolutePath, context, extraEnv, onOutput) == 0
     }
-
-
-
 
     private fun runPipDirect(
         context: Context,
@@ -635,13 +536,10 @@ sys.exit(main())
             "--no-compile",
             "-r", reqFile.absolutePath
         )
-        AppLogger.i(TAG, "安装 Python 依赖 (直接模式): ${command.joinToString(" ")}")
+        AppLogger.i(TAG, "Installing Python dependencies (direct mode): ${command.joinToString(" ")}")
         return executeCommand(command, projectDir, pythonBin, pythonHome, null, null,
-            context, onOutput) == 0
+            context, emptyMap(), onOutput) == 0
     }
-
-
-
 
     private fun executeCommand(
         command: List<String>,
@@ -651,6 +549,7 @@ sys.exit(main())
         muslLinker: String?,
         wrapperPath: String?,
         context: Context,
+        extraEnv: Map<String, String>,
         onOutput: ((String) -> Unit)?
     ): Int {
         val processBuilder = ProcessBuilder(command)
@@ -674,9 +573,10 @@ sys.exit(main())
             env["_PYTHON_WRAPPER"] = wrapperPath
         }
 
-        AppLogger.i(TAG, "executeCommand: 启动进程...")
-        val process = processBuilder.start()
+        extraEnv.forEach { (k, v) -> env[k] = v }
 
+        AppLogger.i(TAG, "executeCommand: starting process...")
+        val process = processBuilder.start()
 
         val outputLines = mutableListOf<String>()
         val readerThread = Thread {
@@ -689,10 +589,9 @@ sys.exit(main())
                     }
                 }
             } catch (e: Exception) {
-                AppLogger.d(TAG, "pip 输出流读取结束: ${e.message}")
+                AppLogger.d(TAG, "pip output stream closed: ${e.message}")
             }
         }.apply { isDaemon = true; start() }
-
 
         val PIP_TIMEOUT_SECONDS = 120L
         val deadline = System.currentTimeMillis() + PIP_TIMEOUT_SECONDS * 1000L
@@ -709,20 +608,19 @@ sys.exit(main())
 
         if (!completed) {
 
-            AppLogger.e(TAG, "pip install 超时 (${PIP_TIMEOUT_SECONDS}秒)，强制终止进程")
+            AppLogger.e(TAG, "pip install timed out (${PIP_TIMEOUT_SECONDS}s), force-killing process")
             onOutput?.invoke("依赖安装超时 (${PIP_TIMEOUT_SECONDS}秒)")
             process.destroyForciblyCompat()
             readerThread.interrupt()
             return -1
         }
 
-
         readerThread.join(3000)
 
         val exitCode = process.exitValue()
         if (exitCode != 0) {
             val lastOutput = synchronized(outputLines) { outputLines.takeLast(5).joinToString("\n") }
-            AppLogger.e(TAG, "pip install 失败, exitCode=$exitCode, output=$lastOutput")
+            AppLogger.e(TAG, "pip install failed, exitCode=$exitCode, output=$lastOutput")
             onOutput?.invoke("依赖安装失败 (exitCode=$exitCode)")
         }
         return exitCode
@@ -730,14 +628,12 @@ sys.exit(main())
 
     fun clearCache(context: Context) {
         getDepsDir(context).deleteRecursively()
-        AppLogger.i(TAG, "Python 依赖缓存已清理")
+        AppLogger.i(TAG, "Python dependency cache cleared")
     }
 
     fun getCacheSize(context: Context): Long {
         return getDepsDir(context).walkTopDown().filter { it.isFile }.sumOf { it.length() }
     }
-
-
 
     private suspend fun downloadWithRetry(
         urls: List<String>,
@@ -747,14 +643,14 @@ sys.exit(main())
     ): Boolean {
         for ((urlIndex, url) in urls.withIndex()) {
             val sourceName = if (urls.size > 1) "$displayName [源${urlIndex + 1}/${urls.size}]" else displayName
-            AppLogger.i(TAG, "尝试下载 $sourceName: $url")
+            AppLogger.i(TAG, "Attempting to download $sourceName: $url")
 
             for (attempt in 1..MAX_RETRY_PER_URL) {
                 val success = DependencyDownloadEngine.downloadFile(url, destFile, sourceName, context)
                 if (success) return true
 
                 if (attempt < MAX_RETRY_PER_URL) {
-                    AppLogger.i(TAG, "$sourceName 下载失败, ${RETRY_DELAY_MS / 1000}s 后重试 ($attempt/$MAX_RETRY_PER_URL)")
+                    AppLogger.i(TAG, "$sourceName download failed, retrying in ${RETRY_DELAY_MS / 1000}s ($attempt/$MAX_RETRY_PER_URL)")
                     kotlinx.coroutines.delay(RETRY_DELAY_MS)
                     DependencyDownloadEngine._state.value = DependencyDownloadEngine.State.Idle
                 }
@@ -763,7 +659,7 @@ sys.exit(main())
             if (urlIndex < urls.lastIndex) {
                 val tmpFile = File(destFile.parentFile, "${destFile.name}.tmp")
                 tmpFile.delete()
-                AppLogger.i(TAG, "$sourceName 失败，切换下一个源...")
+                AppLogger.i(TAG, "$sourceName failed, trying next source...")
                 DependencyDownloadEngine._state.value = DependencyDownloadEngine.State.Idle
             }
         }
@@ -776,41 +672,37 @@ sys.exit(main())
         val destDir = getPythonDir(context)
         val archiveFile = File(getDepsDir(context), fileName)
 
-        AppLogger.i(TAG, "下载 Python 运行时 (共 ${pythonUrls.size} 个源)")
+        AppLogger.i(TAG, "Downloading Python runtime (${pythonUrls.size} sources)")
 
         val downloaded = downloadWithRetry(pythonUrls, archiveFile, "Python $PYTHON_FULL_VERSION ($abi)", context)
         syncEngineState()
         if (!downloaded) return false
 
-
         _downloadState.value = DownloadState.Extracting("Python")
         DependencyDownloadEngine._state.value = DependencyDownloadEngine.State.Extracting("Python")
         try {
 
-
-
             extractTarGz(archiveFile, destDir, stripPrefix = "python/")
-
 
             val pythonBin312 = File(destDir, "bin/python3.12")
             val pythonBin = File(destDir, "bin/python3")
             if (pythonBin312.exists() && pythonBin312.length() > 1024 * 1024) {
                 pythonBin312.setExecutable(true, false)
                 pythonBin312.setReadable(true, true)
-                AppLogger.i(TAG, "Python 运行时已就绪: ${pythonBin312.absolutePath} (${pythonBin312.length() / 1024} KB)")
+                AppLogger.i(TAG, "Python runtime ready: ${pythonBin312.absolutePath} (${pythonBin312.length() / 1024} KB)")
 
                 if (!pythonBin.exists() || pythonBin.length() < 1024 * 1024) {
                     pythonBin312.copyTo(pythonBin, overwrite = true)
                     pythonBin.setExecutable(true, false)
-                    AppLogger.i(TAG, "复制 python3.12 -> python3 (替代损坏的符号链接)")
+                    AppLogger.i(TAG, "Copying python3.12 -> python3 (replacing broken symlink)")
                 }
             } else if (pythonBin.exists() && pythonBin.length() > 1024 * 1024) {
                 pythonBin.setExecutable(true, false)
                 pythonBin.setReadable(true, true)
-                AppLogger.i(TAG, "Python 运行时已就绪: ${pythonBin.absolutePath}")
+                AppLogger.i(TAG, "Python runtime ready: ${pythonBin.absolutePath}")
             } else {
 
-                AppLogger.w(TAG, "未找到有效的 python3.12 或 python3，搜索其他二进制")
+                AppLogger.w(TAG, "No valid python3.12 or python3 found; searching for other binaries")
                 val found = destDir.walkTopDown()
                     .filter { it.name.startsWith("python3") && it.isFile && it.length() > 1024 * 1024 }
                     .firstOrNull()
@@ -823,46 +715,38 @@ sys.exit(main())
                     target.setExecutable(true, false)
                     target.copyTo(File(binDir, "python3"), overwrite = true)
                     File(binDir, "python3").setExecutable(true, false)
-                    AppLogger.i(TAG, "Python 二进制已移动到: ${target.absolutePath}")
+                    AppLogger.i(TAG, "Python binary moved to: ${target.absolutePath}")
                 } else {
-                    AppLogger.e(TAG, "解压后未找到有效的 Python 二进制 (>1MB)")
+                    AppLogger.e(TAG, "No valid Python binary (>1MB) found after extraction")
                     markError("解压后未找到 Python 二进制")
                     return false
                 }
             }
 
-
             File(destDir, "bin").listFiles()?.forEach { it.setExecutable(true, false) }
-
 
             File(destDir, "lib").listFiles()?.filter { it.name.endsWith(".so") || it.name.contains(".so.") }?.forEach {
                 it.setExecutable(true, false)
             }
 
-
             archiveFile.delete()
         } catch (e: Exception) {
-            AppLogger.e(TAG, "解压 Python 失败", e)
+            AppLogger.e(TAG, "Python extraction failed", e)
             markError("解压 Python 失败: ${e.message}")
             return false
         }
 
-
         if (mirror.muslLinkerUrl != null) {
             val muslSuccess = downloadMuslLinker(context, mirror.muslLinkerUrl, abi)
             if (!muslSuccess) {
-                AppLogger.w(TAG, "musl 动态链接器下载失败，Python 可能无法在 Android 上执行")
+                AppLogger.w(TAG, "musl dynamic linker download failed; Python may not execute on Android")
             }
         } else {
-            AppLogger.w(TAG, "当前 ABI ($abi) 无可用的 musl linker")
+            AppLogger.w(TAG, "Current ABI ($abi) has no available musl linker")
         }
 
         return true
     }
-
-
-
-
 
     private suspend fun downloadMuslLinker(context: Context, url: String, abi: String): Boolean {
         val linkerName = getMuslLinkerName(abi)
@@ -870,16 +754,15 @@ sys.exit(main())
         val linkerFile = File(destDir, "lib/$linkerName")
 
         if (linkerFile.exists() && linkerFile.length() > 100 * 1024) {
-            AppLogger.i(TAG, "musl linker 已存在: ${linkerFile.absolutePath} (${linkerFile.length() / 1024} KB)")
+            AppLogger.i(TAG, "musl linker Already exists: ${linkerFile.absolutePath} (${linkerFile.length() / 1024} KB)")
             return true
         }
 
         try {
-            AppLogger.i(TAG, "下载 musl linker: $url")
+            AppLogger.i(TAG, "Downloading musl linker: $url")
             val apkFile = File(getDepsDir(context), "musl-${abi}.apk")
             val downloaded = downloadWithRetry(listOf(url), apkFile, "musl linker ($abi)", context)
             if (!downloaded) return false
-
 
             val gzipStream = java.util.zip.GZIPInputStream(apkFile.inputStream().buffered())
             val tarStream = org.apache.commons.compress.archivers.tar.TarArchiveInputStream(gzipStream)
@@ -894,7 +777,7 @@ sys.exit(main())
                         }
                         linkerFile.setExecutable(true, false)
                         found = true
-                        AppLogger.i(TAG, "musl linker 已提取: ${linkerFile.absolutePath} (${linkerFile.length() / 1024} KB)")
+                        AppLogger.i(TAG, "musl linker extracted: ${linkerFile.absolutePath} (${linkerFile.length() / 1024} KB)")
                         break
                     }
                     entry = tar.nextEntry
@@ -903,31 +786,23 @@ sys.exit(main())
             apkFile.delete()
 
             if (!found) {
-                AppLogger.e(TAG, "Alpine APK 中未找到 $linkerName")
+                AppLogger.e(TAG, "Alpine APK does not contain $linkerName")
                 markError("Alpine APK 中未找到 $linkerName")
             }
             return found
         } catch (e: Exception) {
-            AppLogger.e(TAG, "下载 musl linker 失败", e)
+            AppLogger.e(TAG, "Downloading musl linker failed", e)
             markError("下载 musl linker 失败: ${e.message}")
             return false
         }
     }
 
-
-
-
-
-
-
-
     private fun extractTarGz(archiveFile: File, destDir: File, stripPrefix: String? = null) {
-        AppLogger.i(TAG, "解压 ${archiveFile.name} 到 ${destDir.absolutePath}" +
-            (if (stripPrefix != null) " (剥离前缀: $stripPrefix)" else ""))
+        AppLogger.i(TAG, "Extracting ${archiveFile.name} to ${destDir.absolutePath}" +
+            (if (stripPrefix != null) " (strip prefix: $stripPrefix)" else ""))
 
         val gzipStream = java.util.zip.GZIPInputStream(archiveFile.inputStream().buffered())
         val tarStream = org.apache.commons.compress.archivers.tar.TarArchiveInputStream(gzipStream)
-
 
         val deferredSymlinks = mutableListOf<Pair<String, String>>()
         var fileCount = 0
@@ -936,7 +811,6 @@ sys.exit(main())
             var entry = tar.nextEntry
             while (entry != null) {
                 var entryName = entry.name
-
 
                 if (stripPrefix != null && entryName.startsWith(stripPrefix)) {
                     entryName = entryName.removePrefix(stripPrefix)
@@ -948,9 +822,8 @@ sys.exit(main())
 
                 val outFile = File(destDir, entryName)
 
-
                 if (!outFile.canonicalPath.startsWith(destDir.canonicalPath)) {
-                    AppLogger.w(TAG, "跳过可疑路径: ${entry.name}")
+                    AppLogger.w(TAG, "Skipping suspicious path: ${entry.name}")
                     entry = tar.nextEntry
                     continue
                 }
@@ -979,7 +852,6 @@ sys.exit(main())
             }
         }
 
-
         var resolvedLinks = 0
         for ((linkName, targetName) in deferredSymlinks) {
             val linkFile = File(destDir, linkName)
@@ -995,14 +867,14 @@ sys.exit(main())
                     }
                     resolvedLinks++
                 } catch (e: Exception) {
-                    AppLogger.w(TAG, "解析符号链接失败: $linkName -> $targetName: ${e.message}")
+                    AppLogger.w(TAG, "Failed to resolve symlink: $linkName -> $targetName: ${e.message}")
                 }
             } else {
-                AppLogger.d(TAG, "跳过符号链接（目标不存在）: $linkName -> $targetName")
+                AppLogger.d(TAG, "Skipping symlink (target missing): $linkName -> $targetName")
             }
         }
 
-        AppLogger.i(TAG, "解压完成: $fileCount 个文件, $resolvedLinks/${deferredSymlinks.size} 个符号链接已解析")
+        AppLogger.i(TAG, "Unpack complete: $fileCount files, $resolvedLinks/${deferredSymlinks.size} symlinks resolved")
     }
 
     private fun syncEngineState() {

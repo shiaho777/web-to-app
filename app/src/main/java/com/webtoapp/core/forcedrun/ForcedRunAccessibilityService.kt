@@ -22,23 +22,10 @@ import android.view.View
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 
-
-
-
-
-
-
-
-
-
-
-
-
 class ForcedRunAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "ForcedRunA11yService"
-
 
         @Volatile
         private var instance: ForcedRunAccessibilityService? = null
@@ -46,7 +33,6 @@ class ForcedRunAccessibilityService : AccessibilityService() {
         @Volatile
         var isServiceRunning = false
             private set
-
 
         @Volatile
         var isForcedRunActive = false
@@ -63,16 +49,11 @@ class ForcedRunAccessibilityService : AccessibilityService() {
         @Volatile
         var allowedPackages: Set<String> = emptySet()
 
-
-
-
         @Volatile
         var blockVolumeKeys: Boolean = false
 
-
         @Volatile
         var blockBackKey: Boolean = false
-
 
         @Volatile
         var blockTouchOverlay: Boolean = false
@@ -81,10 +62,8 @@ class ForcedRunAccessibilityService : AccessibilityService() {
                 instance?.updateTouchBlockOverlay(value)
             }
 
-
         @Volatile
         var blockPowerKey: Boolean = false
-
 
         @Volatile
         var blackScreenMode: Boolean = false
@@ -100,15 +79,12 @@ class ForcedRunAccessibilityService : AccessibilityService() {
                 }
             }
 
-
-
-
         fun startForcedRun(
             packageName: String,
             activityClass: String,
             allowedPkgs: Set<String> = emptySet()
         ) {
-            AppLogger.d(TAG, "启动强制运行防护: package=$packageName, activity=$activityClass")
+            AppLogger.d(TAG, "Starting forced-run protection: package=$packageName, activity=$activityClass")
             targetPackageName = packageName
             targetActivityClass = activityClass
             allowedPackages = allowedPkgs + setOf(
@@ -118,19 +94,13 @@ class ForcedRunAccessibilityService : AccessibilityService() {
             isForcedRunActive = true
         }
 
-
-
-
         fun stopForcedRun() {
-            AppLogger.d(TAG, "停止强制运行防护")
+            AppLogger.d(TAG, "Stopping forced-run protection")
             isForcedRunActive = false
             targetPackageName = null
             targetActivityClass = null
             allowedPackages = emptySet()
         }
-
-
-
 
         fun isAccessibilityServiceEnabled(context: Context): Boolean {
             val serviceName = "${context.packageName}/${ForcedRunAccessibilityService::class.java.canonicalName}"
@@ -145,9 +115,6 @@ class ForcedRunAccessibilityService : AccessibilityService() {
             }
         }
 
-
-
-
         fun openAccessibilitySettings(context: Context) {
             val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -155,22 +122,10 @@ class ForcedRunAccessibilityService : AccessibilityService() {
             context.startActivity(intent)
         }
 
-
-
-
-
-
-
-
-
-
-
-
-
         fun setSystemBrightnessGlobal(context: Context, brightness: Int): Boolean {
             return try {
                 if (!Settings.System.canWrite(context)) {
-                    AppLogger.w(TAG, "无 WRITE_SETTINGS 权限，无法控制系统亮度")
+                    AppLogger.w(TAG, "No WRITE_SETTINGS permission; can't control system brightness")
                     return false
                 }
 
@@ -186,16 +141,13 @@ class ForcedRunAccessibilityService : AccessibilityService() {
                     Settings.System.SCREEN_BRIGHTNESS,
                     clamped
                 )
-                AppLogger.d(TAG, "系统亮度已设置: $clamped")
+                AppLogger.d(TAG, "System brightness set: $clamped")
                 true
             } catch (e: Exception) {
-                AppLogger.e(TAG, "设置系统亮度失败", e)
+                AppLogger.e(TAG, "Failed to set system brightness", e)
                 false
             }
         }
-
-
-
 
         fun requestWriteSettingsPermission(context: Context) {
             if (!Settings.System.canWrite(context)) {
@@ -207,10 +159,7 @@ class ForcedRunAccessibilityService : AccessibilityService() {
             }
         }
 
-
-
-
-        fun stopAllBlackTech() {
+        fun stopAllDeviceActions() {
             blockVolumeKeys = false
             blockBackKey = false
             blockTouchOverlay = false
@@ -224,28 +173,24 @@ class ForcedRunAccessibilityService : AccessibilityService() {
     private var consecutiveBringBacks = 0
     private val bringBackRunnable = Runnable { bringAppToFront() }
 
-
     private var touchBlockView: View? = null
     private var windowManager: WindowManager? = null
-
 
     private var screenOffReceiver: BroadcastReceiver? = null
     private var powerManager: PowerManager? = null
     private var wakeLock: PowerManager.WakeLock? = null
-
 
     private var originalBrightness: Int = -1
     private var originalBrightnessMode: Int = -1
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        AppLogger.d(TAG, "辅助功能服务已连接")
+        AppLogger.d(TAG, "Accessibility service connected")
 
         instance = this
         isServiceRunning = true
         windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-
 
         serviceInfo = serviceInfo?.apply {
             eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
@@ -265,59 +210,32 @@ class ForcedRunAccessibilityService : AccessibilityService() {
             notificationTimeout = 50
         }
 
-
         registerScreenOffReceiver()
     }
-
-
-
-
-
-
-
-
-
-
 
     override fun onKeyEvent(event: KeyEvent?): Boolean {
         if (event == null) return false
 
         val keyCode = event.keyCode
 
-
         if (blockVolumeKeys) {
             if (keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
                 keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
                 keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
-                AppLogger.d(TAG, "拦截音量键: keyCode=$keyCode action=${event.action}")
+                AppLogger.d(TAG, "Intercepting volume key: keyCode=$keyCode action=${event.action}")
                 return true
             }
         }
-
 
         if (blockBackKey) {
             if (keyCode == KeyEvent.KEYCODE_BACK) {
-                AppLogger.d(TAG, "拦截返回键: action=${event.action}")
+                AppLogger.d(TAG, "Intercepting back key: action=${event.action}")
                 return true
             }
         }
 
-
-
-
         return false
     }
-
-
-
-
-
-
-
-
-
-
-
 
     @Suppress("DEPRECATION")
     private fun updateTouchBlockOverlay(enable: Boolean) {
@@ -347,18 +265,15 @@ class ForcedRunAccessibilityService : AccessibilityService() {
 
                     windowManager?.addView(view, params)
                     touchBlockView = view
-                    AppLogger.d(TAG, "触摸屏蔽覆盖层已添加")
+                    AppLogger.d(TAG, "Touch-block overlay added")
                 } catch (e: Exception) {
-                    AppLogger.e(TAG, "添加触摸屏蔽覆盖层失败", e)
+                    AppLogger.e(TAG, "Failed to add touch-block overlay", e)
                 }
             } else if (!enable && touchBlockView != null) {
                 removeTouchBlockOverlay()
             }
         }
     }
-
-
-
 
     @Suppress("DEPRECATION")
     private fun updateBlackScreenOverlay(enable: Boolean) {
@@ -391,9 +306,9 @@ class ForcedRunAccessibilityService : AccessibilityService() {
 
                     windowManager?.addView(view, params)
                     touchBlockView = view
-                    AppLogger.d(TAG, "全黑屏覆盖层已添加")
+                    AppLogger.d(TAG, "Full-blackout overlay added")
                 } catch (e: Exception) {
-                    AppLogger.e(TAG, "添加全黑屏覆盖层失败", e)
+                    AppLogger.e(TAG, "Failed to add full-blackout overlay", e)
                 }
             } else {
                 removeTouchBlockOverlay()
@@ -405,23 +320,13 @@ class ForcedRunAccessibilityService : AccessibilityService() {
         touchBlockView?.let { view ->
             try {
                 windowManager?.removeView(view)
-                AppLogger.d(TAG, "覆盖层已移除")
+                AppLogger.d(TAG, "Overlay removed")
             } catch (e: Exception) {
-                AppLogger.e(TAG, "移除覆盖层失败", e)
+                AppLogger.e(TAG, "Failed to remove overlay", e)
             }
         }
         touchBlockView = null
     }
-
-
-
-
-
-
-
-
-
-
 
     private fun registerScreenOffReceiver() {
         if (screenOffReceiver != null) return
@@ -431,8 +336,7 @@ class ForcedRunAccessibilityService : AccessibilityService() {
                 if (!blockPowerKey) return
                 if (intent?.action != Intent.ACTION_SCREEN_OFF) return
 
-                AppLogger.d(TAG, "检测到屏幕关闭（电源键），立即唤醒")
-
+                AppLogger.d(TAG, "Screen-off detected (power key); waking immediately")
 
                 wakeUpScreen()
             }
@@ -445,11 +349,8 @@ class ForcedRunAccessibilityService : AccessibilityService() {
             registerReceiver(screenOffReceiver, filter)
         }
 
-        AppLogger.d(TAG, "屏幕关闭广播接收器已注册")
+        AppLogger.d(TAG, "Screen-off broadcast receiver registered")
     }
-
-
-
 
     @Suppress("DEPRECATION")
     private fun wakeUpScreen() {
@@ -464,24 +365,18 @@ class ForcedRunAccessibilityService : AccessibilityService() {
             )
             wakeLock?.acquire(5000L)
 
-            AppLogger.d(TAG, "屏幕已强制唤醒")
+            AppLogger.d(TAG, "Screen force-woken")
         } catch (e: Exception) {
-            AppLogger.e(TAG, "强制唤醒屏幕失败", e)
+            AppLogger.e(TAG, "Failed to force-wake screen", e)
         }
     }
-
-
-
-
-
 
     private fun setSystemBrightness(brightness: Int) {
         try {
             if (!Settings.System.canWrite(this)) {
-                AppLogger.w(TAG, "无 WRITE_SETTINGS 权限")
+                AppLogger.w(TAG, "No WRITE_SETTINGS permission")
                 return
             }
-
 
             if (originalBrightness == -1) {
                 originalBrightness = Settings.System.getInt(
@@ -496,7 +391,6 @@ class ForcedRunAccessibilityService : AccessibilityService() {
                 )
             }
 
-
             Settings.System.putInt(
                 contentResolver,
                 Settings.System.SCREEN_BRIGHTNESS_MODE,
@@ -509,14 +403,11 @@ class ForcedRunAccessibilityService : AccessibilityService() {
                 brightness.coerceIn(0, 255)
             )
 
-            AppLogger.d(TAG, "系统亮度已设置: $brightness (原值: $originalBrightness)")
+            AppLogger.d(TAG, "System brightness set: $brightness (original: $originalBrightness)")
         } catch (e: Exception) {
-            AppLogger.e(TAG, "设置系统亮度失败", e)
+            AppLogger.e(TAG, "Failed to set system brightness", e)
         }
     }
-
-
-
 
     private fun restoreSystemBrightness() {
         try {
@@ -534,15 +425,13 @@ class ForcedRunAccessibilityService : AccessibilityService() {
                 originalBrightness
             )
 
-            AppLogger.d(TAG, "系统亮度已恢复: $originalBrightness")
+            AppLogger.d(TAG, "System brightness restored: $originalBrightness")
             originalBrightness = -1
             originalBrightnessMode = -1
         } catch (e: Exception) {
-            AppLogger.e(TAG, "恢复系统亮度失败", e)
+            AppLogger.e(TAG, "Failed to restore system brightness", e)
         }
     }
-
-
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (!isForcedRunActive || event == null) return
@@ -565,10 +454,10 @@ class ForcedRunAccessibilityService : AccessibilityService() {
     private fun handleWindowStateChanged(packageName: String, event: AccessibilityEvent) {
         val className = event.className?.toString() ?: ""
 
-        AppLogger.i(TAG, "窗口变化: package=$packageName, class=$className")
+        AppLogger.i(TAG, "Window changed: package=$packageName, class=$className")
 
         if (shouldBringBack(packageName)) {
-            AppLogger.d(TAG, "检测到离开应用: $packageName, 准备拉回")
+            AppLogger.d(TAG, "Detected app leave: $packageName, preparing to pull back")
             scheduleBringBack()
         }
     }
@@ -611,7 +500,7 @@ class ForcedRunAccessibilityService : AccessibilityService() {
         if (now - lastBringBackTime < 100) return
         lastBringBackTime = now
 
-        AppLogger.d(TAG, "执行拉回: package=$pkg, activity=$activity")
+        AppLogger.d(TAG, "Pulling back: package=$pkg, activity=$activity")
 
         try {
             val intent = Intent().apply {
@@ -640,7 +529,7 @@ class ForcedRunAccessibilityService : AccessibilityService() {
             }
 
         } catch (e: Exception) {
-            AppLogger.e(TAG, "拉回失败", e)
+            AppLogger.e(TAG, "Pull-back failed", e)
             try {
                 val launchIntent = packageManager.getLaunchIntentForPackage(pkg)
                 launchIntent?.addFlags(
@@ -649,34 +538,28 @@ class ForcedRunAccessibilityService : AccessibilityService() {
                 )
                 launchIntent?.let { startActivity(it) }
             } catch (e2: Exception) {
-                AppLogger.e(TAG, "备用拉回也失败", e2)
+                AppLogger.e(TAG, "Fallback pull-back also failed", e2)
             }
         }
     }
 
-
-
     override fun onInterrupt() {
-        AppLogger.w(TAG, "辅助功能服务被中断")
+        AppLogger.w(TAG, "Accessibility service interrupted")
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        AppLogger.d(TAG, "辅助功能服务销毁")
-
+        AppLogger.d(TAG, "Accessibility service destroyed")
 
         removeTouchBlockOverlay()
-
 
         screenOffReceiver?.let {
             try { unregisterReceiver(it) } catch (_: Exception) {}
         }
         screenOffReceiver = null
 
-
         wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
-
 
         restoreSystemBrightness()
 

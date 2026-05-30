@@ -1,7 +1,3 @@
-
-
-
-
 const http = require('http');
 const os = require('os');
 const PORT = process.env.PORT || 3000;
@@ -20,12 +16,12 @@ function fmtB(b) { if (b < 1024 * 1024) return (b / 1024).toFixed(0) + ' KB'; if
 function fmtT(s) { const m = Math.floor(s / 60), h = Math.floor(m / 60); if (h > 0) return h + 'h ' + m % 60 + 'm'; if (m > 0) return m + 'm ' + Math.floor(s % 60) + 's'; return Math.floor(s) + 's' }
 
 const server = http.createServer((req, res) => {
-  const p = new URL(req.url, `http:
+  const p = new URL(req.url, `http://${req.headers.host}`).pathname;
   if (p === '/api/stats') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify(getStats())) }
   if (p === '/') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end(getPage()) }
   res.writeHead(404); res.end('Not Found');
 });
-server.listen(PORT, '0.0.0.0', () => console.log('Monitor on http://0.0.0.0:' + PORT));
+server.listen(PORT, '0.0.0.0', () => console.log('Monitor on http:
 
 function getPage() {
   return `<!DOCTYPE html>

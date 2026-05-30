@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -33,9 +34,7 @@ import com.webtoapp.util.NetworkTrustStorage
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
-
 private val PACKAGE_NAME_REGEX = AppConstants.PACKAGE_NAME_REGEX
-
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -74,7 +73,6 @@ fun ApkExportSection(
 
     Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)) {
 
-        // ── 基本信息 ──────────────────────────────────────────
         WtaSection(
             title = Strings.apkConfigNote,
             headerStyle = WtaSectionHeaderStyle.Quiet
@@ -168,7 +166,6 @@ fun ApkExportSection(
             }
         }
 
-        // ── 架构选择 ──────────────────────────────────────────
         WtaSection(
             title = Strings.apkArchitecture,
             headerStyle = WtaSectionHeaderStyle.Quiet
@@ -205,7 +202,6 @@ fun ApkExportSection(
             }
         }
 
-        // ── 权限配置 ──────────────────────────────────────────
         if (onOpenPermissionConfig != null) {
             PermissionSummaryCard(
                 permissions = config.runtimePermissions,
@@ -213,7 +209,6 @@ fun ApkExportSection(
             )
         }
 
-        // ── 网络信任 ──────────────────────────────────────────
         NetworkTrustConfigPanel(
             config = config.networkTrustConfig,
             importError = caImportError,
@@ -233,17 +228,16 @@ fun ApkExportSection(
             }
         )
 
-        // ── 性能优化 ──────────────────────────────────────────
         PerformanceOptimizationSection(
             config = config,
             onConfigChange = onConfigChange
         )
 
-        // ── 自定义签名 ──────────────────────────────────────────
         CustomSigningSection()
+
+        SigningSchemeSection()
     }
 }
-
 
 @Composable
 private fun PerformanceOptimizationSection(
@@ -270,7 +264,7 @@ private fun PerformanceOptimizationSection(
             exit = CardCollapseTransition
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)) {
-                // 资源优化
+
                 WtaSection(
                     title = Strings.perfResourceOptimize,
                     headerStyle = WtaSectionHeaderStyle.Quiet
@@ -314,7 +308,6 @@ private fun PerformanceOptimizationSection(
                     }
                 }
 
-                // 构建优化
                 WtaSection(
                     title = Strings.perfBuildOptimize,
                     headerStyle = WtaSectionHeaderStyle.Quiet
@@ -340,7 +333,6 @@ private fun PerformanceOptimizationSection(
                     }
                 }
 
-                // 加载优化
                 WtaSection(
                     title = Strings.perfLoadOptimize,
                     headerStyle = WtaSectionHeaderStyle.Quiet
@@ -375,7 +367,6 @@ private fun PerformanceOptimizationSection(
                     }
                 }
 
-                // 运行时优化
                 WtaSection(
                     title = Strings.perfRuntimeOptimize,
                     headerStyle = WtaSectionHeaderStyle.Quiet
@@ -395,7 +386,6 @@ private fun PerformanceOptimizationSection(
         }
     }
 }
-
 
 @Composable
 private fun NetworkTrustConfigPanel(
@@ -480,7 +470,6 @@ private fun NetworkTrustConfigPanel(
             )
         }
 
-        // 已导入的证书列表
         config.customCaCertificates.forEach { cert ->
             WtaSettingCard {
                 WtaSettingRow(
@@ -503,7 +492,6 @@ private fun NetworkTrustConfigPanel(
             }
         }
 
-        // 已保存的预设列表
         if (presets.isNotEmpty()) {
             WtaSettingCard {
                 presets.forEachIndexed { index, preset ->
@@ -568,7 +556,6 @@ private fun NetworkTrustConfigPanel(
     }
 }
 
-
 @Composable
 fun CustomSigningSection() {
     val context = LocalContext.current
@@ -581,8 +568,12 @@ fun CustomSigningSection() {
     var showImportPasswordDialog by remember { mutableStateOf(false) }
     var showExportPasswordDialog by remember { mutableStateOf(false) }
     var showRemoveConfirmDialog by remember { mutableStateOf(false) }
+    var showCreateKeystoreDialog by remember { mutableStateOf(false) }
+    var showFingerprintDialog by remember { mutableStateOf(false) }
     var pendingKeystoreUri by remember { mutableStateOf<Uri?>(null) }
     var passwordInput by remember { mutableStateOf("") }
+
+    var keyPasswordInput by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var importError by remember { mutableStateOf<String?>(null) }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
@@ -612,7 +603,7 @@ fun CustomSigningSection() {
         title = Strings.currentSigningStatus,
         headerStyle = WtaSectionHeaderStyle.Quiet
     ) {
-        // 签名状态
+
         WtaSettingCard {
             WtaSettingRow(
                 title = when (signerType) {
@@ -627,15 +618,20 @@ fun CustomSigningSection() {
             )
         }
 
-        // 提示信息
         WtaStatusBanner(
             title = Strings.customSigningNote,
             message = Strings.supportedKeystoreFormats,
             tone = WtaStatusTone.Info
         )
 
-        // 操作按钮
         WtaSettingCard {
+            WtaSettingRow(
+                title = Strings.createKeystore,
+                subtitle = Strings.createKeystoreNote,
+                icon = Icons.Outlined.AddModerator,
+                onClick = { showCreateKeystoreDialog = true }
+            )
+            WtaSectionDivider()
             WtaSettingRow(
                 title = Strings.importKeystore,
                 subtitle = null,
@@ -649,6 +645,15 @@ fun CustomSigningSection() {
                 icon = Icons.Outlined.FileDownload,
                 onClick = { keystoreExportLauncher.launch("webtoapp_signing.p12") }
             )
+            if (certInfo != null) {
+                WtaSectionDivider()
+                WtaSettingRow(
+                    title = Strings.viewFingerprints,
+                    subtitle = null,
+                    icon = Icons.Outlined.Fingerprint,
+                    onClick = { showFingerprintDialog = true }
+                )
+            }
             if (signerType == com.webtoapp.core.apkbuilder.JarSigner.SignerType.PKCS12_CUSTOM) {
                 WtaSectionDivider()
                 WtaSettingRow(
@@ -661,7 +666,6 @@ fun CustomSigningSection() {
             }
         }
 
-        // 操作反馈
         snackbarMessage?.let { msg ->
             WtaStatusBanner(
                 message = msg,
@@ -674,7 +678,34 @@ fun CustomSigningSection() {
         }
     }
 
-    // ── 对话框 ──────────────────────────────────────────
+    if (showCreateKeystoreDialog) {
+        CreateKeystoreDialog(
+            onDismiss = { showCreateKeystoreDialog = false },
+            onCreate = { spec ->
+                coroutineScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                    val success = signer.createCustomKeystore(spec)
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                        if (success) {
+                            signerType = signer.getSignerType()
+                            certInfo = signer.getCertificateInfo()
+                            showCreateKeystoreDialog = false
+                            snackbarMessage = Strings.certCreateSuccess
+                        } else {
+                            snackbarMessage = Strings.certCreateFailed
+                        }
+                    }
+                }
+            }
+        )
+    }
+
+    if (showFingerprintDialog) {
+        FingerprintDialog(
+            fingerprints = remember { signer.getCertificateFingerprints() },
+            onDismiss = { showFingerprintDialog = false },
+            onCopied = { snackbarMessage = Strings.fingerprintCopied }
+        )
+    }
 
     if (showImportPasswordDialog) {
         AlertDialog(
@@ -682,17 +713,20 @@ fun CustomSigningSection() {
                 showImportPasswordDialog = false
                 pendingKeystoreUri = null
                 passwordInput = ""
+                keyPasswordInput = ""
                 importError = null
             },
             icon = { Icon(Icons.Outlined.Key, null) },
             title = { Text(Strings.importKeystore) },
             text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Text(
                         text = Strings.keystorePasswordHint,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(bottom = 12.dp)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     OutlinedTextField(
                         value = passwordInput,
@@ -720,6 +754,27 @@ fun CustomSigningSection() {
                             { Text(error, color = MaterialTheme.colorScheme.error) }
                         }
                     )
+
+                    OutlinedTextField(
+                        value = keyPasswordInput,
+                        onValueChange = {
+                            keyPasswordInput = it
+                            importError = null
+                        },
+                        label = { Text(Strings.keyPasswordOptional) },
+                        singleLine = true,
+                        visualTransformation = if (passwordVisible)
+                            androidx.compose.ui.text.input.VisualTransformation.None
+                        else
+                            androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth(),
+                        supportingText = {
+                            Text(
+                                text = Strings.keyPasswordHint,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    )
                 }
             },
             confirmButton = {
@@ -735,7 +790,8 @@ fun CustomSigningSection() {
                                     }
                                 }
 
-                                val success = signer.importKeystore(tempFile, passwordInput)
+                                val keyPassParam = keyPasswordInput.takeIf { it.isNotEmpty() }
+                                val success = signer.importKeystore(tempFile, passwordInput, keyPassParam)
                                 tempFile.delete()
 
                                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
@@ -745,6 +801,7 @@ fun CustomSigningSection() {
                                         showImportPasswordDialog = false
                                         pendingKeystoreUri = null
                                         passwordInput = ""
+                                        keyPasswordInput = ""
                                         importError = null
                                         snackbarMessage = Strings.keystoreImportSuccess
                                     } else {
@@ -768,6 +825,7 @@ fun CustomSigningSection() {
                     showImportPasswordDialog = false
                     pendingKeystoreUri = null
                     passwordInput = ""
+                    keyPasswordInput = ""
                     importError = null
                 }) {
                     Text(Strings.cancel)
@@ -894,4 +952,395 @@ fun CustomSigningSection() {
             }
         )
     }
+}
+
+@Composable
+fun SigningSchemeSection() {
+    val context = LocalContext.current
+    val signer = remember { com.webtoapp.core.apkbuilder.JarSigner(context) }
+
+    var options by remember { mutableStateOf(signer.getSigningSchemeOptions()) }
+
+    var v1NameInput by remember { mutableStateOf(options.v1SignerName) }
+    var schemeError by remember { mutableStateOf<String?>(null) }
+    var savedHint by remember { mutableStateOf<String?>(null) }
+
+    val effectiveName = remember(v1NameInput, options) {
+        signer.resolveV1SignerName(v1NameInput)
+    }
+
+    fun persist(next: com.webtoapp.core.apkbuilder.JarSigner.SigningSchemeOptions) {
+        options = signer.setSigningSchemeOptions(next)
+        savedHint = Strings.signingSchemeSaved
+    }
+
+    fun toggleScheme(
+        v1: Boolean = options.v1Enabled,
+        v2: Boolean = options.v2Enabled,
+        v3: Boolean = options.v3Enabled
+    ) {
+        if (!(v1 || v2 || v3)) {
+            schemeError = Strings.signingSchemeAtLeastOne
+            return
+        }
+        schemeError = null
+        persist(options.copy(v1Enabled = v1, v2Enabled = v2, v3Enabled = v3))
+    }
+
+    WtaSection(
+        title = Strings.signingSchemeTitle,
+        headerStyle = WtaSectionHeaderStyle.Quiet
+    ) {
+        WtaStatusBanner(
+            message = Strings.signingSchemeNote,
+            tone = WtaStatusTone.Info
+        )
+
+        WtaSettingCard {
+            WtaToggleRow(
+                title = Strings.signingSchemeV1Title,
+                subtitle = Strings.signingSchemeV1Desc,
+                icon = Icons.Outlined.Layers,
+                checked = options.v1Enabled,
+                onCheckedChange = { toggleScheme(v1 = it) }
+            )
+            WtaSectionDivider()
+            WtaToggleRow(
+                title = Strings.signingSchemeV2Title,
+                subtitle = Strings.signingSchemeV2Desc,
+                icon = Icons.Outlined.Layers,
+                checked = options.v2Enabled,
+                onCheckedChange = { toggleScheme(v2 = it) }
+            )
+            WtaSectionDivider()
+            WtaToggleRow(
+                title = Strings.signingSchemeV3Title,
+                subtitle = Strings.signingSchemeV3Desc,
+                icon = Icons.Outlined.Layers,
+                checked = options.v3Enabled,
+                onCheckedChange = { toggleScheme(v3 = it) }
+            )
+        }
+
+        schemeError?.let { err ->
+            WtaStatusBanner(
+                message = err,
+                tone = WtaStatusTone.Warning
+            )
+        }
+
+        WtaSettingCard {
+            WtaToggleRow(
+                title = Strings.signingSchemeAutoFallbackTitle,
+                subtitle = Strings.signingSchemeAutoFallbackDesc,
+                icon = Icons.Outlined.Restore,
+                checked = options.autoFallback,
+                onCheckedChange = { persist(options.copy(autoFallback = it)) }
+            )
+        }
+
+        AnimatedVisibility(visible = options.v1Enabled) {
+            WtaSettingCard {
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = WtaSpacing.RowHorizontal,
+                        vertical = WtaSpacing.ContentGap
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                ) {
+                    Text(
+                        text = Strings.v1SignerNameTitle,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    OutlinedTextField(
+                        value = v1NameInput,
+                        onValueChange = { input ->
+
+                            v1NameInput = input.take(32)
+                        },
+                        label = { Text(Strings.v1SignerNameLabel) },
+                        singleLine = true,
+                        leadingIcon = { Icon(Icons.Outlined.Badge, null) },
+                        trailingIcon = {
+                            if (v1NameInput.isNotEmpty()) {
+                                IconButton(onClick = {
+                                    v1NameInput = ""
+                                    persist(options.copy(v1SignerName = ""))
+                                }) {
+                                    Icon(Icons.Outlined.Clear, null)
+                                }
+                            }
+                        },
+                        supportingText = {
+                            Text(
+                                text = Strings.v1SignerNameHint,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onFocusEvent { focusState ->
+
+                                if (!focusState.isFocused && v1NameInput != options.v1SignerName) {
+                                    persist(options.copy(v1SignerName = v1NameInput))
+                                }
+                            }
+                    )
+
+                    Text(
+                        text = "${Strings.v1SignerNameAutoPreview}: META-INF/$effectiveName.SF · $effectiveName.RSA",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+
+        savedHint?.let { msg ->
+            WtaStatusBanner(
+                message = msg,
+                tone = WtaStatusTone.Success
+            )
+            LaunchedEffect(msg, options, v1NameInput) {
+                kotlinx.coroutines.delay(2000)
+                savedHint = null
+            }
+        }
+    }
+}
+
+@Composable
+private fun CreateKeystoreDialog(
+    onDismiss: () -> Unit,
+    onCreate: (com.webtoapp.core.apkbuilder.JarSigner.CertificateSpec) -> Unit
+) {
+    var alias by remember { mutableStateOf("key0") }
+    var password by remember { mutableStateOf("") }
+    var commonName by remember { mutableStateOf("") }
+    var organization by remember { mutableStateOf("") }
+    var organizationUnit by remember { mutableStateOf("") }
+    var locality by remember { mutableStateOf("") }
+    var state by remember { mutableStateOf("") }
+    var country by remember { mutableStateOf("") }
+    var validityYears by remember { mutableStateOf("30") }
+    var keySize by remember { mutableStateOf(2048) }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Outlined.AddModerator, null) },
+        title = { Text(Strings.createKeystore) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = Strings.createKeystoreNote,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = alias,
+                    onValueChange = { alias = it; error = null },
+                    label = { Text(Strings.certAlias) },
+                    singleLine = true,
+                    isError = error != null,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it; error = null },
+                    label = { Text(Strings.keystorePassword) },
+                    singleLine = true,
+                    isError = error != null,
+                    visualTransformation = if (passwordVisible)
+                        androidx.compose.ui.text.input.VisualTransformation.None
+                    else
+                        androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                if (passwordVisible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                                null
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = commonName,
+                    onValueChange = { commonName = it },
+                    label = { Text(Strings.certCommonName) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = organization,
+                    onValueChange = { organization = it },
+                    label = { Text(Strings.certOrganization) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = organizationUnit,
+                    onValueChange = { organizationUnit = it },
+                    label = { Text(Strings.certOrganizationUnit) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = locality,
+                        onValueChange = { locality = it },
+                        label = { Text(Strings.certLocality) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = state,
+                        onValueChange = { state = it },
+                        label = { Text(Strings.certState) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = country,
+                        onValueChange = { country = it.take(2).uppercase() },
+                        label = { Text(Strings.certCountry) },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = validityYears,
+                        onValueChange = { input -> validityYears = input.filter { it.isDigit() }.take(3) },
+                        label = { Text(Strings.certValidityYears) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Text(
+                    text = Strings.certKeySize,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(2048, 4096).forEach { size ->
+                        PremiumFilterChip(
+                            selected = keySize == size,
+                            onClick = { keySize = size },
+                            label = { Text("$size") }
+                        )
+                    }
+                }
+                error?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (alias.isBlank() || password.isBlank()) {
+                        error = Strings.certAliasPasswordRequired
+                        return@TextButton
+                    }
+                    onCreate(
+                        com.webtoapp.core.apkbuilder.JarSigner.CertificateSpec(
+                            alias = alias.trim(),
+                            password = password,
+                            commonName = commonName,
+                            organization = organization,
+                            organizationUnit = organizationUnit,
+                            locality = locality,
+                            state = state,
+                            country = country,
+                            validityYears = validityYears.toIntOrNull() ?: 30,
+                            keySize = keySize
+                        )
+                    )
+                }
+            ) {
+                Text(Strings.confirm)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(Strings.cancel) }
+        }
+    )
+}
+
+@Composable
+private fun FingerprintDialog(
+    fingerprints: com.webtoapp.core.apkbuilder.JarSigner.CertificateFingerprints?,
+    onDismiss: () -> Unit,
+    onCopied: () -> Unit
+) {
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Outlined.Fingerprint, null) },
+        title = { Text(Strings.viewFingerprints) },
+        text = {
+            if (fingerprints == null) {
+                Text(Strings.signingTypeAutoGenerated)
+            } else {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    FingerprintRow("MD5", fingerprints.md5) { copyToClipboard(context, "MD5", it); onCopied() }
+                    FingerprintRow("SHA-1", fingerprints.sha1) { copyToClipboard(context, "SHA-1", it); onCopied() }
+                    FingerprintRow("SHA-256", fingerprints.sha256) { copyToClipboard(context, "SHA-256", it); onCopied() }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(Strings.confirm) }
+        }
+    )
+}
+
+@Composable
+private fun FingerprintRow(label: String, value: String, onCopy: (String) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onCopy(value) }
+    ) {
+        Row(
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Icon(
+                Icons.Outlined.ContentCopy,
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+
+private fun copyToClipboard(context: android.content.Context, label: String, text: String) {
+    val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE)
+        as android.content.ClipboardManager
+    clipboard.setPrimaryClip(android.content.ClipData.newPlainText(label, text))
 }

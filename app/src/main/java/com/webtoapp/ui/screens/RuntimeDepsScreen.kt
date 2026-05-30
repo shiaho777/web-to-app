@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -95,6 +97,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RuntimeDepsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
@@ -104,16 +107,14 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
     var phpReady by remember { mutableStateOf(WordPressDependencyManager.isPhpReady(context)) }
     var wpReady by remember { mutableStateOf(WordPressDependencyManager.isWordPressReady(context)) }
     var sqliteReady by remember { mutableStateOf(WordPressDependencyManager.isSqlitePluginReady(context)) }
-    var nodeReady by remember { mutableStateOf(NodeDependencyManager.isNodeReady(context)) }
+    var nodeReady by remember { mutableStateOf(com.webtoapp.core.linux.LocalBuildEnvironment.isNpmReady(context)) }
     var pythonReady by remember { mutableStateOf(PythonDependencyManager.isPythonReady(context)) }
-    var goReady by remember { mutableStateOf(GoDependencyManager.isGoExecLoaderReady(context)) }
+    var goReady by remember { mutableStateOf(GoDependencyManager.isGoToolchainReady(context)) }
 
     var wpCacheSize by remember { mutableLongStateOf(0L) }
     var nodeCacheSize by remember { mutableLongStateOf(0L) }
     var pythonCacheSize by remember { mutableLongStateOf(0L) }
     var goCacheSize by remember { mutableLongStateOf(0L) }
-    var phpCacheSize by remember { mutableLongStateOf(0L) }
-    var sqliteCacheSize by remember { mutableLongStateOf(0L) }
 
     var wpProjectCount by remember { mutableIntStateOf(0) }
     var nodeProjectCount by remember { mutableIntStateOf(0) }
@@ -138,8 +139,6 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             wpCacheSize = WordPressDependencyManager.getCacheSize(context)
-            phpCacheSize = wpCacheSize
-            sqliteCacheSize = wpCacheSize
             nodeCacheSize = NodeDependencyManager.getCacheSize(context)
             pythonCacheSize = PythonDependencyManager.getCacheSize(context)
             goCacheSize = GoDependencyManager.getCacheSize(context)
@@ -177,12 +176,11 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
                 phpReady = WordPressDependencyManager.isPhpReady(context)
                 wpReady = WordPressDependencyManager.isWordPressReady(context)
                 sqliteReady = WordPressDependencyManager.isSqlitePluginReady(context)
-                nodeReady = NodeDependencyManager.isNodeReady(context)
+
+                nodeReady = com.webtoapp.core.linux.LocalBuildEnvironment.isNpmReady(context)
                 pythonReady = PythonDependencyManager.isPythonReady(context)
-                goReady = GoDependencyManager.isGoExecLoaderReady(context)
+                goReady = GoDependencyManager.isGoToolchainReady(context)
                 wpCacheSize = withContext(Dispatchers.IO) { WordPressDependencyManager.getCacheSize(context) }
-                phpCacheSize = wpCacheSize
-                sqliteCacheSize = wpCacheSize
                 nodeCacheSize = withContext(Dispatchers.IO) { NodeDependencyManager.getCacheSize(context) }
                 pythonCacheSize = withContext(Dispatchers.IO) { PythonDependencyManager.getCacheSize(context) }
                 goCacheSize = withContext(Dispatchers.IO) { GoDependencyManager.getCacheSize(context) }
@@ -203,8 +201,6 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
         when (wpDownloadState) {
             is WordPressDependencyManager.DownloadState.Complete -> {
                 wpCacheSize = withContext(Dispatchers.IO) { WordPressDependencyManager.getCacheSize(context) }
-                phpCacheSize = wpCacheSize
-                sqliteCacheSize = wpCacheSize
             }
             is WordPressDependencyManager.DownloadState.Error -> {
                 snackbarHostState.showSnackbar((wpDownloadState as WordPressDependencyManager.DownloadState.Error).message)
@@ -252,8 +248,6 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
                 wpReady = WordPressDependencyManager.isWordPressReady(context)
                 sqliteReady = WordPressDependencyManager.isSqlitePluginReady(context)
                 wpCacheSize = withContext(Dispatchers.IO) { WordPressDependencyManager.getCacheSize(context) }
-                phpCacheSize = wpCacheSize
-                sqliteCacheSize = wpCacheSize
             }
         }
     }
@@ -276,17 +270,16 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
                                 GoDependencyManager.clearCache(context)
                             }
                             wpCacheSize = 0L
-                            phpCacheSize = 0L
-                            sqliteCacheSize = 0L
                             nodeCacheSize = 0L
                             pythonCacheSize = 0L
                             goCacheSize = 0L
-                            phpReady = false
+
+                            phpReady = WordPressDependencyManager.isPhpReady(context)
                             wpReady = false
                             sqliteReady = false
-                            nodeReady = false
+                            nodeReady = com.webtoapp.core.linux.LocalBuildEnvironment.isNpmReady(context)
                             pythonReady = false
-                            goReady = GoDependencyManager.isGoExecLoaderReady(context)
+                            goReady = GoDependencyManager.isGoToolchainReady(context)
                             snackbarHostState.showSnackbar(Strings.depClearDone)
                         }
                     }
@@ -360,10 +353,14 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
                         onInstall = {
                             scope.launch {
                                 isDownloading = true
-                                val success = NodeDependencyManager.downloadNodeRuntime(context)
+
+                                val success = runCatching {
+                                    com.webtoapp.core.linux.LocalBuildEnvironment.ensureInstalled(context)
+                                    true
+                                }.getOrElse { false }
                                 isDownloading = false
                                 if (success) {
-                                    nodeReady = NodeDependencyManager.isNodeReady(context)
+                                    nodeReady = com.webtoapp.core.linux.LocalBuildEnvironment.isNpmReady(context)
                                     nodeCacheSize = withContext(Dispatchers.IO) { NodeDependencyManager.getCacheSize(context) }
                                 }
                             }
@@ -395,7 +392,20 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
                         title = Strings.depGoRuntime,
                         description = Strings.depGoDesc,
                         isReady = goReady,
-                        onInstall = null
+                        onInstall = {
+                            scope.launch {
+                                isDownloading = true
+                                val success = com.webtoapp.core.golang.GoToolchainManager
+                                    .installGoToolchain(context)
+                                isDownloading = false
+                                if (success) {
+                                    goReady = GoDependencyManager.isGoToolchainReady(context)
+                                    goCacheSize = withContext(Dispatchers.IO) {
+                                        GoDependencyManager.getCacheSize(context)
+                                    }
+                                }
+                            }
+                        }
                     )
                 }
             }
@@ -514,9 +524,13 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
                                             sqliteReady = WordPressDependencyManager.isSqlitePluginReady(context)
                                             wpCacheSize = withContext(Dispatchers.IO) { WordPressDependencyManager.getCacheSize(context) }
                                         }
-                                        val nodeSuccess = NodeDependencyManager.downloadNodeRuntime(context)
+
+                                        val nodeSuccess = runCatching {
+                                            com.webtoapp.core.linux.LocalBuildEnvironment.ensureInstalled(context)
+                                            true
+                                        }.getOrElse { false }
                                         if (nodeSuccess) {
-                                            nodeReady = NodeDependencyManager.isNodeReady(context)
+                                            nodeReady = com.webtoapp.core.linux.LocalBuildEnvironment.isNpmReady(context)
                                             nodeCacheSize = withContext(Dispatchers.IO) { NodeDependencyManager.getCacheSize(context) }
                                         }
                                         val pythonSuccess = PythonDependencyManager.downloadPythonRuntime(context)
@@ -524,9 +538,14 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
                                             pythonReady = PythonDependencyManager.isPythonReady(context)
                                             pythonCacheSize = withContext(Dispatchers.IO) { PythonDependencyManager.getCacheSize(context) }
                                         }
+
+                                        val goSuccess = com.webtoapp.core.golang.GoToolchainManager.installGoToolchain(context)
+                                        if (goSuccess) {
+                                            goReady = GoDependencyManager.isGoToolchainReady(context)
+                                            goCacheSize = withContext(Dispatchers.IO) { GoDependencyManager.getCacheSize(context) }
+                                        }
                                         isDownloading = false
-                                        goReady = GoDependencyManager.isGoExecLoaderReady(context)
-                                        if (wpSuccess && nodeSuccess && pythonSuccess) {
+                                        if (wpSuccess && nodeSuccess && pythonSuccess && goSuccess) {
                                             snackbarHostState.showSnackbar(Strings.depAllReady)
                                         }
                                     }
@@ -562,8 +581,6 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
                         nodeCacheSize = nodeCacheSize,
                         pythonCacheSize = pythonCacheSize,
                         goCacheSize = goCacheSize,
-                        phpCacheSize = phpCacheSize,
-                        sqliteCacheSize = sqliteCacheSize,
                         totalSize = totalCacheSize
                     )
 
@@ -573,51 +590,38 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
 
                     var confirmClearTarget by remember { mutableStateOf<String?>(null) }
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        PremiumOutlinedButton(
-                            onClick = { confirmClearTarget = "WordPress" },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(WtaRadius.Control),
-                            enabled = wpCacheSize > 0
-                        ) { Text(Strings.depClearWpCache, maxLines = 1) }
+                    data class CacheChip(
+                        val target: String,
+                        val label: String,
+                        val size: Long
+                    )
 
-                        PremiumOutlinedButton(
-                            onClick = { confirmClearTarget = "Node.js" },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(WtaRadius.Control),
-                            enabled = nodeCacheSize > 0
-                        ) { Text(Strings.depClearNodeCache, maxLines = 1) }
+                    val cacheChips = listOfNotNull(
+                        if (wpCacheSize > 0) CacheChip("WordPress", "WordPress", wpCacheSize) else null,
+                        if (nodeCacheSize > 0) CacheChip("Node.js", "Node.js", nodeCacheSize) else null,
+                        if (pythonCacheSize > 0) CacheChip("Python", "Python", pythonCacheSize) else null,
+                        if (goCacheSize > 0) CacheChip("Go", "Go", goCacheSize) else null,
+                    )
 
-                        PremiumOutlinedButton(
-                            onClick = { confirmClearTarget = "PHP" },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(WtaRadius.Control),
-                            enabled = phpCacheSize > 0
-                        ) { Text(Strings.depClearPhpCache, maxLines = 1) }
-                    }
+                    if (cacheChips.isNotEmpty()) {
 
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        PremiumOutlinedButton(
-                            onClick = { confirmClearTarget = "Python" },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(WtaRadius.Control),
-                            enabled = pythonCacheSize > 0
-                        ) { Text(Strings.depClearPythonCache, maxLines = 1) }
-
-                        PremiumOutlinedButton(
-                            onClick = { confirmClearTarget = "Go" },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(WtaRadius.Control),
-                            enabled = goCacheSize > 0
-                        ) { Text(Strings.depClearGoCache, maxLines = 1) }
-
-                        PremiumOutlinedButton(
-                            onClick = { confirmClearTarget = "SQLite" },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(WtaRadius.Control),
-                            enabled = sqliteCacheSize > 0
-                        ) { Text(Strings.depClearSqliteCache, maxLines = 1) }
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            cacheChips.forEach { chip ->
+                                PremiumOutlinedButton(
+                                    onClick = { confirmClearTarget = chip.target },
+                                    shape = RoundedCornerShape(WtaRadius.Control)
+                                ) {
+                                    Text(
+                                        text = "${chip.label} · ${formatSize(chip.size)}",
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     if (confirmClearTarget != null) {
@@ -629,34 +633,33 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
                                     val target = confirmClearTarget
                                     confirmClearTarget = null
                                     scope.launch {
+
                                         withContext(Dispatchers.IO) {
                                             when (target) {
                                                 "WordPress" -> WordPressDependencyManager.clearCache(context)
                                                 "Node.js" -> NodeDependencyManager.clearCache(context)
-                                                "PHP" -> WordPressDependencyManager.clearCache(context)
                                                 "Python" -> PythonDependencyManager.clearCache(context)
                                                 "Go" -> GoDependencyManager.clearCache(context)
-                                                "SQLite" -> WordPressDependencyManager.clearCache(context)
                                             }
                                         }
                                         when (target) {
                                             "WordPress" -> {
-                                                wpCacheSize = 0L; phpCacheSize = 0L; sqliteCacheSize = 0L
-                                                phpReady = false; wpReady = false; sqliteReady = false
+
+                                                wpCacheSize = 0L
+                                                wpReady = false
+                                                sqliteReady = false
+
+                                                phpReady = WordPressDependencyManager.isPhpReady(context)
                                             }
-                                            "Node.js" -> { nodeCacheSize = 0L; nodeReady = false }
-                                            "PHP" -> {
-                                                wpCacheSize = 0L; phpCacheSize = 0L; sqliteCacheSize = 0L
-                                                phpReady = false; wpReady = false; sqliteReady = false
+                                            "Node.js" -> {
+                                                nodeCacheSize = 0L
+
+                                                nodeReady = com.webtoapp.core.linux.LocalBuildEnvironment.isNpmReady(context)
                                             }
                                             "Python" -> { pythonCacheSize = 0L; pythonReady = false }
                                             "Go" -> {
                                                 goCacheSize = 0L
-                                                goReady = GoDependencyManager.isGoExecLoaderReady(context)
-                                            }
-                                            "SQLite" -> {
-                                                wpCacheSize = 0L; phpCacheSize = 0L; sqliteCacheSize = 0L
-                                                phpReady = false; wpReady = false; sqliteReady = false
+                                                goReady = GoDependencyManager.isGoToolchainReady(context)
                                             }
                                         }
                                     }
@@ -937,22 +940,19 @@ private fun RuntimeItemRow(
 
 private data class ProjectEntry(val name: String, val count: Int, val color: Color)
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun StorageSummary(
     wpCacheSize: Long,
     nodeCacheSize: Long,
     pythonCacheSize: Long,
     goCacheSize: Long,
-    phpCacheSize: Long,
-    sqliteCacheSize: Long,
     totalSize: Long
 ) {
     val wpColor = AppColors.WordPress
     val nodeColor = AppColors.NodeJs
     val pythonColor = AppColors.Python
     val goColor = AppColors.Go
-    val phpColor = AppColors.Php
-    val sqliteColor = AppColors.SQLite
 
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Text(text = Strings.depTotalStorage, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
@@ -984,19 +984,20 @@ private fun StorageSummary(
         }
 
         Spacer(modifier = Modifier.height(8.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            StorageLegendItem("WordPress", wpCacheSize, wpColor)
-            StorageLegendItem("Node.js", nodeCacheSize, nodeColor)
-        }
-        Spacer(modifier = Modifier.height(4.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            StorageLegendItem("Python", pythonCacheSize, pythonColor)
-            StorageLegendItem("Go", goCacheSize, goColor)
-        }
-        Spacer(modifier = Modifier.height(4.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            StorageLegendItem("PHP", phpCacheSize, phpColor)
-            StorageLegendItem("SQLite", sqliteCacheSize, sqliteColor)
+        val legendEntries = listOfNotNull(
+            if (wpCacheSize > 0) Triple("WordPress", wpCacheSize, wpColor) else null,
+            if (nodeCacheSize > 0) Triple("Node.js", nodeCacheSize, nodeColor) else null,
+            if (pythonCacheSize > 0) Triple("Python", pythonCacheSize, pythonColor) else null,
+            if (goCacheSize > 0) Triple("Go", goCacheSize, goColor) else null,
+        )
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            legendEntries.forEach { (label, size, color) ->
+                StorageLegendItem(label, size, color)
+            }
         }
     }
 }

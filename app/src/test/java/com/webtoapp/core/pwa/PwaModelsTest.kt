@@ -5,10 +5,6 @@ import org.junit.Test
 
 class PwaModelsTest {
 
-
-
-
-
     @Test
     fun `maxSizePixels returns Int MAX_VALUE for blank sizes`() {
         val icon = PwaIcon(src = "icon.png", sizes = "")
@@ -51,10 +47,6 @@ class PwaModelsTest {
         assertThat(icon.maxSizePixels).isEqualTo(Int.MAX_VALUE)
     }
 
-
-
-
-
     @Test
     fun `PwaManifest default has empty icons list`() {
         val manifest = PwaManifest()
@@ -70,10 +62,6 @@ class PwaModelsTest {
         assertThat(manifest.themeColor).isNull()
     }
 
-
-
-
-
     @Test
     fun `PwaAnalysisResult default is not PWA`() {
         val result = PwaAnalysisResult()
@@ -88,10 +76,6 @@ class PwaModelsTest {
         assertThat(result.source).isEqualTo(PwaDataSource.MANIFEST)
     }
 
-
-
-
-
     @Test
     fun `PwaDataSource has all expected values`() {
         assertThat(PwaDataSource.values()).asList().containsExactly(
@@ -100,10 +84,6 @@ class PwaModelsTest {
             PwaDataSource.NONE
         )
     }
-
-
-
-
 
     @Test
     fun `PwaAnalysisState Idle is data object`() {

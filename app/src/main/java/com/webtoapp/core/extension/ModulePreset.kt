@@ -6,11 +6,6 @@ import com.google.gson.JsonParser
 import com.webtoapp.core.i18n.Strings
 import java.io.File
 
-
-
-
-
-
 data class ModulePreset(
     val id: String = java.util.UUID.randomUUID().toString(),
     val name: String,
@@ -20,9 +15,6 @@ data class ModulePreset(
     val builtIn: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 )
-
-
-
 
 @SuppressLint("StaticFieldLeak")
 class ModulePresetManager private constructor(private val context: Context) {
@@ -53,15 +45,9 @@ class ModulePresetManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     fun getAllPresets(): List<ModulePreset> {
         return getBuiltInPresets() + getUserPresets()
     }
-
-
-
 
     fun getBuiltInPresets(): List<ModulePreset> = listOf(
         ModulePreset(
@@ -124,9 +110,6 @@ class ModulePresetManager private constructor(private val context: Context) {
         )
     )
 
-
-
-
     fun getUserPresets(): List<ModulePreset> {
         return try {
             if (presetsFile.exists()) {
@@ -161,9 +144,6 @@ class ModulePresetManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     fun savePreset(preset: ModulePreset): Result<ModulePreset> {
         return try {
             val presets = getUserPresets().toMutableList()
@@ -180,9 +160,6 @@ class ModulePresetManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     fun deletePreset(presetId: String): Result<Unit> {
         return try {
             val presets = getUserPresets().filter { it.id != presetId }
@@ -192,9 +169,6 @@ class ModulePresetManager private constructor(private val context: Context) {
             Result.failure(e)
         }
     }
-
-
-
 
     fun createPresetFromSelection(
         name: String,

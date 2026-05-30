@@ -5,30 +5,15 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.UserScript
 import java.io.File
 
-
-
-
-
-
-
-
-
-
 object UserScriptStorage {
 
     private const val TAG = "UserScriptStorage"
 
-
     const val EXTERNAL_STORAGE_THRESHOLD = 2048
-
 
     const val FILE_REF_PREFIX = "FILE_REF:"
 
-
     private const val SCRIPTS_DIR = "user_scripts"
-
-
-
 
     private fun getScriptsDir(context: Context): File {
         val dir = File(context.filesDir, SCRIPTS_DIR)
@@ -36,35 +21,21 @@ object UserScriptStorage {
         return dir
     }
 
-
-
-
-
     private fun generateFileName(appId: Long, scriptName: String): String {
         val key = "${appId}_${scriptName}"
         val hash = key.hashCode().toUInt().toString(16)
         return "script_${appId}_${hash}.js"
     }
 
-
-
-
     fun isFileReference(code: String): Boolean {
         return code.startsWith(FILE_REF_PREFIX)
     }
-
-
-
 
     private fun extractFileName(code: String): String? {
         return if (isFileReference(code)) {
             code.removePrefix(FILE_REF_PREFIX).trim()
         } else null
     }
-
-
-
-
 
     fun saveScriptToFile(context: Context, appId: Long, scriptName: String, code: String): String {
         return try {
@@ -79,11 +50,6 @@ object UserScriptStorage {
             code
         }
     }
-
-
-
-
-
 
     fun loadScriptCode(context: Context, code: String): String {
         if (!isFileReference(code)) return code
@@ -105,19 +71,11 @@ object UserScriptStorage {
         }
     }
 
-
-
-
-
     fun ensureCodeLoaded(context: Context, script: UserScript): UserScript {
         if (!isFileReference(script.code)) return script
         val actualCode = loadScriptCode(context, script.code)
         return script.copy(code = actualCode)
     }
-
-
-
-
 
     fun externalizeScripts(context: Context, appId: Long, scripts: List<UserScript>): List<UserScript> {
         return scripts.map { script ->
@@ -131,17 +89,9 @@ object UserScriptStorage {
         }
     }
 
-
-
-
-
     fun internalizeScripts(context: Context, scripts: List<UserScript>): List<UserScript> {
         return scripts.map { ensureCodeLoaded(context, it) }
     }
-
-
-
-
 
     fun deleteScriptsForApp(context: Context, appId: Long) {
         try {
@@ -155,9 +105,6 @@ object UserScriptStorage {
             AppLogger.e(TAG, "Failed to delete scripts for app $appId", e)
         }
     }
-
-
-
 
     fun cleanupOrphanedFiles(context: Context, activeAppIds: Set<Long>) {
         try {

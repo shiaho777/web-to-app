@@ -22,16 +22,6 @@ import com.webtoapp.core.i18n.Strings
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 
-
-
-
-
-
-
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 class DownloadNotificationManager(private val context: Context) {
 
@@ -52,9 +42,6 @@ class DownloadNotificationManager(private val context: Context) {
             }
         }
 
-
-
-
         fun release() {
             synchronized(this) {
                 INSTANCE?.cleanup()
@@ -63,17 +50,14 @@ class DownloadNotificationManager(private val context: Context) {
         }
     }
 
-
     private val customNotificationIdCounter = AtomicInteger(0)
 
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     private val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     private val handler = Handler(Looper.getMainLooper())
 
-
     private val activeDownloads = mutableMapOf<Long, DownloadInfo>()
     private var progressRunnable: Runnable? = null
-
 
     private var downloadReceiver: BroadcastReceiver? = null
 
@@ -81,9 +65,6 @@ class DownloadNotificationManager(private val context: Context) {
         createNotificationChannel()
         registerDownloadReceiver()
     }
-
-
-
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -98,9 +79,6 @@ class DownloadNotificationManager(private val context: Context) {
             notificationManager.createNotificationChannel(channel)
         }
     }
-
-
-
 
     private fun registerDownloadReceiver() {
         if (downloadReceiver != null) return
@@ -125,9 +103,6 @@ class DownloadNotificationManager(private val context: Context) {
         )
     }
 
-
-
-
     fun trackDownload(downloadId: Long, fileName: String, mimeType: String) {
         activeDownloads[downloadId] = DownloadInfo(
             id = downloadId,
@@ -138,15 +113,10 @@ class DownloadNotificationManager(private val context: Context) {
             downloadedBytes = 0
         )
 
-
         showProgressNotification()
-
 
         startProgressPolling()
     }
-
-
-
 
     private fun startProgressPolling() {
         progressRunnable?.let { handler.removeCallbacks(it) }
@@ -161,16 +131,12 @@ class DownloadNotificationManager(private val context: Context) {
                 updateDownloadProgress()
                 showProgressNotification()
 
-
                 handler.postDelayed(this, 500)
             }
         }
 
         handler.post(progressRunnable!!)
     }
-
-
-
 
     private fun updateDownloadProgress() {
         val idsToRemove = mutableListOf<Long>()
@@ -198,7 +164,6 @@ class DownloadNotificationManager(private val context: Context) {
                             0
                         }
 
-
                         when (status) {
                             DownloadManager.STATUS_SUCCESSFUL,
                             DownloadManager.STATUS_FAILED -> {
@@ -213,12 +178,8 @@ class DownloadNotificationManager(private val context: Context) {
             }
         }
 
-
         idsToRemove.forEach { activeDownloads.remove(it) }
     }
-
-
-
 
     private fun showProgressNotification() {
         if (activeDownloads.isEmpty()) {
@@ -235,7 +196,6 @@ class DownloadNotificationManager(private val context: Context) {
         } else {
             Strings.notifDownloadingMultipleFiles.format(downloadingCount)
         }
-
 
         val totalDownloaded = activeDownloads.values.sumOf { it.downloadedBytes }
         val totalSize = activeDownloads.values.sumOf { it.totalBytes }
@@ -257,9 +217,6 @@ class DownloadNotificationManager(private val context: Context) {
 
         notificationManager.notify(PROGRESS_NOTIFICATION_ID, notification)
     }
-
-
-
 
     private fun handleDownloadComplete(downloadId: Long) {
         val info = activeDownloads.remove(downloadId)
@@ -292,14 +249,10 @@ class DownloadNotificationManager(private val context: Context) {
             }
         }
 
-
         if (activeDownloads.isEmpty()) {
             notificationManager.cancel(PROGRESS_NOTIFICATION_ID)
         }
     }
-
-
-
 
     private fun showDownloadCompleteNotification(
         downloadId: Long,
@@ -308,7 +261,6 @@ class DownloadNotificationManager(private val context: Context) {
         mimeType: String
     ) {
         val notificationId = (COMPLETE_NOTIFICATION_ID_BASE + downloadId).toInt()
-
 
         val openIntent = createOpenFileIntent(localUri, mimeType)
         val openPendingIntent = if (openIntent != null) {
@@ -319,7 +271,6 @@ class DownloadNotificationManager(private val context: Context) {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
         } else null
-
 
         val shareIntent = createShareFileIntent(localUri, mimeType)
         val sharePendingIntent = if (shareIntent != null) {
@@ -338,7 +289,6 @@ class DownloadNotificationManager(private val context: Context) {
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
-
         if (openPendingIntent != null) {
             builder.setContentIntent(openPendingIntent)
             builder.addAction(
@@ -347,7 +297,6 @@ class DownloadNotificationManager(private val context: Context) {
                 openPendingIntent
             )
         }
-
 
         if (sharePendingIntent != null) {
             builder.addAction(
@@ -359,9 +308,6 @@ class DownloadNotificationManager(private val context: Context) {
 
         notificationManager.notify(notificationId, builder.build())
     }
-
-
-
 
     private fun showDownloadFailedNotification(downloadId: Long, fileName: String) {
         val notificationId = (COMPLETE_NOTIFICATION_ID_BASE + downloadId).toInt()
@@ -375,9 +321,6 @@ class DownloadNotificationManager(private val context: Context) {
 
         notificationManager.notify(notificationId, builder.build())
     }
-
-
-
 
     private fun createOpenFileIntent(localUri: String?, mimeType: String): Intent? {
         if (localUri == null) return null
@@ -400,9 +343,6 @@ class DownloadNotificationManager(private val context: Context) {
         }
     }
 
-
-
-
     private fun createShareFileIntent(localUri: String?, mimeType: String): Intent? {
         if (localUri == null) return null
         return try {
@@ -424,10 +364,6 @@ class DownloadNotificationManager(private val context: Context) {
         }
     }
 
-
-
-
-
     fun showIndeterminateProgress(fileName: String): Int {
         val notificationId = CUSTOM_NOTIFICATION_ID_BASE + customNotificationIdCounter.incrementAndGet()
 
@@ -445,9 +381,6 @@ class DownloadNotificationManager(private val context: Context) {
         return notificationId
     }
 
-
-
-
     fun updateProgress(notificationId: Int, fileName: String, progress: Int) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.stat_sys_download)
@@ -461,9 +394,6 @@ class DownloadNotificationManager(private val context: Context) {
 
         notificationManager.notify(notificationId, notification)
     }
-
-
-
 
     fun showMediaSaveComplete(
         fileName: String,
@@ -500,9 +430,6 @@ class DownloadNotificationManager(private val context: Context) {
         notificationManager.notify(notificationId, notification)
     }
 
-
-
-
     fun showSaveComplete(
         fileName: String,
         filePath: String,
@@ -535,9 +462,6 @@ class DownloadNotificationManager(private val context: Context) {
         notificationManager.notify(notificationId, builder.build())
     }
 
-
-
-
     fun showSaveFailed(fileName: String, reason: String, progressNotificationId: Int) {
         notificationManager.cancel(progressNotificationId)
 
@@ -554,15 +478,9 @@ class DownloadNotificationManager(private val context: Context) {
         notificationManager.notify(notificationId, notification)
     }
 
-
-
-
     private fun formatFileSize(bytes: Long): String {
         return android.text.format.Formatter.formatFileSize(context, bytes)
     }
-
-
-
 
     private fun cleanup() {
         try {
@@ -578,9 +496,6 @@ class DownloadNotificationManager(private val context: Context) {
             AppLogger.e(TAG, "Cleanup failed", e)
         }
     }
-
-
-
 
     data class DownloadInfo(
         val id: Long,

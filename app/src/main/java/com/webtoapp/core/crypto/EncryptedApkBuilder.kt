@@ -9,10 +9,6 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import javax.crypto.SecretKey
 
-
-
-
-
 class EncryptedApkBuilder(private val context: Context) {
 
     companion object {
@@ -21,9 +17,6 @@ class EncryptedApkBuilder(private val context: Context) {
 
     private val gson = com.webtoapp.util.GsonProvider.gson
     private val keyManager = KeyManager.getInstance(context)
-
-
-
 
     fun writeEncryptedConfig(
         zipOut: ZipOutputStream,
@@ -45,9 +38,6 @@ class EncryptedApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
     fun writeEncryptedHtml(
         zipOut: ZipOutputStream,
         htmlContent: String,
@@ -67,10 +57,6 @@ class EncryptedApkBuilder(private val context: Context) {
             writeEntryDeflated(zipOut, "assets/$fullPath", htmlContent.toByteArray(Charsets.UTF_8))
         }
     }
-
-
-
-
 
     fun writeEncryptedMedia(
         zipOut: ZipOutputStream,
@@ -96,9 +82,6 @@ class EncryptedApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
     fun writeEncryptedSplash(
         zipOut: ZipOutputStream,
         splashData: ByteArray,
@@ -120,9 +103,6 @@ class EncryptedApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
     fun writeEncryptedBgm(
         zipOut: ZipOutputStream,
         bgmData: ByteArray,
@@ -143,7 +123,6 @@ class EncryptedApkBuilder(private val context: Context) {
             writeEntryStored(zipOut, "assets/$bgmPath", bgmData)
         }
 
-
         if (lrcData != null && lrcData.lines.isNotEmpty()) {
             val lrcContent = convertLrcDataToString(lrcData)
             val lrcPath = "bgm/bgm_$index.lrc"
@@ -158,10 +137,6 @@ class EncryptedApkBuilder(private val context: Context) {
         }
     }
 
-
-
-
-
     fun generateEncryptionKey(packageName: String, encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED): SecretKey {
         val signatureHash = keyManager.getSignatureHashForBuild()
         return keyManager.generateKeyForPackage(
@@ -170,11 +145,6 @@ class EncryptedApkBuilder(private val context: Context) {
         )
     }
 
-
-
-
-
-
     fun writeEncryptionMetadata(
         zipOut: ZipOutputStream,
         encryptionConfig: EncryptionConfig,
@@ -182,10 +152,6 @@ class EncryptedApkBuilder(private val context: Context) {
         signatureHash: ByteArray? = null
     ) {
         if (!encryptionConfig.enabled) return
-
-
-
-
 
         val metadata = EncryptionMetadata(
             version = CryptoConstants.ENCRYPTED_HEADER_VERSION,
@@ -200,9 +166,6 @@ class EncryptedApkBuilder(private val context: Context) {
         AppLogger.d(TAG, "写入加密元数据 (signatureHash 已省略, usesCustomPassword=${metadata.usesCustomPassword})")
     }
 
-
-
-
     private fun writeEntryDeflated(zipOut: ZipOutputStream, name: String, data: ByteArray) {
         val entry = ZipEntry(name)
         entry.method = ZipEntry.DEFLATED
@@ -210,9 +173,6 @@ class EncryptedApkBuilder(private val context: Context) {
         zipOut.write(data)
         zipOut.closeEntry()
     }
-
-
-
 
     private fun writeEntryStored(zipOut: ZipOutputStream, name: String, data: ByteArray) {
         val entry = ZipEntry(name)
@@ -228,9 +188,6 @@ class EncryptedApkBuilder(private val context: Context) {
         zipOut.write(data)
         zipOut.closeEntry()
     }
-
-
-
 
     private fun convertLrcDataToString(lrcData: LrcData): String {
         val sb = StringBuilder()
@@ -249,10 +206,6 @@ class EncryptedApkBuilder(private val context: Context) {
         return sb.toString()
     }
 }
-
-
-
-
 
 data class EncryptionMetadata(
     val version: Int,

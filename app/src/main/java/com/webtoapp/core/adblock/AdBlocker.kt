@@ -11,21 +11,7 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 class AdBlocker {
-
 
     enum class ResourceType {
         DOCUMENT, SUBDOCUMENT, SCRIPT, STYLESHEET, IMAGE, FONT,
@@ -49,11 +35,6 @@ class AdBlocker {
         }
     }
 
-
-
-
-
-
     private data class NetworkFilter(
         val pattern: String,
         val regex: Regex?,
@@ -74,9 +55,6 @@ class AdBlocker {
         val rawRule: String = ""
     )
 
-
-
-
     data class CosmeticFilter(
         val selector: String,
         val isException: Boolean,
@@ -91,7 +69,6 @@ class AdBlocker {
         private val HOST_EXTRACT_REGEX = Regex("^(?:https?://)?([^/:]+)")
         private val WHITESPACE_REGEX = Regex("\\s+")
         private val ABP_SEPARATOR_REGEX = Regex("[^\\w%.\\-]")
-
 
         private val SAFELIST_HOSTS = setOf(
 
@@ -151,15 +128,12 @@ class AdBlocker {
             "www.taobao.com", "www.tmall.com", "www.jd.com",
             "www.amazon.com", "www.ebay.com",
 
-
-
             "aliexpress.com", "aliexpress.ru", "aliexpress-media.com",
             "alicdn.com",
 
             "wss.pusher.com", "realtime-cloud.ably.io",
             "sockjs.pusher.com"
         )
-
 
         fun getPopularHostsSources() = listOf(
 
@@ -286,7 +260,6 @@ class AdBlocker {
         @Deprecated("Use getPopularHostsSources() instead for i18n support")
         val POPULAR_HOSTS_SOURCES get() = getPopularHostsSources()
 
-
         private val DEFAULT_AD_HOSTS = setOf(
 
             "googleadservices.com", "googlesyndication.com", "doubleclick.net",
@@ -391,9 +364,6 @@ class AdBlocker {
             "revive-adserver.com", "adzerk.net", "buysellads.com"
         )
 
-
-
-
         private val DEFAULT_NETWORK_RULES = listOf(
 
             "||pagead2.googlesyndication.com^",
@@ -494,7 +464,6 @@ class AdBlocker {
             "||pippio.com^",
             "||hb.yahoo.net^",
 
-
             "||cdn.cookielaw.org^\$third-party",
             "||consent.cookiebot.com^\$third-party",
             "||consent.cookiefirst.com^\$third-party",
@@ -537,8 +506,6 @@ class AdBlocker {
             "@@||firebaseapp.com^",
             "@@||firebase.googleapis.com^"
         )
-
-
 
         private val DEFAULT_COSMETIC_RULES = listOf(
 
@@ -643,7 +610,6 @@ class AdBlocker {
             "##img[src*=\"facebook.com/tr?\"]"
         )
 
-
         private val TYPE_MODIFIERS = mapOf(
             "script" to ResourceType.SCRIPT,
             "stylesheet" to ResourceType.STYLESHEET,
@@ -662,8 +628,6 @@ class AdBlocker {
             "other" to ResourceType.OTHER
         )
 
-
-
         private val FIRST_PARTY_AD_PATH_PATTERNS = listOf(
             "/ads/", "/ad/", "/adserver/", "/adservice/",
             "/adsense/", "/admanager/", "/adx/",
@@ -678,13 +642,10 @@ class AdBlocker {
             "/ad_unit/", "/adunit/"
         )
 
-
         private val FIRST_PARTY_AD_PATH_REGEX: Regex by lazy {
             val escaped = FIRST_PARTY_AD_PATH_PATTERNS.joinToString("|") { Regex.escape(it) }
             Regex(escaped, RegexOption.IGNORE_CASE)
         }
-
-
 
         private val ESSENTIAL_RESOURCE_PATTERNS = listOf(
 
@@ -705,13 +666,10 @@ class AdBlocker {
             "/sw.js", "/service-worker", "/manifest.json", "/manifest.webmanifest"
         )
 
-
         private val ESSENTIAL_RESOURCE_REGEX: Regex by lazy {
             val escaped = ESSENTIAL_RESOURCE_PATTERNS.joinToString("|") { Regex.escape(it) }
             Regex(escaped, RegexOption.IGNORE_CASE)
         }
-
-
 
         val EMPTY_BYTES = ByteArray(0)
         val BLOCKED_JS_BYTES = "/* blocked */".toByteArray()
@@ -719,12 +677,11 @@ class AdBlocker {
         val BLOCKED_JSON_BYTES = "{}".toByteArray()
     }
 
-
-
     private val exactHosts = mutableSetOf<String>()
     private val hostsFileHosts = mutableSetOf<String>()
     private val enabledHostsSources = mutableSetOf<String>()
 
+    private val sourceRuleCounts = mutableMapOf<String, Int>()
 
     private val networkBlockFilters = mutableListOf<NetworkFilter>()
     private val networkExceptionFilters = mutableListOf<NetworkFilter>()
@@ -733,23 +690,17 @@ class AdBlocker {
 
     private val exceptionAnchorDomainIndex = HashMap<String, MutableList<Int>>()
 
-
-
     @Suppress("serial")
     private val blockResultCache = object : LinkedHashMap<Int, Boolean>(256, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, Boolean>?): Boolean = size > 512
     }
 
-
     private val cosmeticBlockFilters = mutableListOf<CosmeticFilter>()
     private val cosmeticExceptionFilters = mutableListOf<CosmeticFilter>()
-
 
     private val scriptletRules = mutableListOf<Pair<Set<String>, String>>()
 
     private var enabled = false
-
-
 
     fun setEnabled(enable: Boolean) {
         enabled = enable
@@ -757,15 +708,11 @@ class AdBlocker {
     }
     fun isEnabled(): Boolean = enabled
 
-
     fun invalidateCache() {
         synchronized(blockResultCache) { blockResultCache.clear() }
     }
 
-
-
-
-    fun initialize(customRules: List<String> = emptyList(), useDefaultRules: Boolean = true) {
+    fun initialize(customRules: List<String> = emptyList(), useDefaultRules: Boolean = false) {
         exactHosts.clear()
         networkBlockFilters.clear()
         networkExceptionFilters.clear()
@@ -787,15 +734,6 @@ class AdBlocker {
         customRules.forEach { parseAndAddRule(it) }
     }
 
-
-
-
-
-
-
-
-
-
     fun shouldBlock(
         url: String,
         pageHost: String? = null,
@@ -807,22 +745,16 @@ class AdBlocker {
         val lowerUrl = url.lowercase()
         val urlHost = extractHost(lowerUrl)
 
-
         if (urlHost != null && matchesHostSet(urlHost, SAFELIST_HOSTS)) return false
 
         val resType = resourceType?.let { ResourceType.fromWebViewType(it) } ?: ResourceType.OTHER
 
-
         if (resType == ResourceType.DOCUMENT) return false
-
-
 
         if (resType == ResourceType.FONT) return false
         if (resType == ResourceType.STYLESHEET && !isThirdParty) return false
 
-
         if (ESSENTIAL_RESOURCE_REGEX.containsMatchIn(lowerUrl)) return false
-
 
         val cacheKey = lowerUrl.hashCode() xor (if (isThirdParty) 0x9e3779b9.toInt() else 0)
         synchronized(blockResultCache) {
@@ -835,9 +767,6 @@ class AdBlocker {
         }
         return result
     }
-
-
-
 
     private fun shouldBlockInternal(
         lowerUrl: String,
@@ -856,16 +785,13 @@ class AdBlocker {
             return true
         }
 
-
         if (matchesAnyNetworkFilter(lowerUrl, urlHost, pageHost, resType, isThirdParty, networkExceptionFilters)) {
             return false
         }
 
-
         if (matchesAnyNetworkFilter(lowerUrl, urlHost, pageHost, resType, isThirdParty, networkBlockFilters)) {
             return true
         }
-
 
         if (!isThirdParty && FIRST_PARTY_AD_PATH_REGEX.containsMatchIn(lowerUrl)) {
             if (resType == ResourceType.SCRIPT || resType == ResourceType.XMLHTTPREQUEST ||
@@ -879,16 +805,11 @@ class AdBlocker {
         return false
     }
 
-
-
     fun shouldBlock(request: WebResourceRequest): Boolean {
         val url = request.url.toString()
         val resType = inferResourceTypeFromRequest(request)
         return shouldBlock(url, resourceType = resType)
     }
-
-
-
 
     private fun inferResourceTypeFromRequest(request: WebResourceRequest): String {
         val accept = request.requestHeaders?.get("Accept") ?: ""
@@ -918,27 +839,19 @@ class AdBlocker {
         }
     }
 
-
-
-
-
     fun getCosmeticFilterCss(pageHost: String): String {
         if (!enabled) return ""
-
 
         val exceptionSelectors = cosmeticExceptionFilters
             .filter { matchesCosmeticDomain(it, pageHost) }
             .map { it.selector }
             .toSet()
 
-
         val selectors = cosmeticBlockFilters
             .filter { matchesCosmeticDomain(it, pageHost) && it.selector !in exceptionSelectors }
             .map { it.selector }
             .distinct()
             .toMutableList()
-
-
 
         val builtInSelectors = listOf(
 
@@ -985,15 +898,11 @@ class AdBlocker {
 
         if (selectors.isEmpty()) return ""
 
-
         val batchSize = 50
         return selectors.chunked(batchSize).joinToString("\n") { batch ->
             batch.joinToString(",\n") + " { display: none !important; visibility: hidden !important; height: 0 !important; min-height: 0 !important; overflow: hidden !important; }"
         }
     }
-
-
-
 
     fun getAntiAdblockScript(pageHost: String): String {
         if (!enabled) return ""
@@ -1014,24 +923,15 @@ class AdBlocker {
             sb.appendLine(scriptlet)
         }
 
-
         sb.appendLine(UNIVERSAL_ANTI_ADBLOCK_SCRIPT)
 
         sb.appendLine("})();")
         return sb.toString()
     }
 
-
-
-
-
     fun createEmptyResponse(): WebResourceResponse {
         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(EMPTY_BYTES))
     }
-
-
-
-
 
     fun createEmptyResponse(resourceType: String): WebResourceResponse {
         return when (resourceType) {
@@ -1047,11 +947,12 @@ class AdBlocker {
         }
     }
 
-
     fun getRuleCount(): Int = exactHosts.size + hostsFileHosts.size +
         networkBlockFilters.size + networkExceptionFilters.size +
         cosmeticBlockFilters.size + cosmeticExceptionFilters.size
     fun getHostsFileRuleCount(): Int = hostsFileHosts.size
+
+    fun getImportedHostsRuleCount(): Int = sourceRuleCounts.values.sum()
     fun getNetworkFilterCount(): Int = networkBlockFilters.size + networkExceptionFilters.size
     fun getCosmeticFilterCount(): Int = cosmeticBlockFilters.size + cosmeticExceptionFilters.size
 
@@ -1064,7 +965,6 @@ class AdBlocker {
         "cosmeticException" to cosmeticExceptionFilters.size,
         "scriptlets" to scriptletRules.size
     )
-
 
     fun addRule(rule: String) {
         parseAndAddRule(rule)
@@ -1095,21 +995,16 @@ class AdBlocker {
     fun clearHostsFileRules() {
         hostsFileHosts.clear()
         enabledHostsSources.clear()
+        sourceRuleCounts.clear()
         synchronized(blockResultCache) { blockResultCache.clear() }
     }
 
     fun getEnabledHostsSources(): Set<String> = enabledHostsSources.toSet()
     fun isHostsSourceEnabled(url: String): Boolean = enabledHostsSources.contains(url)
 
-
-
-
-
-
     private fun parseAndAddRule(rawRule: String) {
         val rule = rawRule.trim()
         if (rule.isEmpty() || rule.startsWith("!") || rule.startsWith("[")) return
-
 
         val cosmeticExIdx = rule.indexOf("#@#")
         val cosmeticIdx = if (cosmeticExIdx < 0) rule.indexOf("##") else -1
@@ -1123,7 +1018,6 @@ class AdBlocker {
             return
         }
 
-
         if (rule.contains("#%#//scriptlet(")) {
             parseScriptletRule(rule)
             return
@@ -1133,7 +1027,6 @@ class AdBlocker {
             parseScriptletRule(rule)
             return
         }
-
 
         parseNetworkFilter(rule)
     }
@@ -1162,7 +1055,6 @@ class AdBlocker {
         val domainPart = if (domainEnd > 0) rule.substring(0, domainEnd) else ""
         val (domains, _) = parseDomainList(domainPart)
 
-
         val scriptletMatch = Regex("(?:scriptlet|js)\\((.+)\\)").find(rule) ?: return
         val args = scriptletMatch.groupValues[1].split(",").map { it.trim().removeSurrounding("'").removeSurrounding("\"") }
         if (args.isEmpty()) return
@@ -1178,7 +1070,6 @@ class AdBlocker {
         val isException = raw.startsWith("@@")
         if (isException) raw = raw.removePrefix("@@")
 
-
         val dollarIdx = raw.lastIndexOf('$')
         var patternPart = raw
         var modifierPart = ""
@@ -1190,7 +1081,6 @@ class AdBlocker {
                 modifierPart = raw.substring(dollarIdx + 1)
             }
         }
-
 
         var thirdPartyOnly = false
         var firstPartyOnly = false
@@ -1224,14 +1114,12 @@ class AdBlocker {
             }
         }
 
-
         var anchorDomain: String? = null
         if (patternPart.startsWith("||")) {
             val domainEnd = patternPart.indexOfFirst { it == '^' || it == '/' || it == '*' || it == '$' }
             anchorDomain = if (domainEnd > 2) patternPart.substring(2, domainEnd).lowercase()
             else patternPart.removePrefix("||").removeSuffix("^").removeSuffix("$").lowercase()
         }
-
 
         if (anchorDomain != null && !anchorDomain.contains('*') &&
             (patternPart == "||$anchorDomain^" || patternPart == "||$anchorDomain" ||
@@ -1240,7 +1128,6 @@ class AdBlocker {
             exactHosts.add(anchorDomain)
             return
         }
-
 
         val regex = compileAbpPattern(patternPart, matchCase)
 
@@ -1276,13 +1163,6 @@ class AdBlocker {
         }
     }
 
-
-
-
-
-
-
-
     private fun compileAbpPattern(pattern: String, matchCase: Boolean): Regex? {
         if (pattern.isEmpty()) return null
         return try {
@@ -1292,7 +1172,6 @@ class AdBlocker {
                 val options = if (matchCase) emptySet() else setOf(RegexOption.IGNORE_CASE)
                 return Regex(p.substring(1, p.length - 1), options)
             }
-
 
             p = p.replace("\\", "\\\\")
                 .replace(".", "\\.")
@@ -1304,7 +1183,6 @@ class AdBlocker {
                 .replace(")", "\\)")
                 .replace("[", "\\[")
                 .replace("]", "\\]")
-
 
             p = p.replace("||", "^(?:https?|wss?)://(?:[^/]*\\.)?")
 
@@ -1335,8 +1213,6 @@ class AdBlocker {
         return include to exclude
     }
 
-
-
     private fun matchesAnyNetworkFilter(
         url: String,
         urlHost: String?,
@@ -1351,7 +1227,6 @@ class AdBlocker {
             filters === networkExceptionFilters -> exceptionAnchorDomainIndex
             else -> null
         }
-
 
         if (urlHost != null && domainIndex != null) {
             var domain: String = urlHost
@@ -1371,7 +1246,6 @@ class AdBlocker {
                 }
             }
         }
-
 
         for (filter in filters) {
             if (filter.anchorDomain != null && domainIndex != null) continue
@@ -1394,10 +1268,8 @@ class AdBlocker {
         if (filter.allowedTypes != null && resType !in filter.allowedTypes) return false
         if (resType in filter.excludedTypes) return false
 
-
         if (filter.thirdPartyOnly && !isThirdParty) return false
         if (filter.firstPartyOnly && isThirdParty) return false
-
 
         if (filter.domains.isNotEmpty() && pageHost != null) {
             if (!filter.domains.any { pageHost == it || pageHost.endsWith(".$it") }) return false
@@ -1406,20 +1278,15 @@ class AdBlocker {
             if (filter.excludedDomains.any { pageHost == it || pageHost.endsWith(".$it") }) return false
         }
 
-
         val regex = filter.regex ?: return false
         return regex.containsMatchIn(url)
     }
-
-
 
     private fun matchesCosmeticDomain(filter: CosmeticFilter, pageHost: String): Boolean {
         if (filter.excludedDomains.any { pageHost == it || pageHost.endsWith(".$it") }) return false
         if (filter.domains.isEmpty()) return true
         return filter.domains.any { pageHost == it || pageHost.endsWith(".$it") }
     }
-
-
 
     private fun matchesHostSet(host: String, hostSet: Set<String>): Boolean {
         var domain = host
@@ -1429,11 +1296,6 @@ class AdBlocker {
         }
         return hostSet.contains(domain)
     }
-
-
-
-
-
 
     private fun extractHost(url: String): String? {
 
@@ -1445,12 +1307,6 @@ class AdBlocker {
             HOST_EXTRACT_REGEX.find(url)?.groupValues?.getOrNull(1)?.lowercase()
         }
     }
-
-
-
-
-
-
 
     private fun generateScriptlet(name: String, args: List<String>): String {
         return when (name) {
@@ -1652,8 +1508,6 @@ class AdBlocker {
         }
     }
 
-
-
     suspend fun importHostsFromFile(context: Context, uri: Uri): Result<Int> = withContext(Dispatchers.IO) {
         try {
             val inputStream = context.contentResolver.openInputStream(uri)
@@ -1689,7 +1543,6 @@ class AdBlocker {
                 content = connection.inputStream.use { it.bufferedReader().readText() }
                 connection.disconnect()
 
-
                 if (context != null) {
                     AdBlockFilterCache.cacheUrlContent(context, url, content)
                 }
@@ -1697,15 +1550,12 @@ class AdBlocker {
 
             val count = parseFilterContent(content)
             enabledHostsSources.add(url)
+            sourceRuleCounts[url] = count
             Result.success(count)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
-
-
-
-
 
     private fun parseFilterContent(content: String): Int {
         var count = 0
@@ -1774,9 +1624,14 @@ class AdBlocker {
 
             val file = File(context.filesDir, "adblock_hosts.txt")
             file.writeText(hostsFileHosts.joinToString("\n"))
-            val sourcesFile = File(context.filesDir, "adblock_hosts_sources.txt")
-            sourcesFile.writeText(enabledHostsSources.joinToString("\n"))
 
+            val sourcesFile = File(context.filesDir, "adblock_hosts_sources.txt")
+            sourcesFile.writeText(
+                enabledHostsSources.joinToString("\n") { url ->
+                    val count = sourceRuleCounts[url] ?: 0
+                    "$url\t$count"
+                }
+            )
 
             saveCompiledStateToCache(context)
 
@@ -1792,27 +1647,43 @@ class AdBlocker {
             val cachedState = AdBlockFilterCache.loadCompiledState(context)
             if (cachedState != null) {
                 restoreFromCompiledState(cachedState)
+
+                hydrateSourceRuleCountsFromDisk(context)
                 com.webtoapp.core.logging.AppLogger.i("AdBlocker",
                     "Restored from compiled cache: ${getRuleCount()} rules")
                 return@withContext Result.success(hostsFileHosts.size)
             }
 
-
             val file = File(context.filesDir, "adblock_hosts.txt")
             if (file.exists()) {
                 hostsFileHosts.addAll(file.readLines().filter { it.isNotBlank() })
             }
-            val sourcesFile = File(context.filesDir, "adblock_hosts_sources.txt")
-            if (sourcesFile.exists()) {
-                enabledHostsSources.addAll(sourcesFile.readLines().filter { it.isNotBlank() })
-            }
+            hydrateSourceRuleCountsFromDisk(context)
             Result.success(hostsFileHosts.size)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
+    private fun hydrateSourceRuleCountsFromDisk(context: Context) {
+        val sourcesFile = File(context.filesDir, "adblock_hosts_sources.txt")
+        if (!sourcesFile.exists()) return
+        sourcesFile.readLines()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .forEach { line ->
+                val tab = line.indexOf('\t')
+                if (tab > 0) {
+                    val url = line.substring(0, tab)
+                    val count = line.substring(tab + 1).toIntOrNull() ?: 0
+                    enabledHostsSources.add(url)
+                    sourceRuleCounts[url] = count
+                } else {
 
+                    enabledHostsSources.add(line)
+                }
+            }
+    }
 
     private suspend fun saveCompiledStateToCache(context: Context) {
         val blockPatterns = networkBlockFilters.map { it.toSerializable() }
@@ -1835,6 +1706,7 @@ class AdBlocker {
         exactHosts.clear()
         hostsFileHosts.clear()
         enabledHostsSources.clear()
+        sourceRuleCounts.clear()
         networkBlockFilters.clear()
         networkExceptionFilters.clear()
         anchorDomainIndex.clear()
@@ -1847,7 +1719,6 @@ class AdBlocker {
         exactHosts.addAll(state.exactHosts)
         hostsFileHosts.addAll(state.hostsFileHosts)
         enabledHostsSources.addAll(state.enabledSources)
-
 
         state.networkBlockFilters.forEachIndexed { idx, sf ->
             val filter = sf.toNetworkFilter()
@@ -1902,19 +1773,12 @@ class AdBlocker {
     )
 }
 
-
-
-
 private val TRANSPARENT_GIF = byteArrayOf(
     0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00, 0x01, 0x00,
     0x00, 0x00, 0x00, 0x21, 0xF9.toByte(), 0x04, 0x01, 0x00, 0x00, 0x00,
     0x00, 0x2C, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00,
     0x00, 0x02, 0x01, 0x00, 0x00
 )
-
-
-
-
 
 private const val UNIVERSAL_ANTI_ADBLOCK_SCRIPT = """
 // 1. Fake ad element — many detectors create a div with ad classes and check visibility
@@ -2088,9 +1952,6 @@ private const val UNIVERSAL_ANTI_ADBLOCK_SCRIPT = """
     }catch(e){/* XHR/fetch interception failed */}
 })();
 """
-
-
-
 
 data class HostsSource(
     val name: String,

@@ -8,10 +8,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 class EngineManager private constructor(private val context: Context) {
 
@@ -28,21 +24,12 @@ class EngineManager private constructor(private val context: Context) {
 
     val fileManager = EngineFileManager(context)
 
-
     private val _selectedEngine = MutableStateFlow(EngineType.SYSTEM_WEBVIEW)
     val selectedEngine: StateFlow<EngineType> = _selectedEngine.asStateFlow()
-
-
-
 
     fun selectEngine(type: EngineType) {
         _selectedEngine.value = type
     }
-
-
-
-
-
 
     fun createEngine(type: EngineType, adBlocker: AdBlocker): BrowserEngine {
         return when (type) {
@@ -51,18 +38,12 @@ class EngineManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     fun isEngineAvailable(type: EngineType): Boolean {
         return when (type) {
             EngineType.SYSTEM_WEBVIEW -> true
             EngineType.GECKOVIEW -> fileManager.isEngineDownloaded(EngineType.GECKOVIEW)
         }
     }
-
-
-
 
     fun getEngineStatus(type: EngineType): EngineStatus {
         return when {
@@ -75,31 +56,20 @@ class EngineManager private constructor(private val context: Context) {
         }
     }
 
-
-
-
     fun getEngineSize(type: EngineType): Long {
         return fileManager.getEngineSize(type)
     }
-
-
-
 
     fun deleteEngine(type: EngineType): Boolean {
         return fileManager.deleteEngineFiles(type)
     }
 }
 
-
-
-
 sealed class EngineStatus {
 
     data object READY : EngineStatus()
 
-
     data class DOWNLOADED(val version: String) : EngineStatus()
-
 
     data object NOT_DOWNLOADED : EngineStatus()
 }

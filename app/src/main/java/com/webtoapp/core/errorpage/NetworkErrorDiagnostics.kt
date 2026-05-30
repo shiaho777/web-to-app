@@ -1,46 +1,24 @@
 package com.webtoapp.core.errorpage
 
-/**
- * 网络错误诊断库。
- *
- * 目的：把 WebView 抛出的晦涩错误（EADDRNOTAVAIL / ECONNREFUSED / ERR_NAME_NOT_RESOLVED …）
- * 映射成终端用户能看懂的"原因 + 建议动作"，在错误页上直接展示。
- *
- * 设计原则：
- *  - 只匹配高价值、有操作建议的错误；匹配不到时返回 null，交还给调用方决定 fallback 行为。
- *  - 纯函数，无状态、无 IO、不访问 Context，便于复用 / 单测。
- *  - 三语文案内联维护，和 [ErrorPageManager] 的 I18nStrings 保持同样的风格，避免跨 Strings 文件的强耦合。
- */
 object NetworkErrorDiagnostics {
 
-    /**
-     * 一条诊断结果。所有字段对 UI 都是可展示文本，已经过语言解析，不含占位符。
-     */
     data class Diagnostic(
-        /** 短标题，用作错误页 H1 / 卡片标题。 */
+
         val title: String,
-        /** 一句话原因解释，给普通用户看。 */
+
         val cause: String,
-        /** 1~4 条可执行建议。先验方案在前。 */
+
         val suggestions: List<String>,
-        /** 建议后续行为：重试是否有意义。 */
+
         val retryable: Boolean,
-        /** 严重程度：info / warning / error。决定 UI 高亮颜色。 */
+
         val severity: Severity,
-        /** 内部命中的诊断键，便于日志与埋点。 */
+
         val key: String,
     )
 
     enum class Severity { INFO, WARNING, ERROR }
 
-    /**
-     * 主入口。
-     *
-     * @param rawDescription WebResourceError.description 原文（不要预先 normalize，errno 会被丢失）。
-     * @param errorCode WebView 错误码（负数 Android 常量）或 HTTP 状态码。
-     * @param failedUrl 失败 URL，用来辅助判断是否访问 loopback / 私网。
-     * @param language [com.webtoapp.core.i18n.AppLanguage.name] 字符串，取值 CHINESE / ENGLISH / ARABIC。
-     */
     fun diagnose(
         rawDescription: String?,
         errorCode: Int,
@@ -49,20 +27,12 @@ object NetworkErrorDiagnostics {
     ): Diagnostic? {
         val desc = (rawDescription ?: "").uppercase()
         val url = failedUrl ?: ""
-        val host = runCatching {
-            android.net.Uri.parse(url).host?.lowercase()
-        }.getOrNull() ?: ""
+        val host = extractHost(url)
         val isLoopback = host == "127.0.0.1" || host == "localhost" || host == "::1" ||
             host.startsWith("127.") || host.endsWith(".localhost")
-        val isPrivate = host.startsWith("10.") ||
-            host.startsWith("192.168.") ||
-            (host.startsWith("172.") && host.substringBefore(".", "").let { _ ->
-                val parts = host.split(".")
-                parts.size >= 2 && parts[1].toIntOrNull()?.let { it in 16..31 } == true
-            })
+        val isPrivate = isPrivateIpv4(host)
         val s = strings(language)
 
-        // ========= 1. 地址不可绑定：EADDRNOTAVAIL（用户截图里那条） =========
         if (desc.contains("EADDRNOTAVAIL") || desc.contains("CANNOT ASSIGN REQUESTED ADDRESS")) {
             return Diagnostic(
                 title = s.eaddrnotavailTitle,
@@ -79,7 +49,6 @@ object NetworkErrorDiagnostics {
             )
         }
 
-        // ========= 2. 端口被占：EADDRINUSE =========
         if (desc.contains("EADDRINUSE") || desc.contains("ADDRESS ALREADY IN USE")) {
             return Diagnostic(
                 title = s.eaddrinuseTitle,
@@ -91,7 +60,6 @@ object NetworkErrorDiagnostics {
             )
         }
 
-        // ========= 3. 连接被拒：ECONNREFUSED / ERR_CONNECTION_REFUSED =========
         val connectionRefused = desc.contains("ECONNREFUSED") ||
             desc.contains("CONNECTION REFUSED") ||
             desc.contains("CONNECTION_REFUSED") ||
@@ -122,7 +90,6 @@ object NetworkErrorDiagnostics {
             }
         }
 
-        // ========= 4. 网络不可达 / 主机不可达 =========
         if (desc.contains("ENETUNREACH") || desc.contains("NETWORK IS UNREACHABLE") ||
             desc.contains("ERR_NETWORK_CHANGED") || desc.contains("ERR_INTERNET_DISCONNECTED")
         ) {
@@ -149,7 +116,6 @@ object NetworkErrorDiagnostics {
             )
         }
 
-        // ========= 5. 超时 =========
         if (desc.contains("ETIMEDOUT") || desc.contains("TIMED_OUT") ||
             desc.contains("ERR_TIMED_OUT") || desc.contains("ERR_CONNECTION_TIMED_OUT") ||
             errorCode == android.webkit.WebViewClient.ERROR_TIMEOUT
@@ -164,7 +130,6 @@ object NetworkErrorDiagnostics {
             )
         }
 
-        // ========= 6. DNS 解析失败 =========
         if (desc.contains("ERR_NAME_NOT_RESOLVED") || desc.contains("ERR_NAME_RESOLUTION_FAILED") ||
             errorCode == android.webkit.WebViewClient.ERROR_HOST_LOOKUP
         ) {
@@ -178,7 +143,6 @@ object NetworkErrorDiagnostics {
             )
         }
 
-        // ========= 7. Cleartext 被阻 =========
         if (desc.contains("CLEARTEXT") || desc.contains("ERR_CLEARTEXT_NOT_PERMITTED")) {
             return Diagnostic(
                 title = s.cleartextTitle,
@@ -190,7 +154,6 @@ object NetworkErrorDiagnostics {
             )
         }
 
-        // ========= 8. SSL 握手失败 =========
         if (desc.contains("ERR_SSL") || desc.contains("SSL_ERROR") ||
             errorCode == android.webkit.WebViewClient.ERROR_FAILED_SSL_HANDSHAKE
         ) {
@@ -204,13 +167,36 @@ object NetworkErrorDiagnostics {
             )
         }
 
-        // 其它错误：交给调用方默认处理
         return null
     }
 
-    // ------------------------------------------------------------------
-    // i18n
-    // ------------------------------------------------------------------
+    private fun extractHost(rawUrl: String): String {
+        if (rawUrl.isBlank()) return ""
+        val schemeStripped = rawUrl.substringAfter("://", rawUrl)
+        val noUserInfo = schemeStripped.substringAfter("@", schemeStripped)
+        val hostPortPath = noUserInfo
+            .substringBefore('/')
+            .substringBefore('?')
+            .substringBefore('#')
+        if (hostPortPath.isEmpty()) return ""
+
+        if (hostPortPath.startsWith("[")) {
+            val end = hostPortPath.indexOf(']')
+            if (end > 0) return hostPortPath.substring(1, end).lowercase()
+            return ""
+        }
+
+        return hostPortPath.substringBeforeLast(':', hostPortPath).lowercase()
+    }
+
+    private fun isPrivateIpv4(host: String): Boolean {
+        if (host.startsWith("10.") || host.startsWith("192.168.")) return true
+        if (!host.startsWith("172.")) return false
+        val parts = host.split('.')
+        if (parts.size < 2) return false
+        val second = parts[1].toIntOrNull() ?: return false
+        return second in 16..31
+    }
 
     private data class Strings(
         val eaddrnotavailTitle: String,
@@ -252,9 +238,10 @@ object NetworkErrorDiagnostics {
     )
 
     private fun strings(language: String): Strings = when (language.uppercase()) {
-        "ENGLISH" -> english()
+        "CHINESE" -> chinese()
         "ARABIC" -> arabic()
-        else -> chinese()
+
+        else -> english()
     }
 
     private fun chinese() = Strings(

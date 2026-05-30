@@ -40,19 +40,6 @@ import com.webtoapp.ui.design.WtaMotion
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.rememberHapticClick
 
-/**
- * A card that can be expanded and collapsed by tapping its header.
- *
- * Visual changes from the original:
- *  - Icon sits inside a rounded plate (matches WtaIconTitle's treatment).
- *  - Header tint is onSurface, not primary, so it does not shout.
- *  - Chevron uses the rounded Material icon and rotates with the settle
- *    spring.
- *  - Taps produce a haptic click.
- *  - Expand/collapse uses the shared Wta card motion.
- *  - Remembers its state across recomposition via rememberSaveable so
- *    configuration changes do not collapse open sections.
- */
 @Composable
 fun CollapsibleConfigCard(
     title: String,

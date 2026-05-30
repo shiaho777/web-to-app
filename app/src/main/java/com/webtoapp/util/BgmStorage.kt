@@ -10,32 +10,20 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
 
-
-
-
-
 object BgmStorage {
 
     private const val TAG = "BgmStorage"
 
-
     private const val BGM_DIR = "bgm"
 
-
     private const val ASSETS_BGM_DIR = "bgm"
-
 
     private val LRC_TIME_REGEX = Regex("""\[(\d{2}):(\d{2})\.(\d{2,3})](.*)""")
     private val LRC_META_REGEX = Regex("""\[(ti|ar|al):(.*)]""", RegexOption.IGNORE_CASE)
 
-
     private val SAFE_NAME_REGEX = Regex("[^a-zA-Z0-9\u4e00-\u9fa5_-]")
 
-
     private val IMAGE_COVER_EXTENSIONS = setOf("png", "jpg", "jpeg")
-
-
-
 
     fun getBgmDir(context: Context): File {
         val dir = File(context.filesDir, BGM_DIR)
@@ -45,24 +33,15 @@ object BgmStorage {
         return dir
     }
 
-
-
-
     fun scanAllBgm(context: Context): List<BgmItem> {
         val result = mutableListOf<BgmItem>()
 
-
         result.addAll(scanAssetsBgm(context))
-
 
         result.addAll(scanUserBgm(context))
 
         return result
     }
-
-
-
-
 
     fun scanAssetsBgm(context: Context): List<BgmItem> {
         val result = mutableListOf<BgmItem>()
@@ -71,19 +50,16 @@ object BgmStorage {
             val assetManager = context.assets
             val files = assetManager.list(ASSETS_BGM_DIR) ?: return emptyList()
 
-
             val mp3Files = files.filter { it.lowercase().endsWith(".mp3") }
 
             for (mp3File in mp3Files) {
                 val nameWithoutExt = mp3File.substringBeforeLast(".")
-
 
                 val coverFile = files.find { file ->
                     val fileNameWithoutExt = file.substringBeforeLast(".")
                     val ext = file.substringAfterLast(".").lowercase()
                     fileNameWithoutExt == nameWithoutExt && ext in IMAGE_COVER_EXTENSIONS
                 }
-
 
                 val bgmPath = "asset:///$ASSETS_BGM_DIR/$mp3File"
                 val userLrcFile = File(getBgmDir(context), "$nameWithoutExt.lrc")
@@ -115,10 +91,6 @@ object BgmStorage {
         return result
     }
 
-
-
-
-
     fun scanUserBgm(context: Context): List<BgmItem> {
         val result = mutableListOf<BgmItem>()
         val bgmDir = getBgmDir(context)
@@ -127,24 +99,20 @@ object BgmStorage {
 
         val files = bgmDir.listFiles() ?: return emptyList()
 
-
         val mp3Files = files.filter { it.extension.lowercase() == "mp3" }
 
         for (mp3File in mp3Files) {
             val nameWithoutExt = mp3File.nameWithoutExtension
-
 
             val coverFile = files.find { file ->
                 file.nameWithoutExtension == nameWithoutExt &&
                 file.extension.lowercase() in IMAGE_COVER_EXTENSIONS
             }
 
-
             val lrcFile = files.find { file ->
                 file.nameWithoutExtension == nameWithoutExt &&
                 file.extension.lowercase() == "lrc"
             }
-
 
             val lrcData = lrcFile?.let { loadLrcFromFile(it) }
 
@@ -160,16 +128,9 @@ object BgmStorage {
         return result
     }
 
-
-
-
-
-
-
     fun saveBgm(context: Context, uri: Uri, customName: String? = null): String? {
         return try {
             val bgmDir = getBgmDir(context)
-
 
             val safeName = if (customName.isNullOrBlank()) {
                 "bgm_${UUID.randomUUID()}"
@@ -178,7 +139,6 @@ object BgmStorage {
             }
             val fileName = "${safeName}.mp3"
             val destFile = File(bgmDir, fileName)
-
 
             val inputStream = context.contentResolver.openInputStream(uri)
             if (inputStream == null) {
@@ -193,7 +153,6 @@ object BgmStorage {
                 }
             }
 
-
             if (!destFile.exists() || destFile.length() == 0L) {
                 AppLogger.e(TAG, "音频文件保存失败或为空: ${destFile.absolutePath}")
                 return null
@@ -206,16 +165,9 @@ object BgmStorage {
         }
     }
 
-
-
-
-
-
-
     fun saveCover(context: Context, uri: Uri, bgmName: String): String? {
         return try {
             val bgmDir = getBgmDir(context)
-
 
             val mimeType = context.contentResolver.getType(uri)
             val extension = when {
@@ -239,16 +191,12 @@ object BgmStorage {
         }
     }
 
-
-
-
     fun deleteBgm(context: Context, bgmItem: BgmItem): Boolean {
         if (bgmItem.isAsset) return false
 
         return try {
 
             File(bgmItem.path).delete()
-
 
             bgmItem.coverPath?.let { File(it).delete() }
 
@@ -258,9 +206,6 @@ object BgmStorage {
             false
         }
     }
-
-
-
 
     fun getBgmInputStream(context: Context, path: String): java.io.InputStream? {
         return try {
@@ -275,9 +220,6 @@ object BgmStorage {
             null
         }
     }
-
-
-
 
     fun copyBgmToDir(context: Context, bgmItem: BgmItem, destDir: File): File? {
         return try {
@@ -296,21 +238,13 @@ object BgmStorage {
         }
     }
 
-
-
-
-
-
-
     fun saveLrc(context: Context, bgmPath: String, lrcData: LrcData): Boolean {
         return try {
 
             val lrcPath = getLrcPathForBgm(context, bgmPath)
             val lrcFile = File(lrcPath)
 
-
             lrcFile.parentFile?.mkdirs()
-
 
             val lrcContent = buildString {
                 appendLine("[ti:${lrcData.title ?: ""}]")
@@ -335,9 +269,6 @@ object BgmStorage {
         }
     }
 
-
-
-
     fun loadLrcFromFile(lrcFile: File): LrcData? {
         return try {
             if (!lrcFile.exists()) return null
@@ -348,9 +279,6 @@ object BgmStorage {
         }
     }
 
-
-
-
     fun loadLrcFromAssets(context: Context, assetPath: String): LrcData? {
         return try {
             val text = context.assets.open(assetPath).bufferedReader().readText()
@@ -360,9 +288,6 @@ object BgmStorage {
             null
         }
     }
-
-
-
 
     private fun parseLrcText(text: String): LrcData? {
         val lines = mutableListOf<LrcLine>()
@@ -384,7 +309,6 @@ object BgmStorage {
                 return@forEach
             }
 
-
             timeRegex.find(line)?.let { match ->
                 val minutes = match.groupValues[1].toLongOrNull() ?: 0
                 val seconds = match.groupValues[2].toLongOrNull() ?: 0
@@ -400,7 +324,6 @@ object BgmStorage {
             }
         }
 
-
         for (i in 0 until lines.size - 1) {
             lines[i] = lines[i].copy(endTime = lines[i + 1].startTime)
         }
@@ -409,9 +332,6 @@ object BgmStorage {
             LrcData(lines = lines, title = title, artist = artist, album = album)
         } else null
     }
-
-
-
 
     fun getLrcPathForBgm(context: Context, bgmPath: String): String {
         return if (bgmPath.startsWith("asset:///")) {
@@ -426,16 +346,10 @@ object BgmStorage {
         }
     }
 
-
-
-
     fun hasLrc(context: Context, bgmPath: String): Boolean {
         val lrcPath = getLrcPathForBgm(context, bgmPath)
         return File(lrcPath).exists()
     }
-
-
-
 
     fun loadLrc(context: Context, bgmPath: String): LrcData? {
         val lrcPath = getLrcPathForBgm(context, bgmPath)

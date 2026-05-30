@@ -15,22 +15,6 @@ import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
-
-/**
- * Lightweight in-process HTTP proxy that bridges WebView traffic to an upstream
- * SOCKS5 proxy. WebView's built-in proxy override does not reliably support the
- * `socks5://` scheme on many Android System WebView builds, so we expose a local
- * HTTP proxy on 127.0.0.1 instead and have it forward every request through a
- * manually performed SOCKS5 handshake (with optional username/password auth).
- *
- * Design goals:
- *   - Fully self-contained (no extra dependency)
- *   - Handles both HTTPS via CONNECT tunneling and plain HTTP via request
- *     line rewriting
- *   - Singleton because Android WebView's proxy override is process-global
- *   - Idempotent on repeated start with the same upstream
- *   - Daemon threads so the bridge never blocks app exit
- */
 object LocalHttpToSocksBridge {
 
     private const val TAG = "LocalHttpToSocksBridge"
@@ -52,7 +36,6 @@ object LocalHttpToSocksBridge {
     @Volatile private var running: Boolean = false
     @Volatile private var upstream: Upstream? = null
     @Volatile private var listenPort: Int = 0
-
 
     @Synchronized
     fun start(upstream: Upstream): Int {
@@ -97,7 +80,6 @@ object LocalHttpToSocksBridge {
         }
     }
 
-
     @Synchronized
     fun stop() {
         if (!running && serverSocket == null) return
@@ -105,11 +87,9 @@ object LocalHttpToSocksBridge {
         stopInternal()
     }
 
-
     fun getListenPort(): Int = listenPort
 
     fun isRunning(): Boolean = running
-
 
     private fun stopInternal() {
         running = false
@@ -121,7 +101,6 @@ object LocalHttpToSocksBridge {
         listenPort = 0
         upstream = null
     }
-
 
     private fun acceptLoop(socket: ServerSocket) {
         while (running) {
@@ -146,7 +125,6 @@ object LocalHttpToSocksBridge {
             }
         }
     }
-
 
     private fun handleClient(client: Socket) {
         try {
@@ -193,7 +171,6 @@ object LocalHttpToSocksBridge {
         }
     }
 
-
     private fun handleConnect(
         client: Socket,
         clientOut: OutputStream,
@@ -231,7 +208,6 @@ object LocalHttpToSocksBridge {
 
         bridge(client, target)
     }
-
 
     private fun handleHttpForward(
         client: Socket,
@@ -286,7 +262,6 @@ object LocalHttpToSocksBridge {
         bridge(client, targetSocket)
     }
 
-
     private fun bridge(a: Socket, b: Socket) {
         val ex = executor ?: run { safeClose(a); safeClose(b); return }
         val pump = ex.submit {
@@ -300,7 +275,6 @@ object LocalHttpToSocksBridge {
         safeClose(b)
     }
 
-
     private fun copyStream(from: Socket, to: Socket) {
         try {
             val inp = from.getInputStream()
@@ -313,10 +287,9 @@ object LocalHttpToSocksBridge {
                 out.flush()
             }
         } catch (_: Exception) {
-            // Connection closed; ignore.
+
         }
     }
-
 
     private fun readHttpLine(inp: InputStream): String? {
         val sb = StringBuilder()
@@ -332,7 +305,6 @@ object LocalHttpToSocksBridge {
         }
     }
 
-
     private fun sendStatus(out: OutputStream, code: Int, reason: String) {
         try {
             val msg = "HTTP/1.1 $code $reason\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
@@ -341,17 +313,10 @@ object LocalHttpToSocksBridge {
         } catch (_: Exception) {}
     }
 
-
     private fun safeClose(s: Socket) {
         try { s.close() } catch (_: Exception) {}
     }
 
-
-    /**
-     * Minimal RFC 1928 / RFC 1929 SOCKS5 client. We do not rely on Java's built-in
-     * `Proxy.Type.SOCKS` because its username/password authentication is inconsistent
-     * across JVM/Android versions and it sometimes silently downgrades.
-     */
     object Socks5Connector {
 
         fun connect(
@@ -372,7 +337,6 @@ object LocalHttpToSocksBridge {
                 val out = socket.getOutputStream()
                 val inp = socket.getInputStream()
 
-
                 val supportsAuth = username.isNotEmpty()
                 val methods = if (supportsAuth) byteArrayOf(0x00, 0x02) else byteArrayOf(0x00)
                 out.write(byteArrayOf(0x05.toByte(), methods.size.toByte()) + methods)
@@ -384,7 +348,7 @@ object LocalHttpToSocksBridge {
                     throw IOException("SOCKS5 version mismatch in method reply: ${methodResp[0].toInt() and 0xff}")
                 }
                 when (val chosen = methodResp[1].toInt() and 0xff) {
-                    0x00 -> { /* no auth */ }
+                    0x00 -> {  }
                     0x02 -> {
                         if (!supportsAuth) {
                             throw IOException("SOCKS5 server requires auth but no credentials provided")
@@ -395,23 +359,21 @@ object LocalHttpToSocksBridge {
                     else -> throw IOException("SOCKS5 unsupported auth method: $chosen")
                 }
 
-
                 val hostBytes = targetHost.toByteArray(StandardCharsets.US_ASCII)
                 if (hostBytes.size > 255) {
                     throw IOException("SOCKS5 destination host too long")
                 }
                 val req = ByteArrayOutputStream(7 + hostBytes.size)
-                req.write(0x05) // version
-                req.write(0x01) // CMD CONNECT
-                req.write(0x00) // RSV
-                req.write(0x03) // ATYP DOMAINNAME
+                req.write(0x05)
+                req.write(0x01)
+                req.write(0x00)
+                req.write(0x03)
                 req.write(hostBytes.size)
                 req.write(hostBytes)
                 req.write((targetPort shr 8) and 0xff)
                 req.write(targetPort and 0xff)
                 out.write(req.toByteArray())
                 out.flush()
-
 
                 val head = ByteArray(4)
                 readFully(inp, head)
@@ -433,9 +395,8 @@ object LocalHttpToSocksBridge {
                     }
                     else -> throw IOException("SOCKS5 unknown ATYP in reply: $atyp")
                 }
-                val skipBuf = ByteArray(skipLen + 2) // address + port
+                val skipBuf = ByteArray(skipLen + 2)
                 readFully(inp, skipBuf)
-
 
                 socket.soTimeout = 0
                 return socket
@@ -444,7 +405,6 @@ object LocalHttpToSocksBridge {
                 throw e
             }
         }
-
 
         private fun performUserPassAuth(
             inp: InputStream,
@@ -477,7 +437,6 @@ object LocalHttpToSocksBridge {
             }
         }
 
-
         private fun connectErrorMessage(rep: Int): String = when (rep) {
             0x01 -> "general SOCKS server failure"
             0x02 -> "connection not allowed by ruleset"
@@ -489,7 +448,6 @@ object LocalHttpToSocksBridge {
             0x08 -> "address type not supported"
             else -> "unknown ($rep)"
         }
-
 
         private fun readFully(inp: InputStream, buf: ByteArray) {
             var read = 0

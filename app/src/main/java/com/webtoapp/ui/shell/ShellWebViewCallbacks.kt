@@ -21,11 +21,6 @@ private fun isLocalRuntimeShellUrl(url: String?): Boolean {
         url.startsWith("http://localhost:", ignoreCase = true)
 }
 
-
-
-
-
-
 fun createShellWebViewCallbacks(
     context: android.content.Context,
     config: ShellConfig,
@@ -70,18 +65,15 @@ fun createShellWebViewCallbacks(
                 val isLocalRuntimePage = isLocalRuntimeShellUrl(url)
                 updateNavigation(it.canGoBack(), it.canGoForward())
 
-
                 if (config.translateEnabled && !isLocalRuntimePage) {
                     injectTranslateScript(it, config.translateTargetLanguage, config.translateShowButton)
                 }
-
 
                 if (!isLocalRuntimePage) {
                     longPressHandler.injectLongPressEnhancer(it)
                 } else {
                     AppLogger.d("ShellActivity", "Skip Shell onPageFinished enhancements for local runtime page: $url")
                 }
-
 
             }
         }
@@ -178,23 +170,19 @@ fun createShellWebViewCallbacks(
 
         override fun onLongPress(webView: WebView, x: Float, y: Float): Boolean {
 
-
             val hitResult = webView.hitTestResult
             val hitType = hitResult.type
             val isLink = hitType == WebView.HitTestResult.SRC_ANCHOR_TYPE ||
                          hitType == WebView.HitTestResult.ANCHOR_TYPE
 
-
             if (!config.webViewConfig.longPressMenuEnabled) {
                 return isLink
             }
-
 
             if (hitType == WebView.HitTestResult.EDIT_TEXT_TYPE ||
                 hitType == WebView.HitTestResult.UNKNOWN_TYPE) {
                 return false
             }
-
 
             longPressHandler.getLongPressDetails(webView, x, y) { result ->
                 when (result) {
@@ -210,7 +198,6 @@ fun createShellWebViewCallbacks(
                     }
                 }
             }
-
 
             return when (hitType) {
                 WebView.HitTestResult.IMAGE_TYPE,

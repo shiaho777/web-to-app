@@ -26,10 +26,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
 
-
-
-
-
 class LongPressHandler(
     private val context: Context,
     private val scope: CoroutineScope
@@ -41,9 +37,6 @@ class LongPressHandler(
         private val VIDEO_EXTENSIONS = setOf(".mp4", ".webm", ".ogg", ".mov", ".avi", ".mkv", ".m3u8")
     }
 
-
-
-
     sealed class LongPressResult {
         data class Image(val url: String) : LongPressResult()
         data class Video(val url: String) : LongPressResult()
@@ -52,10 +45,6 @@ class LongPressHandler(
         object Text : LongPressResult()
         object None : LongPressResult()
     }
-
-
-
-
 
     fun injectLongPressEnhancer(webView: WebView) {
         val js = """
@@ -137,9 +126,6 @@ class LongPressHandler(
         webView.evaluateJavascript(js, null)
     }
 
-
-
-
     fun parseLongPressResult(webView: WebView): LongPressResult {
         val hitResult = webView.hitTestResult
         val type = hitResult.type
@@ -171,23 +157,9 @@ class LongPressHandler(
         }
     }
 
-
-
-
-
-
-
-
-
-
-
-
     fun getLongPressDetails(webView: WebView, x: Float, y: Float, callback: (LongPressResult) -> Unit) {
 
         val scale = webView.scale
-
-
-
 
         val pageX = x / scale
         val pageY = y / scale
@@ -406,18 +378,12 @@ class LongPressHandler(
         }
     }
 
-
-
-
     fun copyToClipboard(text: String, label: String = "链接") {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val clip = ClipData.newPlainText(label, text)
         clipboard.setPrimaryClip(clip)
         Toast.makeText(context, Strings.copiedToClipboard, Toast.LENGTH_SHORT).show()
     }
-
-
-
 
     fun saveImage(imageUrl: String, onResult: (Boolean, String) -> Unit) {
         scope.launch(Dispatchers.IO) {
@@ -449,16 +415,12 @@ class LongPressHandler(
         }
     }
 
-
-
-
     private fun saveBase64Image(dataUrl: String): Uri? {
         val parts = dataUrl.split(",")
         if (parts.size != 2) return null
 
         val meta = parts[0]
         val base64Data = parts[1]
-
 
         val mimeType = DATA_URI_MIME_REGEX.find(meta)?.groupValues?.get(1) ?: "image/png"
         val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "png"
@@ -469,9 +431,6 @@ class LongPressHandler(
 
         return saveBitmapToGallery(bitmap, "IMG_${System.currentTimeMillis()}.$extension", mimeType)
     }
-
-
-
 
     private fun saveUrlImage(imageUrl: String): Uri? {
         val url = URL(imageUrl)
@@ -490,9 +449,6 @@ class LongPressHandler(
 
         return saveBitmapToGallery(bitmap, fileName, mimeType)
     }
-
-
-
 
     private fun saveBitmapToGallery(bitmap: Bitmap, fileName: String, mimeType: String): Uri? {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -531,7 +487,6 @@ class LongPressHandler(
                 bitmap.compress(format, 95, outputStream)
             }
 
-
             val values = ContentValues().apply {
                 put(MediaStore.Images.Media.DATA, file.absolutePath)
                 put(MediaStore.Images.Media.MIME_TYPE, mimeType)
@@ -539,9 +494,6 @@ class LongPressHandler(
             context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
         }
     }
-
-
-
 
     fun downloadVideo(videoUrl: String, onResult: (Boolean, String) -> Unit) {
         if (videoUrl.startsWith("blob:")) {
@@ -574,9 +526,6 @@ class LongPressHandler(
             }
         }
     }
-
-
-
 
     private fun isVideoUrl(url: String): Boolean {
         val lowerUrl = url.lowercase()

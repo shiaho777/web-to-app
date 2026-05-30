@@ -47,22 +47,17 @@ fun WtaScreen(
     snackbarHostState: SnackbarHostState? = null,
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
+
+    titleContent: (@Composable () -> Unit)? = null,
     bottomBar: @Composable () -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
     floatingActionButtonPosition: FabPosition = FabPosition.End,
     contentPadding: PaddingValues = PaddingValues(),
     content: @Composable BoxScope.(PaddingValues) -> Unit
 ) {
-    // A top-bar scroll behaviour is wired through a nestedScroll connection
-    // on the scaffold. When the main content (LazyColumn / Column with
-    // verticalScroll) is scrolled, this drives the `fraction` used to fade
-    // the top bar's background in and to reveal a hairline divider below it.
-    // That gives the screen a subtle "content is behind a frosted panel"
-    // feeling instead of the abrupt transparent-to-content transition.
+
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
-    // Wrap with edge-swipe-to-go-back gesture if a back handler is present.
-    // This gives every screen the iOS-signature interactive pop gesture.
     val screenContent: @Composable () -> Unit = {
         Scaffold(
             modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -87,6 +82,7 @@ fun WtaScreen(
                     subtitle = subtitle,
                     onBack = onBack,
                     actions = actions,
+                    titleContent = titleContent,
                     scrollBehavior = scrollBehavior
                 )
             },
@@ -115,12 +111,6 @@ fun WtaScreen(
     }
 }
 
-/**
- * A refined snackbar that sits slightly above the keyboard / nav bar and uses
- * the inverse surface color so it reads as a system-level notice rather than
- * blending into the content. Action buttons are in onSurfaceVariant-of-inverse
- * (a light tone on a dark pill, matching Apple's toast pattern).
- */
 @Composable
 private fun WtaSnackbar(
     message: String,
@@ -164,12 +154,16 @@ fun WtaTopBar(
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
+
+    titleContent: (@Composable () -> Unit)? = null,
     scrollBehavior: TopAppBarScrollBehavior? = null
 ) {
     Column(modifier = modifier) {
         TopAppBar(
             title = {
-                if (subtitle.isNullOrBlank()) {
+                if (titleContent != null) {
+                    titleContent()
+                } else if (subtitle.isNullOrBlank()) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleLarge,
@@ -205,16 +199,14 @@ fun WtaTopBar(
             },
             actions = actions,
             colors = TopAppBarDefaults.topAppBarColors(
+
                 containerColor = Color.Transparent,
-                scrolledContainerColor = MaterialTheme.colorScheme.background,
+                scrolledContainerColor = Color.Transparent,
                 titleContentColor = MaterialTheme.colorScheme.onSurface
             ),
             scrollBehavior = scrollBehavior
         )
 
-        // Hairline divider that fades in as content scrolls under the top
-        // bar. Implemented as a very thin gradient so it dissolves into the
-        // content rather than reading as a hard line.
         val fraction = scrollBehavior?.state?.overlappedFraction ?: 0f
         val dividerAlpha = (fraction * 2f).coerceIn(0f, 1f)
         if (dividerAlpha > 0f) {

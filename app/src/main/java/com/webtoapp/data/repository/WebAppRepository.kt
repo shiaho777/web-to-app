@@ -9,18 +9,11 @@ import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.dao.AppCategoryDao
 import kotlinx.coroutines.flow.Flow
 
-
-
-
 class WebAppRepository(private val webAppDao: WebAppDao) {
 
     val allWebApps: Flow<List<WebApp>> = webAppDao.getAllWebApps()
 
     val httpWebApps: Flow<List<WebApp>> = webAppDao.getHttpWebApps()
-
-
-
-
 
     val allWebAppSummaries: Flow<List<WebAppSummary>> = webAppDao.getAllWebAppSummaries()
 
@@ -68,19 +61,10 @@ class WebAppRepository(private val webAppDao: WebAppDao) {
         )
     }
 
-
-
-
-
-
-
     suspend fun createWebApps(webApps: List<WebApp>): List<Long> {
         if (webApps.isEmpty()) return emptyList()
         return webAppDao.insertAll(webApps)
     }
-
-
-
 
     suspend fun updateWebApps(webApps: List<WebApp>) {
         if (webApps.isEmpty()) return
@@ -89,49 +73,30 @@ class WebAppRepository(private val webAppDao: WebAppDao) {
         webAppDao.updateAll(updatedApps)
     }
 
-
-
-
     suspend fun deleteWebApps(webApps: List<WebApp>) {
         if (webApps.isEmpty()) return
         webAppDao.deleteAll(webApps)
     }
-
-
-
 
     suspend fun deleteWebAppsByIds(ids: List<Long>) {
         if (ids.isEmpty()) return
         webAppDao.deleteByIds(ids)
     }
 
-
-
-
     suspend fun activateWebApps(ids: List<Long>) {
         if (ids.isEmpty()) return
         webAppDao.updateActivationStatusBatch(ids, true)
     }
-
-
-
 
     suspend fun deactivateWebApps(ids: List<Long>) {
         if (ids.isEmpty()) return
         webAppDao.updateActivationStatusBatch(ids, false)
     }
 
-
-
-
     suspend fun getWebApps(ids: List<Long>): List<WebApp> {
         if (ids.isEmpty()) return emptyList()
         return webAppDao.getWebAppsByIds(ids)
     }
-
-
-
-
 
     suspend fun duplicateWebApp(id: Long, newName: String? = null): Long? {
         val original = webAppDao.getWebAppById(id) ?: return null
@@ -146,33 +111,17 @@ class WebAppRepository(private val webAppDao: WebAppDao) {
         return webAppDao.insert(copy)
     }
 
-
-
-
     fun getActivatedWebApps(): Flow<List<WebApp>> = webAppDao.getActivatedWebApps()
 
-
-
-
     fun getRecentWebApps(limit: Int = 10): Flow<List<WebApp>> = webAppDao.getRecentWebApps(limit)
-
-
-
 
     suspend fun isNameExists(name: String, excludeId: Long? = null): Boolean {
         return webAppDao.countByName(name, excludeId ?: -1) > 0
     }
 
-
-
-
     suspend fun clearCategoryId(categoryId: Long) {
         webAppDao.clearCategoryId(categoryId)
     }
-
-
-
-
 
     @Transaction
     suspend fun deleteCategoryWithCleanup(categoryId: Long, categoryDao: AppCategoryDao) {

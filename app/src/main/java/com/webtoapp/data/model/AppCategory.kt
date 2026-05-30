@@ -3,9 +3,6 @@ package com.webtoapp.data.model
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-
-
-
 @Entity(tableName = "app_categories")
 data class AppCategory(
     @PrimaryKey(autoGenerate = true)

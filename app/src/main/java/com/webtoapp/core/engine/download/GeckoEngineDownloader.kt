@@ -30,7 +30,7 @@ class GeckoEngineDownloader(
         private const val TAG = "GeckoEngineDownloader"
         private const val MAVEN_BASE_URL = "https://maven.mozilla.org/maven2/org/mozilla/geckoview"
 
-        const val DEFAULT_VERSION = "128.0.20240704121409"
+        const val DEFAULT_VERSION = "137.0.20250414091429"
         val SUPPORTED_ABIS = listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
 
         private val ABI_ARTIFACT_MAP = mapOf(
@@ -108,7 +108,8 @@ class GeckoEngineDownloader(
                     }
 
                     _downloadState.value = DownloadState.Downloading(0.85f, "Extracting...")
-                    val extractSuccess = extractSoFromAar(tempAar, targetAbi)
+
+                    val extractSuccess = extractEngineFilesFromAar(tempAar, targetAbi)
                     tempAar.delete()
 
                     if (!extractSuccess) {
@@ -204,32 +205,51 @@ class GeckoEngineDownloader(
         }
     }
 
-    private fun extractSoFromAar(aarFile: File, targetAbi: String): Boolean {
+    private fun extractEngineFilesFromAar(aarFile: File, targetAbi: String): Boolean {
         try {
             val abiDir = fileManager.getAbiDir(EngineType.GECKOVIEW, targetAbi)
-            var extractedCount = 0
-            val prefix = "jni/" + targetAbi + "/"
+            val omniJaDest = fileManager.getOmniJaFile(EngineType.GECKOVIEW)
+            var extractedSoCount = 0
+            var extractedOmniJa = false
+            val soPrefix = "jni/" + targetAbi + "/"
+
+            val omniJaEntry = "assets/" + EngineFileManager.GECKO_OMNI_JA
 
             ZipInputStream(aarFile.inputStream().buffered()).use { zis ->
                 var entry = zis.nextEntry
                 while (entry != null) {
                     val name = entry.name
-                    if (!entry.isDirectory && name.startsWith(prefix) && name.endsWith(".so")) {
+                    if (!entry.isDirectory && name.startsWith(soPrefix) && name.endsWith(".so")) {
                         val soFileName = name.substringAfterLast("/")
                         val destFile = File(abiDir, soFileName)
                         FileOutputStream(destFile).use { out ->
                             zis.copyTo(out)
                         }
                         AppLogger.i(TAG, "Extracted: " + soFileName)
-                        extractedCount++
+                        extractedSoCount++
+                    } else if (!entry.isDirectory && name == omniJaEntry) {
+                        FileOutputStream(omniJaDest).use { out ->
+                            zis.copyTo(out)
+                        }
+                        AppLogger.i(TAG, "Extracted: omni.ja (" + (omniJaDest.length() / 1024) + " KB)")
+                        extractedOmniJa = true
                     }
                     zis.closeEntry()
                     entry = zis.nextEntry
                 }
             }
 
-            AppLogger.i(TAG, "Extracted " + extractedCount + " .so files")
-            return extractedCount > 0
+            AppLogger.i(TAG, "Extracted " + extractedSoCount + " .so files, omni.ja=" + extractedOmniJa)
+
+            if (extractedSoCount == 0) {
+                AppLogger.e(TAG, "No .so extracted from AAR for $targetAbi")
+                return false
+            }
+            if (!extractedOmniJa) {
+                AppLogger.e(TAG, "omni.ja not found in AAR (expected at $omniJaEntry)")
+                return false
+            }
+            return true
         } catch (e: Exception) {
             AppLogger.e(TAG, "Extract AAR failed", e)
             return false

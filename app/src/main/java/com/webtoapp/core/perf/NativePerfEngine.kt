@@ -5,33 +5,6 @@ import android.os.Build
 import android.webkit.WebView
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 object NativePerfEngine {
 
     private const val TAG = "PerfEngine"
@@ -41,7 +14,6 @@ object NativePerfEngine {
 
     @Volatile
     private var isAvailable = false
-
 
     @Volatile
     private var cachedPerfJsStart: String? = null
@@ -72,12 +44,6 @@ object NativePerfEngine {
 
     fun isAvailable(): Boolean = isAvailable
 
-
-
-
-
-
-
     fun getPerfJsStart(): String {
         cachedPerfJsStart?.let { return it }
         return if (isAvailable) {
@@ -91,10 +57,6 @@ object NativePerfEngine {
             getFallbackPerfJsStart()
         }
     }
-
-
-
-
 
     fun getPerfJsEnd(): String {
         cachedPerfJsEnd?.let { return it }
@@ -110,9 +72,6 @@ object NativePerfEngine {
         }
     }
 
-
-
-
     fun getPerfCss(): String {
         cachedPerfCss?.let { return it }
         return if (isAvailable) {
@@ -126,10 +85,6 @@ object NativePerfEngine {
             ""
         }
     }
-
-
-
-
 
     fun injectPerfOptimizations(webView: WebView, phase: Phase) {
         try {
@@ -161,12 +116,6 @@ object NativePerfEngine {
         }
     }
 
-
-
-
-
-
-
     fun extractHost(url: String): String? {
         if (!isAvailable) return extractHostFallback(url)
         return try {
@@ -175,9 +124,6 @@ object NativePerfEngine {
             extractHostFallback(url)
         }
     }
-
-
-
 
     fun getMimeType(path: String): String {
         if (!isAvailable) return getMimeTypeFallback(path)
@@ -188,10 +134,6 @@ object NativePerfEngine {
         }
     }
 
-
-
-
-
     fun checkUrlScheme(url: String): Int {
         if (!isAvailable) return checkUrlSchemeFallback(url)
         return try {
@@ -201,10 +143,6 @@ object NativePerfEngine {
         }
     }
 
-
-
-
-
     fun matchHostSuffix(url: String, suffixes: Array<String>): Int {
         if (!isAvailable) return -1
         return try {
@@ -213,12 +151,6 @@ object NativePerfEngine {
             -1
         }
     }
-
-
-
-
-
-
 
     fun mmapRead(path: String): ByteArray? {
         if (!isAvailable) return null
@@ -230,12 +162,6 @@ object NativePerfEngine {
         }
     }
 
-
-
-
-
-
-
     fun getMemoryInfo(): LongArray? {
         if (!isAvailable) return null
         return try {
@@ -245,42 +171,23 @@ object NativePerfEngine {
         }
     }
 
-
-
-
     fun isLowMemory(): Boolean {
         val info = getMemoryInfo() ?: return false
         return info[1] < info[2]
     }
 
-
-
-
-
-
-
     fun optimizeWebViewSettings(webView: WebView) {
         try {
             webView.settings.apply {
 
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    safeBrowsingEnabled = false
-                }
-
-
                 @Suppress("DEPRECATION")
                 setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH)
-
-
-                cacheMode = android.webkit.WebSettings.LOAD_DEFAULT
-
 
                 if (isLowMemory()) {
                     blockNetworkImage = false
                     loadsImagesAutomatically = true
                     AppLogger.w(TAG, "Low memory mode: image optimization active")
                 }
-
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     offscreenPreRaster = true
@@ -290,12 +197,6 @@ object NativePerfEngine {
             AppLogger.w(TAG, "WebView optimization failed", e)
         }
     }
-
-
-
-
-
-
 
     fun generateBuildTimePerformanceScript(): String {
         val startJs = getPerfJsStart()
@@ -317,8 +218,6 @@ object NativePerfEngine {
             appendLine("</script>")
         }
     }
-
-
 
     private fun extractHostFallback(url: String): String? {
         return try {
@@ -400,8 +299,6 @@ object NativePerfEngine {
         DOCUMENT_START,
         DOCUMENT_END
     }
-
-
 
     private external fun nativeInit(): Boolean
     private external fun nativeGetPerfJsStart(): String

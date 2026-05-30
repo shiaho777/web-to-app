@@ -16,55 +16,28 @@ import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 object NativeNodeEngine {
 
     private const val TAG = "NativeNodeEngine"
 
-
     private const val NODE_VERSION = "18.19.0"
 
-
-
-    // Direct GitHub URLs. For CN users we prefix a proxy at call time, see getNodeDownloadUrls().
     private val NODE_DOWNLOAD_URLS = mapOf(
         "arm64-v8a" to "https://github.com/nicolo-ribaudo/pnpm-prebuilt-android/releases/download/v8.15.4/pnpm-android-arm64",
         "armeabi-v7a" to "https://github.com/nicolo-ribaudo/pnpm-prebuilt-android/releases/download/v8.15.4/pnpm-android-arm"
     )
 
-
-    // npmmirror is reachable globally (including EN/AR locales) and is the canonical
-    // fast source for esbuild prebuilt binaries. No mirror split needed.
     private val ESBUILD_DOWNLOAD_URLS = mapOf(
         "arm64-v8a" to "https://registry.npmmirror.com/@esbuild/android-arm64/-/android-arm64-0.20.0.tgz",
         "armeabi-v7a" to "https://registry.npmmirror.com/@esbuild/android-arm/-/android-arm-0.20.0.tgz",
         "x86_64" to "https://registry.npmmirror.com/@esbuild/android-x64/-/android-x64-0.20.0.tgz"
     )
 
-
-    // CN mirror proxies verified reachable on 2026-05-05.
     private val GITHUB_CN_PROXIES = listOf(
         "https://ghfast.top/",
         "https://gh-proxy.com/"
     )
 
-
-    // Resolve pnpm download URLs with region-aware mirrors. Chinese (zh) locale
-    // gets CN proxies first then a direct GitHub fallback; all other locales,
-    // including English (en) and Arabic (ar), hit GitHub directly.
     private fun getNodeDownloadUrls(abi: String): List<String> {
         val direct = NODE_DOWNLOAD_URLS[abi] ?: return emptyList()
         return if (java.util.Locale.getDefault().language == "zh") {
@@ -75,13 +48,9 @@ object NativeNodeEngine {
         }
     }
 
-
     private val _state = MutableStateFlow<NodeEngineState>(NodeEngineState.NotInitialized)
     val state: StateFlow<NodeEngineState> = _state
     private val installMutex = Mutex()
-
-
-
 
     fun getArchitecture(): String {
         return when {
@@ -93,35 +62,18 @@ object NativeNodeEngine {
         }
     }
 
-
-
-
     private fun getEngineDir(context: Context): File {
         return File(context.filesDir, "node_engine")
     }
-
-
-
 
     fun getEsbuildPath(context: Context): File {
         return File(getEngineDir(context), "esbuild")
     }
 
-
-
-
     fun isAvailable(context: Context): Boolean {
         val esbuild = getEsbuildPath(context)
         return esbuild.exists() && esbuild.canExecute()
     }
-
-
-
-
-
-
-
-
 
     suspend fun initialize(
         context: Context,
@@ -134,12 +86,10 @@ object NativeNodeEngine {
                 val engineDir = getEngineDir(context)
                 engineDir.mkdirs()
 
-
                 if (isAvailable(context)) {
                     _state.value = NodeEngineState.Ready
                     return@withLock Result.success(Unit)
                 }
-
 
                 _state.value = NodeEngineState.Initializing(Strings.nodeDownloadEsbuild, 0.1f)
                 onProgress(Strings.nodeDownloadEsbuild, 0.1f)
@@ -148,7 +98,6 @@ object NativeNodeEngine {
                     _state.value = NodeEngineState.Initializing(Strings.nodeDownloadEsbuild, 0.1f + progress * 0.8f)
                     onProgress(Strings.nodeDownloadEsbuild, 0.1f + progress * 0.8f)
                 }
-
 
                 _state.value = NodeEngineState.Initializing(Strings.nodeVerifyInstall, 0.95f)
                 onProgress(Strings.nodeVerifyInstall, 0.95f)
@@ -171,9 +120,6 @@ object NativeNodeEngine {
         }
     }
 
-
-
-
     private suspend fun downloadEsbuild(
         context: Context,
         onProgress: (Float) -> Unit
@@ -191,9 +137,7 @@ object NativeNodeEngine {
             AppLogger.w(TAG, "下载 esbuild: $url")
             downloadFile(url, tempFile, onProgress)
 
-
             extractEsbuildFromTgz(tempFile, esbuildFile)
-
 
             esbuildFile.setExecutable(true, false)
 
@@ -203,9 +147,6 @@ object NativeNodeEngine {
             tempFile.delete()
         }
     }
-
-
-
 
     private fun extractEsbuildFromTgz(tgzFile: File, outputFile: File) {
 
@@ -225,9 +166,6 @@ object NativeNodeEngine {
         }
         throw Exception(Strings.nodeEsbuildBinaryNotFound)
     }
-
-
-
 
     suspend fun executeEsbuild(
         context: Context,
@@ -257,7 +195,6 @@ object NativeNodeEngine {
         val processBuilder = ProcessBuilder(cmdList)
         processBuilder.directory(workingDir)
         processBuilder.redirectErrorStream(false)
-
 
         val processEnv = processBuilder.environment()
         processEnv["HOME"] = context.filesDir.absolutePath
@@ -303,9 +240,6 @@ object NativeNodeEngine {
         )
     }
 
-
-
-
     private suspend fun downloadFile(
         url: String,
         target: File,
@@ -318,7 +252,6 @@ object NativeNodeEngine {
 
         try {
             conn.connect()
-
 
             var finalConn = conn
             var responseCode = conn.responseCode
@@ -360,9 +293,6 @@ object NativeNodeEngine {
         }
     }
 
-
-
-
     suspend fun reset(context: Context): Result<Unit> = withContext(Dispatchers.IO) {
         try {
             _state.value = NodeEngineState.NotInitialized
@@ -374,18 +304,12 @@ object NativeNodeEngine {
     }
 }
 
-
-
-
 sealed class NodeEngineState {
     object NotInitialized : NodeEngineState()
     data class Initializing(val step: String, val progress: Float) : NodeEngineState()
     object Ready : NodeEngineState()
     data class Error(val message: String) : NodeEngineState()
 }
-
-
-
 
 data class ExecutionResult(
     val exitCode: Int,

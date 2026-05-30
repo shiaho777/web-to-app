@@ -5,15 +5,10 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
-
-
-
-
 class EdgeSwipeRefreshLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null
 ) : SwipeRefreshLayout(context, attrs) {
-
 
     var edgeThresholdDp: Float = 48f
 

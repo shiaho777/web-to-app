@@ -22,30 +22,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.webtoapp.ui.theme.LocalIsDarkTheme
 
-/**
- * Visual tone of a card. Defaults give a clean, flat look suited to information dense
- * screens; use [Elevated] for hero or interactive items to lift them off the background.
- */
 enum class WtaCardTone {
-    /** Default. Flat fill matching surface, subtle outline. */
+
     Surface,
-    /** Slightly raised, uses surfaceContainer + soft shadow. */
+
     Elevated,
-    /** Emphasis. Primary container fill. */
+
     Highlighted,
-    /** For warnings/errors, uses error container. */
+
     Critical
 }
 
-/**
- * Primary card container. Drawn by hand rather than using Material3 Card so we
- * can apply:
- *   - A soft layered shadow instead of Material's single hard drop shadow.
- *   - A crisp 0.5dp inner edge for Surface tone that mimics the iOS "pixel
- *     sharp boundary" effect without tipping into Outlined territory.
- *   - Full control of the press state layer (we rely on [wtaPressScale] for
- *     feedback rather than a ripple).
- */
 @Composable
 fun WtaCard(
     modifier: Modifier = Modifier,

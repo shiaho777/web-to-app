@@ -5,9 +5,6 @@ import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.WebApp
 import kotlinx.coroutines.flow.Flow
 
-
-
-
 data class WebAppSummary(
     val id: Long,
     val name: String,
@@ -27,18 +24,11 @@ data class WebAppStartupCandidate(
     val url: String,
 )
 
-
-
-
 @Dao
 interface WebAppDao {
 
     @Query("SELECT * FROM web_apps ORDER BY updatedAt DESC")
     fun getAllWebApps(): Flow<List<WebApp>>
-
-
-
-
 
     @Query(
         """
@@ -120,64 +110,32 @@ interface WebAppDao {
     @Query("SELECT * FROM web_apps WHERE name LIKE '%' || :query || '%' OR url LIKE '%' || :query || '%'")
     fun searchWebApps(query: String): Flow<List<WebApp>>
 
-
-
-
-
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(webApps: List<WebApp>): List<Long>
-
-
-
 
     @Update
     suspend fun updateAll(webApps: List<WebApp>)
 
-
-
-
     @Delete
     suspend fun deleteAll(webApps: List<WebApp>)
-
-
-
 
     @Query("DELETE FROM web_apps WHERE id IN (:ids)")
     suspend fun deleteByIds(ids: List<Long>)
 
-
-
-
     @Query("UPDATE web_apps SET isActivated = :activated WHERE id IN (:ids)")
     suspend fun updateActivationStatusBatch(ids: List<Long>, activated: Boolean)
-
-
-
 
     @Query("SELECT * FROM web_apps WHERE id IN (:ids)")
     suspend fun getWebAppsByIds(ids: List<Long>): List<WebApp>
 
-
-
-
     @Query("SELECT * FROM web_apps WHERE isActivated = 1 ORDER BY updatedAt DESC")
     fun getActivatedWebApps(): Flow<List<WebApp>>
-
-
-
 
     @Query("SELECT * FROM web_apps ORDER BY updatedAt DESC LIMIT :limit")
     fun getRecentWebApps(limit: Int): Flow<List<WebApp>>
 
-
-
-
     @Query("SELECT COUNT(*) FROM web_apps WHERE name = :name AND id != :excludeId")
     suspend fun countByName(name: String, excludeId: Long): Int
-
-
-
 
     @Query("UPDATE web_apps SET categoryId = NULL WHERE categoryId = :categoryId")
     suspend fun clearCategoryId(categoryId: Long)

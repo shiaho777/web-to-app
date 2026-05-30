@@ -13,16 +13,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 class OfflineManager(private val context: Context) {
 
     companion object {
         private const val TAG = "OfflineManager"
-
 
         private val LARGE_DOWNLOAD_QUALITIES = setOf(
             NetworkQuality.EXCELLENT, NetworkQuality.GOOD
@@ -37,9 +32,6 @@ class OfflineManager(private val context: Context) {
             }
         }
 
-
-
-
         fun release() {
             synchronized(this) {
                 instance?.unregister()
@@ -48,17 +40,11 @@ class OfflineManager(private val context: Context) {
         }
     }
 
-
-
-
     enum class NetworkState {
         ONLINE,
         OFFLINE,
         UNKNOWN
     }
-
-
-
 
     enum class NetworkType {
         WIFI,
@@ -67,9 +53,6 @@ class OfflineManager(private val context: Context) {
         NONE,
         UNKNOWN
     }
-
-
-
 
     enum class NetworkQuality {
         EXCELLENT,
@@ -97,22 +80,13 @@ class OfflineManager(private val context: Context) {
         registerNetworkCallback()
     }
 
-
-
-
     fun isNetworkAvailable(): Boolean {
         return _networkState.value == NetworkState.ONLINE
     }
 
-
-
-
     fun getCurrentNetworkType(): NetworkType {
         return _networkType.value
     }
-
-
-
 
     private fun updateNetworkState() {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -133,9 +107,6 @@ class OfflineManager(private val context: Context) {
             _networkType.value = NetworkType.NONE
         }
     }
-
-
-
 
     private fun registerNetworkCallback() {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
@@ -170,9 +141,6 @@ class OfflineManager(private val context: Context) {
         }
     }
 
-
-
-
     fun unregister() {
         networkCallback?.let { callback ->
             try {
@@ -184,9 +152,6 @@ class OfflineManager(private val context: Context) {
         }
         networkCallback = null
     }
-
-
-
 
     private fun updateNetworkQuality(capabilities: NetworkCapabilities) {
         val downstreamBandwidth = capabilities.linkDownstreamBandwidthKbps
@@ -203,17 +168,10 @@ class OfflineManager(private val context: Context) {
         AppLogger.d(TAG, "网络质量: ${_networkQuality.value}, 下行: ${downstreamBandwidth}kbps, 上行: ${upstreamBandwidth}kbps")
     }
 
-
-
-
     fun isSuitableForLargeDownload(): Boolean {
         return _networkQuality.value in LARGE_DOWNLOAD_QUALITIES &&
                _networkType.value == NetworkType.WIFI
     }
-
-
-
-
 
     fun configureWebViewForOffline(webView: WebView, forceOffline: Boolean = false) {
         val settings = webView.settings
@@ -229,9 +187,6 @@ class OfflineManager(private val context: Context) {
         }
     }
 
-
-
-
     fun setWebViewCacheMode(webView: WebView, cacheMode: CacheMode) {
         webView.settings.cacheMode = when (cacheMode) {
             CacheMode.DEFAULT -> WebSettings.LOAD_DEFAULT
@@ -240,9 +195,6 @@ class OfflineManager(private val context: Context) {
             CacheMode.CACHE_ONLY -> WebSettings.LOAD_CACHE_ONLY
         }
     }
-
-
-
 
     enum class CacheMode {
         DEFAULT,

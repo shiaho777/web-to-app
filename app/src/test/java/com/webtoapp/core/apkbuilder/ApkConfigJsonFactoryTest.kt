@@ -16,46 +16,58 @@ class ApkConfigJsonFactoryTest {
     @Test
     fun `create emits valid json with escaped user content`() {
         val config = ApkConfig(
-            appName = "Quote \" Slash \\ Line\nTab\t",
-            packageName = "com.example.generated",
-            targetUrl = "https://example.com/path?name=\"web\\app\"",
-            versionCode = 7,
-            versionName = "1.2.\"beta\"",
-            activationCodes = listOf("alpha\"one", "line\ncode"),
-            announcementContent = "Hello \"world\"\n<script>alert('\\u2028')</script>",
-            userAgent = "Mozilla/5.0 \"Custom\"",
-            customUserAgent = "Custom\\Agent\nNext",
-            injectScripts = listOf(
-                UserScript(
-                    name = "boot \"script\"",
-                    code = "const msg = \"hello\\\\n\";\nconsole.log(msg);",
-                    enabled = true,
-                    runAt = ScriptRunTime.DOCUMENT_START
-                )
-            ),
-            statusBarBackgroundType = "IMAGE",
-            statusBarBackgroundImage = "/tmp/light background.png",
-            statusBarBackgroundTypeDark = "IMAGE",
-            statusBarBackgroundImageDark = "/tmp/dark background.png",
-            networkTrustConfig = NetworkTrustConfig(
-                trustUserCa = true,
-                customCaCertificates = listOf(
-                    CustomCaCertificate(
-                        id = "ca1",
-                        displayName = "Dev CA",
-                        filePath = "/private/dev-ca.pem",
-                        sha256 = "abc123"
+            meta = MetaBlock(
+                appName = "Quote \" Slash \\ Line\nTab\t",
+                packageName = "com.example.generated",
+                targetUrl = "https://example.com/path?name=\"web\\app\"",
+                versionCode = 7,
+                versionName = "1.2.\"beta\"",
+                networkTrustConfig = NetworkTrustConfig(
+                    trustUserCa = true,
+                    customCaCertificates = listOf(
+                        CustomCaCertificate(
+                            id = "ca1",
+                            displayName = "Dev CA",
+                            filePath = "/private/dev-ca.pem",
+                            sha256 = "abc123"
+                        )
                     )
                 )
             ),
-            bgmEnabled = true,
-            bgmPlaylist = listOf(
-                BgmShellItem(
-                    id = "track\"1",
-                    name = "Night\nDrive",
-                    assetPath = "assets/bgm/night drive.mp3",
-                    lrcAssetPath = "assets/bgm/night drive.lrc",
-                    sortOrder = 3
+            activation = ActivationBlock(
+                codes = listOf("alpha\"one", "line\ncode")
+            ),
+            announcement = AnnouncementBlock(
+                content = "Hello \"world\"\n<script>alert('\\u2028')</script>"
+            ),
+            webView = WebViewBlock(
+                userAgent = "Mozilla/5.0 \"Custom\"",
+                customUserAgent = "Custom\\Agent\nNext",
+                injectScripts = listOf(
+                    UserScript(
+                        name = "boot \"script\"",
+                        code = "const msg = \"hello\\\\n\";\nconsole.log(msg);",
+                        enabled = true,
+                        runAt = ScriptRunTime.DOCUMENT_START
+                    )
+                )
+            ),
+            statusBar = StatusBarBlock(
+                backgroundType = "IMAGE",
+                backgroundImage = "/tmp/light background.png",
+                backgroundTypeDark = "IMAGE",
+                backgroundImageDark = "/tmp/dark background.png"
+            ),
+            bgm = BgmBlock(
+                enabled = true,
+                playlist = listOf(
+                    BgmShellItem(
+                        id = "track\"1",
+                        name = "Night\nDrive",
+                        assetPath = "assets/bgm/night drive.mp3",
+                        lrcAssetPath = "assets/bgm/night drive.lrc",
+                        sortOrder = 3
+                    )
                 )
             )
         )
@@ -84,21 +96,27 @@ class ApkConfigJsonFactoryTest {
     @Test
     fun `create output is consumable by ShellConfig`() {
         val config = ApkConfig(
-            appName = "Shell Ready",
-            packageName = "com.example.shellready",
-            targetUrl = "https://example.com",
-            javaScriptEnabled = false,
-            injectScripts = listOf(
-                UserScript(
-                    name = "start",
-                    code = "window.__ready = true;",
-                    runAt = ScriptRunTime.DOCUMENT_IDLE
+            meta = MetaBlock(
+                appName = "Shell Ready",
+                packageName = "com.example.shellready",
+                targetUrl = "https://example.com"
+            ),
+            webView = WebViewBlock(
+                javaScriptEnabled = false,
+                injectScripts = listOf(
+                    UserScript(
+                        name = "start",
+                        code = "window.__ready = true;",
+                        runAt = ScriptRunTime.DOCUMENT_IDLE
+                    )
                 )
             ),
-            bootStartEnabled = true,
-            scheduledStartEnabled = true,
-            scheduledTime = "07:30",
-            scheduledDays = listOf(1, 3, 5)
+            autoStart = AutoStartBlock(
+                bootStartEnabled = true,
+                scheduledStartEnabled = true,
+                scheduledTime = "07:30",
+                scheduledDays = listOf(1, 3, 5)
+            )
         )
 
         val shellConfig = GsonProvider.gson.fromJson(
@@ -118,10 +136,12 @@ class ApkConfigJsonFactoryTest {
         val error = org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
             ApkConfigJsonFactory.create(
                 ApkConfig(
-                    appName = "Broken Web",
-                    packageName = "com.example.brokenweb",
-                    targetUrl = "   ",
-                    appType = "WEB"
+                    meta = MetaBlock(
+                        appName = "Broken Web",
+                        packageName = "com.example.brokenweb",
+                        targetUrl = "   ",
+                        appType = "WEB"
+                    )
                 )
             )
         }
@@ -134,11 +154,13 @@ class ApkConfigJsonFactoryTest {
         val error = org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
             ApkConfigJsonFactory.create(
                 ApkConfig(
-                    appName = "Broken Html",
-                    packageName = "com.example.brokenhtml",
-                    targetUrl = "",
-                    appType = "HTML",
-                    htmlEntryFile = ".html"
+                    meta = MetaBlock(
+                        appName = "Broken Html",
+                        packageName = "com.example.brokenhtml",
+                        targetUrl = "",
+                        appType = "HTML"
+                    ),
+                    html = HtmlBlock(entryFile = ".html")
                 )
             )
         }
@@ -151,10 +173,12 @@ class ApkConfigJsonFactoryTest {
         val root = JsonParser.parseString(
             ApkConfigJsonFactory.create(
                 ApkConfig(
-                    appName = "Node App",
-                    packageName = "com.example.nodeapp",
-                    targetUrl = "",
-                    appType = "NODEJS_APP"
+                    meta = MetaBlock(
+                        appName = "Node App",
+                        packageName = "com.example.nodeapp",
+                        targetUrl = "",
+                        appType = "NODEJS_APP"
+                    )
                 )
             )
         ).asJsonObject
@@ -166,16 +190,20 @@ class ApkConfigJsonFactoryTest {
     @Test
     fun `disabled optional services keep legacy null payloads`() {
         val config = ApkConfig(
-            appName = "Optional Off",
-            packageName = "com.example.optionaloff",
-            targetUrl = "https://example.com",
-            backgroundRunEnabled = false,
-            backgroundRunConfig = BackgroundRunConfig(
-                notificationTitle = "Should not leak"
+            meta = MetaBlock(
+                appName = "Optional Off",
+                packageName = "com.example.optionaloff",
+                targetUrl = "https://example.com"
             ),
-            notificationEnabled = false,
-            notificationConfig = NotificationConfig(
-                pollUrl = "https://example.com/poll"
+            optionalServices = OptionalServicesBlock(
+                backgroundRunEnabled = false,
+                backgroundRunConfig = BackgroundRunConfig(
+                    notificationTitle = "Should not leak"
+                ),
+                notificationEnabled = false,
+                notificationConfig = NotificationConfig(
+                    pollUrl = "https://example.com/poll"
+                )
             )
         )
 
@@ -188,13 +216,15 @@ class ApkConfigJsonFactoryTest {
     @Test
     fun `encrypted stub keeps only public placeholder fields`() {
         val config = ApkConfig(
-            appName = "Private \"App\"",
-            packageName = "com.example.private",
-            targetUrl = "https://secret.example.com/token?value=hidden",
-            versionCode = 99,
-            versionName = "9.9.9",
-            customUserAgent = "SensitiveAgent/1.0",
-            activationCodes = listOf("SECRET-CODE")
+            meta = MetaBlock(
+                appName = "Private \"App\"",
+                packageName = "com.example.private",
+                targetUrl = "https://secret.example.com/token?value=hidden",
+                versionCode = 99,
+                versionName = "9.9.9"
+            ),
+            activation = ActivationBlock(codes = listOf("SECRET-CODE")),
+            webView = WebViewBlock(customUserAgent = "SensitiveAgent/1.0")
         )
 
         val json = ApkConfigJsonFactory.createEncryptedStub(config)
@@ -216,25 +246,29 @@ class ApkConfigJsonFactoryTest {
     @Test
     fun `embedded modules serialize nested rules and config values structurally`() {
         val config = ApkConfig(
-            appName = "Modules",
-            packageName = "com.example.modules",
-            targetUrl = "https://example.com",
-            embeddedExtensionModules = listOf(
-                EmbeddedExtensionModule(
-                    id = "module\"one",
-                    name = "Module\nOne",
-                    code = "console.log(\"safe json\");",
-                    cssCode = "body::before { content: \"x\"; }",
-                    urlMatches = listOf(
-                        EmbeddedUrlMatchRule(
-                            pattern = "https://example.com/*",
-                            isRegex = false,
-                            exclude = false
+            meta = MetaBlock(
+                appName = "Modules",
+                packageName = "com.example.modules",
+                targetUrl = "https://example.com"
+            ),
+            extension = ExtensionBlock(
+                embeddedModules = listOf(
+                    EmbeddedExtensionModule(
+                        id = "module\"one",
+                        name = "Module\nOne",
+                        code = "console.log(\"safe json\");",
+                        cssCode = "body::before { content: \"x\"; }",
+                        urlMatches = listOf(
+                            EmbeddedUrlMatchRule(
+                                pattern = "https://example.com/*",
+                                isRegex = false,
+                                exclude = false
+                            )
+                        ),
+                        configValues = mapOf(
+                            "selector\"key" to ".card[data-x=\"1\"]",
+                            "message" to "line\nbreak"
                         )
-                    ),
-                    configValues = mapOf(
-                        "selector\"key" to ".card[data-x=\"1\"]",
-                        "message" to "line\nbreak"
                     )
                 )
             )

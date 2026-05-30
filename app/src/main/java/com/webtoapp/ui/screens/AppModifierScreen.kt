@@ -1,69 +1,100 @@
 package com.webtoapp.ui.screens
 
 import android.net.Uri
-import com.webtoapp.ui.design.WtaSwitch
-import com.webtoapp.ui.components.PremiumOutlinedButton
-import com.webtoapp.ui.components.PremiumFilterChip
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Android
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.SearchOff
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
-import com.webtoapp.core.appmodifier.*
+import com.webtoapp.core.appmodifier.AppCloner
+import com.webtoapp.core.appmodifier.AppFilterType
+import com.webtoapp.core.appmodifier.AppListProvider
+import com.webtoapp.core.appmodifier.AppModifyConfig
+import com.webtoapp.core.appmodifier.AppModifyResult
+import com.webtoapp.core.appmodifier.InstalledAppInfo
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.data.model.BgmConfig
-import com.webtoapp.ui.components.*
+import com.webtoapp.data.model.SplashOrientation
+import com.webtoapp.data.model.SplashType
+import com.webtoapp.ui.components.ActivationCodeCard
+import com.webtoapp.ui.components.AppNameTextFieldSimple
+import com.webtoapp.ui.components.BgmCard
+import com.webtoapp.ui.components.IconPickerWithLibrary
+import com.webtoapp.ui.components.PremiumButton
+import com.webtoapp.ui.components.PremiumFilterChip
+import com.webtoapp.ui.components.PremiumOutlinedButton
+import com.webtoapp.ui.components.PremiumTextField
+import com.webtoapp.ui.design.WtaEmptyState
+import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaScreen
+import com.webtoapp.ui.design.WtaSettingCard
+import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.design.WtaStatusBanner
+import com.webtoapp.ui.design.WtaStatusTone
+import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
+import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 import com.webtoapp.util.SplashStorage
 import kotlinx.coroutines.launch
-import java.io.File
-import com.webtoapp.ui.design.WtaBackground
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import com.webtoapp.R
-import com.webtoapp.ui.components.EnhancedElevatedCard
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppModifierScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onSelectApp: (String) -> Unit
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val snackbarHostState = remember { SnackbarHostState() }
-
     val appListProvider = remember { AppListProvider(context) }
-    val appCloner = remember { AppCloner(context) }
-
 
     var apps by remember { mutableStateOf<List<InstalledAppInfo>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var searchQuery by remember { mutableStateOf("") }
     var filterType by remember { mutableStateOf(AppFilterType.USER) }
-    var selectedApp by remember { mutableStateOf<InstalledAppInfo?>(null) }
-
 
     LaunchedEffect(filterType, searchQuery) {
         isLoading = true
@@ -71,54 +102,11 @@ fun AppModifierScreen(
         isLoading = false
     }
 
-
-    if (selectedApp != null) {
-        AppModifyFullScreen(
-            app = selectedApp!!,
-            appCloner = appCloner,
-            onBack = { selectedApp = null },
-            onResult = { result ->
-                selectedApp = null
-                scope.launch {
-                    when (result) {
-                        is AppModifyResult.ShortcutSuccess -> {
-                            snackbarHostState.showSnackbar(Strings.shortcutCreated)
-                        }
-                        is AppModifyResult.CloneSuccess -> {
-                            snackbarHostState.showSnackbar(Strings.cloneSuccess)
-                        }
-                        is AppModifyResult.Error -> {
-                            snackbarHostState.showSnackbar("${Strings.failed}: ${result.message}")
-                        }
-                    }
-                }
-            }
-        )
-        return
-    }
-
-    Scaffold(
-        containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = { Text(Strings.appIconModifier) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, Strings.back)
-                    }
-                }
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        WtaBackground(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
+    WtaScreen(
+        title = Strings.appIconModifier,
+        onBack = onBack
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
 
             PremiumTextField(
                 value = searchQuery,
@@ -127,135 +115,127 @@ fun AppModifierScreen(
                 leadingIcon = { Icon(Icons.Default.Search, null) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Clear, Strings.clear)
+                        FilledIconButton(
+                            onClick = { searchQuery = "" },
+                            colors = androidx.compose.material3.IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.Clear, Strings.clear, modifier = Modifier.size(16.dp))
                         }
                     }
                 },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(
+                        horizontal = WtaSpacing.ScreenHorizontal,
+                        vertical = WtaSpacing.ContentGap
+                    )
             )
-
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = WtaSpacing.ScreenHorizontal),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
-                PremiumFilterChip(
-                    selected = filterType == AppFilterType.USER,
-                    onClick = { filterType = AppFilterType.USER },
-                    label = { Text(Strings.userApps) },
-                    leadingIcon = if (filterType == AppFilterType.USER) {
-                        { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                    } else null
-                )
-                PremiumFilterChip(
-                    selected = filterType == AppFilterType.SYSTEM,
-                    onClick = { filterType = AppFilterType.SYSTEM },
-                    label = { Text(Strings.systemApps) },
-                    leadingIcon = if (filterType == AppFilterType.SYSTEM) {
-                        { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                    } else null
-                )
-                PremiumFilterChip(
-                    selected = filterType == AppFilterType.ALL,
-                    onClick = { filterType = AppFilterType.ALL },
-                    label = { Text(Strings.all) },
-                    leadingIcon = if (filterType == AppFilterType.ALL) {
-                        { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                    } else null
-                )
+                FilterChipFor(filterType, AppFilterType.USER, Strings.userApps) { filterType = it }
+                FilterChipFor(filterType, AppFilterType.SYSTEM, Strings.systemApps) { filterType = it }
+                FilterChipFor(filterType, AppFilterType.ALL, Strings.all) { filterType = it }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
+            Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
 
             Text(
                 text = Strings.totalFilesCount.replace("%d", apps.size.toString()),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = WtaSpacing.ScreenHorizontal)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
 
-
-            if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(apps, key = { it.packageName }) { app ->
-                        AppListItem(
-                            app = app,
-                            onClick = { selectedApp = app }
+                apps.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = WtaSpacing.ScreenHorizontal, vertical = WtaSpacing.SectionGap),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        WtaEmptyState(
+                            title = Strings.appNotFound,
+                            message = Strings.appModifierEmptyMessage,
+                            icon = Icons.Outlined.SearchOff
                         )
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        contentPadding = PaddingValues(
+                            horizontal = WtaSpacing.ScreenHorizontal,
+                            vertical = WtaSpacing.ContentGap
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                    ) {
+                        items(apps, key = { it.packageName }) { app ->
+                            AppListItem(
+                                app = app,
+                                onClick = { onSelectApp(app.packageName) }
+                            )
+                        }
                     }
                 }
             }
         }
     }
-        }
 }
 
-
-
+@Composable
+private fun FilterChipFor(
+    current: AppFilterType,
+    target: AppFilterType,
+    label: String,
+    onSelect: (AppFilterType) -> Unit
+) {
+    PremiumFilterChip(
+        selected = current == target,
+        onClick = { onSelect(target) },
+        label = { Text(label) }
+    )
+}
 
 @Composable
-fun AppListItem(
+private fun AppListItem(
     app: InstalledAppInfo,
     onClick: () -> Unit
 ) {
-    EnhancedElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
+    WtaSettingCard(
+        onClick = onClick,
+        contentPadding = PaddingValues(0.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
+                .padding(WtaSpacing.Medium),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            AppIconBox(app = app, size = 44.dp)
 
-            app.icon?.let { drawable ->
-                Image(
-                    bitmap = drawable.toBitmap(56, 56).asImageBitmap(),
-                    contentDescription = app.appName,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(MaterialTheme.shapes.small)
-                )
-            } ?: Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        MaterialTheme.shapes.small
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Outlined.Android,
-                    null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
+            Spacer(modifier = Modifier.width(WtaSpacing.Medium))
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = app.appName,
                     style = MaterialTheme.typography.titleSmall,
@@ -285,69 +265,149 @@ fun AppListItem(
     }
 }
 
-
-
+@Composable
+private fun AppIconBox(
+    app: InstalledAppInfo,
+    size: Dp = 48.dp
+) {
+    val drawable = app.icon
+    if (drawable != null) {
+        Image(
+            bitmap = drawable.toBitmap(96, 96).asImageBitmap(),
+            contentDescription = app.appName,
+            modifier = Modifier
+                .size(size)
+                .clip(RoundedCornerShape(WtaRadius.IconPlate))
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .size(size)
+                .clip(RoundedCornerShape(WtaRadius.IconPlate))
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Outlined.Android,
+                null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppModifyFullScreen(
+    packageName: String,
+    onBack: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val appListProvider = remember { AppListProvider(context) }
+    val appCloner = remember { AppCloner(context) }
+
+    var app by remember { mutableStateOf<InstalledAppInfo?>(null) }
+    var loadingApp by remember { mutableStateOf(true) }
+
+    LaunchedEffect(packageName) {
+        loadingApp = true
+        app = appListProvider.getAppInfo(packageName)
+        loadingApp = false
+    }
+
+    if (loadingApp) {
+        WtaScreen(
+            title = Strings.modifyApp,
+            onBack = onBack,
+            snackbarHostState = snackbarHostState
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        return
+    }
+
+    val resolvedApp = app
+    if (resolvedApp == null) {
+        WtaScreen(
+            title = Strings.modifyApp,
+            onBack = onBack,
+            snackbarHostState = snackbarHostState
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(WtaSpacing.ScreenHorizontal),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                WtaEmptyState(
+                    title = Strings.appNotFound,
+                    message = packageName,
+                    icon = Icons.Outlined.SearchOff
+                )
+            }
+        }
+        return
+    }
+
+    AppModifyContent(
+        app = resolvedApp,
+        appCloner = appCloner,
+        snackbarHostState = snackbarHostState,
+        onBack = onBack,
+        onResult = { result ->
+            scope.launch {
+                when (result) {
+                    is AppModifyResult.ShortcutSuccess -> {
+                        snackbarHostState.showSnackbar(Strings.shortcutCreated)
+                        onBack()
+                    }
+                    is AppModifyResult.CloneSuccess -> {
+                        snackbarHostState.showSnackbar(Strings.cloneSuccess)
+                        onBack()
+                    }
+                    is AppModifyResult.Error -> {
+                        snackbarHostState.showSnackbar("${Strings.failed}: ${result.message}")
+                    }
+                }
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AppModifyContent(
     app: InstalledAppInfo,
     appCloner: AppCloner,
+    snackbarHostState: SnackbarHostState,
     onBack: () -> Unit,
     onResult: (AppModifyResult) -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
 
-
-    var newAppName by remember { mutableStateOf(app.appName) }
-    var newIconUri by remember { mutableStateOf<Uri?>(null) }
-    var newIconPath by remember { mutableStateOf<String?>(null) }
+    var editState by remember { mutableStateOf(AppModifierEditState(newAppName = app.appName)) }
     var isProcessing by remember { mutableStateOf(false) }
     var progress by remember { mutableIntStateOf(0) }
     var progressText by remember { mutableStateOf("") }
 
-
-    var splashEnabled by remember { mutableStateOf(false) }
-    var splashType by remember { mutableStateOf("IMAGE") }
-    var splashPath by remember { mutableStateOf<String?>(null) }
-    var splashDuration by remember { mutableIntStateOf(3) }
-    var splashClickToSkip by remember { mutableStateOf(true) }
-    var splashLandscape by remember { mutableStateOf(false) }
-    var splashFillScreen by remember { mutableStateOf(true) }
-    var splashVideoStartMs by remember { mutableLongStateOf(0L) }
-    var splashVideoEndMs by remember { mutableLongStateOf(5000L) }
-    var splashVideoDurationMs by remember { mutableLongStateOf(0L) }
-    var splashEnableAudio by remember { mutableStateOf(false) }
-
-
-    var activationEnabled by remember { mutableStateOf(false) }
-    var activationCodes by remember { mutableStateOf<List<String>>(emptyList()) }
-    var activationRequireEveryTime by remember { mutableStateOf(false) }
-    var newActivationCode by remember { mutableStateOf("") }
-
-
-    var announcementEnabled by remember { mutableStateOf(false) }
-    var announcementTitle by remember { mutableStateOf("") }
-    var announcementContent by remember { mutableStateOf("") }
-    var announcementLink by remember { mutableStateOf("") }
-
-
-    var bgmEnabled by remember { mutableStateOf(false) }
-    var bgmConfig by remember { mutableStateOf(BgmConfig()) }
-
+    fun update(transform: AppModifierEditState.() -> AppModifierEditState) {
+        editState = editState.transform()
+    }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        uri?.let {
-            newIconUri = it
-            newIconPath = null
-        }
+        uri?.let { update { copy(newIconUri = it, newIconPath = null) } }
     }
-
-
     val splashImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -355,15 +415,20 @@ fun AppModifyFullScreen(
             scope.launch {
                 val savedPath = SplashStorage.saveMediaFromUri(context, it, isVideo = false)
                 if (savedPath != null) {
-                    splashPath = savedPath
-                    splashType = "IMAGE"
-                    splashEnabled = true
+                    update {
+                        copy(
+                            splashEnabled = true,
+                            splashConfig = splashConfig.copy(
+                                type = SplashType.IMAGE,
+                                mediaPath = savedPath
+                            ),
+                            splashMediaUri = Uri.fromFile(java.io.File(savedPath))
+                        )
+                    }
                 }
             }
         }
     }
-
-
     val splashVideoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -371,562 +436,318 @@ fun AppModifyFullScreen(
             scope.launch {
                 val savedPath = SplashStorage.saveMediaFromUri(context, it, isVideo = true)
                 if (savedPath != null) {
-                    splashPath = savedPath
-                    splashType = "VIDEO"
-                    splashEnabled = true
-                    splashVideoStartMs = 0L
-                    splashVideoEndMs = 5000L
-                    splashVideoDurationMs = 0L
+                    update {
+                        copy(
+                            splashEnabled = true,
+                            splashConfig = splashConfig.copy(
+                                type = SplashType.VIDEO,
+                                mediaPath = savedPath,
+                                videoStartMs = 0L,
+                                videoEndMs = 5000L,
+                                videoDurationMs = 0L
+                            ),
+                            splashMediaUri = Uri.fromFile(java.io.File(savedPath))
+                        )
+                    }
                 }
             }
         }
     }
 
-
-    fun buildConfig(): AppModifyConfig {
-        return AppModifyConfig(
-            originalApp = app,
-            newAppName = newAppName,
-            newIconPath = newIconPath ?: newIconUri?.toString(),
-            splashEnabled = splashEnabled && splashPath != null,
-            splashType = splashType,
-            splashPath = splashPath,
-            splashDuration = splashDuration,
-            splashClickToSkip = splashClickToSkip,
-            splashVideoStartMs = splashVideoStartMs,
-            splashVideoEndMs = splashVideoEndMs,
-            splashLandscape = splashLandscape,
-            splashFillScreen = splashFillScreen,
-            splashEnableAudio = splashEnableAudio,
-            activationEnabled = activationEnabled,
-            activationCodes = activationCodes,
-            activationRequireEveryTime = activationRequireEveryTime,
-            announcementEnabled = announcementEnabled,
-            announcementTitle = announcementTitle,
-            announcementContent = announcementContent,
-            announcementLink = announcementLink.ifBlank { null },
-            bgmEnabled = bgmEnabled,
-            bgmConfig = if (bgmEnabled) bgmConfig else null
-        )
+    fun runClone() {
+        if (editState.newAppName.isBlank() || isProcessing) return
+        isProcessing = true
+        scope.launch {
+            try {
+                val result = appCloner.cloneAndInstall(editState.toConfig(app)) { p, t ->
+                    scope.launch {
+                        progress = p
+                        progressText = t
+                    }
+                }
+                isProcessing = false
+                onResult(result)
+            } catch (e: Exception) {
+                isProcessing = false
+                onResult(AppModifyResult.Error(e.message ?: Strings.failed))
+            }
+        }
     }
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = { Text(Strings.modifyApp) },
-                navigationIcon = {
-                    IconButton(onClick = { if (!isProcessing) onBack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, Strings.back)
+    fun runShortcut() {
+        if (editState.newAppName.isBlank() || isProcessing) return
+        isProcessing = true
+        scope.launch {
+            try {
+                val result = appCloner.createModifiedShortcut(editState.toConfig(app)) { p, t ->
+                    scope.launch {
+                        progress = p
+                        progressText = t
                     }
+                }
+                isProcessing = false
+                onResult(result)
+            } catch (e: Exception) {
+                isProcessing = false
+                onResult(AppModifyResult.Error(e.message ?: Strings.failed))
+            }
+        }
+    }
+
+    val canClone = editState.newIconUri == null && editState.newIconPath == null
+
+    WtaCreateFlowScaffold(
+        title = Strings.modifyApp,
+        onBack = if (isProcessing) {
+            {  }
+        } else {
+            onBack
+        },
+        bottomBar = {
+            AppModifyBottomBar(
+                isProcessing = isProcessing,
+                progress = progress,
+                progressText = progressText,
+                canClone = canClone,
+                cloneEnabled = editState.newAppName.isNotBlank() && !isProcessing && canClone,
+                shortcutEnabled = editState.newAppName.isNotBlank() && !isProcessing,
+                onClone = ::runClone,
+                onShortcut = ::runShortcut
+            )
+        }
+    ) {
+        WtaCreateFlowSection(title = Strings.labelBasicInfo) {
+            OriginalAppCard(app = app)
+
+            BasicInfoCard(
+                editState = editState,
+                onNameChange = { update { copy(newAppName = it) } },
+                onPickFromGallery = { imagePickerLauncher.launch("image/*") },
+                onPickFromLibrary = { path ->
+                    update { copy(newIconPath = path, newIconUri = null) }
                 },
-                actions = {
-                    if (!isProcessing) {
-
-                        if (newIconUri == null && newIconPath == null) {
-                            TextButton(
-                                onClick = {
-                                    isProcessing = true
-                                    scope.launch {
-                                        try {
-                                            val result = appCloner.cloneAndInstall(buildConfig()) { p, t ->
-                                                scope.launch {
-                                                    progress = p
-                                                    progressText = t
-                                                }
-                                            }
-                                            onResult(result)
-                                        } catch (e: Exception) {
-                                            onResult(AppModifyResult.Error(e.message ?: Strings.failed))
-                                        }
-                                    }
-                                },
-                                enabled = newAppName.isNotBlank()
-                            ) {
-                                Text(Strings.cloneInstall)
-                            }
-                        }
-
-                        TextButton(
-                            onClick = {
-                                isProcessing = true
-                                scope.launch {
-                                    try {
-                                        val result = appCloner.createModifiedShortcut(buildConfig()) { p, t ->
-                                            scope.launch {
-                                                progress = p
-                                                progressText = t
-                                            }
-                                        }
-                                        onResult(result)
-                                    } catch (e: Exception) {
-                                        onResult(AppModifyResult.Error(e.message ?: Strings.failed))
-                                    }
-                                }
-                            },
-                            enabled = newAppName.isNotBlank()
-                        ) {
-                            Text(Strings.btnShortcut)
-                        }
-                    } else {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp).padding(end = 8.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }
+                onResetIcon = {
+                    update { copy(newIconUri = null, newIconPath = null) }
                 }
             )
         }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(scrollState)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
 
-            if (isProcessing) {
-                EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        LinearProgressIndicator(
-                            progress = { progress / 100f },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            progressText,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-
-            EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    app.icon?.let { drawable ->
-                        Image(
-                            bitmap = drawable.toBitmap(56, 56).asImageBitmap(),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(MaterialTheme.shapes.small)
-                        )
-                    } ?: Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.shapes.small),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Outlined.Android, null)
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(Strings.originalApp, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                        Text(app.appName, style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "${app.packageName} · v${app.versionName}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-
-            EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(Strings.labelBasicInfo, style = MaterialTheme.typography.titleMedium)
-
-
-                    IconPickerWithLibrary(
-                        iconUri = newIconUri,
-                        iconPath = newIconPath,
-                        onSelectFromGallery = { imagePickerLauncher.launch("image/*") },
-                        onSelectFromLibrary = { path ->
-                            newIconPath = path
-                            newIconUri = null
-                        }
-                    )
-
-
-                    if (newIconUri != null || newIconPath != null) {
-                        TextButton(
-                            onClick = {
-                                newIconUri = null
-                                newIconPath = null
-                            },
-                            contentPadding = PaddingValues(0.dp)
-                        ) {
-                            Icon(Icons.Outlined.Refresh, null, Modifier.size(16.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text(Strings.useOriginalIcon, style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
-
-
-                    AppNameTextFieldSimple(
-                        value = newAppName,
-                        onValueChange = { newAppName = it }
-                    )
-                }
-            }
-
-
-            ActivationCard(
-                enabled = activationEnabled,
-                codes = activationCodes,
-                requireEveryTime = activationRequireEveryTime,
-                onEnabledChange = { activationEnabled = it },
-                onCodesChange = { activationCodes = it },
-                onRequireEveryTimeChange = { activationRequireEveryTime = it }
+        WtaCreateFlowSection(title = Strings.appConfig) {
+            ActivationCodeCard(
+                enabled = editState.activationEnabled,
+                activationCodes = editState.activationCodes,
+                requireEveryTime = editState.activationRequireEveryTime,
+                dialogConfig = editState.activationDialogConfig,
+                onEnabledChange = { update { copy(activationEnabled = it) } },
+                onCodesChange = { update { copy(activationCodes = it) } },
+                onRequireEveryTimeChange = { update { copy(activationRequireEveryTime = it) } },
+                onDialogConfigChange = { update { copy(activationDialogConfig = it) } }
             )
 
-
-            AnnouncementCardForModifier(
-                enabled = announcementEnabled,
-                title = announcementTitle,
-                content = announcementContent,
-                link = announcementLink,
-                onEnabledChange = { announcementEnabled = it },
-                onTitleChange = { announcementTitle = it },
-                onContentChange = { announcementContent = it },
-                onLinkChange = { announcementLink = it }
+            AnnouncementCard(
+                enabled = editState.announcementEnabled,
+                announcement = editState.announcement,
+                onEnabledChange = { update { copy(announcementEnabled = it) } },
+                onAnnouncementChange = { update { copy(announcement = it) } }
             )
 
-
-            SplashCardForModifier(
-                enabled = splashEnabled,
-                splashType = splashType,
-                splashPath = splashPath,
-                duration = splashDuration,
-                clickToSkip = splashClickToSkip,
-                landscape = splashLandscape,
-                fillScreen = splashFillScreen,
-                enableAudio = splashEnableAudio,
-                videoStartMs = splashVideoStartMs,
-                videoEndMs = splashVideoEndMs,
-                videoDurationMs = splashVideoDurationMs,
-                onEnabledChange = { splashEnabled = it },
+            SplashScreenCard(
+                enabled = editState.splashEnabled,
+                splashConfig = editState.splashConfig,
+                splashMediaUri = editState.splashMediaUri,
+                savedSplashPath = editState.splashConfig.mediaPath,
+                onEnabledChange = { update { copy(splashEnabled = it) } },
                 onSelectImage = { splashImagePickerLauncher.launch("image/*") },
                 onSelectVideo = { splashVideoPickerLauncher.launch("video/*") },
-                onClearMedia = {
-                    splashPath = null
-                    splashEnabled = false
+                onDurationChange = { duration ->
+                    update { copy(splashConfig = splashConfig.copy(duration = duration)) }
                 },
-                onDurationChange = { splashDuration = it },
-                onClickToSkipChange = { splashClickToSkip = it },
-                onLandscapeChange = { splashLandscape = it },
-                onFillScreenChange = { splashFillScreen = it },
-                onEnableAudioChange = { splashEnableAudio = it },
+                onClickToSkipChange = { skip ->
+                    update { copy(splashConfig = splashConfig.copy(clickToSkip = skip)) }
+                },
+                onOrientationChange = { orientation ->
+                    update { copy(splashConfig = splashConfig.copy(orientation = orientation)) }
+                },
+                onFillScreenChange = { fill ->
+                    update { copy(splashConfig = splashConfig.copy(fillScreen = fill)) }
+                },
+                onEnableAudioChange = { audio ->
+                    update { copy(splashConfig = splashConfig.copy(enableAudio = audio)) }
+                },
                 onVideoTrimChange = { start, end, total ->
-                    splashVideoStartMs = start
-                    splashVideoEndMs = end
-                    splashVideoDurationMs = total
+                    update {
+                        copy(
+                            splashConfig = splashConfig.copy(
+                                videoStartMs = start,
+                                videoEndMs = end,
+                                videoDurationMs = total
+                            )
+                        )
+                    }
+                },
+                onClearMedia = {
+                    update {
+                        copy(
+                            splashEnabled = false,
+                            splashConfig = splashConfig.copy(
+                                mediaPath = null,
+                                videoStartMs = 0L,
+                                videoEndMs = 5000L,
+                                videoDurationMs = 0L
+                            ),
+                            splashMediaUri = null
+                        )
+                    }
                 }
             )
-
 
             BgmCard(
-                enabled = bgmEnabled,
-                config = bgmConfig,
-                onEnabledChange = { bgmEnabled = it },
-                onConfigChange = { bgmConfig = it }
+                enabled = editState.bgmEnabled,
+                config = editState.bgmConfig,
+                onEnabledChange = { update { copy(bgmEnabled = it) } },
+                onConfigChange = { update { copy(bgmConfig = it) } }
             )
 
-
-            WarningCard(message = Strings.cloneInstallWarning)
-
-            Spacer(modifier = Modifier.height(32.dp))
+            WtaStatusBanner(
+                message = Strings.cloneInstallWarning,
+                tone = WtaStatusTone.Warning
+            )
         }
     }
 }
 
-
-
-
 @Composable
-private fun ActivationCard(
-    enabled: Boolean,
-    codes: List<String>,
-    requireEveryTime: Boolean,
-    onEnabledChange: (Boolean) -> Unit,
-    onCodesChange: (List<String>) -> Unit,
-    onRequireEveryTimeChange: (Boolean) -> Unit
-) {
-    var newCode by remember { mutableStateOf("") }
-
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            CollapsibleCardHeader(
-                icon = Icons.Outlined.Key,
-                title = Strings.activationCodeVerify,
-                checked = enabled,
-                onCheckedChange = onEnabledChange
-            )
-
-            if (enabled) {
-                Spacer(modifier = Modifier.height(12.dp))
+private fun OriginalAppCard(app: InstalledAppInfo) {
+    WtaSettingCard {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(WtaSpacing.Large),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AppIconBox(app = app, size = 48.dp)
+            Spacer(modifier = Modifier.width(WtaSpacing.Large))
+            Column {
                 Text(
-                    Strings.activationCodeHint,
+                    Strings.originalApp,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(app.appName, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "${app.packageName} · v${app.versionName}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
+            }
+        }
+    }
+}
 
+@Composable
+private fun BasicInfoCard(
+    editState: AppModifierEditState,
+    onNameChange: (String) -> Unit,
+    onPickFromGallery: () -> Unit,
+    onPickFromLibrary: (String) -> Unit,
+    onResetIcon: () -> Unit
+) {
+    WtaSettingCard {
+        Column(
+            modifier = Modifier.padding(WtaSpacing.Large),
+            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Large)
+        ) {
+            IconPickerWithLibrary(
+                iconUri = editState.newIconUri,
+                iconPath = editState.newIconPath,
+                onSelectFromGallery = onPickFromGallery,
+                onSelectFromLibrary = onPickFromLibrary
+            )
 
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            if (editState.newIconUri != null || editState.newIconPath != null) {
+                androidx.compose.material3.TextButton(
+                    onClick = onResetIcon,
+                    contentPadding = PaddingValues(0.dp)
                 ) {
-                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                        Text(Strings.requireEveryLaunch, style = MaterialTheme.typography.bodyMedium)
-                        Text(
-                            if (requireEveryTime) Strings.requireEveryLaunchHintOn else Strings.requireEveryLaunchHintOff,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    WtaSwitch(checked = requireEveryTime, onCheckedChange = onRequireEveryTimeChange)
+                    Icon(Icons.Outlined.Refresh, null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(WtaSpacing.Tiny))
+                    Text(Strings.useOriginalIcon, style = MaterialTheme.typography.labelMedium)
                 }
+            }
 
-                Spacer(modifier = Modifier.height(12.dp))
+            AppNameTextFieldSimple(
+                value = editState.newAppName,
+                onValueChange = onNameChange
+            )
+        }
+    }
+}
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    PremiumTextField(
-                        value = newCode,
-                        onValueChange = { newCode = it },
-                        placeholder = { Text(Strings.inputActivationCode) },
-                        singleLine = true,
-                        modifier = Modifier.weight(weight = 1f, fill = true)
+@Composable
+private fun AppModifyBottomBar(
+    isProcessing: Boolean,
+    progress: Int,
+    progressText: String,
+    canClone: Boolean,
+    cloneEnabled: Boolean,
+    shortcutEnabled: Boolean,
+    onClone: () -> Unit,
+    onShortcut: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.96f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = WtaSpacing.ScreenHorizontal,
+                    vertical = WtaSpacing.Medium
+                ),
+            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+        ) {
+            if (isProcessing) {
+                LinearProgressIndicator(
+                    progress = { progress / 100f },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (progressText.isNotBlank()) {
+                    Text(
+                        progressText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    FilledIconButton(
-                        onClick = {
-                            if (newCode.isNotBlank()) {
-                                onCodesChange(codes + newCode)
-                                newCode = ""
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Default.Add, Strings.add)
-                    }
-                }
-
-                codes.forEachIndexed { index, code ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(code, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(weight = 1f, fill = true))
-                        IconButton(onClick = { onCodesChange(codes.filterIndexed { i, _ -> i != index }) }) {
-                            Icon(Icons.Outlined.Delete, Strings.btnDelete, tint = MaterialTheme.colorScheme.error)
-                        }
-                    }
                 }
             }
-        }
-    }
-}
 
-
-
-
-@Composable
-private fun AnnouncementCardForModifier(
-    enabled: Boolean,
-    title: String,
-    content: String,
-    link: String,
-    onEnabledChange: (Boolean) -> Unit,
-    onTitleChange: (String) -> Unit,
-    onContentChange: (String) -> Unit,
-    onLinkChange: (String) -> Unit
-) {
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            CollapsibleCardHeader(
-                icon = Icons.Outlined.Campaign,
-                title = Strings.popupAnnouncement,
-                checked = enabled,
-                onCheckedChange = onEnabledChange
-            )
-
-            if (enabled) {
-                Spacer(modifier = Modifier.height(12.dp))
-
-                PremiumTextField(
-                    value = title,
-                    onValueChange = onTitleChange,
-                    label = { Text(Strings.announcementTitle) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                PremiumTextField(
-                    value = content,
-                    onValueChange = onContentChange,
-                    label = { Text(Strings.announcementContent) },
-                    minLines = 2,
-                    maxLines = 4,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                PremiumTextField(
-                    value = link,
-                    onValueChange = onLinkChange,
-                    label = { Text(Strings.linkUrl) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-    }
-}
-
-
-
-
-@Composable
-private fun SplashCardForModifier(
-    enabled: Boolean,
-    splashType: String,
-    splashPath: String?,
-    duration: Int,
-    clickToSkip: Boolean,
-    landscape: Boolean,
-    fillScreen: Boolean,
-    enableAudio: Boolean,
-    videoStartMs: Long,
-    videoEndMs: Long,
-    videoDurationMs: Long,
-    onEnabledChange: (Boolean) -> Unit,
-    onSelectImage: () -> Unit,
-    onSelectVideo: () -> Unit,
-    onClearMedia: () -> Unit,
-    onDurationChange: (Int) -> Unit,
-    onClickToSkipChange: (Boolean) -> Unit,
-    onLandscapeChange: (Boolean) -> Unit,
-    onFillScreenChange: (Boolean) -> Unit,
-    onEnableAudioChange: (Boolean) -> Unit,
-    onVideoTrimChange: (Long, Long, Long) -> Unit
-) {
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            CollapsibleCardHeader(
-                icon = Icons.Outlined.PlayCircle,
-                title = Strings.splashScreen,
-                checked = enabled,
-                onCheckedChange = onEnabledChange
-            )
-
-            if (enabled) {
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (canClone) {
+                    PremiumOutlinedButton(
+                        onClick = onClone,
+                        enabled = cloneEnabled,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(Strings.cloneInstall)
+                    }
+                }
+                PremiumButton(
+                    onClick = onShortcut,
+                    enabled = shortcutEnabled,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    PremiumOutlinedButton(onClick = onSelectImage, modifier = Modifier.weight(weight = 1f, fill = true)) {
-                        Icon(Icons.Outlined.Image, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(Strings.selectImage)
-                    }
-                    PremiumOutlinedButton(onClick = onSelectVideo, modifier = Modifier.weight(weight = 1f, fill = true)) {
-                        Icon(Icons.Outlined.VideoFile, null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(Strings.selectVideo)
-                    }
-                }
-
-                if (splashPath != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    EnhancedElevatedCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    if (splashType == "IMAGE") Icons.Outlined.Image else Icons.Outlined.VideoFile,
-                                    null, Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Spacer(Modifier.width(8.dp))
-                            Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                                Text(if (splashType == "IMAGE") Strings.image else Strings.video, style = MaterialTheme.typography.bodyMedium)
-                                Text(File(splashPath).name, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-                            }
-                            IconButton(onClick = onClearMedia) {
-                                Icon(Icons.Default.Clear, Strings.clear)
-                            }
-                        }
-                    }
-
-                    if (splashType == "VIDEO") {
-                        VideoTrimmer(
-                            videoPath = splashPath,
-                            startMs = videoStartMs,
-                            endMs = videoEndMs,
-                            videoDurationMs = videoDurationMs,
-                            onTrimChange = onVideoTrimChange
-                        )
-                    }
-
-                    if (splashType == "IMAGE") {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("${Strings.splashScreen}: $duration ${Strings.seconds}", style = MaterialTheme.typography.bodyMedium)
-                        Slider(
-                            value = duration.toFloat(),
-                            onValueChange = { onDurationChange(it.toInt()) },
-                            valueRange = 1f..5f,
-                            steps = 3,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-
-                    SettingsSwitchRow(Strings.allowClickToSkip, clickToSkip, onClickToSkipChange)
-                    SettingsSwitchRow(Strings.landscapeMode, landscape, onLandscapeChange)
-                    SettingsSwitchRow(Strings.fillScreen, fillScreen, onFillScreenChange)
-                    if (splashType == "VIDEO") {
-                        SettingsSwitchRow(Strings.enableAudioLabel, enableAudio, onEnableAudioChange)
-                    }
+                    Text(Strings.btnShortcut)
                 }
             }
         }
     }
 }
-

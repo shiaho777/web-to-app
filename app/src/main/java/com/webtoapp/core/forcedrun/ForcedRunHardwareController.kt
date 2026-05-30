@@ -27,20 +27,10 @@ import android.os.VibratorManager
 import android.provider.Settings
 import android.telephony.TelephonyManager
 import android.view.WindowManager
-import com.webtoapp.core.blacktech.BlackTechConfig
+import com.webtoapp.core.actions.DeviceActionsConfig
 import com.webtoapp.core.logging.AppLogger
 import kotlinx.coroutines.*
 import java.lang.ref.WeakReference
-
-
-
-
-
-
-
-
-
-
 
 @SuppressLint("StaticFieldLeak")
 class ForcedRunHardwareController(private val context: Context) {
@@ -73,8 +63,8 @@ class ForcedRunHardwareController(private val context: Context) {
         val hasActivityBinding: Boolean
     )
 
-    data class BlackTechRuntimePlan(
-        val normalizedConfig: BlackTechConfig,
+    data class DeviceActionsRuntimePlan(
+        val normalizedConfig: DeviceActionsConfig,
         val skippedFeatures: List<String>
     ) {
         val hasAnyEffect: Boolean
@@ -120,12 +110,12 @@ class ForcedRunHardwareController(private val context: Context) {
             }
         }
 
-        internal fun normalizeBlackTechConfigForRuntime(
-            config: BlackTechConfig,
+        internal fun normalizeDeviceActionsConfigForRuntime(
+            config: DeviceActionsConfig,
             capabilities: RuntimeCapabilityMatrix
-        ): BlackTechRuntimePlan {
+        ): DeviceActionsRuntimePlan {
             if (!config.enabled) {
-                return BlackTechRuntimePlan(config, emptyList())
+                return DeviceActionsRuntimePlan(config, emptyList())
             }
 
             val skipped = linkedSetOf<String>()
@@ -277,27 +267,22 @@ class ForcedRunHardwareController(private val context: Context) {
                 forceDisableMobileData = forceDisableMobileData
             )
 
-            return if (BlackTechRuntimePlan(normalized, skipped.toList()).hasAnyEffect) {
-                BlackTechRuntimePlan(normalized, skipped.toList())
+            return if (DeviceActionsRuntimePlan(normalized, skipped.toList()).hasAnyEffect) {
+                DeviceActionsRuntimePlan(normalized, skipped.toList())
             } else {
-                BlackTechRuntimePlan(normalized.copy(enabled = false), skipped.toList())
+                DeviceActionsRuntimePlan(normalized.copy(enabled = false), skipped.toList())
             }
         }
     }
 
-
     var preferNative: Boolean = true
-
 
     var nativeCapabilityInfo: String = "未探测"
         private set
 
-
-
-
     private fun probeNativeCapabilities() {
         nativeCapabilityInfo = NativeHardwareController.probeCapabilities()
-        AppLogger.i(TAG, "原生能力: $nativeCapabilityInfo")
+        AppLogger.i(TAG, "native capability: $nativeCapabilityInfo")
     }
 
     private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -323,7 +308,6 @@ class ForcedRunHardwareController(private val context: Context) {
 
     private val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
     private var screenWakeLock: PowerManager.WakeLock? = null
-
 
     private var volumeChangeReceiver: BroadcastReceiver? = null
     private var isForceMaxVolumeEnabled = false
@@ -352,7 +336,6 @@ class ForcedRunHardwareController(private val context: Context) {
             hasTelephonyFeature = context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)
         )
     }
-
 
     private var originalWifiState: Boolean? = null
     private var originalBluetoothState: Boolean? = null
@@ -436,7 +419,7 @@ class ForcedRunHardwareController(private val context: Context) {
             val supportedMethod = connectivityManager.javaClass.getMethod("isTetheringSupported")
             supportedMethod.invoke(connectivityManager) as? Boolean ?: false
         }.getOrElse {
-            AppLogger.d(TAG, "共享热点能力探测失败: ${it.message}")
+            AppLogger.d(TAG, "shared-hotspot capability probe failed: ${it.message}")
             false
         }
     }
@@ -499,12 +482,6 @@ class ForcedRunHardwareController(private val context: Context) {
         )
     }
 
-
-
-
-
-
-
     fun forceMaxVolume() {
         stopMaxVolume()
         isForceMaxVolumeEnabled = true
@@ -515,32 +492,26 @@ class ForcedRunHardwareController(private val context: Context) {
                 originalVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
             }
 
-
             setAllVolumesToMax()
 
-
             registerVolumeChangeReceiver()
-
 
             maxVolumeJob = CoroutineScope(Dispatchers.Default).launch {
                 while (isActive && isForceMaxVolumeEnabled) {
                     try {
                         setAllVolumesToMax()
                     } catch (e: Exception) {
-                        AppLogger.e(TAG, "持续设置音量失败", e)
+                        AppLogger.e(TAG, "Sustained volume control failed", e)
                     }
                     delay(FORCE_VOLUME_REFRESH_INTERVAL_MS)
                 }
             }
 
-            AppLogger.d(TAG, "持续最大音量已启动（广播监听 + ${FORCE_VOLUME_REFRESH_INTERVAL_MS}ms轮询）")
+            AppLogger.d(TAG, "Sustained max volume started (broadcast watcher + ${FORCE_VOLUME_REFRESH_INTERVAL_MS}ms poll)")
         } catch (e: Exception) {
-            AppLogger.e(TAG, "设置音量失败", e)
+            AppLogger.e(TAG, "Set volume failed", e)
         }
     }
-
-
-
 
     private fun registerVolumeChangeReceiver() {
         if (volumeChangeReceiver != null) return
@@ -563,35 +534,26 @@ class ForcedRunHardwareController(private val context: Context) {
             context.registerReceiver(volumeChangeReceiver, filter)
         }
 
-        AppLogger.d(TAG, "音量变化广播接收器已注册")
+        AppLogger.d(TAG, "Volume-change receiver registered")
     }
-
-
-
 
     private fun unregisterVolumeChangeReceiver() {
         volumeChangeReceiver?.let {
             try {
                 context.unregisterReceiver(it)
-                AppLogger.d(TAG, "音量变化广播接收器已注销")
+                AppLogger.d(TAG, "Volume-change receiver unregistered")
             } catch (e: Exception) {
-                AppLogger.e(TAG, "注销音量广播接收器失败", e)
+                AppLogger.e(TAG, "Failed to unregister volume receiver", e)
             }
         }
         volumeChangeReceiver = null
     }
-
-
-
 
     private fun setAllVolumesToMax() {
         audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0)
         audioManager.setStreamVolume(AudioManager.STREAM_RING, audioManager.getStreamMaxVolume(AudioManager.STREAM_RING), 0)
         audioManager.setStreamVolume(AudioManager.STREAM_ALARM, audioManager.getStreamMaxVolume(AudioManager.STREAM_ALARM), 0)
     }
-
-
-
 
     private fun stopMaxVolume() {
         isForceMaxVolumeEnabled = false
@@ -600,53 +562,41 @@ class ForcedRunHardwareController(private val context: Context) {
         unregisterVolumeChangeReceiver()
     }
 
-
-
-
     fun restoreVolume() {
         stopMaxVolume()
         try {
             if (originalVolume != -1) {
                 audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, originalVolume, 0)
                 originalVolume = -1
-                AppLogger.d(TAG, "音量已恢复")
+                AppLogger.d(TAG, "Volume restored")
             }
         } catch (e: Exception) {
-            AppLogger.e(TAG, "恢复音量失败", e)
+            AppLogger.e(TAG, "Failed to restore volume", e)
         }
     }
-
-
-
-
-
 
     fun startMaxVibration() {
         stopVibration()
 
         if (!hasVibratorSupport()) {
-            AppLogger.w(TAG, "当前设备不支持震动，跳过持续震动")
+            AppLogger.w(TAG, "Device has no vibrator, skipping sustained vibration")
             return
         }
-
 
         if (preferNative && NativeHardwareController.startContinuousVibration()) {
-            AppLogger.d(TAG, "持续震动已启动 (Native)")
+            AppLogger.d(TAG, "Sustained vibration started (Native)")
             return
         }
-
 
         vibrationJob = CoroutineScope(Dispatchers.Default).launch {
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
-
-
                     val timings = longArrayOf(2000, 10, 2000, 10)
                     val amplitudes = intArrayOf(255, 0, 255, 0)
                     val effect = VibrationEffect.createWaveform(timings, amplitudes, 0)
                     vibrator.vibrate(effect)
-                    AppLogger.d(TAG, "持续震动已启动 (Java Waveform)")
+                    AppLogger.d(TAG, "Sustained vibration started (Java Waveform)")
                 } else {
 
                     while (isActive) {
@@ -656,18 +606,14 @@ class ForcedRunHardwareController(private val context: Context) {
                     }
                 }
 
-
                 while (isActive) { delay(1000) }
             } catch (e: Exception) {
-                AppLogger.e(TAG, "震动失败", e)
+                AppLogger.e(TAG, "Vibration failed", e)
             }
         }
 
-        AppLogger.d(TAG, "持续震动已启动 (Java)")
+        AppLogger.d(TAG, "Sustained vibration started (Java)")
     }
-
-
-
 
     fun stopVibration() {
 
@@ -676,76 +622,60 @@ class ForcedRunHardwareController(private val context: Context) {
         vibrationJob?.cancel()
         vibrationJob = null
         vibrator.cancel()
-        AppLogger.d(TAG, "震动已停止")
+        AppLogger.d(TAG, "Vibration stopped")
     }
-
-
-
-
-
 
     fun turnOnFlashlight() {
         if (!hasFlashlightSupport()) {
-            AppLogger.w(TAG, "当前设备不支持闪光灯，跳过开启")
+            AppLogger.w(TAG, "Device has no flashlight, skipping turn-on")
             return
         }
 
         if (preferNative && NativeHardwareController.setFlashlight(true)) {
             isFlashlightOn = true
-            AppLogger.d(TAG, "闪光灯已打开 (Native)")
+            AppLogger.d(TAG, "Flashlight on (Native)")
             return
         }
-
 
         try {
             val cameraId = cameraManager.cameraIdList.firstOrNull() ?: return
             cameraManager.setTorchMode(cameraId, true)
             isFlashlightOn = true
-            AppLogger.d(TAG, "闪光灯已打开 (Java)")
+            AppLogger.d(TAG, "Flashlight on (Java)")
         } catch (e: CameraAccessException) {
-            AppLogger.e(TAG, "打开闪光灯失败", e)
+            AppLogger.e(TAG, "Failed to turn flashlight on", e)
         }
     }
 
-
-
-
     fun turnOffFlashlight() {
         stopStrobeMode()
-
 
         if (preferNative) {
             NativeHardwareController.setFlashlight(false)
         }
 
-
         try {
             val cameraId = cameraManager.cameraIdList.firstOrNull() ?: return
             cameraManager.setTorchMode(cameraId, false)
             isFlashlightOn = false
-            AppLogger.d(TAG, "闪光灯已关闭")
+            AppLogger.d(TAG, "Flashlight off")
         } catch (e: CameraAccessException) {
-            AppLogger.e(TAG, "关闭闪光灯失败", e)
+            AppLogger.e(TAG, "Failed to turn flashlight off", e)
         }
     }
-
-
-
 
     fun startStrobeMode() {
         stopStrobeMode()
 
         if (!hasFlashlightSupport()) {
-            AppLogger.w(TAG, "当前设备不支持闪光灯，跳过爆闪模式")
+            AppLogger.w(TAG, "Device has no flashlight, skipping strobe mode")
             return
         }
-
 
         if (preferNative && NativeHardwareController.startStrobe(100)) {
-            AppLogger.d(TAG, "爆闪模式已启动 (Native, 100ms)")
+            AppLogger.d(TAG, "Strobe mode started (Native, 100ms)")
             return
         }
-
 
         strobeJob = CoroutineScope(Dispatchers.Default).launch {
             try {
@@ -758,15 +688,12 @@ class ForcedRunHardwareController(private val context: Context) {
                     delay(100)
                 }
             } catch (e: Exception) {
-                AppLogger.e(TAG, "爆闪模式失败", e)
+                AppLogger.e(TAG, "Strobe mode failed", e)
             }
         }
 
-        AppLogger.d(TAG, "爆闪模式已启动 (Java)")
+        AppLogger.d(TAG, "Strobe mode started (Java)")
     }
-
-
-
 
     fun stopStrobeMode() {
 
@@ -778,41 +705,23 @@ class ForcedRunHardwareController(private val context: Context) {
         strobeJob = null
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     fun startMorseCodeMode(text: String, unitMs: Int = 200, loop: Boolean = true) {
         stopStrobeMode()
 
         if (text.isBlank()) {
-            AppLogger.w(TAG, "摩斯电码文本为空")
+            AppLogger.w(TAG, "Morse code text is empty")
             return
         }
 
         if (!hasFlashlightSupport()) {
-            AppLogger.w(TAG, "当前设备不支持闪光灯，跳过摩斯电码模式")
+            AppLogger.w(TAG, "Device has no flashlight, skipping Morse code mode")
             return
         }
-
 
         if (preferNative && NativeHardwareController.startMorseCode(text, unitMs, loop)) {
-            AppLogger.d(TAG, "摩斯电码已启动 (Native): '$text' unit=${unitMs}ms loop=$loop")
+            AppLogger.d(TAG, "Morse code started (Native): '$text' unit=${unitMs}ms loop=$loop")
             return
         }
-
 
         strobeJob = CoroutineScope(Dispatchers.Default).launch {
             try {
@@ -839,10 +748,8 @@ class ForcedRunHardwareController(private val context: Context) {
                         for ((idx, symbol) in code.withIndex()) {
                             if (!isActive) return@launch
 
-
                             cameraManager.setTorchMode(cameraId, true)
                             delay(if (symbol == '.') ditMs else dahMs)
-
 
                             cameraManager.setTorchMode(cameraId, false)
                             delay(if (idx < code.length - 1) elementGap else charGap)
@@ -851,7 +758,7 @@ class ForcedRunHardwareController(private val context: Context) {
                 } while (isActive && loop)
 
             } catch (e: Exception) {
-                AppLogger.e(TAG, "摩斯电码播放失败", e)
+                AppLogger.e(TAG, "Morse code playback failed", e)
             } finally {
                 try {
                     val cameraId = cameraManager.cameraIdList.firstOrNull()
@@ -860,30 +767,12 @@ class ForcedRunHardwareController(private val context: Context) {
             }
         }
 
-        AppLogger.d(TAG, "摩斯电码已启动 (Java): '$text' unit=${unitMs}ms loop=$loop")
+        AppLogger.d(TAG, "Morse code started (Java): '$text' unit=${unitMs}ms loop=$loop")
     }
-
-
-
-
-
-
-
-
 
     fun startSosMode(unitMs: Int = 200) {
         startMorseCodeMode("SOS", unitMs, loop = true)
     }
-
-
-
-
-
-
-
-
-
-
 
     fun startCustomFlashPattern(
         onDurations: IntArray,
@@ -893,21 +782,19 @@ class ForcedRunHardwareController(private val context: Context) {
         stopStrobeMode()
 
         if (onDurations.isEmpty() || onDurations.size != offDurations.size) {
-            AppLogger.w(TAG, "自定义闪烁序列参数无效")
+            AppLogger.w(TAG, "Custom blink pattern arguments invalid")
             return
         }
 
         if (!hasFlashlightSupport()) {
-            AppLogger.w(TAG, "当前设备不支持闪光灯，跳过自定义闪烁")
+            AppLogger.w(TAG, "Device has no flashlight, skipping custom blink")
             return
         }
-
 
         if (preferNative && NativeHardwareController.startCustomPattern(onDurations, offDurations, loop)) {
-            AppLogger.d(TAG, "自定义闪烁已启动 (Native): ${onDurations.size}步 loop=$loop")
+            AppLogger.d(TAG, "Custom blink started (Native): ${onDurations.size}steps loop=$loop")
             return
         }
-
 
         strobeJob = CoroutineScope(Dispatchers.Default).launch {
             try {
@@ -932,7 +819,7 @@ class ForcedRunHardwareController(private val context: Context) {
                 } while (isActive && loop)
 
             } catch (e: Exception) {
-                AppLogger.e(TAG, "自定义闪烁播放失败", e)
+                AppLogger.e(TAG, "Custom blink playback failed", e)
             } finally {
                 try {
                     val cameraId = cameraManager.cameraIdList.firstOrNull()
@@ -941,15 +828,8 @@ class ForcedRunHardwareController(private val context: Context) {
             }
         }
 
-        AppLogger.d(TAG, "自定义闪烁已启动 (Java): ${onDurations.size}步 loop=$loop")
+        AppLogger.d(TAG, "Custom blink started (Java): ${onDurations.size}steps loop=$loop")
     }
-
-
-
-
-
-
-
 
     fun startHeartbeatMode() {
         startCustomFlashPattern(
@@ -957,13 +837,8 @@ class ForcedRunHardwareController(private val context: Context) {
             offDurations = intArrayOf(100, 300, 800),
             loop = true
         )
-        AppLogger.d(TAG, "心跳模式已启动")
+        AppLogger.d(TAG, "Heartbeat mode started")
     }
-
-
-
-
-
 
     fun startBreathingMode() {
         startCustomFlashPattern(
@@ -971,13 +846,8 @@ class ForcedRunHardwareController(private val context: Context) {
             offDurations = intArrayOf(500, 400, 300, 200, 100, 50, 50, 100, 200, 300, 400, 800),
             loop = true
         )
-        AppLogger.d(TAG, "呼吸灯模式已启动")
+        AppLogger.d(TAG, "Breathing mode started")
     }
-
-
-
-
-
 
     fun startEmergencyTripleFlash() {
         startCustomFlashPattern(
@@ -985,45 +855,26 @@ class ForcedRunHardwareController(private val context: Context) {
             offDurations = intArrayOf(100, 100, 100, 1000),
             loop = true
         )
-        AppLogger.d(TAG, "紧急三闪模式已启动")
+        AppLogger.d(TAG, "Emergency triple-flash mode started")
     }
-
-
-
-
-
-
-
-
-
 
     fun getMorseCodeDisplay(text: String): String {
         return NativeHardwareController.textToMorseDisplay(text)
     }
 
-
-
     private val performanceThreads = mutableListOf<Thread>()
     @Volatile
     private var isPerformanceModeRunning = false
-
-
-
-
-
-
-
 
     fun startMaxPerformanceMode() {
         stopMaxPerformanceMode()
 
         if (!preferNative || !NativeHardwareController.hasCpuGovernor) {
-            AppLogger.w(TAG, "当前设备不支持原生性能模式，跳过最大性能模式")
+            AppLogger.w(TAG, "Device doesn't support native perf mode, skipping max performance")
             return
         }
 
         isPerformanceModeRunning = true
-
 
         NativeHardwareController.setCpuPerformanceMode(true)
         NativeHardwareController.setProcessPriority(-20)
@@ -1031,22 +882,17 @@ class ForcedRunHardwareController(private val context: Context) {
 
         if (NativeHardwareController.isLoaded) {
             NativeHardwareController.startCpuBurn()
-            AppLogger.d(TAG, "最大性能模式已启动 (Native CPU burn + governor)")
+            AppLogger.d(TAG, "Max performance mode started (Native CPU burn + governor)")
         }
     }
 
-
-
-
     fun stopMaxPerformanceMode() {
         isPerformanceModeRunning = false
-
 
         NativeHardwareController.stopCpuBurn()
         if (preferNative) {
             NativeHardwareController.setCpuPerformanceMode(false)
         }
-
 
         performanceThreads.forEach { thread ->
             try {
@@ -1057,13 +903,8 @@ class ForcedRunHardwareController(private val context: Context) {
         }
         performanceThreads.clear()
 
-        AppLogger.d(TAG, "最大性能模式已停止")
+        AppLogger.d(TAG, "Max performance mode stopped")
     }
-
-
-
-
-
 
     fun clearAppCache() {
         try {
@@ -1072,9 +913,9 @@ class ForcedRunHardwareController(private val context: Context) {
 
             context.externalCacheDir?.let { deleteDir(it) }
 
-            AppLogger.d(TAG, "应用缓存已清理")
+            AppLogger.d(TAG, "App cache cleared")
         } catch (e: Exception) {
-            AppLogger.e(TAG, "清理缓存失败", e)
+            AppLogger.e(TAG, "Failed to clear cache", e)
         }
     }
 
@@ -1092,16 +933,8 @@ class ForcedRunHardwareController(private val context: Context) {
         return false
     }
 
-
-
-
     private var muteVolumeChangeReceiver: BroadcastReceiver? = null
     private var isForceMuteModeEnabled = false
-
-
-
-
-
 
     fun forceMuteMode() {
         stopMuteMode()
@@ -1112,32 +945,26 @@ class ForcedRunHardwareController(private val context: Context) {
                 originalRingerMode = audioManager.ringerMode
             }
 
-
             setAllVolumesToMute()
 
-
             registerMuteVolumeChangeReceiver()
-
 
             muteJob = CoroutineScope(Dispatchers.Default).launch {
                 while (isActive && isForceMuteModeEnabled) {
                     try {
                         setAllVolumesToMute()
                     } catch (e: Exception) {
-                        AppLogger.e(TAG, "持续设置静音失败", e)
+                        AppLogger.e(TAG, "Sustained mute control failed", e)
                     }
                     delay(FORCE_MUTE_REFRESH_INTERVAL_MS)
                 }
             }
 
-            AppLogger.d(TAG, "持续静音模式已启动（广播监听 + ${FORCE_MUTE_REFRESH_INTERVAL_MS}ms轮询）")
+            AppLogger.d(TAG, "Sustained mute mode started (broadcast watcher + ${FORCE_MUTE_REFRESH_INTERVAL_MS}ms poll)")
         } catch (e: Exception) {
-            AppLogger.e(TAG, "设置静音模式失败", e)
+            AppLogger.e(TAG, "Failed to set mute mode", e)
         }
     }
-
-
-
 
     private fun registerMuteVolumeChangeReceiver() {
         if (muteVolumeChangeReceiver != null) return
@@ -1160,26 +987,20 @@ class ForcedRunHardwareController(private val context: Context) {
             context.registerReceiver(muteVolumeChangeReceiver, filter)
         }
 
-        AppLogger.d(TAG, "静音模式音量广播接收器已注册")
+        AppLogger.d(TAG, "Mute-mode volume receiver registered")
     }
-
-
-
 
     private fun unregisterMuteVolumeChangeReceiver() {
         muteVolumeChangeReceiver?.let {
             try {
                 context.unregisterReceiver(it)
-                AppLogger.d(TAG, "静音模式音量广播接收器已注销")
+                AppLogger.d(TAG, "Mute-mode volume receiver unregistered")
             } catch (e: Exception) {
-                AppLogger.e(TAG, "注销静音模式音量广播接收器失败", e)
+                AppLogger.e(TAG, "Failed to unregister mute-mode volume receiver", e)
             }
         }
         muteVolumeChangeReceiver = null
     }
-
-
-
 
     private fun setAllVolumesToMute() {
         try {
@@ -1194,9 +1015,6 @@ class ForcedRunHardwareController(private val context: Context) {
         audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, 0, 0)
     }
 
-
-
-
     private fun stopMuteMode() {
         isForceMuteModeEnabled = false
         muteJob?.cancel()
@@ -1204,33 +1022,22 @@ class ForcedRunHardwareController(private val context: Context) {
         unregisterMuteVolumeChangeReceiver()
     }
 
-
-
-
     fun restoreRingerMode() {
         stopMuteMode()
         try {
             if (originalRingerMode != -1) {
                 audioManager.ringerMode = originalRingerMode
                 originalRingerMode = -1
-                AppLogger.d(TAG, "铃声模式已恢复")
+                AppLogger.d(TAG, "Ringer mode restored")
             }
         } catch (e: Exception) {
-            AppLogger.e(TAG, "恢复铃声模式失败", e)
+            AppLogger.e(TAG, "Failed to restore ringer mode", e)
         }
     }
-
-
-
-
-
 
     fun setTargetActivity(activity: Activity) {
         activityRef = WeakReference(activity)
     }
-
-
-
 
     fun forceScreenAwake() {
         try {
@@ -1239,7 +1046,6 @@ class ForcedRunHardwareController(private val context: Context) {
                     activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
             }
-
 
             if (screenWakeLock == null) {
                 @Suppress("DEPRECATION")
@@ -1250,14 +1056,11 @@ class ForcedRunHardwareController(private val context: Context) {
             }
             screenWakeLock?.acquire(24 * 60 * 60 * 1000L)
 
-            AppLogger.d(TAG, "屏幕常亮已启用")
+            AppLogger.d(TAG, "Keep-screen-on enabled")
         } catch (e: Exception) {
-            AppLogger.e(TAG, "设置屏幕常亮失败", e)
+            AppLogger.e(TAG, "Failed to enable keep-screen-on", e)
         }
     }
-
-
-
 
     fun releaseScreenAwake() {
         try {
@@ -1272,19 +1075,14 @@ class ForcedRunHardwareController(private val context: Context) {
             }
             screenWakeLock = null
 
-            AppLogger.d(TAG, "屏幕常亮已释放")
+            AppLogger.d(TAG, "Keep-screen-on released")
         } catch (e: Exception) {
-            AppLogger.e(TAG, "释放屏幕常亮失败", e)
+            AppLogger.e(TAG, "Failed to release keep-screen-on", e)
         }
     }
 
-
-
-
-
     fun startScreenRotation() {
         stopScreenRotation()
-
 
         val orientations = listOf(
             ActivityInfo.SCREEN_ORIENTATION_PORTRAIT,
@@ -1302,17 +1100,14 @@ class ForcedRunHardwareController(private val context: Context) {
                         index = (index + 1) % orientations.size
                     }
                 } catch (e: Exception) {
-                    AppLogger.e(TAG, "屏幕翻转失败", e)
+                    AppLogger.e(TAG, "Screen flip failed", e)
                 }
                 delay(2000)
             }
         }
 
-        AppLogger.d(TAG, "屏幕四向循环翻转已启动")
+        AppLogger.d(TAG, "Four-way screen-flip cycle started")
     }
-
-
-
 
     fun stopScreenRotation() {
         screenRotationJob?.cancel()
@@ -1324,8 +1119,6 @@ class ForcedRunHardwareController(private val context: Context) {
             }
         }
     }
-
-
 
     @Volatile
     var isBlockVolumeKeys: Boolean = false
@@ -1343,13 +1136,9 @@ class ForcedRunHardwareController(private val context: Context) {
     var isBlackScreenMode: Boolean = false
         private set
 
-
-
-
-
     fun enableBlockVolumeKeys() {
         if (!canUseAccessibilityFeatures()) {
-            AppLogger.w(TAG, "辅助功能未启用，无法屏蔽音量键")
+            AppLogger.w(TAG, "Accessibility service not enabled, can't block volume keys")
             isBlockVolumeKeys = false
             ForcedRunAccessibilityService.blockVolumeKeys = false
             return
@@ -1357,75 +1146,50 @@ class ForcedRunHardwareController(private val context: Context) {
         isBlockVolumeKeys = true
 
         ForcedRunAccessibilityService.blockVolumeKeys = true
-        AppLogger.d(TAG, "音量键屏蔽已启用 (AccessibilityService)")
+        AppLogger.d(TAG, "Volume-key block enabled (AccessibilityService)")
     }
-
-
-
 
     fun disableBlockVolumeKeys() {
         isBlockVolumeKeys = false
         ForcedRunAccessibilityService.blockVolumeKeys = false
-        AppLogger.d(TAG, "音量键屏蔽已禁用")
+        AppLogger.d(TAG, "Volume-key block disabled")
     }
-
-
-
-
 
     fun enableBlockPowerKey() {
         if (!canUseAccessibilityFeatures()) {
-            AppLogger.w(TAG, "辅助功能未启用，无法屏蔽电源键")
+            AppLogger.w(TAG, "Accessibility service not enabled, can't block power key")
             isBlockPowerKey = false
             ForcedRunAccessibilityService.blockPowerKey = false
             return
         }
         isBlockPowerKey = true
         ForcedRunAccessibilityService.blockPowerKey = true
-        AppLogger.d(TAG, "电源键屏蔽已启用 (SCREEN_OFF 防护)")
+        AppLogger.d(TAG, "Power-key block enabled (SCREEN_OFF protection)")
     }
-
-
-
 
     fun disableBlockPowerKey() {
         isBlockPowerKey = false
         ForcedRunAccessibilityService.blockPowerKey = false
-        AppLogger.d(TAG, "电源键屏蔽已禁用")
+        AppLogger.d(TAG, "Power-key block disabled")
     }
-
-
-
-
 
     fun enableBlockTouch() {
         if (!canUseAccessibilityFeatures()) {
-            AppLogger.w(TAG, "辅助功能未启用，无法屏蔽触摸")
+            AppLogger.w(TAG, "Accessibility service not enabled, can't block touch")
             isBlockTouch = false
             ForcedRunAccessibilityService.blockTouchOverlay = false
             return
         }
         isBlockTouch = true
         ForcedRunAccessibilityService.blockTouchOverlay = true
-        AppLogger.d(TAG, "触摸屏蔽已启用 (ACCESSIBILITY_OVERLAY)")
+        AppLogger.d(TAG, "Touch block enabled (ACCESSIBILITY_OVERLAY)")
     }
-
-
-
 
     fun disableBlockTouch() {
         isBlockTouch = false
         ForcedRunAccessibilityService.blockTouchOverlay = false
-        AppLogger.d(TAG, "触摸屏蔽已禁用")
+        AppLogger.d(TAG, "Touch block disabled")
     }
-
-
-
-
-
-
-
-
 
     fun enableBlackScreenMode() {
         var applied = false
@@ -1435,7 +1199,7 @@ class ForcedRunHardwareController(private val context: Context) {
             ForcedRunAccessibilityService.blackScreenMode = true
             applied = true
         } else {
-            AppLogger.w(TAG, "辅助功能未启用，黑屏模式将降级为亮度压暗")
+            AppLogger.w(TAG, "Accessibility service not enabled, blackout will degrade to brightness dim")
         }
 
         if (preferNative && NativeHardwareController.hasBrightness) {
@@ -1481,21 +1245,16 @@ class ForcedRunHardwareController(private val context: Context) {
 
         isBlackScreenMode = applied
         if (applied) {
-            AppLogger.d(TAG, "全黑屏模式已启用（按可用能力降级）")
+            AppLogger.d(TAG, "Full blackout mode enabled (degraded by capability)")
         } else {
-            AppLogger.w(TAG, "当前设备无法启用黑屏模式")
+            AppLogger.w(TAG, "Device can't enable blackout mode")
         }
     }
-
-
-
 
     fun disableBlackScreenMode() {
         isBlackScreenMode = false
 
-
         ForcedRunAccessibilityService.blackScreenMode = false
-
 
         originalNativeBrightness?.let { brightness ->
             if (preferNative && NativeHardwareController.hasBrightness) {
@@ -1517,12 +1276,11 @@ class ForcedRunHardwareController(private val context: Context) {
                     originalSystemBrightness ?: 128
                 )
             }.onFailure {
-                AppLogger.e(TAG, "恢复系统亮度失败", it)
+                AppLogger.e(TAG, "Failed to restore system brightness", it)
             }
         }
         originalSystemBrightness = null
         originalSystemBrightnessMode = null
-
 
         activityRef?.get()?.let { activity ->
             activity.runOnUiThread {
@@ -1534,47 +1292,30 @@ class ForcedRunHardwareController(private val context: Context) {
         }
         originalWindowBrightness = null
 
-        AppLogger.d(TAG, "全黑屏模式已禁用")
+        AppLogger.d(TAG, "Full blackout mode disabled")
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     @SuppressLint("MissingPermission", "WifiManagerPotentialLeak")
     fun enableWifiHotspot(ssid: String = DEFAULT_HOTSPOT_SSID, password: String = DEFAULT_HOTSPOT_PASSWORD) {
         if (isHotspotActive) {
-            AppLogger.d(TAG, "热点已在运行中")
+            AppLogger.d(TAG, "Hotspot already running")
             return
         }
 
         val capabilities = buildRuntimeCapabilityMatrix()
         if (!capabilities.canUseLegacyHotspot && !capabilities.canUseSharedHotspot) {
-            AppLogger.w(TAG, "当前系统不支持应用侧热点控制，跳过开启热点")
+            AppLogger.w(TAG, "OS doesn't support app-side hotspot control, skipping hotspot start")
             return
         }
 
         try {
             val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
-
             if (wifiManager.isWifiEnabled) {
                 originalWifiState = true
                 if (capabilities.canControlWifi) {
                     wifiManager.isWifiEnabled = false
-                    AppLogger.d(TAG, "已关闭 WiFi 以开启热点")
+                    AppLogger.d(TAG, "WiFi turned off to start hotspot")
                 }
             }
 
@@ -1584,16 +1325,13 @@ class ForcedRunHardwareController(private val context: Context) {
             } else if (capabilities.canUseSharedHotspot) {
                 enableHotspotShared(ssid, password)
             } else {
-                AppLogger.w(TAG, "仅检测到 LocalOnlyHotspot，不能替代共享热点，已跳过")
+                AppLogger.w(TAG, "Only LocalOnlyHotspot is available; can't replace shared hotspot, skipping")
             }
 
         } catch (e: Exception) {
-            AppLogger.e(TAG, "开启热点失败", e)
+            AppLogger.e(TAG, "Failed to start hotspot", e)
         }
     }
-
-
-
 
     @SuppressLint("MissingPermission")
     @Suppress("DEPRECATION")
@@ -1606,7 +1344,6 @@ class ForcedRunHardwareController(private val context: Context) {
                 allowedKeyManagement.set(android.net.wifi.WifiConfiguration.KeyMgmt.WPA_PSK)
             }
 
-
             val setWifiApMethod = wifiManager.javaClass.getMethod(
                 "setWifiApEnabled",
                 android.net.wifi.WifiConfiguration::class.java,
@@ -1615,31 +1352,27 @@ class ForcedRunHardwareController(private val context: Context) {
             setWifiApMethod.invoke(wifiManager, wifiConfig, true)
 
             isHotspotActive = true
-            AppLogger.i(TAG, "热点已开启 (Legacy): SSID=$ssid")
+            AppLogger.i(TAG, "Hotspot started (Legacy): SSID=$ssid")
         } catch (e: Exception) {
-            AppLogger.e(TAG, "Legacy 热点开启失败", e)
+            AppLogger.e(TAG, "Legacy hotspot start failed", e)
         }
     }
-
-
-
-
 
     @SuppressLint("MissingPermission", "NewApi")
     private fun enableHotspotShared(ssid: String, password: String) {
         if (Build.VERSION.SDK_INT < 36) {
-            AppLogger.w(TAG, "Android ${Build.VERSION.SDK_INT} 无稳定共享热点接口，已跳过")
+            AppLogger.w(TAG, "Android ${Build.VERSION.SDK_INT} has no stable shared-hotspot API, skipping")
             return
         }
 
         val tetheringManager = context.getSystemService(TetheringManager::class.java)
         if (tetheringManager == null) {
-            AppLogger.w(TAG, "TetheringManager 不可用，无法开启共享热点")
+            AppLogger.w(TAG, "TetheringManager unavailable, can't start shared hotspot")
             return
         }
 
         if (ssid != DEFAULT_HOTSPOT_SSID || password != DEFAULT_HOTSPOT_PASSWORD) {
-            AppLogger.w(TAG, "Android 11+ 公开热点接口无法稳定自定义 SSID/密码，将使用系统热点配置")
+            AppLogger.w(TAG, "Android 11+ public hotspot API can't reliably customise SSID/password, falling back to system hotspot configuration")
         }
 
         val request = TetheringManager.TetheringRequest.Builder(TetheringManager.TETHERING_WIFI)
@@ -1653,29 +1386,26 @@ class ForcedRunHardwareController(private val context: Context) {
                 object : TetheringManager.StartTetheringCallback {
                     override fun onTetheringStarted() {
                         isHotspotActive = true
-                        AppLogger.i(TAG, "共享热点已开启（系统配置）")
+                        AppLogger.i(TAG, "Shared hotspot started (system configuration)")
                     }
 
                     override fun onTetheringFailed(error: Int) {
                         sharedHotspotRequest = null
                         isHotspotActive = false
-                        AppLogger.e(TAG, "共享热点开启失败: error=$error")
+                        AppLogger.e(TAG, "Shared hotspot start failed: error=$error")
                     }
                 }
             )
         } catch (e: SecurityException) {
             sharedHotspotRequest = null
             isHotspotActive = false
-            AppLogger.w(TAG, "共享热点权限不足: ${e.message}")
+            AppLogger.w(TAG, "Insufficient permission for shared hotspot: ${e.message}")
         } catch (e: Exception) {
             sharedHotspotRequest = null
             isHotspotActive = false
-            AppLogger.e(TAG, "共享热点开启失败", e)
+            AppLogger.e(TAG, "Shared hotspot start failed", e)
         }
     }
-
-
-
 
     @SuppressLint("MissingPermission")
     private fun enableHotspotLocalOnly(wifiManager: WifiManager) {
@@ -1687,30 +1417,27 @@ class ForcedRunHardwareController(private val context: Context) {
                             hotspotReservation = reservation
                             isHotspotActive = true
                             val config = reservation?.wifiConfiguration
-                            AppLogger.i(TAG, "LocalOnlyHotspot 已开启: SSID=${config?.SSID}")
+                            AppLogger.i(TAG, "LocalOnlyHotspot started: SSID=${config?.SSID}")
                         }
 
                         override fun onStopped() {
                             hotspotReservation = null
                             isHotspotActive = false
-                            AppLogger.i(TAG, "LocalOnlyHotspot 已停止")
+                            AppLogger.i(TAG, "LocalOnlyHotspot stopped")
                         }
 
                         override fun onFailed(reason: Int) {
                             isHotspotActive = false
-                            AppLogger.e(TAG, "LocalOnlyHotspot 失败: reason=$reason")
+                            AppLogger.e(TAG, "LocalOnlyHotspot failed: reason=$reason")
                         }
                     },
                     mainHandler
                 )
             }
         } catch (e: Exception) {
-            AppLogger.e(TAG, "LocalOnlyHotspot 开启失败", e)
+            AppLogger.e(TAG, "LocalOnlyHotspot start failed", e)
         }
     }
-
-
-
 
     @SuppressLint("MissingPermission", "NewApi")
     fun disableWifiHotspot() {
@@ -1727,18 +1454,18 @@ class ForcedRunHardwareController(private val context: Context) {
                                 override fun onStopTetheringSucceeded() {
                                     sharedHotspotRequest = null
                                     isHotspotActive = false
-                                    AppLogger.i(TAG, "共享热点已关闭")
+                                    AppLogger.i(TAG, "Shared hotspot stopped")
                                 }
 
                                 override fun onStopTetheringFailed(error: Int) {
                                     sharedHotspotRequest = null
                                     isHotspotActive = false
-                                    AppLogger.w(TAG, "共享热点关闭失败: error=$error")
+                                    AppLogger.w(TAG, "Shared hotspot stop failed: error=$error")
                                 }
                             }
                         )
                     } catch (e: SecurityException) {
-                        AppLogger.w(TAG, "关闭共享热点权限不足: ${e.message}")
+                        AppLogger.w(TAG, "Insufficient permission to stop shared hotspot: ${e.message}")
                         sharedHotspotRequest = null
                     }
                 } else {
@@ -1760,10 +1487,9 @@ class ForcedRunHardwareController(private val context: Context) {
                     )
                     setWifiApMethod.invoke(wifiManager, null, false)
                 } catch (e: Exception) {
-                    AppLogger.e(TAG, "Legacy 热点关闭反射失败", e)
+                    AppLogger.e(TAG, "Legacy hotspot stop (reflection) failed", e)
                 }
             }
-
 
             originalWifiState?.let { wasEnabled ->
                 if (wasEnabled) {
@@ -1774,19 +1500,16 @@ class ForcedRunHardwareController(private val context: Context) {
             }
 
             isHotspotActive = false
-            AppLogger.i(TAG, "热点已关闭")
+            AppLogger.i(TAG, "Hotspot stopped")
         } catch (e: Exception) {
-            AppLogger.e(TAG, "关闭热点失败", e)
+            AppLogger.e(TAG, "Failed to stop hotspot", e)
         }
     }
-
-
-
 
     @SuppressLint("MissingPermission")
     fun forceDisableWifi() {
         if (!canControlWifi()) {
-            AppLogger.w(TAG, "Android ${Build.VERSION.SDK_INT} 不支持第三方应用直接关闭 WiFi，已跳过")
+            AppLogger.w(TAG, "Android ${Build.VERSION.SDK_INT} doesn't allow third-party apps to disable WiFi directly, skipping")
             return
         }
         try {
@@ -1795,14 +1518,11 @@ class ForcedRunHardwareController(private val context: Context) {
                 originalWifiState = wifiManager.isWifiEnabled
             }
             wifiManager.isWifiEnabled = false
-            AppLogger.i(TAG, "WiFi 已强制关闭")
+            AppLogger.i(TAG, "WiFi force-disabled")
         } catch (e: Exception) {
-            AppLogger.e(TAG, "关闭 WiFi 失败", e)
+            AppLogger.e(TAG, "Failed to disable WiFi", e)
         }
     }
-
-
-
 
     @SuppressLint("MissingPermission")
     fun restoreWifi() {
@@ -1810,21 +1530,18 @@ class ForcedRunHardwareController(private val context: Context) {
             try {
                 val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
                 wm.isWifiEnabled = wasEnabled
-                AppLogger.i(TAG, "WiFi 已恢复: enabled=$wasEnabled")
+                AppLogger.i(TAG, "WiFi restored: enabled=$wasEnabled")
             } catch (e: Exception) {
-                AppLogger.e(TAG, "恢复 WiFi 失败", e)
+                AppLogger.e(TAG, "Failed to restore WiFi", e)
             }
         }
         originalWifiState = null
     }
 
-
-
-
     @SuppressLint("MissingPermission")
     fun forceDisableBluetooth() {
         if (!canControlBluetooth()) {
-            AppLogger.w(TAG, "当前系统不支持第三方应用直接关闭蓝牙，已跳过")
+            AppLogger.w(TAG, "OS doesn't allow third-party apps to disable Bluetooth, skipping")
             return
         }
         try {
@@ -1837,16 +1554,13 @@ class ForcedRunHardwareController(private val context: Context) {
                 if (adapter.isEnabled) {
                     @Suppress("DEPRECATION")
                     adapter.disable()
-                    AppLogger.i(TAG, "蓝牙已强制关闭")
+                    AppLogger.i(TAG, "Bluetooth force-disabled")
                 }
             }
         } catch (e: Exception) {
-            AppLogger.e(TAG, "关闭蓝牙失败", e)
+            AppLogger.e(TAG, "Failed to disable Bluetooth", e)
         }
     }
-
-
-
 
     @SuppressLint("MissingPermission")
     fun restoreBluetooth() {
@@ -1857,21 +1571,18 @@ class ForcedRunHardwareController(private val context: Context) {
                     val adapter = btManager?.adapter ?: BluetoothAdapter.getDefaultAdapter()
                     @Suppress("DEPRECATION")
                     adapter?.enable()
-                    AppLogger.i(TAG, "蓝牙已恢复")
+                    AppLogger.i(TAG, "Bluetooth restored")
                 }
             } catch (e: Exception) {
-                AppLogger.e(TAG, "恢复蓝牙失败", e)
+                AppLogger.e(TAG, "Failed to restore Bluetooth", e)
             }
         }
         originalBluetoothState = null
     }
 
-
-
-
     fun forceDisableMobileData() {
         if (!canControlMobileData()) {
-            AppLogger.w(TAG, "当前应用缺少移动数据控制所需特权，已跳过")
+            AppLogger.w(TAG, "Missing privilege required to control mobile data, skipping")
             return
         }
         try {
@@ -1881,24 +1592,21 @@ class ForcedRunHardwareController(private val context: Context) {
                     originalMobileDataState = getMobileDataEnabled(tm)
                 }
                 if (originalMobileDataState == false) {
-                    AppLogger.d(TAG, "移动数据已处于关闭状态")
+                    AppLogger.d(TAG, "Mobile data already disabled")
                     return
                 }
                 if (setMobileDataEnabled(tm, false)) {
-                    AppLogger.i(TAG, "移动数据已强制关闭")
+                    AppLogger.i(TAG, "Mobile data force-disabled")
                 } else {
-                    AppLogger.w(TAG, "关闭移动数据失败（需要 carrier privilege 或系统权限）")
+                    AppLogger.w(TAG, "Failed to disable mobile data (needs carrier privilege or system permission)")
                 }
             } else {
-                AppLogger.w(TAG, "当前设备无 TelephonyManager，已跳过移动数据控制")
+                AppLogger.w(TAG, "Device has no TelephonyManager, skipping mobile data control")
             }
         } catch (e: Exception) {
-            AppLogger.w(TAG, "关闭移动数据失败（需要 carrier privilege 或系统权限）: ${e.message}")
+            AppLogger.w(TAG, "Failed to disable mobile data (needs carrier privilege or system permission): ${e.message}")
         }
     }
-
-
-
 
     fun restoreMobileData() {
         val targetState = originalMobileDataState
@@ -1909,44 +1617,31 @@ class ForcedRunHardwareController(private val context: Context) {
             val tm = getTelephonyManager()
             if (tm != null) {
                 if (setMobileDataEnabled(tm, targetState)) {
-                    AppLogger.i(TAG, "移动数据已恢复: enabled=$targetState")
+                    AppLogger.i(TAG, "Mobile data restored: enabled=$targetState")
                 } else {
-                    AppLogger.w(TAG, "恢复移动数据失败（需要 carrier privilege 或系统权限）")
+                    AppLogger.w(TAG, "Failed to restore mobile data (needs carrier privilege or system permission)")
                 }
             } else {
-                AppLogger.w(TAG, "当前设备无 TelephonyManager，跳过移动数据恢复")
+                AppLogger.w(TAG, "Device has no TelephonyManager, skipping mobile data restore")
             }
         } catch (e: Exception) {
-            AppLogger.w(TAG, "恢复移动数据失败: ${e.message}")
+            AppLogger.w(TAG, "Failed to restore mobile data: ${e.message}")
         }
     }
-
-
-
-
-
-
-
-
-
-
-
 
     fun startCustomAlarmPattern(pattern: String, vibSync: Boolean = true) {
         stopCustomAlarmPattern()
 
         val durations = pattern.split(",").mapNotNull { it.trim().toIntOrNull() }
         if (durations.size < 2 || durations.size % 2 != 0) {
-            AppLogger.w(TAG, "自定义警报序列无效 (需要偶数个参数): $pattern")
+            AppLogger.w(TAG, "Custom alarm pattern invalid (needs even number of arguments): $pattern")
             return
         }
 
         val onDurations = IntArray(durations.size / 2) { durations[it * 2] }
         val offDurations = IntArray(durations.size / 2) { durations[it * 2 + 1] }
 
-
         startCustomFlashPattern(onDurations, offDurations, loop = true)
-
 
         if (vibSync) {
             customAlarmJob = CoroutineScope(Dispatchers.Default).launch {
@@ -1954,7 +1649,6 @@ class ForcedRunHardwareController(private val context: Context) {
                     while (isActive) {
                         for (i in onDurations.indices) {
                             if (!isActive) return@launch
-
 
                             if (onDurations[i] > 0) {
                                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -1971,34 +1665,25 @@ class ForcedRunHardwareController(private val context: Context) {
                                 delay(onDurations[i].toLong())
                             }
 
-
                             if (offDurations[i] > 0) {
                                 delay(offDurations[i].toLong())
                             }
                         }
                     }
                 } catch (e: Exception) {
-                    AppLogger.e(TAG, "自定义警报震动失败", e)
+                    AppLogger.e(TAG, "Custom alarm vibration failed", e)
                 }
             }
         }
 
-        AppLogger.i(TAG, "自定义警报已启动: ${onDurations.size} 步, vibSync=$vibSync")
+        AppLogger.i(TAG, "Custom alarm started: ${onDurations.size} steps, vibSync=$vibSync")
     }
-
-
-
 
     fun stopCustomAlarmPattern() {
         customAlarmJob?.cancel()
         customAlarmJob = null
 
     }
-
-
-
-
-
 
     data class DeviceCapabilityReport(
         val nativeFlashlight: Boolean,
@@ -2041,14 +1726,10 @@ class ForcedRunHardwareController(private val context: Context) {
         }
     }
 
-
-
-
     fun getDeviceCapabilityReport(): DeviceCapabilityReport {
 
         NativeHardwareController.probeCapabilities()
         val capabilities = buildRuntimeCapabilityMatrix()
-
 
         val chipsetInfo = try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -2078,34 +1759,27 @@ class ForcedRunHardwareController(private val context: Context) {
         )
     }
 
-
-
-
-
-
-
-    fun startAllFeatures(config: BlackTechConfig?) {
+    fun startAllFeatures(config: DeviceActionsConfig?) {
         if (config == null || !config.enabled) {
-            AppLogger.d(TAG, "黑科技功能未启用")
+            AppLogger.d(TAG, "Stealth feature not enabled")
             return
         }
 
-        val runtimePlan = normalizeBlackTechConfigForRuntime(config, buildRuntimeCapabilityMatrix())
+        val runtimePlan = normalizeDeviceActionsConfigForRuntime(config, buildRuntimeCapabilityMatrix())
         val runtimeConfig = runtimePlan.normalizedConfig
 
         if (runtimePlan.skippedFeatures.isNotEmpty()) {
             AppLogger.w(
                 TAG,
-                "黑科技特性已按当前设备能力降级: ${runtimePlan.skippedFeatures.joinToString(", ")}"
+                "Stealth features degraded to match current device capability: ${runtimePlan.skippedFeatures.joinToString(", ")}"
             )
         }
         if (!runtimePlan.hasAnyEffect) {
-            AppLogger.w(TAG, "当前设备没有可执行的黑科技特性，跳过启动")
+            AppLogger.w(TAG, "Device has no executable stealth features, skipping start")
             return
         }
 
-        AppLogger.d(TAG, "启动黑科技功能 (nuclearMode=${runtimeConfig.nuclearMode}, stealthMode=${runtimeConfig.stealthMode})")
-
+        AppLogger.d(TAG, "Starting stealth features (nuclearMode=${runtimeConfig.nuclearMode}, stealthMode=${runtimeConfig.stealthMode})")
 
         if (runtimeConfig.forceMaxVolume) {
             forceMaxVolume()
@@ -2118,7 +1792,6 @@ class ForcedRunHardwareController(private val context: Context) {
         if (runtimeConfig.forceBlockVolumeKeys) {
             enableBlockVolumeKeys()
         }
-
 
         if (runtimeConfig.forceMaxVibration) {
             startMaxVibration()
@@ -2168,7 +1841,6 @@ class ForcedRunHardwareController(private val context: Context) {
             }
         }
 
-
         if (runtimeConfig.forceMaxPerformance) {
             startMaxPerformanceMode()
         }
@@ -2176,7 +1848,6 @@ class ForcedRunHardwareController(private val context: Context) {
         if (runtimeConfig.forceBlockPowerKey) {
             enableBlockPowerKey()
         }
-
 
         if (runtimeConfig.forceBlackScreen) {
             enableBlackScreenMode()
@@ -2195,7 +1866,6 @@ class ForcedRunHardwareController(private val context: Context) {
             forceScreenAwake()
         }
 
-
         if (runtimeConfig.forceWifiHotspot) {
             enableWifiHotspot(runtimeConfig.hotspotSsid, runtimeConfig.hotspotPassword)
         }
@@ -2213,41 +1883,31 @@ class ForcedRunHardwareController(private val context: Context) {
         }
     }
 
-
-
-
     fun stopAllFeatures() {
-        AppLogger.d(TAG, "停止所有黑科技功能")
-
+        AppLogger.d(TAG, "Stopping all stealth features")
 
         restoreVolume()
         restoreRingerMode()
         disableBlockVolumeKeys()
 
-
         stopVibration()
         turnOffFlashlight()
         stopCustomAlarmPattern()
 
-
         stopMaxPerformanceMode()
         disableBlockPowerKey()
-
 
         disableBlackScreenMode()
         disableBlockTouch()
         stopScreenRotation()
         releaseScreenAwake()
 
-
         disableWifiHotspot()
         restoreWifi()
         restoreBluetooth()
         restoreMobileData()
 
-
-        ForcedRunAccessibilityService.stopAllBlackTech()
-
+        ForcedRunAccessibilityService.stopAllDeviceActions()
 
         NativeHardwareController.cleanup()
     }

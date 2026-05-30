@@ -87,11 +87,9 @@ class AdBlockerTest {
         adBlocker.initialize(useDefaultRules = true)
         adBlocker.setEnabled(true)
 
-
         adBlocker.addRule("||alicdn.com^")
         adBlocker.addRule("||aliexpress-media.com^")
         adBlocker.addRule("||aliexpress.com^")
-
 
         assertThat(adBlocker.shouldBlock("https://ae01.alicdn.com/kf/product.jpg", resourceType = "image")).isFalse()
         assertThat(adBlocker.shouldBlock("https://ae02.alicdn.com/kf/product.jpg", resourceType = "image")).isFalse()
@@ -103,10 +101,8 @@ class AdBlockerTest {
         assertThat(adBlocker.shouldBlock("https://g.alicdn.com/code/lib/x.js", resourceType = "script")).isFalse()
         assertThat(adBlocker.shouldBlock("https://at.alicdn.com/t/font.woff2", resourceType = "font")).isFalse()
 
-
         assertThat(adBlocker.shouldBlock("https://ae-pic-a1.aliexpress-media.com/kf/x.jpg", resourceType = "image")).isFalse()
         assertThat(adBlocker.shouldBlock("https://ae-pic-a2.aliexpress-media.com/kf/x.jpg", resourceType = "image")).isFalse()
-
 
         assertThat(adBlocker.shouldBlock("https://aliexpress.ru/item/1.html", resourceType = "main_frame")).isFalse()
         assertThat(adBlocker.shouldBlock("https://m.aliexpress.ru/store/x", resourceType = "xmlhttprequest")).isFalse()
@@ -115,4 +111,3 @@ class AdBlockerTest {
     }
 
 }
-

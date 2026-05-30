@@ -2,15 +2,7 @@ package com.webtoapp.core.extension
 
 import com.webtoapp.core.i18n.Strings
 
-
-
-
-
-
 object BuiltInModules {
-
-
-
 
     fun getAll(): List<ExtensionModule> = listOf(
         videoDownloader(),
@@ -25,8 +17,6 @@ object BuiltInModules {
         contentEnhancer(),
         elementBlocker()
     )
-
-
 
     private fun videoDownloader() = ExtensionModule(
         id = "builtin-video-downloader",
@@ -44,8 +34,6 @@ object BuiltInModules {
         code = VIDEO_DOWNLOADER_CODE,
         runMode = ModuleRunMode.INTERACTIVE,
     )
-
-
 
     private fun bilibiliVideoExtractor() = ExtensionModule(
         id = "builtin-bilibili-extractor",
@@ -65,8 +53,6 @@ object BuiltInModules {
         runMode = ModuleRunMode.INTERACTIVE,
     )
 
-
-
     private fun douyinVideoExtractor() = ExtensionModule(
         id = "builtin-douyin-extractor",
         name = Strings.builtinDouyinExtractor,
@@ -84,8 +70,6 @@ object BuiltInModules {
         code = DOUYIN_EXTRACTOR_CODE,
         runMode = ModuleRunMode.INTERACTIVE,
     )
-
-
 
     private fun xiaohongshuExtractor() = ExtensionModule(
         id = "builtin-xiaohongshu-extractor",
@@ -105,8 +89,6 @@ object BuiltInModules {
         runMode = ModuleRunMode.INTERACTIVE,
     )
 
-
-
     private fun videoEnhancer() = ExtensionModule(
         id = "builtin-video-enhancer",
         name = Strings.builtinVideoEnhancer,
@@ -123,8 +105,6 @@ object BuiltInModules {
         code = VIDEO_ENHANCER_CODE,
         runMode = ModuleRunMode.INTERACTIVE,
     )
-
-
 
     private fun webAnalyzer() = ExtensionModule(
         id = "builtin-web-analyzer",
@@ -143,7 +123,6 @@ object BuiltInModules {
         runMode = ModuleRunMode.INTERACTIVE,
     )
 
-
     private fun findInPage() = ExtensionModule(
         id = "builtin-find-in-page",
         name = Strings.builtinFindInPage,
@@ -160,8 +139,6 @@ object BuiltInModules {
         code = FIND_IN_PAGE_CODE,
         runMode = ModuleRunMode.INTERACTIVE,
     )
-
-
 
     private fun advancedDarkMode() = ExtensionModule(
         id = "builtin-dark-mode",
@@ -180,8 +157,6 @@ object BuiltInModules {
         runMode = ModuleRunMode.INTERACTIVE,
     )
 
-
-
     private fun privacyProtection() = ExtensionModule(
         id = "builtin-privacy-protection",
         name = Strings.builtinPrivacyProtection,
@@ -198,8 +173,6 @@ object BuiltInModules {
         code = PRIVACY_PROTECTION_CODE,
         runMode = ModuleRunMode.INTERACTIVE,
     )
-
-
 
     private fun elementBlocker() = ExtensionModule(
         id = "builtin-element-blocker",
@@ -218,8 +191,6 @@ object BuiltInModules {
         runMode = ModuleRunMode.INTERACTIVE,
     )
 
-
-
     private fun contentEnhancer() = ExtensionModule(
         id = "builtin-content-enhancer",
         name = Strings.builtinContentEnhancer,
@@ -236,9 +207,6 @@ object BuiltInModules {
         code = CONTENT_ENHANCER_CODE,
         runMode = ModuleRunMode.INTERACTIVE,
     )
-
-
-
 
     private const val VIDEO_DOWNLOADER_CODE = """
 (function() {
@@ -297,7 +265,6 @@ object BuiltInModules {
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', register) : register();
 })();
 """
-
 
     private const val BILIBILI_EXTRACTOR_CODE = """
 (function() {
@@ -359,7 +326,6 @@ object BuiltInModules {
     setTimeout(register, 1000);
 })();
 """
-
 
     private const val DOUYIN_EXTRACTOR_CODE = """
 (function() {
@@ -425,7 +391,6 @@ object BuiltInModules {
     setTimeout(register, 1000);
 })();
 """
-
 
     private const val XIAOHONGSHU_EXTRACTOR_CODE = """
 (function() {
@@ -511,7 +476,6 @@ object BuiltInModules {
 })();
 """
 
-
     private const val VIDEO_ENHANCER_CODE = """
 (function() {
     'use strict';
@@ -574,7 +538,6 @@ object BuiltInModules {
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', register) : register();
 })();
 """
-
 
     private const val WEB_ANALYZER_CODE = """
 (function() {
@@ -639,7 +602,6 @@ object BuiltInModules {
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', register) : register();
 })();
 """
-
 
     private const val FIND_IN_PAGE_CODE = """
 (function() {
@@ -799,7 +761,6 @@ object BuiltInModules {
 })();
 """
 
-
     private const val DARK_MODE_CODE = """
 (function() {
     'use strict';
@@ -889,7 +850,6 @@ object BuiltInModules {
 })();
 """
 
-
     private const val PRIVACY_PROTECTION_CODE = """
 (function() {
     'use strict';
@@ -959,7 +919,6 @@ object BuiltInModules {
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', register) : register();
 })();
 """
-
 
     private const val CONTENT_ENHANCER_CODE = """
 (function() {
@@ -1031,7 +990,6 @@ object BuiltInModules {
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', register) : register();
 })();
 """
-
 
     private const val ELEMENT_BLOCKER_CODE = """
 (function() {

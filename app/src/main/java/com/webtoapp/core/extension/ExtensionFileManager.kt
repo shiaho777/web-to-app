@@ -14,15 +14,6 @@ import java.security.MessageDigest
 import java.util.UUID
 import java.util.zip.ZipInputStream
 
-
-
-
-
-
-
-
-
-
 class ExtensionFileManager(private val context: Context) {
 
     companion object {
@@ -39,6 +30,13 @@ class ExtensionFileManager(private val context: Context) {
         File(context.filesDir, EXTENSIONS_DIR).apply { mkdirs() }
     }
 
+    fun allocateChromeExtensionDir(): Pair<String, File> {
+        val id = UUID.randomUUID().toString().take(12)
+        val dir = File(extensionsDir, id)
+        dir.mkdirs()
+        return id to dir
+    }
+
     private val tempDir: File by lazy {
         File(context.cacheDir, TEMP_DIR).apply { mkdirs() }
     }
@@ -53,9 +51,6 @@ class ExtensionFileManager(private val context: Context) {
 
     private val httpClient get() = NetworkModule.defaultClient
 
-
-
-
     sealed class ImportResult {
         data class UserScript(
             val parseResult: UserScriptParser.ParseResult
@@ -66,9 +61,6 @@ class ExtensionFileManager(private val context: Context) {
             val extractedDir: File
         ) : ImportResult()
 
-
-
-
         data class JsPackage(
             val module: ExtensionModule,
             val fileCount: Int,
@@ -77,11 +69,6 @@ class ExtensionFileManager(private val context: Context) {
 
         data class Error(val message: String) : ImportResult()
     }
-
-
-
-
-
 
     suspend fun importUserScript(uri: Uri): ImportResult = withContext(Dispatchers.IO) {
         try {
@@ -97,9 +84,6 @@ class ExtensionFileManager(private val context: Context) {
         }
     }
 
-
-
-
     fun importUserScriptFromText(content: String, fileName: String = ""): ImportResult {
         return try {
             val parseResult = UserScriptParser.parse(content, fileName)
@@ -109,11 +93,6 @@ class ExtensionFileManager(private val context: Context) {
             ImportResult.Error("Parse failed: ${e.message}")
         }
     }
-
-
-
-
-
 
     suspend fun importChromeExtension(uri: Uri): ImportResult = withContext(Dispatchers.IO) {
         try {
@@ -131,7 +110,6 @@ class ExtensionFileManager(private val context: Context) {
 
             val result = importChromeExtensionFromFile(tempFile)
 
-
             tempFile.delete()
 
             result
@@ -140,10 +118,6 @@ class ExtensionFileManager(private val context: Context) {
             ImportResult.Error("Import failed: ${e.message}")
         }
     }
-
-
-
-
 
     suspend fun importChromeExtensionFromFile(file: File): ImportResult = withContext(Dispatchers.IO) {
         try {
@@ -162,7 +136,6 @@ class ExtensionFileManager(private val context: Context) {
                 extractZipToDirectory(file, extractDir)
             }
 
-
             val actualDir = findManifestDirectory(extractDir)
             if (actualDir == null) {
 
@@ -176,8 +149,6 @@ class ExtensionFileManager(private val context: Context) {
                         "Chrome extension import currently requires a package with content_scripts, popup/options UI, or background/declarativeNetRequest runtime assets."
                 )
             }
-
-
 
             val parseResult = ChromeExtensionParser.parseFromDirectory(actualDir, overrideExtensionId = extensionId)
 
@@ -194,10 +165,6 @@ class ExtensionFileManager(private val context: Context) {
             ImportResult.Error("Import failed: ${e.message}")
         }
     }
-
-
-
-
 
     suspend fun importJsZipPackage(uri: Uri): ImportResult = withContext(Dispatchers.IO) {
         try {
@@ -232,10 +199,6 @@ class ExtensionFileManager(private val context: Context) {
         }
     }
 
-
-
-
-
     private fun tryImportAsJsPackage(dir: File): ImportResult? {
         val jsFiles = dir.walkTopDown()
             .filter { it.isFile && (it.extension.equals("js", true) || it.extension.equals("mjs", true)) }
@@ -247,14 +210,11 @@ class ExtensionFileManager(private val context: Context) {
             .filter { it.isFile && it.extension.equals("css", true) }
             .toList()
 
-
-
         val codeFilesMap = linkedMapOf<String, String>()
         jsFiles.forEach { file ->
             val relativePath = file.relativeTo(dir).path
             codeFilesMap[relativePath] = file.readText()
         }
-
 
         val combinedCss = if (cssFiles.isNotEmpty()) {
             buildString {
@@ -265,7 +225,6 @@ class ExtensionFileManager(private val context: Context) {
                 }
             }
         } else ""
-
 
         val suggestedName = dir.name.takeIf { it.isNotBlank() && !it.startsWith("jszip_") }
             ?: jsFiles.firstOrNull()?.nameWithoutExtension
@@ -291,12 +250,6 @@ class ExtensionFileManager(private val context: Context) {
             totalSize = totalSize
         )
     }
-
-
-
-
-
-
 
     suspend fun preloadRequires(requireUrls: List<String>): Map<String, String> = withContext(Dispatchers.IO) {
         val result = mutableMapOf<String, String>()
@@ -331,10 +284,6 @@ class ExtensionFileManager(private val context: Context) {
         }
         result
     }
-
-
-
-
 
     suspend fun preloadResources(resources: Map<String, String>): Map<String, String> = withContext(Dispatchers.IO) {
         val result = mutableMapOf<String, String>()
@@ -375,19 +324,11 @@ class ExtensionFileManager(private val context: Context) {
         result
     }
 
-
-
-
-
     fun getCachedRequire(url: String): String? {
         val hash = sha256(url)
         val cacheFile = File(requireCacheDir, hash)
         return if (cacheFile.exists()) cacheFile.readText() else null
     }
-
-
-
-
 
     fun getCachedResource(name: String, url: String): String? {
         val hash = sha256("$name:$url")
@@ -402,11 +343,6 @@ class ExtensionFileManager(private val context: Context) {
             .take(32)
     }
 
-
-
-
-
-
     fun cleanupExtensionDir(dirName: String) {
         try {
             val dir = File(extensionsDir, dirName)
@@ -419,9 +355,6 @@ class ExtensionFileManager(private val context: Context) {
         }
     }
 
-
-
-
     fun cleanupTemp() {
         try {
             tempDir.listFiles()?.forEach { it.deleteRecursively() }
@@ -430,17 +363,9 @@ class ExtensionFileManager(private val context: Context) {
         }
     }
 
-
-
-
     fun getExtensionsDirSize(): Long {
         return extensionsDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
     }
-
-
-
-
-
 
     private fun extractZipToDirectory(zipFile: File, targetDir: File) {
         ZipInputStream(zipFile.inputStream().buffered()).use { zis ->
@@ -448,13 +373,9 @@ class ExtensionFileManager(private val context: Context) {
         }
     }
 
-
-
-
     private fun extractCrxToDirectory(crxFile: File, zipOffset: Long, targetDir: File) {
         RandomAccessFile(crxFile, "r").use { raf ->
             raf.seek(zipOffset)
-
 
             val tempZip = File(tempDir, "crx_zip_${System.currentTimeMillis()}.zip")
             try {
@@ -472,14 +393,10 @@ class ExtensionFileManager(private val context: Context) {
         }
     }
 
-
-
-
     private fun extractZipStream(zis: ZipInputStream, targetDir: File) {
         var entry = zis.nextEntry
         while (entry != null) {
             val entryName = entry.name
-
 
             val destFile = File(targetDir, entryName).canonicalFile
             if (!destFile.path.startsWith(targetDir.canonicalPath)) {
@@ -488,7 +405,6 @@ class ExtensionFileManager(private val context: Context) {
                 entry = zis.nextEntry
                 continue
             }
-
 
             if (entryName.startsWith("__MACOSX/") || entryName.endsWith(".DS_Store")) {
                 zis.closeEntry()
@@ -510,18 +426,12 @@ class ExtensionFileManager(private val context: Context) {
         }
     }
 
-
-
-
     private fun findManifestDirectory(dir: File): File? {
         return dir.walkTopDown()
             .maxDepth(4)
             .filter { it.isDirectory && it.resolve("manifest.json").exists() }
             .minByOrNull { it.relativeTo(dir).path.count { ch -> ch == File.separatorChar } }
     }
-
-
-
 
     private fun getFileName(uri: Uri): String? {
         return try {

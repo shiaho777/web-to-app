@@ -34,12 +34,6 @@ import com.webtoapp.ui.design.WtaStatusTone
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaSwitch
 
-/**
- * Legacy common UI helpers kept as thin forwarders over the Wta design system.
- * Prefer the Wta components directly in new code. These exist to avoid a
- * flag-day migration of every screen at once.
- */
-
 @Composable
 fun SettingsSwitch(
     title: String,
@@ -138,8 +132,7 @@ fun IconSwitchCard(
     subtitle: String? = null,
     modifier: Modifier = Modifier
 ) {
-    // Painter variant: fall back to a plain row without an icon plate so we don't
-    // have to duplicate the tinted plate rendering. Legacy callers keep working.
+
     WtaCard(
         modifier = modifier.fillMaxWidth(),
         tone = WtaCardTone.Surface
@@ -288,7 +281,7 @@ fun IconTitleRow(
     enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-    // Painter variant retained for callers that use vector resource painters.
+
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically

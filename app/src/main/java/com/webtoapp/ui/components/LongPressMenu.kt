@@ -36,9 +36,6 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LongPressMenuSheet(
@@ -145,7 +142,6 @@ private fun ImageMenuContent(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-
         Text(
             text = imageUrl.take(100) + if (imageUrl.length > 100) "..." else "",
             style = MaterialTheme.typography.bodySmall,
@@ -157,7 +153,6 @@ private fun ImageMenuContent(
 
         Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider()
-
 
         MenuItemButton(
             icon = Icons.Default.Download,
@@ -215,7 +210,6 @@ private fun VideoMenuContent(
             )
         }
 
-
         Text(
             text = videoUrl.take(100) + if (videoUrl.length > 100) "..." else "",
             style = MaterialTheme.typography.bodySmall,
@@ -227,7 +221,6 @@ private fun VideoMenuContent(
 
         Spacer(modifier = Modifier.height(16.dp))
         HorizontalDivider()
-
 
         MenuItemButton(
             icon = Icons.Default.Download,
@@ -301,7 +294,6 @@ private fun LinkMenuContent(
 
         HorizontalDivider()
 
-
         MenuItemButton(
             icon = Icons.Default.ContentCopy,
             text = Strings.longPressMenuCopyLink,
@@ -361,7 +353,6 @@ private fun ImageLinkMenuContent(
 
         HorizontalDivider()
 
-
         Text(
             text = Strings.longPressMenuImage,
             style = MaterialTheme.typography.labelMedium,
@@ -386,7 +377,6 @@ private fun ImageLinkMenuContent(
                 onDismiss()
             }
         )
-
 
         if (linkUrl.isNotBlank()) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -418,10 +408,6 @@ private fun ImageLinkMenuContent(
         }
     }
 }
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -529,7 +515,6 @@ private fun SimpleImageMenuContent(
 
         HorizontalDivider()
 
-
         MenuItemButton(
             icon = Icons.Default.Download,
             text = Strings.longPressMenuSaveImage,
@@ -602,7 +587,6 @@ private fun SimpleLinkOnlyContent(
 
         HorizontalDivider()
 
-
         MenuItemButton(
             icon = Icons.Default.ContentCopy,
             text = Strings.longPressMenuCopyLink,
@@ -652,7 +636,6 @@ private fun SimpleImageLinkMenuContent(
 
         HorizontalDivider()
 
-
         Text(
             text = Strings.longPressMenuImage,
             style = MaterialTheme.typography.labelMedium,
@@ -677,7 +660,6 @@ private fun SimpleImageLinkMenuContent(
                 onDismiss()
             }
         )
-
 
         if (linkUrl.isNotBlank()) {
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -732,11 +714,6 @@ private fun MenuItemButton(
     }
 }
 
-
-
-
-
-
 @Composable
 fun IosStyleLongPressMenu(
     result: LongPressHandler.LongPressResult,
@@ -760,7 +737,6 @@ fun IosStyleLongPressMenu(
     )
 
     LaunchedEffect(Unit) { visible = true }
-
 
     Box(
         modifier = Modifier
@@ -1013,11 +989,6 @@ private fun IosHorizontalDivider() {
     )
 }
 
-
-
-
-
-
 @Composable
 fun FloatingBubbleLongPressMenu(
     result: LongPressHandler.LongPressResult,
@@ -1031,7 +1002,6 @@ fun FloatingBubbleLongPressMenu(
 ) {
     val density = LocalDensity.current
 
-
     var visible by remember { mutableStateOf(false) }
     val expandProgress by animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
@@ -1040,7 +1010,6 @@ fun FloatingBubbleLongPressMenu(
     )
 
     LaunchedEffect(Unit) { visible = true }
-
 
     val menuItems = remember(result) {
         when (result) {
@@ -1071,7 +1040,6 @@ fun FloatingBubbleLongPressMenu(
         return
     }
 
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -1091,7 +1059,6 @@ fun FloatingBubbleLongPressMenu(
             val angle = Math.toRadians((startAngle + angleStep * index).toDouble())
             val offsetX = with(density) { (bubbleRadius.toPx() * cos(angle) * expandProgress).roundToInt() }
             val offsetY = with(density) { (bubbleRadius.toPx() * sin(angle) * expandProgress).roundToInt() }
-
 
             val itemScale by animateFloatAsState(
                 targetValue = if (visible) 1f else 0f,
@@ -1117,7 +1084,6 @@ fun FloatingBubbleLongPressMenu(
                 )
             }
         }
-
 
         Popup(
             alignment = Alignment.TopStart,
@@ -1184,7 +1150,6 @@ private fun FloatingBubble(
             }
         }
 
-
         if (scale > 0.5f) {
             Surface(
                 shape = RoundedCornerShape(4.dp),
@@ -1202,11 +1167,6 @@ private fun FloatingBubble(
         }
     }
 }
-
-
-
-
-
 
 @Composable
 @Suppress("UNUSED_VARIABLE")
@@ -1234,7 +1194,6 @@ fun ContextMenuLongPressMenu(
     )
 
     LaunchedEffect(Unit) { visible = true }
-
 
     val menuItems = remember(result) {
         when (result) {
@@ -1265,7 +1224,6 @@ fun ContextMenuLongPressMenu(
         onDismiss()
         return
     }
-
 
     Box(
         modifier = Modifier

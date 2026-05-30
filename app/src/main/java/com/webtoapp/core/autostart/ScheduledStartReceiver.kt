@@ -8,18 +8,6 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.WebToAppApplication
 import java.util.Calendar
 
-
-
-
-
-
-
-
-
-
-
-
-
 class ScheduledStartReceiver : BroadcastReceiver() {
 
     companion object {
@@ -33,9 +21,7 @@ class ScheduledStartReceiver : BroadcastReceiver() {
 
         AppLogger.d(TAG, "收到定时启动广播")
 
-
         val pendingResult = goAsync()
-
 
         val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         val wakeLock = pm.newWakeLock(
@@ -48,13 +34,11 @@ class ScheduledStartReceiver : BroadcastReceiver() {
         try {
             val autoStartManager = AutoStartManager(context)
 
-
             val isShellMode = try {
                 WebToAppApplication.shellMode.isShellMode()
             } catch (e: Exception) {
                 false
             }
-
 
             val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
             val dayOfWeek = if (today == Calendar.SUNDAY) 7 else today - 1
@@ -64,7 +48,6 @@ class ScheduledStartReceiver : BroadcastReceiver() {
             } else {
                 handleMainAppMode(context, autoStartManager, dayOfWeek)
             }
-
 
             autoStartManager.rescheduleAfterTrigger()
         } catch (e: Exception) {
@@ -78,9 +61,6 @@ class ScheduledStartReceiver : BroadcastReceiver() {
             } catch (_: Exception) {}
         }
     }
-
-
-
 
     private fun handleShellMode(context: Context, dayOfWeek: Int) {
         val config = try {
@@ -106,9 +86,6 @@ class ScheduledStartReceiver : BroadcastReceiver() {
             AppLogger.d(TAG, "Shell 模式：今天(周$dayOfWeek)不在启动日期列表中，跳过")
         }
     }
-
-
-
 
     private fun handleMainAppMode(context: Context, autoStartManager: AutoStartManager, dayOfWeek: Int) {
         val config = autoStartManager.getScheduledStartConfig() ?: run {

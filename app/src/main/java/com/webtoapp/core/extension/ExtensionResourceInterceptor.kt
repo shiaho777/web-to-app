@@ -5,21 +5,12 @@ import android.webkit.WebResourceResponse
 import com.webtoapp.core.logging.AppLogger
 import java.io.ByteArrayInputStream
 
-
-
-
-
-
-
-
-
 object ExtensionResourceInterceptor {
 
     private const val TAG = "ExtResInterceptor"
     private const val SCHEME = "chrome-extension"
     private const val LOCALHOST_EXT_PREFIX = "https://localhost/__ext__/"
     private const val ASSETS_BASE = "extensions"
-
 
     private val MIME_TYPES = mapOf(
         "html" to "text/html",
@@ -48,15 +39,11 @@ object ExtensionResourceInterceptor {
         "webm" to "video/webm"
     )
 
-
     private val TEXT_MIME_TYPES = setOf(
         "text/html", "text/css", "text/plain",
         "application/javascript", "application/json",
         "application/xml", "image/svg+xml"
     )
-
-
-
 
     fun isChromeExtensionUrl(url: String): Boolean {
         return url.startsWith("$SCHEME://")
@@ -80,13 +67,6 @@ object ExtensionResourceInterceptor {
         return intercept(context, normalizedUrl)
     }
 
-
-
-
-
-
-
-
     fun intercept(context: Context, url: String): WebResourceResponse? {
         if (!isChromeExtensionUrl(url)) return null
 
@@ -102,7 +82,6 @@ object ExtensionResourceInterceptor {
             val extId = withoutScheme.substring(0, slashIndex)
             var resourcePath = withoutScheme.substring(slashIndex + 1)
 
-
             resourcePath = resourcePath.split("?")[0].split("#")[0]
 
             resourcePath = resourcePath.trimStart('/')
@@ -112,19 +91,15 @@ object ExtensionResourceInterceptor {
                 return createEmptyResponse()
             }
 
-
             if (resourcePath.contains("..")) {
                 AppLogger.w(TAG, "Path traversal attempt blocked: $url")
                 return createEmptyResponse()
             }
 
-
             val assetPath = "$ASSETS_BASE/$extId/$resourcePath"
-
 
             val assetResponse = loadAssetResource(context, assetPath, url)
             if (assetResponse != null) return assetResponse
-
 
             return loadFileResource(context, extId, resourcePath, url)
         } catch (e: Exception) {
@@ -133,15 +108,11 @@ object ExtensionResourceInterceptor {
         }
     }
 
-
-
-
     private fun loadAssetResource(context: Context, assetPath: String, originalUrl: String): WebResourceResponse? {
         return try {
             val inputStream = context.assets.open(assetPath)
             val mimeType = getMimeType(assetPath)
             val encoding = if (mimeType in TEXT_MIME_TYPES) "UTF-8" else null
-
 
             val headers = mutableMapOf<String, String>()
             headers["Access-Control-Allow-Origin"] = "*"
@@ -166,22 +137,13 @@ object ExtensionResourceInterceptor {
         }
     }
 
-
-
-
-
-
-
-
     private fun loadFileResource(context: Context, extId: String, resourcePath: String, originalUrl: String): WebResourceResponse? {
         val extensionsDir = java.io.File(context.filesDir, ASSETS_BASE)
-
 
         val directFile = java.io.File(extensionsDir, "$extId/$resourcePath")
         if (directFile.exists() && directFile.isFile) {
             return createFileResponse(directFile, originalUrl)
         }
-
 
         val extDir = java.io.File(extensionsDir, extId)
         if (extDir.exists() && extDir.isDirectory) {
@@ -192,8 +154,6 @@ object ExtensionResourceInterceptor {
                 }
             }
         }
-
-
 
         if (extensionsDir.exists()) {
             extensionsDir.listFiles()?.filter { it.isDirectory }?.forEach { parentDir ->
@@ -211,9 +171,6 @@ object ExtensionResourceInterceptor {
         AppLogger.w(TAG, "Extension resource not found in assets or filesDir: $extId/$resourcePath (URL: $originalUrl)")
         return createEmptyResponse()
     }
-
-
-
 
     private fun createFileResponse(file: java.io.File, originalUrl: String): WebResourceResponse {
         val mimeType = getMimeType(file.name)
@@ -234,16 +191,10 @@ object ExtensionResourceInterceptor {
         )
     }
 
-
-
-
     private fun getMimeType(path: String): String {
         val extension = path.substringAfterLast('.', "").lowercase()
         return MIME_TYPES[extension] ?: "application/octet-stream"
     }
-
-
-
 
     private fun createEmptyResponse(): WebResourceResponse {
         return WebResourceResponse(

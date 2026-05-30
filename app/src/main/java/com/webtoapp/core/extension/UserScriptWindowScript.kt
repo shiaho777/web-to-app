@@ -1,17 +1,6 @@
 package com.webtoapp.core.extension
 
-
-
-
-
-
-
-
 object UserScriptWindowScript {
-
-
-
-
 
     fun getWindowManagerScript(): String = """
 (function() {

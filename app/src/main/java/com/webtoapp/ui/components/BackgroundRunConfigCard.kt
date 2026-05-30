@@ -19,10 +19,6 @@ import com.webtoapp.core.background.BackgroundRunService
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.BackgroundRunExportConfig
 
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BackgroundRunConfigCard(
@@ -85,7 +81,6 @@ fun BackgroundRunConfigCard(
                 )
             }
 
-
             AnimatedVisibility(visible = enabled) {
                 Column(
                     modifier = Modifier.padding(top = 16.dp),
@@ -107,7 +102,6 @@ fun BackgroundRunConfigCard(
                         )
                     }
 
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -122,7 +116,6 @@ fun BackgroundRunConfigCard(
                             onCheckedChange = { onConfigChange(config.copy(keepCpuAwake = it)) }
                         )
                     }
-
 
                     val context = LocalContext.current
                     OutlinedButton(
@@ -148,14 +141,12 @@ fun BackgroundRunConfigCard(
                         }
                     }
 
-
                     TextButton(
                         onClick = { expanded = !expanded },
                         modifier = Modifier.align(Alignment.End)
                     ) {
                         Text(if (expanded) Strings.hideAdvanced else Strings.showAdvanced)
                     }
-
 
                     AnimatedVisibility(visible = expanded) {
                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -168,7 +159,6 @@ fun BackgroundRunConfigCard(
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
-
 
                             PremiumTextField(
                                 value = config.notificationContent,

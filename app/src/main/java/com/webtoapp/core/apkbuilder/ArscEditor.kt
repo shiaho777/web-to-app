@@ -2,36 +2,16 @@ package com.webtoapp.core.apkbuilder
 
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
-
-
-
 class ArscEditor {
 
     companion object {
         private const val TAG = "ArscEditor"
 
-
         private const val PAD_CHAR = '\u0000'
     }
 
-
-
-
-
-
-
-
-
-
-
-
     fun modifyAppName(arscData: ByteArray, oldAppName: String, newAppName: String): ByteArray {
         AppLogger.d(TAG, "modifyAppName: old length=${oldAppName.length}chars, new='$newAppName'")
-
 
         val oldNameVariants = listOf(
             oldAppName,
@@ -49,7 +29,6 @@ class ArscEditor {
 
         for (oldName in oldNameVariants) {
             if (usedEncoding != "none") break
-
 
             val utf8Result = replaceStringByBytes(result, oldName, newAppName, Charsets.UTF_8)
             val utf8Changed = !utf8Result.contentEquals(result)
@@ -78,15 +57,6 @@ class ArscEditor {
         return result
     }
 
-
-
-
-
-
-
-
-
-
     private fun replaceStringByBytes(
         data: ByteArray,
         oldStr: String,
@@ -96,10 +66,8 @@ class ArscEditor {
         val oldBytes = oldStr.toByteArray(charset)
         val targetByteLen = oldBytes.size
 
-
         val safeNewStr = adjustStringToByteLength(newStr, targetByteLen, charset)
         val newBytes = safeNewStr.toByteArray(charset)
-
 
         val replacement = when {
             newBytes.size == targetByteLen -> newBytes
@@ -127,17 +95,12 @@ class ArscEditor {
         return replaceBytes(data, oldBytes, replacement)
     }
 
-
-
-
     private fun adjustStringToByteLength(str: String, targetByteLen: Int, charset: java.nio.charset.Charset): String {
         val fullBytes = str.toByteArray(charset)
-
 
         if (fullBytes.size <= targetByteLen) {
             return str
         }
-
 
         val builder = StringBuilder()
         var currentByteLen = 0
@@ -157,14 +120,6 @@ class ArscEditor {
         return builder.toString()
     }
 
-
-
-
-
-
-
-
-
     fun modifyIconPathsToPng(arscData: ByteArray): ByteArray {
 
         val candidates = listOf(
@@ -178,7 +133,6 @@ class ArscEditor {
 
         var result = arscData
         var changed = false
-
 
         val extensionPairs = listOf(
             ".xml" to ".png",
@@ -208,10 +162,6 @@ class ArscEditor {
         AppLogger.d("ArscEditor", "modifyIconPathsToPng: changed=$changed")
         return result
     }
-
-
-
-
 
     private fun replaceBytes(data: ByteArray, pattern: ByteArray, replacement: ByteArray): ByteArray {
         val result = data.copyOf()

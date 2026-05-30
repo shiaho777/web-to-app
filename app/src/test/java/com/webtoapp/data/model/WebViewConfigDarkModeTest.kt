@@ -5,10 +5,6 @@ import org.junit.Test
 
 class WebViewConfigDarkModeTest {
 
-
-
-
-
     @Test
     fun `WebViewConfig dark mode status bar fields have correct defaults`() {
         val config = WebViewConfig()
@@ -32,10 +28,6 @@ class WebViewConfigDarkModeTest {
         assertThat(config.statusBarBackgroundImage).isNull()
         assertThat(config.statusBarBackgroundAlpha).isWithin(0.01f).of(1.0f)
     }
-
-
-
-
 
     @Test
     fun `WebViewConfig dark mode fields are independent from light mode`() {
@@ -78,10 +70,6 @@ class WebViewConfigDarkModeTest {
         assertThat(copied.statusBarBackgroundAlphaDark).isWithin(0.01f).of(0.8f)
     }
 
-
-
-
-
     @Test
     fun `StatusBarColorMode enum has all expected values`() {
         assertThat(StatusBarColorMode.values().map { it.name }).containsExactly(
@@ -93,10 +81,6 @@ class WebViewConfigDarkModeTest {
     fun `StatusBarColorMode THEME is default`() {
         assertThat(StatusBarColorMode.THEME.name).isEqualTo("THEME")
     }
-
-
-
-
 
     @Test
     fun `StatusBarBackgroundType enum has all expected values`() {
@@ -110,10 +94,6 @@ class WebViewConfigDarkModeTest {
         assertThat(StatusBarBackgroundType.COLOR.name).isEqualTo("COLOR")
     }
 
-
-
-
-
     @Test
     fun `OrientationMode enum has AUTO value`() {
         assertThat(OrientationMode.values().map { it.name }).contains("AUTO")
@@ -126,10 +106,6 @@ class WebViewConfigDarkModeTest {
             "SENSOR_PORTRAIT", "SENSOR_LANDSCAPE", "AUTO"
         )
     }
-
-
-
-
 
     @Test
     fun `WebViewConfig supports IMAGE background type for dark mode`() {
@@ -154,10 +130,6 @@ class WebViewConfigDarkModeTest {
         assertThat(config.statusBarBackgroundTypeDark).isEqualTo(StatusBarBackgroundType.IMAGE)
         assertThat(config.statusBarBackgroundImageDark).isNull()
     }
-
-
-
-
 
     @Test
     fun `WebViewConfig with all dark mode fields set preserves values through copy`() {

@@ -4,9 +4,6 @@ import androidx.room.*
 import com.webtoapp.data.model.AppCategory
 import kotlinx.coroutines.flow.Flow
 
-
-
-
 @Dao
 interface AppCategoryDao {
 

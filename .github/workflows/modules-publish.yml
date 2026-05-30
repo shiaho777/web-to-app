@@ -1,0 +1,70 @@
+name: Module Market Publish
+
+# Regenerates `modules/submissions.json` after a PR is merged into main.
+#
+# This file is what tells the in-app market who submitted each module
+# and when. Modules without a corresponding entry are deliberately
+# hidden from the catalog — that's how the "only show merged PRs"
+# guarantee is enforced. We regenerate from scratch on every relevant
+# push so a missing entry can never silently outlive a revert.
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'modules/**'
+      - 'tools/ci/generate_submissions.py'
+      - '.github/workflows/modules-publish.yml'
+  workflow_dispatch:
+
+permissions:
+  # Needed to commit the regenerated file back to main.
+  contents: write
+
+concurrency:
+  group: modules-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Generate submissions.json
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          # We need the full history so `git log --diff-filter=A` can find
+          # the introducing commit for each module folder.
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Use system Python 3
+        run: python3 --version
+
+      - name: Generate submissions.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Comma-separated list of GitHub logins that may seed modules
+          # via a direct push (no PR). Anything else without a merged PR
+          # stays hidden from the catalog.
+          MAINTAINERS: shiahonb777
+        run: |
+          python3 tools/ci/generate_submissions.py \
+            --owner "${GITHUB_REPOSITORY%%/*}" \
+            --repo "${GITHUB_REPOSITORY##*/}" \
+            --token "$GITHUB_TOKEN"
+
+      - name: Commit changes if any
+        run: |
+          if git diff --quiet -- modules/submissions.json; then
+            echo "No changes to submissions.json"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add modules/submissions.json
+          git commit -m "chore(modules): regenerate submissions.json"
+          git push

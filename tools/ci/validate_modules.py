@@ -83,6 +83,18 @@ ALLOWED_EXTRA_FILES: set[str] = {
     ".gitkeep",
 }
 
+# Image files contributors may drop next to `main.js` for use as the
+# module icon. The CI generator does not download these — they are served
+# via the same GitHub raw / jsDelivr fallback the runtime already uses.
+ALLOWED_ICON_FILES: set[str] = {
+    "icon.png", "icon.svg", "icon.webp", "icon.jpg", "icon.jpeg",
+}
+
+# Maximum size for an inlined icon. Larger icons should be hosted off-repo
+# and referenced via an absolute `iconUrl`. 256 KB is a forgiving limit:
+# a 256x256 PNG with reasonable compression sits comfortably below it.
+MAX_ICON_BYTES = 256 * 1024
+
 
 @dataclass
 class Report:
@@ -309,6 +321,10 @@ def _validate_registry_entry(
     if "hasCss" in entry and not isinstance(entry["hasCss"], bool):
         report.error(where, "`hasCss` must be a boolean")
 
+    icon_url = entry.get("iconUrl")
+    if icon_url is not None and not _is_str(icon_url):
+        report.error(where, "`iconUrl` must be a string when present")
+
 
 def _validate_registry(report: Report, registry: dict[str, Any]) -> list[dict[str, Any]]:
     where = "registry.json"
@@ -435,6 +451,9 @@ def _validate_folder_layout(report: Report, folder: Path) -> None:
     for child in folder.iterdir():
         if child.name in expected or child.name in ALLOWED_EXTRA_FILES:
             continue
+        if child.name in ALLOWED_ICON_FILES:
+            # Icons are size-checked separately further below.
+            continue
         if child.is_dir():
             report.warning(
                 where,
@@ -445,6 +464,75 @@ def _validate_folder_layout(report: Report, folder: Path) -> None:
                 where,
                 f"unexpected file `{child.name}` — the runtime won't download it",
             )
+
+
+def _validate_icon_coherence(
+    report: Report, folder: Path, entry: dict[str, Any] | None
+) -> None:
+    """
+    Cross-check the contributor-supplied icon against the registry.
+
+    The contract:
+
+    - If `iconUrl` is missing/empty, the app falls back to the first letter
+      of the module name. No icon file is needed.
+    - If `iconUrl` looks like a relative path, the corresponding file must
+      actually exist next to `main.js` and stay within the size budget.
+    - If `iconUrl` is absolute (starts with `http://` or `https://`), we
+      defer to the contributor's hosting and do not check the file system.
+    - The file name must come from `ALLOWED_ICON_FILES` so we don't end up
+      shipping random binaries through the catalog.
+    """
+    where = f"modules/{folder.name}"
+    icon_url = (entry or {}).get("iconUrl")
+
+    icon_files_present = sorted(
+        f for f in ALLOWED_ICON_FILES if (folder / f).is_file()
+    )
+
+    # Warn about extra random icon files when the registry doesn't reference
+    # them — the runtime won't fetch a `logo.png` it has no way to know about.
+    if not icon_url and icon_files_present:
+        report.warning(
+            where,
+            f"icon file(s) {icon_files_present} present but registry has no "
+            "`iconUrl` — they won't be used by the runtime",
+        )
+
+    if not _is_str(icon_url) or not icon_url.strip():
+        return
+
+    icon_url = icon_url.strip()
+    if icon_url.startswith("http://") or icon_url.startswith("https://"):
+        if icon_url.startswith("http://"):
+            report.warning(where, "`iconUrl` uses http://; prefer https for catalog assets")
+        return
+
+    # Relative path case. Reject path traversal and force the file to live
+    # inside the module folder with a known extension.
+    normalised = icon_url.lstrip("./")
+    if normalised.startswith("/") or ".." in normalised.split("/"):
+        report.error(where, f"`iconUrl` must be a path inside the module folder, got {icon_url!r}")
+        return
+    if normalised not in ALLOWED_ICON_FILES:
+        report.error(
+            where,
+            f"`iconUrl` must reference one of {sorted(ALLOWED_ICON_FILES)}, got {icon_url!r}",
+        )
+        return
+
+    icon_path = folder / normalised
+    if not icon_path.is_file():
+        report.error(where, f"`iconUrl` points at {normalised!r} but no such file exists")
+        return
+
+    size = icon_path.stat().st_size
+    if size > MAX_ICON_BYTES:
+        report.error(
+            where,
+            f"`{normalised}` is {size // 1024} KB, over the {MAX_ICON_BYTES // 1024} KB cap; "
+            "trim the icon or host it off-repo via an absolute URL",
+        )
 
 
 def _validate_main_js(report: Report, folder: Path) -> None:
@@ -547,6 +635,7 @@ def main(repo_root: Path) -> int:
     for folder in folders:
         _validate_folder_layout(report, folder)
         _validate_main_js(report, folder)
+        _validate_icon_coherence(report, folder, entries_by_path.get(folder.name))
 
         manifest_path = folder / "module.json"
         manifest = _load_json(report, manifest_path, f"modules/{folder.name}/module.json")

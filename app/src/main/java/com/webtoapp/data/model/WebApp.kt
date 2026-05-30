@@ -53,46 +53,35 @@ data class WebApp(
     val goAppConfig: GoAppConfig? = null,
     val multiWebConfig: MultiWebConfig? = null,
 
-
     val activationEnabled: Boolean = false,
     val activationCodes: List<String> = emptyList(),
     val activationCodeList: List<com.webtoapp.core.activation.ActivationCode> = emptyList(),
     val activationRequireEveryTime: Boolean = false,
     val isActivated: Boolean = false,
 
-
     val adsEnabled: Boolean = false,
     val adConfig: AdConfig? = null,
-
 
     val announcementEnabled: Boolean = false,
     val announcement: Announcement? = null,
 
-
     val adBlockEnabled: Boolean = false,
     val adBlockRules: List<String> = emptyList(),
 
-
     val webViewConfig: WebViewConfig = WebViewConfig(),
-
 
     val splashEnabled: Boolean = false,
     val splashConfig: SplashConfig? = null,
 
-
     val bgmEnabled: Boolean = false,
     val bgmConfig: BgmConfig? = null,
 
-
     val apkExportConfig: ApkExportConfig? = null,
-
 
     val themeType: String = "AURORA",
 
-
     val translateEnabled: Boolean = false,
     val translateConfig: TranslateConfig? = null,
-
 
     val extensionEnabled: Boolean = false,
     val extensionModuleIds: List<String> = emptyList(),
@@ -100,10 +89,10 @@ data class WebApp(
 
     val autoStartConfig: AutoStartConfig? = null,
     val forcedRunConfig: com.webtoapp.core.forcedrun.ForcedRunConfig? = null,
-    val blackTechConfig: com.webtoapp.core.blacktech.BlackTechConfig? = null,
-    val disguiseConfig: com.webtoapp.core.disguise.DisguiseConfig? = null,
-    val browserDisguiseConfig: com.webtoapp.core.disguise.BrowserDisguiseConfig? = null,
-    val deviceDisguiseConfig: com.webtoapp.core.disguise.DeviceDisguiseConfig? = null,
+    val blackTechConfig: com.webtoapp.core.actions.DeviceActionsConfig? = null,
+    val disguiseConfig: com.webtoapp.core.appearance.DisguiseConfig? = null,
+    val browserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? = null,
+    val deviceDisguiseConfig: com.webtoapp.core.appearance.DeviceDisguiseConfig? = null,
     val activationDialogConfig: ActivationDialogConfig? = null,
     val categoryId: Long? = null,
 
@@ -170,7 +159,6 @@ enum class StatusBarBackgroundType {
     IMAGE
 }
 
-
 enum class LongPressMenuStyle {
     DISABLED,
     SIMPLE,
@@ -179,7 +167,6 @@ enum class LongPressMenuStyle {
     FLOATING,
     CONTEXT
 }
-
 
 enum class UserAgentMode(
     val displayName: String,
@@ -238,7 +225,6 @@ enum class UserAgentMode(
     )
 }
 
-
 object UserAgentVersions {
     const val CHROME = "131"
     const val FIREFOX = "133"
@@ -275,7 +261,8 @@ data class WebViewConfig(
     val statusBarBackgroundType: StatusBarBackgroundType = StatusBarBackgroundType.COLOR,
     val statusBarBackgroundImage: String? = null,
     val statusBarBackgroundAlpha: Float = 1.0f,
-    val statusBarHeightDp: Int = 0,
+
+    val statusBarHeightDp: Int = -1,
 
     val statusBarColorModeDark: StatusBarColorMode = StatusBarColorMode.THEME,
     val statusBarColorDark: String? = null,
@@ -283,8 +270,8 @@ data class WebViewConfig(
     val statusBarBackgroundTypeDark: StatusBarBackgroundType = StatusBarBackgroundType.COLOR,
     val statusBarBackgroundImageDark: String? = null,
     val statusBarBackgroundAlphaDark: Float = 1.0f,
-    val longPressMenuEnabled: Boolean = true,
-    val longPressMenuStyle: LongPressMenuStyle = LongPressMenuStyle.FULL,
+    val longPressMenuEnabled: Boolean = false,
+    val longPressMenuStyle: LongPressMenuStyle = LongPressMenuStyle.DISABLED,
     val adBlockToggleEnabled: Boolean = false,
     val popupBlockerEnabled: Boolean = false,
     val popupBlockerToggleEnabled: Boolean = false,
@@ -298,42 +285,63 @@ data class WebViewConfig(
     val enableZoomPolyfill: Boolean = true,
     val enableCrossOriginIsolation: Boolean = false,
     val hideUrlPreview: Boolean = false,
-    val disableShields: Boolean = true,
 
-    // 特殊设置
     val decodeBase64DeepLinks: Boolean = false,
-    val mediaAutoplayEnabled: Boolean = true,
-    val acceptThirdPartyCookies: Boolean = true,
-    val enableKernelDisguise: Boolean = true,
-    val enableImageRepair: Boolean = true,
-    val enableScrollMemory: Boolean = true,
-    val enableHttpsUpgrade: Boolean = true,
-    val enableOAuthExternalRedirect: Boolean = true,
-    val enableClipboardPolyfill: Boolean = true,
-    val enableNotificationPolyfill: Boolean = true,
-    val safeBrowsingEnabled: Boolean = true,
-    val geolocationEnabled: Boolean = true,
-    val enableOrientationPolyfill: Boolean = true,
-    val enableCompatPolyfills: Boolean = true,
-    val enableNativeBridge: Boolean = true,
-    val javaScriptCanOpenWindows: Boolean = true,
-    val databaseEnabled: Boolean = true,
-    val enableCookiePersistence: Boolean = true,
-    val enablePrivateNetworkBridge: Boolean = true,
-    val allowMixedContent: Boolean = true,
-    val enableGpc: Boolean = true,
-    val enableCookieConsentBlock: Boolean = true,
-    val enableReferrerPolicy: Boolean = true,
-    val enableTrackerBlocking: Boolean = true,
-    val enableBlobDownloadInterception: Boolean = true,
+    val decodeBase64Mode: Base64DeepLinkMode = Base64DeepLinkMode.GESTURE_ONLY,
+    val javaScriptCanOpenWindows: Boolean = false,
+    val jsOpenWindowsPolicy: JsOpenWindowsPolicy = JsOpenWindowsPolicy.ALLOW,
+
+    val mediaAutoplayEnabled: Boolean = false,
+    val mediaAutoplayScope: MediaAutoplayScope = MediaAutoplayScope.VIDEO_ONLY,
+    val enableImageRepair: Boolean = false,
+    val enableScrollMemory: Boolean = false,
+
+    val enableKernelDisguise: Boolean = false,
+    val kernelDisguiseLevel: KernelDisguiseLevel = KernelDisguiseLevel.STANDARD,
+    val enableCloudflareCompat: Boolean = false,
+    val cloudflareCompatMode: CloudflareCompatMode = CloudflareCompatMode.AUTO_DETECT,
+    val allowMixedContent: Boolean = false,
+    val mixedContentMode: MixedContentMode = MixedContentMode.COMPATIBILITY,
+    val enablePrivateNetworkBridge: Boolean = false,
+    val privateNetworkScope: PrivateNetworkScope = PrivateNetworkScope.LOCAL_ONLY,
+
+    val acceptThirdPartyCookies: Boolean = false,
+    val thirdPartyCookieMode: ThirdPartyCookieMode = ThirdPartyCookieMode.SAME_SITE_LAX,
+    val databaseEnabled: Boolean = false,
+    val enableCookiePersistence: Boolean = false,
+
+    val enableClipboardPolyfill: Boolean = false,
+    val enableNotificationPolyfill: Boolean = false,
+    val enableOrientationPolyfill: Boolean = false,
+    val enableCompatPolyfills: Boolean = false,
+
+    val enableNativeBridge: Boolean = false,
+    val nativeBridgeCapabilities: NativeBridgeCapabilities = NativeBridgeCapabilities(),
+
+    val geolocationEnabled: Boolean = false,
+    val geolocationAccuracy: GeolocationAccuracy = GeolocationAccuracy.COARSE,
+    val geolocationPolicy: GeolocationPolicy = GeolocationPolicy.ALWAYS_ASK,
+    val enableBlobDownloadInterception: Boolean = false,
+    val blobInterceptScope: BlobInterceptScope = BlobInterceptScope.ALL,
+    val blobInterceptThresholdMb: Int = 5,
+
+    val primeUserActivation: Boolean = false,
+    val primeUserActivationMode: PrimeUserActivationMode = PrimeUserActivationMode.SYNTHETIC_TAP,
+    val primeUserActivationTiming: PrimeUserActivationTiming = PrimeUserActivationTiming.ON_PAGE_FINISHED,
+
+    val failoverEnabled: Boolean = false,
+    val failoverUrls: List<String> = emptyList(),
+    val failoverTriggers: FailoverTriggers = FailoverTriggers(),
+
+    val failoverTimeoutSeconds: Int = 15,
+
+    val fullscreenVideoOrientation: FullscreenVideoOrientation = FullscreenVideoOrientation.AUTO_SENSOR_LANDSCAPE,
+
     val keepScreenOn: Boolean = false,
     val screenAwakeMode: ScreenAwakeMode = ScreenAwakeMode.OFF,
     val screenAwakeTimeoutMinutes: Int = 30,
     val screenBrightness: Int = -1,
     val keyboardAdjustMode: KeyboardAdjustMode = KeyboardAdjustMode.RESIZE,
-
-
-
 
     val allowFileAccessFromFileURLs: Boolean = false,
     val allowUniversalAccessFromFileURLs: Boolean = false,
@@ -354,7 +362,6 @@ data class WebViewConfig(
     val proxyPassword: String = "",
     val hostsMappingEnabled: Boolean = false,
     val hostsMappings: List<HostMappingEntry> = emptyList(),
-
 
     val dnsMode: String = "SYSTEM",
     val dnsConfig: DnsConfig = DnsConfig()
@@ -390,7 +397,6 @@ enum class FloatingBorderStyle {
     ACCENT
 }
 
-
 enum class DnsProvider(val key: String, val dohUrl: String, val displayName: String) {
     @com.google.gson.annotations.SerializedName("cloudflare")
     CLOUDFLARE("cloudflare", "https://cloudflare-dns.com/dns-query", "Cloudflare"),
@@ -415,7 +421,6 @@ enum class DnsProvider(val key: String, val dohUrl: String, val displayName: Str
         }
     }
 }
-
 
 data class DnsConfig(
 
@@ -442,13 +447,11 @@ data class UserScript(
     val runAt: ScriptRunTime = ScriptRunTime.DOCUMENT_END
 )
 
-
 enum class ScriptRunTime {
     DOCUMENT_START,
     DOCUMENT_END,
     DOCUMENT_IDLE
 }
-
 
 enum class NewWindowBehavior {
     SAME_WINDOW,
@@ -508,7 +511,6 @@ enum class ViewportMode {
     CUSTOM
 }
 
-
 data class MediaConfig(
     val mediaPath: String,
     val enableAudio: Boolean = true,
@@ -519,7 +521,6 @@ data class MediaConfig(
     val backgroundColor: String = "#000000",
     val keepScreenOn: Boolean = true
 )
-
 
 @Stable
 data class GalleryConfig(
@@ -635,7 +636,6 @@ enum class NodeJsBuildMode {
     FULLSTACK
 }
 
-
 data class NodeJsConfig(
     val projectId: String = "",
     val projectName: String = "",
@@ -684,6 +684,8 @@ data class PhpAppConfig(
 data class PythonAppConfig(
     val projectId: String = "",
     val projectName: String = "",
+
+    val sourceProjectPath: String = "",
     val framework: String = "",
     val entryFile: String = "app.py",
     val entryModule: String = "",
@@ -944,7 +946,7 @@ data class ApkExportConfig(
     val networkTrustConfig: NetworkTrustConfig = NetworkTrustConfig(),
     val encryptionConfig: ApkEncryptionConfig = ApkEncryptionConfig(),
     val hardeningConfig: AppHardeningConfig = AppHardeningConfig(),
-    val isolationConfig: com.webtoapp.core.isolation.IsolationConfig = com.webtoapp.core.isolation.IsolationConfig(),
+    val isolationConfig: com.webtoapp.core.privacy.IsolationConfig = com.webtoapp.core.privacy.IsolationConfig(),
     val backgroundRunEnabled: Boolean = false,
     val backgroundRunConfig: BackgroundRunExportConfig = BackgroundRunExportConfig(),
     val engineType: String = "SYSTEM_WEBVIEW",
@@ -978,22 +980,18 @@ data class ApkRuntimePermissions(
     val location: Boolean = false,
     val notifications: Boolean = false,
 
-
     val readExternalStorage: Boolean = false,
     val writeExternalStorage: Boolean = false,
     val readMediaImages: Boolean = false,
     val readMediaVideo: Boolean = false,
     val readMediaAudio: Boolean = false,
 
-
     val bluetooth: Boolean = false,
     val nfc: Boolean = false,
     val wifiState: Boolean = false,
 
-
     val bodySensors: Boolean = false,
     val activityRecognition: Boolean = false,
-
 
     val readPhoneState: Boolean = false,
     val callPhone: Boolean = false,
@@ -1007,7 +1005,6 @@ data class ApkRuntimePermissions(
     val readCallLog: Boolean = false,
     val writeCallLog: Boolean = false,
     val processOutgoingCalls: Boolean = false,
-
 
     val foregroundService: Boolean = false,
     val wakeLock: Boolean = false,
@@ -1168,9 +1165,6 @@ data class AutoStartConfig(
     val bootDelay: Long = 5000L
 )
 
-
-
-
 fun WebApp.toManifestJson(): String {
     return com.webtoapp.data.converter.Converters.gson.toJson(this)
 }
@@ -1217,3 +1211,139 @@ data class NotificationExportConfig(
 
     val clickUrl: String = ""
 )
+
+enum class Base64DeepLinkMode {
+
+    GESTURE_ONLY,
+
+    ALWAYS,
+}
+
+enum class JsOpenWindowsPolicy {
+
+    ALLOW,
+
+    BLOCK,
+
+    PROMPT,
+}
+
+enum class MediaAutoplayScope {
+
+    VIDEO_ONLY,
+
+    AUDIO_ONLY,
+
+    BOTH,
+}
+
+enum class KernelDisguiseLevel {
+
+    BASIC,
+
+    STANDARD,
+
+    DEEP,
+}
+
+enum class CloudflareCompatMode {
+
+    AUTO_DETECT,
+
+    ALWAYS_ON,
+}
+
+enum class MixedContentMode {
+
+    NEVER,
+
+    COMPATIBILITY,
+
+    ALWAYS,
+}
+
+enum class PrivateNetworkScope {
+
+    LOCAL_ONLY,
+
+    ALL,
+}
+
+enum class ThirdPartyCookieMode {
+
+    NONE,
+
+    SAME_SITE_LAX,
+
+    ALL,
+}
+
+data class NativeBridgeCapabilities(
+    val clipboard: Boolean = true,
+    val vibration: Boolean = true,
+    val geolocation: Boolean = true,
+    val brightness: Boolean = true,
+    val notification: Boolean = true,
+    val download: Boolean = true,
+    val privateNetwork: Boolean = true,
+    val screenWake: Boolean = true,
+)
+
+enum class GeolocationAccuracy {
+
+    COARSE,
+
+    FINE,
+}
+
+enum class GeolocationPolicy {
+
+    ALWAYS_ASK,
+
+    REMEMBER_PER_HOST,
+
+    DENY_ALL,
+}
+
+enum class BlobInterceptScope {
+
+    ALL,
+
+    SIZE_OVER_THRESHOLD,
+}
+
+enum class PrimeUserActivationMode {
+
+    SYNTHETIC_TAP,
+
+    DPAD_OK,
+
+    BOTH,
+}
+
+enum class PrimeUserActivationTiming {
+
+    ON_PAGE_FINISHED,
+
+    ON_FIRST_VISIBLE,
+}
+
+data class FailoverTriggers(
+
+    val networkError: Boolean = true,
+
+    val http5xx: Boolean = true,
+
+    val http4xx: Boolean = false,
+
+    val timeout: Boolean = false,
+)
+
+enum class FullscreenVideoOrientation {
+
+    AUTO_SENSOR_LANDSCAPE,
+
+    FORCE_LANDSCAPE,
+
+    KEEP_CURRENT,
+}

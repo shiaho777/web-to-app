@@ -1,7 +1,3 @@
-// Night Shift — overlay an amber tint to reduce blue light.
-// Uses a fixed full-screen overlay with `mix-blend-mode: multiply` so
-// the page colours are tinted rather than just covered.
-
 (function () {
   var opacity = Math.max(0, Math.min(100, parseInt(getConfig('opacity', '20'), 10) || 20)) / 100;
 

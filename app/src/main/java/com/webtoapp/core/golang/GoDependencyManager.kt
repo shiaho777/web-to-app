@@ -44,6 +44,10 @@ object GoDependencyManager {
         return loader.exists() && loader.canExecute()
     }
 
+    fun isGoToolchainReady(context: Context): Boolean {
+        return GoToolchainManager.isGoReady(context) && isGoExecLoaderReady(context)
+    }
+
     fun getDeviceAbi(): String {
         return Build.SUPPORTED_ABIS?.firstOrNull() ?: "arm64-v8a"
     }
@@ -194,13 +198,15 @@ object GoDependencyManager {
     fun clearCache(context: Context) {
         getBinDir(context).deleteRecursively()
         getLegacyDepsDir(context).deleteRecursively()
-        AppLogger.i(TAG, "Go 二进制缓存和历史工具链缓存已清理")
+        GoToolchainManager.clearCache(context)
+        AppLogger.i(TAG, "Go 工具链 + 二进制缓存已清理")
     }
 
     fun getCacheSize(context: Context): Long {
         return sequenceOf(getBinDir(context), getLegacyDepsDir(context))
             .filter { it.exists() }
-            .sumOf { dir -> dir.walkTopDown().filter { it.isFile }.sumOf { it.length() } }
+            .sumOf { dir -> dir.walkTopDown().filter { it.isFile }.sumOf { it.length() } } +
+            GoToolchainManager.getCacheSize(context)
     }
 
     private fun findBinaryInProject(projectDir: File, binaryName: String): File? {

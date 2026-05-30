@@ -3,25 +3,15 @@ package com.webtoapp.core.crypto
 import android.content.Context
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
 object NativeCrypto {
 
     private const val TAG = "NativeCrypto"
 
-
     @Volatile
     private var isLoaded = false
 
-
     @Volatile
     private var isAvailable = false
-
-
-
-
 
     fun load(): Boolean {
         if (isLoaded) return isAvailable
@@ -34,7 +24,6 @@ object NativeCrypto {
                 AppLogger.i(TAG, "Native crypto library loaded successfully")
                 true
             } catch (e: UnsatisfiedLinkError) {
-
 
                 AppLogger.w(TAG, "Native crypto library not available: ${e.message}")
                 AppLogger.w(TAG, "This is normal on emulators or some devices, using Java fallback")
@@ -57,16 +46,10 @@ object NativeCrypto {
         return isAvailable
     }
 
-
-
-
     fun isNativeAvailable(): Boolean {
         load()
         return isAvailable
     }
-
-
-
 
     fun initialize(context: Context): Boolean {
         if (!load()) {
@@ -81,13 +64,6 @@ object NativeCrypto {
             false
         }
     }
-
-
-
-
-
-
-
 
     fun decryptData(encrypted: ByteArray, context: Context): ByteArray? {
         if (!isAvailable) {
@@ -107,9 +83,6 @@ object NativeCrypto {
         }
     }
 
-
-
-
     fun checkIntegrity(context: Context): Boolean {
         if (!isAvailable) {
             AppLogger.w(TAG, "Native library not available, skipping integrity check")
@@ -124,9 +97,6 @@ object NativeCrypto {
         }
     }
 
-
-
-
     fun getSignatureHashString(context: Context): String? {
         if (!isAvailable) {
             return null
@@ -140,9 +110,6 @@ object NativeCrypto {
         }
     }
 
-
-
-
     fun clear() {
         if (isAvailable) {
             try {
@@ -153,15 +120,7 @@ object NativeCrypto {
         }
     }
 
-
-
-
-
-
     private external fun init(context: Context): Boolean
-
-
-
 
     private external fun decrypt(
         encrypted: ByteArray,
@@ -169,28 +128,12 @@ object NativeCrypto {
         signature: ByteArray
     ): ByteArray?
 
-
-
-
     private external fun verifyIntegrity(context: Context): Boolean
-
-
-
 
     private external fun clearCache()
 
-
-
-
     private external fun getSignatureHash(context: Context): String
 }
-
-
-
-
-
-
-
 
 class HybridDecryptor(private val context: Context) {
 
@@ -214,7 +157,6 @@ class HybridDecryptor(private val context: Context) {
             false
         }
 
-
         nativeAvailable = try {
             NativeCrypto.isNativeAvailable().also { available ->
                 if (available) {
@@ -230,9 +172,6 @@ class HybridDecryptor(private val context: Context) {
         }
     }
 
-
-
-
     fun decrypt(encrypted: ByteArray): ByteArray {
 
         if (optimizedAvailable) {
@@ -246,7 +185,6 @@ class HybridDecryptor(private val context: Context) {
                 AppLogger.e("HybridDecryptor", "Optimized native error: ${e.message}")
             }
         }
-
 
         if (nativeAvailable) {
             try {
@@ -262,17 +200,11 @@ class HybridDecryptor(private val context: Context) {
             }
         }
 
-
         return javaDecryptor.decrypt(encrypted)
     }
 
-
-
-
-
     private fun decryptWithOptimized(encrypted: ByteArray): ByteArray? {
         if (encrypted.size < 4) return null
-
 
         val pathLen = ((encrypted[0].toInt() and 0xFF) shl 24) or
                       ((encrypted[1].toInt() and 0xFF) shl 16) or
@@ -285,7 +217,6 @@ class HybridDecryptor(private val context: Context) {
         val aad = encrypted.copyOfRange(4, 4 + pathLen)
         val encPart = encrypted.copyOfRange(4 + pathLen, encrypted.size)
 
-
         val keyManager = KeyManager.getInstance(context)
         val key = keyManager.getAppKey()
         val keyBytes = key.encoded
@@ -293,15 +224,9 @@ class HybridDecryptor(private val context: Context) {
         return NativeCryptoOptimized.decryptWithKey(encPart, keyBytes, aad)
     }
 
-
-
-
     fun loadAsset(assetPath: String): ByteArray {
         return javaDecryptor.loadAsset(assetPath)
     }
-
-
-
 
     fun verifyIntegrity(): Boolean {
         return try {

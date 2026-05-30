@@ -1,8 +1,5 @@
 package com.webtoapp.core.frontend
 
-
-
-
 enum class FrontendFramework {
     VUE,
     REACT,
@@ -14,9 +11,6 @@ enum class FrontendFramework {
     UNKNOWN
 }
 
-
-
-
 enum class DatabaseType {
     SQLITE,
     MYSQL,
@@ -25,9 +19,6 @@ enum class DatabaseType {
     REDIS,
     NONE
 }
-
-
-
 
 data class ProjectDetectionResult(
     val framework: FrontendFramework,
@@ -46,19 +37,12 @@ data class ProjectDetectionResult(
     val runtimeRequirement: ProjectRuntimeRequirement = ProjectRuntimeRequirement()
 )
 
-
-
-
-
 data class DependencyInfo(
     val name: String,
     val version: String,
     val isDevDependency: Boolean = false,
     val category: DependencyCategory = DependencyCategory.OTHER
 )
-
-
-
 
 enum class DependencyCategory {
     FRAMEWORK,
@@ -72,18 +56,12 @@ enum class DependencyCategory {
     OTHER
 }
 
-
-
-
 enum class PackageManager {
     NPM,
     YARN,
     PNPM,
     BUN
 }
-
-
-
 
 data class ProjectIssue(
     val severity: IssueSeverity,
@@ -108,9 +86,6 @@ enum class IssueType {
     NO_DIST_FOLDER
 }
 
-
-
-
 enum class BackendFramework {
     EXPRESS,
     FASTIFY,
@@ -120,18 +95,12 @@ enum class BackendFramework {
     NONE
 }
 
-
-
-
 data class FrontendProjectConfig(
     val projectPath: String,
     val framework: FrontendFramework,
     val outputDir: String,
     val hasDistFolder: Boolean = false
 )
-
-
-
 
 data class ProjectRuntimeRequirement(
     val needsNodeRuntime: Boolean = false,
@@ -143,16 +112,12 @@ data class ProjectRuntimeRequirement(
     val envVarHints: Map<String, String> = emptyMap()
 )
 
-
-
-
 sealed class BuildState {
     object Idle : BuildState()
     object Scanning : BuildState()
     data class Importing(val progress: Float, val message: String) : BuildState()
     data class Success(val outputPath: String, val fileCount: Int) : BuildState()
     data class Error(val message: String) : BuildState()
-
 
     object CheckingEnvironment : BuildState()
     object InitializingEnvironment : BuildState()
@@ -163,16 +128,10 @@ sealed class BuildState {
     object ProcessingOutput : BuildState()
 }
 
-
-
-
 enum class BuildMode {
     IMPORT_DIST,
     FULL_BUILD
 }
-
-
-
 
 data class BuildLogEntry(
     val timestamp: Long,

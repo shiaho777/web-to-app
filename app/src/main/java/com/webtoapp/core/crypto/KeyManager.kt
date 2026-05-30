@@ -8,10 +8,6 @@ import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 import javax.crypto.SecretKey
 
-
-
-
-
 class KeyManager(private val context: Context) {
 
     companion object {
@@ -20,10 +16,6 @@ class KeyManager(private val context: Context) {
         @Volatile
         private var INSTANCE: KeyManager? = null
 
-
-
-
-
         fun getInstance(context: Context): KeyManager {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: KeyManager(context.applicationContext).also { INSTANCE = it }
@@ -31,19 +23,13 @@ class KeyManager(private val context: Context) {
         }
     }
 
-
     @Volatile
     private var cachedKey: SecretKey? = null
 
     @Volatile
     private var cachedIterations: Int = CryptoConstants.PBKDF2_ITERATIONS
 
-
     private val keysByIterations = ConcurrentHashMap<Int, SecretKey>()
-
-
-
-
 
     fun getAppKey(): SecretKey {
         cachedKey?.let { return it }
@@ -61,9 +47,6 @@ class KeyManager(private val context: Context) {
             return key
         }
     }
-
-
-
 
     fun getAppKey(iterations: Int): SecretKey {
 
@@ -86,9 +69,6 @@ class KeyManager(private val context: Context) {
         }
     }
 
-
-
-
     fun generateKeyForPackage(
         packageName: String,
         signatureHash: ByteArray
@@ -100,10 +80,6 @@ class KeyManager(private val context: Context) {
             100000
         )
     }
-
-
-
-
 
     fun generateKeyForPackage(
         packageName: String,
@@ -119,9 +95,6 @@ class KeyManager(private val context: Context) {
         )
     }
 
-
-
-
     fun deriveKeyWithHKDF(
         packageName: String,
         signatureHash: ByteArray,
@@ -129,9 +102,6 @@ class KeyManager(private val context: Context) {
     ): EnhancedCrypto.SecureKeyContainer {
         return EnhancedCrypto.deriveAppKey(packageName, signatureHash, additionalEntropy)
     }
-
-
-
 
     @Suppress("DEPRECATION")
     fun getAppSignature(): ByteArray {
@@ -160,7 +130,6 @@ class KeyManager(private val context: Context) {
                 return getDefaultSignature()
             }
 
-
             val signature = signatures[0]
             MessageDigest.getInstance("SHA-256").digest(signature.toByteArray())
 
@@ -170,24 +139,14 @@ class KeyManager(private val context: Context) {
         }
     }
 
-
-
-
-
     fun getSignatureHashForBuild(): ByteArray {
         return getAppSignature()
     }
-
-
-
 
     fun verifySignature(expectedHash: ByteArray): Boolean {
         val currentHash = getAppSignature()
         return MessageDigest.isEqual(currentHash, expectedHash)
     }
-
-
-
 
     fun clearCache() {
         cachedKey = null
@@ -195,11 +154,7 @@ class KeyManager(private val context: Context) {
         keysByIterations.clear()
     }
 
-
-
-
     private fun getDefaultSignature(): ByteArray {
-
 
         AppLogger.e(TAG, "SECURITY: 无法获取真实应用签名，使用后备签名。加密强度已降低！")
 
@@ -208,15 +163,9 @@ class KeyManager(private val context: Context) {
         val deviceInfo = "${Build.MANUFACTURER}:${Build.MODEL}:${Build.FINGERPRINT}"
         val deviceHash = deviceInfo.toByteArray().sha256()
 
-
         return (packageHash + deviceHash).sha256()
     }
 }
-
-
-
-
-
 
 data class KeyDerivationParams(
     val packageName: String,

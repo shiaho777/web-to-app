@@ -7,10 +7,6 @@ import com.webtoapp.core.shell.ShellConfig
 import java.io.InputStream
 import java.util.concurrent.ConcurrentHashMap
 
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 class SecureAssetLoader(private val context: Context) {
 
@@ -31,14 +27,9 @@ class SecureAssetLoader(private val context: Context) {
     private val integrityChecker = IntegrityChecker(context)
     private val gson = com.webtoapp.util.GsonProvider.gson
 
-
     private val cache = ConcurrentHashMap<String, ByteArray>()
 
-
     var integrityCheckEnabled = true
-
-
-
 
     fun loadConfig(): ShellConfig? {
         return try {
@@ -57,23 +48,16 @@ class SecureAssetLoader(private val context: Context) {
         }
     }
 
-
-
-
     fun loadHtml(htmlPath: String): String {
         val fullPath = if (htmlPath.startsWith("html/")) htmlPath else "html/$htmlPath"
         return loadAssetAsString(fullPath)
     }
-
-
-
 
     fun loadAsset(assetPath: String): ByteArray {
 
         cache[assetPath]?.let { return it }
 
         val data = decryptor.loadAsset(assetPath)
-
 
         if (data.size < 1024 * 1024) {
             cache[assetPath] = data
@@ -82,51 +66,30 @@ class SecureAssetLoader(private val context: Context) {
         return data
     }
 
-
-
-
     fun loadAssetAsString(assetPath: String): String {
         return String(loadAsset(assetPath), Charsets.UTF_8)
     }
-
-
-
 
     fun openAsset(assetPath: String): InputStream {
         return loadAsset(assetPath).inputStream()
     }
 
-
-
-
     fun assetExists(assetPath: String): Boolean {
         return decryptor.assetExists(assetPath)
     }
-
-
-
 
     fun isEncrypted(assetPath: String): Boolean {
         return decryptor.isEncrypted(assetPath)
     }
 
-
-
-
     fun checkIntegrity(): IntegrityResult {
         return integrityChecker.check()
     }
-
-
-
 
     fun clearCache() {
         cache.clear()
         decryptor.clearCache()
     }
-
-
-
 
     fun preload(assetPaths: List<String>) {
         assetPaths.forEach { path ->
@@ -138,10 +101,6 @@ class SecureAssetLoader(private val context: Context) {
         }
     }
 }
-
-
-
-
 
 class SecureConfigLoader(private val context: Context) {
 
@@ -155,22 +114,13 @@ class SecureConfigLoader(private val context: Context) {
     @Volatile
     private var configLoaded = false
 
-
-
-
     fun isShellMode(): Boolean {
         return loadConfig() != null
     }
 
-
-
-
     fun getConfig(): ShellConfig? {
         return loadConfig()
     }
-
-
-
 
     private fun loadConfig(): ShellConfig? {
         if (configLoaded) return cachedConfig
@@ -214,9 +164,6 @@ class SecureConfigLoader(private val context: Context) {
             return cachedConfig
         }
     }
-
-
-
 
     fun reload() {
         synchronized(this) {

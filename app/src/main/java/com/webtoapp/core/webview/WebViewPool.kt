@@ -8,17 +8,6 @@ import android.os.Looper
 import android.webkit.WebView
 import com.webtoapp.core.logging.AppLogger
 
-
-
-
-
-
-
-
-
-
-
-
 object WebViewPool {
 
     private const val TAG = "WebViewPool"
@@ -30,17 +19,11 @@ object WebViewPool {
     @Volatile
     private var isPrewarmed = false
 
-
-
-
-
-
     fun prewarm(context: Context) {
         if (isPrewarmed) return
         isPrewarmed = true
 
         val appContext = context.applicationContext
-
 
         mainHandler.post {
             try {
@@ -61,13 +44,6 @@ object WebViewPool {
         }
     }
 
-
-
-
-
-
-
-
     @SuppressLint("SetJavaScriptEnabled")
     fun acquire(context: Context): WebView {
         val webView = synchronized(pool) {
@@ -76,10 +52,8 @@ object WebViewPool {
 
         return if (webView != null) {
 
-
             (webView.context as? MutableContextWrapper)?.baseContext = context
             AppLogger.d(TAG, "WebView acquired from pool (remaining: ${pool.size})")
-
 
             replenishPool(context.applicationContext)
 
@@ -89,10 +63,6 @@ object WebViewPool {
             WebView(context)
         }
     }
-
-
-
-
 
     fun recycle(webView: WebView) {
         try {
@@ -110,7 +80,6 @@ object WebViewPool {
                 }
             }
 
-
             webView.destroy()
             AppLogger.d(TAG, "Pool full, WebView destroyed")
         } catch (e: Exception) {
@@ -118,10 +87,6 @@ object WebViewPool {
             try { webView.destroy() } catch (_: Exception) {}
         }
     }
-
-
-
-
 
     fun release() {
         synchronized(pool) {
@@ -136,13 +101,7 @@ object WebViewPool {
         AppLogger.i(TAG, "WebView pool released")
     }
 
-
-
-
     fun poolSize(): Int = synchronized(pool) { pool.size }
-
-
-
 
     private fun replenishPool(appContext: Context) {
         mainHandler.post {
@@ -165,17 +124,10 @@ object WebViewPool {
         }
     }
 
-
-
-
-
-
     @SuppressLint("SetJavaScriptEnabled")
     private fun createPrewarmedWebView(appContext: Context): WebView {
         val contextWrapper = MutableContextWrapper(appContext)
         val webView = WebView(contextWrapper)
-
-
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -187,7 +139,6 @@ object WebViewPool {
             @Suppress("DEPRECATION")
             setRenderPriority(android.webkit.WebSettings.RenderPriority.HIGH)
         }
-
 
         webView.isScrollbarFadingEnabled = true
 

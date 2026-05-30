@@ -33,9 +33,6 @@ import kotlin.math.cos
 import kotlin.math.sin
 import androidx.compose.ui.graphics.Color
 
-
-
-
 @Composable
 fun VueLogo(modifier: Modifier = Modifier) {
     val accent = MaterialTheme.colorScheme.onSurface
@@ -93,9 +90,6 @@ fun VueLogo(modifier: Modifier = Modifier) {
     }
 }
 
-
-
-
 @Composable
 fun ReactLogo(modifier: Modifier = Modifier) {
     val accent = MaterialTheme.colorScheme.onSurface
@@ -143,9 +137,6 @@ fun ReactLogo(modifier: Modifier = Modifier) {
         }
     }
 }
-
-
-
 
 @Composable
 fun ViteLogo(modifier: Modifier = Modifier) {
@@ -209,10 +200,6 @@ fun ViteLogo(modifier: Modifier = Modifier) {
     }
 }
 
-
-
-
-
 @Composable
 fun SampleProjectsCard(
     onSelectSample: (SampleProject) -> Unit,
@@ -221,7 +208,6 @@ fun SampleProjectsCard(
     val samples = remember { SampleProjectManager.getSampleProjects() }
 
     val theme = LocalAppTheme.current
-
 
     val containerModifier = modifier
         .fillMaxWidth()
@@ -274,7 +260,6 @@ fun SampleProjectsCard(
                     )
                 }
 
-
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(theme.shapes.buttonRadius))
@@ -292,7 +277,6 @@ fun SampleProjectsCard(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-
             samples.forEachIndexed { index, sample ->
                 SampleProjectItem(
                     sample = sample,
@@ -306,9 +290,6 @@ fun SampleProjectsCard(
     }
 }
 
-
-
-
 @Composable
 private fun SampleProjectItem(
     sample: SampleProject,
@@ -316,7 +297,6 @@ private fun SampleProjectItem(
 ) {
     val theme = LocalAppTheme.current
     val accentColor = MaterialTheme.colorScheme.onSurface
-
 
     var isPressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
@@ -387,7 +367,6 @@ private fun SampleProjectItem(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 sample.tags.take(2).forEach { tag ->
                     Box(
@@ -408,7 +387,6 @@ private fun SampleProjectItem(
         }
 
         Spacer(modifier = Modifier.width(8.dp))
-
 
         Box(
             modifier = Modifier

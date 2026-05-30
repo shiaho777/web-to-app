@@ -26,9 +26,6 @@ import com.webtoapp.util.IconLibraryItem
 import com.webtoapp.util.IconLibraryStorage
 import kotlinx.coroutines.launch
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IconLibraryDialog(
@@ -39,7 +36,6 @@ fun IconLibraryDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val icons by IconLibraryStorage.iconsFlow.collectAsState(initial = emptyList())
-
 
     LaunchedEffect(Unit) {
         IconLibraryStorage.initialize(context)
@@ -94,7 +90,6 @@ fun IconLibraryDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-
                 OutlinedCard(
                     onClick = {
                         onDismiss()
@@ -135,7 +130,6 @@ fun IconLibraryDialog(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
 
                 if (icons.isEmpty()) {
                     Box(
@@ -196,7 +190,6 @@ fun IconLibraryDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -209,9 +202,6 @@ fun IconLibraryDialog(
         }
     }
 }
-
-
-
 
 @Composable
 private fun IconGridItem(
@@ -239,7 +229,6 @@ private fun IconGridItem(
             contentScale = ContentScale.Crop
         )
 
-
         if (icon.isAiGenerated) {
             Surface(
                 modifier = Modifier
@@ -259,7 +248,6 @@ private fun IconGridItem(
             }
         }
 
-
         IconButton(
             onClick = { showDeleteConfirm = true },
             modifier = Modifier
@@ -274,7 +262,6 @@ private fun IconGridItem(
             )
         }
     }
-
 
     if (showDeleteConfirm) {
         AlertDialog(

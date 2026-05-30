@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package android.bundle;
+
+import "bundle/targeting.proto";
+
+option java_package = "com.android.bundle";
+option java_multiple_files = false;
+option java_outer_classname = "Files";
+
+message Assets {
+  repeated TargetedAssetsDirectory directory = 1;
+}
+
+message NativeLibraries {
+  repeated TargetedNativeDirectory directory = 1;
+}
+
+message ApexImages {
+  reserved 2;
+  repeated TargetedApexImage image = 1;
+}
+
+message TargetedAssetsDirectory {
+  string path = 1;
+  AssetsDirectoryTargeting targeting = 2;
+}
+
+message TargetedNativeDirectory {
+  string path = 1;
+  NativeDirectoryTargeting targeting = 2;
+}
+
+message TargetedApexImage {
+  string path = 1;
+  string build_info_path = 3;
+  ApexImageTargeting targeting = 2;
+}

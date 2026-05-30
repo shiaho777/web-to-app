@@ -20,9 +20,6 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
 import kotlinx.coroutines.delay
 
-
-
-
 @Composable
 fun ShellSplashOverlay(
     splashType: String,
@@ -39,7 +36,6 @@ fun ShellSplashOverlay(
     val assetPath = "splash_media.$extension"
     val videoDurationMs = videoEndMs - videoStartMs
     val contentScaleMode = if (fillScreen) ContentScale.Crop else ContentScale.Fit
-
 
     var videoRemainingMs by remember { mutableLongStateOf(videoDurationMs) }
 
@@ -62,7 +58,6 @@ fun ShellSplashOverlay(
         when (splashType) {
             "IMAGE" -> {
 
-
                 Image(
                     painter = rememberAsyncImagePainter(
                         ImageRequest.Builder(context)
@@ -80,8 +75,6 @@ fun ShellSplashOverlay(
                 var mediaPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
                 var isPlayerReady by remember { mutableStateOf(false) }
                 var tempVideoFile by remember { mutableStateOf<java.io.File?>(null) }
-
-
 
                 LaunchedEffect(isPlayerReady) {
                     if (!isPlayerReady) return@LaunchedEffect
@@ -189,8 +182,6 @@ fun ShellSplashOverlay(
             }
         }
 
-
-
         val displayTime = if (splashType == "VIDEO") ((videoRemainingMs + 999) / 1000).toInt() else countdown
 
         Surface(
@@ -230,9 +221,6 @@ fun ShellSplashOverlay(
         }
     }
 }
-
-
-
 
 @Composable
 fun MediaContentDisplay(

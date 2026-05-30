@@ -22,11 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.webtoapp.core.i18n.Strings
 
-
-
-
-
-
 @Composable
 fun ForcedRunCountdownOverlay(
     remainingMs: Long,
@@ -37,7 +32,6 @@ fun ForcedRunCountdownOverlay(
 ) {
     var showPasswordDialog by remember { mutableStateOf(false) }
     var passwordError by remember { mutableStateOf(false) }
-
 
     val formattedTime = remember(remainingMs) {
         val totalSeconds = (remainingMs.coerceAtLeast(0) / 1000).toInt()
@@ -96,7 +90,6 @@ fun ForcedRunCountdownOverlay(
                         color = MaterialTheme.colorScheme.onErrorContainer
                     )
 
-
                     if (allowEmergencyExit && !emergencyPassword.isNullOrEmpty()) {
                         Text(
                             text = Strings.tapToEnterPasswordToExit,
@@ -109,7 +102,6 @@ fun ForcedRunCountdownOverlay(
             }
         }
     }
-
 
     if (showPasswordDialog) {
         EmergencyExitPasswordDialog(
@@ -128,9 +120,6 @@ fun ForcedRunCountdownOverlay(
         )
     }
 }
-
-
-
 
 @Composable
 private fun EmergencyExitPasswordDialog(

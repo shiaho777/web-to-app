@@ -28,19 +28,13 @@ import com.webtoapp.core.forcedrun.ForcedRunManager
 import com.webtoapp.core.floatingwindow.FloatingWindowService
 import com.webtoapp.ui.shared.WindowHelper
 
-
-
-
-
 class ShellActivity : AppCompatActivity() {
 
     private var webView: WebView? = null
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
 
-
     private var deepLinkUrl = mutableStateOf<String?>(null)
-
 
     val permissionDelegate = ShellPermissionDelegate(this)
 
@@ -49,9 +43,7 @@ class ShellActivity : AppCompatActivity() {
     private var showNavigationBarInFullscreen: Boolean = false
     private var translateBridge: TranslateBridge? = null
 
-
     private var originalOrientationBeforeFullscreen: Int = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-
 
     private var statusBarColorMode: String = "THEME"
     private var statusBarCustomColor: String? = null
@@ -59,7 +51,7 @@ class ShellActivity : AppCompatActivity() {
     private var statusBarBackgroundType: String = "COLOR"
     private var statusBarBackgroundImage: String? = null
     private var statusBarBackgroundAlpha: Float = 1.0f
-    private var statusBarHeightDp: Int = 0
+    private var statusBarHeightDp: Int = -1
 
     private var statusBarColorModeDark: String = "THEME"
     private var statusBarCustomColorDark: String? = null
@@ -73,9 +65,7 @@ class ShellActivity : AppCompatActivity() {
     private var forcedRunConfig: ForcedRunConfig? = null
     private val forcedRunManager by lazy { ForcedRunManager.getInstance(this) }
 
-
     private var pendingFloatingWindowLaunch = false
-
 
     private var webViewStateBundle: Bundle? = null
     private fun applyStatusBarColor(
@@ -113,15 +103,11 @@ class ShellActivity : AppCompatActivity() {
 
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-
             try {
                 startLockTask()
             } catch (e: Exception) {
                 AppLogger.w("ShellActivity", "startLockTask failed (expected without device admin)", e)
             }
-
-
-
 
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -154,7 +140,6 @@ class ShellActivity : AppCompatActivity() {
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareController.getInstance(this)
 
-
         if (hardwareController.isBlockVolumeKeys) {
             when (event.keyCode) {
                 KeyEvent.KEYCODE_VOLUME_UP,
@@ -162,7 +147,6 @@ class ShellActivity : AppCompatActivity() {
                 KeyEvent.KEYCODE_VOLUME_MUTE -> return true
             }
         }
-
 
         if (hardwareController.isBlockPowerKey && event.keyCode == KeyEvent.KEYCODE_POWER) {
             return true
@@ -183,7 +167,6 @@ class ShellActivity : AppCompatActivity() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareController.getInstance(this)
-
 
         if (hardwareController.isBlockVolumeKeys) {
             when (keyCode) {
@@ -206,7 +189,6 @@ class ShellActivity : AppCompatActivity() {
         return super.dispatchTouchEvent(ev)
     }
 
-
     fun handlePermissionRequest(request: PermissionRequest) = permissionDelegate.handlePermissionRequest(request)
     fun handleGeolocationPermission(origin: String?, callback: GeolocationPermissions.Callback?) = permissionDelegate.handleGeolocationPermission(origin, callback)
 
@@ -222,7 +204,6 @@ class ShellActivity : AppCompatActivity() {
 
         ShellActivityInit.initLogger(this)
 
-
         try {
             enableEdgeToEdge()
             com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "enableEdgeToEdge 成功")
@@ -233,9 +214,19 @@ class ShellActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
 
+        if (!isTaskRoot &&
+            intent?.action == Intent.ACTION_MAIN &&
+            intent?.hasCategory(Intent.CATEGORY_LAUNCHER) == true
+        ) {
+            com.webtoapp.core.shell.ShellLogger.i(
+                "ShellActivity",
+                "Spurious launcher relaunch detected (task root exists), finishing to let system bring existing task forward"
+            )
+            finish()
+            return
+        }
 
         savedInstanceState?.let { webViewStateBundle = it }
-
 
         if (WebToAppApplication.shellMode.requiresCustomPassword()) {
             showPasswordDialog()
@@ -256,13 +247,11 @@ class ShellActivity : AppCompatActivity() {
 
         forcedRunConfig = config.forcedRunConfig
 
-
         com.webtoapp.core.shell.ShellLogger.logFeature("Config", "加载配置", buildString {
             append("强制运行=${config.forcedRunConfig?.enabled ?: false}, ")
             append("后台运行=${config.backgroundRunEnabled}, ")
             append("独立环境=${config.isolationEnabled}")
         })
-
 
         ShellActivityInit.initForcedRunManager(this, config, forcedRunManager, ::onForcedRunStateChanged)
         ShellActivityInit.initAutoStart(this, config)
@@ -271,14 +260,12 @@ class ShellActivity : AppCompatActivity() {
         ShellActivityInit.initNotificationService(this, config)
         ShellActivityInit.setTaskDescription(this, config.appName)
 
-
         try {
             permissionDelegate.requestNotificationPermissionIfNeeded()
             com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "通知权限请求完成")
         } catch (e: Exception) {
             com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "通知权限请求失败", e)
         }
-
 
         com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "开始读取状态栏配置")
         statusBarColorMode = config.webViewConfig.statusBarColorMode
@@ -305,8 +292,6 @@ class ShellActivity : AppCompatActivity() {
             KeyboardAdjustMode.RESIZE
         }
 
-
-
         immersiveFullscreenEnabled = config.webViewConfig.hideToolbar
         try {
             applyImmersiveFullscreen(immersiveFullscreenEnabled)
@@ -314,7 +299,6 @@ class ShellActivity : AppCompatActivity() {
         } catch (e: Exception) {
             com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "应用沉浸式全屏失败", e)
         }
-
 
         val shellAwakeMode = config.webViewConfig.screenAwakeMode.uppercase()
         when (shellAwakeMode) {
@@ -341,7 +325,6 @@ class ShellActivity : AppCompatActivity() {
             }
         }
 
-
         val shellBrightness = config.webViewConfig.screenBrightness
         if (shellBrightness in 0..100) {
             val lp = window.attributes
@@ -349,7 +332,6 @@ class ShellActivity : AppCompatActivity() {
             window.attributes = lp
             com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "屏幕亮度: ${shellBrightness}%")
         }
-
 
         val floatingWindowConfig = config.webViewConfig.floatingWindowConfig
         if (floatingWindowConfig.enabled) {
@@ -366,7 +348,6 @@ class ShellActivity : AppCompatActivity() {
                 FloatingWindowService.requestOverlayPermission(this)
             }
         }
-
 
         val intentUrl = intent?.data?.toString()
         if (!intentUrl.isNullOrBlank() && intent?.action == Intent.ACTION_VIEW) {
@@ -390,7 +371,6 @@ class ShellActivity : AppCompatActivity() {
 
                 currentIsDarkTheme = isDarkTheme
 
-
                 LaunchedEffect(isDarkTheme, statusBarColorMode, statusBarColorModeDark) {
                     if (!immersiveFullscreenEnabled) {
                         val effectiveColorMode = if (isDarkTheme) statusBarColorModeDark else statusBarColorMode
@@ -407,10 +387,8 @@ class ShellActivity : AppCompatActivity() {
                         try {
                             webView = wv
 
-
                             wv.resumeTimers()
                             com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebView 创建成功, timers resumed")
-
 
                             val savedState = webViewStateBundle
                             if (savedState != null) {
@@ -429,8 +407,25 @@ class ShellActivity : AppCompatActivity() {
                             val downloadBridge = com.webtoapp.core.webview.DownloadBridge(this@ShellActivity, lifecycleScope)
                             wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
 
-                            val nativeBridge = com.webtoapp.core.webview.NativeBridge(this@ShellActivity, lifecycleScope) { wv }
-                            wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
+                            if (config.webViewConfig.enableNativeBridge) {
+                                val capabilities = com.webtoapp.data.model.NativeBridgeCapabilities(
+                                    clipboard = config.webViewConfig.nativeBridgeClipboard,
+                                    vibration = config.webViewConfig.nativeBridgeVibration,
+                                    geolocation = config.webViewConfig.nativeBridgeGeolocation,
+                                    brightness = config.webViewConfig.nativeBridgeBrightness,
+                                    notification = config.webViewConfig.nativeBridgeNotification,
+                                    download = config.webViewConfig.nativeBridgeDownload,
+                                    privateNetwork = config.webViewConfig.nativeBridgePrivateNetwork,
+                                    screenWake = config.webViewConfig.nativeBridgeScreenWake,
+                                )
+                                val nativeBridge = com.webtoapp.core.webview.NativeBridge(
+                                    context = this@ShellActivity,
+                                    scope = lifecycleScope,
+                                    webViewProvider = { wv },
+                                    capabilities = capabilities
+                                )
+                                wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
+                            }
                             com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "JS 桥接接口注册完成")
                         } catch (e: Exception) {
                             com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "WebView 初始化失败", e)
@@ -471,7 +466,6 @@ class ShellActivity : AppCompatActivity() {
             }
         }
 
-
         onBackPressedDispatcher.addCallback(this, ShellActivityInit.createBackPressedCallback(
             activity = this,
             forcedRunManager = forcedRunManager,
@@ -482,7 +476,17 @@ class ShellActivity : AppCompatActivity() {
     }
 
     private fun showCustomView(view: View) {
-        originalOrientationBeforeFullscreen = WindowHelper.showCustomView(this, view)
+
+        val orientationStrategy = run {
+            val raw = WebToAppApplication.shellMode.getConfig()?.webViewConfig?.fullscreenVideoOrientation
+            try {
+                if (!raw.isNullOrBlank()) com.webtoapp.data.model.FullscreenVideoOrientation.valueOf(raw)
+                else com.webtoapp.data.model.FullscreenVideoOrientation.AUTO_SENSOR_LANDSCAPE
+            } catch (_: Exception) {
+                com.webtoapp.data.model.FullscreenVideoOrientation.AUTO_SENSOR_LANDSCAPE
+            }
+        }
+        originalOrientationBeforeFullscreen = WindowHelper.showCustomView(this, view, orientationStrategy)
         applyImmersiveFullscreen(true)
     }
 
@@ -495,10 +499,6 @@ class ShellActivity : AppCompatActivity() {
             applyImmersiveFullscreen(immersiveFullscreenEnabled)
         }
     }
-
-
-
-
 
     private fun launchFloatingWindowAndFinish(config: com.webtoapp.core.shell.ShellConfig) {
         val floatingWindowConfig = config.webViewConfig.floatingWindowConfig
@@ -564,7 +564,6 @@ class ShellActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
 
-
         val notificationClickUrl = intent?.getStringExtra("notification_click_url")
         if (!notificationClickUrl.isNullOrBlank()) {
             val baseUrl = WebToAppApplication.shellMode.getConfig()?.targetUrl ?: ""
@@ -601,7 +600,6 @@ class ShellActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
 
-
         if (pendingFloatingWindowLaunch) {
             val config = WebToAppApplication.shellMode.getConfig()
             if (config != null && FloatingWindowService.canDrawOverlays(this)) {
@@ -614,15 +612,12 @@ class ShellActivity : AppCompatActivity() {
 
         webView?.onResume()
 
-
         webView?.resumeTimers()
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onResume - WebView resumed, timers resumed")
     }
 
     override fun onPause() {
         super.onPause()
-
-
 
         webView?.onPause()
 
@@ -633,9 +628,6 @@ class ShellActivity : AppCompatActivity() {
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
 
-
-
-
         if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "Memory pressure (level=$level), skipped manual GC")
         }
@@ -644,21 +636,16 @@ class ShellActivity : AppCompatActivity() {
     override fun onLowMemory() {
         super.onLowMemory()
 
-
-
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "Low memory, skipped manual GC")
     }
 
     override fun onDestroy() {
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onDestroy")
 
-
         android.webkit.CookieManager.getInstance().flush()
 
         webView?.let { wv ->
             wv.stopLoading()
-
-
 
             wv.onPause()
             wv.webChromeClient = null
@@ -670,10 +657,6 @@ class ShellActivity : AppCompatActivity() {
         webView = null
         super.onDestroy()
     }
-
-
-
-
 
     private fun showPasswordDialog() {
         val editText = android.widget.EditText(this).apply {

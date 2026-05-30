@@ -11,22 +11,11 @@ import java.io.File
 import java.io.FileOutputStream
 import java.util.zip.ZipInputStream
 
-
-
-
-
-
-
-
-
-
 object ZipProjectImporter {
 
     private const val TAG = "ZipProjectImporter"
     private const val MAX_ZIP_SIZE = 500L * 1024 * 1024
     private const val MAX_ENTRY_COUNT = 10_000
-
-
 
     private val HTML_EXTENSIONS = setOf("html", "htm", "xhtml")
     private val CSS_EXTENSIONS = setOf("css")
@@ -39,14 +28,10 @@ object ZipProjectImporter {
     private val VIDEO_EXTENSIONS = setOf("mp4", "webm", "mkv", "avi", "mov", "flv", "m4v")
     private val DATA_EXTENSIONS = setOf("json", "xml", "csv", "txt", "md", "yaml", "yml", "toml")
 
-
     private val SKIP_PATTERNS = setOf(
         "__MACOSX", ".DS_Store", "Thumbs.db", ".git", ".svn", ".hg",
         "node_modules", ".idea", ".vscode"
     )
-
-
-
 
     enum class ResourceType(val icon: String, val label: String) {
         HTML("globe", "HTML"),
@@ -60,7 +45,6 @@ object ZipProjectImporter {
         OTHER("attachment", "其他")
     }
 
-
     data class ProjectFile(
         val relativePath: String,
         val absolutePath: String,
@@ -69,7 +53,6 @@ object ZipProjectImporter {
     ) {
         val fileName: String get() = relativePath.substringAfterLast('/')
         val extension: String get() = fileName.substringAfterLast('.', "").lowercase()
-
 
         fun toHtmlFile(): HtmlFile = HtmlFile(
             name = relativePath,
@@ -85,7 +68,6 @@ object ZipProjectImporter {
         )
     }
 
-
     data class ResourceStats(
         val type: ResourceType,
         val count: Int,
@@ -93,7 +75,6 @@ object ZipProjectImporter {
     ) {
         val formattedSize: String get() = totalSize.toFileSizeString()
     }
-
 
     data class ZipProjectAnalysis(
         val extractDir: String,
@@ -117,32 +98,20 @@ object ZipProjectImporter {
         val formattedTotalSize: String get() = totalSize.toFileSizeString()
     }
 
-
-
-
-
-
-
     suspend fun importZip(context: Context, zipUri: Uri): ZipProjectAnalysis {
         val zipFileName = getZipFileName(context, zipUri) ?: "project.zip"
         AppLogger.i(TAG, "开始导入 ZIP: $zipFileName")
 
-
         val extractDir = extractZip(context, zipUri)
         AppLogger.i(TAG, "解压完成: ${extractDir.absolutePath}")
 
-
         val projectRoot = unwrapSingleRootDir(extractDir)
-
 
         val analysis = analyzeProject(projectRoot, zipFileName)
         AppLogger.i(TAG, "分析完成: ${analysis.totalFileCount} 个文件, ${analysis.formattedTotalSize}")
 
         return analysis
     }
-
-
-
 
     private fun extractZip(context: Context, zipUri: Uri): File {
         val tempDir = File(context.cacheDir, "zip_import_${System.currentTimeMillis()}").apply {
@@ -166,13 +135,11 @@ object ZipProjectImporter {
 
                         val entryName = entry.name
 
-
                         if (shouldSkipEntry(entryName)) {
                             zis.closeEntry()
                             entry = zis.nextEntry
                             continue
                         }
-
 
                         val targetFile = File(tempDir, entryName).canonicalFile
                         if (!targetFile.path.startsWith(tempDir.canonicalPath)) {
@@ -222,9 +189,6 @@ object ZipProjectImporter {
         return tempDir
     }
 
-
-
-
     private fun unwrapSingleRootDir(dir: File): File {
         val children = dir.listFiles() ?: return dir
         return if (children.size == 1 && children[0].isDirectory) {
@@ -234,13 +198,9 @@ object ZipProjectImporter {
         }
     }
 
-
-
-
     private fun analyzeProject(projectDir: File, zipFileName: String): ZipProjectAnalysis {
         val allFiles = mutableListOf<ProjectFile>()
         val warnings = mutableListOf<String>()
-
 
         projectDir.walkTopDown()
             .filter { it.isFile }
@@ -258,15 +218,12 @@ object ZipProjectImporter {
                 )
             }
 
-
         val htmlFiles = allFiles.filter { it.resourceType == ResourceType.HTML }
-
 
         val entryFile = detectEntryFile(htmlFiles)
         if (entryFile == null && htmlFiles.isEmpty()) {
             warnings.add("未找到 HTML 文件，请确认 ZIP 内容正确")
         }
-
 
         val stats = ResourceType.entries
             .map { type ->
@@ -278,7 +235,6 @@ object ZipProjectImporter {
                 )
             }
             .filter { it.count > 0 }
-
 
         if (allFiles.any { it.size > 50 * 1024 * 1024 }) {
             warnings.add("存在超过 50MB 的大文件，打包 APK 时可能影响安装包大小")
@@ -297,35 +253,23 @@ object ZipProjectImporter {
         )
     }
 
-
-
-
-
     private fun detectEntryFile(htmlFiles: List<ProjectFile>): String? {
         if (htmlFiles.isEmpty()) return null
-
 
         htmlFiles.find { it.relativePath.equals("index.html", ignoreCase = true) }
             ?.let { return it.relativePath }
 
-
         htmlFiles.find { it.relativePath.equals("index.htm", ignoreCase = true) }
             ?.let { return it.relativePath }
-
 
         htmlFiles.find { it.fileName.equals("index.html", ignoreCase = true) }
             ?.let { return it.relativePath }
 
-
         htmlFiles.find { !it.relativePath.contains('/') }
             ?.let { return it.relativePath }
 
-
         return htmlFiles.firstOrNull()?.relativePath
     }
-
-
-
 
     private fun classifyFile(fileName: String): ResourceType {
         val ext = fileName.substringAfterLast('.', "").lowercase()
@@ -342,12 +286,10 @@ object ZipProjectImporter {
         }
     }
 
-
     private fun shouldSkipEntry(name: String): Boolean {
         val parts = name.split('/', '\\')
         return parts.any { part -> SKIP_PATTERNS.any { pattern -> part.equals(pattern, ignoreCase = true) } }
     }
-
 
     private fun getZipFileName(context: Context, uri: Uri): String? {
         if (uri.scheme == "content") {
@@ -361,9 +303,6 @@ object ZipProjectImporter {
         return uri.path?.substringAfterLast('/')
     }
 
-
-
-
     fun cleanupTempFiles(context: Context) {
         try {
             val cacheDir = context.cacheDir
@@ -376,7 +315,6 @@ object ZipProjectImporter {
             AppLogger.e(TAG, "清理 ZIP 临时文件失败", e)
         }
     }
-
 
     class ZipImportException(message: String, cause: Throwable? = null) : Exception(message, cause)
 }

@@ -18,10 +18,6 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AppHardeningConfig
 import androidx.compose.ui.graphics.Color
 
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HardeningConfigCard(
@@ -87,7 +83,6 @@ fun HardeningConfigCard(
                 )
             }
 
-
             AnimatedVisibility(visible = config.enabled) {
                 Card(
                     colors = CardDefaults.cardColors(
@@ -116,11 +111,3 @@ fun HardeningConfigCard(
         }
     }
 }
-
-
-
-
-
-
-
-

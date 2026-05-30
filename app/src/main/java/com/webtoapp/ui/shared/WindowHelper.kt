@@ -63,11 +63,6 @@ object WindowHelper {
         return luminance > 0.5
     }
 
-
-
-
-
-
     fun applyImmersiveFullscreen(
         activity: Activity,
         enabled: Boolean,
@@ -148,20 +143,56 @@ object WindowHelper {
                             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                     }
                 } else {
-                    WindowCompat.setDecorFitsSystemWindows(activity.window, true)
-                    controller.show(WindowInsetsCompat.Type.systemBars())
-                    activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
-                    applyStatusBarColor(activity, statusBarColorMode, statusBarCustomColor, statusBarDarkIcons, isDarkTheme)
+
+                    val needsCustomBackground = statusBarBgType == "IMAGE" ||
+                        statusBarColorMode == "CUSTOM" ||
+                        statusBarColorMode == "TRANSPARENT"
+
+                    if (needsCustomBackground) {
+
+                        WindowCompat.setDecorFitsSystemWindows(activity.window, false)
+                        controller.show(WindowInsetsCompat.Type.systemBars())
+                        activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
+
+                        if (statusBarBgType == "IMAGE") {
+
+                            activity.window.statusBarColor = android.graphics.Color.TRANSPARENT
+
+                            val useDarkIcons = statusBarDarkIcons ?: !isDarkTheme
+                            controller.isAppearanceLightStatusBars = useDarkIcons
+                        } else {
+                            when (statusBarColorMode) {
+                                "CUSTOM" -> {
+                                    val color = try {
+                                        android.graphics.Color.parseColor(statusBarCustomColor ?: "#000000")
+                                    } catch (e: Exception) {
+                                        android.graphics.Color.BLACK
+                                    }
+                                    activity.window.statusBarColor = color
+                                    val useDarkIcons = statusBarDarkIcons ?: isColorLight(color)
+                                    controller.isAppearanceLightStatusBars = useDarkIcons
+                                }
+                                "TRANSPARENT" -> {
+                                    activity.window.statusBarColor = android.graphics.Color.TRANSPARENT
+                                    val useDarkIcons = statusBarDarkIcons ?: !isDarkTheme
+                                    controller.isAppearanceLightStatusBars = useDarkIcons
+                                }
+                            }
+                        }
+                        controller.isAppearanceLightNavigationBars = controller.isAppearanceLightStatusBars
+                    } else {
+
+                        WindowCompat.setDecorFitsSystemWindows(activity.window, true)
+                        controller.show(WindowInsetsCompat.Type.systemBars())
+                        activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
+                        applyStatusBarColor(activity, statusBarColorMode, statusBarCustomColor, statusBarDarkIcons, isDarkTheme)
+                    }
                 }
             }
         } catch (e: Exception) {
             AppLogger.w(tag, "applyImmersiveFullscreen failed", e)
         }
     }
-
-
-
-
 
     fun applyKeyboardModeOnly(
         activity: Activity,
@@ -174,12 +205,6 @@ object WindowHelper {
             AppLogger.w(tag, "applyKeyboardModeOnly failed", e)
         }
     }
-
-
-
-
-
-
 
     private fun applyKeyboardMode(
         activity: Activity,
@@ -215,7 +240,6 @@ object WindowHelper {
 
                         AppLogger.d(tag, "键盘弹出: IME bottom=${imeInsets.bottom}px")
 
-                        // 检测网页是否已自行处理键盘适配，避免重复滚动导致输入框跑到两倍高度
                         view.postDelayed({
                             checkAndScrollWebViewToFocusedInput(activity)
                         }, 100)
@@ -232,7 +256,6 @@ object WindowHelper {
                     windowInsets
                 }
 
-
                 ViewCompat.requestApplyInsets(contentView)
                 AppLogger.d(tag, "键盘模式: RESIZE (WindowInsets 监听)")
             }
@@ -244,7 +267,6 @@ object WindowHelper {
                     WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING or
                     WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
                 )
-
 
                 ViewCompat.setOnApplyWindowInsetsListener(contentView, null)
                 contentView.setPadding(
@@ -259,19 +281,6 @@ object WindowHelper {
         }
     }
 
-
-
-
-
-
-
-    /**
-     * 检测网页是否已自行处理键盘适配，如果没有才执行 scrollIntoView。
-     * 
-     * 检测逻辑：判断当前聚焦元素是否已经在可视区域内（即网页自己已经做了上推）。
-     * 如果元素已经可见，则不再重复滚动，避免与网页自身的键盘适配代码冲突
-     * 导致输入框跑到键盘两倍高度的位置。
-     */
     private fun checkAndScrollWebViewToFocusedInput(activity: Activity) {
         try {
             val webView = findWebViewInHierarchy(activity.window.decorView)
@@ -298,7 +307,6 @@ object WindowHelper {
         }
     }
 
-
     private fun scrollWebViewToFocusedInput(activity: Activity) {
         try {
 
@@ -316,9 +324,6 @@ object WindowHelper {
         }
     }
 
-
-
-
     private fun findWebViewInHierarchy(view: View): android.webkit.WebView? {
         if (view is android.webkit.WebView) return view
         if (view is ViewGroup) {
@@ -330,32 +335,26 @@ object WindowHelper {
         return null
     }
 
-
-
-
-
-
-
-
     fun showCustomView(
         activity: Activity,
-        view: View
+        view: View,
+        fullscreenOrientation: com.webtoapp.data.model.FullscreenVideoOrientation =
+            com.webtoapp.data.model.FullscreenVideoOrientation.AUTO_SENSOR_LANDSCAPE
     ): Int {
         val originalOrientation = activity.requestedOrientation
 
-
-
-
-        val isVideoView = view is android.view.SurfaceView ||
-                          view is android.view.TextureView ||
-                          (view is ViewGroup && hasVideoChildView(view))
-
-        if (isVideoView) {
-            activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-            AppLogger.d("WindowHelper", "Video fullscreen: switching to SENSOR_LANDSCAPE")
-        } else {
-
-            AppLogger.d("WindowHelper", "Non-video fullscreen: keeping current orientation ($originalOrientation)")
+        when (fullscreenOrientation) {
+            com.webtoapp.data.model.FullscreenVideoOrientation.AUTO_SENSOR_LANDSCAPE -> {
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                AppLogger.d("WindowHelper", "Fullscreen: SENSOR_LANDSCAPE (auto-rotate with device)")
+            }
+            com.webtoapp.data.model.FullscreenVideoOrientation.FORCE_LANDSCAPE -> {
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                AppLogger.d("WindowHelper", "Fullscreen: LANDSCAPE (forced)")
+            }
+            com.webtoapp.data.model.FullscreenVideoOrientation.KEEP_CURRENT -> {
+                AppLogger.d("WindowHelper", "Fullscreen: keeping current orientation ($originalOrientation)")
+            }
         }
 
         val decorView = activity.window.decorView as FrameLayout
@@ -368,26 +367,6 @@ object WindowHelper {
         )
         return originalOrientation
     }
-
-
-
-
-
-    private fun hasVideoChildView(parent: ViewGroup): Boolean {
-        for (i in 0 until parent.childCount) {
-            val child = parent.getChildAt(i)
-            if (child is android.view.SurfaceView || child is android.view.TextureView) {
-                return true
-            }
-            if (child is ViewGroup && hasVideoChildView(child)) {
-                return true
-            }
-        }
-        return false
-    }
-
-
-
 
     fun hideCustomView(
         activity: Activity,

@@ -7,14 +7,7 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
-
-
-
-
 object ZipUtils {
-
-
-
 
     fun writeEntryDeflated(zipOut: ZipOutputStream, name: String, data: ByteArray) {
         val entry = ZipEntry(name)
@@ -23,10 +16,6 @@ object ZipUtils {
         zipOut.write(data)
         zipOut.closeEntry()
     }
-
-
-
-
 
     fun writeEntryStoredSimple(zipOut: ZipOutputStream, name: String, data: ByteArray) {
         val entry = ZipEntry(name)
@@ -43,23 +32,16 @@ object ZipUtils {
         zipOut.closeEntry()
     }
 
-
-
-
-
     fun writeEntryStored(zipOut: ZipOutputStream, name: String, data: ByteArray) {
         val entry = ZipEntry(name)
         entry.method = ZipEntry.STORED
         entry.size = data.size.toLong()
         entry.compressedSize = data.size.toLong()
 
-
-
         if (name == "resources.arsc") {
             val nameBytes = name.toByteArray(Charsets.UTF_8)
             val baseHeaderSize = 30
             val base = baseHeaderSize + nameBytes.size
-
 
             val padLen = (4 - (base + 4) % 4) % 4
             if (padLen > 0) {
@@ -84,14 +66,8 @@ object ZipUtils {
         zipOut.closeEntry()
     }
 
-
-
-
-
-
     fun writeEntryStoredStreaming(zipOut: ZipOutputStream, name: String, file: File) {
         val fileSize = file.length()
-
 
         val crc = CRC32()
         val buffer = ByteArray(8192)
@@ -102,13 +78,11 @@ object ZipUtils {
             }
         }
 
-
         val entry = ZipEntry(name)
         entry.method = ZipEntry.STORED
         entry.size = fileSize
         entry.compressedSize = fileSize
         entry.crc = crc.value
-
 
         zipOut.putNextEntry(entry)
         file.inputStream().buffered().use { input ->
@@ -122,17 +96,10 @@ object ZipUtils {
         AppLogger.d("ZipUtils", "Large file streaming embedded(STORED): $name (${fileSize / 1024} KB)")
     }
 
-
-
-
     fun copyEntry(zipIn: ZipFile, zipOut: ZipOutputStream, entry: ZipEntry) {
         val data = zipIn.getInputStream(entry).readBytes()
         writeEntryDeflated(zipOut, entry.name, data)
     }
-
-
-
-
 
     fun copyEntryPreserveMethod(zipIn: ZipFile, zipOut: ZipOutputStream, entry: ZipEntry) {
         val data = zipIn.getInputStream(entry).readBytes()

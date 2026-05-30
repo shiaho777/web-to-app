@@ -17,14 +17,6 @@ import com.webtoapp.core.network.NetworkModule
 import org.json.JSONArray
 import org.json.JSONObject
 
-
-
-
-
-
-
-
-
 class GreasemonkeyBridge(
     private val context: Context,
     private val webViewProvider: () -> WebView?
@@ -33,16 +25,6 @@ class GreasemonkeyBridge(
         const val JS_INTERFACE_NAME = "__WTA_GM_BRIDGE__"
         private const val TAG = "GreasemonkeyBridge"
         private const val PREFS_PREFIX = "gm_storage_"
-
-
-
-
-
-
-
-
-
-
 
         fun generatePolyfillScript(
             scriptId: String,
@@ -242,8 +224,6 @@ class GreasemonkeyBridge(
 
     private val httpClient get() = NetworkModule.defaultClient
 
-
-
     private fun getPrefs(scriptId: String) =
         context.getSharedPreferences("$PREFS_PREFIX$scriptId", Context.MODE_PRIVATE)
 
@@ -268,8 +248,6 @@ class GreasemonkeyBridge(
         return JSONArray(keys.toList()).toString()
     }
 
-
-
     @JavascriptInterface
     fun xmlHttpRequest(callbackId: String, detailsJson: String) {
         scope.launch {
@@ -283,7 +261,6 @@ class GreasemonkeyBridge(
 
                 val requestBuilder = Request.Builder().url(url)
 
-
                 if (headersObj != null) {
                     val headerMap = mutableMapOf<String, String>()
                     headersObj.keys().forEach { key ->
@@ -291,7 +268,6 @@ class GreasemonkeyBridge(
                     }
                     requestBuilder.headers(headerMap.toHeaders())
                 }
-
 
                 when (method) {
                     "POST", "PUT", "PATCH" -> {
@@ -309,7 +285,6 @@ class GreasemonkeyBridge(
                 val responseText = response.body?.string() ?: ""
                 val status = response.code
                 val statusText = response.message
-
 
                 val responseHeaders = JSONObject()
                 response.headers.forEach { (name, value) ->
@@ -337,8 +312,6 @@ class GreasemonkeyBridge(
         }
     }
 
-
-
     @JavascriptInterface
     fun setClipboard(text: String, type: String) {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -346,8 +319,6 @@ class GreasemonkeyBridge(
         clipboard.setPrimaryClip(clip)
         AppLogger.d(TAG, "GM_setClipboard: ${text.take(50)}...")
     }
-
-
 
     @JavascriptInterface
     fun openInTab(url: String, openInBackground: Boolean): Boolean {
@@ -362,14 +333,10 @@ class GreasemonkeyBridge(
         }
     }
 
-
-
     @JavascriptInterface
     fun log(message: String) {
         AppLogger.d(TAG, "[GM_log] $message")
     }
-
-
 
     private fun callbackToJs(callbackId: String, event: String, dataJson: String) {
         val escapedData = dataJson.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r")

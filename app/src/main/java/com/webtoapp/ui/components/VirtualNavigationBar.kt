@@ -26,9 +26,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
-
-
-
 data class VirtualNavBarConfig(
     val showBackButton: Boolean = true,
     val showForwardButton: Boolean = true,
@@ -42,11 +39,6 @@ data class VirtualNavBarConfig(
     val horizontalPadding: Int = 16,
     val bottomPadding: Int = 8
 )
-
-
-
-
-
 
 @Composable
 fun VirtualNavigationBar(
@@ -100,7 +92,6 @@ fun VirtualNavigationBar(
                         )
                     }
 
-
                     if (config.showForwardButton) {
                         NavButton(
                             icon = Icons.AutoMirrored.Filled.ArrowForward,
@@ -112,7 +103,6 @@ fun VirtualNavigationBar(
                         )
                     }
 
-
                     if (config.showRefreshButton) {
                         NavButton(
                             icon = Icons.Filled.Refresh,
@@ -123,7 +113,6 @@ fun VirtualNavigationBar(
                             disabledIconColor = config.disabledIconColor
                         )
                     }
-
 
                     if (config.showHomeButton) {
                         NavButton(
@@ -163,9 +152,6 @@ private fun NavButton(
         )
     }
 }
-
-
-
 
 @Composable
 fun FloatingVirtualNavigationBar(

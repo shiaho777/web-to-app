@@ -8,7 +8,6 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -18,9 +17,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,120 +25,53 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
-import com.webtoapp.ui.theme.WebToAppTheme
-import com.webtoapp.data.model.AnnouncementTemplateType
+import com.webtoapp.core.activation.ActivationCode
+import com.webtoapp.core.appmodifier.AppModifyPayload
+import com.webtoapp.data.model.Announcement
+import com.webtoapp.data.model.SplashConfig
+import com.webtoapp.data.model.SplashOrientation
+import com.webtoapp.data.model.SplashType
 import com.webtoapp.ui.components.announcement.toUiTemplate
+import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.util.normalizeExternalIntentUrl
 import kotlinx.coroutines.delay
 import java.io.File
 
-
-
-
-
 class SplashLauncherActivity : AppCompatActivity() {
 
     companion object {
-        const val EXTRA_TARGET_PACKAGE = "target_package"
-        const val EXTRA_SPLASH_TYPE = "splash_type"
-        const val EXTRA_SPLASH_PATH = "splash_path"
-        const val EXTRA_SPLASH_DURATION = "splash_duration"
-        const val EXTRA_SPLASH_CLICK_SKIP = "splash_click_skip"
-        const val EXTRA_VIDEO_START_MS = "video_start_ms"
-        const val EXTRA_VIDEO_END_MS = "video_end_ms"
-        const val EXTRA_SPLASH_LANDSCAPE = "splash_landscape"
-        const val EXTRA_SPLASH_FILL_SCREEN = "splash_fill_screen"
-        const val EXTRA_SPLASH_ENABLE_AUDIO = "splash_enable_audio"
-
-        const val EXTRA_ACTIVATION_ENABLED = "activation_enabled"
-        const val EXTRA_ACTIVATION_CODES = "activation_codes"
-        const val EXTRA_ACTIVATION_REQUIRE_EVERY_TIME = "activation_require_every_time"
-
-        const val EXTRA_ANNOUNCEMENT_ENABLED = "announcement_enabled"
-        const val EXTRA_ANNOUNCEMENT_TITLE = "announcement_title"
-        const val EXTRA_ANNOUNCEMENT_CONTENT = "announcement_content"
-        const val EXTRA_ANNOUNCEMENT_LINK = "announcement_link"
-        const val EXTRA_ANNOUNCEMENT_TEMPLATE = "announcement_template"
-        const val EXTRA_ANNOUNCEMENT_SHOW_EMOJI = "announcement_show_emoji"
-        const val EXTRA_ANNOUNCEMENT_ANIMATION = "announcement_animation"
+        const val EXTRA_PAYLOAD_JSON = "app_modify_payload"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val targetPackage = intent.getStringExtra(EXTRA_TARGET_PACKAGE)
-        val splashType = intent.getStringExtra(EXTRA_SPLASH_TYPE) ?: "IMAGE"
-        val splashPath = intent.getStringExtra(EXTRA_SPLASH_PATH)
-        val splashDuration = intent.getIntExtra(EXTRA_SPLASH_DURATION, 3)
-        val clickToSkip = intent.getBooleanExtra(EXTRA_SPLASH_CLICK_SKIP, true)
-        val videoStartMs = intent.getLongExtra(EXTRA_VIDEO_START_MS, 0L)
-        val videoEndMs = intent.getLongExtra(EXTRA_VIDEO_END_MS, 5000L)
-        val isLandscape = intent.getBooleanExtra(EXTRA_SPLASH_LANDSCAPE, false)
-        val fillScreen = intent.getBooleanExtra(EXTRA_SPLASH_FILL_SCREEN, true)
-        val enableAudio = intent.getBooleanExtra(EXTRA_SPLASH_ENABLE_AUDIO, false)
-
-        val activationEnabled = intent.getBooleanExtra(EXTRA_ACTIVATION_ENABLED, false)
-        val activationRequireEveryTime = intent.getBooleanExtra(EXTRA_ACTIVATION_REQUIRE_EVERY_TIME, false)
-        val activationCodesStr = intent.getStringExtra(EXTRA_ACTIVATION_CODES) ?: ""
-        val activationCodes = if (activationCodesStr.isNotBlank()) {
-            activationCodesStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-        } else {
-            emptyList()
-        }
-
-        val announcementEnabled = intent.getBooleanExtra(EXTRA_ANNOUNCEMENT_ENABLED, false)
-        val announcementTitle = intent.getStringExtra(EXTRA_ANNOUNCEMENT_TITLE) ?: ""
-        val announcementContent = intent.getStringExtra(EXTRA_ANNOUNCEMENT_CONTENT) ?: ""
-        val announcementLink = intent.getStringExtra(EXTRA_ANNOUNCEMENT_LINK)
-        val announcementTemplate = intent.getStringExtra(EXTRA_ANNOUNCEMENT_TEMPLATE) ?: "XIAOHONGSHU"
-        val announcementShowEmoji = intent.getBooleanExtra(EXTRA_ANNOUNCEMENT_SHOW_EMOJI, true)
-        val announcementAnimation = intent.getBooleanExtra(EXTRA_ANNOUNCEMENT_ANIMATION, true)
-
-
-        if (targetPackage.isNullOrBlank()) {
+        val payload = AppModifyPayload.fromJson(intent.getStringExtra(EXTRA_PAYLOAD_JSON))
+        if (payload == null || payload.targetPackage.isBlank()) {
+            AppLogger.w("SplashLauncherActivity", "Missing or invalid payload, finishing")
             finish()
             return
         }
 
+        val splashPath = payload.splashConfig.mediaPath
+        val hasValidSplash = payload.splashEnabled &&
+            splashPath != null &&
+            File(splashPath).exists()
 
-        val hasValidSplash = splashPath != null && File(splashPath).exists()
-
-
-        if (hasValidSplash && isLandscape) {
+        if (hasValidSplash && payload.splashConfig.orientation == SplashOrientation.LANDSCAPE) {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         }
 
         setContent {
             WebToAppTheme { _ ->
                 SplashLauncherScreen(
-                    targetPackage = targetPackage,
+                    payload = payload,
                     hasValidSplash = hasValidSplash,
-                    splashType = splashType,
-                    splashPath = splashPath,
-                    splashDuration = splashDuration,
-                    clickToSkip = clickToSkip,
-                    videoStartMs = videoStartMs,
-                    videoEndMs = videoEndMs,
-                    fillScreen = fillScreen,
-                    enableAudio = enableAudio,
-                    activationEnabled = activationEnabled,
-                    activationRequireEveryTime = activationRequireEveryTime,
-                    activationCodes = activationCodes,
-                    announcementEnabled = announcementEnabled,
-                    announcementTitle = announcementTitle,
-                    announcementContent = announcementContent,
-                    announcementLink = announcementLink,
-                    announcementTemplate = announcementTemplate,
-                    announcementShowEmoji = announcementShowEmoji,
-                    announcementAnimation = announcementAnimation,
-                    onLaunchTarget = { launchTargetApp(targetPackage) }
+                    onLaunchTarget = { launchTargetApp(payload.targetPackage) }
                 )
             }
         }
@@ -157,46 +87,37 @@ class SplashLauncherActivity : AppCompatActivity() {
             AppLogger.e("SplashLauncherActivity", "Operation failed", e)
         }
 
-
         finishAndRemoveTask()
     }
 }
 
-
-
-
 @Composable
 fun SplashLauncherScreen(
-    targetPackage: String,
+    payload: AppModifyPayload,
     hasValidSplash: Boolean,
-    splashType: String,
-    splashPath: String?,
-    splashDuration: Int,
-    clickToSkip: Boolean,
-    videoStartMs: Long,
-    videoEndMs: Long,
-    fillScreen: Boolean,
-    enableAudio: Boolean = false,
-    activationEnabled: Boolean = false,
-    activationRequireEveryTime: Boolean = false,
-    activationCodes: List<String> = emptyList(),
-    announcementEnabled: Boolean = false,
-    announcementTitle: String = "",
-    announcementContent: String = "",
-    announcementLink: String? = null,
-    announcementTemplate: String = "XIAOHONGSHU",
-    announcementShowEmoji: Boolean = true,
-    announcementAnimation: Boolean = true,
     onLaunchTarget: () -> Unit
 ) {
     val context = LocalContext.current
     val activation = com.webtoapp.WebToAppApplication.activation
-    val scope = rememberCoroutineScope()
 
+    val splashConfig = payload.splashConfig
+    val splashPath = splashConfig.mediaPath
+    val splashType = splashConfig.type
+    val splashDuration = splashConfig.duration
+    val clickToSkip = splashConfig.clickToSkip
+    val videoStartMs = splashConfig.videoStartMs
+    val videoEndMs = splashConfig.videoEndMs
+    val fillScreen = splashConfig.fillScreen
+    val enableAudio = splashConfig.enableAudio
+
+    val activationEnabled = payload.activationEnabled
+    val activationRequireEveryTime = payload.activationRequireEveryTime
+    val activationCodes = payload.activationCodes
+    val announcement = payload.announcement
+    val announcementEnabled = payload.announcementEnabled
 
     var isActivated by remember { mutableStateOf(!activationEnabled) }
     var showActivationDialog by remember { mutableStateOf(activationEnabled) }
-
 
     LaunchedEffect(activationRequireEveryTime) {
         if (activationEnabled && activationRequireEveryTime) {
@@ -207,20 +128,17 @@ fun SplashLauncherScreen(
         }
     }
 
-
     var showAnnouncementDialog by remember { mutableStateOf(false) }
-
 
     var showSplash by remember { mutableStateOf(false) }
     var countdown by remember { mutableIntStateOf(
-        if (splashType == "VIDEO") ((videoEndMs - videoStartMs) / 1000).toInt() else splashDuration
+        if (splashType == SplashType.VIDEO) ((videoEndMs - videoStartMs) / 1000).toInt() else splashDuration
     ) }
-
 
     LaunchedEffect(isActivated) {
         if (isActivated) {
 
-            if (announcementEnabled && announcementTitle.isNotEmpty()) {
+            if (announcementEnabled && announcement.title.isNotEmpty()) {
                 showAnnouncementDialog = true
             } else {
 
@@ -233,7 +151,6 @@ fun SplashLauncherScreen(
         }
     }
 
-
     fun onAnnouncementDismiss() {
         showAnnouncementDialog = false
         if (hasValidSplash && splashPath != null) {
@@ -243,15 +160,13 @@ fun SplashLauncherScreen(
         }
     }
 
-
     LaunchedEffect(Unit) {
         if (!activationEnabled && !announcementEnabled && !hasValidSplash) {
             onLaunchTarget()
         }
     }
 
-
-    if (showSplash && splashType == "IMAGE") {
+    if (showSplash && splashType == SplashType.IMAGE) {
         LaunchedEffect(countdown) {
             if (countdown > 0) {
                 delay(1000L)
@@ -262,7 +177,6 @@ fun SplashLauncherScreen(
             }
         }
     }
-
 
     Box(
         modifier = Modifier
@@ -288,7 +202,6 @@ fun SplashLauncherScreen(
             }
         }
 
-
         AnimatedVisibility(
             visible = showSplash && splashPath != null,
             enter = fadeIn(animationSpec = tween(200)),
@@ -310,34 +223,31 @@ fun SplashLauncherScreen(
             )
         }
 
-
         if (!showActivationDialog && !showAnnouncementDialog && !showSplash && isActivated) {
             CircularProgressIndicator(color = Color.White)
         }
     }
 
-
     if (showActivationDialog) {
+        val dialogConfig = payload.activationDialogConfig
         ActivationDialog(
             onDismiss = { showActivationDialog = false },
             onActivate = { code ->
-                if (activationCodes.contains(code)) {
+                if (matchesAnyCode(code, activationCodes)) {
                     isActivated = true
                     showActivationDialog = false
                 }
-            }
+            },
+            customTitle = dialogConfig.title,
+            customSubtitle = dialogConfig.subtitle,
+            customInputLabel = dialogConfig.inputLabel,
+            customButtonText = dialogConfig.buttonText
         )
     }
 
-
     if (showAnnouncementDialog) {
         AnnouncementDialog(
-            title = announcementTitle,
-            content = announcementContent,
-            linkUrl = announcementLink,
-            templateName = announcementTemplate,
-            showEmoji = announcementShowEmoji,
-            animationEnabled = announcementAnimation,
+            announcement = announcement,
             onDismiss = { onAnnouncementDismiss() },
             onLinkClick = { url ->
                 val safeUrl = normalizeExternalUrlForIntent(url)
@@ -355,12 +265,13 @@ fun SplashLauncherScreen(
     }
 }
 
+private fun matchesAnyCode(input: String, codes: List<ActivationCode>): Boolean {
+    return codes.any { it.code == input }
+}
+
 private fun normalizeExternalUrlForIntent(rawUrl: String): String {
     return normalizeExternalIntentUrl(rawUrl)
 }
-
-
-
 
 @Composable
 fun ActivationDialog(
@@ -417,54 +328,27 @@ fun ActivationDialog(
     )
 }
 
-
-
-
-
 @Composable
 fun AnnouncementDialog(
-    title: String,
-    content: String,
-    linkUrl: String?,
-    templateName: String = "XIAOHONGSHU",
-    showEmoji: Boolean = true,
-    animationEnabled: Boolean = true,
+    announcement: Announcement,
     onDismiss: () -> Unit,
     onLinkClick: (String) -> Unit
 ) {
-
-        val template = try {
-        AnnouncementTemplateType.valueOf(templateName).toUiTemplate()
-    } catch (e: Exception) {
-        com.webtoapp.ui.components.announcement.AnnouncementTemplate.MINIMAL
-    }
-
-    val announcement = com.webtoapp.data.model.Announcement(
-        title = title,
-        content = content,
-        linkUrl = linkUrl,
-        showEmoji = showEmoji,
-        animationEnabled = animationEnabled
-    )
-
     com.webtoapp.ui.components.announcement.AnnouncementDialog(
         config = com.webtoapp.ui.components.announcement.AnnouncementConfig(
             announcement = announcement,
-            template = template,
-            showEmoji = showEmoji,
-            animationEnabled = animationEnabled
+            template = announcement.template.toUiTemplate(),
+            showEmoji = announcement.showEmoji,
+            animationEnabled = announcement.animationEnabled
         ),
         onDismiss = onDismiss,
         onLinkClick = { url -> onLinkClick(url) }
     )
 }
 
-
-
-
 @Composable
 fun SplashContent(
-    splashType: String,
+    splashType: SplashType,
     splashPath: String,
     countdown: Int,
     clickToSkip: Boolean,
@@ -477,7 +361,6 @@ fun SplashContent(
     val context = LocalContext.current
     val videoDurationMs = videoEndMs - videoStartMs
     val contentScaleMode = if (fillScreen) ContentScale.Crop else ContentScale.Fit
-
 
     var videoRemainingMs by remember { mutableLongStateOf(videoDurationMs) }
 
@@ -498,7 +381,7 @@ fun SplashContent(
         contentAlignment = Alignment.Center
     ) {
         when (splashType) {
-            "IMAGE" -> {
+            SplashType.IMAGE -> {
                 Image(
                     painter = rememberAsyncImagePainter(
                         ImageRequest.Builder(context)
@@ -511,11 +394,9 @@ fun SplashContent(
                     contentScale = contentScaleMode
                 )
             }
-            "VIDEO" -> {
+            SplashType.VIDEO -> {
                 var mediaPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
                 var isPlayerReady by remember { mutableStateOf(false) }
-
-
 
                 LaunchedEffect(isPlayerReady) {
                     if (!isPlayerReady) return@LaunchedEffect
@@ -586,7 +467,6 @@ fun SplashContent(
             }
         }
 
-
         Surface(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -599,7 +479,7 @@ fun SplashContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
 
-                val displayTime = if (splashType == "VIDEO") ((videoRemainingMs + 999) / 1000).toInt() else countdown
+                val displayTime = if (splashType == SplashType.VIDEO) ((videoRemainingMs + 999) / 1000).toInt() else countdown
                 if (displayTime > 0) {
                     Text(
                         text = "${displayTime}s",

@@ -7,10 +7,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 
-
-
-
-
 class AppUsageTracker(
     private val repository: AppStatsRepository
 ) {
@@ -20,12 +16,7 @@ class AppUsageTracker(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-
     private val activeSessions = ConcurrentHashMap<Long, Long>()
-
-
-
-
 
     fun trackLaunch(appId: Long) {
         activeSessions[appId] = System.currentTimeMillis()
@@ -34,10 +25,6 @@ class AppUsageTracker(
         }
         AppLogger.d(TAG, "trackLaunch: appId=$appId")
     }
-
-
-
-
 
     fun trackClose(appId: Long) {
         val startTime = activeSessions.remove(appId) ?: return
@@ -50,10 +37,6 @@ class AppUsageTracker(
         }
     }
 
-
-
-
-
     fun trackPause(appId: Long) {
         val startTime = activeSessions[appId] ?: return
         val duration = System.currentTimeMillis() - startTime
@@ -65,10 +48,6 @@ class AppUsageTracker(
 
         activeSessions[appId] = System.currentTimeMillis()
     }
-
-
-
-
 
     fun trackResume(appId: Long) {
         activeSessions[appId] = System.currentTimeMillis()

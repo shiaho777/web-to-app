@@ -14,9 +14,6 @@ import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.wordpress.WordPressDependencyManager
 
-
-
-
 @Composable
 fun WordPressLoadingOverlay(
     state: WordPressPreviewState,
@@ -86,9 +83,6 @@ fun WordPressLoadingOverlay(
     }
 }
 
-
-
-
 @Composable
 fun PhpAppLoadingOverlay(
     state: PhpAppPreviewState,
@@ -150,9 +144,6 @@ fun PhpAppLoadingOverlay(
     }
 }
 
-
-
-
 @Composable
 fun PythonAppLoadingOverlay(
     state: PythonAppPreviewState,
@@ -183,9 +174,6 @@ fun PythonAppLoadingOverlay(
     }
 }
 
-
-
-
 @Composable
 fun SimpleAppLoadingOverlay(
     isStarting: Boolean,
@@ -213,8 +201,6 @@ fun SimpleAppLoadingOverlay(
         }
     }
 }
-
-
 
 @Composable
 private fun ErrorWithRetry(message: String, onRetry: () -> Unit) {

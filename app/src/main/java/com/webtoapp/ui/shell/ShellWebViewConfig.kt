@@ -5,12 +5,7 @@ import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.data.model.ScriptRunTime
 import com.webtoapp.data.model.WebViewConfig
 
-
-
-
-
 fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
-
 
     val isLocalFileApp = config.appType.trim().uppercase() in setOf("HTML", "FRONTEND")
 
@@ -80,32 +75,88 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         enableZoomPolyfill = config.webViewConfig.enableZoomPolyfill,
         enableCrossOriginIsolation = config.webViewConfig.enableCrossOriginIsolation,
         hideUrlPreview = config.webViewConfig.hideUrlPreview,
-        disableShields = config.webViewConfig.disableShields,
         decodeBase64DeepLinks = config.webViewConfig.decodeBase64DeepLinks,
+        decodeBase64Mode = try {
+            com.webtoapp.data.model.Base64DeepLinkMode.valueOf(config.webViewConfig.decodeBase64Mode)
+        } catch (e: Exception) { com.webtoapp.data.model.Base64DeepLinkMode.GESTURE_ONLY },
         mediaAutoplayEnabled = config.webViewConfig.mediaAutoplayEnabled,
+        mediaAutoplayScope = try {
+            com.webtoapp.data.model.MediaAutoplayScope.valueOf(config.webViewConfig.mediaAutoplayScope)
+        } catch (e: Exception) { com.webtoapp.data.model.MediaAutoplayScope.VIDEO_ONLY },
         acceptThirdPartyCookies = config.webViewConfig.acceptThirdPartyCookies,
+        thirdPartyCookieMode = try {
+            com.webtoapp.data.model.ThirdPartyCookieMode.valueOf(config.webViewConfig.thirdPartyCookieMode)
+        } catch (e: Exception) { com.webtoapp.data.model.ThirdPartyCookieMode.SAME_SITE_LAX },
         enableKernelDisguise = config.webViewConfig.enableKernelDisguise,
+        kernelDisguiseLevel = try {
+            com.webtoapp.data.model.KernelDisguiseLevel.valueOf(config.webViewConfig.kernelDisguiseLevel)
+        } catch (e: Exception) { com.webtoapp.data.model.KernelDisguiseLevel.STANDARD },
         enableImageRepair = config.webViewConfig.enableImageRepair,
         enableScrollMemory = config.webViewConfig.enableScrollMemory,
-        enableHttpsUpgrade = config.webViewConfig.enableHttpsUpgrade,
-        enableOAuthExternalRedirect = config.webViewConfig.enableOAuthExternalRedirect,
         enableClipboardPolyfill = config.webViewConfig.enableClipboardPolyfill,
         enableNotificationPolyfill = config.webViewConfig.enableNotificationPolyfill,
-        safeBrowsingEnabled = config.webViewConfig.safeBrowsingEnabled,
         geolocationEnabled = config.webViewConfig.geolocationEnabled,
+        geolocationAccuracy = try {
+            com.webtoapp.data.model.GeolocationAccuracy.valueOf(config.webViewConfig.geolocationAccuracy)
+        } catch (e: Exception) { com.webtoapp.data.model.GeolocationAccuracy.COARSE },
+        geolocationPolicy = try {
+            com.webtoapp.data.model.GeolocationPolicy.valueOf(config.webViewConfig.geolocationPolicy)
+        } catch (e: Exception) { com.webtoapp.data.model.GeolocationPolicy.ALWAYS_ASK },
         enableOrientationPolyfill = config.webViewConfig.enableOrientationPolyfill,
         enableCompatPolyfills = config.webViewConfig.enableCompatPolyfills,
         enableNativeBridge = config.webViewConfig.enableNativeBridge,
+        nativeBridgeCapabilities = com.webtoapp.data.model.NativeBridgeCapabilities(
+            clipboard = config.webViewConfig.nativeBridgeClipboard,
+            vibration = config.webViewConfig.nativeBridgeVibration,
+            geolocation = config.webViewConfig.nativeBridgeGeolocation,
+            brightness = config.webViewConfig.nativeBridgeBrightness,
+            notification = config.webViewConfig.nativeBridgeNotification,
+            download = config.webViewConfig.nativeBridgeDownload,
+            privateNetwork = config.webViewConfig.nativeBridgePrivateNetwork,
+            screenWake = config.webViewConfig.nativeBridgeScreenWake,
+        ),
         javaScriptCanOpenWindows = config.webViewConfig.javaScriptCanOpenWindows,
+        jsOpenWindowsPolicy = try {
+            com.webtoapp.data.model.JsOpenWindowsPolicy.valueOf(config.webViewConfig.jsOpenWindowsPolicy)
+        } catch (e: Exception) { com.webtoapp.data.model.JsOpenWindowsPolicy.ALLOW },
         databaseEnabled = config.webViewConfig.databaseEnabled,
         enableCookiePersistence = config.webViewConfig.enableCookiePersistence,
         enablePrivateNetworkBridge = config.webViewConfig.enablePrivateNetworkBridge,
+        privateNetworkScope = try {
+            com.webtoapp.data.model.PrivateNetworkScope.valueOf(config.webViewConfig.privateNetworkScope)
+        } catch (e: Exception) { com.webtoapp.data.model.PrivateNetworkScope.LOCAL_ONLY },
         allowMixedContent = config.webViewConfig.allowMixedContent,
-        enableGpc = config.webViewConfig.enableGpc,
-        enableCookieConsentBlock = config.webViewConfig.enableCookieConsentBlock,
-        enableReferrerPolicy = config.webViewConfig.enableReferrerPolicy,
-        enableTrackerBlocking = config.webViewConfig.enableTrackerBlocking,
+        mixedContentMode = try {
+            com.webtoapp.data.model.MixedContentMode.valueOf(config.webViewConfig.mixedContentMode)
+        } catch (e: Exception) { com.webtoapp.data.model.MixedContentMode.COMPATIBILITY },
         enableBlobDownloadInterception = config.webViewConfig.enableBlobDownloadInterception,
+        blobInterceptScope = try {
+            com.webtoapp.data.model.BlobInterceptScope.valueOf(config.webViewConfig.blobInterceptScope)
+        } catch (e: Exception) { com.webtoapp.data.model.BlobInterceptScope.ALL },
+        blobInterceptThresholdMb = config.webViewConfig.blobInterceptThresholdMb,
+        enableCloudflareCompat = config.webViewConfig.enableCloudflareCompat,
+        cloudflareCompatMode = try {
+            com.webtoapp.data.model.CloudflareCompatMode.valueOf(config.webViewConfig.cloudflareCompatMode)
+        } catch (e: Exception) { com.webtoapp.data.model.CloudflareCompatMode.AUTO_DETECT },
+        primeUserActivation = config.webViewConfig.primeUserActivation,
+        primeUserActivationMode = try {
+            com.webtoapp.data.model.PrimeUserActivationMode.valueOf(config.webViewConfig.primeUserActivationMode)
+        } catch (e: Exception) { com.webtoapp.data.model.PrimeUserActivationMode.SYNTHETIC_TAP },
+        primeUserActivationTiming = try {
+            com.webtoapp.data.model.PrimeUserActivationTiming.valueOf(config.webViewConfig.primeUserActivationTiming)
+        } catch (e: Exception) { com.webtoapp.data.model.PrimeUserActivationTiming.ON_PAGE_FINISHED },
+        fullscreenVideoOrientation = try {
+            com.webtoapp.data.model.FullscreenVideoOrientation.valueOf(config.webViewConfig.fullscreenVideoOrientation)
+        } catch (e: Exception) { com.webtoapp.data.model.FullscreenVideoOrientation.AUTO_SENSOR_LANDSCAPE },
+        failoverEnabled = config.webViewConfig.failoverEnabled,
+        failoverUrls = config.webViewConfig.failoverUrls,
+        failoverTriggers = com.webtoapp.data.model.FailoverTriggers(
+            networkError = config.webViewConfig.failoverTriggerNetworkError,
+            http5xx = config.webViewConfig.failoverTriggerHttp5xx,
+            http4xx = config.webViewConfig.failoverTriggerHttp4xx,
+            timeout = config.webViewConfig.failoverTriggerTimeout,
+        ),
+        failoverTimeoutSeconds = config.webViewConfig.failoverTimeoutSeconds,
         keepScreenOn = config.webViewConfig.keepScreenOn,
         screenAwakeMode = try { com.webtoapp.data.model.ScreenAwakeMode.valueOf(config.webViewConfig.screenAwakeMode) } catch (e: Exception) { com.webtoapp.data.model.ScreenAwakeMode.OFF },
         screenAwakeTimeoutMinutes = config.webViewConfig.screenAwakeTimeoutMinutes,

@@ -9,58 +9,37 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import java.io.File
 
-
-
-
-
-
-
-
-
-
-
 class FrontendProjectBuilder(private val context: Context) {
 
     companion object {
         private const val TAG = "FrontendProjectBuilder"
     }
 
-
     private val _buildState = MutableStateFlow<BuildState>(BuildState.Idle)
     val buildState: StateFlow<BuildState> = _buildState
 
-
     private val _buildLogs = MutableStateFlow<List<BuildLogEntry>>(emptyList())
     val buildLogs: StateFlow<List<BuildLogEntry>> = _buildLogs
-
-
-
-
-
-
 
     suspend fun importProject(projectPath: String): Result<ImportResult> = withContext(Dispatchers.IO) {
         _buildLogs.value = emptyList()
 
         try {
             _buildState.value = BuildState.Scanning
-            addLog(LogLevel.INFO, "开始扫描项目...")
+            addLog(LogLevel.INFO, Strings.importLogStartScan)
 
             val projectDir = File(projectPath)
             if (!projectDir.exists()) {
                 throw Exception(Strings.frontendProjectDirNotFound.format(projectPath))
             }
 
-
-            addLog(LogLevel.INFO, "检测项目类型...")
+            addLog(LogLevel.INFO, Strings.importLogDetectingType)
             val detection = ProjectDetector.detectProject(projectPath)
 
-            addLog(LogLevel.INFO, "框架: ${getFrameworkDisplayName(detection.framework)}")
+            addLog(LogLevel.INFO, Strings.buildLogFrameworkLine.format(getFrameworkDisplayName(detection.framework)))
             if (detection.frameworkVersion != null) {
-                addLog(LogLevel.INFO, "版本: ${detection.frameworkVersion}")
+                addLog(LogLevel.INFO, Strings.importLogVersionLine.format(detection.frameworkVersion))
             }
-
-
 
             detection.issues.forEach { issue ->
                 when (issue.severity) {
@@ -73,29 +52,25 @@ class FrontendProjectBuilder(private val context: Context) {
                 }
             }
 
-
             val outputDir = File(detection.outputDir)
             if (!outputDir.exists() || !outputDir.isDirectory) {
                 throw Exception(Strings.frontendBuildOutputNotFound)
             }
-
 
             val indexHtml = File(outputDir, "index.html")
             if (!indexHtml.exists()) {
                 throw Exception(Strings.frontendIndexHtmlNotFound)
             }
 
-            addLog(LogLevel.INFO, "找到输出目录: ${outputDir.name}")
-
+            addLog(LogLevel.INFO, Strings.importLogFoundOutputDir.format(outputDir.name))
 
             val files = outputDir.walkTopDown().filter { it.isFile }.toList()
-            addLog(LogLevel.INFO, "共 ${files.size} 个文件")
+            addLog(LogLevel.INFO, Strings.importLogFileCount.format(files.size))
 
-            _buildState.value = BuildState.Importing(0f, "准备导入...")
-
+            _buildState.value = BuildState.Importing(0f, Strings.importLogPreparing)
 
             _buildState.value = BuildState.Success(outputDir.absolutePath, files.size)
-            addLog(LogLevel.INFO, "扫描完成，准备导入")
+            addLog(LogLevel.INFO, Strings.importLogScanComplete)
 
             Result.success(ImportResult(
                 outputPath = outputDir.absolutePath,
@@ -106,15 +81,12 @@ class FrontendProjectBuilder(private val context: Context) {
             ))
 
         } catch (e: Exception) {
-            AppLogger.d(TAG, "导入失败", e)
-            addLog(LogLevel.ERROR, "导入失败: ${e.message}")
-            _buildState.value = BuildState.Error(e.message ?: "未知错误")
+            AppLogger.d(TAG, "Import failed", e)
+            addLog(LogLevel.ERROR, Strings.importLogFailedWithMsg.format(e.message ?: ""))
+            _buildState.value = BuildState.Error(e.message ?: Strings.unknownError)
             Result.failure(e)
         }
     }
-
-
-
 
     private fun addLog(level: LogLevel, message: String) {
         val entry = BuildLogEntry(
@@ -125,16 +97,10 @@ class FrontendProjectBuilder(private val context: Context) {
         _buildLogs.value = _buildLogs.value + entry
     }
 
-
-
-
     fun reset() {
         _buildState.value = BuildState.Idle
         _buildLogs.value = emptyList()
     }
-
-
-
 
     private fun getFrameworkDisplayName(framework: FrontendFramework): String {
         return when (framework) {
@@ -149,9 +115,6 @@ class FrontendProjectBuilder(private val context: Context) {
         }
     }
 }
-
-
-
 
 data class ImportResult(
     val outputPath: String,

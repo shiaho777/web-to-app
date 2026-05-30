@@ -9,38 +9,6 @@ import androidx.webkit.WebViewFeature
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.webview.OAuthCompatEngine
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 object BrowserKernel {
 
     private const val TAG = "BrowserKernel"
@@ -68,14 +36,12 @@ object BrowserKernel {
 
     fun isAvailable(): Boolean = isAvailable
 
+    enum class Level { BASIC, STANDARD, DEEP }
 
-
-
-
-
-
-
-    fun configureWebView(webView: WebView) {
+    fun configureWebView(
+        webView: WebView,
+        level: Level = Level.STANDARD
+    ) {
         try {
             webView.settings.apply {
 
@@ -84,10 +50,8 @@ object BrowserKernel {
                 userAgentString = cleanUa
                 cachedCleanUa = cleanUa
 
-                AppLogger.d(TAG, "UA sanitized: ${cleanUa.take(80)}...")
+                AppLogger.d(TAG, "UA sanitized (level=$level): ${cleanUa.take(80)}...")
             }
-
-
 
             removeRequestedWithHeader(webView)
 
@@ -95,15 +59,6 @@ object BrowserKernel {
             AppLogger.w(TAG, "WebView kernel config failed", e)
         }
     }
-
-
-
-
-
-
-
-
-
 
     @SuppressLint("RestrictedApi")
     private fun removeRequestedWithHeader(webView: WebView) {
@@ -139,10 +94,6 @@ object BrowserKernel {
         AppLogger.d(TAG, "X-Requested-With removal: will rely on shouldInterceptRequest fallback")
     }
 
-
-
-
-
     fun sanitizeUserAgent(rawUa: String): String {
         if (isAvailable) {
             try {
@@ -154,16 +105,7 @@ object BrowserKernel {
         return sanitizeUserAgentFallback(rawUa)
     }
 
-
-
-
     fun getCleanUserAgent(): String? = cachedCleanUa
-
-
-
-
-
-
 
     fun getKernelJs(): String {
         cachedKernelJs?.let { return it }
@@ -180,11 +122,9 @@ object BrowserKernel {
         }
     }
 
+    fun injectKernelJs(webView: WebView, level: Level = Level.STANDARD) {
 
-
-
-
-    fun injectKernelJs(webView: WebView) {
+        if (level == Level.BASIC) return
         try {
             val js = getKernelJs()
             if (js.isNotEmpty()) {
@@ -195,17 +135,11 @@ object BrowserKernel {
         }
     }
 
-
-
-
-
     fun sanitizeRequestHeaders(headers: Map<String, String>): Map<String, String> {
         val clean = headers.toMutableMap()
 
-
         clean.remove("X-Requested-With")
         clean.remove("x-requested-with")
-
 
         cachedCleanUa?.let { ua ->
             clean["User-Agent"] = ua
@@ -214,35 +148,9 @@ object BrowserKernel {
         return clean
     }
 
-
-
-
-
-
-
     fun isKernelDisguiseActive(): Boolean = true
 
-
-
-
-
-
-    @Deprecated("Use OAuthCompatEngine.getAntiDetectionJs(url) instead",
-        replaceWith = ReplaceWith("OAuthCompatEngine.getAntiDetectionJs(url)"))
-    fun getGoogleOAuthAntiDetectionJs(): String {
-
-        return OAuthCompatEngine.getAntiDetectionJs("https://accounts.google.com") ?: ""
-    }
-
-
-
-
-
-
-
     fun getBuildTimeKernelJs(): String = getKernelJs()
-
-
 
     private fun sanitizeUserAgentFallback(ua: String): String {
         var result = ua
@@ -285,8 +193,6 @@ object BrowserKernel {
             delete window.__webdriver_script_function;
         })();""".trimIndent()
     }
-
-
 
     private external fun nativeGetKernelJs(): String
     private external fun nativeSanitizeUserAgent(ua: String): String?

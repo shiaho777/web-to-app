@@ -17,13 +17,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.core.isolation.*
+import com.webtoapp.core.privacy.*
 import androidx.compose.ui.graphics.Color
-
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -99,7 +94,6 @@ fun IsolationConfigCard(
                     }
                 )
             }
-
 
             AnimatedVisibility(visible = config.enabled) {
                 Column(
@@ -204,7 +198,6 @@ fun IsolationConfigCard(
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-
                         Text(
                             text = Strings.networkProtection,
                             style = MaterialTheme.typography.labelMedium,
@@ -244,7 +237,6 @@ fun IsolationConfigCard(
                             }
                         )
 
-
                         AnimatedVisibility(visible = config.ipSpoofConfig.enabled) {
                             Column(
                                 modifier = Modifier.padding(start = 16.dp, top = 8.dp)
@@ -271,7 +263,6 @@ fun IsolationConfigCard(
                                         )
                                     }
                                 }
-
 
                                 AnimatedVisibility(visible = config.ipSpoofConfig.randomIpRange == IpRange.SEARCH) {
                                     Column(
@@ -309,7 +300,6 @@ fun IsolationConfigCard(
                         }
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -383,7 +373,6 @@ fun IsolationConfigCard(
                             }
                         }
                     }
-
 
                     Card(
                         colors = CardDefaults.cardColors(
@@ -473,7 +462,6 @@ private fun IsolationOption(
         )
     }
 }
-
 
 private fun isBasicConfig(config: IsolationConfig): Boolean {
     return config.enabled &&

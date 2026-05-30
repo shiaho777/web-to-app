@@ -1,8 +1,5 @@
 package com.webtoapp.core.extension.panel
 
-
-
-
 object PanelHelperScript {
     val helperScript: String = """
 (function() {

@@ -17,9 +17,6 @@ import com.webtoapp.core.stats.AppUsageStats
 import com.webtoapp.core.stats.AppHealthRecord
 import com.webtoapp.core.stats.AppUsageStatsDao
 
-
-
-
 @Database(
     entities = [WebApp::class, AppCategory::class, AppUsageStats::class, AppHealthRecord::class],
     version = 36,
@@ -44,23 +41,12 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-
-
-
-
         fun closeDatabase() {
             synchronized(this) {
                 INSTANCE?.close()
                 INSTANCE = null
             }
         }
-
-
-
-
-
-
-
 
         private fun rebuildWebAppsTable(
             db: SupportSQLiteDatabase,
@@ -75,9 +61,6 @@ abstract class AppDatabase : RoomDatabase() {
             postSql.forEach { db.execSQL(it) }
         }
 
-
-
-
         private fun createAddColumnMigration(
             startVersion: Int,
             endVersion: Int,
@@ -91,37 +74,33 @@ abstract class AppDatabase : RoomDatabase() {
                         db.execSQL("ALTER TABLE web_apps ADD COLUMN $columnName $columnType DEFAULT $defaultValue")
                     } catch (e: Exception) {
 
-                        AppLogger.w("AppDatabase", "迁移 $startVersion->$endVersion 跳过: ${e.message}")
+                        AppLogger.w("AppDatabase", "Migration $startVersion->$endVersion skipping: ${e.message}")
                     }
                 }
             }
         }
-
 
         private val MIGRATION_11_12 = createAddColumnMigration(11, 12, "autoStartConfig")
         private val MIGRATION_10_12 = createAddColumnMigration(10, 12, "autoStartConfig")
         private val MIGRATION_9_12 = createAddColumnMigration(9, 12, "autoStartConfig")
         private val MIGRATION_8_12 = createAddColumnMigration(8, 12, "autoStartConfig")
 
-
         private val MIGRATION_12_13 = createAddColumnMigration(12, 13, "forcedRunConfig")
-
 
         private val MIGRATION_13_14 = object : Migration(13, 14) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 try {
                     db.execSQL("ALTER TABLE web_apps ADD COLUMN blackTechConfig TEXT DEFAULT NULL")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 13->14 blackTechConfig 跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 13->14 blackTechConfig skipping: ${e.message}")
                 }
                 try {
                     db.execSQL("ALTER TABLE web_apps ADD COLUMN disguiseConfig TEXT DEFAULT NULL")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 13->14 disguiseConfig 跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 13->14 disguiseConfig skipping: ${e.message}")
                 }
             }
         }
-
 
         private val MIGRATION_14_15 = object : Migration(14, 15) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -138,13 +117,13 @@ abstract class AppDatabase : RoomDatabase() {
                         )
                     """.trimIndent())
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 14->15 创建 app_categories 跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 14->15 creating app_categories skipping: ${e.message}")
                 }
 
                 try {
                     db.execSQL("ALTER TABLE web_apps ADD COLUMN categoryId INTEGER DEFAULT NULL")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 14->15 categoryId 跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 14->15 categoryId skipping: ${e.message}")
                 }
             }
         }
@@ -153,12 +132,12 @@ abstract class AppDatabase : RoomDatabase() {
                 try {
                     db.execSQL("ALTER TABLE web_apps ADD COLUMN autoStartConfig TEXT DEFAULT NULL")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 11->13 autoStartConfig 跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 11->13 autoStartConfig skipping: ${e.message}")
                 }
                 try {
                     db.execSQL("ALTER TABLE web_apps ADD COLUMN forcedRunConfig TEXT DEFAULT NULL")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 11->13 forcedRunConfig 跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 11->13 forcedRunConfig skipping: ${e.message}")
                 }
             }
         }
@@ -167,29 +146,25 @@ abstract class AppDatabase : RoomDatabase() {
                 try {
                     db.execSQL("ALTER TABLE web_apps ADD COLUMN autoStartConfig TEXT DEFAULT NULL")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 10->13 autoStartConfig 跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 10->13 autoStartConfig skipping: ${e.message}")
                 }
                 try {
                     db.execSQL("ALTER TABLE web_apps ADD COLUMN forcedRunConfig TEXT DEFAULT NULL")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 10->13 forcedRunConfig 跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 10->13 forcedRunConfig skipping: ${e.message}")
                 }
             }
         }
 
-
-
-
         private val MIGRATION_15_16 = object : Migration(15, 16) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                AppLogger.i("AppDatabase", "迁移 15->16: no schema changes")
+                AppLogger.i("AppDatabase", "Migration 15->16: no schema changes")
             }
         }
 
         private val MIGRATION_16_17 = object : Migration(16, 17) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                AppLogger.i("AppDatabase", "迁移 16->17: 删除浏览器扩展字段")
-
+                AppLogger.i("AppDatabase", "Migration 16->17: dropping browser-extension fields")
 
                 db.execSQL("""
                     CREATE TABLE IF NOT EXISTS web_apps_new (
@@ -235,7 +210,6 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """.trimIndent())
 
-
                 db.execSQL("""
                     INSERT INTO web_apps_new (
                         id, name, url, iconPath, packageName, appType,
@@ -275,21 +249,17 @@ abstract class AppDatabase : RoomDatabase() {
                     FROM web_apps
                 """.trimIndent())
 
-
                 db.execSQL("DROP TABLE web_apps")
-
 
                 db.execSQL("ALTER TABLE web_apps_new RENAME TO web_apps")
 
-                AppLogger.i("AppDatabase", "迁移 16->17 完成")
+                AppLogger.i("AppDatabase", "Migration 16->17 complete")
             }
         }
 
-
         private val MIGRATION_17_18 = object : Migration(17, 18) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                AppLogger.i("AppDatabase", "迁移 17->18: 删除油猴脚本字段")
-
+                AppLogger.i("AppDatabase", "Migration 17->18: dropping userscript fields")
 
                 db.execSQL("""
                     CREATE TABLE IF NOT EXISTS web_apps_new (
@@ -333,7 +303,6 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 """.trimIndent())
 
-
                 db.execSQL("""
                     INSERT INTO web_apps_new (
                         id, name, url, iconPath, packageName, appType,
@@ -371,44 +340,33 @@ abstract class AppDatabase : RoomDatabase() {
                     FROM web_apps
                 """.trimIndent())
 
-
                 db.execSQL("DROP TABLE web_apps")
-
 
                 db.execSQL("ALTER TABLE web_apps_new RENAME TO web_apps")
 
-                AppLogger.i("AppDatabase", "迁移 17->18 完成")
+                AppLogger.i("AppDatabase", "Migration 17->18 complete")
             }
         }
 
-
         private val MIGRATION_18_19 = createAddColumnMigration(18, 19, "activationDialogConfig")
-
 
         private val MIGRATION_19_20 = createAddColumnMigration(19, 20, "extensionFabIcon")
 
-
         private val MIGRATION_21_22 = createAddColumnMigration(21, 22, "wordpressConfig")
-
 
         private val MIGRATION_22_23 = createAddColumnMigration(22, 23, "nodejsConfig")
 
-
         private val MIGRATION_23_24 = createAddColumnMigration(23, 24, "phpAppConfig")
-
 
         private val MIGRATION_24_25 = createAddColumnMigration(24, 25, "pythonAppConfig")
 
-
         private val MIGRATION_25_26 = createAddColumnMigration(25, 26, "goAppConfig")
-
 
         private val MIGRATION_26_27 = createAddColumnMigration(26, 27, "docsSiteConfig")
 
-
         private val MIGRATION_28_29 = object : Migration(28, 29) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                AppLogger.i("AppDatabase", "迁移 28->29: 添加使用统计和健康检测表")
+                AppLogger.i("AppDatabase", "Migration 28->29: adding usage-stats and health-check tables")
 
                 db.execSQL("""
                     CREATE TABLE IF NOT EXISTS app_usage_stats (
@@ -442,55 +400,47 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_app_health_records_appId ON app_health_records(appId)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_app_health_records_checkedAt ON app_health_records(checkedAt)")
 
-                AppLogger.i("AppDatabase", "迁移 28->29 完成")
+                AppLogger.i("AppDatabase", "Migration 28->29 complete")
             }
         }
-
 
         private val MIGRATION_29_30 = object : Migration(29, 30) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                AppLogger.i("AppDatabase", "迁移 29->30: no schema changes")
+                AppLogger.i("AppDatabase", "Migration 29->30: no schema changes")
             }
         }
 
-
         private val MIGRATION_30_31 = createAddColumnMigration(30, 31, "multiWebConfig")
-
 
         private val MIGRATION_31_32 = createAddColumnMigration(31, 32, "browserDisguiseConfig")
 
-
         private val MIGRATION_32_33 = createAddColumnMigration(32, 33, "deviceDisguiseConfig")
-
-
-
 
         private val MIGRATION_33_34 = object : Migration(33, 34) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                AppLogger.i("AppDatabase", "迁移 33->34: 添加 extensionEnabled 字段")
+                AppLogger.i("AppDatabase", "Migration 33->34: adding extensionEnabled field")
                 try {
                     db.execSQL("ALTER TABLE web_apps ADD COLUMN extensionEnabled INTEGER NOT NULL DEFAULT 0")
 
                     db.execSQL("UPDATE web_apps SET extensionEnabled = 1 WHERE extensionModuleIds != '[]' AND extensionModuleIds != ''")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 33->34 extensionEnabled 跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 33->34 extensionEnabled skipping: ${e.message}")
                 }
             }
         }
 
-
         private val MIGRATION_34_35 = object : Migration(34, 35) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                AppLogger.i("AppDatabase", "迁移 34->35: 补充 web_apps 索引")
+                AppLogger.i("AppDatabase", "Migration 34->35: adding web_apps indices")
                 try {
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_web_apps_appType_url ON web_apps(appType, url)")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 34->35 appType+url 索引跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 34->35 appType+url index skipped: ${e.message}")
                 }
                 try {
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_web_apps_appType_iconPath_url ON web_apps(appType, iconPath, url)")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 34->35 appType+iconPath+url 索引跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 34->35 appType+iconPath+url index skipped: ${e.message}")
                 }
             }
         }
@@ -517,7 +467,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_35_36 = object : Migration(35, 36) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                AppLogger.i("AppDatabase", "迁移 35->36: 重建 web_apps 表以对齐当前本地结构")
+                AppLogger.i("AppDatabase", "Migration 35->36: rebuilding web_apps table to match current local schema")
                 rebuildWebAppsTable(
                     db = db,
                     createTableSql = """
@@ -584,8 +534,6 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
-
-
         private val MIGRATION_27_28_COLUMNS = """
             id, name, url, iconPath, packageName, appType,
             mediaConfig, galleryConfig, htmlConfig,
@@ -608,7 +556,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_27_28 = object : Migration(27, 28) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                AppLogger.i("AppDatabase", "迁移 27->28: 删除 docsSiteConfig 字段")
+                AppLogger.i("AppDatabase", "Migration 27->28: dropping docsSiteConfig field")
 
                 rebuildWebAppsTable(
                     db = db,
@@ -670,37 +618,36 @@ abstract class AppDatabase : RoomDatabase() {
                     )
                 )
 
-                AppLogger.i("AppDatabase", "迁移 27->28 完成")
+                AppLogger.i("AppDatabase", "Migration 27->28 complete")
             }
         }
-
 
         private val MIGRATION_20_21 = object : Migration(20, 21) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 try {
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_web_apps_updatedAt ON web_apps(updatedAt)")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 20->21 updatedAt 索引跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 20->21 updatedAt index skipped: ${e.message}")
                 }
                 try {
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_web_apps_categoryId ON web_apps(categoryId)")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 20->21 categoryId 索引跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 20->21 categoryId index skipped: ${e.message}")
                 }
                 try {
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_web_apps_isActivated ON web_apps(isActivated)")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 20->21 isActivated 索引跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 20->21 isActivated index skipped: ${e.message}")
                 }
                 try {
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_web_apps_appType_url ON web_apps(appType, url)")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 20->21 appType+url 索引跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 20->21 appType+url index skipped: ${e.message}")
                 }
                 try {
                     db.execSQL("CREATE INDEX IF NOT EXISTS index_web_apps_appType_iconPath_url ON web_apps(appType, iconPath, url)")
                 } catch (e: Exception) {
-                    AppLogger.w("AppDatabase", "迁移 20->21 appType+iconPath+url 索引跳过: ${e.message}")
+                    AppLogger.w("AppDatabase", "Migration 20->21 appType+iconPath+url index skipped: ${e.message}")
                 }
             }
         }

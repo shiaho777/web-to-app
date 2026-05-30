@@ -31,11 +31,6 @@ import com.webtoapp.core.extension.CodeSnippetCategory
 import com.webtoapp.core.extension.CodeSnippets
 import androidx.compose.ui.graphics.Color
 
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CodeSnippetSelectorDialog(
@@ -49,12 +44,10 @@ fun CodeSnippetSelectorDialog(
     val allCategories = remember { CodeSnippets.getAll() }
     val popularSnippets = remember { CodeSnippets.getPopular() }
 
-
     val searchResults = remember(searchQuery) {
         if (searchQuery.isBlank()) emptyList()
         else CodeSnippets.search(searchQuery)
     }
-
 
     val displaySnippets = when {
         searchQuery.isNotBlank() -> searchResults
@@ -121,7 +114,6 @@ fun CodeSnippetSelectorDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -141,7 +133,6 @@ fun CodeSnippetSelectorDialog(
                             } else null
                         )
 
-
                         allCategories.forEach { category ->
                             PremiumFilterChip(
                                 selected = selectedCategory == category,
@@ -158,7 +149,6 @@ fun CodeSnippetSelectorDialog(
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
-
 
                     selectedCategory?.let { category ->
                         Surface(
@@ -190,7 +180,6 @@ fun CodeSnippetSelectorDialog(
                         Spacer(modifier = Modifier.height(12.dp))
                     }
 
-
                     if (searchQuery.isNotBlank()) {
                         Text(
                             com.webtoapp.core.i18n.Strings.foundResults.format(searchResults.size),
@@ -199,7 +188,6 @@ fun CodeSnippetSelectorDialog(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                     }
-
 
                     LazyColumn(
                         modifier = Modifier.weight(weight = 1f, fill = true),
@@ -249,7 +237,6 @@ fun CodeSnippetSelectorDialog(
         }
     }
 
-
     previewSnippet?.let { snippet ->
         CodeSnippetPreviewDialog(
             snippet = snippet,
@@ -261,9 +248,6 @@ fun CodeSnippetSelectorDialog(
         )
     }
 }
-
-
-
 
 @Composable
 private fun CodeSnippetItem(
@@ -296,7 +280,6 @@ private fun CodeSnippetItem(
                     overflow = TextOverflow.Ellipsis
                 )
 
-
                 if (snippet.tags.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -317,7 +300,6 @@ private fun CodeSnippetItem(
                 }
             }
 
-
             FilledTonalIconButton(
                 onClick = onInsert,
                 modifier = Modifier.size(36.dp)
@@ -331,10 +313,6 @@ private fun CodeSnippetItem(
         }
     }
 }
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -404,7 +382,6 @@ fun CodeSnippetPreviewDialog(
                         }
                     }
 
-
                     Surface(
                         modifier = Modifier
                             .weight(weight = 1f, fill = true)
@@ -446,7 +423,6 @@ fun CodeSnippetPreviewDialog(
 
                             HorizontalDivider()
 
-
                             LazyColumn(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -467,7 +443,6 @@ fun CodeSnippetPreviewDialog(
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
-
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -494,10 +469,6 @@ fun CodeSnippetPreviewDialog(
         }
     }
 }
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -556,7 +527,6 @@ fun CodeSnippetQuickPicker(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -580,7 +550,6 @@ fun CodeSnippetQuickPicker(
         }
     }
 
-
     if (showFullSelector) {
         CodeSnippetSelectorDialog(
             onDismiss = { showFullSelector = false },
@@ -588,10 +557,6 @@ fun CodeSnippetQuickPicker(
         )
     }
 }
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

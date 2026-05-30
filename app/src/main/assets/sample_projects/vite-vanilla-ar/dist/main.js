@@ -1,6 +1,3 @@
-// Vite Vanilla JS Weather App - Built version (Arabic)
-
-// Mock weather data for Arabic cities
 const weatherData = {
     'دبي': { temp: 28, icon: '☀️', desc: 'مشمس', humidity: 45, wind: 12, feels: 30 },
     'الرياض': { temp: 32, icon: '☀️', desc: 'حار', humidity: 35, wind: 8, feels: 35 },
@@ -14,7 +11,6 @@ const weatherData = {
     'البحرين': { temp: 28, icon: '🌫️', desc: 'رطب', humidity: 80, wind: 4, feels: 32 }
 };
 
-// DOM elements
 const cityInput = document.getElementById('cityInput');
 const searchBtn = document.getElementById('searchBtn');
 const cityName = document.getElementById('cityName');
@@ -25,10 +21,9 @@ const humidity = document.getElementById('humidity');
 const wind = document.getElementById('wind');
 const feelsLike = document.getElementById('feelsLike');
 
-// Update weather display
 function updateWeather(city) {
     const data = weatherData[city];
-    
+
     if (data) {
         cityName.textContent = city;
         temperature.textContent = `${data.temp}°`;
@@ -37,19 +32,18 @@ function updateWeather(city) {
         humidity.textContent = `${data.humidity}%`;
         wind.textContent = `${data.wind} كم/س`;
         feelsLike.textContent = `${data.feels}°`;
-        
-        // Add animation effect
+
         const display = document.querySelector('.weather-display');
         display.style.animation = 'none';
-        display.offsetHeight; // Trigger reflow
+        display.offsetHeight;
         display.style.animation = 'fadeIn 0.5s ease-out';
     } else {
-        // Generate random weather data
+
         const icons = ['☀️', '⛅', '🌤️', '🌧️', '🌫️', '⛈️'];
         const descs = ['مشمس', 'غائم', 'صافي جزئياً', 'ممطر', 'ضبابي', 'عاصف'];
         const randomIndex = Math.floor(Math.random() * icons.length);
         const randomTemp = Math.floor(Math.random() * 20) + 20;
-        
+
         cityName.textContent = city;
         temperature.textContent = `${randomTemp}°`;
         weatherIcon.textContent = icons[randomIndex];
@@ -60,7 +54,6 @@ function updateWeather(city) {
     }
 }
 
-// Event listeners
 searchBtn.addEventListener('click', () => {
     const city = cityInput.value.trim();
     if (city) {
@@ -77,5 +70,4 @@ cityInput.addEventListener('keypress', (e) => {
     }
 });
 
-// Initialize
 console.log('🌤️ تطبيق الطقس تم تحميله');

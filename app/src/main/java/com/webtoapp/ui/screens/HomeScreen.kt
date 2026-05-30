@@ -103,9 +103,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import com.webtoapp.ui.components.liquidGlass
 import com.webtoapp.ui.design.WtaBadge
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
@@ -128,7 +125,6 @@ fun HomeScreen(
     onOpenAppModifier: () -> Unit = {},
     onOpenAiSettings: () -> Unit = {},
     onOpenAiCoding: () -> Unit = {},
-    onOpenAiHtmlCoding: () -> Unit = {},
     onOpenExtensionModules: () -> Unit = {},
     onOpenLinuxEnvironment: () -> Unit = {},
     onOpenBrowserKernel: () -> Unit = {},
@@ -138,11 +134,11 @@ fun HomeScreen(
     onOpenStats: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
     onOpenMore: () -> Unit = {},
+    onOpenPlayStore: () -> Unit = {},
 ) {
     val apps by viewModel.filteredSummaries.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
 
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val selectedCategoryId by viewModel.selectedCategoryId.collectAsStateWithLifecycle()
@@ -159,7 +155,6 @@ fun HomeScreen(
     var shareApkFailureReport by remember { mutableStateOf<BuildFailureReport?>(null) }
     var showFabMenu by remember { mutableStateOf(false) }
     var showBatchImportDialog by remember { mutableStateOf(false) }
-
 
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -186,9 +181,9 @@ fun HomeScreen(
     )
     val createActionItems = listOf(
         CreateActionItem(Strings.appTypeWeb, R.drawable.ic_type_web, onCreateApp),
-        CreateActionItem(Strings.appTypeMultiWeb, R.drawable.ic_type_web, onCreateMultiWebApp),
+        CreateActionItem(Strings.appTypeMultiWeb, R.drawable.ic_type_multi_web, onCreateMultiWebApp),
         CreateActionItem(Strings.appTypeHtml, R.drawable.ic_type_html, onCreateHtmlApp),
-        CreateActionItem(Strings.websiteOfflinePack, R.drawable.ic_type_html, onCreateOfflinePack),
+        CreateActionItem(Strings.websiteOfflinePack, R.drawable.ic_type_offline_pack, onCreateOfflinePack),
         CreateActionItem(Strings.appTypeFrontend, R.drawable.ic_type_frontend, onCreateFrontendApp),
         CreateActionItem(Strings.appTypePhp, R.drawable.ic_type_php, onCreatePhpApp),
         CreateActionItem(Strings.appTypeWordPress, R.drawable.ic_type_wordpress, onCreateWordPressApp),
@@ -202,45 +197,27 @@ fun HomeScreen(
     WtaScreen(
         title = Strings.myApps,
         snackbarHostState = snackbarHostState,
-        actions = {
-            androidx.compose.animation.AnimatedVisibility(
-                visible = isSearchActive,
-                enter = androidx.compose.animation.fadeIn(
-                    animationSpec = com.webtoapp.ui.design.WtaMotion.enterTween()
-                ) + androidx.compose.animation.expandHorizontally(
-                    expandFrom = androidx.compose.ui.Alignment.End,
-                    animationSpec = com.webtoapp.ui.design.WtaMotion.settleSpring()
-                ),
-                exit = androidx.compose.animation.fadeOut(
-                    animationSpec = com.webtoapp.ui.design.WtaMotion.exitTween()
-                ) + androidx.compose.animation.shrinkHorizontally(
-                    shrinkTowards = androidx.compose.ui.Alignment.End,
-                    animationSpec = com.webtoapp.ui.design.WtaMotion.exitTween()
-                )
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    com.webtoapp.ui.design.WtaTextField(
-                        value = searchQuery,
-                        onValueChange = { viewModel.search(it) },
-                        placeholder = Strings.search,
-                        singleLine = true,
-                        modifier = Modifier
-                            .widthIn(max = 220.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                }
-            }
 
+        titleContent = if (isSearchActive) {
+            {
+                com.webtoapp.ui.design.WtaTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.search(it) },
+                    placeholder = Strings.search,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        } else null,
+        actions = {
                     val context = LocalContext.current
                     val themeManager = remember { ThemeManager.getInstance(context) }
                     val darkModeState by themeManager.darkModeFlow.collectAsStateWithLifecycle()
                     val isDarkNow = darkModeState == ThemeManager.DarkModeSettings.DARK
 
-
                     val revealState = LocalThemeRevealState.current
                     val view = LocalView.current
                     val activity = context as? android.app.Activity
-
 
                     var buttonCenter by remember { mutableStateOf(androidx.compose.ui.geometry.Offset.Zero) }
 
@@ -249,7 +226,6 @@ fun HomeScreen(
                             val switchToDark = !isDarkNow
 
                             if (revealState != null) {
-
 
                                 revealState.triggerReveal(
                                     center = buttonCenter,
@@ -301,7 +277,6 @@ fun HomeScreen(
                         )
                     }
 
-
                     LanguageSelectorButton(
                         onLanguageChanged = {
 
@@ -310,7 +285,6 @@ fun HomeScreen(
                             }
                         }
                     )
-
 
                     IconButton(
                         onClick = {
@@ -398,13 +372,17 @@ fun HomeScreen(
                                 leadingIcon = { Icon(Icons.Outlined.BarChart, null, Modifier.size(20.dp)) }
                             )
                             DropdownMenuItem(
+                                text = { Text(Strings.menuGooglePlay) },
+                                onClick = { showMoreMenu = false; onOpenPlayStore() },
+                                leadingIcon = { Icon(Icons.Outlined.PlayCircleOutline, null, Modifier.size(20.dp)) }
+                            )
+                            DropdownMenuItem(
                                 text = { Text(Strings.menuAbout) },
                                 onClick = { showMoreMenu = false; onOpenAbout() },
                                 leadingIcon = { Icon(Icons.Outlined.Info, null, Modifier.size(20.dp)) }
                             )
                         }
                     }
-
 
         }
     ) {
@@ -447,7 +425,6 @@ fun HomeScreen(
                     val sharedApkBuilder = remember { ApkBuilder(listContext) }
                     val sharedScope = rememberCoroutineScope()
 
-
                     val healthMonitor: com.webtoapp.core.stats.AppHealthMonitor? = remember {
                         try { org.koin.java.KoinJavaComponent.get(com.webtoapp.core.stats.AppHealthMonitor::class.java) }
                         catch (e: Exception) { null }
@@ -455,7 +432,6 @@ fun HomeScreen(
                     val healthRecordsState = healthMonitor?.allHealthRecords?.collectAsState(initial = emptyList<com.webtoapp.core.stats.AppHealthRecord>())
                     val healthRecords: List<com.webtoapp.core.stats.AppHealthRecord> = healthRecordsState?.value ?: emptyList()
                     val healthMap = remember(healthRecords) { healthRecords.associateBy { it.appId } }
-
 
                     fun resolveScreenshotService(): com.webtoapp.core.stats.WebsiteScreenshotService? {
                         return try {
@@ -469,12 +445,9 @@ fun HomeScreen(
                     }
                     val screenshotService: com.webtoapp.core.stats.WebsiteScreenshotService? = resolveScreenshotService()
 
-
-
                     val previewImageLoader = remember(listContext) {
                         coil.Coil.imageLoader(listContext)
                     }
-
 
                     val screenshotVersions = remember { mutableStateMapOf<Long, Int>() }
                     val screenshotLoadingStates = remember { mutableStateMapOf<Long, Boolean>() }
@@ -529,17 +502,25 @@ fun HomeScreen(
                         val appsNow = latestApps.value
                         val specsNow = latestPreviewSpecs.value
                         val captureTargets = appsNow.mapNotNull { app ->
-                            specsNow[app.id]?.captureUrl?.let { captureUrl -> app to captureUrl }
+                            specsNow[app.id]?.let { spec ->
+                                if (spec.captureUrl != null) app to spec else null
+                            }
                         }
                         com.webtoapp.core.logging.AppLogger.i(
                             "ScreenshotFlow",
                             "init effect: apps=${appsNow.size}, captureTargets=${captureTargets.size}"
                         )
-                        for ((app, captureUrl) in captureTargets) {
+                        for ((app, spec) in captureTargets) {
                             if (svc.hasScreenshot(app.id)) continue
                             screenshotLoadingStates[app.id] = true
                             try {
-                                svc.captureScreenshot(app.id, captureUrl)
+                                val fullApp = viewModel.getWebApp(app.id) ?: continue
+                                com.webtoapp.ui.screens.captureAppThumbnail(
+                                    context = listContext.applicationContext,
+                                    screenshotService = svc,
+                                    app = fullApp,
+                                    spec = spec,
+                                )
                                 com.webtoapp.core.logging.AppLogger.i(
                                     "ScreenshotFlow",
                                     "initial capture finished: appId=${app.id}, name=${app.name}"
@@ -570,14 +551,12 @@ fun HomeScreen(
                         val scope = sharedScope
                         val previewSpec = previewSpecs[app.id] ?: AppPreviewSpec()
 
-
                         StaggeredAnimatedItem(
                             index = index,
                             modifier = Modifier.animateItem(
                                 placementSpec = com.webtoapp.ui.design.WtaMotion.settleSpring()
                             )
                         ) {
-
 
                         val dismissState = rememberSwipeToDismissBoxState(
                             confirmValueChange = { value ->
@@ -775,7 +754,17 @@ fun HomeScreen(
                                                     "HomeScreen",
                                                     "manual screenshot requested: appId=${app.id}, name=${app.name}, target=${previewSpec.captureUrl}"
                                                 )
-                                                val result = resolvedService.captureScreenshot(app.id, previewSpec.captureUrl)
+                                                val fullApp = viewModel.getWebApp(app.id)
+                                                val result = if (fullApp != null) {
+                                                    com.webtoapp.ui.screens.captureAppThumbnail(
+                                                        context = listContext.applicationContext,
+                                                        screenshotService = resolvedService,
+                                                        app = fullApp,
+                                                        spec = previewSpec,
+                                                    )
+                                                } else {
+                                                    previewSpec.captureUrl?.let { resolvedService.captureScreenshot(app.id, it) }
+                                                }
                                                 val finishMessage = "manual capture finished: appId=${app.id}, path=$result, exists=${resolvedService.hasScreenshot(app.id)}"
                                                 com.webtoapp.core.logging.AppLogger.i("ScreenshotFlow", finishMessage)
                                                 android.util.Log.i("ScreenshotFlow", finishMessage)
@@ -803,14 +792,12 @@ fun HomeScreen(
                         }
                     }
 
-
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
                 }
             }
-
 
                     Column(
                         modifier = Modifier
@@ -883,7 +870,6 @@ fun HomeScreen(
                             }
                         }
 
-
                         val fabRotation by animateFloatAsState(
                             targetValue = if (showFabMenu) 135f else 0f,
                             animationSpec = com.webtoapp.ui.design.WtaMotion.settleSpring(),
@@ -918,7 +904,6 @@ fun HomeScreen(
             }
     }
 
-
     if (showBuildDialog && buildingApp != null) {
         BuildApkDialog(
             webApp = buildingApp!!,
@@ -942,7 +927,6 @@ fun HomeScreen(
             onDismiss = { shareApkFailureReport = null }
         )
     }
-
 
     if (showDeleteDialog && selectedApp != null) {
         AnimatedAlertDialog(
@@ -977,7 +961,6 @@ fun HomeScreen(
         )
     }
 
-
     if (showCategoryEditor) {
         CategoryEditorDialog(
             category = editingCategory,
@@ -999,7 +982,6 @@ fun HomeScreen(
         )
     }
 
-
     if (showMoveToCategoryDialog && appToMove != null) {
         val summary = appToMove!!
         MoveToCategoryDialog(
@@ -1018,7 +1000,6 @@ fun HomeScreen(
         )
     }
 
-
     if (showBatchImportDialog) {
         val importService = remember { org.koin.java.KoinJavaComponent.get<com.webtoapp.core.stats.BatchImportService>(com.webtoapp.core.stats.BatchImportService::class.java) }
         BatchImportDialog(
@@ -1031,8 +1012,6 @@ fun HomeScreen(
     }
 
 }
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1118,9 +1097,6 @@ private fun SidebarMenuItem(
     }
 }
 
-
-
-
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun AppCard(
@@ -1190,7 +1166,7 @@ fun AppCard(
                         com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
                         com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
                         com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
-                        com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_web
+                        com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
                     }
                     Icon(
                         painter = painterResource(defaultIconRes),
@@ -1227,7 +1203,6 @@ fun AppCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-
             Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                 Text(
                     text = app.name,
@@ -1252,7 +1227,6 @@ fun AppCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
 
-
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
 
                     AppTypeChip(appType = app.appType)
@@ -1267,7 +1241,6 @@ fun AppCard(
                     }
                 }
             }
-
 
             Spacer(modifier = Modifier.width(12.dp))
             Box(
@@ -1285,7 +1258,6 @@ fun AppCard(
             ) {
                 if (screenshotPath != null) {
                     Box(modifier = Modifier.fillMaxSize()) {
-
 
                         val screenshotCacheKey = "wta_shot_${app.id}_v$screenshotVersion"
                         AsyncImage(
@@ -1347,7 +1319,7 @@ fun AppCard(
                                     com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
                                     com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
                                     com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
-                                    com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_web
+                                    com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
                                 }),
                                 contentDescription = Strings.btnPreview,
                                 modifier = Modifier.size(18.dp),
@@ -1357,7 +1329,6 @@ fun AppCard(
                     }
                 }
             }
-
 
             Box {
                 com.webtoapp.ui.design.WtaIconButton(
@@ -1457,9 +1428,6 @@ fun AppCard(
     }
 }
 
-
-
-
 @Composable
 fun FeatureChip(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -1472,9 +1440,6 @@ fun FeatureChip(
         contentColor = MaterialTheme.colorScheme.onSecondaryContainer
     )
 }
-
-
-
 
 @Composable
 fun AppTypeChip(appType: com.webtoapp.data.model.AppType) {
@@ -1537,9 +1502,6 @@ fun AppTypeChip(appType: com.webtoapp.data.model.AppType) {
     )
 }
 
-
-
-
 @Composable
 fun EmptyState(
     modifier: Modifier = Modifier,
@@ -1550,8 +1512,7 @@ fun EmptyState(
         modifier = modifier.padding(horizontal = 40.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Illustration frame: a subtle circular plate holding the icon.
-        // No motion, no toy-feel. The restraint makes the UI feel considered.
+
         Box(
             modifier = Modifier
                 .size(88.dp)
@@ -1595,12 +1556,6 @@ fun EmptyState(
     }
 }
 
-/**
- * A tile used in the "create new app" flyout. Renders as a square-ish card
- * with a large icon plate on top and a small centered label below. Each tile
- * is press-animated through Wta primitives so the grid feels like a mini
- * SpringBoard rather than a list of text buttons.
- */
 @Composable
 private fun CreateActionTile(
     label: String,
@@ -1803,9 +1758,6 @@ private fun BuildFailureReportDialog(
     )
 }
 
-
-
-
 @Composable
 fun BuildApkDialog(
     webApp: WebApp,
@@ -1823,21 +1775,17 @@ fun BuildApkDialog(
     var buildFailureReport by remember { mutableStateOf<BuildFailureReport?>(null) }
     var preflightReport by remember { mutableStateOf<ApkExportPreflightReport?>(null) }
 
-
     var encryptionConfig by remember {
         mutableStateOf(webApp.apkExportConfig?.encryptionConfig ?: com.webtoapp.data.model.ApkEncryptionConfig())
     }
-
 
     var hardeningConfig by remember {
         mutableStateOf(webApp.apkExportConfig?.hardeningConfig ?: com.webtoapp.data.model.AppHardeningConfig())
     }
 
-
     var isolationConfig by remember {
         mutableStateOf(resolveBuildIsolationDefault(webApp.apkExportConfig?.isolationConfig))
     }
-
 
     var backgroundRunEnabled by remember {
         mutableStateOf(webApp.apkExportConfig?.backgroundRunEnabled ?: false)
@@ -1846,7 +1794,6 @@ fun BuildApkDialog(
         mutableStateOf(webApp.apkExportConfig?.backgroundRunConfig ?: com.webtoapp.data.model.BackgroundRunExportConfig())
     }
 
-
     var notificationEnabled by remember {
         mutableStateOf(webApp.apkExportConfig?.notificationEnabled ?: false)
     }
@@ -1854,14 +1801,12 @@ fun BuildApkDialog(
         mutableStateOf(webApp.apkExportConfig?.notificationConfig ?: com.webtoapp.data.model.NotificationExportConfig())
     }
 
-
     var dnsMode by remember {
         mutableStateOf(webApp.webViewConfig.dnsMode)
     }
     var dnsConfig by remember {
         mutableStateOf(webApp.webViewConfig.dnsConfig)
     }
-
 
     var selectedEngineType by remember {
         mutableStateOf(webApp.apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW")
@@ -1912,11 +1857,6 @@ fun BuildApkDialog(
                     analysisReport = result.analysisReport
                     isBuilding = false
 
-                    val installStarted = apkBuilder.installApk(result.apkFile)
-                    onResult(
-                        if (installStarted) "APK 构建成功，正在启动安装..."
-                        else "APK 构建成功，但无法自动启动安装"
-                    )
                 }
                 is BuildResult.Error -> {
                     buildFailureReport = buildBuildFailureReport(webAppWithConfig, result)
@@ -1942,13 +1882,22 @@ fun BuildApkDialog(
         preflightReport = ApkExportPreflight.check(context, currentBuildConfig())
     }
 
+    val dialogScrollState = rememberScrollState()
+    LaunchedEffect(analysisReport) {
+        if (analysisReport != null) {
+
+            withFrameNanos {}
+            dialogScrollState.animateScrollTo(dialogScrollState.maxValue)
+        }
+    }
+
     AnimatedAlertDialog(
         onDismissRequest = { if (!isBuilding) onDismiss() },
         title = { Text(Strings.buildDialogTitle) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.verticalScroll(rememberScrollState())
+                modifier = Modifier.verticalScroll(dialogScrollState)
             ) {
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1996,24 +1945,20 @@ fun BuildApkDialog(
 
                 HorizontalDivider()
 
-
                 com.webtoapp.ui.components.EncryptionConfigCard(
                     config = encryptionConfig,
                     onConfigChange = { encryptionConfig = it }
                 )
-
 
                 com.webtoapp.ui.components.HardeningConfigCard(
                     config = hardeningConfig,
                     onConfigChange = { hardeningConfig = it }
                 )
 
-
                 com.webtoapp.ui.components.IsolationConfigCard(
                     config = isolationConfig,
                     onConfigChange = { isolationConfig = it }
                 )
-
 
                 com.webtoapp.ui.components.BackgroundRunConfigCard(
                     enabled = backgroundRunEnabled,
@@ -2022,7 +1967,6 @@ fun BuildApkDialog(
                     onConfigChange = { backgroundRunConfig = it }
                 )
 
-
                 com.webtoapp.ui.components.NotificationConfigCard(
                     enabled = notificationEnabled,
                     config = notificationConfig,
@@ -2030,14 +1974,12 @@ fun BuildApkDialog(
                     onConfigChange = { notificationConfig = it }
                 )
 
-
                 com.webtoapp.ui.components.DnsConfigCard(
                     dnsMode = dnsMode,
                     dnsConfig = dnsConfig,
                     onDnsModeChange = { dnsMode = it },
                     onDnsConfigChange = { dnsConfig = it }
                 )
-
 
                 if (webApp.appType == com.webtoapp.data.model.AppType.WEB) {
                     EngineSelectionCard(
@@ -2049,25 +1991,25 @@ fun BuildApkDialog(
 
                 HorizontalDivider()
 
-                Text(
-                    Strings.buildApkForApp.replace("%s", webApp.name),
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                if (analysisReport == null) {
+                    Text(
+                        Strings.buildApkForApp.replace("%s", webApp.name),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
 
-                Text(
-                    Strings.buildCompleteInstallHint,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                    Text(
+                        Strings.buildCompleteInstallHint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
                 preflightReport?.let { report ->
                     ApkExportPreflightPanel(report = report)
                 }
 
-
                 if (isBuilding) {
                     Spacer(Modifier.height(12.dp))
-
 
                     val animatedProgress by animateFloatAsState(
                         targetValue = progress / 100f,
@@ -2077,7 +2019,6 @@ fun BuildApkDialog(
                         ),
                         label = "buildProgress"
                     )
-
 
                     val pulseAlpha by rememberInfiniteTransition(label = "buildPulse").animateFloat(
                         initialValue = 0.6f,
@@ -2130,10 +2071,19 @@ fun BuildApkDialog(
                     }
                 }
 
-
                 analysisReport?.let { report ->
                     HorizontalDivider()
 
+                    BuildSummaryCard(
+                        webApp = webApp,
+                        apkFile = report.apkFile,
+                        totalSizeFormatted = report.totalSizeFormatted,
+                        versionName = currentBuildConfig().apkExportConfig
+                            ?.customVersionName?.takeIf { it.isNotBlank() } ?: "1.0.0",
+                        versionCode = currentBuildConfig().apkExportConfig?.customVersionCode ?: 1
+                    )
+
+                    HorizontalDivider()
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -2153,7 +2103,6 @@ fun BuildApkDialog(
                     }
 
                     Spacer(Modifier.height(4.dp))
-
 
                     report.categories.forEach { cat ->
                         val catColor = try {
@@ -2195,55 +2144,34 @@ fun BuildApkDialog(
                         )
                         Spacer(Modifier.height(2.dp))
                     }
-
-
-                    if (report.optimizationHints.isNotEmpty()) {
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "Optimization Hints",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.tertiary
-                        )
-                        report.optimizationHints.take(3).forEach { hint ->
-                            Row(
-                                modifier = Modifier.padding(top = 4.dp),
-                                verticalAlignment = Alignment.Top
-                            ) {
-                                val icon = when (hint.priority) {
-                                    com.webtoapp.core.apkbuilder.ApkAnalyzer.OptimizationHint.Priority.HIGH -> Icons.Outlined.Error
-                                    com.webtoapp.core.apkbuilder.ApkAnalyzer.OptimizationHint.Priority.MEDIUM -> Icons.Outlined.Warning
-                                    com.webtoapp.core.apkbuilder.ApkAnalyzer.OptimizationHint.Priority.LOW -> Icons.Outlined.Info
-                                }
-                                val iconColor = when (hint.priority) {
-                                    com.webtoapp.core.apkbuilder.ApkAnalyzer.OptimizationHint.Priority.HIGH -> MaterialTheme.colorScheme.error
-                                    com.webtoapp.core.apkbuilder.ApkAnalyzer.OptimizationHint.Priority.MEDIUM -> MaterialTheme.colorScheme.tertiary
-                                    com.webtoapp.core.apkbuilder.ApkAnalyzer.OptimizationHint.Priority.LOW -> MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                                Icon(icon, null, Modifier.size(14.dp), tint = iconColor)
-                                Spacer(Modifier.width(4.dp))
-                                Text(
-                                    hint.title,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
                 }
             }
         },
         confirmButton = {
             if (!isBuilding) {
+                val builtApk = analysisReport?.apkFile
                 PremiumButton(
-                    onClick = { launchBuild() }
+                    onClick = {
+                        if (builtApk != null) {
+
+                            val installStarted = apkBuilder.installApk(builtApk)
+                            onResult(
+                                if (installStarted) "正在启动安装..."
+                                else "无法自动启动安装"
+                            )
+                        } else {
+                            launchBuild()
+                        }
+                    }
                 ) {
-                    Icon(Icons.Outlined.Build, null, Modifier.size(18.dp))
+                    val icon = if (builtApk != null) Icons.Outlined.GetApp else Icons.Outlined.Build
+                    Icon(icon, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        if (buildFailureReport != null || preflightReport?.hasErrors == true) {
-                            Strings.btnRetry
-                        } else {
-                            Strings.btnStartBuild
+                        when {
+                            builtApk != null -> Strings.install
+                            buildFailureReport != null || preflightReport?.hasErrors == true -> Strings.btnRetry
+                            else -> Strings.btnStartBuild
                         }
                     )
                 }
@@ -2254,7 +2182,7 @@ fun BuildApkDialog(
         dismissButton = {
             if (!isBuilding) {
                 TextButton(onClick = onDismiss) {
-                    Text(Strings.btnCancel)
+                    Text(if (analysisReport != null) Strings.close else Strings.btnCancel)
                 }
             }
         }
@@ -2269,13 +2197,165 @@ fun BuildApkDialog(
 }
 
 private fun resolveBuildIsolationDefault(
-    config: com.webtoapp.core.isolation.IsolationConfig?
-): com.webtoapp.core.isolation.IsolationConfig {
-    return config ?: com.webtoapp.core.isolation.IsolationConfig.DISABLED
+    config: com.webtoapp.core.privacy.IsolationConfig?
+): com.webtoapp.core.privacy.IsolationConfig {
+    return config ?: com.webtoapp.core.privacy.IsolationConfig.DISABLED
 }
 
+@Composable
+private fun BuildSummaryCard(
+    webApp: WebApp,
+    apkFile: java.io.File,
+    totalSizeFormatted: String,
+    versionName: String,
+    versionCode: Int
+) {
+    val context = LocalContext.current
+    val clipboardManager = LocalClipboardManager.current
 
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            Strings.buildSummaryTitle,
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary
+        )
 
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val iconPath = webApp.iconPath
+            if (!iconPath.isNullOrBlank()) {
+                AsyncImage(
+                    model = iconPath,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(WtaRadius.IconPlate)),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(WtaRadius.IconPlate))
+                        .background(
+                            MaterialTheme.colorScheme.primary.copy(
+                                alpha = com.webtoapp.ui.design.WtaAlpha.MutedContainer
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.Android, null,
+                        modifier = Modifier.size(22.dp),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+            Spacer(Modifier.width(12.dp))
+            Text(
+                webApp.name,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        BuildSummaryRow(label = Strings.buildSummaryAppSize, value = totalSizeFormatted)
+        BuildSummaryRow(label = Strings.buildSummaryVersion, value = "$versionName ($versionCode)")
+        BuildSummaryRow(label = Strings.buildSummaryJdk, value = "17")
+        BuildSummaryRow(label = Strings.buildSummarySignature, value = "v1+v2+v3")
+
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                Strings.buildSummaryLocation,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                apkFile.absolutePath,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilledTonalButton(
+                    onClick = {
+                        clipboardManager.setText(AnnotatedString(apkFile.absolutePath))
+                        android.widget.Toast.makeText(
+                            context, Strings.copiedToClipboard,
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 12.dp, vertical = 6.dp
+                    )
+                ) {
+                    Icon(Icons.Outlined.ContentCopy, null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(Strings.buildSummaryCopyPath, style = MaterialTheme.typography.labelMedium)
+                }
+                FilledTonalButton(
+                    onClick = { openApkWithChooser(context, apkFile) },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                        horizontal = 12.dp, vertical = 6.dp
+                    )
+                ) {
+                    Icon(Icons.Outlined.Share, null, Modifier.size(16.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(Strings.buildSummaryOpenWith, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BuildSummaryRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(start = 12.dp)
+        )
+    }
+}
+
+private fun openApkWithChooser(context: android.content.Context, apkFile: java.io.File) {
+    try {
+        val uri = androidx.core.content.FileProvider.getUriForFile(
+            context, "${context.packageName}.fileprovider", apkFile
+        )
+        val sendIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+
+            type = "*/*"
+            putExtra(android.content.Intent.EXTRA_STREAM, uri)
+
+            clipData = android.content.ClipData.newRawUri(apkFile.name, uri)
+            addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        val chooser = android.content.Intent.createChooser(sendIntent, Strings.buildSummaryOpenWith)
+        chooser.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(chooser)
+    } catch (e: Exception) {
+        AppLogger.e("BuildSummaryCard", "openApkWithChooser failed", e)
+        android.widget.Toast.makeText(
+            context, e.localizedMessage ?: "Open failed",
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
+    }
+}
 
 @Composable
 fun EngineSelectionCard(
@@ -2293,7 +2373,6 @@ fun EngineSelectionCard(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-
 
         Row(
             modifier = Modifier
@@ -2317,7 +2396,6 @@ fun EngineSelectionCard(
                 )
             }
         }
-
 
         Row(
             modifier = Modifier

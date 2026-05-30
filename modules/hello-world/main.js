@@ -1,8 +1,3 @@
-// Hello World — WebToApp example module.
-// Runs at DOCUMENT_END and shows a floating banner with a greeting.
-// All values come through `getConfig(key, default)` so the user can tweak
-// them in the module settings.
-
 (function () {
   var greeting = getConfig('greeting', 'Hello from WebToApp!');
   var durationMs = parseInt(getConfig('durationMs', '3000'), 10) || 3000;

@@ -2,9 +2,6 @@ package com.webtoapp.data.model
 
 import com.webtoapp.core.i18n.Strings
 
-
-
-
 enum class ProviderCategory {
     RECOMMENDED,
     INTERNATIONAL,
@@ -22,10 +19,6 @@ enum class ProviderCategory {
         CUSTOM -> Strings.providerCategoryCustom
     }
 }
-
-
-
-
 
 enum class AiProvider(
     val baseUrl: String,
@@ -46,7 +39,6 @@ enum class AiProvider(
         apiKeyUrl = "https://openrouter.ai/keys",
         category = ProviderCategory.RECOMMENDED
     ),
-
 
     OPENAI(
         baseUrl = "https://api.openai.com",
@@ -85,7 +77,6 @@ enum class AiProvider(
         category = ProviderCategory.INTERNATIONAL
     ),
 
-
     GROQ(
         baseUrl = "https://api.groq.com/openai",
         modelsEndpoint = "/v1/models",
@@ -104,7 +95,6 @@ enum class AiProvider(
         apiKeyUrl = "https://cloud.sambanova.ai/apis",
         category = ProviderCategory.INTERNATIONAL
     ),
-
 
     TOGETHER(
         baseUrl = "https://api.together.xyz",
@@ -136,7 +126,6 @@ enum class AiProvider(
         apiKeyUrl = "https://novita.ai/settings#key-management",
         category = ProviderCategory.AGGREGATOR
     ),
-
 
     DEEPSEEK(
         baseUrl = "https://api.deepseek.com",
@@ -211,7 +200,6 @@ enum class AiProvider(
         category = ProviderCategory.CHINESE
     ),
 
-
     OLLAMA(
         baseUrl = "http://localhost:11434",
         modelsEndpoint = "/api/tags",
@@ -230,7 +218,6 @@ enum class AiProvider(
         apiKeyUrl = "https://docs.vllm.ai/",
         category = ProviderCategory.SELF_HOSTED
     ),
-
 
     CUSTOM(
         baseUrl = "",
@@ -344,26 +331,16 @@ enum class AiProvider(
         CUSTOM -> Strings.providerCustomPricing
     }
 
-
-
-
     val requiresApiKey: Boolean get() = when (this) {
         OLLAMA, LM_STUDIO, VLLM -> false
         else -> true
     }
-
-
-
 
     val allowCustomBaseUrl: Boolean get() = when (this) {
         CUSTOM, OLLAMA, LM_STUDIO, VLLM -> true
         else -> false
     }
 }
-
-
-
-
 
 enum class AiFeature(
     val icon: String,
@@ -398,9 +375,6 @@ enum class AiFeature(
     }
 }
 
-
-
-
 enum class ModelCapability {
     TEXT, AUDIO, IMAGE, IMAGE_GENERATION, VIDEO, CODE, FUNCTION_CALL, LONG_CONTEXT;
 
@@ -427,9 +401,6 @@ enum class ModelCapability {
     }
 }
 
-
-
-
 fun ModelCapability.getLocalizedDisplayName(): String {
     return when (this) {
         ModelCapability.TEXT -> com.webtoapp.core.i18n.Strings.textGeneration
@@ -442,9 +413,6 @@ fun ModelCapability.getLocalizedDisplayName(): String {
         ModelCapability.LONG_CONTEXT -> com.webtoapp.core.i18n.Strings.longContext
     }
 }
-
-
-
 
 fun ModelCapability.getLocalizedDescription(): String {
     return when (this) {
@@ -459,16 +427,11 @@ fun ModelCapability.getLocalizedDescription(): String {
     }
 }
 
-
-
-
 data class CapabilityFeatureMapping(
     val capability: ModelCapability,
     val enabledFeatures: Set<AiFeature>
 ) {
     companion object {
-
-
 
         fun getDefaultMappings(): List<CapabilityFeatureMapping> {
             return ModelCapability.entries.map { capability ->
@@ -483,9 +446,6 @@ data class CapabilityFeatureMapping(
     }
 }
 
-
-
-
 data class AiModel(
     val id: String,
     val name: String,
@@ -496,9 +456,6 @@ data class AiModel(
     val outputPrice: Double = 0.0,
     val isCustom: Boolean = false
 )
-
-
-
 
 enum class ApiFormat {
     OPENAI_COMPATIBLE,
@@ -511,9 +468,6 @@ enum class ApiFormat {
         GOOGLE_GEMINI -> "Google Gemini"
     }
 }
-
-
-
 
 data class ApiKeyConfig(
     val id: String = java.util.UUID.randomUUID().toString(),
@@ -528,19 +482,11 @@ data class ApiKeyConfig(
     val createdAt: Long = System.currentTimeMillis()
 ) {
 
-
-
     val displayName: String get() = alias?.takeIf { it.isNotBlank() } ?: provider.displayName
-
-
-
 
     fun getEffectiveModelsEndpoint(): String {
         return customModelsEndpoint?.takeIf { it.isNotBlank() } ?: provider.modelsEndpoint
     }
-
-
-
 
     fun getEffectiveChatEndpoint(): String {
         return customChatEndpoint?.takeIf { it.isNotBlank() } ?: when (provider) {
@@ -555,9 +501,6 @@ data class ApiKeyConfig(
     }
 }
 
-
-
-
 data class SavedModel(
     val id: String = java.util.UUID.randomUUID().toString(),
     val model: AiModel,
@@ -568,9 +511,6 @@ data class SavedModel(
     val isDefault: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 ) {
-
-
-
 
     fun getSupportedFeatures(): Set<AiFeature> {
         val features = mutableSetOf<AiFeature>()
@@ -583,15 +523,9 @@ data class SavedModel(
         return features
     }
 
-
-
-
     fun supportsFeature(feature: AiFeature): Boolean {
         return getSupportedFeatures().contains(feature)
     }
-
-
-
 
     fun getFeaturesForCapability(capability: ModelCapability): Set<AiFeature> {
         return featureMappings[capability]
@@ -599,17 +533,11 @@ data class SavedModel(
     }
 }
 
-
-
-
 data class AiSettings(
     val apiKeys: List<ApiKeyConfig> = emptyList(),
     val savedModels: List<SavedModel> = emptyList(),
     val defaultModelId: String? = null
 )
-
-
-
 
 enum class LrcTaskStatus {
     PENDING,
@@ -617,9 +545,6 @@ enum class LrcTaskStatus {
     COMPLETED,
     FAILED
 }
-
-
-
 
 data class LrcTask(
     val id: String = java.util.UUID.randomUUID().toString(),
@@ -634,9 +559,6 @@ data class LrcTask(
     val createdAt: Long = System.currentTimeMillis(),
     val completedAt: Long? = null
 )
-
-
-
 
 object PresetLrcThemes {
     val themes = listOf(
@@ -717,13 +639,7 @@ object PresetLrcThemes {
     fun getById(id: String): LrcTheme? = themes.find { it.id == id }
 }
 
-
-
-
 fun AiProvider.getLocalizedDisplayName(): String = displayName
-
-
-
 
 fun AiFeature.getLocalizedDisplayName(): String {
     return when (this) {
@@ -737,9 +653,6 @@ fun AiFeature.getLocalizedDisplayName(): String {
     }
 }
 
-
-
-
 fun AiFeature.getLocalizedDescription(): String {
     return when (this) {
         AiFeature.AI_CODING -> Strings.aiCodingDesc
@@ -752,12 +665,6 @@ fun AiFeature.getLocalizedDescription(): String {
     }
 }
 
-
-
-
 fun AiProvider.getLocalizedDescription(): String = description
-
-
-
 
 fun AiProvider.getLocalizedPricing(): String = pricing

@@ -11,11 +11,6 @@ import kotlinx.coroutines.withContext
 import com.webtoapp.core.network.NetworkModule
 import okhttp3.Request
 
-
-
-
-
-
 data class OnlineMusicTrack(
     val id: String,
     val name: String,
@@ -30,17 +25,11 @@ data class OnlineMusicTrack(
     val resultIndex: Int = 0
 )
 
-
-
-
 data class MusicSearchResponse(
     val tracks: List<OnlineMusicTrack>,
     val hasMore: Boolean = false,
     val total: Int = 0
 )
-
-
-
 
 data class ChannelStatus(
     val channelId: String,
@@ -48,8 +37,6 @@ data class ChannelStatus(
     val latencyMs: Long = 0,
     val errorMessage: String? = null
 )
-
-
 
 data class OnlineMusicData(
     @SerializedName("name") val name: String,
@@ -75,11 +62,6 @@ fun OnlineMusicTrack.toOnlineMusicData(): OnlineMusicData {
         isPaid = false
     )
 }
-
-
-
-
-
 
 abstract class MusicChannel {
     abstract val id: String
@@ -124,12 +106,6 @@ abstract class MusicChannel {
         }
     }
 }
-
-
-
-
-
-
 
 class NetEaseChannel : MusicChannel() {
     override val id = "netease"
@@ -185,7 +161,6 @@ class NetEaseChannel : MusicChannel() {
                     ))
                 }
 
-
                 val sortedTracks = smartSort(tracks, query)
                 Result.success(MusicSearchResponse(sortedTracks, total = sortedTracks.size))
             } catch (e: Exception) {
@@ -234,13 +209,6 @@ class NetEaseChannel : MusicChannel() {
         }
     }
 }
-
-
-
-
-
-
-
 
 class NetEaseOfficialChannel : MusicChannel() {
     override val id = "netease_official"
@@ -333,7 +301,6 @@ class NetEaseOfficialChannel : MusicChannel() {
                     }
                 }
 
-
                 val fallbackQuery = "${track.name} ${track.artist.split("、").firstOrNull() ?: ""}"
                 val encoded = java.net.URLEncoder.encode(fallbackQuery.trim(), "UTF-8")
                 val fallbackUrl = "$detailBaseUrl?name=$encoded&n=1"
@@ -372,13 +339,6 @@ class NetEaseOfficialChannel : MusicChannel() {
     }
 }
 
-
-
-
-
-
-
-
 class QiShuiChannel : MusicChannel() {
     override val id = "qishui"
     override val displayName = "汽水音乐"
@@ -407,7 +367,6 @@ class QiShuiChannel : MusicChannel() {
                         val cover = data.get("cover")?.asString
                         val lrc = data.get("lrc")?.asString
                         val isPay = data.get("pay")?.asString == "pay"
-
 
                         if (!isRelevant(title, singer, query)) {
                             AppLogger.d("QiShuiChannel", "Skipping irrelevant: $title - $singer (query=$query)")
@@ -479,12 +438,6 @@ class QiShuiChannel : MusicChannel() {
     }
 }
 
-
-
-
-
-
-
 class ITunesChannel : MusicChannel() {
     override val id = "itunes"
     override val displayName = "iTunes"
@@ -536,12 +489,6 @@ class ITunesChannel : MusicChannel() {
     }
 }
 
-
-
-
-
-
-
 private fun smartSort(tracks: List<OnlineMusicTrack>, query: String): List<OnlineMusicTrack> {
     val queryLower = query.lowercase().trim()
     val queryParts = queryLower.split(" ", "　").filter { it.isNotBlank() }
@@ -551,24 +498,18 @@ private fun smartSort(tracks: List<OnlineMusicTrack>, query: String): List<Onlin
         val artistLower = track.artist.lowercase()
         var score = 0
 
-
         if (nameLower == queryLower) score += 1000
-
 
         if (nameLower.startsWith(queryLower)) score += 500
 
-
         if (nameLower.contains(queryLower)) score += 200
 
-
         if (artistLower == queryLower || artistLower.contains(queryLower)) score += 100
-
 
         queryParts.forEach { part ->
             if (nameLower.contains(part)) score += 50
             if (artistLower.contains(part)) score += 30
         }
-
 
         val coverKeywords = listOf("cover", "翻唱", "女声版", "男声版", "dj版", "remix", "live", "钢琴版", "吉他版")
         if (coverKeywords.any { nameLower.contains(it) }) {
@@ -579,37 +520,18 @@ private fun smartSort(tracks: List<OnlineMusicTrack>, query: String): List<Onlin
     }
 }
 
-
-
-
-
 private fun isRelevant(songName: String, artist: String, query: String): Boolean {
     val q = query.lowercase().trim()
     val name = songName.lowercase()
     val art = artist.lowercase()
 
-
-
     val queryChars = q.toSet()
-
 
     val matchCount = queryChars.count { c -> name.contains(c) || art.contains(c) }
     val matchRatio = if (queryChars.isNotEmpty()) matchCount.toFloat() / queryChars.size else 0f
 
     return matchRatio >= 0.3f
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 object OnlineMusicApi {
 
@@ -626,9 +548,6 @@ object OnlineMusicApi {
     private val channelStatusCache = mutableMapOf<String, ChannelStatus>()
 
     fun getChannel(channelId: String): MusicChannel? = channelMap[channelId]
-
-
-
 
     suspend fun testAllChannels(): Map<String, ChannelStatus> {
         val results = mutableMapOf<String, ChannelStatus>()
@@ -647,9 +566,6 @@ object OnlineMusicApi {
         return results
     }
 
-
-
-
     suspend fun testChannel(channelId: String): ChannelStatus {
         val channel = channelMap[channelId]
             ?: return ChannelStatus(channelId, false, 0, "渠道不存在")
@@ -658,22 +574,13 @@ object OnlineMusicApi {
         return status
     }
 
-
-
-
     fun getCachedStatus(channelId: String): ChannelStatus? = channelStatusCache[channelId]
-
-
-
 
     suspend fun search(channelId: String, query: String, page: Int = 1): Result<MusicSearchResponse> {
         val channel = channelMap[channelId]
             ?: return Result.failure(Exception(Strings.musicChannelNotFound.format(channelId)))
         return channel.search(query, page)
     }
-
-
-
 
     suspend fun getTrackDetail(track: OnlineMusicTrack): Result<OnlineMusicTrack> {
         val channel = channelMap[track.sourceChannelId]

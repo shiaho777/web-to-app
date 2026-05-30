@@ -4,15 +4,15 @@
 /src/main/java/com/webtoapp/core/activation/
 /src/main/java/com/webtoapp/core/adblock/
 /src/main/java/com/webtoapp/core/announcement/
-/src/main/java/com/webtoapp/core/blacktech/
-/src/main/java/com/webtoapp/core/disguise/
+/src/main/java/com/webtoapp/core/actions/
+/src/main/java/com/webtoapp/core/appearance/
 /src/main/java/com/webtoapp/core/dns/
 /src/main/java/com/webtoapp/core/extension/
 /src/main/java/com/webtoapp/core/floatingwindow/
 /src/main/java/com/webtoapp/core/forcedrun/
 /src/main/java/com/webtoapp/core/gecko/
 /src/main/java/com/webtoapp/core/i18n/
-/src/main/java/com/webtoapp/core/isolation/
+/src/main/java/com/webtoapp/core/privacy/
 /src/main/java/com/webtoapp/core/logging/
 /src/main/java/com/webtoapp/core/notification/
 /src/main/java/com/webtoapp/core/perf/
@@ -24,7 +24,7 @@
 /src/main/java/com/webtoapp/core/backgroundrun/
 /src/main/java/com/webtoapp/core/bgm/
 /src/main/java/com/webtoapp/core/engine/
-/src/main/java/com/webtoapp/core/hardening/
+/src/main/java/com/webtoapp/core/protection/
 /src/main/java/com/webtoapp/core/scraper/
 /src/main/java/com/webtoapp/core/script/
 /src/main/java/com/webtoapp/core/ads/

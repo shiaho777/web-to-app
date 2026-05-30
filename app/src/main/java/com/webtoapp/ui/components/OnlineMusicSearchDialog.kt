@@ -58,9 +58,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-
-
-
 data class DownloadLogEntry(
     val timestamp: Long = System.currentTimeMillis(),
     val message: String,
@@ -68,10 +65,6 @@ data class DownloadLogEntry(
 ) {
     enum class LogType { INFO, SUCCESS, ERROR, WARNING }
 }
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,19 +75,16 @@ fun OnlineMusicSearchDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-
     var channelStatuses by remember { mutableStateOf<Map<String, ChannelStatus>>(emptyMap()) }
     var selectedChannelId by remember { mutableStateOf(OnlineMusicApi.channels.first().id) }
     var testingChannels by remember { mutableStateOf(false) }
     var testingChannelId by remember { mutableStateOf<String?>(null) }
-
 
     var searchQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<OnlineMusicTrack>>(emptyList()) }
     var isSearching by remember { mutableStateOf(false) }
     var searchError by remember { mutableStateOf<String?>(null) }
     var hasSearched by remember { mutableStateOf(false) }
-
 
     var previewingTrack by remember { mutableStateOf<OnlineMusicTrack?>(null) }
     var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
@@ -105,7 +95,6 @@ fun OnlineMusicSearchDialog(
     var previewDuration by remember { mutableLongStateOf(0L) }
     var isPreviewPlaying by remember { mutableStateOf(false) }
 
-
     var downloadingTrackId by remember { mutableStateOf<String?>(null) }
     var downloadProgress by remember { mutableFloatStateOf(0f) }
     var downloadedTrackIds by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -113,9 +102,7 @@ fun OnlineMusicSearchDialog(
     var showDownloadLog by remember { mutableStateOf(false) }
     var downloadSpeed by remember { mutableStateOf("") }
 
-
     val snackbarHostState = remember { SnackbarHostState() }
-
 
     LaunchedEffect(isPreviewPlaying) {
         while (isPreviewPlaying) {
@@ -128,7 +115,6 @@ fun OnlineMusicSearchDialog(
         }
     }
 
-
     LaunchedEffect(Unit) {
         val cached = mutableMapOf<String, ChannelStatus>()
         OnlineMusicApi.channels.forEach { ch ->
@@ -137,13 +123,11 @@ fun OnlineMusicSearchDialog(
         channelStatuses = cached
     }
 
-
     DisposableEffect(Unit) {
         onDispose {
             mediaPlayer?.release()
         }
     }
-
 
     fun formatDuration(ms: Long): String {
         val totalSeconds = ms / 1000
@@ -151,7 +135,6 @@ fun OnlineMusicSearchDialog(
         val seconds = totalSeconds % 60
         return "%d:%02d".format(minutes, seconds)
     }
-
 
     fun performSearch() {
         if (searchQuery.isBlank()) return
@@ -187,7 +170,6 @@ fun OnlineMusicSearchDialog(
             isSearching = false
         }
     }
-
 
     fun previewTrack(track: OnlineMusicTrack) {
         if (previewingTrack?.id == track.id && isPreviewPlaying) {
@@ -234,7 +216,6 @@ fun OnlineMusicSearchDialog(
 
                 AppLogger.i("OnlineMusicSearch", "Playing: $playUrl")
 
-
                 searchResults = searchResults.map {
                     if (it.id == track.id) detailedTrack else it
                 }
@@ -242,7 +223,6 @@ fun OnlineMusicSearchDialog(
                 withContext(Dispatchers.Main) {
                     try {
                         val mp = MediaPlayer()
-
 
                         mp.setOnPreparedListener { player ->
                             AppLogger.i("OnlineMusicSearch", "MediaPlayer prepared, duration: ${player.duration}ms")
@@ -277,7 +257,6 @@ fun OnlineMusicSearchDialog(
                         mediaPlayer = mp
                         mp.prepareAsync()
 
-
                         scope.launch {
                             delay(15000)
                             if (isLoadingPreview && loadingPreviewTrackId == track.id) {
@@ -303,11 +282,9 @@ fun OnlineMusicSearchDialog(
         }
     }
 
-
     fun addLog(message: String, type: DownloadLogEntry.LogType = DownloadLogEntry.LogType.INFO) {
         downloadLogs = downloadLogs + DownloadLogEntry(message = message, type = type)
     }
-
 
     fun downloadTrack(track: OnlineMusicTrack) {
         scope.launch {
@@ -340,7 +317,6 @@ fun OnlineMusicSearchDialog(
                 addLog(Strings.getPlayUrlSuccess, DownloadLogEntry.LogType.SUCCESS)
                 addLog(Strings.startDownloadMusic)
 
-
                 searchResults = searchResults.map {
                     if (it.id == track.id) detailedTrack!! else it
                 }
@@ -350,13 +326,11 @@ fun OnlineMusicSearchDialog(
                 val bgmItem = OnlineMusicDownloader.downloadMusic(context, detailedTrack!!) { progress ->
                     downloadProgress = progress
 
-
                     val now = System.currentTimeMillis()
                     val elapsed = now - lastProgressTime
                     if (elapsed > 500) {
                         lastProgressTime = now
                     }
-
 
                     val percent = (progress * 100).toInt()
                     if (percent > 0 && percent % 20 == 0) {
@@ -446,7 +420,6 @@ fun OnlineMusicSearchDialog(
                                 }
                             }
 
-
                             TextButton(
                                 onClick = {
                                     scope.launch {
@@ -510,7 +483,6 @@ fun OnlineMusicSearchDialog(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -539,7 +511,6 @@ fun OnlineMusicSearchDialog(
                             shape = RoundedCornerShape(12.dp)
                         )
 
-
                         FilledIconButton(
                             onClick = { performSearch() },
                             enabled = searchQuery.isNotBlank() && !isSearching,
@@ -559,7 +530,6 @@ fun OnlineMusicSearchDialog(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-
                     AnimatedVisibility(
                         visible = showDownloadLog && downloadLogs.isNotEmpty(),
                         enter = expandVertically() + fadeIn(),
@@ -573,7 +543,6 @@ fun OnlineMusicSearchDialog(
                             onClear = { downloadLogs = emptyList() }
                         )
                     }
-
 
                     if (isSearching) {
                         Box(
@@ -687,7 +656,6 @@ fun OnlineMusicSearchDialog(
                         }
                     }
 
-
                     AnimatedVisibility(
                         visible = previewingTrack != null && isPlayerPrepared,
                         enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -731,9 +699,6 @@ fun OnlineMusicSearchDialog(
         }
     }
 }
-
-
-
 
 @Composable
 private fun ChannelChip(
@@ -810,9 +775,6 @@ private fun ChannelChip(
     )
 }
 
-
-
-
 @Composable
 private fun OnlineMusicTrackItem(
     track: OnlineMusicTrack,
@@ -875,7 +837,6 @@ private fun OnlineMusicTrackItem(
                         )
                     }
 
-
                     if (isPlaying || isPaused || isLoadingPreview) {
                         Box(
                             modifier = Modifier
@@ -902,7 +863,6 @@ private fun OnlineMusicTrackItem(
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
-
 
                 Column(
                     modifier = Modifier.weight(weight = 1f, fill = true)
@@ -948,7 +908,6 @@ private fun OnlineMusicTrackItem(
 
                 Spacer(modifier = Modifier.width(4.dp))
 
-
                 IconButton(
                     onClick = onPlay,
                     enabled = !isLoadingPreview
@@ -975,7 +934,6 @@ private fun OnlineMusicTrackItem(
                         )
                     }
                 }
-
 
                 if (isDownloaded) {
                     Icon(
@@ -1016,7 +974,6 @@ private fun OnlineMusicTrackItem(
                 }
             }
 
-
             if (isDownloading) {
                 LinearProgressIndicator(
                     progress = { downloadProgress },
@@ -1030,18 +987,12 @@ private fun OnlineMusicTrackItem(
     }
 }
 
-
-
-
 private fun formatTrackDuration(ms: Long): String {
     val totalSeconds = ms / 1000
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return "%d:%02d".format(minutes, seconds)
 }
-
-
-
 
 @Composable
 private fun EnhancedMiniPlayer(
@@ -1108,7 +1059,6 @@ private fun EnhancedMiniPlayer(
                     )
                 }
 
-
                 IconButton(onClick = onPlayPause) {
                     Icon(
                         if (isPlaying) Icons.Filled.PauseCircleFilled
@@ -1119,7 +1069,6 @@ private fun EnhancedMiniPlayer(
                     )
                 }
 
-
                 IconButton(onClick = onStop) {
                     Icon(
                         Icons.Filled.StopCircle,
@@ -1129,7 +1078,6 @@ private fun EnhancedMiniPlayer(
                     )
                 }
             }
-
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1164,9 +1112,6 @@ private fun EnhancedMiniPlayer(
     }
 }
 
-
-
-
 @Composable
 private fun DownloadLogPanel(
     logs: List<DownloadLogEntry>,
@@ -1177,7 +1122,6 @@ private fun DownloadLogPanel(
 ) {
     val logListState = rememberLazyListState()
     val timeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
-
 
     LaunchedEffect(logs.size) {
         if (logs.isNotEmpty()) {
@@ -1254,7 +1198,6 @@ private fun DownloadLogPanel(
                 }
             }
 
-
             if (isDownloading) {
                 LinearProgressIndicator(
                     progress = { progress },
@@ -1266,7 +1209,6 @@ private fun DownloadLogPanel(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
             }
-
 
             LazyColumn(
                 state = logListState,

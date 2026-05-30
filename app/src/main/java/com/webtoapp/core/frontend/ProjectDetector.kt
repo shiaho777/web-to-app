@@ -1,20 +1,14 @@
 package com.webtoapp.core.frontend
 
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.google.gson.JsonObject
 import java.io.File
-
-
-
-
-
-
 
 object ProjectDetector {
 
     private const val TAG = "ProjectDetector"
     private val gson = com.webtoapp.util.GsonProvider.gson
-
 
     private val frameworkDetectors = mapOf(
         "vue" to FrontendFramework.VUE,
@@ -26,7 +20,6 @@ object ProjectDetector {
         "@angular/core" to FrontendFramework.ANGULAR,
         "svelte" to FrontendFramework.SVELTE
     )
-
 
     private val databaseDetectors = mapOf(
         "sqlite3" to DatabaseType.SQLITE,
@@ -41,8 +34,6 @@ object ProjectDetector {
         "ioredis" to DatabaseType.REDIS
     )
 
-
-
     private val categoryDetectors = mapOf(
 
         "element-ui" to DependencyCategory.UI_LIBRARY,
@@ -54,7 +45,6 @@ object ProjectDetector {
         "tailwindcss" to DependencyCategory.UI_LIBRARY,
         "bootstrap" to DependencyCategory.UI_LIBRARY,
 
-
         "vuex" to DependencyCategory.STATE_MANAGEMENT,
         "pinia" to DependencyCategory.STATE_MANAGEMENT,
         "redux" to DependencyCategory.STATE_MANAGEMENT,
@@ -62,21 +52,17 @@ object ProjectDetector {
         "mobx" to DependencyCategory.STATE_MANAGEMENT,
         "zustand" to DependencyCategory.STATE_MANAGEMENT,
 
-
         "vue-router" to DependencyCategory.ROUTER,
         "react-router" to DependencyCategory.ROUTER,
         "react-router-dom" to DependencyCategory.ROUTER,
 
-
         "axios" to DependencyCategory.HTTP_CLIENT,
         "ky" to DependencyCategory.HTTP_CLIENT,
-
 
         "vite" to DependencyCategory.BUILD_TOOL,
         "webpack" to DependencyCategory.BUILD_TOOL,
         "rollup" to DependencyCategory.BUILD_TOOL,
         "esbuild" to DependencyCategory.BUILD_TOOL,
-
 
         "jest" to DependencyCategory.TESTING,
         "vitest" to DependencyCategory.TESTING,
@@ -84,20 +70,15 @@ object ProjectDetector {
         "cypress" to DependencyCategory.TESTING
     )
 
-
-
-
     fun detectProject(projectPath: String): ProjectDetectionResult {
         val projectDir = File(projectPath)
         val issues = mutableListOf<ProjectIssue>()
         val suggestions = mutableListOf<String>()
 
-
         val distDir = findDistDirectory(projectDir)
         if (distDir != null) {
-            suggestions.add("检测到已构建的输出目录: ${distDir.name}，可直接导入")
+            suggestions.add(Strings.frontendDetectFoundDistDir.format(distDir.name))
         }
-
 
         val packageJsonFile = File(projectDir, "package.json")
         if (!packageJsonFile.exists()) {
@@ -105,58 +86,47 @@ object ProjectDetector {
             if (distDir != null || hasIndexHtml(projectDir)) {
                 return createStaticResult(projectDir, distDir, issues, suggestions)
             }
-            return createErrorResult("未找到 package.json 文件，也没有检测到静态文件", issues)
+            return createErrorResult(Strings.frontendDetectNoPackageJson, issues)
         }
 
         val packageJson = try {
             gson.fromJson(packageJsonFile.readText(), JsonObject::class.java)
         } catch (e: Exception) {
-            AppLogger.d(TAG, "解析 package.json 失败", e)
-            return createErrorResult("package.json 格式错误: ${e.message}", issues)
+            AppLogger.d(TAG, "Failed to parse package.json", e)
+            return createErrorResult(Strings.frontendDetectInvalidPackageJson.format(e.message ?: ""), issues)
         }
-
 
         val dependencies = parseDependencies(packageJson, "dependencies", false)
         val devDependencies = parseDependencies(packageJson, "devDependencies", true)
         val allDeps = dependencies + devDependencies
 
-
         val framework = detectFramework(allDeps, projectDir)
         val frameworkVersion = getFrameworkVersion(framework, allDeps)
 
-
         val packageManager = detectPackageManager(projectDir)
-
 
         val hasTypeScript = allDeps.any { it.name == "typescript" } ||
                            File(projectDir, "tsconfig.json").exists()
 
-
         val databases = detectDatabases(allDeps)
-
 
         val scripts = parseScripts(packageJson)
 
-
         val (buildCommand, outputDir) = determineBuildConfig(framework, scripts, projectDir)
 
-
         val devCommand = determineDevCommand(scripts)
-
 
         val hasDistFolder = distDir != null
         if (!hasDistFolder) {
             issues.add(ProjectIssue(
                 severity = IssueSeverity.WARNING,
                 type = IssueType.NO_DIST_FOLDER,
-                message = "未检测到构建输出目录（dist/build）",
-                suggestion = "请先在电脑上运行 npm run build 构建项目，然后导入构建后的文件夹"
+                message = Strings.frontendDetectNoDistFolder,
+                suggestion = Strings.frontendDetectNoDistSuggestion
             ))
         }
 
-
         val runtimeRequirement = detectRuntimeRequirement(projectDir, framework, allDeps, scripts)
-
 
         generateSuggestions(framework, allDeps, databases, hasDistFolder, runtimeRequirement, suggestions)
 
@@ -178,10 +148,6 @@ object ProjectDetector {
         )
     }
 
-
-
-
-
     private fun findDistDirectory(projectDir: File): File? {
         val possibleDirs = listOf("dist", "build", "out", ".output/public", "public")
         for (dirName in possibleDirs) {
@@ -193,15 +159,9 @@ object ProjectDetector {
         return null
     }
 
-
-
-
     private fun hasIndexHtml(dir: File): Boolean {
         return File(dir, "index.html").exists()
     }
-
-
-
 
     private fun createStaticResult(
         projectDir: File,
@@ -215,11 +175,11 @@ object ProjectDetector {
             issues.add(ProjectIssue(
                 severity = IssueSeverity.ERROR,
                 type = IssueType.MISSING_CONFIG,
-                message = "未找到 index.html 文件"
+                message = Strings.frontendDetectNoIndexHtml
             ))
         }
 
-        suggestions.add("检测到静态网站项目，将直接导入所有文件")
+        suggestions.add(Strings.frontendDetectStaticImport)
 
         return ProjectDetectionResult(
             framework = FrontendFramework.UNKNOWN,
@@ -237,9 +197,6 @@ object ProjectDetector {
             suggestions = suggestions
         )
     }
-
-
-
 
     private fun parseDependencies(
         packageJson: JsonObject,
@@ -262,9 +219,6 @@ object ProjectDetector {
             )
         }
     }
-
-
-
 
     private fun detectFramework(deps: List<DependencyInfo>, projectDir: File): FrontendFramework {
         val depNames = deps.map { it.name }.toSet()
@@ -296,9 +250,6 @@ object ProjectDetector {
         }
     }
 
-
-
-
     private fun getFrameworkVersion(framework: FrontendFramework, deps: List<DependencyInfo>): String? {
         val frameworkPackage = when (framework) {
             FrontendFramework.VUE -> "vue"
@@ -316,14 +267,6 @@ object ProjectDetector {
         }
     }
 
-
-
-
-    /**
-     * 检测项目里使用的包管理器（npm/pnpm/yarn/bun）。
-     * 暴露成 public 是为了让 InstallProjectDepsCard 在不解析整个项目的前提下，
-     * 也能正确选择 install 命令——避免重复实现锁文件嗅探逻辑。
-     */
     fun detectPackageManager(projectDir: File): PackageManager {
         return when {
             File(projectDir, "pnpm-lock.yaml").exists() -> PackageManager.PNPM
@@ -333,25 +276,16 @@ object ProjectDetector {
         }
     }
 
-
-
-
     private fun detectDatabases(deps: List<DependencyInfo>): List<DatabaseType> {
         return deps.mapNotNull { dep ->
             databaseDetectors[dep.name]
         }.distinct()
     }
 
-
-
-
     private fun parseScripts(packageJson: JsonObject): Map<String, String> {
         val scripts = packageJson.getAsJsonObject("scripts") ?: return emptyMap()
         return scripts.entrySet().associate { it.key to it.value.asString }
     }
-
-
-
 
     private fun determineBuildConfig(
         framework: FrontendFramework,
@@ -378,9 +312,6 @@ object ProjectDetector {
         return buildCommand to outputDir
     }
 
-
-
-
     private fun determineDevCommand(scripts: Map<String, String>): String? {
         return when {
             "dev" in scripts -> "dev"
@@ -390,9 +321,6 @@ object ProjectDetector {
         }
     }
 
-
-
-
     private fun detectRuntimeRequirement(
         projectDir: File,
         framework: FrontendFramework,
@@ -400,7 +328,6 @@ object ProjectDetector {
         scripts: Map<String, String>
     ): ProjectRuntimeRequirement {
         val depNames = deps.map { it.name }.toSet()
-
 
         val backendFramework = when {
             "express" in depNames -> BackendFramework.EXPRESS
@@ -411,10 +338,8 @@ object ProjectDetector {
             else -> BackendFramework.NONE
         }
 
-
         val serverDirs = listOf("server", "api", "backend", "src/server", "src/api")
         val hasServerDir = serverDirs.any { File(projectDir, it).exists() }
-
 
         val hasServerScript = scripts.keys.any { key ->
             key.contains("server", ignoreCase = true) ||
@@ -423,7 +348,6 @@ object ProjectDetector {
         }
 
         val needsBackend = backendFramework != BackendFramework.NONE || hasServerDir || hasServerScript
-
 
         val isSSR = when (framework) {
             FrontendFramework.NEXT -> {
@@ -447,7 +371,6 @@ object ProjectDetector {
             else -> false
         }
 
-
         val envVarHints = mutableMapOf<String, String>()
         val envExample = File(projectDir, ".env.example")
         if (envExample.exists()) {
@@ -458,12 +381,11 @@ object ProjectDetector {
                     if (parts.size >= 1) {
                         val key = parts[0].trim()
 
-                        envVarHints[key] = "请配置环境变量 $key"
+                        envVarHints[key] = Strings.frontendDetectConfigureEnvVar.format(key)
                     }
                 }
             }
         }
-
 
         val backendEntryFile = serverDirs.firstNotNullOfOrNull { dir ->
             val serverIndex = File(projectDir, "$dir/index.js")
@@ -483,9 +405,6 @@ object ProjectDetector {
         )
     }
 
-
-
-
     private fun generateSuggestions(
         framework: FrontendFramework,
         deps: List<DependencyInfo>,
@@ -499,34 +418,31 @@ object ProjectDetector {
             if (runtimeRequirement.backendFramework != BackendFramework.NONE) {
                 val fwName = runtimeRequirement.backendFramework.name.lowercase()
                     .replaceFirstChar { it.uppercase() }
-                suggestions.add("🚀 检测到 $fwName 后端框架，建议使用 Node.js 应用模式打包")
+                suggestions.add("🚀 ${Strings.frontendSuggestBackendDetected.format(fwName)}")
             }
             if (runtimeRequirement.isSSR) {
-                suggestions.add("⚠️ 检测到 SSR 框架，需要 Node.js 运行时或切换到静态导出模式")
+                suggestions.add("⚠️ ${Strings.frontendSuggestSsrDetected}")
             }
             if (runtimeRequirement.backendEntryFile != null) {
-                suggestions.add("📄 后端入口文件: ${runtimeRequirement.backendEntryFile}")
+                suggestions.add("📄 ${Strings.frontendSuggestBackendEntry.format(runtimeRequirement.backendEntryFile)}")
             }
         } else if (!hasDistFolder) {
-            suggestions.add("💡 请先在电脑上构建项目：npm run build")
-            suggestions.add("💡 然后选择构建输出目录（通常是 dist 或 build）导入")
+            suggestions.add("💡 ${Strings.frontendSuggestRunBuild}")
+            suggestions.add("💡 ${Strings.frontendSuggestSelectDist}")
         }
 
         if (runtimeRequirement.envVarHints.isNotEmpty()) {
-            suggestions.add("🔑 检测到 ${runtimeRequirement.envVarHints.size} 个环境变量需要配置")
+            suggestions.add("🔑 ${Strings.frontendSuggestEnvVars.format(runtimeRequirement.envVarHints.size)}")
         }
 
         if (databases.isNotEmpty()) {
             if (runtimeRequirement.needsNodeRuntime) {
-                suggestions.add("🗃️ 检测到数据库依赖，Node.js 模式下可使用 SQLite")
+                suggestions.add("🗃️ ${Strings.frontendSuggestDbWithNode}")
             } else {
-                suggestions.add("⚠️ 检测到数据库依赖，纯静态模式无法使用后端数据库")
+                suggestions.add("⚠️ ${Strings.frontendSuggestDbStaticOnly}")
             }
         }
     }
-
-
-
 
     private fun createErrorResult(message: String, issues: MutableList<ProjectIssue>): ProjectDetectionResult {
         issues.add(ProjectIssue(

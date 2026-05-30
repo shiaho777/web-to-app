@@ -9,21 +9,9 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.ui.shell.ShellActivity
 import com.webtoapp.ui.webview.WebViewActivity
 
-
-
-
-
 object AutoStartLauncher {
 
     private const val TAG = "AutoStartLauncher"
-
-
-
-
-
-
-
-
 
     fun launch(
         context: Context,
@@ -55,9 +43,6 @@ object AutoStartLauncher {
         }
     }
 
-
-
-
     private fun launchShellApp(context: Context, source: String) {
         try {
             val intent = Intent(context, ShellActivity::class.java).apply {
@@ -69,9 +54,6 @@ object AutoStartLauncher {
             AppLogger.e(TAG, "[$source] 启动 Shell 应用失败", e)
         }
     }
-
-
-
 
     private fun launchWebViewApp(context: Context, source: String, appId: Long) {
         try {

@@ -10,7 +10,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 
-
 enum class AppThemeType(val icon: String) {
     KIMI_NO_NAWA("Minimize");
 
@@ -93,15 +92,8 @@ data class ThemeShapes(
     val useSoftShadows: Boolean
 )
 
-
 object AppThemes {
 
-    /**
-     * Single monochrome theme. Calibrated for a refined editorial look:
-     *  - Near-black instead of pure black in dark mode for a softer OLED-friendly base
-     *  - Distinct surfaceContainer steps so stacked cards read as layers
-     *  - Generous corner radius and subtle ambient shadow for a modern, tactile feel
-     */
     val KimiNoNawa = AppTheme(
         type = AppThemeType.KIMI_NO_NAWA,
         lightColors = lightColorScheme(

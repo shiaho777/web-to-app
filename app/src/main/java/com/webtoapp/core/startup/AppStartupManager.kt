@@ -23,8 +23,6 @@ class AppStartupManager(
         loggingStartup.initialize()
         shellRuntimeStartup.initialize()
 
-
-
         appScope.launch(Dispatchers.Default) {
             securityStartup.initialize()
         }

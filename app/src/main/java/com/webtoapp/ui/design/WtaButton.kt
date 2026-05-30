@@ -38,12 +38,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
-/**
- * The single button primitive used across the app. Painted by hand rather
- * than delegating to Material's Button family so we can own the feedback
- * animation end-to-end: no ripple, filled container colour, spring-based
- * press scale, subtle alpha dip on press, and consistent haptic.
- */
 @Composable
 fun WtaButton(
     onClick: () -> Unit,
@@ -138,11 +132,6 @@ fun WtaButton(
     }
 }
 
-/**
- * Icon-only button with haptic feedback and consistent sizing. Stays on
- * Material IconButton because there's little value in reimplementing its
- * touch target sizing.
- */
 @Composable
 fun WtaIconButton(
     onClick: () -> Unit,

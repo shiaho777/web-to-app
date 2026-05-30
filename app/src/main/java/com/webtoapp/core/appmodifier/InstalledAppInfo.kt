@@ -1,9 +1,11 @@
 package com.webtoapp.core.appmodifier
 
 import android.graphics.drawable.Drawable
-
-
-
+import com.webtoapp.core.activation.ActivationCode
+import com.webtoapp.data.model.ActivationDialogConfig
+import com.webtoapp.data.model.Announcement
+import com.webtoapp.data.model.BgmConfig
+import com.webtoapp.data.model.SplashConfig
 
 data class InstalledAppInfo(
     val packageName: String,
@@ -18,8 +20,6 @@ data class InstalledAppInfo(
     val apkSize: Long
 ) {
 
-
-
     val formattedSize: String
         get() {
             val kb = apkSize / 1024.0
@@ -32,67 +32,34 @@ data class InstalledAppInfo(
         }
 }
 
-
-
-
 data class AppModifyConfig(
     val originalApp: InstalledAppInfo,
     val newAppName: String,
     val newIconPath: String? = null,
 
-
     val splashEnabled: Boolean = false,
-    val splashType: String = "IMAGE",
-    val splashPath: String? = null,
-    val splashDuration: Int = 3,
-    val splashClickToSkip: Boolean = true,
-    val splashVideoStartMs: Long = 0,
-    val splashVideoEndMs: Long = 5000,
-    val splashLandscape: Boolean = false,
-    val splashFillScreen: Boolean = true,
-    val splashEnableAudio: Boolean = false,
-
+    val splashConfig: SplashConfig = SplashConfig(),
 
     val activationEnabled: Boolean = false,
-    val activationCodes: List<String> = emptyList(),
+    val activationCodes: List<ActivationCode> = emptyList(),
     val activationRequireEveryTime: Boolean = false,
-
+    val activationDialogConfig: ActivationDialogConfig = ActivationDialogConfig(),
 
     val announcementEnabled: Boolean = false,
-    val announcementTitle: String = "",
-    val announcementContent: String = "",
-    val announcementLink: String? = null,
-    val announcementTemplate: String = "XIAOHONGSHU",
-    val announcementShowEmoji: Boolean = true,
-    val announcementAnimationEnabled: Boolean = true,
-
+    val announcement: Announcement = Announcement(),
 
     val bgmEnabled: Boolean = false,
-    val bgmConfig: com.webtoapp.data.model.BgmConfig? = null
+    val bgmConfig: BgmConfig? = null
 )
-
-
-
 
 sealed class AppModifyResult {
 
-
-
     data object ShortcutSuccess : AppModifyResult()
-
-
-
 
     data class CloneSuccess(val apkPath: String) : AppModifyResult()
 
-
-
-
     data class Error(val message: String) : AppModifyResult()
 }
-
-
-
 
 enum class AppFilterType {
     ALL,

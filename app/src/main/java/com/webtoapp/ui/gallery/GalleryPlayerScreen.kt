@@ -40,9 +40,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 
-
-
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GalleryPlayerScreen(
@@ -53,7 +50,6 @@ fun GalleryPlayerScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-
     val items = remember(config) {
         when (config.playMode) {
             GalleryPlayMode.SHUFFLE -> config.getSortedItems().shuffled()
@@ -61,20 +57,16 @@ fun GalleryPlayerScreen(
         }
     }
 
-
     val pagerState = rememberPagerState(
         initialPage = startIndex,
         pageCount = { items.size }
     )
 
-
     val currentIndex by remember { derivedStateOf { pagerState.settledPage } }
     val currentItem = items.getOrNull(currentIndex)
 
-
     var showControls by remember { mutableStateOf(true) }
     var isPlaying by remember { mutableStateOf(config.autoPlay) }
-
 
     LaunchedEffect(currentIndex, isPlaying) {
 
@@ -91,14 +83,12 @@ fun GalleryPlayerScreen(
         }
     }
 
-
     LaunchedEffect(showControls) {
         if (showControls) {
             delay(3000)
             showControls = false
         }
     }
-
 
     val bgColor = remember(config.backgroundColor) {
         try {
@@ -159,7 +149,6 @@ fun GalleryPlayerScreen(
             }
         }
 
-
         AnimatedVisibility(
             visible = showControls && config.showMediaInfo,
             enter = fadeIn() + slideInVertically(),
@@ -173,7 +162,6 @@ fun GalleryPlayerScreen(
                 onBack = onBack
             )
         }
-
 
         if (config.showThumbnailBar) {
             AnimatedVisibility(
@@ -193,7 +181,6 @@ fun GalleryPlayerScreen(
                 )
             }
         }
-
 
         if (currentItem?.type == GalleryItemType.IMAGE) {
             AnimatedVisibility(
@@ -220,7 +207,6 @@ fun GalleryPlayerScreen(
                 }
             }
         }
-
 
         AnimatedVisibility(
             visible = showControls && currentIndex > 0,
@@ -282,9 +268,6 @@ fun GalleryPlayerScreen(
     }
 }
 
-
-
-
 @Composable
 private fun TopInfoBar(
     currentItem: GalleryItem?,
@@ -330,7 +313,6 @@ private fun TopInfoBar(
                 )
             }
 
-
             currentItem?.let { item ->
                 Icon(
                     if (item.type == GalleryItemType.VIDEO) Icons.Outlined.Videocam
@@ -344,9 +326,6 @@ private fun TopInfoBar(
     }
 }
 
-
-
-
 @Composable
 private fun ThumbnailBar(
     items: List<GalleryItem>,
@@ -355,7 +334,6 @@ private fun ThumbnailBar(
 ) {
     val context = LocalContext.current
     val listState = rememberLazyListState()
-
 
     LaunchedEffect(currentIndex) {
         if (currentIndex in items.indices) {
@@ -404,7 +382,6 @@ private fun ThumbnailBar(
                         contentScale = ContentScale.Crop
                     )
 
-
                     if (item.type == GalleryItemType.VIDEO) {
                         Icon(
                             Icons.Default.PlayCircle,
@@ -420,9 +397,6 @@ private fun ThumbnailBar(
         }
     }
 }
-
-
-
 
 @Composable
 fun GalleryImageViewer(
@@ -447,9 +421,6 @@ fun GalleryImageViewer(
     }
 }
 
-
-
-
 @Composable
 fun GalleryVideoPlayer(
     item: GalleryItem,
@@ -471,7 +442,6 @@ fun GalleryVideoPlayer(
     var duration by remember { mutableLongStateOf(0L) }
     var isFastForwarding by remember { mutableStateOf(false) }
     var playbackSpeed by remember { mutableFloatStateOf(1f) }
-
 
     DisposableEffect(item.path) {
         val mediaPlayer = android.media.MediaPlayer().apply {
@@ -506,7 +476,6 @@ fun GalleryVideoPlayer(
         }
     }
 
-
     LaunchedEffect(isPlaying, isPrepared, isCurrentPage) {
         player?.let { mp ->
             if (isPrepared) {
@@ -519,7 +488,6 @@ fun GalleryVideoPlayer(
         }
     }
 
-
     LaunchedEffect(enableAudio, isPrepared) {
         player?.let { mp ->
             if (isPrepared) {
@@ -530,7 +498,6 @@ fun GalleryVideoPlayer(
             }
         }
     }
-
 
     LaunchedEffect(isPlaying, isPrepared) {
         while (isPlaying && isPrepared) {
@@ -544,7 +511,6 @@ fun GalleryVideoPlayer(
             delay(100)
         }
     }
-
 
     LaunchedEffect(isFastForwarding) {
         if (isFastForwarding) {
@@ -620,7 +586,6 @@ fun GalleryVideoPlayer(
             modifier = Modifier.fillMaxSize()
         )
 
-
         AnimatedVisibility(
             visible = showControls,
             enter = fadeIn(),
@@ -650,7 +615,6 @@ fun GalleryVideoPlayer(
             )
         }
 
-
         AnimatedVisibility(
             visible = isFastForwarding,
             enter = fadeIn(),
@@ -677,9 +641,6 @@ fun GalleryVideoPlayer(
         }
     }
 }
-
-
-
 
 @Composable
 private fun VideoControlBar(
@@ -734,7 +695,6 @@ private fun VideoControlBar(
                 )
             }
 
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -764,7 +724,6 @@ private fun VideoControlBar(
                     }
                 }
 
-
                 IconButton(onClick = { onSeek((currentPosition - 10000).coerceAtLeast(0)) }) {
                     Icon(
                         Icons.Default.Replay10,
@@ -772,7 +731,6 @@ private fun VideoControlBar(
                         tint = Color.White
                     )
                 }
-
 
                 IconButton(
                     onClick = onPlayPause,
@@ -786,7 +744,6 @@ private fun VideoControlBar(
                     )
                 }
 
-
                 IconButton(onClick = { onSeek((currentPosition + 10000).coerceAtMost(duration)) }) {
                     Icon(
                         Icons.Default.Forward10,
@@ -795,15 +752,11 @@ private fun VideoControlBar(
                     )
                 }
 
-
                 Spacer(modifier = Modifier.width(48.dp))
             }
         }
     }
 }
-
-
-
 
 private fun formatTime(ms: Long): String {
     val seconds = (ms / 1000) % 60

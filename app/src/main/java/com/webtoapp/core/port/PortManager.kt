@@ -10,29 +10,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 object PortManager {
 
     private const val TAG = "PortManager"
 
-
     private const val STALE_THRESHOLD_MS = 30_000L
-
-
-
 
     enum class PortRange(val start: Int, val end: Int) {
         LOCAL_HTTP(18000, 18499),
@@ -45,17 +27,11 @@ object PortManager {
         val size: Int get() = end - start + 1
     }
 
-
-
-
     private val lock = ReentrantReadWriteLock()
-
 
     private val allocatedPorts = ConcurrentHashMap<Int, PortAllocation>()
 
-
     private val portProcesses = ConcurrentHashMap<Int, Process>()
-
 
     data class PortAllocation(
         val port: Int,
@@ -68,7 +44,6 @@ object PortManager {
         val uptimeMs: Long get() = System.currentTimeMillis() - allocatedAt
     }
 
-
     data class RangeStats(
         val range: PortRange,
         val allocated: Int,
@@ -76,20 +51,9 @@ object PortManager {
         val usagePercent: Float
     )
 
-
-
-
-
-
-
-
-
-
-
     fun allocate(range: PortRange, owner: String, preferredPort: Int = 0): Int = lock.write {
 
         purgeStaleAllocationsLocked()
-
 
         if (preferredPort > 0) {
             if (!allocatedPorts.containsKey(preferredPort) && isPortAvailable(preferredPort)) {
@@ -101,7 +65,6 @@ object PortManager {
             AppLogger.w(TAG, "首选端口 $preferredPort 不可用，自动分配")
         }
 
-
         for (port in range.start..range.end) {
             if (!allocatedPorts.containsKey(port) && isPortAvailable(port)) {
                 val allocation = PortAllocation(port, owner, range)
@@ -110,7 +73,6 @@ object PortManager {
                 return@write port
             }
         }
-
 
         if (range != PortRange.GENERAL) {
             AppLogger.w(TAG, "${range.name} 范围端口已满，尝试通用范围")
@@ -128,9 +90,6 @@ object PortManager {
         -1
     }
 
-
-
-
     fun release(port: Int) {
 
         val process = portProcesses.remove(port)
@@ -145,9 +104,6 @@ object PortManager {
         }
     }
 
-
-
-
     fun releaseByOwner(owner: String) {
         val toRelease: List<Int>
         lock.read {
@@ -155,9 +111,6 @@ object PortManager {
         }
         toRelease.forEach { port -> release(port) }
     }
-
-
-
 
     fun releaseAll() {
 
@@ -175,18 +128,9 @@ object PortManager {
         }
     }
 
-
-
-
     fun isAllocated(port: Int): Boolean = allocatedPorts.containsKey(port)
 
-
-
-
     fun getAllocation(port: Int): PortAllocation? = allocatedPorts[port]
-
-
-
 
     fun registerProcess(port: Int, process: Process, pid: Long = -1) = lock.write {
         portProcesses[port] = process
@@ -197,35 +141,20 @@ object PortManager {
         AppLogger.d(TAG, "注册端口 $port 的进程 (PID: $pid)")
     }
 
-
-
-
     fun getProcess(port: Int): Process? = portProcesses[port]
-
-
-
 
     fun isProcessAlive(port: Int): Boolean {
         return portProcesses[port]?.isAliveCompat() == true
     }
-
-
-
 
     fun getAllAllocations(): Map<Int, PortAllocation> {
         purgeStaleAllocations()
         return lock.read { allocatedPorts.toMap() }
     }
 
-
-
-
     fun getAllocatedCount(range: PortRange): Int = lock.read {
         allocatedPorts.values.count { it.range == range }
     }
-
-
-
 
     fun isPortAvailable(port: Int): Boolean {
         return try {
@@ -235,9 +164,6 @@ object PortManager {
         }
     }
 
-
-
-
     fun findAvailablePort(range: PortRange): Int = lock.read {
         for (port in range.start..range.end) {
             if (!allocatedPorts.containsKey(port) && isPortAvailable(port)) {
@@ -246,14 +172,6 @@ object PortManager {
         }
         -1
     }
-
-
-
-
-
-
-
-
 
     fun purgeStaleAllocations(): Int {
         val stale = mutableListOf<Int>()
@@ -284,7 +202,6 @@ object PortManager {
         return stale.size
     }
 
-
     private fun purgeStaleAllocationsLocked() {
         val now = System.currentTimeMillis()
         val stale = mutableListOf<Int>()
@@ -302,9 +219,6 @@ object PortManager {
         }
     }
 
-
-
-
     fun getRangeStats(): List<RangeStats> = lock.read {
         PortRange.entries.map { range ->
             val count = allocatedPorts.values.count { it.range == range }
@@ -316,11 +230,6 @@ object PortManager {
             )
         }
     }
-
-
-
-
-
 
     private fun terminateProcess(port: Int, process: Process) {
         try {
@@ -338,44 +247,28 @@ object PortManager {
         }
     }
 
-
-
-
     fun allocateForLocalHttp(owner: String, preferred: Int = 0) =
         allocate(PortRange.LOCAL_HTTP, "localhttp:$owner", preferred)
-
 
     fun allocateForPhp(projectId: String, preferred: Int = 0) =
         allocate(PortRange.PHP, "php:$projectId", preferred)
 
-
     fun allocateForNodeJs(projectId: String, preferred: Int = 0) =
         allocate(PortRange.NODEJS, "nodejs:$projectId", preferred)
-
 
     fun allocateForPython(projectId: String, preferred: Int = 0) =
         allocate(PortRange.PYTHON, "python:$projectId", preferred)
 
-
     fun allocateForGo(projectId: String, preferred: Int = 0) =
         allocate(PortRange.GO, "go:$projectId", preferred)
 
-
     fun releasePhp(projectId: String) = releaseByOwner("php:$projectId")
-
 
     fun releaseNodeJs(projectId: String) = releaseByOwner("nodejs:$projectId")
 
-
     fun releasePython(projectId: String) = releaseByOwner("python:$projectId")
 
-
     fun releaseGo(projectId: String) = releaseByOwner("go:$projectId")
-
-
-
-
-
 
     fun getStats(): String {
         val sb = StringBuilder("端口使用统计:\n")
@@ -387,9 +280,6 @@ object PortManager {
         return sb.toString()
     }
 
-
-
-
     fun dumpAllocations() {
         AppLogger.d(TAG, "=== 端口分配详情 ===")
         allocatedPorts.forEach { (port, alloc) ->
@@ -399,9 +289,6 @@ object PortManager {
         }
         AppLogger.d(TAG, getStats())
     }
-
-
-
 
     fun formatDuration(ms: Long): String {
         val seconds = ms / 1000

@@ -4,59 +4,26 @@ import android.content.Context
 import android.util.Log
 import com.webtoapp.data.model.AdConfig
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class AdManager(private val context: Context) {
 
     private var isInitialized = false
     private var adConfig: AdConfig? = null
 
-
-
-
     fun initialize(config: AdConfig) {
         if (isInitialized) return
         adConfig = config
-
-
-
 
         Log.d(TAG, "AdManager initialized with config: banner=${config.bannerEnabled}, interstitial=${config.interstitialEnabled}, splash=${config.splashEnabled}")
 
         isInitialized = true
     }
 
-
-
-
     fun showBannerAd(container: android.view.ViewGroup) {
         val config = adConfig ?: return
         if (!config.bannerEnabled || config.bannerId.isBlank()) return
 
-
-
-
-
-
-
-
         Log.d(TAG, "showBannerAd called but ad SDK not integrated, bannerId=${config.bannerId}")
     }
-
-
-
 
     fun loadInterstitialAd(onLoaded: () -> Unit, onFailed: (String) -> Unit) {
         val config = adConfig ?: return
@@ -65,35 +32,16 @@ class AdManager(private val context: Context) {
             return
         }
 
-
-
-
-
-
-
-
         Log.d(TAG, "loadInterstitialAd called but ad SDK not integrated")
         onFailed("广告 SDK 未集成")
     }
 
-
-
-
     fun showInterstitialAd(activity: android.app.Activity, onDismissed: () -> Unit) {
-
-
-
-
-
 
         Log.d(TAG, "showInterstitialAd called but ad SDK not integrated")
 
-
         onDismissed()
     }
-
-
-
 
     fun showSplashAd(
         activity: android.app.Activity,
@@ -111,22 +59,12 @@ class AdManager(private val context: Context) {
             return
         }
 
-
-
-
-
-
-
         Log.d(TAG, "showSplashAd called but ad SDK not integrated, duration=${config.splashDuration}s")
-
 
         android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
             onFinished()
         }, (config.splashDuration * 1000).toLong())
     }
-
-
-
 
     fun destroy() {
         Log.d(TAG, "AdManager destroyed")
@@ -138,9 +76,6 @@ class AdManager(private val context: Context) {
         private const val TAG = "AdManager"
     }
 
-
-
-
     fun isAdReady(adType: AdType): Boolean {
         val config = adConfig ?: return false
         return when (adType) {
@@ -151,17 +86,11 @@ class AdManager(private val context: Context) {
     }
 }
 
-
-
-
 enum class AdType {
     BANNER,
     INTERSTITIAL,
     SPLASH
 }
-
-
-
 
 interface AdCallback {
     fun onAdLoaded()

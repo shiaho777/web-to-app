@@ -5,9 +5,6 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.sample.SampleProjectExtractor
 import com.webtoapp.core.sample.TypedSampleProject
 
-
-
-
 object PythonSampleManager {
 
     fun getSampleProjects(): List<TypedSampleProject> {

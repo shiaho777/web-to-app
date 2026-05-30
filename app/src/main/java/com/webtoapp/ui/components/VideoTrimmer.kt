@@ -25,11 +25,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
 import java.io.File
 
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VideoTrimmer(
@@ -41,7 +36,6 @@ fun VideoTrimmer(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-
 
     val videoExists = remember(videoPath) {
         when {
@@ -57,7 +51,6 @@ fun VideoTrimmer(
             else -> false
         }
     }
-
 
     if (!videoExists) {
         Box(
@@ -76,16 +69,13 @@ fun VideoTrimmer(
         return
     }
 
-
     var totalDuration by remember { mutableLongStateOf(videoDurationMs) }
     var thumbnail by remember { mutableStateOf<Bitmap?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var currentPreviewMs by remember { mutableLongStateOf(startMs) }
 
-
     val retriever = remember { MediaMetadataRetriever() }
     var retrieverReady by remember { mutableStateOf(false) }
-
 
     LaunchedEffect(videoPath) {
         isLoading = true
@@ -98,17 +88,14 @@ fun VideoTrimmer(
                 }
                 retrieverReady = true
 
-
                 val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
                 val duration = durationStr?.toLongOrNull() ?: 0L
-
 
                 val frame = retriever.getFrameAtTime(startMs * 1000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
 
                 totalDuration = duration
                 thumbnail = frame
                 currentPreviewMs = startMs
-
 
                 if (videoDurationMs == 0L && duration > 0) {
                     onTrimChange(0L, duration, duration)
@@ -119,7 +106,6 @@ fun VideoTrimmer(
         }
         isLoading = false
     }
-
 
     var previewJob by remember { mutableStateOf<Job?>(null) }
     val scope = rememberCoroutineScope()
@@ -149,7 +135,6 @@ fun VideoTrimmer(
         }
     }
 
-
     DisposableEffect(Unit) {
         onDispose {
             try {
@@ -159,7 +144,6 @@ fun VideoTrimmer(
             }
         }
     }
-
 
     val selectedDuration = endMs - startMs
     val selectedSeconds = selectedDuration / 1000f
@@ -211,7 +195,6 @@ fun VideoTrimmer(
             }
         }
 
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -228,7 +211,6 @@ fun VideoTrimmer(
             )
         }
 
-
         if (totalDuration > 0) {
             Column {
                 Text(
@@ -239,18 +221,15 @@ fun VideoTrimmer(
 
                 Spacer(modifier = Modifier.height(4.dp))
 
-
                 RangeSlider(
                     value = startMs.toFloat()..endMs.toFloat(),
                     onValueChange = { range ->
                         val newStart = range.start.toLong()
                         var newEnd = range.endInclusive.toLong()
 
-
                         if (newEnd - newStart < 1000) {
                             newEnd = minOf(newStart + 1000, totalDuration)
                         }
-
 
                         currentPreviewMs = newStart
 
@@ -259,7 +238,6 @@ fun VideoTrimmer(
                     valueRange = 0f..totalDuration.toFloat(),
                     modifier = Modifier.fillMaxWidth()
                 )
-
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -280,9 +258,6 @@ fun VideoTrimmer(
         }
     }
 }
-
-
-
 
 private fun formatTime(ms: Long): String {
     val totalSeconds = ms / 1000

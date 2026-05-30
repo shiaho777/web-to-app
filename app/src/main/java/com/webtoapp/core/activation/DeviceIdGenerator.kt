@@ -9,12 +9,6 @@ import java.util.UUID
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
-
-
-
-
-
-
 object DeviceIdGenerator {
 
     private const val TAG = "DeviceIdGenerator"
@@ -23,15 +17,9 @@ object DeviceIdGenerator {
     private const val KEY_DEVICE_ID_HMAC = "device_id_hmac"
     private const val HMAC_SECRET = "WTA_DeviceId_Integrity_2024"
 
-
-
-
-
-
     @SuppressLint("HardwareIds")
     fun getDeviceId(context: Context): String {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-
 
         val savedId = prefs.getString(KEY_DEVICE_ID, null)
         val savedHmac = prefs.getString(KEY_DEVICE_ID_HMAC, null)
@@ -44,7 +32,6 @@ object DeviceIdGenerator {
             }
             AppLogger.w(TAG, "Device ID integrity check failed — regenerating")
         }
-
 
         val androidId = Settings.Secure.getString(
             context.contentResolver,
@@ -59,7 +46,6 @@ object DeviceIdGenerator {
             UUID.randomUUID().toString().replace("-", "")
         }
 
-
         val hmac = computeHmac(deviceId)
         prefs.edit()
             .putString(KEY_DEVICE_ID, deviceId)
@@ -70,17 +56,11 @@ object DeviceIdGenerator {
         return deviceId
     }
 
-
-
-
     private fun hashString(input: String): String {
         val bytes = MessageDigest.getInstance("SHA-256")
             .digest(input.toByteArray())
         return bytes.joinToString("") { "%02x".format(it) }.take(32)
     }
-
-
-
 
     private fun computeHmac(data: String): String {
         val mac = Mac.getInstance("HmacSHA256")
@@ -89,9 +69,6 @@ object DeviceIdGenerator {
         val hmacBytes = mac.doFinal(data.toByteArray())
         return hmacBytes.joinToString("") { "%02x".format(it) }
     }
-
-
-
 
     private fun constantTimeEquals(a: String, b: String): Boolean {
         if (a.length != b.length) return false

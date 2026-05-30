@@ -65,6 +65,8 @@ import com.webtoapp.core.market.MarketModuleView
 import com.webtoapp.core.market.MarketState
 import com.webtoapp.core.market.ModuleMarketEntry
 import com.webtoapp.core.market.ModuleMarketRepository
+import com.webtoapp.core.market.ModuleSubmission
+import com.webtoapp.core.market.ModuleSubmitter
 import com.webtoapp.ui.components.PremiumFilterChip
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.design.WtaBackground
@@ -75,14 +77,21 @@ import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSpacing
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import androidx.compose.material.icons.filled.MergeType
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.Lightbulb
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.VolunteerActivism
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.format.DateTimeParseException
 
-/**
- * Module Market — pulls modules straight from this project's GitHub repository
- * and lets the user install them with one tap. See `modules/README.md` in the
- * repo for the contributing flow.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModuleMarketScreen(
@@ -101,7 +110,7 @@ fun ModuleMarketScreen(
     }
 
     LaunchedEffect(repo) {
-        // Kick off an initial fetch — uses cache when fresh, network otherwise.
+
         repo.refresh(force = false)
     }
 
@@ -152,7 +161,6 @@ fun ModuleMarketScreen(
         WtaBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
             Column(modifier = Modifier.fillMaxSize()) {
 
-                // Search field
                 PremiumTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -172,8 +180,6 @@ fun ModuleMarketScreen(
                     shape = RoundedCornerShape(WtaRadius.Button)
                 )
 
-                // Category chips. We show a fixed set of the most relevant
-                // categories so the row stays shallow on small screens.
                 LazyRow(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -219,13 +225,28 @@ fun ModuleMarketScreen(
                                     context.startActivity(
                                         Intent(Intent.ACTION_VIEW, Uri.parse(repo.githubUrl(entry)))
                                     )
-                                }
+                                },
+                                onOpenPullRequest = { url ->
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                },
+                                onOpenSubmitter = { url ->
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                },
+                                onOpenContributing = {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(repo.contributingUrl)))
+                                },
+                                resolveIcon = { entry -> repo.resolveIconUrl(entry) }
                             )
                         }
                     }
                     is MarketState.Loaded -> {
                         if (filtered.isEmpty()) {
-                            EmptyState(searchQuery)
+                            EmptyState(
+                                searchQuery = searchQuery,
+                                onOpenContributing = {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(repo.contributingUrl)))
+                                }
+                            )
                         } else {
                             ModuleListContent(
                                 items = filtered,
@@ -241,7 +262,17 @@ fun ModuleMarketScreen(
                                     context.startActivity(
                                         Intent(Intent.ACTION_VIEW, Uri.parse(repo.githubUrl(entry)))
                                     )
-                                }
+                                },
+                                onOpenPullRequest = { url ->
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                },
+                                onOpenSubmitter = { url ->
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                },
+                                onOpenContributing = {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(repo.contributingUrl)))
+                                },
+                                resolveIcon = { entry -> repo.resolveIconUrl(entry) }
                             )
                         }
                     }
@@ -275,21 +306,226 @@ private fun ModuleListContent(
     items: List<MarketModuleView>,
     installingId: String?,
     onInstall: (ModuleMarketEntry) -> Unit,
-    onOpenSource: (ModuleMarketEntry) -> Unit
+    onOpenSource: (ModuleMarketEntry) -> Unit,
+    onOpenPullRequest: (String) -> Unit,
+    onOpenSubmitter: (String) -> Unit,
+    onOpenContributing: () -> Unit,
+    resolveIcon: (ModuleMarketEntry) -> String?
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        item(key = "__contribution_guide__") {
+            ContributionGuideCard(onOpenContributing = onOpenContributing)
+        }
         items(items, key = { it.entry.id }) { view ->
             MarketModuleCard(
                 view = view,
                 isInstalling = installingId == view.entry.id,
+                iconUrl = resolveIcon(view.entry),
                 onInstall = { onInstall(view.entry) },
-                onOpenSource = { onOpenSource(view.entry) }
+                onOpenSource = { onOpenSource(view.entry) },
+                onOpenPullRequest = onOpenPullRequest,
+                onOpenSubmitter = onOpenSubmitter
             )
         }
+    }
+}
+
+@Composable
+private fun ContributionGuideCard(
+    onOpenContributing: () -> Unit,
+    initiallyExpanded: Boolean = false
+) {
+    var expanded by remember { mutableStateOf(initiallyExpanded) }
+
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Highlighted,
+        contentPadding = PaddingValues(WtaSpacing.Large)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Outlined.VolunteerActivism,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    Strings.moduleMarketGuideTitle,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    Strings.moduleMarketGuideSubtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(WtaRadius.Button))
+                .clickable { expanded = !expanded }
+                .padding(vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                if (expanded) Strings.moduleMarketGuideCollapse else Strings.moduleMarketGuideExpand,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.weight(1f))
+            Icon(
+                if (expanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        if (expanded) {
+            Spacer(Modifier.height(8.dp))
+
+            GuideSectionHeader(Strings.moduleMarketGuideStepsTitle)
+            Spacer(Modifier.height(6.dp))
+            val steps = listOf(
+                Strings.moduleMarketGuideStep1,
+                Strings.moduleMarketGuideStep2,
+                Strings.moduleMarketGuideStep3,
+                Strings.moduleMarketGuideStep4,
+                Strings.moduleMarketGuideStep5
+            )
+            steps.forEachIndexed { index, step ->
+                NumberedStep(number = index + 1, text = step)
+                if (index < steps.lastIndex) Spacer(Modifier.height(6.dp))
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            GuideSectionHeader(Strings.moduleMarketGuideFilesTitle)
+            Spacer(Modifier.height(6.dp))
+            GuideFileRow(Icons.Outlined.Description, Strings.moduleMarketGuideFileModuleJson)
+            GuideFileRow(Icons.Outlined.Description, Strings.moduleMarketGuideFileMainJs)
+            GuideFileRow(Icons.Outlined.Description, Strings.moduleMarketGuideFileStyleCss)
+            GuideFileRow(Icons.Outlined.Folder, Strings.moduleMarketGuideFileIcon)
+
+            Spacer(Modifier.height(14.dp))
+
+            GuideSectionHeader(Strings.moduleMarketGuideTipsTitle)
+            Spacer(Modifier.height(6.dp))
+            GuideTipRow(Strings.moduleMarketGuideTipValidate)
+            GuideTipRow(Strings.moduleMarketGuideTipNoTopReturn)
+            GuideTipRow(Strings.moduleMarketGuideTipVersion)
+
+            Spacer(Modifier.height(14.dp))
+
+            WtaButton(
+                onClick = onOpenContributing,
+                text = Strings.moduleMarketGuideOpenRepo,
+                variant = WtaButtonVariant.Tonal,
+                size = WtaButtonSize.Small,
+                leadingIcon = Icons.Default.OpenInNew,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
+@Composable
+private fun GuideSectionHeader(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurface
+    )
+}
+
+@Composable
+private fun NumberedStep(number: Int, text: String) {
+    Row(verticalAlignment = Alignment.Top) {
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                number.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Spacer(Modifier.width(10.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun GuideFileRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String) {
+    Row(
+        modifier = Modifier.padding(vertical = 3.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+@Composable
+private fun GuideTipRow(text: String) {
+    Row(
+        modifier = Modifier.padding(vertical = 3.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Icon(
+            Icons.Filled.Lightbulb,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 
@@ -297,8 +533,11 @@ private fun ModuleListContent(
 private fun MarketModuleCard(
     view: MarketModuleView,
     isInstalling: Boolean,
+    iconUrl: String?,
     onInstall: () -> Unit,
-    onOpenSource: () -> Unit
+    onOpenSource: () -> Unit,
+    onOpenPullRequest: (String) -> Unit,
+    onOpenSubmitter: (String) -> Unit
 ) {
     WtaCard(
         modifier = Modifier.fillMaxWidth(),
@@ -306,23 +545,11 @@ private fun MarketModuleCard(
         contentPadding = PaddingValues(WtaSpacing.Large)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Icon — use first letter of name as a stand-in. Custom material
-            // icon names are stored in `entry.icon`; full mapping is left for
-            // a future iteration.
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = view.entry.name.take(1).uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
+
+            ModuleIcon(
+                iconUrl = iconUrl,
+                fallbackLetter = view.entry.name.take(1).uppercase()
+            )
 
             Spacer(Modifier.width(12.dp))
 
@@ -352,14 +579,16 @@ private fun MarketModuleCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                view.entry.author?.let { a ->
-                    Text(
-                        Strings.moduleMarketAuthor.replace("%s", a.name),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
             }
+        }
+
+        view.submission?.let { submission ->
+            Spacer(Modifier.height(10.dp))
+            SubmissionStrip(
+                submission = submission,
+                onOpenPullRequest = onOpenPullRequest,
+                onOpenSubmitter = onOpenSubmitter
+            )
         }
 
         Spacer(Modifier.height(10.dp))
@@ -375,6 +604,200 @@ private fun MarketModuleCard(
                 onClick = onInstall
             )
         }
+    }
+}
+
+@Composable
+private fun ModuleIcon(
+    iconUrl: String?,
+    fallbackLetter: String,
+    size: androidx.compose.ui.unit.Dp = 40.dp
+) {
+    val context = LocalContext.current
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        if (!iconUrl.isNullOrBlank()) {
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(iconUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize().clip(CircleShape)
+            )
+        } else {
+            Text(
+                text = fallbackLetter,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+@Composable
+private fun SubmissionStrip(
+    submission: ModuleSubmission,
+    onOpenPullRequest: (String) -> Unit,
+    onOpenSubmitter: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val submitter = submission.submitter
+    val timeAgo = submission.submittedAt?.let { formatRelativeTime(it) }
+    val prUrl = submission.prUrl
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+
+        val avatarModifier = Modifier
+            .size(22.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .let { base ->
+                if (submitter?.profileUrl?.isNotBlank() == true) {
+                    base.clickable { onOpenSubmitter(submitter.profileUrl) }
+                } else base
+            }
+        if (submitter?.avatarUrl?.isNotBlank() == true) {
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(submitter.avatarUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = null,
+                modifier = avatarModifier
+            )
+        } else {
+            Box(modifier = avatarModifier, contentAlignment = Alignment.Center) {
+                Text(
+                    submitter?.login?.take(1)?.uppercase().orEmpty(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        Spacer(Modifier.width(8.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            val loginText = submitter?.login?.takeIf { it.isNotBlank() }
+            if (loginText != null) {
+                Text(
+                    Strings.moduleMarketSubmittedBy.replace("%s", loginText),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = if (submitter?.profileUrl?.isNotBlank() == true) {
+                        Modifier.clickable { onOpenSubmitter(submitter.profileUrl) }
+                    } else Modifier
+                )
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (submission.direct) {
+                    Icon(
+                        Icons.Default.MergeType,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(Modifier.width(3.dp))
+                    Text(
+                        Strings.moduleMarketDirectPush,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                } else if (submission.prNumber != null) {
+                    Icon(
+                        Icons.Default.MergeType,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(Modifier.width(3.dp))
+                    Text(
+                        Strings.moduleMarketPrNumber.replace("%d", submission.prNumber.toString()),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1
+                    )
+                }
+
+                if (timeAgo != null) {
+                    if (submission.direct || submission.prNumber != null) {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "·",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    Icon(
+                        Icons.Default.Schedule,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(Modifier.width(3.dp))
+                    Text(
+                        timeAgo,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+
+        if (!prUrl.isNullOrBlank() && !submission.direct) {
+            Spacer(Modifier.width(8.dp))
+            IconButton(
+                onClick = { onOpenPullRequest(prUrl) },
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    Icons.Default.OpenInNew,
+                    contentDescription = Strings.moduleMarketViewPullRequest,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
+    }
+}
+
+private fun formatRelativeTime(iso: String): String? {
+    val instant = try {
+        Instant.parse(iso)
+    } catch (e: DateTimeParseException) {
+        return null
+    } catch (e: Exception) {
+        return null
+    }
+    val deltaMs = (System.currentTimeMillis() - instant.toEpochMilli()).coerceAtLeast(0)
+    val seconds = deltaMs / 1000
+    val minutes = seconds / 60
+    val hours = minutes / 60
+    val days = hours / 24
+    val months = days / 30
+    val years = days / 365
+    return when {
+        seconds < 60 -> Strings.moduleMarketTimeJustNow
+        minutes < 60 -> Strings.moduleMarketTimeMinutesAgo.replace("%d", minutes.toString())
+        hours < 24 -> Strings.moduleMarketTimeHoursAgo.replace("%d", hours.toString())
+        days < 30 -> Strings.moduleMarketTimeDaysAgo.replace("%d", days.toString())
+        months < 12 -> Strings.moduleMarketTimeMonthsAgo.replace("%d", months.toString())
+        else -> Strings.moduleMarketTimeYearsAgo.replace("%d", years.toString())
     }
 }
 
@@ -440,14 +863,38 @@ private fun LoadingPlaceholder() {
 }
 
 @Composable
-private fun EmptyState(searchQuery: String) {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Text(
-            if (searchQuery.isBlank()) Strings.moduleMarketEmpty
-            else Strings.moduleMarketNoResults,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+private fun EmptyState(searchQuery: String, onOpenContributing: () -> Unit) {
+    if (searchQuery.isNotBlank()) {
+
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text(
+                Strings.moduleMarketNoResults,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        item {
+            Text(
+                Strings.moduleMarketGuideEmptyCta,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+        item {
+            ContributionGuideCard(
+                onOpenContributing = onOpenContributing,
+                initiallyExpanded = true
+            )
+        }
     }
 }
 
@@ -471,7 +918,6 @@ private fun ErrorState(message: String, onRetry: () -> Unit) {
     }
 }
 
-/** Categories shown as filter chips in the market header. */
 private val MarketCategoryHighlights = listOf(
     ModuleCategory.CONTENT_FILTER,
     ModuleCategory.STYLE_MODIFIER,

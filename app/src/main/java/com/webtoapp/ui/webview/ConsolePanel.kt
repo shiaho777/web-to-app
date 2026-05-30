@@ -24,17 +24,9 @@ import androidx.compose.ui.unit.sp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.AppColors
 
-
-
-
-
-
 enum class ConsoleLevel {
     LOG, INFO, WARNING, ERROR, DEBUG
 }
-
-
-
 
 data class ConsoleLogEntry(
     val level: ConsoleLevel,
@@ -43,9 +35,6 @@ data class ConsoleLogEntry(
     val lineNumber: Int,
     val timestamp: Long
 )
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +53,6 @@ fun ConsolePanel(
     val context = LocalContext.current
     val timeFormat = remember { java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault()) }
 
-
     val surfaceColor = MaterialTheme.colorScheme.surface
     val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
     val onSurface = MaterialTheme.colorScheme.onSurface
@@ -72,13 +60,11 @@ fun ConsolePanel(
     val primary = MaterialTheme.colorScheme.primary
     val errorColor = MaterialTheme.colorScheme.error
 
-
     LaunchedEffect(consoleMessages.size) {
         if (consoleMessages.isNotEmpty()) {
             listState.animateScrollToItem(consoleMessages.size - 1)
         }
     }
-
 
     val panelHeight = if (isExpanded) 350.dp else 200.dp
 
@@ -167,7 +153,6 @@ fun ConsolePanel(
                 }
             }
 
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -213,7 +198,6 @@ fun ConsolePanel(
                     }
                 }
             }
-
 
             Surface(
                 color = surfaceVariant,
@@ -315,7 +299,6 @@ private fun ConsoleLogItem(
                 tint = textColor
             )
 
-
             Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                 SelectionContainer {
                     Text(
@@ -328,7 +311,6 @@ private fun ConsoleLogItem(
                     )
                 }
 
-
                 Text(
                     "${entry.source}:${entry.lineNumber} • ${timeFormat.format(java.util.Date(entry.timestamp))}",
                     style = MaterialTheme.typography.labelSmall,
@@ -336,7 +318,6 @@ private fun ConsoleLogItem(
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
-
 
             IconButton(
                 onClick = onCopy,

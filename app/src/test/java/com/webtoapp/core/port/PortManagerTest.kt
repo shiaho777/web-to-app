@@ -91,4 +91,3 @@ class PortManagerTest {
         assertThat(PortManager.getAllAllocations()).isEmpty()
     }
 }
-

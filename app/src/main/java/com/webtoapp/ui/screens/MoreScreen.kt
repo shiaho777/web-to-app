@@ -20,9 +20,6 @@ import com.webtoapp.ui.design.WtaSettingCard
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSpacing
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoreScreen(
@@ -67,7 +64,6 @@ fun MoreScreen(
                     }
                 }
 
-
                 WtaSection(title = Strings.moreSectionDevTools) {
                     WtaSettingCard {
                         MoreMenuItem(
@@ -101,7 +97,6 @@ fun MoreScreen(
                         )
                     }
                 }
-
 
                 WtaSection(title = Strings.moreSectionBrowser) {
                     WtaSettingCard {

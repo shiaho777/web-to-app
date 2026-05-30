@@ -7,9 +7,6 @@ import com.webtoapp.core.i18n.Strings
 import java.io.File
 import java.util.zip.ZipFile
 
-
-
-
 data class TypedSampleProject(
     val id: String,
     val name: String,
@@ -20,19 +17,12 @@ data class TypedSampleProject(
     val brandColor: Long
 )
 
-
-
-
-
-
-
 object SampleProjectExtractor {
 
     private const val TAG = "SampleProjectExtractor"
     private const val SAMPLES_DIR = "sample_projects"
 
-
-
+    private const val SAMPLE_CONTENT_VERSION = 6
 
     fun getLanguageSuffix(): String {
         return when (Strings.currentLanguage.value) {
@@ -41,11 +31,6 @@ object SampleProjectExtractor {
             AppLanguage.ARABIC -> "-ar"
         }
     }
-
-
-
-
-
 
     suspend fun extractSampleProject(
         context: Context,
@@ -74,7 +59,7 @@ object SampleProjectExtractor {
 
             val assetPath = "$SAMPLES_DIR/$projectId"
             copyAssetFolder(context, assetPath, outputDir)
-            copySharedPythonSampleAssetsIfNeeded(context, projectId, outputDir)
+            copySharedSampleAssetsIfNeeded(context, projectId, outputDir)
 
             versionFile.writeText(currentVersion.toString())
 
@@ -87,11 +72,6 @@ object SampleProjectExtractor {
         }
     }
 
-
-
-
-
-
     private fun getAppVersionCode(context: Context): Long {
         return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
@@ -102,14 +82,12 @@ object SampleProjectExtractor {
                 packageInfo.versionCode.toLong()
             }
 
-            versionCode xor (packageInfo.lastUpdateTime / 1000)
+            val sampleVersion = SAMPLE_CONTENT_VERSION.toLong()
+            versionCode xor sampleVersion xor (packageInfo.lastUpdateTime / 1000)
         } catch (e: Exception) {
             0L
         }
     }
-
-
-
 
     private fun copyAssetFolder(context: Context, assetPath: String, targetDir: File) {
         val assetManager = context.assets
@@ -128,30 +106,89 @@ object SampleProjectExtractor {
                 for (file in files) {
                     copyAssetFolder(context, "$assetPath/$file", File(targetDir, file))
                 }
+
+                supplementHiddenAssetsFromApk(context, assetPath, targetDir, visibleNames = files.toSet())
             }
         } catch (e: Exception) {
             AppLogger.w(TAG, "复制文件失败: $assetPath", e)
         }
     }
 
-    private fun copySharedPythonSampleAssetsIfNeeded(
+    private fun supplementHiddenAssetsFromApk(
+        context: Context,
+        assetPath: String,
+        targetDir: File,
+        visibleNames: Set<String>,
+    ) {
+        val sourceApk = context.applicationInfo?.sourceDir?.takeIf { it.isNotBlank() } ?: return
+        val apkFile = File(sourceApk)
+        if (!apkFile.exists() || !apkFile.isFile) return
+
+        val prefix = "assets/${assetPath.trimStart('/')}/"
+
+        val hiddenChildren = mutableSetOf<String>()
+        try {
+            ZipFile(apkFile).use { zip ->
+                val entries = zip.entries()
+                while (entries.hasMoreElements()) {
+                    val name = entries.nextElement().name
+                    if (!name.startsWith(prefix)) continue
+                    val rel = name.removePrefix(prefix)
+                    if (rel.isEmpty()) continue
+                    val firstSeg = rel.substringBefore('/')
+                    if (firstSeg.startsWith(".") && firstSeg !in visibleNames) {
+                        hiddenChildren.add(firstSeg)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "扫描 APK 隐藏 assets 失败: $assetPath", e)
+            return
+        }
+
+        if (hiddenChildren.isEmpty()) return
+        AppLogger.i(TAG, "APK 隐藏 assets 兜底复制 ${hiddenChildren.size} 项: $hiddenChildren under $assetPath")
+        for (childName in hiddenChildren) {
+            val childAssetPath = "$assetPath/$childName"
+            val childTarget = File(targetDir, childName)
+
+            val ok = copyAssetFolderFromApk(context, childAssetPath, childTarget)
+            if (!ok) {
+                AppLogger.w(TAG, "APK 兜底复制失败: $childAssetPath")
+            }
+        }
+    }
+
+    private fun copySharedSampleAssetsIfNeeded(
         context: Context,
         projectId: String,
         outputDir: File
     ) {
-        val sharedAssetPath = when {
+
+        val pythonShared = when {
             projectId.startsWith("python-fastapi") -> "$SAMPLES_DIR/python-fastapi-shared/.pypackages"
             projectId.startsWith("python-django") -> "$SAMPLES_DIR/python-django-shared/.pypackages"
+            projectId.startsWith("python-flask") -> "$SAMPLES_DIR/python-flask-shared/.pypackages"
             else -> null
-        } ?: return
+        }
+        pythonShared?.let { copyShared(context, it, File(outputDir, ".pypackages")) }
 
-        val sharedTarget = File(outputDir, ".pypackages")
-        AppLogger.i(TAG, "复制共享 Python 示例依赖: $sharedAssetPath -> ${sharedTarget.absolutePath}")
-        copyAssetFolder(context, sharedAssetPath, sharedTarget)
-        if (!sharedTarget.walkTopDown().any { it.isFile }) {
-            val copied = copyAssetFolderFromApk(context, sharedAssetPath, sharedTarget)
+        val goShared = when {
+            projectId.startsWith("go-gin") -> "$SAMPLES_DIR/go-gin-shared/vendor"
+            projectId.startsWith("go-echo") -> "$SAMPLES_DIR/go-echo-shared/vendor"
+            projectId.startsWith("go-fiber") -> "$SAMPLES_DIR/go-fiber-shared/vendor"
+            else -> null
+        }
+        goShared?.let { copyShared(context, it, File(outputDir, "vendor")) }
+    }
+
+    private fun copyShared(context: Context, assetPath: String, target: File) {
+        AppLogger.i(TAG, "复制共享 sample 依赖: $assetPath -> ${target.absolutePath}")
+        copyAssetFolder(context, assetPath, target)
+        if (!target.walkTopDown().any { it.isFile }) {
+            val copied = copyAssetFolderFromApk(context, assetPath, target)
             if (!copied) {
-                AppLogger.w(TAG, "共享 Python 示例依赖为空: $sharedAssetPath")
+                AppLogger.w(TAG, "共享 sample 依赖为空: $assetPath（如果是 Go vendor 还没预生成可忽略）")
             }
         }
     }
@@ -184,9 +221,6 @@ object SampleProjectExtractor {
         }
         return copiedAny
     }
-
-
-
 
     fun clearExtractedProjects(context: Context) {
         val samplesDir = File(context.filesDir, "sample_projects")

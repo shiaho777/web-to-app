@@ -1,0 +1,402 @@
+/*
+ * Copyright (C) 2016 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+syntax = "proto3";
+
+import "aapt/Configuration.proto";
+
+package aapt.pb;
+
+option java_package = "com.android.aapt";
+option java_multiple_files = false;
+option java_outer_classname = "Resources";
+
+// A string pool that wraps the binary form of the C++ class android::ResStringPool.
+message StringPool {
+  bytes data = 1;
+}
+
+// The position of a declared entity within a file.
+message SourcePosition {
+  uint32 line_number = 1;
+  uint32 column_number = 2;
+}
+
+// Developer friendly source file information for an entity in the resource table.
+message Source {
+  uint32 path_idx = 1;
+  SourcePosition position = 2;
+}
+
+// The name and version fingerprint of a build tool.
+message ToolFingerprint {
+  string tool = 1;
+  string version = 2;
+}
+
+// References to non local resources
+message DynamicRefTable {
+  PackageId package_id = 1;
+  string package_name = 2;
+}
+
+// Top level message representing a resource table.
+message ResourceTable {
+  StringPool source_pool = 1;
+  repeated Package package = 2;
+  repeated Overlayable overlayable = 3;
+  repeated ToolFingerprint tool_fingerprint = 4;
+  repeated DynamicRefTable dynamic_ref_table = 5;
+}
+
+// A package ID in the range [0x00, 0xff].
+message PackageId {
+  uint32 id = 1;
+}
+
+// Defines resources for an Android package.
+message Package {
+  PackageId package_id = 1;
+  string package_name = 2;
+  repeated Type type = 3;
+}
+
+// A type ID in the range [0x01, 0xff].
+message TypeId {
+  uint32 id = 1;
+}
+
+message Type {
+  TypeId type_id = 1;
+  string name = 2;
+  repeated Entry entry = 3;
+}
+
+message Visibility {
+  enum Level {
+    UNKNOWN = 0;
+    PRIVATE = 1;
+    PUBLIC = 2;
+  }
+  Level level = 1;
+  Source source = 2;
+  string comment = 3;
+  bool staged_api = 4;
+}
+
+message AllowNew {
+  Source source = 1;
+  string comment = 2;
+}
+
+message Overlayable {
+  string name = 1;
+  Source source = 2;
+  string actor = 3;
+}
+
+message OverlayableItem {
+  enum Policy {
+    NONE = 0;
+    PUBLIC = 1;
+    SYSTEM = 2;
+    VENDOR = 3;
+    PRODUCT = 4;
+    SIGNATURE = 5;
+    ODM = 6;
+    OEM = 7;
+    ACTOR = 8;
+    CONFIG_SIGNATURE = 9;
+  }
+  Source source = 1;
+  string comment = 2;
+  repeated Policy policy = 3;
+  uint32 overlayable_idx = 4;
+}
+
+message StagedId {
+  Source source = 1;
+  uint32 staged_id = 2;
+}
+
+message EntryId {
+  uint32 id = 1;
+}
+
+message Entry {
+  EntryId entry_id = 1;
+  string name = 2;
+  Visibility visibility = 3;
+  AllowNew allow_new = 4;
+  OverlayableItem overlayable_item = 5;
+  repeated ConfigValue config_value = 6;
+  StagedId staged_id = 7;
+  repeated ConfigValue flag_disabled_config_value = 8;
+}
+
+message ConfigValue {
+  Configuration config = 1;
+  Value value = 2;
+  reserved 3;
+}
+
+message Value {
+  Source source = 1;
+  string comment = 2;
+  bool weak = 3;
+  oneof value {
+    Item item = 4;
+    CompoundValue compound_value = 5;
+  }
+}
+
+message Item {
+  oneof value {
+    Reference ref = 1;
+    String str = 2;
+    RawString raw_str = 3;
+    StyledString styled_str = 4;
+    FileReference file = 5;
+    Id id = 6;
+    Primitive prim = 7;
+  }
+  uint32 flag_status = 8;
+  bool flag_negated = 9;
+  string flag_name = 10;
+}
+
+message CompoundValue {
+  oneof value {
+    Attribute attr = 1;
+    Style style = 2;
+    Styleable styleable = 3;
+    Array array = 4;
+    Plural plural = 5;
+    MacroBody macro = 6;
+  }
+  uint32 flag_status = 7;
+  bool flag_negated = 8;
+  string flag_name = 9;
+}
+
+message Boolean {
+  bool value = 1;
+}
+
+message Reference {
+  enum Type {
+    REFERENCE = 0;
+    ATTRIBUTE = 1;
+  }
+  Type type = 1;
+  uint32 id = 2;
+  string name = 3;
+  bool private = 4;
+  Boolean is_dynamic = 5;
+  uint32 type_flags = 6;
+  bool allow_raw = 7;
+}
+
+message Id {
+}
+
+message String {
+  string value = 1;
+}
+
+message RawString {
+  string value = 1;
+}
+
+message StyledString {
+  string value = 1;
+  message Span {
+    string tag = 1;
+    uint32 first_char = 2;
+    uint32 last_char = 3;
+  }
+  repeated Span span = 2;
+}
+
+message FileReference {
+  enum Type {
+    UNKNOWN = 0;
+    PNG = 1;
+    BINARY_XML = 2;
+    PROTO_XML = 3;
+  }
+  string path = 1;
+  Type type = 2;
+}
+
+message Primitive {
+  message NullType {
+  }
+  message EmptyType {
+  }
+  oneof oneof_value {
+    NullType null_value = 1;
+    EmptyType empty_value = 2;
+    float float_value = 3;
+    uint32 dimension_value = 13;
+    uint32 fraction_value = 14;
+    int32 int_decimal_value = 6;
+    uint32 int_hexadecimal_value = 7;
+    bool boolean_value = 8;
+    uint32 color_argb8_value = 9;
+    uint32 color_rgb8_value = 10;
+    uint32 color_argb4_value = 11;
+    uint32 color_rgb4_value = 12;
+    float dimension_value_deprecated = 4 [deprecated=true];
+    float fraction_value_deprecated = 5 [deprecated=true];
+  }
+}
+
+message Attribute {
+  message Symbol {
+    Source source = 1;
+    string comment = 2;
+    Reference name = 3;
+    uint32 value = 4;
+    uint32 type = 5;
+  }
+  enum FormatFlags {
+    NONE = 0x0;
+    ANY = 0x0000ffff;
+    REFERENCE = 0x01;
+    STRING = 0x02;
+    INTEGER = 0x04;
+    BOOLEAN = 0x08;
+    COLOR = 0x010;
+    FLOAT = 0x020;
+    DIMENSION = 0x040;
+    FRACTION = 0x080;
+    ENUM = 0x00010000;
+    FLAGS = 0x00020000;
+  }
+  uint32 format_flags = 1;
+  int32 min_int = 2;
+  int32 max_int = 3;
+  repeated Symbol symbol = 4;
+}
+
+message Style {
+  message Entry {
+    Source source = 1;
+    string comment = 2;
+    Reference key = 3;
+    Item item = 4;
+  }
+  Reference parent = 1;
+  Source parent_source = 2;
+  repeated Entry entry = 3;
+}
+
+message Styleable {
+  message Entry {
+    Source source = 1;
+    string comment = 2;
+    Reference attr = 3;
+  }
+  repeated Entry entry = 1;
+}
+
+message Array {
+  message Element {
+    Source source = 1;
+    string comment = 2;
+    Item item = 3;
+  }
+  repeated Element element = 1;
+}
+
+message Plural {
+  enum Arity {
+    ZERO = 0;
+    ONE = 1;
+    TWO = 2;
+    FEW = 3;
+    MANY = 4;
+    OTHER = 5;
+  }
+  message Entry {
+    Source source = 1;
+    string comment = 2;
+    Arity arity = 3;
+    Item item = 4;
+  }
+  repeated Entry entry = 1;
+}
+
+message XmlNode {
+  oneof node {
+    XmlElement element = 1;
+    string text = 2;
+  }
+  SourcePosition source = 3;
+}
+
+message XmlElement {
+  repeated XmlNamespace namespace_declaration = 1;
+  string namespace_uri = 2;
+  string name = 3;
+  repeated XmlAttribute attribute = 4;
+  repeated XmlNode child = 5;
+}
+
+message XmlNamespace {
+  string prefix = 1;
+  string uri = 2;
+  SourcePosition source = 3;
+}
+
+message XmlAttribute {
+  string namespace_uri = 1;
+  string name = 2;
+  string value = 3;
+  SourcePosition source = 4;
+  uint32 resource_id = 5;
+  Item compiled_item = 6;
+}
+
+message MacroBody {
+  string raw_string = 1;
+  StyleString style_string = 2;
+  repeated UntranslatableSection untranslatable_sections = 3;
+  repeated NamespaceAlias namespace_stack = 4;
+  SourcePosition source = 5;
+}
+
+message NamespaceAlias {
+  string prefix = 1;
+  string package_name = 2;
+  bool is_private = 3;
+}
+
+message StyleString {
+  message Span {
+    string name = 1;
+    uint32 start_index = 2;
+    uint32 end_index = 3;
+  }
+  string str = 1;
+  repeated Span spans = 2;
+}
+
+message UntranslatableSection {
+  uint64 start_index = 1;
+  uint64 end_index = 2;
+}

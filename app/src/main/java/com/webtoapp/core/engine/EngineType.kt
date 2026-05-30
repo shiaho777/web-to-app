@@ -2,9 +2,6 @@ package com.webtoapp.core.engine
 
 import com.webtoapp.core.i18n.Strings
 
-
-
-
 enum class EngineType(
     val displayName: String,
 
@@ -18,7 +15,6 @@ enum class EngineType(
         estimatedSizeMb = 0,
         requiresDownload = false
     ),
-
 
     GECKOVIEW(
         displayName = "GeckoView (Firefox)",

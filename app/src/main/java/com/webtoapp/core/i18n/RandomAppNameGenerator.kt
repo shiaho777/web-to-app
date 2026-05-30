@@ -2,14 +2,7 @@ package com.webtoapp.core.i18n
 
 import kotlin.random.Random
 
-
-
-
-
-
-
 object RandomAppNameGenerator {
-
 
     private val chinesePrefixes = listOf(
         "小", "大", "快", "智", "云", "新", "超", "酷", "妙", "神",
@@ -26,7 +19,6 @@ object RandomAppNameGenerator {
         "空间", "世界", "宇宙", "星球", "银河", "统计", "分析", "探索", "发现", "秘密",
         "路径", "桥梁", "通道", "入口", "窗口", "门户", "平台", "中心", "基地", "站"
     )
-
 
     private val englishPrefixes = listOf(
         "Quick", "Smart", "Easy", "Super", "Magic", "Ultra", "Pro", "Neo", "Max", "Prime",
@@ -47,7 +39,6 @@ object RandomAppNameGenerator {
         "Flow", "Sync", "Track", "Pulse", "Beat", "Wave", "Loop", "Ring", "Spin", "Dash"
     )
 
-
     private val arabicPrefixes = listOf(
         "السريع", "الذكي", "السهل", "الخارق", "السحري", "الفائق", "المتقدم", "الجديد", "الأقصى", "الأول",
         "البرق", "الصاروخ", "الخفيف", "المباشر", "الفوري", "السريع", "العاجل", "المنطلق", "المندفع", "الخاطف",
@@ -64,9 +55,6 @@ object RandomAppNameGenerator {
         "القاعدة", "النقطة", "القلب", "الموقع", "المكان", "الموضع", "الموقف", "المكتب", "اللوحة", "الوسادة"
     )
 
-
-
-
     fun generate(): String {
         return when (Strings.currentLanguage.value) {
             AppLanguage.CHINESE -> generateChinese()
@@ -74,9 +62,6 @@ object RandomAppNameGenerator {
             AppLanguage.ARABIC -> generateArabic()
         }
     }
-
-
-
 
     fun generate(language: AppLanguage): String {
         return when (language) {

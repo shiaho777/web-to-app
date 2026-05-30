@@ -9,11 +9,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.material3.MaterialTheme
 
-/**
- * Plain themed background. In the minimal monochrome design, we skip the gradient
- * theatrics of the old ThemedBackgroundBox and just use [MaterialTheme.colorScheme.background].
- * Screens wrapped in WtaScreen get this automatically.
- */
 @Composable
 fun WtaBackground(
     modifier: Modifier = Modifier,

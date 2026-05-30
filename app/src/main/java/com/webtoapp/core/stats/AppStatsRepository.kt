@@ -3,17 +3,11 @@ package com.webtoapp.core.stats
 import com.webtoapp.core.logging.AppLogger
 import kotlinx.coroutines.flow.Flow
 
-
-
-
-
 class AppStatsRepository(private val dao: AppUsageStatsDao) {
 
     companion object {
         private const val TAG = "AppStatsRepository"
     }
-
-
 
     val allStats: Flow<List<AppUsageStats>> = dao.getAllStats()
 
@@ -24,9 +18,6 @@ class AppStatsRepository(private val dao: AppUsageStatsDao) {
     fun getMostTimeSpentApps(limit: Int = 10): Flow<List<AppUsageStats>> = dao.getMostTimeSpentApps(limit)
 
     fun getRecentlyUsedApps(since: Long): Flow<List<AppUsageStats>> = dao.getRecentlyUsedApps(since)
-
-
-
 
     suspend fun recordLaunch(appId: Long) {
         try {
@@ -45,9 +36,6 @@ class AppStatsRepository(private val dao: AppUsageStatsDao) {
             AppLogger.e(TAG, "记录启动失败: ${e.message}")
         }
     }
-
-
-
 
     suspend fun recordUsageDuration(appId: Long, durationMs: Long) {
         if (durationMs <= 0) return
@@ -69,9 +57,6 @@ class AppStatsRepository(private val dao: AppUsageStatsDao) {
         }
     }
 
-
-
-
     suspend fun getOverallStats(): OverallStats {
         return try {
             OverallStats(
@@ -84,8 +69,6 @@ class AppStatsRepository(private val dao: AppUsageStatsDao) {
             OverallStats()
         }
     }
-
-
 
     fun getAllLatestHealthRecords(): Flow<List<AppHealthRecord>> = dao.getAllLatestHealthRecords()
 
@@ -115,17 +98,11 @@ class AppStatsRepository(private val dao: AppUsageStatsDao) {
         return dao.getUptimePercent(appId, since) ?: 0f
     }
 
-
-
-
     suspend fun cleanupOldHealthRecords() {
         val sevenDaysAgo = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L
         dao.cleanupOldRecords(sevenDaysAgo)
     }
 }
-
-
-
 
 data class OverallStats(
     val totalLaunchCount: Int = 0,

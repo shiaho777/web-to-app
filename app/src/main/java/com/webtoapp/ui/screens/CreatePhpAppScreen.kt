@@ -45,17 +45,6 @@ import kotlinx.coroutines.flow.first
 import java.io.File
 import java.util.zip.ZipInputStream
 
-
-
-
-
-
-
-
-
-
-
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreatePhpAppScreen(
@@ -73,10 +62,8 @@ fun CreatePhpAppScreen(
     val scope = rememberCoroutineScope()
     val isEdit = existingAppId > 0L
 
-
     var appName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
-
 
     var documentRoot by remember { mutableStateOf("") }
     var entryFile by remember { mutableStateOf("index.php") }
@@ -85,21 +72,17 @@ fun CreatePhpAppScreen(
     var newEnvKey by remember { mutableStateOf("") }
     var newEnvValue by remember { mutableStateOf("") }
 
-
     var selectedProjectDir by remember { mutableStateOf<String?>(null) }
     var detectedFramework by remember { mutableStateOf<String?>(null) }
     var projectId by remember { mutableStateOf<String?>(null) }
-
 
     var composerDeps by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var composerDevDeps by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var showAllDeps by remember { mutableStateOf(false) }
     var showAllDevDeps by remember { mutableStateOf(false) }
 
-
     var detectedWebDirs by remember { mutableStateOf<List<String>>(emptyList()) }
     var useCustomDocRoot by remember { mutableStateOf(false) }
-
 
     var phpExtensions by remember { mutableStateOf<Map<String, Boolean>>(mapOf(
         "pdo_sqlite" to true,
@@ -112,18 +95,14 @@ fun CreatePhpAppScreen(
         "xml" to false
     )) }
 
-
     var detectedDbFiles by remember { mutableStateOf<List<String>>(emptyList()) }
     var sqlitePath by remember { mutableStateOf("") }
 
-
     var frameworkVersion by remember { mutableStateOf<String?>(null) }
-
 
     var isCreating by remember { mutableStateOf(false) }
     var creationPhase by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-
 
     LaunchedEffect(existingAppId) {
         if (existingAppId > 0L) {
@@ -145,10 +124,8 @@ fun CreatePhpAppScreen(
         }
     }
 
-
     val downloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
     var showDownloadDialog by remember { mutableStateOf(false) }
-
 
     val processProjectDir: suspend (File) -> Unit = processProject@{ inputDir ->
 
@@ -167,10 +144,8 @@ fun CreatePhpAppScreen(
         val detected = runtime.detectEntryFile(projectDir, detectedDocRoot)
         entryFile = detected
 
-
         val possibleDirs = listOf("public", "www", "htdocs", "web", "webroot", "html")
         detectedWebDirs = possibleDirs.filter { File(projectDir, it).isDirectory }
-
 
         val dbExtensions = listOf(".db", ".sqlite", ".sqlite3")
         detectedDbFiles = projectDir.walk().maxDepth(3)
@@ -180,7 +155,6 @@ fun CreatePhpAppScreen(
         if (detectedDbFiles.isNotEmpty()) {
             sqlitePath = detectedDbFiles.first()
         }
-
 
         val composerJson = File(projectDir, "composer.json")
         if (composerJson.exists()) {
@@ -192,7 +166,6 @@ fun CreatePhpAppScreen(
                     if (appName.isBlank()) appName = name.substringAfterLast("/")
                 }
 
-
                 json.getAsJsonObject("require")?.let { req ->
                     composerDeps = req.entrySet()
                         .filter { it.key != "php" }
@@ -203,11 +176,9 @@ fun CreatePhpAppScreen(
                         .associate { it.key to it.value.asString }
                 }
 
-
                 json.getAsJsonObject("require")?.get("php")?.asString?.let {
                     frameworkVersion = it
                 }
-
 
                 val allDepKeys = (composerDeps.keys + composerDevDeps.keys).toSet()
                 if (allDepKeys.any { it.contains("gd") || it.contains("image") || it.contains("intervention") }) {
@@ -225,7 +196,6 @@ fun CreatePhpAppScreen(
             } catch (e: Exception) { android.util.Log.w("CreatePhpApp", "Failed to parse composer.json dependencies", e) }
         }
 
-
         if (!WordPressDependencyManager.isPhpReady(context)) {
             showDownloadDialog = true
             val success = WordPressDependencyManager.downloadAllDependencies(context)
@@ -237,14 +207,12 @@ fun CreatePhpAppScreen(
             }
         }
 
-
         creationPhase = Strings.copyingProjectFiles
         val newProjectId = java.util.UUID.randomUUID().toString()
         runtime.createProject(newProjectId, projectDir)
         projectId = newProjectId
         creationPhase = Strings.phpProjectReady
     }
-
 
     val iconPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -283,7 +251,6 @@ fun CreatePhpAppScreen(
                         creationPhase = Strings.phpFrameworkDetected
                         processProjectDir(tempDir)
 
-
                         tempDir.deleteRecursively()
                     }
                 } catch (e: Exception) {
@@ -294,7 +261,6 @@ fun CreatePhpAppScreen(
             }
         }
     }
-
 
     val zipPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -334,14 +300,12 @@ fun CreatePhpAppScreen(
                             return@withContext
                         }
 
-
                         val children = extractDir.listFiles()
                         val projectDir = if (children != null && children.size == 1 && children[0].isDirectory) {
                             children[0]
                         } else {
                             extractDir
                         }
-
 
                         val hasPhpFiles = projectDir.walk().maxDepth(3).any { it.extension == "php" }
                         if (!hasPhpFiles) {
@@ -353,7 +317,6 @@ fun CreatePhpAppScreen(
 
                         creationPhase = Strings.phpFrameworkDetected
                         processProjectDir(projectDir)
-
 
                         extractDir.deleteRecursively()
                     }
@@ -367,7 +330,6 @@ fun CreatePhpAppScreen(
     }
 
     val canCreate = projectId != null
-
 
     val accentColor = MaterialTheme.colorScheme.onSurface
 
@@ -412,7 +374,6 @@ fun CreatePhpAppScreen(
                     frameworkVersion = frameworkVersion
                 )
 
-
             if (selectedProjectDir == null) {
                 TypedSampleProjectsCard(
                     title = Strings.sampleProjects,
@@ -452,7 +413,6 @@ fun CreatePhpAppScreen(
                 )
             }
 
-
             if (!isEdit) {
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -471,13 +431,11 @@ fun CreatePhpAppScreen(
                 }
             }
 
-
             RuntimeIconPickerCard(
                 appIcon = appIcon,
                 onSelectIcon = { iconPickerLauncher.launch("image/*") }
             )
             }
-
 
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -542,10 +500,8 @@ fun CreatePhpAppScreen(
                 }
             }
 
-
             WtaCreateFlowSection(title = Strings.appConfig) {
             if (projectId != null) {
-
 
                 if (composerDeps.isNotEmpty() || composerDevDeps.isNotEmpty()) {
                     PhpComposerDepsCard(
@@ -559,7 +515,6 @@ fun CreatePhpAppScreen(
                     )
                 }
 
-                // 在 App 内一键 composer install——只在项目有 composer.json 时显示
                 if (selectedProjectDir != null && File(selectedProjectDir!!, "composer.json").exists()) {
                     InstallProjectDepsCard(
                         kind = DepsKind.PHP,
@@ -568,7 +523,6 @@ fun CreatePhpAppScreen(
                         onOpenBuildEnvScreen = onOpenLinuxEnv,
                     )
                 }
-
 
                 PhpDocRootCard(
                     detectedWebDirs = detectedWebDirs,
@@ -584,14 +538,12 @@ fun CreatePhpAppScreen(
                     onEntryFileChange = { entryFile = it }
                 )
 
-
                 PhpExtensionsCard(
                     extensions = phpExtensions,
                     onToggle = { ext, enabled ->
                         phpExtensions = phpExtensions.toMutableMap().apply { put(ext, enabled) }
                     }
                 )
-
 
                 if (detectedDbFiles.isNotEmpty()) {
                     PhpDatabaseCard(
@@ -601,9 +553,7 @@ fun CreatePhpAppScreen(
                     )
                 }
 
-
                 PhpFrameworkTipCard(framework = detectedFramework)
-
 
                 RuntimeEnvVarsCard(
                     envVars = envVars,
@@ -622,21 +572,21 @@ fun CreatePhpAppScreen(
             }
             }
 
+            if (isCreating || errorMessage != null) {
+                WtaCreateFlowSection(title = Strings.preview) {
+                    if (isCreating) {
+                        RuntimeLoadingCard(creationPhase)
+                    }
 
-            WtaCreateFlowSection(title = Strings.preview) {
-                if (isCreating) {
-                    RuntimeLoadingCard(creationPhase)
-                }
-
-                errorMessage?.let { error ->
-                    RuntimeErrorCard(error = error, onDismiss = { errorMessage = null })
+                    errorMessage?.let { error ->
+                        RuntimeErrorCard(error = error, onDismiss = { errorMessage = null })
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
-
 
     if (showDownloadDialog) {
         AlertDialog(
@@ -675,11 +625,6 @@ fun CreatePhpAppScreen(
         }
 }
 
-
-
-
-
-
 @Composable
 private fun PhpHeroSection(
     detectedFramework: String?,
@@ -702,9 +647,6 @@ private fun PhpHeroSection(
         tags = tags
     )
 }
-
-
-
 
 @Composable
 private fun PhpComposerDepsCard(
@@ -787,9 +729,6 @@ private fun PhpComposerDepsCard(
         }
     }
 }
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -875,9 +814,6 @@ private fun PhpDocRootCard(
     }
 }
 
-
-
-
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 private fun PhpExtensionsCard(
@@ -913,9 +849,6 @@ private fun PhpExtensionsCard(
         }
     }
 }
-
-
-
 
 @Composable
 private fun PhpDatabaseCard(
@@ -961,9 +894,6 @@ private fun PhpDatabaseCard(
     }
 }
 
-
-
-
 @Composable
 private fun PhpFrameworkTipCard(framework: String?) {
     val tip = when (framework?.lowercase()) {
@@ -995,10 +925,6 @@ private fun PhpFrameworkTipCard(framework: String?) {
     }
 }
 
-
-
-
-
 private fun copyDocumentTreeToLocal(context: Context, docDir: DocumentFile, destDir: File) {
     docDir.listFiles().forEach { child ->
         val name = child.name ?: return@forEach
@@ -1022,14 +948,9 @@ private fun copyDocumentTreeToLocal(context: Context, docDir: DocumentFile, dest
     }
 }
 
-
-
-
-
 private fun resolvePhpProjectRoot(dir: File): File {
 
     if (dir.listFiles()?.any { it.isFile && it.extension == "php" } == true) return dir
-
 
     val phpSubDir = dir.listFiles()
         ?.filter { it.isDirectory && it.name != "__MACOSX" && !it.name.startsWith("._") }

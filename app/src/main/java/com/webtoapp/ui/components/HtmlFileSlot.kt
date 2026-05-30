@@ -20,10 +20,6 @@ import com.webtoapp.data.model.HtmlFile
 import com.webtoapp.ui.theme.LocalIsDarkTheme
 import androidx.compose.ui.graphics.Color
 
-
-
-
-
 @Composable
 fun HtmlFileSlot(
     label: String,

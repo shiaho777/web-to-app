@@ -8,11 +8,20 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 class AppStringsResourceConsistencyTest {
 
+    private companion object {
+
+        val NON_LOCALIZED_STRING_KEYS = setOf(
+
+            "app_name",
+        )
+
+        val LOCALES = listOf("values-zh", "values-en", "values-ar")
+    }
+
     @Test
     fun `grouped app strings stay aligned across locales`() {
         val resDir = resolveExistingDir("app/src/main/res", "src/main/res")
         val defaultDir = File(resDir, "values")
-        val localeDirs = listOf("values-zh", "values-en", "values-ar")
         val defaultFiles = defaultDir.listFiles { file ->
             file.isFile && file.name.startsWith("app_strings_") && file.name.endsWith(".xml")
         }?.sortedBy { it.name }.orEmpty()
@@ -20,7 +29,7 @@ class AppStringsResourceConsistencyTest {
         assertThat(defaultFiles).isNotEmpty()
         val expectedFileNames = defaultFiles.map { it.name }
 
-        localeDirs.forEach { localeDir ->
+        LOCALES.forEach { localeDir ->
             val actualNames = File(resDir, localeDir)
                 .listFiles { file ->
                     file.isFile && file.name.startsWith("app_strings_") && file.name.endsWith(".xml")
@@ -35,13 +44,52 @@ class AppStringsResourceConsistencyTest {
 
         defaultFiles.forEach { defaultFile ->
             val expectedKeys = readStringKeys(defaultFile)
-            localeDirs.forEach { localeDir ->
+            LOCALES.forEach { localeDir ->
                 val localeFile = File(resDir, "$localeDir/${defaultFile.name}")
                 val actualKeys = readStringKeys(localeFile)
                 assertWithMessage("Key mismatch for ${defaultFile.name} in $localeDir")
                     .that(actualKeys)
                     .containsExactlyElementsIn(expectedKeys)
             }
+        }
+    }
+
+    @Test
+    fun `top-level strings xml stays aligned across locales`() {
+        val resDir = resolveExistingDir("app/src/main/res", "src/main/res")
+        val defaultFile = File(resDir, "values/strings.xml")
+        assertWithMessage("values/strings.xml must exist")
+            .that(defaultFile.exists()).isTrue()
+
+        val defaultKeys = readStringKeys(defaultFile).toSet()
+        val translatable = defaultKeys - NON_LOCALIZED_STRING_KEYS
+
+        LOCALES.forEach { localeDir ->
+            val localeFile = File(resDir, "$localeDir/strings.xml")
+            assertWithMessage("$localeDir/strings.xml must exist")
+                .that(localeFile.exists()).isTrue()
+
+            val localeKeys = readStringKeys(localeFile).toSet()
+
+            val missing = translatable - localeKeys
+            assertWithMessage(
+                "Missing translations in $localeDir/strings.xml. " +
+                    "Add the following keys: $missing"
+            ).that(missing).isEmpty()
+
+            val orphan = localeKeys - defaultKeys
+            assertWithMessage(
+                "Orphan keys in $localeDir/strings.xml that are absent from " +
+                    "values/strings.xml: $orphan"
+            ).that(orphan).isEmpty()
+
+            val redeclaredNonLocalised = NON_LOCALIZED_STRING_KEYS.intersect(localeKeys)
+            assertWithMessage(
+                "$localeDir/strings.xml redeclares keys that are intentionally " +
+                    "non-localised in values/. Either translate them by " +
+                    "removing them from NON_LOCALIZED_STRING_KEYS, or drop the " +
+                    "locale-specific copy. Offending keys: $redeclaredNonLocalised"
+            ).that(redeclaredNonLocalised).isEmpty()
         }
     }
 

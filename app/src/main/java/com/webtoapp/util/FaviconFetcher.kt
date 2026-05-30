@@ -12,27 +12,15 @@ import java.io.File
 import java.io.FileOutputStream
 import java.net.URI
 
-
-
-
-
-
-
-
-
 object FaviconFetcher {
 
     private const val TAG = "FaviconFetcher"
 
-
     private const val MIN_ICON_SIZE = 32
-
 
     private const val PREFERRED_ICON_SIZE = 192
 
-
     private val ICON_SIZE_REGEX = Regex("(\\d+)x(\\d+)")
-
 
     private val LINK_ICON_REGEX = Regex("""<link[^>]*rel\s*=\s*["'](?:icon|shortcut icon|apple-touch-icon)["'][^>]*>""", RegexOption.IGNORE_CASE)
     private val HREF_REGEX = Regex("""href\s*=\s*["']([^"']+)["']""", RegexOption.IGNORE_CASE)
@@ -41,20 +29,12 @@ object FaviconFetcher {
 
     private val client get() = NetworkModule.defaultClient
 
-
-
-
-
-
-
-
     suspend fun fetchFavicon(context: Context, url: String): String? = withContext(Dispatchers.IO) {
         try {
             val normalizedUrl = normalizeUrl(url)
             val baseUrl = getBaseUrl(normalizedUrl)
 
             AppLogger.d(TAG, "开始获取网站图标: $baseUrl")
-
 
             val htmlIcons = tryParseHtmlForIcons(normalizedUrl)
             if (htmlIcons.isNotEmpty()) {
@@ -70,14 +50,12 @@ object FaviconFetcher {
                 }
             }
 
-
             val faviconUrl = "$baseUrl/favicon.ico"
             val faviconPath = downloadAndSaveIcon(context, faviconUrl)
             if (faviconPath != null) {
                 AppLogger.d(TAG, "从 favicon.ico 获取图标成功")
                 return@withContext faviconPath
             }
-
 
             val googleFaviconUrl = "https://www.google.com/s2/favicons?sz=128&domain_url=$baseUrl"
             val googlePath = downloadAndSaveIcon(context, googleFaviconUrl)
@@ -95,17 +73,11 @@ object FaviconFetcher {
         }
     }
 
-
-
-
     private data class IconInfo(
         val href: String,
         val size: Int = 0,
         val type: String = ""
     )
-
-
-
 
     private fun tryParseHtmlForIcons(url: String): List<IconInfo> {
         return try {
@@ -119,7 +91,6 @@ object FaviconFetcher {
 
             val html = response.body?.string() ?: return emptyList()
             val icons = mutableListOf<IconInfo>()
-
 
             LINK_ICON_REGEX.findAll(html).forEach { linkMatch ->
                 val linkTag = linkMatch.value
@@ -136,13 +107,11 @@ object FaviconFetcher {
                         }
                     }
 
-
                     if (size == 0 || size >= MIN_ICON_SIZE) {
                         icons.add(IconInfo(href, size))
                     }
                 }
             }
-
 
             OG_IMAGE_REGEX.find(html)?.let { ogMatch ->
                 val ogImage = ogMatch.groupValues[1]
@@ -159,9 +128,6 @@ object FaviconFetcher {
         }
     }
 
-
-
-
     private fun downloadAndSaveIcon(context: Context, iconUrl: String): String? {
         return try {
             val request = Request.Builder()
@@ -175,7 +141,6 @@ object FaviconFetcher {
             val bytes = response.body?.bytes() ?: return null
             if (bytes.isEmpty()) return null
 
-
             val options = BitmapFactory.Options().apply {
                 inJustDecodeBounds = true
             }
@@ -186,19 +151,16 @@ object FaviconFetcher {
                 return null
             }
 
-
             if (options.outWidth < MIN_ICON_SIZE && options.outHeight < MIN_ICON_SIZE) {
                 AppLogger.w(TAG, "图标太小: ${options.outWidth}x${options.outHeight}")
                 return null
             }
-
 
             val iconsDir = File(context.filesDir, "website_icons")
             iconsDir.mkdirs()
 
             val fileName = "favicon_${System.currentTimeMillis()}.png"
             val outputFile = File(iconsDir, fileName)
-
 
             val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             if (bitmap == null) {
@@ -220,9 +182,6 @@ object FaviconFetcher {
         }
     }
 
-
-
-
     private fun normalizeUrl(url: String): String {
         var normalized = url.trim()
         if (!normalized.startsWith("http://") && !normalized.startsWith("https://")) {
@@ -230,9 +189,6 @@ object FaviconFetcher {
         }
         return upgradeRemoteHttpToHttps(normalized)
     }
-
-
-
 
     private fun getBaseUrl(url: String): String {
         return try {
@@ -252,9 +208,6 @@ object FaviconFetcher {
         }
     }
 
-
-
-
     private fun resolveIconUrl(baseUrl: String, href: String): String {
         val resolved = when {
             href.startsWith("http://") || href.startsWith("https://") -> href
@@ -264,9 +217,6 @@ object FaviconFetcher {
         }
         return upgradeRemoteHttpToHttps(resolved)
     }
-
-
-
 
     private fun upgradeRemoteHttpToHttps(url: String): String {
         if (!url.startsWith("http://")) return url

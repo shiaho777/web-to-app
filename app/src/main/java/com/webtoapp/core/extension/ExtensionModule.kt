@@ -8,9 +8,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
-
 private const val REGEX_TIMEOUT_MS = 200L
-
 
 private val regexExecutor by lazy {
     Executors.newSingleThreadExecutor { r ->
@@ -18,11 +16,9 @@ private val regexExecutor by lazy {
     }
 }
 
-
 private val regexCache = object : LinkedHashMap<String, Regex>(32, 0.75f, true) {
     override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Regex>?) = size > 64
 }
-
 
 private fun safeRegexMatch(pattern: String, input: String): Boolean {
     return try {
@@ -38,7 +34,6 @@ private fun safeRegexMatch(pattern: String, input: String): Boolean {
     }
 }
 
-
 private fun String.escapeForJsSingleQuote(): String =
     this.replace("\\", "\\\\")
         .replace("'", "\\'")
@@ -47,16 +42,12 @@ private fun String.escapeForJsSingleQuote(): String =
         .replace("\u2028", "\\u2028")
         .replace("\u2029", "\\u2029")
 
-
 private fun String.escapeForJsTemplate(): String =
     this.replace("\\", "\\\\")
         .replace("`", "\\`")
         .replace("\${", "\\\${")
         .replace("\n", "\\n")
         .replace("\r", "\\r")
-
-
-
 
 enum class ModuleCategory(val icon: String) {
     CONTENT_FILTER("block"),
@@ -136,9 +127,6 @@ enum class ModuleCategory(val icon: String) {
     }
 }
 
-
-
-
 enum class ModuleRunTime(val jsEvent: String) {
     DOCUMENT_START(""),
     DOCUMENT_END("DOMContentLoaded"),
@@ -162,9 +150,6 @@ enum class ModuleRunTime(val jsEvent: String) {
         BEFORE_UNLOAD -> Strings.runTimeBeforeUnloadDesc
     }
 }
-
-
-
 
 enum class ModuleTrigger {
     AUTO,
@@ -204,9 +189,6 @@ enum class ModuleTrigger {
         VISIBILITY -> Strings.triggerVisibilityDesc
     }
 }
-
-
-
 
 enum class ModulePermission(val dangerous: Boolean = false) {
     DOM_ACCESS,
@@ -310,9 +292,6 @@ enum class ModulePermission(val dangerous: Boolean = false) {
     }
 }
 
-
-
-
 enum class ConfigItemType {
     TEXT, TEXTAREA, NUMBER, BOOLEAN,
     SELECT, MULTI_SELECT, RADIO, CHECKBOX,
@@ -372,9 +351,6 @@ enum class ConfigItemType {
     }
 }
 
-
-
-
 data class ModuleConfigItem(
     @SerializedName("key")
     val key: String,
@@ -396,28 +372,13 @@ data class ModuleConfigItem(
     val validation: String? = null
 )
 
-
-
-
-
-
 enum class ModuleUiType {
     FLOATING_BUTTON
 }
 
-
-
-
-
-
-
-
-
-
 data class ModuleUiConfig(
     @SerializedName("type")
     val type: ModuleUiType = ModuleUiType.FLOATING_BUTTON,
-
 
     @SerializedName("autoHide")
     val autoHide: Boolean = false,
@@ -434,9 +395,6 @@ data class ModuleUiConfig(
     }
 }
 
-
-
-
 data class ModuleAuthor(
     @SerializedName("name")
     val name: String,
@@ -448,9 +406,6 @@ data class ModuleAuthor(
     val qq: String? = null
 )
 
-
-
-
 data class ModuleVersion(
     @SerializedName("code")
     val code: Int = 1,
@@ -459,9 +414,6 @@ data class ModuleVersion(
     @SerializedName("changelog")
     val changelog: String = ""
 )
-
-
-
 
 data class UrlMatchRule(
     @SerializedName("pattern")
@@ -472,19 +424,11 @@ data class UrlMatchRule(
     val exclude: Boolean = false
 )
 
-
-
-
-
 enum class ModuleSourceType {
     CUSTOM,
     USERSCRIPT,
     CHROME_EXTENSION
 }
-
-
-
-
 
 enum class ModuleRunMode {
     INTERACTIVE,
@@ -506,11 +450,6 @@ enum class ModuleRunMode {
     }
 }
 
-
-
-
-
-
 data class ExtensionModule(
 
     @SerializedName("id")
@@ -522,68 +461,53 @@ data class ExtensionModule(
     @SerializedName("icon")
     val icon: String = "package",
 
-
     @SerializedName("category")
     val category: ModuleCategory = ModuleCategory.OTHER,
     @SerializedName("tags")
     val tags: List<String> = emptyList(),
-
 
     @SerializedName("version")
     val version: ModuleVersion = ModuleVersion(),
     @SerializedName("author")
     val author: ModuleAuthor? = null,
 
-
     @SerializedName("code")
     val code: String = "",
     @SerializedName("cssCode")
     val cssCode: String = "",
 
-
-
-
     @SerializedName("codeFiles")
     val codeFiles: Map<String, String> = emptyMap(),
-
 
     @SerializedName("runAt")
     val runAt: ModuleRunTime = ModuleRunTime.DOCUMENT_END,
     @SerializedName("urlMatches")
     val urlMatches: List<UrlMatchRule> = emptyList(),
 
-
     @SerializedName("permissions")
     val permissions: List<ModulePermission> = emptyList(),
-
 
     @SerializedName("configItems")
     val configItems: List<ModuleConfigItem> = emptyList(),
     @SerializedName("configValues")
     val configValues: Map<String, String> = emptyMap(),
 
-
     @SerializedName("dependencies")
     val dependencies: List<String> = emptyList(),
-
 
     @SerializedName("enabled")
     val enabled: Boolean = true,
     @SerializedName("builtIn")
     val builtIn: Boolean = false,
 
-
     @SerializedName("uiConfig")
     val uiConfig: ModuleUiConfig = ModuleUiConfig.DEFAULT,
-
 
     @SerializedName("runMode")
     val runMode: ModuleRunMode = ModuleRunMode.INTERACTIVE,
 
-
     @SerializedName("sourceType")
     val sourceType: ModuleSourceType = ModuleSourceType.CUSTOM,
-
 
     @SerializedName("chromeExtId")
     val chromeExtId: String = "",
@@ -598,7 +522,6 @@ data class ExtensionModule(
     @SerializedName("manifestJson")
     val manifestJson: String = "",
 
-
     @SerializedName("gmGrants")
     val gmGrants: List<String> = emptyList(),
     @SerializedName("requireUrls")
@@ -608,7 +531,6 @@ data class ExtensionModule(
     @SerializedName("noframes")
     val noframes: Boolean = false,
 
-
     @SerializedName("createdAt")
     val createdAt: Long = System.currentTimeMillis(),
     @SerializedName("updatedAt")
@@ -617,12 +539,8 @@ data class ExtensionModule(
     companion object {
         private val gson get() = GsonProvider.gson
 
-
         private const val SHARE_CODE_PREFIX_V1 = "WTA1:"
         private const val SHARE_CODE_PREFIX_V0 = ""
-
-
-
 
         fun fromJson(json: String): ExtensionModule? {
             return try {
@@ -631,10 +549,6 @@ data class ExtensionModule(
                 null
             }
         }
-
-
-
-
 
         fun fromShareCode(shareCode: String): ExtensionModule? {
             return try {
@@ -658,17 +572,11 @@ data class ExtensionModule(
             }
         }
 
-
-
-
         private fun decompressGzip(compressed: ByteArray): String {
             java.util.zip.GZIPInputStream(java.io.ByteArrayInputStream(compressed)).use { gzip ->
                 return gzip.bufferedReader().readText()
             }
         }
-
-
-
 
         private fun compressGzip(data: String): ByteArray {
             val bos = java.io.ByteArrayOutputStream()
@@ -679,29 +587,16 @@ data class ExtensionModule(
         }
     }
 
-
-
-
     fun toJson(): String = gson.toJson(this)
-
-
-
-
 
     fun toShareCode(): String {
         val compressed = compressGzip(toJson())
         return SHARE_CODE_PREFIX_V1 + android.util.Base64.encodeToString(compressed, android.util.Base64.NO_WRAP)
     }
 
-
-
-
     fun toShareCodeLegacy(): String {
         return android.util.Base64.encodeToString(toJson().toByteArray(), android.util.Base64.NO_WRAP)
     }
-
-
-
 
     fun matchesUrl(url: String): Boolean {
         if (urlMatches.isEmpty()) return true
@@ -709,14 +604,11 @@ data class ExtensionModule(
         val includeRules = urlMatches.filter { !it.exclude }
         val excludeRules = urlMatches.filter { it.exclude }
 
-
         for (rule in excludeRules) {
             if (matchRule(url, rule)) return false
         }
 
-
         if (includeRules.isEmpty()) return true
-
 
         return includeRules.any { matchRule(url, it) }
     }
@@ -726,14 +618,8 @@ data class ExtensionModule(
             safeRegexMatch(rule.pattern, url)
         } else {
 
-
             val pattern = rule.pattern
             if (pattern == "*" || pattern == "<all_urls>") return true
-
-
-
-
-
 
             val regexPattern = buildString {
                 append("^")
@@ -774,7 +660,6 @@ data class ExtensionModule(
         }
     }
 
-
     @Transient
     @Volatile
     private var _cachedExecutableCode: String? = null
@@ -786,10 +671,6 @@ data class ExtensionModule(
                 configItems.isEmpty()
         )
     }
-
-
-
-
 
     fun generateExecutableCode(): String {
         _cachedExecutableCode?.let { return it }
@@ -892,15 +773,11 @@ data class ExtensionModule(
         """.trimIndent().also { _cachedExecutableCode = it }
     }
 
-
-
-
     fun validate(): List<String> {
         val errors = mutableListOf<String>()
 
         if (name.isBlank()) errors.add(Strings.validateNameEmpty)
         if (code.isBlank() && cssCode.isBlank() && codeFiles.isEmpty()) errors.add(Strings.validateCodeEmpty)
-
 
         configItems.forEach { item ->
             if (item.required && configValues[item.key].isNullOrBlank()) {
@@ -911,9 +788,6 @@ data class ExtensionModule(
         return errors
     }
 }
-
-
-
 
 data class ModulePackage(
     @SerializedName("name")
@@ -944,13 +818,7 @@ data class ModulePackage(
     fun toJson(): String = gson.toJson(this)
 }
 
-
-
-
 object ModuleCategoryGroups {
-
-
-
 
     val groups = listOf(
         CategoryGroup(
@@ -1032,25 +900,16 @@ object ModuleCategoryGroups {
         )
     )
 
-
-
-
     fun getGroupForCategory(category: ModuleCategory): CategoryGroup? {
         return groups.find { it.categories.contains(category) }
     }
 }
-
-
-
 
 data class CategoryGroup(
     val name: String,
     val icon: String,
     val categories: List<ModuleCategory>
 )
-
-
-
 
 object ModulePermissionGroups {
 
@@ -1129,21 +988,12 @@ object ModulePermissionGroups {
     )
 }
 
-
-
-
 data class PermissionGroup(
     val name: String,
     val permissions: List<ModulePermission>
 )
 
-
-
-
 object ModulePresets {
-
-
-
 
     fun createElementBlocker(
         name: String,
@@ -1174,9 +1024,6 @@ object ModulePresets {
         )
     }
 
-
-
-
     fun createStyleInjector(
         name: String,
         cssCode: String,
@@ -1193,9 +1040,6 @@ object ModulePresets {
             cssCode = cssCode
         )
     }
-
-
-
 
     fun createAutoClicker(
         name: String,
@@ -1219,9 +1063,6 @@ object ModulePresets {
             """.trimIndent()
         )
     }
-
-
-
 
     fun createFloatingButton(
         name: String,

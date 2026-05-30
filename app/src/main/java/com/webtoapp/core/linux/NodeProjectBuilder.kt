@@ -1,20 +1,15 @@
 package com.webtoapp.core.linux
 
 import android.content.Context
-import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.frontend.*
+import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.logging.AppLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.max
-
-
-
-
-
-
 
 class NodeProjectBuilder(private val context: Context) {
 
@@ -24,16 +19,11 @@ class NodeProjectBuilder(private val context: Context) {
 
     private val buildEngine = PureBuildEngine(context)
 
-
     private val _buildState = MutableStateFlow<NodeBuildState>(NodeBuildState.Idle)
     val buildState: StateFlow<NodeBuildState> = _buildState
 
-
     private val _buildLogs = MutableStateFlow<List<BuildLogEntry>>(emptyList())
     val buildLogs: StateFlow<List<BuildLogEntry>> = _buildLogs
-
-
-
 
     suspend fun buildProject(
         projectPath: String,
@@ -44,19 +34,18 @@ class NodeProjectBuilder(private val context: Context) {
         try {
             val projectDir = File(projectPath)
             if (!projectDir.exists()) {
-                throw Exception("项目目录不存在: $projectPath")
+                throw Exception(Strings.frontendProjectDirNotFound.format(projectPath))
             }
 
-
             _buildState.value = NodeBuildState.Analyzing
-            addLog(LogLevel.INFO, "分析项目...")
+            addLog(LogLevel.INFO, Strings.buildLogAnalyzingProject)
 
             val detection = ProjectDetector.detectProject(projectPath)
-            addLog(LogLevel.INFO, "框架: ${getFrameworkName(detection.framework)}")
-            addLog(LogLevel.INFO, "包管理器: ${detection.packageManager}")
+            addLog(LogLevel.INFO, Strings.buildLogFrameworkLine.format(getFrameworkName(detection.framework)))
+            addLog(LogLevel.INFO, Strings.buildLogPackageManagerLine.format(detection.packageManager))
 
-            _buildState.value = NodeBuildState.InstallingDeps(0f, "准备构建环境")
-            addLog(LogLevel.INFO, "准备本地 Node.js 构建环境...")
+            _buildState.value = NodeBuildState.InstallingDeps(0f, Strings.buildLogPreparingBuildEnv)
+            addLog(LogLevel.INFO, Strings.buildLogPreparingNodeEnv)
             LocalBuildEnvironment.ensureInstalled(context) { step, progress ->
                 _buildState.value = NodeBuildState.InstallingDeps(progress * 0.2f, step)
                 addLog(LogLevel.DEBUG, step)
@@ -66,10 +55,10 @@ class NodeProjectBuilder(private val context: Context) {
             val envVars = buildEnvironmentVariables(workDir, config)
             val buildScript = config.buildCommand ?: detection.buildCommand
             if (buildScript.isNullOrBlank()) {
-                throw IllegalStateException("未检测到可执行的构建脚本")
+                throw IllegalStateException(Strings.nodeBuildNoExecutableScript)
             }
 
-            addLog(LogLevel.INFO, "安装项目依赖...")
+            addLog(LogLevel.INFO, Strings.buildLogInstallingProjectDeps)
             _buildState.value = NodeBuildState.InstallingDeps(0.25f, detection.packageManager.name.lowercase())
             val installResult = LocalBuildEnvironment.installDependencies(
                 context = context,
@@ -80,14 +69,14 @@ class NodeProjectBuilder(private val context: Context) {
                 env = envVars
             ) { line -> addLog(LogLevel.DEBUG, line) }
             if (installResult.exitCode != 0) {
-                throw IllegalStateException(buildFailure("依赖安装失败", installResult))
+                throw IllegalStateException(buildFailure(Strings.nodeBuildDependencyInstallFailed, installResult))
             }
 
             val outputDir = File(LocalBuildEnvironment.getProjectsRoot(context), System.currentTimeMillis().toString())
             outputDir.mkdirs()
 
-            _buildState.value = NodeBuildState.Building(0.55f, "执行 $buildScript")
-            addLog(LogLevel.INFO, "执行构建脚本: $buildScript")
+            _buildState.value = NodeBuildState.Building(0.55f, Strings.buildLogRunningScriptShort.format(buildScript))
+            addLog(LogLevel.INFO, Strings.buildLogRunningScript.format(buildScript))
             val scriptResult = LocalBuildEnvironment.runPackageScript(
                 context = context,
                 projectDir = workDir,
@@ -97,19 +86,19 @@ class NodeProjectBuilder(private val context: Context) {
                 env = envVars
             ) { line -> addLog(LogLevel.DEBUG, line) }
             if (scriptResult.exitCode != 0) {
-                throw IllegalStateException(buildFailure("构建脚本执行失败", scriptResult))
+                throw IllegalStateException(buildFailure(Strings.nodeBuildScriptExecutionFailed, scriptResult))
             }
 
             _buildState.value = NodeBuildState.Processing
             val producedOutput = locateOutputDirectory(workDir, detection)
-                ?: throw IllegalStateException("构建完成，但未找到输出目录: ${detection.outputDir}")
+                ?: throw IllegalStateException(Strings.nodeBuildCompletedNoOutput.format(detection.outputDir))
             copyDirectory(producedOutput, outputDir)
 
             val fileCount = outputDir.walkTopDown().count { it.isFile }
             val totalSize = outputDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
 
-            addLog(LogLevel.INFO, "构建完成: $fileCount 个文件, ${formatSize(totalSize)}")
-            addLog(LogLevel.INFO, "输出目录: ${producedOutput.absolutePath}")
+            addLog(LogLevel.INFO, Strings.buildLogBuildCompleteSummary.format(fileCount, formatSize(totalSize)))
+            addLog(LogLevel.INFO, Strings.buildLogOutputDirectory.format(producedOutput.absolutePath))
 
             _buildState.value = NodeBuildState.Success(outputDir.absolutePath, scriptResult.duration)
 
@@ -123,14 +112,11 @@ class NodeProjectBuilder(private val context: Context) {
 
         } catch (e: Exception) {
             AppLogger.d(TAG, "Build failed", e)
-            addLog(LogLevel.ERROR, "构建失败: ${e.message}")
-            _buildState.value = NodeBuildState.Error(e.message ?: "未知错误", _buildLogs.value)
+            addLog(LogLevel.ERROR, Strings.buildLogBuildFailedWithMsg.format(e.message ?: ""))
+            _buildState.value = NodeBuildState.Error(e.message ?: Strings.unknownError, _buildLogs.value)
             Result.failure(e)
         }
     }
-
-
-
 
     private fun addLog(level: LogLevel, message: String) {
         val entry = BuildLogEntry(
@@ -141,9 +127,6 @@ class NodeProjectBuilder(private val context: Context) {
         _buildLogs.value = _buildLogs.value + entry
     }
 
-
-
-
     fun reset() {
         _buildState.value = NodeBuildState.Idle
         _buildLogs.value = emptyList()
@@ -153,7 +136,7 @@ class NodeProjectBuilder(private val context: Context) {
     private fun prepareWorkingDirectory(projectDir: File): File {
         val workDir = File(LocalBuildEnvironment.getWorkRoot(context), "${projectDir.name}-${System.currentTimeMillis()}")
         _buildState.value = NodeBuildState.CopyingFiles(0f)
-        addLog(LogLevel.INFO, "复制项目到本地构建工作区...")
+        addLog(LogLevel.INFO, Strings.buildLogCopyingProject)
         copyDirectory(projectDir, workDir) { progress ->
             _buildState.value = NodeBuildState.CopyingFiles(progress * 0.2f)
         }
@@ -239,9 +222,6 @@ class NodeProjectBuilder(private val context: Context) {
         }
     }
 
-
-
-
     private fun getFrameworkName(framework: FrontendFramework): String {
         return when (framework) {
             FrontendFramework.VUE -> "Vue.js"
@@ -255,9 +235,6 @@ class NodeProjectBuilder(private val context: Context) {
         }
     }
 
-
-
-
     private fun formatSize(bytes: Long): String {
         return when {
             bytes < 1024 -> "$bytes B"
@@ -266,9 +243,6 @@ class NodeProjectBuilder(private val context: Context) {
         }
     }
 }
-
-
-
 
 sealed class NodeBuildState {
     object Idle : NodeBuildState()
@@ -281,9 +255,6 @@ sealed class NodeBuildState {
     data class Error(val message: String, val logs: List<BuildLogEntry>) : NodeBuildState()
 }
 
-
-
-
 data class NodeBuildConfig(
     val buildCommand: String? = null,
     val cleanInstall: Boolean = false,
@@ -292,9 +263,6 @@ data class NodeBuildConfig(
     val buildTimeout: Long = 600_000,
     val allowBuiltinPackagerFallback: Boolean = false
 )
-
-
-
 
 data class NodeBuildResult(
     val outputPath: String,

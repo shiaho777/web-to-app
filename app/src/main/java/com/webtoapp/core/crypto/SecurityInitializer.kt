@@ -7,11 +7,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 object SecurityInitializer {
 
@@ -26,9 +21,6 @@ object SecurityInitializer {
 
     private var runtimeProtection: RuntimeProtection? = null
 
-
-
-
     data class SecurityConfig(
         val enableIntegrityCheck: Boolean = true,
         val enableAntiDebug: Boolean = true,
@@ -38,13 +30,6 @@ object SecurityInitializer {
         val enableRuntimeProtection: Boolean = true,
         val blockOnThreat: Boolean = false
     )
-
-
-
-
-
-
-
 
     fun initialize(
         context: Context,
@@ -68,15 +53,12 @@ object SecurityInitializer {
 
             AppLogger.d(TAG, "Initializing security with config: $config")
 
-
             if (config.enableRuntimeProtection) {
                 runtimeProtection = RuntimeProtection.getInstance(context)
-
 
                 runtimeProtection?.setThreatCallback { result ->
                     AppLogger.w(TAG, "Threat detected: level=${result.threatLevel}, threats=${result.threats}")
                     onThreatDetected?.invoke(result)
-
 
                     if (config.blockOnThreat && result.shouldBlock) {
                         AppLogger.e(TAG, "Blocking due to high threat level")
@@ -85,7 +67,6 @@ object SecurityInitializer {
                 }
                 runtimeProtection?.startMonitoring()
             }
-
 
             if (config.enableIntegrityCheck) {
                 CoroutineScope(Dispatchers.IO).launch {
@@ -103,9 +84,6 @@ object SecurityInitializer {
         }
     }
 
-
-
-
     private fun loadSecurityConfig(context: Context): SecurityConfig? {
         return try {
             val inputStream = context.assets.open("encryption_meta.json")
@@ -116,9 +94,6 @@ object SecurityInitializer {
             null
         }
     }
-
-
-
 
     private fun performIntegrityCheck(context: Context) {
         try {
@@ -135,29 +110,17 @@ object SecurityInitializer {
         }
     }
 
-
-
-
     fun quickCheck(): Boolean {
         return runtimeProtection?.quickCheck() ?: true
     }
-
-
-
 
     fun getThreatLevel(): Int {
         return runtimeProtection?.getThreatLevel() ?: RuntimeProtection.THREAT_NONE
     }
 
-
-
-
     fun performFullCheck(): ProtectionResult? {
         return runtimeProtection?.performCheck(forceRefresh = true)
     }
-
-
-
 
     fun shutdown() {
         runtimeProtection?.stopMonitoring()
@@ -165,13 +128,7 @@ object SecurityInitializer {
         isInitialized = false
     }
 
-
-
-
     fun isInitialized(): Boolean = isInitialized
-
-
-
 
     fun getConfig(): SecurityConfig? = securityConfig
 }

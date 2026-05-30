@@ -19,14 +19,8 @@ import kotlinx.coroutines.flow.stateIn
 
 private val Context.themeDataStore: DataStore<Preferences> by preferencesDataStore(name = "theme_settings")
 
-
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 class ThemeManager(private val context: Context) {
-
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -48,9 +42,6 @@ class ThemeManager(private val context: Context) {
         }
     }
 
-
-
-
     enum class DarkModeSettings {
         SYSTEM,
         LIGHT,
@@ -62,9 +53,6 @@ class ThemeManager(private val context: Context) {
             DARK -> Strings.alwaysDark
         }
     }
-
-
-
 
     enum class AnimationSpeed(val multiplier: Float) {
         SLOW(1.5f),
@@ -80,16 +68,7 @@ class ThemeManager(private val context: Context) {
         }
     }
 
-
-
-
-
-
-
     val themeTypeFlow: StateFlow<AppThemeType> = kotlinx.coroutines.flow.MutableStateFlow(AppThemeType.KIMI_NO_NAWA)
-
-
-
 
     val darkModeFlow: StateFlow<DarkModeSettings> = context.themeDataStore.data.map { prefs ->
         val modeName = prefs[KEY_DARK_MODE] ?: DarkModeSettings.SYSTEM.name
@@ -104,9 +83,6 @@ class ThemeManager(private val context: Context) {
         initialValue = DarkModeSettings.SYSTEM
     )
 
-
-
-
     val enableAnimationsFlow: StateFlow<Boolean> = context.themeDataStore.data.map { prefs ->
         prefs[KEY_ENABLE_ANIMATIONS] ?: true
     }.stateIn(
@@ -114,9 +90,6 @@ class ThemeManager(private val context: Context) {
         started = SharingStarted.Eagerly,
         initialValue = true
     )
-
-
-
 
     val enableParticlesFlow: StateFlow<Boolean> = context.themeDataStore.data.map { prefs ->
         prefs[KEY_ENABLE_PARTICLES] ?: true
@@ -126,9 +99,6 @@ class ThemeManager(private val context: Context) {
         initialValue = true
     )
 
-
-
-
     val enableHapticsFlow: StateFlow<Boolean> = context.themeDataStore.data.map { prefs ->
         prefs[KEY_ENABLE_HAPTICS] ?: true
     }.stateIn(
@@ -137,9 +107,6 @@ class ThemeManager(private val context: Context) {
         initialValue = true
     )
 
-
-
-
     val enableSoundFlow: StateFlow<Boolean> = context.themeDataStore.data.map { prefs ->
         prefs[KEY_ENABLE_SOUND] ?: true
     }.stateIn(
@@ -147,9 +114,6 @@ class ThemeManager(private val context: Context) {
         started = SharingStarted.Eagerly,
         initialValue = true
     )
-
-
-
 
     val animationSpeedFlow: StateFlow<AnimationSpeed> = context.themeDataStore.data.map { prefs ->
         val speedName = prefs[KEY_ANIMATION_SPEED] ?: AnimationSpeed.NORMAL.name
@@ -164,17 +128,9 @@ class ThemeManager(private val context: Context) {
         initialValue = AnimationSpeed.NORMAL
     )
 
-
-
-
-
-
     suspend fun setThemeType(type: AppThemeType) {
 
     }
-
-
-
 
     suspend fun setDarkMode(mode: DarkModeSettings) {
         context.themeDataStore.edit { prefs ->
@@ -182,17 +138,11 @@ class ThemeManager(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun setEnableAnimations(enabled: Boolean) {
         context.themeDataStore.edit { prefs ->
             prefs[KEY_ENABLE_ANIMATIONS] = enabled
         }
     }
-
-
-
 
     suspend fun setEnableParticles(enabled: Boolean) {
         context.themeDataStore.edit { prefs ->
@@ -200,26 +150,17 @@ class ThemeManager(private val context: Context) {
         }
     }
 
-
-
-
     suspend fun setEnableHaptics(enabled: Boolean) {
         context.themeDataStore.edit { prefs ->
             prefs[KEY_ENABLE_HAPTICS] = enabled
         }
     }
 
-
-
-
     suspend fun setEnableSound(enabled: Boolean) {
         context.themeDataStore.edit { prefs ->
             prefs[KEY_ENABLE_SOUND] = enabled
         }
     }
-
-
-
 
     suspend fun setAnimationSpeed(speed: AnimationSpeed) {
         context.themeDataStore.edit { prefs ->

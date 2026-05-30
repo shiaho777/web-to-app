@@ -26,15 +26,6 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.net.HttpURLConnection
 import java.net.URL
 
-
-
-
-
-
-
-
-
-
 class NotificationPollingService : Service() {
 
     companion object {
@@ -235,7 +226,6 @@ class NotificationPollingService : Service() {
             return START_NOT_STICKY
         }
 
-
         val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         pollUrl = intent?.getStringExtra(EXTRA_POLL_URL)
             ?: prefs.getString(EXTRA_POLL_URL, "") ?: ""
@@ -256,7 +246,6 @@ class NotificationPollingService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-
 
         prefs.edit()
             .putString(EXTRA_POLL_URL, pollUrl)
@@ -284,7 +273,6 @@ class NotificationPollingService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-
 
         handler.removeCallbacks(pollRunnable)
         handler.postDelayed(pollRunnable, 10 * 1000L)
@@ -344,7 +332,6 @@ class NotificationPollingService : Service() {
                 connectTimeout = 15_000
                 readTimeout = 15_000
 
-
                 if (pollHeaders.isNotBlank()) {
                     try {
                         val headersObj = JSONObject(pollHeaders)
@@ -357,7 +344,6 @@ class NotificationPollingService : Service() {
                         AppLogger.w(TAG, "解析自定义 Headers 失败", e)
                     }
                 }
-
 
                 if (getRequestProperty("Accept") == null) {
                     setRequestProperty("Accept", "application/json")
@@ -398,7 +384,6 @@ class NotificationPollingService : Service() {
                 val obj = JSONObject(trimmed)
                 notifications.add(parseNotification(obj))
             }
-
 
             notifications.take(5).forEachIndexed { index, notif ->
                 showPollNotification(notif, baseId = index)

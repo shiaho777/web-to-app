@@ -6,25 +6,7 @@ import android.content.Intent
 import android.os.PowerManager
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.WebToAppApplication
-import com.webtoapp.core.forcedrun.ForcedRunReceiver
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import com.webtoapp.core.forcedrun.ForcedRunManager
 
 class BootReceiver : BroadcastReceiver() {
 
@@ -51,18 +33,13 @@ class BootReceiver : BroadcastReceiver() {
         }
     }
 
-
-
-
     private fun handleBootCompleted(context: Context) {
         AppLogger.d(TAG, "收到开机完成广播")
-
 
         val pendingResult = goAsync()
 
         val autoStartManager = AutoStartManager(context)
         val bootDelay = autoStartManager.getBootDelay()
-
 
         val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         val wakeLock = pm.newWakeLock(
@@ -107,11 +84,13 @@ class BootReceiver : BroadcastReceiver() {
                 }
             }
 
-
             autoStartManager.rescheduleAlarmIfNeeded()
-            context.sendBroadcast(Intent(context, ForcedRunReceiver::class.java).apply {
-                action = Intent.ACTION_BOOT_COMPLETED
-            })
+
+            try {
+                ForcedRunManager.getInstance(context).restoreFromPersistence()
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "恢复强制运行状态失败", e)
+            }
         } catch (e: Exception) {
             AppLogger.e(TAG, "开机自启动处理异常", e)
         } finally {
@@ -125,10 +104,6 @@ class BootReceiver : BroadcastReceiver() {
         }
     }
 
-
-
-
-
     private fun handlePackageReplaced(context: Context) {
         AppLogger.d(TAG, "收到应用更新广播，恢复闹钟调度")
         try {
@@ -138,10 +113,6 @@ class BootReceiver : BroadcastReceiver() {
             AppLogger.e(TAG, "应用更新后恢复闹钟失败", e)
         }
     }
-
-
-
-
 
     private fun handleTimeChanged(context: Context, action: String) {
         AppLogger.d(TAG, "收到时间变更广播: $action")

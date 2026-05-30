@@ -18,30 +18,15 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-
-
-
-
-
-
-
-
-
-
 object DependencyDownloadEngine {
 
     private const val TAG = "DependencyDownloadEngine"
 
-
     private const val SPEED_WINDOW_MS = 3000L
-
 
     private const val THROTTLE_MS = 500L
 
-
     private const val PAUSE_CHECK_MS = 200L
-
-
 
     sealed class State {
         object Idle : State()
@@ -74,7 +59,6 @@ object DependencyDownloadEngine {
         object Complete : State()
         data class Error(val message: String, val retryable: Boolean = true) : State()
 
-
         data class Paused(
             val url: String,
             val displayName: String,
@@ -89,15 +73,10 @@ object DependencyDownloadEngine {
     val _state = MutableStateFlow<State>(State.Idle)
     val state: StateFlow<State> = _state
 
-
     private val _paused = AtomicBoolean(false)
     private val downloadMutex = Mutex()
 
-
     val isActive: Boolean get() = _state.value is State.Downloading || _state.value is State.Paused
-
-
-
 
     private const val USER_AGENT = "WebToApp/1.0 (Android; DependencyDownloadEngine)"
 
@@ -112,9 +91,6 @@ object DependencyDownloadEngine {
             }
         }
     }
-
-
-
 
     private class SpeedTracker {
         private val speedSamples = mutableListOf<Pair<Long, Long>>()
@@ -143,11 +119,6 @@ object DependencyDownloadEngine {
         return remaining / speed
     }
 
-
-
-
-
-
     fun pause() {
         if (_state.value is State.Downloading) {
             _paused.set(true)
@@ -165,33 +136,15 @@ object DependencyDownloadEngine {
         }
     }
 
-
-
-
     fun resume() {
         _paused.set(false)
         AppLogger.i(TAG, "下载已继续")
     }
 
-
-
-
     fun reset() {
         _paused.set(false)
         _state.value = State.Idle
     }
-
-
-
-
-
-
-
-
-
-
-
-
 
     suspend fun downloadFile(
         url: String,
@@ -267,9 +220,7 @@ object DependencyDownloadEngine {
                                 fos.write(buffer, 0, bytesRead)
                                 downloadedBytes += bytesRead
 
-
                                 speedTracker.recordSample(downloadedBytes)
-
 
                                 val now = System.currentTimeMillis()
                                 if (now - lastThrottleTime >= THROTTLE_MS) {
@@ -300,7 +251,6 @@ object DependencyDownloadEngine {
                     }
                 }
 
-
                 tempFile.renameTo(destFile)
                 AppLogger.i(TAG, "$displayName 下载完成: ${destFile.length()} 字节")
                 true
@@ -312,8 +262,6 @@ object DependencyDownloadEngine {
             }
         }
     }
-
-
 
     fun formatSpeed(bytesPerSec: Long): String {
         return when {

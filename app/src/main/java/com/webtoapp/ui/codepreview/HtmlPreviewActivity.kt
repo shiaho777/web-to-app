@@ -47,10 +47,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-
-
-
-
 class HtmlPreviewActivity : ComponentActivity() {
 
     companion object {
@@ -97,7 +93,6 @@ private fun HtmlPreviewScreen(
     var isDevToolsExpanded by remember { mutableStateOf(false) }
     var showSourceDialog by remember { mutableStateOf(false) }
     var sourceCode by remember { mutableStateOf("") }
-
 
     LaunchedEffect(filePath, htmlContent) {
         sourceCode = when {
@@ -198,7 +193,6 @@ private fun HtmlPreviewScreen(
                 )
             }
 
-
             Box(modifier = Modifier.weight(weight = 1f, fill = true)) {
                 val activity = context as? ComponentActivity
                 val lifecycleScope = activity?.lifecycleScope
@@ -210,24 +204,17 @@ private fun HtmlPreviewScreen(
 
                             setBackgroundColor(android.graphics.Color.WHITE)
 
-
-                            // Debug 包打开远程调试，方便用户在 PC Chrome chrome://inspect 抓真实 console。
-                            // Release 包通过 BuildConfig.DEBUG 自动关闭，不影响发布。
                             try {
                                 if (com.webtoapp.BuildConfig.DEBUG) {
                                     WebView.setWebContentsDebuggingEnabled(true)
                                 }
-                            } catch (_: Throwable) { /* 某些设备拒绝即跳过 */ }
+                            } catch (_: Throwable) {  }
 
                             lifecycleScope?.let { scope ->
                                 val downloadBridge = com.webtoapp.core.webview.DownloadBridge(ctx, scope)
                                 addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
                             }
 
-                            // 用 WebViewAssetLoader 在 https://appassets.androidplatform.net/local/...
-                            // 下代理本地 HTML 项目目录。这是真正合法的 https origin，
-                            // 外联 CDN（如 mdui、Vue、React 等带 integrity/crossorigin 或 ES Module 的脚本）
-                            // 在这个 origin 下 fetch、CORS、模块解析才会正常工作。
                             val projectRoot: File? = filePath?.let { File(it).parentFile }
                             val assetLoader = WebViewAssetLoader.Builder()
                                 .setDomain("appassets.androidplatform.net")
@@ -259,19 +246,15 @@ private fun HtmlPreviewScreen(
                                 }
                             )
 
-
-
-
                             when {
                                 filePath != null -> {
                                     val file = File(filePath)
-                                    // 走合法 https origin，外联 CDN 脚本能按正常路径解析。
+
                                     val url = "https://appassets.androidplatform.net/local/${file.name}"
                                     loadUrl(url)
                                 }
                                 htmlContent != null -> {
-                                    // 没有磁盘项目时退化为空 origin 加载内联 HTML。
-                                    // 此模式下页面里的相对链接无效，仅适合纯内联预览。
+
                                     loadDataWithBaseURL(
                                         "https://appassets.androidplatform.net/inline/",
                                         htmlContent,
@@ -288,7 +271,6 @@ private fun HtmlPreviewScreen(
                         .background(Color.White)
                 )
             }
-
 
             AnimatedVisibility(
                 visible = showDevTools,
@@ -317,7 +299,6 @@ private fun HtmlPreviewScreen(
         }
     }
 
-
     if (showSourceDialog) {
         SourceCodeDialog(
             sourceCode = sourceCode,
@@ -344,12 +325,9 @@ private fun WebView.setupWebView(
         builtInZoomControls = true
         displayZoomControls = false
         setSupportZoom(true)
-        // 通过 WebViewAssetLoader 加载后已经是合法 https origin，
-        // 但保留 ALWAYS_ALLOW 是为了兼容用户引入 http 资源的极端场景。
+
         mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
 
-        // 走 https origin 之后，这两个 file:// 专用开关本可以收紧；
-        // 暂时保留，避免回归用户既有的本地 file:// 引用习惯。
         @Suppress("DEPRECATION")
         allowFileAccessFromFileURLs = true
         @Suppress("DEPRECATION")
@@ -370,8 +348,6 @@ private fun WebView.setupWebView(
             super.onPageFinished(view, url)
             onPageFinished()
 
-            // 仅注入下载桥；不再注入大段调试 script，避免污染用户 console
-            // 也避免在外链脚本（如 mdui）执行链路里多塞一段同步 IIFE。
             view?.evaluateJavascript(com.webtoapp.core.webview.DownloadBridge.getInjectionScript(), null)
         }
 
@@ -379,10 +355,6 @@ private fun WebView.setupWebView(
             return false
         }
 
-        // 把本地资源解析完全交给 WebViewAssetLoader：
-        //   https://appassets.androidplatform.net/local/...  -> 项目目录磁盘文件
-        // 其它 https/http 请求 assetLoader 返回 null，由 WebView 走默认网络栈，
-        // 这样 mdui / Vue / React 等 CDN 资源走真实网络，integrity/CORS 才会正常。
         override fun shouldInterceptRequest(
             view: WebView?,
             request: WebResourceRequest?
@@ -418,7 +390,6 @@ private fun WebView.setupWebView(
             return true
         }
 
-
         override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
             super.onShowCustomView(view, callback)
         }
@@ -429,11 +400,9 @@ private fun WebView.setupWebView(
     }
 }
 
-
 enum class ConsoleLevel {
     LOG, INFO, WARNING, ERROR, DEBUG
 }
-
 
 data class ConsoleLogEntry(
     val level: ConsoleLevel,
@@ -459,7 +428,6 @@ private fun DevToolsPanel(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     val timeFormat = remember { SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()) }
-
 
     LaunchedEffect(consoleMessages.size) {
         if (consoleMessages.isNotEmpty()) {
@@ -575,7 +543,6 @@ private fun DevToolsPanel(
                 }
             }
 
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -612,7 +579,6 @@ private fun DevToolsPanel(
                     }
                 }
             }
-
 
             Surface(
                 color = Color(0xFF2D2D2D),
@@ -674,7 +640,6 @@ private fun DevToolsPanel(
         }
     }
 
-
     selectedMessage?.let { entry ->
         MessageDetailDialog(
             entry = entry,
@@ -733,7 +698,6 @@ private fun ConsoleLogItem(
                 tint = textColor
             )
 
-
             Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                 SelectionContainer {
                     Text(
@@ -746,7 +710,6 @@ private fun ConsoleLogItem(
                     )
                 }
 
-
                 Text(
                     "${entry.source}:${entry.lineNumber} • ${timeFormat.format(Date(entry.timestamp))}",
                     style = MaterialTheme.typography.labelSmall,
@@ -754,7 +717,6 @@ private fun ConsoleLogItem(
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
-
 
             IconButton(
                 onClick = onCopy,
@@ -831,7 +793,6 @@ ${entry.message}
                     }
                 }
 
-
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -852,7 +813,6 @@ ${entry.message}
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
-
 
                     Surface(
                         color = Color(0xFF2D2D2D),
@@ -948,7 +908,6 @@ private fun SourceCodeDialog(
                         }
                     }
                 }
-
 
                 val lines = sourceCode.lines()
                 LazyColumn(

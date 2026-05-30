@@ -63,10 +63,6 @@ import java.io.File
 import androidx.compose.ui.graphics.Color
 import com.webtoapp.ui.components.EnhancedElevatedCard
 
-
-
-
-
 private data class HtmlEditorStateSnapshot(
     val appName: String = "",
     val manualFiles: List<HtmlFile> = emptyList(),
@@ -75,10 +71,6 @@ private data class HtmlEditorStateSnapshot(
     val enableLocalStorage: Boolean = true,
     val landscapeMode: Boolean = false
 )
-
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -107,9 +99,7 @@ fun CreateHtmlAppScreen(
     val scope = rememberCoroutineScope()
     val isEditMode = existingAppId != null
 
-
     var selectedTabIndex by remember { mutableIntStateOf(0) }
-
 
     var existingApp by remember { mutableStateOf<com.webtoapp.data.model.WebApp?>(null) }
     LaunchedEffect(existingAppId) {
@@ -123,14 +113,12 @@ fun CreateHtmlAppScreen(
     var appIcon by remember { mutableStateOf<Uri?>(null) }
     var appIconPath by remember { mutableStateOf<String?>(null) }
 
-
     var zipAnalysis by remember { mutableStateOf<ZipProjectImporter.ZipProjectAnalysis?>(null) }
     var zipImporting by remember { mutableStateOf(false) }
     var zipError by remember { mutableStateOf<String?>(null) }
     var zipEntryFile by remember { mutableStateOf("") }
     var showEntryFileDialog by remember { mutableStateOf(false) }
     var showFileListDialog by remember { mutableStateOf(false) }
-
 
     var folderAnalysis by remember { mutableStateOf<ZipProjectImporter.ZipProjectAnalysis?>(null) }
     var folderImporting by remember { mutableStateOf(false) }
@@ -139,23 +127,18 @@ fun CreateHtmlAppScreen(
     var showFolderEntryFileDialog by remember { mutableStateOf(false) }
     var showFolderFileListDialog by remember { mutableStateOf(false) }
 
-
     var manualFiles by remember { mutableStateOf<List<HtmlFile>>(emptyList()) }
-
 
     var enableJavaScript by remember { mutableStateOf(true) }
     var enableLocalStorage by remember { mutableStateOf(true) }
     var landscapeMode by remember { mutableStateOf(false) }
 
-
     var themeType by remember { mutableStateOf("AURORA") }
-
 
     var enableOptimize by remember { mutableStateOf(false) }
     var isOptimizing by remember { mutableStateOf(false) }
     var optimizeResult by remember { mutableStateOf<HtmlProjectOptimizer.OptimizeResult?>(null) }
     val esbuildAvailable = remember { NativeNodeEngine.isAvailable(context) }
-
 
     LaunchedEffect(existingApp) {
         existingApp?.let { app ->
@@ -163,11 +146,9 @@ fun CreateHtmlAppScreen(
             appName = app.name
             appIconPath = app.iconPath
 
-
             app.htmlConfig?.let { config ->
 
                 val restoredFiles = config.files.filter { java.io.File(it.path).exists() }.toMutableList()
-
 
                 if (config.projectId.isNotBlank()) {
                     val projectDir = java.io.File(context.filesDir, "html_projects/${config.projectId}")
@@ -187,17 +168,14 @@ fun CreateHtmlAppScreen(
                 }
                 manualFiles = restoredFiles
 
-
                 enableJavaScript = config.enableJavaScript
                 enableLocalStorage = config.enableLocalStorage
                 landscapeMode = config.landscapeMode
             }
 
-
             themeType = app.themeType
         }
     }
-
 
     LaunchedEffect(importDir) {
         if (importDir != null) {
@@ -223,10 +201,8 @@ fun CreateHtmlAppScreen(
         }
     }
 
-
     var projectAnalysis by remember { mutableStateOf<HtmlProjectProcessor.ProjectAnalysis?>(null) }
     var showAnalysisDialog by remember { mutableStateOf(false) }
-
 
     LaunchedEffect(manualFiles) {
         val htmlFile = manualFiles.firstOrNull { it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) || it.name.endsWith(".htm", ignoreCase = true) }
@@ -243,7 +219,6 @@ fun CreateHtmlAppScreen(
         }
     }
 
-
     val canCreate = when (selectedTabIndex) {
         0 -> manualFiles.any { it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) || it.name.endsWith(".htm", ignoreCase = true) }
         1 -> zipAnalysis != null && zipAnalysis!!.htmlFiles.isNotEmpty()
@@ -251,12 +226,10 @@ fun CreateHtmlAppScreen(
         else -> false
     }
 
-
     val hasIssues = projectAnalysis?.issues?.any {
         it.severity == HtmlProjectProcessor.IssueSeverity.ERROR ||
         it.severity == HtmlProjectProcessor.IssueSeverity.WARNING
     } == true
-
 
     val zipPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -289,7 +262,6 @@ fun CreateHtmlAppScreen(
         }
     }
 
-
     val folderPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
@@ -319,7 +291,6 @@ fun CreateHtmlAppScreen(
         }
     }
 
-
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
@@ -342,20 +313,15 @@ fun CreateHtmlAppScreen(
         }
     }
 
-
     val entryFile = manualFiles.firstOrNull {
         it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) || it.name.endsWith(".htm", ignoreCase = true)
     }?.name?.takeIf { it.isNotBlank() && it.substringBeforeLast(".").isNotBlank() } ?: "index.html"
-
 
     val iconPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri -> uri?.let { appIcon = it } }
 
-
-
     var baselineSnapshot by remember { mutableStateOf(HtmlEditorStateSnapshot(appName = importProjectName ?: "")) }
-
 
     LaunchedEffect(existingApp) {
         existingApp?.let {
@@ -371,7 +337,6 @@ fun CreateHtmlAppScreen(
             )
         }
     }
-
 
     LaunchedEffect(importDir) {
         if (importDir != null) {
@@ -397,16 +362,15 @@ fun CreateHtmlAppScreen(
     }
     var showExitConfirmDialog by remember { mutableStateOf(false) }
 
-
     var showCodeEditorDialog by remember { mutableStateOf(false) }
     var codeEditorType by remember { mutableStateOf(HtmlFileType.HTML) }
     var codeEditorContent by remember { mutableStateOf("") }
 
+    var codeEditorFileName by remember { mutableStateOf<String?>(null) }
 
     BackHandler(enabled = hasUnsavedChanges) {
         showExitConfirmDialog = true
     }
-
 
     if (showExitConfirmDialog) {
         AlertDialog(
@@ -435,13 +399,13 @@ fun CreateHtmlAppScreen(
         )
     }
 
-
     if (showCodeEditorDialog) {
         CodeEditorDialog(
             fileType = codeEditorType,
             initialContent = codeEditorContent,
             onSave = { content ->
-                val fileName = when (codeEditorType) {
+
+                val fileName = codeEditorFileName ?: when (codeEditorType) {
                     HtmlFileType.HTML -> "index.html"
                     HtmlFileType.CSS -> "style.css"
                     HtmlFileType.JS -> "script.js"
@@ -449,19 +413,27 @@ fun CreateHtmlAppScreen(
                 }
 
                 scope.launch {
+
+                    val existingIndex = manualFiles.indexOfFirst { it.name == fileName }
+                    val existing = existingIndex.takeIf { it >= 0 }?.let { manualFiles[it] }
+
                     val file = withContext(Dispatchers.IO) {
-                        val tempDir = File(context.cacheDir, "html_temp").apply { mkdirs() }
-                        val targetFile = File(tempDir, fileName)
+                        val targetFile = if (existing != null) {
+                            File(existing.path)
+                        } else {
+                            val tempDir = File(context.cacheDir, "html_temp").apply { mkdirs() }
+                            File(tempDir, fileName)
+                        }
+                        targetFile.parentFile?.mkdirs()
                         targetFile.writeText(content)
                         targetFile
                     }
                     val htmlFileObj = HtmlFile(
                         name = fileName,
                         path = file.absolutePath,
-                        type = codeEditorType
+                        type = existing?.type ?: codeEditorType
                     )
 
-                    val existingIndex = manualFiles.indexOfFirst { it.name == fileName }
                     if (existingIndex >= 0) {
                         manualFiles = manualFiles.toMutableList().also { it[existingIndex] = htmlFileObj }
                     } else {
@@ -470,8 +442,12 @@ fun CreateHtmlAppScreen(
                     if (appName.isBlank() && codeEditorType == HtmlFileType.HTML) appName = "index"
                 }
                 showCodeEditorDialog = false
+                codeEditorFileName = null
             },
-            onDismiss = { showCodeEditorDialog = false }
+            onDismiss = {
+                showCodeEditorDialog = false
+                codeEditorFileName = null
+            }
         )
     }
 
@@ -681,7 +657,6 @@ fun CreateHtmlAppScreen(
                 }
             }
 
-
             if (selectedTabIndex == 0) {
 
                 EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -697,7 +672,6 @@ fun CreateHtmlAppScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-
 
                         manualFiles.forEachIndexed { index, file ->
                             val (icon, label) = when (file.type) {
@@ -718,6 +692,8 @@ fun CreateHtmlAppScreen(
                                 onEdit = {
                                     codeEditorType = file.type.takeIf { it == HtmlFileType.HTML || it == HtmlFileType.CSS || it == HtmlFileType.JS } ?: HtmlFileType.OTHER
                                     codeEditorContent = try { File(file.path).readText() } catch (e: Exception) { "" }
+
+                                    codeEditorFileName = file.name
                                     showCodeEditorDialog = true
                                 }
                             )
@@ -725,7 +701,6 @@ fun CreateHtmlAppScreen(
                                 Spacer(modifier = Modifier.height(12.dp))
                             }
                         }
-
 
                         Spacer(modifier = Modifier.height(12.dp))
                         OutlinedButton(
@@ -738,7 +713,6 @@ fun CreateHtmlAppScreen(
                         }
                     }
                 }
-
 
                 EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -777,6 +751,7 @@ fun CreateHtmlAppScreen(
                                     codeEditorContent = if (existingHtml != null) {
                                         try { File(existingHtml.path).readText() } catch (e: Exception) { "" }
                                     } else "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>My App</title>\n</head>\n<body>\n    <h1>Hello World</h1>\n</body>\n</html>"
+                                    codeEditorFileName = existingHtml?.name
                                     showCodeEditorDialog = true
                                 },
                                 modifier = Modifier.weight(1f)
@@ -793,6 +768,7 @@ fun CreateHtmlAppScreen(
                                     codeEditorContent = if (existingCss != null) {
                                         try { File(existingCss.path).readText() } catch (e: Exception) { "" }
                                     } else "/* Styles */\nbody {\n    margin: 0;\n    padding: 0;\n    font-family: sans-serif;\n}\n"
+                                    codeEditorFileName = existingCss?.name
                                     showCodeEditorDialog = true
                                 },
                                 modifier = Modifier.weight(1f)
@@ -809,6 +785,7 @@ fun CreateHtmlAppScreen(
                                     codeEditorContent = if (existingJs != null) {
                                         try { File(existingJs.path).readText() } catch (e: Exception) { "" }
                                     } else "// JavaScript\ndocument.addEventListener('DOMContentLoaded', () => {\n    console.log('App loaded');\n});\n"
+                                    codeEditorFileName = existingJs?.name
                                     showCodeEditorDialog = true
                                 },
                                 modifier = Modifier.weight(1f)
@@ -821,7 +798,6 @@ fun CreateHtmlAppScreen(
                     }
                 }
             }
-
 
             if (selectedTabIndex == 1) {
                 ZipImportSection(
@@ -839,7 +815,6 @@ fun CreateHtmlAppScreen(
                     }
                 )
             }
-
 
             if (selectedTabIndex == 2) {
                 FolderImportSection(
@@ -859,7 +834,6 @@ fun CreateHtmlAppScreen(
             }
             }
 
-
             WtaCreateFlowSection(title = Strings.appConfig) {
             if (!isEditMode) {
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -870,14 +844,12 @@ fun CreateHtmlAppScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-
                     AppNameTextFieldSimple(
                         value = appName,
                         onValueChange = { appName = it }
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
-
 
                     IconPickerWithLibrary(
                         iconUri = appIcon,
@@ -892,7 +864,6 @@ fun CreateHtmlAppScreen(
             }
             }
 
-
             EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
@@ -900,7 +871,6 @@ fun CreateHtmlAppScreen(
                         style = MaterialTheme.typography.titleMedium
                     )
                     Spacer(modifier = Modifier.height(12.dp))
-
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -925,7 +895,6 @@ fun CreateHtmlAppScreen(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(8.dp))
 
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -948,7 +917,6 @@ fun CreateHtmlAppScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(8.dp))
-
 
                     if (!isEditMode) {
                     Row(
@@ -978,7 +946,6 @@ fun CreateHtmlAppScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(8.dp))
-
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -1018,7 +985,6 @@ fun CreateHtmlAppScreen(
                             onCheckedChange = { enableOptimize = it }
                         )
                     }
-
 
                     if (optimizeResult != null) {
                         Spacer(modifier = Modifier.height(8.dp))
@@ -1083,7 +1049,6 @@ fun CreateHtmlAppScreen(
             }
             }
 
-
             WtaCreateFlowSection(title = Strings.preview) {
                 if (hasIssues && projectAnalysis != null) {
                     val errorCount = projectAnalysis!!.issues.count {
@@ -1108,7 +1073,6 @@ fun CreateHtmlAppScreen(
                     )
                 }
 
-
                 WtaStatusBanner(
                     message = when (selectedTabIndex) {
                             0 -> Strings.htmlAppTip
@@ -1120,13 +1084,11 @@ fun CreateHtmlAppScreen(
                     messageMaxLines = 4
                 )
 
-
                 WtaStatusBanner(
                     message = Strings.featureTip,
                     tone = WtaStatusTone.Warning,
                     messageMaxLines = 4
                 )
-
 
             if (selectedTabIndex == 0) {
                 EnhancedElevatedCard(
@@ -1165,14 +1127,12 @@ fun CreateHtmlAppScreen(
         }
     }
 
-
     if (showAnalysisDialog && projectAnalysis != null) {
         ProjectAnalysisDialog(
             analysis = projectAnalysis!!,
             onDismiss = { showAnalysisDialog = false }
         )
     }
-
 
     if (showEntryFileDialog && zipAnalysis != null) {
         ZipEntryFileDialog(
@@ -1186,14 +1146,12 @@ fun CreateHtmlAppScreen(
         )
     }
 
-
     if (showFileListDialog && zipAnalysis != null) {
         ZipFileListDialog(
             analysis = zipAnalysis!!,
             onDismiss = { showFileListDialog = false }
         )
     }
-
 
     if (showFolderEntryFileDialog && folderAnalysis != null) {
         ZipEntryFileDialog(
@@ -1207,7 +1165,6 @@ fun CreateHtmlAppScreen(
         )
     }
 
-
     if (showFolderFileListDialog && folderAnalysis != null) {
         ZipFileListDialog(
             analysis = folderAnalysis!!,
@@ -1215,9 +1172,6 @@ fun CreateHtmlAppScreen(
         )
     }
 }
-
-
-
 
 @Composable
 private fun ProjectAnalysisDialog(
@@ -1273,7 +1227,6 @@ private fun ProjectAnalysisDialog(
                     }
                 }
 
-
                 if (analysis.issues.isNotEmpty()) {
                     item {
                         Spacer(modifier = Modifier.height(8.dp))
@@ -1288,7 +1241,6 @@ private fun ProjectAnalysisDialog(
                         IssueCard(issue)
                     }
                 }
-
 
                 if (analysis.suggestions.isNotEmpty()) {
                     item {
@@ -1320,7 +1272,6 @@ private fun ProjectAnalysisDialog(
                         }
                     }
                 }
-
 
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
@@ -1357,9 +1308,6 @@ private fun ProjectAnalysisDialog(
         }
     )
 }
-
-
-
 
 @Composable
 private fun FileInfoRow(file: HtmlProjectProcessor.FileInfo, type: String) {
@@ -1400,9 +1348,6 @@ private fun FileInfoRow(file: HtmlProjectProcessor.FileInfo, type: String) {
         }
     }
 }
-
-
-
 
 @Composable
 private fun IssueCard(issue: HtmlProjectProcessor.ProjectIssue) {
@@ -1462,9 +1407,6 @@ private fun IssueCard(issue: HtmlProjectProcessor.ProjectIssue) {
     }
 }
 
-
-
-
 private fun formatFileSize(size: Long): String {
     return when {
         size < 1024 -> "$size B"
@@ -1473,9 +1415,6 @@ private fun formatFileSize(size: Long): String {
     }
 }
 
-
-
-
 @Composable
 private fun CodeEditorDialog(
     fileType: HtmlFileType,
@@ -1483,236 +1422,27 @@ private fun CodeEditorDialog(
     onSave: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var codeText by remember { mutableStateOf(initialContent) }
-    val isModified = codeText != initialContent
 
-    val title = when (fileType) {
+    val language = when (fileType) {
         HtmlFileType.HTML -> "HTML"
         HtmlFileType.CSS -> "CSS"
         HtmlFileType.JS -> "JavaScript"
         else -> Strings.codeEditorTitle
     }
-
     val placeholder = when (fileType) {
         HtmlFileType.HTML -> Strings.htmlCodePlaceholder
         HtmlFileType.CSS -> Strings.cssCodePlaceholder
         HtmlFileType.JS -> Strings.jsCodePlaceholder
         else -> ""
     }
-
-
-    val accentColor = MaterialTheme.colorScheme.onSurface
-
-    Dialog(
-        onDismissRequest = {
-            if (!isModified) onDismiss()
-
-        },
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = !isModified
-        )
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(0.dp),
-            color = com.webtoapp.ui.theme.AppColors.EditorDark.copy(alpha = 0.98f),
-            shape = RoundedCornerShape(0.dp)
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-
-                Surface(
-                    color = com.webtoapp.ui.theme.AppColors.EditorDark,
-                    tonalElevation = 2.dp
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .statusBarsPadding()
-                            .padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        IconButton(onClick = {
-                            if (isModified) {
-
-
-                            }
-                            onDismiss()
-                        }) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = Strings.close,
-                                tint = com.webtoapp.ui.theme.AppColors.CodeForeground
-                            )
-                        }
-
-
-                        Surface(
-                            color = accentColor.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = accentColor,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Text(
-                            text = Strings.codeEditorTitle,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = com.webtoapp.ui.theme.AppColors.CodeForeground,
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        if (isModified) {
-                            Surface(
-                                color = com.webtoapp.ui.theme.AppColors.CodeForeground.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(4.dp)
-                            ) {
-                                Text(
-                                    text = "●",
-                                    color = com.webtoapp.ui.theme.AppColors.CodeForeground,
-                                    fontSize = 10.sp,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(4.dp))
-                        }
-
-
-                        TextButton(
-                            onClick = { onSave(codeText) },
-                            enabled = codeText.isNotBlank()
-                        ) {
-                            Icon(
-                                Icons.Outlined.Save,
-                                contentDescription = null,
-                                tint = if (codeText.isNotBlank()) com.webtoapp.ui.theme.AppColors.CodeForeground else com.webtoapp.ui.theme.AppColors.CodeMuted,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = Strings.saveFile,
-                                color = if (codeText.isNotBlank()) com.webtoapp.ui.theme.AppColors.CodeForeground else com.webtoapp.ui.theme.AppColors.CodeMuted
-                            )
-                        }
-                    }
-                }
-
-
-                val verticalScrollState = rememberScrollState()
-                val horizontalScrollState = rememberScrollState()
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                ) {
-                    // 关键：把 verticalScroll 唯一地放在外层 Row 上。
-                    // 行号 Column 与 BasicTextField 都不再各自套 scroll、也不再 fillMaxHeight/fillMaxSize，
-                    // 子组件在垂直方向自然按内容撑开，由父 Row 统一滚动。
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .verticalScroll(verticalScrollState)
-                    ) {
-
-                        val lineCount = maxOf(codeText.count { it == '\n' } + 1, 1)
-                        Column(
-                            modifier = Modifier
-                                .width(44.dp)
-                                .background(com.webtoapp.ui.theme.AppColors.EditorDark)
-                                .padding(end = 8.dp, top = 8.dp),
-                            horizontalAlignment = Alignment.End
-                        ) {
-                            for (i in 1..lineCount) {
-                                Text(
-                                    text = "$i",
-                                    style = TextStyle(
-                                        fontFamily = FontFamily.Monospace,
-                                        fontSize = 13.sp,
-                                        lineHeight = 20.sp,
-                                        color = com.webtoapp.ui.theme.AppColors.CodeGutter
-                                    )
-                                )
-                            }
-                        }
-
-                        // 1dp 分隔条改为 BasicTextField 左侧 padding 模拟，
-                        // 避免在无界高度的 verticalScroll 容器中 fillMaxHeight 塌缩。
-
-                        BasicTextField(
-                            value = codeText,
-                            onValueChange = { codeText = it },
-                            textStyle = TextStyle(
-                                fontFamily = FontFamily.Monospace,
-                                fontSize = 13.sp,
-                                lineHeight = 20.sp,
-                                color = com.webtoapp.ui.theme.AppColors.CodeForeground
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(horizontalScrollState)
-                                .padding(start = 9.dp, top = 8.dp, end = 8.dp, bottom = 8.dp),
-                            decorationBox = { innerTextField ->
-                                Box {
-                                    if (codeText.isEmpty()) {
-                                        Text(
-                                            text = placeholder,
-                                            style = TextStyle(
-                                                fontFamily = FontFamily.Monospace,
-                                                fontSize = 13.sp,
-                                                lineHeight = 20.sp,
-                                                color = com.webtoapp.ui.theme.AppColors.CodeMuted
-                                            )
-                                        )
-                                    }
-                                    innerTextField()
-                                }
-                            }
-                        )
-                    }
-                }
-
-
-                Surface(
-                    color = com.webtoapp.ui.theme.AppColors.EditorDarkAlt
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .padding(horizontal = 12.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-
-                    ) {
-                        val lineCount = codeText.count { it == '\n' } + 1
-                        val charCount = codeText.length
-                        Text(
-                            text = "$lineCount ${if (lineCount == 1) "line" else "lines"}, $charCount chars",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = com.webtoapp.ui.theme.AppColors.CodeForeground.copy(alpha = 0.9f)
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.9f)
-                        )
-                    }
-                }
-            }
-        }
-    }
+    com.webtoapp.ui.components.WtaCodeEditorDialog(
+        language = language,
+        initialContent = initialContent,
+        placeholder = placeholder,
+        onSave = onSave,
+        onDismiss = onDismiss
+    )
 }
-
-
-
 
 private fun getFileName(context: android.content.Context, uri: Uri): String? {
     var result: String? = null
@@ -1731,9 +1461,6 @@ private fun getFileName(context: android.content.Context, uri: Uri): String? {
     }
     return result
 }
-
-
-
 
 private fun copyUriToTempFile(
     context: android.content.Context,
@@ -1755,9 +1482,6 @@ private fun copyUriToTempFile(
     }
 }
 
-
-
-
 private fun getFileType(fileName: String): HtmlFileType {
     val extension = fileName.substringAfterLast('.', "").lowercase()
     return when (extension) {
@@ -1769,11 +1493,6 @@ private fun getFileType(fileName: String): HtmlFileType {
         else -> HtmlFileType.OTHER
     }
 }
-
-
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -1848,7 +1567,6 @@ private fun ZipImportSection(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1892,14 +1610,12 @@ private fun ZipImportSection(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-
                 Text(
                     text = Strings.zipResourceStats,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-
 
                 val stats = zipAnalysis.stats
                 FlowRow(
@@ -1923,7 +1639,6 @@ private fun ZipImportSection(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -1940,7 +1655,6 @@ private fun ZipImportSection(
                     )
                 }
 
-
                 Spacer(modifier = Modifier.height(8.dp))
                 TextButton(
                     onClick = onShowFileList,
@@ -1956,7 +1670,6 @@ private fun ZipImportSection(
                 }
             }
         }
-
 
         if (zipAnalysis.warnings.isNotEmpty()) {
             EnhancedElevatedCard(
@@ -2021,7 +1734,6 @@ private fun ZipImportSection(
                     Text(Strings.selectZipFile)
                 }
 
-
                 if (zipError != null) {
                     Spacer(modifier = Modifier.height(12.dp))
                     EnhancedElevatedCard(
@@ -2052,9 +1764,6 @@ private fun ZipImportSection(
         }
     }
 }
-
-
-
 
 @Composable
 private fun ZipEntryFileDialog(
@@ -2136,9 +1845,6 @@ private fun ZipEntryFileDialog(
         }
     )
 }
-
-
-
 
 @Composable
 private fun ZipFileListDialog(
@@ -2223,18 +1929,11 @@ private fun ZipFileListDialog(
     )
 }
 
-
 private fun Long.toFileSizeString(): String = when {
     this < 1024 -> "$this B"
     this < 1024 * 1024 -> "${this / 1024} KB"
     else -> String.format(java.util.Locale.getDefault(), "%.1f MB", this / (1024.0 * 1024.0))
 }
-
-
-
-
-
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -2309,7 +2008,6 @@ private fun FolderImportSection(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -2353,14 +2051,12 @@ private fun FolderImportSection(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-
                 Text(
                     text = Strings.zipResourceStats,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-
 
                 val stats = folderAnalysis.stats
                 FlowRow(
@@ -2384,7 +2080,6 @@ private fun FolderImportSection(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -2401,7 +2096,6 @@ private fun FolderImportSection(
                     )
                 }
 
-
                 Spacer(modifier = Modifier.height(8.dp))
                 TextButton(
                     onClick = onShowFileList,
@@ -2417,7 +2111,6 @@ private fun FolderImportSection(
                 }
             }
         }
-
 
         if (folderAnalysis.warnings.isNotEmpty()) {
             EnhancedElevatedCard(
@@ -2482,7 +2175,6 @@ private fun FolderImportSection(
                     Text(Strings.folderSelectFolder)
                 }
 
-
                 if (folderError != null) {
                     Spacer(modifier = Modifier.height(12.dp))
                     EnhancedElevatedCard(
@@ -2514,19 +2206,10 @@ private fun FolderImportSection(
     }
 }
 
-
-
-
 private val FOLDER_SKIP_PATTERNS = setOf(
     "__MACOSX", ".DS_Store", "Thumbs.db", ".git", ".svn", ".hg",
     "node_modules", ".idea", ".vscode"
 )
-
-
-
-
-
-
 
 private fun importFolderFromSaf(
     context: android.content.Context,
@@ -2542,7 +2225,6 @@ private fun importFolderFromSaf(
         val docId = DocumentsContract.getTreeDocumentId(treeUri)
         val docUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, docId)
 
-
         var folderName = "HTML Project"
         context.contentResolver.query(
             docUri,
@@ -2556,9 +2238,7 @@ private fun importFolderFromSaf(
 
         copyDocumentTree(context, treeUri, docId, tempDir)
 
-
         val projectRoot = unwrapSingleRootDir(tempDir)
-
 
         return analyzeFolder(projectRoot, folderName)
 
@@ -2568,9 +2248,6 @@ private fun importFolderFromSaf(
         throw RuntimeException(Strings.folderImportFailed.replace("%s", e.message ?: "Unknown"), e)
     }
 }
-
-
-
 
 private fun copyDocumentTree(
     context: android.content.Context,
@@ -2599,7 +2276,6 @@ private fun copyDocumentTree(
             val childName = cursor.getString(nameIndex) ?: continue
             val mimeType = cursor.getString(mimeIndex) ?: ""
 
-
             if (FOLDER_SKIP_PATTERNS.any { childName.equals(it, ignoreCase = true) }) {
                 continue
             }
@@ -2626,9 +2302,6 @@ private fun copyDocumentTree(
     }
 }
 
-
-
-
 private fun unwrapSingleRootDir(dir: File): File {
     val children = dir.listFiles() ?: return dir
     return if (children.size == 1 && children[0].isDirectory) {
@@ -2638,7 +2311,6 @@ private fun unwrapSingleRootDir(dir: File): File {
     }
 }
 
-
 private val HTML_EXT = setOf("html", "htm", "xhtml")
 private val CSS_EXT = setOf("css")
 private val JS_EXT = setOf("js", "mjs", "jsx", "ts", "tsx")
@@ -2647,9 +2319,6 @@ private val FONT_EXT = setOf("ttf", "otf", "woff", "woff2", "eot")
 private val AUDIO_EXT = setOf("mp3", "wav", "ogg", "aac", "flac", "m4a")
 private val VIDEO_EXT = setOf("mp4", "webm", "mkv", "avi", "mov")
 private val DATA_EXT = setOf("json", "xml", "csv", "txt", "md", "yaml", "yml")
-
-
-
 
 private fun analyzeFolder(
     projectDir: File,
@@ -2675,7 +2344,6 @@ private fun analyzeFolder(
         }
 
     val htmlFiles = allFiles.filter { it.resourceType == ZipProjectImporter.ResourceType.HTML }
-
 
     val entryFile = htmlFiles.find { it.relativePath.equals("index.html", ignoreCase = true) }?.relativePath
         ?: htmlFiles.find { it.relativePath.equals("index.htm", ignoreCase = true) }?.relativePath
@@ -2714,7 +2382,6 @@ private fun analyzeFolder(
         zipFileName = folderName
     )
 }
-
 
 private fun classifyFileByExt(fileName: String): ZipProjectImporter.ResourceType {
     val ext = fileName.substringAfterLast('.', "").lowercase()

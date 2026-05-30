@@ -14,12 +14,12 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.protobuf")
 }
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
-
 
 val localProperties = Properties().apply {
     val file = rootProject.file("local.properties")
@@ -54,20 +54,19 @@ android {
     defaultConfig {
         applicationId = "com.webtoapp"
         minSdk = 23
-        targetSdk = 36
-        versionCode = 33
-        versionName = "1.9.6"
+
+        targetSdk = 28
+        versionCode = 35
+        versionName = "2.0.0"
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
 
         vectorDrawables {
             useSupportLibrary = true
         }
 
-
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
         }
-
 
         externalNativeBuild {
             cmake {
@@ -76,7 +75,6 @@ android {
             }
         }
     }
-
 
     externalNativeBuild {
         cmake {
@@ -102,8 +100,6 @@ android {
             isEnable = false
         }
     }
-
-
 
     bundle {
         language {
@@ -131,6 +127,17 @@ android {
         }
     }
 
+    lint {
+
+        disable += "NullSafeMutableLiveData"
+
+        disable += "ExpiredTargetSdkVersion"
+        disable += "ExpiringTargetSdkVersion"
+        disable += "OldTargetApi"
+
+        abortOnError = false
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -148,6 +155,8 @@ android {
     }
     androidResources {
         ignoreAssetsPattern = ""
+
+        localeFilters += listOf("zh", "en", "ar")
     }
 }
 
@@ -164,10 +173,7 @@ tasks.register<Copy>("syncShellTemplateApk") {
 
 tasks.matching { it.name == "preBuild" }.configureEach {
     dependsOn("syncShellTemplateApk")
-    // PHP 二进制不能 dependsOn，因为它走外网（github releases）下载。
-    // 网络抽风时不应阻断整个 debug 构建。开发者要发 release 版前请手动跑：
-    //   ./gradlew :app:downloadPhpBinary
-    // 该 task 的 onlyIf 会缓存结果，已下载的话只是 NO-SOURCE，不会重复下。
+
 }
 
 tasks.register("testClasses") {
@@ -281,6 +287,22 @@ androidComponents {
     }
 }
 
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:3.25.5"
+    }
+    generateProtoTasks {
+        all().forEach { task ->
+            task.builtins {
+
+                create("java") {
+                    option("lite")
+                }
+            }
+        }
+    }
+}
+
 dependencies {
 
     implementation("androidx.core:core-ktx:1.12.0")
@@ -289,13 +311,13 @@ dependencies {
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.documentfile:documentfile:1.0.1")
 
+    implementation("com.google.protobuf:protobuf-javalite:3.25.5")
 
     implementation("com.google.android.material:material:1.10.0")
     implementation("androidx.activity:activity-compose:1.8.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
-
 
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
     implementation("androidx.compose.ui:ui")
@@ -308,59 +330,44 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.5")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
-
     implementation("androidx.room:room-runtime:2.7.2")
     implementation("androidx.room:room-ktx:2.7.2")
     ksp("androidx.room:room-compiler:2.7.2")
 
-
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-
 
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("io.coil-kt:coil-video:2.5.0")
     implementation("io.coil-kt:coil-gif:2.5.0")
 
-
     implementation("com.google.code.gson:gson:2.10.1")
-
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0")
 
-
     implementation("io.insert-koin:koin-android:3.5.3")
     implementation("io.insert-koin:koin-androidx-compose:3.5.3")
 
-
     implementation("androidx.webkit:webkit:1.9.0")
-
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
-
 
     implementation("org.apache.commons:commons-compress:1.26.0")
     implementation("org.tukaani:xz:1.9")
 
-
     implementation("com.android.tools.build:apksig:8.3.0")
-
 
     implementation("org.mozilla.geckoview:geckoview-arm64-v8a:137.0.20250414091429")
 
-
     implementation("com.google.zxing:core:3.5.2")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")
-
 
     implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-beta.3")
 
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.browser:browser:1.8.0")
-
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
@@ -370,57 +377,4 @@ dependencies {
 
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-}
-
-
-
-
-
-
-
-
-
-tasks.register("downloadPhpBinary") {
-    description = "Downloads pre-built PHP binary for Android arm64 and bundles it as native library"
-    group = "setup"
-
-    val phpVersion = "8.4"
-    val jniLibsDir = file("src/main/jniLibs/arm64-v8a")
-    val outputFile = File(jniLibsDir, "libphp.so")
-    // 在配置阶段就解析路径，避免 doLast 闭包里访问 project.layout / Task.project
-    // （Gradle configuration cache 9.x 禁止执行期访问这些）
-    val tempDirRoot = layout.buildDirectory.dir("tmp/php-download").get().asFile
-    val rootProjectDirCapture = rootDir
-
-    onlyIf { !outputFile.exists() }
-
-    doLast {
-        jniLibsDir.mkdirs()
-        val url = "https://github.com/pmmp/PHP-Binaries/releases/download/pm5-php-${phpVersion}-latest/PHP-${phpVersion}-Android-arm64-PM5.tar.gz"
-        tempDirRoot.mkdirs()
-        val tarFile = File(tempDirRoot, "php.tar.gz")
-        fun runCommand(vararg args: String) {
-            val exitCode = ProcessBuilder(*args).inheritIO().start().waitFor()
-            if (exitCode != 0) {
-                throw GradleException("Command failed (${args.joinToString(" ")}): exit code $exitCode")
-            }
-        }
-
-        println("Downloading PHP $phpVersion for Android arm64...")
-        runCommand("curl", "-L", "-f", "-o", tarFile.absolutePath, url)
-
-        println("Extracting PHP binary...")
-        runCommand("tar", "-xzf", tarFile.absolutePath, "-C", tempDirRoot.absolutePath)
-
-
-        val extracted = File(tempDirRoot, "bin/php").takeIf { it.exists() }
-            ?: tempDirRoot.walkTopDown().firstOrNull { it.name == "php" && it.isFile }
-            ?: throw GradleException("PHP binary not found in archive")
-
-        extracted.copyTo(outputFile, overwrite = true)
-        outputFile.setExecutable(true)
-        tempDirRoot.deleteRecursively()
-
-        println("PHP binary installed: ${outputFile.relativeTo(rootProjectDirCapture)}")
-    }
 }

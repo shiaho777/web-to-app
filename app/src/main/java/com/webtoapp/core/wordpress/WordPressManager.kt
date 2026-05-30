@@ -10,23 +10,11 @@ import java.io.FileOutputStream
 import java.util.UUID
 import java.util.zip.ZipInputStream
 
-
-
-
-
-
-
-
-
-
-
 object WordPressManager {
 
     private const val TAG = "WordPressManager"
 
-
     private const val MAX_INSTALL_VERIFY_RETRIES = 10
-
 
     private const val INSTALL_VERIFY_INTERVAL_MS = 500L
 
@@ -35,20 +23,6 @@ object WordPressManager {
         val plugins: List<String> = emptyList(),
         val version: String? = null
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     suspend fun createProject(
         context: Context,
@@ -59,36 +33,30 @@ object WordPressManager {
         try {
 
             if (!WordPressDependencyManager.isAllReady(context)) {
-                AppLogger.e(TAG, "依赖未就绪，无法创建项目")
+                AppLogger.e(TAG, "dependencies not ready, can't create project")
                 return@withContext null
             }
 
             val projectId = UUID.randomUUID().toString().take(8)
             val projectDir = getProjectDir(context, projectId)
 
-            AppLogger.i(TAG, "创建 WordPress 项目: $projectId")
-
+            AppLogger.i(TAG, "Creating WordPress project: $projectId")
 
             val wpSourceDir = File(WordPressDependencyManager.getDepsDir(context), "wordpress")
             copyDirectory(wpSourceDir, projectDir)
-            AppLogger.i(TAG, "WordPress 核心已复制")
-
+            AppLogger.i(TAG, "WordPress core copied")
 
             installSqlitePlugin(context, projectDir)
 
-
             generateWpConfig(projectDir, siteTitle)
 
-            AppLogger.i(TAG, "WordPress 项目创建完成: $projectId (${projectDir.absolutePath})")
+            AppLogger.i(TAG, "WordPress project created: $projectId (${projectDir.absolutePath})")
             projectId
         } catch (e: Exception) {
-            AppLogger.e(TAG, "创建 WordPress 项目失败", e)
+            AppLogger.e(TAG, "Creating WordPress projectfailed", e)
             null
         }
     }
-
-
-
 
     suspend fun importTheme(
         context: Context,
@@ -100,18 +68,14 @@ object WordPressManager {
             val themesDir = File(projectDir, "wp-content/themes")
             themesDir.mkdirs()
 
-
             val themeName = extractZipFromUri(context, themeZipUri, themesDir)
-            AppLogger.i(TAG, "主题已导入: $themeName")
+            AppLogger.i(TAG, "Theme imported: $themeName")
             themeName
         } catch (e: Exception) {
-            AppLogger.e(TAG, "导入主题失败", e)
+            AppLogger.e(TAG, "Failed to import theme", e)
             null
         }
     }
-
-
-
 
     suspend fun importPlugin(
         context: Context,
@@ -124,16 +88,13 @@ object WordPressManager {
             pluginsDir.mkdirs()
 
             val pluginName = extractZipFromUri(context, pluginZipUri, pluginsDir)
-            AppLogger.i(TAG, "插件已导入: $pluginName")
+            AppLogger.i(TAG, "Plugin imported: $pluginName")
             pluginName
         } catch (e: Exception) {
-            AppLogger.e(TAG, "导入插件失败", e)
+            AppLogger.e(TAG, "Failed to import plugin", e)
             null
         }
     }
-
-
-
 
     suspend fun importFullProject(
         context: Context,
@@ -144,13 +105,10 @@ object WordPressManager {
         try {
             val projectDir = getProjectDir(context, projectId)
 
-
             projectDir.deleteRecursively()
             projectDir.mkdirs()
 
-
             extractZipFromUri(context, zipUri, projectDir)
-
 
             val wpIndicator = File(projectDir, "wp-includes/version.php")
             if (!wpIndicator.exists()) {
@@ -166,25 +124,20 @@ object WordPressManager {
                 }
             }
 
-
             val sqlitePluginDir = File(projectDir, "wp-content/plugins/sqlite-database-integration")
             if (!sqlitePluginDir.exists()) {
                 installSqlitePlugin(context, projectDir)
             }
 
-
             generateWpConfig(projectDir, siteTitle)
 
-            AppLogger.i(TAG, "完整 WordPress 项目已导入: $projectId")
+            AppLogger.i(TAG, "Full WordPress project imported: $projectId")
             true
         } catch (e: Exception) {
-            AppLogger.e(TAG, "导入完整 WordPress 项目失败", e)
+            AppLogger.e(TAG, "Failed to import full WordPress project", e)
             false
         }
     }
-
-
-
 
     suspend fun importProjectDirectory(
         context: Context,
@@ -193,7 +146,7 @@ object WordPressManager {
     ): String? = withContext(Dispatchers.IO) {
         try {
             if (!WordPressDependencyManager.isAllReady(context)) {
-                AppLogger.e(TAG, "依赖未就绪，无法导入 WordPress 项目")
+                AppLogger.e(TAG, "dependencies not ready, can't import WordPress project")
                 return@withContext null
             }
 
@@ -218,37 +171,29 @@ object WordPressManager {
             }
 
             generateWpConfig(projectDir, siteTitle)
-            AppLogger.i(TAG, "WordPress 目录项目已导入: $projectId (${projectDir.absolutePath})")
+            AppLogger.i(TAG, "WordPress directory project imported: $projectId (${projectDir.absolutePath})")
             projectId
         } catch (e: Exception) {
-            AppLogger.e(TAG, "导入 WordPress 目录失败", e)
+            AppLogger.e(TAG, "Failed to import WordPress directory", e)
             null
         }
     }
-
-
 
     fun deleteProject(context: Context, projectId: String): Boolean {
         return try {
             val projectDir = getProjectDir(context, projectId)
             projectDir.deleteRecursively()
-            AppLogger.i(TAG, "项目已删除: $projectId")
+            AppLogger.i(TAG, "Project deleted: $projectId")
             true
         } catch (e: Exception) {
-            AppLogger.e(TAG, "删除项目失败: $projectId", e)
+            AppLogger.e(TAG, "Failed to delete project: $projectId", e)
             false
         }
     }
 
-
-
-
     fun getProjectDir(context: Context, projectId: String): File {
         return File(WordPressDependencyManager.getWordPressProjectsDir(context), projectId)
     }
-
-
-
 
     fun getInstalledThemes(context: Context, projectId: String): List<String> {
         val themesDir = File(getProjectDir(context, projectId), "wp-content/themes")
@@ -258,9 +203,6 @@ object WordPressManager {
             ?: emptyList()
     }
 
-
-
-
     fun getInstalledPlugins(context: Context, projectId: String): List<String> {
         val pluginsDir = File(getProjectDir(context, projectId), "wp-content/plugins")
         return pluginsDir.listFiles()
@@ -268,9 +210,6 @@ object WordPressManager {
             ?.map { it.name }
             ?: emptyList()
     }
-
-
-
 
     fun getProjectSize(context: Context, projectId: String): Long {
         return getProjectDir(context, projectId)
@@ -301,49 +240,29 @@ object WordPressManager {
         return ProjectMetadata(themes = themes, plugins = plugins, version = version)
     }
 
-
-
-
-
-
-
     fun ensureDbPhpExists(context: Context, projectDir: File) {
         val dbPhp = File(projectDir, "wp-content/db.php")
         val pluginLoadPhp = File(projectDir, "wp-content/plugins/sqlite-database-integration/load.php")
 
         if (!pluginLoadPhp.exists()) {
-            AppLogger.d(TAG, "SQLite 插件未安装，跳过 db.php 检查")
+            AppLogger.d(TAG, "SQLite plugin not installed, skipping db.php check")
             return
         }
 
         if (!dbPhp.exists()) {
-            AppLogger.w(TAG, "db.php 不存在，正在生成...")
+            AppLogger.w(TAG, "db.php missing, generating...")
             generateDbPhp(dbPhp)
         } else {
 
             val content = dbPhp.readText()
             if (!content.contains("sqlite-database-integration")) {
-                AppLogger.w(TAG, "db.php 未正确引用 SQLite 插件，重新生成")
+                AppLogger.w(TAG, "db.php doesn't reference the SQLite plugin correctly, regenerating")
                 generateDbPhp(dbPhp)
             }
         }
 
-
         File(projectDir, "wp-content/database").mkdirs()
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     suspend fun autoInstallIfNeeded(
         baseUrl: String,
@@ -356,12 +275,11 @@ object WordPressManager {
         try {
 
             if (!isRedirectingToInstall(baseUrl)) {
-                AppLogger.d(TAG, "WordPress 已安装，跳过自动安装")
+                AppLogger.d(TAG, "WordPress already installed, skipping auto-install")
                 return@withContext true
             }
 
-            AppLogger.i(TAG, "WordPress 未安装，开始自动安装...")
-
+            AppLogger.i(TAG, "WordPress not installed, starting auto-install...")
 
             val installUrl = java.net.URL("$baseUrl/wp-admin/install.php?step=2")
             val installConn = installUrl.openConnection() as java.net.HttpURLConnection
@@ -385,7 +303,6 @@ object WordPressManager {
             installConn.outputStream.use { it.write(params.toByteArray(Charsets.UTF_8)) }
             val installCode = installConn.responseCode
 
-
             var installSuccess = false
             try {
                 val responseBody = if (installCode in 200..299) {
@@ -395,55 +312,47 @@ object WordPressManager {
                 }
 
                 val snippet = responseBody.take(500).replace(Regex("<[^>]+>"), " ").replace(Regex("\\s+"), " ").trim()
-                AppLogger.d(TAG, "安装响应: code=$installCode, bodyLen=${responseBody.length}, snippet=$snippet")
+                AppLogger.d(TAG, "Install response: code=$installCode, bodyLen=${responseBody.length}, snippet=$snippet")
 
                 installSuccess = responseBody.contains("wp-login.php") ||
                     responseBody.contains("installed") ||
                     responseBody.contains("Success") ||
                     responseBody.contains("成功")
                 if (!installSuccess) {
-                    AppLogger.w(TAG, "安装响应未包含成功标志，可能安装未完成")
+                    AppLogger.w(TAG, "Install response missing succeeded marker; install may be incomplete")
                 }
             } catch (e: Exception) {
-                AppLogger.w(TAG, "读取安装响应失败: ${e.message}")
+                AppLogger.w(TAG, "Failed to read install response: ${e.message}")
             }
             installConn.disconnect()
 
             if (installCode !in 200..399) {
-                AppLogger.e(TAG, "WordPress 自动安装失败 (code=$installCode)")
+                AppLogger.e(TAG, "WordPress auto-install failed (code=$installCode)")
                 return@withContext false
             }
 
-            AppLogger.i(TAG, "WordPress 自动安装请求完成 (code=$installCode)")
-
-
+            AppLogger.i(TAG, "WordPress auto-install request complete (code=$installCode)")
 
             repeat(MAX_INSTALL_VERIFY_RETRIES) { attempt ->
                 kotlinx.coroutines.delay(INSTALL_VERIFY_INTERVAL_MS)
                 try {
                     if (!isRedirectingToInstall(baseUrl)) {
-                        AppLogger.i(TAG, "WordPress 安装验证成功 (尝试 ${attempt + 1})")
+                        AppLogger.i(TAG, "WordPress install verification succeeded (attempt ${attempt + 1})")
                         return@withContext true
                     }
-                    AppLogger.d(TAG, "WordPress 安装验证: 仍重定向到 install.php (尝试 ${attempt + 1})")
+                    AppLogger.d(TAG, "WordPress install verification: still redirecting to install.php (attempt ${attempt + 1})")
                 } catch (e: Exception) {
-                    AppLogger.d(TAG, "WordPress 安装验证异常 (尝试 ${attempt + 1}): ${e.message}")
+                    AppLogger.d(TAG, "WordPress install verification raised an exception (attempt ${attempt + 1}): ${e.message}")
                 }
             }
 
-
-            AppLogger.w(TAG, "WordPress 安装验证超时 (${MAX_INSTALL_VERIFY_RETRIES} 次)，继续加载")
+            AppLogger.w(TAG, "WordPress install verification timed out (${MAX_INSTALL_VERIFY_RETRIES} attempts), continuing to load")
             true
         } catch (e: Exception) {
-            AppLogger.e(TAG, "WordPress 自动安装异常", e)
+            AppLogger.e(TAG, "WordPress auto-install raised an exception", e)
             false
         }
     }
-
-
-
-
-
 
     suspend fun applyRuntimeConfig(
         phpBinary: String,
@@ -495,14 +404,14 @@ object WordPressManager {
             val exitCode = process.waitFor()
             script.delete()
             if (exitCode == 0) {
-                AppLogger.i(TAG, "WordPress 运行时配置已应用")
+                AppLogger.i(TAG, "WordPress runtime config applied")
                 true
             } else {
-                AppLogger.w(TAG, "WordPress 运行时配置失败 exit=$exitCode output=$output")
+                AppLogger.w(TAG, "WordPress runtime config failed exit=$exitCode output=$output")
                 false
             }
         } catch (e: Exception) {
-            AppLogger.e(TAG, "应用 WordPress 运行时配置失败", e)
+            AppLogger.e(TAG, "Failed to apply WordPress runtime config", e)
             false
         }
     }
@@ -540,55 +449,37 @@ object WordPressManager {
         }
     }
 
-
-
-
-
-
     private fun installSqlitePlugin(context: Context, projectDir: File) {
         val sqliteSourceDir = File(WordPressDependencyManager.getDepsDir(context), "sqlite-database-integration")
         val pluginsDir = File(projectDir, "wp-content/plugins/sqlite-database-integration")
 
-
         copyDirectory(sqliteSourceDir, pluginsDir)
-
 
         val dbCopy = File(pluginsDir, "db.copy")
         val dbPhp = File(projectDir, "wp-content/db.php")
         if (dbCopy.exists()) {
             dbCopy.copyTo(dbPhp, overwrite = true)
-            AppLogger.d(TAG, "db.copy 已复制为 db.php")
+            AppLogger.d(TAG, "db.copy copied to db.php")
         }
-
-
 
         if (!dbPhp.exists()) {
-            AppLogger.w(TAG, "db.copy 不存在，手动生成 db.php drop-in")
+            AppLogger.w(TAG, "db.copy missing, generating db.php drop-in manually")
             generateDbPhp(dbPhp)
         }
-
-
 
         val loadPhp = File(pluginsDir, "load.php")
         if (dbPhp.exists() && loadPhp.exists()) {
             val dbPhpContent = dbPhp.readText()
             if (!dbPhpContent.contains("sqlite-database-integration")) {
-                AppLogger.w(TAG, "db.php 未正确引用 SQLite 插件，重新生成")
+                AppLogger.w(TAG, "db.php doesn't reference the SQLite plugin correctly, regenerating")
                 generateDbPhp(dbPhp)
             }
         }
 
-
         File(projectDir, "wp-content/database").mkdirs()
 
-        AppLogger.i(TAG, "SQLite 插件已安装 (db.php=${dbPhp.exists()}, load.php=${loadPhp.exists()})")
+        AppLogger.i(TAG, "SQLite plugin installed (db.php=${dbPhp.exists()}, load.php=${loadPhp.exists()})")
     }
-
-
-
-
-
-
 
     private fun generateDbPhp(dbPhp: File) {
         dbPhp.writeText("""<?php
@@ -616,12 +507,8 @@ if (is_readable(${'$'}sqlite_plugin)) {
 """)
     }
 
-
-
-
     private fun generateWpConfig(projectDir: File, siteTitle: String) {
         val wpConfig = File(projectDir, "wp-config.php")
-
 
         val keys = listOf(
             "AUTH_KEY", "SECURE_AUTH_KEY", "LOGGED_IN_KEY", "NONCE_KEY",
@@ -695,19 +582,13 @@ if (!defined('ABSPATH')) {
 require_once ABSPATH . 'wp-settings.php';
 """)
 
-        AppLogger.i(TAG, "wp-config.php 已生成")
+        AppLogger.i(TAG, "wp-config.php generated")
     }
-
-
-
 
     private fun generateRandomSalt(length: Int = 64): String {
         val chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_+=[]{}|;:,.<>?"
         return (1..length).map { chars.random() }.joinToString("")
     }
-
-
-
 
     private fun copyDirectory(source: File, dest: File) {
         dest.mkdirs()
@@ -723,9 +604,6 @@ require_once ABSPATH . 'wp-settings.php';
         }
     }
 
-
-
-
     private fun moveDirectoryContents(source: File, dest: File) {
         source.listFiles()?.forEach { file ->
             val target = File(dest, file.name)
@@ -735,9 +613,6 @@ require_once ABSPATH . 'wp-settings.php';
             file.renameTo(target)
         }
     }
-
-
-
 
     private fun extractZipFromUri(context: Context, uri: Uri, destDir: File): String? {
         var topLevelDir: String? = null
@@ -754,9 +629,8 @@ require_once ABSPATH . 'wp-settings.php';
 
                 val outFile = File(destDir, entry.name)
 
-
                 if (!outFile.canonicalPath.startsWith(destDir.canonicalPath)) {
-                    AppLogger.w(TAG, "跳过不安全的 zip 条目: ${entry.name}")
+                    AppLogger.w(TAG, "Skipping unsafe zip entry: ${entry.name}")
                     zipInputStream.closeEntry()
                     entry = zipInputStream.nextEntry
                     continue

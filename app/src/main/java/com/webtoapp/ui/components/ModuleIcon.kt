@@ -14,14 +14,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import com.webtoapp.util.SvgIconMapper
 
-
-
-
-
-
-
-
-
 @Composable
 fun ModuleIcon(
     iconId: String,
@@ -55,7 +47,6 @@ fun ModuleIcon(
             }
         }
 
-
         iconId.startsWith("asset:") -> {
             val assetPath = iconId.removePrefix("asset:")
             val context = LocalContext.current
@@ -84,7 +75,6 @@ fun ModuleIcon(
                 )
             }
         }
-
 
         else -> {
             Icon(

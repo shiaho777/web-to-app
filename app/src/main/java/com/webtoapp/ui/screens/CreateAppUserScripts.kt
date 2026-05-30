@@ -32,9 +32,6 @@ import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.*
 import androidx.compose.ui.graphics.Color
 
-
-
-
 @Composable
 fun UserScriptsSection(
     scripts: List<UserScript>,
@@ -105,9 +102,6 @@ fun UserScriptsSection(
     }
 }
 
-
-
-
 @Composable
 fun UserScriptItem(
     script: UserScript,
@@ -139,9 +133,6 @@ fun UserScriptItem(
     }
 }
 
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UserScriptEditorDialog(
@@ -162,10 +153,8 @@ fun UserScriptEditorDialog(
     val scrollState = rememberScrollState()
     val context = LocalContext.current
 
-
     val largeCodeThreshold = 5000
     val isLargeCode = code.length > largeCodeThreshold
-
 
     val jsFilePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
@@ -212,7 +201,6 @@ fun UserScriptEditorDialog(
                     } else null,
                     modifier = Modifier.fillMaxWidth()
                 )
-
 
                 ExposedDropdownMenuBox(
                     expanded = runAtExpanded,
@@ -275,7 +263,6 @@ fun UserScriptEditorDialog(
                     }
                 }
 
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -287,7 +274,6 @@ fun UserScriptEditorDialog(
                         onCheckedChange = { enabled = it }
                     )
                 }
-
 
                 PremiumOutlinedButton(
                     onClick = {
@@ -309,7 +295,6 @@ fun UserScriptEditorDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(Strings.scriptImportFile)
                 }
-
 
                 if (isLargeCode) {
 

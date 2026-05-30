@@ -13,22 +13,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
-
-
-
-
-
-
-
-
 class SaveAppUseCase(private val repository: WebAppRepository) {
 
     companion object {
         private const val TAG = "SaveAppUseCase"
     }
-
-
-
 
     suspend fun saveIcon(context: Context, iconUri: Uri?): String? {
         return iconUri?.let { uri ->
@@ -38,9 +27,6 @@ class SaveAppUseCase(private val repository: WebAppRepository) {
         }
     }
 
-
-
-
     suspend fun getCurrentThemeType(context: Context): String {
         return try {
             val themeManager = ThemeManager.getInstance(context)
@@ -49,9 +35,6 @@ class SaveAppUseCase(private val repository: WebAppRepository) {
             "AURORA"
         }
     }
-
-
-
 
     suspend fun createApp(
         context: Context,
@@ -81,9 +64,6 @@ class SaveAppUseCase(private val repository: WebAppRepository) {
         }
     }
 
-
-
-
     suspend fun updateApp(
         context: Context,
         appId: Long,
@@ -109,9 +89,6 @@ class SaveAppUseCase(private val repository: WebAppRepository) {
             repository.updateWebApp(updatedApp)
         }
     }
-
-
-
 
     suspend fun processHtmlFiles(
         context: Context,

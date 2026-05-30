@@ -10,11 +10,7 @@ import com.webtoapp.data.model.LrcData
 import com.webtoapp.data.model.LrcLine
 import kotlinx.coroutines.delay
 
-
 private val BGM_LRC_TIME_REGEX = Regex("""\[(\d{2}):(\d{2})\.(\d{2,3})](.*)""")
-
-
-
 
 class BgmPlayerState internal constructor(
     private val _player: MutableState<MediaPlayer?>,
@@ -31,9 +27,6 @@ class BgmPlayerState internal constructor(
     var currentLrcLineIndex: Int by _currentLrcLineIndex
     var currentPosition: Long by _currentPosition
 }
-
-
-
 
 internal fun parseLrcText(text: String): LrcData? {
     val lines = mutableListOf<LrcLine>()
@@ -54,17 +47,12 @@ internal fun parseLrcText(text: String): LrcData? {
         }
     }
 
-
     for (i in 0 until lines.size - 1) {
         lines[i] = lines[i].copy(endTime = lines[i + 1].startTime)
     }
 
     return if (lines.isNotEmpty()) LrcData(lines = lines) else null
 }
-
-
-
-
 
 @Composable
 fun rememberBgmPlayerState(
@@ -79,14 +67,12 @@ fun rememberBgmPlayerState(
     val isBgmPlayingState = remember { mutableStateOf(false) }
     var isBgmPlaying by isBgmPlayingState
 
-
     val currentLrcDataState = remember { mutableStateOf<LrcData?>(null) }
     var currentLrcData by currentLrcDataState
     val currentLrcLineIndexState = remember { mutableIntStateOf(-1) }
     var currentLrcLineIndex by currentLrcLineIndexState
     val bgmCurrentPositionState = remember { mutableLongStateOf(0L) }
     var bgmCurrentPosition by bgmCurrentPositionState
-
 
     fun loadLrcForCurrentBgm(bgmIndex: Int) {
         if (!config.bgmShowLyrics) {
@@ -108,7 +94,6 @@ fun rememberBgmPlayerState(
             currentLrcData = null
         }
     }
-
 
     LaunchedEffect(config.bgmEnabled) {
         if (config.bgmEnabled && config.bgmPlaylist.isNotEmpty()) {
@@ -145,7 +130,6 @@ fun rememberBgmPlayerState(
                             player.prepare()
                             player.start()
 
-
                             loadLrcForCurrentBgm(nextIndex)
                         } catch (e: Exception) {
                             AppLogger.e("ShellActivity", "播放下一首 BGM 失败", e)
@@ -155,14 +139,12 @@ fun rememberBgmPlayerState(
 
                 player.prepare()
 
-
                 if (config.bgmAutoPlay) {
                     player.start()
                     isBgmPlaying = true
                 }
 
                 bgmPlayer = player
-
 
                 loadLrcForCurrentBgm(0)
 
@@ -173,7 +155,6 @@ fun rememberBgmPlayerState(
         }
     }
 
-
     LaunchedEffect(isBgmPlaying, currentLrcData) {
         if (!isBgmPlaying || currentLrcData == null) return@LaunchedEffect
 
@@ -182,7 +163,6 @@ fun rememberBgmPlayerState(
                 try {
                     if (mp.isPlaying) {
                         bgmCurrentPosition = mp.currentPosition.toLong()
-
 
                         val lrcData = currentLrcData
                         if (lrcData != null) {
@@ -199,7 +179,6 @@ fun rememberBgmPlayerState(
             delay(100)
         }
     }
-
 
     DisposableEffect(Unit) {
         onDispose {

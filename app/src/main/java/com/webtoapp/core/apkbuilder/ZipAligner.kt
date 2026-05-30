@@ -9,39 +9,14 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 object ZipAligner {
 
     private const val TAG = "ZipAligner"
 
-
     private const val LFH_FIXED_SIZE = 30
-
 
     private const val DEFAULT_ALIGNMENT = 4L
     private const val NATIVE_LIB_ALIGNMENT = 16 * 1024L
-
-
-
-
-
-
-
-
-
 
     fun alignInPlace(apkFile: File): Boolean {
         val tempFile = File(apkFile.parent, apkFile.name + ".aligned")
@@ -61,13 +36,6 @@ object ZipAligner {
             false
         }
     }
-
-
-
-
-
-
-
 
     fun align(input: File, output: File): Boolean {
         if (!input.exists()) {
@@ -118,12 +86,9 @@ object ZipAligner {
                                 crc.update(data)
                                 newEntry.crc = crc.value
 
-
-
                                 val nameBytes = entry.name.toByteArray(Charsets.UTF_8)
                                 val currentOffset = countingStream.bytesWritten
                                 val dataOffset = currentOffset + LFH_FIXED_SIZE + nameBytes.size
-
 
                                 val alignment = getEntryAlignment(entry.name)
                                 val remainder = dataOffset % alignment
@@ -131,12 +96,10 @@ object ZipAligner {
 
                                 if (padding > 0) {
 
-
                                     val extraLen = padding
                                     newEntry.extra = ByteArray(extraLen)
                                     alignedCount++
                                 }
-
 
                                 val finalDataOffset = dataOffset + (newEntry.extra?.size ?: 0)
                                 if (finalDataOffset % alignment != 0L) {
@@ -173,11 +136,6 @@ object ZipAligner {
         }
     }
 
-
-
-
-
-
     fun verifyAlignment(apkFile: File): Boolean {
         try {
 
@@ -191,7 +149,6 @@ object ZipAligner {
                     raf.seek(offset)
                     raf.readFully(header)
 
-
                     if (header[0] != lfhSignature[0] || header[1] != lfhSignature[1] ||
                         header[2] != lfhSignature[2] || header[3] != lfhSignature[3]) {
                         break
@@ -203,11 +160,9 @@ object ZipAligner {
                     val fileNameLen = buf.getShort(26).toInt() and 0xFFFF
                     val extraLen = buf.getShort(28).toInt() and 0xFFFF
 
-
                     val nameBytes = ByteArray(fileNameLen)
                     raf.readFully(nameBytes)
                     val fileName = String(nameBytes, Charsets.UTF_8)
-
 
                     val dataOffset = offset + LFH_FIXED_SIZE + fileNameLen + extraLen
 
@@ -221,10 +176,7 @@ object ZipAligner {
                         return isStored && isAligned
                     }
 
-
-
                     offset = dataOffset + compressedSize
-
 
                     val gpFlags = buf.getShort(6).toInt() and 0xFFFF
                     if (gpFlags and 0x08 != 0) {
@@ -242,9 +194,6 @@ object ZipAligner {
             return false
         }
     }
-
-
-
 
     fun verifyNativeLibAlignment(apkFile: File, alignment: Long = NATIVE_LIB_ALIGNMENT): Boolean {
         try {
@@ -306,9 +255,6 @@ object ZipAligner {
     private fun isNativeLibraryEntry(name: String): Boolean {
         return name.startsWith("lib/") && name.endsWith(".so")
     }
-
-
-
 
     private class CountingOutputStream(
         private val wrapped: OutputStream

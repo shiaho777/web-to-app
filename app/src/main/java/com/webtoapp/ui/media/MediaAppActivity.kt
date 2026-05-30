@@ -37,18 +37,11 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.ui.theme.WebToAppTheme
 
-
-
-
-
 class MediaAppActivity : AppCompatActivity() {
 
     companion object {
         private const val EXTRA_WEB_APP = "extra_web_app"
         private val gson = com.webtoapp.util.GsonProvider.gson
-
-
-
 
         fun startForPreview(context: Context, webApp: WebApp) {
             context.startActivity(Intent(context, MediaAppActivity::class.java).apply {
@@ -62,7 +55,6 @@ class MediaAppActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
 
         val webAppJson = intent.getStringExtra(EXTRA_WEB_APP)
         val config = if (webAppJson != null) {
@@ -79,7 +71,6 @@ class MediaAppActivity : AppCompatActivity() {
             return
         }
 
-
         setTaskDescription(
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
                 android.app.ActivityManager.TaskDescription.Builder()
@@ -93,9 +84,7 @@ class MediaAppActivity : AppCompatActivity() {
 
         currentConfig = config
 
-
         setupFullscreen()
-
 
         requestedOrientation = if (config.landscape) {
             ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -112,9 +101,6 @@ class MediaAppActivity : AppCompatActivity() {
             }
         }
     }
-
-
-
 
     private fun createConfigFromWebApp(webApp: WebApp): MediaAppConfig? {
         val mediaConfig = webApp.mediaConfig ?: return null
@@ -150,21 +136,17 @@ class MediaAppActivity : AppCompatActivity() {
 
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-
         window.statusBarColor = android.graphics.Color.TRANSPARENT
         window.navigationBarColor = android.graphics.Color.TRANSPARENT
-
 
         if (currentConfig?.keepScreenOn == true) {
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
 
-
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
             window.attributes.layoutInDisplayCutoutMode =
                 WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
-
 
         WindowInsetsControllerCompat(window, window.decorView).let { controller ->
             controller.hide(WindowInsetsCompat.Type.systemBars())
@@ -172,10 +154,6 @@ class MediaAppActivity : AppCompatActivity() {
             controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
     }
-
-
-
-
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
@@ -191,9 +169,6 @@ class MediaAppActivity : AppCompatActivity() {
     }
 }
 
-
-
-
 data class MediaAppConfig(
     val appName: String = "",
     val mediaType: String = "IMAGE",
@@ -206,9 +181,6 @@ data class MediaAppConfig(
     val backgroundColor: String = "#000000",
     val keepScreenOn: Boolean = true
 )
-
-
-
 
 @Composable
 fun MediaAppScreen(
@@ -250,9 +222,6 @@ fun MediaAppScreen(
     }
 }
 
-
-
-
 @Composable
 fun ImageDisplay(
     context: android.content.Context,
@@ -274,9 +243,6 @@ fun ImageDisplay(
         contentScale = if (fillScreen) ContentScale.Crop else ContentScale.Fit
     )
 }
-
-
-
 
 @Composable
 fun VideoPlayer(

@@ -18,40 +18,6 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @SuppressLint("StaticFieldLeak")
 object AppLogger {
 
@@ -64,7 +30,6 @@ object AppLogger {
     private const val FLUSH_INTERVAL_MS = 3000L
     private const val MAX_BUFFER_SIZE = 100
 
-
     enum class Level(val value: Int, val label: String) {
         VERBOSE(0, "V"),
         DEBUG(1, "D"),
@@ -73,7 +38,6 @@ object AppLogger {
         ERROR(4, "E"),
         FATAL(5, "F")
     }
-
 
     enum class Category(val label: String) {
         SYSTEM("SYSTEM"),
@@ -101,12 +65,10 @@ object AppLogger {
     private val isInitialized = AtomicBoolean(false)
     private val isShutdown = AtomicBoolean(false)
 
-
     private val logBuffer = ConcurrentLinkedQueue<String>()
     private val executor = Executors.newSingleThreadScheduledExecutor { r ->
         Thread(r, "AppLogger-Writer").apply { isDaemon = true }
     }
-
 
     private val dateFormat = threadLocalCompat {
         SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
@@ -115,15 +77,9 @@ object AppLogger {
         SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
     }
 
-
     var minLevel: Level = Level.VERBOSE
 
-
     var logToLogcat: Boolean = true
-
-
-
-
 
     @Synchronized
     fun init(context: Context) {
@@ -137,26 +93,20 @@ object AppLogger {
             this.startTime = System.currentTimeMillis()
             this.sessionId = generateSessionId()
 
-
             logDir = File(context.filesDir, LOG_DIR_NAME).apply {
                 if (!exists()) mkdirs()
             }
 
-
             val timestamp = fileNameFormat.get()!!.format(Date(startTime))
             logFile = File(logDir, "$LOG_FILE_PREFIX$timestamp$LOG_FILE_EXTENSION")
 
-
             cleanOldLogs()
 
-
             setupCrashHandler()
-
 
             startFlushTask()
 
             isInitialized.set(true)
-
 
             writeStartupInfo()
 
@@ -167,10 +117,6 @@ object AppLogger {
         }
     }
 
-
-
-
-
     @Synchronized
     fun shutdown() {
         if (!isInitialized.get() || isShutdown.get()) return
@@ -178,12 +124,9 @@ object AppLogger {
         try {
             isShutdown.set(true)
 
-
             writeShutdownInfo()
 
-
             flushBuffer()
-
 
             executor.shutdown()
             executor.awaitTermination(5, TimeUnit.SECONDS)
@@ -195,40 +138,29 @@ object AppLogger {
         }
     }
 
-
-
-
     fun v(tag: String, message: String, throwable: Throwable? = null) {
         log(Level.VERBOSE, Category.GENERAL, tag, message, throwable)
     }
-
 
     fun d(tag: String, message: String, throwable: Throwable? = null) {
         log(Level.DEBUG, Category.GENERAL, tag, message, throwable)
     }
 
-
     fun i(tag: String, message: String, throwable: Throwable? = null) {
         log(Level.INFO, Category.GENERAL, tag, message, throwable)
     }
-
 
     fun w(tag: String, message: String, throwable: Throwable? = null) {
         log(Level.WARN, Category.GENERAL, tag, message, throwable)
     }
 
-
     fun e(tag: String, message: String, throwable: Throwable? = null) {
         log(Level.ERROR, Category.GENERAL, tag, message, throwable)
     }
 
-
     fun f(tag: String, message: String, throwable: Throwable? = null) {
         log(Level.FATAL, Category.GENERAL, tag, message, throwable)
     }
-
-
-
 
     fun lifecycle(component: String, event: String, details: String = "") {
         val message = buildString {
@@ -238,7 +170,6 @@ object AppLogger {
         log(Level.INFO, Category.LIFECYCLE, "Lifecycle", message)
     }
 
-
     fun userAction(action: String, details: String = "") {
         val message = buildString {
             append("Action: $action")
@@ -247,7 +178,6 @@ object AppLogger {
         log(Level.INFO, Category.USER_ACTION, "UserAction", message)
     }
 
-
     fun ui(component: String, action: String, details: String = "") {
         val message = buildString {
             append("$component: $action")
@@ -255,7 +185,6 @@ object AppLogger {
         }
         log(Level.DEBUG, Category.UI, "UI", message)
     }
-
 
     fun network(action: String, url: String = "", details: String = "") {
         val message = buildString {
@@ -266,7 +195,6 @@ object AppLogger {
         log(Level.DEBUG, Category.NETWORK, "Network", message)
     }
 
-
     fun database(operation: String, table: String = "", details: String = "") {
         val message = buildString {
             append("$operation")
@@ -275,7 +203,6 @@ object AppLogger {
         }
         log(Level.DEBUG, Category.DATABASE, "Database", message)
     }
-
 
     fun webView(action: String, url: String = "", details: String = "") {
         val message = buildString {
@@ -286,7 +213,6 @@ object AppLogger {
         log(Level.DEBUG, Category.WEBVIEW, "WebView", message)
     }
 
-
     fun apkBuild(step: String, details: String = "", error: Throwable? = null) {
         val level = if (error != null) Level.ERROR else Level.INFO
         val message = buildString {
@@ -296,7 +222,6 @@ object AppLogger {
         log(level, Category.APK_BUILD, "ApkBuild", message, error)
     }
 
-
     fun extension(moduleName: String, action: String, details: String = "") {
         val message = buildString {
             append("Module: $moduleName | Action: $action")
@@ -305,7 +230,6 @@ object AppLogger {
         log(Level.DEBUG, Category.EXTENSION, "Extension", message)
     }
 
-
     fun ai(provider: String, action: String, details: String = "") {
         val message = buildString {
             append("Provider: $provider | Action: $action")
@@ -313,7 +237,6 @@ object AppLogger {
         }
         log(Level.DEBUG, Category.AI, "AI", message)
     }
-
 
     fun crypto(operation: String, details: String = "", error: Throwable? = null) {
         val level = if (error != null) Level.ERROR else Level.DEBUG
@@ -324,7 +247,6 @@ object AppLogger {
         log(level, Category.CRYPTO, "Crypto", message, error)
     }
 
-
     fun media(action: String, type: String = "", details: String = "") {
         val message = buildString {
             append("$action")
@@ -333,7 +255,6 @@ object AppLogger {
         }
         log(Level.DEBUG, Category.MEDIA, "Media", message)
     }
-
 
     fun file(operation: String, path: String = "", details: String = "") {
         val message = buildString {
@@ -344,7 +265,6 @@ object AppLogger {
         log(Level.DEBUG, Category.FILE, "File", message)
     }
 
-
     fun system(event: String, details: String = "") {
         val message = buildString {
             append("Event: $event")
@@ -353,17 +273,11 @@ object AppLogger {
         log(Level.INFO, Category.SYSTEM, "System", message)
     }
 
-
-
-
     fun getLogFilePath(): String? = logFile?.absolutePath
-
 
     fun getLogDirPath(): String? = logDir?.absolutePath
 
-
     fun getSessionId(): String = sessionId
-
 
     fun getAllLogFiles(): List<File> {
         return logDir?.listFiles()
@@ -371,7 +285,6 @@ object AppLogger {
             ?.sortedByDescending { it.lastModified() }
             ?: emptyList()
     }
-
 
     fun getLogContent(maxLines: Int = 1000): String {
         flushBuffer()
@@ -390,7 +303,6 @@ object AppLogger {
         }
     }
 
-
     fun getRecentLogTail(maxChars: Int = 12000): String {
         flushBuffer()
         return try {
@@ -405,17 +317,13 @@ object AppLogger {
         }
     }
 
-
     fun getSessionDuration(): Long {
         return System.currentTimeMillis() - startTime
     }
 
-
     fun flush() {
         flushBuffer()
     }
-
-
 
     private fun log(
         level: Level,
@@ -445,14 +353,11 @@ object AppLogger {
                 }
             }
 
-
             logBuffer.offer(logLine)
-
 
             if (level.value >= Level.ERROR.value || logBuffer.size >= MAX_BUFFER_SIZE) {
                 flushBuffer()
             }
-
 
             if (logToLogcat) {
                 val logcatTag = "[$category] $tag"
@@ -534,7 +439,6 @@ object AppLogger {
                     append("\n$separator\n")
                 }
 
-
                 writeDirectly(crashInfo)
 
                 Log.e(TAG, "Application crash logged", throwable)
@@ -542,7 +446,6 @@ object AppLogger {
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to log crash", e)
             }
-
 
             defaultHandler?.uncaughtException(thread, throwable)
         }

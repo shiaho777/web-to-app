@@ -10,10 +10,6 @@ import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.core.webview.WebViewManager
 import com.webtoapp.data.model.WebViewConfig
 
-
-
-
-
 class SystemWebViewEngine(
     private val context: Context,
     private val adBlocker: AdBlocker
@@ -30,7 +26,6 @@ class SystemWebViewEngine(
         callback: BrowserEngineCallback
     ): View {
         val wv = WebView(context)
-
 
         val bridgeCallbacks = object : WebViewCallbacks {
             override fun onPageStarted(url: String?) = callback.onPageStarted(url)
@@ -49,7 +44,6 @@ class SystemWebViewEngine(
             override fun onHideCustomView() = callback.onHideCustomView()
 
             override fun onGeolocationPermission(origin: String?, cb: GeolocationPermissions.Callback?) {
-
 
                 cb?.invoke(origin, true, false)
             }
@@ -125,45 +119,7 @@ class SystemWebViewEngine(
         webView?.clearHistory()
     }
 
-    override fun getShields(): com.webtoapp.core.engine.shields.BrowserShields? {
-        return webViewManager.getShields()
-    }
-
-    override fun toggleReaderMode(enabled: Boolean) {
-        val shields = getShields() ?: return
-        if (enabled) {
-            evaluateJavascript(shields.readerMode.generateExtractScript()) { result ->
-                if (result != null && result != "null" && result != "\"null\"") {
-                    try {
-                        val jsonStr = com.webtoapp.util.GsonProvider.gson.fromJson(result, String::class.java)
-                        val obj = com.google.gson.JsonParser.parseString(jsonStr).asJsonObject
-                        val title = obj.get("title")?.asString ?: ""
-                        val siteName = obj.get("siteName")?.asString ?: ""
-                        val author = obj.get("author")?.asString ?: ""
-                        val content = obj.get("content")?.asString ?: ""
-                        val url = obj.get("url")?.asString ?: ""
-
-                        val readerHtml = shields.readerMode.generateReaderHtml(
-                            title, siteName, author, content, url
-                        )
-                        webView?.loadDataWithBaseURL(url, readerHtml, "text/html", "UTF-8", url)
-                    } catch (e: Exception) {
-                        com.webtoapp.core.logging.AppLogger.e("SystemWebViewEngine", "Reader mode parse failed", e)
-                    }
-                }
-            }
-        } else {
-            webView?.reload()
-        }
-    }
-
-
-
-
     fun getWebViewManager(): WebViewManager = webViewManager
-
-
-
 
     fun getWebView(): WebView? = webView
 }

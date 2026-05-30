@@ -10,9 +10,6 @@ import com.webtoapp.core.logging.AppLogger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
-
-
-
 class ForcedRunState(
     val forcedRunManager: ForcedRunManager,
     forcedRunActiveState: State<Boolean>,
@@ -29,9 +26,6 @@ class ForcedRunState(
     var showForcedRunPermissionDialog by showPermissionDialogState
     var forcedRunPermissionChecked by permissionCheckedState
 }
-
-
-
 
 @Composable
 fun rememberForcedRunState(context: Context): ForcedRunState {
@@ -56,9 +50,6 @@ fun rememberForcedRunState(context: Context): ForcedRunState {
     }
 }
 
-
-
-
 fun formatDuration(ms: Long): String {
     val totalSeconds = ms.coerceAtLeast(0) / 1000
     val hours = totalSeconds / 3600
@@ -70,9 +61,6 @@ fun formatDuration(ms: Long): String {
         String.format(java.util.Locale.getDefault(), "%02d:%02d", minutes, seconds)
     }
 }
-
-
-
 
 fun updateForcedRunState(
     state: ForcedRunState,
@@ -115,9 +103,6 @@ fun updateForcedRunState(
     }
 }
 
-
-
-
 @Composable
 fun ForcedRunEffects(
     state: ForcedRunState,
@@ -144,7 +129,6 @@ fun ForcedRunEffects(
         }
     }
 
-
     LaunchedEffect(isActivated, config) {
         while (isActive) {
             updateForcedRunState(state, config, isActivated)
@@ -153,11 +137,9 @@ fun ForcedRunEffects(
         }
     }
 
-
     LaunchedEffect(state.forcedRunActive, config) {
         onForcedRunStateChanged(state.forcedRunActive, config)
     }
-
 
     DisposableEffect(Unit) {
         onDispose {

@@ -2,9 +2,6 @@ package com.webtoapp.core.ai
 
 import com.google.gson.JsonObject
 
-
-
-
 sealed class StreamEvent {
     object Started : StreamEvent()
     data class Thinking(val content: String) : StreamEvent()
@@ -12,9 +9,6 @@ sealed class StreamEvent {
     data class Done(val fullContent: String) : StreamEvent()
     data class Error(val message: String) : StreamEvent()
 }
-
-
-
 
 data class ToolCallResponse(
     val textContent: String = "",
@@ -28,9 +22,6 @@ data class ToolCallData(
     val arguments: Map<String, Any?>
 )
 
-
-
-
 sealed class ToolStreamEvent {
     object Started : ToolStreamEvent()
     data class TextDelta(val delta: String, val accumulated: String) : ToolStreamEvent()
@@ -42,17 +33,11 @@ sealed class ToolStreamEvent {
     data class Error(val message: String) : ToolStreamEvent()
 }
 
-
-
-
 data class ToolCallInfo(
     val id: String,
     val name: String,
     val arguments: String
 )
-
-
-
 
 internal fun extractTextFromContentElement(elem: com.google.gson.JsonElement?): String? {
     if (elem == null || elem.isJsonNull) return null
@@ -76,9 +61,6 @@ internal fun extractTextFromContentElement(elem: com.google.gson.JsonElement?): 
         else -> null
     }
 }
-
-
-
 
 internal fun extractReasoningFrom(choiceObj: JsonObject?, deltaObj: JsonObject?): String? {
     val fromDelta = sequenceOf(
@@ -106,9 +88,6 @@ internal fun extractReasoningFrom(choiceObj: JsonObject?, deltaObj: JsonObject?)
         }
     }.firstOrNull()
 }
-
-
-
 
 internal fun extractContentFrom(choiceObj: JsonObject?): String? {
     if (choiceObj == null) return null

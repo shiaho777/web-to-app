@@ -39,7 +39,6 @@ fun LinuxEnvironmentScreen(onBack: () -> Unit) {
     val scrollState = rememberScrollState()
     val theme = LocalAppTheme.current
 
-
     val themeAccentColor = MaterialTheme.colorScheme.primary
 
     val envManager = remember { LinuxEnvironmentManager.getInstance(context) }
@@ -161,9 +160,6 @@ fun LinuxEnvironmentScreen(onBack: () -> Unit) {
         }
 }
 
-
-
-
 @Composable
 private fun CardContainer(
     modifier: Modifier = Modifier,
@@ -194,7 +190,6 @@ private fun StatusCard(
     val isReady = state is EnvironmentState.Ready
     val isInstalling = state is EnvironmentState.Downloading || state is EnvironmentState.Installing
     val isError = state is EnvironmentState.Error
-
 
     val readyColor = themeColor
 
@@ -238,7 +233,7 @@ private fun StatusCard(
                         text = when (state) {
                             is EnvironmentState.Ready -> Strings.envReady
                             is EnvironmentState.NotInstalled -> Strings.envNotInstalled
-                            is EnvironmentState.NodeInstalledNpmMissing -> "Node 已就绪，npm 未安装"
+                            is EnvironmentState.NodeInstalledNpmMissing -> Strings.nodeInstalledNpmMissing
                             is EnvironmentState.Downloading -> "${Strings.envDownloading}: ${state.component}"
                             is EnvironmentState.Installing -> "${Strings.envInstalling}: ${state.step}"
                             is EnvironmentState.Error -> Strings.envInstallFailed
@@ -251,7 +246,7 @@ private fun StatusCard(
                         text = when (state) {
                             is EnvironmentState.Ready -> Strings.canBuildFrontend
                             is EnvironmentState.NotInstalled -> Strings.builtInPackagerReady
-                            is EnvironmentState.NodeInstalledNpmMissing -> "继续安装 npm / pnpm / yarn 后即可进行本地构建"
+                            is EnvironmentState.NodeInstalledNpmMissing -> Strings.nodeInstalledNpmMissingHint
                             is EnvironmentState.Downloading -> "${(state.progress * 100).toInt()}%"
                             is EnvironmentState.Installing -> "${(state.progress * 100).toInt()}%"
                             is EnvironmentState.Error -> state.message
@@ -341,7 +336,7 @@ private fun BuildToolsCard(info: EnvironmentInfo, themeColor: Color) {
                 icon = Icons.Outlined.Code,
                 name = "Node.js",
                 status = versionStatus(info.nodeReady, info.nodeVersion),
-                description = "本地脚本运行时",
+                description = Strings.nodeRuntimeDesc,
                 color = if (info.nodeReady) themeColor else com.webtoapp.ui.design.WtaColors.semantic.neutral,
                 isAvailable = info.nodeReady,
             )
@@ -352,7 +347,7 @@ private fun BuildToolsCard(info: EnvironmentInfo, themeColor: Color) {
                 icon = Icons.Outlined.Terminal,
                 name = "npm",
                 status = versionStatus(info.npmReady, info.npmVersion),
-                description = "依赖安装与 npm run build",
+                description = Strings.npmDesc,
                 color = if (info.npmReady) themeColor else com.webtoapp.ui.design.WtaColors.semantic.neutral,
                 isAvailable = info.npmReady
             )
@@ -363,7 +358,7 @@ private fun BuildToolsCard(info: EnvironmentInfo, themeColor: Color) {
                 icon = Icons.Outlined.DeveloperMode,
                 name = "pnpm",
                 status = versionStatus(info.pnpmReady, info.pnpmVersion),
-                description = "pnpm 项目支持",
+                description = Strings.toolPnpmDesc,
                 color = if (info.pnpmReady) themeColor else com.webtoapp.ui.design.WtaColors.semantic.neutral,
                 isAvailable = info.pnpmReady
             )
@@ -374,7 +369,7 @@ private fun BuildToolsCard(info: EnvironmentInfo, themeColor: Color) {
                 icon = Icons.Outlined.Layers,
                 name = "yarn",
                 status = versionStatus(info.yarnReady, info.yarnVersion),
-                description = "yarn 项目支持",
+                description = Strings.toolYarnDesc,
                 color = if (info.yarnReady) themeColor else com.webtoapp.ui.design.WtaColors.semantic.neutral,
                 isAvailable = info.yarnReady
             )
@@ -385,7 +380,7 @@ private fun BuildToolsCard(info: EnvironmentInfo, themeColor: Color) {
                 icon = Icons.Outlined.Speed,
                 name = "esbuild",
                 status = if (info.esbuildAvailable) Strings.installed else Strings.notInstalled,
-                description = "静态资源优化与轻量构建加速",
+                description = Strings.esbuildDesc,
                 color = if (info.esbuildAvailable) themeColor else com.webtoapp.ui.design.WtaColors.semantic.neutral,
                 isAvailable = info.esbuildAvailable
             )
@@ -523,7 +518,6 @@ private fun StorageCard(info: EnvironmentInfo, themeColor: Color, onClearCache: 
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
 
             StorageRow(Strings.buildTools, formatSize(info.storageUsed))
             Spacer(modifier = Modifier.height(8.dp))
@@ -677,12 +671,6 @@ private fun formatSize(bytes: Long): String = when {
     else -> String.format(java.util.Locale.getDefault(), "%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
 }
 
-
-/**
- * 介绍卡片：开门见山告诉用户这个功能是什么、能干什么、不能干什么。
- * 之前不少用户（包括"为什么 Go 不能直接构建"的反馈）都是因为以为这是通用的
- * "本地构建一切"，所以 UI 上需要明确说明它的实际边界——这是 Node.js 工具链。
- */
 @Composable
 private fun IntroCard(themeColor: Color) {
     CardContainer {
@@ -717,13 +705,6 @@ private fun IntroCard(themeColor: Color) {
     }
 }
 
-/**
- * 项目支持矩阵：把每种 App 类型在手机上是怎样被处理的做成一份清单。
- * 关键设计目标——让 Go 应用为什么必须预编译这件事不再是隐藏知识：
- *   - 前端 → 在这里 build
- *   - 静态 / Node / PHP / Python → 不需要 build，直接打包或现场解释
- *   - Go → 必须电脑端预编译，给出明确指令和原因
- */
 @Composable
 private fun ProjectSupportMatrixCard(themeColor: Color) {
     CardContainer {
@@ -799,7 +780,6 @@ private fun ProjectSupportMatrixCard(themeColor: Color) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // "为什么 Go 需要预编译"详细说明，折叠在矩阵下方
             WhyGoExpander()
         }
     }
@@ -859,9 +839,6 @@ private fun ProjectSupportRow(
     }
 }
 
-/**
- * 折叠式说明：第一次看到的用户可以选择展开看技术原因，避免主屏幕信息过载。
- */
 @Composable
 private fun WhyGoExpander() {
     var expanded by remember { mutableStateOf(false) }
@@ -914,14 +891,6 @@ private fun WhyGoExpander() {
     }
 }
 
-
-/**
- * "更多运行时"卡片：让用户可选地安装 PHP / Composer / Python，
- * 这些是相对独立的下载（PHP 几十 MB / Composer 3.5 MB / Python ~15 MB），
- * 不强制下载——只在用户明确点击时才触发。
- *
- * onChanged：安装完成后用来刷新外层 envInfo
- */
 @Composable
 private fun MoreRuntimesCard(
     info: EnvironmentInfo,
@@ -932,7 +901,6 @@ private fun MoreRuntimesCard(
     val scope = rememberCoroutineScope()
     val envManager = remember { LinuxEnvironmentManager.getInstance(context) }
 
-    // 三个运行时各自维护一个"正在安装中"的状态，避免它们互相阻塞 UI
     var installingPhp by remember { mutableStateOf(false) }
     var installingComposer by remember { mutableStateOf(false) }
     var installingPython by remember { mutableStateOf(false) }
@@ -971,7 +939,6 @@ private fun MoreRuntimesCard(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // PHP 运行时
             RuntimeInstallRow(
                 title = "PHP",
                 buttonLabel = if (installingPhp) Strings.runtimeInstalling else Strings.installPhpRuntime,
@@ -992,7 +959,6 @@ private fun MoreRuntimesCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Composer 依赖 PHP，按钮要求 PHP 必须已就绪
             RuntimeInstallRow(
                 title = "Composer",
                 buttonLabel = when {
@@ -1017,7 +983,6 @@ private fun MoreRuntimesCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Python 运行时（pip 随包，与 Python 同生命周期）
             RuntimeInstallRow(
                 title = "Python",
                 buttonLabel = if (installingPython) Strings.runtimeInstalling else Strings.installPythonRuntime,

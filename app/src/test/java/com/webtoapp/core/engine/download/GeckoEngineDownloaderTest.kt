@@ -62,6 +62,8 @@ class GeckoEngineDownloaderTest {
         val abiDir = fileManager.getAbiDir(EngineType.GECKOVIEW, abi)
         abiDir.mkdirs()
         java.io.File(abiDir, "libxul.so").writeBytes(byteArrayOf(1, 2, 3))
+
+        fileManager.getOmniJaFile(EngineType.GECKOVIEW).writeBytes(byteArrayOf(4, 5, 6))
         fileManager.setDownloadedVersion(EngineType.GECKOVIEW, "cached-version")
 
         val success = downloader.download(abi = abi, version = "cached-version")

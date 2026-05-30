@@ -6,25 +6,13 @@ import com.webtoapp.core.i18n.Strings
 import java.io.File
 import java.nio.charset.Charset
 
-
-
-
-
-
-
-
-
-
 object HtmlProjectProcessor {
 
     private const val TAG = "HtmlProjectProcessor"
 
-
     private const val MAX_ANALYZE_FILE_SIZE = 5L * 1024 * 1024
 
-
     private val encodingCache = LruCache<String, String>(50)
-
 
     private val cssLinkRegex = Regex("""<link[^>]*href=["']([^"']+)["'][^>]*>""", RegexOption.IGNORE_CASE)
     private val jsScriptRegex = Regex("""<script[^>]*src=["']([^"']+)["'][^>]*>""", RegexOption.IGNORE_CASE)
@@ -34,25 +22,17 @@ object HtmlProjectProcessor {
 
     private val localCssRegex = Regex("""<link[^>]*href=["'](?!https?://)[^"']*\.css["'][^>]*>""", RegexOption.IGNORE_CASE)
 
-
-
     private val localJsRegex = Regex("""(?s)<script[^>]*\bsrc=["'](?!https?://)([^"']*\.js)["'][^>]*>.*?</script>""", RegexOption.IGNORE_CASE)
     private val charsetRegex = Regex("""charset=["']?([^"'\s>]+)""", RegexOption.IGNORE_CASE)
-
 
     private val closeHeadRegex = Regex("</head>", RegexOption.IGNORE_CASE)
     private val openBodyRegex = Regex("<body", RegexOption.IGNORE_CASE)
     private val openHtmlTagRegex = Regex("<html[^>]*>", RegexOption.IGNORE_CASE)
 
-
     private val closeBodyRegex = Regex("</body>", RegexOption.IGNORE_CASE)
     private val closeHtmlRegex = Regex("</html>", RegexOption.IGNORE_CASE)
 
-
     private val openHeadRegex = Regex("<head>", RegexOption.IGNORE_CASE)
-
-
-
 
     data class ProjectAnalysis(
         val htmlFiles: List<FileInfo>,
@@ -63,9 +43,6 @@ object HtmlProjectProcessor {
         val suggestions: List<String>
     )
 
-
-
-
     data class FileInfo(
         val name: String,
         val path: String,
@@ -73,9 +50,6 @@ object HtmlProjectProcessor {
         val encoding: String?,
         val references: List<ResourceReference> = emptyList()
     )
-
-
-
 
     data class ResourceReference(
         val type: ReferenceType,
@@ -93,9 +67,6 @@ object HtmlProjectProcessor {
         CSS_URL,
         OTHER
     }
-
-
-
 
     data class ProjectIssue(
         val severity: IssueSeverity,
@@ -120,9 +91,6 @@ object HtmlProjectProcessor {
         EXTERNAL_RESOURCE
     }
 
-
-
-
     fun analyzeProject(
         htmlFilePath: String?,
         cssFilePath: String?,
@@ -136,7 +104,6 @@ object HtmlProjectProcessor {
         val cssFiles = mutableListOf<FileInfo>()
         val jsFiles = mutableListOf<FileInfo>()
         val otherFiles = mutableListOf<FileInfo>()
-
 
         htmlFilePath?.let { path ->
             val file = File(path)
@@ -164,7 +131,6 @@ object HtmlProjectProcessor {
                     references = references
                 ))
 
-
                 references.forEach { ref ->
                     if (!ref.isValid) {
                         issues.add(ProjectIssue(
@@ -188,7 +154,6 @@ object HtmlProjectProcessor {
             }
         }
 
-
         cssFilePath?.let { path ->
             val file = File(path)
             if (file.exists()) {
@@ -199,7 +164,6 @@ object HtmlProjectProcessor {
                     size = file.length(),
                     encoding = encoding
                 ))
-
 
                 if (encoding != "UTF-8" && encoding != null) {
                     issues.add(ProjectIssue(
@@ -213,7 +177,6 @@ object HtmlProjectProcessor {
             }
         }
 
-
         jsFilePath?.let { path ->
             val file = File(path)
             if (file.exists()) {
@@ -226,7 +189,6 @@ object HtmlProjectProcessor {
                     encoding = encoding
                 ))
 
-
                 if (file.length() <= MAX_ANALYZE_FILE_SIZE) {
                     val content = readFileWithEncoding(file, encoding)
 
@@ -234,7 +196,6 @@ object HtmlProjectProcessor {
                 }
             }
         }
-
 
         if (htmlFiles.isNotEmpty() && cssFiles.isEmpty() && jsFiles.isEmpty()) {
             val htmlFileObj = htmlFilePath?.let { File(it) }?.takeIf { it.exists() && it.length() <= MAX_ANALYZE_FILE_SIZE }
@@ -258,15 +219,6 @@ object HtmlProjectProcessor {
         )
     }
 
-
-
-
-
-
-
-
-
-
     fun processHtmlContent(
         htmlContent: String,
         cssContent: String?,
@@ -276,11 +228,9 @@ object HtmlProjectProcessor {
     ): String {
         var result = htmlContent
 
-
         if (fixPaths) {
             result = fixResourcePaths(result)
         }
-
 
         if (removeLocalRefs) {
             result = removeLocalResourceReferences(result,
@@ -288,16 +238,13 @@ object HtmlProjectProcessor {
                 hasJsContent = !jsContent.isNullOrBlank())
         }
 
-
         if (!cssContent.isNullOrBlank()) {
             result = inlineCss(result, cssContent)
         }
 
-
         if (!jsContent.isNullOrBlank()) {
             result = inlineJs(result, jsContent)
         }
-
 
         if (!result.contains("viewport", ignoreCase = true)) {
             result = addViewportMeta(result)
@@ -306,16 +253,8 @@ object HtmlProjectProcessor {
         return result
     }
 
-
-
-
-
-
-
     private fun fixResourcePaths(html: String): String {
         var result = html
-
-
 
         result = absolutePathRegex.replace(result) { match ->
             val attr = match.groupValues[1]
@@ -323,26 +262,15 @@ object HtmlProjectProcessor {
             """$attr=".${path}""""
         }
 
-        // 修复协议相对路径（//example.com/js/app.js -> https://example.com/js/app.js）
         result = protocolRelativeRegex.replace(result) { match ->
             val attr = match.groupValues[1]
             val path = match.groupValues[2]
             """$attr="https:$path""""
         }
 
-        // 不再修改 ../ 开头的相对路径，因为它们已经是正确的相对引用
-        // 强制改为 ./ 会破坏子目录 HTML 文件的正确引用（如 pages/about.html 引用 ../js/app.js）
-
         return result
     }
 
-    /**
-     * 移除本地资源引用
-     * @param html HTML 内容
-     * @param hasCssContent 是否有 CSS 内容可内联
-     * @param hasJsContent 是否有 JS 内容可内联
-     * @return 处理后的 HTML
-     */
     private fun removeLocalResourceReferences(
         html: String,
         hasCssContent: Boolean = true,
@@ -350,12 +278,10 @@ object HtmlProjectProcessor {
     ): String {
         var result = html
 
-        // 只在有 CSS 内容时才移除 CSS link 标签，否则保留引用让用户自己处理
         if (hasCssContent) {
             result = localCssRegex.replace(result, "<!-- CSS inlined -->")
         }
 
-        // 只在有 JS 内容时才移除 JS script 标签，否则保留引用让用户自己处理
         if (hasJsContent) {
             result = localJsRegex.replace(result, "<!-- JS inlined -->")
         }
@@ -363,9 +289,6 @@ object HtmlProjectProcessor {
         return result
     }
 
-    /**
-     * 内联 CSS
-     */
     private fun inlineCss(html: String, css: String): String {
         val styleTag = "<style>\n/* Inlined CSS */\n$css\n</style>"
         val escapedStyleTag = Regex.escapeReplacement(styleTag)
@@ -391,9 +314,6 @@ object HtmlProjectProcessor {
         }
     }
 
-    /**
-     * 内联 JS
-     */
     private fun inlineJs(html: String, js: String): String {
         val wrappedJs = wrapJsForSafeExecution(js)
         val scriptTag = "<script>\n/* Inlined JS */\n$wrappedJs\n</script>"
@@ -410,14 +330,10 @@ object HtmlProjectProcessor {
         }
     }
 
-    /**
-     * 包装 JS 确保安全执行
-     */
     private fun wrapJsForSafeExecution(js: String): String {
         val trimmed = js.trim()
         if (trimmed.isEmpty()) return ""
 
-        // Check是否已有 DOM 加载包装
         val hasWrapper = trimmed.contains("DOMContentLoaded", ignoreCase = true) ||
                         trimmed.contains("window.onload", ignoreCase = true) ||
                         trimmed.contains("addEventListener('load'", ignoreCase = true) ||
@@ -450,9 +366,6 @@ $trimmed
         }
     }
 
-    /**
-     * 添加 viewport meta
-     */
     private fun addViewportMeta(html: String): String {
         val viewportMeta = """<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">"""
 
@@ -474,13 +387,9 @@ $trimmed
         }
     }
 
-    /**
-     * 分析 HTML 中的资源引用
-     */
     private fun analyzeHtmlReferences(html: String, baseDir: File?): List<ResourceReference> {
         val references = mutableListOf<ResourceReference>()
 
-        // CSS link 标签
         cssLinkRegex.findAll(html).forEach { match ->
             val path = match.groupValues[1]
             if (!path.startsWith("http://") && !path.startsWith("https://") && path.endsWith(".css", ignoreCase = true)) {
@@ -488,7 +397,6 @@ $trimmed
             }
         }
 
-        // JS script 标签
         jsScriptRegex.findAll(html).forEach { match ->
             val path = match.groupValues[1]
             if (!path.startsWith("http://") && !path.startsWith("https://")) {
@@ -496,7 +404,6 @@ $trimmed
             }
         }
 
-        // Image
         imgSrcRegex.findAll(html).forEach { match ->
             val path = match.groupValues[1]
             if (!path.startsWith("http://") && !path.startsWith("https://") && !path.startsWith("data:")) {
@@ -507,9 +414,6 @@ $trimmed
         return references
     }
 
-    /**
-     * 分析单个资源引用
-     */
     private fun analyzeReference(path: String, type: ReferenceType, baseDir: File?): ResourceReference {
         val isAbsolute = path.startsWith("/")
         val resolvedPath = if (baseDir != null && !isAbsolute) {
@@ -533,34 +437,29 @@ $trimmed
         )
     }
 
-    /**
-     * 检测文件编码（带缓存）
-     */
     private fun detectEncoding(file: File): String? {
         val cacheKey = file.absolutePath + "_" + file.lastModified()
 
-        // Check缓存
         encodingCache.get(cacheKey)?.let { return it }
 
         return try {
-            // Only read the first 1000 bytes via stream to avoid loading the entire file into memory
+
             val bytes = ByteArray(minOf(1000, file.length().toInt().coerceAtLeast(0)))
             val bytesRead = file.inputStream().use { it.read(bytes) }
             val header = if (bytesRead < bytes.size) bytes.copyOf(bytesRead) else bytes
 
             val encoding = when {
-                // Check BOM
+
                 header.size >= 3 && header[0] == 0xEF.toByte() && header[1] == 0xBB.toByte() && header[2] == 0xBF.toByte() -> "UTF-8"
                 header.size >= 2 && header[0] == 0xFE.toByte() && header[1] == 0xFF.toByte() -> "UTF-16BE"
                 header.size >= 2 && header[0] == 0xFF.toByte() && header[1] == 0xFE.toByte() -> "UTF-16LE"
                 else -> {
-                    // 尝试检测 charset 声明
+
                     val content = String(header, Charsets.ISO_8859_1)
                     charsetRegex.find(content)?.groupValues?.get(1)?.uppercase() ?: "UTF-8"
                 }
             }
 
-            // Cache结果
             encodingCache.put(cacheKey, encoding)
             encoding
         } catch (e: Exception) {
@@ -569,16 +468,10 @@ $trimmed
         }
     }
 
-    /**
-     * 清除编码缓存
-     */
     fun clearEncodingCache() {
         encodingCache.evictAll()
     }
 
-    /**
-     * 使用正确编码读取文件
-     */
     fun readFileWithEncoding(file: File, encoding: String?): String {
         return try {
             val charset = when (encoding?.uppercase()) {
@@ -592,7 +485,7 @@ $trimmed
             file.readText(charset)
         } catch (e: Exception) {
             AppLogger.e(TAG, "读取文件失败: ${file.path}", e)
-            // 降级尝试
+
             try {
                 file.readText(Charsets.UTF_8)
             } catch (e2: Exception) {
@@ -601,11 +494,8 @@ $trimmed
         }
     }
 
-    /**
-     * 检查 JS 常见问题
-     */
     private fun checkJsIssues(content: String, fileName: String, issues: MutableList<ProjectIssue>) {
-        // Check是否使用了 document.write（在 WebView 中可能有问题）
+
         if (content.contains("document.write", ignoreCase = true)) {
             issues.add(ProjectIssue(
                 severity = IssueSeverity.WARNING,
@@ -616,7 +506,6 @@ $trimmed
             ))
         }
 
-        // Check是否有语法错误的常见模式
         val unclosedBraces = content.count { it == '{' } - content.count { it == '}' }
         if (unclosedBraces != 0) {
             issues.add(ProjectIssue(
