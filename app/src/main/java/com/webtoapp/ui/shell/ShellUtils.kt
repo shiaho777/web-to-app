@@ -44,6 +44,16 @@ internal fun buildPackagedHtmlShellEntryUrl(packageName: String, entryFile: Stri
     return "${buildPackagedHtmlShellBaseUrl(packageName)}/${android.net.Uri.encode(normalizedEntry, "/")}"
 }
 
+/**
+ * file:// 方式的 HTML 入口 URL。用于纯静态本地应用——不经过本地 HTTP server,
+ * 直接从打包进 APK 的 assets/html 加载。运行时 [HtmlFrontendShellMode] 实际会基于
+ * 解压目录重建 file:// URL,此处作为打包态 targetUrl 的一致占位/兜底值。
+ */
+internal fun buildPackagedHtmlFileSchemeEntryUrl(entryFile: String): String {
+    val normalizedEntry = entryFile.removePrefix("/").ifBlank { "index.html" }
+    return "file:///android_asset/html/${android.net.Uri.encode(normalizedEntry, "/")}"
+}
+
 internal fun validateDeepLinkUrl(url: String, allowedHosts: List<String>, targetUrl: String): String {
     if (allowedHosts.isEmpty()) return url
 

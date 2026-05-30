@@ -2458,10 +2458,15 @@ builtins.__import__ = _w2a_import
 
     private fun buildRequiredPermissions(config: ApkConfig): List<String> {
 
-        val permissions = linkedSetOf(
-            "android.permission.INTERNET",
-            "android.permission.ACCESS_NETWORK_STATE"
-        )
+        val permissions = linkedSetOf<String>()
+
+        // 纯 file:// 的静态本地应用(无 Service Worker / PWA / WASM)不需要本地 HTTP
+        // server,也不需要 INTERNET——彻底脱离网络。其余所有情况都注入 INTERNET。
+        // ACCESS_NETWORK_STATE 始终保留:它非敏感权限,且多处网络状态检查会无条件用到。
+        if (!config.htmlUsesFileScheme) {
+            permissions += "android.permission.INTERNET"
+        }
+        permissions += "android.permission.ACCESS_NETWORK_STATE"
 
         val rp = config.runtimePermissions
 
@@ -2724,9 +2729,10 @@ builtins.__import__ = _w2a_import
 }
 
 fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = null): ApkConfig {
-    val effectiveTargetUrl = computeEffectiveTargetUrl(packageName)
+    val htmlUsesFileScheme = computeHtmlUsesFileScheme(context)
+    val effectiveTargetUrl = computeEffectiveTargetUrl(packageName, htmlUsesFileScheme)
     return ApkConfig(
-        meta = buildMetaBlock(packageName, effectiveTargetUrl),
+        meta = buildMetaBlock(packageName, effectiveTargetUrl, htmlUsesFileScheme),
         activation = buildActivationBlock(),
         adBlock = buildAdBlockBlock(),
         announcement = buildAnnouncementBlock(),
@@ -2759,10 +2765,11 @@ fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = 
     )
 }
 
-private fun WebApp.computeEffectiveTargetUrl(packageName: String): String = when (appType) {
+private fun WebApp.computeEffectiveTargetUrl(packageName: String, htmlUsesFileScheme: Boolean): String = when (appType) {
     com.webtoapp.data.model.AppType.HTML -> {
         val entryFile = htmlConfig?.getValidEntryFile() ?: "index.html"
-        buildPackagedHtmlShellEntryUrl(packageName, entryFile)
+        if (htmlUsesFileScheme) buildPackagedHtmlFileSchemeEntryUrl(entryFile)
+        else buildPackagedHtmlShellEntryUrl(packageName, entryFile)
     }
     com.webtoapp.data.model.AppType.IMAGE,
     com.webtoapp.data.model.AppType.VIDEO -> "asset://media_content"
@@ -2778,13 +2785,46 @@ private fun WebApp.computeEffectiveTargetUrl(packageName: String): String = when
     }
     com.webtoapp.data.model.AppType.FRONTEND -> {
         val entryFile = htmlConfig?.getValidEntryFile() ?: "index.html"
-        buildPackagedHtmlShellEntryUrl(packageName, entryFile)
+        if (htmlUsesFileScheme) buildPackagedHtmlFileSchemeEntryUrl(entryFile)
+        else buildPackagedHtmlShellEntryUrl(packageName, entryFile)
     }
     com.webtoapp.data.model.AppType.PHP_APP -> "phpapp://localhost"
     com.webtoapp.data.model.AppType.PYTHON_APP -> "pythonapp://localhost"
     com.webtoapp.data.model.AppType.GO_APP -> "goapp://localhost"
     com.webtoapp.data.model.AppType.MULTI_WEB -> "multiweb://localhost"
     else -> url
+}
+
+/**
+ * 打包期判定:HTML/FRONTEND 应用能否以 file:// 纯本地方式运行(不需要本地 HTTP
+ * server、不需要 INTERNET)。判定复用运行时同一套逻辑
+ * [com.webtoapp.core.webview.LocalHttpServer.siteRequiresHttpServer]:站点若含
+ * Service Worker / PWA manifest / WASM 等需要 HTTP 源的特性,则必须用 localhost。
+ *
+ * 保守原则:仅 HTML/FRONTEND 适用;拿不到源目录或拿不到 context 时一律返回 false
+ * (回退 localhost + INTERNET),绝不冒进把联网/PWA 应用误判成 file://。
+ */
+private fun WebApp.computeHtmlUsesFileScheme(context: android.content.Context?): Boolean {
+    if (appType != com.webtoapp.data.model.AppType.HTML &&
+        appType != com.webtoapp.data.model.AppType.FRONTEND) {
+        return false
+    }
+    if (context == null) return false
+    val sourceDir = resolveHtmlSourceDir(context) ?: return false
+    if (!sourceDir.exists() || !sourceDir.isDirectory) return false
+    return !com.webtoapp.core.webview.LocalHttpServer.siteRequiresHttpServer(sourceDir)
+}
+
+private fun WebApp.resolveHtmlSourceDir(context: android.content.Context): File? {
+    val stored = htmlConfig?.projectId
+        ?.takeIf { it.isNotBlank() }
+        ?.let { File(context.filesDir, "html_projects/$it") }
+        ?.takeIf { it.exists() && it.isDirectory }
+    if (stored != null) return stored
+    return htmlConfig?.projectDir
+        ?.takeIf { it.isNotBlank() }
+        ?.let { File(it) }
+        ?.takeIf { it.exists() && it.isDirectory }
 }
 
 private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
@@ -2812,7 +2852,7 @@ private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
     return result
 }
 
-private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: String): MetaBlock = MetaBlock(
+private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: String, htmlUsesFileScheme: Boolean): MetaBlock = MetaBlock(
     appName = name,
     packageName = packageName,
     targetUrl = effectiveTargetUrl,
@@ -2825,7 +2865,8 @@ private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: Strin
     themeType = themeType,
     darkMode = "SYSTEM",
     language = com.webtoapp.core.i18n.Strings.currentLanguage.value.name,
-    engineType = apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW"
+    engineType = apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW",
+    htmlUsesFileScheme = htmlUsesFileScheme
 )
 
 private fun WebApp.buildActivationBlock(): ActivationBlock = ActivationBlock(
@@ -2847,6 +2888,7 @@ private fun WebApp.buildAnnouncementBlock(): AnnouncementBlock = AnnouncementBlo
     enabled = announcementEnabled,
     title = announcement?.title ?: "",
     content = announcement?.content ?: "",
+    contentIsHtml = announcement?.contentIsHtml ?: false,
     link = announcement?.linkUrl ?: "",
     linkText = announcement?.linkText ?: "",
     template = announcement?.template?.toUiTemplate()?.type?.name ?: AnnouncementTemplateType.MINIMAL.name,
@@ -3062,7 +3104,8 @@ private fun WebApp.buildDnsBlock(): DnsBlock = DnsBlock(
         provider = webViewConfig.dnsConfig.provider,
         customDohUrl = webViewConfig.dnsConfig.customDohUrl,
         dohMode = webViewConfig.dnsConfig.dohMode,
-        bypassSystemDns = webViewConfig.dnsConfig.bypassSystemDns
+        bypassSystemDns = webViewConfig.dnsConfig.bypassSystemDns,
+        echEnabled = webViewConfig.dnsConfig.echEnabled
     )
 )
 

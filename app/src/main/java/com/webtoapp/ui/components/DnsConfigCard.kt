@@ -180,6 +180,33 @@ fun DnsConfigCard(
                             onCheckedChange = { onDnsConfigChange(dnsConfig.copy(bypassSystemDns = it)) }
                         )
                     }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                Strings.dnsEchLabel,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                Strings.dnsEchDesc,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                Strings.dnsEchGeckoOnly,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = dnsConfig.echEnabled,
+                            onCheckedChange = { onDnsConfigChange(dnsConfig.copy(echEnabled = it)) }
+                        )
+                    }
                 }
             }
         }

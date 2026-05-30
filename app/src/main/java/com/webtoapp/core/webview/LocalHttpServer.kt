@@ -49,6 +49,57 @@ class LocalHttpServer(
                 }
         }
 
+        /**
+         * 判断一个本地站点是否「必须」通过本地 HTTP server(http://127.0.0.1)加载,
+         * 而不能用 file:// 直开。需要 HTTP server 的能力包括:
+         *   - Service Worker / PWA(file:// 下无法注册 SW、manifest 安装受限)
+         *   - 跨域隔离 / WASM(COOP/COEP 响应头只有 HTTP server 能下发)
+         *
+         * 纯静态 HTML(只有 html/css/js/图片)不满足任一条件时,返回 false,
+         * 运行时改用 file:// 加载——不依赖本地 server、不需要 INTERNET 权限、
+         * 彻底脱离网络。
+         */
+        fun siteRequiresHttpServer(rootDir: File): Boolean {
+            if (!rootDir.exists()) return false
+
+            if (shouldEnableCrossOriginIsolation(rootDir)) return true
+
+            val swFileNames = setOf(
+                "sw.js",
+                "service-worker.js",
+                "serviceworker.js",
+                "service_worker.js",
+                "ngsw-worker.js",
+                "firebase-messaging-sw.js"
+            )
+            val manifestNames = setOf("manifest.json", "manifest.webmanifest")
+
+            return rootDir.walkTopDown()
+                .maxDepth(6)
+                .filter { it.isFile }
+                .take(2000)
+                .any { file ->
+                    val name = file.name.lowercase()
+                    when {
+                        name in swFileNames -> true
+                        name in manifestNames -> true
+                        name.endsWith(".webmanifest") -> true
+                        name.endsWith(".html") || name.endsWith(".htm") ||
+                            name.endsWith(".js") -> {
+                            runCatching {
+                                if (file.length() > 2 * 1024 * 1024L) return@runCatching false
+                                val text = file.readText()
+                                text.contains("serviceWorker.register") ||
+                                    text.contains("navigator.serviceWorker") ||
+                                    text.contains("rel=\"manifest\"") ||
+                                    text.contains("rel='manifest'")
+                            }.getOrDefault(false)
+                        }
+                        else -> false
+                    }
+                }
+        }
+
         fun stablePortForPackageName(
             packageName: String,
             range: PortManager.PortRange = PortManager.PortRange.LOCAL_HTTP

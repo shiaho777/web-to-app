@@ -60,6 +60,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.graphics.toArgb
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.Announcement
@@ -198,6 +200,73 @@ private fun Announcement.linkUrlOrNull(): String? = linkUrl?.takeIf { it.isNotBl
 
 private fun Announcement.linkTextOrDefault(defaultText: String = Strings.viewDetails): String =
     linkText?.ifEmpty { defaultText } ?: defaultText
+
+/**
+ * 公告内容区。根据 [Announcement.contentIsHtml] 决定渲染方式：
+ *  - false（默认）：纯文本 [Text]，保持原有模板样式行为。
+ *  - true：把 content 作为 HTML 嵌入一个轻量 WebView（禁用 JS，仅富文本展示），
+ *    背景透明以贴合弹窗模板配色，文字默认色跟随当前模板 [textColor]。
+ * 外框（标题、关闭按钮、底部按钮）由各 Dialog 自行负责，本组件只渲染"内容"。
+ */
+@Composable
+private fun AnnouncementContent(
+    announcement: Announcement,
+    textColor: Color,
+    modifier: Modifier = Modifier
+) {
+    if (!announcement.contentIsHtml) {
+        Text(
+            text = announcement.content,
+            modifier = modifier,
+            style = MaterialTheme.typography.bodyLarge,
+            color = textColor,
+            lineHeight = 24.sp
+        )
+        return
+    }
+
+    val textCss = String.format("#%06X", 0xFFFFFF and textColor.toArgb())
+    val html = remember(announcement.content, textCss) {
+        """
+        <!DOCTYPE html><html><head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          html,body{margin:0;padding:0;background:transparent;
+            color:$textCss;
+            font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+            font-size:16px;line-height:1.5;word-wrap:break-word;overflow-wrap:break-word;}
+          img,video,iframe{max-width:100%;height:auto;}
+          a{color:inherit;}
+          table{max-width:100%;}
+        </style></head>
+        <body>${announcement.content}</body></html>
+        """.trimIndent()
+    }
+
+    AndroidView(
+        modifier = modifier.fillMaxWidth(),
+        factory = { ctx ->
+            android.webkit.WebView(ctx).apply {
+                setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                isVerticalScrollBarEnabled = false
+                isHorizontalScrollBarEnabled = false
+                settings.javaScriptEnabled = false
+                settings.domStorageEnabled = false
+                settings.allowFileAccess = false
+                settings.allowContentAccess = false
+                @Suppress("DEPRECATION")
+                settings.allowFileAccessFromFileURLs = false
+                @Suppress("DEPRECATION")
+                settings.allowUniversalAccessFromFileURLs = false
+                settings.loadWithOverviewMode = true
+                settings.useWideViewPort = false
+            }
+        },
+        update = { webView ->
+            webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+        }
+    )
+}
 
 @Composable
 fun AnnouncementTemplateSelector(
@@ -433,11 +502,9 @@ private fun SimpleDialog(
                 }
             }
             HorizontalDivider(color = styleAccentColor(style).copy(alpha = 0.10f))
-            Text(
-                text = config.announcement.content,
-                style = MaterialTheme.typography.bodyLarge,
-                color = styleBodyColor(style),
-                lineHeight = 24.sp
+            AnnouncementContent(
+                announcement = config.announcement,
+                textColor = styleBodyColor(style)
             )
             DialogFooter(config.announcement.linkText, onLinkClick, linkUrl, onDismiss)
         }
@@ -486,12 +553,14 @@ private fun AccentDialog(
                             fontWeight = FontWeight.SemiBold,
                             color = Color(0xFF1F2350)
                         )
-                        Text(
-                            text = config.announcement.content,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color(0xFF3B3F68),
-                            lineHeight = 23.sp
-                        )
+                        if (!config.announcement.contentIsHtml) {
+                            Text(
+                                text = config.announcement.content,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color(0xFF3B3F68),
+                                lineHeight = 23.sp
+                            )
+                        }
                     }
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.Filled.Close, contentDescription = Strings.close, tint = Color(0xFF1F2350))
@@ -499,6 +568,12 @@ private fun AccentDialog(
                 }
             }
             Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                if (config.announcement.contentIsHtml) {
+                    AnnouncementContent(
+                        announcement = config.announcement,
+                        textColor = Color(0xFF3B3F68)
+                    )
+                }
                 DialogFooter(config.announcement.linkText, onLinkClick, linkUrl, onDismiss)
             }
         }
@@ -553,11 +628,9 @@ private fun DarkDialog(
                     Icon(Icons.Filled.Close, contentDescription = Strings.close, tint = Color.White)
                 }
             }
-            Text(
-                text = config.announcement.content,
-                style = MaterialTheme.typography.bodyLarge,
-                color = styleBodyColor(style),
-                lineHeight = 24.sp
+            AnnouncementContent(
+                announcement = config.announcement,
+                textColor = styleBodyColor(style)
             )
             DialogFooter(config.announcement.linkText, onLinkClick, linkUrl, onDismiss)
         }

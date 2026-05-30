@@ -136,6 +136,9 @@ data class ShellConfig(
     @SerializedName("targetUrl")
     val targetUrl: String = "",
 
+    @SerializedName("htmlUsesFileScheme")
+    val htmlUsesFileScheme: Boolean = false,
+
     @SerializedName("versionCode")
     val versionCode: Int = 1,
 
@@ -177,6 +180,9 @@ data class ShellConfig(
 
     @SerializedName("announcementContent")
     val announcementContent: String = "",
+
+    @SerializedName("announcementContentIsHtml")
+    val announcementContentIsHtml: Boolean = false,
 
     @SerializedName("announcementLink")
     val announcementLink: String = "",
@@ -924,7 +930,10 @@ data class DnsShellConfig(
     val dohMode: String = "automatic",
 
     @SerializedName("bypassSystemDns")
-    val bypassSystemDns: Boolean = false
+    val bypassSystemDns: Boolean = false,
+
+    @SerializedName("echEnabled")
+    val echEnabled: Boolean = false
 )
 
 data class HostMappingShellEntry(

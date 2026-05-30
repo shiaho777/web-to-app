@@ -118,17 +118,29 @@ fun AnnouncementCard(
                         },
                         label = { Text(Strings.announcementContent) },
                         supportingText = {
-                            Text(
-                                "${announcement.content.length}/500",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (announcement.content.length > 500)
-                                    MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            if (!announcement.contentIsHtml) {
+                                Text(
+                                    "${announcement.content.length}/500",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (announcement.content.length > 500)
+                                        MaterialTheme.colorScheme.error
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         },
                         minLines = 3,
-                        maxLines = 5,
+                        maxLines = if (announcement.contentIsHtml) 10 else 5,
                         modifier = Modifier.fillMaxWidth()
+                    )
+
+                    WtaToggleRow(
+                        icon = Icons.Outlined.Code,
+                        title = Strings.announcementContentHtml,
+                        subtitle = Strings.announcementContentHtmlDesc,
+                        checked = announcement.contentIsHtml,
+                        onCheckedChange = {
+                            onAnnouncementChange(announcement.copy(contentIsHtml = it))
+                        }
                     )
 
                     PremiumTextField(

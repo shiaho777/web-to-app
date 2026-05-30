@@ -234,7 +234,8 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
             provider = config.webViewConfig.dnsConfig.provider,
             customDohUrl = config.webViewConfig.dnsConfig.customDohUrl,
             dohMode = config.webViewConfig.dnsConfig.dohMode,
-            bypassSystemDns = config.webViewConfig.dnsConfig.bypassSystemDns
+            bypassSystemDns = config.webViewConfig.dnsConfig.bypassSystemDns,
+            echEnabled = config.webViewConfig.dnsConfig.echEnabled
         ),
         injectScripts = config.webViewConfig.injectScripts.map { shellScript ->
             com.webtoapp.data.model.UserScript(
