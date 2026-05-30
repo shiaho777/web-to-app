@@ -301,16 +301,39 @@ fun HtmlFrontendShellMode(
 
                 phase = "starting"
                 val resolvedEntry = resolveExtractedHtmlEntry(siteDir, effectiveEntryFile)
-                val shouldEnableIsolation = config.webViewConfig.enableCrossOriginIsolation ||
-                    com.webtoapp.core.webview.LocalHttpServer.shouldEnableCrossOriginIsolation(siteDir)
-                val baseUrl = httpServer.start(siteDir, enableCrossOriginIsolation = shouldEnableIsolation)
-                targetUrl = buildLocalHttpTargetUrl(baseUrl, resolvedEntry)
-                phase = "ready"
 
-                AppLogger.i(
-                    "HtmlShell",
-                    "HTML Shell ready: url=$targetUrl, entry=$resolvedEntry, port=$stableHttpPort, crossOriginIsolation=$shouldEnableIsolation"
-                )
+                // 打包期已决定纯 file://(并据此移除了 INTERNET 权限)时,运行时必须
+                // 尊重该决定、强制 file://——否则起 localhost server 会因无 INTERNET
+                // 权限连接失败。打包期未决定 file:// 时,再按站点特性运行时自动分流。
+                val requiresHttpServer = if (config.htmlUsesFileScheme) {
+                    false
+                } else {
+                    config.webViewConfig.enableCrossOriginIsolation ||
+                        com.webtoapp.core.webview.LocalHttpServer.siteRequiresHttpServer(siteDir)
+                }
+
+                if (requiresHttpServer) {
+
+                    val shouldEnableIsolation = config.webViewConfig.enableCrossOriginIsolation ||
+                        com.webtoapp.core.webview.LocalHttpServer.shouldEnableCrossOriginIsolation(siteDir)
+                    val baseUrl = httpServer.start(siteDir, enableCrossOriginIsolation = shouldEnableIsolation)
+                    targetUrl = buildLocalHttpTargetUrl(baseUrl, resolvedEntry)
+                    AppLogger.i(
+                        "HtmlShell",
+                        "HTML Shell ready (HTTP server): url=$targetUrl, entry=$resolvedEntry, port=$stableHttpPort, crossOriginIsolation=$shouldEnableIsolation"
+                    )
+                } else {
+
+                    httpServer.stop()
+                    val normalizedEntry = resolvedEntry.removePrefix("/").ifBlank { "index.html" }
+                    val entryFileObj = File(siteDir, normalizedEntry)
+                    targetUrl = android.net.Uri.fromFile(entryFileObj).toString()
+                    AppLogger.i(
+                        "HtmlShell",
+                        "HTML Shell ready (file://): url=$targetUrl, entry=$resolvedEntry (no Service Worker / PWA / WASM detected, running offline without local server)"
+                    )
+                }
+                phase = "ready"
             } catch (e: Exception) {
                 AppLogger.e("HtmlShell", "HTML Shell Launch failed", e)
                 phase = "error"

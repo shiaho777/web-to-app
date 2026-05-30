@@ -132,6 +132,12 @@ enum class AnnouncementTriggerMode {
 data class Announcement(
     val title: String = "",
     val content: String = "",
+    /**
+     * 公告内容是否按 HTML 渲染。默认 false（保持原有纯文本 + 模板样式行为，旧公告零影响）。
+     * 为 true 时，[content] 作为 HTML 嵌入公告弹窗的内容区（外框：标题/关闭按钮/底部按钮/
+     * 触发机制等保持不变）。HTML 由 app 创建者自行编写，仅作富文本展示，渲染时禁用 JavaScript。
+     */
+    val contentIsHtml: Boolean = false,
     val linkUrl: String? = null,
     val linkText: String? = null,
     val showOnce: Boolean = true,
@@ -430,7 +436,15 @@ data class DnsConfig(
 
     val dohMode: String = "automatic",
 
-    val bypassSystemDns: Boolean = false
+    val bypassSystemDns: Boolean = false,
+
+    /**
+     * Encrypted Client Hello（ECH）。开启后在 TLS 握手中加密 ClientHello（含 SNI），
+     * 隐藏访问的目标域名。依赖 DoH：必须先配置 DoH（dnsMode != SYSTEM 且有有效
+     * dohUrl），ECH 才会生效；仅 GeckoView 引擎支持，系统 WebView 无法控制。
+     * 仅对自身部署了 ECH 的站点（主要是 Cloudflare 系）真正生效，其余静默回退。
+     */
+    val echEnabled: Boolean = false
 ) {
 
     val effectiveDohUrl: String
@@ -438,6 +452,10 @@ data class DnsConfig(
             "custom" -> customDohUrl
             else -> DnsProvider.entries.find { it.key == provider }?.dohUrl ?: ""
         }
+
+    /** ECH 真正可用的前提：DoH 已配置（有有效的 DoH URL）。 */
+    val echEffective: Boolean
+        get() = echEnabled && effectiveDohUrl.isNotBlank()
 }
 
 data class UserScript(

@@ -40,6 +40,7 @@ data class ApkConfig(
     val appName: String get() = meta.appName
     val packageName: String get() = meta.packageName
     val targetUrl: String get() = meta.targetUrl
+    val htmlUsesFileScheme: Boolean get() = meta.htmlUsesFileScheme
     val versionCode: Int get() = meta.versionCode
     val versionName: String get() = meta.versionName
     val iconPath: String? get() = meta.iconPath
@@ -65,6 +66,7 @@ data class ApkConfig(
     val announcementEnabled: Boolean get() = announcement.enabled
     val announcementTitle: String get() = announcement.title
     val announcementContent: String get() = announcement.content
+    val announcementContentIsHtml: Boolean get() = announcement.contentIsHtml
     val announcementLink: String get() = announcement.link
     val announcementLinkText: String get() = announcement.linkText
     val announcementTemplate: String get() = announcement.template
@@ -358,7 +360,14 @@ data class MetaBlock(
     val themeType: String = "AURORA",
     val darkMode: String = "SYSTEM",
     val language: String = "CHINESE",
-    val engineType: String = "SYSTEM_WEBVIEW"
+    val engineType: String = "SYSTEM_WEBVIEW",
+    /**
+     * HTML/FRONTEND 应用是否以 file:// 方式加载(纯静态、无 Service Worker / PWA / WASM)。
+     * 为 true 时运行时直接 file:// 打开本地页面,不启动本地 HTTP server,也不需要
+     * INTERNET 权限,可完全脱离网络。打包期保守判定:拿不准一律 false(回退到
+     * localhost server + INTERNET)。
+     */
+    val htmlUsesFileScheme: Boolean = false
 )
 
 data class ActivationBlock(
@@ -380,6 +389,7 @@ data class AnnouncementBlock(
     val enabled: Boolean = false,
     val title: String = "",
     val content: String = "",
+    val contentIsHtml: Boolean = false,
     val link: String = "",
     val linkText: String = "",
     val template: String = "MINIMAL",
@@ -801,5 +811,6 @@ data class DnsApkConfig(
     val provider: String = "cloudflare",
     val customDohUrl: String = "",
     val dohMode: String = "automatic",
-    val bypassSystemDns: Boolean = false
+    val bypassSystemDns: Boolean = false,
+    val echEnabled: Boolean = false
 )

@@ -63,6 +63,7 @@ fun ShellAnnouncementDialog(
     val shellAnnouncement = Announcement(
         title = config.announcementTitle,
         content = config.announcementContent,
+        contentIsHtml = config.announcementContentIsHtml,
         linkUrl = config.announcementLink.ifEmpty { null },
         linkText = config.announcementLinkText.ifEmpty { null },
         template = try {

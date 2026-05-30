@@ -131,6 +131,27 @@ class GeckoViewEngine(
             runtime.settings.setTrustedRecursiveResolverUri(dohUrl)
 
             AppLogger.d(TAG, "DoH applied to GeckoView: provider=${config.provider}, mode=$trrMode, url=$dohUrl")
+
+            if (config.echEffective) {
+                AppLogger.d(
+                    TAG,
+                    "ECH requested but only takes effect from runtime creation (via --pref); " +
+                        "it will apply on next GeckoRuntime creation"
+                )
+            }
+        }
+
+        /**
+         * ECH（Encrypted Client Hello）的 Gecko preference 只能在 runtime 创建时通过
+         * --pref 参数注入，无法在 runtime 创建后动态切换。ECH 依赖 DoH，因此仅在
+         * [com.webtoapp.data.model.DnsConfig.echEffective] 为 true 时注入。
+         */
+        private fun buildEchArgs(config: com.webtoapp.data.model.DnsConfig?): List<String> {
+            if (config?.echEffective != true) return emptyList()
+            return listOf(
+                "--pref=network.dns.echconfig.enabled=true",
+                "--pref=network.dns.http3_echconfig.enabled=true"
+            )
         }
 
         private fun createRuntime(context: Context): GeckoRuntime {
@@ -159,12 +180,14 @@ class GeckoViewEngine(
                 }
             }
 
+            val runtimeArgs = mutableListOf<String>()
+            runtimeArgs += buildEchArgs(currentDnsConfig)
             currentProxyConfig?.let { config ->
-                val proxyArgs = buildProxyArgs(config)
-                if (proxyArgs.isNotEmpty()) {
-                    settingsBuilder.arguments(proxyArgs.toTypedArray())
-                    AppLogger.d(TAG, "GeckoView proxy args applied at runtime creation: $proxyArgs")
-                }
+                runtimeArgs += buildProxyArgs(config)
+            }
+            if (runtimeArgs.isNotEmpty()) {
+                settingsBuilder.arguments(runtimeArgs.toTypedArray())
+                AppLogger.d(TAG, "GeckoView runtime args applied at creation: $runtimeArgs")
             }
 
             return GeckoRuntime.create(context, settingsBuilder.build())

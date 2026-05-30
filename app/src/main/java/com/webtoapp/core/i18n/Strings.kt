@@ -4004,6 +4004,18 @@ object Strings {
         AppLanguage.ARABIC -> "محتوى الإعلان"
     }
 
+    val announcementContentHtml: String get() = when (lang) {
+        AppLanguage.CHINESE -> "内容使用 HTML"
+        AppLanguage.ENGLISH -> "Content as HTML"
+        AppLanguage.ARABIC -> "المحتوى بصيغة HTML"
+    }
+
+    val announcementContentHtmlDesc: String get() = when (lang) {
+        AppLanguage.CHINESE -> "将公告内容作为 HTML 渲染，获得更高的排版自由度。弹窗外框与关闭按钮不变。"
+        AppLanguage.ENGLISH -> "Render the announcement content as HTML for richer layout. The popup frame and close button stay the same."
+        AppLanguage.ARABIC -> "عرض محتوى الإعلان بصيغة HTML لمزيد من حرية التنسيق. يبقى إطار النافذة وزر الإغلاق كما هو."
+    }
+
     val linkUrl: String get() = when (lang) {
         AppLanguage.CHINESE -> "链接地址（可选）"
         AppLanguage.ENGLISH -> "Link URL (optional)"
@@ -20909,6 +20921,30 @@ object Strings {
         AppLanguage.CHINESE -> "忽略系统 DNS 设置，仅使用 DoH 解析。可绕过 ISP DNS 污染/劫持。"
         AppLanguage.ENGLISH -> "Ignore system DNS settings, use DoH only. Bypasses ISP DNS pollution/hijacking."
         AppLanguage.ARABIC -> "تجاهل إعدادات DNS للنظام، استخدم DoH فقط. يتجاوز تلوث/اختطاف DNS لمزود الخدمة."
+    }
+
+    val dnsEchLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "加密客户端问候 (ECH)"
+        AppLanguage.ENGLISH -> "Encrypted Client Hello (ECH)"
+        AppLanguage.ARABIC -> "تشفير ترحيب العميل (ECH)"
+    }
+
+    val dnsEchDesc: String get() = when (lang) {
+        AppLanguage.CHINESE -> "加密 TLS 握手，隐藏你访问的网站域名，防止网络中间人看到你连了哪个站。仅对支持 ECH 的网站生效。"
+        AppLanguage.ENGLISH -> "Encrypts the TLS handshake to hide which website domain you visit from on-path observers. Only effective for sites that support ECH."
+        AppLanguage.ARABIC -> "يشفّر مصافحة TLS لإخفاء اسم نطاق الموقع الذي تزوره عن المراقبين على المسار. يعمل فقط مع المواقع التي تدعم ECH."
+    }
+
+    val dnsEchRequiresDoh: String get() = when (lang) {
+        AppLanguage.CHINESE -> "需先启用 DNS-over-HTTPS"
+        AppLanguage.ENGLISH -> "Requires DNS-over-HTTPS to be enabled first"
+        AppLanguage.ARABIC -> "يتطلب تفعيل DNS-over-HTTPS أولاً"
+    }
+
+    val dnsEchGeckoOnly: String get() = when (lang) {
+        AppLanguage.CHINESE -> "仅 GeckoView 引擎支持"
+        AppLanguage.ENGLISH -> "Supported only by the GeckoView engine"
+        AppLanguage.ARABIC -> "مدعوم فقط بواسطة محرك GeckoView"
     }
 
     val isolatedBrowserEnvironment: String get() = when (lang) {
