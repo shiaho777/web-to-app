@@ -2802,8 +2802,9 @@ private fun WebApp.computeEffectiveTargetUrl(packageName: String, htmlUsesFileSc
  * [com.webtoapp.core.webview.LocalHttpServer.siteRequiresHttpServer]:站点若含
  * Service Worker / PWA manifest / WASM 等需要 HTTP 源的特性,则必须用 localhost。
  *
- * 保守原则:仅 HTML/FRONTEND 适用;拿不到源目录或拿不到 context 时一律返回 false
- * (回退 localhost + INTERNET),绝不冒进把联网/PWA 应用误判成 file://。
+ * 保守原则:仅 HTML/FRONTEND 适用;开启跨域隔离(需 server 下发 COOP/COEP 头)、
+ * 拿不到源目录或拿不到 context 时一律返回 false(回退 localhost + INTERNET),绝不
+ * 冒进把联网/PWA/隔离应用误判成 file://。运行时据此决定且不再二次推翻(打包决定优先)。
  */
 private fun WebApp.computeHtmlUsesFileScheme(context: android.content.Context?): Boolean {
     if (appType != com.webtoapp.data.model.AppType.HTML &&
@@ -2811,6 +2812,8 @@ private fun WebApp.computeHtmlUsesFileScheme(context: android.content.Context?):
         return false
     }
     if (context == null) return false
+
+    if (webViewConfig.enableCrossOriginIsolation) return false
     val sourceDir = resolveHtmlSourceDir(context) ?: return false
     if (!sourceDir.exists() || !sourceDir.isDirectory) return false
     return !com.webtoapp.core.webview.LocalHttpServer.siteRequiresHttpServer(sourceDir)
