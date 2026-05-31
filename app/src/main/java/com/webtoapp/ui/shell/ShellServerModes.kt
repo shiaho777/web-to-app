@@ -302,15 +302,7 @@ fun HtmlFrontendShellMode(
                 phase = "starting"
                 val resolvedEntry = resolveExtractedHtmlEntry(siteDir, effectiveEntryFile)
 
-                // 打包期已决定纯 file://(并据此移除了 INTERNET 权限)时,运行时必须
-                // 尊重该决定、强制 file://——否则起 localhost server 会因无 INTERNET
-                // 权限连接失败。打包期未决定 file:// 时,再按站点特性运行时自动分流。
-                val requiresHttpServer = if (config.htmlUsesFileScheme) {
-                    false
-                } else {
-                    config.webViewConfig.enableCrossOriginIsolation ||
-                        com.webtoapp.core.webview.LocalHttpServer.siteRequiresHttpServer(siteDir)
-                }
+                val requiresHttpServer = !config.htmlUsesFileScheme
 
                 if (requiresHttpServer) {
 
@@ -330,7 +322,7 @@ fun HtmlFrontendShellMode(
                     targetUrl = android.net.Uri.fromFile(entryFileObj).toString()
                     AppLogger.i(
                         "HtmlShell",
-                        "HTML Shell ready (file://): url=$targetUrl, entry=$resolvedEntry (no Service Worker / PWA / WASM detected, running offline without local server)"
+                        "HTML Shell ready (file://): url=$targetUrl, entry=$resolvedEntry (packaged as pure-static, running offline without local server)"
                     )
                 }
                 phase = "ready"
