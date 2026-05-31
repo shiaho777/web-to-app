@@ -158,9 +158,17 @@ class LocalHttpServer(
                 PortManager.allocateForLocalHttp(rootDir.name)
             }
 
+            // PortManager 在所有端口段占满时返回 -1。绝不能把 -1 传给 ServerSocket
+            // (会抛 "Port value out of range: -1")。退回让系统自动选一个空闲端口
+            // (端口 0 = 由 OS 分配),loopback server 用哪个端口对用户透明。
+            val bindPort = if (allocatedPort in 1..65535) allocatedPort else 0
+            if (bindPort == 0) {
+                AppLogger.w(TAG, "端口分配失败(allocate=$allocatedPort),回退系统自动分配")
+            }
+
             val bindAddress = java.net.Inet4Address.getByName(LOOPBACK_HOST)
-            serverSocket = ServerSocket(allocatedPort, 50, bindAddress)
-            actualPort = serverSocket?.localPort ?: allocatedPort
+            serverSocket = ServerSocket(bindPort, 50, bindAddress)
+            actualPort = serverSocket?.localPort ?: bindPort
             isRunning.set(true)
 
             AppLogger.i(TAG, "服务器启动在端口 $actualPort, 根目录: ${rootDir.absolutePath}")
