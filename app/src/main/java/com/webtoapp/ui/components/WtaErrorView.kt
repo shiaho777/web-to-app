@@ -178,3 +178,40 @@ fun WtaErrorView(
         )
     }
 }
+
+@Composable
+fun WtaErrorDialog(
+    scope: String,
+    message: String?,
+    throwable: Throwable? = null,
+    contextLines: List<String> = emptyList(),
+    title: String = Strings.errorScreenTitle,
+    onDismiss: () -> Unit
+) {
+    val report = remember(scope, message, throwable, contextLines) {
+        buildErrorReport(scope, message, throwable, contextLines)
+    }
+    val displayMessage = message ?: throwable?.message ?: Strings.serverStartFailed
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+        },
+        title = { Text(title) },
+        text = {
+            Column {
+                Text(
+                    displayMessage,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                WtaErrorDetailsSection(report = report, modifier = Modifier.fillMaxWidth())
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(Strings.close) }
+        }
+    )
+}

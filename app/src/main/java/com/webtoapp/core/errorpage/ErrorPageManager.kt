@@ -36,9 +36,10 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
             failedUrl = failedUrl,
             language = config.language,
         )
+        val report = buildErrorPageReport(errorCode, description, rawDescription, failedUrl, diagnostic)
         return when (config.mode) {
-            ErrorPageMode.DEFAULT -> diagnostic?.let { generateDiagnosticFallbackPage(it, failedUrl) }
-            ErrorPageMode.BUILTIN_STYLE -> generateBuiltInPage(errorCode, description, failedUrl, diagnostic)
+            ErrorPageMode.DEFAULT -> diagnostic?.let { generateDiagnosticFallbackPage(it, failedUrl, report) }
+            ErrorPageMode.BUILTIN_STYLE -> generateBuiltInPage(errorCode, description, failedUrl, diagnostic, report)
             ErrorPageMode.CUSTOM_HTML -> config.customHtml
             ErrorPageMode.CUSTOM_MEDIA -> generateMediaPage(failedUrl)
         }
@@ -53,6 +54,10 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
         val gameLink: String,
         val gameLabel: String,
         val gameClose: String,
+        val copyDetails: String,
+        val showDetails: String,
+        val hideDetails: String,
+        val copied: String,
         val dir: String,
         val langCode: String
     )
@@ -68,6 +73,10 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
                 gameLink = "等待时玩个小游戏",
                 gameLabel = "小游戏",
                 gameClose = "关闭",
+                copyDetails = "复制详细信息",
+                showDetails = "显示详细信息",
+                hideDetails = "隐藏详细信息",
+                copied = "已复制",
                 dir = "ltr",
                 langCode = "zh"
             )
@@ -80,6 +89,10 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
                 gameLink = "جرّب لعبة أثناء الانتظار",
                 gameLabel = "لعبة",
                 gameClose = "إغلاق",
+                copyDetails = "نسخ التفاصيل",
+                showDetails = "عرض التفاصيل",
+                hideDetails = "إخفاء التفاصيل",
+                copied = "تم النسخ",
                 dir = "rtl",
                 langCode = "ar"
             )
@@ -93,6 +106,10 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
                 gameLink = "Play a game while you wait",
                 gameLabel = "Game",
                 gameClose = "Close",
+                copyDetails = "Copy details",
+                showDetails = "Show details",
+                hideDetails = "Hide details",
+                copied = "Copied",
                 dir = "ltr",
                 langCode = "en"
             )
@@ -104,6 +121,7 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
         description: String,
         failedUrl: String?,
         diagnostic: NetworkErrorDiagnostics.Diagnostic?,
+        report: String,
     ): String {
         val style = config.builtInStyle
         val strings = getStrings()
@@ -113,7 +131,7 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
         val autoRetry = config.autoRetrySeconds
 
         if (style != ErrorPageStyle.MATERIAL) {
-            return generateLegacyPage(style, strings, retryBtnText, showGame, gameType, autoRetry, failedUrl, diagnostic)
+            return generateLegacyPage(style, strings, retryBtnText, showGame, gameType, autoRetry, failedUrl, diagnostic, report)
         }
 
         val safeUrl = failedUrl
@@ -267,6 +285,7 @@ canvas{border-radius:12px;margin-top:8px;touch-action:none;}
     .diag-list li{color:#c6c6cb;}
     .diag-list li::before{background:#7a7a7f;}
 }
+${errorDetailsCss()}
 </style>
 </head>
 <body>
@@ -292,6 +311,8 @@ ${if (autoRetry > 0) """<div class="auto-retry" id="autoRetry">${strings.autoRet
 ${if (showGame) """<a class="game-link" onclick="showGame()">${strings.gameLink} →</a>""" else ""}
 
 <div class="error-code">${formatErrorCode(errorCode)}${if (diagnostic != null) " · ${escapeHtml(diagnostic.key)}" else ""}</div>
+
+${errorDetailsHtml(report, strings)}
 
 ${if (showGame) """
 <div class="game-overlay" id="gameOverlay">
@@ -345,6 +366,7 @@ function startGame(){
         autoRetry: Int,
         failedUrl: String?,
         diagnostic: NetworkErrorDiagnostics.Diagnostic?,
+        report: String,
     ): String {
         val resolvedTitle = diagnostic?.title ?: strings.title
         val resolvedSubtitle = diagnostic?.cause ?: strings.subtitle
@@ -421,6 +443,7 @@ canvas{border-radius:8px;margin-top:4px;touch-action:none;}
 .diag-list li::before{content:'';position:absolute;inset-inline-start:5px;top:9px;width:4px;height:4px;border-radius:999px;background:currentColor;opacity:0.55;}
 
 $styleCss
+${errorDetailsCss()}
 </style>
 </head>
 <body>
@@ -432,6 +455,8 @@ ${if (diagnostic != null) renderDiagnosticCard(diagnostic) else ""}
     <button class="retry-btn" onclick="retryLoad()">$retryBtnText</button>
     ${if (autoRetry > 0) """<div class="auto-retry" id="autoRetry">${strings.autoRetryPrefix}<span id="countdown">$autoRetry</span>${strings.autoRetrySuffix}</div>""" else ""}
 </div>
+
+${errorDetailsHtml(report, strings)}
 
 ${if (showGame) """<a class="game-link" onclick="showGame()">${strings.gameLink} →</a>""" else ""}
 
@@ -546,6 +571,7 @@ body{
     private fun generateDiagnosticFallbackPage(
         diag: NetworkErrorDiagnostics.Diagnostic,
         failedUrl: String?,
+        report: String,
     ): String {
         val strings = getStrings()
         val retryBtnText = config.retryButtonText.ifBlank { strings.retryButton }
@@ -601,6 +627,7 @@ button:active{transform:scale(0.97);}
     .head,.code{color:#7a7a7f;}
     button{background:#ebebee;color:#0a0a0c;}
 }
+${errorDetailsCss()}
 </style>
 </head>
 <body>
@@ -611,11 +638,99 @@ button:active{transform:scale(0.97);}
 <ul>$items</ul>
 <button onclick="var u='$safeUrl';if(u)location.href=u;else location.reload();">${escapeHtml(retryBtnText)}</button>
 <div class="code">${escapeHtml(diag.key)}</div>
+${errorDetailsHtml(report, strings)}
 </div>
 </body>
 </html>
         """.trimIndent()
     }
+
+    private fun buildErrorPageReport(
+        errorCode: Int,
+        description: String,
+        rawDescription: String,
+        failedUrl: String?,
+        diagnostic: NetworkErrorDiagnostics.Diagnostic?
+    ): String {
+        val sb = StringBuilder()
+        sb.appendLine("===== WebToApp Page Error =====")
+        sb.appendLine("url: ${failedUrl ?: "-"}")
+        sb.appendLine("errorCode: $errorCode (${formatErrorCode(errorCode)})")
+        sb.appendLine("description: $description")
+        if (rawDescription != description) sb.appendLine("rawDescription: $rawDescription")
+        if (diagnostic != null) {
+            sb.appendLine("diagnosticKey: ${diagnostic.key}")
+            sb.appendLine("diagnosticTitle: ${diagnostic.title}")
+            sb.appendLine("diagnosticCause: ${diagnostic.cause}")
+            if (diagnostic.suggestions.isNotEmpty()) {
+                sb.appendLine("suggestions:")
+                diagnostic.suggestions.forEach { sb.appendLine("  - $it") }
+            }
+        }
+        sb.appendLine("androidSdk: ${android.os.Build.VERSION.SDK_INT}")
+        sb.appendLine("device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+        sb.appendLine("time: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())}")
+        sb.append("===============================")
+        return sb.toString()
+    }
+
+    private fun jsEscape(raw: String): String = raw
+        .replace("\\", "\\\\")
+        .replace("`", "\\`")
+        .replace("$", "\\$")
+
+    private fun errorDetailsHtml(report: String, strings: I18nStrings): String {
+        val reportJs = jsEscape(report)
+        return """
+<div class="wta-err-actions">
+    <button class="wta-err-btn" onclick="wtaCopyDetails()" id="wtaCopyBtn">${escapeHtml(strings.copyDetails)}</button>
+    <button class="wta-err-btn" onclick="wtaToggleDetails()" id="wtaToggleBtn">${escapeHtml(strings.showDetails)}</button>
+</div>
+<pre class="wta-err-details" id="wtaErrDetails">${escapeHtml(report)}</pre>
+<script>
+var __wtaReport=`$reportJs`;
+var __wtaShow='${jsEscape(strings.showDetails)}';
+var __wtaHide='${jsEscape(strings.hideDetails)}';
+var __wtaCopied='${jsEscape(strings.copied)}';
+var __wtaCopyLabel='${jsEscape(strings.copyDetails)}';
+function wtaToggleDetails(){
+    var d=document.getElementById('wtaErrDetails');
+    var b=document.getElementById('wtaToggleBtn');
+    if(d.style.display==='block'){d.style.display='none';b.textContent=__wtaShow;}
+    else{d.style.display='block';b.textContent=__wtaHide;}
+}
+function wtaCopyDetails(){
+    var ok=false;
+    try{
+        var ta=document.createElement('textarea');
+        ta.value=__wtaReport;ta.style.position='fixed';ta.style.left='-9999px';
+        document.body.appendChild(ta);ta.focus();ta.select();
+        ok=document.execCommand('copy');document.body.removeChild(ta);
+    }catch(e){ok=false;}
+    if(!ok&&navigator.clipboard){try{navigator.clipboard.writeText(__wtaReport);ok=true;}catch(e){}}
+    var b=document.getElementById('wtaCopyBtn');
+    if(b){b.textContent=__wtaCopied;setTimeout(function(){b.textContent=__wtaCopyLabel;},1500);}
+}
+</script>
+"""
+    }
+
+    private fun errorDetailsCss(): String = """
+.wta-err-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px;}
+.wta-err-btn{
+    height:38px;padding:0 16px;border-radius:9px;cursor:pointer;
+    border:1px solid rgba(128,128,128,0.4);background:transparent;color:inherit;
+    font-family:inherit;font-size:13px;font-weight:500;
+}
+.wta-err-btn:active{transform:scale(0.97);}
+.wta-err-details{
+    display:none;max-width:380px;width:100%;margin:14px auto 0 auto;padding:12px;
+    border-radius:10px;background:rgba(128,128,128,0.1);
+    border:1px solid rgba(128,128,128,0.2);text-align:start;
+    font-family:'SF Mono','Roboto Mono',monospace;font-size:11px;line-height:1.5;
+    white-space:pre-wrap;word-break:break-word;overflow-x:auto;max-height:280px;overflow-y:auto;
+}
+"""
 
     private fun escapeHtml(raw: String): String = raw
         .replace("&", "&amp;")

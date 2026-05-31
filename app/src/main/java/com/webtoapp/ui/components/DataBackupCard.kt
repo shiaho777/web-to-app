@@ -55,6 +55,8 @@ fun DataBackupCard() {
     var isExporting by remember { mutableStateOf(false) }
     var isImporting by remember { mutableStateOf(false) }
     var progressMessage by remember { mutableStateOf("") }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
+    var errorScope by remember { mutableStateOf("") }
     val isBusy = isExporting || isImporting
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -82,11 +84,8 @@ fun DataBackupCard() {
                         Toast.LENGTH_LONG
                     ).show()
                 }.onFailure { e ->
-                    Toast.makeText(
-                        context,
-                        Strings.backupExportFailed.format(e.message),
-                        Toast.LENGTH_LONG
-                    ).show()
+                    errorScope = "Data backup export"
+                    errorThrowable = e
                 }
             }
         }
@@ -117,14 +116,20 @@ fun DataBackupCard() {
                         Toast.LENGTH_LONG
                     ).show()
                 }.onFailure { e ->
-                    Toast.makeText(
-                        context,
-                        Strings.backupImportFailed.format(e.message),
-                        Toast.LENGTH_LONG
-                    ).show()
+                    errorScope = "Data backup import"
+                    errorThrowable = e
                 }
             }
         }
+    }
+
+    errorThrowable?.let { err ->
+        WtaErrorDialog(
+            scope = errorScope,
+            message = err.message,
+            throwable = err,
+            onDismiss = { errorThrowable = null }
+        )
     }
 
     WtaCard(modifier = Modifier.fillMaxWidth()) {

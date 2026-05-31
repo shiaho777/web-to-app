@@ -67,6 +67,7 @@ fun PortManagerScreen(
 
     var isScanningWtaApps by remember { mutableStateOf(false) }
     var wtaReports by remember { mutableStateOf<List<WtaAppPortReport>>(emptyList()) }
+    var scanErrorThrowable by remember { mutableStateOf<Throwable?>(null) }
 
     val nowMs by produceState(initialValue = System.currentTimeMillis()) {
         while (true) {
@@ -86,6 +87,7 @@ fun PortManagerScreen(
         try {
             wtaReports = WtaAppPortDiscovery.queryAllApps(context)
         } catch (e: Exception) {
+            scanErrorThrowable = e
             snackbarHostState.showSnackbar("${Strings.portManagerScanFailed}: ${e.message ?: ""}")
         } finally {
             isScanningWtaApps = false
@@ -260,6 +262,15 @@ fun PortManagerScreen(
                 )
             }
         }
+    }
+
+    scanErrorThrowable?.let { err ->
+        com.webtoapp.ui.components.WtaErrorDialog(
+            scope = "Port manager scan",
+            message = err.message ?: Strings.portManagerScanFailed,
+            throwable = err,
+            onDismiss = { scanErrorThrowable = null }
+        )
     }
 
     if (showKillAllDialog) {
