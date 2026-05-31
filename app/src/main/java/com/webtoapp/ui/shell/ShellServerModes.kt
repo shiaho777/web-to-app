@@ -7,8 +7,6 @@ import android.webkit.WebView
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -44,6 +42,7 @@ fun WordPressShellMode(
 
     var phase by remember { mutableStateOf("extracting") }
     var errorMsg by remember { mutableStateOf<String?>(null) }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
     var serverUrl by remember { mutableStateOf<String?>(null) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
 
@@ -116,6 +115,7 @@ fun WordPressShellMode(
                 AppLogger.e("WordPressShell", "WordPress Shell Launch failed", e)
                 phase = "error"
                 errorMsg = e.message ?: Strings.unknownError
+                errorThrowable = e
             }
         }
     }
@@ -225,25 +225,12 @@ fun WordPressShellMode(
             }
 
             "error" -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = errorMsg ?: Strings.wpStartFailed,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
+                ShellErrorScreen(
+                    config = config,
+                    mode = "WordPress",
+                    message = errorMsg ?: Strings.wpStartFailed,
+                    throwable = errorThrowable
+                )
             }
         }
     }
@@ -265,6 +252,7 @@ fun HtmlFrontendShellMode(
     val context = LocalContext.current
     var phase by remember { mutableStateOf("extracting") }
     var errorMsg by remember { mutableStateOf<String?>(null) }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
     var targetUrl by remember { mutableStateOf<String?>(null) }
     val stableHttpPort = remember(config.packageName) {
         com.webtoapp.core.webview.LocalHttpServer.stablePortForPackageName(config.packageName)
@@ -330,6 +318,7 @@ fun HtmlFrontendShellMode(
                 AppLogger.e("HtmlShell", "HTML Shell Launch failed", e)
                 phase = "error"
                 errorMsg = e.message ?: Strings.serverStartFailed
+                errorThrowable = e
             }
         }
     }
@@ -374,25 +363,12 @@ fun HtmlFrontendShellMode(
             }
 
             "error" -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = errorMsg ?: Strings.serverStartFailed,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
+                ShellErrorScreen(
+                    config = config,
+                    mode = "HTML",
+                    message = errorMsg ?: Strings.serverStartFailed,
+                    throwable = errorThrowable
+                )
             }
         }
     }
@@ -443,6 +419,7 @@ fun NodeJsShellMode(
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
 
     val nodeRuntime = remember { com.webtoapp.core.nodejs.NodeRuntime(context) }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -512,6 +489,7 @@ fun NodeJsShellMode(
                 com.webtoapp.core.shell.ShellLogger.e("NodeJsShell", "Node.js Shell 启动失败", e)
                 phase = "error"
                 errorMsg = e.message ?: Strings.unknownError
+                errorThrowable = e
             }
         }
     }
@@ -615,25 +593,12 @@ fun NodeJsShellMode(
             }
 
             "error" -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = errorMsg ?: Strings.nodeStartFailed,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
+                ShellErrorScreen(
+                    config = config,
+                    mode = "Node.js",
+                    message = errorMsg ?: Strings.nodeStartFailed,
+                    throwable = errorThrowable
+                )
             }
         }
     }
@@ -657,6 +622,7 @@ fun PhpAppShellMode(
     var serverUrl by remember { mutableStateOf<String?>(null) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     val phpRuntime = remember { com.webtoapp.core.php.PhpAppRuntime(context) }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -707,6 +673,7 @@ fun PhpAppShellMode(
             } catch (e: Exception) {
                 phase = "error"
                 errorMsg = e.message ?: Strings.unknownError
+                errorThrowable = e
             }
         }
     }
@@ -780,13 +747,12 @@ fun PhpAppShellMode(
                 }
             }
             "error" -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Warning, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(errorMsg ?: Strings.phpStartFailed, color = MaterialTheme.colorScheme.error)
-                    }
-                }
+                ShellErrorScreen(
+                    config = config,
+                    mode = "PHP",
+                    message = errorMsg ?: Strings.phpStartFailed,
+                    throwable = errorThrowable
+                )
             }
         }
     }
@@ -810,6 +776,7 @@ fun PythonAppShellMode(
     var serverUrl by remember { mutableStateOf<String?>(null) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     val pythonRuntime = remember { com.webtoapp.core.python.PythonRuntime(context) }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -917,6 +884,7 @@ fun PythonAppShellMode(
                 AppLogger.e("PythonShell", "Python Shell Launch failed", e)
                 phase = "error"
                 errorMsg = e.message ?: Strings.unknownError
+                errorThrowable = e
             }
         }
     }
@@ -1011,31 +979,12 @@ fun PythonAppShellMode(
                 }
             }
             "error" -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .padding(24.dp)
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        Icon(Icons.Default.Warning, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            Strings.pythonServerTimeout,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            errorMsg ?: Strings.pythonStartFailed,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                        )
-                    }
-                }
+                ShellErrorScreen(
+                    config = config,
+                    mode = "Python",
+                    message = errorMsg ?: Strings.pythonStartFailed,
+                    throwable = errorThrowable
+                )
             }
         }
     }
@@ -1059,6 +1008,7 @@ fun GoAppShellMode(
     var serverUrl by remember { mutableStateOf<String?>(null) }
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
     val goRuntime = remember { com.webtoapp.core.golang.GoRuntime(context) }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -1133,6 +1083,7 @@ fun GoAppShellMode(
                 AppLogger.e("GoShell", "Go Shell Launch failed", e)
                 phase = "error"
                 errorMsg = e.message ?: Strings.unknownError
+                errorThrowable = e
             }
         }
     }
@@ -1227,13 +1178,12 @@ fun GoAppShellMode(
                 }
             }
             "error" -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Warning, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(errorMsg ?: Strings.goStartFailed, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
-                    }
-                }
+                ShellErrorScreen(
+                    config = config,
+                    mode = "Go",
+                    message = errorMsg ?: Strings.goStartFailed,
+                    throwable = errorThrowable
+                )
             }
         }
     }
@@ -1259,6 +1209,8 @@ fun ServerAppShellMode(
     val httpServer = remember { com.webtoapp.core.webview.LocalHttpServer(context) }
 
     DisposableEffect(httpServer) { onDispose { httpServer.stop() } }
+
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -1358,6 +1310,7 @@ fun ServerAppShellMode(
             } catch (e: Exception) {
                 phase = "error"
                 errorMsg = e.message ?: Strings.serverStartFailed
+                errorThrowable = e
                 AppLogger.e("ServerAppShellMode", "Start exception", e)
             }
         }
@@ -1453,13 +1406,12 @@ fun ServerAppShellMode(
                 }
             }
             "error" -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Warning, null, modifier = Modifier.size(48.dp), tint = MaterialTheme.colorScheme.error)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(errorMsg ?: Strings.serverStartFailed, color = MaterialTheme.colorScheme.error)
-                    }
-                }
+                ShellErrorScreen(
+                    config = config,
+                    mode = appType,
+                    message = errorMsg ?: Strings.serverStartFailed,
+                    throwable = errorThrowable
+                )
             }
         }
     }

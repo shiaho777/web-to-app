@@ -193,17 +193,25 @@ fun RuntimeBrandedLoadingCard(
 @Composable
 fun RuntimeBrandedErrorCard(
     error: String,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    scope: String = "Runtime",
+    throwable: Throwable? = null
 ) {
     EnhancedElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = runtimeAccentContainer(0.08f))
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Outlined.Warning, null, tint = MaterialTheme.colorScheme.onSurface)
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(error, modifier = Modifier.weight(weight = 1f, fill = true), color = MaterialTheme.colorScheme.onSurface)
-            TextButton(onClick = onDismiss) { Text(Strings.btnCancel) }
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Outlined.Warning, null, tint = MaterialTheme.colorScheme.onSurface)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(error, modifier = Modifier.weight(weight = 1f, fill = true), color = MaterialTheme.colorScheme.onSurface)
+                TextButton(onClick = onDismiss) { Text(Strings.btnCancel) }
+            }
+            val report = remember(scope, error, throwable) {
+                buildErrorReport(scope, error, throwable)
+            }
+            WtaErrorDetailsSection(report = report, modifier = Modifier.fillMaxWidth())
         }
     }
 }
@@ -314,17 +322,25 @@ fun RuntimeLoadingCard(creationPhase: String) {
 @Composable
 fun RuntimeErrorCard(
     error: String,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    scope: String = "Runtime",
+    throwable: Throwable? = null
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = runtimeAccentContainer(0.08f))
     ) {
-        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Default.Error, null, tint = MaterialTheme.colorScheme.onSurface)
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(error, modifier = Modifier.weight(weight = 1f, fill = true), color = MaterialTheme.colorScheme.onSurface)
-            TextButton(onClick = onDismiss) { Text(Strings.btnCancel) }
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Error, null, tint = MaterialTheme.colorScheme.onSurface)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(error, modifier = Modifier.weight(weight = 1f, fill = true), color = MaterialTheme.colorScheme.onSurface)
+                TextButton(onClick = onDismiss) { Text(Strings.btnCancel) }
+            }
+            val report = remember(scope, error, throwable) {
+                buildErrorReport(scope, error, throwable)
+            }
+            WtaErrorDetailsSection(report = report, modifier = Modifier.fillMaxWidth())
         }
     }
 }

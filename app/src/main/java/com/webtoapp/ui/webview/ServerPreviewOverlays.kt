@@ -1,12 +1,12 @@
 package com.webtoapp.ui.webview
 
 import androidx.compose.foundation.background
-import com.webtoapp.ui.components.PremiumButton
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -75,7 +75,7 @@ fun WordPressLoadingOverlay(
                     Text(Strings.wpStartingServer)
                 }
                 is WordPressPreviewState.Error -> {
-                    ErrorWithRetry(state.message, onRetry)
+                    ErrorWithRetry(state.message, onRetry, scope = "WordPress preview", throwable = state.throwable)
                 }
                 else -> {}
             }
@@ -136,7 +136,7 @@ fun PhpAppLoadingOverlay(
                     Text(Strings.phpAppStartingServer)
                 }
                 is PhpAppPreviewState.Error -> {
-                    ErrorWithRetry(state.message, onRetry)
+                    ErrorWithRetry(state.message, onRetry, scope = "PHP preview", throwable = state.throwable)
                 }
                 else -> {}
             }
@@ -166,7 +166,7 @@ fun PythonAppLoadingOverlay(
                     Text(Strings.pyStartingPreview)
                 }
                 is PythonAppPreviewState.Error -> {
-                    ErrorWithRetry(state.message, onRetry)
+                    ErrorWithRetry(state.message, onRetry, scope = "Python preview", throwable = state.throwable)
                 }
                 else -> {}
             }
@@ -179,7 +179,9 @@ fun SimpleAppLoadingOverlay(
     isStarting: Boolean,
     startingText: String,
     errorMessage: String?,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    errorScope: String = "App preview",
+    errorThrowable: Throwable? = null
 ) {
     Box(
         modifier = Modifier
@@ -196,14 +198,19 @@ fun SimpleAppLoadingOverlay(
                 CircularProgressIndicator()
                 Text(startingText)
             } else if (errorMessage != null) {
-                ErrorWithRetry(errorMessage, onRetry)
+                ErrorWithRetry(errorMessage, onRetry, scope = errorScope, throwable = errorThrowable)
             }
         }
     }
 }
 
 @Composable
-private fun ErrorWithRetry(message: String, onRetry: () -> Unit) {
+private fun ErrorWithRetry(
+    message: String,
+    onRetry: () -> Unit,
+    scope: String = "App preview",
+    throwable: Throwable? = null
+) {
     Icon(
         Icons.Outlined.Warning,
         contentDescription = null,
@@ -215,9 +222,13 @@ private fun ErrorWithRetry(message: String, onRetry: () -> Unit) {
         color = MaterialTheme.colorScheme.error,
         textAlign = TextAlign.Center
     )
-    PremiumButton(onClick = onRetry) {
-        Text(Strings.btnRetry)
+    val report = remember(scope, message, throwable) {
+        com.webtoapp.ui.components.buildErrorReport(scope, message, throwable)
     }
+    com.webtoapp.ui.components.WtaErrorDetailsSection(
+        report = report,
+        onRetry = onRetry
+    )
 }
 
 @Composable

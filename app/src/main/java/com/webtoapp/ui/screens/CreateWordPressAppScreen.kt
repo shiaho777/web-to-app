@@ -87,6 +87,7 @@ fun CreateWordPressAppScreen(
     var creationPhase by remember { mutableStateOf("") }
     var projectId by remember { mutableStateOf<String?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
 
     val downloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
     var showDownloadDialog by remember { mutableStateOf(false) }
@@ -143,6 +144,7 @@ fun CreateWordPressAppScreen(
                     }
                 } catch (e: Exception) {
                     errorMessage = e.message ?: Strings.wpProjectCreateFailed
+                    errorThrowable = e
                 } finally {
                     isCreating = false
                 }
@@ -188,6 +190,7 @@ fun CreateWordPressAppScreen(
                 }
             } catch (e: Exception) {
                 errorMessage = e.message ?: Strings.wpProjectCreateFailed
+                errorThrowable = e
             } finally {
                 isCreating = false
             }
@@ -294,6 +297,7 @@ fun CreateWordPressAppScreen(
                                     }
                                 } catch (e: Exception) {
                                     errorMessage = e.message ?: Strings.wpProjectCreateFailed
+                                    errorThrowable = e
                                 } finally {
                                     isCreating = false
                                 }
@@ -497,7 +501,7 @@ fun CreateWordPressAppScreen(
                     }
 
                     errorMessage?.let { error ->
-                        RuntimeBrandedErrorCard(error = error, onDismiss = { errorMessage = null })
+                        RuntimeBrandedErrorCard(error = error, onDismiss = { errorMessage = null; errorThrowable = null }, scope = "WordPress app create", throwable = errorThrowable)
                     }
 
                     if (projectId != null && !isCreating) {

@@ -97,6 +97,7 @@ fun CreateGoAppScreen(
     var isCreating by remember { mutableStateOf(false) }
     var creationPhase by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
 
     LaunchedEffect(existingAppId) {
         if (existingAppId > 0L) {
@@ -233,6 +234,7 @@ fun CreateGoAppScreen(
                     }
                 } catch (e: Exception) {
                     errorMessage = e.message ?: Strings.projectImportFailed
+                    errorThrowable = e
                 } finally {
                     isCreating = false
                 }
@@ -317,6 +319,7 @@ fun CreateGoAppScreen(
                                     }
                                 } catch (e: Exception) {
                                     errorMessage = e.message
+                                    errorThrowable = e
                                 } finally {
                                     isCreating = false
                                 }
@@ -502,7 +505,7 @@ fun CreateGoAppScreen(
                     }
 
                     errorMessage?.let { error ->
-                        RuntimeErrorCard(error = error, onDismiss = { errorMessage = null })
+                        RuntimeErrorCard(error = error, onDismiss = { errorMessage = null; errorThrowable = null }, scope = "Go app create", throwable = errorThrowable)
                     }
                 }
             }
