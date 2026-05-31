@@ -141,12 +141,14 @@ fun PlayStoreScreen(
                                     } catch (e: com.webtoapp.core.playstore.aab.AabExportException) {
                                         ExportState.Failed(
                                             failureStage = e.failureStage,
-                                            technicalDetails = e.message ?: e.javaClass.simpleName
+                                            technicalDetails = e.message ?: e.javaClass.simpleName,
+                                            throwable = e
                                         )
                                     } catch (e: Exception) {
                                         ExportState.Failed(
                                             failureStage = com.webtoapp.core.playstore.aab.FailureStage.UNKNOWN,
-                                            technicalDetails = e.message ?: e.javaClass.simpleName
+                                            technicalDetails = e.message ?: e.javaClass.simpleName,
+                                            throwable = e
                                         )
                                     }
                                 }
@@ -647,7 +649,8 @@ internal sealed interface ExportState {
 
     data class Failed(
         val failureStage: com.webtoapp.core.playstore.aab.FailureStage,
-        val technicalDetails: String
+        val technicalDetails: String,
+        val throwable: Throwable? = null
     ) : ExportState
 
     data object NeedsApk : ExportState
@@ -786,6 +789,18 @@ private fun ExportStateCard(
                             fontFamily = FontFamily.Monospace
                         )
                     }
+                    val report = remember(state.failureStage, state.technicalDetails, state.throwable) {
+                        com.webtoapp.ui.components.buildErrorReport(
+                            scope = "AAB export",
+                            message = state.technicalDetails,
+                            throwable = state.throwable,
+                            contextLines = listOf("failureStage=${state.failureStage.name}")
+                        )
+                    }
+                    com.webtoapp.ui.components.WtaErrorDetailsSection(
+                        report = report,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }

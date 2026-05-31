@@ -886,6 +886,37 @@ object Strings {
         AppLanguage.ARABIC -> "فشل تشغيل الخادم"
     }
 
+    val errorScreenTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "应用启动遇到问题"
+        AppLanguage.ENGLISH -> "Something went wrong while starting"
+        AppLanguage.ARABIC -> "حدثت مشكلة أثناء بدء التشغيل"
+    }
+    val errorShowDetails: String get() = when (lang) {
+        AppLanguage.CHINESE -> "显示详细信息"
+        AppLanguage.ENGLISH -> "Show details"
+        AppLanguage.ARABIC -> "عرض التفاصيل"
+    }
+    val errorHideDetails: String get() = when (lang) {
+        AppLanguage.CHINESE -> "隐藏详细信息"
+        AppLanguage.ENGLISH -> "Hide details"
+        AppLanguage.ARABIC -> "إخفاء التفاصيل"
+    }
+    val errorCopyDetails: String get() = when (lang) {
+        AppLanguage.CHINESE -> "复制详细信息"
+        AppLanguage.ENGLISH -> "Copy details"
+        AppLanguage.ARABIC -> "نسخ التفاصيل"
+    }
+    val errorCopied: String get() = when (lang) {
+        AppLanguage.CHINESE -> "已复制详细信息"
+        AppLanguage.ENGLISH -> "Details copied"
+        AppLanguage.ARABIC -> "تم نسخ التفاصيل"
+    }
+    val errorRetry: String get() = when (lang) {
+        AppLanguage.CHINESE -> "重试"
+        AppLanguage.ENGLISH -> "Retry"
+        AppLanguage.ARABIC -> "إعادة المحاولة"
+    }
+
     val phpSupportedFrameworks: String get() = when (lang) {
         AppLanguage.CHINESE -> "支持 Laravel、ThinkPHP、CodeIgniter、Slim。"
         AppLanguage.ENGLISH -> "Supports Laravel, ThinkPHP, CodeIgniter, Slim and plain PHP projects"

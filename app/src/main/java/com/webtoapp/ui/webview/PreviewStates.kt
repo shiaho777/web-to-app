@@ -7,7 +7,7 @@ sealed class WordPressPreviewState {
     object CreatingProject : WordPressPreviewState()
     object StartingServer : WordPressPreviewState()
     data class Ready(val url: String) : WordPressPreviewState()
-    data class Error(val message: String) : WordPressPreviewState()
+    data class Error(val message: String, val throwable: Throwable? = null) : WordPressPreviewState()
 }
 
 sealed class PhpAppPreviewState {
@@ -16,7 +16,7 @@ sealed class PhpAppPreviewState {
     object Downloading : PhpAppPreviewState()
     object StartingServer : PhpAppPreviewState()
     data class Ready(val url: String) : PhpAppPreviewState()
-    data class Error(val message: String) : PhpAppPreviewState()
+    data class Error(val message: String, val throwable: Throwable? = null) : PhpAppPreviewState()
 }
 
 sealed class PythonAppPreviewState {
@@ -25,7 +25,7 @@ sealed class PythonAppPreviewState {
     object InstallingDeps : PythonAppPreviewState()
     object StartingServer : PythonAppPreviewState()
     data class Ready(val url: String) : PythonAppPreviewState()
-    data class Error(val message: String) : PythonAppPreviewState()
+    data class Error(val message: String, val throwable: Throwable? = null) : PythonAppPreviewState()
 }
 
 sealed class NodeJsAppPreviewState {
@@ -34,7 +34,7 @@ sealed class NodeJsAppPreviewState {
 
     object StartingServer : NodeJsAppPreviewState()
     data class Ready(val url: String) : NodeJsAppPreviewState()
-    data class Error(val message: String) : NodeJsAppPreviewState()
+    data class Error(val message: String, val throwable: Throwable? = null) : NodeJsAppPreviewState()
 }
 
 sealed class GoAppPreviewState {
@@ -42,7 +42,7 @@ sealed class GoAppPreviewState {
     object Starting : GoAppPreviewState()
     object StartingServer : GoAppPreviewState()
     data class Ready(val url: String) : GoAppPreviewState()
-    data class Error(val message: String) : GoAppPreviewState()
+    data class Error(val message: String, val throwable: Throwable? = null) : GoAppPreviewState()
 }
 
 fun formatWpBytes(bytes: Long): String {

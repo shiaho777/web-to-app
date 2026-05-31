@@ -104,6 +104,7 @@ fun CreateNodeJsAppScreen(
     var isCreating by remember { mutableStateOf(false) }
     var creationPhase by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
 
     LaunchedEffect(existingAppId) {
         if (existingAppId > 0L) {
@@ -318,6 +319,7 @@ fun CreateNodeJsAppScreen(
                     }
                 } catch (e: Exception) {
                     errorMessage = e.message ?: Strings.projectImportFailed
+                    errorThrowable = e
                 } finally {
                     isCreating = false
                 }
@@ -389,6 +391,7 @@ fun CreateNodeJsAppScreen(
                                 )
                             } catch (e: Exception) {
                                 errorMessage = e.message ?: Strings.projectSyncFailed
+                                errorThrowable = e
                             } finally {
                                 isCreating = false
                             }
@@ -606,6 +609,7 @@ fun CreateNodeJsAppScreen(
                                         }
                                     } catch (e: Exception) {
                                         errorMessage = e.message
+                                        errorThrowable = e
                                     } finally {
                                         isCreating = false
                                     }
@@ -923,7 +927,7 @@ fun CreateNodeJsAppScreen(
                     }
 
                     errorMessage?.let { error ->
-                        RuntimeErrorCard(error = error, onDismiss = { errorMessage = null })
+                        RuntimeErrorCard(error = error, onDismiss = { errorMessage = null; errorThrowable = null }, scope = "Node.js app create", throwable = errorThrowable)
                     }
                 }
             }

@@ -1521,7 +1521,7 @@ fun WebViewScreen(
             }
         } catch (e: Exception) {
             AppLogger.e("PythonAppPreview", "Failed to start preview", e)
-            pythonAppPreviewState = PythonAppPreviewState.Error(e.message ?: Strings.pyPreviewFailed)
+            pythonAppPreviewState = PythonAppPreviewState.Error(e.message ?: Strings.pyPreviewFailed, e)
         }
     }
 
@@ -1690,7 +1690,7 @@ fun WebViewScreen(
             }
         } catch (e: Exception) {
             AppLogger.e("NodeJsAppPreview", "Failed to start preview", e)
-            nodeJsAppPreviewState = NodeJsAppPreviewState.Error(e.message ?: Strings.nodePreviewFailed)
+            nodeJsAppPreviewState = NodeJsAppPreviewState.Error(e.message ?: Strings.nodePreviewFailed, e)
         }
     }
 
@@ -1848,7 +1848,7 @@ fun WebViewScreen(
             }
         } catch (e: Exception) {
             AppLogger.e("GoAppPreview", "Failed to start preview", e)
-            goAppPreviewState = GoAppPreviewState.Error(e.message ?: Strings.goPreviewFailed)
+            goAppPreviewState = GoAppPreviewState.Error(e.message ?: Strings.goPreviewFailed, e)
         }
     }
 
@@ -2779,7 +2779,9 @@ fun WebViewScreen(
                     isStarting = goAppPreviewState is GoAppPreviewState.Starting || goAppPreviewState is GoAppPreviewState.StartingServer,
                     startingText = Strings.goStartingPreview,
                     errorMessage = (goAppPreviewState as? GoAppPreviewState.Error)?.message,
-                    onRetry = { goAppRetryTrigger++ }
+                    onRetry = { goAppRetryTrigger++ },
+                    errorScope = "Go preview",
+                    errorThrowable = (goAppPreviewState as? GoAppPreviewState.Error)?.throwable
                 )
             }
 
@@ -2846,6 +2848,18 @@ fun WebViewScreen(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(error, modifier = Modifier.weight(weight = 1f, fill = true))
+                        TextButton(onClick = {
+                            val report = com.webtoapp.ui.components.buildErrorReport(
+                                scope = "WebView load error",
+                                message = error,
+                                contextLines = listOf("url=${webApp?.url ?: directUrl ?: testUrl ?: "-"}")
+                            )
+                            val cm = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                            cm?.setPrimaryClip(android.content.ClipData.newPlainText("WebToApp Error", report))
+                            android.widget.Toast.makeText(context, Strings.errorCopied, android.widget.Toast.LENGTH_SHORT).show()
+                        }) {
+                            Text(Strings.errorCopyDetails)
+                        }
                         TextButton(onClick = { errorMessage = null }) {
                             Text(Strings.close)
                         }

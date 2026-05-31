@@ -86,6 +86,7 @@ fun CreatePythonAppScreen(
     var isCreating by remember { mutableStateOf(false) }
     var creationPhase by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
 
     LaunchedEffect(existingAppId) {
         if (existingAppId > 0L) {
@@ -319,6 +320,7 @@ fun CreatePythonAppScreen(
                     }
                 } catch (e: Exception) {
                     errorMessage = e.message ?: Strings.projectImportFailed
+                    errorThrowable = e
                 } finally {
                     isCreating = false
                 }
@@ -408,6 +410,7 @@ fun CreatePythonAppScreen(
                                     }
                                 } catch (e: Exception) {
                                     errorMessage = e.message
+                                    errorThrowable = e
                                 } finally {
                                     isCreating = false
                                 }
@@ -595,7 +598,7 @@ fun CreatePythonAppScreen(
                     }
 
                     errorMessage?.let { error ->
-                        RuntimeErrorCard(error = error, onDismiss = { errorMessage = null })
+                        RuntimeErrorCard(error = error, onDismiss = { errorMessage = null; errorThrowable = null }, scope = "Python app create", throwable = errorThrowable)
                     }
                 }
             }
