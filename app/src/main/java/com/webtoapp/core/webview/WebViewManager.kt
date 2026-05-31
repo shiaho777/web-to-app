@@ -4300,7 +4300,23 @@ class WebViewManager(
                 )
                 return@launch
             }
+            ensureChromeExtensionRuntimesForDeferredModules(webView)
             performExtensionModuleInjection(webView, url, runAt)
+        }
+    }
+
+    private fun ensureChromeExtensionRuntimesForDeferredModules(webView: WebView) {
+        if (extensionRuntimes.isNotEmpty()) return
+        val hasChromeExtModules = getActiveModulesForCurrentApp().any { module ->
+            module.sourceType == com.webtoapp.core.extension.ModuleSourceType.CHROME_EXTENSION &&
+                module.chromeExtId.isNotEmpty()
+        }
+        if (hasChromeExtModules) {
+            AppLogger.d(
+                "WebViewManager",
+                "Deferred load resolved Chrome extension module(s); initializing runtimes"
+            )
+            initChromeExtensionRuntimes(webView)
         }
     }
 
