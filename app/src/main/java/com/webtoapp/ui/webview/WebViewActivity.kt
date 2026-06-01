@@ -2250,13 +2250,7 @@ fun WebViewScreen(
                 AppLogger.d("WebViewActivity", "=========================================")
 
                 if (htmlDir.exists()) {
-                    val requiresServer = app.webViewConfig.enableCrossOriginIsolation ||
-                        LocalHttpServer.siteRequiresHttpServer(htmlDir)
-                    if (!requiresServer) {
-                        val fileUrl = "file://${htmlDir.absolutePath}/$entryFile"
-                        AppLogger.d("WebViewActivity", "HTML preview (file://, pure-static parity with APK): $fileUrl")
-                        fileUrl
-                    } else try {
+                    try {
 
                         val enableLocalIsolation = app.webViewConfig.enableCrossOriginIsolation ||
                             LocalHttpServer.shouldEnableCrossOriginIsolation(htmlDir)

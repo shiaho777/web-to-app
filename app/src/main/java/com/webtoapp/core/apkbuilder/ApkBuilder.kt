@@ -2797,38 +2797,21 @@ private fun WebApp.computeEffectiveTargetUrl(packageName: String, htmlUsesFileSc
 }
 
 /**
- * 打包期判定:HTML/FRONTEND 应用能否以 file:// 纯本地方式运行(不需要本地 HTTP
- * server、不需要 INTERNET)。判定复用运行时同一套逻辑
- * [com.webtoapp.core.webview.LocalHttpServer.siteRequiresHttpServer]:站点若含
- * Service Worker / PWA manifest / WASM 等需要 HTTP 源的特性,则必须用 localhost。
+ * 是否以 file:// 纯本地方式加载 HTML/FRONTEND(不经本地 HTTP server、不需要 INTERNET)。
  *
- * 保守原则:仅 HTML/FRONTEND 适用;开启跨域隔离(需 server 下发 COOP/COEP 头)、
- * 拿不到源目录或拿不到 context 时一律返回 false(回退 localhost + INTERNET),绝不
- * 冒进把联网/PWA/隔离应用误判成 file://。运行时据此决定且不再二次推翻(打包决定优先)。
+ * 现在恒为 false:一律走 http://127.0.0.1 本地 server(真 origin)。loopback server
+ * 完全本地、断网可用,只需 INTERNET 权限来 bind socket(非敏感权限);它提供真实的
+ * http origin,localStorage / fetch / ES module / Web Worker 等才能正常工作。
+ *
+ * file:// 是 opaque origin,会让上述能力失效(2.0.3 自动 file:// 曾导致"本地 JS
+ * 编辑器输入框失效"的回归)。因此放弃"自动判 file://";底层 file:// 路径(见
+ * [com.webtoapp.ui.shell.buildPackagedHtmlFileSchemeEntryUrl] /
+ * [com.webtoapp.core.webview.LocalHttpServer.siteRequiresHttpServer])保留,留待将来
+ * 做成用户手动可选的"纯离线/免 INTERNET 模式",绝不自动启用。
  */
+@Suppress("UNUSED_PARAMETER")
 private fun WebApp.computeHtmlUsesFileScheme(context: android.content.Context?): Boolean {
-    if (appType != com.webtoapp.data.model.AppType.HTML &&
-        appType != com.webtoapp.data.model.AppType.FRONTEND) {
-        return false
-    }
-    if (context == null) return false
-
-    if (webViewConfig.enableCrossOriginIsolation) return false
-    val sourceDir = resolveHtmlSourceDir(context) ?: return false
-    if (!sourceDir.exists() || !sourceDir.isDirectory) return false
-    return !com.webtoapp.core.webview.LocalHttpServer.siteRequiresHttpServer(sourceDir)
-}
-
-private fun WebApp.resolveHtmlSourceDir(context: android.content.Context): File? {
-    val stored = htmlConfig?.projectId
-        ?.takeIf { it.isNotBlank() }
-        ?.let { File(context.filesDir, "html_projects/$it") }
-        ?.takeIf { it.exists() && it.isDirectory }
-    if (stored != null) return stored
-    return htmlConfig?.projectDir
-        ?.takeIf { it.isNotBlank() }
-        ?.let { File(it) }
-        ?.takeIf { it.exists() && it.isDirectory }
+    return false
 }
 
 private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
