@@ -723,17 +723,8 @@ object PerformanceOptimizer {
     }
 
     private fun minifyJsContent(content: String): String? {
-        if (content.length < 100) return null
-        var result = content
-
-        result = result.replace(Regex("""(?<![:"'])//[^\n]*"""), "")
-
-        result = result.replace(Regex("""/\*[\s\S]*?\*/"""), "")
-
-        result = result.replace(Regex("""\s+"""), " ")
-
-        result = result.replace(Regex("""\s*([{}();,:])\s*"""), "$1")
-        return result.trim()
+        AppLogger.w(TAG, "Pure-Kotlin JS minify disabled (regex minify corrupts JS: regex literals, ASI, strings); JS is only minified via esbuild")
+        return null
     }
 
     private fun minifyCssContent(content: String): String? {

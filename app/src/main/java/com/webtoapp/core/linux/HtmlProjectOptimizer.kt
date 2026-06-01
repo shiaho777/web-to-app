@@ -293,87 +293,8 @@ object HtmlProjectOptimizer {
     }
 
     private fun minifyJsPure(file: File): Boolean {
-        try {
-            val content = file.readText()
-            if (content.length < 100) return false
-
-            val minified = StringBuilder()
-            var i = 0
-            var inString = false
-            var stringChar = ' '
-            var inSingleLineComment = false
-            var inMultiLineComment = false
-            var lastChar = ' '
-
-            while (i < content.length) {
-                val c = content[i]
-                val next = if (i + 1 < content.length) content[i + 1] else ' '
-
-                when {
-
-                    inString -> {
-                        minified.append(c)
-                        if (c == stringChar && lastChar != '\\') {
-                            inString = false
-                        }
-                    }
-
-                    inSingleLineComment -> {
-                        if (c == '\n') {
-                            inSingleLineComment = false
-                            minified.append('\n')
-                        }
-                    }
-
-                    inMultiLineComment -> {
-                        if (c == '*' && next == '/') {
-                            inMultiLineComment = false
-                            i++
-                        }
-                    }
-
-                    c == '/' && next == '/' -> {
-                        inSingleLineComment = true
-                        i++
-                    }
-                    c == '/' && next == '*' -> {
-                        inMultiLineComment = true
-                        i++
-                    }
-
-                    c == '"' || c == '\'' || c == '`' -> {
-                        inString = true
-                        stringChar = c
-                        minified.append(c)
-                    }
-
-                    c.isWhitespace() -> {
-                        if (minified.isNotEmpty() && !minified.last().isWhitespace()) {
-
-                            if (minified.last().isLetterOrDigit() || minified.last() == '_' || minified.last() == '$') {
-                                minified.append(' ')
-                            }
-                        }
-                    }
-                    else -> {
-                        minified.append(c)
-                    }
-                }
-
-                lastChar = c
-                i++
-            }
-
-            val result = minified.toString().trim()
-            if (result.length < content.length) {
-                file.writeText(result)
-                return true
-            }
-            return false
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "纯 Kotlin JS 压缩失败: ${e.message}")
-            return false
-        }
+        AppLogger.w(TAG, "Pure-Kotlin JS minify disabled (regex minify corrupts JS: regex literals, ASI, strings); JS is only minified via esbuild: ${file.name}")
+        return false
     }
 
     private fun minifyCssPure(file: File): Boolean {
