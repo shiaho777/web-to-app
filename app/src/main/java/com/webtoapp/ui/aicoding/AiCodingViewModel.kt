@@ -681,11 +681,13 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
             return
         }
 
-        val expandedMessage = expandSlashSkill(rawMessage) ?: rawMessage
-
-        val mentionedPaths = extractMentionPaths(expandedMessage, session.id)
+        val expandedBase = expandSlashSkill(rawMessage) ?: rawMessage
 
         viewModelScope.launch {
+            val starterNote = seedSlashSkillStarter(rawMessage, session.id)
+            val expandedMessage = expandedBase + starterNote
+            val mentionedPaths = extractMentionPaths(expandedMessage, session.id)
+
             val editingId = _ui.value.editingMessageId
             val baseSession = if (editingId != null) {
                 sessionStore.truncateAt(session.id, editingId, keep = false) ?: session
@@ -734,6 +736,22 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
             append("\n\n")
             append(body)
         }
+    }
+
+    private suspend fun seedSlashSkillStarter(message: String, sessionId: String): String {
+        if (!message.startsWith("/")) return ""
+        val firstWhite = message.indexOfFirst { it.isWhitespace() }
+        val nameEnd = if (firstWhite < 0) message.length else firstWhite
+        val skillName = message.substring(1, nameEnd).trim().ifEmpty { return "" }
+        val skill = skillRegistry.get(skillName) ?: return ""
+        if (skill.starterAssetDir == null && skill.starterDir == null) return ""
+        val written = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            files.materializeStarter(sessionId, skill.starterAssetDir, skill.starterDir)
+        }
+        return if (written.isNotEmpty()) {
+            "\n\nStarter files added to the workspace (do not recreate these): " +
+                written.joinToString(", ")
+        } else ""
     }
 
     private fun extractMentionPaths(text: String, sessionId: String): List<String> {

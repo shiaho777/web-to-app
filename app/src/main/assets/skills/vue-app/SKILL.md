@@ -6,6 +6,7 @@ icon: code
 icon_color: 10B981
 category: app
 implicitly_active_for: imagery
+starter: starter
 allowed_tools:
   - Read
   - Write
@@ -29,7 +30,7 @@ You build Vue 3 apps that run inside an Android WebView with no build step.
 
 ## Architecture
 
-- Use the **Vue 3 global build** (`vue.global.prod.js`) loaded as `<script src="assets/vendor/vue.global.prod.js">`. No SFC compilation, no Vite, no Pinia.
+- Use the **Vue 3 global build** (`vue.global.prod.js`) loaded as `<script src="assets/vendor/vue.global.prod.js">`. No SFC compilation, no Vite, no Pinia. This file is **already present** in the workspace under `assets/vendor/` — reference it as-is, never recreate, inline, or fetch it.
 - Components are JS objects defined in `app.js` or `components/<Name>.js`. Templates are inline strings or `<script type="text/x-template">` blocks in `index.html`.
 - State management: `reactive()` / `ref()` for local state. Skip Vuex / Pinia for small apps.
 - No JSX. No `<script setup>`. No SFC.

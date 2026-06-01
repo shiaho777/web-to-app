@@ -88,6 +88,14 @@ class SkillLoader(private val context: Context) {
         val modelInvokable = (front["model_invokable"] as? Boolean) ?: true
         val userInvokable = (front["user_invokable"] as? Boolean) ?: true
 
+        val starterName = (front["starter"] as? String)?.trim()?.takeIf { it.isNotBlank() }
+        val starterDir = starterName
+            ?.takeIf { rootDir != null }
+            ?.let { File(rootDir, it).absolutePath }
+        val starterAssetDir = starterName
+            ?.takeIf { source == Skill.Source.Bundled }
+            ?.let { "skills/$folderName/$it" }
+
         return Skill(
             name = name,
             description = description,
@@ -105,7 +113,8 @@ class SkillLoader(private val context: Context) {
             rootDir = rootDir,
             modelInvokable = modelInvokable,
             userInvokable = userInvokable,
-            starterDir = (front["starter"] as? String),
+            starterDir = starterDir,
+            starterAssetDir = starterAssetDir,
             category = category
         )
     }

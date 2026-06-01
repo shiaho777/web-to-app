@@ -46,6 +46,19 @@ class SkillTool : Tool {
             return ToolResult.error("Skill: '$skillName' has an empty body.")
         }
 
+        val starterNote = if (skill.starterAssetDir != null || skill.starterDir != null) {
+            val written = ctx.fileManager.materializeStarter(
+                sessionId = ctx.sessionId,
+                starterAssetDir = skill.starterAssetDir,
+                starterFsDir = skill.starterDir
+            )
+            written.forEach { ctx.readFiles += it }
+            if (written.isNotEmpty()) {
+                "\n\nStarter files added to the workspace (do not recreate these): " +
+                    written.joinToString(", ")
+            } else ""
+        } else ""
+
         val text = buildString {
             append("# Skill activated: /")
             append(skillName)
@@ -53,6 +66,7 @@ class SkillTool : Tool {
             append(skill.description)
             append("\n\n")
             append(body)
+            append(starterNote)
         }
         return ToolResult.ok(text)
     }

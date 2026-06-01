@@ -32,6 +32,8 @@ data class Skill(
 
     val starterDir: String? = null,
 
+    val starterAssetDir: String? = null,
+
     val category: Category = Category.Tool
 ) {
     enum class Context { Inline, Fork }

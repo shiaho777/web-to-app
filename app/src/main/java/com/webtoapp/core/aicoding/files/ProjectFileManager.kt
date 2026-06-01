@@ -47,6 +47,76 @@ class ProjectFileManager(private val context: Context) {
         return describe(target, sessionId)
     }
 
+    fun materializeStarter(
+        sessionId: String,
+        starterAssetDir: String?,
+        starterFsDir: String?
+    ): List<String> {
+        val written = mutableListOf<String>()
+        try {
+            when {
+                starterAssetDir != null ->
+                    copyAssetTree(context.assets, starterAssetDir, sessionId, "", written)
+                starterFsDir != null -> {
+                    val root = File(starterFsDir)
+                    if (root.isDirectory) copyFileTree(root, root, sessionId, written)
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "materializeStarter failed: ${e.message}")
+        }
+        return written
+    }
+
+    private fun copyAssetTree(
+        assets: android.content.res.AssetManager,
+        assetDir: String,
+        sessionId: String,
+        relativeBase: String,
+        written: MutableList<String>
+    ) {
+        val children = assets.list(assetDir).orEmpty()
+        if (children.isEmpty()) {
+            val relativePath = relativeBase.ifEmpty { assetDir.substringAfterLast('/') }
+            if (exists(sessionId, relativePath)) return
+            try {
+                val bytes = assets.open(assetDir).use { it.readBytes() }
+                if (writeBytes(sessionId, relativePath, bytes) != null) written += relativePath
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "copyAsset failed for $assetDir: ${e.message}")
+            }
+            return
+        }
+        children.forEach { child ->
+            val childAsset = "$assetDir/$child"
+            val childRelative = if (relativeBase.isEmpty()) child else "$relativeBase/$child"
+            copyAssetTree(assets, childAsset, sessionId, childRelative, written)
+        }
+    }
+
+    private fun copyFileTree(
+        root: File,
+        current: File,
+        sessionId: String,
+        written: MutableList<String>
+    ) {
+        current.listFiles()?.forEach { file ->
+            if (file.isDirectory) {
+                copyFileTree(root, file, sessionId, written)
+            } else {
+                val relativePath = file.relativeTo(root).path.replace(File.separatorChar, '/')
+                if (exists(sessionId, relativePath)) return@forEach
+                try {
+                    if (writeBytes(sessionId, relativePath, file.readBytes()) != null) {
+                        written += relativePath
+                    }
+                } catch (e: Exception) {
+                    AppLogger.w(TAG, "copyFile failed for ${file.path}: ${e.message}")
+                }
+            }
+        }
+    }
+
     fun readBytes(sessionId: String, relativePath: String): ByteArray? {
         val target = resolveSafe(sessionId, relativePath) ?: return null
         return if (target.exists() && target.isFile) target.readBytes() else null

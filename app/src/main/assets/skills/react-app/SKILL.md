@@ -6,6 +6,7 @@ icon: code
 icon_color: 06B6D4
 category: app
 implicitly_active_for: imagery
+starter: starter
 allowed_tools:
   - Read
   - Write
@@ -29,8 +30,8 @@ You build small React SPAs that ship inside an Android WebView with no build ste
 
 ## Architecture
 
-- Use **standalone React via UMD** (`react.production.min.js` + `react-dom.production.min.js` from a CDN we ship locally, NOT the public CDN). Reference them as `assets/vendor/react.js` / `assets/vendor/react-dom.js` and assume the assets exist in the WebView.
-- Use **plain JavaScript with HTM (Hyperscript Tagged Markup)** for JSX-equivalent ergonomics: `assets/vendor/htm.js` plus `const html = htm.bind(React.createElement)`. NO build-time JSX.
+- Use **standalone React via UMD** (`react.production.min.js` + `react-dom.production.min.js` from a CDN we ship locally, NOT the public CDN). Reference them as `assets/vendor/react.js` / `assets/vendor/react-dom.js`. These files are **already present** in the workspace under `assets/vendor/` — reference them as-is, never recreate or fetch them.
+- Use **plain JavaScript with HTM (Hyperscript Tagged Markup)** for JSX-equivalent ergonomics: `assets/vendor/htm.js` plus `const html = htm.bind(React.createElement)`. NO build-time JSX. `htm.js` is also **already present** under `assets/vendor/`.
 - Use plain CSS (no Tailwind, no postcss). Keep it in `assets/style.css`.
 - Single-page only: client-side routing via `window.history` and a small `view` state, no react-router.
 
