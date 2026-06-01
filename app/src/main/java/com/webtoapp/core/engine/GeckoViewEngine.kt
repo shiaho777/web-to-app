@@ -37,10 +37,43 @@ class GeckoViewEngine(
         @Volatile
         private var sharedRuntime: GeckoRuntime? = null
 
+        @Volatile
+        private var runtimeEchEnabled: Boolean = false
+
         fun getRuntime(context: Context): GeckoRuntime {
             return sharedRuntime ?: synchronized(this) {
                 sharedRuntime ?: createRuntime(context.applicationContext).also {
                     sharedRuntime = it
+                    runtimeEchEnabled = currentDnsConfig?.echEffective == true
+                }
+            }
+        }
+
+        /**
+         * ECH 的 --pref 只能在 GeckoRuntime 创建时注入,运行时无法热更新。若当前进程里
+         * 已存在的 runtime 与"本次是否需要 ECH"不一致(典型:runtime 先于 DoH/ECH 配置
+         * 创建,带不上 ECH 参数),就销毁并按正确参数重建,确保 SNI 能真正加密。
+         */
+        fun ensureRuntimeForEch(context: Context) {
+            val wantEch = currentDnsConfig?.echEffective == true
+            synchronized(this) {
+                val existing = sharedRuntime
+                if (existing == null) {
+                    getRuntime(context)
+                    return
+                }
+                if (wantEch != runtimeEchEnabled) {
+                    AppLogger.i(
+                        TAG,
+                        "Recreating GeckoRuntime to apply ECH change (want=$wantEch, current=$runtimeEchEnabled)"
+                    )
+                    try {
+                        existing.shutdown()
+                    } catch (e: Exception) {
+                        AppLogger.w(TAG, "GeckoRuntime shutdown failed during ECH recreate: ${e.message}")
+                    }
+                    sharedRuntime = null
+                    getRuntime(context)
                 }
             }
         }
@@ -228,6 +261,11 @@ class GeckoViewEngine(
     ): View {
         this.callback = callback
         this.lastConfig = config
+
+        if (config.dnsMode != "SYSTEM") {
+            applyDnsConfig(config.dnsConfig)
+        }
+        ensureRuntimeForEch(context)
 
         val runtime = getRuntime(context)
 
