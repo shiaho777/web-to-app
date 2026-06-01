@@ -10,12 +10,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import coil.compose.rememberAsyncImagePainter
-import coil.request.ImageRequest
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
 import kotlinx.coroutines.delay
@@ -58,17 +57,29 @@ fun ShellSplashOverlay(
         when (splashType) {
             "IMAGE" -> {
 
-                Image(
-                    painter = rememberAsyncImagePainter(
-                        ImageRequest.Builder(context)
-                            .data("file:///android_asset/$assetPath")
-                            .crossfade(true)
-                            .build()
-                    ),
-                    contentDescription = Strings.cdSplashScreen,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = contentScaleMode
-                )
+                var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+                LaunchedEffect(assetPath) {
+                    bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                        try {
+                            val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
+                            val imageBytes = decryptor.loadAsset(assetPath)
+                            android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        } catch (e: Exception) {
+                            AppLogger.e("ShellSplash", "Failed to load splash image", e)
+                            null
+                        }
+                    }
+                }
+
+                bitmap?.let { bmp ->
+                    Image(
+                        bitmap = bmp.asImageBitmap(),
+                        contentDescription = Strings.cdSplashScreen,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = contentScaleMode
+                    )
+                }
             }
             "VIDEO" -> {
 
@@ -317,22 +328,32 @@ fun MediaContentDisplay(
             }
         } else {
 
-            val painter = rememberAsyncImagePainter(
-                ImageRequest.Builder(context)
-                    .data("file:///android_asset/media_content.png")
-                    .crossfade(true)
-                    .build()
-            )
+            var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
-            Image(
-                painter = painter,
-                contentDescription = Strings.cdMediaContent,
-                modifier = Modifier.fillMaxSize(),
-                contentScale = if (mediaConfig.fillScreen)
-                    ContentScale.Crop
-                else
-                    ContentScale.Fit
-            )
+            LaunchedEffect(Unit) {
+                bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    try {
+                        val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
+                        val imageBytes = decryptor.loadAsset("media_content.png")
+                        android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                    } catch (e: Exception) {
+                        AppLogger.e("MediaContent", "Failed to load image media", e)
+                        null
+                    }
+                }
+            }
+
+            bitmap?.let { bmp ->
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = Strings.cdMediaContent,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = if (mediaConfig.fillScreen)
+                        ContentScale.Crop
+                    else
+                        ContentScale.Fit
+                )
+            }
         }
     }
 }
