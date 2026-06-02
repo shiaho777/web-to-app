@@ -6257,6 +6257,48 @@ object Strings {
         AppLanguage.ARABIC -> "العدد"
     }
 
+    val batchImport: String get() = when (lang) {
+        AppLanguage.CHINESE -> "批量导入"
+        AppLanguage.ENGLISH -> "Batch Import"
+        AppLanguage.ARABIC -> "استيراد دفعي"
+    }
+
+    val batchImportCodes: String get() = when (lang) {
+        AppLanguage.CHINESE -> "批量导入激活码"
+        AppLanguage.ENGLISH -> "Batch Import Codes"
+        AppLanguage.ARABIC -> "استيراد رموز التفعيل دفعةً"
+    }
+
+    val batchImportHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "每行粘贴一个激活码，一行一个。空行、重复和已存在的激活码会自动忽略。"
+        AppLanguage.ENGLISH -> "Paste one activation code per line. Blank lines, duplicates, and codes that already exist are skipped automatically."
+        AppLanguage.ARABIC -> "الصق رمز تفعيل واحد في كل سطر. يتم تجاهل الأسطر الفارغة والمكررة والرموز الموجودة تلقائيًا."
+    }
+
+    val batchImportInputLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "激活码列表（每行一个）"
+        AppLanguage.ENGLISH -> "Activation codes (one per line)"
+        AppLanguage.ARABIC -> "رموز التفعيل (واحد في كل سطر)"
+    }
+
+    val batchImportEmpty: String get() = when (lang) {
+        AppLanguage.CHINESE -> "未识别到有效的激活码"
+        AppLanguage.ENGLISH -> "No valid activation codes found"
+        AppLanguage.ARABIC -> "لم يتم العثور على رموز تفعيل صالحة"
+    }
+
+    fun batchImportResult(added: Int, skipped: Int): String = when (lang) {
+        AppLanguage.CHINESE -> "已导入 $added 个，跳过 $skipped 个"
+        AppLanguage.ENGLISH -> "Imported $added, skipped $skipped"
+        AppLanguage.ARABIC -> "تم استيراد $added، وتم تخطي $skipped"
+    }
+
+    val batchImportNote: String get() = when (lang) {
+        AppLanguage.CHINESE -> "批量导入"
+        AppLanguage.ENGLISH -> "Batch import"
+        AppLanguage.ARABIC -> "استيراد دفعي"
+    }
+
     val totalCodes: String get() = when (lang) {
         AppLanguage.CHINESE -> "共 %d 个激活码"
         AppLanguage.ENGLISH -> "%d activation codes"

@@ -95,6 +95,7 @@ fun ActivationCodeCard(
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var showBatchDialog by remember { mutableStateOf(false) }
+    var showBatchImportDialog by remember { mutableStateOf(false) }
     var showDeleteAllDialog by remember { mutableStateOf(false) }
     var showCustomTextSection by remember { mutableStateOf(
         dialogConfig.title.isNotBlank() || dialogConfig.subtitle.isNotBlank() ||
@@ -281,6 +282,16 @@ fun ActivationCodeCard(
                     }
                 }
 
+                PremiumOutlinedButton(
+                    onClick = { showBatchImportDialog = true },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Outlined.PostAdd, null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(Strings.batchImport, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+
                 if (activationCodes.isNotEmpty()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -352,6 +363,17 @@ fun ActivationCodeCard(
             onConfirm = { codes ->
                 onCodesChange(activationCodes + codes)
                 showBatchDialog = false
+            }
+        )
+    }
+
+    if (showBatchImportDialog) {
+        BatchImportDialog(
+            existingCodes = activationCodes,
+            onDismiss = { showBatchImportDialog = false },
+            onConfirm = { codes ->
+                onCodesChange(activationCodes + codes)
+                showBatchImportDialog = false
             }
         )
     }
@@ -1066,6 +1088,125 @@ private fun BatchGenerateDialog(
                 Icon(Icons.Outlined.AutoAwesome, null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(Strings.batchGenerate, fontWeight = FontWeight.SemiBold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(Strings.btnCancel)
+            }
+        }
+    )
+}
+
+private fun parseBatchImportCodes(
+    raw: String,
+    existingCodes: List<ActivationCode>
+): List<ActivationCode> {
+    val minLen = com.webtoapp.core.activation.ActivationManager.MIN_CODE_LENGTH
+    val maxLen = com.webtoapp.core.activation.ActivationManager.MAX_CODE_LENGTH
+
+    fun normalize(code: String): String =
+        code.replace("-", "").replace(" ", "").uppercase().trim()
+
+    val seen = existingCodes.map { normalize(it.code) }.toMutableSet()
+    val result = mutableListOf<ActivationCode>()
+
+    raw.split("\n").forEach { line ->
+        val trimmed = line.trim()
+        if (trimmed.isEmpty()) return@forEach
+        if (trimmed.length < minLen || trimmed.length > maxLen) return@forEach
+        val key = normalize(trimmed)
+        if (key.isEmpty() || key in seen) return@forEach
+        seen.add(key)
+        result.add(
+            ActivationCode(
+                code = trimmed,
+                type = ActivationCodeType.PERMANENT,
+                note = Strings.batchImportNote
+            )
+        )
+    }
+
+    return result
+}
+
+@Composable
+private fun BatchImportDialog(
+    existingCodes: List<ActivationCode>,
+    onDismiss: () -> Unit,
+    onConfirm: (List<ActivationCode>) -> Unit
+) {
+    var input by remember { mutableStateOf("") }
+    var errorText by remember { mutableStateOf<String?>(null) }
+
+    val nonEmptyLineCount = input.split("\n").count { it.isBlank().not() }
+    val validCount = parseBatchImportCodes(input, existingCodes).size
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(24.dp),
+        icon = {
+            Icon(
+                Icons.Outlined.PostAdd,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+        },
+        title = { Text(Strings.batchImportCodes, fontWeight = FontWeight.SemiBold) },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = Strings.batchImportHint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    lineHeight = 18.sp
+                )
+
+                PremiumTextField(
+                    value = input,
+                    onValueChange = {
+                        input = it
+                        errorText = null
+                    },
+                    label = { Text(Strings.batchImportInputLabel) },
+                    placeholder = { Text("VIPCODE01\nVIPCODE02\nVIPCODE03") },
+                    isError = errorText != null,
+                    supportingText = {
+                        if (errorText != null) {
+                            Text(errorText!!, color = MaterialTheme.colorScheme.error)
+                        } else if (nonEmptyLineCount > 0) {
+                            Text(
+                                Strings.batchImportResult(validCount, nonEmptyLineCount - validCount),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        }
+                    },
+                    minLines = 5,
+                    maxLines = 12,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            PremiumButton(
+                onClick = {
+                    val codes = parseBatchImportCodes(input, existingCodes)
+                    if (codes.isEmpty()) {
+                        errorText = Strings.batchImportEmpty
+                        return@PremiumButton
+                    }
+                    onConfirm(codes)
+                }
+            ) {
+                Icon(Icons.Outlined.PostAdd, null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(Strings.batchImport, fontWeight = FontWeight.SemiBold)
             }
         },
         dismissButton = {
