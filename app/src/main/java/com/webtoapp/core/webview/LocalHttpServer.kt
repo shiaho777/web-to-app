@@ -133,8 +133,10 @@ class LocalHttpServer(
 
     private fun createExecutor(): ThreadPoolExecutor {
         return ThreadPoolExecutor(
-            1, 4, 30L, TimeUnit.SECONDS, LinkedBlockingQueue(32)
-        )
+            4, 32, 30L, TimeUnit.SECONDS, LinkedBlockingQueue(128),
+            { r -> Thread(r, "LocalHttpServer-Worker").apply { isDaemon = true } },
+            ThreadPoolExecutor.CallerRunsPolicy()
+        ).also { it.allowCoreThreadTimeOut(true) }
     }
 
     private fun ensureExecutor(): ThreadPoolExecutor {
@@ -183,7 +185,14 @@ class LocalHttpServer(
                 while (isRunning.get()) {
                     try {
                         val clientSocket = serverSocket?.accept() ?: break
-                        ensureExecutor().execute { handleClient(clientSocket) }
+                        try {
+                            ensureExecutor().execute { handleClient(clientSocket) }
+                        } catch (e: Exception) {
+                            try { clientSocket.close() } catch (_: Exception) {}
+                            if (isRunning.get()) {
+                                AppLogger.w(TAG, "派发请求失败，已关闭连接: ${e.message}")
+                            }
+                        }
                     } catch (e: Exception) {
                         if (isRunning.get()) {
                             AppLogger.e(TAG, "接受连接失败", e)

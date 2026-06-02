@@ -1300,13 +1300,10 @@ class WebViewManager(
 
                     userAgentString = stripWebViewMarker(effectiveUserAgent)
                     AppLogger.d("WebViewManager", "User-Agent set: ${userAgentString.take(80)}...")
-                } else if (config.enableCloudflareCompat) {
-
-                    userAgentString = CloudflareCompat.stripWebViewMarker(userAgentString)
-                    AppLogger.d("WebViewManager", "User-Agent (CF compat, wv stripped): ${userAgentString.take(80)}...")
                 } else {
 
-                    AppLogger.d("WebViewManager", "User-Agent unchanged (system default): ${userAgentString.take(80)}...")
+                    userAgentString = stripWebViewMarker(userAgentString)
+                    AppLogger.d("WebViewManager", "User-Agent (system default, wv stripped): ${userAgentString.take(80)}...")
                 }
 
                 if (!isDesktopModeRequested && effectiveUserAgent == null) {
