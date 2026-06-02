@@ -1162,7 +1162,7 @@ private fun BatchImportDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = Strings.batchImportHint,
+                    text = Strings.batchImportCodesHint,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 18.sp

@@ -14,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -21,6 +22,26 @@ private val Context.themeDataStore: DataStore<Preferences> by preferencesDataSto
 
 @SuppressLint("StaticFieldLeak")
 class ThemeManager(private val context: Context) {
+
+    @Volatile
+    private var cachedDarkMode: DarkModeSettings? = null
+
+    val currentDarkMode: DarkModeSettings
+        get() = cachedDarkMode ?: readDarkModeBlocking().also { cachedDarkMode = it }
+
+    private fun readDarkModeBlocking(): DarkModeSettings = try {
+        kotlinx.coroutines.runBlocking {
+            val prefs = context.themeDataStore.data.first()
+            val modeName = prefs[KEY_DARK_MODE] ?: DarkModeSettings.SYSTEM.name
+            try {
+                DarkModeSettings.valueOf(modeName)
+            } catch (e: Exception) {
+                DarkModeSettings.SYSTEM
+            }
+        }
+    } catch (e: Exception) {
+        darkModeFlow.value
+    }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -136,6 +157,7 @@ class ThemeManager(private val context: Context) {
         context.themeDataStore.edit { prefs ->
             prefs[KEY_DARK_MODE] = mode.name
         }
+        cachedDarkMode = mode
     }
 
     suspend fun setEnableAnimations(enabled: Boolean) {
