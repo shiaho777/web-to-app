@@ -33,7 +33,7 @@ class ModuleMarketRepository private constructor(
     companion object {
         private const val TAG = "ModuleMarket"
 
-        private const val OWNER = "shiahonb777"
+        private const val OWNER = "shiaho777"
         private const val REPO = "web-to-app"
         private const val BRANCH = "main"
         private const val MODULES_DIR = "modules"

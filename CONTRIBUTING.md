@@ -15,7 +15,7 @@ This guide targets **WebToApp 2.0.5** (`versionCode 40`).
 | You want to… | Go to | Effort |
 | --- | --- | --- |
 | Publish a JS/CSS module to the in-app **Module Market** | [`modules/README.md`](modules/README.md) | hours |
-| File a bug, request a feature, or ask a question | [GitHub Issues](https://github.com/shiahonb777/web-to-app/issues) | minutes |
+| File a bug, request a feature, or ask a question | [GitHub Issues](https://github.com/shiaho777/web-to-app/issues) | minutes |
 | Fix a bug or build a feature in the Android client | This guide ↓ | days |
 
 If you're not sure which lane fits, open an issue or a discussion first. There
@@ -55,7 +55,7 @@ python3 tools/ci/validate_modules.py
 
 ### Before you write code
 
-- Search [issues](https://github.com/shiahonb777/web-to-app/issues) for prior
+- Search [issues](https://github.com/shiaho777/web-to-app/issues) for prior
   discussion of the same idea.
 - For non-trivial changes, open an issue first describing the problem and the
   approach you have in mind. This is much cheaper than rewriting after review.
@@ -73,7 +73,7 @@ You'll need:
 - The Gradle wrapper pins Gradle 9.4.1 — no system Gradle install required
 
 ```bash
-git clone https://github.com/shiahonb777/web-to-app.git
+git clone https://github.com/shiaho777/web-to-app.git
 cd web-to-app
 ./gradlew assembleDebug
 ```
@@ -207,7 +207,7 @@ logged and otherwise disregarded.
 | 你想…… | 路径 | 投入 |
 | --- | --- | --- |
 | 给应用内的 **模块市场** 提交一个 JS/CSS 模块 | [`modules/README.md`](modules/README.md) | 几小时 |
-| 报 Bug、提 Feature、问问题 | [GitHub Issues](https://github.com/shiahonb777/web-to-app/issues) | 几分钟 |
+| 报 Bug、提 Feature、问问题 | [GitHub Issues](https://github.com/shiaho777/web-to-app/issues) | 几分钟 |
 | 修 Bug 或在 Android 客户端里做新功能 | 见下方代码贡献小节 | 几天 |
 
 不确定走哪条，先开 issue 或 discussion——动手前对齐方向，比写完再返工便宜
@@ -240,7 +240,7 @@ python3 tools/ci/validate_modules.py
 
 **动手前**
 
-- 在 [issues](https://github.com/shiahonb777/web-to-app/issues) 里先搜一下
+- 在 [issues](https://github.com/shiaho777/web-to-app/issues) 里先搜一下
   类似讨论
 - 较大的改动请先开 issue 说明要解决的问题和方案
 - **谨慎引入新依赖**。`app/build.gradle.kts` 的依赖列表刻意保持精简——本项目
@@ -254,7 +254,7 @@ python3 tools/ci/validate_modules.py
 - Gradle wrapper 已锁定 Gradle 9.4.1，无需系统安装 Gradle
 
 ```bash
-git clone https://github.com/shiahonb777/web-to-app.git
+git clone https://github.com/shiaho777/web-to-app.git
 cd web-to-app
 ./gradlew assembleDebug
 ```

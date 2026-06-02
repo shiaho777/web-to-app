@@ -8,8 +8,8 @@
 
 [English](README.md) · **简体中文**
 
-[![Stars](https://img.shields.io/github/stars/shiahonb777/web-to-app?style=for-the-badge)](https://github.com/shiahonb777/web-to-app/stargazers)
-[![Forks](https://img.shields.io/github/forks/shiahonb777/web-to-app?style=for-the-badge)](https://github.com/shiahonb777/web-to-app/network/members)
+[![Stars](https://img.shields.io/github/stars/shiaho777/web-to-app?style=for-the-badge)](https://github.com/shiaho777/web-to-app/stargazers)
+[![Forks](https://img.shields.io/github/forks/shiaho777/web-to-app?style=for-the-badge)](https://github.com/shiaho777/web-to-app/network/members)
 [![License](https://img.shields.io/badge/License-Unlicense-blue?style=for-the-badge)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-23%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](#)
 
@@ -425,7 +425,7 @@ PayPal、Stripe、Square——外加 reCAPTCHA / hCaptcha / Cloudflare Turnstile
 Gradle 9.4.1，无需系统安装 Gradle。
 
 ```bash
-git clone https://github.com/shiahonb777/web-to-app.git
+git clone https://github.com/shiaho777/web-to-app.git
 cd web-to-app
 ./gradlew assembleDebug
 ```
@@ -443,7 +443,7 @@ Release 构建请在 `app/build.gradle.kts`（经 `local.properties`）中配置
 | 路径 | 内容 | 指南 |
 | --- | --- | --- |
 | `modules/` | 给应用内市场提交一个社区模块 | [`modules/README.md`](modules/README.md) |
-| Issues | 报告 Bug 或申请功能 | [GitHub Issues](https://github.com/shiahonb777/web-to-app/issues) |
+| Issues | 报告 Bug 或申请功能 | [GitHub Issues](https://github.com/shiaho777/web-to-app/issues) |
 | 代码 | 修 Bug 或在 Android 客户端做新功能 | [`CONTRIBUTING.md`](CONTRIBUTING.md) |
 
 ## 联系方式
@@ -452,7 +452,7 @@ Release 构建请在 `app/build.gradle.kts`（经 `local.properties`）中配置
 
 | 平台 | 链接 |
 | --- | --- |
-| GitHub | [github.com/shiahonb777/web-to-app](https://github.com/shiahonb777/web-to-app) |
+| GitHub | [github.com/shiaho777/web-to-app](https://github.com/shiaho777/web-to-app) |
 | Telegram | [t.me/webtoapp777](https://t.me/webtoapp777) |
 | X (Twitter) | [@shiaho777](https://x.com/shiaho777) |
 | Bilibili | [b23.tv/8mGDo2N](https://b23.tv/8mGDo2N) |

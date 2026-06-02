@@ -22832,9 +22832,9 @@ object Strings {
     }
 
     val moduleMarketGuideStep1: String get() = when (lang) {
-        AppLanguage.CHINESE -> "Fork 仓库 shiahonb777/web-to-app。"
-        AppLanguage.ENGLISH -> "Fork the repo shiahonb777/web-to-app."
-        AppLanguage.ARABIC -> "انسخ المستودع shiahonb777/web-to-app."
+        AppLanguage.CHINESE -> "Fork 仓库 shiaho777/web-to-app。"
+        AppLanguage.ENGLISH -> "Fork the repo shiaho777/web-to-app."
+        AppLanguage.ARABIC -> "انسخ المستودع shiaho777/web-to-app."
     }
 
     val moduleMarketGuideStep2: String get() = when (lang) {

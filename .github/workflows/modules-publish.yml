@@ -50,7 +50,7 @@ jobs:
           # Comma-separated list of GitHub logins that may seed modules
           # via a direct push (no PR). Anything else without a merged PR
           # stays hidden from the catalog.
-          MAINTAINERS: shiahonb777
+          MAINTAINERS: shiaho777
         run: |
           python3 tools/ci/generate_submissions.py \
             --owner "${GITHUB_REPOSITORY%%/*}" \

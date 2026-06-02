@@ -318,8 +318,8 @@ private fun ContactGrid() {
             ContactEntry(
                 icon = Icons.Outlined.Code,
                 label = "GitHub",
-                value = "shiahonb777/web-to-app",
-                action = ContactAction.OpenUrl("https://github.com/shiahonb777/web-to-app")
+                value = "shiaho777/web-to-app",
+                action = ContactAction.OpenUrl("https://github.com/shiaho777/web-to-app")
             ),
             ContactEntry(
                 icon = Icons.Outlined.Send,
@@ -353,7 +353,7 @@ private fun ContactGrid() {
                 icon = Icons.Outlined.Forum,
                 label = authorLabel,
                 value = "shiaho",
-                action = ContactAction.OpenUrl("https://github.com/shiahonb777")
+                action = ContactAction.OpenUrl("https://github.com/shiaho777")
             )
         )
     }

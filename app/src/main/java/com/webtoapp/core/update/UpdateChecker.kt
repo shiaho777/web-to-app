@@ -13,7 +13,7 @@ object UpdateChecker {
     private const val TAG = "UpdateChecker"
 
     private const val MIRROR_PREFIX = "https://gh-proxy.org/"
-    private const val OWNER = "shiahonb777"
+    private const val OWNER = "shiaho777"
     private const val REPO = "web-to-app"
     private const val LATEST_RELEASE_API =
         "https://api.github.com/repos/$OWNER/$REPO/releases/latest"
