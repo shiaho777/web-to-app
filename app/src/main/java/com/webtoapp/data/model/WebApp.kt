@@ -304,6 +304,7 @@ data class WebViewConfig(
 
     val enableKernelDisguise: Boolean = false,
     val kernelDisguiseLevel: KernelDisguiseLevel = KernelDisguiseLevel.STANDARD,
+    val kernelFlavor: com.webtoapp.core.kernel.KernelFlavor = com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT,
     val enableCloudflareCompat: Boolean = false,
     val cloudflareCompatMode: CloudflareCompatMode = CloudflareCompatMode.AUTO_DETECT,
     val allowMixedContent: Boolean = false,

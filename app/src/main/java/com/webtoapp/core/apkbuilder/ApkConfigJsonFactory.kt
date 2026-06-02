@@ -196,6 +196,7 @@ internal object ApkConfigJsonFactory {
         "thirdPartyCookieMode" to webViewBehavior.thirdPartyCookieMode,
         "enableKernelDisguise" to webViewBehavior.enableKernelDisguise,
         "kernelDisguiseLevel" to webViewBehavior.kernelDisguiseLevel,
+        "kernelFlavor" to webViewBehavior.kernelFlavor,
         "enableImageRepair" to webViewBehavior.enableImageRepair,
         "enableScrollMemory" to webViewBehavior.enableScrollMemory,
         "followSystemDarkMode" to webViewBehavior.followSystemDarkMode,

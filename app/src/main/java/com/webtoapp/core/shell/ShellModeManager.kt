@@ -1113,6 +1113,9 @@ data class WebViewShellConfig(
     @SerializedName("kernelDisguiseLevel")
     val kernelDisguiseLevel: String = "STANDARD",
 
+    @SerializedName("kernelFlavor")
+    val kernelFlavor: String = "SYSTEM_DEFAULT",
+
     @SerializedName("enableImageRepair")
     val enableImageRepair: Boolean = false,
 

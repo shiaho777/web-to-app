@@ -6269,7 +6269,7 @@ object Strings {
         AppLanguage.ARABIC -> "استيراد رموز التفعيل دفعةً"
     }
 
-    val batchImportHint: String get() = when (lang) {
+    val batchImportCodesHint: String get() = when (lang) {
         AppLanguage.CHINESE -> "每行粘贴一个激活码，一行一个。空行、重复和已存在的激活码会自动忽略。"
         AppLanguage.ENGLISH -> "Paste one activation code per line. Blank lines, duplicates, and codes that already exist are skipped automatically."
         AppLanguage.ARABIC -> "الصق رمز تفعيل واحد في كل سطر. يتم تجاهل الأسطر الفارغة والمكررة والرموز الموجودة تلقائيًا."
@@ -34871,6 +34871,15 @@ object Strings {
     val kernelDisguiseLevelBasic: String get() = when (lang) { AppLanguage.CHINESE -> "基础"; AppLanguage.ENGLISH -> "Basic"; AppLanguage.ARABIC -> "أساسي" }
     val kernelDisguiseLevelStandard: String get() = when (lang) { AppLanguage.CHINESE -> "标准"; AppLanguage.ENGLISH -> "Standard"; AppLanguage.ARABIC -> "قياسي" }
     val kernelDisguiseLevelDeep: String get() = when (lang) { AppLanguage.CHINESE -> "深度"; AppLanguage.ENGLISH -> "Deep"; AppLanguage.ARABIC -> "عميق" }
+
+    val kernelFlavorTitle: String get() = when (lang) { AppLanguage.CHINESE -> "内核风味伪装"; AppLanguage.ENGLISH -> "Kernel Flavor Disguise"; AppLanguage.ARABIC -> "تمويه نكهة النواة" }
+    val kernelFlavorDesc: String get() = when (lang) { AppLanguage.CHINESE -> "让页面识别为所选浏览器内核（UA + Sec-CH-UA + userAgentData 一致伪装）。客户端提示请求头经官方 WebView API 下发，不更换真实引擎。"; AppLanguage.ENGLISH -> "Make pages detect the selected browser kernel (UA + Sec-CH-UA + userAgentData spoofed consistently). Client-hint request headers are driven through the official WebView API; the real engine is unchanged."; AppLanguage.ARABIC -> "اجعل الصفحات تتعرف على نواة المتصفح المختارة (تمويه متسق لـ UA و Sec-CH-UA و userAgentData). يتم إرسال ترويسات تلميحات العميل عبر واجهة WebView الرسمية؛ لا يتغير المحرك الحقيقي." }
+    val kernelFlavorLabel: String get() = when (lang) { AppLanguage.CHINESE -> "目标内核"; AppLanguage.ENGLISH -> "Target Kernel"; AppLanguage.ARABIC -> "النواة المستهدفة" }
+    val kernelFlavorChrome: String get() = when (lang) { AppLanguage.CHINESE -> "Chrome (Blink)"; AppLanguage.ENGLISH -> "Chrome (Blink)"; AppLanguage.ARABIC -> "Chrome (Blink)" }
+    val kernelFlavorEdge: String get() = when (lang) { AppLanguage.CHINESE -> "Edge (Blink)"; AppLanguage.ENGLISH -> "Edge (Blink)"; AppLanguage.ARABIC -> "Edge (Blink)" }
+    val kernelFlavorSamsung: String get() = when (lang) { AppLanguage.CHINESE -> "三星浏览器 (Blink)"; AppLanguage.ENGLISH -> "Samsung Internet (Blink)"; AppLanguage.ARABIC -> "Samsung Internet (Blink)" }
+    val kernelFlavorFirefox: String get() = when (lang) { AppLanguage.CHINESE -> "Firefox (Gecko)"; AppLanguage.ENGLISH -> "Firefox (Gecko)"; AppLanguage.ARABIC -> "Firefox (Gecko)" }
+    val kernelFlavorSafari: String get() = when (lang) { AppLanguage.CHINESE -> "Safari (WebKit)"; AppLanguage.ENGLISH -> "Safari (WebKit)"; AppLanguage.ARABIC -> "Safari (WebKit)" }
 
     val cloudflareCompatModeLabel: String get() = when (lang) { AppLanguage.CHINESE -> "兼容模式"; AppLanguage.ENGLISH -> "Compat Mode"; AppLanguage.ARABIC -> "وضع التوافق" }
     val cloudflareCompatModeAuto: String get() = when (lang) { AppLanguage.CHINESE -> "自动检测"; AppLanguage.ENGLISH -> "Auto Detect"; AppLanguage.ARABIC -> "كشف تلقائي" }

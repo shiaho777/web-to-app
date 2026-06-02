@@ -119,6 +119,11 @@ App 会自动检测并提示更新。
 
 - 桌面模式、自定义 User-Agent、`DOCUMENT_START` / `END` / `IDLE` 三时机的
   JS/CSS 注入（`ScriptRunTime`）
+- 打包时的**内核风味**伪装（`KernelFlavor`）：让生成的 APK 对外表现成
+  Chrome / Edge / 三星浏览器（Blink）、Firefox（Gecko）或 Safari（WebKit）——
+  对 UA、`navigator.userAgentData` / Sec-CH-UA 品牌、`window.chrome` 在否、
+  `vendor` 做一致伪装。客户端提示请求头通过官方
+  `WebSettingsCompat.setUserAgentMetadata` API 下发（在 WebView 支持时）。不更换真实引擎
 - 弹窗拦截，新窗口行为（`NewWindowBehavior`）可选 `SAME_WINDOW` /
   `EXTERNAL_BROWSER` / `POPUP_WINDOW` / `BLOCK`
 - 静态代理（HTTP / HTTPS / SOCKS5）与 PAC，支持身份验证和绕过规则；SOCKS5

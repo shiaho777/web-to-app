@@ -131,6 +131,12 @@ in this repository.
 
 - Desktop mode, custom User-Agent, JS/CSS injection at `DOCUMENT_START` /
   `END` / `IDLE` (`ScriptRunTime`).
+- Build-time **kernel flavor** disguise (`KernelFlavor`): make the generated
+  APK present itself as Chrome / Edge / Samsung Internet (Blink), Firefox
+  (Gecko) or Safari (WebKit) — a consistent spoof of UA, `navigator.userAgentData`
+  / Sec-CH-UA brands, `window.chrome` presence and `vendor`. Client-hint request
+  headers are driven through the official `WebSettingsCompat.setUserAgentMetadata`
+  API (where the WebView supports it). The real engine is unchanged.
 - Popup blocker; new-window behaviour (`NewWindowBehavior`) selectable as
   `SAME_WINDOW` / `EXTERNAL_BROWSER` / `POPUP_WINDOW` / `BLOCK`.
 - Static (HTTP / HTTPS / SOCKS5) and PAC proxies with optional authentication

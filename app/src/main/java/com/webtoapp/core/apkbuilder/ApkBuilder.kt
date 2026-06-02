@@ -26,6 +26,7 @@ import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.getActivationCodeStrings
 import com.webtoapp.ui.components.announcement.toUiTemplate
 import com.webtoapp.ui.shell.buildPackagedHtmlShellEntryUrl
+import com.webtoapp.ui.theme.ThemeManager
 import com.webtoapp.ui.shell.buildPackagedHtmlFileSchemeEntryUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -2710,8 +2711,9 @@ builtins.__import__ = _w2a_import
 fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = null): ApkConfig {
     val htmlUsesFileScheme = computeHtmlUsesFileScheme(context)
     val effectiveTargetUrl = computeEffectiveTargetUrl(packageName, htmlUsesFileScheme)
+    val bakedDarkMode = context?.let { ThemeManager.getInstance(it).currentDarkMode.name } ?: "SYSTEM"
     return ApkConfig(
-        meta = buildMetaBlock(packageName, effectiveTargetUrl, htmlUsesFileScheme),
+        meta = buildMetaBlock(packageName, effectiveTargetUrl, htmlUsesFileScheme, bakedDarkMode),
         activation = buildActivationBlock(),
         adBlock = buildAdBlockBlock(),
         announcement = buildAnnouncementBlock(),
@@ -2817,7 +2819,7 @@ private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
     return result
 }
 
-private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: String, htmlUsesFileScheme: Boolean): MetaBlock = MetaBlock(
+private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: String, htmlUsesFileScheme: Boolean, darkMode: String): MetaBlock = MetaBlock(
     appName = name,
     packageName = packageName,
     targetUrl = effectiveTargetUrl,
@@ -2828,7 +2830,7 @@ private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: Strin
     networkTrustConfig = apkExportConfig?.networkTrustConfig ?: com.webtoapp.data.model.NetworkTrustConfig(),
     appType = appType.name,
     themeType = themeType,
-    darkMode = "SYSTEM",
+    darkMode = darkMode,
     language = com.webtoapp.core.i18n.Strings.currentLanguage.value.name,
     engineType = apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW",
     htmlUsesFileScheme = htmlUsesFileScheme
@@ -2962,6 +2964,7 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     thirdPartyCookieMode = webViewConfig.thirdPartyCookieMode.name,
     enableKernelDisguise = webViewConfig.enableKernelDisguise,
     kernelDisguiseLevel = webViewConfig.kernelDisguiseLevel.name,
+    kernelFlavor = webViewConfig.kernelFlavor.name,
     enableImageRepair = webViewConfig.enableImageRepair,
     enableScrollMemory = webViewConfig.enableScrollMemory,
     followSystemDarkMode = webViewConfig.followSystemDarkMode,

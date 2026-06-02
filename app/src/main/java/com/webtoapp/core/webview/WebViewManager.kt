@@ -1086,6 +1086,12 @@ class WebViewManager(
             }
         } else null
 
+        this.cachedKernelFlavorJs = if (!config.kernelFlavor.profile.isNoOp) {
+            config.kernelFlavor.profile.buildFlavorJs().also { js ->
+                AppLogger.d("WebViewManager", "Kernel Flavor JS cached: ${config.kernelFlavor.name}, ${js.length} chars")
+            }
+        } else null
+
         this.appExtensionModuleIds = extensionModuleIds
 
         this.embeddedModules = embeddedExtensionModules
@@ -1444,6 +1450,10 @@ class WebViewManager(
                 com.webtoapp.core.kernel.BrowserKernel.configureWebView(webView, level)
             }
 
+            if (!config.kernelFlavor.profile.isNoOp) {
+                com.webtoapp.core.kernel.KernelFlavorMetadata.apply(webView, config.kernelFlavor.profile)
+            }
+
             isFocusable = true
             isFocusableInTouchMode = true
             requestFocus()
@@ -1484,6 +1494,12 @@ class WebViewManager(
                 AppLogger.d("WebViewManager", "resolveUserAgent: ${config.userAgentMode.name} mode -> ${ua?.take(60) ?: "null"}")
                 return ua
             }
+        }
+
+        val flavorUa = config.kernelFlavor.profile.userAgent?.takeIf { it.isNotBlank() }
+        if (flavorUa != null) {
+            AppLogger.d("WebViewManager", "resolveUserAgent: KernelFlavor ${config.kernelFlavor.name} -> ${flavorUa.take(60)}")
+            return flavorUa
         }
 
         if (config.desktopMode) {
@@ -1731,6 +1747,10 @@ class WebViewManager(
                         cachedDisguiseJs = cachedBrowserDisguiseJs,
                         enableDiagnostic = false
                     )
+                }
+
+                cachedKernelFlavorJs?.let { flavorJs ->
+                    view?.evaluateJavascript(flavorJs, null)
                 }
 
                 if (config.enableCloudflareCompat) {
@@ -3129,6 +3149,8 @@ class WebViewManager(
     private var currentConfig: WebViewConfig? = null
 
     private var cachedBrowserDisguiseJs: String? = null
+
+    private var cachedKernelFlavorJs: String? = null
 
     private var cachedBrowserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? = null
 

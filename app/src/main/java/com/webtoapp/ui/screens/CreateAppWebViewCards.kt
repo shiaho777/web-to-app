@@ -2572,6 +2572,37 @@ fun SpecialSettingsCard(
                         }
 
                         SpecialAdvancedRow(
+                            title = Strings.kernelFlavorTitle,
+                            subtitle = Strings.kernelFlavorDesc,
+                            icon = Icons.Outlined.Public,
+                            checked = config.kernelFlavor != com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT,
+                            onCheckedChange = { enabled ->
+                                onConfigChange(
+                                    config.copy(
+                                        kernelFlavor = if (enabled) {
+                                            com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME
+                                        } else {
+                                            com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT
+                                        }
+                                    )
+                                )
+                            }
+                        ) {
+                            ChoiceChipRow(
+                                label = Strings.kernelFlavorLabel,
+                                options = listOf(
+                                    com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME to Strings.kernelFlavorChrome,
+                                    com.webtoapp.core.kernel.KernelFlavor.BLINK_EDGE to Strings.kernelFlavorEdge,
+                                    com.webtoapp.core.kernel.KernelFlavor.BLINK_SAMSUNG to Strings.kernelFlavorSamsung,
+                                    com.webtoapp.core.kernel.KernelFlavor.GECKO_FIREFOX to Strings.kernelFlavorFirefox,
+                                    com.webtoapp.core.kernel.KernelFlavor.WEBKIT_SAFARI to Strings.kernelFlavorSafari
+                                ),
+                                selected = config.kernelFlavor,
+                                onSelect = { onConfigChange(config.copy(kernelFlavor = it)) }
+                            )
+                        }
+
+                        SpecialAdvancedRow(
                             title = Strings.cloudflareCompatTitle,
                             subtitle = Strings.cloudflareCompatDesc,
                             icon = Icons.Outlined.VerifiedUser,

@@ -91,6 +91,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         kernelDisguiseLevel = try {
             com.webtoapp.data.model.KernelDisguiseLevel.valueOf(config.webViewConfig.kernelDisguiseLevel)
         } catch (e: Exception) { com.webtoapp.data.model.KernelDisguiseLevel.STANDARD },
+        kernelFlavor = com.webtoapp.core.kernel.KernelFlavor.fromString(config.webViewConfig.kernelFlavor),
         enableImageRepair = config.webViewConfig.enableImageRepair,
         enableScrollMemory = config.webViewConfig.enableScrollMemory,
         followSystemDarkMode = config.webViewConfig.followSystemDarkMode,

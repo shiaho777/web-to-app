@@ -472,6 +472,7 @@ data class WebViewBehaviorBlock(
     val thirdPartyCookieMode: String = "SAME_SITE_LAX",
     val enableKernelDisguise: Boolean = false,
     val kernelDisguiseLevel: String = "STANDARD",
+    val kernelFlavor: String = "SYSTEM_DEFAULT",
     val enableImageRepair: Boolean = false,
     val enableScrollMemory: Boolean = false,
     val followSystemDarkMode: Boolean = false,
