@@ -38,39 +38,47 @@ class GeckoViewEngine(
         private var sharedRuntime: GeckoRuntime? = null
 
         @Volatile
-        private var runtimeEchEnabled: Boolean = false
+        private var runtimeConfigFingerprint: String = ""
+
+        private fun currentConfigFingerprint(): String {
+            val ech = currentDnsConfig?.echEffective == true
+            val proxy = currentProxyConfig?.let { buildProxyPrefs(it) } ?: emptyMap()
+            val proxyKey = proxy.entries.joinToString(",") { "${it.key}=${it.value}" }
+            return "ech=$ech|proxy=$proxyKey"
+        }
 
         fun getRuntime(context: Context): GeckoRuntime {
             return sharedRuntime ?: synchronized(this) {
                 sharedRuntime ?: createRuntime(context.applicationContext).also {
                     sharedRuntime = it
-                    runtimeEchEnabled = currentDnsConfig?.echEffective == true
+                    runtimeConfigFingerprint = currentConfigFingerprint()
                 }
             }
         }
 
         /**
-         * ECH 的 --pref 只能在 GeckoRuntime 创建时注入,运行时无法热更新。若当前进程里
-         * 已存在的 runtime 与"本次是否需要 ECH"不一致(典型:runtime 先于 DoH/ECH 配置
-         * 创建,带不上 ECH 参数),就销毁并按正确参数重建,确保 SNI 能真正加密。
+         * ECH / 代理等 prefs 经 configFilePath 指定的 yaml 在 GeckoRuntime 创建时读取,
+         * 运行时无法热更新。若当前进程里已存在的 runtime 与本次所需的 createRuntime-time
+         * 配置(ECH + 代理)指纹不一致(典型:runtime 先于 DoH/ECH/代理 配置创建,带不上
+         * 对应 prefs),就销毁并按正确参数重建,确保 SNI 加密与代理真正生效。
          */
-        fun ensureRuntimeForEch(context: Context) {
-            val wantEch = currentDnsConfig?.echEffective == true
+        fun ensureRuntimeForConfig(context: Context) {
+            val want = currentConfigFingerprint()
             synchronized(this) {
                 val existing = sharedRuntime
                 if (existing == null) {
                     getRuntime(context)
                     return
                 }
-                if (wantEch != runtimeEchEnabled) {
+                if (want != runtimeConfigFingerprint) {
                     AppLogger.i(
                         TAG,
-                        "Recreating GeckoRuntime to apply ECH change (want=$wantEch, current=$runtimeEchEnabled)"
+                        "Recreating GeckoRuntime to apply config change (want=$want, current=$runtimeConfigFingerprint)"
                     )
                     try {
                         existing.shutdown()
                     } catch (e: Exception) {
-                        AppLogger.w(TAG, "GeckoRuntime shutdown failed during ECH recreate: ${e.message}")
+                        AppLogger.w(TAG, "GeckoRuntime shutdown failed during config recreate: ${e.message}")
                     }
                     sharedRuntime = null
                     getRuntime(context)
@@ -100,49 +108,49 @@ class GeckoViewEngine(
             AppLogger.d(TAG, "Proxy config stored: mode=${config.mode}, type=${config.type}, host=${config.host}:${config.port}")
         }
 
-        private fun buildProxyArgs(config: ProxyConfig): List<String> {
-            if (config.mode == "NONE") return emptyList()
-            val args = mutableListOf<String>()
+        private fun buildProxyPrefs(config: ProxyConfig): Map<String, Any> {
+            if (config.mode == "NONE") return emptyMap()
+            val prefs = LinkedHashMap<String, Any>()
             when (config.mode) {
                 "STATIC" -> {
-                    if (config.host.isBlank() || config.port <= 0) return emptyList()
+                    if (config.host.isBlank() || config.port <= 0) return emptyMap()
 
-                    args.add("--pref=network.proxy.type=1")
+                    prefs["network.proxy.type"] = 1
 
                     when (config.type.uppercase()) {
                         "SOCKS5", "SOCKS" -> {
-                            args.add("--pref=network.proxy.socks=${config.host}")
-                            args.add("--pref=network.proxy.socks_port=${config.port}")
-                            args.add("--pref=network.proxy.socks_version=5")
+                            prefs["network.proxy.socks"] = config.host
+                            prefs["network.proxy.socks_port"] = config.port
+                            prefs["network.proxy.socks_version"] = 5
 
-                            args.add("--pref=network.proxy.socks_remote_dns=true")
+                            prefs["network.proxy.socks_remote_dns"] = true
                         }
                         "HTTPS" -> {
 
-                            args.add("--pref=network.proxy.ssl=${config.host}")
-                            args.add("--pref=network.proxy.ssl_port=${config.port}")
-                            args.add("--pref=network.proxy.http=${config.host}")
-                            args.add("--pref=network.proxy.http_port=${config.port}")
-                            args.add("--pref=network.proxy.share_proxy_settings=true")
+                            prefs["network.proxy.ssl"] = config.host
+                            prefs["network.proxy.ssl_port"] = config.port
+                            prefs["network.proxy.http"] = config.host
+                            prefs["network.proxy.http_port"] = config.port
+                            prefs["network.proxy.share_proxy_settings"] = true
                         }
                         else -> {
 
-                            args.add("--pref=network.proxy.http=${config.host}")
-                            args.add("--pref=network.proxy.http_port=${config.port}")
-                            args.add("--pref=network.proxy.ssl=${config.host}")
-                            args.add("--pref=network.proxy.ssl_port=${config.port}")
-                            args.add("--pref=network.proxy.share_proxy_settings=true")
+                            prefs["network.proxy.http"] = config.host
+                            prefs["network.proxy.http_port"] = config.port
+                            prefs["network.proxy.ssl"] = config.host
+                            prefs["network.proxy.ssl_port"] = config.port
+                            prefs["network.proxy.share_proxy_settings"] = true
                         }
                     }
                 }
                 "PAC" -> {
-                    if (config.pacUrl.isBlank()) return emptyList()
+                    if (config.pacUrl.isBlank()) return emptyMap()
 
-                    args.add("--pref=network.proxy.type=2")
-                    args.add("--pref=network.proxy.autoconfig_url=${config.pacUrl}")
+                    prefs["network.proxy.type"] = 2
+                    prefs["network.proxy.autoconfig_url"] = config.pacUrl
                 }
             }
-            return args
+            return prefs
         }
 
         private fun applyDohToRuntime(runtime: GeckoRuntime, config: com.webtoapp.data.model.DnsConfig) {
@@ -168,16 +176,24 @@ class GeckoViewEngine(
             if (config.echEffective) {
                 AppLogger.d(
                     TAG,
-                    "ECH requested but only takes effect from runtime creation (via --pref); " +
+                    "ECH requested but only takes effect from runtime creation (via configFilePath prefs); " +
                         "it will apply on next GeckoRuntime creation"
                 )
             }
         }
 
+        private const val GECKO_CONFIG_FILE = "geckoview-config.yaml"
+
         /**
-         * ECH（Encrypted Client Hello）的 Gecko preference 只能在 runtime 创建时通过
-         * --pref 参数注入，无法在 runtime 创建后动态切换。ECH 依赖 DoH，因此仅在
-         * [com.webtoapp.data.model.DnsConfig.echEffective] 为 true 时注入。
+         * ECH（Encrypted Client Hello）等 network.dns.* 属于 Gecko preference，
+         * 不是 Gecko 进程命令行参数。GeckoRuntimeSettings.arguments(...) 设置的是
+         * 进程 args（--pref=foo=bar 不会被解析为偏好，会被静默丢弃），因此旧实现的
+         * ECH 从未真正生效（用户实测 sni=plaintext 即此因）。
+         *
+         * Gecko 官方设 preference 的唯一可在 release 包用的途径，是写一个
+         * geckoview-config.yaml 的 prefs: map，并用 configFilePath(...) 强制 runtime
+         * 从该文件读取（默认只有 debuggable / adb debug-app 才读，release 包不读）。
+         * 该文件只能在 runtime 创建时读取，故仍需配合 ensureRuntimeForConfig 重建。
          *
          * ECHConfig 公钥存放在 DNS 的 HTTPS(HTTPS RR / SVCB)记录里。Gecko 要拿到它、
          * 进而加密 SNI，光开 echconfig.enabled 不够，还必须开启 HTTPS RR 的解析与使用：
@@ -185,19 +201,46 @@ class GeckoViewEngine(
          *   - network.dns.http3_echconfig.enabled  : HTTP/3 上的 ECH
          *   - network.dns.upgrade_with_https_rr    : 解析并使用 HTTPS RR
          *   - network.dns.use_https_rr_as_altsvc   : 把 HTTPS RR 当 alt-svc（ECHConfig 经此通道取得）
-         * 缺少后两个,Gecko 取不到 ECHConfig,SNI 仍是明文(用户实测 sni=plaintext 即此因)。
          *
          * 验证:用 GeckoView 引擎打开 https://cloudflare.com/cdn-cgi/trace,看 sni=encrypted。
          * 系统 WebView(Chromium)不暴露 ECH 开关,无法由 app 控制,sni 必为 plaintext。
          */
-        private fun buildEchArgs(config: com.webtoapp.data.model.DnsConfig?): List<String> {
-            if (config?.echEffective != true) return emptyList()
-            return listOf(
-                "--pref=network.dns.echconfig.enabled=true",
-                "--pref=network.dns.http3_echconfig.enabled=true",
-                "--pref=network.dns.upgrade_with_https_rr=true",
-                "--pref=network.dns.use_https_rr_as_altsvc=true"
-            )
+        private fun writeGeckoConfigFile(context: Context, config: com.webtoapp.data.model.DnsConfig?): String {
+            val configFile = java.io.File(context.filesDir, GECKO_CONFIG_FILE)
+            val prefs = LinkedHashMap<String, Any>()
+            if (config?.echEffective == true) {
+                prefs["network.dns.echconfig.enabled"] = true
+                prefs["network.dns.http3_echconfig.enabled"] = true
+                prefs["network.dns.upgrade_with_https_rr"] = true
+                prefs["network.dns.use_https_rr_as_altsvc"] = true
+            }
+
+            currentProxyConfig?.let { prefs.putAll(buildProxyPrefs(it)) }
+
+            val yaml = buildString {
+                append("prefs:\n")
+                if (prefs.isEmpty()) {
+                    append("  {}\n")
+                } else {
+                    prefs.forEach { (key, value) ->
+                        append("  ").append(key).append(": ").append(yamlValue(value)).append("\n")
+                    }
+                }
+            }
+
+            return try {
+                configFile.writeText(yaml)
+                AppLogger.d(TAG, "Gecko config written (prefs=${prefs.size}): ${configFile.absolutePath}")
+                configFile.absolutePath
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "Failed to write Gecko config file", e)
+                ""
+            }
+        }
+
+        private fun yamlValue(value: Any): String = when (value) {
+            is Boolean, is Int, is Long -> value.toString()
+            else -> "\"" + value.toString().replace("\\", "\\\\").replace("\"", "\\\"") + "\""
         }
 
         private fun createRuntime(context: Context): GeckoRuntime {
@@ -226,14 +269,10 @@ class GeckoViewEngine(
                 }
             }
 
-            val runtimeArgs = mutableListOf<String>()
-            runtimeArgs += buildEchArgs(currentDnsConfig)
-            currentProxyConfig?.let { config ->
-                runtimeArgs += buildProxyArgs(config)
-            }
-            if (runtimeArgs.isNotEmpty()) {
-                settingsBuilder.arguments(runtimeArgs.toTypedArray())
-                AppLogger.d(TAG, "GeckoView runtime args applied at creation: $runtimeArgs")
+            val configFilePath = writeGeckoConfigFile(context, currentDnsConfig)
+            if (configFilePath.isNotBlank()) {
+                settingsBuilder.configFilePath(configFilePath)
+                AppLogger.d(TAG, "GeckoView configFilePath set: $configFilePath (ech=${currentDnsConfig?.echEffective == true}, proxy=${currentProxyConfig?.mode ?: "NONE"})")
             }
 
             return GeckoRuntime.create(context, settingsBuilder.build())
@@ -265,7 +304,7 @@ class GeckoViewEngine(
         if (config.dnsMode != "SYSTEM") {
             applyDnsConfig(config.dnsConfig)
         }
-        ensureRuntimeForEch(context)
+        ensureRuntimeForConfig(context)
 
         val runtime = getRuntime(context)
 
