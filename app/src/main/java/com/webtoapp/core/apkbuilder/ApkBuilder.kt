@@ -2159,7 +2159,7 @@ builtins.__import__ = _w2a_import
     }
 
     private fun getThemePrimaryColor(themeType: String): Int = when (themeType) {
-        "AURORA"     -> 0xFF7B68EE.toInt()
+        "AURORA"     -> 0xFF000000.toInt()
         "CYBERPUNK"  -> 0xFFFF00FF.toInt()
         "SAKURA"     -> 0xFFFFB7C5.toInt()
         "OCEAN"      -> 0xFF0077B6.toInt()
@@ -2171,7 +2171,7 @@ builtins.__import__ = _w2a_import
         "MINIMAL"    -> 0xFF212121.toInt()
         "NEON_TOKYO" -> 0xFFE91E63.toInt()
         "LAVENDER"   -> 0xFF7E57C2.toInt()
-        else         -> 0xFF7B68EE.toInt()
+        else         -> 0xFF000000.toInt()
     }
 
     private fun getThemeOnPrimaryColor(themeType: String): Int = when (themeType) {
