@@ -252,7 +252,7 @@ object PythonDependencyManager {
                 !muslReady -> {
                     val muslUrl = mirror.muslLinkerUrl
                     if (muslUrl == null) {
-                        markError("当前 ABI ($abi) 暂无可用的 musl linker")
+                        markError(String.format(com.webtoapp.core.i18n.Strings.pyRuntimeNoMuslForAbi, abi))
                         false
                     } else {
                         _downloadState.value = DownloadState.Extracting("musl linker")
@@ -264,7 +264,7 @@ object PythonDependencyManager {
             if (!success) return@withContext false
 
             if (!isPythonReady(context)) {
-                markError("Python 运行时下载不完整：缺少 Python 二进制或 musl linker")
+                markError(com.webtoapp.core.i18n.Strings.pyRuntimeDownloadIncomplete)
                 return@withContext false
             }
 
@@ -273,7 +273,7 @@ object PythonDependencyManager {
             true
         } catch (e: Exception) {
             AppLogger.e(TAG, "Downloading Python runtimefailed", e)
-            markError(e.message ?: "未知错误")
+            markError(e.message ?: com.webtoapp.core.i18n.Strings.unknownError)
             false
         }
     }
@@ -294,7 +294,7 @@ object PythonDependencyManager {
         if (hasInstalledPackages(sitePackages)) {
             val existingPackages = sitePackages.listFiles()?.size ?: 0
             AppLogger.i(TAG, ".pypackages Already exists (${existingPackages} items)，skipping pip install")
-            onOutput?.invoke("依赖已就绪，跳过安装")
+            onOutput?.invoke(com.webtoapp.core.i18n.Strings.pyDepsAlreadyReady)
             return@withContext true
         }
 
@@ -305,14 +305,14 @@ object PythonDependencyManager {
 
         try {
             sitePackages.mkdirs()
-            onOutput?.invoke("正在安装 Python 依赖...")
+            onOutput?.invoke(com.webtoapp.core.i18n.Strings.pyDepsInstalling)
 
             if (muslLinker == null) {
                 AppLogger.w(
                     TAG,
                     "musl linker missing at build time, can't pre-install Python dependencies: nativeLibraryDir=${context.applicationInfo.nativeLibraryDir}"
                 )
-                onOutput?.invoke("本机构建器缺少可执行 musl linker，无法预安装依赖")
+                onOutput?.invoke(com.webtoapp.core.i18n.Strings.pyDepsBuilderMissingMusl)
                 return@withContext false
             }
 
@@ -321,15 +321,15 @@ object PythonDependencyManager {
 
             if (result) {
                 AppLogger.i(TAG, "Python dependency install succeeded")
-                onOutput?.invoke("依赖安装完成")
+                onOutput?.invoke(com.webtoapp.core.i18n.Strings.pyDepsInstallComplete)
             } else {
                 AppLogger.e(TAG, "Python dependency install failed")
-                onOutput?.invoke("依赖安装失败")
+                onOutput?.invoke(com.webtoapp.core.i18n.Strings.pyDepsInstallFailed)
             }
             result
         } catch (e: Exception) {
             AppLogger.e(TAG, "Python dependency install exception", e)
-            onOutput?.invoke("安装异常: ${e.message}")
+            onOutput?.invoke(String.format(com.webtoapp.core.i18n.Strings.pyDepsInstallException, e.message ?: ""))
             false
         } finally {
             if (installReqFile != reqFile) {
@@ -356,7 +356,7 @@ object PythonDependencyManager {
             TAG,
             "Detected Android-incompatible Python dependencies; using sanitised requirements: ${tempFile.absolutePath} (project=${projectDir.absolutePath})"
         )
-        onOutput?.invoke("已自动调整 Android 不兼容依赖")
+        onOutput?.invoke(com.webtoapp.core.i18n.Strings.pyDepsAdjustedIncompatible)
         return tempFile
     }
 
@@ -493,7 +493,7 @@ sys.exit(main())
         if (exitCode == 0) return true
 
         AppLogger.w(TAG, "pip --only-binary failed (exitCode=$exitCode), retrying without restrictions...")
-        onOutput?.invoke("正在重试依赖安装...")
+        onOutput?.invoke(com.webtoapp.core.i18n.Strings.pyDepsRetrying)
         sitePackages.deleteRecursively()
         sitePackages.mkdirs()
 
@@ -609,7 +609,7 @@ sys.exit(main())
         if (!completed) {
 
             AppLogger.e(TAG, "pip install timed out (${PIP_TIMEOUT_SECONDS}s), force-killing process")
-            onOutput?.invoke("依赖安装超时 (${PIP_TIMEOUT_SECONDS}秒)")
+            onOutput?.invoke(String.format(com.webtoapp.core.i18n.Strings.pyDepsInstallTimeout, PIP_TIMEOUT_SECONDS))
             process.destroyForciblyCompat()
             readerThread.interrupt()
             return -1
@@ -621,7 +621,7 @@ sys.exit(main())
         if (exitCode != 0) {
             val lastOutput = synchronized(outputLines) { outputLines.takeLast(5).joinToString("\n") }
             AppLogger.e(TAG, "pip install failed, exitCode=$exitCode, output=$lastOutput")
-            onOutput?.invoke("依赖安装失败 (exitCode=$exitCode)")
+            onOutput?.invoke(String.format(com.webtoapp.core.i18n.Strings.pyDepsInstallFailedCode, exitCode))
         }
         return exitCode
     }
@@ -642,7 +642,7 @@ sys.exit(main())
         context: Context?
     ): Boolean {
         for ((urlIndex, url) in urls.withIndex()) {
-            val sourceName = if (urls.size > 1) "$displayName [源${urlIndex + 1}/${urls.size}]" else displayName
+            val sourceName = if (urls.size > 1) String.format(com.webtoapp.core.i18n.Strings.pyDownloadSourceLabel, displayName, urlIndex + 1, urls.size) else displayName
             AppLogger.i(TAG, "Attempting to download $sourceName: $url")
 
             for (attempt in 1..MAX_RETRY_PER_URL) {
@@ -718,7 +718,7 @@ sys.exit(main())
                     AppLogger.i(TAG, "Python binary moved to: ${target.absolutePath}")
                 } else {
                     AppLogger.e(TAG, "No valid Python binary (>1MB) found after extraction")
-                    markError("解压后未找到 Python 二进制")
+                    markError(com.webtoapp.core.i18n.Strings.pyExtractNoBinary)
                     return false
                 }
             }
@@ -732,7 +732,7 @@ sys.exit(main())
             archiveFile.delete()
         } catch (e: Exception) {
             AppLogger.e(TAG, "Python extraction failed", e)
-            markError("解压 Python 失败: ${e.message}")
+            markError(String.format(com.webtoapp.core.i18n.Strings.pyExtractFailed, e.message ?: ""))
             return false
         }
 
@@ -787,12 +787,12 @@ sys.exit(main())
 
             if (!found) {
                 AppLogger.e(TAG, "Alpine APK does not contain $linkerName")
-                markError("Alpine APK 中未找到 $linkerName")
+                markError(String.format(com.webtoapp.core.i18n.Strings.pyMuslNotInAlpineApk, linkerName))
             }
             return found
         } catch (e: Exception) {
             AppLogger.e(TAG, "Downloading musl linker failed", e)
-            markError("下载 musl linker 失败: ${e.message}")
+            markError(String.format(com.webtoapp.core.i18n.Strings.pyMuslDownloadFailed, e.message ?: ""))
             return false
         }
     }

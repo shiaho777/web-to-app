@@ -26562,6 +26562,91 @@ object Strings {
         AppLanguage.ENGLISH -> "Python runtime download failed"
         AppLanguage.ARABIC -> "فشل تنزيل وقت تشغيل Python"
     }
+    val pyRuntimeNoMuslForAbi: String get() = when (lang) {
+        AppLanguage.CHINESE -> "当前 ABI (%s) 暂无可用的 musl linker"
+        AppLanguage.ENGLISH -> "No musl linker available for the current ABI (%s)"
+        AppLanguage.ARABIC -> "لا يتوفر رابط musl للبنية الحالية (%s)"
+    }
+    val pyRuntimeDownloadIncomplete: String get() = when (lang) {
+        AppLanguage.CHINESE -> "Python 运行时下载不完整：缺少 Python 二进制或 musl linker"
+        AppLanguage.ENGLISH -> "Python runtime download incomplete: missing Python binary or musl linker"
+        AppLanguage.ARABIC -> "تنزيل بيئة تشغيل Python غير مكتمل: ملف Python التنفيذي أو رابط musl مفقود"
+    }
+    val pyDepsAlreadyReady: String get() = when (lang) {
+        AppLanguage.CHINESE -> "依赖已就绪，跳过安装"
+        AppLanguage.ENGLISH -> "Dependencies ready, skipping install"
+        AppLanguage.ARABIC -> "التبعيات جاهزة، يتم تخطي التثبيت"
+    }
+    val pyDepsInstalling: String get() = when (lang) {
+        AppLanguage.CHINESE -> "正在安装 Python 依赖..."
+        AppLanguage.ENGLISH -> "Installing Python dependencies..."
+        AppLanguage.ARABIC -> "جارٍ تثبيت تبعيات Python..."
+    }
+    val pyDepsBuilderMissingMusl: String get() = when (lang) {
+        AppLanguage.CHINESE -> "本机构建器缺少可执行 musl linker，无法预安装依赖"
+        AppLanguage.ENGLISH -> "The builder is missing an executable musl linker; cannot pre-install dependencies"
+        AppLanguage.ARABIC -> "أداة البناء تفتقر إلى رابط musl قابل للتنفيذ؛ يتعذّر تثبيت التبعيات مسبقًا"
+    }
+    val pyDepsInstallComplete: String get() = when (lang) {
+        AppLanguage.CHINESE -> "依赖安装完成"
+        AppLanguage.ENGLISH -> "Dependencies installed"
+        AppLanguage.ARABIC -> "اكتمل تثبيت التبعيات"
+    }
+    val pyDepsInstallFailed: String get() = when (lang) {
+        AppLanguage.CHINESE -> "依赖安装失败"
+        AppLanguage.ENGLISH -> "Dependency install failed"
+        AppLanguage.ARABIC -> "فشل تثبيت التبعيات"
+    }
+    val pyDepsInstallException: String get() = when (lang) {
+        AppLanguage.CHINESE -> "安装异常: %s"
+        AppLanguage.ENGLISH -> "Install error: %s"
+        AppLanguage.ARABIC -> "خطأ في التثبيت: %s"
+    }
+    val pyDepsAdjustedIncompatible: String get() = when (lang) {
+        AppLanguage.CHINESE -> "已自动调整 Android 不兼容依赖"
+        AppLanguage.ENGLISH -> "Automatically adjusted Android-incompatible dependencies"
+        AppLanguage.ARABIC -> "تم تعديل التبعيات غير المتوافقة مع Android تلقائيًا"
+    }
+    val pyDepsRetrying: String get() = when (lang) {
+        AppLanguage.CHINESE -> "正在重试依赖安装..."
+        AppLanguage.ENGLISH -> "Retrying dependency install..."
+        AppLanguage.ARABIC -> "جارٍ إعادة محاولة تثبيت التبعيات..."
+    }
+    val pyDepsInstallTimeout: String get() = when (lang) {
+        AppLanguage.CHINESE -> "依赖安装超时 (%d秒)"
+        AppLanguage.ENGLISH -> "Dependency install timed out (%ds)"
+        AppLanguage.ARABIC -> "انتهت مهلة تثبيت التبعيات (%d ثانية)"
+    }
+    val pyDepsInstallFailedCode: String get() = when (lang) {
+        AppLanguage.CHINESE -> "依赖安装失败 (exitCode=%d)"
+        AppLanguage.ENGLISH -> "Dependency install failed (exitCode=%d)"
+        AppLanguage.ARABIC -> "فشل تثبيت التبعيات (exitCode=%d)"
+    }
+    val pyDownloadSourceLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "%s [源%d/%d]"
+        AppLanguage.ENGLISH -> "%s [Source %d/%d]"
+        AppLanguage.ARABIC -> "%s [المصدر %d/%d]"
+    }
+    val pyExtractNoBinary: String get() = when (lang) {
+        AppLanguage.CHINESE -> "解压后未找到 Python 二进制"
+        AppLanguage.ENGLISH -> "No Python binary found after extraction"
+        AppLanguage.ARABIC -> "لم يتم العثور على ملف Python التنفيذي بعد فك الضغط"
+    }
+    val pyExtractFailed: String get() = when (lang) {
+        AppLanguage.CHINESE -> "解压 Python 失败: %s"
+        AppLanguage.ENGLISH -> "Failed to extract Python: %s"
+        AppLanguage.ARABIC -> "فشل فك ضغط Python: %s"
+    }
+    val pyMuslNotInAlpineApk: String get() = when (lang) {
+        AppLanguage.CHINESE -> "Alpine APK 中未找到 %s"
+        AppLanguage.ENGLISH -> "%s not found in the Alpine APK"
+        AppLanguage.ARABIC -> "لم يتم العثور على %s في حزمة Alpine"
+    }
+    val pyMuslDownloadFailed: String get() = when (lang) {
+        AppLanguage.CHINESE -> "下载 musl linker 失败: %s"
+        AppLanguage.ENGLISH -> "Failed to download musl linker: %s"
+        AppLanguage.ARABIC -> "فشل تنزيل رابط musl: %s"
+    }
     val nodeLauncherNotPackaged: String get() = when (lang) {
         AppLanguage.CHINESE -> "node 启动器未随 APK 打包: %s"
         AppLanguage.ENGLISH -> "Node launcher wasn't packaged with the APK: %s"
