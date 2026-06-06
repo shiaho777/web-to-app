@@ -946,7 +946,11 @@ fun WebViewScreen(
                         isActivationChecked = true
                         showActivationDialog = true
                     } else {
-                        val activated = activation.isActivated(appId).first()
+                        val activated = if (app.activationRemoteConfig?.enabled == true) {
+                            activation.isActivated(appId).first()
+                        } else {
+                            activation.resolveStartupActivation(appId)
+                        }
                         isActivated = activated
                         isActivationChecked = true
                         if (!activated) {

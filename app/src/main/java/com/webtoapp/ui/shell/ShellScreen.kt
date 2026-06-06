@@ -140,18 +140,18 @@ fun ShellScreen(
                 showActivationDialog = true
             } else {
 
-                val locallyActivated = activation.isActivated(-1L).first()
-                val activated = if (locallyActivated && config.activationRemoteEnabled) {
-                    activation.isRemoteStartupAllowed(
-                        -1L,
-                        activation.buildRemoteRequest(
-                            verifyUrl = config.activationRemoteVerifyUrl,
-                            publicKeyBase64 = config.activationRemotePublicKey,
-                            offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy)
+                val activated = if (config.activationRemoteEnabled) {
+                    activation.isActivated(-1L).first() &&
+                        activation.isRemoteStartupAllowed(
+                            -1L,
+                            activation.buildRemoteRequest(
+                                verifyUrl = config.activationRemoteVerifyUrl,
+                                publicKeyBase64 = config.activationRemotePublicKey,
+                                offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy)
+                            )
                         )
-                    )
                 } else {
-                    locallyActivated
+                    activation.resolveStartupActivation(-1L)
                 }
                 isActivated = activated
                 isActivationChecked = true

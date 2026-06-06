@@ -36,6 +36,8 @@ class ActivationManager(private val context: Context) {
 
     private val secureRandom = SecureRandom()
 
+    private val usageConsumedThisProcess = java.util.Collections.synchronizedSet(mutableSetOf<Long>())
+
     private val remoteVerifier by lazy { RemoteActivationVerifier(context) }
 
     suspend fun verifyRemoteActivation(
@@ -236,6 +238,18 @@ class ActivationManager(private val context: Context) {
         }
     }
 
+    suspend fun resolveStartupActivation(appId: Long): Boolean {
+        val status = getActivationStatus(appId)
+        if (!status.isActivated || !status.isValid) {
+            return false
+        }
+        if (status.usageLimit != null && usageConsumedThisProcess.add(appId)) {
+            incrementUsageCount(appId)
+            AppLogger.i(TAG, "Usage consumed for launch: app=$appId, used=${status.usageCount + 1}/${status.usageLimit}")
+        }
+        return true
+    }
+
     suspend fun getActivationStatus(appId: Long): ActivationStatus {
         return context.activationDataStore.data.first().let { preferences ->
             getActivationStatusSync(appId, preferences)
@@ -314,6 +328,7 @@ class ActivationManager(private val context: Context) {
     }
 
     suspend fun resetActivation(appId: Long) {
+        usageConsumedThisProcess.remove(appId)
         context.activationDataStore.edit { preferences ->
             preferences.remove(booleanPreferencesKey("activated_$appId"))
             preferences.remove(longPreferencesKey("activated_time_$appId"))

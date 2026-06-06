@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
-import com.webtoapp.core.activation.ActivationCode
 import com.webtoapp.core.appmodifier.AppModifyPayload
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.SplashConfig
@@ -39,6 +38,7 @@ import com.webtoapp.ui.components.announcement.toUiTemplate
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.util.normalizeExternalIntentUrl
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -118,15 +118,36 @@ fun SplashLauncherScreen(
     val announcement = payload.announcement
     val announcementEnabled = payload.announcementEnabled
 
+    val activationAppId = remember(payload.targetPackage) {
+        -(kotlin.math.abs(payload.targetPackage.hashCode().toLong()) + 100L)
+    }
+
     var isActivated by remember { mutableStateOf(!activationEnabled) }
-    var showActivationDialog by remember { mutableStateOf(activationEnabled) }
+    var showActivationDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(activationRequireEveryTime) {
-        if (activationEnabled && activationRequireEveryTime) {
-
-            activation.resetActivation(-2L)
-            isActivated = false
-            showActivationDialog = true
+    LaunchedEffect(Unit) {
+        if (activationEnabled) {
+            if (activationRequireEveryTime) {
+                activation.resetActivation(activationAppId)
+                isActivated = false
+                showActivationDialog = true
+            } else if (remoteConfig.enabled) {
+                val ok = activation.isActivated(activationAppId).first() &&
+                    activation.isRemoteStartupAllowed(
+                        activationAppId,
+                        activation.buildRemoteRequest(
+                            verifyUrl = remoteConfig.verifyUrl,
+                            publicKeyBase64 = remoteConfig.publicKeyBase64,
+                            offlinePolicy = remoteConfig.offlinePolicy
+                        )
+                    )
+                isActivated = ok
+                showActivationDialog = !ok
+            } else {
+                val ok = activation.resolveStartupActivation(activationAppId)
+                isActivated = ok
+                showActivationDialog = !ok
+            }
         }
     }
 
@@ -242,7 +263,7 @@ fun SplashLauncherScreen(
                     activationError = null
                     scope.launch {
                         val result = activation.verifyRemoteActivation(
-                            -2L,
+                            activationAppId,
                             code,
                             activation.buildRemoteRequest(
                                 verifyUrl = remoteConfig.verifyUrl,
@@ -259,11 +280,30 @@ fun SplashLauncherScreen(
                             activationError = com.webtoapp.core.i18n.Strings.invalidActivationCode
                         }
                     }
-                } else if (matchesAnyCode(code, activationCodes)) {
-                    isActivated = true
-                    showActivationDialog = false
                 } else {
-                    activationError = com.webtoapp.core.i18n.Strings.invalidActivationCode
+                    activationError = null
+                    scope.launch {
+                        val result = activation.verifyActivationCodeWithObjects(
+                            activationAppId,
+                            code,
+                            activationCodes
+                        )
+                        when (result) {
+                            is com.webtoapp.core.activation.ActivationResult.Success,
+                            is com.webtoapp.core.activation.ActivationResult.AlreadyActivated -> {
+                                isActivated = true
+                                showActivationDialog = false
+                            }
+                            is com.webtoapp.core.activation.ActivationResult.Invalid -> {
+                                activationError = result.message.ifBlank {
+                                    com.webtoapp.core.i18n.Strings.invalidActivationCode
+                                }
+                            }
+                            else -> {
+                                activationError = com.webtoapp.core.i18n.Strings.invalidActivationCode
+                            }
+                        }
+                    }
                 }
             },
             customTitle = dialogConfig.title,
@@ -291,10 +331,6 @@ fun SplashLauncherScreen(
             }
         )
     }
-}
-
-private fun matchesAnyCode(input: String, codes: List<ActivationCode>): Boolean {
-    return codes.any { it.code == input }
 }
 
 private fun normalizeExternalUrlForIntent(rawUrl: String): String {
