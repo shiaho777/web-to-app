@@ -6,7 +6,7 @@ rest.
 
 > **English** · [简体中文](#贡献-webtoapp中文)
 
-This guide targets **WebToApp 2.0.5** (`versionCode 40`).
+This guide targets **WebToApp 2.0.6** (`versionCode 41`).
 
 ---
 
@@ -200,7 +200,7 @@ logged and otherwise disregarded.
 非常感谢你愿意花时间。WebToApp 的迭代速度取决于"小而聚焦"的贡献——下面三条路
 里挑一条走，其他的先忽略。
 
-本指南对应 **WebToApp 2.0.5**（`versionCode 40`）。
+本指南对应 **WebToApp 2.0.6**（`versionCode 41`）。
 
 ### 你想做什么？
 
