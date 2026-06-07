@@ -357,6 +357,8 @@ PayPal、Stripe、Square——外加 reCAPTCHA / hCaptcha / Cloudflare Turnstile
   占位实现）
 - 完整应用数据备份/恢复；项目导出/导入
 - AAB 导出（用于 Play 式分发；bundle 的 protobuf 元数据在设备端生成）
+- 可选的设备端诊断日志 —— 默认关闭；开启后生成的应用会把运行日志写入自己的数据
+  目录，便于排查问题
 
 </details>
 

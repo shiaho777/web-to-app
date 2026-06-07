@@ -81,8 +81,10 @@ object AppLogger {
 
     var logToLogcat: Boolean = true
 
+    private var fileLoggingEnabled: Boolean = true
+
     @Synchronized
-    fun init(context: Context) {
+    fun init(context: Context, fileLoggingEnabled: Boolean = true) {
         if (isInitialized.get()) {
             Log.w(TAG, "AppLogger already initialized")
             return
@@ -92,6 +94,13 @@ object AppLogger {
             this.context = context.applicationContext
             this.startTime = System.currentTimeMillis()
             this.sessionId = generateSessionId()
+            this.fileLoggingEnabled = fileLoggingEnabled
+
+            if (!fileLoggingEnabled) {
+                isInitialized.set(true)
+                Log.d(TAG, "AppLogger initialized (file logging disabled)")
+                return
+            }
 
             logDir = File(context.filesDir, LOG_DIR_NAME).apply {
                 if (!exists()) mkdirs()
@@ -353,10 +362,12 @@ object AppLogger {
                 }
             }
 
-            logBuffer.offer(logLine)
+            if (fileLoggingEnabled) {
+                logBuffer.offer(logLine)
 
-            if (level.value >= Level.ERROR.value || logBuffer.size >= MAX_BUFFER_SIZE) {
-                flushBuffer()
+                if (level.value >= Level.ERROR.value || logBuffer.size >= MAX_BUFFER_SIZE) {
+                    flushBuffer()
+                }
             }
 
             if (logToLogcat) {

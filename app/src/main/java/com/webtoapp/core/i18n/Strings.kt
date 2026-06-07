@@ -19397,6 +19397,18 @@ object Strings {
         AppLanguage.ARABIC -> "بنية APK"
     }
 
+    val apkLoggingTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "诊断日志"
+        AppLanguage.ENGLISH -> "Diagnostic Logging"
+        AppLanguage.ARABIC -> "سجل التشخيص"
+    }
+
+    val apkLoggingHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "开启后，生成的应用会把运行日志写入其数据目录，便于排查问题；关闭则不产生任何日志文件。默认关闭。"
+        AppLanguage.ENGLISH -> "When enabled, the generated app writes runtime logs to its data directory for troubleshooting; when off, no log files are created. Off by default."
+        AppLanguage.ARABIC -> "عند التفعيل، يكتب التطبيق المُنشأ سجلات التشغيل في دليل بياناته لتسهيل تتبع المشكلات؛ وعند الإيقاف لا يتم إنشاء أي ملفات سجل. مُعطّل افتراضيًا."
+    }
+
     val customSigning: String get() = when (lang) {
         AppLanguage.CHINESE -> "自定义签名"
         AppLanguage.ENGLISH -> "Custom Signing"

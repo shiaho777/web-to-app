@@ -2837,7 +2837,8 @@ private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: Strin
     darkMode = darkMode,
     language = com.webtoapp.core.i18n.Strings.currentLanguage.value.name,
     engineType = apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW",
-    htmlUsesFileScheme = htmlUsesFileScheme
+    htmlUsesFileScheme = htmlUsesFileScheme,
+    loggingEnabled = apkExportConfig?.loggingEnabled ?: false
 )
 
 private fun WebApp.buildActivationBlock(): ActivationBlock = ActivationBlock(

@@ -233,6 +233,21 @@ fun ApkExportSection(
             onConfigChange = onConfigChange
         )
 
+        WtaSection(
+            title = Strings.apkLoggingTitle,
+            headerStyle = WtaSectionHeaderStyle.Quiet
+        ) {
+            WtaSettingCard {
+                WtaToggleRow(
+                    title = Strings.apkLoggingTitle,
+                    subtitle = Strings.apkLoggingHint,
+                    icon = Icons.Outlined.Description,
+                    checked = config.loggingEnabled,
+                    onCheckedChange = { onConfigChange(config.copy(loggingEnabled = it)) }
+                )
+            }
+        }
+
         CustomSigningSection()
 
         SigningSchemeSection()

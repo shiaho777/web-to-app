@@ -23,7 +23,8 @@ object ShellActivityInit {
             com.webtoapp.core.shell.ShellLogger.init(
                 context = activity,
                 appName = tempConfig?.appName ?: "ShellApp",
-                appVersion = versionName
+                appVersion = versionName,
+                fileLoggingEnabled = tempConfig?.loggingEnabled ?: false
             )
             com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "onCreate 开始")
 
