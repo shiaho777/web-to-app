@@ -20,8 +20,15 @@ class WebToAppApplication : Application() {
         super.onCreate()
         instance = this
 
+        shellModeManagerLocal = ShellModeManager(this)
+        val fileLoggingEnabled = try {
+            shellModeManagerLocal?.getConfig()?.loggingEnabled ?: false
+        } catch (e: Exception) {
+            false
+        }
+
         try {
-            AppLogger.init(this)
+            AppLogger.init(this, fileLoggingEnabled = fileLoggingEnabled)
             AppLogger.system("Application", "onCreate started (shell)")
         } catch (e: Exception) {
             android.util.Log.e("WebToAppApplication", "AppLogger initialization failed", e)
@@ -99,7 +106,9 @@ class WebToAppApplication : Application() {
     }
 
     private fun initShellRuntime() {
-        shellModeManagerLocal = ShellModeManager(this)
+        if (shellModeManagerLocal == null) {
+            shellModeManagerLocal = ShellModeManager(this)
+        }
         shellActivationManager = ActivationManager(this)
         shellAnnouncementManager = AnnouncementManager(this)
         shellAdBlocker = AdBlocker()

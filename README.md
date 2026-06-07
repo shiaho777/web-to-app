@@ -411,6 +411,9 @@ must be used with informed user consent.
 - Full app data backup and restore; project export/import.
 - AAB export for Play-style distribution (the bundle's protobuf metadata is
   generated on-device).
+- Optional on-device diagnostic logging — off by default; when enabled, the
+  generated app writes runtime logs to its own data directory for
+  troubleshooting.
 
 </details>
 

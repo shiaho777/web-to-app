@@ -18,6 +18,7 @@ object ShellLogger {
 
     private var logFile: File? = null
     private var isInitialized = false
+    private var fileLoggingEnabled = true
     private var appName: String = "ShellApp"
     private var appVersion: String = "1.0.0"
     private var packageName: String = ""
@@ -27,13 +28,20 @@ object ShellLogger {
     }
 
     @Synchronized
-    fun init(context: Context, appName: String = "ShellApp", appVersion: String = "1.0.0") {
+    fun init(context: Context, appName: String = "ShellApp", appVersion: String = "1.0.0", fileLoggingEnabled: Boolean = true) {
         if (isInitialized) return
 
         try {
             this.appName = appName
             this.appVersion = appVersion
             this.packageName = context.packageName
+            this.fileLoggingEnabled = fileLoggingEnabled
+
+            if (!fileLoggingEnabled) {
+                isInitialized = true
+                Log.d(TAG, "ShellLogger 初始化成功（文件日志已禁用）")
+                return
+            }
 
             val externalDir = context.getExternalFilesDir(null)
             val logDir = if (externalDir != null) {

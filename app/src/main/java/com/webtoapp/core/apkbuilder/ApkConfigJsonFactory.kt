@@ -24,6 +24,7 @@ internal object ApkConfigJsonFactory {
         "packageName" to meta.packageName,
         "targetUrl" to meta.targetUrl,
         "htmlUsesFileScheme" to meta.htmlUsesFileScheme,
+        "loggingEnabled" to meta.loggingEnabled,
         "versionCode" to meta.versionCode,
         "versionName" to meta.versionName,
         "activationEnabled" to activation.enabled,

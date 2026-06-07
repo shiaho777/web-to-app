@@ -139,6 +139,9 @@ data class ShellConfig(
     @SerializedName("htmlUsesFileScheme")
     val htmlUsesFileScheme: Boolean = false,
 
+    @SerializedName("loggingEnabled")
+    val loggingEnabled: Boolean = false,
+
     @SerializedName("versionCode")
     val versionCode: Int = 1,
 

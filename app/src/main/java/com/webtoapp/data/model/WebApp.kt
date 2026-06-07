@@ -980,7 +980,8 @@ data class ApkExportConfig(
     val performanceOptimization: Boolean = false,
     val performanceConfig: PerformanceOptimizationConfig = PerformanceOptimizationConfig(),
     val notificationEnabled: Boolean = false,
-    val notificationConfig: NotificationExportConfig = NotificationExportConfig()
+    val notificationConfig: NotificationExportConfig = NotificationExportConfig(),
+    val loggingEnabled: Boolean = false
 )
 
 data class NetworkTrustConfig(

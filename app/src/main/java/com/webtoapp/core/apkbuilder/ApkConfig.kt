@@ -380,7 +380,8 @@ data class MetaBlock(
      * INTERNET 权限,可完全脱离网络。打包期保守判定:拿不准一律 false(回退到
      * localhost server + INTERNET)。
      */
-    val htmlUsesFileScheme: Boolean = false
+    val htmlUsesFileScheme: Boolean = false,
+    val loggingEnabled: Boolean = false
 )
 
 data class ActivationBlock(
