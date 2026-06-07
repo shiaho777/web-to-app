@@ -52,8 +52,6 @@ class LongPressHandler(
                 if (window.__wtaLongPressEnhanced) return;
                 window.__wtaLongPressEnhanced = true;
 
-                console.log('[WebToApp] 注入长按增强脚本');
-
                 // 只阻止 contextmenu 事件，不干扰 touch 事件（以免影响网页的点击事件处理）
                 // 这样可以允许长按保存图片，同时不影响点击功能（如小说阅读器的中央点击设置）
                 document.addEventListener('contextmenu', function(e) {
@@ -118,8 +116,6 @@ class LongPressHandler(
                 if (observerTarget instanceof Node) {
                     observer.observe(observerTarget, { childList: true, subtree: true });
                 }
-
-                console.log('[WebToApp] 长按增强脚本注入完成');
             })();
         """.trimIndent()
 
@@ -173,11 +169,8 @@ class LongPressHandler(
 
                     var elem = document.elementFromPoint(x, y);
                     if (!elem) {
-                        console.log('WebToApp: No element at (' + x + ', ' + y + ')');
                         return JSON.stringify({type: 'none'});
                     }
-
-                    console.log('WebToApp: Element at (' + x + ', ' + y + '): ' + elem.tagName + ', class=' + elem.className);
 
                     var result = {type: 'none'};
 
@@ -336,7 +329,6 @@ class LongPressHandler(
                         result = {type: 'image', url: foundBgImage, alt: 'background'};
                     }
 
-                    console.log('WebToApp: Result type=' + result.type);
                     return JSON.stringify(result);
                 } catch (e) {
                     console.error('WebToApp: Error in getLongPressDetails', e);
