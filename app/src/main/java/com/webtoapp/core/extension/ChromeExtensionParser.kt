@@ -72,9 +72,9 @@ object ChromeExtensionParser {
             val manifestJson = manifestFile.readText()
             val manifest = JSONObject(manifestJson)
 
-            val name = manifest.optString("name", extensionDir.name)
+            val name = resolveI18nMessage(extensionDir, manifest, manifest.optString("name", extensionDir.name))
             val version = manifest.optString("version", "1.0")
-            val description = manifest.optString("description", "")
+            val description = resolveI18nMessage(extensionDir, manifest, manifest.optString("description", ""))
             val manifestVersion = manifest.optInt("manifest_version", 2)
 
             AppLogger.d(TAG, "Parsing extension: $name v$version (manifest v$manifestVersion)")
@@ -271,6 +271,26 @@ object ChromeExtensionParser {
                 warnings = listOf("Parse error: ${e.message}")
             )
         }
+    }
+
+    private fun resolveI18nMessage(extensionDir: File, manifest: JSONObject, raw: String): String {
+        if (!raw.startsWith("__MSG_") || !raw.endsWith("__")) return raw
+        val key = raw.removePrefix("__MSG_").removeSuffix("__")
+        val locale = manifest.optString("default_locale", "en").ifBlank { "en" }
+        val candidates = listOf(locale, locale.replace('-', '_'), "en")
+        for (loc in candidates) {
+            val msgFile = File(extensionDir, "_locales/$loc/messages.json")
+            if (!msgFile.exists()) continue
+            try {
+                val messages = JSONObject(msgFile.readText())
+                val match = messages.keys().asSequence().firstOrNull { it.equals(key, ignoreCase = true) }
+                val message = match?.let { messages.optJSONObject(it)?.optString("message", "") }
+                if (!message.isNullOrBlank()) return message
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "Failed to resolve i18n message for locale=$loc", e)
+            }
+        }
+        return raw
     }
 
     private fun extractPopupPath(manifest: JSONObject): String {

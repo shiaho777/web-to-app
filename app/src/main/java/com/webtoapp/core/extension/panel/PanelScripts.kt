@@ -2694,10 +2694,7 @@ object PanelScripts {
             if (m.icon && m.icon.indexOf('drawable:') === 0) {
                 // 尝试查找对应的 asset 图片
                 var resName = m.icon.substring(9);
-                // 内置扩展图标映射到 assets
-                var assetMap = {
-                    'ic_ext_bewlycat': 'extensions/bewlycat/assets/icon-512.png'
-                };
+                var assetMap = {};
                 if (assetMap[resName]) {
                     return '<img src="file:///android_asset/' + assetMap[resName] + '" width="20" height="20" style="border-radius:4px;object-fit:contain">';
                 }
