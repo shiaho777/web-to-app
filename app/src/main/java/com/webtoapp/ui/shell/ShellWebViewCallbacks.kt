@@ -69,7 +69,7 @@ fun createShellWebViewCallbacks(
                     injectTranslateScript(it, config.translateTargetLanguage, config.translateShowButton)
                 }
 
-                if (!isLocalRuntimePage) {
+                if (!isLocalRuntimePage && config.webViewConfig.longPressMenuEnabled) {
                     longPressHandler.injectLongPressEnhancer(it)
                 } else {
                     AppLogger.d("ShellActivity", "Skip Shell onPageFinished enhancements for local runtime page: $url")

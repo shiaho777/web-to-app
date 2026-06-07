@@ -1924,10 +1924,10 @@ fun WebViewScreen(
                         })();
                     """.trimIndent(), null)
 
-                    if (!false) {
+                    if (webApp?.webViewConfig?.longPressMenuEnabled ?: true) {
                         longPressHandler.injectLongPressEnhancer(it)
                     } else {
-                        AppLogger.d("WebViewActivity", "Skip long-press enhancer for strict compatibility host: $url")
+                        AppLogger.d("WebViewActivity", "Skip long-press enhancer: long-press menu disabled for $url")
                     }
 
                     val tc = webApp?.translateConfig

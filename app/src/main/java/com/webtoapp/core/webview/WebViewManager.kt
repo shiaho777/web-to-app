@@ -902,8 +902,6 @@ class WebViewManager(
                     lastRequestedType = null;
                     emitChange();
                 }, { passive: true });
-
-                console.log('[WebToApp] Screen orientation polyfill loaded');
             })();
         """
     }
@@ -3719,7 +3717,6 @@ class WebViewManager(
                                     if (scale < 1) {
                                         el.style.width = (100 / scale) + '%';
                                     }
-                                    console.log('[WebToApp] Converted zoom to transform:', scale, 'for element:', el.tagName);
                                 }
                             }
                         }
@@ -3763,7 +3760,6 @@ class WebViewManager(
                                         convertZoomToTransform(el);
                                     });
                                 }
-                                console.log('[WebToApp] CSS zoom observer started');
                             }
                         }
 
@@ -3779,7 +3775,6 @@ class WebViewManager(
                             var zoomDescriptor = Object.getOwnPropertyDescriptor(CSSStyleDeclaration.prototype, 'zoom');
                             Object.defineProperty(CSSStyleDeclaration.prototype, 'zoom', {
                                 set: function(value) {
-                                    console.log('[WebToApp] zoom setter called with:', value);
                                     if (value && value !== '1' && value !== 'normal' && value !== 'initial' && value !== '') {
                                         var scale = parseFloat(value);
                                         if (String(value).indexOf('%') !== -1) {
@@ -3791,7 +3786,6 @@ class WebViewManager(
                                             if (scale < 1) {
                                                 this.width = (100 / scale) + '%';
                                             }
-                                            console.log('[WebToApp] Intercepted zoom set, converted to transform:', scale);
                                             return;
                                         }
                                     }
@@ -3820,12 +3814,9 @@ class WebViewManager(
                                 },
                                 configurable: true
                             });
-                            console.log('[WebToApp] zoom setter override installed');
                         } catch(e) {
                             console.warn('[WebToApp] Failed to override zoom setter:', e);
                         }
-
-                        console.log('[WebToApp] CSS zoom polyfill loaded');
                     })();
                 """.trimIndent())
             }
@@ -3859,8 +3850,6 @@ class WebViewManager(
                                 if (data.files) return false; // File sharing not yet supported
                                 return true;
                             };
-
-                            console.log('[WebToApp] navigator.share polyfill loaded');
                         }
                     })();
                 """.trimIndent())
@@ -3886,7 +3875,6 @@ class WebViewManager(
                         // Check if NativeBridge is available (injected by WebView)
                         var hasBridge = typeof NativeBridge !== 'undefined';
                         if (!hasBridge) {
-                            console.log('[WebToApp] NativeBridge not found, clipboard polyfill skipped');
                             return;
                         }
 
@@ -3903,7 +3891,6 @@ class WebViewManager(
 
                             navigator.clipboard.writeText = function(text) {
                                 return originalWriteText(text).catch(function(err) {
-                                    console.log('[WebToApp] Native clipboard write failed, using bridge:', err.message);
                                     try {
                                         NativeBridge.copyToClipboard(String(text));
                                         return Promise.resolve();
@@ -3915,7 +3902,6 @@ class WebViewManager(
 
                             navigator.clipboard.readText = function() {
                                 return originalReadText().catch(function(err) {
-                                    console.log('[WebToApp] Native clipboard read failed, using bridge:', err.message);
                                     try {
                                         var text = NativeBridge.getClipboardText();
                                         return Promise.resolve(text || '');
@@ -3925,7 +3911,6 @@ class WebViewManager(
                                 });
                             };
 
-                            console.log('[WebToApp] Clipboard API wrapped with NativeBridge fallback');
                             return;
                         }
 
@@ -4044,8 +4029,6 @@ class WebViewManager(
                             }
                             return originalExecCommand.apply(document, arguments);
                         };
-
-                        console.log('[WebToApp] Clipboard API polyfill loaded (non-secure context)');
                     })();
                 """.trimIndent())
             }
@@ -4144,8 +4127,6 @@ class WebViewManager(
                         }
                         return originalSetAttribute.call(this, name, value);
                     };
-
-                    console.log('[WebToApp] Link URL preview hidden (enhanced)');
                 })();
             """.trimIndent())
             }
@@ -4293,8 +4274,6 @@ class WebViewManager(
                         window.__webtoapp_popup_blocker_stats__ = function() {
                             return { blocked: blockedCount, enabled: window.__webtoapp_popup_blocker_enabled__ };
                         };
-
-                        console.log('[WebToApp] Popup blocker loaded');
                     })();
                 """.trimIndent())
             }
@@ -4340,8 +4319,6 @@ class WebViewManager(
                                 this.elements = [];
                             };
                         }
-
-                        console.log('[WebToApp] Compatibility fixes loaded');
                     })();
                 """.trimIndent())
             }
@@ -5305,7 +5282,6 @@ class WebViewManager(
                 window.__webtoapp_notification_polyfill__ = true;
 
                 if (typeof NativeBridge === 'undefined') {
-                    console.log('[WebToApp] NativeBridge not found, notification polyfill skipped');
                     return;
                 }
 
@@ -5427,7 +5403,6 @@ class WebViewManager(
                     }).catch(function(){});
                 }
 
-                console.log('[WebToApp] Notification API polyfill loaded');
             })();
         """.trimIndent()
     }

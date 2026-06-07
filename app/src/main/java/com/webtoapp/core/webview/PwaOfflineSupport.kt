@@ -200,7 +200,6 @@ self.addEventListener('fetch', event => {
             // Register Service Worker via Blob URL
             (function() {
                 if (!('serviceWorker' in navigator)) {
-                    console.log('[WTA] Service Worker not supported');
                     return;
                 }
 
@@ -208,7 +207,6 @@ self.addEventListener('fetch', event => {
                 navigator.serviceWorker.getRegistrations().then(function(regs) {
                     const existing = regs.find(r => r.active && r.active.scriptURL.includes('blob:'));
                     if (existing) {
-                        console.log('[WTA] Service Worker already registered');
                         return;
                     }
 
@@ -217,7 +215,6 @@ self.addEventListener('fetch', event => {
 
                     navigator.serviceWorker.register(swUrl, { scope: '/' })
                         .then(function(reg) {
-                            console.log('[WTA] Service Worker registered:', reg.scope);
                             URL.revokeObjectURL(swUrl);
                         })
                         .catch(function(err) {
