@@ -22,11 +22,11 @@ market hides it.
 
 Run locally (no network access — uses cache only):
 
-    python3 tools/ci/generate_submissions.py --offline
+    python3 .github/scripts/ci/generate_submissions.py --offline
 
 Run in CI:
 
-    python3 tools/ci/generate_submissions.py \\
+    python3 .github/scripts/ci/generate_submissions.py \\
         --owner shiaho777 --repo web-to-app \\
         --maintainers shiaho777 \\
         --token "$GITHUB_TOKEN"
@@ -54,7 +54,7 @@ from pathlib import Path
 from typing import Any
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[3]
 MODULES_DIR = REPO_ROOT / "modules"
 SUBMISSIONS_PATH = MODULES_DIR / "submissions.json"
 REGISTRY_PATH = MODULES_DIR / "registry.json"

@@ -3,7 +3,7 @@
 
 This script is intentionally non-failing by default. It reports legacy patterns
 so migrations can reduce the count over time without blocking unrelated work.
-Use --enforce-baseline with tools/ui_design_allowlist.txt to block new debt
+Use --enforce-baseline with .github/scripts/ui_design_allowlist.txt to block new debt
 while allowing documented historical debt to remain during migration.
 """
 
@@ -16,12 +16,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_TARGETS = (
     REPO_ROOT / "app/src/main/java/com/webtoapp/ui/screens",
     REPO_ROOT / "app/src/main/java/com/webtoapp/ui/components",
 )
-DEFAULT_ALLOWLIST = REPO_ROOT / "tools/ui_design_allowlist.txt"
+DEFAULT_ALLOWLIST = REPO_ROOT / ".github/scripts/ui_design_allowlist.txt"
 
 
 @dataclass(frozen=True)

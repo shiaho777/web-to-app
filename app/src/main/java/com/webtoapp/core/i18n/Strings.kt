@@ -23223,9 +23223,9 @@ object Strings {
     }
 
     val moduleMarketGuideTipValidate: String get() = when (lang) {
-        AppLanguage.CHINESE -> "提交前先本地自查：python3 tools/ci/validate_modules.py（只用标准库，无需 pip 安装）。"
-        AppLanguage.ENGLISH -> "Self-check before you submit: python3 tools/ci/validate_modules.py (stdlib only, no pip install)."
-        AppLanguage.ARABIC -> "تحقق ذاتيًا قبل الإرسال: python3 tools/ci/validate_modules.py (المكتبة القياسية فقط، بدون تثبيت pip)."
+        AppLanguage.CHINESE -> "提交前先本地自查：python3 .github/scripts/ci/validate_modules.py（只用标准库，无需 pip 安装）。"
+        AppLanguage.ENGLISH -> "Self-check before you submit: python3 .github/scripts/ci/validate_modules.py (stdlib only, no pip install)."
+        AppLanguage.ARABIC -> "تحقق ذاتيًا قبل الإرسال: python3 .github/scripts/ci/validate_modules.py (المكتبة القياسية فقط، بدون تثبيت pip)."
     }
 
     val moduleMarketGuideTipNoTopReturn: String get() = when (lang) {

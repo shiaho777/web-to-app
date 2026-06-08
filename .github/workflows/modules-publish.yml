@@ -14,7 +14,7 @@ on:
       - main
     paths:
       - 'modules/**'
-      - 'tools/ci/generate_submissions.py'
+      - '.github/scripts/ci/generate_submissions.py'
       - '.github/workflows/modules-publish.yml'
   workflow_dispatch:
 
@@ -52,7 +52,7 @@ jobs:
           # stays hidden from the catalog.
           MAINTAINERS: shiaho777
         run: |
-          python3 tools/ci/generate_submissions.py \
+          python3 .github/scripts/ci/generate_submissions.py \
             --owner "${GITHUB_REPOSITORY%%/*}" \
             --repo "${GITHUB_REPOSITORY##*/}" \
             --token "$GITHUB_TOKEN"

@@ -13,7 +13,7 @@ fast and deterministic.
 
 Run locally:
 
-    python3 tools/ci/validate_modules.py
+    python3 .github/scripts/ci/validate_modules.py
 
 Exit codes:
     0 = catalog is valid
@@ -650,5 +650,5 @@ def main(repo_root: Path) -> int:
 
 
 if __name__ == "__main__":
-    repo = Path(__file__).resolve().parents[2]
+    repo = Path(__file__).resolve().parents[3]
     sys.exit(main(repo))

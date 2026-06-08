@@ -14,7 +14,7 @@ This guide targets **WebToApp 2.0.6** (`versionCode 41`).
 
 | You want to… | Go to | Effort |
 | --- | --- | --- |
-| Publish a JS/CSS module to the in-app **Module Market** | [`modules/README.md`](modules/README.md) | hours |
+| Publish a JS/CSS module to the in-app **Module Market** | [`modules/README.md`](../modules/README.md) | hours |
 | File a bug, request a feature, or ask a question | [GitHub Issues](https://github.com/shiaho777/web-to-app/issues) | minutes |
 | Fix a bug or build a feature in the Android client | This guide ↓ | days |
 
@@ -27,7 +27,7 @@ is no need to write code before there's agreement on the shape of the change.
 
 The fastest way to ship something useful to every WebToApp user is to publish
 a module. The full schema, reviewer checklist, and PR template live in
-[`modules/README.md`](modules/README.md). The short version:
+[`modules/README.md`](../modules/README.md). The short version:
 
 1. Fork the repo.
 2. Add `modules/<your-module>/module.json` and `main.js` (plus `style.css` if
@@ -41,12 +41,12 @@ every push to `main`, and a client only shows a module once it appears in both
 lists only modules whose PR has actually merged. Once merged, every client
 picks up the module on its next refresh (default cache is one hour).
 
-Module changes are validated in CI by `tools/ci/validate_modules.py`
+Module changes are validated in CI by `.github/scripts/ci/validate_modules.py`
 (see `.github/workflows/modules-check.yml`). Run it locally before opening a
 PR:
 
 ```bash
-python3 tools/ci/validate_modules.py
+python3 .github/scripts/ci/validate_modules.py
 ```
 
 ---
@@ -120,8 +120,8 @@ codebase. A few rules worth calling out:
   `com.webtoapp.ui.design`. The older `Premium*` / `Enhanced*` / `Settings*`
   components are retained as permanent alias layers over the Wta internals —
   don't add new ones, and you don't need to rip them out. A build-time audit
-  (`tools/audit_ui_design_system.py`, wired into `build.gradle.kts`) tracks
-  legacy UI debt against `tools/ui_design_allowlist.txt`.
+  (`.github/scripts/audit_ui_design_system.py`, wired into `build.gradle.kts`) tracks
+  legacy UI debt against `.github/scripts/ui_design_allowlist.txt`.
 - **Reuse the design tokens** in `ui/design/WtaTokens.kt` for spacing, radius,
   alpha, and elevation. Don't hard-code numbers.
 - **Strings are trilingual.** Add new strings to all three language branches —
@@ -206,7 +206,7 @@ logged and otherwise disregarded.
 
 | 你想…… | 路径 | 投入 |
 | --- | --- | --- |
-| 给应用内的 **模块市场** 提交一个 JS/CSS 模块 | [`modules/README.md`](modules/README.md) | 几小时 |
+| 给应用内的 **模块市场** 提交一个 JS/CSS 模块 | [`modules/README.md`](../modules/README.md) | 几小时 |
 | 报 Bug、提 Feature、问问题 | [GitHub Issues](https://github.com/shiaho777/web-to-app/issues) | 几分钟 |
 | 修 Bug 或在 Android 客户端里做新功能 | 见下方代码贡献小节 | 几天 |
 
@@ -216,7 +216,7 @@ logged and otherwise disregarded.
 ### 模块市场贡献
 
 让你的工作触达每一个用户最快的方式就是提一个模块。Schema、审核 Checklist 和
-PR 模板都在 [`modules/README.md`](modules/README.md)。简化流程：
+PR 模板都在 [`modules/README.md`](../modules/README.md)。简化流程：
 
 1. Fork 本仓库
 2. 新建 `modules/<你的模块>/module.json` 和 `main.js`（需要 CSS 时再加
@@ -229,11 +229,11 @@ PR 模板都在 [`modules/README.md`](modules/README.md)。简化流程：
 保证只列出 PR 已真正合并的模块。合并后所有客户端在下次刷新（默认 1 小时缓存）
 就能看到。
 
-模块改动由 CI 的 `tools/ci/validate_modules.py` 校验（见
+模块改动由 CI 的 `.github/scripts/ci/validate_modules.py` 校验（见
 `.github/workflows/modules-check.yml`），提 PR 前可本地先跑：
 
 ```bash
-python3 tools/ci/validate_modules.py
+python3 .github/scripts/ci/validate_modules.py
 ```
 
 ### 代码贡献
@@ -294,8 +294,8 @@ cd web-to-app
 - **新 UI 一律构建在 Wta 设计系统之上**——所有界面通过 `com.webtoapp.ui.design`
   渲染。旧的 `Premium*` / `Enhanced*` / `Settings*` 组件作为 Wta 内部实现的
   永久别名层保留——不要再新增，也无需强行替换。构建期有一个审计脚本
-  （`tools/audit_ui_design_system.py`，接进 `build.gradle.kts`）按
-  `tools/ui_design_allowlist.txt` 跟踪历史 UI 债务。
+  （`.github/scripts/audit_ui_design_system.py`，接进 `build.gradle.kts`）按
+  `.github/scripts/ui_design_allowlist.txt` 跟踪历史 UI 债务。
 - 复用 `ui/design/WtaTokens.kt` 里的设计 token（间距、圆角、透明度、高度），
   别硬编码数字
 - **字符串三语**：新字符串要在 `core/i18n/Strings.kt` 的中、英、阿拉伯三个

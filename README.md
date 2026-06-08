@@ -9,7 +9,7 @@
 **WebToApp is an on-device APK builder for websites, HTML apps, media projects, and local server runtimes.**
 Turn a URL, a project folder, or a media library into an installable Android app you can preview, sign, install, share, or export without sending the build to a remote service.
 
-**English** · [简体中文](README_CN.md)
+**English** · [简体中文](.github/docs/README_CN.md)
 
 [![Stars](https://img.shields.io/github/stars/shiaho777/web-to-app?style=for-the-badge)](https://github.com/shiaho777/web-to-app/stargazers)
 [![Forks](https://img.shields.io/github/forks/shiaho777/web-to-app?style=for-the-badge)](https://github.com/shiaho777/web-to-app/network/members)
@@ -108,7 +108,7 @@ The app fetches both `registry.json` and `submissions.json`, and only shows modu
 - Contributors add a folder under `modules/`, update `registry.json`, and open a PR.
 - The default client cache is one hour, so merged modules propagate without an app update.
 
-[Module contributor guide](modules/README.md) · [General contributing guide](CONTRIBUTING.md)
+[Module contributor guide](modules/README.md) · [General contributing guide](.github/CONTRIBUTING.md)
 
 ## Feature Map
 
@@ -176,7 +176,7 @@ The full app has many switches. The sections below group the important ones with
 - WebView/content isolation for storage, WebRTC, Canvas, Audio, WebGL, fonts, headers, and IP surfaces.
 - Browser fingerprint disguise across 28 vectors, including UA, WebGL, Canvas, AudioContext, ClientRects, timezone, language, memory, media devices, WebRTC, fonts, battery, permissions, performance, storage, notifications, CSS media, iframe propagation, and error stack cleanup.
 - Hosts-rule ad blocker with cosmetic MutationObserver filtering and 23 built-in community filter lists.
-- Activation code gating with local verification or your own HTTPS endpoint signed with EC P-256. See [remote activation docs](docs/remote-activation.md).
+- Activation code gating with local verification or your own HTTPS endpoint signed with EC P-256. See [remote activation docs](.github/docs/remote-activation.md).
 
 </details>
 
@@ -251,7 +251,7 @@ For release builds, configure signing through `local.properties` and `app/build.
 | --- | --- | --- |
 | `modules/` | Publish a community module to the in-app market | [modules/README.md](modules/README.md) |
 | Issues | Report a bug or request a feature | [GitHub Issues](https://github.com/shiaho777/web-to-app/issues) |
-| Code | Fix a bug or build a feature in the Android client | [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Code | Fix a bug or build a feature in the Android client | [CONTRIBUTING.md](.github/CONTRIBUTING.md) |
 
 ## Contact
 

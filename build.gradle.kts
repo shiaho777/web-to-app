@@ -17,10 +17,10 @@ tasks.register<Exec>("checkUiDesignSystem") {
     workingDir = rootDir
     commandLine(
         "python3",
-        "tools/audit_ui_design_system.py",
+        ".github/scripts/audit_ui_design_system.py",
         "--enforce-baseline",
         "--allowlist",
-        "tools/ui_design_allowlist.txt",
+        ".github/scripts/ui_design_allowlist.txt",
         "--top",
         "12"
     )

@@ -323,7 +323,7 @@ The repo ships a Python validator that mirrors the install-time checks the
 app performs, plus a few correctness rules CI uses to gate PRs:
 
 ```
-python3 tools/ci/validate_modules.py
+python3 .github/scripts/ci/validate_modules.py
 ```
 
 It uses only the standard library, so no `pip install` step is needed.
@@ -506,7 +506,7 @@ App 打开市场时同时拉 `registry.json` 和 `submissions.json`，**只渲�
 规则：
 
 ```
-python3 tools/ci/validate_modules.py
+python3 .github/scripts/ci/validate_modules.py
 ```
 
 只用了标准库，无需 `pip install`。同样的脚本会在
