@@ -99,14 +99,14 @@ object WindowHelper {
                     WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
             }
 
-            applyKeyboardMode(activity, keyboardAdjustMode, tag)
-
             WindowInsetsControllerCompat(activity.window, activity.window.decorView).let { controller ->
+                var decorFitsSystemWindows = true
                 if (enabled) {
                     activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
                     val shouldShowStatusBar = if (forceHideSystemUi) false else showStatusBar
 
                     if (shouldShowStatusBar) {
+                        decorFitsSystemWindows = false
                         WindowCompat.setDecorFitsSystemWindows(activity.window, false)
                         controller.show(WindowInsetsCompat.Type.statusBars())
 
@@ -143,6 +143,7 @@ object WindowHelper {
                             }
                         }
                     } else {
+                        decorFitsSystemWindows = false
                         WindowCompat.setDecorFitsSystemWindows(activity.window, false)
                         activity.window.statusBarColor = android.graphics.Color.TRANSPARENT
                         controller.hide(WindowInsetsCompat.Type.statusBars())
@@ -165,6 +166,7 @@ object WindowHelper {
 
                     if (needsCustomBackground) {
 
+                        decorFitsSystemWindows = false
                         WindowCompat.setDecorFitsSystemWindows(activity.window, false)
                         controller.show(WindowInsetsCompat.Type.systemBars())
                         activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
@@ -197,34 +199,25 @@ object WindowHelper {
                         controller.isAppearanceLightNavigationBars = controller.isAppearanceLightStatusBars
                     } else {
 
+                        decorFitsSystemWindows = true
                         WindowCompat.setDecorFitsSystemWindows(activity.window, true)
                         controller.show(WindowInsetsCompat.Type.systemBars())
                         activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
                         applyStatusBarColor(activity, statusBarColorMode, statusBarCustomColor, statusBarDarkIcons, isDarkTheme)
                     }
                 }
+                applyKeyboardMode(activity, keyboardAdjustMode, tag, decorFitsSystemWindows)
             }
         } catch (e: Exception) {
             AppLogger.w(tag, "applyImmersiveFullscreen failed", e)
         }
     }
 
-    fun applyKeyboardModeOnly(
-        activity: Activity,
-        keyboardAdjustMode: KeyboardAdjustMode?,
-        tag: String = "WindowHelper"
-    ) {
-        try {
-            applyKeyboardMode(activity, keyboardAdjustMode, tag)
-        } catch (e: Exception) {
-            AppLogger.w(tag, "applyKeyboardModeOnly failed", e)
-        }
-    }
-
     private fun applyKeyboardMode(
         activity: Activity,
         keyboardAdjustMode: KeyboardAdjustMode?,
-        tag: String
+        tag: String,
+        decorFitsSystemWindows: Boolean
     ) {
         val contentView = activity.findViewById<View>(android.R.id.content) ?: return
 
@@ -233,76 +226,27 @@ object WindowHelper {
         when (mode) {
             KeyboardAdjustMode.RESIZE -> {
 
-                @Suppress("DEPRECATION")
-                activity.window.setSoftInputMode(
-                    WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING or
-                    WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
-                )
+                if (decorFitsSystemWindows) {
+                    @Suppress("DEPRECATION")
+                    activity.window.setSoftInputMode(
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+                            WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
+                    )
 
-                var imeAnimating = false
+                    clearImePadding(contentView)
 
-                fun applyImeBottomPadding(bottom: Int) {
-                    if (contentView.paddingBottom != bottom) {
-                        contentView.setPadding(
-                            contentView.paddingLeft,
-                            contentView.paddingTop,
-                            contentView.paddingRight,
-                            bottom
-                        )
-                    }
+                    AppLogger.d(tag, "键盘模式: RESIZE (系统调整)")
+                } else {
+                    @Suppress("DEPRECATION")
+                    activity.window.setSoftInputMode(
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING or
+                            WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
+                    )
+
+                    installManualImePadding(activity, contentView)
+
+                    AppLogger.d(tag, "键盘模式: RESIZE (边到边调整)")
                 }
-
-                ViewCompat.setWindowInsetsAnimationCallback(
-                    contentView,
-                    object : WindowInsetsAnimationCompat.Callback(
-                        WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_STOP
-                    ) {
-                        override fun onPrepare(animation: WindowInsetsAnimationCompat) {
-                            if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
-                                imeAnimating = true
-                            }
-                        }
-
-                        override fun onProgress(
-                            insets: WindowInsetsCompat,
-                            runningAnimations: MutableList<WindowInsetsAnimationCompat>
-                        ): WindowInsetsCompat {
-
-                            applyImeBottomPadding(insets.getInsets(WindowInsetsCompat.Type.ime()).bottom)
-                            return insets
-                        }
-
-                        override fun onEnd(animation: WindowInsetsAnimationCompat) {
-                            if (animation.typeMask and WindowInsetsCompat.Type.ime() == 0) return
-                            imeAnimating = false
-
-                            val rootInsets = ViewCompat.getRootWindowInsets(contentView)
-                            val imeVisible = rootInsets?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
-                            val imeBottom = rootInsets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
-                            applyImeBottomPadding(if (imeVisible) imeBottom else 0)
-
-                            if (imeVisible) {
-                                contentView.postDelayed({
-                                    checkAndScrollWebViewToFocusedInput(activity)
-                                }, 100)
-                            }
-                        }
-                    }
-                )
-
-                ViewCompat.setOnApplyWindowInsetsListener(contentView) { _, windowInsets ->
-
-                    if (!imeAnimating) {
-                        val imeVisible = windowInsets.isVisible(WindowInsetsCompat.Type.ime())
-                        val imeBottom = windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-                        applyImeBottomPadding(if (imeVisible) imeBottom else 0)
-                    }
-
-                    windowInsets
-                }
-
-                ViewCompat.requestApplyInsets(contentView)
-                AppLogger.d(tag, "键盘模式: RESIZE (IME 动画同步)")
             }
 
             KeyboardAdjustMode.NOTHING -> {
@@ -313,17 +257,86 @@ object WindowHelper {
                     WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
                 )
 
-                ViewCompat.setWindowInsetsAnimationCallback(contentView, null)
-                ViewCompat.setOnApplyWindowInsetsListener(contentView, null)
+                clearImePadding(contentView)
+
+                AppLogger.d(tag, "键盘模式: NOTHING (覆盖)")
+            }
+        }
+    }
+
+    private fun installManualImePadding(activity: Activity, contentView: View) {
+        var imeAnimating = false
+
+        fun applyImeBottomPadding(bottom: Int) {
+            if (contentView.paddingBottom != bottom) {
                 contentView.setPadding(
                     contentView.paddingLeft,
                     contentView.paddingTop,
                     contentView.paddingRight,
-                    0
+                    bottom
                 )
-
-                AppLogger.d(tag, "键盘模式: NOTHING (覆盖)")
             }
+        }
+
+        ViewCompat.setWindowInsetsAnimationCallback(
+            contentView,
+            object : WindowInsetsAnimationCompat.Callback(
+                WindowInsetsAnimationCompat.Callback.DISPATCH_MODE_STOP
+            ) {
+                override fun onPrepare(animation: WindowInsetsAnimationCompat) {
+                    if (animation.typeMask and WindowInsetsCompat.Type.ime() != 0) {
+                        imeAnimating = true
+                    }
+                }
+
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>
+                ): WindowInsetsCompat {
+                    applyImeBottomPadding(insets.getInsets(WindowInsetsCompat.Type.ime()).bottom)
+                    return insets
+                }
+
+                override fun onEnd(animation: WindowInsetsAnimationCompat) {
+                    if (animation.typeMask and WindowInsetsCompat.Type.ime() == 0) return
+                    imeAnimating = false
+
+                    val rootInsets = ViewCompat.getRootWindowInsets(contentView)
+                    val imeVisible = rootInsets?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
+                    val imeBottom = rootInsets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
+                    applyImeBottomPadding(if (imeVisible) imeBottom else 0)
+
+                    if (imeVisible) {
+                        contentView.postDelayed({
+                            checkAndScrollWebViewToFocusedInput(activity)
+                        }, 100)
+                    }
+                }
+            }
+        )
+
+        ViewCompat.setOnApplyWindowInsetsListener(contentView) { _, windowInsets ->
+            if (!imeAnimating) {
+                val imeVisible = windowInsets.isVisible(WindowInsetsCompat.Type.ime())
+                val imeBottom = windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+                applyImeBottomPadding(if (imeVisible) imeBottom else 0)
+            }
+            windowInsets
+        }
+
+        ViewCompat.requestApplyInsets(contentView)
+    }
+
+    private fun clearImePadding(contentView: View) {
+        ViewCompat.setWindowInsetsAnimationCallback(contentView, null)
+        ViewCompat.setOnApplyWindowInsetsListener(contentView, null)
+        if (contentView.paddingBottom != 0) {
+            contentView.setPadding(
+                contentView.paddingLeft,
+                contentView.paddingTop,
+                contentView.paddingRight,
+                0
+            )
         }
     }
 

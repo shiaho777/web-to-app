@@ -2140,74 +2140,61 @@ fun KeyboardAdjustModeCard(
     mode: com.webtoapp.data.model.KeyboardAdjustMode,
     onModeChange: (com.webtoapp.data.model.KeyboardAdjustMode) -> Unit
 ) {
-    val isCustomized = mode != com.webtoapp.data.model.KeyboardAdjustMode.RESIZE
+    val modes = listOf(
+        com.webtoapp.data.model.KeyboardAdjustMode.RESIZE to Strings.keyboardAdjustResize,
+        com.webtoapp.data.model.KeyboardAdjustMode.NOTHING to Strings.keyboardAdjustNothing
+    )
+    val hintText = when (mode) {
+        com.webtoapp.data.model.KeyboardAdjustMode.RESIZE -> Strings.keyboardAdjustResizeHint
+        com.webtoapp.data.model.KeyboardAdjustMode.NOTHING -> Strings.keyboardAdjustNothingHint
+    }
 
-    Column {
-        SettingsSwitch(
-            title = Strings.keyboardAdjustModeLabel,
-            subtitle = Strings.keyboardAdjustModeHint,
-            checked = isCustomized,
-            onCheckedChange = { checked ->
-                if (checked) {
-                    onModeChange(com.webtoapp.data.model.KeyboardAdjustMode.NOTHING)
-                } else {
-                    onModeChange(com.webtoapp.data.model.KeyboardAdjustMode.RESIZE)
+    WtaSettingCard {
+        Column(
+            modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal, vertical = WtaSpacing.RowVertical),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Column {
+                Text(
+                    text = Strings.keyboardAdjustModeLabel,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = Strings.keyboardAdjustModeHint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                modes.forEach { (m, label) ->
+                    PremiumFilterChip(
+                        selected = mode == m,
+                        onClick = { onModeChange(m) },
+                        label = { Text(label) }
+                    )
                 }
             }
-        )
 
-        AnimatedVisibility(
-            visible = isCustomized,
-            enter = CardExpandTransition,
-            exit = CardCollapseTransition
-        ) {
-            Column(modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 4.dp)) {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val modes = listOf(
-                        com.webtoapp.data.model.KeyboardAdjustMode.NOTHING to Strings.keyboardAdjustNothing,
-                        com.webtoapp.data.model.KeyboardAdjustMode.RESIZE to Strings.keyboardAdjustResize
-                    )
-                    modes.forEach { (m, label) ->
-                        PremiumFilterChip(
-                            selected = mode == m,
-                            onClick = { onModeChange(m) },
-                            label = { Text(label) }
-                        )
-                    }
-                }
-
-                val hintText = when (mode) {
-                    com.webtoapp.data.model.KeyboardAdjustMode.RESIZE -> Strings.keyboardAdjustResizeHint
-                    com.webtoapp.data.model.KeyboardAdjustMode.NOTHING -> Strings.keyboardAdjustNothingHint
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Outlined.Info,
-                            null,
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = hintText,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
-                }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Outlined.Info,
+                    null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = hintText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

@@ -165,6 +165,10 @@ class WebViewActivity : AppCompatActivity() {
         )
     }
 
+    internal fun refreshWindowConfig() {
+        applyImmersiveFullscreen(immersiveFullscreenEnabled)
+    }
+
     private var cameraPhotoUri: android.net.Uri? = null
 
     private val fileChooserActivityLauncher = registerForActivityResult(
@@ -850,11 +854,7 @@ fun WebViewScreen(
                 activity.showNavigationBarInFullscreen = app.webViewConfig.showNavigationBarInFullscreen
                 activity.keyboardAdjustMode = app.webViewConfig.keyboardAdjustMode
 
-                WindowHelper.applyKeyboardModeOnly(
-                    activity = activity,
-                    keyboardAdjustMode = app.webViewConfig.keyboardAdjustMode,
-                    tag = "WebViewActivity"
-                )
+                activity.refreshWindowConfig()
             }
 
             if (!adCapabilityNoticeShown && hasConfiguredAds(app)) {
