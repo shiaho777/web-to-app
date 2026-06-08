@@ -7,6 +7,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.documentfile.provider.DocumentFile
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -69,6 +70,7 @@ fun CreateFrontendAppScreen(
     var buildMode by remember { mutableStateOf(BuildMode.IMPORT_DIST) }
 
     var projectPath by remember { mutableStateOf<String?>(null) }
+    var folderImportPath by remember { mutableStateOf<String?>(null) }
     var projectName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
     var existingApp by remember { mutableStateOf<com.webtoapp.data.model.WebApp?>(null) }
@@ -137,14 +139,37 @@ fun CreateFrontendAppScreen(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
         uri?.let {
-            val path = getPathFromUri(context, it)
-            if (path != null) {
-                projectPath = path
-                projectName = File(path).name
-
-                scope.launch {
-                    isDetecting = true
-                    detectionResult = ProjectDetector.detectProject(path)
+            scope.launch {
+                isDetecting = true
+                try {
+                    folderImportPath?.let { path -> File(path).deleteRecursively() }
+                    val importedDir = copyFrontendDocumentTreeToCache(context, it)
+                    folderImportPath = importedDir.parentFile?.absolutePath ?: importedDir.absolutePath
+                    projectPath = importedDir.absolutePath
+                    projectName = importedDir.name
+                    detectionResult = ProjectDetector.detectProject(importedDir.absolutePath)
+                } catch (e: Exception) {
+                    detectionResult = ProjectDetectionResult(
+                        framework = FrontendFramework.UNKNOWN,
+                        frameworkVersion = null,
+                        packageManager = PackageManager.NPM,
+                        hasTypeScript = false,
+                        databases = emptyList(),
+                        dependencies = emptyList(),
+                        devDependencies = emptyList(),
+                        scripts = emptyMap(),
+                        buildCommand = null,
+                        devCommand = null,
+                        outputDir = "",
+                        issues = listOf(
+                            ProjectIssue(
+                                severity = IssueSeverity.ERROR,
+                                type = IssueType.MISSING_CONFIG,
+                                message = e.message ?: Strings.projectImportFailed
+                            )
+                        )
+                    )
+                } finally {
                     isDetecting = false
                 }
             }
@@ -273,6 +298,8 @@ fun CreateFrontendAppScreen(
                                         )
                                     }
                                     IconButton(onClick = {
+                                        folderImportPath?.let { path -> File(path).deleteRecursively() }
+                                        folderImportPath = null
                                         projectPath = null
                                         detectionResult = null
                                         importBuilder.reset()
@@ -1033,23 +1060,47 @@ private fun getAccentColor(framework: FrontendFramework): Color {
     return com.webtoapp.ui.theme.AppColors.NeutralAccent
 }
 
-private fun getPathFromUri(@Suppress("UNUSED_PARAMETER") context: android.content.Context, uri: Uri): String? {
-    return try {
-        val docId = android.provider.DocumentsContract.getTreeDocumentId(uri)
-        val split = docId.split(":")
-        if (split.size >= 2) {
-            val type = split[0]
-            val path = split[1]
-            when (type) {
-                "primary" -> "/storage/emulated/0/$path"
-                else -> "/storage/$type/$path"
-            }
-        } else {
-            uri.path
-        }
-    } catch (e: Exception) {
-        uri.path
+private fun copyFrontendDocumentTreeToCache(context: android.content.Context, uri: Uri): File {
+    val rootDoc = DocumentFile.fromTreeUri(context, uri)
+        ?: throw IllegalArgumentException(Strings.dirNotExists)
+    if (!rootDoc.exists() || !rootDoc.isDirectory) {
+        throw IllegalArgumentException(Strings.dirNotExists)
     }
+
+    val rootName = rootDoc.name?.takeIf { it.isNotBlank() } ?: "frontend_project"
+    val targetRoot = File(context.cacheDir, "frontend_saf_import_${System.currentTimeMillis()}/$rootName")
+    targetRoot.mkdirs()
+
+    val skipDirs = setOf(".git", ".svn", ".hg", ".idea", ".vscode", "node_modules", "__MACOSX")
+    var copiedCount = 0
+
+    fun copyDocTree(doc: DocumentFile, targetDir: File) {
+        doc.listFiles().forEach { child ->
+            val name = child.name ?: return@forEach
+            if (name.startsWith("._") || name == ".DS_Store") return@forEach
+            if (child.isDirectory) {
+                if (name in skipDirs) return@forEach
+                val childDir = File(targetDir, name)
+                childDir.mkdirs()
+                copyDocTree(child, childDir)
+            } else if (child.isFile) {
+                val outFile = File(targetDir, name)
+                context.contentResolver.openInputStream(child.uri)?.use { input ->
+                    outFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                copiedCount++
+            }
+        }
+    }
+
+    copyDocTree(rootDoc, targetRoot)
+    if (copiedCount == 0) {
+        targetRoot.parentFile?.deleteRecursively()
+        throw IllegalArgumentException(Strings.dirNotExists)
+    }
+    return targetRoot
 }
 
 @Composable

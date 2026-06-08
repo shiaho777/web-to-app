@@ -73,6 +73,7 @@ fun CreatePhpAppScreen(
     var newEnvValue by remember { mutableStateOf("") }
 
     var selectedProjectDir by remember { mutableStateOf<String?>(null) }
+    var localProjectDir by remember { mutableStateOf<String?>(null) }
     var detectedFramework by remember { mutableStateOf<String?>(null) }
     var projectId by remember { mutableStateOf<String?>(null) }
 
@@ -120,6 +121,7 @@ fun CreatePhpAppScreen(
                     detectedFramework = config.framework
                     projectId = config.projectId
                     selectedProjectDir = config.projectName
+                    localProjectDir = PhpAppRuntime(context).getProjectDir(config.projectId).absolutePath
                 }
             }
         }
@@ -210,8 +212,9 @@ fun CreatePhpAppScreen(
 
         creationPhase = Strings.copyingProjectFiles
         val newProjectId = java.util.UUID.randomUUID().toString()
-        runtime.createProject(newProjectId, projectDir)
+        val importedDir = runtime.createProject(newProjectId, projectDir)
         projectId = newProjectId
+        localProjectDir = importedDir.absolutePath
         creationPhase = Strings.phpProjectReady
     }
 
@@ -352,7 +355,7 @@ fun CreatePhpAppScreen(
                                 documentRoot = documentRoot,
                                 entryFile = entryFile,
                                 envVars = envVars,
-                                hasComposerJson = selectedProjectDir?.let { File(it, "composer.json").exists() } ?: false,
+                                hasComposerJson = localProjectDir?.let { File(it, "composer.json").exists() } ?: false,
                                 landscapeMode = landscapeMode
                             ),
                             appIcon,
@@ -387,6 +390,7 @@ fun CreatePhpAppScreen(
                             val result = PhpSampleManager.extractSampleProject(context, sample.id)
                             result.onSuccess { path ->
                                 selectedProjectDir = path
+                                localProjectDir = null
                                 isCreating = true
                                 creationPhase = Strings.phpFrameworkDetected
                                 try {
@@ -401,8 +405,9 @@ fun CreatePhpAppScreen(
                                         appName = sample.name
                                         creationPhase = Strings.copyingProjectFiles
                                         val newProjectId = java.util.UUID.randomUUID().toString()
-                                        runtime.createProject(newProjectId, projectDir)
+                                        val importedDir = runtime.createProject(newProjectId, projectDir)
                                         projectId = newProjectId
+                                        localProjectDir = importedDir.absolutePath
                                         creationPhase = Strings.phpProjectReady
                                     }
                                 } catch (e: Exception) {
@@ -519,10 +524,10 @@ fun CreatePhpAppScreen(
                     )
                 }
 
-                if (selectedProjectDir != null && File(selectedProjectDir!!, "composer.json").exists()) {
+                if (localProjectDir != null && File(localProjectDir!!, "composer.json").exists()) {
                     InstallProjectDepsCard(
                         kind = DepsKind.PHP,
-                        projectDir = selectedProjectDir,
+                        projectDir = localProjectDir,
                         accentColor = accentColor,
                         onOpenBuildEnvScreen = onOpenLinuxEnv,
                     )

@@ -4,6 +4,7 @@ import android.net.Uri
 import com.webtoapp.ui.components.PremiumButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.documentfile.provider.DocumentFile
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -66,6 +67,8 @@ fun CreatePythonAppScreen(
     var newEnvValue by remember { mutableStateOf("") }
 
     var selectedProjectDir by remember { mutableStateOf<String?>(null) }
+    var sourceProjectPath by remember { mutableStateOf<String?>(null) }
+    var localProjectDir by remember { mutableStateOf<String?>(null) }
     var detectedFramework by remember { mutableStateOf<String?>(null) }
     var projectId by remember { mutableStateOf<String?>(null) }
 
@@ -104,6 +107,8 @@ fun CreatePythonAppScreen(
                     detectedFramework = config.framework
                     projectId = config.projectId
                     selectedProjectDir = config.projectName
+                    sourceProjectPath = config.sourceProjectPath.takeIf { it.isNotBlank() }
+                    localProjectDir = PythonRuntime(context).getProjectDir(config.projectId).absolutePath
                 }
             }
         }
@@ -128,40 +133,18 @@ fun CreatePythonAppScreen(
 
                         creationPhase = Strings.copyingProjectFiles
                         val newProjectId = java.util.UUID.randomUUID().toString()
-
-                        val docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri)
-                        val path = docId.substringAfter(":")
-                        val storageRoot = if (docId.startsWith("primary:")) {
-                            android.os.Environment.getExternalStorageDirectory().absolutePath
-                        } else {
-                            "/storage/${docId.substringBefore(":")}"
-                        }
-                        val projectPath = "$storageRoot/$path"
-                        val projectFileDir = File(projectPath)
-
-                        var copiedDir: File
-                        if (projectFileDir.exists() && projectFileDir.canRead()) {
-                            copiedDir = runtime.createProject(newProjectId, projectFileDir)
-                        } else {
-                            copiedDir = runtime.getProjectDir(newProjectId)
-                            copiedDir.mkdirs()
-                        }
-
+                        val selectedName = DocumentFile.fromTreeUri(context, treeUri)?.name
+                        val copiedDir = runtime.createProjectFromUri(newProjectId, treeUri, context)
                         val copiedFileCount = copiedDir.walkTopDown().filter { it.isFile }.count()
                         if (copiedFileCount == 0) {
-
-                            android.util.Log.w("CreatePythonApp", "File API 复制了 0 个文件，回退 SAF API: $treeUri")
-                            copiedDir = runtime.createProjectFromUri(newProjectId, treeUri, context)
-                            val safCopiedCount = copiedDir.walkTopDown().filter { it.isFile }.count()
-                            android.util.Log.i("CreatePythonApp", "SAF API 复制了 $safCopiedCount 个文件")
-                            if (safCopiedCount == 0) {
-                                errorMessage = Strings.dirNotExists
-                                isCreating = false
-                                return@withContext
-                            }
+                            errorMessage = Strings.dirNotExists
+                            isCreating = false
+                            return@withContext
                         }
 
-                        selectedProjectDir = projectPath
+                        selectedProjectDir = selectedName ?: copiedDir.absolutePath
+                        sourceProjectPath = null
+                        localProjectDir = copiedDir.absolutePath
                         projectId = newProjectId
 
                         val framework = runtime.detectFramework(copiedDir)
@@ -345,14 +328,14 @@ fun CreatePythonAppScreen(
                                 projectId = pid,
                                 projectName = appName.ifBlank { Strings.createPythonApp },
 
-                                sourceProjectPath = selectedProjectDir.orEmpty(),
+                                sourceProjectPath = sourceProjectPath.orEmpty(),
                                 framework = detectedFramework ?: "raw",
                                 entryFile = entryFile,
                                 entryModule = entryModule,
                                 serverType = serverType,
                                 envVars = envVars,
-                                requirementsFile = if (selectedProjectDir?.let { File(it, "requirements.txt").exists() } == true) "requirements.txt" else "",
-                                hasPipDeps = selectedProjectDir?.let { File(it, "requirements.txt").exists() } ?: false,
+                                requirementsFile = if (localProjectDir?.let { File(it, "requirements.txt").exists() } == true) "requirements.txt" else "",
+                                hasPipDeps = localProjectDir?.let { File(it, "requirements.txt").exists() } ?: false,
                                 landscapeMode = landscapeMode
                             ),
                             appIcon,
@@ -387,6 +370,8 @@ fun CreatePythonAppScreen(
                             val result = PythonSampleManager.extractSampleProject(context, sample.id)
                             result.onSuccess { path ->
                                 selectedProjectDir = path
+                                sourceProjectPath = path
+                                localProjectDir = null
                                 isCreating = true
                                 creationPhase = Strings.frameworkDetected
                                 try {
@@ -404,8 +389,9 @@ fun CreatePythonAppScreen(
                                         appName = sample.name
                                         creationPhase = Strings.copyingProjectFiles
                                         val newProjectId = java.util.UUID.randomUUID().toString()
-                                        runtime.createProject(newProjectId, projectDir)
+                                        val importedDir = runtime.createProject(newProjectId, projectDir)
                                         projectId = newProjectId
+                                        localProjectDir = importedDir.absolutePath
                                         creationPhase = Strings.pyProjectReady
                                     }
                                 } catch (e: Exception) {
@@ -532,10 +518,10 @@ fun CreatePythonAppScreen(
                     )
                 }
 
-                if (selectedProjectDir != null && File(selectedProjectDir!!, "requirements.txt").exists()) {
+                if (localProjectDir != null && File(localProjectDir!!, "requirements.txt").exists()) {
                     InstallProjectDepsCard(
                         kind = DepsKind.PYTHON,
-                        projectDir = selectedProjectDir,
+                        projectDir = localProjectDir,
                         accentColor = accentColor,
                         onOpenBuildEnvScreen = onOpenLinuxEnv,
                     )

@@ -32,6 +32,7 @@ import com.webtoapp.ui.components.TypedSampleProjectsCard
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
+import com.webtoapp.ui.screens.create.runtime.GoProjectSourceLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -65,6 +66,7 @@ fun CreateGoAppScreen(
     var newEnvValue by remember { mutableStateOf("") }
 
     var selectedProjectDir by remember { mutableStateOf<String?>(null) }
+    var buildProjectDir by remember { mutableStateOf<String?>(null) }
     var detectedFramework by remember { mutableStateOf<String?>(null) }
     var projectId by remember { mutableStateOf<String?>(null) }
 
@@ -114,7 +116,9 @@ fun CreateGoAppScreen(
                     detectedFramework = config.framework
                     projectId = config.projectId
 
-                    selectedProjectDir = GoRuntime(context).getProjectDir(config.projectId).absolutePath
+                    val localProjectDir = GoRuntime(context).getProjectDir(config.projectId).absolutePath
+                    selectedProjectDir = localProjectDir
+                    buildProjectDir = localProjectDir
                     targetArch = config.targetArch
                     binaryDetected = config.binaryName.isNotBlank()
                 }
@@ -137,28 +141,27 @@ fun CreateGoAppScreen(
 
                 try {
                     withContext(Dispatchers.IO) {
-                        val docId = android.provider.DocumentsContract.getTreeDocumentId(treeUri)
-                        val path = docId.substringAfter(":")
-                        val storageRoot = if (docId.startsWith("primary:")) {
-                            android.os.Environment.getExternalStorageDirectory().absolutePath
-                        } else {
-                            "/storage/${docId.substringBefore(":")}"
-                        }
-                        val projectPath = "$storageRoot/$path"
-                        val projectDir = File(projectPath)
-
-                        if (!projectDir.exists()) {
-                            errorMessage = Strings.dirNotExists
-                            isCreating = false
-                            return@withContext
-                        }
-
-                        selectedProjectDir = projectPath
-
                         val runtime = GoRuntime(context)
+                        val selectedName = androidx.documentfile.provider.DocumentFile
+                            .fromTreeUri(context, treeUri)
+                            ?.name
+                        creationPhase = Strings.copyingProjectFiles
+                        val newProjectId = java.util.UUID.randomUUID().toString()
+                        val projectDir = GoProjectSourceLoader().copyDocumentTreeToProject(context, treeUri, newProjectId)
+                        selectedProjectDir = selectedName ?: projectDir.absolutePath
+                        buildProjectDir = projectDir.absolutePath
+                        projectId = newProjectId
+                        creationPhase = Strings.frameworkDetected
+
                         val framework = runtime.detectFramework(projectDir)
                         detectedFramework = framework
 
+                        binaryDetected = false
+                        binarySize = null
+                        binaryName = ""
+                        goModulePath = null
+                        goVersion = null
+                        goDeps = emptyList()
                         val detectedBinary = runtime.detectBinary(projectDir)
                         if (detectedBinary != null) {
                             binaryName = detectedBinary
@@ -226,10 +229,6 @@ fun CreateGoAppScreen(
                             } catch (e: Exception) { android.util.Log.w("CreateGoApp", "Failed to parse go.mod", e) }
                         }
 
-                        creationPhase = Strings.copyingProjectFiles
-                        val newProjectId = java.util.UUID.randomUUID().toString()
-                        runtime.createProject(newProjectId, projectDir)
-                        projectId = newProjectId
                         creationPhase = Strings.goProjectReady
                     }
                 } catch (e: Exception) {
@@ -298,6 +297,7 @@ fun CreateGoAppScreen(
                             val result = GoSampleManager.extractSampleProject(context, sample.id)
                             result.onSuccess { path ->
                                 selectedProjectDir = path
+                                buildProjectDir = null
                                 isCreating = true
                                 creationPhase = Strings.frameworkDetected
                                 try {
@@ -313,8 +313,9 @@ fun CreateGoAppScreen(
                                         appName = sample.name
                                         creationPhase = Strings.copyingProjectFiles
                                         val newProjectId = java.util.UUID.randomUUID().toString()
-                                        runtime.createProject(newProjectId, projectDir)
+                                        val importedDir = runtime.createProject(newProjectId, projectDir)
                                         projectId = newProjectId
+                                        buildProjectDir = importedDir.absolutePath
                                         creationPhase = Strings.goProjectReady
                                     }
                                 } catch (e: Exception) {
@@ -439,9 +440,10 @@ fun CreateGoAppScreen(
                     toolchainReady = goToolchainReady,
                 )
 
-                if (selectedProjectDir != null) {
+                val effectiveBuildProjectDir = buildProjectDir ?: projectId?.let { GoRuntime(context).getProjectDir(it).absolutePath }
+                if (effectiveBuildProjectDir != null) {
                     GoBuildInAppCard(
-                        projectDir = selectedProjectDir!!,
+                        projectDir = effectiveBuildProjectDir,
                         binaryName = binaryName,
                         appName = appName,
                         accentColor = accentColor,

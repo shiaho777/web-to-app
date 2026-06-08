@@ -1,8 +1,5 @@
 package com.webtoapp.ui.screens.create.common
 
-import android.net.Uri
-import android.os.Environment
-import android.provider.DocumentsContract
 import java.io.File
 
 internal fun parseEnvFile(file: File): Map<String, String> {
@@ -18,17 +15,6 @@ internal fun parseEnvFile(file: File): Map<String, String> {
             key.takeIf { it.isNotEmpty() }?.let { it to value }
         }
         .toMap()
-}
-
-internal fun resolveDocumentTreeDirectory(treeUri: Uri): File {
-    val docId = DocumentsContract.getTreeDocumentId(treeUri)
-    val relativePath = docId.substringAfter(":")
-    val storageRoot = if (docId.startsWith("primary:")) {
-        Environment.getExternalStorageDirectory().absolutePath
-    } else {
-        "/storage/${docId.substringBefore(":")}"
-    }
-    return File(storageRoot, relativePath)
 }
 
 internal fun unwrapSingleDirectoryRoot(dir: File): File {
