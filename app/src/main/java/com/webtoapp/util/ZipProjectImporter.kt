@@ -14,7 +14,8 @@ import java.util.zip.ZipInputStream
 object ZipProjectImporter {
 
     private const val TAG = "ZipProjectImporter"
-    private const val MAX_ZIP_SIZE = 500L * 1024 * 1024
+    private const val MAX_ZIP_SIZE = 1024L * 1024 * 1024
+    private const val MAX_SOURCE_ZIP_SIZE = 1024L * 1024 * 1024
     private const val MAX_ENTRY_COUNT = 10_000
 
     private val HTML_EXTENSIONS = setOf("html", "htm", "xhtml")
@@ -101,6 +102,7 @@ object ZipProjectImporter {
     suspend fun importZip(context: Context, zipUri: Uri): ZipProjectAnalysis {
         val zipFileName = getZipFileName(context, zipUri) ?: "project.zip"
         AppLogger.i(TAG, "开始导入 ZIP: $zipFileName")
+        validateSourceZipSize(context, zipUri)
 
         val extractDir = extractZip(context, zipUri)
         AppLogger.i(TAG, "解压完成: ${extractDir.absolutePath}")
@@ -301,6 +303,25 @@ object ZipProjectImporter {
             }
         }
         return uri.path?.substringAfterLast('/')
+    }
+
+    private fun validateSourceZipSize(context: Context, uri: Uri) {
+        val size = getSourceZipSize(context, uri)
+        if (size > MAX_SOURCE_ZIP_SIZE) {
+            throw ZipImportException(Strings.zipFileSizeExceeded.format(MAX_SOURCE_ZIP_SIZE / 1024 / 1024))
+        }
+    }
+
+    private fun getSourceZipSize(context: Context, uri: Uri): Long {
+        if (uri.scheme == "content") {
+            context.contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val index = cursor.getColumnIndex(OpenableColumns.SIZE)
+                    if (index >= 0 && !cursor.isNull(index)) return cursor.getLong(index)
+                }
+            }
+        }
+        return uri.path?.let(::File)?.length() ?: -1L
     }
 
     fun cleanupTempFiles(context: Context) {

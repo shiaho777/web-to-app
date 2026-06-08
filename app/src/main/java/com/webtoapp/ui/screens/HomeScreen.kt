@@ -137,6 +137,7 @@ fun HomeScreen(
     onOpenPlayStore: () -> Unit = {},
 ) {
     val apps by viewModel.filteredSummaries.collectAsStateWithLifecycle()
+    val allWebApps by viewModel.webApps.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -155,9 +156,39 @@ fun HomeScreen(
     var shareApkFailureReport by remember { mutableStateOf<BuildFailureReport?>(null) }
     var showFabMenu by remember { mutableStateOf(false) }
     var showBatchImportDialog by remember { mutableStateOf(false) }
+    var pendingBookmarkExportApps by remember { mutableStateOf<List<WebApp>>(emptyList()) }
 
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val bookmarkImportExportService = remember {
+        org.koin.java.KoinJavaComponent.get<com.webtoapp.core.stats.BatchImportService>(
+            com.webtoapp.core.stats.BatchImportService::class.java
+        )
+    }
+    val context = LocalContext.current
+    val bookmarkExportLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.CreateDocument("text/html")
+    ) { uri: android.net.Uri? ->
+        uri ?: return@rememberLauncherForActivityResult
+        val appsToExport = pendingBookmarkExportApps
+        scope.launch {
+            try {
+                val html = withContext(Dispatchers.IO) {
+                    bookmarkImportExportService.exportAsBookmarksHtml(appsToExport)
+                }
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { output ->
+                        output.write(html.toByteArray(Charsets.UTF_8))
+                    } ?: error(Strings.bookmarkExportFailed)
+                }
+                snackbarHostState.showSnackbar(Strings.bookmarkExportSuccess.replace("%d", appsToExport.size.toString()))
+            } catch (e: Exception) {
+                snackbarHostState.showSnackbar(Strings.bookmarkExportFailedWithReason.replace("%s", e.message ?: "Unknown error"))
+            } finally {
+                pendingBookmarkExportApps = emptyList()
+            }
+        }
+    }
     LaunchedEffect(uiState) {
         when (uiState) {
             is UiState.Success -> {
@@ -375,6 +406,25 @@ fun HomeScreen(
                                 text = { Text(Strings.menuGooglePlay) },
                                 onClick = { showMoreMenu = false; onOpenPlayStore() },
                                 leadingIcon = { Icon(Icons.Outlined.PlayCircleOutline, null, Modifier.size(20.dp)) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(Strings.menuBatchImport) },
+                                onClick = { showMoreMenu = false; showBatchImportDialog = true },
+                                leadingIcon = { Icon(Icons.Outlined.Bookmarks, null, Modifier.size(20.dp)) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(Strings.bookmarkExportAll) },
+                                onClick = {
+                                    showMoreMenu = false
+                                    val exportableApps = allWebApps.filter { bookmarkImportExportService.isBookmarkExportable(it.url) }
+                                    if (exportableApps.isEmpty()) {
+                                        scope.launch { snackbarHostState.showSnackbar(Strings.bookmarkExportEmpty) }
+                                    } else {
+                                        pendingBookmarkExportApps = exportableApps
+                                        bookmarkExportLauncher.launch("webtoapp_bookmarks.html")
+                                    }
+                                },
+                                leadingIcon = { Icon(Icons.Outlined.FileDownload, null, Modifier.size(20.dp)) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.menuAbout) },
@@ -1001,12 +1051,11 @@ fun HomeScreen(
     }
 
     if (showBatchImportDialog) {
-        val importService = remember { org.koin.java.KoinJavaComponent.get<com.webtoapp.core.stats.BatchImportService>(com.webtoapp.core.stats.BatchImportService::class.java) }
         BatchImportDialog(
-            importService = importService,
+            importService = bookmarkImportExportService,
             onDismiss = { showBatchImportDialog = false },
             onImport = { entries ->
-                importService.importEntries(entries)
+                bookmarkImportExportService.importEntries(entries)
             }
         )
     }
@@ -1807,6 +1856,17 @@ fun BuildApkDialog(
     var selectedEngineType by remember {
         mutableStateOf(webApp.apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW")
     }
+    val updatePackageName = webApp.apkExportConfig?.customPackageName
+        ?.takeIf { it.isNotBlank() && it.matches(com.webtoapp.util.AppConstants.PACKAGE_NAME_REGEX) }
+    val baseVersionCode = webApp.apkExportConfig?.customVersionCode ?: 1
+    val installedVersionCode = remember(updatePackageName) {
+        updatePackageName?.let { findInstalledVersionCode(context, it) }
+    }
+    val suggestedUpdateVersionCode = if (updatePackageName != null) {
+        (maxOf(baseVersionCode.toLong(), installedVersionCode ?: 0L) + 1L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+    } else {
+        baseVersionCode
+    }
     val engineFileManager = remember { com.webtoapp.core.engine.download.EngineFileManager(context) }
     val isGeckoDownloaded = remember(selectedEngineType) {
         engineFileManager.isEngineDownloaded(com.webtoapp.core.engine.EngineType.GECKOVIEW)
@@ -1826,7 +1886,13 @@ fun BuildApkDialog(
                 notificationEnabled = notificationEnabled,
                 notificationConfig = notificationConfig,
                 engineType = selectedEngineType
-            )
+            ).let { exportConfig ->
+                if (updatePackageName != null && (exportConfig.customVersionCode ?: 1) < suggestedUpdateVersionCode) {
+                    exportConfig.copy(customVersionCode = suggestedUpdateVersionCode)
+                } else {
+                    exportConfig
+                }
+            }
         )
     }
 
@@ -1991,6 +2057,33 @@ fun BuildApkDialog(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+
+                    if (updatePackageName != null) {
+                        Surface(
+                            shape = RoundedCornerShape(WtaRadius.Control),
+                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Icon(
+                                    Icons.Outlined.SystemUpdateAlt,
+                                    null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    Strings.updateApkGuide.replace("%s", updatePackageName)
+                                        .replace("%d", suggestedUpdateVersionCode.toString()),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
                 }
 
                 preflightReport?.let { report ->
@@ -2189,6 +2282,28 @@ private fun resolveBuildIsolationDefault(
     config: com.webtoapp.core.privacy.IsolationConfig?
 ): com.webtoapp.core.privacy.IsolationConfig {
     return config ?: com.webtoapp.core.privacy.IsolationConfig.DISABLED
+}
+
+private fun findInstalledVersionCode(context: android.content.Context, packageName: String): Long? {
+    return try {
+        val packageInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            context.packageManager.getPackageInfo(
+                packageName,
+                android.content.pm.PackageManager.PackageInfoFlags.of(0)
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            context.packageManager.getPackageInfo(packageName, 0)
+        }
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            packageInfo.longVersionCode
+        } else {
+            @Suppress("DEPRECATION")
+            packageInfo.versionCode.toLong()
+        }
+    } catch (_: Exception) {
+        null
+    }
 }
 
 @Composable

@@ -207,6 +207,11 @@
 }
 -dontwarn com.android.apksig.**
 
+-keep class com.android.aapt.** { *; }
+-keepclassmembers class com.android.aapt.** { *; }
+-keep class com.android.bundle.** { *; }
+-keepclassmembers class com.android.bundle.** { *; }
+
 # ============================================================
 # GeckoView — 大量 JNI / 注解反射
 # ============================================================

@@ -1237,7 +1237,7 @@ data class WebViewShellConfig(
     val blobInterceptThresholdMb: Int = 5,
 
     @SerializedName("enableCloudflareCompat")
-    val enableCloudflareCompat: Boolean = false,
+    val enableCloudflareCompat: Boolean = true,
 
     @SerializedName("cloudflareCompatMode")
     val cloudflareCompatMode: String = "AUTO_DETECT",

@@ -54,6 +54,7 @@ class WebViewManager(
     private val privateNetworkScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val downloadBridgeScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val blobCacheHookHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val cloudflareCompatScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
 
     companion object {
 
@@ -1409,6 +1410,10 @@ class WebViewManager(
                 installPrivateNetworkApiBridge(this, config)
             }
 
+            if (config.enableCloudflareCompat) {
+                installCloudflareCompatDocumentStart(this)
+            }
+
             if (config.downloadEnabled) {
                 setDownloadListener { url, userAgent, contentDisposition, mimeType, contentLength ->
                     callbacks.onDownloadStart(url, userAgent, contentDisposition, mimeType, contentLength)
@@ -1766,7 +1771,8 @@ class WebViewManager(
                     val shouldInject = when (config.cloudflareCompatMode) {
                         com.webtoapp.data.model.CloudflareCompatMode.ALWAYS_ON -> true
                         com.webtoapp.data.model.CloudflareCompatMode.AUTO_DETECT ->
-                            CloudflareCompat.isCloudflareChallenge(url)
+                            CloudflareCompat.isCloudflareChallenge(url) ||
+                                CloudflareCompat.hasCloudflareSignal(url)
                     }
                     if (shouldInject) {
                         view?.let { wv -> CloudflareCompat.injectCompat(wv, url) }
@@ -2175,6 +2181,12 @@ class WebViewManager(
                     val failedUrl = request.url?.toString()
                     val description = if (statusCode > 0) "HTTP $statusCode $reason" else reason
                     AppLogger.w("WebViewManager", "Main-frame HTTP error: url=$failedUrl code=$statusCode reason=$reason")
+                    val isCloudflareResponse = statusCode in 400..599 &&
+                        CloudflareCompat.hasCloudflareSignal(
+                            url = failedUrl,
+                            reasonPhrase = reason,
+                            responseHeaders = errorResponse?.responseHeaders
+                        )
 
                     if (view != null && failedUrl != null && failedUrl != "about:blank" && config.failoverEnabled) {
                         val triggers = config.failoverTriggers
@@ -2190,7 +2202,7 @@ class WebViewManager(
                     }
 
                     val manager = errorPageManager
-                    if (manager != null && view != null && failedUrl != null && failedUrl != "about:blank") {
+                    if (!isCloudflareResponse && manager != null && view != null && failedUrl != null && failedUrl != "about:blank") {
                         val errorHtml = manager.generateErrorPage(statusCode, description, failedUrl)
                         if (errorHtml != null) {
                             lastFailedUrl = failedUrl
@@ -2201,6 +2213,9 @@ class WebViewManager(
                         }
                     }
 
+                    if (isCloudflareResponse) {
+                        AppLogger.d("WebViewManager", "Keeping Cloudflare HTTP response visible for: $failedUrl")
+                    }
                     callbacks.onError(statusCode, description)
                 }
             }
@@ -3169,6 +3184,24 @@ class WebViewManager(
             }
         } else {
             AppLogger.d("WebViewManager", "Document-start script unsupported; private network bridge will use runtime fallback")
+        }
+    }
+
+    private fun installCloudflareCompatDocumentStart(webView: WebView) {
+        if (cloudflareCompatScriptHandlers.containsKey(webView)) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            AppLogger.d("WebViewManager", "Document-start script unsupported; Cloudflare compat will use runtime fallback")
+            return
+        }
+        try {
+            cloudflareCompatScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                CloudflareCompat.generateCompatJs(),
+                setOf("*")
+            )
+            AppLogger.d("WebViewManager", "Cloudflare compat installed at document start")
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "Document-start Cloudflare compat install failed", e)
         }
     }
 

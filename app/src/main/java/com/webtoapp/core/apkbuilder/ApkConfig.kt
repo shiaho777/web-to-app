@@ -520,7 +520,7 @@ data class WebViewBehaviorBlock(
     val enableBlobDownloadInterception: Boolean = false,
     val blobInterceptScope: String = "ALL",
     val blobInterceptThresholdMb: Int = 5,
-    val enableCloudflareCompat: Boolean = false,
+    val enableCloudflareCompat: Boolean = true,
     val cloudflareCompatMode: String = "AUTO_DETECT",
     val primeUserActivation: Boolean = false,
     val primeUserActivationMode: String = "SYNTHETIC_TAP",

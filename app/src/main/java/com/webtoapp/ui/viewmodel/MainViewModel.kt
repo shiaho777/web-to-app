@@ -467,7 +467,7 @@ class MainViewModel(
     suspend fun saveAndPreview(): Long? {
         val state = _editState.value
 
-        if (state.name.isBlank() && state.url.isBlank()) return null
+        if (!validateInput(state)) return null
 
         return try {
             val webApp = buildDraftWebApp(

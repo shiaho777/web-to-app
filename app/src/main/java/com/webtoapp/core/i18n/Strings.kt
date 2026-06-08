@@ -384,6 +384,31 @@ object Strings {
         AppLanguage.ENGLISH -> "Import"
         AppLanguage.ARABIC -> "استيراد"
     }
+    val bookmarkExportAll: String get() = when (lang) {
+        AppLanguage.CHINESE -> "导出书签"
+        AppLanguage.ENGLISH -> "Export Bookmarks"
+        AppLanguage.ARABIC -> "تصدير الإشارات المرجعية"
+    }
+    val bookmarkExportEmpty: String get() = when (lang) {
+        AppLanguage.CHINESE -> "没有可导出的网页应用"
+        AppLanguage.ENGLISH -> "No web apps to export"
+        AppLanguage.ARABIC -> "لا توجد تطبيقات ويب للتصدير"
+    }
+    val bookmarkExportSuccess: String get() = when (lang) {
+        AppLanguage.CHINESE -> "已导出 %d 个书签"
+        AppLanguage.ENGLISH -> "%d bookmarks exported"
+        AppLanguage.ARABIC -> "تم تصدير %d إشارة مرجعية"
+    }
+    val bookmarkExportFailed: String get() = when (lang) {
+        AppLanguage.CHINESE -> "书签导出失败"
+        AppLanguage.ENGLISH -> "Bookmark export failed"
+        AppLanguage.ARABIC -> "فشل تصدير الإشارات المرجعية"
+    }
+    val bookmarkExportFailedWithReason: String get() = when (lang) {
+        AppLanguage.CHINESE -> "书签导出失败：%s"
+        AppLanguage.ENGLISH -> "Bookmark export failed: %s"
+        AppLanguage.ARABIC -> "فشل تصدير الإشارات المرجعية: %s"
+    }
 
     val templateExport: String get() = when (lang) {
         AppLanguage.CHINESE -> "导出为模板"
@@ -8669,6 +8694,11 @@ object Strings {
         AppLanguage.CHINESE -> "1"
         AppLanguage.ENGLISH -> "1"
         AppLanguage.ARABIC -> "1"
+    }
+    val updateApkGuide: String get() = when (lang) {
+        AppLanguage.CHINESE -> "将使用相同包名 %s 并把版本号提升到 %d。构建完成后点击安装，Android 会显示正常更新确认。"
+        AppLanguage.ENGLISH -> "Uses the same package %s and raises versionCode to %d. After build, tap Install and Android will show the normal update prompt."
+        AppLanguage.ARABIC -> "سيستخدم نفس الحزمة %s ويرفع versionCode إلى %d. بعد البناء، اضغط تثبيت وسيعرض Android مطالبة التحديث العادية."
     }
 
     val selectTheme: String get() = when (lang) {
@@ -25916,14 +25946,14 @@ object Strings {
         AppLanguage.ARABIC -> "افتراضي"
     }
     val engineSelectTitle: String get() = when (lang) {
-        AppLanguage.CHINESE -> "浏览器引擎"
-        AppLanguage.ENGLISH -> "Browser Engine"
-        AppLanguage.ARABIC -> "محرك المتصفح"
+        AppLanguage.CHINESE -> "APK 内置浏览器引擎"
+        AppLanguage.ENGLISH -> "APK Embedded Browser Engine"
+        AppLanguage.ARABIC -> "محرك متصفح مضمن في APK"
     }
     val engineSelectDesc: String get() = when (lang) {
-        AppLanguage.CHINESE -> "选择导出 APK 使用的浏览器引擎"
-        AppLanguage.ENGLISH -> "Select browser engine for exported APK"
-        AppLanguage.ARABIC -> "اختر محرك المتصفح لملف APK المصدر"
+        AppLanguage.CHINESE -> "选择随导出 APK 一起打包的浏览器引擎，而不是跳转到外部浏览器"
+        AppLanguage.ENGLISH -> "Select the browser engine packaged into the exported APK, not an external browser launch"
+        AppLanguage.ARABIC -> "اختر محرك المتصفح المضمن داخل ملف APK المصدر، وليس فتح متصفح خارجي"
     }
     val engineGeckoNotDownloaded: String get() = when (lang) {
         AppLanguage.CHINESE -> "GeckoView 引擎未下载，请先在“浏览器内核”页面下载"
@@ -25931,9 +25961,9 @@ object Strings {
         AppLanguage.ARABIC -> "لم يتم تنزيل محرك GeckoView. يرجى تنزيله من صفحة نواة المتصفح أولاً."
     }
     val engineApkSizeWarning: String get() = when (lang) {
-        AppLanguage.CHINESE -> "使用 GeckoView 将增加 APK 体积约 %s MB"
-        AppLanguage.ENGLISH -> "Using GeckoView will increase APK size by ~%s MB"
-        AppLanguage.ARABIC -> "استخدام GeckoView سيزيد حجم APK بنحو %s MB"
+        AppLanguage.CHINESE -> "GeckoView 会被打进 APK，体积约增加 %s MB"
+        AppLanguage.ENGLISH -> "GeckoView is packaged into the APK and adds ~%s MB"
+        AppLanguage.ARABIC -> "سيتم تضمين GeckoView داخل APK وسيضيف نحو %s MB"
     }
 
     val deepLinkSetting: String get() = when (lang) {
@@ -34241,6 +34271,11 @@ object Strings {
         AppLanguage.CHINESE -> "解压后文件大小超过限制（%dMB）"
         AppLanguage.ENGLISH -> "Extracted file size exceeds limit (%dMB)"
         AppLanguage.ARABIC -> "حجم الملف المستخرج يتجاوز الحد (%dMB)"
+    }
+    val zipFileSizeExceeded: String get() = when (lang) {
+        AppLanguage.CHINESE -> "ZIP 文件大小超过限制（%dMB）"
+        AppLanguage.ENGLISH -> "ZIP file size exceeds limit (%dMB)"
+        AppLanguage.ARABIC -> "حجم ملف ZIP يتجاوز الحد (%dMB)"
     }
     val zipCannotOpen: String get() = when (lang) {
         AppLanguage.CHINESE -> "无法打开 ZIP 文件"

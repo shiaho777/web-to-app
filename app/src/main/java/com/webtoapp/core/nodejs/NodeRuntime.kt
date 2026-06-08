@@ -1,6 +1,7 @@
 package com.webtoapp.core.nodejs
 
 import android.content.Context
+import androidx.documentfile.provider.DocumentFile
 import com.webtoapp.core.i18n.PreviewHtmlSupport.escapeText
 import com.webtoapp.core.i18n.PreviewHtmlSupport.htmlLang
 import com.webtoapp.core.logging.AppLogger
@@ -223,6 +224,51 @@ $filesHtml
         sourceDir: File
     ): File = createProject(projectId = projectId, sourceDir = sourceDir, cleanTarget = true)
 
+    suspend fun createProjectFromUri(
+        projectId: String,
+        treeUri: android.net.Uri,
+        cleanTarget: Boolean = true
+    ): File = withContext(Dispatchers.IO) {
+        val rootDoc = DocumentFile.fromTreeUri(context, treeUri)
+        require(rootDoc != null && rootDoc.exists() && rootDoc.isDirectory) {
+            com.webtoapp.core.i18n.Strings.importNodeDirNotFound
+        }
+
+        val projectDir = File(NodeDependencyManager.getNodeProjectsDir(context), projectId)
+        if (cleanTarget && projectDir.exists()) {
+            projectDir.deleteRecursively()
+        }
+        projectDir.mkdirs()
+
+        var copiedCount = 0
+
+        fun copyDocTree(doc: DocumentFile, relativePath: String) {
+            val name = doc.name ?: return
+            if (doc.isDirectory) {
+                if (name in PROJECT_EXCLUDE_DIRS || name.startsWith("._")) return
+                val nextPath = if (relativePath.isEmpty()) name else "$relativePath/$name"
+                doc.listFiles().forEach { child -> copyDocTree(child, nextPath) }
+            } else if (doc.isFile) {
+                if (name.startsWith("._")) return
+                val destPath = if (relativePath.isEmpty()) name else "$relativePath/$name"
+                val destFile = File(projectDir, destPath)
+                destFile.parentFile?.mkdirs()
+                context.contentResolver.openInputStream(doc.uri)?.use { input ->
+                    destFile.outputStream().use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                copiedCount++
+            }
+        }
+
+        rootDoc.listFiles().forEach { child -> copyDocTree(child, "") }
+        flattenSingleProjectRoot(projectDir)
+
+        AppLogger.i(TAG, "SAF 项目文件已同步到: ${projectDir.absolutePath} (total $copiedCount files)")
+        projectDir
+    }
+
     fun resolveSourceProjectDir(sourceProjectPath: String?): File? {
         val path = sourceProjectPath?.trim().orEmpty()
         if (path.isEmpty()) return null
@@ -232,6 +278,26 @@ $filesHtml
 
     fun getProjectDir(projectId: String): File {
         return File(NodeDependencyManager.getNodeProjectsDir(context), projectId)
+    }
+
+    private fun flattenSingleProjectRoot(projectDir: File) {
+        if (File(projectDir, "package.json").exists()) return
+        val visibleChildren = projectDir.listFiles().orEmpty().filter { !it.name.startsWith(".") }
+        val nestedDir = visibleChildren.singleOrNull()
+            ?.takeIf { it.isDirectory && File(it, "package.json").exists() }
+            ?: return
+        nestedDir.listFiles().orEmpty().forEach { child ->
+            val target = File(projectDir, child.name)
+            if (!child.renameTo(target)) {
+                if (child.isDirectory) {
+                    child.copyRecursively(target, overwrite = true)
+                } else {
+                    child.copyTo(target, overwrite = true)
+                }
+                child.deleteRecursively()
+            }
+        }
+        nestedDir.deleteRecursively()
     }
 
     fun detectEntryFile(projectDir: File): String? {

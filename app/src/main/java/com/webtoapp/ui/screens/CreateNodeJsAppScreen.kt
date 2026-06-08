@@ -154,23 +154,21 @@ fun CreateNodeJsAppScreen(
 
                 try {
                     withContext(Dispatchers.IO) {
-                        val projectPath = getPathFromUri(treeUri)
-                        if (projectPath.isNullOrBlank()) {
-                            errorMessage = Strings.dirNotExists
-                            isCreating = false
-                            return@withContext
-                        }
-                        val projectDir = File(projectPath)
-
-                        if (!projectDir.exists() || !File(projectDir, "package.json").exists()) {
-                            errorMessage = context.getString(com.webtoapp.R.string.njs_package_json_not_found)
-                            isCreating = false
-                            return@withContext
-                        }
-
-                        selectedProjectDir = projectPath
-
                         val runtime = NodeRuntime(context)
+                        val newProjectId = java.util.UUID.randomUUID().toString()
+
+                        creationPhase = Strings.copyingProjectFiles
+                        val projectDir = runtime.createProjectFromUri(newProjectId, treeUri)
+
+                        if (!File(projectDir, "package.json").exists()) {
+                            errorMessage = context.getString(com.webtoapp.R.string.njs_package_json_not_found)
+                            projectDir.deleteRecursively()
+                            isCreating = false
+                            return@withContext
+                        }
+
+                        selectedProjectDir = projectDir.absolutePath
+
                         val detected = runtime.detectEntryFile(projectDir)
                         if (detected != null) {
                             detectedEntryFile = detected
@@ -312,8 +310,6 @@ fun CreateNodeJsAppScreen(
                         }
 
                         creationPhase = Strings.copyingProjectFiles
-                        val newProjectId = java.util.UUID.randomUUID().toString()
-                        runtime.createProject(newProjectId, projectDir)
                         projectId = newProjectId
                         creationPhase = Strings.njsProjectReady
                     }
@@ -1490,25 +1486,6 @@ private fun NodeJsDependenciesCard(
                 }
             }
         }
-    }
-}
-
-private fun getPathFromUri(uri: Uri): String? {
-    return try {
-        val docId = android.provider.DocumentsContract.getTreeDocumentId(uri)
-        val split = docId.split(":")
-        if (split.size >= 2) {
-            val type = split[0]
-            val path = split[1]
-            when (type) {
-                "primary" -> "/storage/emulated/0/$path"
-                else -> "/storage/$type/$path"
-            }
-        } else {
-            uri.path
-        }
-    } catch (e: Exception) {
-        uri.path
     }
 }
 

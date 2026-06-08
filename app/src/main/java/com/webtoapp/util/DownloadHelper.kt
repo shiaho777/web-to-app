@@ -276,59 +276,18 @@ object DownloadHelper {
             return
         }
 
-        try {
-
-            val fileName = parseFileName(safeUrl, contentDisposition, mimeType)
-            val originHeader = buildOriginHeader(safeUrl)
-
-            val request = DownloadManager.Request(Uri.parse(safeUrl)).apply {
-
-                addRequestHeader("User-Agent", userAgent)
-
-                CookieManager.getInstance().getCookie(safeUrl)?.let { cookie ->
-                    if (cookie.isNotBlank()) {
-                        addRequestHeader("Cookie", cookie)
-                    }
-                }
-
-                originHeader?.let { origin ->
-                    addRequestHeader("Origin", origin)
-                    addRequestHeader("Referer", "$origin/")
-                }
-
-                if (showEnhancedNotification) {
-
-                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
-                } else {
-                    setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                }
-                setTitle(fileName)
-                setDescription("正在下载...")
-
-                setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-
-                setAllowedNetworkTypes(
-                    DownloadManager.Request.NETWORK_WIFI or
-                    DownloadManager.Request.NETWORK_MOBILE
-                )
-
-                if (mimeType.isNotBlank()) {
-                    setMimeType(mimeType)
-                }
-            }
-
+        val fileName = parseFileName(safeUrl, contentDisposition, mimeType)
+        val downloadId = try {
+            val request = buildDownloadManagerRequest(
+                safeUrl = safeUrl,
+                userAgent = userAgent,
+                contentDisposition = contentDisposition,
+                mimeType = mimeType,
+                fileName = fileName,
+                showEnhancedNotification = showEnhancedNotification
+            )
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            val downloadId = downloadManager.enqueue(request)
-
-            if (showEnhancedNotification) {
-                val notificationManager = DownloadNotificationManager.getInstance(context)
-                notificationManager.trackDownload(downloadId, fileName, mimeType)
-            }
-
-            retryCountMap.remove(safeUrl)
-
-            Toast.makeText(context, Strings.startDownload.replace("%s", fileName), Toast.LENGTH_SHORT).show()
-
+            downloadManager.enqueue(request)
         } catch (e: Exception) {
             AppLogger.e(TAG, "Operation failed", e)
 
@@ -352,6 +311,65 @@ object DownloadHelper {
             retryCountMap.remove(safeUrl)
             Toast.makeText(context, Strings.downloadFailedTryBrowser, Toast.LENGTH_SHORT).show()
             openInBrowser(context, safeUrl)
+            return
+        }
+
+        retryCountMap.remove(safeUrl)
+
+        if (showEnhancedNotification) {
+            try {
+                val notificationManager = DownloadNotificationManager.getInstance(context)
+                notificationManager.trackDownload(downloadId, fileName, mimeType)
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "Download enqueued but enhanced notification tracking failed", e)
+            }
+        }
+
+        Toast.makeText(context, Strings.startDownload.replace("%s", fileName), Toast.LENGTH_SHORT).show()
+    }
+
+    private fun buildDownloadManagerRequest(
+        safeUrl: String,
+        userAgent: String,
+        contentDisposition: String,
+        mimeType: String,
+        fileName: String,
+        showEnhancedNotification: Boolean
+    ): DownloadManager.Request {
+        val originHeader = buildOriginHeader(safeUrl)
+
+        return DownloadManager.Request(Uri.parse(safeUrl)).apply {
+            addRequestHeader("User-Agent", userAgent)
+
+            CookieManager.getInstance().getCookie(safeUrl)?.let { cookie ->
+                if (cookie.isNotBlank()) {
+                    addRequestHeader("Cookie", cookie)
+                }
+            }
+
+            originHeader?.let { origin ->
+                addRequestHeader("Origin", origin)
+                addRequestHeader("Referer", "$origin/")
+            }
+
+            if (showEnhancedNotification) {
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
+            } else {
+                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            }
+            setTitle(fileName)
+            setDescription("正在下载...")
+
+            setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+
+            setAllowedNetworkTypes(
+                DownloadManager.Request.NETWORK_WIFI or
+                    DownloadManager.Request.NETWORK_MOBILE
+            )
+
+            if (mimeType.isNotBlank()) {
+                setMimeType(mimeType)
+            }
         }
     }
 

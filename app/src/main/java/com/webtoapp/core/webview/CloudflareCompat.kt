@@ -16,6 +16,8 @@ object CloudflareCompat {
         "challenges.cloudflare.com",
         "cf-turnstile",
         "cdn-cgi/challenge-platform",
+        "__CF\$cv\$params",
+        "cf-ray",
         "Just a moment"
     )
 
@@ -27,6 +29,28 @@ object CloudflareCompat {
             return false
         }
         return CLOUDFLARE_CHALLENGE_HOSTS.any { host == it || host.endsWith(".$it") }
+    }
+
+    fun hasCloudflareSignal(
+        url: String?,
+        reasonPhrase: String? = null,
+        responseHeaders: Map<String, String>? = null
+    ): Boolean {
+        val haystack = buildString {
+            append(url.orEmpty())
+            append('\n')
+            append(reasonPhrase.orEmpty())
+            responseHeaders?.forEach { (key, value) ->
+                append('\n')
+                append(key)
+                append(": ")
+                append(value)
+            }
+        }.lowercase()
+
+        return CLOUDFLARE_PAGE_INDICATORS.any { haystack.contains(it.lowercase()) } ||
+            responseHeaders?.keys?.any { it.equals("cf-ray", ignoreCase = true) } == true ||
+            responseHeaders?.values?.any { it.equals("cloudflare", ignoreCase = true) } == true
     }
 
     fun stripWebViewMarker(userAgent: String): String {

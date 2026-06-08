@@ -105,6 +105,30 @@ class BatchImportService(
         return gson.toJson(template)
     }
 
+    fun exportAsBookmarksHtml(apps: List<WebApp>): String {
+        val nowSeconds = System.currentTimeMillis() / 1000
+        val items = apps
+            .filter { isBookmarkExportable(it.url) }
+            .distinctBy { normalizeUrl(it.url) }
+            .joinToString(separator = "\n") { app ->
+                """        <DT><A HREF="${escapeBookmark(normalizeUrl(app.url))}" ADD_DATE="$nowSeconds">${escapeBookmark(app.name)}</A>"""
+            }
+        return buildString {
+            appendLine("<!DOCTYPE NETSCAPE-Bookmark-file-1>")
+            appendLine("<META HTTP-EQUIV=\"Content-Type\" CONTENT=\"text/html; charset=UTF-8\">")
+            appendLine("<TITLE>Bookmarks</TITLE>")
+            appendLine("<H1>Bookmarks</H1>")
+            appendLine("<DL><p>")
+            appendLine("    <DT><H3 ADD_DATE=\"$nowSeconds\" LAST_MODIFIED=\"$nowSeconds\">WebToApp</H3>")
+            appendLine("    <DL><p>")
+            appendLine(items)
+            appendLine("    </DL><p>")
+            appendLine("</DL><p>")
+        }
+    }
+
+    fun isBookmarkExportable(url: String): Boolean = url.isValidUrl()
+
     fun parseTemplate(json: String): AppTemplate? {
         return try {
             gson.fromJson(json, AppTemplate::class.java)
@@ -146,6 +170,14 @@ class BatchImportService(
         } catch (e: Exception) {
             url.take(30)
         }
+    }
+
+    private fun escapeBookmark(value: String): String {
+        return value
+            .replace("&", "&amp;")
+            .replace("\"", "&quot;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
     }
 }
 
