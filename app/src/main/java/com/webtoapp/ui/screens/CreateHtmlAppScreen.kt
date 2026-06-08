@@ -72,6 +72,11 @@ private data class HtmlEditorStateSnapshot(
     val landscapeMode: Boolean = false
 )
 
+private fun HtmlProjectProcessor.ProjectIssue.isActionableAnalysisIssue(): Boolean {
+    return severity == HtmlProjectProcessor.IssueSeverity.ERROR ||
+        severity == HtmlProjectProcessor.IssueSeverity.WARNING
+}
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreateHtmlAppScreen(
@@ -226,10 +231,7 @@ fun CreateHtmlAppScreen(
         else -> false
     }
 
-    val hasIssues = projectAnalysis?.issues?.any {
-        it.severity == HtmlProjectProcessor.IssueSeverity.ERROR ||
-        it.severity == HtmlProjectProcessor.IssueSeverity.WARNING
-    } == true
+    val hasIssues = projectAnalysis?.issues?.any { it.isActionableAnalysisIssue() } == true
 
     val zipPickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
@@ -1073,7 +1075,7 @@ fun CreateHtmlAppScreen(
                             if (isNotEmpty()) append("\n")
                             append(Strings.autoFixHint)
                         },
-                        tone = WtaStatusTone.Error,
+                        tone = if (errorCount > 0) WtaStatusTone.Error else WtaStatusTone.Warning,
                         actionLabel = Strings.viewAnalysisResult,
                         onAction = { showAnalysisDialog = true },
                         messageMaxLines = 4
@@ -1185,6 +1187,8 @@ private fun ProjectAnalysisDialog(
     analysis: HtmlProjectProcessor.ProjectAnalysis,
     onDismiss: () -> Unit
 ) {
+    val actionableIssues = analysis.issues.filter { it.isActionableAnalysisIssue() }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -1212,31 +1216,8 @@ private fun ProjectAnalysisDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
 
-                item {
-                    Text(
-                        text = Strings.fileInfo,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                item {
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        analysis.htmlFiles.forEach { file ->
-                            FileInfoRow(file, "HTML")
-                        }
-                        analysis.cssFiles.forEach { file ->
-                            FileInfoRow(file, "CSS")
-                        }
-                        analysis.jsFiles.forEach { file ->
-                            FileInfoRow(file, "JS")
-                        }
-                    }
-                }
-
-                if (analysis.issues.isNotEmpty()) {
+                if (actionableIssues.isNotEmpty()) {
                     item {
-                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = Strings.detectedIssues,
                             style = MaterialTheme.typography.titleSmall,
@@ -1244,66 +1225,8 @@ private fun ProjectAnalysisDialog(
                         )
                     }
 
-                    items(analysis.issues) { issue ->
+                    items(actionableIssues) { issue ->
                         IssueCard(issue)
-                    }
-                }
-
-                if (analysis.suggestions.isNotEmpty()) {
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = Strings.suggestions,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    items(analysis.suggestions) { suggestion ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Icon(
-                                Icons.Outlined.Lightbulb,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = suggestion,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    EnhancedElevatedCard(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                        )
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Icon(
-                                Icons.Outlined.AutoFixHigh,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = Strings.autoProcessHint,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
                     }
                 }
             }
@@ -1317,95 +1240,53 @@ private fun ProjectAnalysisDialog(
 }
 
 @Composable
-private fun FileInfoRow(file: HtmlProjectProcessor.FileInfo, type: String) {
+private fun IssueCard(issue: HtmlProjectProcessor.ProjectIssue) {
+    val (icon, contentColor) = when (issue.severity) {
+        HtmlProjectProcessor.IssueSeverity.ERROR -> Pair(
+            Icons.Outlined.Error,
+            MaterialTheme.colorScheme.onSurface
+        )
+        HtmlProjectProcessor.IssueSeverity.WARNING -> Pair(
+            Icons.Outlined.Warning,
+            MaterialTheme.colorScheme.onSurface
+        )
+        HtmlProjectProcessor.IssueSeverity.INFO -> Pair(
+            Icons.Outlined.Info,
+            MaterialTheme.colorScheme.onSurface
+        )
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                MaterialTheme.shapes.small
-            )
-            .padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.Top
     ) {
-        Text(
-            text = type,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier
-                .background(
-                    MaterialTheme.colorScheme.primaryContainer,
-                    MaterialTheme.shapes.extraSmall
-                )
-                .padding(horizontal = 6.dp, vertical = 2.dp)
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(16.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
-        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = file.name,
+                text = issue.message,
                 style = MaterialTheme.typography.bodySmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                color = contentColor
             )
-            Text(
-                text = Strings.encodingAndSize.format(file.encoding ?: "UTF-8", formatFileSize(file.size)),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun IssueCard(issue: HtmlProjectProcessor.ProjectIssue) {
-    val (icon, containerColor, contentColor) = when (issue.severity) {
-        HtmlProjectProcessor.IssueSeverity.ERROR -> Triple(
-            Icons.Outlined.Error,
-            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
-            MaterialTheme.colorScheme.onSurface
-        )
-        HtmlProjectProcessor.IssueSeverity.WARNING -> Triple(
-            Icons.Outlined.Warning,
-            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
-            MaterialTheme.colorScheme.onSurface
-        )
-        HtmlProjectProcessor.IssueSeverity.INFO -> Triple(
-            Icons.Outlined.Info,
-            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
-            MaterialTheme.colorScheme.onSurface
-        )
-    }
-
-    EnhancedElevatedCard(
-        colors = CardDefaults.cardColors(containerColor = containerColor)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+            issue.file?.let {
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = issue.message,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = contentColor
-                )
-            }
-            if (issue.file != null) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = Strings.fileLabel.format(issue.file),
+                    text = Strings.fileLabel.format(it),
                     style = MaterialTheme.typography.labelSmall,
                     color = contentColor.copy(alpha = 0.7f)
                 )
             }
-            if (issue.suggestion != null) {
-                Spacer(modifier = Modifier.height(4.dp))
+            issue.suggestion?.let {
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "${Strings.suggestions}: ${issue.suggestion}",
+                    text = it,
                     style = MaterialTheme.typography.labelSmall,
                     color = contentColor.copy(alpha = 0.8f)
                 )

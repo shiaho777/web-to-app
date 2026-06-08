@@ -14,16 +14,18 @@ object HtmlProjectProcessor {
 
     private val encodingCache = LruCache<String, String>(50)
 
-    private val cssLinkRegex = Regex("""<link[^>]*href=["']([^"']+)["'][^>]*>""", RegexOption.IGNORE_CASE)
-    private val jsScriptRegex = Regex("""<script[^>]*src=["']([^"']+)["'][^>]*>""", RegexOption.IGNORE_CASE)
-    private val imgSrcRegex = Regex("""<img[^>]*src=["']([^"']+)["'][^>]*>""", RegexOption.IGNORE_CASE)
-    private val absolutePathRegex = Regex("""(href|src)=["'](/[^"']+)["']""")
-    private val protocolRelativeRegex = Regex("""(href|src)=["'](//[^"']+)["']""")
+    private val cssLinkRegex = Regex("""<link[^>]*\shref\s*=\s*["']([^"']+)["'][^>]*>""", RegexOption.IGNORE_CASE)
+    private val jsScriptRegex = Regex("""<script[^>]*\ssrc\s*=\s*["']([^"']+)["'][^>]*>""", RegexOption.IGNORE_CASE)
+    private val imgSrcRegex = Regex("""<img[^>]*\ssrc\s*=\s*["']([^"']+)["'][^>]*>""", RegexOption.IGNORE_CASE)
+    private val absolutePathRegex = Regex("""(\s)(href|src)\s*=\s*(["'])(/(?!/)[^"']+)\3""", RegexOption.IGNORE_CASE)
+    private val protocolRelativeRegex = Regex("""(\s)(href|src)\s*=\s*(["'])(//[^"']+)\3""", RegexOption.IGNORE_CASE)
 
-    private val localCssRegex = Regex("""<link[^>]*href=["'](?!https?://)[^"']*\.css["'][^>]*>""", RegexOption.IGNORE_CASE)
+    private val localCssRegex = Regex("""<link[^>]*\shref\s*=\s*(["'])([^"']*\.css(?:[?#][^"']*)?)\1[^>]*>""", RegexOption.IGNORE_CASE)
 
-    private val localJsRegex = Regex("""(?s)<script[^>]*\bsrc=["'](?!https?://)([^"']*\.js)["'][^>]*>.*?</script>""", RegexOption.IGNORE_CASE)
+    private val localJsRegex = Regex("""(?s)<script[^>]*\ssrc\s*=\s*(["'])([^"']*\.m?js(?:[?#][^"']*)?)\1[^>]*>.*?</script>""", RegexOption.IGNORE_CASE)
     private val charsetRegex = Regex("""charset=["']?([^"'\s>]+)""", RegexOption.IGNORE_CASE)
+    private val referenceSchemeRegex = Regex("""^[a-z][a-z0-9+.-]*:""", RegexOption.IGNORE_CASE)
+    private val dynamicReferenceMarkers = listOf("${'$'}{", "{{", "}}", "<%", "%>", "||", "&&")
 
     private val closeHeadRegex = Regex("</head>", RegexOption.IGNORE_CASE)
     private val openBodyRegex = Regex("<body", RegexOption.IGNORE_CASE)
@@ -197,10 +199,11 @@ object HtmlProjectProcessor {
             }
         }
 
-        if (htmlFiles.isNotEmpty() && cssFiles.isEmpty() && jsFiles.isEmpty()) {
-            val htmlFileObj = htmlFilePath?.let { File(it) }?.takeIf { it.exists() && it.length() <= MAX_ANALYZE_FILE_SIZE }
-            val htmlContent = htmlFileObj?.let { readFileWithEncoding(it, null) } ?: ""
-            if (htmlContent.contains("<link", ignoreCase = true) || htmlContent.contains("<script", ignoreCase = true)) {
+        if (htmlFiles.isNotEmpty()) {
+            val references = htmlFiles.flatMap { it.references }
+            val needsCss = cssFiles.isEmpty() && references.any { it.type == ReferenceType.CSS_LINK }
+            val needsJs = jsFiles.isEmpty() && references.any { it.type == ReferenceType.JS_SCRIPT }
+            if (needsCss || needsJs) {
                 suggestions.add(Strings.suggestExternalFilesDetected)
             }
         }
@@ -256,16 +259,20 @@ object HtmlProjectProcessor {
     private fun fixResourcePaths(html: String): String {
         var result = html
 
-        result = absolutePathRegex.replace(result) { match ->
-            val attr = match.groupValues[1]
-            val path = match.groupValues[2]
-            """$attr=".${path}""""
+        result = protocolRelativeRegex.replace(result) { match ->
+            val prefix = match.groupValues[1]
+            val attr = match.groupValues[2]
+            val quote = match.groupValues[3]
+            val path = match.groupValues[4]
+            if (isDynamicReference(path)) match.value else "$prefix$attr=${quote}https:$path$quote"
         }
 
-        result = protocolRelativeRegex.replace(result) { match ->
-            val attr = match.groupValues[1]
-            val path = match.groupValues[2]
-            """$attr="https:$path""""
+        result = absolutePathRegex.replace(result) { match ->
+            val prefix = match.groupValues[1]
+            val attr = match.groupValues[2]
+            val quote = match.groupValues[3]
+            val path = match.groupValues[4]
+            if (isDynamicReference(path)) match.value else "$prefix$attr=$quote.$path$quote"
         }
 
         return result
@@ -279,11 +286,15 @@ object HtmlProjectProcessor {
         var result = html
 
         if (hasCssContent) {
-            result = localCssRegex.replace(result, "<!-- CSS inlined -->")
+            result = localCssRegex.replace(result) { match ->
+                if (shouldAnalyzeLocalReference(match.groupValues[2])) "<!-- CSS inlined -->" else match.value
+            }
         }
 
         if (hasJsContent) {
-            result = localJsRegex.replace(result, "<!-- JS inlined -->")
+            result = localJsRegex.replace(result) { match ->
+                if (shouldAnalyzeLocalReference(match.groupValues[2])) "<!-- JS inlined -->" else match.value
+            }
         }
 
         return result
@@ -392,21 +403,21 @@ $trimmed
 
         cssLinkRegex.findAll(html).forEach { match ->
             val path = match.groupValues[1]
-            if (!path.startsWith("http://") && !path.startsWith("https://") && path.endsWith(".css", ignoreCase = true)) {
+            if (shouldAnalyzeLocalReference(path) && stripReferenceSuffix(path).endsWith(".css", ignoreCase = true)) {
                 references.add(analyzeReference(path, ReferenceType.CSS_LINK, baseDir))
             }
         }
 
         jsScriptRegex.findAll(html).forEach { match ->
             val path = match.groupValues[1]
-            if (!path.startsWith("http://") && !path.startsWith("https://")) {
+            if (shouldAnalyzeLocalReference(path)) {
                 references.add(analyzeReference(path, ReferenceType.JS_SCRIPT, baseDir))
             }
         }
 
         imgSrcRegex.findAll(html).forEach { match ->
             val path = match.groupValues[1]
-            if (!path.startsWith("http://") && !path.startsWith("https://") && !path.startsWith("data:")) {
+            if (shouldAnalyzeLocalReference(path)) {
                 references.add(analyzeReference(path, ReferenceType.IMAGE, baseDir))
             }
         }
@@ -415,9 +426,10 @@ $trimmed
     }
 
     private fun analyzeReference(path: String, type: ReferenceType, baseDir: File?): ResourceReference {
-        val isAbsolute = path.startsWith("/")
+        val localPath = stripReferenceSuffix(path)
+        val isAbsolute = localPath.startsWith("/")
         val resolvedPath = if (baseDir != null && !isAbsolute) {
-            File(baseDir, path.removePrefix("./")).absolutePath
+            File(baseDir, localPath.removePrefix("./")).absolutePath
         } else null
 
         val exists = resolvedPath?.let { File(it).exists() } ?: false
@@ -435,6 +447,26 @@ $trimmed
             isValid = !isAbsolute && (exists || resolvedPath == null),
             issue = issue
         )
+    }
+
+    private fun shouldAnalyzeLocalReference(rawPath: String): Boolean {
+        val path = rawPath.trim()
+        if (path.isBlank() || path.startsWith("#") || path.startsWith("//")) return false
+        if (referenceSchemeRegex.containsMatchIn(path)) return false
+        if (isDynamicReference(path)) return false
+        if (path.any { it == '{' || it == '}' || it == '<' || it == '>' || it == '`' }) return false
+        val localPath = stripReferenceSuffix(path)
+        if (localPath.isBlank() || localPath.endsWith("/")) return false
+        return true
+    }
+
+    private fun isDynamicReference(path: String): Boolean {
+        return dynamicReferenceMarkers.any { path.contains(it) } ||
+            path.any { it == '{' || it == '}' || it == '<' || it == '>' || it == '`' }
+    }
+
+    private fun stripReferenceSuffix(path: String): String {
+        return path.trim().substringBefore("#").substringBefore("?")
     }
 
     private fun detectEncoding(file: File): String? {

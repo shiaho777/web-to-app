@@ -3076,9 +3076,9 @@ object Strings {
     }
 
     val projectAnalysis: String get() = when (lang) {
-        AppLanguage.CHINESE -> "项目分析"
-        AppLanguage.ENGLISH -> "Project Analysis"
-        AppLanguage.ARABIC -> "تحليل المشروع"
+        AppLanguage.CHINESE -> "项目检查"
+        AppLanguage.ENGLISH -> "Project Check"
+        AppLanguage.ARABIC -> "فحص المشروع"
     }
 
     val framework: String get() = when (lang) {
@@ -3749,9 +3749,9 @@ object Strings {
     }
 
     val projectIssuesDetected: String get() = when (lang) {
-        AppLanguage.CHINESE -> "检测到项目问题"
-        AppLanguage.ENGLISH -> "Project issues detected"
-        AppLanguage.ARABIC -> "تم اكتشاف مشاكل في المشروع"
+        AppLanguage.CHINESE -> "项目需要确认"
+        AppLanguage.ENGLISH -> "Project needs review"
+        AppLanguage.ARABIC -> "المشروع يحتاج إلى مراجعة"
     }
 
     val errorsCount: String get() = when (lang) {
@@ -3767,15 +3767,15 @@ object Strings {
     }
 
     val autoFixHint: String get() = when (lang) {
-        AppLanguage.CHINESE -> "应用会自动修复路径问题并内联CSS/JS，但建议查看详情确认"
-        AppLanguage.ENGLISH -> "Path issues and CSS/JS will be fixed automatically. Review the details first."
-        AppLanguage.ARABIC -> "سيقوم التطبيق بإصلاح مشاكل المسار تلقائيًا ودمج CSS/JS، لكن يُرجى مراجعة التفاصيل"
+        AppLanguage.CHINESE -> "请确认这些文件引用是否需要一并导入"
+        AppLanguage.ENGLISH -> "Review these file references before creating the app."
+        AppLanguage.ARABIC -> "راجع مراجع الملفات هذه قبل إنشاء التطبيق."
     }
 
     val viewAnalysisResult: String get() = when (lang) {
-        AppLanguage.CHINESE -> "查看分析结果"
-        AppLanguage.ENGLISH -> "View Analysis Result"
-        AppLanguage.ARABIC -> "عرض نتيجة التحليل"
+        AppLanguage.CHINESE -> "查看详情"
+        AppLanguage.ENGLISH -> "View Details"
+        AppLanguage.ARABIC -> "عرض التفاصيل"
     }
 
     val htmlAppTip: String get() = when (lang) {
@@ -3803,9 +3803,9 @@ object Strings {
     }
 
     val projectAnalysisResult: String get() = when (lang) {
-        AppLanguage.CHINESE -> "项目分析结果"
-        AppLanguage.ENGLISH -> "Project Analysis Result"
-        AppLanguage.ARABIC -> "نتيجة تحليل المشروع"
+        AppLanguage.CHINESE -> "项目检查"
+        AppLanguage.ENGLISH -> "Project Check"
+        AppLanguage.ARABIC -> "فحص المشروع"
     }
 
     val fileInfo: String get() = when (lang) {
@@ -3827,9 +3827,9 @@ object Strings {
     }
 
     val autoProcessHint: String get() = when (lang) {
-        AppLanguage.CHINESE -> "应用会自动处理：路径修复、CSS/JS内联、编码转换、viewport适配"
-        AppLanguage.ENGLISH -> "App will auto-process: path fixing, CSS/JS inlining, encoding conversion, viewport adaptation"
-        AppLanguage.ARABIC -> "سيقوم التطبيق بالمعالجة التلقائية: إصلاح المسارات، دمج CSS/JS، تحويل الترميز، تكييف viewport"
+        AppLanguage.CHINESE -> "创建时会保留页面结构，并处理必要的路径与编码适配"
+        AppLanguage.ENGLISH -> "Creation keeps the page structure and applies needed path and encoding adjustments."
+        AppLanguage.ARABIC -> "يحافظ الإنشاء على بنية الصفحة ويطبق تعديلات المسار والترميز اللازمة."
     }
 
     val gotIt: String get() = when (lang) {
@@ -3881,9 +3881,9 @@ object Strings {
     }
 
     val zipProjectAnalysis: String get() = when (lang) {
-        AppLanguage.CHINESE -> "项目分析"
-        AppLanguage.ENGLISH -> "Project Analysis"
-        AppLanguage.ARABIC -> "تحليل المشروع"
+        AppLanguage.CHINESE -> "项目检查"
+        AppLanguage.ENGLISH -> "Project Check"
+        AppLanguage.ARABIC -> "فحص المشروع"
     }
 
     val zipEntryFile: String get() = when (lang) {
@@ -28869,9 +28869,9 @@ object Strings {
     }
 
     val suggestExternalFilesDetected: String get() = when (lang) {
-        AppLanguage.CHINESE -> "检测到 HTML 中引用了外部 CSS/JS 文件，请确保已导入对应文件"
-        AppLanguage.ENGLISH -> "External CSS/JS files referenced in HTML detected, please ensure they have been imported"
-        AppLanguage.ARABIC -> "تم اكتشاف ملفات CSS/JS خارجية مُشار إليها في HTML، يرجى التأكد من استيرادها"
+        AppLanguage.CHINESE -> "HTML 引用了本地 CSS/JS，请确认相关文件已导入"
+        AppLanguage.ENGLISH -> "HTML references local CSS/JS. Make sure those files are included."
+        AppLanguage.ARABIC -> "يشير HTML إلى CSS/JS محلي. تأكد من تضمين هذه الملفات."
     }
 
     val suggestUseRelativePathsForAll: String get() = when (lang) {
