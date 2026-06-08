@@ -381,26 +381,13 @@ fun CreateFrontendAppScreen(
                                     value = File(detectionResult!!.outputDir).name
                                 )
 
-                                if (detectionResult!!.issues.isNotEmpty()) {
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    detectionResult!!.issues.forEach { issue ->
-                                        IssueItem(issue)
-                                    }
+                                val visibleIssues = detectionResult!!.issues.filter {
+                                    it.severity == IssueSeverity.ERROR || it.severity == IssueSeverity.WARNING
                                 }
-
-                                if (detectionResult!!.suggestions.isNotEmpty()) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    detectionResult!!.suggestions.forEach { suggestion ->
-                                        Row(
-                                            modifier = Modifier.padding(vertical = 2.dp),
-                                            verticalAlignment = Alignment.Top
-                                        ) {
-                                            Text(
-                                                suggestion,
-                                                style = MaterialTheme.typography.bodySmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
+                                if (visibleIssues.isNotEmpty()) {
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    visibleIssues.forEach { issue ->
+                                        IssueItem(issue)
                                     }
                                 }
                             }
