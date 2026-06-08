@@ -799,7 +799,8 @@ data class HtmlConfig(
     val enableLocalStorage: Boolean = true,
     val allowFileAccess: Boolean = true,
     val backgroundColor: String = "#FFFFFF",
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+    val loadMode: HtmlLoadMode = HtmlLoadMode.AUTO
 ) {
     fun getValidEntryFile(): String {
         return entryFile.takeIf {
@@ -821,6 +822,12 @@ enum class HtmlFileType {
     IMAGE,
     FONT,
     OTHER
+}
+
+enum class HtmlLoadMode {
+    AUTO,
+    FILE,
+    LOCAL_HTTP
 }
 
 enum class BgmPlayMode {

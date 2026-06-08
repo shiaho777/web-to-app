@@ -3435,6 +3435,36 @@ object Strings {
         AppLanguage.ARABIC -> "السماح باستخدام localStorage لحفظ البيانات"
     }
 
+    val htmlLoadMode: String get() = when (lang) {
+        AppLanguage.CHINESE -> "加载方式"
+        AppLanguage.ENGLISH -> "Load Mode"
+        AppLanguage.ARABIC -> "طريقة التحميل"
+    }
+
+    val htmlLoadModeAuto: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自动"
+        AppLanguage.ENGLISH -> "Auto"
+        AppLanguage.ARABIC -> "تلقائي"
+    }
+
+    val htmlLoadModeFile: String get() = when (lang) {
+        AppLanguage.CHINESE -> "本地文件"
+        AppLanguage.ENGLISH -> "Local File"
+        AppLanguage.ARABIC -> "ملف محلي"
+    }
+
+    val htmlLoadModeServer: String get() = when (lang) {
+        AppLanguage.CHINESE -> "本地服务"
+        AppLanguage.ENGLISH -> "Local Server"
+        AppLanguage.ARABIC -> "خادم محلي"
+    }
+
+    val htmlLoadModeHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自动会让简单静态页不带网络权限；游戏、音频、fetch、模块、WASM、PWA 等项目会使用本地服务以获得更好兼容性。"
+        AppLanguage.ENGLISH -> "Auto keeps simple static pages without network permission. Games, audio, fetch, modules, WASM, and PWA projects use a local server for better compatibility."
+        AppLanguage.ARABIC -> "يحافظ الوضع التلقائي على الصفحات الثابتة البسيطة بدون إذن الشبكة. تستخدم الألعاب والصوت و fetch والوحدات و WASM و PWA خادما محليا لتوافق أفضل."
+    }
+
     val landscapeModeLabel: String get() = when (lang) {
         AppLanguage.CHINESE -> "横屏模式"
         AppLanguage.ENGLISH -> "Landscape Mode"

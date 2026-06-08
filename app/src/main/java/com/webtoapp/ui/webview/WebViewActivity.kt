@@ -47,6 +47,7 @@ import androidx.lifecycle.lifecycleScope
 import com.webtoapp.ui.components.EdgeSwipeRefreshLayout
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.bgm.BgmPlayer
+import com.webtoapp.core.webview.HtmlRuntimeLoadInspector
 import com.webtoapp.core.webview.LocalHttpServer
 import com.webtoapp.core.webview.LongPressHandler
 import com.webtoapp.core.webview.WebViewCallbacks
@@ -54,6 +55,7 @@ import com.webtoapp.core.webview.WebViewManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.KeyboardAdjustMode
 import com.webtoapp.data.model.LongPressMenuStyle
+import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.data.model.SplashOrientation
 import com.webtoapp.data.model.SplashType
 import com.webtoapp.data.model.WebApp
@@ -2265,15 +2267,29 @@ fun WebViewScreen(
                 if (htmlDir.exists()) {
                     try {
 
-                        val enableLocalIsolation = app.webViewConfig.enableCrossOriginIsolation ||
-                            LocalHttpServer.shouldEnableCrossOriginIsolation(htmlDir)
-                        val baseUrl = localHttpServer.start(
-                            htmlDir,
-                            enableCrossOriginIsolation = enableLocalIsolation
-                        )
-                        val targetUrl = "$baseUrl/${Uri.encode(entryFile.removePrefix("/").ifBlank { "index.html" }, "/")}"
-                        AppLogger.d("WebViewActivity", "Target URL: $targetUrl, crossOriginIsolation=$enableLocalIsolation")
-                        targetUrl to null
+                        val usesFileScheme = when (app.htmlConfig?.loadMode ?: HtmlLoadMode.AUTO) {
+                            HtmlLoadMode.FILE -> true
+                            HtmlLoadMode.LOCAL_HTTP -> false
+                            HtmlLoadMode.AUTO -> !app.webViewConfig.enableCrossOriginIsolation &&
+                                HtmlRuntimeLoadInspector.prefersFileScheme(htmlDir)
+                        }
+                        if (usesFileScheme) {
+                            localHttpServer.stop()
+                            val normalizedEntry = entryFile.removePrefix("/").ifBlank { "index.html" }
+                            val targetUrl = Uri.fromFile(File(htmlDir, normalizedEntry)).toString()
+                            AppLogger.d("WebViewActivity", "Target URL (file compatibility): $targetUrl")
+                            targetUrl to null
+                        } else {
+                            val enableLocalIsolation = app.webViewConfig.enableCrossOriginIsolation ||
+                                LocalHttpServer.shouldEnableCrossOriginIsolation(htmlDir)
+                            val baseUrl = localHttpServer.start(
+                                htmlDir,
+                                enableCrossOriginIsolation = enableLocalIsolation
+                            )
+                            val targetUrl = "$baseUrl/${Uri.encode(entryFile.removePrefix("/").ifBlank { "index.html" }, "/")}"
+                            AppLogger.d("WebViewActivity", "Target URL: $targetUrl, crossOriginIsolation=$enableLocalIsolation")
+                            targetUrl to null
+                        }
                     } catch (e: Exception) {
                         AppLogger.e("WebViewActivity", "Failed to start local server", e)
                         "" to (e.message ?: Strings.serverStartFailed)

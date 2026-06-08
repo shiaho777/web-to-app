@@ -930,7 +930,10 @@ data class HtmlShellConfig(
     val backgroundColor: String = "#FFFFFF",
 
     @SerializedName("landscapeMode")
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+
+    @SerializedName("loadMode")
+    val loadMode: String = "AUTO"
 ) {
 
     fun getValidEntryFile(): String {

@@ -48,6 +48,7 @@ import com.webtoapp.core.linux.NativeNodeEngine
 import com.webtoapp.data.model.HtmlConfig
 import com.webtoapp.data.model.HtmlFile
 import com.webtoapp.data.model.HtmlFileType
+import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
@@ -69,6 +70,7 @@ private data class HtmlEditorStateSnapshot(
     val appIcon: Uri? = null,
     val enableJavaScript: Boolean = true,
     val enableLocalStorage: Boolean = true,
+    val loadMode: HtmlLoadMode = HtmlLoadMode.AUTO,
     val landscapeMode: Boolean = false
 )
 
@@ -95,8 +97,9 @@ fun CreateHtmlAppScreen(
         iconUri: Uri?,
         enableJavaScript: Boolean,
         enableLocalStorage: Boolean,
+        loadMode: HtmlLoadMode,
         landscapeMode: Boolean
-    ) -> Unit = { _, _, _, _, _, _, _ -> },
+    ) -> Unit = { _, _, _, _, _, _, _, _ -> },
     importDir: String? = null,
     importProjectName: String? = null
 ) {
@@ -136,6 +139,7 @@ fun CreateHtmlAppScreen(
 
     var enableJavaScript by remember { mutableStateOf(true) }
     var enableLocalStorage by remember { mutableStateOf(true) }
+    var loadMode by remember { mutableStateOf(HtmlLoadMode.AUTO) }
     var landscapeMode by remember { mutableStateOf(false) }
 
     var themeType by remember { mutableStateOf("AURORA") }
@@ -175,6 +179,7 @@ fun CreateHtmlAppScreen(
 
                 enableJavaScript = config.enableJavaScript
                 enableLocalStorage = config.enableLocalStorage
+                loadMode = config.loadMode
                 landscapeMode = config.landscapeMode
             }
 
@@ -335,6 +340,7 @@ fun CreateHtmlAppScreen(
                 appIcon = appIcon,
                 enableJavaScript = enableJavaScript,
                 enableLocalStorage = enableLocalStorage,
+                loadMode = loadMode,
                 landscapeMode = landscapeMode
             )
         }
@@ -349,17 +355,19 @@ fun CreateHtmlAppScreen(
                 appIcon = appIcon,
                 enableJavaScript = enableJavaScript,
                 enableLocalStorage = enableLocalStorage,
+                loadMode = loadMode,
                 landscapeMode = landscapeMode
             )
         }
     }
 
-    val hasUnsavedChanges = remember(appName, manualFiles, appIcon, enableJavaScript, enableLocalStorage, landscapeMode, baselineSnapshot) {
+    val hasUnsavedChanges = remember(appName, manualFiles, appIcon, enableJavaScript, enableLocalStorage, loadMode, landscapeMode, baselineSnapshot) {
         appName != baselineSnapshot.appName ||
         manualFiles != baselineSnapshot.manualFiles ||
         appIcon != baselineSnapshot.appIcon ||
         enableJavaScript != baselineSnapshot.enableJavaScript ||
         enableLocalStorage != baselineSnapshot.enableLocalStorage ||
+        loadMode != baselineSnapshot.loadMode ||
         landscapeMode != baselineSnapshot.landscapeMode
     }
     var showExitConfirmDialog by remember { mutableStateOf(false) }
@@ -482,6 +490,7 @@ fun CreateHtmlAppScreen(
                                         files = manualFiles,
                                         enableJavaScript = enableJavaScript,
                                         enableLocalStorage = enableLocalStorage,
+                                        loadMode = loadMode,
                                         landscapeMode = landscapeMode
                                     )
                                     onCreated(
@@ -497,6 +506,7 @@ fun CreateHtmlAppScreen(
                                     files = manualFiles,
                                     enableJavaScript = enableJavaScript,
                                     enableLocalStorage = enableLocalStorage,
+                                    loadMode = loadMode,
                                     landscapeMode = landscapeMode
                                 )
                                 onCreated(
@@ -527,6 +537,7 @@ fun CreateHtmlAppScreen(
                                             finalIconUri,
                                             enableJavaScript,
                                             enableLocalStorage,
+                                            loadMode,
                                             landscapeMode
                                         )
                                     }
@@ -538,6 +549,7 @@ fun CreateHtmlAppScreen(
                                         finalIconUri,
                                         enableJavaScript,
                                         enableLocalStorage,
+                                        loadMode,
                                         landscapeMode
                                     )
                                 }
@@ -563,6 +575,7 @@ fun CreateHtmlAppScreen(
                                             finalIconUri,
                                             enableJavaScript,
                                             enableLocalStorage,
+                                            loadMode,
                                             landscapeMode
                                         )
                                     }
@@ -574,6 +587,7 @@ fun CreateHtmlAppScreen(
                                         finalIconUri,
                                         enableJavaScript,
                                         enableLocalStorage,
+                                        loadMode,
                                         landscapeMode
                                     )
                                 }
@@ -914,6 +928,50 @@ fun CreateHtmlAppScreen(
                             checked = enableLocalStorage,
                             onCheckedChange = { enableLocalStorage = it }
                         )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(Strings.htmlLoadMode)
+                        Text(
+                            text = Strings.htmlLoadModeHint,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            HtmlLoadMode.entries.forEach { mode ->
+                                FilterChip(
+                                    selected = loadMode == mode,
+                                    onClick = { loadMode = mode },
+                                    label = {
+                                        Text(
+                                            when (mode) {
+                                                HtmlLoadMode.AUTO -> Strings.htmlLoadModeAuto
+                                                HtmlLoadMode.FILE -> Strings.htmlLoadModeFile
+                                                HtmlLoadMode.LOCAL_HTTP -> Strings.htmlLoadModeServer
+                                            }
+                                        )
+                                    },
+                                    leadingIcon = if (loadMode == mode) {
+                                        {
+                                            Icon(
+                                                Icons.Filled.Check,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(FilterChipDefaults.IconSize)
+                                            )
+                                        }
+                                    } else null
+                                )
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))

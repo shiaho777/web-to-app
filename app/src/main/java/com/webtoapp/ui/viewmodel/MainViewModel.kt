@@ -784,6 +784,7 @@ class MainViewModel(
         iconUri: Uri?,
         enableJavaScript: Boolean = true,
         enableLocalStorage: Boolean = true,
+        loadMode: HtmlLoadMode = HtmlLoadMode.AUTO,
         landscapeMode: Boolean = false
     ) = createApp("HTML", iconUri) { savedIconPath, currentThemeType, categoryId ->
         val context = getApplication<Application>()
@@ -811,6 +812,7 @@ class MainViewModel(
                 files = savedFiles,
                 enableJavaScript = enableJavaScript,
                 enableLocalStorage = enableLocalStorage,
+                loadMode = loadMode,
                 landscapeMode = landscapeMode
             ),
             activationEnabled = false,

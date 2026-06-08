@@ -636,7 +636,8 @@ data class HtmlBlock(
     val entryFile: String = "index.html",
     val enableJavaScript: Boolean = true,
     val enableLocalStorage: Boolean = true,
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+    val loadMode: String = "AUTO"
 )
 
 data class GalleryBlock(

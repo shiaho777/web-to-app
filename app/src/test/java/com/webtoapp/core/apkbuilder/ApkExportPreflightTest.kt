@@ -8,10 +8,13 @@ import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.HtmlConfig
 import com.webtoapp.data.model.HtmlFile
 import com.webtoapp.data.model.HtmlFileType
+import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.data.model.NetworkTrustConfig
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.WordPressConfig
+import com.webtoapp.ui.shell.buildPackagedHtmlFileSchemeEntryUrl
 import com.webtoapp.ui.shell.buildPackagedHtmlShellEntryUrl
+import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -54,7 +57,7 @@ class ApkExportPreflightTest {
     }
 
     @Test
-    fun `frontend app without source project directory targets saved html asset`() {
+    fun `frontend app without source project directory conservatively targets loopback`() {
         val index = temp.newFile("index.html").apply {
             writeText("<html></html>")
         }
@@ -74,6 +77,75 @@ class ApkExportPreflightTest {
         assertThat(config.targetUrl).isEqualTo(
             buildPackagedHtmlShellEntryUrl("com.example.frontend", "index.html")
         )
+    }
+
+    @Test
+    fun `auto html static project uses file scheme`() {
+        val projectDir = temp.newFolder("static-html")
+        File(projectDir, "index.html").writeText("<html><body>Hello</body></html>")
+        val app = WebApp(
+            name = "Html",
+            url = "",
+            appType = AppType.HTML,
+            htmlConfig = HtmlConfig(
+                projectDir = projectDir.absolutePath,
+                entryFile = "index.html"
+            )
+        )
+
+        val config = app.toApkConfig("com.example.static", context)
+
+        assertThat(config.htmlUsesFileScheme).isTrue()
+        assertThat(config.targetUrl).isEqualTo(buildPackagedHtmlFileSchemeEntryUrl("index.html"))
+    }
+
+    @Test
+    fun `auto html web audio project uses loopback server`() {
+        val projectDir = temp.newFolder("game-html")
+        File(projectDir, "index.html").writeText(
+            "<html><script>const ac = new AudioContext(); localStorage.setItem('score','1')</script></html>"
+        )
+        val app = WebApp(
+            name = "Game",
+            url = "",
+            appType = AppType.HTML,
+            htmlConfig = HtmlConfig(
+                projectDir = projectDir.absolutePath,
+                entryFile = "index.html"
+            )
+        )
+
+        val config = app.toApkConfig("com.example.game", context)
+
+        assertThat(config.htmlUsesFileScheme).isFalse()
+        assertThat(config.targetUrl).isEqualTo(
+            buildPackagedHtmlShellEntryUrl("com.example.game", "index.html")
+        )
+    }
+
+    @Test
+    fun `explicit html load mode overrides automatic detection`() {
+        val projectDir = temp.newFolder("forced-html")
+        File(projectDir, "index.html").writeText("<html><script>fetch('/data.json')</script></html>")
+        val fileApp = WebApp(
+            name = "ForcedFile",
+            url = "",
+            appType = AppType.HTML,
+            htmlConfig = HtmlConfig(
+                projectDir = projectDir.absolutePath,
+                entryFile = "index.html",
+                loadMode = HtmlLoadMode.FILE
+            )
+        )
+        val serverApp = fileApp.copy(
+            htmlConfig = fileApp.htmlConfig?.copy(loadMode = HtmlLoadMode.LOCAL_HTTP)
+        )
+
+        val fileConfig = fileApp.toApkConfig("com.example.file", context)
+        val serverConfig = serverApp.toApkConfig("com.example.server", context)
+
+        assertThat(fileConfig.htmlUsesFileScheme).isTrue()
+        assertThat(serverConfig.htmlUsesFileScheme).isFalse()
     }
 
     @Test

@@ -17,11 +17,13 @@ import com.webtoapp.core.crypto.EncryptedApkBuilder
 import com.webtoapp.core.crypto.EncryptionConfig
 import com.webtoapp.core.crypto.KeyManager
 import com.webtoapp.core.crypto.toHexString
+import com.webtoapp.core.webview.HtmlRuntimeLoadInspector
 import com.webtoapp.core.shell.BgmShellItem
 import com.webtoapp.core.shell.LrcShellTheme
 import com.webtoapp.data.model.ApkRuntimePermissions
 import com.webtoapp.data.model.LrcData
 import com.webtoapp.data.model.AnnouncementTemplateType
+import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.getActivationCodeStrings
 import com.webtoapp.ui.components.announcement.toUiTemplate
@@ -2476,8 +2478,10 @@ builtins.__import__ = _w2a_import
 
         val permissions = linkedSetOf<String>()
 
-        permissions += "android.permission.INTERNET"
-        permissions += "android.permission.ACCESS_NETWORK_STATE"
+        if (config.requiresNetworkPermissions()) {
+            permissions += "android.permission.INTERNET"
+            permissions += "android.permission.ACCESS_NETWORK_STATE"
+        }
 
         val rp = config.runtimePermissions
 
@@ -2691,6 +2695,28 @@ builtins.__import__ = _w2a_import
         return permissions.toList()
     }
 
+    private fun ApkConfig.requiresNetworkPermissions(): Boolean {
+        if (appType != "HTML" && appType != "FRONTEND") return true
+        if (!htmlUsesFileScheme) return true
+        if (targetUrl.startsWith("http://", ignoreCase = true) ||
+            targetUrl.startsWith("https://", ignoreCase = true)) return true
+        if (adsEnabled || adBannerEnabled || adInterstitialEnabled || adSplashEnabled) return true
+        if (announcementEnabled &&
+            (announcementLink.startsWith("http://", ignoreCase = true) ||
+                announcementLink.startsWith("https://", ignoreCase = true) ||
+                announcementTriggerOnNoNetwork ||
+                announcementTriggerIntervalMinutes > 0)) return true
+        if (activationRemoteEnabled) return true
+        if (translateEnabled) return true
+        if (proxyMode != "NONE") return true
+        if (dnsMode != "SYSTEM") return true
+        if (pwaOfflineEnabled) return true
+        if (enablePrivateNetworkBridge) return true
+        if (enableCloudflareCompat && webViewBehavior.cloudflareCompatMode == "ALWAYS") return true
+        if (failoverEnabled && failoverUrls.isNotEmpty()) return true
+        return false
+    }
+
     fun installApk(apkFile: File): Boolean {
         return try {
             val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -2809,7 +2835,35 @@ private fun WebApp.computeEffectiveTargetUrl(packageName: String, htmlUsesFileSc
 
 @Suppress("UNUSED_PARAMETER")
 private fun WebApp.computeHtmlUsesFileScheme(context: android.content.Context?): Boolean {
-    return false
+    if (appType != com.webtoapp.data.model.AppType.HTML &&
+        appType != com.webtoapp.data.model.AppType.FRONTEND) {
+        return false
+    }
+    return when (htmlConfig?.loadMode ?: HtmlLoadMode.AUTO) {
+        HtmlLoadMode.FILE -> true
+        HtmlLoadMode.LOCAL_HTTP -> false
+        HtmlLoadMode.AUTO -> context?.let { resolveHtmlSourceDir(it) }
+            ?.takeIf {
+                java.io.File(
+                    it,
+                    htmlConfig?.getValidEntryFile()?.removePrefix("/")?.ifBlank { "index.html" } ?: "index.html"
+                ).exists()
+            }
+            ?.let { HtmlRuntimeLoadInspector.prefersFileScheme(it) }
+            ?: false
+    }
+}
+
+private fun WebApp.resolveHtmlSourceDir(context: android.content.Context): java.io.File? {
+    val stored = htmlConfig?.projectId
+        ?.takeIf { it.isNotBlank() }
+        ?.let { java.io.File(context.filesDir, "html_projects/$it") }
+        ?.takeIf { it.exists() && it.isDirectory }
+    if (stored != null) return stored
+    return htmlConfig?.projectDir
+        ?.takeIf { it.isNotBlank() }
+        ?.let { java.io.File(it) }
+        ?.takeIf { it.exists() && it.isDirectory }
 }
 
 private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
@@ -3150,7 +3204,8 @@ private fun WebApp.buildHtmlBlock(): HtmlBlock = HtmlBlock(
     entryFile = htmlConfig?.getValidEntryFile() ?: "index.html",
     enableJavaScript = htmlConfig?.enableJavaScript ?: true,
     enableLocalStorage = htmlConfig?.enableLocalStorage ?: true,
-    landscapeMode = htmlConfig?.landscapeMode ?: false
+    landscapeMode = htmlConfig?.landscapeMode ?: false,
+    loadMode = htmlConfig?.loadMode?.name ?: HtmlLoadMode.AUTO.name
 )
 
 private fun WebApp.buildGalleryBlock(): GalleryBlock {

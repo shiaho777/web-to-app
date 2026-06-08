@@ -148,8 +148,11 @@ fun BoxScope.ShellVirtualNavBar(
         onHome = {
 
             val homeUrl = when {
-                appType == "HTML" || appType == "FRONTEND" ->
-                    buildPackagedHtmlShellEntryUrl(config.packageName, config.htmlConfig.getValidEntryFile())
+                appType == "HTML" || appType == "FRONTEND" -> {
+                    val entryFile = config.htmlConfig.getValidEntryFile()
+                    if (config.htmlUsesFileScheme) buildPackagedHtmlFileSchemeEntryUrl(entryFile)
+                    else buildPackagedHtmlShellEntryUrl(config.packageName, entryFile)
+                }
                 else -> config.targetUrl
             }
             webViewRef?.loadUrl(homeUrl)

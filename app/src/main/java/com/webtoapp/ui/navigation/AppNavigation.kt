@@ -1,5 +1,6 @@
 package com.webtoapp.ui.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -17,6 +18,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.i18n.InitializeLanguage
+import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.ui.aicoding.AiCodingScreen
 import com.webtoapp.ui.aicoding.SkillEditorScreen
 import com.webtoapp.ui.screens.AboutScreen
@@ -294,7 +296,15 @@ fun AppNavigation() {
                         viewModel.saveHtmlApp(name, htmlConfig, iconUri, themeType)
                         navController.popBackStack()
                     },
-                    onZipCreated = { name, extractedDir, entryFile, iconUri, enableJs, enableStorage, landscape ->
+                    onZipCreated = {
+                        name: String,
+                        extractedDir: String,
+                        entryFile: String,
+                        iconUri: Uri?,
+                        enableJs: Boolean,
+                        enableStorage: Boolean,
+                        loadMode: HtmlLoadMode,
+                        landscape: Boolean ->
                         viewModel.saveZipHtmlApp(
                             name = name,
                             extractedDir = extractedDir,
@@ -302,6 +312,7 @@ fun AppNavigation() {
                             iconUri = iconUri,
                             enableJavaScript = enableJs,
                             enableLocalStorage = enableStorage,
+                            loadMode = loadMode,
                             landscapeMode = landscape
                         )
                         navController.popBackStack()
