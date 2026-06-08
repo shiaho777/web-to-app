@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="96" alt="WebToApp icon" />
+
 # WebToApp
 
 ### Build Android APKs from web projects, directly on your phone.

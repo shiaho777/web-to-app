@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" width="96" alt="WebToApp 图标" />
+
 # WebToApp
 
 ### 在手机上把 Web 项目打包成可安装的 Android APK。
