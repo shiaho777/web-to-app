@@ -37,6 +37,38 @@ class AxmlRebuilder {
             "android.permission.INTERNET",
             "android.permission.ACCESS_NETWORK_STATE"
         )
+
+        private val WEBTOAPP_RUNTIME_COMPONENTS = setOf(
+            "com.webtoapp.WebToAppApplication",
+            "com.webtoapp.ui.MainActivity",
+            "com.webtoapp.ui.shell.ShellActivity",
+            "com.webtoapp.core.background.BackgroundRunService",
+            "com.webtoapp.core.notification.NotificationPollingService",
+            "com.webtoapp.core.floatingwindow.FloatingWindowService",
+            "com.webtoapp.core.forcedrun.ForcedRunGuardService",
+            "com.webtoapp.core.forcedrun.ForcedRunAccessibilityService",
+            "com.webtoapp.core.nodejs.NodeService",
+            "com.webtoapp.core.autostart.BootReceiver",
+            "com.webtoapp.core.autostart.ScheduledStartReceiver",
+            "com.webtoapp.core.forcedrun.ForcedRunReceiver",
+            "com.webtoapp.core.port.PortQueryReceiver",
+            "com.webtoapp.core.port.PortReleaseReceiver",
+            "com.webtoapp.core.notification.BridgeAlarmReceiver",
+            "androidx.core.content.FileProvider"
+        )
+
+        private val GECKOVIEW_RUNTIME_COMPONENTS = (0..39)
+            .map { "org.mozilla.gecko.process.GeckoChildProcessServices\$tab$it" }
+            .toSet() + setOf(
+            "org.mozilla.gecko.media.MediaManager",
+            "org.mozilla.gecko.process.GeckoChildProcessServices\$gmplugin",
+            "org.mozilla.gecko.process.GeckoChildProcessServices\$socket",
+            "org.mozilla.gecko.process.GeckoChildProcessServices\$gpu",
+            "org.mozilla.gecko.process.GeckoChildProcessServices\$utility",
+            "org.mozilla.gecko.process.GeckoChildProcessServices\$ipdlunittest"
+        )
+
+        private val DEFAULT_RUNTIME_COMPONENTS = WEBTOAPP_RUNTIME_COMPONENTS + GECKOVIEW_RUNTIME_COMPONENTS
     }
 
     fun expandAndModifyWithAliases(
@@ -399,6 +431,61 @@ class AxmlRebuilder {
         return -1
     }
 
+    private fun pruneRuntimeComponents(parsed: ParsedAxml, requiredComponents: Set<String>) {
+        val resourceMap = parsed.resourceMap ?: return
+        val nameAttrIndex = resourceMap.indexOf(ATTR_NAME)
+        if (nameAttrIndex < 0) {
+            AppLogger.w(TAG, "android:name attribute not found, skip component prune")
+            return
+        }
+
+        val removableTags = setOf("service", "receiver", "provider")
+        val indicesToRemove = mutableSetOf<Int>()
+        val removedComponents = mutableListOf<String>()
+        var i = 0
+
+        while (i < parsed.chunks.size) {
+            val chunk = parsed.chunks[i]
+            if (chunk.type != CHUNK_START_ELEMENT) {
+                i++
+                continue
+            }
+
+            val tagName = readElementName(parsed, chunk)
+            if (tagName !in removableTags) {
+                i++
+                continue
+            }
+
+            val componentName = readStringAttribute(parsed, chunk, nameAttrIndex)
+            if (componentName == null ||
+                componentName !in DEFAULT_RUNTIME_COMPONENTS ||
+                componentName in requiredComponents) {
+                i++
+                continue
+            }
+
+            val endIndex = findMatchingEndElementIndex(parsed, i)
+            if (endIndex <= i) {
+                i++
+                continue
+            }
+
+            for (idx in i..endIndex) {
+                indicesToRemove += idx
+            }
+            removedComponents += componentName
+            i = endIndex + 1
+        }
+
+        if (indicesToRemove.isEmpty()) return
+
+        for (idx in indicesToRemove.sortedDescending()) {
+            parsed.chunks.removeAt(idx)
+        }
+        AppLogger.d(TAG, "Pruned ${removedComponents.size} runtime components: ${removedComponents.joinToString()}")
+    }
+
     private fun addDeepLinkIntentFilter(parsed: ParsedAxml, hosts: List<String>) {
         if (hosts.isEmpty()) return
 
@@ -699,6 +786,64 @@ class AxmlRebuilder {
                 }
             }
         }
+        return -1
+    }
+
+    private fun readElementName(parsed: ParsedAxml, chunk: Chunk): String? {
+        return parsed.stringPool.strings.getOrNull(readElementNameIndex(chunk))
+    }
+
+    private fun readElementNameIndex(chunk: Chunk): Int {
+        if (chunk.data.size < 24) return -1
+        val buffer = ByteBuffer.wrap(chunk.data).order(ByteOrder.LITTLE_ENDIAN)
+        return buffer.getInt(20)
+    }
+
+    private fun readStringAttribute(parsed: ParsedAxml, chunk: Chunk, attrIndex: Int): String? {
+        if (chunk.type != CHUNK_START_ELEMENT || chunk.data.size < 36) return null
+        val buffer = ByteBuffer.wrap(chunk.data).order(ByteOrder.LITTLE_ENDIAN)
+        val attrStart = buffer.getShort(24).toInt() and 0xFFFF
+        val attrSize = buffer.getShort(26).toInt() and 0xFFFF
+        val attrCount = buffer.getShort(28).toInt() and 0xFFFF
+        if (attrSize == 0 || attrCount == 0) return null
+
+        for (i in 0 until attrCount) {
+            val attrOffset = 16 + attrStart + i * attrSize
+            if (attrOffset + 20 > chunk.data.size) break
+            val attrName = buffer.getInt(attrOffset + 4)
+            if (attrName != attrIndex) continue
+
+            val attrValueType = buffer.get(attrOffset + 15).toInt() and 0xFF
+            if (attrValueType != 0x03) return null
+
+            val attrValueData = buffer.getInt(attrOffset + 16)
+            return parsed.stringPool.strings.getOrNull(attrValueData)
+        }
+
+        return null
+    }
+
+    private fun findMatchingEndElementIndex(parsed: ParsedAxml, startIndex: Int): Int {
+        val startChunk = parsed.chunks.getOrNull(startIndex) ?: return -1
+        if (startChunk.type != CHUNK_START_ELEMENT) return -1
+
+        val elementNameIndex = readElementNameIndex(startChunk)
+        if (elementNameIndex < 0) return -1
+
+        var depth = 0
+        for (i in startIndex until parsed.chunks.size) {
+            val chunk = parsed.chunks[i]
+            if (readElementNameIndex(chunk) != elementNameIndex) continue
+
+            when (chunk.type) {
+                CHUNK_START_ELEMENT -> depth++
+                CHUNK_END_ELEMENT -> {
+                    depth--
+                    if (depth == 0) return i
+                }
+            }
+        }
+
         return -1
     }
 
@@ -1039,7 +1184,8 @@ class AxmlRebuilder {
         aliasCount: Int = 0,
         appName: String = "",
         deepLinkHosts: List<String> = emptyList(),
-        permissions: List<String> = BASELINE_RUNTIME_PERMISSIONS
+        permissions: List<String> = BASELINE_RUNTIME_PERMISSIONS,
+        requiredComponents: Set<String> = DEFAULT_RUNTIME_COMPONENTS
     ): ByteArray {
         return try {
             val parsed = parseAxml(axmlData)
@@ -1062,6 +1208,8 @@ class AxmlRebuilder {
             stripTestOnlyFlag(parsed)
 
             ensureUsesPermissions(parsed, permissions)
+
+            pruneRuntimeComponents(parsed, requiredComponents)
 
             if (aliasCount > 0 && appName.isNotEmpty()) {
                 addActivityAliases(parsed, newPackage, aliasCount, appName)

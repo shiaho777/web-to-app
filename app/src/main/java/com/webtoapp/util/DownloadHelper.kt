@@ -2,6 +2,7 @@ package com.webtoapp.util
 
 import android.app.DownloadManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Environment
 import android.webkit.MimeTypeMap
@@ -279,6 +280,7 @@ object DownloadHelper {
         val fileName = parseFileName(safeUrl, contentDisposition, mimeType)
         val downloadId = try {
             val request = buildDownloadManagerRequest(
+                context = context,
                 safeUrl = safeUrl,
                 userAgent = userAgent,
                 contentDisposition = contentDisposition,
@@ -329,6 +331,7 @@ object DownloadHelper {
     }
 
     private fun buildDownloadManagerRequest(
+        context: Context,
         safeUrl: String,
         userAgent: String,
         contentDisposition: String,
@@ -352,7 +355,7 @@ object DownloadHelper {
                 addRequestHeader("Referer", "$origin/")
             }
 
-            if (showEnhancedNotification) {
+            if (showEnhancedNotification && canHideDownloadManagerNotification(context)) {
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_HIDDEN)
             } else {
                 setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
@@ -371,6 +374,10 @@ object DownloadHelper {
                 setMimeType(mimeType)
             }
         }
+    }
+
+    private fun canHideDownloadManagerNotification(context: Context): Boolean {
+        return context.checkCallingOrSelfPermission("android.permission.DOWNLOAD_WITHOUT_NOTIFICATION") == PackageManager.PERMISSION_GRANTED
     }
 
     fun openInBrowser(context: Context, url: String) {
