@@ -36,6 +36,32 @@ class ShellWebViewNavigationTest {
     }
 
     @Test
+    fun `back exits when generated error page points back to failed remote preview url`() {
+        assertThat(
+            ShellWebViewNavigation.resolveBackAction(
+                canGoBack = true,
+                currentIndex = 1,
+                currentUrls = listOf("data:text/html;charset=utf-8;base64,PGgxPkVycm9yPC9oMT4="),
+                previousUrls = listOf("https://offline.example.com"),
+                beforePreviousUrls = emptyList()
+            )
+        ).isEqualTo(ShellWebViewNavigation.BackAction.FINISH)
+    }
+
+    @Test
+    fun `back skips failed remote url when real history exists before generated error page`() {
+        assertThat(
+            ShellWebViewNavigation.resolveBackAction(
+                canGoBack = true,
+                currentIndex = 2,
+                currentUrls = listOf("data:text/html;charset=utf-8;base64,PGgxPkVycm9yPC9oMT4="),
+                previousUrls = listOf("https://offline.example.com"),
+                beforePreviousUrls = listOf("https://example.com/home")
+            )
+        ).isEqualTo(ShellWebViewNavigation.BackAction.SKIP_PREVIOUS)
+    }
+
+    @Test
     fun `back keeps normal web history`() {
         assertThat(
             ShellWebViewNavigation.shouldFinishInsteadOfBack(
