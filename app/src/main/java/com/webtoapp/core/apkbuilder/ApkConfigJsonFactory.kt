@@ -114,6 +114,7 @@ internal object ApkConfigJsonFactory {
         "nodejsConfig" to nodejsConfigPayload(),
         "deepLinkEnabled" to deepLink.enabled,
         "deepLinkHosts" to deepLink.hosts,
+        "deepLinkSchemes" to deepLink.schemes,
         "phpAppConfig" to phpAppConfigPayload(),
         "pythonAppConfig" to pythonAppConfigPayload(),
         "goAppConfig" to goAppConfigPayload(),

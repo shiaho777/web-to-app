@@ -5,9 +5,11 @@ import com.google.gson.JsonParser
 import com.webtoapp.core.shell.BgmShellItem
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.data.model.CustomCaCertificate
+import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.NetworkTrustConfig
 import com.webtoapp.data.model.ScriptRunTime
 import com.webtoapp.data.model.UserScript
+import com.webtoapp.data.model.WebApp
 import com.webtoapp.util.GsonProvider
 import org.junit.Test
 
@@ -150,6 +152,34 @@ class ApkConfigJsonFactoryTest {
         assertThat(shellConfig.webViewConfig.injectScripts.single().runAt).isEqualTo("DOCUMENT_IDLE")
         assertThat(shellConfig.autoStartConfig?.scheduledTime).isEqualTo("07:30")
         assertThat(shellConfig.autoStartConfig?.scheduledDays).containsExactly(1, 3, 5).inOrder()
+    }
+
+    @Test
+    fun `web apk config carries dedicated oauth callback scheme to shell config`() {
+        val config = WebApp(
+            name = "OAuth App",
+            url = "https://example.com",
+            appType = AppType.WEB
+        ).toApkConfig("com.example.oauthapp")
+
+        val shellConfig = GsonProvider.gson.fromJson(
+            ApkConfigJsonFactory.create(config),
+            ShellConfig::class.java
+        )
+
+        assertThat(config.deepLinkSchemes).containsExactly("wta-com-example-oauthapp")
+        assertThat(shellConfig.deepLinkSchemes).containsExactly("wta-com-example-oauthapp")
+    }
+
+    @Test
+    fun `non web apk config does not register oauth callback scheme`() {
+        val config = WebApp(
+            name = "Gallery App",
+            url = "",
+            appType = AppType.GALLERY
+        ).toApkConfig("com.example.galleryapp")
+
+        assertThat(config.deepLinkSchemes).isEmpty()
     }
 
     @Test

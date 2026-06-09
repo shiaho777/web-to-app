@@ -390,10 +390,7 @@ class ShellActivity : AppCompatActivity() {
 
         val intentUrl = intent?.data?.toString()
         if (!intentUrl.isNullOrBlank() && intent?.action == Intent.ACTION_VIEW) {
-            val safeUrl = normalizeShellTargetUrlForSecurity(intentUrl)
-            val validatedUrl = if (config.deepLinkEnabled || config.deepLinkHosts.isNotEmpty()) {
-                validateDeepLinkUrl(safeUrl, config.deepLinkHosts, config.targetUrl)
-            } else safeUrl
+            val validatedUrl = resolveShellDeepLinkUrl(intentUrl, config)
             deepLinkUrl.value = validatedUrl
             com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "收到 Deep Link: $validatedUrl (原始: $intentUrl)")
         }
@@ -653,12 +650,7 @@ class ShellActivity : AppCompatActivity() {
                 resetFreshBrowsingSession()
             }
             val config = WebToAppApplication.shellMode.getConfig()
-            val safeUrl = normalizeShellTargetUrlForSecurity(url)
-            val validatedUrl = if (config != null && (config.deepLinkEnabled || config.deepLinkHosts.isNotEmpty())) {
-                validateDeepLinkUrl(safeUrl, config.deepLinkHosts, config.targetUrl)
-            } else {
-                safeUrl
-            }
+            val validatedUrl = if (config != null) resolveShellDeepLinkUrl(url, config) else normalizeShellTargetUrlForSecurity(url)
             if (!validatedUrl.startsWith("http://") && !validatedUrl.startsWith("https://")) return
             deepLinkUrl.value = validatedUrl
 

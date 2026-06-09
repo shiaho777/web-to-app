@@ -400,6 +400,9 @@ data class ShellConfig(
     @SerializedName("deepLinkHosts")
     val deepLinkHosts: List<String> = emptyList(),
 
+    @SerializedName("deepLinkSchemes")
+    val deepLinkSchemes: List<String> = emptyList(),
+
     @SerializedName("phpAppConfig")
     val phpAppConfig: PhpAppShellConfig = PhpAppShellConfig(),
 

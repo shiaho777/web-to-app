@@ -26249,9 +26249,9 @@ object Strings {
     }
 
     val oauthReturnGuideSummary: String get() = when (lang) {
-        AppLanguage.CHINESE -> "Google 等 OAuth 登录会在系统浏览器完成。若登录后没有回到应用，需要让网站把授权结果跳回生成的 APK。"
-        AppLanguage.ENGLISH -> "OAuth providers such as Google finish sign-in in the system browser. If login does not return to the app, make your website redirect the result back to the generated APK."
-        AppLanguage.ARABIC -> "تكتمل عمليات OAuth مثل Google في متصفح النظام. إذا لم يعد تسجيل الدخول إلى التطبيق، اجعل موقعك يعيد نتيجة التفويض إلى ملف APK الناتج."
+        AppLanguage.CHINESE -> "Google 等 OAuth 登录会在系统浏览器完成。若登录后没有回到应用，需要让网站把授权结果跳到 APK 专属回跳协议。"
+        AppLanguage.ENGLISH -> "OAuth providers such as Google finish sign-in in the system browser. If login does not return to the app, make your website redirect the result to the APK callback scheme."
+        AppLanguage.ARABIC -> "تكتمل عمليات OAuth مثل Google في متصفح النظام. إذا لم يعد تسجيل الدخول إلى التطبيق، اجعل موقعك يعيد نتيجة التفويض إلى مخطط الرجوع الخاص بملف APK."
     }
 
     val oauthReturnGuideButton: String get() = when (lang) {
@@ -26267,15 +26267,15 @@ object Strings {
     }
 
     val oauthReturnGuideReason: String get() = when (lang) {
-        AppLanguage.CHINESE -> "如果网站只在外部浏览器里完成登录，APK 内的 WebView 仍然没有自己的登录态，看起来就像“授权没生效”。正确做法是让服务端在 OAuth callback 后生成一次性 token，再重定向到应用匹配的 HTTPS 域名。"
-        AppLanguage.ENGLISH -> "If the website only signs in inside the external browser, the APK WebView still has no app-side session, which looks like authorization failed. The correct flow is to create a one-time token after the OAuth callback, then redirect to an HTTPS host matched by the app."
-        AppLanguage.ARABIC -> "إذا سجّل الموقع الدخول داخل المتصفح الخارجي فقط، فلن تحصل WebView داخل APK على جلسة خاصة بها، وسيبدو الأمر كأن التفويض فشل. التدفق الصحيح هو إنشاء رمز لمرة واحدة بعد callback الخاص بـ OAuth، ثم إعادة التوجيه إلى مضيف HTTPS يطابقه التطبيق."
+        AppLanguage.CHINESE -> "如果网站只在外部浏览器里完成登录，APK 内的 WebView 仍然没有自己的登录态，看起来就像“授权没生效”。导出的 WEB APK 会自动注册 wta-包名 回跳协议，服务端可在 OAuth callback 后带着一次性 token 拉回应用。"
+        AppLanguage.ENGLISH -> "If the website only signs in inside the external browser, the APK WebView still has no app-side session, which looks like authorization failed. Exported WEB APKs automatically register a wta-package callback scheme, so your server can return to the app with a one-time token after the OAuth callback."
+        AppLanguage.ARABIC -> "إذا سجّل الموقع الدخول داخل المتصفح الخارجي فقط، فلن تحصل WebView داخل APK على جلسة خاصة بها، وسيبدو الأمر كأن التفويض فشل. تسجل ملفات WEB APK المصدرة مخطط رجوع wta-package تلقائيًا، بحيث يمكن للخادم الرجوع إلى التطبيق برمز لمرة واحدة بعد callback الخاص بـ OAuth."
     }
 
     val oauthReturnGuideSteps: String get() = when (lang) {
-        AppLanguage.CHINESE -> "推荐流程：\n1. 打开“链接打开”，让 APK 接收你网站的 HTTPS 域名。\n2. 在 Google Console 中配置你网站自己的 OAuth redirect URI。\n3. 服务端处理 callback，写入或生成一次性登录 token。\n4. 服务端重定向到应用域名，例如 https://example.com/app-login?token=xxx。\n5. WebView 加载该地址后，由网站设置应用内 Cookie 或本地会话。"
-        AppLanguage.ENGLISH -> "Recommended flow:\n1. Enable Deep Link so the APK can receive your HTTPS domain.\n2. Configure your website OAuth redirect URI in Google Console.\n3. Let your server handle the callback and create a one-time login token.\n4. Redirect to the app domain, for example https://example.com/app-login?token=xxx.\n5. When WebView loads that URL, your website sets the in-app cookie or local session."
-        AppLanguage.ARABIC -> "التدفق المقترح:\n1. فعّل الرابط العميق حتى يستقبل APK نطاق HTTPS الخاص بك.\n2. اضبط OAuth redirect URI الخاص بموقعك في Google Console.\n3. اجعل الخادم يعالج callback وينشئ رمز تسجيل دخول لمرة واحدة.\n4. أعد التوجيه إلى نطاق التطبيق، مثل https://example.com/app-login?token=xxx.\n5. عند تحميل WebView لهذا الرابط، يضبط موقعك ملف تعريف الارتباط أو الجلسة المحلية داخل التطبيق."
+        AppLanguage.CHINESE -> "推荐流程：\n1. 在 Google Console 中配置你网站自己的 OAuth redirect URI，例如 https://example.com/oauth/google/callback。\n2. 服务端处理 callback，生成一次性登录 token。\n3. 服务端重定向到 APK 专属协议：wta-com-example-app://oauth-return?url=https%3A%2F%2Fexample.com%2Fapp-login%3Ftoken%3Dxxx。\n4. APK 收到后会加载 url 参数里的 HTTPS 地址，并校验它属于应用目标域名。\n5. WebView 加载该地址后，由网站设置应用内 Cookie 或本地会话。"
+        AppLanguage.ENGLISH -> "Recommended flow:\n1. Configure your website OAuth redirect URI in Google Console, for example https://example.com/oauth/google/callback.\n2. Let your server handle the callback and create a one-time login token.\n3. Redirect to the APK callback scheme: wta-com-example-app://oauth-return?url=https%3A%2F%2Fexample.com%2Fapp-login%3Ftoken%3Dxxx.\n4. The APK loads the HTTPS URL from the url parameter and verifies that it belongs to the app target domain.\n5. When WebView loads that URL, your website sets the in-app cookie or local session."
+        AppLanguage.ARABIC -> "التدفق المقترح:\n1. اضبط OAuth redirect URI الخاص بموقعك في Google Console، مثل https://example.com/oauth/google/callback.\n2. اجعل الخادم يعالج callback وينشئ رمز تسجيل دخول لمرة واحدة.\n3. أعد التوجيه إلى مخطط رجوع APK: wta-com-example-app://oauth-return?url=https%3A%2F%2Fexample.com%2Fapp-login%3Ftoken%3Dxxx.\n4. سيحمّل APK رابط HTTPS من معامل url ويتحقق من أنه ينتمي إلى نطاق التطبيق المستهدف.\n5. عند تحميل WebView لهذا الرابط، يضبط موقعك ملف تعريف الارتباط أو الجلسة المحلية داخل التطبيق."
     }
 
     val encryptLevelFast: String get() = when (lang) {

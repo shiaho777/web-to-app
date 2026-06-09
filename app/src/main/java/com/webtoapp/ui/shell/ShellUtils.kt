@@ -2,6 +2,7 @@ package com.webtoapp.ui.shell
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import com.webtoapp.core.crypto.AssetDecryptor
 import com.webtoapp.core.crypto.CryptoConstants
@@ -32,6 +33,52 @@ internal fun normalizeShellTargetUrlForSecurity(rawUrl: String): String {
         trimmed
     }
     return withScheme
+}
+
+internal fun resolveShellDeepLinkUrl(
+    rawUrl: String,
+    config: com.webtoapp.core.shell.ShellConfig
+): String {
+    val trimmed = rawUrl.trim()
+    val parsed = runCatching { Uri.parse(trimmed) }.getOrNull()
+    val scheme = parsed?.scheme?.lowercase()
+    val allowedSchemes = config.deepLinkSchemes.map { it.lowercase() }.toSet()
+    if (!scheme.isNullOrBlank() && scheme in allowedSchemes) {
+        val embeddedUrl = parsed.getQueryParameter("url")
+            ?: parsed.getQueryParameter("target")
+            ?: parsed.getQueryParameter("redirect")
+            ?: parsed.getQueryParameter("redirect_url")
+            ?: parsed.getQueryParameter("returnUrl")
+            ?: parsed.getQueryParameter("return_url")
+        val candidate = embeddedUrl?.takeIf { it.isNotBlank() } ?: buildUrlFromCustomScheme(parsed, config.targetUrl)
+        val safeCandidate = normalizeShellTargetUrlForSecurity(candidate)
+        return validateDeepLinkUrl(safeCandidate, config.deepLinkHosts, config.targetUrl)
+    }
+
+    val safeUrl = normalizeShellTargetUrlForSecurity(trimmed)
+    return if (config.deepLinkEnabled || config.deepLinkHosts.isNotEmpty()) {
+        validateDeepLinkUrl(safeUrl, config.deepLinkHosts, config.targetUrl)
+    } else {
+        safeUrl
+    }
+}
+
+private fun buildUrlFromCustomScheme(uri: Uri, targetUrl: String): String {
+    val targetUri = runCatching { Uri.parse(normalizeShellTargetUrlForSecurity(targetUrl)) }.getOrNull()
+    val base = targetUri?.buildUpon()?.encodedPath(null)?.encodedQuery(null)?.fragment(null)?.build()?.toString()?.trimEnd('/')
+        ?: normalizeShellTargetUrlForSecurity(targetUrl).trimEnd('/')
+    val hostPart = uri.host?.takeIf { it.isNotBlank() }
+    val pathPart = uri.encodedPath?.takeIf { it.isNotBlank() } ?: ""
+    val queryPart = uri.encodedQuery?.takeIf { it.isNotBlank() }?.let { "?$it" } ?: ""
+    val fragmentPart = uri.encodedFragment?.takeIf { it.isNotBlank() }?.let { "#$it" } ?: ""
+    val encodedPath = buildString {
+        if (!hostPart.isNullOrBlank() && hostPart != "oauth-return") {
+            append("/")
+            append(Uri.encode(hostPart))
+        }
+        append(pathPart)
+    }.ifBlank { "/" }
+    return base + encodedPath + queryPart + fragmentPart
 }
 
 internal fun buildPackagedHtmlShellBaseUrl(packageName: String): String {

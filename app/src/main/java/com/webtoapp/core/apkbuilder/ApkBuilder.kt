@@ -801,6 +801,7 @@ class ApkBuilder(private val context: Context) {
                                 aliasCount,
                                 config.appName,
                                 config.deepLinkHosts,
+                                config.deepLinkSchemes,
                                 buildRequiredPermissions(config),
                                 buildRequiredComponents(config)
                             )
@@ -2838,7 +2839,7 @@ fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = 
         autoStart = buildAutoStartBlock(),
         optionalServices = buildOptionalServicesBlock(),
         disguise = buildDisguiseBlock(),
-        deepLink = buildDeepLinkBlock(),
+        deepLink = buildDeepLinkBlock(packageName),
         wordpress = buildWordpressBlock(),
         nodejs = buildNodejsBlock(),
         phpApp = buildPhpAppBlock(),
@@ -3377,13 +3378,14 @@ private fun WebApp.buildDisguiseBlock(): DisguiseBlock = DisguiseBlock(
     deviceDisguiseConfig = deviceDisguiseConfig
 )
 
-private fun WebApp.buildDeepLinkBlock(): DeepLinkBlock = DeepLinkBlock(
+private fun WebApp.buildDeepLinkBlock(packageName: String): DeepLinkBlock = DeepLinkBlock(
     enabled = apkExportConfig?.deepLinkEnabled ?: false,
     hosts = buildOAuthReturnHosts(
         url = url,
         customHosts = apkExportConfig?.customDeepLinkHosts ?: emptyList(),
         includeCustomHosts = apkExportConfig?.deepLinkEnabled == true
-    )
+    ),
+    schemes = buildOAuthReturnSchemes(packageName, appType)
 )
 
 private fun WebApp.buildWordpressBlock(): WordpressBlock = WordpressBlock(
@@ -3534,6 +3536,16 @@ private fun buildOAuthReturnHosts(
         url = url,
         customHosts = if (includeCustomHosts) customHosts else emptyList()
     )
+}
+
+private fun buildOAuthReturnSchemes(packageName: String, appType: com.webtoapp.data.model.AppType): List<String> {
+    if (appType != com.webtoapp.data.model.AppType.WEB) return emptyList()
+    val normalized = packageName.lowercase()
+        .map { ch -> if (ch.isLetterOrDigit()) ch else '-' }
+        .joinToString("")
+        .trim('-')
+    if (normalized.isBlank()) return emptyList()
+    return listOf("wta-$normalized")
 }
 
 fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.Context): ApkConfig {

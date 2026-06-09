@@ -486,8 +486,8 @@ class AxmlRebuilder {
         AppLogger.d(TAG, "Pruned ${removedComponents.size} runtime components: ${removedComponents.joinToString()}")
     }
 
-    private fun addDeepLinkIntentFilter(parsed: ParsedAxml, hosts: List<String>) {
-        if (hosts.isEmpty()) return
+    private fun addDeepLinkIntentFilter(parsed: ParsedAxml, hosts: List<String>, schemes: List<String>) {
+        if (hosts.isEmpty() && schemes.isEmpty()) return
 
         val resourceMap = parsed.resourceMap
         if (resourceMap == null) {
@@ -546,29 +546,43 @@ class AxmlRebuilder {
         val httpSchemeIndex = getOrAddString(parsed.stringPool, "http")
 
         val newChunks = mutableListOf<Chunk>()
+        fun addViewFilterHeader() {
+            newChunks.add(buildSimpleStartElement(androidNsIndex, intentFilterNameIndex, 0))
 
-        newChunks.add(buildSimpleStartElement(androidNsIndex, intentFilterNameIndex, 0))
+            newChunks.add(buildActionOrCategoryElement(androidNsIndex, actionNameIndex, currentNameAttrIndex, viewActionIndex))
+            newChunks.add(buildEndElement(androidNsIndex, actionNameIndex))
 
-        newChunks.add(buildActionOrCategoryElement(androidNsIndex, actionNameIndex, currentNameAttrIndex, viewActionIndex))
-        newChunks.add(buildEndElement(androidNsIndex, actionNameIndex))
+            newChunks.add(buildActionOrCategoryElement(androidNsIndex, categoryNameIndex, currentNameAttrIndex, defaultCategoryIndex))
+            newChunks.add(buildEndElement(androidNsIndex, categoryNameIndex))
 
-        newChunks.add(buildActionOrCategoryElement(androidNsIndex, categoryNameIndex, currentNameAttrIndex, defaultCategoryIndex))
-        newChunks.add(buildEndElement(androidNsIndex, categoryNameIndex))
-
-        newChunks.add(buildActionOrCategoryElement(androidNsIndex, categoryNameIndex, currentNameAttrIndex, browsableCategoryIndex))
-        newChunks.add(buildEndElement(androidNsIndex, categoryNameIndex))
-
-        for (host in hosts) {
-            val hostValueIndex = getOrAddString(parsed.stringPool, host)
-
-            newChunks.add(buildDataElement(androidNsIndex, dataNameIndex, currentSchemeAttrIndex, httpsSchemeIndex, currentHostAttrIndex, hostValueIndex))
-            newChunks.add(buildEndElement(androidNsIndex, dataNameIndex))
-
-            newChunks.add(buildDataElement(androidNsIndex, dataNameIndex, currentSchemeAttrIndex, httpSchemeIndex, currentHostAttrIndex, hostValueIndex))
-            newChunks.add(buildEndElement(androidNsIndex, dataNameIndex))
+            newChunks.add(buildActionOrCategoryElement(androidNsIndex, categoryNameIndex, currentNameAttrIndex, browsableCategoryIndex))
+            newChunks.add(buildEndElement(androidNsIndex, categoryNameIndex))
         }
 
-        newChunks.add(buildEndElement(androidNsIndex, intentFilterNameIndex))
+        if (hosts.isNotEmpty()) {
+            addViewFilterHeader()
+            for (host in hosts) {
+                val hostValueIndex = getOrAddString(parsed.stringPool, host)
+
+                newChunks.add(buildDataElement(androidNsIndex, dataNameIndex, currentSchemeAttrIndex, httpsSchemeIndex, currentHostAttrIndex, hostValueIndex))
+                newChunks.add(buildEndElement(androidNsIndex, dataNameIndex))
+
+                newChunks.add(buildDataElement(androidNsIndex, dataNameIndex, currentSchemeAttrIndex, httpSchemeIndex, currentHostAttrIndex, hostValueIndex))
+                newChunks.add(buildEndElement(androidNsIndex, dataNameIndex))
+            }
+            newChunks.add(buildEndElement(androidNsIndex, intentFilterNameIndex))
+        }
+
+        if (schemes.isNotEmpty()) {
+            addViewFilterHeader()
+            for (scheme in schemes) {
+                val schemeValueIndex = getOrAddString(parsed.stringPool, scheme)
+
+                newChunks.add(buildSchemeOnlyDataElement(androidNsIndex, dataNameIndex, currentSchemeAttrIndex, schemeValueIndex))
+                newChunks.add(buildEndElement(androidNsIndex, dataNameIndex))
+            }
+            newChunks.add(buildEndElement(androidNsIndex, intentFilterNameIndex))
+        }
 
         val currentEndIndex = findActivityEndIndex(parsed, "com.webtoapp.ui.shell.ShellActivity")
         if (currentEndIndex >= 0) {
@@ -895,6 +909,44 @@ class AxmlRebuilder {
         return Chunk(CHUNK_START_ELEMENT, 0, chunkSize, buffer.array())
     }
 
+    private fun buildSchemeOnlyDataElement(
+        androidNsIndex: Int,
+        elementNameIndex: Int,
+        schemeAttrIndex: Int,
+        schemeValueIndex: Int
+    ): Chunk {
+        val attrCount = 1
+        val attrSize = 20
+        val headerSize = 16
+        val chunkSize = 36 + attrCount * attrSize
+
+        val buffer = ByteBuffer.allocate(chunkSize).order(ByteOrder.LITTLE_ENDIAN)
+
+        buffer.putShort(CHUNK_START_ELEMENT.toShort())
+        buffer.putShort(headerSize.toShort())
+        buffer.putInt(chunkSize)
+        buffer.putInt(0)
+        buffer.putInt(-1)
+        buffer.putInt(-1)
+        buffer.putInt(elementNameIndex)
+        buffer.putShort(20)
+        buffer.putShort(attrSize.toShort())
+        buffer.putShort(attrCount.toShort())
+        buffer.putShort(0)
+        buffer.putShort(0)
+        buffer.putShort(0)
+
+        buffer.putInt(androidNsIndex)
+        buffer.putInt(schemeAttrIndex)
+        buffer.putInt(schemeValueIndex)
+        buffer.putShort(8)
+        buffer.put(0)
+        buffer.put(0x03)
+        buffer.putInt(schemeValueIndex)
+
+        return Chunk(CHUNK_START_ELEMENT, 0, chunkSize, buffer.array())
+    }
+
     private fun getOrAddString(pool: StringPool, str: String): Int {
         val index = pool.strings.indexOf(str)
         if (index >= 0) return index
@@ -1184,6 +1236,7 @@ class AxmlRebuilder {
         aliasCount: Int = 0,
         appName: String = "",
         deepLinkHosts: List<String> = emptyList(),
+        deepLinkSchemes: List<String> = emptyList(),
         permissions: List<String> = BASELINE_RUNTIME_PERMISSIONS,
         requiredComponents: Set<String> = DEFAULT_RUNTIME_COMPONENTS
     ): ByteArray {
@@ -1218,14 +1271,14 @@ class AxmlRebuilder {
 
             rewireLauncherToShellActivity(parsed, addDirectLauncherToShell = aliasCount == 0)
 
-            if (deepLinkHosts.isNotEmpty()) {
-                addDeepLinkIntentFilter(parsed, deepLinkHosts)
-                AppLogger.d(TAG, "Added deep link intent-filter for hosts: $deepLinkHosts")
+            if (deepLinkHosts.isNotEmpty() || deepLinkSchemes.isNotEmpty()) {
+                addDeepLinkIntentFilter(parsed, deepLinkHosts, deepLinkSchemes)
+                AppLogger.d(TAG, "Added deep link intent-filter for hosts: $deepLinkHosts, schemes: $deepLinkSchemes")
             }
 
             val result = rebuildAxml(parsed)
 
-            AppLogger.d(TAG, "AXML full rebuild complete: original=${axmlData.size}, new=${result.size}, aliases=$aliasCount, deepLinkHosts=${deepLinkHosts.size}")
+            AppLogger.d(TAG, "AXML full rebuild complete: original=${axmlData.size}, new=${result.size}, aliases=$aliasCount, deepLinkHosts=${deepLinkHosts.size}, deepLinkSchemes=${deepLinkSchemes.size}")
             result
 
         } catch (e: Exception) {

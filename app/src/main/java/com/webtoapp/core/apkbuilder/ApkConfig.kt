@@ -312,6 +312,7 @@ data class ApkConfig(
 
     val deepLinkEnabled: Boolean get() = deepLink.enabled
     val deepLinkHosts: List<String> get() = deepLink.hosts
+    val deepLinkSchemes: List<String> get() = deepLink.schemes
 
     val wordpressSiteTitle: String get() = wordpress.siteTitle
     val wordpressAdminUser: String get() = wordpress.adminUser
@@ -713,7 +714,8 @@ data class DisguiseBlock(
 
 data class DeepLinkBlock(
     val enabled: Boolean = false,
-    val hosts: List<String> = emptyList()
+    val hosts: List<String> = emptyList(),
+    val schemes: List<String> = emptyList()
 )
 
 data class WordpressBlock(
