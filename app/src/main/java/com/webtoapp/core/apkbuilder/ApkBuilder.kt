@@ -47,6 +47,16 @@ class ApkBuilder(private val context: Context) {
         private val PACKAGE_NAME_REGEX = AppConstants.PACKAGE_NAME_REGEX
         private val CHARSET_REGEX = AppConstants.CHARSET_REGEX
         private const val FLOATING_WINDOW_MINIMIZED_ICON_ASSET = "floating_window_minimized_icon.png"
+        private val GECKOVIEW_RUNTIME_COMPONENTS = (0..39)
+            .map { "org.mozilla.gecko.process.GeckoChildProcessServices\$tab$it" }
+            .toSet() + setOf(
+            "org.mozilla.gecko.media.MediaManager",
+            "org.mozilla.gecko.process.GeckoChildProcessServices\$gmplugin",
+            "org.mozilla.gecko.process.GeckoChildProcessServices\$socket",
+            "org.mozilla.gecko.process.GeckoChildProcessServices\$gpu",
+            "org.mozilla.gecko.process.GeckoChildProcessServices\$utility",
+            "org.mozilla.gecko.process.GeckoChildProcessServices\$ipdlunittest"
+        )
     }
 
     private val template = ApkTemplate(context)
@@ -792,7 +802,8 @@ class ApkBuilder(private val context: Context) {
                                 aliasCount,
                                 config.appName,
                                 config.deepLinkHosts,
-                                buildRequiredPermissions(config)
+                                buildRequiredPermissions(config),
+                                buildRequiredComponents(config)
                             )
                             writeEntryDeflated(zipOut, entry.name, modifiedData)
                             if (aliasCount > 0) {
@@ -2648,8 +2659,6 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.USE_EXACT_ALARM"
         }
 
-        permissions += "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"
-
         if (config.activationEnabled) {
             permissions += "android.permission.USE_BIOMETRIC"
             permissions += "android.permission.USE_FINGERPRINT"
@@ -2693,6 +2702,61 @@ builtins.__import__ = _w2a_import
         }
 
         return permissions.toList()
+    }
+
+    private fun buildRequiredComponents(config: ApkConfig): Set<String> {
+        val components = linkedSetOf(
+            "com.webtoapp.WebToAppApplication",
+            "com.webtoapp.ui.MainActivity",
+            "com.webtoapp.ui.shell.ShellActivity",
+            "androidx.core.content.FileProvider"
+        )
+
+        if (config.appType == "NODEJS_APP") {
+            components += "com.webtoapp.core.nodejs.NodeService"
+        }
+
+        if (config.backgroundRunEnabled) {
+            components += "com.webtoapp.core.background.BackgroundRunService"
+        }
+
+        if (config.notificationEnabled) {
+            components += "com.webtoapp.core.notification.NotificationPollingService"
+        }
+
+        if (config.enableNativeBridge && config.webViewBehavior.nativeBridgeNotification) {
+            components += "com.webtoapp.core.notification.BridgeAlarmReceiver"
+        }
+
+        if (config.floatingWindowEnabled) {
+            components += "com.webtoapp.core.floatingwindow.FloatingWindowService"
+        }
+
+        val forcedRunEnabled = config.forcedRunConfig?.enabled == true
+        if (forcedRunEnabled) {
+            components += "com.webtoapp.core.forcedrun.ForcedRunGuardService"
+            components += "com.webtoapp.core.forcedrun.ForcedRunAccessibilityService"
+            components += "com.webtoapp.core.forcedrun.ForcedRunReceiver"
+        }
+
+        if (config.bootStartEnabled || config.scheduledStartEnabled || forcedRunEnabled) {
+            components += "com.webtoapp.core.autostart.BootReceiver"
+        }
+
+        if (config.scheduledStartEnabled) {
+            components += "com.webtoapp.core.autostart.ScheduledStartReceiver"
+        }
+
+        if (config.appType in setOf("NODEJS_APP", "WORDPRESS", "PHP_APP", "PYTHON_APP", "GO_APP")) {
+            components += "com.webtoapp.core.port.PortQueryReceiver"
+            components += "com.webtoapp.core.port.PortReleaseReceiver"
+        }
+
+        if (config.engineType == "GECKOVIEW") {
+            components += GECKOVIEW_RUNTIME_COMPONENTS
+        }
+
+        return components
     }
 
     private fun ApkConfig.requiresNetworkPermissions(): Boolean {

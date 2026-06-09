@@ -5,10 +5,19 @@ import com.google.common.truth.Truth.assertThat
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.ApkExportConfig
 import com.webtoapp.data.model.AppType
+import com.webtoapp.data.model.AutoStartConfig
+import com.webtoapp.data.model.FloatingWindowConfig
 import com.webtoapp.data.model.HtmlConfig
 import com.webtoapp.data.model.HtmlLoadMode
+import com.webtoapp.data.model.NativeBridgeCapabilities
+import com.webtoapp.data.model.NodeJsConfig
 import com.webtoapp.data.model.WebApp
+import com.webtoapp.data.model.WebViewConfig
+import com.webtoapp.core.forcedrun.ForcedRunConfig
+import com.webtoapp.core.playstore.aab.axml.AxmlToProtoXml
 import java.io.File
+import java.util.zip.ZipFile
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -78,8 +87,7 @@ class ExportSecurityRegressionTest {
 
         assertThat(permissions).containsExactly(
             "android.permission.INTERNET",
-            "android.permission.ACCESS_NETWORK_STATE",
-            "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"
+            "android.permission.ACCESS_NETWORK_STATE"
         ).inOrder()
     }
 
@@ -120,9 +128,172 @@ class ExportSecurityRegressionTest {
             "android.permission.POST_NOTIFICATIONS",
             "android.permission.FOREGROUND_SERVICE_LOCATION",
             "android.permission.FOREGROUND_SERVICE_CAMERA",
-            "android.permission.FOREGROUND_SERVICE_MICROPHONE",
-            "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"
+            "android.permission.FOREGROUND_SERVICE_MICROPHONE"
         ).inOrder()
+    }
+
+    @Test
+    fun `plain web export only keeps baseline runtime components`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val builder = ApkBuilder(context)
+        val method = ApkBuilder::class.java.getDeclaredMethod(
+            "buildRequiredComponents",
+            ApkConfig::class.java
+        ).apply { isAccessible = true }
+
+        val config = WebApp(
+            name = "Zenbox",
+            url = "https://example.com",
+            appType = AppType.WEB,
+            apkExportConfig = ApkExportConfig()
+        ).toApkConfig("com.example.zenbox", context)
+
+        @Suppress("UNCHECKED_CAST")
+        val components = method.invoke(builder, config) as Set<String>
+
+        assertThat(components).containsExactly(
+            "com.webtoapp.WebToAppApplication",
+            "com.webtoapp.ui.MainActivity",
+            "com.webtoapp.ui.shell.ShellActivity",
+            "androidx.core.content.FileProvider"
+        ).inOrder()
+    }
+
+    @Test
+    fun `runtime components are only kept when explicitly enabled`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val builder = ApkBuilder(context)
+        val method = ApkBuilder::class.java.getDeclaredMethod(
+            "buildRequiredComponents",
+            ApkConfig::class.java
+        ).apply { isAccessible = true }
+
+        val config = WebApp(
+            name = "Runtime",
+            url = "",
+            appType = AppType.NODEJS_APP,
+            nodejsConfig = NodeJsConfig(projectId = "node", projectName = "Node"),
+            webViewConfig = WebViewConfig(
+                floatingWindowConfig = FloatingWindowConfig(enabled = true),
+                enableNativeBridge = true,
+                nativeBridgeCapabilities = NativeBridgeCapabilities(notification = true)
+            ),
+            apkExportConfig = ApkExportConfig(
+                backgroundRunEnabled = true,
+                notificationEnabled = true
+            ),
+            autoStartConfig = AutoStartConfig(
+                bootStartEnabled = true,
+                scheduledStartEnabled = true
+            ),
+            forcedRunConfig = ForcedRunConfig(enabled = true)
+        ).toApkConfig("com.example.runtime", context)
+
+        @Suppress("UNCHECKED_CAST")
+        val components = method.invoke(builder, config) as Set<String>
+
+        assertThat(components).containsAtLeast(
+            "com.webtoapp.core.nodejs.NodeService",
+            "com.webtoapp.core.background.BackgroundRunService",
+            "com.webtoapp.core.notification.NotificationPollingService",
+            "com.webtoapp.core.notification.BridgeAlarmReceiver",
+            "com.webtoapp.core.floatingwindow.FloatingWindowService",
+            "com.webtoapp.core.forcedrun.ForcedRunGuardService",
+            "com.webtoapp.core.forcedrun.ForcedRunAccessibilityService",
+            "com.webtoapp.core.forcedrun.ForcedRunReceiver",
+            "com.webtoapp.core.autostart.BootReceiver",
+            "com.webtoapp.core.autostart.ScheduledStartReceiver",
+            "com.webtoapp.core.port.PortQueryReceiver",
+            "com.webtoapp.core.port.PortReleaseReceiver"
+        )
+    }
+
+    @Test
+    fun `geckoview export keeps gecko process components`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val builder = ApkBuilder(context)
+        val method = ApkBuilder::class.java.getDeclaredMethod(
+            "buildRequiredComponents",
+            ApkConfig::class.java
+        ).apply { isAccessible = true }
+
+        val config = WebApp(
+            name = "Firefox",
+            url = "https://example.com",
+            appType = AppType.WEB,
+            apkExportConfig = ApkExportConfig(engineType = "GECKOVIEW")
+        ).toApkConfig("com.example.firefox", context)
+
+        @Suppress("UNCHECKED_CAST")
+        val components = method.invoke(builder, config) as Set<String>
+
+        assertThat(components).contains("org.mozilla.gecko.media.MediaManager")
+        assertThat(components).contains("org.mozilla.gecko.process.GeckoChildProcessServices\$tab0")
+        assertThat(components).contains("org.mozilla.gecko.process.GeckoChildProcessServices\$tab39")
+    }
+
+    @Test
+    fun `plain web manifest prunes unused sensitive runtime components`() {
+        val template = File("src/main/assets/template/webview_shell.apk")
+        assumeTrue(
+            "shell template not built - run ':app:syncShellTemplateApk' first",
+            template.exists()
+        )
+
+        val axmlBytes = ZipFile(template).use { zip ->
+            val entry = zip.getEntry("AndroidManifest.xml")
+                ?: error("AndroidManifest.xml missing from shell template")
+            zip.getInputStream(entry).readBytes()
+        }
+
+        val modified = AxmlRebuilder().expandAndModifyFull(
+            axmlData = axmlBytes,
+            originalPackage = "com.webtoapp",
+            newPackage = "com.example.zenbox",
+            versionCode = 1,
+            versionName = "1.0",
+            appName = "Zenbox",
+            permissions = listOf(
+                "android.permission.INTERNET",
+                "android.permission.ACCESS_NETWORK_STATE"
+            ),
+            requiredComponents = setOf(
+                "com.webtoapp.WebToAppApplication",
+                "com.webtoapp.ui.MainActivity",
+                "com.webtoapp.ui.shell.ShellActivity",
+                "androidx.core.content.FileProvider"
+            )
+        )
+
+        val application = AxmlToProtoXml.convert(modified)
+            .element
+            .childList
+            .filter { it.hasElement() }
+            .map { it.element }
+            .single { it.name == "application" }
+        val componentNames = application.childList
+            .filter { it.hasElement() }
+            .map { it.element }
+            .filter { it.name in setOf("service", "receiver", "provider") }
+            .mapNotNull { element ->
+                element.attributeList.firstOrNull { it.name == "name" }?.value
+            }
+
+        assertThat(componentNames).contains("androidx.core.content.FileProvider")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.background.BackgroundRunService")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.notification.NotificationPollingService")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.notification.BridgeAlarmReceiver")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.floatingwindow.FloatingWindowService")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.forcedrun.ForcedRunGuardService")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.forcedrun.ForcedRunAccessibilityService")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.forcedrun.ForcedRunReceiver")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.nodejs.NodeService")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.autostart.BootReceiver")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.autostart.ScheduledStartReceiver")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.port.PortQueryReceiver")
+        assertThat(componentNames).doesNotContain("com.webtoapp.core.port.PortReleaseReceiver")
+        assertThat(componentNames).doesNotContain("org.mozilla.gecko.media.MediaManager")
+        assertThat(componentNames).doesNotContain("org.mozilla.gecko.process.GeckoChildProcessServices\$tab0")
     }
 
     @Test

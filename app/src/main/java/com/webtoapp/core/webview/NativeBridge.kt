@@ -880,6 +880,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun scheduleNotification(jsonPayload: String): Boolean {
+        if (!capabilities.notification) return false
         return try {
             val json = org.json.JSONObject(jsonPayload)
             val title = json.optString("title").ifBlank { getAppLabel() }
