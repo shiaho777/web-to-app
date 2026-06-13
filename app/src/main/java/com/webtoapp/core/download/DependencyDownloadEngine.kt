@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import com.webtoapp.core.network.NetworkModule
@@ -74,8 +75,20 @@ object DependencyDownloadEngine {
         ) : State()
     }
 
-    val _state = MutableStateFlow<State>(State.Idle)
+    private val _states = MutableStateFlow<Map<TaskId, State>>(emptyMap())
+    val states: StateFlow<Map<TaskId, State>> = _states.asStateFlow()
+
+    private val _state = MutableStateFlow<State>(State.Idle)
     val state: StateFlow<State> = _state
+
+    fun stateFor(taskId: TaskId): State = _states.value[taskId] ?: State.Idle
+
+    private fun emit(taskId: TaskId, newState: State) {
+        _states.value = _states.value + (taskId to newState)
+        if (taskId == DEFAULT_TASK) {
+            _state.value = newState
+        }
+    }
 
     private val _paused = AtomicBoolean(false)
     private val downloadMutex = Mutex()
@@ -124,20 +137,18 @@ object DependencyDownloadEngine {
     }
 
     fun pause(taskId: TaskId = DEFAULT_TASK) {
-        if (_state.value is State.Downloading) {
-            _paused.set(true)
-            val dl = _state.value as? State.Downloading ?: return
-            _state.value = State.Paused(
-                url = dl.url,
-                displayName = dl.displayName,
-                fileName = dl.fileName,
-                bytesDownloaded = dl.bytesDownloaded,
-                totalBytes = dl.totalBytes,
-                progress = dl.progress,
-                startTimeMillis = dl.startTimeMillis
-            )
-            AppLogger.i(TAG, "下载已暂停 [task=$taskId]: ${dl.displayName}")
-        }
+        val dl = stateFor(taskId) as? State.Downloading ?: return
+        _paused.set(true)
+        emit(taskId, State.Paused(
+            url = dl.url,
+            displayName = dl.displayName,
+            fileName = dl.fileName,
+            bytesDownloaded = dl.bytesDownloaded,
+            totalBytes = dl.totalBytes,
+            progress = dl.progress,
+            startTimeMillis = dl.startTimeMillis
+        ))
+        AppLogger.i(TAG, "下载已暂停 [task=$taskId]: ${dl.displayName}")
     }
 
     fun resume(taskId: TaskId = DEFAULT_TASK) {
@@ -147,7 +158,7 @@ object DependencyDownloadEngine {
 
     fun reset(taskId: TaskId = DEFAULT_TASK) {
         _paused.set(false)
-        _state.value = State.Idle
+        emit(taskId, State.Idle)
     }
 
     suspend fun downloadFile(
@@ -181,14 +192,14 @@ object DependencyDownloadEngine {
                 val response = httpClient.newCall(requestBuilder.build()).execute()
 
                 if (!response.isSuccessful && response.code != 206) {
-                    AppLogger.e(TAG, "下载失败: HTTP ${response.code} - $url")
-                    _state.value = State.Error(Strings.downloadFailedHttp.replace("%d", response.code.toString()))
+                    AppLogger.e(TAG, "下载失败: HTTP ${response.code} - $url [task=$taskId]")
+                    emit(taskId, State.Error(Strings.downloadFailedHttp.replace("%d", response.code.toString())))
                     response.close()
                     return@withLock false
                 }
 
                 val body = response.body ?: run {
-                    _state.value = State.Error(Strings.downloadReturnedEmpty)
+                    emit(taskId, State.Error(Strings.downloadReturnedEmpty))
                     response.close()
                     return@withLock false
                 }
@@ -238,7 +249,7 @@ object DependencyDownloadEngine {
                                         (downloadedBytes.toFloat() / totalBytes).coerceIn(0f, 1f)
                                     } else 0f
 
-                                    _state.value = State.Downloading(
+                                    emit(taskId, State.Downloading(
                                         url = url,
                                         displayName = displayName,
                                         fileName = fileName,
@@ -249,7 +260,7 @@ object DependencyDownloadEngine {
                                         etaSeconds = eta,
                                         startTimeMillis = startTime,
                                         isPaused = false
-                                    )
+                                    ))
                                 }
                             }
                         }
@@ -261,8 +272,8 @@ object DependencyDownloadEngine {
                 true
 
             } catch (e: Exception) {
-                AppLogger.e(TAG, "下载 $displayName 失败", e)
-                _state.value = State.Error(Strings.downloadNameFailed.replaceFirst("%s", displayName).replaceFirst("%s", e.message ?: ""))
+                AppLogger.e(TAG, "下载 $displayName 失败 [task=$taskId]", e)
+                emit(taskId, State.Error(Strings.downloadNameFailed.replaceFirst("%s", displayName).replaceFirst("%s", e.message ?: "")))
                 false
             }
         }
