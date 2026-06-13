@@ -161,6 +161,16 @@ object DependencyDownloadEngine {
         emit(taskId, State.Idle)
     }
 
+    private val _cancelled = AtomicBoolean(false)
+
+    fun cancel(taskId: TaskId = DEFAULT_TASK) {
+        _cancelled.set(true)
+        _paused.set(false)
+        emit(taskId, State.Idle)
+        _states.value = _states.value - taskId
+        AppLogger.i(TAG, "下载已取消 [task=$taskId]")
+    }
+
     suspend fun downloadFile(
         url: String,
         destFile: File,
@@ -176,6 +186,7 @@ object DependencyDownloadEngine {
             val speedTracker = SpeedTracker()
 
             _paused.set(false)
+            _cancelled.set(false)
 
             try {
 
@@ -229,8 +240,14 @@ object DependencyDownloadEngine {
                             while (inputStream.read(buffer).also { bytesRead = it } != -1) {
 
                                 while (_paused.get()) {
+                                    if (_cancelled.get()) {
+                                        throw kotlinx.coroutines.CancellationException("cancelled by user [task=$taskId]")
+                                    }
                                     delay(PAUSE_CHECK_MS)
                                     if (!isActive) return@withLock false
+                                }
+                                if (_cancelled.get()) {
+                                    throw kotlinx.coroutines.CancellationException("cancelled by user [task=$taskId]")
                                 }
 
                                 fos.write(buffer, 0, bytesRead)
@@ -271,6 +288,10 @@ object DependencyDownloadEngine {
                 AppLogger.i(TAG, "$displayName 下载完成: ${destFile.length()} 字节")
                 true
 
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                AppLogger.i(TAG, "$displayName 被取消,保留临时文件以便断点续传 [task=$taskId]")
+                _states.value = _states.value - taskId
+                throw e
             } catch (e: Exception) {
                 AppLogger.e(TAG, "下载 $displayName 失败 [task=$taskId]", e)
                 emit(taskId, State.Error(Strings.downloadNameFailed.replaceFirst("%s", displayName).replaceFirst("%s", e.message ?: "")))

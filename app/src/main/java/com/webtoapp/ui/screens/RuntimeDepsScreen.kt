@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Pause
@@ -321,7 +322,8 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
                 downloadLabel = downloadLabel,
                 engineState = engineState,
                 onPause = { DependencyDownloadEngine.pause() },
-                onResume = { DependencyDownloadEngine.resume() }
+                onResume = { DependencyDownloadEngine.resume() },
+                onCancel = { DependencyDownloadEngine.cancel() }
             )
 
             WtaSection(title = Strings.depSectionRuntimes) {
@@ -729,7 +731,8 @@ private fun StatusOverviewCard(
     downloadLabel: String,
     engineState: DependencyDownloadEngine.State,
     onPause: () -> Unit,
-    onResume: () -> Unit
+    onResume: () -> Unit,
+    onCancel: () -> Unit = {}
 ) {
     val gradientColors = if (allReady) {
         listOf(com.webtoapp.ui.design.WtaColors.semantic.success, MaterialTheme.colorScheme.primary)
@@ -852,6 +855,13 @@ private fun StatusOverviewCard(
                                         tint = Color.White
                                     )
                                 }
+                                IconButton(onClick = onCancel) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = Strings.depDlCancel,
+                                        tint = Color.White
+                                    )
+                                }
                             }
                         }
                         is DependencyDownloadEngine.State.Paused -> {
@@ -867,6 +877,13 @@ private fun StatusOverviewCard(
                                     Icon(
                                         imageVector = if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
                                         contentDescription = if (isPaused) Strings.depDlResume else Strings.depDlPause,
+                                        tint = Color.White
+                                    )
+                                }
+                                IconButton(onClick = onCancel) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Close,
+                                        contentDescription = Strings.depDlCancel,
                                         tint = Color.White
                                     )
                                 }

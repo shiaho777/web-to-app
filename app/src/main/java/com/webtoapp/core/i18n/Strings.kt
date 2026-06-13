@@ -2823,6 +2823,12 @@ object Strings {
         AppLanguage.ARABIC -> "متوقف مؤقتًا"
     }
 
+    val depDlCancel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "取消下载"
+        AppLanguage.ENGLISH -> "Cancel download"
+        AppLanguage.ARABIC -> "إلغاء التنزيل"
+    }
+
     val deleteConfirmTitle: String get() = when (lang) {
         AppLanguage.CHINESE -> "确认删除"
         AppLanguage.ENGLISH -> "Confirm Delete"
