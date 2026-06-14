@@ -92,7 +92,12 @@ fun BoxScope.ShellScaffoldLayout(
         }
     }
 
-    val showToolbar = (!hideToolbar || config.webViewConfig.showToolbarInFullscreen) && !hideBrowserToolbar
+    val toolbarCfg = config.webViewConfig
+    val hasAnyToolbarItem = toolbarCfg.toolbarShowTitle || toolbarCfg.toolbarShowUrl ||
+        toolbarCfg.toolbarShowBack || toolbarCfg.toolbarShowForward || toolbarCfg.toolbarShowRefresh
+    val showSlimToolbar = hideBrowserToolbar && toolbarCfg.browserToolbarCustomized && hasAnyToolbarItem
+    val showToolbar = (!hideToolbar || config.webViewConfig.showToolbarInFullscreen) &&
+        (!hideBrowserToolbar || showSlimToolbar)
 
     Scaffold(
 

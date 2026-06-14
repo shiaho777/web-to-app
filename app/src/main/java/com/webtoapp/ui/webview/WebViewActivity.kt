@@ -2343,7 +2343,18 @@ fun WebViewScreen(
 
     val showToolbarInPreview = !hideToolbar || webApp?.webViewConfig?.showToolbarInFullscreen == true
 
-    val shouldShowTopBar = showToolbarInPreview && !hideBrowserToolbar
+    val toolbarCfg = webApp?.webViewConfig
+    val hasAnyToolbarItem = toolbarCfg?.toolbarShowTitle == true || toolbarCfg?.toolbarShowUrl == true ||
+        toolbarCfg?.toolbarShowBack == true || toolbarCfg?.toolbarShowForward == true || toolbarCfg?.toolbarShowRefresh == true
+    val showSlimToolbar = hideBrowserToolbar && toolbarCfg?.browserToolbarCustomized == true && hasAnyToolbarItem
+    val shouldShowTopBar = showToolbarInPreview && (!hideBrowserToolbar || showSlimToolbar)
+
+    com.webtoapp.core.logging.AppLogger.d(
+        "WebViewToolbar",
+        "hideBrowserToolbar=$hideBrowserToolbar browserToolbarCustomized=${toolbarCfg?.browserToolbarCustomized} " +
+            "hasAnyToolbarItem=$hasAnyToolbarItem showSlimToolbar=$showSlimToolbar shouldShowTopBar=$shouldShowTopBar " +
+            "title=${toolbarCfg?.toolbarShowTitle} back=${toolbarCfg?.toolbarShowBack}"
+    )
 
     LaunchedEffect(hideToolbar) {
 

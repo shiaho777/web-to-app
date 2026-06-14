@@ -1026,6 +1026,9 @@ data class WebViewShellConfig(
     @SerializedName("toolbarShowRefresh")
     val toolbarShowRefresh: Boolean = true,
 
+    @SerializedName("browserToolbarCustomized")
+    val browserToolbarCustomized: Boolean = false,
+
     @SerializedName("showStatusBarInFullscreen")
     val showStatusBarInFullscreen: Boolean = false,
 

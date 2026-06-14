@@ -3022,6 +3022,7 @@ private fun WebApp.buildWebViewBlock(context: android.content.Context?): WebView
         toolbarShowBack = webViewConfig.toolbarShowBack,
         toolbarShowForward = webViewConfig.toolbarShowForward,
         toolbarShowRefresh = webViewConfig.toolbarShowRefresh,
+        browserToolbarCustomized = webViewConfig.browserToolbarCustomized,
         showStatusBarInFullscreen = webViewConfig.showStatusBarInFullscreen,
         showNavigationBarInFullscreen = webViewConfig.showNavigationBarInFullscreen,
         showToolbarInFullscreen = webViewConfig.showToolbarInFullscreen,
