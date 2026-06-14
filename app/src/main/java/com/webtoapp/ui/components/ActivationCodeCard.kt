@@ -105,6 +105,8 @@ fun ActivationCodeCard(
         dialogConfig.title.isNotBlank() || dialogConfig.subtitle.isNotBlank() ||
         dialogConfig.inputLabel.isNotBlank() || dialogConfig.buttonText.isNotBlank()
     ) }
+    var showRemoteSection by remember { mutableStateOf(remoteConfig.enabled) }
+    var showCodesSection by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     var showCopiedSnackbar by remember { mutableStateOf(false) }
@@ -197,11 +199,58 @@ fun ActivationCodeCard(
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                RemoteActivationSection(
-                    remoteConfig = remoteConfig,
-                    onRemoteConfigChange = onRemoteConfigChange,
-                    onShowGuide = { showRemoteGuideDialog = true }
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showRemoteSection = !showRemoteSection },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                        Text(
+                            text = Strings.remoteActivationTitle,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        val remoteSubtitle = if (remoteConfig.enabled) {
+                            val rawUrl = remoteConfig.verifyUrl.trim()
+                            val displayUrl = if (rawUrl.length > 30) rawUrl.take(30) + "…" else rawUrl
+                            Strings.activationSectionRemoteEnabled(displayUrl)
+                        } else {
+                            Strings.activationSectionRemoteDisabled
+                        }
+                        Text(
+                            text = remoteSubtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    val remoteArrowRotation by animateFloatAsState(
+                        targetValue = if (showRemoteSection) 180f else 0f,
+                        animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow),
+                        label = "remoteArrowRotation"
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.graphicsLayer { rotationZ = remoteArrowRotation }
+                    )
+                }
+
+                AnimatedVisibility(
+                    visible = showRemoteSection,
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        RemoteActivationSection(
+                            remoteConfig = remoteConfig,
+                            onRemoteConfigChange = onRemoteConfigChange,
+                            onShowGuide = { showRemoteGuideDialog = true }
+                        )
+                    }
+                }
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
@@ -282,88 +331,134 @@ fun ActivationCodeCard(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showCodesSection = !showCodesSection },
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-
-                    PremiumButton(
-                        onClick = { showAddDialog = true },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(Strings.addActivationCode, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                        Text(
+                            text = Strings.activationSectionCodes,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        val codesSubtitle = if (activationCodes.isNotEmpty()) {
+                            Strings.activationSectionCodesCount(activationCodes.size)
+                        } else {
+                            Strings.activationSectionCodesEmpty
+                        }
+                        Text(
+                            text = codesSubtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-
-                    PremiumOutlinedButton(
-                        onClick = { showBatchDialog = true },
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Icon(Icons.Outlined.AutoAwesome, null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(Strings.batchGenerate, maxLines = 1)
-                    }
+                    val codesArrowRotation by animateFloatAsState(
+                        targetValue = if (showCodesSection) 180f else 0f,
+                        animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow),
+                        label = "codesArrowRotation"
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.graphicsLayer { rotationZ = codesArrowRotation }
+                    )
                 }
 
-                PremiumOutlinedButton(
-                    onClick = { showBatchImportDialog = true },
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                AnimatedVisibility(
+                    visible = showCodesSection,
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
                 ) {
-                    Icon(Icons.Outlined.PostAdd, null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(Strings.batchImport, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Spacer(modifier = Modifier.height(4.dp))
 
-                if (activationCodes.isNotEmpty()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(
-                            onClick = {
-                                val allCodes = activationCodes.joinToString("\n") { it.code }
-                                clipboardManager.setText(AnnotatedString(allCodes))
-                                showCopiedSnackbar = true
-                            },
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(Icons.Outlined.CopyAll, null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(Strings.copyAllCodes, style = MaterialTheme.typography.labelSmall)
+
+                            PremiumButton(
+                                onClick = { showAddDialog = true },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(Strings.addActivationCode, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+
+                            PremiumOutlinedButton(
+                                onClick = { showBatchDialog = true },
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(Icons.Outlined.AutoAwesome, null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(Strings.batchGenerate, maxLines = 1)
+                            }
                         }
 
-                        TextButton(
-                            onClick = { showDeleteAllDialog = true },
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
+                        PremiumOutlinedButton(
+                            onClick = { showBatchImportDialog = true },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Outlined.DeleteSweep, null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(Strings.deleteAllCodes, style = MaterialTheme.typography.labelSmall)
+                            Icon(Icons.Outlined.PostAdd, null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(Strings.batchImport, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
-                    }
-                }
 
-                if (activationCodes.isNotEmpty()) {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        activationCodes.forEachIndexed { index, code ->
-                            EnhancedActivationCodeItem(
-                                code = code,
-                                onDelete = {
-                                    onCodesChange(activationCodes.filterIndexed { i, _ -> i != index })
+                        if (activationCodes.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        val allCodes = activationCodes.joinToString("\n") { it.code }
+                                        clipboardManager.setText(AnnotatedString(allCodes))
+                                        showCopiedSnackbar = true
+                                    },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) {
+                                    Icon(Icons.Outlined.CopyAll, null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(Strings.copyAllCodes, style = MaterialTheme.typography.labelSmall)
                                 }
-                            )
+
+                                TextButton(
+                                    onClick = { showDeleteAllDialog = true },
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                    colors = ButtonDefaults.textButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.error
+                                    )
+                                ) {
+                                    Icon(Icons.Outlined.DeleteSweep, null, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(Strings.deleteAllCodes, style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+
+                        if (activationCodes.isNotEmpty()) {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                activationCodes.forEachIndexed { index, code ->
+                                    EnhancedActivationCodeItem(
+                                        code = code,
+                                        onDelete = {
+                                            onCodesChange(activationCodes.filterIndexed { i, _ -> i != index })
+                                        }
+                                    )
+                                }
+                            }
+                        } else {
+
+                            EmptyActivationCodesState()
                         }
                     }
-                } else {
-
-                    EmptyActivationCodesState()
                 }
                 SnackbarHost(
                     hostState = snackbarHostState,

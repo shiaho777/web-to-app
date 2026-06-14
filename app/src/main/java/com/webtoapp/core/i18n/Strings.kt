@@ -6258,6 +6258,40 @@ object Strings {
         AppLanguage.ARABIC -> "التحقق عبر الإنترنت"
     }
 
+    val activationSectionRemoteEnabled: (String) -> String get() = { url ->
+        when (lang) {
+            AppLanguage.CHINESE -> if (url.isNotEmpty()) String.format(java.util.Locale.getDefault(), "已启用 · %s", url) else "已启用"
+            AppLanguage.ENGLISH -> if (url.isNotEmpty()) String.format(java.util.Locale.getDefault(), "Enabled · %s", url) else "Enabled"
+            AppLanguage.ARABIC -> if (url.isNotEmpty()) String.format(java.util.Locale.getDefault(), "مفعّل · %s", url) else "مفعّل"
+        }
+    }
+
+    val activationSectionRemoteDisabled: String get() = when (lang) {
+        AppLanguage.CHINESE -> "未启用"
+        AppLanguage.ENGLISH -> "Not enabled"
+        AppLanguage.ARABIC -> "غير مفعّل"
+    }
+
+    val activationSectionCodes: String get() = when (lang) {
+        AppLanguage.CHINESE -> "管理激活码"
+        AppLanguage.ENGLISH -> "Manage Codes"
+        AppLanguage.ARABIC -> "إدارة الرموز"
+    }
+
+    val activationSectionCodesCount: (Int) -> String get() = { count ->
+        when (lang) {
+            AppLanguage.CHINESE -> String.format(java.util.Locale.getDefault(), "共 %d 个", count)
+            AppLanguage.ENGLISH -> String.format(java.util.Locale.getDefault(), "%d total", count)
+            AppLanguage.ARABIC -> String.format(java.util.Locale.getDefault(), "%d الإجمالي", count)
+        }
+    }
+
+    val activationSectionCodesEmpty: String get() = when (lang) {
+        AppLanguage.CHINESE -> "暂无激活码"
+        AppLanguage.ENGLISH -> "No codes yet"
+        AppLanguage.ARABIC -> "لا رموز بعد"
+    }
+
     val remoteActivationHint: String get() = when (lang) {
         AppLanguage.CHINESE -> "让你自己的 HTTPS 接口验证激活码，用于吊销、动态发码、设备识别和次数控制。"
         AppLanguage.ENGLISH -> "Verify activation codes with your own HTTPS endpoint for revocation, dynamic issuing, device checks, and usage control."
