@@ -1290,6 +1290,15 @@ data class WebViewShellConfig(
     @SerializedName("failoverTimeoutSeconds")
     val failoverTimeoutSeconds: Int = 15,
 
+    @SerializedName("autoRefreshEnabled")
+    val autoRefreshEnabled: Boolean = false,
+
+    @SerializedName("autoRefreshIntervalSec")
+    val autoRefreshIntervalSec: Int = 60,
+
+    @SerializedName("autoRefreshShowCountdown")
+    val autoRefreshShowCountdown: Boolean = true,
+
     @SerializedName("keepScreenOn")
     val keepScreenOn: Boolean = false,
 

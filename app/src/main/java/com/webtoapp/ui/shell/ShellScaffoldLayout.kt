@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
@@ -68,6 +69,28 @@ fun BoxScope.ShellScaffoldLayout(
     statusBarHeightDp: Int
 ) {
     val context = LocalContext.current
+
+    var autoRefreshController by remember { mutableStateOf<com.webtoapp.core.webview.AutoRefreshController?>(null) }
+    val autoRefreshRemaining = autoRefreshController?.remainingSeconds?.collectAsStateWithLifecycle()?.value ?: 0
+
+    LaunchedEffect(webViewConfig.autoRefreshEnabled, webViewConfig.autoRefreshIntervalSec, webViewConfig.autoRefreshShowCountdown, webViewRecreationKey) {
+        autoRefreshController?.stop()
+        autoRefreshController = null
+        if (!webViewConfig.autoRefreshEnabled) return@LaunchedEffect
+        val controller = com.webtoapp.core.webview.AutoRefreshController(
+            intervalSec = webViewConfig.autoRefreshIntervalSec.coerceAtLeast(1),
+            showCountdown = webViewConfig.autoRefreshShowCountdown,
+            onReload = { webViewRef?.reload() }
+        )
+        autoRefreshController = controller
+        controller.start()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            autoRefreshController?.stop()
+        }
+    }
 
     val showToolbar = (!hideToolbar || config.webViewConfig.showToolbarInFullscreen) && !hideBrowserToolbar
 
@@ -162,6 +185,16 @@ fun BoxScope.ShellScaffoldLayout(
                 forcedRunActive = forcedRunActive,
                 forcedRunRemainingMs = forcedRunRemainingMs
             )
+
+            if (autoRefreshRemaining > 0 && autoRefreshController?.countdownVisible == true) {
+                com.webtoapp.ui.components.AutoRefreshCountdownChip(
+                    remainingSeconds = autoRefreshRemaining,
+                    onClick = { autoRefreshController?.pauseBriefly() },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                )
+            }
 
             ShellErrorCard(
                 errorMessage = errorMessage,

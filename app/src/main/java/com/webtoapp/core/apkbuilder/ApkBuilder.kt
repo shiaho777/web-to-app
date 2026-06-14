@@ -3106,7 +3106,11 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     failoverTriggerHttp5xx = webViewConfig.failoverTriggers.http5xx,
     failoverTriggerHttp4xx = webViewConfig.failoverTriggers.http4xx,
     failoverTriggerTimeout = webViewConfig.failoverTriggers.timeout,
-    failoverTimeoutSeconds = webViewConfig.failoverTimeoutSeconds
+    failoverTimeoutSeconds = webViewConfig.failoverTimeoutSeconds,
+
+    autoRefreshEnabled = webViewConfig.autoRefreshEnabled,
+    autoRefreshIntervalSec = webViewConfig.autoRefreshIntervalSec,
+    autoRefreshShowCountdown = webViewConfig.autoRefreshShowCountdown
 )
 
 private fun WebApp.buildScreenAwakeBlock(): ScreenAwakeBlock = ScreenAwakeBlock(

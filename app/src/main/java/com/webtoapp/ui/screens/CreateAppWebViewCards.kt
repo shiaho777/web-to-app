@@ -644,6 +644,58 @@ fun BrowserAdvancedConfigCard(
                     }
 
                     WtaSection(
+                        title = Strings.sectionAutoRefresh,
+                        headerStyle = WtaSectionHeaderStyle.Quiet
+                    ) {
+                        WtaSettingCard {
+                            WtaToggleRow(
+                                title = Strings.autoRefreshSettingLabel,
+                                subtitle = Strings.autoRefreshSettingDesc,
+                                checked = config.autoRefreshEnabled,
+                                onCheckedChange = { onConfigChange(config.copy(autoRefreshEnabled = it)) }
+                            )
+
+                            AnimatedVisibility(
+                                visible = config.autoRefreshEnabled,
+                                enter = CardExpandTransition,
+                                exit = CardCollapseTransition
+                            ) {
+                                Column {
+                                    WtaSectionDivider()
+                                    WtaSliderRow(
+                                        title = Strings.autoRefreshIntervalLabel,
+                                        value = config.autoRefreshIntervalSec.toFloat(),
+                                        onValueChange = { onConfigChange(config.copy(autoRefreshIntervalSec = it.toInt())) },
+                                        valueLabel = Strings.autoRefreshIntervalValue(config.autoRefreshIntervalSec),
+                                        valueRange = 5f..600f
+                                    )
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = WtaSpacing.RowHorizontal),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        listOf(30, 60, 120, 300).forEach { sec ->
+                                            FilterChip(
+                                                selected = config.autoRefreshIntervalSec == sec,
+                                                onClick = { onConfigChange(config.copy(autoRefreshIntervalSec = sec)) },
+                                                label = { Text(Strings.autoRefreshIntervalValue(sec)) }
+                                            )
+                                        }
+                                    }
+                                    WtaSectionDivider()
+                                    WtaToggleRow(
+                                        title = Strings.autoRefreshShowCountdownLabel,
+                                        subtitle = Strings.autoRefreshShowCountdownDesc,
+                                        checked = config.autoRefreshShowCountdown,
+                                        onCheckedChange = { onConfigChange(config.copy(autoRefreshShowCountdown = it)) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    WtaSection(
                         title = Strings.sectionOfflinePerformance,
                         headerStyle = WtaSectionHeaderStyle.Quiet
                     ) {

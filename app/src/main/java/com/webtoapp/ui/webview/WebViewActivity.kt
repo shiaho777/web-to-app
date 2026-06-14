@@ -1,6 +1,7 @@
 package com.webtoapp.ui.webview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.ui.components.PremiumButton
+import com.webtoapp.ui.components.AutoRefreshCountdownChip
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -827,6 +828,9 @@ fun WebViewScreen(
     val goHttpServer = remember { com.webtoapp.core.webview.LocalHttpServer(context) }
     var goAppRetryTrigger by remember { mutableIntStateOf(0) }
 
+    var autoRefreshController by remember { mutableStateOf<com.webtoapp.core.webview.AutoRefreshController?>(null) }
+    val autoRefreshRemaining = autoRefreshController?.remainingSeconds?.collectAsStateWithLifecycle()?.value ?: 0
+
     LaunchedEffect(webApp) {
         webApp?.let { app ->
             onStatusBarConfigChanged?.invoke(
@@ -870,7 +874,28 @@ fun WebViewScreen(
         }
     }
 
-    LaunchedEffect(appId, directUrl, testUrl, previewApp) {
+    LaunchedEffect(webApp?.id, webApp?.webViewConfig?.autoRefreshEnabled, webApp?.webViewConfig?.autoRefreshIntervalSec, webApp?.webViewConfig?.autoRefreshShowCountdown, isActivated) {
+        autoRefreshController?.stop()
+        autoRefreshController = null
+        val app = webApp ?: return@LaunchedEffect
+        if (!app.webViewConfig.autoRefreshEnabled) return@LaunchedEffect
+        if (app.activationEnabled && !isActivated) return@LaunchedEffect
+        val controller = com.webtoapp.core.webview.AutoRefreshController(
+            intervalSec = app.webViewConfig.autoRefreshIntervalSec.coerceAtLeast(1),
+            showCountdown = app.webViewConfig.autoRefreshShowCountdown,
+            onReload = { webViewRef?.reload() }
+        )
+        autoRefreshController = controller
+        controller.start()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            autoRefreshController?.stop()
+        }
+    }
+
+
 
         if (isTestMode) {
             isActivated = true
@@ -2494,6 +2519,16 @@ fun WebViewScreen(
         }
 
         Box(modifier = contentModifier) {
+
+            if (autoRefreshRemaining > 0 && autoRefreshController?.countdownVisible == true) {
+                AutoRefreshCountdownChip(
+                    remainingSeconds = autoRefreshRemaining,
+                    onClick = { autoRefreshController?.pauseBriefly() },
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                )
+            }
 
             AnimatedVisibility(
                 visible = isLoading,
