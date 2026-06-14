@@ -8504,6 +8504,12 @@ object Strings {
         AppLanguage.ARABIC -> "غير متصل والأداء"
     }
 
+    val sectionAutoRefresh: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自动刷新"
+        AppLanguage.ENGLISH -> "Auto Refresh"
+        AppLanguage.ARABIC -> "التحديث التلقائي"
+    }
+
     val sectionDeveloper: String get() = when (lang) {
         AppLanguage.CHINESE -> "开发者工具"
         AppLanguage.ENGLISH -> "Developer"
@@ -9161,6 +9167,44 @@ object Strings {
         AppLanguage.CHINESE -> "允许下拉刷新页面"
         AppLanguage.ENGLISH -> "Allow swipe down to refresh"
         AppLanguage.ARABIC -> "السماح بالسحب لأسفل للتحديث"
+    }
+
+    val autoRefreshSettingLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自动刷新"
+        AppLanguage.ENGLISH -> "Auto Refresh"
+        AppLanguage.ARABIC -> "التحديث التلقائي"
+    }
+
+    val autoRefreshSettingDesc: String get() = when (lang) {
+        AppLanguage.CHINESE -> "定时自动刷新网页"
+        AppLanguage.ENGLISH -> "Periodically reload the page"
+        AppLanguage.ARABIC -> "إعادة تحميل الصفحة دورياً"
+    }
+
+    val autoRefreshIntervalLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "刷新间隔"
+        AppLanguage.ENGLISH -> "Refresh Interval"
+        AppLanguage.ARABIC -> "فترة التحديث"
+    }
+
+    val autoRefreshIntervalValue: (Int) -> String get() = { seconds ->
+        when (lang) {
+            AppLanguage.CHINESE -> String.format(java.util.Locale.getDefault(), "%d 秒", seconds)
+            AppLanguage.ENGLISH -> String.format(java.util.Locale.getDefault(), "%d s", seconds)
+            AppLanguage.ARABIC -> String.format(java.util.Locale.getDefault(), "%d ث", seconds)
+        }
+    }
+
+    val autoRefreshShowCountdownLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "显示倒计时"
+        AppLanguage.ENGLISH -> "Show Countdown"
+        AppLanguage.ARABIC -> "إظهار العد التنازلي"
+    }
+
+    val autoRefreshShowCountdownDesc: String get() = when (lang) {
+        AppLanguage.CHINESE -> "右上角显示剩余秒数，点击可暂停本轮"
+        AppLanguage.ENGLISH -> "Show remaining seconds in the corner, tap to skip this round"
+        AppLanguage.ARABIC -> "إظهار الثواني المتبقية في الزاوية، انقر لتخطي هذه الجولة"
     }
 
     val desktopModeSetting: String get() = when (lang) {

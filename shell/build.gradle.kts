@@ -211,6 +211,7 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/ui/components/StatusBarBackground.kt",
         "**/ui/components/LongPressMenu.kt",
         "**/ui/components/ForcedRunCountdownOverlay.kt",
+        "**/ui/components/AutoRefreshCountdownOverlay.kt",
 
         "**/util/**"
     )

@@ -170,6 +170,10 @@ data class ApkConfig(
     val failoverTriggerTimeout: Boolean get() = webViewBehavior.failoverTriggerTimeout
     val failoverTimeoutSeconds: Int get() = webViewBehavior.failoverTimeoutSeconds
 
+    val autoRefreshEnabled: Boolean get() = webViewBehavior.autoRefreshEnabled
+    val autoRefreshIntervalSec: Int get() = webViewBehavior.autoRefreshIntervalSec
+    val autoRefreshShowCountdown: Boolean get() = webViewBehavior.autoRefreshShowCountdown
+
     val keepScreenOn: Boolean get() = screenAwake.keepScreenOn
     val screenAwakeMode: String get() = screenAwake.mode
     val screenAwakeTimeoutMinutes: Int get() = screenAwake.timeoutMinutes
@@ -537,7 +541,11 @@ data class WebViewBehaviorBlock(
     val failoverTriggerHttp5xx: Boolean = true,
     val failoverTriggerHttp4xx: Boolean = false,
     val failoverTriggerTimeout: Boolean = false,
-    val failoverTimeoutSeconds: Int = 15
+    val failoverTimeoutSeconds: Int = 15,
+
+    val autoRefreshEnabled: Boolean = false,
+    val autoRefreshIntervalSec: Int = 60,
+    val autoRefreshShowCountdown: Boolean = true
 )
 
 data class ScreenAwakeBlock(
