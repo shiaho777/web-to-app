@@ -18081,18 +18081,6 @@ object Strings {
         AppLanguage.ARABIC -> "إخفاء شريط التنقل العلوي للمتصفح، يعمل بشكل مستقل بدون وضع ملء الشاشة"
     }
 
-    val toolbarContentOptionsLabel: String get() = when (lang) {
-        AppLanguage.CHINESE -> "工具栏内容"
-        AppLanguage.ENGLISH -> "Toolbar Content"
-        AppLanguage.ARABIC -> "محتوى شريط الأدوات"
-    }
-
-    val toolbarContentOptionsHint: String get() = when (lang) {
-        AppLanguage.CHINESE -> "配置浏览器工具栏可见时显示哪些内容"
-        AppLanguage.ENGLISH -> "Choose what appears when the browser toolbar is visible"
-        AppLanguage.ARABIC -> "اختر ما يظهر عند عرض شريط أدوات المتصفح"
-    }
-
     val toolbarShowTitleLabel: String get() = when (lang) {
         AppLanguage.CHINESE -> "显示标题"
         AppLanguage.ENGLISH -> "Show Title"

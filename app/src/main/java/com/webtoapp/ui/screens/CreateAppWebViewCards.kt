@@ -1644,8 +1644,6 @@ fun HideBrowserToolbarCard(
     onEnabledChange: (Boolean) -> Unit,
     onWebViewConfigChange: (WebViewConfig) -> Unit = {}
 ) {
-    var toolbarOptionsExpanded by remember { mutableStateOf(false) }
-
     WtaSettingCard {
         WtaToggleRow(
             icon = Icons.Outlined.WebAsset,
@@ -1657,23 +1655,6 @@ fun HideBrowserToolbarCard(
 
         AnimatedVisibility(
             visible = !enabled,
-            enter = CardExpandTransition,
-            exit = CardCollapseTransition
-        ) {
-            Column {
-                WtaSectionDivider()
-                WtaChoiceRow(
-                    title = Strings.toolbarContentOptionsLabel,
-                    subtitle = Strings.toolbarContentOptionsHint,
-                    value = if (toolbarOptionsExpanded) Strings.collapse else Strings.expand,
-                    isExpanded = toolbarOptionsExpanded,
-                    onClick = { toolbarOptionsExpanded = !toolbarOptionsExpanded }
-                )
-            }
-        }
-
-        AnimatedVisibility(
-            visible = !enabled && toolbarOptionsExpanded,
             enter = CardExpandTransition,
             exit = CardCollapseTransition
         ) {
