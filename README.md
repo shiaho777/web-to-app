@@ -84,9 +84,9 @@ Supported `AppType` values include Web, HTML, Frontend, WordPress, Node.js, PHP,
 
 Releases are published on [GitHub Releases](https://github.com/shiaho777/web-to-app/releases).
 
-The WebToApp host app itself keeps `targetSdk = 28` on purpose so it can fork and exec native binaries from app storage, like Termux, so the host is distributed through GitHub Releases.
+The WebToApp host app pins `targetSdk = 28` deliberately — not as a limitation, but as the enabling choice that lets generated apps run Node.js, PHP, Python, Go, and WordPress as native binaries straight from app storage, the way Termux does. Most "URL to APK" tools can only wrap a WebView; running full server runtimes on-device is the hard part, and 28 is what makes it possible. Because of this, the host ships through GitHub Releases.
 
-Generated apps, however, are fully publishable to Google Play. The on-device AAB exporter rewrites `targetSdk` to the Play-required level (currently 35) and signs the bundle locally, so Web, HTML, front-end, and media apps can ship to the Play Store directly. Apps that rely on forking local native runtimes (Node.js, PHP, Python, Go, WordPress) are not Play-compatible and stay APK-only.
+This trade-off only applies to the host and to fork-based runtime apps. Generated Web, HTML, front-end, and media apps are fully publishable to Google Play: the on-device AAB exporter rewrites `targetSdk` to the Play-required level (currently 35) and signs the bundle locally, so they ship to the Play Store directly. Apps that fork local native runtimes (Node.js, PHP, Python, Go, WordPress) stay APK-only, since Play Store apps cannot fork binaries on modern Android.
 
 ## Module Market
 
@@ -213,7 +213,7 @@ The full app has many switches. The sections below group the important ones with
 - The repository has two Gradle modules: `app` is the full builder and host; `shell` is the runtime host embedded into generated APKs.
 - Runtime code is authored in `app` and synchronized into `shell`, so shared WebView/runtime behavior has one source of truth.
 - The APK builder patches template APKs at the binary AXML/ARSC level, injects config/resources, prunes permissions, and signs with `apksig`.
-- The host keeps `targetSdk = 28` intentionally so local native runtimes can `fork` and `exec` from app storage; the AAB exporter separately rewrites `targetSdk` for Play Store distribution.
+- The host pins `targetSdk = 28` deliberately — it is what lets generated apps fork and exec native runtimes (Node.js, PHP, Python, Go, WordPress) from app storage, a capability URL-wrapper tools lack; the AAB exporter separately rewrites `targetSdk` for Play Store distribution.
 - Server runtimes and optional GeckoView native runtime are downloaded on first use instead of bundled into the base APK.
 
 ## Tech Stack
