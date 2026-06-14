@@ -652,7 +652,7 @@ sys.exit(main())
                 if (attempt < MAX_RETRY_PER_URL) {
                     AppLogger.i(TAG, "$sourceName download failed, retrying in ${RETRY_DELAY_MS / 1000}s ($attempt/$MAX_RETRY_PER_URL)")
                     kotlinx.coroutines.delay(RETRY_DELAY_MS)
-                    DependencyDownloadEngine._state.value = DependencyDownloadEngine.State.Idle
+                    DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Idle)
                 }
             }
 
@@ -660,7 +660,7 @@ sys.exit(main())
                 val tmpFile = File(destFile.parentFile, "${destFile.name}.tmp")
                 tmpFile.delete()
                 AppLogger.i(TAG, "$sourceName failed, trying next source...")
-                DependencyDownloadEngine._state.value = DependencyDownloadEngine.State.Idle
+                DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Idle)
             }
         }
         return false
@@ -679,7 +679,7 @@ sys.exit(main())
         if (!downloaded) return false
 
         _downloadState.value = DownloadState.Extracting("Python")
-        DependencyDownloadEngine._state.value = DependencyDownloadEngine.State.Extracting("Python")
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Extracting("Python"))
         try {
 
             extractTarGz(archiveFile, destDir, stripPrefix = "python/")
@@ -904,11 +904,11 @@ sys.exit(main())
 
     private fun markComplete() {
         _downloadState.value = DownloadState.Complete
-        DependencyDownloadEngine._state.value = DependencyDownloadEngine.State.Complete
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Complete)
     }
 
     private fun markError(message: String) {
         _downloadState.value = DownloadState.Error(message)
-        DependencyDownloadEngine._state.value = DependencyDownloadEngine.State.Error(message)
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Error(message))
     }
 }

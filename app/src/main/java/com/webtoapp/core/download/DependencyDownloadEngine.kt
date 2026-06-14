@@ -83,6 +83,10 @@ object DependencyDownloadEngine {
 
     fun stateFor(taskId: TaskId): State = _states.value[taskId] ?: State.Idle
 
+    fun publishState(newState: State, taskId: TaskId = DEFAULT_TASK) {
+        emit(taskId, newState)
+    }
+
     private fun emit(taskId: TaskId, newState: State) {
         _states.value = _states.value + (taskId to newState)
         if (taskId == DEFAULT_TASK) {

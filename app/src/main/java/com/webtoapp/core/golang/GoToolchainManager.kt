@@ -168,8 +168,9 @@ object GoToolchainManager {
                 }
 
                 _downloadState.value = DownloadState.Extracting("Go $GO_VERSION")
-                DependencyDownloadEngine._state.value =
+                DependencyDownloadEngine.publishState(
                     DependencyDownloadEngine.State.Extracting("Go $GO_VERSION")
+                )
 
                 val goRoot = getGoRoot(context)
                 goRoot.deleteRecursively()
@@ -245,7 +246,7 @@ object GoToolchainManager {
             if (attempt < MAX_RETRY_PER_URL) {
                 AppLogger.i(TAG, "$displayName 下载失败, ${RETRY_DELAY_MS / 1000}s 后重试 ($attempt/$MAX_RETRY_PER_URL)")
                 kotlinx.coroutines.delay(RETRY_DELAY_MS)
-                DependencyDownloadEngine._state.value = DependencyDownloadEngine.State.Idle
+                DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Idle)
             }
         }
         return false
@@ -296,7 +297,7 @@ object GoToolchainManager {
                 return true
             }
             AppLogger.w(TAG, "$displayName 源 $url 全部重试仍失败,切换下一源")
-            DependencyDownloadEngine._state.value = DependencyDownloadEngine.State.Idle
+            DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Idle)
         }
         AppLogger.e(TAG, "$displayName 所有源均失败,共尝试 ${urls.size} 个")
         return false
@@ -449,11 +450,11 @@ object GoToolchainManager {
 
     private fun markComplete() {
         _downloadState.value = DownloadState.Complete
-        DependencyDownloadEngine._state.value = DependencyDownloadEngine.State.Complete
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Complete)
     }
 
     private fun markError(message: String, retryable: Boolean = true) {
         _downloadState.value = DownloadState.Error(message, retryable = retryable)
-        DependencyDownloadEngine._state.value = DependencyDownloadEngine.State.Error(message)
+        DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Error(message))
     }
 }
