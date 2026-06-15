@@ -106,6 +106,27 @@
         { "pattern": "*", "isRegex": false, "exclude": false }
       ],
       "hasCss": true
+    },
+    {
+      "id": "android-tv-dpad-control",
+      "path": "android-tv-dpad-control",
+      "name": "Android TV D-Pad Control",
+      "description": "A persistent, D-pad controllable mouse cursor for Android TV and Android boxes. Move the cursor with the directional pad, click with the center button, and hold to open settings.",
+      "icon": "settings_remote",
+      "category": "INTERACTION",
+      "tags": ["tv", "remote", "d-pad", "cursor"],
+      "version": "1.0.0",
+      "minAppVersion": 33,
+      "author": {
+        "name": "Stremiouser666",
+        "url": "https://github.com/Stremiouser666"
+      },
+      "runAt": "DOCUMENT_START",
+      "permissions": ["DOM_ACCESS", "CSS_INJECT", "STORAGE", "KEYBOARD"],
+      "urlMatches": [
+        { "pattern": "*", "isRegex": false, "exclude": false }
+      ],
+      "hasCss": false
     }
   ]
 }
