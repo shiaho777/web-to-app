@@ -2364,7 +2364,7 @@ fun WebViewScreen(
                 TopAppBar(
                     title = {
                         Column {
-                            if (isTestMode || webApp?.webViewConfig?.toolbarShowTitle != false) {
+                            if (isTestMode || webApp?.webViewConfig?.toolbarShowTitle == true) {
                                 Text(
                                     text = if (isTestMode) Strings.moduleTestMode else pageTitle.ifEmpty { webApp?.name ?: "WebApp" },
                                     style = MaterialTheme.typography.titleMedium,
@@ -2379,7 +2379,7 @@ fun WebViewScreen(
                                     color = MaterialTheme.colorScheme.primary,
                                     maxLines = 1
                                 )
-                            } else if (currentUrl.isNotEmpty() && webApp?.webViewConfig?.toolbarShowUrl != false) {
+                            } else if (currentUrl.isNotEmpty() && webApp?.webViewConfig?.toolbarShowUrl == true) {
                                 Text(
                                     text = currentUrl,
                                     style = MaterialTheme.typography.bodySmall,
@@ -2390,25 +2390,20 @@ fun WebViewScreen(
                             }
                         }
                     },
-                    navigationIcon = {
-                        if (isTestMode || webApp?.webViewConfig?.toolbarShowBack != false) {
-                            if (canGoBack) {
-                                IconButton(onClick = {
+                    actions = {
+                        if (isTestMode || webApp?.webViewConfig?.toolbarShowBack == true) {
+                            IconButton(
+                                onClick = {
                                     (context as? AppCompatActivity)?.let { activity ->
                                         ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
                                     }
-                                }) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
-                                }
-                            } else {
-                                IconButton(onClick = { (context as? AppCompatActivity)?.finish() }) {
-                                    Icon(Icons.Default.Close, "Close")
-                                }
+                                },
+                                enabled = canGoBack
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                             }
                         }
-                    },
-                    actions = {
-                        if (isTestMode || webApp?.webViewConfig?.toolbarShowForward != false) {
+                        if (isTestMode || webApp?.webViewConfig?.toolbarShowForward == true) {
                             IconButton(
                                 onClick = { webViewRef?.goForward() },
                                 enabled = canGoForward
@@ -2416,7 +2411,7 @@ fun WebViewScreen(
                                 Icon(Icons.AutoMirrored.Filled.ArrowForward, "Forward")
                             }
                         }
-                        if (isTestMode || webApp?.webViewConfig?.toolbarShowRefresh != false) {
+                        if (isTestMode || webApp?.webViewConfig?.toolbarShowRefresh == true) {
                             IconButton(onClick = { webViewRef?.reload() }) {
                                 Icon(Icons.Default.Refresh, "Refresh")
                             }
