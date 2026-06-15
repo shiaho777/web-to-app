@@ -481,9 +481,14 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 (function() {
                     try {
                         const blobUrl = $safeBlobUrl;
-                        const filename = $safeFilename;
+                        let filename = $safeFilename;
                         const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024;
                         const CHUNK_SIZE = 512 * 1024;
+
+                        if (window.__wtaBlobNameMap) {
+                            var cachedName = window.__wtaBlobNameMap.get(blobUrl);
+                            if (cachedName) filename = cachedName;
+                        }
 
                         function uint8ToBase64(u8) {
                             const S = 8192; const p = [];

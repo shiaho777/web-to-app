@@ -44,6 +44,7 @@ class DownloadBridge(
                 if (window._wtaBlobCacheHooked) return;
                 window._wtaBlobCacheHooked = true;
                 const blobUrlMap = window.__wtaBlobMap || (window.__wtaBlobMap = new Map());
+                const blobNameMap = window.__wtaBlobNameMap || (window.__wtaBlobNameMap = new Map());
                 const originalCreateObjectURL = URL.createObjectURL.bind(URL);
                 const originalRevokeObjectURL = URL.revokeObjectURL.bind(URL);
                 URL.createObjectURL = function(blob) {
@@ -54,9 +55,20 @@ class DownloadBridge(
                     return url;
                 };
                 URL.revokeObjectURL = function(url) {
-                    setTimeout(function() { blobUrlMap.delete(url); }, 30000);
+                    setTimeout(function() { blobUrlMap.delete(url); blobNameMap.delete(url); }, 30000);
                     return originalRevokeObjectURL(url);
                 };
+                document.addEventListener('click', function(e) {
+                    var target = e.target;
+                    while (target && target.tagName !== 'A') {
+                        target = target.parentElement;
+                    }
+                    if (!target || target.tagName !== 'A') return;
+                    var href = target.href || '';
+                    if (href.indexOf('blob:') !== 0 && href.indexOf('data:') !== 0) return;
+                    var dl = target.getAttribute('download');
+                    if (dl) blobNameMap.set(href, dl);
+                }, true);
             })();
         """
 
