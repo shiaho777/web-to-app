@@ -1,26 +1,5 @@
 {
   "schema": 1,
-  "generatedAt": "2026-05-17T00:00:00Z",
-  "submissions": {
-    "wta-hello-world": {
-      "submittedAt": "2026-05-15T00:00:00Z",
-      "direct": true,
-      "submitter": {
-        "login": "shiaho777",
-        "name": "shiaho",
-        "avatarUrl": "https://avatars.githubusercontent.com/shiaho777",
-        "profileUrl": "https://github.com/shiaho777"
-      }
-    },
-    "wta-night-shift": {
-      "submittedAt": "2026-05-15T00:00:00Z",
-      "direct": true,
-      "submitter": {
-        "login": "shiaho777",
-        "name": "shiaho",
-        "avatarUrl": "https://avatars.githubusercontent.com/shiaho777",
-        "profileUrl": "https://github.com/shiaho777"
-      }
-    }
-  }
+  "generatedAt": "2026-06-15T04:08:01Z",
+  "submissions": {}
 }
