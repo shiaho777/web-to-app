@@ -279,7 +279,8 @@ fun ShellScreen(
                 longPressTouchX = x
                 longPressTouchY = y
                 showLongPressMenu = true
-            }
+            },
+            onRefreshFinished = { isRefreshing = false }
         )
     }
 
@@ -337,7 +338,7 @@ fun ShellScreen(
         bgmState = bgmState,
         swipeRefreshEnabled = swipeRefreshEnabled,
         isRefreshing = isRefreshing,
-        onRefresh = { isRefreshing = false },
+        onRefresh = { isRefreshing = true },
         onWebViewCreated = onWebViewCreated,
         onWebViewRefUpdated = { webViewRef = it },
         onShowActivationDialog = { showActivationDialog = true },

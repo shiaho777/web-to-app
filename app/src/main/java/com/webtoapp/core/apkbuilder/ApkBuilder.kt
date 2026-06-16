@@ -2877,7 +2877,19 @@ private fun WebApp.computeEffectiveTargetUrl(packageName: String): String = when
 
 @Suppress("UNUSED_PARAMETER")
 private fun WebApp.computeHtmlUsesFileScheme(context: android.content.Context?): Boolean {
-    return false
+    val mode = htmlConfig?.loadMode ?: com.webtoapp.data.model.HtmlLoadMode.AUTO
+    return when (mode) {
+        com.webtoapp.data.model.HtmlLoadMode.FILE -> true
+        com.webtoapp.data.model.HtmlLoadMode.LOCAL_HTTP -> false
+        com.webtoapp.data.model.HtmlLoadMode.AUTO -> {
+            val htmlDir = htmlConfig?.projectDir?.let { java.io.File(it) }
+            if (htmlDir != null && htmlDir.exists()) {
+                com.webtoapp.core.webview.HtmlRuntimeLoadInspector.prefersFileScheme(htmlDir)
+            } else {
+                false
+            }
+        }
+    }
 }
 
 private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {

@@ -181,6 +181,7 @@ fun ShellContentRouter(
                             )
                             isEnabled = swipeRefreshEnabled
                             setOnRefreshListener {
+                                onRefresh()
                                 swipeChildWebView?.reload()
                             }
                             setOnChildScrollUpCallback { _, child ->
@@ -282,6 +283,7 @@ fun ShellLocalFileWebView(
                     )
                     isEnabled = swipeRefreshEnabled
                     setOnRefreshListener {
+                        onRefresh()
                         swipeChildWebView?.reload()
                     }
                     setOnChildScrollUpCallback { _, child ->

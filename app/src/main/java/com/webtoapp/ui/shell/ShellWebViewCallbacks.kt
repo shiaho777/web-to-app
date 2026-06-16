@@ -38,7 +38,8 @@ fun createShellWebViewCallbacks(
     updateNavigation: (canBack: Boolean, canForward: Boolean) -> Unit,
     updateWebViewRef: (WebView?) -> Unit,
     notifyRecreationKeyIncrement: () -> Unit,
-    notifyLongPressMenu: (LongPressHandler.LongPressResult, Float, Float) -> Unit
+    notifyLongPressMenu: (LongPressHandler.LongPressResult, Float, Float) -> Unit,
+    onRefreshFinished: () -> Unit = {}
 ): WebViewCallbacks {
     return object : WebViewCallbacks {
         override fun onPageStarted(url: String?) {
@@ -59,6 +60,7 @@ fun createShellWebViewCallbacks(
         override fun onPageFinished(url: String?) {
             if (url == "about:blank") return
             updateLoading(false)
+            onRefreshFinished()
             updateUrl(url ?: "")
             com.webtoapp.core.shell.ShellLogger.logWebView("Loading complete", url ?: "")
             webViewRefProvider()?.let {

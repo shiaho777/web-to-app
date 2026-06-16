@@ -226,6 +226,7 @@ private fun TabsMode(
                                 )
                                 isEnabled = swipeRefreshEnabled
                                 setOnRefreshListener {
+                                    onRefresh()
                                     (getChildAt(0) as? WebView)?.reload()
                                 }
                                 setOnChildScrollUpCallback { _, child ->
@@ -347,6 +348,7 @@ private fun CardsMode(
                         )
                         isEnabled = swipeRefreshEnabled
                         setOnRefreshListener {
+                            onRefresh()
                             swipeChildWebView?.reload()
                         }
                         setOnChildScrollUpCallback { _, child ->
@@ -646,6 +648,7 @@ private fun FeedMode(
                         )
                         isEnabled = swipeRefreshEnabled
                         setOnRefreshListener {
+                            onRefresh()
                             swipeChildWebView?.reload()
                         }
                         setOnChildScrollUpCallback { _, child ->
@@ -988,6 +991,7 @@ private fun DrawerMode(
                                     )
                                     isEnabled = swipeRefreshEnabled
                                     setOnRefreshListener {
+                                        onRefresh()
                                         (getChildAt(0) as? WebView)?.reload()
                                     }
                                     setOnChildScrollUpCallback { _, child ->

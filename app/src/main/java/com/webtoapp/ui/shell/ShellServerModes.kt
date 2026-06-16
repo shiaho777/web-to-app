@@ -143,6 +143,7 @@ fun WordPressShellMode(
                                 )
                                 isEnabled = swipeRefreshEnabled
                                 setOnRefreshListener {
+                                    onRefresh()
                                     swipeChildWebView?.reload()
                                 }
                                 setOnChildScrollUpCallback { _, child ->
@@ -644,6 +645,7 @@ fun NodeJsShellMode(
                                 )
                                 isEnabled = swipeRefreshEnabled
                                 setOnRefreshListener {
+                                    onRefresh()
                                     swipeChildWebView?.reload()
                                 }
                                 setOnChildScrollUpCallback { _, child ->
@@ -823,6 +825,7 @@ fun PhpAppShellMode(
                                 )
                                 isEnabled = swipeRefreshEnabled
                                 setOnRefreshListener {
+                                    onRefresh()
                                     swipeChildWebView?.reload()
                                 }
                                 setOnChildScrollUpCallback { _, child ->
@@ -1037,6 +1040,7 @@ fun PythonAppShellMode(
                                 )
                                 isEnabled = swipeRefreshEnabled
                                 setOnRefreshListener {
+                                    onRefresh()
                                     swipeChildWebView?.reload()
                                 }
                                 setOnChildScrollUpCallback { _, child ->
@@ -1236,6 +1240,7 @@ fun GoAppShellMode(
                                 )
                                 isEnabled = swipeRefreshEnabled
                                 setOnRefreshListener {
+                                    onRefresh()
                                     swipeChildWebView?.reload()
                                 }
                                 setOnChildScrollUpCallback { _, child ->
@@ -1460,6 +1465,7 @@ fun ServerAppShellMode(
                                 )
                                 isEnabled = swipeRefreshEnabled
                                 setOnRefreshListener {
+                                    onRefresh()
                                     swipeChildWebView?.reload()
                                 }
                                 setOnChildScrollUpCallback { _, child ->
