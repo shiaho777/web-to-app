@@ -1650,7 +1650,6 @@ fun HideBrowserToolbarCard(
         WtaToggleRow(
             icon = Icons.Outlined.WebAsset,
             title = Strings.hideBrowserToolbarLabel,
-            subtitle = Strings.hideBrowserToolbarHint,
             checked = enabled,
             onCheckedChange = onEnabledChange
         )
