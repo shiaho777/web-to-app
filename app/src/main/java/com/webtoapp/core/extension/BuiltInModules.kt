@@ -22,7 +22,7 @@ object BuiltInModules {
         icon = "download",
         category = ModuleCategory.MEDIA,
         tags = listOf(Strings.tagVideo, Strings.tagDownload, "MP4", "bilibili", "douyin", "xiaohongshu", "instagram", "facebook", "tiktok"),
-        version = ModuleVersion(5, "5.1.0", Strings.versionV4Ui),
+        version = ModuleVersion(5, "5.2.0", Strings.versionV4Ui),
         author = ModuleAuthor("WebToApp"),
         builtIn = true,
         enabled = false,
@@ -158,9 +158,9 @@ object BuiltInModules {
     const LANG = (navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
                  (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     const I18N = {
-        zh: { name: '媒体下载', noMedia: '未检测到媒体', detected: '检测到 {0} 个媒体', video: '视频', image: '图片', blob: 'Blob流', download: '下载', blobNotSupported: 'Blob流暂不支持直接下载', downloading: '开始下载...', bilibiliTip: '提示：B站视频和音频分离，需用工具合并', quality: '画质', dlVideo: '下载视频流', dlAudio: '下载音频流', dlAllImg: '下载全部图片', dlAllVid: '下载全部视频', dlNoWm: '下载无水印视频', copied: '链接已复制', platform: '平台', detected2: '检测到 {0} 张图片，{1} 个视频' },
-        en: { name: 'Media Download', noMedia: 'No media detected', detected: '{0} media items detected', video: 'Video', image: 'Image', blob: 'Blob', download: 'Download', blobNotSupported: 'Blob stream not supported for direct download', downloading: 'Downloading...', bilibiliTip: 'Tip: Bilibili separates video and audio, merge with tools', quality: 'Quality', dlVideo: 'Download Video', dlAudio: 'Download Audio', dlAllImg: 'Download all images', dlAllVid: 'Download all videos', dlNoWm: 'Download without watermark', copied: 'Link copied', platform: 'Platform', detected2: '{0} images, {1} videos detected' },
-        ar: { name: 'تحميل الوسائط', noMedia: 'لم يتم الكشف عن وسائط', detected: 'تم الكشف عن {0} وسائط', video: 'فيديو', image: 'صورة', blob: 'Blob', download: 'تحميل', blobNotSupported: 'لا يدعم تحميل Blob مباشرة', downloading: 'جاري التحميل...', bilibiliTip: 'تلميح: بيليبيلي يفصل الفيديو والصوت، تحتاج أداة للدمج', quality: 'الجودة', dlVideo: 'تحميل الفيديو', dlAudio: 'تحميل الصوت', dlAllImg: 'تحميل كل الصور', dlAllVid: 'تحميل كل الفيديوهات', dlNoWm: 'تحميل بدون علامة مائية', copied: 'تم نسخ الرابط', platform: 'المنصة', detected2: '{0} صورة، {1} فيديو' }
+        zh: { name: '媒体下载', noMedia: '未检测到媒体', detected: '检测到 {0} 个媒体', video: '视频', image: '图片', audio: '音频', blob: 'Blob流', download: '下载', blobNotSupported: 'Blob流暂不支持直接下载', downloading: '开始下载...', bilibiliTip: '提示：B站视频和音频分离，需用工具合并', quality: '画质', dlVideo: '下载视频流', dlAudio: '下载音频流', dlMusic: '下载背景音乐', dlAllImg: '下载全部图片', dlAllVid: '下载全部视频', dlNoWm: '下载无水印视频', copied: '链接已复制', platform: '平台', detected2: '检测到 {0} 张图片，{1} 个视频' },
+        en: { name: 'Media Download', noMedia: 'No media detected', detected: '{0} media items detected', video: 'Video', image: 'Image', audio: 'Audio', blob: 'Blob', download: 'Download', blobNotSupported: 'Blob stream not supported for direct download', downloading: 'Downloading...', bilibiliTip: 'Tip: Bilibili separates video and audio, merge with tools', quality: 'Quality', dlVideo: 'Download Video', dlAudio: 'Download Audio', dlMusic: 'Download Music', dlAllImg: 'Download all images', dlAllVid: 'Download all videos', dlNoWm: 'Download without watermark', copied: 'Link copied', platform: 'Platform', detected2: '{0} images, {1} videos detected' },
+        ar: { name: 'تحميل الوسائط', noMedia: 'لم يتم الكشف عن وسائط', detected: 'تم الكشف عن {0} وسائط', video: 'فيديو', image: 'صورة', audio: 'صوت', blob: 'Blob', download: 'تحميل', blobNotSupported: 'لا يدعم تحميل Blob مباشرة', downloading: 'جاري التحميل...', bilibiliTip: 'تلميح: بيليبيلي يفصل الفيديو والصوت، تحتاج أداة للدمج', quality: 'الجودة', dlVideo: 'تحميل الفيديو', dlAudio: 'تحميل الصوت', dlMusic: 'تحميل الموسيقى', dlAllImg: 'تحميل كل الصور', dlAllVid: 'تحميل كل الفيديوهات', dlNoWm: 'تحميل بدون علامة مائية', copied: 'تم نسخ الرابط', platform: 'المنصة', detected2: '{0} صورة، {1} فيديو' }
     };
     const T = I18N[LANG] || I18N.en;
 
@@ -357,9 +357,108 @@ object BuiltInModules {
         return mediaList;
     }
 
-    function downloadItem(url, filename, headers) {
+    let audioUrl = null;
+    let audioTitle = '';
+
+    function getTikTokAudio() {
+        audioUrl = null;
+        audioTitle = '';
+        try {
+            var sigi = window.SIGI_STATE || window.__SIGI_STATE__;
+            if (sigi) {
+                var keys = Object.keys(sigi.ItemModule || {});
+                if (keys.length > 0) {
+                    var item = sigi.ItemModule[keys[0]];
+                    if (item?.music) {
+                        var musicUrl = item.music.playUrl || item.music.play_url;
+                        if (musicUrl) {
+                            audioUrl = musicUrl;
+                            audioTitle = item.music.title || item.music.author || '';
+                        }
+                    }
+                }
+            }
+            if (!audioUrl && window.__NEXT_DATA__) {
+                var videoData = window.__NEXT_DATA__.props?.pageProps?.itemInfo?.itemStruct;
+                if (videoData?.music) {
+                    var url = videoData.music.playUrl || videoData.music.play_url;
+                    if (url) {
+                        audioUrl = url;
+                        audioTitle = videoData.music.title || videoData.music.authorName || '';
+                    }
+                }
+            }
+        } catch (e) {}
+        return audioUrl;
+    }
+
+    function getDouyinAudio() {
+        audioUrl = null;
+        audioTitle = '';
+        try {
+            function findMusic(obj, depth) {
+                if (depth > 10 || !obj || typeof obj !== 'object') return null;
+                if (obj.music?.play_url?.url_list?.[0]) return { url: obj.music.play_url.url_list[0], title: obj.music.title || obj.music.author || '' };
+                if (obj.music?.play_addr?.url_list?.[0]) return { url: obj.music.play_addr.url_list[0], title: obj.music.title || obj.music.author || '' };
+                for (var k in obj) { var r = findMusic(obj[k], depth + 1); if (r) return r; }
+                return null;
+            }
+            var src = null;
+            if (window._ROUTER_DATA) src = findMusic(window._ROUTER_DATA, 0);
+            if (!src && window.__INITIAL_STATE__) src = findMusic(window.__INITIAL_STATE__, 0);
+            if (src) { audioUrl = src.url; audioTitle = src.title; }
+        } catch (e) {}
+        return audioUrl;
+    }
+
+    function getInstagramAudio() {
+        audioUrl = null;
+        audioTitle = '';
+        try {
+            var scripts = document.querySelectorAll('script[type="application/json"]');
+            for (var s = 0; s < scripts.length; s++) {
+                var text = scripts[s].textContent;
+                if (text && text.includes('audio_url')) {
+                    var match = text.match(/"audio_url"\s*:\s*"([^"]+)"/);
+                    if (match) {
+                        audioUrl = match[1].replace(/\\u0026/g, '&').replace(/\\\//g, '/');
+                        return audioUrl;
+                    }
+                }
+            }
+        } catch (e) {}
+        return audioUrl;
+    }
+
+    function getGenericAudio() {
+        audioUrl = null;
+        audioTitle = '';
+        document.querySelectorAll('audio').forEach((a) => {
+            if (!audioUrl) {
+                var src = a.src || a.querySelector('source')?.src;
+                if (src && !src.startsWith('blob:')) audioUrl = src;
+            }
+        });
+        return audioUrl;
+    }
+
+    function detectPlatformAudio() {
+        var platform = getPlatform();
+        if (platform === 'tiktok') return getTikTokAudio();
+        if (platform === 'douyin') return getDouyinAudio();
+        if (platform === 'instagram') return getInstagramAudio();
+        return getGenericAudio();
+    }
+
+    function downloadItem(url, filename, headers, type) {
         if (typeof NativeBridge !== 'undefined') {
-            if (headers && NativeBridge.downloadWithHeaders) {
+            if (type === 'audio' && NativeBridge.downloadAudio) {
+                if (headers && NativeBridge.downloadWithHeaders) {
+                    NativeBridge.downloadWithHeaders(url, filename, JSON.stringify(headers));
+                } else {
+                    NativeBridge.downloadAudio(url, filename);
+                }
+            } else if (headers && NativeBridge.downloadWithHeaders) {
                 NativeBridge.downloadWithHeaders(url, filename, JSON.stringify(headers));
             } else if (NativeBridge.downloadVideo) {
                 NativeBridge.downloadVideo(url, filename);
@@ -388,7 +487,9 @@ object BuiltInModules {
         if (platform === 'douyin') {
             const data = getDouyinVideoData();
             if (!data?.url) return noMediaPanel('🎵');
-            return '<div style="margin-bottom:20px"><div style="font-size:15px;font-weight:600;color:#1f2937;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">' + escapeHtml(data.desc || T.video) + '</div><div style="font-size:13px;color:#9ca3af">@' + escapeHtml(data.author) + '</div></div><button onclick="__wtaMediaDL(\'douyin\')" style="width:100%;background:linear-gradient(135deg,#fe2c55,#ff6b81);color:white;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><span>⬇️</span> ' + T.dlNoWm + '</button>';
+            var douyinHtml = '<div style="margin-bottom:20px"><div style="font-size:15px;font-weight:600;color:#1f2937;margin-bottom:8px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">' + escapeHtml(data.desc || T.video) + '</div><div style="font-size:13px;color:#9ca3af">@' + escapeHtml(data.author) + '</div></div><button onclick="__wtaMediaDL(\'douyin\')" style="width:100%;background:linear-gradient(135deg,#fe2c55,#ff6b81);color:white;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px"><span>⬇️</span> ' + T.dlNoWm + '</button>';
+            if (getDouyinAudio()) douyinHtml += '<button onclick="__wtaMediaDL(\'audio\')" style="width:100%;background:linear-gradient(135deg,#23ade5,#5bc0de);color:white;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><span>🎵</span> ' + T.dlMusic + '</button>';
+            return douyinHtml;
         }
 
         if (platform === 'xiaohongshu') {
@@ -410,7 +511,9 @@ object BuiltInModules {
         if (platform === 'instagram') {
             getInstagramMedia();
             if (!mediaList.length) return noMediaPanel('📷');
-            return renderMediaListPanel('#E1306C', '📷');
+            var igHtml = renderMediaListPanel('#E1306C', '📷');
+            if (getInstagramAudio()) igHtml += '<button onclick="__wtaMediaDL(\'audio\')" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#23ade5,#5bc0de);color:white;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><span>🎵</span> ' + T.dlAudio + '</button>';
+            return igHtml;
         }
 
         if (platform === 'facebook') {
@@ -422,7 +525,9 @@ object BuiltInModules {
         if (platform === 'tiktok') {
             getTikTokMedia();
             if (!mediaList.length) return noMediaPanel('🎵');
-            return renderMediaListPanel('#000000', '🎵');
+            var tiktokHtml = renderMediaListPanel('#000000', '🎵');
+            if (getTikTokAudio()) tiktokHtml += '<button onclick="__wtaMediaDL(\'audio\')" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#23ade5,#5bc0de);color:white;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><span>🎵</span> ' + T.dlMusic + '</button>';
+            return tiktokHtml;
         }
 
         detectGenericVideos();
@@ -431,6 +536,9 @@ object BuiltInModules {
         mediaList.forEach((v, i) => {
             html += '<div style="background:#f9fafb;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px"><div style="width:48px;height:48px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-size:20px">🎬</div><div style="flex:1"><div style="font-weight:600;color:#1f2937">' + T.video + ' ' + (i+1) + '</div><div style="font-size:12px;color:#9ca3af">' + (v.w || '?') + 'x' + (v.h || '?') + ' · ' + (v.blob ? T.blob : 'MP4') + '</div></div><button onclick="__wtaMediaDL(\'generic_' + i + '\')" style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer">' + T.download + '</button></div>';
         });
+        if (getGenericAudio()) {
+            html += '<button onclick="__wtaMediaDL(\'audio\')" style="width:100%;margin-top:8px;background:linear-gradient(135deg,#23ade5,#5bc0de);color:white;border:none;padding:14px;border-radius:12px;font-size:15px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><span>🎵</span> ' + T.audio + ' ' + T.download + '</button>';
+        }
         return html;
     }
 
@@ -464,7 +572,18 @@ object BuiltInModules {
             const url = type === 'video' ? info?.video : info?.audio;
             if (!url) return;
             const fn = 'bilibili_' + type + '_' + Date.now() + (type === 'video' ? '.m4s' : '.m4a');
-            downloadItem(url, fn, { Referer: 'https://www.bilibili.com' });
+            downloadItem(url, fn, { Referer: 'https://www.bilibili.com' }, type === 'audio' ? 'audio' : undefined);
+            __WTA_MODULE_UI__.closePanel();
+            return;
+        }
+
+        if (action === 'audio') {
+            if (!audioUrl) return;
+            var platform = getPlatform();
+            var ext = platform === 'bilibili' ? '.m4a' : '.mp3';
+            var fn = (audioTitle ? audioTitle.replace(/[^\w\u4e00-\u9fa5]/g, '_').slice(0, 40) : platform + '_audio') + '_' + Date.now() + ext;
+            var headers = platform === 'bilibili' ? { Referer: 'https://www.bilibili.com' } : undefined;
+            downloadItem(audioUrl, fn, headers, 'audio');
             __WTA_MODULE_UI__.closePanel();
             return;
         }

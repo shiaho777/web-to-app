@@ -22,7 +22,8 @@ object MediaSaver {
 
     enum class MediaType {
         IMAGE,
-        VIDEO
+        VIDEO,
+        AUDIO
     }
 
     sealed class SaveResult {
@@ -57,6 +58,7 @@ object MediaSaver {
         return when {
             mimeType?.startsWith("image/") == true -> MediaType.IMAGE
             mimeType?.startsWith("video/") == true -> MediaType.VIDEO
+            mimeType?.startsWith("audio/") == true -> MediaType.AUDIO
             else -> null
         }
     }
@@ -66,6 +68,7 @@ object MediaSaver {
         return when (extension) {
             "jpg", "jpeg", "png", "gif", "webp", "bmp", "heic", "heif" -> MediaType.IMAGE
             "mp4", "webm", "mkv", "avi", "mov", "3gp", "m4v", "flv" -> MediaType.VIDEO
+            "mp3", "m4a", "aac", "ogg", "wav", "flac", "mka", "opus" -> MediaType.AUDIO
             else -> null
         }
     }
@@ -268,6 +271,10 @@ object MediaSaver {
                 MediaStore.Video.Media.EXTERNAL_CONTENT_URI to
                     "${Environment.DIRECTORY_MOVIES}/$APP_FOLDER"
             }
+            MediaType.AUDIO -> {
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI to
+                    "${Environment.DIRECTORY_MUSIC}/$APP_FOLDER"
+            }
         }
 
         val contentValues = ContentValues().apply {
@@ -315,6 +322,7 @@ object MediaSaver {
         val baseDir = when (mediaType) {
             MediaType.IMAGE -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
             MediaType.VIDEO -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES)
+            MediaType.AUDIO -> Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
         }
 
         val appDir = File(baseDir, APP_FOLDER)
@@ -341,6 +349,7 @@ object MediaSaver {
             val contentUri = when (mediaType) {
                 MediaType.IMAGE -> MediaStore.Images.Media.EXTERNAL_CONTENT_URI
                 MediaType.VIDEO -> MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+                MediaType.AUDIO -> MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
             }
 
             val values = ContentValues().apply {
@@ -352,6 +361,9 @@ object MediaSaver {
                     }
                     MediaType.VIDEO -> {
                         put(MediaStore.Video.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
+                    }
+                    MediaType.AUDIO -> {
+                        put(MediaStore.Audio.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
                     }
                 }
             }
@@ -379,6 +391,14 @@ object MediaSaver {
                 "webm" -> "video/webm"
                 "mkv" -> "video/x-matroska"
                 "mov" -> "video/quicktime"
+                "mp3" -> "audio/mpeg"
+                "m4a" -> "audio/mp4"
+                "aac" -> "audio/aac"
+                "ogg" -> "audio/ogg"
+                "wav" -> "audio/wav"
+                "flac" -> "audio/flac"
+                "opus" -> "audio/ogg"
+                "mka" -> "audio/x-matroska"
                 else -> "application/octet-stream"
             }
     }
