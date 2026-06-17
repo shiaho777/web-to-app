@@ -1,0 +1,39 @@
+/* Web Tint — visual filter overlays. */
+#wta-tint-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2147483647;
+    transition: opacity 0.3s ease;
+}
+
+#wta-tint-overlay[data-mode='night'] {
+    mix-blend-mode: multiply;
+}
+
+#wta-tint-overlay[data-mode='custom'] {
+    mix-blend-mode: multiply;
+}
+
+/* Grayscale / contrast / invert use CSS filters on the root element. */
+html.wta-tint-grayscale {
+    filter: grayscale(1) !important;
+}
+
+html.wta-tint-grayscale img,
+html.wta-tint-grayscale video,
+html.wta-tint-grayscale canvas,
+html.wta-tint-grayscale iframe {
+    filter: grayscale(0) !important;
+}
+
+html.wta-tint-invert {
+    filter: invert(1) hue-rotate(180deg) !important;
+}
+
+html.wta-tint-invert img,
+html.wta-tint-invert video,
+html.wta-tint-invert canvas,
+html.wta-tint-invert iframe {
+    filter: invert(1) hue-rotate(180deg) !important;
+}

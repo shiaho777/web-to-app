@@ -6,9 +6,9 @@
   "category": "NAVIGATION",
   "tags": ["scroll", "reading", "manga", "feed", "official"],
   "version": {
-    "code": 1,
-    "name": "1.0.0",
-    "changelog": "Initial release."
+    "code": 2,
+    "name": "1.1.0",
+    "changelog": "Added reverse scroll mode and keyboard shortcuts."
   },
   "author": {
     "name": "shiaho",
@@ -32,6 +32,22 @@
       "key": "pauseOnInteract",
       "name": "Pause on user interaction",
       "description": "When on, manual scroll / arrow keys / spacebar briefly pause auto-scroll. Resumes after about 1.5 seconds of idle.",
+      "type": "BOOLEAN",
+      "defaultValue": "true",
+      "required": false
+    },
+    {
+      "key": "reverse",
+      "name": "Reverse scroll (bottom to top)",
+      "description": "Scroll upwards instead of downwards. Jumps to page bottom first — useful for comment sections.",
+      "type": "BOOLEAN",
+      "defaultValue": "false",
+      "required": false
+    },
+    {
+      "key": "keyboardShortcuts",
+      "name": "Enable keyboard shortcuts",
+      "description": "J = toggle scroll, [ = slower, ] = faster, R = reverse direction.",
       "type": "BOOLEAN",
       "defaultValue": "true",
       "required": false

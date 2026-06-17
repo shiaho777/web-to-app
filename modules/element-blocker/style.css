@@ -1,0 +1,40 @@
+/* Element Blocker — hides elements matching CSS selectors. */
+
+/* Picker mode highlight. */
+.wta-eb-pick-hover {
+    outline: 3px solid #ff4444 !important;
+    outline-offset: -3px !important;
+    cursor: crosshair !important;
+}
+
+/* Picker mode banner. */
+#wta-eb-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2147483647;
+    padding: 10px 16px;
+    background: rgba(28, 28, 32, 0.96);
+    color: #fff;
+    font: 600 14px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+#wta-eb-banner button {
+    appearance: none;
+    background: rgba(255, 255, 255, 0.15);
+    border: 0;
+    color: inherit;
+    font: inherit;
+    padding: 6px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+#wta-eb-banner button:hover {
+    background: rgba(255, 255, 255, 0.25);
+}

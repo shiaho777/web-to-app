@@ -111,11 +111,15 @@ html.wta-reading-mode-root:has(#wta-reading-mode-article[data-theme='dark']) {
   background: #1f2329;
 }
 
-/* ── font sizes ───────────────────────────────────────────────────── */
+/* ── font sizes (now arbitrary px via inline style) ────────────── */
 
-#wta-reading-mode-article[data-font-size='small'] { font-size: 16px; }
-#wta-reading-mode-article[data-font-size='medium'] { font-size: 18px; }
-#wta-reading-mode-article[data-font-size='large'] { font-size: 21px; }
+#wta-reading-mode-article .wta-rm-meta {
+    display: block;
+    font-size: 0.8em;
+    opacity: 0.5;
+    margin-bottom: 24px;
+    font-weight: 400;
+}
 
 /* ── font families ────────────────────────────────────────────────── */
 

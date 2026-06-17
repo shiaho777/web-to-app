@@ -1,0 +1,57 @@
+/* Selection Actions — floating action bar for text selections. */
+
+#wta-sa-bar {
+    position: fixed;
+    z-index: 2147483646;
+    display: none;
+    align-items: center;
+    gap: 2px;
+    padding: 4px;
+    background: rgba(28, 28, 32, 0.96);
+    color: #f5f5f7;
+    border-radius: 12px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.32);
+    font: 500 13px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: auto;
+    transform: translate(-50%, -100%) translateY(-8px);
+    opacity: 0;
+    transition: opacity 0.12s ease-out;
+}
+
+#wta-sa-bar.wta-sa-visible {
+    display: inline-flex;
+    opacity: 1;
+}
+
+#wta-sa-bar button {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    color: inherit;
+    font: inherit;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+#wta-sa-bar button:hover,
+#wta-sa-bar button:active {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+#wta-sa-bar .wta-sa-icon {
+    font-size: 14px;
+    line-height: 1;
+}
+
+#wta-sa-bar .wta-sa-divider {
+    width: 1px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.16);
+}
