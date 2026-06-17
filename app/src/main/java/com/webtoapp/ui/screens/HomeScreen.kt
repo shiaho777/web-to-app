@@ -483,6 +483,14 @@ fun HomeScreen(
                     val healthRecords: List<com.webtoapp.core.stats.AppHealthRecord> = healthRecordsState?.value ?: emptyList()
                     val healthMap = remember(healthRecords) { healthRecords.associateBy { it.appId } }
 
+                    LaunchedEffect(apps, healthMonitor) {
+                        val monitor = healthMonitor ?: return@LaunchedEffect
+                        val webApps = apps.mapNotNull { viewModel.getWebApp(it.id) }
+                        if (webApps.isNotEmpty()) {
+                            monitor.checkApps(webApps)
+                        }
+                    }
+
                     fun resolveScreenshotService(): com.webtoapp.core.stats.WebsiteScreenshotService? {
                         return try {
                             org.koin.java.KoinJavaComponent.get(com.webtoapp.core.stats.WebsiteScreenshotService::class.java)
