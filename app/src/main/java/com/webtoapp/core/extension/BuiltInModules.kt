@@ -21,8 +21,8 @@ object BuiltInModules {
         description = Strings.builtinMediaDownloaderDesc,
         icon = "download",
         category = ModuleCategory.MEDIA,
-        tags = listOf(Strings.tagVideo, Strings.tagDownload, "MP4", "bilibili", "douyin", "xiaohongshu"),
-        version = ModuleVersion(5, "5.0.0", Strings.versionV4Ui),
+        tags = listOf(Strings.tagVideo, Strings.tagDownload, "MP4", "bilibili", "douyin", "xiaohongshu", "instagram", "facebook", "tiktok"),
+        version = ModuleVersion(5, "5.1.0", Strings.versionV4Ui),
         author = ModuleAuthor("WebToApp"),
         builtIn = true,
         enabled = false,
@@ -171,11 +171,17 @@ object BuiltInModules {
     function isBilibili() { return host.includes('bilibili.com'); }
     function isDouyin() { return host.includes('douyin.com'); }
     function isXiaohongshu() { return host.includes('xiaohongshu.com') || host.includes('xhslink.com'); }
+    function isInstagram() { return host.includes('instagram.com'); }
+    function isFacebook() { return host.includes('facebook.com') || host.includes('fb.watch'); }
+    function isTikTok() { return host.includes('tiktok.com'); }
 
     function getPlatform() {
         if (isBilibili()) return 'bilibili';
         if (isDouyin()) return 'douyin';
         if (isXiaohongshu()) return 'xiaohongshu';
+        if (isInstagram()) return 'instagram';
+        if (isFacebook()) return 'facebook';
+        if (isTikTok()) return 'tiktok';
         return 'generic';
     }
 
@@ -235,6 +241,122 @@ object BuiltInModules {
         return mediaList;
     }
 
+    function getInstagramMedia() {
+        mediaList = [];
+        try {
+            var scripts = document.querySelectorAll('script[type="application/json"]');
+            for (var s = 0; s < scripts.length; s++) {
+                var text = scripts[s].textContent;
+                if (text && text.includes('video_url')) {
+                    var match = text.match(/"video_url"\s*:\s*"([^"]+)"/);
+                    if (match) {
+                        var url = match[1].replace(/\\u0026/g, '&').replace(/\\\//g, '/');
+                        mediaList.push({ type: 'video', src: url, i: 0 });
+                    }
+                }
+                if (text && text.includes('display_url') && mediaList.length === 0) {
+                    var imgMatch = text.match(/"display_url"\s*:\s*"([^"]+)"/);
+                    if (imgMatch) {
+                        var imgUrl = imgMatch[1].replace(/\\u0026/g, '&').replace(/\\\//g, '/');
+                        mediaList.push({ type: 'image', src: imgUrl, i: 0 });
+                    }
+                }
+            }
+        } catch (e) {}
+        if (mediaList.length === 0) {
+            document.querySelectorAll('video').forEach((v) => {
+                var src = v.src || v.currentSrc;
+                if (src && !src.startsWith('blob:')) mediaList.push({ type: 'video', src, i: mediaList.length });
+            });
+        }
+        if (mediaList.length === 0) {
+            var ogVideo = document.querySelector('meta[property="og:video"]');
+            if (ogVideo) mediaList.push({ type: 'video', src: ogVideo.content, i: 0 });
+            var ogImg = document.querySelector('meta[property="og:image"]');
+            if (ogImg && mediaList.length === 0) mediaList.push({ type: 'image', src: ogImg.content, i: 0 });
+        }
+        return mediaList;
+    }
+
+    function getFacebookMedia() {
+        mediaList = [];
+        try {
+            var ogVideo = document.querySelector('meta[property="og:video"]');
+            if (ogVideo && ogVideo.content) {
+                mediaList.push({ type: 'video', src: ogVideo.content, i: 0 });
+            }
+            var ogVideoSecure = document.querySelector('meta[property="og:video:secure_url"]');
+            if (ogVideoSecure && ogVideoSecure.content && !mediaList.find(m => m.src === ogVideoSecure.content)) {
+                mediaList.push({ type: 'video', src: ogVideoSecure.content, i: mediaList.length });
+            }
+        } catch (e) {}
+        if (mediaList.length === 0) {
+            document.querySelectorAll('video').forEach((v) => {
+                var src = v.src || v.currentSrc;
+                if (src && !src.startsWith('blob:')) mediaList.push({ type: 'video', src, i: mediaList.length });
+            });
+        }
+        if (mediaList.length === 0) {
+            try {
+                var scripts = document.querySelectorAll('script');
+                for (var i = 0; i < scripts.length; i++) {
+                    var text = scripts[i].textContent;
+                    if (text && text.includes('video_data')) {
+                        var matches = text.match(/"playable_url"\s*:\s*"([^"]+)"/g);
+                        if (matches) {
+                            matches.forEach(function(m) {
+                                var url = m.match(/"([^"]+)"$/)[1].replace(/\\\//g, '/');
+                                if (!mediaList.find(function(x) { return x.src === url; })) {
+                                    mediaList.push({ type: 'video', src: url, i: mediaList.length });
+                                }
+                            });
+                        }
+                    }
+                }
+            } catch (e) {}
+        }
+        return mediaList;
+    }
+
+    function getTikTokMedia() {
+        mediaList = [];
+        try {
+            var sigi = window.SIGI_STATE || window.__SIGI_STATE__;
+            if (sigi) {
+                var video = sigi.ItemModule?.[Object.keys(sigi.ItemModule)[0]]?.video;
+                if (video) {
+                    var playAddr = video.playAddr || video.play_addr;
+                    if (playAddr) {
+                        var url = Array.isArray(playAddr) ? playAddr[0] : (playAddr.url_list?.[0] || playAddr);
+                        if (url) mediaList.push({ type: 'video', src: url, i: 0, desc: video.desc || '' });
+                    }
+                }
+            }
+            if (mediaList.length === 0) {
+                var nextData = window.__NEXT_DATA__;
+                if (nextData) {
+                    var videoData = nextData.props?.pageProps?.itemInfo?.itemStruct?.video;
+                    if (videoData) {
+                        var addr = videoData.playAddr || videoData.play_addr;
+                        var url = Array.isArray(addr) ? addr[0] : (addr?.url_list?.[0] || addr);
+                        if (url) mediaList.push({ type: 'video', src: url, i: 0, desc: videoData.desc || '' });
+                    }
+                }
+            }
+        } catch (e) {}
+        if (mediaList.length === 0) {
+            document.querySelectorAll('video').forEach((v) => {
+                var src = v.src || v.currentSrc;
+                if (src && !src.startsWith('blob:')) mediaList.push({ type: 'video', src, i: mediaList.length });
+            });
+        }
+        if (mediaList.length === 0) {
+            var ogVideo = document.querySelector('meta[property="og:video"]');
+            if (ogVideo && ogVideo.content) mediaList.push({ type: 'video', src: ogVideo.content, i: 0 });
+        }
+        return mediaList;
+    }
+
     function downloadItem(url, filename, headers) {
         if (typeof NativeBridge !== 'undefined') {
             if (headers && NativeBridge.downloadWithHeaders) {
@@ -285,6 +407,24 @@ object BuiltInModules {
             return html;
         }
 
+        if (platform === 'instagram') {
+            getInstagramMedia();
+            if (!mediaList.length) return noMediaPanel('📷');
+            return renderMediaListPanel('#E1306C', '📷');
+        }
+
+        if (platform === 'facebook') {
+            getFacebookMedia();
+            if (!mediaList.length) return noMediaPanel('📘');
+            return renderMediaListPanel('#1877F2', '📘');
+        }
+
+        if (platform === 'tiktok') {
+            getTikTokMedia();
+            if (!mediaList.length) return noMediaPanel('🎵');
+            return renderMediaListPanel('#000000', '🎵');
+        }
+
         detectGenericVideos();
         if (!mediaList.length) return noMediaPanel('🎬');
         let html = '<div style="color:#6b7280;font-size:13px;margin-bottom:16px">' + T.detected.replace('{0}', mediaList.length) + '</div>';
@@ -296,6 +436,17 @@ object BuiltInModules {
 
     function noMediaPanel(icon) {
         return '<div style="text-align:center;padding:40px;color:#9ca3af"><div style="font-size:48px;margin-bottom:16px">' + icon + '</div><div>' + T.noMedia + '</div></div>';
+    }
+
+    function renderMediaListPanel(color, icon) {
+        var html = '<div style="color:#6b7280;font-size:13px;margin-bottom:16px">' + T.detected.replace('{0}', mediaList.length) + '</div>';
+        mediaList.forEach((m, i) => {
+            html += '<div style="background:#f9fafb;border-radius:12px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px">' +
+                '<div style="width:48px;height:48px;background:linear-gradient(135deg,' + color + ',' + color + '99);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-size:20px">' + (m.type === 'image' ? '🖼️' : icon) + '</div>' +
+                '<div style="flex:1"><div style="font-weight:600;color:#1f2937">' + (m.type === 'image' ? T.image : T.video) + ' ' + (i+1) + '</div></div>' +
+                '<button onclick="__wtaMediaDL(\'list_' + i + '\')" style="background:linear-gradient(135deg,' + color + ',' + color + '99);color:white;border:none;padding:10px 20px;border-radius:8px;font-size:14px;cursor:pointer">' + T.download + '</button></div>';
+        });
+        return html;
     }
 
     function escapeHtml(s) {
@@ -355,6 +506,18 @@ object BuiltInModules {
             __WTA_MODULE_UI__.closePanel();
             return;
         }
+
+        if (action.startsWith('list_')) {
+            const idx = parseInt(action.slice(5));
+            const m = mediaList[idx];
+            if (!m) return;
+            const platform = getPlatform();
+            const prefix = platform === 'instagram' ? 'instagram' : platform === 'facebook' ? 'facebook' : 'tiktok';
+            const ext = m.type === 'image' ? '.jpg' : '.mp4';
+            downloadItem(m.src, prefix + '_' + m.type + '_' + Date.now() + ext);
+            __WTA_MODULE_UI__.closePanel();
+            return;
+        }
     };
 
     function register() {
@@ -362,7 +525,8 @@ object BuiltInModules {
         __WTA_MODULE_UI__.register({ ...MODULE, uiConfig: (typeof __MODULE_UI_CONFIG__ !== 'undefined' ? __MODULE_UI_CONFIG__ : undefined), runMode: (typeof __MODULE_RUN_MODE__ !== 'undefined' ? __MODULE_RUN_MODE__ : 'INTERACTIVE'), onAction: c => c.innerHTML = getPanelHtml() });
     }
 
-    const delay = isBilibili() || isDouyin() || isXiaohongshu() ? 1000 : 0;
+    const needsDelay = isBilibili() || isDouyin() || isXiaohongshu() || isInstagram() || isFacebook() || isTikTok();
+    const delay = needsDelay ? 1000 : 0;
     if (delay) setTimeout(register, delay);
     else document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', register) : register();
 })();
