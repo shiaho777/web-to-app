@@ -184,6 +184,14 @@ NativeBridge.saveVideoToGallery('https://example.com/video.mp4', 'my_video.mp4')
 NativeBridge.downloadVideo('https://example.com/video.mp4', 'my_video.mp4');
 ```
 
+#### downloadAudio(url, filename)
+下载音频文件（保存到音乐目录）
+- `url`: string - 音频 URL
+- `filename`: string - 文件名（建议 .m4a / .mp3 / .aac 扩展名）
+```javascript
+NativeBridge.downloadAudio('https://example.com/audio.m4a', 'my_audio.m4a');
+```
+
 #### downloadWithHeaders(url, filename, headersJson)
 带自定义 Headers 下载文件（用于需要 Referer 等的资源）
 - `url`: string - 文件 URL
@@ -1525,6 +1533,41 @@ if (NativeBridge.isFullscreen()) {
                 }
             } catch (e: Exception) {
                 AppLogger.e("NativeBridge", "Failed to download video", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, Strings.downloadFailed, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    @JavascriptInterface
+    fun downloadAudio(url: String, filename: String) {
+        if (!capabilities.download) return
+        scope.launch {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, Strings.startDownload.replace("%s", filename), Toast.LENGTH_SHORT).show()
+            }
+
+            try {
+                val mimeType = if (filename.endsWith(".m4a")) "audio/mp4"
+                    else if (filename.endsWith(".mp3")) "audio/mpeg"
+                    else if (filename.endsWith(".aac")) "audio/aac"
+                    else if (filename.endsWith(".ogg")) "audio/ogg"
+                    else if (filename.endsWith(".opus")) "audio/ogg"
+                    else "audio/mpeg"
+                val result = MediaSaver.saveFromUrl(context, url, filename, mimeType)
+                withContext(Dispatchers.Main) {
+                    when (result) {
+                        is MediaSaver.SaveResult.Success -> {
+                            Toast.makeText(context, Strings.downloadComplete.replace("%s", filename), Toast.LENGTH_SHORT).show()
+                        }
+                        is MediaSaver.SaveResult.Error -> {
+                            Toast.makeText(context, Strings.downloadFailedWithReason.replace("%s", result.message), Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                AppLogger.e("NativeBridge", "Failed to download audio", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(context, Strings.downloadFailed, Toast.LENGTH_SHORT).show()
                 }
