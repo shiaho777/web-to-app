@@ -518,7 +518,7 @@ function startGame(){
 
         val mediaHtml = if (mediaSrc != null) {
             if (isVideo) {
-                """<video src="$mediaSrc" autoplay loop muted playsinline style="max-width:80%;max-height:50vh;border-radius:12px;"></video>"""
+                """<div class="video-wrapper"><video id="v" src="$mediaSrc" loop playsinline preload="metadata"></video><div class="video-overlay" id="overlay"><div class="play-btn" id="playBtn"></div></div><div class="video-controls" id="controls"><button class="ctrl-btn" id="ctrlPlay"></button><input type="range" class="seek-bar" id="seekBar" min="0" max="100" value="0" step="0.1"><span class="time-label" id="timeLabel">0:00 / 0:00</span></div></div>"""
             } else {
                 """<img src="$mediaSrc" style="max-width:80%;max-height:50vh;border-radius:12px;object-fit:contain;" alt=""/>"""
             }
@@ -549,11 +549,57 @@ body{
     font-family:inherit;
 }
 .retry-btn:active{background:rgba(138,180,248,0.08);}
+.video-wrapper{position:relative;display:inline-block;max-width:80%;max-height:50vh;border-radius:12px;overflow:hidden;background:#000;}
+.video-wrapper video{display:block;max-width:100%;max-height:50vh;object-fit:contain;}
+.video-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;background:rgba(0,0,0,0.25);transition:opacity .2s;}
+.video-overlay.hidden{opacity:0;pointer-events:none;}
+.play-btn{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.9);display:flex;align-items:center;justify-content:center;}
+.play-btn::before{content:'';border-style:solid;border-width:13px 0 13px 22px;border-color:transparent transparent transparent #1f1f1f;margin-left:5px;}
+.play-btn.playing::before{border:none;width:20px;height:24px;border-left:7px solid #1f1f1f;border-right:7px solid #1f1f1f;margin-left:0;}
+.video-controls{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;gap:8px;padding:6px 10px;background:linear-gradient(transparent,rgba(0,0,0,0.7));opacity:0;transition:opacity .2s;}
+.video-wrapper:hover .video-controls,.video-wrapper.show-controls .video-controls{opacity:1;}
+.ctrl-btn{flex-shrink:0;width:28px;height:28px;border:none;background:transparent;cursor:pointer;padding:0;position:relative;}
+.ctrl-btn::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border-style:solid;border-width:10px 0 10px 16px;border-color:transparent transparent transparent #fff;}
+.ctrl-btn.playing::before{border:none;width:14px;height:18px;border-left:5px solid #fff;border-right:5px solid #fff;}
+.seek-bar{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:rgba(255,255,255,0.3);cursor:pointer;outline:none;}
+.seek-bar::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:#8ab4f8;cursor:pointer;}
+.seek-bar::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#8ab4f8;cursor:pointer;border:none;}
+.seek-bar:active::-webkit-slider-thumb{width:18px;height:18px;}
+.time-label{flex-shrink:0;color:#fff;font-size:11px;font-family:monospace;white-space:nowrap;}
 </style>
 </head>
 <body>
 <div class="media-container">$mediaHtml</div>
 <button class="retry-btn" onclick="var u='$safeUrl';if(u)location.href=u;else location.reload();">$retryBtnText</button>
+<script>
+(function(){
+    var v=document.getElementById('v');if(!v)return;
+    var overlay=document.getElementById('overlay');
+    var playBtn=document.getElementById('playBtn');
+    var ctrlPlay=document.getElementById('ctrlPlay');
+    var seekBar=document.getElementById('seekBar');
+    var timeLabel=document.getElementById('timeLabel');
+    var wrapper=v.closest('.video-wrapper');
+    function fmt(s){if(!isFinite(s))return'0:00';var m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;}
+    function togglePlay(){if(v.paused){v.play();}else{v.pause();}}
+    function updatePlayState(){var p=!v.paused;playBtn.classList.toggle('playing',p);ctrlPlay.classList.toggle('playing',p);overlay.classList.toggle('hidden',p);}
+    if(playBtn)playBtn.addEventListener('click',function(e){e.stopPropagation();togglePlay();});
+    if(overlay)overlay.addEventListener('click',togglePlay);
+    if(ctrlPlay)ctrlPlay.addEventListener('click',function(e){e.stopPropagation();togglePlay();});
+    if(seekBar){seekBar.addEventListener('input',function(){if(v.duration){v.currentTime=(seekBar.value/100)*v.duration;}});}
+    v.addEventListener('timeupdate',function(){if(v.duration&&!seekBar.dragging){seekBar.value=(v.currentTime/v.duration)*100;}timeLabel.textContent=fmt(v.currentTime)+' / '+fmt(v.duration);});
+    v.addEventListener('loadedmetadata',function(){timeLabel.textContent=fmt(v.currentTime)+' / '+fmt(v.duration);});
+    if(seekBar){seekBar.addEventListener('touchstart',function(){seekBar.dragging=true;});seekBar.addEventListener('mousedown',function(){seekBar.dragging=true;});seekBar.addEventListener('touchend',function(){seekBar.dragging=false;});seekBar.addEventListener('mouseup',function(){seekBar.dragging=false;});}
+    v.addEventListener('play',updatePlayState);
+    v.addEventListener('pause',updatePlayState);
+    v.addEventListener('ended',updatePlayState);
+    v.addEventListener('click',togglePlay);
+    var hideTimer;function showControls(){wrapper.classList.add('show-controls');clearTimeout(hideTimer);hideTimer=setTimeout(function(){wrapper.classList.remove('show-controls');},3000);}
+    if(wrapper){wrapper.addEventListener('touchstart',showControls,{passive:true});wrapper.addEventListener('mousemove',showControls);}
+    v.play().catch(function(){});
+    showControls();
+})();
+</script>
 </body>
 </html>
         """.trimIndent()
@@ -571,17 +617,36 @@ body{
             val file = java.io.File(mediaPath)
             if (!file.exists() || !file.canRead()) return null
 
-            if (!isVideo && file.length() <= MAX_BASE64_MEDIA_SIZE) {
+            val fileLen = file.length()
+            if (!isVideo && fileLen in 1..MAX_BASE64_MEDIA_SIZE) {
                 val mime = "image/png"
-                val base64 = android.util.Base64.encodeToString(
-                    file.readBytes(),
-                    android.util.Base64.NO_WRAP
-                )
-                "data:$mime;base64,$base64"
+                val base64 = encodeFileToBase64(file)
+                if (base64 != null) {
+                    "data:$mime;base64,$base64"
+                } else {
+                    "file://${file.absolutePath}"
+                }
             } else {
                 "file://${file.absolutePath}"
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
+            null
+        }
+    }
+
+    private fun encodeFileToBase64(file: java.io.File): String? {
+        return try {
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            val output = java.io.ByteArrayOutputStream()
+            file.inputStream().use { input ->
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read <= 0) break
+                    output.write(buffer, 0, read)
+                }
+            }
+            android.util.Base64.encodeToString(output.toByteArray(), android.util.Base64.NO_WRAP)
+        } catch (e: OutOfMemoryError) {
             null
         }
     }
