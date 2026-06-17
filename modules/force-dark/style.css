@@ -1,0 +1,63 @@
+/* Force Dark — intelligent dark mode via CSS color-scheme + smart inversion. */
+
+html.wta-force-dark {
+    color-scheme: dark !important;
+    background-color: rgb(var(--wta-dark-bg, 18, 18, 22)) !important;
+}
+
+html.wta-force-dark body {
+    background-color: rgb(var(--wta-dark-bg, 18, 18, 22)) !important;
+    color: hsl(0, 0%, calc(var(--wta-dark-text, 90) * 1%)) !important;
+}
+
+/* Invert bright elements to dark, but skip media. */
+html.wta-force-dark body *:not(img):not(video):not(canvas):not(svg):not(picture):not(iframe) {
+    background-color: rgb(var(--wta-dark-bg, 18, 18, 22)) !important;
+    color: hsl(0, 0%, calc(var(--wta-dark-text, 90) * 1%)) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Preserve media if configured. */
+html.wta-force-dark.preserve-media img,
+html.wta-force-dark.preserve-media video,
+html.wta-force-dark.preserve-media canvas,
+html.wta-force-dark.preserve-media svg,
+html.wta-force-dark.preserve-media picture,
+html.wta-force-dark.preserve-media iframe {
+    filter: none !important;
+}
+
+/* Links: visible against dark bg. */
+html.wta-force-dark a {
+    color: #6cb6ff !important;
+}
+
+html.wta-force-dark a:visited {
+    color: #c084fc !important;
+}
+
+/* Inputs and form elements. */
+html.wta-force-dark input,
+html.wta-force-dark textarea,
+html.wta-force-dark select {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: hsl(0, 0%, calc(var(--wta-dark-text, 90) * 1%)) !important;
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+html.wta-force-dark input::placeholder,
+html.wta-force-dark textarea::placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Code blocks. */
+html.wta-force-dark pre,
+html.wta-force-dark code {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    color: hsl(0, 0%, calc(var(--wta-dark-text, 90) * 1%)) !important;
+}
+
+/* Scrollbars. */
+html.wta-force-dark {
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}

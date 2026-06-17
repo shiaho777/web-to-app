@@ -6,9 +6,9 @@
   "category": "READING",
   "tags": ["reader", "article", "typography", "focus", "official"],
   "version": {
-    "code": 1,
-    "name": "1.0.0",
-    "changelog": "Initial release."
+    "code": 2,
+    "name": "1.1.0",
+    "changelog": "Improved article extraction (ad/sidebar penalty), reading time estimate, custom font size."
   },
   "author": {
     "name": "shiaho",
@@ -35,16 +35,11 @@
     },
     {
       "key": "fontSize",
-      "name": "Font size",
-      "description": "Article body font size.",
-      "type": "SELECT",
-      "defaultValue": "medium",
-      "required": false,
-      "options": [
-        { "value": "small", "label": "Small (16px)" },
-        { "value": "medium", "label": "Medium (18px)" },
-        { "value": "large", "label": "Large (21px)" }
-      ]
+      "name": "Font size (px)",
+      "description": "Article body font size in pixels.",
+      "type": "NUMBER",
+      "defaultValue": "18",
+      "required": false
     },
     {
       "key": "fontFamily",

@@ -35,10 +35,10 @@
     var best = null;
     var bestScore = 0;
 
+    var AD_PATTERNS = /ad|advert|promo|sidebar|footer|header|nav|menu|cookie|consent|popup|modal|social|share|comment|related|recommend/i;
+
     for (var i = 0; i < candidates.length; i++) {
       var el = candidates[i];
-      // Skip layout containers that hold all of <body>'s text — they'd
-      // always win but contain the entire chrome too.
       if (el === document.body || el === document.documentElement) continue;
 
       var text = (el.textContent || '').trim();
@@ -48,17 +48,21 @@
       var paragraphs = el.querySelectorAll('p').length;
       if (paragraphs < 2) continue;
 
-      // Tag bias.
       var tagBoost = 1;
       var name = el.tagName.toLowerCase();
       if (name === 'article') tagBoost = 4;
       else if (name === 'main') tagBoost = 3;
       else if (el.getAttribute('role') === 'main') tagBoost = 3;
 
-      // Penalise nav-style links density.
       var links = el.querySelectorAll('a').length;
       var linkDensity = links / Math.max(1, paragraphs);
       var penalty = linkDensity > 3 ? 0.3 : 1;
+
+      var cls = (el.className || '') + ' ' + (el.id || '');
+      if (AD_PATTERNS.test(cls)) penalty *= 0.2;
+
+      var commLinks = el.querySelectorAll('a[href*="comment"], a[href*="share"], a[href*="social"]').length;
+      if (commLinks > 3) penalty *= 0.5;
 
       var score = len * tagBoost * penalty;
       if (score > bestScore) {
@@ -87,19 +91,20 @@
     var opts = getOpts();
     var html = article.innerHTML;
     var title = (document.title || '').trim();
+    var words = (article.textContent || '').trim().split(/\s+/).filter(Boolean).length;
+    var readMin = Math.max(1, Math.round(words / 200));
+    var readLabel = readMin + ' min read';
 
-    // Build the reader shell. Inline styles only — no extra <style> needed
-    // beyond the optional style.css we already injected.
     var shell = document.createElement('div');
     shell.id = ARTICLE_ID;
     shell.dataset.theme = opts.theme;
-    shell.dataset.fontSize = opts.fontSize;
+    shell.dataset.fontSize = String(opts.fontSize);
     shell.dataset.fontFamily = opts.fontFamily;
     shell.style.maxWidth = opts.maxWidth + 'px';
     shell.innerHTML =
       '<header class="wta-rm-header"><h1>' +
       escapeHtml(title) +
-      '</h1></header>' +
+      '</h1><span class="wta-rm-meta">' + escapeHtml(readLabel) + ' \u00b7 ' + words + ' words</span></header>' +
       '<div class="wta-rm-body">' +
       html +
       '</div>';

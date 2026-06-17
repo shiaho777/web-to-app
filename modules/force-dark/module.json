@@ -1,0 +1,48 @@
+{
+  "id": "wta-force-dark",
+  "name": "Force Dark",
+  "description": "Intelligently force any page into dark mode. Uses CSS color-scheme, smart background inversion, and text color correction — not a simple overlay. Attempts to preserve images, videos, and embedded content while darkening the page chrome.",
+  "icon": "dark_mode",
+  "category": "THEME",
+  "tags": ["dark", "theme", "accessibility", "night"],
+  "version": {
+    "code": 1,
+    "name": "1.0.0",
+    "changelog": "Initial release."
+  },
+  "author": {
+    "name": "shiaho",
+    "url": "https://github.com/shiaho777"
+  },
+  "runAt": "DOCUMENT_START",
+  "urlMatches": [
+    { "pattern": "*", "isRegex": false, "exclude": false }
+  ],
+  "permissions": ["CSS_INJECT", "DOM_ACCESS"],
+  "configItems": [
+    {
+      "key": "brightness",
+      "name": "Background brightness (%)",
+      "description": "How dark the background should be. 0 = pure black, 100 = no change.",
+      "type": "NUMBER",
+      "defaultValue": "10",
+      "required": false
+    },
+    {
+      "key": "preserveImages",
+      "name": "Preserve images and videos",
+      "description": "Do not invert images, videos, and embedded content.",
+      "type": "BOOLEAN",
+      "defaultValue": "true",
+      "required": false
+    },
+    {
+      "key": "textBrightness",
+      "name": "Text brightness (%)",
+      "description": "Brightness of corrected text. 100 = white, 70 = soft gray.",
+      "type": "NUMBER",
+      "defaultValue": "90",
+      "required": false
+    }
+  ]
+}

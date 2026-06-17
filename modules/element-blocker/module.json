@@ -1,0 +1,48 @@
+{
+  "id": "wta-element-blocker",
+  "name": "Element Blocker",
+  "description": "Block annoying page elements — ads, cookie banners, sticky bars, popups, newsletter prompts — using CSS selectors. Add your own rules or use the built-in defaults. Click the panel button to enter picker mode and tap any element to block it permanently on that site.",
+  "icon": "block",
+  "category": "CONTENT_FILTER",
+  "tags": ["adblock", "filter", "cleanup", "css"],
+  "version": {
+    "code": 1,
+    "name": "1.0.0",
+    "changelog": "Initial release."
+  },
+  "author": {
+    "name": "shiaho",
+    "url": "https://github.com/shiaho777"
+  },
+  "runAt": "DOCUMENT_START",
+  "urlMatches": [
+    { "pattern": "*", "isRegex": false, "exclude": false }
+  ],
+  "permissions": ["DOM_ACCESS", "CSS_INJECT", "STORAGE"],
+  "configItems": [
+    {
+      "key": "customRules",
+      "name": "Custom CSS selectors to block",
+      "description": "One selector per line. Elements matching these will be hidden. e.g. .ad-banner, #cookie-popup, [class*=newsletter].",
+      "type": "TEXTAREA",
+      "defaultValue": "",
+      "required": false
+    },
+    {
+      "key": "enableDefaults",
+      "name": "Enable built-in filter rules",
+      "description": "Includes common ad, cookie banner, and popup selectors.",
+      "type": "BOOLEAN",
+      "defaultValue": "true",
+      "required": false
+    },
+    {
+      "key": "enablePicker",
+      "name": "Enable element picker mode",
+      "description": "When on, the panel button activates a tap-to-block picker.",
+      "type": "BOOLEAN",
+      "defaultValue": "true",
+      "required": false
+    }
+  ]
+}

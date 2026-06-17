@@ -35,6 +35,8 @@
   var lastTs = 0;
   var paused = false;
   var stopOnUser = String(getConfig('pauseOnInteract', 'true')) === 'true';
+  var reverse = String(getConfig('reverse', 'false')) === 'true';
+  var useShortcuts = String(getConfig('keyboardShortcuts', 'true')) === 'true';
 
   function step(ts) {
     if (paused) {
@@ -47,6 +49,7 @@
     lastTs = ts;
 
     var px = levelToPxPerSec(getSpeedLevel()) * dt;
+    if (reverse) px = -px;
     var before = window.scrollY;
     window.scrollBy(0, px);
     // If we didn't move (page bottom or scroll-locked), stop — it's
@@ -60,6 +63,7 @@
 
   function start() {
     if (rafId !== null) return;
+    if (reverse) window.scrollTo(0, document.documentElement.scrollHeight);
     sessionStorage.setItem(STATE_KEY, '1');
     paused = false;
     lastTs = 0;
@@ -113,6 +117,18 @@
 
   // Pause when the tab is backgrounded — saves battery and stops the
   // scroll position drifting while the user does something else.
+  // ── keyboard shortcuts (J toggle, [ slower, ] faster, R reverse) ──
+  if (useShortcuts) {
+    window.addEventListener('keydown', function (e) {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+      if (e.key === 'j' || e.key === 'J') { e.preventDefault(); toggle(); }
+      else if (e.key === '[') { e.preventDefault(); sessionStorage.setItem(SPEED_KEY, String(Math.max(1, getSpeedLevel() - 1))); refreshPanel(); }
+      else if (e.key === ']') { e.preventDefault(); sessionStorage.setItem(SPEED_KEY, String(Math.min(10, getSpeedLevel() + 1))); refreshPanel(); }
+      else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); reverse = !reverse; if (rafId !== null) { stop(); start(); } }
+    });
+  }
+
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) paused = true;
     else if (rafId !== null) {

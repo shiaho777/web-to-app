@@ -1,0 +1,40 @@
+{
+  "id": "wta-text-find",
+  "name": "Find in Page",
+  "description": "Ctrl+F style in-page search bar. Highlights all matches, navigate with up/down arrows or Enter, shows match count and current position. Supports case-sensitive and regex modes. Opens via the floating panel button.",
+  "icon": "find_in_page",
+  "category": "NAVIGATION",
+  "tags": ["search", "find", "text", "navigation"],
+  "version": {
+    "code": 1,
+    "name": "1.0.0",
+    "changelog": "Initial release."
+  },
+  "author": {
+    "name": "shiaho",
+    "url": "https://github.com/shiaho777"
+  },
+  "runAt": "DOCUMENT_END",
+  "urlMatches": [
+    { "pattern": "*", "isRegex": false, "exclude": false }
+  ],
+  "permissions": ["DOM_ACCESS", "CSS_INJECT", "KEYBOARD"],
+  "configItems": [
+    {
+      "key": "highlightColor",
+      "name": "Highlight color",
+      "description": "Color for the current match highlight.",
+      "type": "COLOR",
+      "defaultValue": "#ffeb3b",
+      "required": false
+    },
+    {
+      "key": "otherMatchColor",
+      "name": "Other match color",
+      "description": "Color for non-current match highlights.",
+      "type": "COLOR",
+      "defaultValue": "#fff59d",
+      "required": false
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "id": "wta-web-tint",
+  "name": "Web Tint",
+  "description": "Visual filter overlay for any page. Includes night shift (amber blue-light filter), grayscale, high contrast, invert colors, and custom color tint. Adjustable intensity and color temperature. A superset of the former Night Shift module.",
+  "icon": "palette",
+  "category": "STYLE_MODIFIER",
+  "tags": ["theme", "filter", "night-shift", "accessibility", "color"],
+  "version": {
+    "code": 1,
+    "name": "1.0.0",
+    "changelog": "Initial release. Replaces Night Shift with multiple filter modes."
+  },
+  "author": {
+    "name": "shiaho",
+    "url": "https://github.com/shiaho777"
+  },
+  "runAt": "DOCUMENT_START",
+  "urlMatches": [
+    { "pattern": "*", "isRegex": false, "exclude": false }
+  ],
+  "permissions": ["CSS_INJECT", "DOM_ACCESS"],
+  "configItems": [
+    {
+      "key": "mode",
+      "name": "Filter mode",
+      "description": "night = amber blue-light filter. grayscale = remove all color. contrast = boost contrast. invert = invert all colors. custom = apply a custom color tint.",
+      "type": "SELECT",
+      "defaultValue": "night",
+      "required": false,
+      "options": [
+        { "value": "night", "label": "Night Shift (amber)" },
+        { "value": "grayscale", "label": "Grayscale" },
+        { "value": "contrast", "label": "High Contrast" },
+        { "value": "invert", "label": "Invert Colors" },
+        { "value": "custom", "label": "Custom Tint" }
+      ]
+    },
+    {
+      "key": "intensity",
+      "name": "Intensity (%)",
+      "description": "Overlay opacity for night shift and custom tint modes. 0 = off, 100 = full.",
+      "type": "NUMBER",
+      "defaultValue": "20",
+      "required": false
+    },
+    {
+      "key": "temperature",
+      "name": "Color temperature (K)",
+      "description": "Night shift color temperature. 2000 = warm amber, 3500 = soft warm, 5000 = neutral.",
+      "type": "SELECT",
+      "defaultValue": "2700",
+      "required": false,
+      "options": [
+        { "value": "2000", "label": "2000K (candle)" },
+        { "value": "2700", "label": "2700K (warm)" },
+        { "value": "3500", "label": "3500K (soft)" },
+        { "value": "5000", "label": "5000K (neutral)" }
+      ]
+    },
+    {
+      "key": "tintColor",
+      "name": "Custom tint color",
+      "description": "Hex color for custom tint mode, e.g. #ff9b40 for amber.",
+      "type": "COLOR",
+      "defaultValue": "#ff9b40",
+      "required": false
+    },
+    {
+      "key": "contrastAmount",
+      "name": "Contrast boost amount (%)",
+      "description": "Contrast multiplier for high-contrast mode. 100 = no change, 150 = 1.5x contrast.",
+      "type": "NUMBER",
+      "defaultValue": "140",
+      "required": false
+    }
+  ]
+}
