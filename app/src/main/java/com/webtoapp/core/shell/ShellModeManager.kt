@@ -232,6 +232,12 @@ data class ShellConfig(
     @SerializedName("announcementTriggerIntervalMinutes")
     val announcementTriggerIntervalMinutes: Int = 0,
 
+    @SerializedName("announcementVersion")
+    val announcementVersion: Int = 1,
+
+    @SerializedName("announcementTriggerIntervalIncludeLaunch")
+    val announcementTriggerIntervalIncludeLaunch: Boolean = false,
+
     @SerializedName("adsEnabled")
     val adsEnabled: Boolean = false,
 
@@ -906,7 +912,22 @@ data class MultiWebSiteShellConfig(
     val linkSelector: String = "",
 
     @SerializedName("enabled")
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
+
+    @SerializedName("sourceAppId")
+    val sourceAppId: Long = 0,
+
+    @SerializedName("sourceProjectId")
+    val sourceProjectId: String = "",
+
+    @SerializedName("faviconUrl")
+    val faviconUrl: String = "",
+
+    @SerializedName("themeColor")
+    val themeColor: String = "",
+
+    @SerializedName("sortIndex")
+    val sortIndex: Int = 0
 ) {
     fun getEffectiveUrl(localBaseUrl: String = ""): String {
         return if ((type == "LOCAL" || type == "INLINE_HTML" || (type == "EXISTING" && localFilePath.isNotBlank())) && localFilePath.isNotBlank()) {
@@ -936,7 +957,13 @@ data class HtmlShellConfig(
     val landscapeMode: Boolean = false,
 
     @SerializedName("loadMode")
-    val loadMode: String = "AUTO"
+    val loadMode: String = "AUTO",
+
+    @SerializedName("port")
+    val port: Int = 0,
+
+    @SerializedName("portConflictMode")
+    val portConflictMode: String = "AUTO_KILL"
 ) {
 
     fun getValidEntryFile(): String {
@@ -1221,6 +1248,33 @@ data class WebViewShellConfig(
     @SerializedName("nativeBridgeScreenWake")
     val nativeBridgeScreenWake: Boolean = true,
 
+    @SerializedName("nativeBridgeOpenExternal")
+    val nativeBridgeOpenExternal: Boolean = true,
+
+    @SerializedName("nativeBridgeDeviceInfo")
+    val nativeBridgeDeviceInfo: Boolean = true,
+
+    @SerializedName("nativeBridgeSecurityInfo")
+    val nativeBridgeSecurityInfo: Boolean = true,
+
+    @SerializedName("nativeBridgeNetworkInfo")
+    val nativeBridgeNetworkInfo: Boolean = true,
+
+    @SerializedName("nativeBridgeToast")
+    val nativeBridgeToast: Boolean = true,
+
+    @SerializedName("nativeBridgeLogging")
+    val nativeBridgeLogging: Boolean = true,
+
+    @SerializedName("nativeBridgeFindInPage")
+    val nativeBridgeFindInPage: Boolean = true,
+
+    @SerializedName("nativeBridgeOrientation")
+    val nativeBridgeOrientation: Boolean = true,
+
+    @SerializedName("nativeBridgeFullscreen")
+    val nativeBridgeFullscreen: Boolean = true,
+
     @SerializedName("javaScriptCanOpenWindows")
     val javaScriptCanOpenWindows: Boolean = false,
 
@@ -1246,7 +1300,7 @@ data class WebViewShellConfig(
     val mixedContentMode: String = "COMPATIBILITY",
 
     @SerializedName("enableBlobDownloadInterception")
-    val enableBlobDownloadInterception: Boolean = false,
+    val enableBlobDownloadInterception: Boolean = true,
 
     @SerializedName("blobInterceptScope")
     val blobInterceptScope: String = "ALL",
@@ -1316,6 +1370,9 @@ data class WebViewShellConfig(
 
     @SerializedName("showFloatingBackButton")
     val showFloatingBackButton: Boolean = false,
+
+    @SerializedName("downloadEnabled")
+    val downloadEnabled: Boolean = true,
 
     @SerializedName("keyboardAdjustMode")
     val keyboardAdjustMode: String = "RESIZE",
@@ -1537,7 +1594,13 @@ data class AutoStartShellConfig(
     val scheduledTime: String = "08:00",
 
     @SerializedName("scheduledDays")
-    val scheduledDays: List<Int> = listOf(1, 2, 3, 4, 5, 6, 7)
+    val scheduledDays: List<Int> = listOf(1, 2, 3, 4, 5, 6, 7),
+
+    @SerializedName("scheduledRepeat")
+    val scheduledRepeat: Boolean = true,
+
+    @SerializedName("bootDelay")
+    val bootDelay: Long = 5000L
 )
 
 data class IsolationShellConfig(

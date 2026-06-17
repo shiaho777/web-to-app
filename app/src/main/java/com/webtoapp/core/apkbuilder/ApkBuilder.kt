@@ -2969,7 +2969,9 @@ private fun WebApp.buildAnnouncementBlock(): AnnouncementBlock = AnnouncementBlo
     allowNeverShow = announcement?.allowNeverShow ?: false,
     triggerOnLaunch = announcement?.triggerOnLaunch ?: true,
     triggerOnNoNetwork = announcement?.triggerOnNoNetwork ?: false,
-    triggerIntervalMinutes = announcement?.triggerIntervalMinutes ?: 0
+    triggerIntervalMinutes = announcement?.triggerIntervalMinutes ?: 0,
+    version = announcement?.version ?: 1,
+    triggerIntervalIncludeLaunch = announcement?.triggerIntervalIncludeLaunch ?: false
 )
 
 private fun WebApp.buildAdsBlock(): AdsBlock = AdsBlock(
@@ -3053,7 +3055,8 @@ private fun WebApp.buildWebViewBlock(context: android.content.Context?): WebView
         performanceOptimization = webViewConfig.performanceOptimization,
         pwaOfflineEnabled = webViewConfig.pwaOfflineEnabled && !webViewConfig.clearBrowsingDataOnLaunch,
         pwaOfflineStrategy = webViewConfig.pwaOfflineStrategy,
-        keyboardAdjustMode = webViewConfig.keyboardAdjustMode.name
+        keyboardAdjustMode = webViewConfig.keyboardAdjustMode.name,
+        downloadEnabled = webViewConfig.downloadEnabled
     )
 }
 
@@ -3096,6 +3099,15 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     nativeBridgeDownload = webViewConfig.nativeBridgeCapabilities.download,
     nativeBridgePrivateNetwork = webViewConfig.nativeBridgeCapabilities.privateNetwork,
     nativeBridgeScreenWake = webViewConfig.nativeBridgeCapabilities.screenWake,
+    nativeBridgeOpenExternal = webViewConfig.nativeBridgeCapabilities.openExternal,
+    nativeBridgeDeviceInfo = webViewConfig.nativeBridgeCapabilities.deviceInfo,
+    nativeBridgeSecurityInfo = webViewConfig.nativeBridgeCapabilities.securityInfo,
+    nativeBridgeNetworkInfo = webViewConfig.nativeBridgeCapabilities.networkInfo,
+    nativeBridgeToast = webViewConfig.nativeBridgeCapabilities.toast,
+    nativeBridgeLogging = webViewConfig.nativeBridgeCapabilities.logging,
+    nativeBridgeFindInPage = webViewConfig.nativeBridgeCapabilities.findInPage,
+    nativeBridgeOrientation = webViewConfig.nativeBridgeCapabilities.orientation,
+    nativeBridgeFullscreen = webViewConfig.nativeBridgeCapabilities.fullscreen,
     javaScriptCanOpenWindows = webViewConfig.javaScriptCanOpenWindows,
     jsOpenWindowsPolicy = webViewConfig.jsOpenWindowsPolicy.name,
     databaseEnabled = webViewConfig.databaseEnabled,
@@ -3239,6 +3251,7 @@ private fun WebApp.buildHtmlBlock(): HtmlBlock = HtmlBlock(
     entryFile = htmlConfig?.getValidEntryFile() ?: "index.html",
     enableJavaScript = htmlConfig?.enableJavaScript ?: true,
     enableLocalStorage = htmlConfig?.enableLocalStorage ?: true,
+    backgroundColor = htmlConfig?.backgroundColor ?: "#FFFFFF",
     landscapeMode = htmlConfig?.landscapeMode ?: false,
     loadMode = htmlConfig?.loadMode?.name ?: HtmlLoadMode.AUTO.name,
     port = htmlConfig?.port ?: 0,
@@ -3328,7 +3341,9 @@ private fun WebApp.buildAutoStartBlock(): AutoStartBlock = AutoStartBlock(
     bootStartEnabled = autoStartConfig?.bootStartEnabled ?: false,
     scheduledStartEnabled = autoStartConfig?.scheduledStartEnabled ?: false,
     scheduledTime = autoStartConfig?.scheduledTime ?: "08:00",
-    scheduledDays = autoStartConfig?.scheduledDays ?: listOf(1, 2, 3, 4, 5, 6, 7)
+    scheduledDays = autoStartConfig?.scheduledDays ?: listOf(1, 2, 3, 4, 5, 6, 7),
+    scheduledRepeat = autoStartConfig?.scheduledRepeat ?: true,
+    bootDelay = autoStartConfig?.bootDelay ?: 5000L
 )
 
 private fun WebApp.buildOptionalServicesBlock(): OptionalServicesBlock = OptionalServicesBlock(
@@ -3441,7 +3456,12 @@ private fun WebApp.buildMultiWebBlock(): MultiWebBlock {
             category = site.category,
             cssSelector = site.cssSelector,
             linkSelector = site.linkSelector,
-            enabled = site.enabled
+            enabled = site.enabled,
+            sourceAppId = site.sourceAppId,
+            sourceProjectId = site.sourceProjectId,
+            faviconUrl = site.faviconUrl,
+            themeColor = site.themeColor,
+            sortIndex = site.sortIndex
         )
     } ?: emptyList()
     return MultiWebBlock(

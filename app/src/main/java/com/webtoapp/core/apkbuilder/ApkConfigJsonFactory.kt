@@ -56,6 +56,8 @@ internal object ApkConfigJsonFactory {
         "announcementTriggerOnLaunch" to announcement.triggerOnLaunch,
         "announcementTriggerOnNoNetwork" to announcement.triggerOnNoNetwork,
         "announcementTriggerIntervalMinutes" to announcement.triggerIntervalMinutes,
+        "announcementVersion" to announcement.version,
+        "announcementTriggerIntervalIncludeLaunch" to announcement.triggerIntervalIncludeLaunch,
         "adsEnabled" to ads.enabled,
         "adBannerEnabled" to ads.bannerEnabled,
         "adBannerId" to ads.bannerId,
@@ -232,6 +234,15 @@ internal object ApkConfigJsonFactory {
         "nativeBridgeDownload" to webViewBehavior.nativeBridgeDownload,
         "nativeBridgePrivateNetwork" to webViewBehavior.nativeBridgePrivateNetwork,
         "nativeBridgeScreenWake" to webViewBehavior.nativeBridgeScreenWake,
+        "nativeBridgeOpenExternal" to webViewBehavior.nativeBridgeOpenExternal,
+        "nativeBridgeDeviceInfo" to webViewBehavior.nativeBridgeDeviceInfo,
+        "nativeBridgeSecurityInfo" to webViewBehavior.nativeBridgeSecurityInfo,
+        "nativeBridgeNetworkInfo" to webViewBehavior.nativeBridgeNetworkInfo,
+        "nativeBridgeToast" to webViewBehavior.nativeBridgeToast,
+        "nativeBridgeLogging" to webViewBehavior.nativeBridgeLogging,
+        "nativeBridgeFindInPage" to webViewBehavior.nativeBridgeFindInPage,
+        "nativeBridgeOrientation" to webViewBehavior.nativeBridgeOrientation,
+        "nativeBridgeFullscreen" to webViewBehavior.nativeBridgeFullscreen,
         "javaScriptCanOpenWindows" to webViewBehavior.javaScriptCanOpenWindows,
         "jsOpenWindowsPolicy" to webViewBehavior.jsOpenWindowsPolicy,
         "databaseEnabled" to webViewBehavior.databaseEnabled,
@@ -284,6 +295,7 @@ internal object ApkConfigJsonFactory {
         "dnsMode" to dns.mode,
         "dnsConfig" to dns.config,
         "showFloatingBackButton" to webView.showFloatingBackButton,
+        "downloadEnabled" to webView.downloadEnabled,
         "floatingWindowConfig" to floatingWindowConfigPayload(),
         "errorPageConfig" to errorPageConfigPayload()
     )
@@ -338,6 +350,7 @@ internal object ApkConfigJsonFactory {
         "entryFile" to html.entryFile,
         "enableJavaScript" to html.enableJavaScript,
         "enableLocalStorage" to html.enableLocalStorage,
+        "backgroundColor" to html.backgroundColor,
         "landscapeMode" to html.landscapeMode,
         "loadMode" to html.loadMode,
         "port" to html.port,
@@ -369,7 +382,9 @@ internal object ApkConfigJsonFactory {
                 "bootStartEnabled" to autoStart.bootStartEnabled,
                 "scheduledStartEnabled" to autoStart.scheduledStartEnabled,
                 "scheduledTime" to autoStart.scheduledTime,
-                "scheduledDays" to autoStart.scheduledDays
+                "scheduledDays" to autoStart.scheduledDays,
+                "scheduledRepeat" to autoStart.scheduledRepeat,
+                "bootDelay" to autoStart.bootDelay
             )
         } else null
 

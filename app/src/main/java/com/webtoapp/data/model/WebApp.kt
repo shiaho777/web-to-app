@@ -339,7 +339,7 @@ data class WebViewConfig(
     val geolocationEnabled: Boolean = false,
     val geolocationAccuracy: GeolocationAccuracy = GeolocationAccuracy.COARSE,
     val geolocationPolicy: GeolocationPolicy = GeolocationPolicy.ALWAYS_ASK,
-    val enableBlobDownloadInterception: Boolean = false,
+    val enableBlobDownloadInterception: Boolean = true,
     val blobInterceptScope: BlobInterceptScope = BlobInterceptScope.ALL,
     val blobInterceptThresholdMb: Int = 5,
 
@@ -1355,6 +1355,15 @@ data class NativeBridgeCapabilities(
     val download: Boolean = true,
     val privateNetwork: Boolean = true,
     val screenWake: Boolean = true,
+    val openExternal: Boolean = true,
+    val deviceInfo: Boolean = true,
+    val securityInfo: Boolean = true,
+    val networkInfo: Boolean = true,
+    val toast: Boolean = true,
+    val logging: Boolean = true,
+    val findInPage: Boolean = true,
+    val orientation: Boolean = true,
+    val fullscreen: Boolean = true,
 )
 
 enum class GeolocationAccuracy {

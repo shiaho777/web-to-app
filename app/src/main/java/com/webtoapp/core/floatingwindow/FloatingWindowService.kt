@@ -260,6 +260,15 @@ class FloatingWindowService : Service() {
                             download = shellConfig.webViewConfig.nativeBridgeDownload,
                             privateNetwork = shellConfig.webViewConfig.nativeBridgePrivateNetwork,
                             screenWake = shellConfig.webViewConfig.nativeBridgeScreenWake,
+                            openExternal = shellConfig.webViewConfig.nativeBridgeOpenExternal,
+                            deviceInfo = shellConfig.webViewConfig.nativeBridgeDeviceInfo,
+                            securityInfo = shellConfig.webViewConfig.nativeBridgeSecurityInfo,
+                            networkInfo = shellConfig.webViewConfig.nativeBridgeNetworkInfo,
+                            toast = shellConfig.webViewConfig.nativeBridgeToast,
+                            logging = shellConfig.webViewConfig.nativeBridgeLogging,
+                            findInPage = shellConfig.webViewConfig.nativeBridgeFindInPage,
+                            orientation = shellConfig.webViewConfig.nativeBridgeOrientation,
+                            fullscreen = shellConfig.webViewConfig.nativeBridgeFullscreen,
                         )
                         val nativeBridge = com.webtoapp.core.webview.NativeBridge(
                             context = this@FloatingWindowService,

@@ -35686,6 +35686,15 @@ object Strings {
     val nativeBridgeCapsDownload: String get() = when (lang) { AppLanguage.CHINESE -> "下载"; AppLanguage.ENGLISH -> "Download"; AppLanguage.ARABIC -> "التنزيل" }
     val nativeBridgeCapsPrivateNetwork: String get() = when (lang) { AppLanguage.CHINESE -> "私网请求"; AppLanguage.ENGLISH -> "Private Network"; AppLanguage.ARABIC -> "الشبكة الخاصة" }
     val nativeBridgeCapsScreenWake: String get() = when (lang) { AppLanguage.CHINESE -> "屏幕常亮"; AppLanguage.ENGLISH -> "Screen Wake"; AppLanguage.ARABIC -> "إيقاظ الشاشة" }
+    val nativeBridgeCapsOpenExternal: String get() = when (lang) { AppLanguage.CHINESE -> "外部交互"; AppLanguage.ENGLISH -> "Open External"; AppLanguage.ARABIC -> "فتح خارجي" }
+    val nativeBridgeCapsDeviceInfo: String get() = when (lang) { AppLanguage.CHINESE -> "设备信息"; AppLanguage.ENGLISH -> "Device Info"; AppLanguage.ARABIC -> "معلومات الجهاز" }
+    val nativeBridgeCapsSecurityInfo: String get() = when (lang) { AppLanguage.CHINESE -> "安全状态"; AppLanguage.ENGLISH -> "Security Info"; AppLanguage.ARABIC -> "معلومات الأمان" }
+    val nativeBridgeCapsNetworkInfo: String get() = when (lang) { AppLanguage.CHINESE -> "网络/状态"; AppLanguage.ENGLISH -> "Network/State"; AppLanguage.ARABIC -> "الشبكة/الحالة" }
+    val nativeBridgeCapsToast: String get() = when (lang) { AppLanguage.CHINESE -> "Toast 提示"; AppLanguage.ENGLISH -> "Toast"; AppLanguage.ARABIC -> "توست" }
+    val nativeBridgeCapsLogging: String get() = when (lang) { AppLanguage.CHINESE -> "日志"; AppLanguage.ENGLISH -> "Logging"; AppLanguage.ARABIC -> "التسجيل" }
+    val nativeBridgeCapsFindInPage: String get() = when (lang) { AppLanguage.CHINESE -> "页内查找"; AppLanguage.ENGLISH -> "Find in Page"; AppLanguage.ARABIC -> "البحث في الصفحة" }
+    val nativeBridgeCapsOrientation: String get() = when (lang) { AppLanguage.CHINESE -> "屏幕方向"; AppLanguage.ENGLISH -> "Orientation"; AppLanguage.ARABIC -> "اتجاه الشاشة" }
+    val nativeBridgeCapsFullscreen: String get() = when (lang) { AppLanguage.CHINESE -> "全屏"; AppLanguage.ENGLISH -> "Fullscreen"; AppLanguage.ARABIC -> "ملء الشاشة" }
 
     val geolocationAccuracyLabel: String get() = when (lang) { AppLanguage.CHINESE -> "精度"; AppLanguage.ENGLISH -> "Accuracy"; AppLanguage.ARABIC -> "الدقة" }
     val geolocationAccuracyCoarse: String get() = when (lang) { AppLanguage.CHINESE -> "粗略"; AppLanguage.ENGLISH -> "Coarse"; AppLanguage.ARABIC -> "تقريبية" }
@@ -36382,58 +36391,10 @@ object Strings {
         AppLanguage.ARABIC -> "تعذّر تحديد مصدر التثبيت"
     }
 
-    val modifierErrorPageTitle: String get() = when (lang) {
-        AppLanguage.CHINESE -> "网络错误页"
-        AppLanguage.ENGLISH -> "Error Page"
-        AppLanguage.ARABIC -> "صفحة الخطأ"
-    }
-
-    val modifierErrorPageDefault: String get() = when (lang) {
-        AppLanguage.CHINESE -> "默认错误页"
-        AppLanguage.ENGLISH -> "Default Error Page"
-        AppLanguage.ARABIC -> "صفحة الخطأ الافتراضية"
-    }
-
-    val modifierErrorPageDefaultHint: String get() = when (lang) {
-        AppLanguage.CHINESE -> "使用内置的网络错误提示页面"
-        AppLanguage.ENGLISH -> "Use built-in network error page"
-        AppLanguage.ARABIC -> "استخدام صفحة خطأ الشبكة المدمجة"
-    }
-
-    val modifierErrorPageCustom: String get() = when (lang) {
-        AppLanguage.CHINESE -> "自定义 HTML 页面"
-        AppLanguage.ENGLISH -> "Custom HTML Page"
-        AppLanguage.ARABIC -> "صفحة HTML مخصصة"
-    }
-
-    val modifierErrorPageCustomHint: String get() = when (lang) {
-        AppLanguage.CHINESE -> "使用自定义 HTML 作为错误页面"
-        AppLanguage.ENGLISH -> "Use custom HTML as error page"
-        AppLanguage.ARABIC -> "استخدام HTML مخصص كصفحة خطأ"
-    }
-
-    val modifierErrorPageSuppressed: String get() = when (lang) {
+    val errorPageModeSuppressed: String get() = when (lang) {
         AppLanguage.CHINESE -> "屏蔽错误信息"
-        AppLanguage.ENGLISH -> "Suppress Error Info"
+        AppLanguage.ENGLISH -> "Suppress Errors"
         AppLanguage.ARABIC -> "إخفاء معلومات الخطأ"
-    }
-
-    val modifierErrorPageSuppressedHint: String get() = when (lang) {
-        AppLanguage.CHINESE -> "不显示任何错误页面，网络异常时保持空白"
-        AppLanguage.ENGLISH -> "Don't show any error page, stay blank on network failure"
-        AppLanguage.ARABIC -> "عدم عرض أي صفحة خطأ، البقاء فارغًا عند فشل الشبكة"
-    }
-
-    val modifierErrorPageCustomHtmlLabel: String get() = when (lang) {
-        AppLanguage.CHINESE -> "HTML 代码"
-        AppLanguage.ENGLISH -> "HTML Code"
-        AppLanguage.ARABIC -> "كود HTML"
-    }
-
-    val modifierErrorPageCustomHtmlHint: String get() = when (lang) {
-        AppLanguage.CHINESE -> "输入自定义的 HTML 页面代码，支持完整 HTML 语法"
-        AppLanguage.ENGLISH -> "Enter custom HTML page code, full HTML syntax supported"
-        AppLanguage.ARABIC -> "أدخل كود صفحة HTML مخصص، يدعم بناء HTML كامل"
     }
 }
 

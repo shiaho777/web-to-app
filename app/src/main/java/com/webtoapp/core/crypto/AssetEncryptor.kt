@@ -71,7 +71,7 @@ data class EncryptionConfig(
     val customPassword: String? = null
 ) {
     companion object {
-        private const val PBKDF2_ITERATIONS = 100000
+        private const val PBKDF2_ITERATIONS = CryptoConstants.PBKDF2_ITERATIONS
 
         val DISABLED = EncryptionConfig(enabled = false)
 

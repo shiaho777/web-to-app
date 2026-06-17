@@ -423,7 +423,9 @@ data class AnnouncementBlock(
     val allowNeverShow: Boolean = false,
     val triggerOnLaunch: Boolean = true,
     val triggerOnNoNetwork: Boolean = false,
-    val triggerIntervalMinutes: Int = 0
+    val triggerIntervalMinutes: Int = 0,
+    val version: Int = 1,
+    val triggerIntervalIncludeLaunch: Boolean = false
 )
 
 data class AdsBlock(
@@ -474,7 +476,8 @@ data class WebViewBlock(
     val performanceOptimization: Boolean = false,
     val pwaOfflineEnabled: Boolean = false,
     val pwaOfflineStrategy: String = "NETWORK_FIRST",
-    val keyboardAdjustMode: String = "RESIZE"
+    val keyboardAdjustMode: String = "RESIZE",
+    val downloadEnabled: Boolean = true
 )
 
 data class WebViewBehaviorBlock(
@@ -520,13 +523,22 @@ data class WebViewBehaviorBlock(
     val nativeBridgeDownload: Boolean = true,
     val nativeBridgePrivateNetwork: Boolean = true,
     val nativeBridgeScreenWake: Boolean = true,
+    val nativeBridgeOpenExternal: Boolean = true,
+    val nativeBridgeDeviceInfo: Boolean = true,
+    val nativeBridgeSecurityInfo: Boolean = true,
+    val nativeBridgeNetworkInfo: Boolean = true,
+    val nativeBridgeToast: Boolean = true,
+    val nativeBridgeLogging: Boolean = true,
+    val nativeBridgeFindInPage: Boolean = true,
+    val nativeBridgeOrientation: Boolean = true,
+    val nativeBridgeFullscreen: Boolean = true,
     val databaseEnabled: Boolean = true,
     val enableCookiePersistence: Boolean = true,
     val enablePrivateNetworkBridge: Boolean = false,
     val privateNetworkScope: String = "LOCAL_ONLY",
     val allowMixedContent: Boolean = false,
     val mixedContentMode: String = "COMPATIBILITY",
-    val enableBlobDownloadInterception: Boolean = false,
+    val enableBlobDownloadInterception: Boolean = true,
     val blobInterceptScope: String = "ALL",
     val blobInterceptThresholdMb: Int = 5,
     val enableCloudflareCompat: Boolean = true,
@@ -651,6 +663,7 @@ data class HtmlBlock(
     val entryFile: String = "index.html",
     val enableJavaScript: Boolean = true,
     val enableLocalStorage: Boolean = true,
+    val backgroundColor: String = "#FFFFFF",
     val landscapeMode: Boolean = false,
     val loadMode: String = "AUTO",
     val port: Int = 0,
@@ -704,7 +717,9 @@ data class AutoStartBlock(
     val bootStartEnabled: Boolean = false,
     val scheduledStartEnabled: Boolean = false,
     val scheduledTime: String = "08:00",
-    val scheduledDays: List<Int> = listOf(1, 2, 3, 4, 5, 6, 7)
+    val scheduledDays: List<Int> = listOf(1, 2, 3, 4, 5, 6, 7),
+    val scheduledRepeat: Boolean = true,
+    val bootDelay: Long = 5000L
 )
 
 data class OptionalServicesBlock(

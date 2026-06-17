@@ -440,6 +440,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun showToast(message: String, duration: String = "short") {
+        if (!capabilities.toast) return
         scope.launch(Dispatchers.Main) {
             val length = if (duration == "long") Toast.LENGTH_LONG else Toast.LENGTH_SHORT
             Toast.makeText(context, message, length).show()
@@ -523,6 +524,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun share(title: String, text: String, url: String = "") {
+        if (!capabilities.openExternal) return
         scope.launch(Dispatchers.Main) {
             try {
                 val shareText = if (url.isNotBlank()) "$text\n$url" else text
@@ -544,6 +546,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun shareImage(imageUrl: String, title: String = Strings.shareImage) {
+        if (!capabilities.openExternal) return
         scope.launch(Dispatchers.Main) {
             Toast.makeText(context, Strings.preparingShare, Toast.LENGTH_SHORT).show()
         }
@@ -555,6 +558,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun openUrl(url: String) {
+        if (!capabilities.openExternal) return
         scope.launch(Dispatchers.Main) {
             try {
                 val safeUrl = normalizeExternalIntentUrl(url)
@@ -582,6 +586,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun openApp(packageName: String): Boolean {
+        if (!capabilities.openExternal) return false
         return try {
             val intent = context.packageManager.getLaunchIntentForPackage(packageName)
             if (intent != null) {
@@ -748,6 +753,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun getDeviceInfo(): String {
+        if (!capabilities.deviceInfo) return "{}"
         return try {
             val displayMetrics = context.resources.displayMetrics
 
@@ -769,6 +775,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun getAppInfo(): String {
+        if (!capabilities.deviceInfo) return "{}"
         return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
             val json = org.json.JSONObject()
@@ -783,6 +790,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun isDeveloperOptionsEnabled(): Boolean {
+        if (!capabilities.securityInfo) return false
         return try {
             Settings.Secure.getInt(
                 context.contentResolver,
@@ -796,6 +804,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun isAdbEnabled(): Boolean {
+        if (!capabilities.securityInfo) return false
         return try {
             Settings.Secure.getInt(
                 context.contentResolver,
@@ -809,6 +818,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun isDebuggable(): Boolean {
+        if (!capabilities.securityInfo) return false
         return try {
             (context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0
         } catch (e: Exception) {
@@ -818,6 +828,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun getSecurityInfo(): String {
+        if (!capabilities.securityInfo) return "{}"
         return try {
             val devOptions = try {
                 Settings.Secure.getInt(
@@ -848,6 +859,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun areNotificationsEnabled(): Boolean {
+        if (!capabilities.notification) return false
         return try {
             NotificationManagerCompat.from(context).areNotificationsEnabled()
         } catch (e: Exception) {
@@ -858,6 +870,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun openNotificationSettings(): Boolean {
+        if (!capabilities.notification) return false
         return try {
             val intent = Intent().apply {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -908,6 +921,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun cancelNotification(tag: String): Boolean {
+        if (!capabilities.notification) return false
         return try {
             NotificationManagerCompat.from(context).cancel(tag.hashCode())
             true
@@ -919,6 +933,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun cancelAllNotifications(): Boolean {
+        if (!capabilities.notification) return false
         return try {
             NotificationManagerCompat.from(context).cancelAll()
             true
@@ -958,6 +973,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun canScheduleExactAlarms(): Boolean {
+        if (!capabilities.notificationScheduled) return false
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager
@@ -995,6 +1011,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun stopBackgroundService(): Boolean {
+        if (!capabilities.notificationPersistent) return false
         return try {
             BackgroundRunService.stop(context)
             true
@@ -1006,6 +1023,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun isBackgroundServiceRunning(): Boolean {
+        if (!capabilities.notificationPersistent) return false
         return try {
             BackgroundRunService.isServiceRunning()
         } catch (e: Exception) {
@@ -1015,6 +1033,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun isDozeMode(): Boolean {
+        if (!capabilities.networkInfo) return false
         return try {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
             val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
@@ -1027,6 +1046,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun isIgnoringBatteryOptimizations(): Boolean {
+        if (!capabilities.networkInfo) return false
         return try {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return true
             val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
@@ -1039,6 +1059,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun openBatteryOptimizationSettings(): Boolean {
+        if (!capabilities.networkInfo) return false
         return try {
             val intent = Intent().apply {
                 action = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -1058,6 +1079,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun getAppState(): String {
+        if (!capabilities.networkInfo) return "unknown"
         return try {
             if (isAppInForeground()) "foreground" else "background"
         } catch (e: Exception) {
@@ -1067,6 +1089,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun isAppInForeground(): Boolean {
+        if (!capabilities.networkInfo) return false
         return try {
             val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
                 ?: return false
@@ -1141,6 +1164,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun isNetworkAvailable(): Boolean {
+        if (!capabilities.networkInfo) return false
         return try {
             val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
             val network = connectivityManager.activeNetwork ?: return false
@@ -1153,6 +1177,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun getNetworkType(): String {
+        if (!capabilities.networkInfo) return "unknown"
         return try {
             val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
             val network = connectivityManager.activeNetwork ?: return "none"
@@ -1190,6 +1215,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun log(message: String) {
+        if (!capabilities.logging) return
         AppLogger.d("NativeBridge", "[JS] $message")
     }
 
@@ -1335,6 +1361,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun findInPage(query: String): String {
+        if (!capabilities.findInPage) return buildFindStateJson(supported = false)
         val safeQuery = query.trim().take(200)
         if (safeQuery.isBlank()) return clearFindInPage()
 
@@ -1370,6 +1397,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun findNextInPage(forward: Boolean): String {
+        if (!capabilities.findInPage) return buildFindStateJson(supported = false)
         scope.launch(Dispatchers.Main) {
             try {
                 val webView = webViewProvider() ?: return@launch
@@ -1386,6 +1414,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun clearFindInPage(): String {
+        if (!capabilities.findInPage) return buildFindStateJson(supported = false)
         findQuery = ""
         findActiveMatchOrdinal = -1
         findNumberOfMatches = 0
@@ -1406,6 +1435,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun setOrientation(orientation: String) {
+        if (!capabilities.orientation) return
         scope.launch(Dispatchers.Main) {
             try {
                 val activity = context as? Activity ?: return@launch
@@ -1427,6 +1457,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun getOrientation(): String {
+        if (!capabilities.orientation) return "unknown"
         return try {
             val displayMetrics = context.resources.displayMetrics
             if (displayMetrics.widthPixels > displayMetrics.heightPixels) {
@@ -1441,6 +1472,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun lockOrientation() {
+        if (!capabilities.orientation) return
         scope.launch(Dispatchers.Main) {
             try {
                 val activity = context as? Activity ?: return@launch
@@ -1459,6 +1491,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun unlockOrientation() {
+        if (!capabilities.orientation) return
         scope.launch(Dispatchers.Main) {
             try {
                 val activity = context as? Activity ?: return@launch
@@ -1472,6 +1505,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun downloadVideo(url: String, filename: String) {
+        if (!capabilities.download) return
         scope.launch {
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, Strings.startDownload.replace("%s", filename), Toast.LENGTH_SHORT).show()
@@ -1500,6 +1534,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun downloadWithHeaders(url: String, filename: String, headersJson: String) {
+        if (!capabilities.download) return
         scope.launch {
             withContext(Dispatchers.Main) {
                 Toast.makeText(context, Strings.startDownload.replace("%s", filename), Toast.LENGTH_SHORT).show()
@@ -1578,6 +1613,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun enterFullscreen() {
+        if (!capabilities.fullscreen) return
         scope.launch(Dispatchers.Main) {
             try {
                 val activity = context as? Activity ?: return@launch
@@ -1608,6 +1644,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun exitFullscreen() {
+        if (!capabilities.fullscreen) return
         scope.launch(Dispatchers.Main) {
             try {
                 val activity = context as? Activity ?: return@launch
@@ -1631,6 +1668,7 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun isFullscreen(): Boolean {
+        if (!capabilities.fullscreen) return false
         return try {
             val activity = context as? Activity ?: return false
             val decorView = activity.window.decorView

@@ -454,6 +454,15 @@ class ShellActivity : AppCompatActivity() {
                                     download = config.webViewConfig.nativeBridgeDownload,
                                     privateNetwork = config.webViewConfig.nativeBridgePrivateNetwork,
                                     screenWake = config.webViewConfig.nativeBridgeScreenWake,
+                                    openExternal = config.webViewConfig.nativeBridgeOpenExternal,
+                                    deviceInfo = config.webViewConfig.nativeBridgeDeviceInfo,
+                                    securityInfo = config.webViewConfig.nativeBridgeSecurityInfo,
+                                    networkInfo = config.webViewConfig.nativeBridgeNetworkInfo,
+                                    toast = config.webViewConfig.nativeBridgeToast,
+                                    logging = config.webViewConfig.nativeBridgeLogging,
+                                    findInPage = config.webViewConfig.nativeBridgeFindInPage,
+                                    orientation = config.webViewConfig.nativeBridgeOrientation,
+                                    fullscreen = config.webViewConfig.nativeBridgeFullscreen,
                                 )
                                 val nativeBridge = com.webtoapp.core.webview.NativeBridge(
                                     context = this@ShellActivity,

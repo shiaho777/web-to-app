@@ -129,6 +129,7 @@ class WebViewActivity : AppCompatActivity() {
     internal var showNavigationBarInFullscreen: Boolean = false
 
     private var originalOrientationBeforeFullscreen: Int = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    internal var fullscreenVideoOrientation: com.webtoapp.data.model.FullscreenVideoOrientation = com.webtoapp.data.model.FullscreenVideoOrientation.AUTO_SENSOR_LANDSCAPE
 
     private var statusBarColorMode: com.webtoapp.data.model.StatusBarColorMode = com.webtoapp.data.model.StatusBarColorMode.THEME
     private var statusBarCustomColor: String? = null
@@ -548,12 +549,18 @@ class WebViewActivity : AppCompatActivity() {
                         val downloadBridge = com.webtoapp.core.webview.DownloadBridge(this@WebViewActivity, lifecycleScope)
                         wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
 
-                        val nativeBridge = com.webtoapp.core.webview.NativeBridge(
-                            context = this@WebViewActivity,
-                            scope = lifecycleScope,
-                            webViewProvider = { wv }
-                        )
-                        wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
+                        val previewWvConfig = previewApp?.webViewConfig
+                        if (previewWvConfig?.enableNativeBridge == true) {
+                            val nativeBridge = com.webtoapp.core.webview.NativeBridge(
+                                context = this@WebViewActivity,
+                                scope = lifecycleScope,
+                                webViewProvider = { wv },
+                                capabilities = previewWvConfig.nativeBridgeCapabilities
+                            )
+                            wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
+                        } else {
+                            wv.removeJavascriptInterface(com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
+                        }
 
                         if (previewApp?.translateEnabled == true) {
                             val translateBridge = com.webtoapp.core.webview.TranslateBridge(wv, lifecycleScope)
@@ -620,7 +627,7 @@ class WebViewActivity : AppCompatActivity() {
 
     private fun showCustomView(view: View) {
         originalOrientationBeforeFullscreen = WindowHelper.showCustomView(this, view)
-        WindowHelper.applyFullscreenVideoOrientation(this, webView)
+        WindowHelper.applyFullscreenVideoOrientation(this, webView, fullscreenVideoOrientation)
         applyImmersiveFullscreen(true)
     }
 
@@ -912,6 +919,9 @@ fun WebViewScreen(
                 adBlocker.setEnabled(true)
             }
 
+            (activity as? WebViewActivity)?.fullscreenVideoOrientation =
+                previewApp.webViewConfig.fullscreenVideoOrientation
+
             when (previewApp.webViewConfig.orientationMode) {
                 com.webtoapp.data.model.OrientationMode.LANDSCAPE -> {
                     activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -1014,6 +1024,9 @@ fun WebViewScreen(
                 if (app.bgmEnabled && app.bgmConfig != null && isActivated) {
                     bgmPlayer.initialize(app.bgmConfig)
                 }
+
+                (activity as? WebViewActivity)?.fullscreenVideoOrientation =
+                    app.webViewConfig.fullscreenVideoOrientation
 
                 when (app.webViewConfig.orientationMode) {
                     com.webtoapp.data.model.OrientationMode.LANDSCAPE -> {

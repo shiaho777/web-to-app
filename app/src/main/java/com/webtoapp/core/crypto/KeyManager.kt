@@ -77,7 +77,7 @@ class KeyManager(private val context: Context) {
         return AesCryptoEngine.deriveKeyFromPackage(
             packageName,
             signatureHash,
-            100000
+            CryptoConstants.PBKDF2_ITERATIONS
         )
     }
 
@@ -90,7 +90,7 @@ class KeyManager(private val context: Context) {
         return AesCryptoEngine.deriveKeyFromPackage(
             packageName,
             signatureHash,
-            100000,
+            CryptoConstants.PBKDF2_ITERATIONS,
             customPassword
         )
     }

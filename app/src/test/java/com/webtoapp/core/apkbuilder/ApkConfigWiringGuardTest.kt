@@ -7,12 +7,17 @@ import org.junit.Test
 class ApkConfigWiringGuardTest {
 
     private val apkBuilderFile: File by lazy {
-        val candidates = listOf(
+        resolveFile(
             "src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt",
             "app/src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt"
         )
-        candidates.map(::File).firstOrNull { it.exists() }
-            ?: error("ApkBuilder.kt not found at any of: $candidates (cwd=${File(".").absolutePath})")
+    }
+
+    private val jsonFactoryFile: File by lazy {
+        resolveFile(
+            "src/main/java/com/webtoapp/core/apkbuilder/ApkConfigJsonFactory.kt",
+            "app/src/main/java/com/webtoapp/core/apkbuilder/ApkConfigJsonFactory.kt"
+        )
     }
 
     @Test
@@ -38,6 +43,23 @@ class ApkConfigWiringGuardTest {
         assertThat(violations).isEmpty()
     }
 
+    @Test
+    fun `json factory payloads do not hardcode user-facing field literals`() {
+        val text = jsonFactoryFile.readText()
+        val payloads = extractPayloadFunctions(text)
+        assertThat(payloads).isNotEmpty()
+
+        val violations = mutableListOf<String>()
+        for (payload in payloads) {
+            for (hit in scanForLiteralsInPayload(payload.body)) {
+                if (hit.value in WHITELISTED_INTERNALS) continue
+                violations.add("${payload.name} (L${payload.startLine}): `${hit.key} to ${hit.value}`")
+            }
+        }
+
+        assertThat(violations).isEmpty()
+    }
+
     private data class BuildBlock(
         val name: String,
         val startLine: Int,
@@ -48,6 +70,21 @@ class ApkConfigWiringGuardTest {
         val field: String,
         val value: String
     )
+
+    private data class PayloadFunc(
+        val name: String,
+        val startLine: Int,
+        val body: String
+    )
+
+    private data class PayloadLiteralHit(
+        val key: String,
+        val value: String
+    )
+
+    private fun resolveFile(vararg candidates: String): File =
+        candidates.map(::File).firstOrNull { it.exists() }
+            ?: error("File not found at any of: $candidates (cwd=${File(".").absolutePath})")
 
     private fun extractBuildBlocks(text: String): List<BuildBlock> {
         val lines = text.lines()
@@ -64,6 +101,21 @@ class ApkConfigWiringGuardTest {
         }
     }
 
+    private fun extractPayloadFunctions(text: String): List<PayloadFunc> {
+        val lines = text.lines()
+        val starts = mutableListOf<Pair<Int, String>>()
+        for ((idx, line) in lines.withIndex()) {
+            val m = PAYLOAD_HEADER.find(line) ?: continue
+            starts.add(idx to m.groupValues[1])
+        }
+        if (starts.isEmpty()) return emptyList()
+        return starts.mapIndexed { i, (startIdx, name) ->
+            val endIdx = if (i + 1 < starts.size) starts[i + 1].first else lines.size
+            val body = lines.subList(startIdx + 1, endIdx).joinToString("\n")
+            PayloadFunc(name, startIdx + 2, body)
+        }
+    }
+
     private fun scanForLiterals(body: String): List<LiteralHit> {
         val hits = mutableListOf<LiteralHit>()
         for (raw in body.lines()) {
@@ -75,29 +127,52 @@ class ApkConfigWiringGuardTest {
             if (line.startsWith("return ")) continue
             if (line.startsWith("add(") || line.startsWith("addAll(")) continue
             if (line.startsWith("}") || line.startsWith(")")) continue
+
             val m = ASSIGN.find(line) ?: continue
             val field = m.groupValues[1]
             val rhs = m.groupValues[2].trimEnd(',').trim()
-            if (line.contains("?:")) continue
-            if (rhs.contains("(") && rhs.contains(")")) continue
-            if (rhs == "true" || rhs == "false" || rhs == "null") continue
-            if (rhs.startsWith("listOf") || rhs.startsWith("emptyList")) continue
-            if (rhs.startsWith("it.") || rhs.startsWith("this.")) continue
-            val isStringLiteral = rhs.startsWith("\"") && rhs.endsWith("\"")
-            val hasInterpolation = rhs.contains("$")
-            if (isStringLiteral && !hasInterpolation) {
-                hits.add(LiteralHit(field, rhs))
-            } else if (NUMERIC_LITERAL.matches(rhs)) {
-                hits.add(LiteralHit(field, rhs))
-            }
+            detectLiteral(rhs)?.let { hits.add(LiteralHit(field, it)) }
         }
         return hits
+    }
+
+    private fun scanForLiteralsInPayload(body: String): List<PayloadLiteralHit> {
+        val hits = mutableListOf<PayloadLiteralHit>()
+        for (raw in body.lines()) {
+            val line = raw.trim()
+            if (line.isBlank()) continue
+
+            val m = PAIR_ASSIGN.find(line) ?: continue
+            val key = m.groupValues[1]
+            val rhs = m.groupValues[2].trimEnd(',').trim()
+            detectLiteral(rhs)?.let { hits.add(PayloadLiteralHit(key, it)) }
+        }
+        return hits
+    }
+
+    private fun detectLiteral(rhs: String): String? {
+        if (rhs == "true" || rhs == "false" || rhs == "null") return null
+        if (rhs.startsWith("listOf") || rhs.startsWith("emptyList")) return null
+        if (rhs.startsWith("it.") || rhs.startsWith("this.")) return null
+
+        val isStringLiteral = rhs.startsWith("\"") && rhs.endsWith("\"")
+        val hasInterpolation = rhs.contains("\$")
+        if (isStringLiteral && !hasInterpolation && rhs !in WHITELISTED_INTERNALS) {
+            return rhs
+        }
+        if (NUMERIC_LITERAL.matches(rhs)) {
+            return rhs
+        }
+        return null
     }
 
     companion object {
         private val BUILD_BLOCK_HEADER =
             Regex("^private fun WebApp\\.(build\\w+Block)\\(")
+        private val PAYLOAD_HEADER =
+            Regex("private fun ApkConfig\\.(\\w+Payload\\(\\))")
         private val ASSIGN = Regex("^(\\w+)\\s*=\\s*(.+)$")
+        private val PAIR_ASSIGN = Regex("\"(\\w+)\"\\s+to\\s+(.+?)(?:,\\s*\$|\$)")
         private val NUMERIC_LITERAL = Regex("^-?\\d+\\.?\\d*[fFlL]?$")
         private val WHITELISTED_INTERNALS = setOf(
             "\"__kernel__\"",

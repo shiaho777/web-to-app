@@ -2,7 +2,6 @@ package com.webtoapp.core.appmodifier
 
 import android.graphics.drawable.Drawable
 import com.webtoapp.core.activation.ActivationCode
-import com.webtoapp.core.errorpage.ErrorPageConfig
 import com.webtoapp.data.model.ActivationDialogConfig
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.BgmConfig
@@ -51,10 +50,7 @@ data class AppModifyConfig(
     val announcement: Announcement = Announcement(),
 
     val bgmEnabled: Boolean = false,
-    val bgmConfig: BgmConfig? = null,
-
-    val errorPageEnabled: Boolean = false,
-    val errorPageConfig: ErrorPageConfig = ErrorPageConfig()
+    val bgmConfig: BgmConfig? = null
 )
 
 sealed class AppModifyResult {

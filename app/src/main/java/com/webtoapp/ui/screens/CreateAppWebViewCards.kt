@@ -2380,8 +2380,8 @@ fun ErrorPageConfigCard(
 ) {
     val isCustomized = config.mode != com.webtoapp.core.errorpage.ErrorPageMode.DEFAULT
 
-    Column {
-        SettingsSwitch(
+    WtaSettingCard {
+        WtaToggleRow(
             title = Strings.errorPageTitle,
             subtitle = Strings.errorPageSubtitle,
             checked = isCustomized,
@@ -2399,8 +2399,12 @@ fun ErrorPageConfigCard(
             enter = CardExpandTransition,
             exit = CardCollapseTransition
         ) {
-            Column(modifier = Modifier.padding(start = 16.dp, top = 4.dp, bottom = 4.dp)) {
-
+            Column(
+                modifier = Modifier.padding(
+                    horizontal = WtaSpacing.RowHorizontal,
+                    vertical = WtaSpacing.ContentGap
+                )
+            ) {
                     Text(
                         text = Strings.errorPageSubtitle,
                         style = MaterialTheme.typography.labelMedium,
@@ -2418,7 +2422,8 @@ fun ErrorPageConfigCard(
                         val modes = listOf(
                             com.webtoapp.core.errorpage.ErrorPageMode.BUILTIN_STYLE to Strings.errorPageModeBuiltIn,
                             com.webtoapp.core.errorpage.ErrorPageMode.CUSTOM_HTML to Strings.errorPageModeCustomHtml,
-                            com.webtoapp.core.errorpage.ErrorPageMode.CUSTOM_MEDIA to Strings.errorPageModeCustomMedia
+                            com.webtoapp.core.errorpage.ErrorPageMode.CUSTOM_MEDIA to Strings.errorPageModeCustomMedia,
+                            com.webtoapp.core.errorpage.ErrorPageMode.SUPPRESSED to Strings.errorPageModeSuppressed
                         )
                         modes.forEach { (mode, label) ->
                             PremiumFilterChip(
@@ -2469,7 +2474,7 @@ fun ErrorPageConfigCard(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            SettingsSwitch(
+                            WtaToggleRow(
                                 title = Strings.errorPageMiniGameLabel,
                                 subtitle = Strings.errorPageMiniGameDesc,
                                 checked = config.showMiniGame,
@@ -2539,7 +2544,7 @@ fun ErrorPageConfigCard(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    SettingsSwitch(
+                    WtaToggleRow(
                         title = Strings.errorPageAutoRetryLabel,
                         subtitle = if (config.autoRetrySeconds > 0)
                             Strings.errorPageAutoRetryDesc.replace("%d", config.autoRetrySeconds.toString())
@@ -2948,6 +2953,51 @@ fun SpecialSettingsCard(
                                     selected = caps.screenWake,
                                     onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(screenWake = !caps.screenWake))) },
                                     label = { Text(Strings.nativeBridgeCapsScreenWake) }
+                                )
+                                FilterChip(
+                                    selected = caps.openExternal,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(openExternal = !caps.openExternal))) },
+                                    label = { Text(Strings.nativeBridgeCapsOpenExternal) }
+                                )
+                                FilterChip(
+                                    selected = caps.deviceInfo,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(deviceInfo = !caps.deviceInfo))) },
+                                    label = { Text(Strings.nativeBridgeCapsDeviceInfo) }
+                                )
+                                FilterChip(
+                                    selected = caps.securityInfo,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(securityInfo = !caps.securityInfo))) },
+                                    label = { Text(Strings.nativeBridgeCapsSecurityInfo) }
+                                )
+                                FilterChip(
+                                    selected = caps.networkInfo,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(networkInfo = !caps.networkInfo))) },
+                                    label = { Text(Strings.nativeBridgeCapsNetworkInfo) }
+                                )
+                                FilterChip(
+                                    selected = caps.toast,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(toast = !caps.toast))) },
+                                    label = { Text(Strings.nativeBridgeCapsToast) }
+                                )
+                                FilterChip(
+                                    selected = caps.logging,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(logging = !caps.logging))) },
+                                    label = { Text(Strings.nativeBridgeCapsLogging) }
+                                )
+                                FilterChip(
+                                    selected = caps.findInPage,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(findInPage = !caps.findInPage))) },
+                                    label = { Text(Strings.nativeBridgeCapsFindInPage) }
+                                )
+                                FilterChip(
+                                    selected = caps.orientation,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(orientation = !caps.orientation))) },
+                                    label = { Text(Strings.nativeBridgeCapsOrientation) }
+                                )
+                                FilterChip(
+                                    selected = caps.fullscreen,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(fullscreen = !caps.fullscreen))) },
+                                    label = { Text(Strings.nativeBridgeCapsFullscreen) }
                                 )
                             }
                         }
