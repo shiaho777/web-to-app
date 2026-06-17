@@ -106,6 +106,27 @@
         { "pattern": "*", "isRegex": false, "exclude": false }
       ],
       "hasCss": true
+    },
+    {
+      "id": "wta-tv-dpad-cursor",
+      "path": "tv-dpad-cursor",
+      "name": "TV D-Pad Cursor",
+      "description": "A virtual mouse cursor controlled by the D-pad on Android TV, Fire TV, and TV boxes. Move with arrow keys, click with Enter, long-press Enter to open settings. Includes movement acceleration, edge scrolling, click highlighting, and page zoom.",
+      "icon": "settings_remote",
+      "category": "ACCESSIBILITY",
+      "tags": ["tv", "remote", "d-pad", "cursor", "accessibility"],
+      "version": "1.0.0",
+      "minAppVersion": 33,
+      "author": {
+        "name": "shiaho",
+        "url": "https://github.com/shiaho777"
+      },
+      "runAt": "DOCUMENT_START",
+      "permissions": ["DOM_ACCESS", "CSS_INJECT", "STORAGE", "KEYBOARD"],
+      "urlMatches": [
+        { "pattern": "*", "isRegex": false, "exclude": false }
+      ],
+      "hasCss": true
     }
   ]
 }

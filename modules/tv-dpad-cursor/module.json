@@ -1,0 +1,88 @@
+{
+  "id": "wta-tv-dpad-cursor",
+  "name": "TV D-Pad Cursor",
+  "description": "A virtual mouse cursor controlled by the D-pad on Android TV, Fire TV, and TV boxes. Move with arrow keys, click with Enter, long-press Enter to open settings. Includes movement acceleration, edge scrolling, click highlighting, and page zoom.",
+  "icon": "settings_remote",
+  "category": "ACCESSIBILITY",
+  "tags": ["tv", "remote", "d-pad", "cursor", "accessibility"],
+  "version": {
+    "code": 1,
+    "name": "1.0.0",
+    "changelog": "Initial release."
+  },
+  "author": {
+    "name": "shiaho",
+    "url": "https://github.com/shiaho777"
+  },
+  "runAt": "DOCUMENT_START",
+  "urlMatches": [
+    { "pattern": "*", "isRegex": false, "exclude": false }
+  ],
+  "permissions": ["DOM_ACCESS", "CSS_INJECT", "STORAGE", "KEYBOARD"],
+  "configItems": [
+    {
+      "key": "cursorSpeed",
+      "name": "Cursor speed (px/frame)",
+      "description": "Normal movement speed when a direction key is held. Higher = faster cursor.",
+      "type": "NUMBER",
+      "defaultValue": "10",
+      "required": false
+    },
+    {
+      "key": "fastSpeed",
+      "name": "Accelerated speed (px/frame)",
+      "description": "Speed after holding a direction key beyond the accel delay threshold.",
+      "type": "NUMBER",
+      "defaultValue": "24",
+      "required": false
+    },
+    {
+      "key": "accelFrames",
+      "name": "Acceleration delay (frames)",
+      "description": "Number of frames to hold a direction before switching to fast speed. 0 = always fast.",
+      "type": "NUMBER",
+      "defaultValue": "18",
+      "required": false
+    },
+    {
+      "key": "scrollSpeed",
+      "name": "Edge scroll speed (px)",
+      "description": "Pixels scrolled per tick when the cursor reaches the screen edge.",
+      "type": "NUMBER",
+      "defaultValue": "14",
+      "required": false
+    },
+    {
+      "key": "scrollZone",
+      "name": "Edge scroll zone (px)",
+      "description": "Distance from the screen border within which edge scrolling activates.",
+      "type": "NUMBER",
+      "defaultValue": "80",
+      "required": false
+    },
+    {
+      "key": "idleHideMs",
+      "name": "Idle hide delay (ms)",
+      "description": "Milliseconds of inactivity before the cursor fades. 0 = never hide.",
+      "type": "NUMBER",
+      "defaultValue": "5000",
+      "required": false
+    },
+    {
+      "key": "highlight",
+      "name": "Highlight clickable elements on hover",
+      "description": "Draws an outline around clickable elements when the cursor is over them.",
+      "type": "BOOLEAN",
+      "defaultValue": "false",
+      "required": false
+    },
+    {
+      "key": "pageZoom",
+      "name": "Page zoom (%)",
+      "description": "Scales the entire page. 100 = no zoom. Uses CSS transform for GeckoView compatibility.",
+      "type": "NUMBER",
+      "defaultValue": "100",
+      "required": false
+    }
+  ]
+}
