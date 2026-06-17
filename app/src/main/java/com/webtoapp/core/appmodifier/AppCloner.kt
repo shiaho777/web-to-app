@@ -214,6 +214,8 @@ class AppCloner(private val context: Context) {
         }
     }
 
+    private val manifestRewriter = CloneManifestRewriter()
+
     suspend fun cloneAndInstall(
         config: AppModifyConfig,
         onProgress: (Int, String) -> Unit = { _, _ -> }
@@ -244,6 +246,9 @@ class AppCloner(private val context: Context) {
             val newPackageName = generateClonePackageName(config.originalApp.packageName)
             AppLogger.d("AppCloner", "New package name: $newPackageName")
 
+            val hasModifications = CloneConfigBuilder.hasAnyModification(config)
+            AppLogger.d("AppCloner", "Has modifications: $hasModifications")
+
             safeProgress(10, "复制 APK...")
 
             val unsignedApk = File(tempDir, "clone_unsigned.apk")
@@ -260,10 +265,24 @@ class AppCloner(private val context: Context) {
                     ?: config.originalApp.icon?.let { drawableToBitmap(it) }
             } catch (e: Exception) {
                 AppLogger.e("AppCloner", "Failed to load icon: ${e.message}")
-
             }
 
-            AppLogger.d("AppCloner", "Modifying APK...")
+            val cloneHostDex = loadCloneHostDex()
+            if (hasModifications && cloneHostDex == null) {
+                AppLogger.w("AppCloner", "Modifications requested but clone_host.dex not found; proceeding without injection")
+            }
+
+            val splashMediaPath = if (CloneConfigBuilder.needsSplashMedia(config)) {
+                CloneConfigBuilder.getSplashMediaPath(config)
+            } else null
+
+            val configJson = if (hasModifications) {
+                CloneConfigBuilder.buildJson(config)
+            } else null
+
+            val splashType = CloneConfigBuilder.getSplashType(config)
+
+            AppLogger.d("AppCloner", "Modifying APK with injection: dex=${cloneHostDex != null}, config=${configJson != null}, splash=${splashMediaPath != null}")
             modifyApk(
                 sourceApk = sourceApk,
                 outputApk = unsignedApk,
@@ -271,7 +290,12 @@ class AppCloner(private val context: Context) {
                 newPackageName = newPackageName,
                 originalAppName = config.originalApp.appName,
                 newAppName = config.newAppName,
-                iconBitmap = iconBitmap
+                iconBitmap = iconBitmap,
+                injectDex = cloneHostDex,
+                injectConfigJson = configJson,
+                injectSplashMediaPath = splashMediaPath,
+                injectSplashType = splashType,
+                useManifestRewriter = hasModifications && cloneHostDex != null
             ) { progress ->
 
             }
@@ -309,6 +333,15 @@ class AppCloner(private val context: Context) {
             AppLogger.e("AppCloner", "Cloning failed", e)
             AppLogger.e("AppCloner", "Operation failed", e)
             AppModifyResult.Error(e.message ?: "克隆失败: ${e.javaClass.simpleName}")
+        }
+    }
+
+    private fun loadCloneHostDex(): ByteArray? {
+        return try {
+            context.assets.open("clone_host/clone_host.dex").use { it.readBytes() }
+        } catch (e: Exception) {
+            AppLogger.w("AppCloner", "clone_host.dex asset not found: ${e.message}")
+            null
         }
     }
 
@@ -351,18 +384,37 @@ class AppCloner(private val context: Context) {
         originalAppName: String,
         newAppName: String,
         iconBitmap: Bitmap?,
+        injectDex: ByteArray? = null,
+        injectConfigJson: String? = null,
+        injectSplashMediaPath: String? = null,
+        injectSplashType: String = "IMAGE",
+        useManifestRewriter: Boolean = false,
         onProgress: (Int) -> Unit = {}
     ) {
+        var originalLauncherActivity: String? = null
+
         ZipFile(sourceApk).use { zipIn ->
             ZipOutputStream(FileOutputStream(outputApk)).use { zipOut ->
                 val entries = zipIn.entries().toList()
                     .sortedWith(compareBy<ZipEntry> { it.name != "resources.arsc" })
                 val entryNames = entries.map { it.name }.toSet()
+
+                val existingDexNumbers = entryNames.mapNotNull { name ->
+                    if (name.matches(Regex("^classes\\d*\\.dex$"))) {
+                        if (name == "classes.dex") 1
+                        else name.removePrefix("classes").removeSuffix(".dex").toIntOrNull()
+                    } else null
+                }.sorted()
+                val nextDexNumber = (existingDexNumbers.maxOrNull() ?: 0) + 1
+                val newDexName = "classes${nextDexNumber}.dex"
+                AppLogger.d("AppCloner", "Injecting DEX as: $newDexName (existing: $existingDexNumbers)")
+
+                val allEntryCount = entries.size + (if (injectDex != null) 1 else 0)
                 var processedCount = 0
 
                 entries.forEach { entry ->
                     processedCount++
-                    onProgress((processedCount * 100) / entries.size)
+                    onProgress((processedCount * 100) / allEntryCount)
 
                     when {
 
@@ -376,11 +428,17 @@ class AppCloner(private val context: Context) {
                                 val originalData = zipIn.getInputStream(entry).readBytes()
                                 AppLogger.d("AppCloner", "AndroidManifest.xml original size: ${originalData.size} bytes")
 
-                                val modifiedData = if (originalPackageName == "com.webtoapp") {
-                                    axmlEditor.modifyPackageName(originalData, newPackageName)
+                                val modifiedData: ByteArray
+                                if (useManifestRewriter) {
+                                    AppLogger.d("AppCloner", "Using CloneManifestRewriter for injection")
+                                    val rewriteResult = manifestRewriter.rewrite(originalData, originalPackageName, newPackageName)
+                                    modifiedData = rewriteResult.axmlData
+                                    originalLauncherActivity = rewriteResult.originalLauncherActivity
+                                    AppLogger.d("AppCloner", "Original launcher activity: $originalLauncherActivity")
+                                } else if (originalPackageName == "com.webtoapp") {
+                                    modifiedData = axmlEditor.modifyPackageName(originalData, newPackageName)
                                 } else {
-
-                                    axmlRebuilder.expandAndModify(
+                                    modifiedData = axmlRebuilder.expandAndModify(
                                         originalData,
                                         originalPackageName,
                                         newPackageName
@@ -391,7 +449,6 @@ class AppCloner(private val context: Context) {
                                 writeEntryDeflated(zipOut, entry.name, modifiedData)
                             } catch (e: Exception) {
                                 AppLogger.e("AppCloner", "Failed to modify AndroidManifest.xml: ${e.message}", e)
-
                                 copyEntry(zipIn, zipOut, entry)
                             }
                         }
@@ -410,9 +467,20 @@ class AppCloner(private val context: Context) {
                                 writeEntryStored(zipOut, entry.name, modifiedData)
                             } catch (e: Exception) {
                                 AppLogger.e("AppCloner", "Failed to modify resources.arsc: ${e.message}", e)
-
                                 copyEntry(zipIn, zipOut, entry)
                             }
+                        }
+
+                        injectConfigJson != null && entry.name == "assets/clone_config.json" -> {
+                            AppLogger.d("AppCloner", "Replacing existing clone_config.json")
+                            writeEntryDeflated(zipOut, entry.name, injectConfigJson.toByteArray(Charsets.UTF_8))
+                        }
+
+                        injectSplashMediaPath != null && (
+                            entry.name == "assets/splash_media.png" ||
+                            entry.name == "assets/splash_media.mp4"
+                        ) -> {
+                            AppLogger.d("AppCloner", "Skipping existing splash media: ${entry.name}")
                         }
 
                         iconBitmap != null && isIconEntry(entry.name) -> {
@@ -425,54 +493,50 @@ class AppCloner(private val context: Context) {
                     }
                 }
 
+                if (injectDex != null) {
+                    AppLogger.d("AppCloner", "Injecting DEX: $newDexName (${injectDex.size} bytes)")
+                    writeEntryDeflated(zipOut, newDexName, injectDex)
+                    processedCount++
+                    onProgress((processedCount * 100) / allEntryCount)
+                }
+
+                if (injectConfigJson != null) {
+                    val finalConfigJson = if (originalLauncherActivity != null) {
+                        try {
+                            val obj = com.google.gson.JsonParser.parseString(injectConfigJson).asJsonObject
+                            obj.addProperty("originalLauncherActivity", originalLauncherActivity)
+                            obj.toString()
+                        } catch (e: Exception) {
+                            injectConfigJson
+                        }
+                    } else {
+                        injectConfigJson
+                    }
+                    AppLogger.d("AppCloner", "Injecting clone_config.json (${finalConfigJson.length} chars)")
+                    writeEntryDeflated(zipOut, "assets/clone_config.json", finalConfigJson.toByteArray(Charsets.UTF_8))
+                }
+
+                if (injectSplashMediaPath != null) {
+                    val splashFile = File(injectSplashMediaPath)
+                    if (splashFile.exists()) {
+                        val splashAssetName = if (injectSplashType == "VIDEO") "assets/splash_media.mp4" else "assets/splash_media.png"
+                        AppLogger.d("AppCloner", "Injecting splash media: $splashAssetName from ${splashFile.absolutePath} (${splashFile.length()} bytes)")
+                        val splashBytes = splashFile.readBytes()
+                        if (injectSplashType == "VIDEO") {
+                            writeEntryStored(zipOut, splashAssetName, splashBytes)
+                        } else {
+                            writeEntryDeflated(zipOut, splashAssetName, splashBytes)
+                        }
+                    } else {
+                        AppLogger.w("AppCloner", "Splash media file not found: ${splashFile.absolutePath}")
+                    }
+                }
+
                 if (iconBitmap != null &&
                     entryNames.contains("res/drawable/ic_launcher_foreground.xml")
                 ) {
                     addAdaptiveIconPngs(zipOut, iconBitmap, entryNames)
                 }
-            }
-        }
-    }
-
-    private fun modifyManifestPackageName(
-        data: ByteArray,
-        oldPackage: String,
-        newPackage: String
-    ): ByteArray {
-        val result = data.copyOf()
-
-        replacePackageBytes(result, oldPackage, newPackage, Charsets.UTF_8)
-
-        replacePackageBytes(result, oldPackage, newPackage, Charsets.UTF_16LE)
-
-        return result
-    }
-
-    private fun replacePackageBytes(data: ByteArray, oldPkg: String, newPkg: String, charset: java.nio.charset.Charset) {
-        val oldBytes = oldPkg.toByteArray(charset)
-        val newBytes = newPkg.toByteArray(charset)
-
-        val replacement = if (newBytes.size <= oldBytes.size) {
-            newBytes + ByteArray(oldBytes.size - newBytes.size)
-        } else {
-
-            newBytes.copyOf(oldBytes.size)
-        }
-
-        var i = 0
-        while (i <= data.size - oldBytes.size) {
-            var match = true
-            for (j in oldBytes.indices) {
-                if (data[i + j] != oldBytes[j]) {
-                    match = false
-                    break
-                }
-            }
-            if (match) {
-                System.arraycopy(replacement, 0, data, i, replacement.size)
-                i += oldBytes.size
-            } else {
-                i++
             }
         }
     }
