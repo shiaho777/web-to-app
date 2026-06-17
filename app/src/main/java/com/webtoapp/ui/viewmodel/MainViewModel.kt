@@ -784,8 +784,10 @@ class MainViewModel(
         iconUri: Uri?,
         enableJavaScript: Boolean = true,
         enableLocalStorage: Boolean = true,
-        loadMode: HtmlLoadMode = HtmlLoadMode.AUTO,
-        landscapeMode: Boolean = false
+        loadMode: HtmlLoadMode = HtmlLoadMode.FILE,
+        landscapeMode: Boolean = false,
+        port: Int = 0,
+        portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL
     ) = createApp("HTML", iconUri) { savedIconPath, currentThemeType, categoryId ->
         val context = getApplication<Application>()
         val projectId = HtmlStorage.generateProjectId()
@@ -813,7 +815,9 @@ class MainViewModel(
                 enableJavaScript = enableJavaScript,
                 enableLocalStorage = enableLocalStorage,
                 loadMode = loadMode,
-                landscapeMode = landscapeMode
+                landscapeMode = landscapeMode,
+                port = port,
+                portConflictMode = portConflictMode
             ),
             activationEnabled = false,
             activationCodeList = emptyList(),

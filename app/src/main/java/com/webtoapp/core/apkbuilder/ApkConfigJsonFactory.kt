@@ -339,7 +339,9 @@ internal object ApkConfigJsonFactory {
         "enableJavaScript" to html.enableJavaScript,
         "enableLocalStorage" to html.enableLocalStorage,
         "landscapeMode" to html.landscapeMode,
-        "loadMode" to html.loadMode
+        "loadMode" to html.loadMode,
+        "port" to html.port,
+        "portConflictMode" to html.portConflictMode
     )
 
     private fun ApkConfig.galleryConfigPayload(): Map<String, Any?> = linkedMapOf(

@@ -63,6 +63,15 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import androidx.compose.ui.graphics.Color
 import com.webtoapp.ui.components.EnhancedElevatedCard
+import com.webtoapp.ui.animation.CardExpandTransition
+import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.data.model.PortConflictMode
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import com.webtoapp.ui.design.WtaSettingCard
+import com.webtoapp.ui.design.WtaToggleRow
+import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaSpacing
 
 private data class HtmlEditorStateSnapshot(
     val appName: String = "",
@@ -70,7 +79,7 @@ private data class HtmlEditorStateSnapshot(
     val appIcon: Uri? = null,
     val enableJavaScript: Boolean = true,
     val enableLocalStorage: Boolean = true,
-    val loadMode: HtmlLoadMode = HtmlLoadMode.AUTO,
+    val loadMode: HtmlLoadMode = HtmlLoadMode.FILE,
     val landscapeMode: Boolean = false
 )
 
@@ -98,8 +107,10 @@ fun CreateHtmlAppScreen(
         enableJavaScript: Boolean,
         enableLocalStorage: Boolean,
         loadMode: HtmlLoadMode,
-        landscapeMode: Boolean
-    ) -> Unit = { _, _, _, _, _, _, _, _ -> },
+        landscapeMode: Boolean,
+        port: Int,
+        portConflictMode: PortConflictMode
+    ) -> Unit = { _, _, _, _, _, _, _, _, _, _ -> },
     importDir: String? = null,
     importProjectName: String? = null
 ) {
@@ -139,7 +150,9 @@ fun CreateHtmlAppScreen(
 
     var enableJavaScript by remember { mutableStateOf(true) }
     var enableLocalStorage by remember { mutableStateOf(true) }
-    var loadMode by remember { mutableStateOf(HtmlLoadMode.AUTO) }
+    var loadMode by remember { mutableStateOf(HtmlLoadMode.FILE) }
+    var serverPort by remember { mutableStateOf(0) }
+    var portConflictMode by remember { mutableStateOf(PortConflictMode.AUTO_KILL) }
     var landscapeMode by remember { mutableStateOf(false) }
 
     var themeType by remember { mutableStateOf("AURORA") }
@@ -180,6 +193,8 @@ fun CreateHtmlAppScreen(
                 enableJavaScript = config.enableJavaScript
                 enableLocalStorage = config.enableLocalStorage
                 loadMode = config.loadMode
+                serverPort = config.port
+                portConflictMode = config.portConflictMode
                 landscapeMode = config.landscapeMode
             }
 
@@ -361,7 +376,7 @@ fun CreateHtmlAppScreen(
         }
     }
 
-    val hasUnsavedChanges = remember(appName, manualFiles, appIcon, enableJavaScript, enableLocalStorage, loadMode, landscapeMode, baselineSnapshot) {
+    val hasUnsavedChanges = remember(appName, manualFiles, appIcon, enableJavaScript, enableLocalStorage, loadMode, serverPort, portConflictMode, landscapeMode, baselineSnapshot) {
         appName != baselineSnapshot.appName ||
         manualFiles != baselineSnapshot.manualFiles ||
         appIcon != baselineSnapshot.appIcon ||
@@ -491,7 +506,9 @@ fun CreateHtmlAppScreen(
                                         enableJavaScript = enableJavaScript,
                                         enableLocalStorage = enableLocalStorage,
                                         loadMode = loadMode,
-                                        landscapeMode = landscapeMode
+                                        landscapeMode = landscapeMode,
+                                        port = serverPort,
+                                        portConflictMode = portConflictMode
                                     )
                                     onCreated(
                                         appName.ifBlank { Strings.createHtmlApp },
@@ -507,7 +524,9 @@ fun CreateHtmlAppScreen(
                                     enableJavaScript = enableJavaScript,
                                     enableLocalStorage = enableLocalStorage,
                                     loadMode = loadMode,
-                                    landscapeMode = landscapeMode
+                                    landscapeMode = landscapeMode,
+                                    port = serverPort,
+                                    portConflictMode = portConflictMode
                                 )
                                 onCreated(
                                     appName.ifBlank { Strings.createHtmlApp },
@@ -538,7 +557,9 @@ fun CreateHtmlAppScreen(
                                             enableJavaScript,
                                             enableLocalStorage,
                                             loadMode,
-                                            landscapeMode
+                                            landscapeMode,
+                                            serverPort,
+                                            portConflictMode
                                         )
                                     }
                                 } else {
@@ -550,7 +571,9 @@ fun CreateHtmlAppScreen(
                                         enableJavaScript,
                                         enableLocalStorage,
                                         loadMode,
-                                        landscapeMode
+                                        landscapeMode,
+                                        serverPort,
+                                        portConflictMode
                                     )
                                 }
                             }
@@ -576,7 +599,9 @@ fun CreateHtmlAppScreen(
                                             enableJavaScript,
                                             enableLocalStorage,
                                             loadMode,
-                                            landscapeMode
+                                            landscapeMode,
+                                            serverPort,
+                                            portConflictMode
                                         )
                                     }
                                 } else {
@@ -588,7 +613,9 @@ fun CreateHtmlAppScreen(
                                         enableJavaScript,
                                         enableLocalStorage,
                                         loadMode,
-                                        landscapeMode
+                                        landscapeMode,
+                                        serverPort,
+                                        portConflictMode
                                     )
                                 }
                             }
@@ -934,41 +961,165 @@ fun CreateHtmlAppScreen(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(Strings.htmlLoadMode)
-                        Text(
-                            text = Strings.htmlLoadModeHint,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    val isLocalServer = loadMode == HtmlLoadMode.LOCAL_HTTP
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                            Text(Strings.localServerToggle)
+                            Text(
+                                text = if (isLocalServer) Strings.localServerOnDesc else Strings.localServerFileDesc,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        WtaSwitch(
+                            checked = isLocalServer,
+                            onCheckedChange = { enabled ->
+                                loadMode = if (enabled) HtmlLoadMode.LOCAL_HTTP else HtmlLoadMode.FILE
+                            }
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                    }
+
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = isLocalServer,
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp, top = 8.dp, bottom = 4.dp),
+                            verticalArrangement = Arrangement.spacedBy(0.dp)
                         ) {
-                            HtmlLoadMode.entries.forEach { mode ->
-                                FilterChip(
-                                    selected = loadMode == mode,
-                                    onClick = { loadMode = mode },
-                                    label = {
-                                        Text(
-                                            when (mode) {
-                                                HtmlLoadMode.AUTO -> Strings.htmlLoadModeAuto
-                                                HtmlLoadMode.FILE -> Strings.htmlLoadModeFile
-                                                HtmlLoadMode.LOCAL_HTTP -> Strings.htmlLoadModeServer
-                                            }
+                            HorizontalDivider()
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = Strings.portConfigTitle,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = Strings.portAutoAssign,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = Strings.portAutoAssignHint,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                WtaSwitch(
+                                    checked = serverPort == 0,
+                                    onCheckedChange = { auto -> serverPort = if (auto) 0 else 8080 }
+                                )
+                            }
+
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = serverPort > 0,
+                                enter = CardExpandTransition,
+                                exit = CardCollapseTransition
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 8.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = Strings.portDefaultLabel,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(10.dp),
+                                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                        modifier = Modifier.width(100.dp)
+                                    ) {
+                                        BasicTextField(
+                                            value = if (serverPort > 0) serverPort.toString() else "",
+                                            onValueChange = { text ->
+                                                val num = text.toIntOrNull()
+                                                serverPort = if (num != null && num in 1024..65535) num
+                                                else if (text.isEmpty()) 0 else serverPort
+                                            },
+                                            singleLine = true,
+                                            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                                                textAlign = TextAlign.Center
+                                            ),
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
                                         )
-                                    },
-                                    leadingIcon = if (loadMode == mode) {
-                                        {
-                                            Icon(
-                                                Icons.Filled.Check,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(FilterChipDefaults.IconSize)
-                                            )
-                                        }
-                                    } else null
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider()
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = Strings.portConflictTitle,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = Strings.portConflictAutoKill,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = Strings.portConflictAutoKillHint,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                RadioButton(
+                                    selected = portConflictMode == PortConflictMode.AUTO_KILL,
+                                    onClick = { portConflictMode = PortConflictMode.AUTO_KILL }
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = Strings.portConflictAlert,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = Strings.portConflictAlertHint,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                RadioButton(
+                                    selected = portConflictMode == PortConflictMode.ALERT,
+                                    onClick = { portConflictMode = PortConflictMode.ALERT }
                                 )
                             }
                         }
@@ -998,10 +1149,6 @@ fun CreateHtmlAppScreen(
                         )
                     }
                     }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(8.dp))
 
                     Spacer(modifier = Modifier.height(8.dp))
                     HorizontalDivider()
@@ -1043,7 +1190,7 @@ fun CreateHtmlAppScreen(
                                 Text(
                                     text = Strings.optimizeJsSkippedNoEsbuild,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }

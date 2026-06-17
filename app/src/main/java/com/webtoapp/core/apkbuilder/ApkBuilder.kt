@@ -3240,7 +3240,9 @@ private fun WebApp.buildHtmlBlock(): HtmlBlock = HtmlBlock(
     enableJavaScript = htmlConfig?.enableJavaScript ?: true,
     enableLocalStorage = htmlConfig?.enableLocalStorage ?: true,
     landscapeMode = htmlConfig?.landscapeMode ?: false,
-    loadMode = htmlConfig?.loadMode?.name ?: HtmlLoadMode.AUTO.name
+    loadMode = htmlConfig?.loadMode?.name ?: HtmlLoadMode.AUTO.name,
+    port = htmlConfig?.port ?: 0,
+    portConflictMode = htmlConfig?.portConflictMode?.name ?: "AUTO_KILL"
 )
 
 private fun WebApp.buildGalleryBlock(): GalleryBlock {

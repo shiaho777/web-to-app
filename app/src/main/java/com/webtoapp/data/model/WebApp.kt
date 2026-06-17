@@ -806,7 +806,9 @@ data class HtmlConfig(
     val allowFileAccess: Boolean = true,
     val backgroundColor: String = "#FFFFFF",
     val landscapeMode: Boolean = false,
-    val loadMode: HtmlLoadMode = HtmlLoadMode.AUTO
+    val loadMode: HtmlLoadMode = HtmlLoadMode.FILE,
+    val port: Int = 0,
+    val portConflictMode: PortConflictMode = PortConflictMode.AUTO_KILL
 ) {
     fun getValidEntryFile(): String {
         return entryFile.takeIf {
@@ -834,6 +836,11 @@ enum class HtmlLoadMode {
     AUTO,
     FILE,
     LOCAL_HTTP
+}
+
+enum class PortConflictMode {
+    AUTO_KILL,
+    ALERT
 }
 
 enum class BgmPlayMode {

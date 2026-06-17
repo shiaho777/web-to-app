@@ -3471,6 +3471,90 @@ object Strings {
         AppLanguage.ARABIC -> "تظل الملفات المحلية تعمل دون اتصال. تستخدم ملفات APK المصدرة خادما محليا داخل التطبيق لتوافق الألعاب والصوت و fetch والوحدات و WASM و PWA."
     }
 
+    val localServerToggle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "本地服务"
+        AppLanguage.ENGLISH -> "Local Server"
+        AppLanguage.ARABIC -> "خادم محلي"
+    }
+
+    val localServerFileDesc: String get() = when (lang) {
+        AppLanguage.CHINESE -> "使用本地文件直接加载，离线可用"
+        AppLanguage.ENGLISH -> "Load local files directly, available offline"
+        AppLanguage.ARABIC -> "تحميل الملفات المحلية مباشرة، متاح دون اتصال"
+    }
+
+    val localServerOnDesc: String get() = when (lang) {
+        AppLanguage.CHINESE -> "通过本地 HTTP 服务承载，兼容 fetch、模块、WASM 和 PWA"
+        AppLanguage.ENGLISH -> "Serve via local HTTP, compatible with fetch, modules, WASM and PWA"
+        AppLanguage.ARABIC -> "خدمة عبر HTTP المحلي، متوافق مع fetch والوحدات و WASM و PWA"
+    }
+
+    val portConfigTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "端口配置"
+        AppLanguage.ENGLISH -> "Port Configuration"
+        AppLanguage.ARABIC -> "إعدادات المنفذ"
+    }
+
+    val portAutoAssign: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自动分配端口"
+        AppLanguage.ENGLISH -> "Auto Assign Port"
+        AppLanguage.ARABIC -> "تعيين المنفذ تلقائيا"
+    }
+
+    val portAutoAssignHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "系统自动选择可用端口"
+        AppLanguage.ENGLISH -> "System automatically selects an available port"
+        AppLanguage.ARABIC -> "يختار النظام منفذا متاحا تلقائيا"
+    }
+
+    val portCustom: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自定义端口"
+        AppLanguage.ENGLISH -> "Custom Port"
+        AppLanguage.ARABIC -> "منفذ مخصص"
+    }
+
+    val portCustomHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "输入端口号 (1024–65535)"
+        AppLanguage.ENGLISH -> "Enter port number (1024–65535)"
+        AppLanguage.ARABIC -> "أدخل رقم المنفذ (1024-65535)"
+    }
+
+    val portConflictTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "端口冲突处理"
+        AppLanguage.ENGLISH -> "Port Conflict Handling"
+        AppLanguage.ARABIC -> "معالجة تعارض المنفذ"
+    }
+
+    val portConflictAutoKill: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自动终止占用进程"
+        AppLanguage.ENGLISH -> "Auto Kill Occupying Process"
+        AppLanguage.ARABIC -> "إنهاء العملية المحتلة تلقائيا"
+    }
+
+    val portConflictAutoKillHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "检测到端口被占用时自动终止占用进程并启动服务"
+        AppLanguage.ENGLISH -> "Automatically kill the occupying process and start the service when a port conflict is detected"
+        AppLanguage.ARABIC -> "إنهاء العملية المحتلة تلقائيا وبدء الخدمة عند اكتشاف تعارض في المنفذ"
+    }
+
+    val portConflictAlert: String get() = when (lang) {
+        AppLanguage.CHINESE -> "提示端口被占用"
+        AppLanguage.ENGLISH -> "Alert Port In Use"
+        AppLanguage.ARABIC -> "تنبيه المنفذ مستخدم"
+    }
+
+    val portConflictAlertHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "检测到端口被占用时不加载页面并提示用户"
+        AppLanguage.ENGLISH -> "Do not load the page and alert the user when a port conflict is detected"
+        AppLanguage.ARABIC -> "عدم تحميل الصفحة وتنبيه المستخدم عند اكتشاف تعارض في المنفذ"
+    }
+
+    val portDefaultLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "默认端口"
+        AppLanguage.ENGLISH -> "Default Port"
+        AppLanguage.ARABIC -> "المنفذ الافتراضي"
+    }
+
     val landscapeModeLabel: String get() = when (lang) {
         AppLanguage.CHINESE -> "横屏模式"
         AppLanguage.ENGLISH -> "Landscape Mode"

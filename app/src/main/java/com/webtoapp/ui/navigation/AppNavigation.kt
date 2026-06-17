@@ -304,7 +304,9 @@ fun AppNavigation() {
                         enableJs: Boolean,
                         enableStorage: Boolean,
                         loadMode: HtmlLoadMode,
-                        landscape: Boolean ->
+                        landscape: Boolean,
+                        port: Int,
+                        portConflictMode: com.webtoapp.data.model.PortConflictMode ->
                         viewModel.saveZipHtmlApp(
                             name = name,
                             extractedDir = extractedDir,
@@ -313,7 +315,9 @@ fun AppNavigation() {
                             enableJavaScript = enableJs,
                             enableLocalStorage = enableStorage,
                             loadMode = loadMode,
-                            landscapeMode = landscape
+                            landscapeMode = landscape,
+                            port = port,
+                            portConflictMode = portConflictMode
                         )
                         navController.popBackStack()
                     },

@@ -652,7 +652,9 @@ data class HtmlBlock(
     val enableJavaScript: Boolean = true,
     val enableLocalStorage: Boolean = true,
     val landscapeMode: Boolean = false,
-    val loadMode: String = "AUTO"
+    val loadMode: String = "AUTO",
+    val port: Int = 0,
+    val portConflictMode: String = "AUTO_KILL"
 )
 
 data class GalleryBlock(
