@@ -5,6 +5,7 @@ import androidx.compose.runtime.Stable
 import com.webtoapp.core.activation.ActivationCode
 import com.webtoapp.core.appmodifier.AppModifyConfig
 import com.webtoapp.core.appmodifier.InstalledAppInfo
+import com.webtoapp.core.errorpage.ErrorPageConfig
 import com.webtoapp.data.model.ActivationDialogConfig
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.BgmConfig
@@ -31,7 +32,10 @@ data class AppModifierEditState(
     val announcement: Announcement = Announcement(),
 
     val bgmEnabled: Boolean = false,
-    val bgmConfig: BgmConfig = BgmConfig()
+    val bgmConfig: BgmConfig = BgmConfig(),
+
+    val errorPageEnabled: Boolean = false,
+    val errorPageConfig: ErrorPageConfig = ErrorPageConfig()
 ) {
     fun toConfig(originalApp: InstalledAppInfo): AppModifyConfig {
         return AppModifyConfig(
@@ -48,7 +52,9 @@ data class AppModifierEditState(
             announcementEnabled = announcementEnabled,
             announcement = announcement,
             bgmEnabled = bgmEnabled,
-            bgmConfig = if (bgmEnabled) bgmConfig else null
+            bgmConfig = if (bgmEnabled) bgmConfig else null,
+            errorPageEnabled = errorPageEnabled,
+            errorPageConfig = errorPageConfig
         )
     }
 }

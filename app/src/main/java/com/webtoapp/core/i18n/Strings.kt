@@ -36381,6 +36381,60 @@ object Strings {
         AppLanguage.ENGLISH -> "Couldn't determine the installer source"
         AppLanguage.ARABIC -> "تعذّر تحديد مصدر التثبيت"
     }
+
+    val modifierErrorPageTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "网络错误页"
+        AppLanguage.ENGLISH -> "Error Page"
+        AppLanguage.ARABIC -> "صفحة الخطأ"
+    }
+
+    val modifierErrorPageDefault: String get() = when (lang) {
+        AppLanguage.CHINESE -> "默认错误页"
+        AppLanguage.ENGLISH -> "Default Error Page"
+        AppLanguage.ARABIC -> "صفحة الخطأ الافتراضية"
+    }
+
+    val modifierErrorPageDefaultHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "使用内置的网络错误提示页面"
+        AppLanguage.ENGLISH -> "Use built-in network error page"
+        AppLanguage.ARABIC -> "استخدام صفحة خطأ الشبكة المدمجة"
+    }
+
+    val modifierErrorPageCustom: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自定义 HTML 页面"
+        AppLanguage.ENGLISH -> "Custom HTML Page"
+        AppLanguage.ARABIC -> "صفحة HTML مخصصة"
+    }
+
+    val modifierErrorPageCustomHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "使用自定义 HTML 作为错误页面"
+        AppLanguage.ENGLISH -> "Use custom HTML as error page"
+        AppLanguage.ARABIC -> "استخدام HTML مخصص كصفحة خطأ"
+    }
+
+    val modifierErrorPageSuppressed: String get() = when (lang) {
+        AppLanguage.CHINESE -> "屏蔽错误信息"
+        AppLanguage.ENGLISH -> "Suppress Error Info"
+        AppLanguage.ARABIC -> "إخفاء معلومات الخطأ"
+    }
+
+    val modifierErrorPageSuppressedHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "不显示任何错误页面，网络异常时保持空白"
+        AppLanguage.ENGLISH -> "Don't show any error page, stay blank on network failure"
+        AppLanguage.ARABIC -> "عدم عرض أي صفحة خطأ، البقاء فارغًا عند فشل الشبكة"
+    }
+
+    val modifierErrorPageCustomHtmlLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "HTML 代码"
+        AppLanguage.ENGLISH -> "HTML Code"
+        AppLanguage.ARABIC -> "كود HTML"
+    }
+
+    val modifierErrorPageCustomHtmlHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "输入自定义的 HTML 页面代码，支持完整 HTML 语法"
+        AppLanguage.ENGLISH -> "Enter custom HTML page code, full HTML syntax supported"
+        AppLanguage.ARABIC -> "أدخل كود صفحة HTML مخصص، يدعم بناء HTML كامل"
+    }
 }
 
 @Composable

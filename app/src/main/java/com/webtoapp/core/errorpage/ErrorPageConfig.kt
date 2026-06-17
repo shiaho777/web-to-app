@@ -8,7 +8,9 @@ enum class ErrorPageMode {
 
     CUSTOM_HTML,
 
-    CUSTOM_MEDIA
+    CUSTOM_MEDIA,
+
+    SUPPRESSED
 }
 
 enum class ErrorPageStyle(val displayName: String) {

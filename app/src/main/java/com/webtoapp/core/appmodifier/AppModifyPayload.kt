@@ -1,6 +1,7 @@
 package com.webtoapp.core.appmodifier
 
 import com.webtoapp.core.activation.ActivationCode
+import com.webtoapp.core.errorpage.ErrorPageConfig
 import com.webtoapp.data.model.ActivationDialogConfig
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.SplashConfig
@@ -16,7 +17,10 @@ data class AppModifyPayload(
     val activationDialogConfig: ActivationDialogConfig = ActivationDialogConfig(),
     val activationRemoteConfig: com.webtoapp.data.model.RemoteActivationConfig = com.webtoapp.data.model.RemoteActivationConfig(),
     val announcementEnabled: Boolean = false,
-    val announcement: Announcement = Announcement()
+    val announcement: Announcement = Announcement(),
+
+    val errorPageEnabled: Boolean = false,
+    val errorPageConfig: ErrorPageConfig = ErrorPageConfig()
 ) {
 
     fun toJson(): String = GsonProvider.gson.toJson(this)
@@ -26,7 +30,8 @@ data class AppModifyPayload(
         val hasActivation = activationEnabled &&
             (activationCodes.isNotEmpty() || activationRemoteConfig.enabled)
         val hasAnnouncement = announcementEnabled && announcement.title.isNotBlank()
-        return hasSplash || hasActivation || hasAnnouncement
+        val hasErrorPage = errorPageEnabled && errorPageConfig.mode != com.webtoapp.core.errorpage.ErrorPageMode.DEFAULT
+        return hasSplash || hasActivation || hasAnnouncement || hasErrorPage
     }
 
     companion object {

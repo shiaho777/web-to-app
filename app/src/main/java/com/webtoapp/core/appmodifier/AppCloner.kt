@@ -94,7 +94,9 @@ class AppCloner(private val context: Context) {
                 activationDialogConfig = config.activationDialogConfig,
                 activationRemoteConfig = config.activationRemoteConfig,
                 announcementEnabled = config.announcementEnabled,
-                announcement = config.announcement
+                announcement = config.announcement,
+                errorPageEnabled = config.errorPageEnabled,
+                errorPageConfig = config.errorPageConfig
             )
 
             val needsSplashLauncher = payload.needsLauncher() &&

@@ -42,6 +42,7 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
             ErrorPageMode.BUILTIN_STYLE -> generateBuiltInPage(errorCode, description, failedUrl, diagnostic, report)
             ErrorPageMode.CUSTOM_HTML -> config.customHtml
             ErrorPageMode.CUSTOM_MEDIA -> generateMediaPage(failedUrl)
+            ErrorPageMode.SUPPRESSED -> null
         }
     }
 

@@ -553,6 +553,13 @@ private fun AppModifyContent(
                 onAnnouncementChange = { update { copy(announcement = it) } }
             )
 
+            NetworkErrorPageCard(
+                enabled = editState.errorPageEnabled,
+                config = editState.errorPageConfig,
+                onEnabledChange = { update { copy(errorPageEnabled = it) } },
+                onConfigChange = { update { copy(errorPageConfig = it) } }
+            )
+
             SplashScreenCard(
                 enabled = editState.splashEnabled,
                 splashConfig = editState.splashConfig,
