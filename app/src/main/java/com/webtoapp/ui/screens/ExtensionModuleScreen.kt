@@ -272,25 +272,52 @@ fun ExtensionModuleScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.back)
                     }
+                },
+                actions = {
+                    var showMoreMenu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { showMoreMenu = true }) {
+                            Icon(Icons.Outlined.MoreVert, contentDescription = Strings.more)
+                        }
+                        DropdownMenu(
+                            expanded = showMoreMenu,
+                            onDismissRequest = { showMoreMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(Strings.browserExtStoreTitle) },
+                                onClick = { showMoreMenu = false; showStoreDialog = true },
+                                leadingIcon = { Icon(Icons.Default.Extension, null, Modifier.size(20.dp)) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(Strings.aiDevelop) },
+                                onClick = { showMoreMenu = false; onNavigateToAiDeveloper() },
+                                leadingIcon = { Icon(Icons.Default.AutoAwesome, null, Modifier.size(20.dp)) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(Strings.manualCreate) },
+                                onClick = { showMoreMenu = false; onNavigateToEditor(null) },
+                                leadingIcon = { Icon(Icons.Default.Code, null, Modifier.size(20.dp)) }
+                            )
+                            HorizontalDivider()
+                            DropdownMenuItem(
+                                text = { Text(Strings.importUserScript) },
+                                onClick = { showMoreMenu = false; userScriptPickerLauncher.launch("*/*") },
+                                leadingIcon = { Icon(Icons.Default.Description, null, Modifier.size(20.dp)) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(Strings.importChromeExtension) },
+                                onClick = { showMoreMenu = false; chromeExtPickerLauncher.launch("*/*") },
+                                leadingIcon = { Icon(Icons.Default.Extension, null, Modifier.size(20.dp)) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(Strings.importJsPackage) },
+                                onClick = { showMoreMenu = false; jsZipPickerLauncher.launch("*/*") },
+                                leadingIcon = { Icon(Icons.Default.FolderZip, null, Modifier.size(20.dp)) }
+                            )
+                        }
+                    }
                 }
-
             )
-        },
-        floatingActionButton = {
-
-            FloatingActionButton(
-                onClick = { showImportDialog = true },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary,
-                elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 2.dp,
-                    pressedElevation = 0.dp,
-                    focusedElevation = 2.dp,
-                    hoveredElevation = 3.dp
-                )
-            ) {
-                Icon(Icons.Default.Add, contentDescription = Strings.addModule)
-            }
         }
     ) { padding ->
         WtaBackground(
@@ -301,6 +328,38 @@ fun ExtensionModuleScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
+
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                item {
+                    QuickActionCard(
+                        icon = Icons.Default.Storefront,
+                        iconTint = MaterialTheme.colorScheme.primary,
+                        title = Strings.moduleMarketTitle,
+                        onClick = onNavigateToMarket
+                    )
+                }
+                item {
+                    QuickActionCard(
+                        icon = Icons.Default.Code,
+                        iconTint = MaterialTheme.colorScheme.tertiary,
+                        title = Strings.manualCreate,
+                        onClick = { onNavigateToEditor(null) }
+                    )
+                }
+                item {
+                    QuickActionCard(
+                        icon = Icons.Default.AutoAwesome,
+                        iconTint = MaterialTheme.colorScheme.secondary,
+                        title = Strings.aiDevelop,
+                        onClick = onNavigateToAiDeveloper
+                    )
+                }
+            }
 
             PremiumTextField(
                 value = searchQuery,
@@ -2191,6 +2250,44 @@ private fun formatFileSize(bytes: Long): String = when {
 }
 
 @Composable
+@Composable
+private fun QuickActionCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: androidx.compose.ui.graphics.Color,
+    title: String,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .width(100.dp)
+            .clip(RoundedCornerShape(WtaRadius.Card))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .clickable(onClick = onClick)
+            .padding(vertical = 14.dp, horizontal = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(iconTint.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp), tint = iconTint)
+        }
+        Text(
+            title,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
 private fun AddEntryRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     iconTint: androidx.compose.ui.graphics.Color,
