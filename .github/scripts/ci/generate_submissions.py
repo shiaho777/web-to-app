@@ -307,9 +307,12 @@ def _resolve_for_path(
             submitter_profile=profile,
         )
 
-    # No merged PR was found. This is the direct-push branch: only record
-    # an entry when the commit author is on the maintainer allowlist —
-    # otherwise the module stays hidden from the catalog by design.
+    # No merged PR was found. This is a direct push to main. The main branch
+    # is branch-protected, so a direct push has already been authorised by a
+    # maintainer (or admin) — we trust that gate rather than re-checking the
+    # GitHub login, which is unreliable for commits whose author email isn't
+    # linked to a GitHub account (the API returns `author: null` and we'd
+    # silently hide legitimate maintainer pushes).
     meta = _commit_metadata(target_sha)
     # Try to resolve the GitHub login from the commit's email when possible.
     # `git log` doesn't carry the GitHub login, so we look it up by querying
@@ -323,9 +326,16 @@ def _resolve_for_path(
     except (urllib.error.HTTPError, urllib.error.URLError):
         pass
 
+    if not login:
+        # Commit email isn't linked to a GitHub account, so the API can't
+        # tell us who authored it. The push already cleared branch
+        # protection, so attribute it to the repo owner as a fallback.
+        login = client.owner
+
     if maintainers and login.lower() not in {m.lower() for m in maintainers}:
-        # Strict policy: even direct pushes must come from a known
-        # maintainer. Anything else stays hidden.
+        # We resolved a login and it isn't on the maintainer allowlist.
+        # Branch protection should prevent strangers from direct-pushing,
+        # but keep the check as defence in depth for unprotected repos.
         return None
 
     avatar = ""
