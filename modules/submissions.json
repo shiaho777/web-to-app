@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "generatedAt": "2026-05-17T00:00:00Z",
+  "generatedAt": "2026-06-18T00:00:00Z",
   "submissions": {
     "wta-hello-world": {
       "submittedAt": "2026-05-15T00:00:00Z",
@@ -12,8 +12,48 @@
         "profileUrl": "https://github.com/shiaho777"
       }
     },
-    "wta-night-shift": {
-      "submittedAt": "2026-05-15T00:00:00Z",
+    "wta-web-tint": {
+      "submittedAt": "2026-06-17T21:43:16+08:00",
+      "direct": true,
+      "submitter": {
+        "login": "shiaho777",
+        "name": "shiaho",
+        "avatarUrl": "https://avatars.githubusercontent.com/shiaho777",
+        "profileUrl": "https://github.com/shiaho777"
+      }
+    },
+    "wta-reading-mode": {
+      "submittedAt": "2026-05-23T15:28:53+08:00",
+      "direct": true,
+      "submitter": {
+        "login": "shiaho777",
+        "name": "shiaho",
+        "avatarUrl": "https://avatars.githubusercontent.com/shiaho777",
+        "profileUrl": "https://github.com/shiaho777"
+      }
+    },
+    "wta-selection-actions": {
+      "submittedAt": "2026-06-17T21:43:16+08:00",
+      "direct": true,
+      "submitter": {
+        "login": "shiaho777",
+        "name": "shiaho",
+        "avatarUrl": "https://avatars.githubusercontent.com/shiaho777",
+        "profileUrl": "https://github.com/shiaho777"
+      }
+    },
+    "wta-auto-scroll": {
+      "submittedAt": "2026-05-23T15:28:53+08:00",
+      "direct": true,
+      "submitter": {
+        "login": "shiaho777",
+        "name": "shiaho",
+        "avatarUrl": "https://avatars.githubusercontent.com/shiaho777",
+        "profileUrl": "https://github.com/shiaho777"
+      }
+    },
+    "wta-tv-dpad-cursor": {
+      "submittedAt": "2026-06-17T21:30:12+08:00",
       "direct": true,
       "submitter": {
         "login": "shiaho777",
