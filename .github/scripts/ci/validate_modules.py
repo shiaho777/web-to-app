@@ -279,6 +279,8 @@ def _validate_module_json(
             options = item.get("options")
             if not isinstance(options, list) or not options:
                 report.error(item_loc, f"`options` is required for type {type_}")
+            elif not all(_is_str(o) for o in options):
+                report.error(item_loc, f"`options` for type {type_} must be a list of strings; the app parses ModuleConfigItem.options as List<String>, so object forms like [{{\"value\",\"label\"}}] fail Gson deserialization")
 
 
 # ───────────────────────── registry checks ─────────────────────────────

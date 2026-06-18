@@ -27,13 +27,7 @@
       "type": "SELECT",
       "defaultValue": "google",
       "required": false,
-      "options": [
-        { "value": "google", "label": "Google" },
-        { "value": "duckduckgo", "label": "DuckDuckGo" },
-        { "value": "bing", "label": "Bing" },
-        { "value": "baidu", "label": "Baidu" },
-        { "value": "wikipedia", "label": "Wikipedia" }
-      ]
+      "options": ["google", "duckduckgo", "bing", "baidu", "wikipedia"]
     },
     {
       "key": "translateEngine",
@@ -42,11 +36,7 @@
       "type": "SELECT",
       "defaultValue": "google",
       "required": false,
-      "options": [
-        { "value": "google", "label": "Google Translate" },
-        { "value": "deepl", "label": "DeepL" },
-        { "value": "mymemory", "label": "MyMemory" }
-      ]
+      "options": ["google", "deepl", "mymemory"]
     },
     {
       "key": "showSearch",

@@ -27,11 +27,7 @@
       "type": "SELECT",
       "defaultValue": "light",
       "required": false,
-      "options": [
-        { "value": "light", "label": "Light" },
-        { "value": "sepia", "label": "Sepia" },
-        { "value": "dark", "label": "Dark" }
-      ]
+      "options": ["light", "sepia", "dark"]
     },
     {
       "key": "fontSize",
@@ -48,11 +44,7 @@
       "type": "SELECT",
       "defaultValue": "serif",
       "required": false,
-      "options": [
-        { "value": "serif", "label": "Serif (Georgia)" },
-        { "value": "sans", "label": "Sans-serif (System)" },
-        { "value": "mono", "label": "Monospace" }
-      ]
+      "options": ["serif", "sans", "mono"]
     },
     {
       "key": "maxWidth",

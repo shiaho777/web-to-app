@@ -27,13 +27,7 @@
       "type": "SELECT",
       "defaultValue": "night",
       "required": false,
-      "options": [
-        { "value": "night", "label": "Night Shift (amber)" },
-        { "value": "grayscale", "label": "Grayscale" },
-        { "value": "contrast", "label": "High Contrast" },
-        { "value": "invert", "label": "Invert Colors" },
-        { "value": "custom", "label": "Custom Tint" }
-      ]
+      "options": ["night", "grayscale", "contrast", "invert", "custom"]
     },
     {
       "key": "intensity",
@@ -50,12 +44,7 @@
       "type": "SELECT",
       "defaultValue": "2700",
       "required": false,
-      "options": [
-        { "value": "2000", "label": "2000K (candle)" },
-        { "value": "2700", "label": "2700K (warm)" },
-        { "value": "3500", "label": "3500K (soft)" },
-        { "value": "5000", "label": "5000K (neutral)" }
-      ]
+      "options": ["2000", "2700", "3500", "5000"]
     },
     {
       "key": "tintColor",
