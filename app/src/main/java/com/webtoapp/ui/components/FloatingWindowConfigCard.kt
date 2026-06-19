@@ -3,7 +3,6 @@ package com.webtoapp.ui.components
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
-import com.webtoapp.ui.design.WtaSwitch
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -34,8 +33,14 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.FloatingBorderStyle
 import com.webtoapp.data.model.FloatingWindowAspectRatioMode
 import com.webtoapp.data.model.FloatingWindowConfig
-import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.ui.animation.CardExpandTransition
+import com.webtoapp.ui.design.WtaDivider
+import com.webtoapp.ui.design.WtaFeatureCard
+import com.webtoapp.ui.design.WtaFeatureCardHeader
+import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.util.IconStorage
 import java.io.File
 import kotlin.math.roundToInt
@@ -74,66 +79,33 @@ fun FloatingWindowConfigCard(
         label = "arrowRotation"
     )
 
-    EnhancedElevatedCard(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (config.enabled) primary.copy(alpha = 0.1f)
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Outlined.PictureInPicture,
-                            contentDescription = null,
-                            modifier = Modifier.size(22.dp),
-                            tint = if (config.enabled) primary
-                                   else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            Strings.floatingWindowTitle,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                }
-                Spacer(Modifier.width(8.dp))
+    WtaFeatureCard(modifier = modifier) {
+        WtaFeatureCardHeader(
+            icon = Icons.Outlined.PictureInPicture,
+            title = Strings.floatingWindowTitle,
+            subtitle = if (!config.enabled) Strings.notEnabled else null,
+            enabled = config.enabled,
+            trailing = {
                 WtaSwitch(
                     checked = config.enabled,
                     onCheckedChange = { onConfigChange(config.copy(enabled = it)) }
                 )
             }
+        )
 
-            AnimatedVisibility(
-                visible = config.enabled,
-                enter = CardExpandTransition,
-                exit = CardCollapseTransition
-            ) {
-                Column(modifier = Modifier.padding(top = 16.dp)) {
+        AnimatedVisibility(
+            visible = config.enabled,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            Column(modifier = Modifier.padding(top = WtaSpacing.Large)) {
+                WtaDivider()
+                Spacer(modifier = Modifier.height(WtaSpacing.Large))
 
-                    SectionHeader(
-                        icon = Icons.Outlined.Straighten,
-                        title = Strings.fwSectionSize
-                    )
+                SectionHeader(
+                    icon = Icons.Outlined.Straighten,
+                    title = Strings.fwSectionSize
+                )
 
                     SliderWithLabel(
                         label = Strings.fwWidthLabel,
@@ -383,13 +355,12 @@ fun FloatingWindowConfigCard(
                     )
 
                     Spacer(Modifier.height(8.dp))
-                    Surface(
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { showAdvanced = !showAdvanced },
-                        shape = RoundedCornerShape(10.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            .clip(RoundedCornerShape(WtaRadius.IconPlate))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            .clickable { showAdvanced = !showAdvanced }
                     ) {
                         Row(
                             modifier = Modifier
@@ -446,7 +417,6 @@ fun FloatingWindowConfigCard(
                             )
                         }
                     }
-                }
             }
         }
     }
@@ -465,13 +435,12 @@ private fun FloatingWindowMinimizedIconPicker(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Surface(
+        Box(
             modifier = Modifier
                 .size(56.dp)
-                .clip(RoundedCornerShape(18.dp))
-                .clickable { onSelect() },
-            shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant
+                .clip(RoundedCornerShape(WtaRadius.Card))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable { onSelect() }
         ) {
             if (hasIcon) {
                 AsyncImage(
@@ -571,9 +540,10 @@ private fun SliderWithLabel(
                 label,
                 style = MaterialTheme.typography.bodyMedium
             )
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = primary.copy(alpha = 0.1f)
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(WtaRadius.Chip))
+                    .background(primary.copy(alpha = 0.1f))
             ) {
                 Text(
                     "${value}${suffix}",

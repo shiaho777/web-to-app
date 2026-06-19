@@ -2,7 +2,6 @@ package com.webtoapp.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import com.webtoapp.ui.design.WtaSwitch
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,7 +12,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -22,6 +20,10 @@ import com.webtoapp.R
 import com.webtoapp.core.forcedrun.ForcedRunConfig
 import com.webtoapp.core.forcedrun.ForcedRunMode
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaDivider
+import com.webtoapp.ui.design.WtaFeatureCard
+import com.webtoapp.ui.design.WtaFeatureCardHeader
+import com.webtoapp.ui.design.WtaSpacing
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -79,61 +81,27 @@ fun ForcedRunConfigCard(
         }
     }
 
-    EnhancedElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Outlined.DirectionsRun,
-                            contentDescription = null,
-                            tint = if (enabled) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            Strings.forcedRunSettings,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            if (enabled) Strings.enabled else Strings.notEnabled,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+    WtaFeatureCard(modifier = Modifier) {
+        WtaFeatureCardHeader(
+            icon = Icons.Outlined.DirectionsRun,
+            title = Strings.forcedRunSettings,
+            subtitle = if (!enabled) Strings.notEnabled else null,
+            enabled = enabled,
+            onClick = { expanded = !expanded },
+            trailing = {
                 Icon(
-                    if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
                     contentDescription = null
                 )
             }
+        )
 
-            AnimatedVisibility(visible = expanded) {
-                Column(modifier = Modifier.padding(top = 16.dp)) {
+        AnimatedVisibility(visible = expanded) {
+            Column(modifier = Modifier.padding(top = WtaSpacing.Large)) {
+                WtaDivider()
+                Spacer(modifier = Modifier.height(WtaSpacing.Large))
 
-                    Row(
+                Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -544,7 +512,6 @@ fun ForcedRunConfigCard(
                     }
                 }
             }
-        }
     }
 
     if (showStartTimePicker) {

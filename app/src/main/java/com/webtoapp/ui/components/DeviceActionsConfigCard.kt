@@ -18,6 +18,11 @@ import androidx.compose.ui.res.painterResource
 import com.webtoapp.R
 import com.webtoapp.core.actions.DeviceActionsConfig
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaDivider
+import com.webtoapp.ui.design.WtaFeatureCard
+import com.webtoapp.ui.design.WtaFeatureCardHeader
+import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaSpacing
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -130,61 +135,27 @@ fun DeviceActionsConfigCard(
         }
     }
 
-    EnhancedElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Outlined.Memory,
-                            contentDescription = null,
-                            tint = if (enabled) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            Strings.deviceActionsFeatures,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            if (enabled) Strings.enabled else Strings.notEnabled,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+    WtaFeatureCard(modifier = Modifier) {
+        WtaFeatureCardHeader(
+            icon = Icons.Outlined.Memory,
+            title = Strings.deviceActionsFeatures,
+            subtitle = if (!enabled) Strings.notEnabled else null,
+            enabled = enabled,
+            onClick = { expanded = !expanded },
+            trailing = {
                 Icon(
-                    if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
                     contentDescription = null
                 )
             }
+        )
 
-            AnimatedVisibility(visible = expanded) {
-                Column(modifier = Modifier.padding(top = 16.dp)) {
+        AnimatedVisibility(visible = expanded) {
+            Column(modifier = Modifier.padding(top = WtaSpacing.Large)) {
+                WtaDivider()
+                Spacer(modifier = Modifier.height(WtaSpacing.Large))
 
-                    Row(
+                Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -295,7 +266,7 @@ fun DeviceActionsConfigCard(
                                         Row(
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .clip(RoundedCornerShape(8.dp))
+                                                .clip(RoundedCornerShape(WtaRadius.Chip))
                                                 .clickable {
                                                     currentFlashModeIndex = index
 
@@ -364,7 +335,7 @@ fun DeviceActionsConfigCard(
                                                 },
                                                 singleLine = true,
                                                 modifier = Modifier.fillMaxWidth(),
-                                                shape = RoundedCornerShape(12.dp)
+                                                shape = RoundedCornerShape(WtaRadius.Control)
                                             )
 
                                             Spacer(modifier = Modifier.height(8.dp))
@@ -510,7 +481,7 @@ fun DeviceActionsConfigCard(
                                         label = { Text(Strings.hotspotSsid) },
                                         singleLine = true,
                                         modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(12.dp)
+                                        shape = RoundedCornerShape(WtaRadius.Control)
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     OutlinedTextField(
@@ -523,7 +494,7 @@ fun DeviceActionsConfigCard(
                                         supportingText = { Text(Strings.hotspotPasswordHint) },
                                         singleLine = true,
                                         modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(12.dp)
+                                        shape = RoundedCornerShape(WtaRadius.Control)
                                     )
                                 }
                             }
@@ -638,7 +609,7 @@ fun DeviceActionsConfigCard(
                                         singleLine = false,
                                         maxLines = 3,
                                         modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(12.dp)
+                                        shape = RoundedCornerShape(WtaRadius.Control)
                                     )
 
                                     Spacer(modifier = Modifier.height(8.dp))
@@ -656,9 +627,10 @@ fun DeviceActionsConfigCard(
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
-                            Surface(
-                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f),
-                                shape = RoundedCornerShape(8.dp)
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(WtaRadius.Chip))
+                                    .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f))
                             ) {
                                 Row(
                                     modifier = Modifier.padding(12.dp),
@@ -680,7 +652,6 @@ fun DeviceActionsConfigCard(
                             }
                         }
                     }
-                }
             }
         }
     }

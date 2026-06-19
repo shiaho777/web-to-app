@@ -1,5 +1,11 @@
 package com.webtoapp.ui.components
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaBadge
+import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaDivider
+import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSwitch
 
 import android.content.Intent
@@ -30,6 +36,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
@@ -143,7 +150,7 @@ fun ExtensionModuleCard(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
+                            .clip(RoundedCornerShape(WtaRadius.Control))
                             .background(
                                 if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
                                 else MaterialTheme.colorScheme.surfaceVariant
@@ -244,9 +251,7 @@ fun ExtensionModuleCard(
                             )
                         }
 
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                        )
+                        WtaDivider()
 
                         FabIconSelector(
                             selectedIcon = extensionFabIcon,
@@ -305,14 +310,15 @@ private fun ExtensionEmptyState(
     onBrowse: () -> Unit,
     onPickScheme: () -> Unit
 ) {
-    Surface(
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Highlighted,
+        shape = RoundedCornerShape(WtaRadius.Card),
+        contentPadding = PaddingValues(0.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
             MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-        ),
-        modifier = Modifier.fillMaxWidth()
+        )
     ) {
         Column(
             modifier = Modifier
@@ -435,13 +441,11 @@ private fun ExtensionIconAction(
     contentDescription: String,
     onClick: () -> Unit
 ) {
-    Surface(
+    WtaCard(
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current)
-            Color.White.copy(alpha = 0.10f)
-        else
-            Color.White.copy(alpha = 0.72f),
+        tone = WtaCardTone.Surface,
+        shape = RoundedCornerShape(WtaRadius.Control),
+        contentPadding = PaddingValues(0.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
@@ -467,9 +471,10 @@ private fun SelectedModuleItem(
     module: ExtensionModule,
     onRemove: () -> Unit
 ) {
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f)
+    WtaCard(
+        tone = WtaCardTone.Elevated,
+        shape = RoundedCornerShape(WtaRadius.Chip),
+        contentPadding = PaddingValues(0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -504,14 +509,14 @@ private fun SelectedModuleItem(
                 ) {
 
                     if (module.builtIn) {
-                        CompactBadge(
+                        WtaBadge(
                             text = Strings.builtIn,
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
 
-                    CompactBadge(
+                    WtaBadge(
                         text = module.runMode.getDisplayName(),
                         containerColor = if (module.runMode == ModuleRunMode.AUTO)
                             MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
@@ -523,7 +528,7 @@ private fun SelectedModuleItem(
                             MaterialTheme.colorScheme.onPrimaryContainer
                     )
 
-                    CompactBadge(
+                    WtaBadge(
                         text = module.category.getDisplayName(),
                         containerColor = MaterialTheme.colorScheme.surfaceVariant,
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -543,26 +548,6 @@ private fun SelectedModuleItem(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun CompactBadge(
-    text: String,
-    containerColor: Color,
-    contentColor: Color
-) {
-    Surface(
-        shape = RoundedCornerShape(4.dp),
-        color = containerColor
-    ) {
-        Text(
-            text,
-            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = contentColor,
-            maxLines = 1
-        )
     }
 }
 
@@ -624,10 +609,11 @@ private fun FabIconSelector(
             },
             icon = {
 
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    shadowElevation = 8.dp
+                Box(
+                    modifier = Modifier
+                        .shadow(8.dp, RoundedCornerShape(WtaRadius.Card))
+                        .clip(RoundedCornerShape(WtaRadius.Card))
+                        .background(MaterialTheme.colorScheme.primary)
                 ) {
                     Box(
                         modifier = Modifier.size(64.dp),
@@ -693,14 +679,11 @@ private fun FabIconSelector(
     ) {
 
         item {
-            Surface(
+            WtaCard(
                 onClick = { galleryLauncher.launch("image/*") },
-                shape = RoundedCornerShape(10.dp),
-                color = if (isCustomSelected) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f)
-                },
+                tone = if (isCustomSelected) WtaCardTone.Highlighted else WtaCardTone.Surface,
+                shape = RoundedCornerShape(WtaRadius.Control),
+                contentPadding = PaddingValues(0.dp),
                 border = if (isCustomSelected) {
                     androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
                 } else {
@@ -755,17 +738,16 @@ private fun FabIconSelector(
 
         items(PRESET_FAB_ICONS) { preset ->
             val isSelected = selectedIcon == preset.id
-            Surface(
-                onClick = { onIconChange(if (isSelected) "" else preset.id) },
-                shape = RoundedCornerShape(8.dp),
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f)
-                },
-                border = if (isSelected) {
-                    androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
-                } else null
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(WtaRadius.Chip))
+                    .background(if (isSelected) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f)
+                    })
+                    .then(if (isSelected) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(WtaRadius.Chip)) else Modifier)
+                    .clickable { onIconChange(if (isSelected) "" else preset.id) }
             ) {
                 Box(
                     modifier = Modifier.size(40.dp),
@@ -805,10 +787,11 @@ private fun FabIconSelector(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Surface(
-                onClick = { onIconChange("") },
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { onIconChange("") }
             ) {
                 Icon(
                     Icons.Filled.Close,
@@ -884,12 +867,13 @@ fun ExtensionModuleSelectorDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
+        WtaCard(
             modifier = Modifier
                 .fillMaxWidth(0.95f)
                 .fillMaxHeight(0.85f),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface
+            tone = WtaCardTone.Surface,
+            contentPadding = PaddingValues(0.dp),
+            shape = RoundedCornerShape(WtaRadius.Card)
         ) {
             Column {
 
@@ -927,7 +911,7 @@ fun ExtensionModuleSelectorDialog(
                             }
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(WtaRadius.Control)
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -1036,14 +1020,11 @@ private fun ModuleSelectItem(
     isSelected: Boolean,
     onToggle: () -> Unit
 ) {
-    Surface(
+    WtaCard(
         onClick = onToggle,
-        shape = RoundedCornerShape(12.dp),
-        color = if (isSelected) {
-            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        },
+        tone = if (isSelected) WtaCardTone.Highlighted else WtaCardTone.Surface,
+        shape = RoundedCornerShape(WtaRadius.Control),
+        contentPadding = PaddingValues(0.dp),
         border = if (isSelected) {
             androidx.compose.foundation.BorderStroke(
                 2.dp,
@@ -1058,9 +1039,10 @@ private fun ModuleSelectItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surface
+            Box(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface)
             ) {
                 Box(
                     modifier = Modifier.size(40.dp),
@@ -1095,13 +1077,13 @@ private fun ModuleSelectItem(
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     if (module.builtIn) {
-                        CompactBadge(
+                        WtaBadge(
                             text = Strings.builtIn,
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
-                    CompactBadge(
+                    WtaBadge(
                         text = module.runMode.getDisplayName(),
                         containerColor = if (module.runMode == ModuleRunMode.AUTO)
                             MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f)
@@ -1129,17 +1111,12 @@ private fun ModuleSelectItem(
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         module.tags.take(3).forEach { tag ->
-                            Surface(
-                                shape = RoundedCornerShape(4.dp),
-                                color = MaterialTheme.colorScheme.surfaceVariant
-                            ) {
-                                Text(
-                                    tag,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            WtaBadge(
+                                text = tag,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                compact = true
+                            )
                         }
                     }
                 }
@@ -1167,12 +1144,13 @@ fun ModuleTestDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
+        WtaCard(
             modifier = Modifier
                 .fillMaxWidth(0.95f)
                 .fillMaxHeight(0.8f),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface
+            tone = WtaCardTone.Surface,
+            contentPadding = PaddingValues(0.dp),
+            shape = RoundedCornerShape(WtaRadius.Card)
         ) {
             Column {
 
@@ -1192,9 +1170,10 @@ fun ModuleTestDialog(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
 
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(WtaRadius.Control))
+                            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
                     ) {
                         Row(
                             modifier = Modifier
@@ -1298,12 +1277,13 @@ fun ModuleDetailDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
+        WtaCard(
             modifier = Modifier
                 .fillMaxWidth(0.95f)
                 .fillMaxHeight(0.7f),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface
+            tone = WtaCardTone.Surface,
+            contentPadding = PaddingValues(0.dp),
+            shape = RoundedCornerShape(WtaRadius.Card)
         ) {
             Column {
 
@@ -1349,16 +1329,11 @@ fun ModuleDetailDialog(
                     if (module.tags.isNotEmpty()) {
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             items(module.tags) { tag ->
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = MaterialTheme.colorScheme.surfaceVariant
-                                ) {
-                                    Text(
-                                        "#$tag",
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                }
+                                WtaBadge(
+                                    text = "#$tag",
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    compact = true
+                                )
                             }
                         }
                     }
@@ -1394,23 +1369,18 @@ fun ModuleDetailDialog(
                         )
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             items(module.permissions) { perm ->
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = if (perm.dangerous)
+                                WtaBadge(
+                                    text = perm.displayName,
+                                    containerColor = if (perm.dangerous)
                                         MaterialTheme.colorScheme.errorContainer
                                     else
-                                        MaterialTheme.colorScheme.surfaceVariant
-                                ) {
-                                    Text(
-                                        perm.displayName,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = if (perm.dangerous)
-                                            MaterialTheme.colorScheme.onErrorContainer
-                                        else
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                    contentColor = if (perm.dangerous)
+                                        MaterialTheme.colorScheme.onErrorContainer
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                    compact = true
+                                )
                             }
                         }
                     }
@@ -1436,17 +1406,12 @@ fun ModuleDetailDialog(
 
 @Composable
 private fun InfoChip(text: String) {
-    Surface(
-        shape = RoundedCornerShape(4.dp),
-        color = MaterialTheme.colorScheme.secondaryContainer
-    ) {
-        Text(
-            text,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSecondaryContainer
-        )
-    }
+    WtaBadge(
+        text = text,
+        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        compact = true
+    )
 }
 
 @Composable
@@ -1476,12 +1441,12 @@ fun PresetSelectorDialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
-        Surface(
+        Box(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
-                .fillMaxHeight(0.7f),
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surface
+                .fillMaxHeight(0.7f)
+                .clip(RoundedCornerShape(WtaRadius.Dialog))
+                .background(MaterialTheme.colorScheme.surface)
         ) {
             Column {
                 TopAppBar(
@@ -1622,10 +1587,11 @@ fun SavePresetDialog(
             Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        onClick = { showIconPicker = true },
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primaryContainer
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(WtaRadius.Chip))
+                            .background(MaterialTheme.colorScheme.primaryContainer)
+                            .clickable { showIconPicker = true }
                     ) {
                         Text(
                             selectedIcon,
@@ -1664,17 +1630,18 @@ fun SavePresetDialog(
                     Text(Strings.selectIconTitle, style = MaterialTheme.typography.labelMedium)
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(PRESET_ICONS) { icon ->
-                            Surface(
-                                onClick = {
-                                    selectedIcon = icon
-                                    showIconPicker = false
-                                },
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (icon == selectedIcon) {
-                                    MaterialTheme.colorScheme.primaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceVariant
-                                }
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(WtaRadius.Chip))
+                                    .background(if (icon == selectedIcon) {
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    })
+                                    .clickable {
+                                        selectedIcon = icon
+                                        showIconPicker = false
+                                    }
                             ) {
                                 Icon(
                                     com.webtoapp.util.SvgIconMapper.getIcon(icon),

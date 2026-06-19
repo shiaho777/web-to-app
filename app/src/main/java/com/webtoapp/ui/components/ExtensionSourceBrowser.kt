@@ -41,7 +41,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -68,6 +67,7 @@ import com.webtoapp.core.extension.ExtensionModule
 import com.webtoapp.core.extension.ModuleSourceType
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaTopBar
 import com.webtoapp.ui.theme.LocalIsDarkTheme
 import java.io.File
 
@@ -102,38 +102,14 @@ fun ExtensionSourceBrowserDialog(
                 .background(MaterialTheme.colorScheme.surface)
         ) {
             Column {
-                TopAppBar(
-                    title = {
-                        Column {
-                            Text(
-                                if (selectedFilePath != null) selectedFileName else module.name,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            if (selectedFilePath != null) {
-                                Text(
-                                    selectedFilePath ?: "",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                            }
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            if (selectedFilePath != null) {
-                                selectedFilePath = null
-                            } else {
-                                onDismiss()
-                            }
-                        }) {
-                            Icon(
-                                if (selectedFilePath != null) Icons.AutoMirrored.Filled.ArrowBack else Icons.Default.Close,
-                                contentDescription = null
-                            )
+                WtaTopBar(
+                    title = if (selectedFilePath != null) selectedFileName else module.name,
+                    subtitle = selectedFilePath,
+                    onBack = {
+                        if (selectedFilePath != null) {
+                            selectedFilePath = null
+                        } else {
+                            onDismiss()
                         }
                     }
                 )
@@ -409,12 +385,6 @@ private fun getFileIconColor(fileName: String): Color = when {
         fileName.endsWith(".gif") -> MaterialTheme.colorScheme.tertiary
     fileName == "manifest.json" -> MaterialTheme.colorScheme.primary
     else -> MaterialTheme.colorScheme.onSurfaceVariant
-}
-
-private fun formatFileSize(bytes: Long): String = when {
-    bytes < 1024 -> "${bytes}B"
-    bytes < 1024 * 1024 -> "${"%.1f".format(bytes / 1024.0)}KB"
-    else -> "${"%.1f".format(bytes / (1024.0 * 1024.0))}MB"
 }
 
 private fun buildExtensionFileTree(

@@ -82,11 +82,11 @@ object WtaRadius {
 }
 
 object WtaSize {
-    val Icon: Dp = 20.dp
+    val Icon: Dp = 22.dp
     val IconSmall: Dp = 16.dp
-    val IconLarge: Dp = 24.dp
-    val IconPlate: Dp = 36.dp
-    val IconPlateLarge: Dp = 44.dp
+    val IconLarge: Dp = 26.dp
+    val IconPlate: Dp = 40.dp
+    val IconPlateLarge: Dp = 48.dp
     val RowMinHeight: Dp = 60.dp
     val RowTrailingMaxWidth: Dp = 148.dp
     val BannerActionMaxWidth: Dp = 132.dp
@@ -116,7 +116,7 @@ object WtaElevation {
 object WtaAlpha {
     const val Disabled = 0.38f
     const val Divider = 0.55f
-    const val MutedContainer = 0.08f
+    const val MutedContainer = 0.12f
     const val PressedContainer = 0.12f
     const val Subtle = 0.16f
     const val Medium = 0.32f
