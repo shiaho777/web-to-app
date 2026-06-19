@@ -48,7 +48,16 @@ data class ModuleMarketEntry(
     val hasCss: Boolean = false,
 
     @SerializedName("iconUrl")
-    val iconUrl: String? = null
+    val iconUrl: String? = null,
+
+    @SerializedName("sourceType")
+    val sourceType: String = "CUSTOM",
+
+    @SerializedName("storeId")
+    val storeId: String? = null,
+
+    @SerializedName("homepage")
+    val homepage: String? = null
 )
 
 data class ModuleSubmission(
@@ -110,6 +119,14 @@ enum class MarketInstallState {
     NotInstalled,
     UpToDate,
     UpdateAvailable
+}
+
+data class InstallProgress(
+    val label: String,
+    val current: Int,
+    val total: Int
+) {
+    val fraction: Float get() = if (total > 0) current.toFloat() / total else 0f
 }
 
 data class MarketModuleView(

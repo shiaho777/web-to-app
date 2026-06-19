@@ -27,15 +27,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.components.ExtensionSourceBrowserDialog
+import com.webtoapp.ui.components.formatFileSize
 import com.webtoapp.ui.components.PremiumTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,7 +50,15 @@ import androidx.compose.ui.window.DialogProperties
 import com.webtoapp.core.extension.*
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.components.QrCodeShareDialog
+import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaDivider
+import com.webtoapp.ui.design.WtaFullEmptyState
+import com.webtoapp.ui.design.WtaLoadingState
 import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaTab
+import com.webtoapp.ui.design.WtaTabRow
 import kotlinx.coroutines.launch
 import com.webtoapp.ui.design.WtaBackground
 import androidx.compose.ui.graphics.Color
@@ -84,7 +91,6 @@ fun ExtensionModuleScreen(
     var selectedCategory by remember { mutableStateOf<ModuleCategory?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var showImportDialog by remember { mutableStateOf(false) }
-    var showStoreDialog by remember { mutableStateOf(false) }
 
     val extensionFileManager = remember { ExtensionFileManager(context) }
     var showUserScriptPreview by remember { mutableStateOf<UserScriptParser.ParseResult?>(null) }
@@ -284,9 +290,9 @@ fun ExtensionModuleScreen(
                             onDismissRequest = { showMoreMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text(Strings.browserExtStoreTitle) },
-                                onClick = { showMoreMenu = false; showStoreDialog = true },
-                                leadingIcon = { Icon(Icons.Default.Extension, null, Modifier.size(20.dp)) }
+                                text = { Text(Strings.communityExtStoreTitle) },
+                                onClick = { showMoreMenu = false; onNavigateToMarket() },
+                                leadingIcon = { Icon(Icons.Default.Storefront, null, Modifier.size(20.dp)) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.aiDevelop) },
@@ -298,7 +304,7 @@ fun ExtensionModuleScreen(
                                 onClick = { showMoreMenu = false; onNavigateToEditor(null) },
                                 leadingIcon = { Icon(Icons.Default.Code, null, Modifier.size(20.dp)) }
                             )
-                            HorizontalDivider()
+                            WtaDivider()
                             DropdownMenuItem(
                                 text = { Text(Strings.importUserScript) },
                                 onClick = { showMoreMenu = false; userScriptPickerLauncher.launch("*/*") },
@@ -329,38 +335,6 @@ fun ExtensionModuleScreen(
             modifier = Modifier.fillMaxSize()
         ) {
 
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                item {
-                    QuickActionCard(
-                        icon = Icons.Default.Storefront,
-                        iconTint = MaterialTheme.colorScheme.primary,
-                        title = Strings.moduleMarketTitle,
-                        onClick = onNavigateToMarket
-                    )
-                }
-                item {
-                    QuickActionCard(
-                        icon = Icons.Default.Code,
-                        iconTint = MaterialTheme.colorScheme.tertiary,
-                        title = Strings.manualCreate,
-                        onClick = { onNavigateToEditor(null) }
-                    )
-                }
-                item {
-                    QuickActionCard(
-                        icon = Icons.Default.AutoAwesome,
-                        iconTint = MaterialTheme.colorScheme.secondary,
-                        title = Strings.aiDevelop,
-                        onClick = onNavigateToAiDeveloper
-                    )
-                }
-            }
-
             PremiumTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -383,76 +357,15 @@ fun ExtensionModuleScreen(
             )
 
             val pagerState = rememberPagerState(pageCount = { 2 })
-            val tabTitles = listOf(
-                Strings.extensionModulesTab,
-                Strings.userScriptsTab
+            WtaTabRow(
+                tabs = listOf(
+                    WtaTab(Strings.extensionModulesTab, extensionModules.size),
+                    WtaTab(Strings.userScriptsTab, userScriptModules.size)
+                ),
+                selectedIndex = pagerState.currentPage,
+                onTabSelected = { scope.launch { pagerState.animateScrollToPage(it) } },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .clip(RoundedCornerShape(WtaRadius.Control))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(3.dp),
-                    horizontalArrangement = Arrangement.spacedBy(3.dp)
-                ) {
-                    tabTitles.forEachIndexed { index, title ->
-                        val isSelected = pagerState.currentPage == index
-                        val count = if (index == 0) extensionModules.size else userScriptModules.size
-
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(34.dp)
-                                .clip(RoundedCornerShape(WtaRadius.Button))
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.surface
-                                    else Color.Transparent
-                                )
-                                .clickable { scope.launch { pagerState.animateScrollToPage(index) } }
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxSize(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    title,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                                    color = if (isSelected) MaterialTheme.colorScheme.onSurface
-                                        else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                if (count > 0) {
-                                    Spacer(modifier = Modifier.width(5.dp))
-                                    Box(
-                                        modifier = Modifier
-                                            .clip(RoundedCornerShape(5.dp))
-                                            .background(
-                                                if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.08f)
-                                            )
-                                    ) {
-                                        Text(
-                                            "$count",
-                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = if (isSelected) MaterialTheme.colorScheme.primary
-                                                else MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
 
             HorizontalPager(
                 state = pagerState,
@@ -512,20 +425,12 @@ fun ExtensionModuleScreen(
         }
     }
 
-    if (showStoreDialog) {
-        BrowserExtensionStoreDialog(
-            extensionFileManager = extensionFileManager,
-            extensionManager = extensionManager,
-            onDismiss = { showStoreDialog = false }
-        )
-    }
-
     if (showImportDialog) {
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = { showImportDialog = false },
 
-            title = { Text(Strings.addModule) },
-            text = {
+            title = Strings.addModule,
+            content = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
                     Text(
@@ -538,22 +443,11 @@ fun ExtensionModuleScreen(
                     AddEntryRow(
                         icon = Icons.Default.Storefront,
                         iconTint = MaterialTheme.colorScheme.primary,
-                        title = Strings.moduleMarketTitle,
+                        title = Strings.communityExtStoreTitle,
                         subtitle = Strings.addEntryFromMarketDesc,
                         onClick = {
                             showImportDialog = false
                             onNavigateToMarket()
-                        }
-                    )
-
-                    AddEntryRow(
-                        icon = Icons.Default.Extension,
-                        iconTint = MaterialTheme.colorScheme.primary,
-                        title = Strings.browserExtStoreTitle,
-                        subtitle = Strings.browserExtStoreDesc,
-                        onClick = {
-                            showImportDialog = false
-                            showStoreDialog = true
                         }
                     )
 
@@ -612,7 +506,7 @@ fun ExtensionModuleScreen(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(RoundedCornerShape(11.dp))
+                                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
                                     .background(
                                         Brush.linearGradient(
                                             listOf(
@@ -660,7 +554,7 @@ fun ExtensionModuleScreen(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(RoundedCornerShape(11.dp))
+                                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
                                     .background(
                                         Brush.linearGradient(
                                             listOf(
@@ -708,7 +602,7 @@ fun ExtensionModuleScreen(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(RoundedCornerShape(11.dp))
+                                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
                                     .background(
                                         Brush.linearGradient(
                                             listOf(
@@ -756,7 +650,7 @@ fun ExtensionModuleScreen(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(RoundedCornerShape(11.dp))
+                                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
                                     .background(
                                         Brush.linearGradient(
                                             listOf(
@@ -799,7 +693,7 @@ fun ExtensionModuleScreen(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(RoundedCornerShape(11.dp))
+                                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
                                     .background(
                                         Brush.linearGradient(
                                             listOf(
@@ -835,10 +729,10 @@ fun ExtensionModuleScreen(
     }
 
     showUserScriptPreview?.let { parseResult ->
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = { showUserScriptPreview = null },
-            title = { Text(Strings.installUserScript) },
-            text = {
+            title = Strings.installUserScript,
+            content = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -957,10 +851,10 @@ fun ExtensionModuleScreen(
     showJsPackagePreview?.let { jsPackage ->
         var editableName by remember(jsPackage) { mutableStateOf(jsPackage.module.name) }
 
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = { showJsPackagePreview = null },
-            title = { Text(Strings.installJsPackage) },
-            text = {
+            title = Strings.installJsPackage,
+            content = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -1122,13 +1016,13 @@ fun ExtensionModuleScreen(
     }
 
     showChromeExtPreview?.let { parseResult ->
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = {
                 showChromeExtPreview = null
                 pendingChromeExtDir = null
             },
-            title = { Text(Strings.installChromeExtension) },
-            text = {
+            title = Strings.installChromeExtension,
+            content = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
@@ -1306,7 +1200,7 @@ fun ModuleCard(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .clip(RoundedCornerShape(13.dp))
+                        .clip(RoundedCornerShape(WtaRadius.IconPlate))
                         .background(
                             Brush.linearGradient(
                                 listOf(
@@ -1530,10 +1424,10 @@ fun ModuleCard(
     }
 
     if (showExportDialog) {
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = { showExportDialog = false },
-            title = { Text(Strings.exportModule) },
-            text = {
+            title = Strings.exportModule,
+            content = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
 
                     Box(
@@ -1575,7 +1469,7 @@ fun ModuleCard(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(RoundedCornerShape(11.dp))
+                                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
                                     .background(
                                         Brush.linearGradient(
                                             listOf(
@@ -1800,90 +1694,23 @@ private fun ExtensionModulesTabContent(
 
             if (filteredModules.isEmpty() && isLoading && searchQuery.isBlank()) {
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 56.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(36.dp),
-                                strokeWidth = 3.dp
-                            )
-                            Text(
-                                Strings.loading,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    WtaLoadingState(
+                        modifier = Modifier.padding(vertical = 56.dp),
+                        message = Strings.loading,
+                        fillMaxSize = false
+                    )
                 }
             } else if (filteredModules.isEmpty()) {
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 56.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-
-                            Box(
-                                modifier = Modifier
-                                    .size(88.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        Brush.radialGradient(
-                                            listOf(
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.02f)
-                                            )
-                                        )
-                                    ),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    if (searchQuery.isNotBlank()) Icons.Outlined.Search else Icons.Outlined.Inventory2,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(36.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                                )
-                            }
-
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Text(
-                                    if (searchQuery.isNotBlank()) Strings.noModulesFound else Strings.noModulesYet,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                                Text(
-                                    if (searchQuery.isNotBlank())
-                                        Strings.tryDifferentSearch
-                                    else
-                                        Strings.createModuleHint,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
+                    WtaFullEmptyState(
+                        title = if (searchQuery.isNotBlank()) Strings.noModulesFound else Strings.noModulesYet,
+                        message = if (searchQuery.isNotBlank()) Strings.tryDifferentSearch else Strings.createModuleHint,
+                        icon = if (searchQuery.isNotBlank()) Icons.Outlined.Search else Icons.Outlined.Inventory2,
+                        modifier = Modifier.padding(vertical = 56.dp),
+                        fillMaxSize = false,
+                        action = {
                             if (searchQuery.isBlank()) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     FilledTonalButton(
                                         onClick = { onNavigateToAiDeveloper() },
                                         shape = RoundedCornerShape(WtaRadius.Button),
@@ -1913,7 +1740,7 @@ private fun ExtensionModulesTabContent(
                                 }
                             }
                         }
-                    }
+                    )
                 }
             }
 
@@ -2060,7 +1887,7 @@ private fun UserScriptCard(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .clip(RoundedCornerShape(13.dp))
+                        .clip(RoundedCornerShape(WtaRadius.IconPlate))
                         .background(
                             Brush.linearGradient(
                                 listOf(
@@ -2098,7 +1925,7 @@ private fun UserScriptCard(
 
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(6.dp))
+                                .clip(RoundedCornerShape(WtaRadius.Badge))
                                 .background(
                                     if (isChromeExt) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
                                     else MaterialTheme.colorScheme.tertiary.copy(alpha = 0.10f)
@@ -2243,51 +2070,8 @@ private fun UserScriptCard(
     }
 }
 
-private fun formatFileSize(bytes: Long): String = when {
-    bytes < 1024 -> "${bytes}B"
-    bytes < 1024 * 1024 -> "${"%.1f".format(bytes / 1024.0)}KB"
-    else -> "${"%.1f".format(bytes / (1024.0 * 1024.0))}MB"
-}
 
 @Composable
-@Composable
-private fun QuickActionCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    iconTint: androidx.compose.ui.graphics.Color,
-    title: String,
-    onClick: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .width(100.dp)
-            .clip(RoundedCornerShape(WtaRadius.Card))
-            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-            .clickable(onClick = onClick)
-            .padding(vertical = 14.dp, horizontal = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Box(
-            modifier = Modifier
-                .size(42.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(iconTint.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp), tint = iconTint)
-        }
-        Text(
-            title,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
 private fun AddEntryRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     iconTint: androidx.compose.ui.graphics.Color,
@@ -2310,7 +2094,7 @@ private fun AddEntryRow(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .clip(RoundedCornerShape(11.dp))
+                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
                     .background(
                         Brush.linearGradient(
                             listOf(
@@ -2337,199 +2121,6 @@ private fun AddEntryRow(
                 modifier = Modifier.size(18.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
             )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun BrowserExtensionStoreDialog(
-    extensionFileManager: ExtensionFileManager,
-    extensionManager: ExtensionManager,
-    onDismiss: () -> Unit
-) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val userModules by extensionManager.modules.collectAsStateWithLifecycle()
-
-    val installedNames = remember(userModules) {
-        userModules
-            .filter { it.sourceType == ModuleSourceType.CHROME_EXTENSION }
-            .map { it.name.trim() }
-            .toSet()
-    }
-
-    var installingId by remember { mutableStateOf<String?>(null) }
-    var customInput by remember { mutableStateOf("") }
-
-    fun install(storeId: String, displayName: String) {
-        if (installingId != null) return
-        installingId = storeId
-        scope.launch {
-            val result = extensionFileManager.installChromeExtensionFromStore(storeId)
-            when (result) {
-                is ExtensionFileManager.ImportResult.ChromeExtension -> {
-                    var ok = 0
-                    result.parseResult.modules.forEach { module ->
-                        extensionManager.addModule(module).onSuccess { ok++ }
-                    }
-                    if (ok > 0) {
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.msg_import_success, result.parseResult.extensionName),
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        Toast.makeText(context, context.getString(R.string.msg_import_failed, context.getString(R.string.unknown_error)), Toast.LENGTH_SHORT).show()
-                    }
-                }
-                is ExtensionFileManager.ImportResult.Error -> {
-                    Toast.makeText(context, context.getString(R.string.msg_import_failed, result.message), Toast.LENGTH_LONG).show()
-                }
-                else -> {
-                    Toast.makeText(context, context.getString(R.string.msg_import_failed, context.getString(R.string.unknown_error)), Toast.LENGTH_SHORT).show()
-                }
-            }
-            installingId = null
-        }
-    }
-
-    Dialog(
-        onDismissRequest = { if (installingId == null) onDismiss() },
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.95f)
-                .fillMaxHeight(0.85f),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface
-        ) {
-            Column {
-                TopAppBar(
-                    title = { Text(Strings.browserExtStoreTitle) },
-                    navigationIcon = {
-                        IconButton(onClick = { if (installingId == null) onDismiss() }) {
-                            Icon(Icons.Default.Close, Strings.btnCancel)
-                        }
-                    }
-                )
-
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    item {
-                        Text(
-                            Strings.browserExtStoreInstallByIdHint,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            PremiumTextField(
-                                value = customInput,
-                                onValueChange = { customInput = it },
-                                modifier = Modifier.weight(1f),
-                                placeholder = { Text("chromewebstore.google.com/... or id") },
-                                singleLine = true,
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            PremiumButton(
-                                onClick = {
-                                    val id = com.webtoapp.core.extension.BrowserExtensionStore.extractStoreId(customInput)
-                                    if (id == null) {
-                                        Toast.makeText(context, context.getString(R.string.msg_import_failed, "id"), Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        install(id, id)
-                                    }
-                                },
-                                enabled = installingId == null,
-                                shape = RoundedCornerShape(WtaRadius.Button)
-                            ) {
-                                Text(Strings.install, style = MaterialTheme.typography.labelMedium)
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(0.5.dp)
-                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                        )
-                    }
-
-                    items(com.webtoapp.core.extension.BrowserExtensionStore.catalog, key = { it.storeId }) { entry ->
-                        val isInstalled = entry.name.trim() in installedNames
-                        val isBusy = installingId == entry.storeId
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(11.dp))
-                                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    Icons.Outlined.Extension,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    entry.name,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
-                                )
-                                Text(
-                                    entry.description,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    lineHeight = 16.sp
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                            when {
-                                isBusy -> CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                                isInstalled -> Icon(
-                                    Icons.Default.CheckCircle,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                else -> PremiumButton(
-                                    onClick = { install(entry.storeId, entry.name) },
-                                    enabled = installingId == null,
-                                    shape = RoundedCornerShape(WtaRadius.Button)
-                                ) {
-                                    Icon(Icons.Default.Download, null, Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(Strings.install, style = MaterialTheme.typography.labelMedium)
-                                }
-                            }
-                        }
-                    }
-
-                    item { Spacer(modifier = Modifier.height(24.dp)) }
-                }
-            }
         }
     }
 }

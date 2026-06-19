@@ -67,6 +67,9 @@ ALLOWED_CONFIG_TYPES: set[str] = {
     "DATETIME", "FILE", "IMAGE",
 }
 
+ALLOWED_SOURCE_TYPES: set[str] = {"CUSTOM", "CHROME_EXTENSION"}
+STORE_ID_RE = re.compile(r"^[a-p]{32}$")
+
 
 # ───────────────────────── regex helpers ───────────────────────────────
 
@@ -326,6 +329,15 @@ def _validate_registry_entry(
     icon_url = entry.get("iconUrl")
     if icon_url is not None and not _is_str(icon_url):
         report.error(where, "`iconUrl` must be a string when present")
+
+    source_type = entry.get("sourceType", "CUSTOM")
+    if not _is_str(source_type) or source_type not in ALLOWED_SOURCE_TYPES:
+        report.error(where, f"`sourceType` must be one of {sorted(ALLOWED_SOURCE_TYPES)}, got {source_type!r}")
+
+    if source_type == "CHROME_EXTENSION":
+        store_id = entry.get("storeId")
+        if not _is_str(store_id) or not STORE_ID_RE.match(store_id or ""):
+            report.error(where, "`storeId` is required for CHROME_EXTENSION and must be a 32-char Chrome Web Store ID")
 
 
 def _validate_registry(report: Report, registry: dict[str, Any]) -> list[dict[str, Any]]:
@@ -624,16 +636,17 @@ def main(repo_root: Path) -> int:
 
     folder_paths = {p.name for p in folders}
     registry_paths = {e["path"] for e in registry_entries if _is_str(e.get("path"))}
+    custom_paths = {e["path"] for e in registry_entries if _is_str(e.get("path")) and e.get("sourceType", "CUSTOM") != "CHROME_EXTENSION"}
 
     # Folders missing a registry entry.
     for orphan in folder_paths - registry_paths:
         report.error(f"modules/{orphan}", "module folder has no entry in registry.json")
-    # Registry entries pointing at non-existent folders.
-    for ghost in registry_paths - folder_paths:
+    # Registry entries pointing at non-existent folders (CHROME_EXTENSION entries don't need folders).
+    for ghost in custom_paths - folder_paths:
         report.error("registry.json", f"entry refers to missing folder modules/{ghost}/")
 
     # 3. Per-folder validation + cross-file consistency.
-    entries_by_path = {e["path"]: e for e in registry_entries if _is_str(e.get("path"))}
+    entries_by_path = {e["path"]: e for e in registry_entries if _is_str(e.get("path")) and e.get("sourceType", "CUSTOM") != "CHROME_EXTENSION"}
     for folder in folders:
         _validate_folder_layout(report, folder)
         _validate_main_js(report, folder)
