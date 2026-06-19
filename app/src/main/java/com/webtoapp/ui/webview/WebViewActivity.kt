@@ -2209,6 +2209,7 @@ fun WebViewScreen(
                     4 -> ConsoleLevel.ERROR
                     else -> ConsoleLevel.LOG
                 }
+                AppLogger.d("WebViewConsole", "[$consoleLevel] $message ($sourceId:$lineNumber)")
                 consoleMessages = consoleMessages + ConsoleLogEntry(
                     level = consoleLevel,
                     message = message,

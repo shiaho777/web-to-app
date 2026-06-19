@@ -49,6 +49,18 @@ fun createShellWebViewCallbacks(
             com.webtoapp.core.shell.ShellLogger.logWebView("开始加载", url ?: "")
         }
 
+        override fun onConsoleMessage(level: Int, message: String, sourceId: String, lineNumber: Int) {
+            val levelStr = when (level) {
+                0 -> "DEBUG"
+                1 -> "LOG"
+                2 -> "INFO"
+                3 -> "WARN"
+                4 -> "ERROR"
+                else -> "LOG"
+            }
+            AppLogger.d("ShellConsole", "[$levelStr] $message ($sourceId:$lineNumber)")
+        }
+
         override fun onUrlChanged(webView: WebView?, url: String?) {
 
             webView?.let {
