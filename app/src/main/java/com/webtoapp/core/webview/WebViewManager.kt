@@ -5170,8 +5170,7 @@ class WebViewManager(
 
             val nonChromeModules = allModules.filter { module ->
                 module.sourceType != com.webtoapp.core.extension.ModuleSourceType.CHROME_EXTENSION &&
-                module.shouldRegisterInPanel() &&
-                !module.builtIn
+                module.shouldRegisterInPanel()
             }
 
             if (chromeModules.isEmpty() && nonChromeModules.isEmpty()) return
@@ -5263,6 +5262,8 @@ class WebViewManager(
                     (function() {
                         function _reg() {
                             if (typeof __WTA_MODULE_UI__ === 'undefined') { setTimeout(_reg, 100); return; }
+                            var _p = window.__WTA_PANEL__;
+                            var _ex = _p && _p.modules ? _p.modules.find(function(m) { return m.id === '${module.id.replace("\\", "\\\\").replace("'", "\\'")'; }) : null;
                             __WTA_MODULE_UI__.register({
                                 id: '${module.id.replace("\\", "\\\\").replace("'", "\\'")}',
                                 name: '$jsName',
@@ -5276,7 +5277,9 @@ class WebViewManager(
                                 permissions: [],
                                 world: '${module.world}',
                                 runAt: '${module.runAt.name}',
-                                runMode: '${module.runMode.name}'
+                                runMode: '${module.runMode.name}',
+                                onAction: _ex ? _ex.onAction : undefined,
+                                panelHtml: _ex ? _ex.panelHtml : undefined
                             });
                         }
                         setTimeout(_reg, 50);
