@@ -5257,15 +5257,16 @@ class WebViewManager(
                     module.icon.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "")
                 } else ""
                 val matchesPage = module.matchesUrl(url)
+                val jsModuleId = module.id.replace("\\", "\\\\").replace("'", "\\'")
 
                 regBuilder.appendLine("""
                     (function() {
                         function _reg() {
                             if (typeof __WTA_MODULE_UI__ === 'undefined') { setTimeout(_reg, 100); return; }
                             var _p = window.__WTA_PANEL__;
-                            var _ex = _p && _p.modules ? _p.modules.find(function(m) { return m.id === '${module.id.replace("\\", "\\\\").replace("'", "\\'")'; }) : null;
+                            var _ex = _p && _p.modules ? _p.modules.find(function(m) { return m.id === '$jsModuleId'; }) : null;
                             __WTA_MODULE_UI__.register({
-                                id: '${module.id.replace("\\", "\\\\").replace("'", "\\'")}',
+                                id: '$jsModuleId',
                                 name: '$jsName',
                                 description: '$jsDesc',
                                 version: '$jsVersion',
