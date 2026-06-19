@@ -10,6 +10,7 @@ import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.WebToAppApplication
 import androidx.core.content.FileProvider
 import com.webtoapp.core.crypto.AssetEncryptor
 import com.webtoapp.core.crypto.EncryptedApkBuilder
@@ -897,6 +898,15 @@ class ApkBuilder(private val context: Context) {
 
                 if (!hasConfigFile) {
                     writeConfigEntry(zipOut, config, assetEncryptor, encryptionConfig)
+                }
+
+                if (config.adBlock.enabled) {
+                    val compiledRules = WebToAppApplication.adBlock.getCompiledRulesText()
+                    if (compiledRules.isNotEmpty()) {
+                        val rulesData = compiledRules.toByteArray(Charsets.UTF_8)
+                        writeEntryDeflated(zipOut, "assets/wta_adblock_compiled.txt", rulesData)
+                        logger.log("AdBlock compiled rules bundled (${rulesData.size} bytes)")
+                    }
                 }
 
                 ensureRequiredRuntimeAssets(zipOut, config.appType, entryNames)

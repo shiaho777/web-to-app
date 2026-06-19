@@ -127,7 +127,15 @@ fun ShellScreen(
     LaunchedEffect(Unit) {
 
         if (config.adBlockEnabled) {
-            adBlocker.initialize(config.adBlockRules, useDefaultRules = false)
+            val compiledRules = try {
+                val rulesText = context.assets.open("wta_adblock_compiled.txt")
+                    .bufferedReader().use { it.readText() }
+                if (rulesText.isNotEmpty()) {
+                    rulesText.split("\n").filter { it.isNotBlank() }
+                } else emptyList()
+            } catch (_: Exception) { emptyList<String>() }
+            val allRules = config.adBlockRules + compiledRules
+            adBlocker.initialize(allRules, useDefaultRules = false)
             adBlocker.setEnabled(true)
         }
 

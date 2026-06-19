@@ -966,6 +966,15 @@ class AdBlocker {
         "scriptlets" to scriptletRules.size
     )
 
+    fun getCompiledRulesText(): String = buildString {
+        exactHosts.forEach { append("||").append(it).append("^\n") }
+        hostsFileHosts.forEach { append("||").append(it).append("^\n") }
+        networkBlockFilters.forEach { if (it.rawRule.isNotEmpty()) append(it.rawRule).append("\n") }
+        networkExceptionFilters.forEach { if (it.rawRule.isNotEmpty()) append(it.rawRule).append("\n") }
+        cosmeticBlockFilters.forEach { if (it.rawRule.isNotEmpty()) append(it.rawRule).append("\n") }
+        cosmeticExceptionFilters.forEach { if (it.rawRule.isNotEmpty()) append(it.rawRule).append("\n") }
+    }.trimEnd()
+
     fun addRule(rule: String) {
         parseAndAddRule(rule)
         synchronized(blockResultCache) { blockResultCache.clear() }
