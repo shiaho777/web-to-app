@@ -737,9 +737,8 @@ data class ExtensionModule(
                 }
 
                 // 自动注册模块到面板系统（使用配置的 uiConfig）
-                // 如果用户代码已经调用了 register，面板系统会更新已有注册
-                // 注意：只在用户代码未传递 uiConfig 时才补充注册
-                ${if (shouldRegisterInPanel()) """
+                // 内置模块自带 register() 调用，跳过自动注册避免覆盖 onAction
+                ${if (shouldRegisterInPanel() && !builtIn) """
                 (function __autoRegister__() {
                     if (typeof __WTA_MODULE_UI__ === 'undefined') {
                         setTimeout(__autoRegister__, 100);
