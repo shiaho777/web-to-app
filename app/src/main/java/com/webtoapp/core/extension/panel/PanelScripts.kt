@@ -2500,7 +2500,8 @@ object PanelScripts {
                 <div class="wta-floating-panel-resize"></div>
             `;
 
-            document.body.appendChild(win);
+            var panelContainer = document.getElementById('wta-ext-panel-container') || document.body;
+            panelContainer.appendChild(win);
 
             // 拖拽
             DragManager.makeDraggable(win, win.querySelector('.wta-floating-panel-header'));
@@ -2517,6 +2518,8 @@ object PanelScripts {
                 module.onAction(contentEl);
             } else if (contentEl && module.panelHtml) {
                 contentEl.innerHTML = module.panelHtml;
+            } else if (contentEl) {
+                contentEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--wta-on-surface-variant);font-size:14px">' + (T.noDescription || '') + '</div>';
             }
 
             // 显示窗口

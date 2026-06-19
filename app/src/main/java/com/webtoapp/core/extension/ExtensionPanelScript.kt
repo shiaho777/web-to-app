@@ -1660,7 +1660,8 @@ object ExtensionPanelScript {
                 </div>
             `;
 
-            document.body.appendChild(win);
+            var panelContainer = document.getElementById('wta-ext-panel-container') || document.body;
+            panelContainer.appendChild(win);
 
             // 填充内容
             const contentEl = document.getElementById(`wta-modwin-content-${"$"}{moduleId}`);
@@ -1668,6 +1669,8 @@ object ExtensionPanelScript {
                 module.onAction(contentEl);
             } else if (contentEl && module.panelHtml) {
                 contentEl.innerHTML = module.panelHtml;
+            } else if (contentEl) {
+                contentEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--wta-on-surface-variant);font-size:14px">' + (T.noDescription || '') + '</div>';
             }
 
             sessionStorage.setItem(`wta-modwin-visible-${"$"}{moduleId}`, '1');
