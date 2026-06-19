@@ -82,7 +82,10 @@ import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaTab
 import com.webtoapp.ui.design.WtaTabRow
 import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
+import coil.compose.AsyncImagePainter
 import coil.request.ImageRequest
+import androidx.compose.foundation.Image
 import androidx.compose.material.icons.filled.MergeType
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.ExpandMore
@@ -649,6 +652,11 @@ private fun ModuleIcon(
     size: androidx.compose.ui.unit.Dp = 40.dp
 ) {
     val context = LocalContext.current
+    val painter = rememberAsyncImagePainter(
+        model = if (!iconUrl.isNullOrBlank()) {
+            ImageRequest.Builder(context).data(iconUrl).crossfade(true).build()
+        } else null
+    )
     Box(
         modifier = Modifier
             .size(size)
@@ -656,12 +664,9 @@ private fun ModuleIcon(
             .background(MaterialTheme.colorScheme.primaryContainer),
         contentAlignment = Alignment.Center
     ) {
-        if (!iconUrl.isNullOrBlank()) {
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(iconUrl)
-                    .crossfade(true)
-                    .build(),
+        if (painter.state is AsyncImagePainter.State.Success) {
+            Image(
+                painter = painter,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize().clip(CircleShape)
             )
