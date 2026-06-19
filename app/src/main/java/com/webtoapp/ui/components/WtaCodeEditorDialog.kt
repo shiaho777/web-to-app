@@ -59,6 +59,7 @@ fun WtaCodeEditorDialog(
     var codeText by remember { mutableStateOf(initialContent) }
     val isModified = codeText != initialContent
     val accentColor = MaterialTheme.colorScheme.onSurface
+    val scheme = rememberEditorColorScheme()
 
     var showDiscardConfirm by remember { mutableStateOf(false) }
 
@@ -85,13 +86,13 @@ fun WtaCodeEditorDialog(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(0.dp),
-            color = AppColors.EditorDark.copy(alpha = 0.98f),
+            color = scheme.background.copy(alpha = 0.98f),
             shape = RectangleShape
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
 
                 Surface(
-                    color = AppColors.EditorDark,
+                    color = scheme.background,
                     tonalElevation = 2.dp
                 ) {
                     Row(
@@ -105,7 +106,7 @@ fun WtaCodeEditorDialog(
                             Icon(
                                 Icons.Default.Close,
                                 contentDescription = Strings.close,
-                                tint = AppColors.CodeForeground
+                                tint = scheme.foreground
                             )
                         }
 
@@ -126,18 +127,18 @@ fun WtaCodeEditorDialog(
                         Text(
                             text = Strings.codeEditorTitle,
                             style = MaterialTheme.typography.titleSmall,
-                            color = AppColors.CodeForeground,
+                            color = scheme.foreground,
                             modifier = Modifier.weight(1f)
                         )
 
                         if (isModified) {
                             Surface(
-                                color = AppColors.CodeForeground.copy(alpha = 0.15f),
+                                color = scheme.foreground.copy(alpha = 0.15f),
                                 shape = RoundedCornerShape(WtaRadius.Badge)
                             ) {
                                 Text(
                                     text = "●",
-                                    color = AppColors.CodeForeground,
+                                    color = scheme.foreground,
                                     fontSize = 10.sp,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
@@ -153,13 +154,13 @@ fun WtaCodeEditorDialog(
                             Icon(
                                 Icons.Outlined.Save,
                                 contentDescription = null,
-                                tint = if (canSave) AppColors.CodeForeground else AppColors.CodeMuted,
+                                tint = if (canSave) scheme.foreground else scheme.muted,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
                                 text = Strings.saveFile,
-                                color = if (canSave) AppColors.CodeForeground else AppColors.CodeMuted
+                                color = if (canSave) scheme.foreground else scheme.muted
                             )
                         }
                     }
@@ -176,14 +177,14 @@ fun WtaCodeEditorDialog(
 
                     Row(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .fillMaxWidth()
                             .verticalScroll(verticalScrollState)
                     ) {
                         val lineCount = maxOf(codeText.count { it == '\n' } + 1, 1)
                         Column(
                             modifier = Modifier
                                 .width(44.dp)
-                                .background(AppColors.EditorDark)
+                                .background(scheme.background)
                                 .padding(end = 8.dp, top = 8.dp),
                             horizontalAlignment = Alignment.End
                         ) {
@@ -194,7 +195,7 @@ fun WtaCodeEditorDialog(
                                         fontFamily = FontFamily.Monospace,
                                         fontSize = 13.sp,
                                         lineHeight = 20.sp,
-                                        color = AppColors.CodeGutter
+                                        color = scheme.gutter
                                     )
                                 )
                             }
@@ -207,8 +208,9 @@ fun WtaCodeEditorDialog(
                                 fontFamily = FontFamily.Monospace,
                                 fontSize = 13.sp,
                                 lineHeight = 20.sp,
-                                color = AppColors.CodeForeground
+                                color = scheme.foreground
                             ),
+                            visualTransformation = CodeSyntaxTransformation(language, scheme),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .horizontalScroll(horizontalScrollState)
@@ -222,7 +224,7 @@ fun WtaCodeEditorDialog(
                                                 fontFamily = FontFamily.Monospace,
                                                 fontSize = 13.sp,
                                                 lineHeight = 20.sp,
-                                                color = AppColors.CodeMuted
+                                                color = scheme.muted
                                             )
                                         )
                                     }
@@ -233,7 +235,7 @@ fun WtaCodeEditorDialog(
                     }
                 }
 
-                Surface(color = AppColors.EditorDarkAlt) {
+                Surface(color = scheme.backgroundAlt) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -246,13 +248,13 @@ fun WtaCodeEditorDialog(
                         Text(
                             text = "$lineCount ${if (lineCount == 1) "line" else "lines"}, $charCount chars",
                             style = MaterialTheme.typography.labelSmall,
-                            color = AppColors.CodeForeground.copy(alpha = 0.9f)
+                            color = scheme.foreground.copy(alpha = 0.9f)
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         Text(
                             text = language,
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.9f)
+                            color = scheme.foreground.copy(alpha = 0.9f)
                         )
                     }
                 }

@@ -44,7 +44,39 @@ object AppColors {
 
     val CodeMuted: Color = Color(0xFF666666)
 
+    val CodeKeyword: Color = Color(0xFF569CD6)
+
+    val CodeString: Color = Color(0xFFCE9178)
+
+    val CodeComment: Color = Color(0xFF6A9955)
+
+    val CodeNumber: Color = Color(0xFFB5CEA8)
+
+    val CodeFunction: Color = Color(0xFFDCDCAA)
+
     val CodeDivider: Color = Color(0xFF3A3A3A)
+
+    val EditorLight: Color = Color(0xFFFAFAFA)
+
+    val EditorLightAlt: Color = Color(0xFFF0F0F0)
+
+    val CodeForegroundLight: Color = Color(0xFF333333)
+
+    val CodeGutterLight: Color = Color(0xFFBBBBBB)
+
+    val CodeMutedLight: Color = Color(0xFF999999)
+
+    val CodeDividerLight: Color = Color(0xFFE0E0E0)
+
+    val CodeKeywordLight: Color = Color(0xFF0000FF)
+
+    val CodeStringLight: Color = Color(0xFFA31515)
+
+    val CodeCommentLight: Color = Color(0xFF008000)
+
+    val CodeNumberLight: Color = Color(0xFF098658)
+
+    val CodeFunctionLight: Color = Color(0xFF795E26)
 
     val DiffAddedBg: Color = Color(0x3010B981)
 
