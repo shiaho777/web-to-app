@@ -13,6 +13,8 @@ import com.webtoapp.core.extension.ModulePermission
 import com.webtoapp.core.extension.ModuleRunTime
 import com.webtoapp.core.extension.ModuleSourceType
 import com.webtoapp.core.extension.ModuleVersion
+import com.webtoapp.core.extension.ExtensionFileManager
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.network.NetworkModule
 import kotlinx.coroutines.Dispatchers
@@ -76,11 +78,16 @@ class ModuleMarketRepository private constructor(
             val entries = loaded?.entries ?: emptyList()
             val submissions = loaded?.submissions ?: emptyMap()
             val installed = (user + builtIn).associateBy { it.id }
+            val installedByName = (user + builtIn).associateBy { it.name.trim() }
             entries.mapNotNull { entry ->
 
                 val submission = submissions[entry.id] ?: return@mapNotNull null
 
-                val local = installed[entry.id]
+                val local = if (entry.sourceType == "CHROME_EXTENSION") {
+                    installedByName[entry.name.trim()]
+                } else {
+                    installed[entry.id]
+                }
                 if (local == null) {
                     MarketModuleView(entry, MarketInstallState.NotInstalled, null, submission)
                 } else {
@@ -156,14 +163,32 @@ class ModuleMarketRepository private constructor(
         )
     }
 
-    suspend fun install(entry: ModuleMarketEntry): Result<ExtensionModule> = withContext(Dispatchers.IO) {
+    suspend fun install(
+        entry: ModuleMarketEntry,
+        onProgress: (InstallProgress) -> Unit = {}
+    ): Result<ExtensionModule> = withContext(Dispatchers.IO) {
         try {
+            if (entry.sourceType == "CHROME_EXTENSION" && entry.storeId != null) {
+                return@withContext installChromeExtension(entry, onProgress)
+            }
+
+            val totalSteps = if (entry.hasCss) 4 else 3
+            var step = 0
+
+            onProgress(InstallProgress(Strings.moduleMarketDlManifest, ++step, totalSteps))
             val manifestRaw = fetchRaw("${entry.path}/module.json")
                 ?: return@withContext Result.failure(IOException("module.json download failed"))
+
+            onProgress(InstallProgress(Strings.moduleMarketDlCode, ++step, totalSteps))
             val mainJs = fetchRaw("${entry.path}/main.js")
                 ?: return@withContext Result.failure(IOException("main.js download failed"))
-            val styleCss = if (entry.hasCss) fetchRaw("${entry.path}/style.css").orEmpty() else ""
 
+            val styleCss = if (entry.hasCss) {
+                onProgress(InstallProgress(Strings.moduleMarketDlStyle, ++step, totalSteps))
+                fetchRaw("${entry.path}/style.css").orEmpty()
+            } else ""
+
+            onProgress(InstallProgress(Strings.moduleMarketInstalling, ++step, totalSteps))
             val manifest = try {
                 gson.fromJson(manifestRaw, RemoteManifest::class.java)
             } catch (e: Exception) {
@@ -194,8 +219,40 @@ class ModuleMarketRepository private constructor(
         }
     }
 
+    private suspend fun installChromeExtension(
+        entry: ModuleMarketEntry,
+        onProgress: (InstallProgress) -> Unit
+    ): Result<ExtensionModule> {
+        onProgress(InstallProgress(Strings.moduleMarketInstalling, 1, 1))
+        val fileManager = ExtensionFileManager(context)
+        val result = fileManager.installChromeExtensionFromStore(entry.storeId!!)
+        return when (result) {
+            is ExtensionFileManager.ImportResult.ChromeExtension -> {
+                val modules = result.parseResult.modules
+                if (modules.isEmpty()) {
+                    Result.failure(IllegalStateException("No modules parsed from extension"))
+                } else {
+                    modules.forEach { module ->
+                        extensionManager.addModule(module)
+                    }
+                    Result.success(modules.first())
+                }
+            }
+            is ExtensionFileManager.ImportResult.Error -> {
+                Result.failure(IllegalStateException(result.message))
+            }
+            else -> {
+                Result.failure(IllegalStateException("Unexpected import result"))
+            }
+        }
+    }
+
     fun githubUrl(entry: ModuleMarketEntry): String =
-        "https://github.com/$OWNER/$REPO/tree/$BRANCH/$MODULES_DIR/${entry.path}"
+        if (entry.sourceType == "CHROME_EXTENSION" && entry.storeId != null) {
+            entry.homepage ?: "https://chromewebstore.google.com/detail/${entry.storeId}"
+        } else {
+            "https://github.com/$OWNER/$REPO/tree/$BRANCH/$MODULES_DIR/${entry.path}"
+        }
 
     fun resolveIconUrl(entry: ModuleMarketEntry): String? {
         val raw = entry.iconUrl?.trim().orEmpty()

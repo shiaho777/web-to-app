@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -60,6 +61,7 @@ import androidx.compose.ui.unit.dp
 import com.webtoapp.core.extension.ExtensionManager
 import com.webtoapp.core.extension.ModuleCategory
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.market.InstallProgress
 import com.webtoapp.core.market.MarketInstallState
 import com.webtoapp.core.market.MarketModuleView
 import com.webtoapp.core.market.MarketState
@@ -77,6 +79,8 @@ import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.design.WtaTab
+import com.webtoapp.ui.design.WtaTabRow
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import androidx.compose.material.icons.filled.MergeType
@@ -118,6 +122,7 @@ fun ModuleMarketScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<ModuleCategory?>(null) }
     var installingId by remember { mutableStateOf<String?>(null) }
+    var installProgress by remember { mutableStateOf<InstallProgress?>(null) }
 
     val filtered = remember(views, searchQuery, selectedCategory) {
         views.filter { v ->
@@ -132,12 +137,17 @@ fun ModuleMarketScreen(
         }
     }
 
+    var selectedTab by remember { mutableStateOf(0) }
+    val filteredCustom = filtered.filter { it.entry.sourceType != "CHROME_EXTENSION" }
+    val filteredChromeExt = filtered.filter { it.entry.sourceType == "CHROME_EXTENSION" }
+    val currentList = if (selectedTab == 0) filteredCustom else filteredChromeExt
+
     Scaffold(
         containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text(Strings.moduleMarketTitle) },
+                title = { Text(Strings.communityExtStoreTitle) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.back)
@@ -206,19 +216,34 @@ fun ModuleMarketScreen(
 
                 Spacer(Modifier.height(4.dp))
 
+                WtaTabRow(
+                    tabs = listOf(
+                        WtaTab(Strings.extensionModulesTab, filteredCustom.size),
+                        WtaTab(Strings.browserExtTab, filteredChromeExt.size)
+                    ),
+                    selectedIndex = selectedTab,
+                    onTabSelected = { selectedTab = it },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+
                 when (val s = state) {
                     is MarketState.Idle, is MarketState.Loading -> {
                         if (views.isEmpty()) {
                             LoadingPlaceholder()
                         } else {
                             ModuleListContent(
-                                items = filtered,
+                                items = currentList,
                                 installingId = installingId,
+                                installProgress = installProgress,
                                 onInstall = { entry ->
                                     installingId = entry.id
+                                    installProgress = null
                                     scope.launch {
-                                        installModule(entry, repo, snackbarHostState, context.applicationContext)
+                                        installModule(entry, repo, snackbarHostState, context.applicationContext) { progress ->
+                                            installProgress = progress
+                                        }
                                         installingId = null
+                                        installProgress = null
                                     }
                                 },
                                 onOpenSource = { entry ->
@@ -240,7 +265,7 @@ fun ModuleMarketScreen(
                         }
                     }
                     is MarketState.Loaded -> {
-                        if (filtered.isEmpty()) {
+                        if (currentList.isEmpty()) {
                             EmptyState(
                                 searchQuery = searchQuery,
                                 onOpenContributing = {
@@ -249,13 +274,18 @@ fun ModuleMarketScreen(
                             )
                         } else {
                             ModuleListContent(
-                                items = filtered,
+                                items = currentList,
                                 installingId = installingId,
+                                installProgress = installProgress,
                                 onInstall = { entry ->
                                     installingId = entry.id
+                                    installProgress = null
                                     scope.launch {
-                                        installModule(entry, repo, snackbarHostState, context.applicationContext)
+                                        installModule(entry, repo, snackbarHostState, context.applicationContext) { progress ->
+                                            installProgress = progress
+                                        }
                                         installingId = null
+                                        installProgress = null
                                     }
                                 },
                                 onOpenSource = { entry ->
@@ -291,9 +321,10 @@ private suspend fun installModule(
     entry: ModuleMarketEntry,
     repo: ModuleMarketRepository,
     snackbar: SnackbarHostState,
-    appContext: android.content.Context
+    appContext: android.content.Context,
+    onProgress: (InstallProgress) -> Unit
 ) {
-    val result = repo.install(entry)
+    val result = repo.install(entry, onProgress)
     result.onSuccess {
         Toast.makeText(appContext, Strings.moduleMarketInstalled.replace("%s", entry.name), Toast.LENGTH_SHORT).show()
     }.onFailure { e ->
@@ -305,6 +336,7 @@ private suspend fun installModule(
 private fun ModuleListContent(
     items: List<MarketModuleView>,
     installingId: String?,
+    installProgress: InstallProgress?,
     onInstall: (ModuleMarketEntry) -> Unit,
     onOpenSource: (ModuleMarketEntry) -> Unit,
     onOpenPullRequest: (String) -> Unit,
@@ -324,6 +356,7 @@ private fun ModuleListContent(
             MarketModuleCard(
                 view = view,
                 isInstalling = installingId == view.entry.id,
+                installProgress = if (installingId == view.entry.id) installProgress else null,
                 iconUrl = resolveIcon(view.entry),
                 onInstall = { onInstall(view.entry) },
                 onOpenSource = { onOpenSource(view.entry) },
@@ -533,6 +566,7 @@ private fun GuideTipRow(text: String) {
 private fun MarketModuleCard(
     view: MarketModuleView,
     isInstalling: Boolean,
+    installProgress: InstallProgress?,
     iconUrl: String?,
     onInstall: () -> Unit,
     onOpenSource: () -> Unit,
@@ -601,6 +635,7 @@ private fun MarketModuleCard(
             InstallButton(
                 state = view.state,
                 isInstalling = isInstalling,
+                installProgress = installProgress,
                 onClick = onInstall
             )
         }
@@ -805,13 +840,26 @@ private fun formatRelativeTime(iso: String): String? {
 private fun InstallButton(
     state: MarketInstallState,
     isInstalling: Boolean,
+    installProgress: InstallProgress?,
     onClick: () -> Unit
 ) {
     if (isInstalling) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-            Spacer(Modifier.width(8.dp))
-            Text(Strings.moduleMarketInstalling, style = MaterialTheme.typography.labelMedium)
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    installProgress?.label ?: Strings.moduleMarketInstalling,
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+            if (installProgress != null) {
+                Spacer(Modifier.height(6.dp))
+                LinearProgressIndicator(
+                    progress = { installProgress.fraction },
+                    modifier = Modifier.fillMaxWidth().height(4.dp)
+                )
+            }
         }
         return
     }

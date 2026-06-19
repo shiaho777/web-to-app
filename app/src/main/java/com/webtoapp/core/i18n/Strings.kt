@@ -23322,6 +23322,24 @@ object Strings {
         AppLanguage.ARABIC -> "تحديث"
     }
 
+    val moduleMarketDlManifest: String get() = when (lang) {
+        AppLanguage.CHINESE -> "下载清单…"
+        AppLanguage.ENGLISH -> "Downloading manifest…"
+        AppLanguage.ARABIC -> "Downloading manifest…"
+    }
+
+    val moduleMarketDlCode: String get() = when (lang) {
+        AppLanguage.CHINESE -> "下载代码…"
+        AppLanguage.ENGLISH -> "Downloading code…"
+        AppLanguage.ARABIC -> "Downloading code…"
+    }
+
+    val moduleMarketDlStyle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "下载样式…"
+        AppLanguage.ENGLISH -> "Downloading styles…"
+        AppLanguage.ARABIC -> "Downloading styles…"
+    }
+
     val moduleMarketInstalling: String get() = when (lang) {
         AppLanguage.CHINESE -> "正在安装"
         AppLanguage.ENGLISH -> "Installing"
@@ -27979,6 +27997,16 @@ object Strings {
         AppLanguage.CHINESE -> "浏览器扩展商店"
         AppLanguage.ENGLISH -> "Browser Extension Store"
         AppLanguage.ARABIC -> "متجر إضافات المتصفح"
+    }
+    val communityExtStoreTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "社区扩展商店"
+        AppLanguage.ENGLISH -> "Community Extension Store"
+        AppLanguage.ARABIC -> "متجر الإضافات المجتمعية"
+    }
+    val browserExtTab: String get() = when (lang) {
+        AppLanguage.CHINESE -> "浏览器扩展"
+        AppLanguage.ENGLISH -> "Browser Extensions"
+        AppLanguage.ARABIC -> "إضافات المتصفح"
     }
     val browserExtStoreDesc: String get() = when (lang) {
         AppLanguage.CHINESE -> "一键下载安装热门 Chrome 扩展，无需打包进应用"
