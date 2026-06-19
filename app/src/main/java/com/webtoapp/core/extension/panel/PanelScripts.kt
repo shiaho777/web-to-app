@@ -2708,10 +2708,7 @@ object PanelScripts {
             }
             if (m.icon) {
                 var _l = (m.name || m.icon || '?').charAt(0).toUpperCase();
-                var _cs = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#06b6d4','#ef4444','#3b82f6'];
-                var _i = 0; for (var _k = 0; _k < (m.name || m.icon).length; _k++) _i += (m.name || m.icon).charCodeAt(_k);
-                var _c = _cs[_i % _cs.length];
-                return '<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:' + _c + ';color:#fff;font-size:16px;font-weight:700;border-radius:10px">' + _l + '</span>';
+                return '<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:var(--wta-surface-dim);color:var(--wta-on-surface);font-size:16px;font-weight:700;border-radius:10px">' + _l + '</span>';
             }
             var isChromeExt = m.sourceType === 'CHROME_EXTENSION';
             if (isChromeExt) {
