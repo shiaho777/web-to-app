@@ -2549,11 +2549,22 @@ fun WebViewScreen(
                 val mwApp = webApp
                 val multiWebConfig = mwApp?.multiWebConfig
                 if (mwApp != null && multiWebConfig != null && multiWebConfig.sites.isNotEmpty()) {
+                    val ctx = androidx.compose.ui.platform.LocalContext.current
                     val shellConfig = com.webtoapp.core.shell.ShellConfig(
                         appName = mwApp.name,
                         appType = "MULTI_WEB",
                         multiWebConfig = com.webtoapp.core.shell.MultiWebShellConfig(
                             sites = multiWebConfig.sites.map { site ->
+                                val siteShellConfig = if (site.sourceAppId > 0) {
+                                    try {
+                                        val repo = org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(
+                                            com.webtoapp.data.repository.WebAppRepository::class.java
+                                        )
+                                        kotlinx.coroutines.runBlocking { repo.getWebApp(site.sourceAppId) }?.let { sourceApp ->
+                                            com.webtoapp.core.apkbuilder.buildSiteShellConfig(sourceApp, "preview", site.id, ctx, isPreview = true)
+                                        }
+                                    } catch (_: Exception) { null }
+                                } else null
                                 com.webtoapp.core.shell.MultiWebSiteShellConfig(
                                     id = site.id,
                                     name = site.name,
@@ -2564,7 +2575,15 @@ fun WebViewScreen(
                                     category = site.category,
                                     cssSelector = site.cssSelector,
                                     linkSelector = site.linkSelector,
-                                    enabled = site.enabled
+                                    enabled = site.enabled,
+                                    sourceAppId = site.sourceAppId,
+                                    sourceProjectId = site.sourceProjectId,
+                                    faviconUrl = site.faviconUrl,
+                                    themeColor = site.themeColor,
+                                    sortIndex = site.sortIndex,
+                                    appType = site.appType,
+                                    siteProjectId = site.siteProjectId,
+                                    siteShellConfig = siteShellConfig
                                 )
                             },
                             displayMode = multiWebConfig.displayMode,

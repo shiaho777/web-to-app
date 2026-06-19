@@ -291,3 +291,11 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
 
     return webViewConfig
 }
+
+fun com.webtoapp.core.shell.WebViewShellConfig.toWebViewConfig(isLocalFileApp: Boolean): WebViewConfig {
+    val tempConfig = com.webtoapp.core.shell.ShellConfig(
+        appType = if (isLocalFileApp) "HTML" else "WEB",
+        webViewConfig = this
+    )
+    return buildWebViewConfig(tempConfig)
+}

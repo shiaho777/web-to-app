@@ -419,7 +419,16 @@ data class ShellConfig(
     val goAppConfig: GoAppShellConfig = GoAppShellConfig(),
 
     @SerializedName("multiWebConfig")
-    val multiWebConfig: MultiWebShellConfig = MultiWebShellConfig()
+    val multiWebConfig: MultiWebShellConfig = MultiWebShellConfig(),
+
+    @SerializedName("siteId")
+    val siteId: String = "",
+
+    @SerializedName("siteDirName")
+    val siteDirName: String = "",
+
+    @SerializedName("siteAssetBase")
+    val siteAssetBase: String = ""
 )
 
 data class EmbeddedShellModule(
@@ -927,7 +936,16 @@ data class MultiWebSiteShellConfig(
     val themeColor: String = "",
 
     @SerializedName("sortIndex")
-    val sortIndex: Int = 0
+    val sortIndex: Int = 0,
+
+    @SerializedName("appType")
+    val appType: String = "WEB",
+
+    @SerializedName("siteProjectId")
+    val siteProjectId: String = "",
+
+    @SerializedName("siteShellConfig")
+    val siteShellConfig: ShellConfig? = null
 ) {
     fun getEffectiveUrl(localBaseUrl: String = ""): String {
         return if ((type == "LOCAL" || type == "INLINE_HTML" || (type == "EXISTING" && localFilePath.isNotBlank())) && localFilePath.isNotBlank()) {

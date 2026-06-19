@@ -62,11 +62,11 @@ fun WordPressShellMode(
                     return@withContext
                 }
 
-                val wpDir = File(context.filesDir, "wordpress_site")
+                val wpDir = File(context.filesDir, config.siteDirName.ifBlank { "wordpress_site" })
                 val marker = File(wpDir, ".wp_extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
-                    scope = "wordpress",
+                    scope = config.siteId.ifBlank { "wordpress" },
                     configVersionCode = config.versionCode,
                     extra = config.wordpressConfig.siteTitle
                 )
@@ -74,7 +74,7 @@ fun WordPressShellMode(
                 if (shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("WordPressShell", "Extracting WordPress files to ${wpDir.absolutePath}")
                     wpDir.deleteRecursively()
-                    extractAssetsRecursive(context, "wordpress", wpDir)
+                    extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "wordpress" }, wpDir)
                     writeExtractionMarker(marker, extractionToken)
                 }
 
@@ -255,8 +255,9 @@ fun HtmlFrontendShellMode(
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
     var targetUrl by remember { mutableStateOf<String?>(null) }
-    val stableHttpPort = remember(config.packageName) {
-        com.webtoapp.core.webview.LocalHttpServer.stablePortForPackageName(config.packageName)
+    val stableHttpPort = remember(config.packageName, config.siteId) {
+        val portOwner = if (config.siteId.isNotBlank()) "${config.packageName}_${config.siteId}" else config.packageName
+        com.webtoapp.core.webview.LocalHttpServer.stablePortForPackageName(portOwner)
     }
     val httpServer = remember(stableHttpPort) {
         com.webtoapp.core.webview.LocalHttpServer(context, stableHttpPort)
@@ -271,20 +272,22 @@ fun HtmlFrontendShellMode(
     LaunchedEffect(config.versionCode, effectiveEntryFile, config.webViewConfig.enableCrossOriginIsolation) {
         withContext(Dispatchers.IO) {
             try {
-                val siteDir = File(context.filesDir, "html_shell_site")
+                val siteDir = File(context.filesDir, config.siteDirName.ifBlank { "html_shell_site" })
                 val marker = File(siteDir, ".html_extracted")
                 val configuredEntryFile = config.htmlConfig.getValidEntryFile()
                 val extractionToken = buildExtractionToken(
                     context = context,
-                    scope = "html",
+                    scope = config.siteId.ifBlank { "html" },
                     configVersionCode = config.versionCode,
                     extra = "${config.appType}|$configuredEntryFile|coi=${config.webViewConfig.enableCrossOriginIsolation}"
                 )
 
-                if (shouldReextractAssets(marker, extractionToken)) {
+                val assetBase = config.siteAssetBase.ifBlank { "html" }
+                val hasBundledAssets = try { context.assets.list(assetBase)?.isNotEmpty() == true } catch (_: Exception) { false }
+                if (hasBundledAssets && shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("HtmlShell", "Extracting HTML assets to ${siteDir.absolutePath}")
                     siteDir.deleteRecursively()
-                    extractAssetsRecursive(context, "html", siteDir)
+                    extractAssetsRecursive(context, assetBase, siteDir)
                     writeExtractionMarker(marker, extractionToken)
                 }
 
@@ -424,8 +427,9 @@ fun NodeJsStaticShellMode(
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
     var targetUrl by remember { mutableStateOf<String?>(null) }
-    val stableHttpPort = remember(config.packageName) {
-        com.webtoapp.core.webview.LocalHttpServer.stablePortForPackageName(config.packageName)
+    val stableHttpPort = remember(config.packageName, config.siteId) {
+        val portOwner = if (config.siteId.isNotBlank()) "${config.packageName}_${config.siteId}" else config.packageName
+        com.webtoapp.core.webview.LocalHttpServer.stablePortForPackageName(portOwner)
     }
     val httpServer = remember(stableHttpPort) {
         com.webtoapp.core.webview.LocalHttpServer(context, stableHttpPort)
@@ -438,11 +442,11 @@ fun NodeJsStaticShellMode(
     LaunchedEffect(config.versionCode) {
         withContext(Dispatchers.IO) {
             try {
-                val siteDir = File(context.filesDir, "nodejs_static_site")
+                val siteDir = File(context.filesDir, config.siteDirName.ifBlank { "nodejs_static_site" })
                 val marker = File(siteDir, ".nodejs_static_extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
-                    scope = "nodejs_static",
+                    scope = config.siteId.ifBlank { "nodejs_static" },
                     configVersionCode = config.versionCode,
                     extra = config.nodejsConfig.entryFile
                 )
@@ -450,7 +454,7 @@ fun NodeJsStaticShellMode(
                 if (shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("NodeJsStaticShell", "Extracting nodejs static assets to ${siteDir.absolutePath}")
                     siteDir.deleteRecursively()
-                    extractAssetsRecursive(context, "nodejs_app", siteDir)
+                    extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "nodejs_app" }, siteDir)
                     writeExtractionMarker(marker, extractionToken)
                 }
 
@@ -568,11 +572,11 @@ fun NodeJsShellMode(
                 AppLogger.i("NodeJsShell", "libnode.so path: $nodePath (size=${java.io.File(nodePath).length()})")
                 com.webtoapp.core.shell.ShellLogger.i("NodeJsShell", "libnode.so 路径: $nodePath (size=${java.io.File(nodePath).length()})")
 
-                val projectDir = File(context.filesDir, "nodejs_site")
+                val projectDir = File(context.filesDir, config.siteDirName.ifBlank { "nodejs_site" })
                 val marker = File(projectDir, ".nodejs_extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
-                    scope = "nodejs",
+                    scope = config.siteId.ifBlank { "nodejs" },
                     configVersionCode = config.versionCode,
                     extra = "${config.nodejsConfig.mode}|${config.nodejsConfig.entryFile}"
                 )
@@ -581,7 +585,7 @@ fun NodeJsShellMode(
                     AppLogger.i("NodeJsShell", "Extracting Node.js project files to ${projectDir.absolutePath}")
                     com.webtoapp.core.shell.ShellLogger.i("NodeJsShell", "提取 Node.js 项目文件到 ${projectDir.absolutePath}")
                     projectDir.deleteRecursively()
-                    extractAssetsRecursive(context, "nodejs_app", projectDir)
+                    extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "nodejs_app" }, projectDir)
                     writeExtractionMarker(marker, extractionToken)
                 }
 
@@ -767,17 +771,17 @@ fun PhpAppShellMode(
                     return@withContext
                 }
 
-                val phpProjectDir = File(context.filesDir, "php_app_site")
+                val phpProjectDir = File(context.filesDir, config.siteDirName.ifBlank { "php_app_site" })
                 val marker = File(phpProjectDir, ".php_extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
-                    scope = "php_app",
+                    scope = config.siteId.ifBlank { "php_app" },
                     configVersionCode = config.versionCode,
                     extra = "${config.phpAppConfig.documentRoot}|${config.phpAppConfig.entryFile}"
                 )
                 if (shouldReextractAssets(marker, extractionToken)) {
                     phpProjectDir.deleteRecursively()
-                    extractAssetsRecursive(context, "php_app", phpProjectDir)
+                    extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "php_app" }, phpProjectDir)
                     writeExtractionMarker(marker, extractionToken)
                 }
 
@@ -952,9 +956,9 @@ fun PythonAppShellMode(
                 if (!pythonRuntime.isPythonAvailable()) {
                     AppLogger.w("PythonShell", "Python runtime unavailable, falling back to preview mode")
 
-                    val projectDir = File(context.filesDir, "python_app_site")
+                    val projectDir = File(context.filesDir, config.siteDirName.ifBlank { "python_app_site" })
                     projectDir.mkdirs()
-                    extractAssetsRecursive(context, "python_app", projectDir)
+                    extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "python_app" }, projectDir)
                     val previewHtml = File(projectDir, "_preview_.html")
                     if (previewHtml.exists()) {
                         serverUrl = "file://${previewHtml.absolutePath}"
@@ -968,11 +972,11 @@ fun PythonAppShellMode(
                 }
                 AppLogger.i("PythonShell", "Python runtime ready")
 
-                val projectDir = File(context.filesDir, "python_app_site")
+                val projectDir = File(context.filesDir, config.siteDirName.ifBlank { "python_app_site" })
                 val marker = File(projectDir, ".python_extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
-                    scope = "python_app",
+                    scope = config.siteId.ifBlank { "python_app" },
                     configVersionCode = config.versionCode,
                     extra = "${pyConfig.framework}|${pyConfig.entryFile}|${pyConfig.entryModule}"
                 )
@@ -980,7 +984,7 @@ fun PythonAppShellMode(
                 if (shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("PythonShell", "Extracting Python project files to ${projectDir.absolutePath}")
                     projectDir.deleteRecursively()
-                    extractAssetsRecursive(context, "python_app", projectDir)
+                    extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "python_app" }, projectDir)
                     writeExtractionMarker(marker, extractionToken)
                 } else {
                     AppLogger.i("PythonShell", "Extraction marker exists, skipping extraction")
@@ -1146,11 +1150,11 @@ fun GoAppShellMode(
             try {
                 val goConfig = config.goAppConfig
 
-                val projectDir = File(context.filesDir, "go_app_site")
+                val projectDir = File(context.filesDir, config.siteDirName.ifBlank { "go_app_site" })
                 val marker = File(projectDir, ".go_extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
-                    scope = "go_app",
+                    scope = config.siteId.ifBlank { "go_app" },
                     configVersionCode = config.versionCode,
                     extra = "${goConfig.framework}|${goConfig.binaryName}|${goConfig.staticDir}"
                 )
@@ -1158,7 +1162,7 @@ fun GoAppShellMode(
                 if (shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("GoShell", "Extracting Go project files to ${projectDir.absolutePath}")
                     projectDir.deleteRecursively()
-                    extractAssetsRecursive(context, "go_app", projectDir)
+                    extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "go_app" }, projectDir)
                     writeExtractionMarker(marker, extractionToken)
                 } else {
                     AppLogger.i("GoShell", "Extraction marker exists, skipping extraction")

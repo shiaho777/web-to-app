@@ -975,6 +975,10 @@ private fun AddSiteDialog(
                             localFilePath = localFilePath,
                             sourceAppId = app.id,
                             sourceProjectId = sourceProjectId,
+                            appType = app.appType.name,
+                            htmlConfig = app.htmlConfig,
+                            webViewConfig = app.webViewConfig,
+                            siteProjectId = sourceProjectId.ifBlank { UUID.randomUUID().toString() },
                             enabled = true,
                             sortIndex = newSortIndex + selectedAppIds.indexOf(app.id)
                         )

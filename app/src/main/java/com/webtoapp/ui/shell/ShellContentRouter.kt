@@ -135,17 +135,21 @@ fun ShellContentRouter(
             )
         }
         appType == "MULTI_WEB" -> {
-            AppLogger.i("ShellScreen", "进入 MULTI_WEB 分支，启动 MultiWebShellMode, mode=${config.multiWebConfig.displayMode}, sites=${config.multiWebConfig.sites.size}")
-            MultiWebShellMode(
-                config = config,
-                webViewConfig = webViewConfig,
-                webViewCallbacks = webViewCallbacks,
-                webViewManager = webViewManager,
-                onWebViewCreated = onWebViewCreated,
-                swipeRefreshEnabled = swipeRefreshEnabled,
-                isRefreshing = isRefreshing,
-                onRefresh = onRefresh
-            )
+            if (config.siteId.isNotBlank()) {
+                AppLogger.e("ShellContentRouter", "Recursive MULTI_WEB detected for site ${config.siteId}, aborting")
+            } else {
+                AppLogger.i("ShellScreen", "进入 MULTI_WEB 分支，启动 MultiWebShellMode, mode=${config.multiWebConfig.displayMode}, sites=${config.multiWebConfig.sites.size}")
+                MultiWebShellMode(
+                    config = config,
+                    webViewConfig = webViewConfig,
+                    webViewCallbacks = webViewCallbacks,
+                    webViewManager = webViewManager,
+                    onWebViewCreated = onWebViewCreated,
+                    swipeRefreshEnabled = swipeRefreshEnabled,
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh
+                )
+            }
         }
         appType == "HTML" || appType == "FRONTEND" -> {
             HtmlFrontendShellMode(

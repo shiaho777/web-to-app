@@ -782,7 +782,17 @@ data class MultiWebSite(
     val cssSelector: String = "",
     val linkSelector: String = "",
     val enabled: Boolean = true,
-    val sortIndex: Int = 0
+    val sortIndex: Int = 0,
+    val appType: String = "WEB",
+    val htmlUsesFileScheme: Boolean = false,
+    val webViewConfig: WebViewConfig? = null,
+    val htmlConfig: HtmlConfig? = null,
+    val nodejsConfig: NodeJsConfig? = null,
+    val phpAppConfig: PhpAppConfig? = null,
+    val pythonAppConfig: PythonAppConfig? = null,
+    val goAppConfig: GoAppConfig? = null,
+    val wordpressConfig: WordPressConfig? = null,
+    val siteProjectId: String = ""
 ) {
 
     fun getEffectiveUrl(localBaseUrl: String = ""): String {
