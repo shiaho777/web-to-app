@@ -77,6 +77,7 @@ class GeckoViewEngine(
                     )
                     try {
                         existing.shutdown()
+                        clearGeckoProfileDir(context)
                     } catch (e: Exception) {
                         AppLogger.w(TAG, "GeckoRuntime shutdown failed during config recreate: ${e.message}")
                     }
@@ -259,7 +260,7 @@ class GeckoViewEngine(
             currentDnsConfig?.let { config ->
                 val dohUrl = config.effectiveDohUrl
                 if (dohUrl.isNotBlank()) {
-                    val trrMode = if (config.dohMode == "strict" || config.bypassSystemDns) {
+                    val trrMode = if (config.dohMode == "strict" || config.bypassSystemDns || config.echEffective) {
                         GeckoRuntimeSettings.TRR_MODE_ONLY
                     } else {
                         GeckoRuntimeSettings.TRR_MODE_FIRST
@@ -276,6 +277,18 @@ class GeckoViewEngine(
             }
 
             return GeckoRuntime.create(context, settingsBuilder.build())
+        }
+
+        private fun clearGeckoProfileDir(context: Context) {
+            try {
+                val profileDir = java.io.File(context.filesDir, "geckoview")
+                if (profileDir.exists()) {
+                    profileDir.deleteRecursively()
+                    AppLogger.d(TAG, "GeckoView profile cleared for fresh ECH/pref init")
+                }
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "Failed to clear GeckoView profile: ${e.message}")
+            }
         }
     }
 
