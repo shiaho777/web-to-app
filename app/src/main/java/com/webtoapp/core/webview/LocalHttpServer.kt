@@ -90,7 +90,7 @@ class LocalHttpServer(
         private set
 
     @Synchronized
-    fun start(rootDir: File, enableCrossOriginIsolation: Boolean = false): String {
+    fun start(rootDir: File, enableCrossOriginIsolation: Boolean = false, owner: String = ""): String {
         if (isRunning.get() && rootDirectory == rootDir && crossOriginIsolationEnabled == enableCrossOriginIsolation) {
 
             return buildLoopbackBaseUrl(actualPort)
@@ -103,10 +103,11 @@ class LocalHttpServer(
 
         try {
 
+            val effectiveOwner = owner.ifBlank { rootDir.name }
             val allocatedPort = if (port > 0) {
-                PortManager.allocateForLocalHttp(rootDir.name, port)
+                PortManager.allocateForLocalHttp(effectiveOwner, port)
             } else {
-                PortManager.allocateForLocalHttp(rootDir.name)
+                PortManager.allocateForLocalHttp(effectiveOwner)
             }
 
             val bindPort = if (allocatedPort in 1..65535) allocatedPort else 0

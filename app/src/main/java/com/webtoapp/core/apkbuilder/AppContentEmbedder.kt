@@ -30,7 +30,8 @@ class EmbedContext(
     val fnAddFrontendFiles: (ZipOutputStream, File, List<com.webtoapp.data.model.HtmlFile>) -> Unit,
     val fnAddPhpAppFiles: (ZipOutputStream, File) -> Unit,
     val fnAddPythonAppFiles: (ZipOutputStream, File) -> Unit,
-    val fnAddGoAppFiles: (ZipOutputStream, File) -> Unit
+    val fnAddGoAppFiles: (ZipOutputStream, File) -> Unit,
+    val multiWebSiteSourceDirs: Map<String, File> = emptyMap()
 )
 
 data class EmbedResult(
@@ -197,17 +198,39 @@ class GoAppContentEmbedder : AppContentEmbedder {
 
 class MultiWebContentEmbedder : AppContentEmbedder {
     override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
-        val dir = ctx.secondaryProjectDir
-        if (dir == null || !dir.exists()) {
-            return EmbedResult(true, message = "No multi-web local project files to embed")
+        val sites = ctx.config.multiWeb.sites
+        val embedded = mutableListOf<String>()
+        sites.forEach { site ->
+            val appType = site.appType.uppercase()
+            if (appType != "HTML" && appType != "FRONTEND") return@forEach
+            val dir = ctx.multiWebSiteSourceDirs[site.id] ?: ctx.secondaryProjectDir
+            if (dir == null || !dir.exists()) return@forEach
+            ctx.logger.log("Embed multi-web site ${site.id} (${site.name}) from ${dir.absolutePath}")
+            RuntimeAssetEmbedder.embedProjectFiles(
+                zipOut = zipOut,
+                projectDir = dir,
+                config = RuntimeAssetEmbedder.EmbedConfig(
+                    runtimeName = "multiWebSite_${site.id}",
+                    assetPrefix = "assets/multiweb_sites/${site.id}/${site.siteShellConfig?.siteAssetBase?.ifBlank { "html" } ?: "html"}",
+                    excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
+                    runtimeType = "nodejs"
+                ),
+                logger = ctx.logger
+            )
+            embedded.add(site.id)
         }
-        ctx.logger.section("Embed Multi-Web Local Site Files")
-        RuntimeAssetEmbedder.embedProjectFiles(
-            zipOut = zipOut,
-            projectDir = dir,
-            config = RuntimeAssetEmbedder.multiWebConfig(),
-            logger = ctx.logger
-        )
-        return EmbedResult(true, message = "Multi-web local site files embedded")
+        if (embedded.isEmpty()) {
+            val dir = ctx.secondaryProjectDir
+            if (dir != null && dir.exists()) {
+                ctx.logger.section("Embed Multi-Web Legacy Local Site Files")
+                RuntimeAssetEmbedder.embedProjectFiles(
+                    zipOut = zipOut,
+                    projectDir = dir,
+                    config = RuntimeAssetEmbedder.multiWebConfig(),
+                    logger = ctx.logger
+                )
+            }
+        }
+        return EmbedResult(true, message = "Multi-web local site files embedded (${embedded.size} sites)")
     }
 }

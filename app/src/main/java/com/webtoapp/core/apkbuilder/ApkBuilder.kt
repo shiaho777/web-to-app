@@ -976,6 +976,13 @@ class ApkBuilder(private val context: Context) {
                         ?.let { File(context.filesDir, "html_projects/$it") }
                     else -> null
                 }
+                val multiWebSiteSourceDirs = if (config.appType == "MULTI_WEB") {
+                    config.multiWeb.sites.mapNotNull { site ->
+                        val dir = site.sourceProjectId.takeIf { it.isNotBlank() }
+                            ?.let { File(context.filesDir, "html_projects/$it") }
+                        if (dir != null && dir.exists()) site.id to dir else null
+                    }.toMap()
+                } else emptyMap()
 
                 val embedder = AppContentEmbedderFactory.create(config.appType)
                 if (embedder != null) {
@@ -1002,7 +1009,8 @@ class ApkBuilder(private val context: Context) {
                         fnAddFrontendFiles = ::addFrontendFilesToAssets,
                         fnAddPhpAppFiles = ::addPhpAppFilesToAssets,
                         fnAddPythonAppFiles = ::addPythonAppFilesToAssets,
-                        fnAddGoAppFiles = ::addGoAppFilesToAssets
+                        fnAddGoAppFiles = ::addGoAppFilesToAssets,
+                        multiWebSiteSourceDirs = multiWebSiteSourceDirs
                     )
                     val result = embedder.embed(zipOut, embedCtx)
                     logger.log("Content embedding [${config.appType}]: ${result.message}")
@@ -2893,7 +2901,7 @@ fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = 
         phpApp = buildPhpAppBlock(),
         pythonApp = buildPythonAppBlock(),
         goApp = buildGoAppBlock(),
-        multiWeb = buildMultiWebBlock()
+        multiWeb = buildMultiWebBlock(context, packageName)
     )
 }
 
@@ -2926,13 +2934,13 @@ private fun WebApp.computeEffectiveTargetUrl(packageName: String): String = when
 }
 
 @Suppress("UNUSED_PARAMETER")
-private fun WebApp.computeHtmlUsesFileScheme(context: android.content.Context?): Boolean {
-    val mode = htmlConfig?.loadMode ?: com.webtoapp.data.model.HtmlLoadMode.AUTO
+private fun com.webtoapp.data.model.HtmlConfig?.computeHtmlUsesFileScheme(context: android.content.Context?): Boolean {
+    val mode = this?.loadMode ?: com.webtoapp.data.model.HtmlLoadMode.AUTO
     return when (mode) {
         com.webtoapp.data.model.HtmlLoadMode.FILE -> true
         com.webtoapp.data.model.HtmlLoadMode.LOCAL_HTTP -> false
         com.webtoapp.data.model.HtmlLoadMode.AUTO -> {
-            val htmlDir = htmlConfig?.projectDir?.let { java.io.File(it) }
+            val htmlDir = this?.projectDir?.let { java.io.File(it) }
             if (htmlDir != null && htmlDir.exists()) {
                 com.webtoapp.core.webview.HtmlRuntimeLoadInspector.prefersFileScheme(htmlDir)
             } else {
@@ -2941,6 +2949,9 @@ private fun WebApp.computeHtmlUsesFileScheme(context: android.content.Context?):
         }
     }
 }
+
+private fun WebApp.computeHtmlUsesFileScheme(context: android.content.Context?): Boolean =
+    htmlConfig.computeHtmlUsesFileScheme(context)
 
 private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
     var result = apkExportConfig?.runtimePermissions ?: ApkRuntimePermissions()
@@ -3034,10 +3045,10 @@ private fun WebApp.buildAdsBlock(): AdsBlock = AdsBlock(
     splashId = adConfig?.splashId ?: ""
 )
 
-private fun WebApp.buildWebViewBlock(context: android.content.Context?): WebViewBlock {
+private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: android.content.Context?): WebViewBlock {
     val resolvedInjectScripts = buildList {
 
-        if (webViewConfig.enableKernelDisguise) {
+        if (enableKernelDisguise) {
             add(com.webtoapp.data.model.UserScript(
                 name = "__kernel__",
                 code = com.webtoapp.core.kernel.BrowserKernel.getBuildTimeKernelJs(),
@@ -3057,58 +3068,61 @@ private fun WebApp.buildWebViewBlock(context: android.content.Context?): WebView
             enabled = true,
             runAt = com.webtoapp.data.model.ScriptRunTime.DOCUMENT_END
         ))
-        val userScripts = if (context != null && webViewConfig.injectScripts.any {
+        val userScripts = if (context != null && injectScripts.any {
                 com.webtoapp.core.script.UserScriptStorage.isFileReference(it.code)
             }) {
-            com.webtoapp.core.script.UserScriptStorage.internalizeScripts(context, webViewConfig.injectScripts)
+            com.webtoapp.core.script.UserScriptStorage.internalizeScripts(context, injectScripts)
         } else {
-            webViewConfig.injectScripts
+            injectScripts
         }
         addAll(userScripts)
     }
 
     return WebViewBlock(
-        javaScriptEnabled = webViewConfig.javaScriptEnabled,
-        domStorageEnabled = webViewConfig.domStorageEnabled,
-        allowFileAccess = webViewConfig.allowFileAccess,
-        allowContentAccess = webViewConfig.allowContentAccess,
-        cacheEnabled = webViewConfig.cacheEnabled && !webViewConfig.clearBrowsingDataOnLaunch,
-        clearBrowsingDataOnLaunch = webViewConfig.clearBrowsingDataOnLaunch,
-        zoomEnabled = webViewConfig.zoomEnabled,
-        desktopMode = webViewConfig.desktopMode,
-        userAgent = webViewConfig.userAgent,
-        userAgentMode = webViewConfig.userAgentMode.name,
-        customUserAgent = webViewConfig.customUserAgent,
-        hideToolbar = webViewConfig.hideToolbar,
-        hideBrowserToolbar = webViewConfig.hideBrowserToolbar,
-        toolbarShowTitle = webViewConfig.toolbarShowTitle,
-        toolbarShowUrl = webViewConfig.toolbarShowUrl,
-        toolbarShowBack = webViewConfig.toolbarShowBack,
-        toolbarShowForward = webViewConfig.toolbarShowForward,
-        toolbarShowRefresh = webViewConfig.toolbarShowRefresh,
-        browserToolbarCustomized = webViewConfig.browserToolbarCustomized,
-        showStatusBarInFullscreen = webViewConfig.showStatusBarInFullscreen,
-        showNavigationBarInFullscreen = webViewConfig.showNavigationBarInFullscreen,
-        showToolbarInFullscreen = webViewConfig.showToolbarInFullscreen,
-        landscapeMode = webViewConfig.landscapeMode,
-        orientationMode = webViewConfig.orientationMode.name,
+        javaScriptEnabled = javaScriptEnabled,
+        domStorageEnabled = domStorageEnabled,
+        allowFileAccess = allowFileAccess,
+        allowContentAccess = allowContentAccess,
+        cacheEnabled = cacheEnabled && !clearBrowsingDataOnLaunch,
+        clearBrowsingDataOnLaunch = clearBrowsingDataOnLaunch,
+        zoomEnabled = zoomEnabled,
+        desktopMode = desktopMode,
+        userAgent = userAgent,
+        userAgentMode = userAgentMode.name,
+        customUserAgent = customUserAgent,
+        hideToolbar = hideToolbar,
+        hideBrowserToolbar = hideBrowserToolbar,
+        toolbarShowTitle = toolbarShowTitle,
+        toolbarShowUrl = toolbarShowUrl,
+        toolbarShowBack = toolbarShowBack,
+        toolbarShowForward = toolbarShowForward,
+        toolbarShowRefresh = toolbarShowRefresh,
+        browserToolbarCustomized = browserToolbarCustomized,
+        showStatusBarInFullscreen = showStatusBarInFullscreen,
+        showNavigationBarInFullscreen = showNavigationBarInFullscreen,
+        showToolbarInFullscreen = showToolbarInFullscreen,
+        landscapeMode = landscapeMode,
+        orientationMode = orientationMode.name,
         injectScripts = resolvedInjectScripts,
-        longPressMenuEnabled = webViewConfig.longPressMenuEnabled,
-        longPressMenuStyle = webViewConfig.longPressMenuStyle.name,
-        adBlockToggleEnabled = webViewConfig.adBlockToggleEnabled,
-        popupBlockerEnabled = webViewConfig.popupBlockerEnabled,
-        popupBlockerToggleEnabled = webViewConfig.popupBlockerToggleEnabled,
-        openExternalLinks = webViewConfig.openExternalLinks,
-        showFloatingBackButton = webViewConfig.showFloatingBackButton,
-        swipeRefreshEnabled = webViewConfig.swipeRefreshEnabled,
-        fullscreenEnabled = webViewConfig.fullscreenEnabled,
-        performanceOptimization = webViewConfig.performanceOptimization,
-        pwaOfflineEnabled = webViewConfig.pwaOfflineEnabled && !webViewConfig.clearBrowsingDataOnLaunch,
-        pwaOfflineStrategy = webViewConfig.pwaOfflineStrategy,
-        keyboardAdjustMode = webViewConfig.keyboardAdjustMode.name,
-        downloadEnabled = webViewConfig.downloadEnabled
+        longPressMenuEnabled = longPressMenuEnabled,
+        longPressMenuStyle = longPressMenuStyle.name,
+        adBlockToggleEnabled = adBlockToggleEnabled,
+        popupBlockerEnabled = popupBlockerEnabled,
+        popupBlockerToggleEnabled = popupBlockerToggleEnabled,
+        openExternalLinks = openExternalLinks,
+        showFloatingBackButton = showFloatingBackButton,
+        swipeRefreshEnabled = swipeRefreshEnabled,
+        fullscreenEnabled = fullscreenEnabled,
+        performanceOptimization = performanceOptimization,
+        pwaOfflineEnabled = pwaOfflineEnabled && !clearBrowsingDataOnLaunch,
+        pwaOfflineStrategy = pwaOfflineStrategy,
+        keyboardAdjustMode = keyboardAdjustMode.name,
+        downloadEnabled = downloadEnabled
     )
 }
+
+private fun WebApp.buildWebViewBlock(context: android.content.Context?): WebViewBlock =
+    webViewConfig.toWebViewBlock(context)
 
 private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBehaviorBlock(
     initialScale = webViewConfig.initialScale,
@@ -3322,16 +3336,18 @@ private fun WebApp.buildMediaBlock(): MediaBlock = MediaBlock(
     keepScreenOn = mediaConfig?.keepScreenOn ?: true
 )
 
-private fun WebApp.buildHtmlBlock(): HtmlBlock = HtmlBlock(
-    entryFile = htmlConfig?.getValidEntryFile() ?: "index.html",
-    enableJavaScript = htmlConfig?.enableJavaScript ?: true,
-    enableLocalStorage = htmlConfig?.enableLocalStorage ?: true,
-    backgroundColor = htmlConfig?.backgroundColor ?: "#FFFFFF",
-    landscapeMode = htmlConfig?.landscapeMode ?: false,
-    loadMode = htmlConfig?.loadMode?.name ?: HtmlLoadMode.AUTO.name,
-    port = htmlConfig?.port ?: 0,
-    portConflictMode = htmlConfig?.portConflictMode?.name ?: "AUTO_KILL"
+private fun com.webtoapp.data.model.HtmlConfig?.toHtmlBlock(): HtmlBlock = HtmlBlock(
+    entryFile = this?.getValidEntryFile() ?: "index.html",
+    enableJavaScript = this?.enableJavaScript ?: true,
+    enableLocalStorage = this?.enableLocalStorage ?: true,
+    backgroundColor = this?.backgroundColor ?: "#FFFFFF",
+    landscapeMode = this?.landscapeMode ?: false,
+    loadMode = this?.loadMode?.name ?: HtmlLoadMode.AUTO.name,
+    port = this?.port ?: 0,
+    portConflictMode = this?.portConflictMode?.name ?: "AUTO_KILL"
 )
+
+private fun WebApp.buildHtmlBlock(): HtmlBlock = htmlConfig.toHtmlBlock()
 
 private fun WebApp.buildGalleryBlock(): GalleryBlock {
     val items = galleryConfig?.items?.mapIndexed { index, item ->
@@ -3519,8 +3535,20 @@ private fun WebApp.buildGoAppBlock(): GoAppBlock = GoAppBlock(
     landscapeMode = goAppConfig?.landscapeMode ?: false
 )
 
-private fun WebApp.buildMultiWebBlock(): MultiWebBlock {
+private fun WebApp.buildMultiWebBlock(context: android.content.Context?, packageName: String): MultiWebBlock {
+    val repo = context?.let {
+        try {
+            org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(
+                com.webtoapp.data.repository.WebAppRepository::class.java
+            )
+        } catch (_: Exception) { null }
+    }
     val sites = multiWebConfig?.sites?.map { site ->
+        val siteShellConfig = if (repo != null && site.sourceAppId > 0) {
+            kotlinx.coroutines.runBlocking { repo.getWebApp(site.sourceAppId) }?.let { sourceApp ->
+                buildSiteShellConfig(sourceApp, packageName, site.id, context)
+            }
+        } else null
         com.webtoapp.core.shell.MultiWebSiteShellConfig(
             id = site.id,
             name = site.name,
@@ -3536,7 +3564,10 @@ private fun WebApp.buildMultiWebBlock(): MultiWebBlock {
             sourceProjectId = site.sourceProjectId,
             faviconUrl = site.faviconUrl,
             themeColor = site.themeColor,
-            sortIndex = site.sortIndex
+            sortIndex = site.sortIndex,
+            appType = site.appType,
+            siteProjectId = site.siteProjectId,
+            siteShellConfig = siteShellConfig
         )
     } ?: emptyList()
     return MultiWebBlock(
@@ -3546,6 +3577,41 @@ private fun WebApp.buildMultiWebBlock(): MultiWebBlock {
         showSiteIcons = multiWebConfig?.showSiteIcons ?: true,
         landscapeMode = multiWebConfig?.landscapeMode ?: false,
         projectId = multiWebConfig?.projectId ?: ""
+    )
+}
+
+internal fun buildSiteShellConfig(
+    sourceWebApp: WebApp,
+    parentPkg: String,
+    siteId: String,
+    context: android.content.Context?,
+    isPreview: Boolean = false
+): com.webtoapp.core.shell.ShellConfig {
+    require(sourceWebApp.appType != com.webtoapp.data.model.AppType.MULTI_WEB) { "MultiWeb site source cannot be MULTI_WEB" }
+    val sitePkg = "${parentPkg}_site_$siteId"
+    val apkConfig = sourceWebApp.toApkConfigWithModules(sitePkg, context!!)
+    val json = ApkConfigJsonFactory.toShellConfigJson(apkConfig)
+    val shell = com.webtoapp.util.GsonProvider.gson.fromJson(json, com.webtoapp.core.shell.ShellConfig::class.java)
+    val assetBase = when (sourceWebApp.appType) {
+        com.webtoapp.data.model.AppType.HTML, com.webtoapp.data.model.AppType.FRONTEND -> "html"
+        com.webtoapp.data.model.AppType.NODEJS_APP -> "nodejs_app"
+        com.webtoapp.data.model.AppType.PHP_APP -> "php_app"
+        com.webtoapp.data.model.AppType.PYTHON_APP -> "python_app"
+        com.webtoapp.data.model.AppType.GO_APP -> "go_app"
+        com.webtoapp.data.model.AppType.WORDPRESS -> "wordpress"
+        else -> ""
+    }
+    val siteDirName = if (isPreview) {
+        "html_projects/${sourceWebApp.htmlConfig?.projectId ?: siteId}"
+    } else {
+        "multiweb_$siteId"
+    }
+    return shell.copy(
+        siteId = siteId,
+        siteDirName = siteDirName,
+        siteAssetBase = assetBase,
+        packageName = sitePkg,
+        multiWebConfig = com.webtoapp.core.shell.MultiWebShellConfig()
     )
 }
 

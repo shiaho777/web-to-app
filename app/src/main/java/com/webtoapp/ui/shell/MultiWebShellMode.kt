@@ -1,8 +1,5 @@
 package com.webtoapp.ui.shell
 
-import android.view.MotionEvent
-import android.view.ViewGroup
-import android.webkit.WebView
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -10,9 +7,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,24 +19,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
+import android.webkit.WebView
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.MultiWebShellConfig
 import com.webtoapp.core.shell.MultiWebSiteShellConfig
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.WebViewCallbacks
-import com.webtoapp.ui.components.EdgeSwipeRefreshLayout
 import com.webtoapp.data.model.WebViewConfig
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.URL
@@ -60,46 +49,9 @@ fun MultiWebShellMode(
     onRefresh: () -> Unit = {}
 ) {
     val multiWebConfig = config.multiWebConfig
-    val sites = multiWebConfig.sites.filter { it.enabled && (it.url.isNotBlank() || it.localFilePath.isNotBlank()) }
-
-    val hasLocalSites = sites.any { (it.type == "LOCAL" || it.type == "INLINE_HTML" || (it.type == "EXISTING" && it.localFilePath.isNotBlank())) && it.localFilePath.isNotBlank() }
-    val context = LocalContext.current
-    val httpServer = remember { if (hasLocalSites) com.webtoapp.core.webview.LocalHttpServer(context) else null }
-    var localBaseUrl by remember { mutableStateOf("") }
-
-    DisposableEffect(httpServer) {
-        if (httpServer != null && hasLocalSites) {
-            val projectId = multiWebConfig.projectId
-            if (projectId.isNotBlank()) {
-                val projectDir = java.io.File(context.filesDir, "html_projects/$projectId")
-                val marker = java.io.File(projectDir, ".multiweb_extracted")
-                val extractionToken = buildExtractionToken(
-                    context = context,
-                    scope = "multiweb",
-                    configVersionCode = config.versionCode,
-                    extra = "${multiWebConfig.projectId}|${sites.map { "${it.id}:${it.localFilePath}:${it.type}:${it.enabled}" }}"
-                )
-                val bundledAssetPath = "html_projects/$projectId"
-                val bundledChildren = try {
-                    context.assets.list(bundledAssetPath)
-                } catch (_: Exception) {
-                    null
-                }
-                if (!bundledChildren.isNullOrEmpty() && shouldReextractAssets(marker, extractionToken)) {
-                    projectDir.deleteRecursively()
-                    extractAssetsRecursive(context, bundledAssetPath, projectDir)
-                    writeExtractionMarker(marker, extractionToken)
-                }
-                if (projectDir.exists()) {
-                    localBaseUrl = httpServer.start(projectDir)
-                }
-            }
-        }
-        onDispose { httpServer?.stop() }
-    }
+    val sites = multiWebConfig.sites.filter { it.enabled }
 
     if (sites.isEmpty()) {
-
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
@@ -118,27 +70,58 @@ fun MultiWebShellMode(
         return
     }
 
-    if (hasLocalSites && localBaseUrl.isBlank()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-    } else {
-        when (multiWebConfig.displayMode.uppercase()) {
-            "TABS" -> TabsMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-            "CARDS" -> CardsMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-            "FEED" -> FeedMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-            "DRAWER" -> DrawerMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-            else -> TabsMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-        }
+    when (multiWebConfig.displayMode.uppercase()) {
+        "TABS" -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+        "CARDS" -> CardsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+        "FEED" -> FeedMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+        "DRAWER" -> DrawerMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+        else -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
     }
 }
 
+@Composable
+private fun SiteContent(
+    site: MultiWebSiteShellConfig,
+    config: ShellConfig,
+    webViewConfig: WebViewConfig,
+    webViewCallbacks: WebViewCallbacks,
+    webViewManager: com.webtoapp.core.webview.WebViewManager,
+    onWebViewCreated: (WebView) -> Unit,
+    swipeRefreshEnabled: Boolean,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit
+) {
+    val siteCfg = site.siteShellConfig
+    val effectiveConfig = siteCfg ?: ShellConfig(
+        appName = site.name,
+        appType = "WEB",
+        targetUrl = site.url,
+        packageName = config.packageName
+    )
+    val siteWvCfg = remember(site.id) { buildWebViewConfig(effectiveConfig) }
+    ShellContentRouter(
+        appType = site.appType,
+        config = effectiveConfig,
+        webViewRecreationKey = site.id.hashCode(),
+        webViewConfig = siteWvCfg,
+        webViewCallbacks = webViewCallbacks,
+        webViewManager = webViewManager,
+        deepLinkUrl = site.url.takeIf { site.appType == "WEB" && it.isNotBlank() },
+        swipeRefreshEnabled = swipeRefreshEnabled,
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        onWebViewCreated = onWebViewCreated,
+        onWebViewRefUpdated = { },
+        onActivityFinish = { }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TabsMode(
     config: ShellConfig,
     multiWebConfig: MultiWebShellConfig,
     sites: List<MultiWebSiteShellConfig>,
-    localBaseUrl: String,
     webViewConfig: WebViewConfig,
     webViewCallbacks: WebViewCallbacks,
     webViewManager: com.webtoapp.core.webview.WebViewManager,
@@ -148,7 +131,6 @@ private fun TabsMode(
     onRefresh: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val webViews = remember { mutableStateMapOf<Int, WebView>() }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -212,93 +194,11 @@ private fun TabsMode(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-
-            AndroidView(
-                factory = { ctx ->
-                    android.widget.FrameLayout(ctx).apply {
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                        sites.forEachIndexed { index, site ->
-                            val swipeLayout = EdgeSwipeRefreshLayout(ctx).apply {
-                                layoutParams = ViewGroup.LayoutParams(
-                                    ViewGroup.LayoutParams.MATCH_PARENT,
-                                    ViewGroup.LayoutParams.MATCH_PARENT
-                                )
-                                setColorSchemeColors(
-                                    android.graphics.Color.parseColor("#6750A4"),
-                                    android.graphics.Color.parseColor("#7F67BE")
-                                )
-                                isEnabled = swipeRefreshEnabled
-                                setOnRefreshListener {
-                                    onRefresh()
-                                    (getChildAt(0) as? WebView)?.reload()
-                                }
-                                setOnChildScrollUpCallback { _, child ->
-                                    val wv = child as? WebView ?: return@setOnChildScrollUpCallback false
-                                    wv.scrollY > 0
-                                }
-                                val createdWebView = webViews.getOrPut(index) {
-                                    WebView(ctx).apply {
-                                        layoutParams = ViewGroup.LayoutParams(
-                                            ViewGroup.LayoutParams.MATCH_PARENT,
-                                            ViewGroup.LayoutParams.MATCH_PARENT
-                                        )
-                                        webViewManager.configureWebView(
-                                            this, webViewConfig, webViewCallbacks,
-                                            config.extensionModuleIds, config.embeddedExtensionModules,
-                                            config.extensionFabIcon, allowGlobalModuleFallback = false,
-                                            extensionEnabled = config.extensionEnabled,
-                                            browserDisguiseConfig = config.browserDisguiseConfig,
-                                            deviceDisguiseConfig = config.deviceDisguiseConfig
-                                        )
-                                        var lastTouchX = 0f; var lastTouchY = 0f
-                                        setOnTouchListener { view, event ->
-                                            when (event.action) {
-                                                MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                                                    lastTouchX = event.x; lastTouchY = event.y
-                                                }
-                                                MotionEvent.ACTION_UP -> view.performClick()
-                                            }
-                                            false
-                                        }
-                                        setOnLongClickListener {
-                                            webViewCallbacks.onLongPress(this, lastTouchX, lastTouchY)
-                                        }
-                                        onWebViewCreated(this)
-                                        loadUrl(site.getEffectiveUrl(localBaseUrl))
-                                    }
-                                }
-                                addView(createdWebView)
-                                visibility = if (index == selectedTab) android.view.View.VISIBLE else android.view.View.GONE
-                            }
-                            addView(swipeLayout)
-                        }
-                    }
-                },
-                update = { frameLayout ->
-
-                    for (i in 0 until frameLayout.childCount) {
-                        val child = frameLayout.getChildAt(i)
-                        child.visibility = if (i == selectedTab) android.view.View.VISIBLE else android.view.View.GONE
-                    }
-
-                    webViews[selectedTab]?.let { onWebViewCreated(it) }
-
-                    val currentSwipe = frameLayout.getChildAt(selectedTab) as? EdgeSwipeRefreshLayout
-                    if (currentSwipe != null) {
-                        currentSwipe.isEnabled = swipeRefreshEnabled
-                        if (currentSwipe.isRefreshing != isRefreshing) {
-                            currentSwipe.isRefreshing = isRefreshing
-                        }
-                        if (!isRefreshing && currentSwipe.isRefreshing) {
-                            currentSwipe.isRefreshing = false
-                        }
-                    }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
+            sites.getOrNull(selectedTab)?.let { site ->
+                key(site.id) {
+                    SiteContent(site, config, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+                }
+            }
         }
     }
 }
@@ -309,7 +209,6 @@ private fun CardsMode(
     config: ShellConfig,
     multiWebConfig: MultiWebShellConfig,
     sites: List<MultiWebSiteShellConfig>,
-    localBaseUrl: String,
     webViewConfig: WebViewConfig,
     webViewCallbacks: WebViewCallbacks,
     webViewManager: com.webtoapp.core.webview.WebViewManager,
@@ -321,7 +220,6 @@ private fun CardsMode(
     var openSite by remember { mutableStateOf<MultiWebSiteShellConfig?>(null) }
 
     if (openSite != null) {
-
         val site = openSite!!
         Scaffold(
             containerColor = Color.Transparent,
@@ -340,76 +238,13 @@ private fun CardsMode(
                 )
             }
         ) { padding ->
-            var swipeChildWebView: WebView? = null
-            AndroidView(
-                factory = { ctx ->
-                    EdgeSwipeRefreshLayout(ctx).apply {
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                        setColorSchemeColors(
-                            android.graphics.Color.parseColor("#6750A4"),
-                            android.graphics.Color.parseColor("#7F67BE")
-                        )
-                        isEnabled = swipeRefreshEnabled
-                        setOnRefreshListener {
-                            onRefresh()
-                            swipeChildWebView?.reload()
-                        }
-                        setOnChildScrollUpCallback { _, child ->
-                            val wv = child as? WebView ?: return@setOnChildScrollUpCallback false
-                            wv.scrollY > 0
-                        }
-                        val createdWebView = WebView(ctx).apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                            webViewManager.configureWebView(
-                                this, webViewConfig, webViewCallbacks,
-                                config.extensionModuleIds, config.embeddedExtensionModules,
-                                config.extensionFabIcon, allowGlobalModuleFallback = false,
-                                extensionEnabled = config.extensionEnabled,
-                                browserDisguiseConfig = config.browserDisguiseConfig,
-                                deviceDisguiseConfig = config.deviceDisguiseConfig
-                            )
-                            var lastTouchX = 0f; var lastTouchY = 0f
-                            setOnTouchListener { view, event ->
-                                when (event.action) {
-                                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                                        lastTouchX = event.x; lastTouchY = event.y
-                                    }
-                                    MotionEvent.ACTION_UP -> view.performClick()
-                                }
-                                false
-                            }
-                            setOnLongClickListener {
-                                webViewCallbacks.onLongPress(this, lastTouchX, lastTouchY)
-                            }
-                            onWebViewCreated(this)
-                            loadUrl(site.getEffectiveUrl(localBaseUrl))
-                        }
-                        swipeChildWebView = createdWebView
-                        addView(createdWebView)
-                    }
-                },
-                update = { swipeLayout ->
-                    swipeLayout.isEnabled = swipeRefreshEnabled
-                    if (swipeLayout.isRefreshing != isRefreshing) {
-                        swipeLayout.isRefreshing = isRefreshing
-                    }
-                    if (!isRefreshing && swipeLayout.isRefreshing) {
-                        swipeLayout.isRefreshing = false
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            )
+            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+                key(site.id) {
+                    SiteContent(site, config, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+                }
+            }
         }
     } else {
-
         CardsHomeGrid(
             sites = sites,
             showIcons = multiWebConfig.showSiteIcons,
@@ -424,7 +259,6 @@ private fun CardsHomeGrid(
     showIcons: Boolean,
     onSiteClicked: (MultiWebSiteShellConfig) -> Unit
 ) {
-
     val grouped = remember(sites) {
         val categorized = sites.groupBy { it.category.ifBlank { "" } }
         categorized.entries.sortedBy { if (it.key.isBlank()) "zzz" else it.key }
@@ -449,23 +283,11 @@ private fun CardsHomeGrid(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
-
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                Text(
-                    "🌐",
-                    fontSize = 40.sp
-                )
+                Text("🌐", fontSize = 40.sp)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "My Sites",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    "${sites.size} sites",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text("My Sites", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+                Text("${sites.size} sites", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -491,7 +313,6 @@ private fun CardsHomeGrid(
                     pair.forEachIndexed { i, site ->
                         val colorIndex = (sites.indexOf(site)) % cardColors.size
                         val (colorStart, colorEnd) = cardColors[colorIndex]
-
                         SiteCard(
                             site = site,
                             colorStart = colorStart,
@@ -501,7 +322,6 @@ private fun CardsHomeGrid(
                             modifier = Modifier.weight(1f)
                         )
                     }
-
                     if (pair.size == 1) {
                         Spacer(modifier = Modifier.weight(1f))
                     }
@@ -533,18 +353,13 @@ private fun SiteCard(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(colorStart, colorEnd)
-                    )
-                )
+                .background(brush = Brush.linearGradient(colors = listOf(colorStart, colorEnd)))
                 .padding(16.dp)
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-
                 if (showIcon) {
                     Box(
                         modifier = Modifier
@@ -556,15 +371,10 @@ private fun SiteCard(
                         if (site.iconEmoji.isNotBlank()) {
                             Text(site.iconEmoji, fontSize = 22.sp)
                         } else {
-                            Icon(
-                                Icons.Outlined.Language, null,
-                                tint = Color.White,
-                                modifier = Modifier.size(24.dp)
-                            )
+                            Icon(Icons.Outlined.Language, null, tint = Color.White, modifier = Modifier.size(24.dp))
                         }
                     }
                 }
-
                 Column {
                     Text(
                         site.name.ifBlank { extractDomain(site.url) },
@@ -601,7 +411,6 @@ private fun FeedMode(
     config: ShellConfig,
     multiWebConfig: MultiWebShellConfig,
     sites: List<MultiWebSiteShellConfig>,
-    localBaseUrl: String,
     webViewConfig: WebViewConfig,
     webViewCallbacks: WebViewCallbacks,
     webViewManager: com.webtoapp.core.webview.WebViewManager,
@@ -618,14 +427,14 @@ private fun FeedMode(
 
     LaunchedEffect(sites) {
         isLoading = true
-        feedItems = withContext(Dispatchers.IO) {
-            fetchFeedItems(sites)
-        }
+        feedItems = withContext(Dispatchers.IO) { fetchFeedItems(sites) }
         isLoading = false
     }
 
     if (openUrl != null) {
-
+        val urlCfg = remember(openUrl) {
+            ShellConfig(appName = openTitle, appType = "WEB", targetUrl = openUrl ?: "", packageName = config.packageName)
+        }
         Scaffold(
             containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets(0),
@@ -640,96 +449,41 @@ private fun FeedMode(
                 )
             }
         ) { padding ->
-            var swipeChildWebView: WebView? = null
-            AndroidView(
-                factory = { ctx ->
-                    EdgeSwipeRefreshLayout(ctx).apply {
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                        setColorSchemeColors(
-                            android.graphics.Color.parseColor("#6750A4"),
-                            android.graphics.Color.parseColor("#7F67BE")
-                        )
-                        isEnabled = swipeRefreshEnabled
-                        setOnRefreshListener {
-                            onRefresh()
-                            swipeChildWebView?.reload()
-                        }
-                        setOnChildScrollUpCallback { _, child ->
-                            val wv = child as? WebView ?: return@setOnChildScrollUpCallback false
-                            wv.scrollY > 0
-                        }
-                        val createdWebView = WebView(ctx).apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                            webViewManager.configureWebView(
-                                this, webViewConfig, webViewCallbacks,
-                                config.extensionModuleIds, config.embeddedExtensionModules,
-                                config.extensionFabIcon, allowGlobalModuleFallback = false,
-                                extensionEnabled = config.extensionEnabled,
-                                browserDisguiseConfig = config.browserDisguiseConfig,
-                                deviceDisguiseConfig = config.deviceDisguiseConfig
-                            )
-                            var lastTouchX = 0f; var lastTouchY = 0f
-                            setOnTouchListener { view, event ->
-                                when (event.action) {
-                                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                                        lastTouchX = event.x; lastTouchY = event.y
-                                    }
-                                    MotionEvent.ACTION_UP -> view.performClick()
-                                }
-                                false
-                            }
-                            setOnLongClickListener {
-                                webViewCallbacks.onLongPress(this, lastTouchX, lastTouchY)
-                            }
-                            onWebViewCreated(this)
-                            loadUrl(openUrl!!)
-                        }
-                        swipeChildWebView = createdWebView
-                        addView(createdWebView)
-                    }
-                },
-                update = { swipeLayout ->
-                    swipeLayout.isEnabled = swipeRefreshEnabled
-                    if (swipeLayout.isRefreshing != isRefreshing) {
-                        swipeLayout.isRefreshing = isRefreshing
-                    }
-                    if (!isRefreshing && swipeLayout.isRefreshing) {
-                        swipeLayout.isRefreshing = false
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            )
+            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+                key(openUrl) {
+                    ShellContentRouter(
+                        appType = "WEB",
+                        config = urlCfg,
+                        webViewRecreationKey = (openUrl ?: "").hashCode(),
+                        webViewConfig = webViewConfig,
+                        webViewCallbacks = webViewCallbacks,
+                        webViewManager = webViewManager,
+                        deepLinkUrl = openUrl,
+                        swipeRefreshEnabled = swipeRefreshEnabled,
+                        isRefreshing = isRefreshing,
+                        onRefresh = onRefresh,
+                        onWebViewCreated = onWebViewCreated,
+                        onWebViewRefUpdated = { },
+                        onActivityFinish = { }
+                    )
+                }
+            }
         }
     } else {
-
         Scaffold(
             containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets(0),
             topBar = {
                 TopAppBar(
-                    title = {
-                        Text(Strings.multiWebModeFeed, fontWeight = FontWeight.Bold)
-                    },
+                    title = { Text(Strings.multiWebModeFeed, fontWeight = FontWeight.Bold) },
                     actions = {
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    isLoading = true
-                                    feedItems = withContext(Dispatchers.IO) {
-                                        fetchFeedItems(sites)
-                                    }
-                                    isLoading = false
-                                }
+                        IconButton(onClick = {
+                            scope.launch {
+                                isLoading = true
+                                feedItems = withContext(Dispatchers.IO) { fetchFeedItems(sites) }
+                                isLoading = false
                             }
-                        ) {
+                        }) {
                             Icon(Icons.Default.Refresh, contentDescription = Strings.refresh)
                         }
                     }
@@ -737,12 +491,7 @@ private fun FeedMode(
             }
         ) { padding ->
             if (isLoading && feedItems.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(16.dp))
@@ -750,58 +499,26 @@ private fun FeedMode(
                     }
                 }
             } else if (feedItems.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            Icons.Outlined.RssFeed, null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-                        )
+                        Icon(Icons.Outlined.RssFeed, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            "No articles found",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            "Configure CSS selectors to extract articles",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        )
+                        Text("No articles found", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Configure CSS selectors to extract articles", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
                     }
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
+                    modifier = Modifier.fillMaxSize().padding(padding),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item {
-                        Text(
-                            "${feedItems.size} articles from ${sites.size} sites",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
+                        Text("${feedItems.size} articles from ${sites.size} sites", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 8.dp))
                     }
-
                     items(feedItems) { item ->
-                        FeedItemCard(
-                            item = item,
-                            onClick = {
-                                openUrl = item.url
-                                openTitle = item.title
-                            }
-                        )
+                        FeedItemCard(item = item, onClick = { openUrl = item.url; openTitle = item.title })
                     }
-
                     item { Spacer(modifier = Modifier.height(16.dp)) }
                 }
             }
@@ -810,50 +527,25 @@ private fun FeedMode(
 }
 
 @Composable
-private fun FeedItemCard(
-    item: FeedItem,
-    onClick: () -> Unit
-) {
+private fun FeedItemCard(item: FeedItem, onClick: () -> Unit) {
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 1.dp
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (item.siteEmoji.isNotBlank()) {
                     Text(item.siteEmoji, fontSize = 14.sp)
                     Spacer(modifier = Modifier.width(6.dp))
                 }
-                Text(
-                    item.siteName,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Text(item.siteName, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
             }
             Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                item.title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-                lineHeight = 22.sp
-            )
+            Text(item.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 3, overflow = TextOverflow.Ellipsis, lineHeight = 22.sp)
             Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                extractDomain(item.url),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
+            Text(extractDomain(item.url), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
         }
     }
 }
@@ -864,7 +556,6 @@ private fun DrawerMode(
     config: ShellConfig,
     multiWebConfig: MultiWebShellConfig,
     sites: List<MultiWebSiteShellConfig>,
-    localBaseUrl: String,
     webViewConfig: WebViewConfig,
     webViewCallbacks: WebViewCallbacks,
     webViewManager: com.webtoapp.core.webview.WebViewManager,
@@ -879,211 +570,56 @@ private fun DrawerMode(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(drawerVisible) {
-        if (drawerVisible) {
-            scope.launch { drawerState.open() }
-        } else {
-            scope.launch { drawerState.close() }
-        }
+        if (drawerVisible) scope.launch { drawerState.open() } else scope.launch { drawerState.close() }
     }
-
     LaunchedEffect(drawerState.currentValue) {
-        if (!drawerVisible && drawerState.currentValue == DrawerValue.Open) {
-            drawerVisible = true
-        } else if (drawerVisible && drawerState.currentValue == DrawerValue.Closed) {
-            drawerVisible = false
-        }
+        if (!drawerVisible && drawerState.currentValue == DrawerValue.Open) drawerVisible = true
+        else if (drawerVisible && drawerState.currentValue == DrawerValue.Closed) drawerVisible = false
     }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(
-                modifier = Modifier.width(300.dp)
-            ) {
-
+            ModalDrawerSheet(modifier = Modifier.width(300.dp)) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.primaryContainer)
-                        .padding(24.dp)
+                    modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primaryContainer).padding(24.dp)
                 ) {
-                    Text(
-                        "My Sites",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Text(
-                        "${sites.size} sites",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    )
+                    Text("My Sites", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    Text("${sites.size} sites", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
                 }
-
                 Spacer(modifier = Modifier.height(8.dp))
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
+                LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
                     items(sites) { site ->
                         val isSelected = selectedSite?.id == site.id
-                        DrawerSiteItem(
-                            site = site,
-                            isSelected = isSelected,
-                            onClick = {
-                                selectedSite = site
-                                drawerVisible = false
-                            }
-                        )
+                        DrawerSiteItem(site = site, isSelected = isSelected, onClick = { selectedSite = site; drawerVisible = false })
                     }
                 }
             }
         },
         gesturesEnabled = true
     ) {
-
         val currentSite = selectedSite ?: sites.firstOrNull()
-
-        val webViews = remember { mutableStateMapOf<String, WebView>() }
-
         Scaffold(
             containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets(0),
             topBar = {
                 TopAppBar(
-                    title = {
-                        Text(
-                            currentSite?.name?.ifBlank { currentSite?.url?.let { extractDomain(it) } ?: "" } ?: "",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            drawerVisible = !drawerVisible
-                        }) {
-                            Icon(Icons.Default.Menu, contentDescription = Strings.more)
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
+                    title = { Text(currentSite?.name?.ifBlank { currentSite?.url?.let { extractDomain(it) } ?: "" } ?: "", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    navigationIcon = { IconButton(onClick = { drawerVisible = !drawerVisible }) { Icon(Icons.Default.Menu, contentDescription = Strings.more) } },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
                 )
             }
         ) { padding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-            ) {
-
-                AndroidView(
-                    factory = { ctx ->
-                        android.widget.FrameLayout(ctx).apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                            sites.forEachIndexed { index, site ->
-                                val swipeLayout = EdgeSwipeRefreshLayout(ctx).apply {
-                                    layoutParams = ViewGroup.LayoutParams(
-                                        ViewGroup.LayoutParams.MATCH_PARENT,
-                                        ViewGroup.LayoutParams.MATCH_PARENT
-                                    )
-                                    setColorSchemeColors(
-                                        android.graphics.Color.parseColor("#6750A4"),
-                                        android.graphics.Color.parseColor("#7F67BE")
-                                    )
-                                    isEnabled = swipeRefreshEnabled
-                                    setOnRefreshListener {
-                                        onRefresh()
-                                        (getChildAt(0) as? WebView)?.reload()
-                                    }
-                                    setOnChildScrollUpCallback { _, child ->
-                                        val wv = child as? WebView ?: return@setOnChildScrollUpCallback false
-                                        wv.scrollY > 0
-                                    }
-                                    val createdWebView = webViews.getOrPut(site.id) {
-                                        WebView(ctx).apply {
-                                            layoutParams = ViewGroup.LayoutParams(
-                                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                                ViewGroup.LayoutParams.MATCH_PARENT
-                                            )
-                                            webViewManager.configureWebView(
-                                                this, webViewConfig, webViewCallbacks,
-                                                config.extensionModuleIds, config.embeddedExtensionModules,
-                                                config.extensionFabIcon, allowGlobalModuleFallback = false,
-                                                extensionEnabled = config.extensionEnabled,
-                                                browserDisguiseConfig = config.browserDisguiseConfig,
-                                                deviceDisguiseConfig = config.deviceDisguiseConfig
-                                            )
-                                            var lastTouchX = 0f; var lastTouchY = 0f
-                                            setOnTouchListener { view, event ->
-                                                when (event.action) {
-                                                    MotionEvent.ACTION_DOWN, MotionEvent.ACTION_MOVE -> {
-                                                        lastTouchX = event.x; lastTouchY = event.y
-                                                    }
-                                                    MotionEvent.ACTION_UP -> view.performClick()
-                                                }
-                                                false
-                                            }
-                                            setOnLongClickListener {
-                                                webViewCallbacks.onLongPress(this, lastTouchX, lastTouchY)
-                                            }
-                                            onWebViewCreated(this)
-                                            loadUrl(site.getEffectiveUrl(localBaseUrl))
-                                        }
-                                    }
-                                    addView(createdWebView)
-
-                                    tag = site.id
-                                    visibility = if (currentSite?.id == site.id) android.view.View.VISIBLE else android.view.View.GONE
-                                }
-                                addView(swipeLayout)
-                            }
-                        }
-                    },
-                    update = { frameLayout ->
-
-                        val selectedId = currentSite?.id
-                        for (i in 0 until frameLayout.childCount) {
-                            val child = frameLayout.getChildAt(i)
-                            child.visibility = if (child.tag == selectedId) android.view.View.VISIBLE else android.view.View.GONE
-                        }
-
-                        selectedId?.let { id -> webViews[id]?.let { onWebViewCreated(it) } }
-
-                        val currentSwipe = frameLayout.findViewWithTag<android.view.View>(selectedId) as? EdgeSwipeRefreshLayout
-                        if (currentSwipe != null) {
-                            currentSwipe.isEnabled = swipeRefreshEnabled
-                            if (currentSwipe.isRefreshing != isRefreshing) {
-                                currentSwipe.isRefreshing = isRefreshing
-                            }
-                            if (!isRefreshing && currentSwipe.isRefreshing) {
-                                currentSwipe.isRefreshing = false
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
-
-                if (currentSite == null) {
-                    Column(
-                        modifier = Modifier.align(Alignment.Center),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            Icons.Outlined.Language, null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        )
+            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+                currentSite?.let { site ->
+                    key(site.id) {
+                        SiteContent(site, config, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+                    }
+                } ?: run {
+                    Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Outlined.Language, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
                         Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            "No site selected",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Text("No site selected", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -1092,84 +628,37 @@ private fun DrawerMode(
 }
 
 @Composable
-private fun DrawerSiteItem(
-    site: MultiWebSiteShellConfig,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
+private fun DrawerSiteItem(site: MultiWebSiteShellConfig, isSelected: Boolean, onClick: () -> Unit) {
     val backgroundColor by animateColorAsState(
-        targetValue = if (isSelected) {
-            MaterialTheme.colorScheme.secondaryContainer
-        } else {
-            Color.Transparent
-        },
+        targetValue = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent,
         animationSpec = spring(stiffness = Spring.StiffnessMedium),
         label = "drawerItemBg"
     )
-
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(backgroundColor)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(backgroundColor).clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primaryContainer),
-            contentAlignment = Alignment.Center
-        ) {
-            if (site.iconEmoji.isNotBlank()) {
-                Text(site.iconEmoji, fontSize = 18.sp)
-            } else {
-                Icon(
-                    Icons.Outlined.Language, null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+        Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
+            if (site.iconEmoji.isNotBlank()) Text(site.iconEmoji, fontSize = 18.sp)
+            else Icon(Icons.Outlined.Language, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(20.dp))
         }
-
         Spacer(modifier = Modifier.width(14.dp))
-
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 site.name.ifBlank { extractDomain(site.url) },
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onSecondaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1, overflow = TextOverflow.Ellipsis
             )
             Text(
                 extractDomain(site.url),
                 style = MaterialTheme.typography.bodySmall,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                color = if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1, overflow = TextOverflow.Ellipsis
             )
         }
-
-        if (isSelected) {
-            Icon(
-                Icons.Default.Check, null,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.size(20.dp)
-            )
-        }
+        if (isSelected) Icon(Icons.Default.Check, null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(20.dp))
     }
 }
 
@@ -1183,54 +672,33 @@ private fun extractDomain(url: String): String {
 
 private fun fetchFeedItems(sites: List<MultiWebSiteShellConfig>): List<FeedItem> {
     val allItems = mutableListOf<FeedItem>()
-
     for (site in sites) {
         if (site.url.isBlank()) continue
         val siteName = site.name.ifBlank { extractDomain(site.url) }
-
         try {
             val connection = URL(site.url).openConnection()
             connection.connectTimeout = 8000
             connection.readTimeout = 8000
             connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36")
             val html = connection.getInputStream().bufferedReader().readText()
-
             if (site.cssSelector.isNotBlank()) {
-
                 val elements = extractElementsByCss(html, site.cssSelector)
                 elements.forEach { element ->
                     val text = extractTextFromHtml(element).trim()
                     val href = extractHrefFromHtml(element)
                     if (text.isNotBlank() && text.length > 5) {
                         val fullUrl = resolveUrl(site.url, href ?: "")
-                        allItems.add(
-                            FeedItem(
-                                title = text,
-                                url = fullUrl.ifBlank { site.url },
-                                siteName = siteName,
-                                siteEmoji = site.iconEmoji,
-                                siteUrl = site.url
-                            )
-                        )
+                        allItems.add(FeedItem(title = text, url = fullUrl.ifBlank { site.url }, siteName = siteName, siteEmoji = site.iconEmoji, siteUrl = site.url))
                     }
                 }
             } else {
-
                 val linkPattern = Regex("""<a\s[^>]*href\s*=\s*["']([^"']*)["'][^>]*>(.*?)</a>""", RegexOption.DOT_MATCHES_ALL)
                 linkPattern.findAll(html).forEach { match ->
                     val href = match.groupValues[1]
                     val text = extractTextFromHtml(match.groupValues[2]).trim()
                     if (text.length in 10..200 && !text.contains("<") && href.isNotBlank()) {
                         val fullUrl = resolveUrl(site.url, href)
-                        allItems.add(
-                            FeedItem(
-                                title = text,
-                                url = fullUrl,
-                                siteName = siteName,
-                                siteEmoji = site.iconEmoji,
-                                siteUrl = site.url
-                            )
-                        )
+                        allItems.add(FeedItem(title = text, url = fullUrl, siteName = siteName, siteEmoji = site.iconEmoji, siteUrl = site.url))
                     }
                 }
             }
@@ -1238,19 +706,15 @@ private fun fetchFeedItems(sites: List<MultiWebSiteShellConfig>): List<FeedItem>
             AppLogger.w("MultiWebFeed", "Failed to fetch ${site.url}: ${e.message}")
         }
     }
-
     return allItems.distinctBy { it.title }.take(100)
 }
 
 private fun extractElementsByCss(html: String, selector: String): List<String> {
-
     val parts = selector.trim().split(Regex("\\s+"))
     val targetSelector = parts.last()
-
     val tag: String?
     val className: String?
     val idName: String?
-
     when {
         targetSelector.contains(".") -> {
             val split = targetSelector.split(".", limit = 2)
@@ -1270,9 +734,7 @@ private fun extractElementsByCss(html: String, selector: String): List<String> {
             idName = null
         }
     }
-
     val results = mutableListOf<String>()
-
     val tagPattern = tag ?: "[a-zA-Z][a-zA-Z0-9]*"
     val attrPattern = buildString {
         append("""<$tagPattern\s""")
@@ -1285,29 +747,20 @@ private fun extractElementsByCss(html: String, selector: String): List<String> {
         }
         append(""">.*?</$tagPattern>""")
     }
-
     try {
         val regex = Regex(attrPattern, setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE))
-        regex.findAll(html).take(50).forEach { match ->
-            results.add(match.value)
-        }
+        regex.findAll(html).take(50).forEach { match -> results.add(match.value) }
     } catch (e: Exception) {
         AppLogger.w("MultiWebFeed", "CSS selector regex failed: ${e.message}")
     }
-
     return results
 }
 
 private fun extractTextFromHtml(html: String): String {
     return html.replace(Regex("<[^>]*>"), "")
-        .replace("&amp;", "&")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", "\"")
-        .replace("&#39;", "'")
-        .replace("&nbsp;", " ")
-        .replace(Regex("\\s+"), " ")
-        .trim()
+        .replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">")
+        .replace("&quot;", "\"").replace("&#39;", "'").replace("&nbsp;", " ")
+        .replace(Regex("\\s+"), " ").trim()
 }
 
 private fun extractHrefFromHtml(html: String): String? {
@@ -1321,12 +774,8 @@ private fun resolveUrl(baseUrl: String, href: String): String {
     if (href.startsWith("//")) return "https:$href"
     return try {
         val base = URL(baseUrl)
-        if (href.startsWith("/")) {
-            "${base.protocol}://${base.host}$href"
-        } else {
-            val basePath = baseUrl.substringBeforeLast("/")
-            "$basePath/$href"
-        }
+        if (href.startsWith("/")) "${base.protocol}://${base.host}$href"
+        else "${baseUrl.substringBeforeLast("/")}/$href"
     } catch (e: Exception) {
         href
     }

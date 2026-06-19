@@ -11,6 +11,8 @@ internal object ApkConfigJsonFactory {
             .create()
     }
 
+    internal fun toShellConfigJson(config: ApkConfig): String = configGson.toJson(config.toShellPayload())
+
     fun create(config: ApkConfig, gson: com.google.gson.Gson = configGson): String {
         ApkConfigValidator.requireValid(config)
         return gson.toJson(config.toShellPayload())
