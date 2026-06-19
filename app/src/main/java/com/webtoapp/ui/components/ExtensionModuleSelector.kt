@@ -30,6 +30,8 @@ import com.webtoapp.ui.design.WtaFeatureCardHeader
 import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
+import com.webtoapp.ui.design.WtaTab
+import com.webtoapp.ui.design.WtaTabRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 
@@ -165,6 +167,11 @@ fun ModuleSelectionDialog(
         matchesSearch && matchesCategory
     }
 
+    var selectedTab by remember { mutableStateOf(0) }
+    val filteredCustom = filteredModules.filter { it.sourceType != ModuleSourceType.CHROME_EXTENSION }
+    val filteredChromeExt = filteredModules.filter { it.sourceType == ModuleSourceType.CHROME_EXTENSION }
+    val currentFiltered = if (selectedTab == 0) filteredCustom else filteredChromeExt
+
     WtaAlertDialog(
         onDismissRequest = onDismiss,
         title = Strings.selectExtensionModules,
@@ -221,11 +228,23 @@ fun ModuleSelectionDialog(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            WtaTabRow(
+                tabs = listOf(
+                    WtaTab(Strings.extensionModulesTab, filteredCustom.size),
+                    WtaTab(Strings.browserExtTab, filteredChromeExt.size)
+                ),
+                selectedIndex = selectedTab,
+                onTabSelected = { selectedTab = it },
+                modifier = Modifier.padding(vertical = 2.dp)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
             LazyColumn(
                 modifier = Modifier.heightIn(max = 400.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                items(filteredModules, key = { it.id }) { module ->
+                items(currentFiltered, key = { it.id }) { module ->
                     val isSelected = module.id in selectedIds
 
                     WtaCard(
@@ -286,7 +305,7 @@ fun ModuleSelectionDialog(
                     }
                 }
 
-                if (filteredModules.isEmpty()) {
+                if (currentFiltered.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
