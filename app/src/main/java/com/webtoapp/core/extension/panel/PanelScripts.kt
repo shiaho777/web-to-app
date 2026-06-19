@@ -2706,7 +2706,13 @@ object PanelScripts {
                 var assetPath = m.icon.substring(6);
                 return '<img src="file:///android_asset/' + assetPath + '" width="20" height="20" style="border-radius:4px;object-fit:contain">';
             }
-            if (m.icon) return m.icon;
+            if (m.icon) {
+                var _l = (m.name || m.icon || '?').charAt(0).toUpperCase();
+                var _cs = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#06b6d4','#ef4444','#3b82f6'];
+                var _i = 0; for (var _k = 0; _k < (m.name || m.icon).length; _k++) _i += (m.name || m.icon).charCodeAt(_k);
+                var _c = _cs[_i % _cs.length];
+                return '<span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:' + _c + ';color:#fff;font-size:16px;font-weight:700;border-radius:10px">' + _l + '</span>';
+            }
             var isChromeExt = m.sourceType === 'CHROME_EXTENSION';
             if (isChromeExt) {
                 return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><path d="M21.17 8H12"/><path d="M3.95 6.06L8.54 14"/><path d="M10.88 21.94L15.46 14"/></svg>';
