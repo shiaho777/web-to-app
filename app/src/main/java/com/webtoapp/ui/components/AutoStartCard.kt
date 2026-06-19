@@ -6,7 +6,6 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,7 +16,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
@@ -26,6 +24,10 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.webtoapp.core.autostart.AutoStartManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AutoStartConfig
+import com.webtoapp.ui.design.WtaDivider
+import com.webtoapp.ui.design.WtaFeatureCard
+import com.webtoapp.ui.design.WtaFeatureCardHeader
+import com.webtoapp.ui.design.WtaSpacing
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,65 +110,28 @@ fun AutoStartCard(
         }
     }
 
-    EnhancedElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (bootStartEnabled || scheduledStartEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Outlined.RocketLaunch,
-                            contentDescription = null,
-                            tint = if (bootStartEnabled || scheduledStartEnabled) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            Strings.autoStartSettings,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            if (bootStartEnabled || scheduledStartEnabled) Strings.enabled else Strings.notEnabled,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (bootStartEnabled || scheduledStartEnabled) {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    }
-                }
+    val isEnabled = bootStartEnabled || scheduledStartEnabled
+    WtaFeatureCard(modifier = Modifier) {
+        WtaFeatureCardHeader(
+            icon = Icons.Outlined.RocketLaunch,
+            title = Strings.autoStartSettings,
+            subtitle = if (!isEnabled) Strings.notEnabled else null,
+            enabled = isEnabled,
+            onClick = { expanded = !expanded },
+            trailing = {
                 Icon(
-                    if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
                     contentDescription = null
                 )
             }
+        )
 
-            AnimatedVisibility(visible = expanded) {
-                Column(modifier = Modifier.padding(top = 16.dp)) {
+        AnimatedVisibility(visible = expanded) {
+            Column(modifier = Modifier.padding(top = WtaSpacing.Large)) {
+                WtaDivider()
+                Spacer(modifier = Modifier.height(WtaSpacing.Large))
 
-                    Row(
+                Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
@@ -539,7 +504,6 @@ fun AutoStartCard(
                     }
                 }
             }
-        }
     }
 
     if (showTimePicker) {

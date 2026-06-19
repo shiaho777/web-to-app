@@ -738,15 +738,19 @@ fun WtaBadge(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     containerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-    contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant
+    contentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    compact: Boolean = false
 ) {
+    val radius = if (compact) WtaRadius.Badge else WtaRadius.Button
+    val hPad = if (compact) 5.dp else 8.dp
+    val vPad = if (compact) 1.dp else 4.dp
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(WtaRadius.Button))
+            .clip(RoundedCornerShape(radius))
             .background(containerColor)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = hPad, vertical = vPad),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {

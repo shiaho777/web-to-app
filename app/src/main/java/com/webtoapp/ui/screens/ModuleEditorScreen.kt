@@ -849,11 +849,12 @@ private fun BasicInfoTab(
             }
         }
 
-        Surface(
-            onClick = onCategoryClick,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(WtaRadius.Card))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .clickable { onCategoryClick() }
         ) {
             Row(
                 modifier = Modifier.padding(16.dp),
@@ -863,7 +864,7 @@ private fun BasicInfoTab(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .clip(RoundedCornerShape(13.dp))
+                        .clip(RoundedCornerShape(WtaRadius.IconPlate))
                         .background(
                             Brush.linearGradient(
                                 listOf(
@@ -897,10 +898,11 @@ private fun BasicInfoTab(
             }
         }
 
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(WtaRadius.Card))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -953,7 +955,7 @@ private fun BasicInfoTab(
                         items(tagList) { tag ->
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
+                                    .clip(RoundedCornerShape(WtaRadius.Chip))
                                     .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.08f))
                                     .padding(horizontal = 10.dp, vertical = 5.dp)
                             ) {
@@ -970,10 +972,11 @@ private fun BasicInfoTab(
             }
         }
 
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(WtaRadius.Card))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(
@@ -983,7 +986,7 @@ private fun BasicInfoTab(
                     Box(
                         modifier = Modifier
                             .size(28.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(RoundedCornerShape(WtaRadius.Chip))
                             .background(
                                 Brush.linearGradient(
                                     listOf(
@@ -1018,7 +1021,7 @@ private fun BasicInfoTab(
                         label = { Text(Strings.versionLabel) },
                         placeholder = { Text("1.0.0") },
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(WtaRadius.Control),
                         leadingIcon = {
                             Icon(
                                 Icons.Outlined.Numbers,
@@ -1035,7 +1038,7 @@ private fun BasicInfoTab(
                         label = { Text(Strings.author) },
                         placeholder = { Text(Strings.yourName) },
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(WtaRadius.Control),
                         leadingIcon = {
                             Icon(
                                 Icons.Outlined.Person,
@@ -1220,10 +1223,11 @@ private fun AdvancedTab(
         iconTint: Color,
         onClick: () -> Unit
     ) {
-        Surface(
-            onClick = onClick,
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerLow
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(WtaRadius.Card))
+                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .clickable { onClick() }
         ) {
             Row(
                 modifier = Modifier
@@ -1235,7 +1239,7 @@ private fun AdvancedTab(
                 Box(
                     modifier = Modifier
                         .size(40.dp)
-                        .clip(RoundedCornerShape(11.dp))
+                        .clip(RoundedCornerShape(WtaRadius.IconPlate))
                         .background(
                             Brush.linearGradient(
                                 listOf(
@@ -1353,7 +1357,7 @@ private fun AdvancedTab(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(WtaRadius.IconPlate))
                         .background(
                             Brush.linearGradient(
                                 listOf(
@@ -1418,7 +1422,7 @@ fun IconPickerDialog(
                             Box(
                                 modifier = Modifier
                                     .size(44.dp)
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .clip(RoundedCornerShape(WtaRadius.Control))
                                     .background(
                                         if (isSelected)
                                             Brush.linearGradient(
@@ -1481,10 +1485,12 @@ fun UrlMatchDialog(
                 if (urlMatches.isNotEmpty()) {
                     urlMatches.forEachIndexed { index, rule ->
                         val ruleTint = if (rule.exclude) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
-                        Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 3.dp)
+                                .clip(RoundedCornerShape(WtaRadius.Card))
+                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                         ) {
                             Row(
                                 modifier = Modifier.padding(10.dp),
@@ -1494,7 +1500,7 @@ fun UrlMatchDialog(
                                 Box(
                                     modifier = Modifier
                                         .size(34.dp)
-                                        .clip(RoundedCornerShape(9.dp))
+                                        .clip(RoundedCornerShape(WtaRadius.Control))
                                         .background(
                                             Brush.linearGradient(
                                                 listOf(
@@ -1524,7 +1530,7 @@ fun UrlMatchDialog(
                                         if (rule.isRegex) {
                                             Box(
                                                 modifier = Modifier
-                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .clip(RoundedCornerShape(WtaRadius.Badge))
                                                     .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.10f))
                                                     .padding(horizontal = 5.dp, vertical = 1.dp)
                                             ) {
@@ -1533,7 +1539,7 @@ fun UrlMatchDialog(
                                         }
                                         Box(
                                             modifier = Modifier
-                                                .clip(RoundedCornerShape(4.dp))
+                                                .clip(RoundedCornerShape(WtaRadius.Badge))
                                                 .background(ruleTint.copy(alpha = 0.10f))
                                                 .padding(horizontal = 5.dp, vertical = 1.dp)
                                         ) {
@@ -1631,10 +1637,12 @@ fun ConfigItemsDialog(
                 } else {
                     configItems.forEachIndexed { index, item ->
                         val itemColor = MaterialTheme.colorScheme.secondary
-                        Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 3.dp)
+                                .clip(RoundedCornerShape(WtaRadius.Card))
+                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
                         ) {
                             Row(
                                 modifier = Modifier.padding(10.dp),
@@ -1644,7 +1652,7 @@ fun ConfigItemsDialog(
                                 Box(
                                     modifier = Modifier
                                         .size(34.dp)
-                                        .clip(RoundedCornerShape(9.dp))
+                                        .clip(RoundedCornerShape(WtaRadius.Control))
                                         .background(
                                             Brush.linearGradient(
                                                 listOf(
@@ -1837,10 +1845,11 @@ fun TemplateSelectionDialog(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 items(templates) { template ->
-                    Surface(
-                        onClick = { onTemplateSelected(template) },
-                        shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerLow
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(WtaRadius.Card))
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                            .clickable { onTemplateSelected(template) }
                     ) {
                         Row(
                             modifier = Modifier
@@ -1852,7 +1861,7 @@ fun TemplateSelectionDialog(
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .clip(RoundedCornerShape(11.dp))
+                                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
                                     .background(
                                         Brush.linearGradient(
                                             listOf(
@@ -1880,7 +1889,7 @@ fun TemplateSelectionDialog(
                                 Spacer(modifier = Modifier.height(3.dp))
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(6.dp))
+                                        .clip(RoundedCornerShape(WtaRadius.Badge))
                                         .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.08f))
                                         .padding(horizontal = 7.dp, vertical = 2.dp)
                                 ) {

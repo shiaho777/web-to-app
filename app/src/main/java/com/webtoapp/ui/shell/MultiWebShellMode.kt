@@ -118,12 +118,18 @@ fun MultiWebShellMode(
         return
     }
 
-    when (multiWebConfig.displayMode.uppercase()) {
-        "TABS" -> TabsMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-        "CARDS" -> CardsMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-        "FEED" -> FeedMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-        "DRAWER" -> DrawerMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-        else -> TabsMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+    if (hasLocalSites && localBaseUrl.isBlank()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    } else {
+        when (multiWebConfig.displayMode.uppercase()) {
+            "TABS" -> TabsMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+            "CARDS" -> CardsMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+            "FEED" -> FeedMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+            "DRAWER" -> DrawerMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+            else -> TabsMode(config, multiWebConfig, sites, localBaseUrl, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+        }
     }
 }
 

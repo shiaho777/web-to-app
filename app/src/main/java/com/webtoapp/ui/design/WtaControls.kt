@@ -27,6 +27,8 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -284,4 +286,32 @@ fun WtaChip(
             }
         }
     }
+}
+
+@Composable
+fun WtaCheckbox(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    val view = LocalView.current
+    val colors = MaterialTheme.colorScheme
+    val onChange: (Boolean) -> Unit = { next ->
+        if (enabled) performHaptic(view)
+        onCheckedChange(next)
+    }
+    Checkbox(
+        checked = checked,
+        onCheckedChange = onChange,
+        modifier = modifier,
+        enabled = enabled,
+        colors = CheckboxDefaults.colors(
+            checkedColor = colors.primary,
+            uncheckedColor = colors.outlineVariant.copy(alpha = 0.6f),
+            checkmarkColor = colors.onPrimary,
+            disabledCheckedColor = colors.primary.copy(alpha = 0.4f),
+            disabledUncheckedColor = colors.outlineVariant.copy(alpha = 0.3f)
+        )
+    )
 }

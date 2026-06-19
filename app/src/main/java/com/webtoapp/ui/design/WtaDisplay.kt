@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -134,7 +135,61 @@ fun WtaIconTitle(
         }
         Spacer(modifier = Modifier.width(WtaSpacing.IconTextGap))
         Column {
-            Text(text = title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+            )
+            if (!subtitle.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun WtaIconTitle(
+    painter: Painter,
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    enabled: Boolean = true,
+    plateSize: Dp = WtaSize.IconPlate,
+    iconSize: Dp = WtaSize.Icon,
+    accent: Color = MaterialTheme.colorScheme.primary
+) {
+    val tint = if (enabled) accent else MaterialTheme.colorScheme.onSurfaceVariant
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(plateSize)
+                .clip(RoundedCornerShape(WtaRadius.IconPlate))
+                .background(
+                    if (enabled) accent.copy(alpha = WtaAlpha.MutedContainer)
+                    else MaterialTheme.colorScheme.surfaceVariant
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painter,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(iconSize)
+            )
+        }
+        Spacer(modifier = Modifier.width(WtaSpacing.IconTextGap))
+        Column {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+            )
             if (!subtitle.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
@@ -150,10 +205,11 @@ fun WtaIconTitle(
 @Composable
 fun WtaLoadingState(
     modifier: Modifier = Modifier,
-    message: String? = null
+    message: String? = null,
+    fillMaxSize: Boolean = true
 ) {
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.then(if (fillMaxSize) Modifier.fillMaxSize() else Modifier.fillMaxWidth()),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -230,10 +286,11 @@ fun WtaFullEmptyState(
     modifier: Modifier = Modifier,
     message: String? = null,
     icon: ImageVector = Icons.Outlined.Inbox,
-    action: (@Composable () -> Unit)? = null
+    action: (@Composable () -> Unit)? = null,
+    fillMaxSize: Boolean = true
 ) {
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.then(if (fillMaxSize) Modifier.fillMaxSize() else Modifier.fillMaxWidth()),
         contentAlignment = Alignment.Center
     ) {
         Column(

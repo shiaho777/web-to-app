@@ -3,14 +3,13 @@ package com.webtoapp.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -18,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.webtoapp.ui.design.WtaCard
@@ -30,9 +28,10 @@ import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.design.WtaLoadingState
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaStatItem
-import com.webtoapp.ui.design.WtaStatusTone
 import com.webtoapp.ui.design.WtaStatusBanner
+import com.webtoapp.ui.design.WtaStatusTone
 import com.webtoapp.ui.design.WtaSwitch
+import com.webtoapp.ui.design.WtaToggleRow
 
 @Composable
 fun SettingsSwitch(
@@ -42,28 +41,28 @@ fun SettingsSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
+    WtaToggleRow(
+        title = title,
+        subtitle = subtitle,
+        checked = checked,
+        onCheckedChange = onCheckedChange,
         modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(modifier = Modifier.weight(1f).padding(end = WtaSpacing.Medium)) {
-            Text(
-                title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        WtaSwitch(checked = checked, onCheckedChange = onCheckedChange)
-    }
+    )
+}
+
+@Composable
+fun SettingsSwitchRow(
+    title: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    WtaToggleRow(
+        title = title,
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -82,7 +81,7 @@ fun SettingsSection(
         WtaCard(
             modifier = Modifier.fillMaxWidth(),
             tone = WtaCardTone.Surface,
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(WtaSpacing.Large)
+            contentPadding = PaddingValues(WtaSpacing.Large)
         ) {
             Column(
                 verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
@@ -118,7 +117,10 @@ fun IconSwitchCard(
                 modifier = Modifier.weight(1f)
             )
             Spacer(modifier = Modifier.width(WtaSpacing.Small))
-            WtaSwitch(checked = checked, onCheckedChange = onCheckedChange)
+            WtaSwitch(
+                checked = checked,
+                onCheckedChange = onCheckedChange
+            )
         }
     }
 }
@@ -132,7 +134,6 @@ fun IconSwitchCard(
     subtitle: String? = null,
     modifier: Modifier = Modifier
 ) {
-
     WtaCard(
         modifier = modifier.fillMaxWidth(),
         tone = WtaCardTone.Surface
@@ -142,18 +143,18 @@ fun IconSwitchCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                if (subtitle != null) {
-                    Text(
-                        subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            WtaIconTitle(
+                painter = iconPainter,
+                title = title,
+                subtitle = subtitle,
+                enabled = checked,
+                modifier = Modifier.weight(1f)
+            )
             Spacer(modifier = Modifier.width(WtaSpacing.Small))
-            WtaSwitch(checked = checked, onCheckedChange = onCheckedChange)
+            WtaSwitch(
+                checked = checked,
+                onCheckedChange = onCheckedChange
+            )
         }
     }
 }
@@ -217,25 +218,6 @@ fun ErrorPlaceholder(
 }
 
 @Composable
-fun SettingsSwitchRow(
-    title: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = WtaSpacing.Tiny),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(title, style = MaterialTheme.typography.bodyMedium)
-        WtaSwitch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
 fun CardContent(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
@@ -281,20 +263,12 @@ fun IconTitleRow(
     enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
-
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        androidx.compose.material3.Icon(
-            painter = iconPainter,
-            contentDescription = null,
-            tint = if (enabled) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(end = WtaSpacing.Small)
-        )
-        Text(title, style = MaterialTheme.typography.titleMedium)
-    }
+    WtaIconTitle(
+        painter = iconPainter,
+        title = title,
+        enabled = enabled,
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -310,8 +284,16 @@ fun CollapsibleCardHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        WtaIconTitle(icon = icon, title = title, enabled = checked)
-        WtaSwitch(checked = checked, onCheckedChange = onCheckedChange)
+        WtaIconTitle(
+            icon = icon,
+            title = title,
+            enabled = checked,
+            modifier = Modifier.weight(1f)
+        )
+        WtaSwitch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
     }
 }
 
@@ -328,8 +310,16 @@ fun CollapsibleCardHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconTitleRow(iconPainter = iconPainter, title = title, enabled = checked)
-        WtaSwitch(checked = checked, onCheckedChange = onCheckedChange)
+        WtaIconTitle(
+            painter = iconPainter,
+            title = title,
+            enabled = checked,
+            modifier = Modifier.weight(1f)
+        )
+        WtaSwitch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
     }
 }
 

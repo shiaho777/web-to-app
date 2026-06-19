@@ -123,10 +123,10 @@ private fun resolveTone(tone: WtaCardTone): WtaCardSpec {
             container = colors.surface,
             border = BorderStroke(
                 width = 0.5.dp,
-                color = if (isDark) Color.White.copy(alpha = 0.06f)
-                else Color.Black.copy(alpha = 0.05f)
+                color = if (isDark) Color.White.copy(alpha = 0.09f)
+                else Color.Black.copy(alpha = 0.08f)
             ),
-            elevation = WtaElevation.Level1
+            elevation = WtaElevation.Level2
         )
         WtaCardTone.Elevated -> WtaCardSpec(
             container = colors.surfaceContainer,
