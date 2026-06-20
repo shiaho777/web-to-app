@@ -1916,11 +1916,151 @@ object ExtensionPanelScript {
 
         minimizeModuleWindow(moduleId) {
             const win = document.getElementById(`wta-modwin-${"$"}{moduleId}`);
-            if (win) {
+            const module = this.modules.find(m => m.id === moduleId);
+            if (!win || !module) return;
+
+            // 保存当前窗口位置和大小
+            const rect = win.getBoundingClientRect();
+            const savedPos = { left: rect.left, top: rect.top };
+            const savedSize = { width: rect.width, height: rect.height };
+            sessionStorage.setItem(`wta-modwin-pos-${"$"}{moduleId}`, JSON.stringify(savedPos));
+            sessionStorage.setItem(`wta-modwin-size-${"$"}{moduleId}`, JSON.stringify(savedSize));
+
+            // 动画缩小
+            win.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+            win.style.transform = 'scale(0.1)';
+            win.style.opacity = '0';
+
+            setTimeout(() => {
                 win.style.display = 'none';
-                sessionStorage.setItem(`wta-modwin-visible-${"$"}{moduleId}`, '0');
-            }
+                win.style.transition = '';
+                win.style.transform = '';
+                win.style.opacity = '';
+
+                // 创建小图标
+                this.createMiniModuleIcon(moduleId, module, savedPos);
+            }, 200);
+
             this.showToast(T.panelMinimized);
+        },
+
+        createMiniModuleIcon(moduleId, module, savedPos) {
+            // 检查是否已有小图标
+            const existingMini = document.getElementById(`wta-modwin-mini-${"$"}{moduleId}`);
+            if (existingMini) {
+                existingMini.style.display = 'flex';
+                return;
+            }
+
+            const mini = document.createElement('div');
+            mini.id = `wta-modwin-mini-${"$"}{moduleId}`;
+            mini.style.cssText = `position:fixed;z-index:2147483645;width:50px;height:50px;border-radius:50%;background:var(--wta-surface);box-shadow:var(--wta-shadow-lg);border:2px solid var(--wta-outline);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:24px;user-select:none;pointer-events:auto;transition:transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)`;
+            
+            // 恢复位置或使用保存的位置
+            const savedMiniPos = sessionStorage.getItem(`wta-modwin-mini-pos-${"$"}{moduleId}`);
+            const pos = savedMiniPos ? JSON.parse(savedMiniPos) : savedPos;
+            mini.style.left = pos.left + 'px';
+            mini.style.top = pos.top + 'px';
+
+            mini.innerHTML = module.icon || '📦';
+            mini.title = module.name || T.unnamed;
+
+            var panelContainer = document.getElementById('wta-ext-panel-container') || document.body;
+            panelContainer.appendChild(mini);
+
+            // 动画出现
+            mini.style.transform = 'scale(0)';
+            setTimeout(() => {
+                mini.style.transform = 'scale(1)';
+            }, 10);
+
+            // 启用拖动和边缘吸附
+            DragManager.makeDraggable(mini, mini, {
+                moduleId: `mini-${"$"}{moduleId}`,
+                resizable: false,
+                edgeSnapping: true,
+                onDragEnd: () => {
+                    // 保存小图标位置
+                    const miniRect = mini.getBoundingClientRect();
+                    sessionStorage.setItem(`wta-modwin-mini-pos-${"$"}{moduleId}`, JSON.stringify({ 
+                        left: miniRect.left, 
+                        top: miniRect.top 
+                    }));
+                }
+            });
+
+            // 点击恢复窗口
+            let isDragging = false;
+            let startX, startY;
+            
+            mini.addEventListener('mousedown', (e) => {
+                isDragging = false;
+                startX = e.clientX;
+                startY = e.clientY;
+            });
+
+            mini.addEventListener('mousemove', (e) => {
+                if (Math.abs(e.clientX - startX) > 5 || Math.abs(e.clientY - startY) > 5) {
+                    isDragging = true;
+                }
+            });
+
+            mini.addEventListener('mouseup', (e) => {
+                if (!isDragging) {
+                    this.restoreModuleWindow(moduleId);
+                }
+            });
+
+            mini.addEventListener('touchstart', (e) => {
+                isDragging = false;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            });
+
+            mini.addEventListener('touchmove', (e) => {
+                if (Math.abs(e.touches[0].clientX - startX) > 5 || Math.abs(e.touches[0].clientY - startY) > 5) {
+                    isDragging = true;
+                }
+            });
+
+            mini.addEventListener('touchend', (e) => {
+                if (!isDragging) {
+                    e.preventDefault();
+                    this.restoreModuleWindow(moduleId);
+                }
+            });
+        },
+
+        restoreModuleWindow(moduleId) {
+            const mini = document.getElementById(`wta-modwin-mini-${"$"}{moduleId}`);
+            const win = document.getElementById(`wta-modwin-${"$"}{moduleId}`);
+            
+            if (!win) return;
+
+            // 隐藏小图标
+            if (mini) {
+                mini.style.transform = 'scale(0)';
+                setTimeout(() => {
+                    mini.style.display = 'none';
+                }, 200);
+            }
+
+            // 恢复窗口
+            win.style.display = 'flex';
+            win.style.transform = 'scale(0.1)';
+            win.style.opacity = '0';
+            
+            setTimeout(() => {
+                win.style.transition = 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease-out';
+                win.style.transform = 'scale(1)';
+                win.style.opacity = '1';
+                
+                setTimeout(() => {
+                    win.style.transition = '';
+                }, 300);
+            }, 10);
+
+            sessionStorage.setItem(`wta-modwin-visible-${"$"}{moduleId}`, '1');
         },
 
         // ==================== 通用方法 ====================
