@@ -1126,14 +1126,16 @@ object ExtensionPanelScript {
 
     // ==================== 拖动管理器 ====================
     const DragManager = {
-        makeDraggable(element, handle = null) {
+        makeDraggable(element, handle = null, options = {}) {
             const dragHandle = handle || element;
+            const { onDragEnd, resizable = true, edgeSnapping = true, moduleId = null } = options;
             let isDragging = false;
             let startX, startY, startLeft, startTop;
 
             const onStart = (e) => {
                 if (e.target.closest('[data-wta-action="minimizeModuleWindow"]')) return;
                 if (e.target.closest('[data-wta-action="closeModuleWindow"]')) return;
+                if (e.target.closest('[data-wta-resize-handle]')) return;
                 isDragging = true;
                 element.classList.add('dragging');
                 const touch = e.touches ? e.touches[0] : e;
@@ -1148,18 +1150,42 @@ object ExtensionPanelScript {
             const onMove = (e) => {
                 if (!isDragging) return;
                 const touch = e.touches ? e.touches[0] : e;
-                const dx = touch.clientX - startX;
-                const dy = touch.clientY - startY;
-                element.style.left = (startLeft + dx) + 'px';
-                element.style.top = (startTop + dy) + 'px';
+                let newLeft = startLeft + (touch.clientX - startX);
+                let newTop = startTop + (touch.clientY - startY);
+                
+                // 边缘吸附
+                if (edgeSnapping) {
+                    const rect = element.getBoundingClientRect();
+                    const winWidth = window.innerWidth;
+                    const winHeight = window.innerHeight;
+                    const threshold = 20;
+                    
+                    if (newLeft < threshold) newLeft = 0;
+                    if (newTop < threshold) newTop = 0;
+                    if (newLeft + rect.width > winWidth - threshold) newLeft = winWidth - rect.width;
+                    if (newTop + rect.height > winHeight - threshold) newTop = winHeight - rect.height;
+                }
+                
+                element.style.left = newLeft + 'px';
+                element.style.top = newTop + 'px';
                 element.style.right = 'auto';
                 element.style.bottom = 'auto';
                 element.style.transform = 'none';
             };
 
             const onEnd = () => {
-                isDragging = false;
-                element.classList.remove('dragging');
+                if (isDragging) {
+                    isDragging = false;
+                    element.classList.remove('dragging');
+                    
+                    // 保存位置
+                    if (moduleId) {
+                        const rect = element.getBoundingClientRect();
+                        sessionStorage.setItem(`wta-modwin-pos-${"$"}{moduleId}`, JSON.stringify({ left: rect.left, top: rect.top }));
+                    }
+                    
+                    if (onDragEnd) onDragEnd();
+                }
             };
 
             dragHandle.addEventListener('mousedown', onStart);
@@ -1170,6 +1196,60 @@ object ExtensionPanelScript {
             document.addEventListener('touchend', onEnd);
 
             element.classList.add('wta-draggable');
+            
+            // 启用调整大小
+            if (resizable) {
+                const resizeHandle = element.querySelector('[data-wta-resize-handle]');
+                if (resizeHandle) {
+                    this.makeResizable(element, resizeHandle, moduleId);
+                }
+            }
+        },
+        
+        makeResizable(element, handle, moduleId = null) {
+            let isResizing = false;
+            let startX, startY, startWidth, startHeight;
+            
+            const onStart = (e) => {
+                isResizing = true;
+                const touch = e.touches ? e.touches[0] : e;
+                startX = touch.clientX;
+                startY = touch.clientY;
+                startWidth = element.offsetWidth;
+                startHeight = element.offsetHeight;
+                e.preventDefault();
+                e.stopPropagation();
+            };
+            
+            const onMove = (e) => {
+                if (!isResizing) return;
+                const touch = e.touches ? e.touches[0] : e;
+                const newWidth = Math.max(280, startWidth + (touch.clientX - startX));
+                const newHeight = Math.max(300, startHeight + (touch.clientY - startY));
+                element.style.width = newWidth + 'px';
+                element.style.height = newHeight + 'px';
+            };
+            
+            const onEnd = () => {
+                if (isResizing) {
+                    isResizing = false;
+                    
+                    // 保存大小
+                    if (moduleId) {
+                        sessionStorage.setItem(`wta-modwin-size-${"$"}{moduleId}`, JSON.stringify({ 
+                            width: element.offsetWidth, 
+                            height: element.offsetHeight 
+                        }));
+                    }
+                }
+            };
+            
+            handle.addEventListener('mousedown', onStart);
+            handle.addEventListener('touchstart', onStart, { passive: false });
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchend', onEnd);
         }
     };
 
@@ -1720,7 +1800,26 @@ object ExtensionPanelScript {
             // 创建独立窗口
             const win = document.createElement('div');
             win.id = `wta-modwin-${"$"}{moduleId}`;
-            win.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:380px;height:500px;z-index:2147483644;display:flex;flex-direction:column;overflow:hidden;pointer-events:auto;background:var(--wta-surface);border-radius:var(--wta-radius);box-shadow:var(--wta-shadow-lg);border:1px solid var(--wta-outline);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)';
+            
+            // 从 sessionStorage 恢复位置和大小
+            const savedPos = sessionStorage.getItem(`wta-modwin-pos-${"$"}{moduleId}`);
+            const savedSize = sessionStorage.getItem(`wta-modwin-size-${"$"}{moduleId}`);
+            const pos = savedPos ? JSON.parse(savedPos) : null;
+            const size = savedSize ? JSON.parse(savedSize) : { width: 320, height: 400 };
+            
+            win.style.cssText = `position:fixed;z-index:2147483644;display:flex;flex-direction:column;overflow:hidden;pointer-events:auto;background:var(--wta-surface);border-radius:var(--wta-radius);box-shadow:var(--wta-shadow-lg);border:1px solid var(--wta-outline);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);width:${"$"}{size.width}px;height:${"$"}{size.height}px;min-width:280px;min-height:300px`;
+            
+            if (pos) {
+                win.style.left = pos.left + 'px';
+                win.style.top = pos.top + 'px';
+                win.style.right = 'auto';
+                win.style.bottom = 'auto';
+                win.style.transform = 'none';
+            } else {
+                win.style.top = '50%';
+                win.style.left = '50%';
+                win.style.transform = 'translate(-50%, -50%)';
+            }
 
             win.innerHTML = `
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--wta-outline);cursor:move;user-select:none">
@@ -1732,6 +1831,7 @@ object ExtensionPanelScript {
                 </div>
                 <div id="wta-modwin-content-${"$"}{moduleId}" style="flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch">
                 </div>
+                <div style="position:absolute;bottom:0;right:0;width:16px;height:16px;cursor:nwse-resize;opacity:0.3;background:linear-gradient(135deg,transparent 50%,var(--wta-on-surface-variant) 50%)" data-wta-resize-handle></div>
             `;
 
             var panelContainer = document.getElementById('wta-ext-panel-container') || document.body;
@@ -1740,7 +1840,11 @@ object ExtensionPanelScript {
             // 启用拖动功能（使用标题栏作为拖动手柄）
             const dragHandle = win.querySelector('div[style*="cursor:move"]');
             if (dragHandle) {
-                DragManager.makeDraggable(win, dragHandle);
+                DragManager.makeDraggable(win, dragHandle, { 
+                    moduleId: moduleId,
+                    resizable: true,
+                    edgeSnapping: true
+                });
             }
 
             // 填充内容
