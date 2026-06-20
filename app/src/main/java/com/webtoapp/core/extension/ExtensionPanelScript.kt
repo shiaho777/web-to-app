@@ -1150,26 +1150,8 @@ object ExtensionPanelScript {
             const onMove = (e) => {
                 if (!isDragging) return;
                 const touch = e.touches ? e.touches[0] : e;
-                let newLeft = startLeft + (touch.clientX - startX);
-                let newTop = startTop + (touch.clientY - startY);
-                
-                // 边缘吸附
-                if (edgeSnapping) {
-                    const elemWidth = element.offsetWidth;
-                    const elemHeight = element.offsetHeight;
-                    const winWidth = window.innerWidth;
-                    const winHeight = window.innerHeight;
-                    const threshold = 20;
-                    
-                    // 左边缘吸附
-                    if (newLeft < threshold) newLeft = 0;
-                    // 上边缘吸附
-                    if (newTop < threshold) newTop = 0;
-                    // 右边缘吸附
-                    if (newLeft + elemWidth > winWidth - threshold) newLeft = winWidth - elemWidth;
-                    // 下边缘吸附
-                    if (newTop + elemHeight > winHeight - threshold) newTop = winHeight - elemHeight;
-                }
+                const newLeft = startLeft + (touch.clientX - startX);
+                const newTop = startTop + (touch.clientY - startY);
                 
                 element.style.left = newLeft + 'px';
                 element.style.top = newTop + 'px';
@@ -1183,10 +1165,66 @@ object ExtensionPanelScript {
                     isDragging = false;
                     element.classList.remove('dragging');
                     
-                    // 保存位置
-                    if (moduleId) {
+                    // 边缘吸附（带动画）
+                    if (edgeSnapping) {
+                        const elemWidth = element.offsetWidth;
+                        const elemHeight = element.offsetHeight;
+                        const winWidth = window.innerWidth;
+                        const winHeight = window.innerHeight;
+                        const threshold = 60;
+                        
                         const rect = element.getBoundingClientRect();
-                        sessionStorage.setItem(`wta-modwin-pos-${"$"}{moduleId}`, JSON.stringify({ left: rect.left, top: rect.top }));
+                        let snapX = rect.left;
+                        let snapY = rect.top;
+                        let didSnap = false;
+                        
+                        // 左边缘吸附
+                        if (rect.left < threshold) {
+                            snapX = 0;
+                            didSnap = true;
+                        }
+                        // 右边缘吸附
+                        if (rect.left + elemWidth > winWidth - threshold) {
+                            snapX = winWidth - elemWidth;
+                            didSnap = true;
+                        }
+                        // 上边缘吸附
+                        if (rect.top < threshold) {
+                            snapY = 0;
+                            didSnap = true;
+                        }
+                        // 下边缘吸附
+                        if (rect.top + elemHeight > winHeight - threshold) {
+                            snapY = winHeight - elemHeight;
+                            didSnap = true;
+                        }
+                        
+                        // 确保不超出屏幕
+                        snapX = Math.max(0, Math.min(snapX, winWidth - elemWidth));
+                        snapY = Math.max(0, Math.min(snapY, winHeight - elemHeight));
+                        
+                        if (didSnap) {
+                            // 添加平滑过渡动画
+                            element.style.transition = 'left 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), top 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                            element.style.left = snapX + 'px';
+                            element.style.top = snapY + 'px';
+                            
+                            // 动画结束后移除过渡
+                            setTimeout(() => {
+                                element.style.transition = '';
+                            }, 200);
+                        }
+                        
+                        // 保存位置（使用吸附后的位置）
+                        if (moduleId) {
+                            sessionStorage.setItem(`wta-modwin-pos-${"$"}{moduleId}`, JSON.stringify({ left: snapX, top: snapY }));
+                        }
+                    } else {
+                        // 不吸附时直接保存位置
+                        if (moduleId) {
+                            const rect = element.getBoundingClientRect();
+                            sessionStorage.setItem(`wta-modwin-pos-${"$"}{moduleId}`, JSON.stringify({ left: rect.left, top: rect.top }));
+                        }
                     }
                     
                     if (onDragEnd) onDragEnd();
