@@ -331,6 +331,17 @@ object ExtensionPanelScript {
             transition: none;
         }
 
+        /* 模块窗口拖动样式 */
+        .wta-draggable {
+            cursor: move;
+        }
+
+        .wta-draggable.dragging {
+            opacity: 0.9;
+            cursor: grabbing;
+            transition: none;
+        }
+
         #wta-ext-fab.hidden {
             display: none !important;
         }
@@ -1113,6 +1124,55 @@ object ExtensionPanelScript {
         AUTO: 'AUTO'
     };
 
+    // ==================== 拖动管理器 ====================
+    const DragManager = {
+        makeDraggable(element, handle = null) {
+            const dragHandle = handle || element;
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            const onStart = (e) => {
+                if (e.target.closest('[data-wta-action="minimizeModuleWindow"]')) return;
+                if (e.target.closest('[data-wta-action="closeModuleWindow"]')) return;
+                isDragging = true;
+                element.classList.add('dragging');
+                const touch = e.touches ? e.touches[0] : e;
+                startX = touch.clientX;
+                startY = touch.clientY;
+                const rect = element.getBoundingClientRect();
+                startLeft = rect.left;
+                startTop = rect.top;
+                e.preventDefault();
+            };
+
+            const onMove = (e) => {
+                if (!isDragging) return;
+                const touch = e.touches ? e.touches[0] : e;
+                const dx = touch.clientX - startX;
+                const dy = touch.clientY - startY;
+                element.style.left = (startLeft + dx) + 'px';
+                element.style.top = (startTop + dy) + 'px';
+                element.style.right = 'auto';
+                element.style.bottom = 'auto';
+                element.style.transform = 'none';
+            };
+
+            const onEnd = () => {
+                isDragging = false;
+                element.classList.remove('dragging');
+            };
+
+            dragHandle.addEventListener('mousedown', onStart);
+            dragHandle.addEventListener('touchstart', onStart, { passive: false });
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('mouseup', onEnd);
+            document.addEventListener('touchend', onEnd);
+
+            element.classList.add('wta-draggable');
+        }
+    };
+
     // ==================== 面板管理器 ====================
     const WTA_PANEL = {
         modules: [],
@@ -1676,6 +1736,12 @@ object ExtensionPanelScript {
 
             var panelContainer = document.getElementById('wta-ext-panel-container') || document.body;
             panelContainer.appendChild(win);
+
+            // 启用拖动功能（使用标题栏作为拖动手柄）
+            const dragHandle = win.querySelector('div[style*="cursor:move"]');
+            if (dragHandle) {
+                DragManager.makeDraggable(win, dragHandle);
+            }
 
             // 填充内容
             const contentEl = document.getElementById(`wta-modwin-content-${"$"}{moduleId}`);
