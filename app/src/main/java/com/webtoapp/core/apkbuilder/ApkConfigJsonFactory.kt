@@ -78,6 +78,16 @@ internal object ApkConfigJsonFactory {
         "splashEnableAudio" to splash.enableAudio,
         "webViewConfig" to webViewConfigPayload(),
         "appType" to meta.appType,
+        "siteAssetBase" to when (meta.appType) {
+            "HTML" -> "html"
+            "FRONTEND" -> "frontend_app"
+            "NODEJS_APP" -> "nodejs_app"
+            "PHP_APP" -> "php_app"
+            "PYTHON_APP" -> "python_app"
+            "GO_APP" -> "go_app"
+            "WORDPRESS" -> "wordpress"
+            else -> ""
+        },
         "mediaConfig" to mediaConfigPayload(),
         "htmlConfig" to htmlConfigPayload(),
         "galleryConfig" to galleryConfigPayload(),

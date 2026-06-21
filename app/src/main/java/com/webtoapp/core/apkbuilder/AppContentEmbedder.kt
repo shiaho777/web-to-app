@@ -72,6 +72,26 @@ class MediaContentEmbedder : AppContentEmbedder {
 
 class HtmlContentEmbedder : AppContentEmbedder {
     override fun embed(zipOut: ZipOutputStream, ctx: EmbedContext): EmbedResult {
+        val dir = ctx.projectDir
+        if (dir != null && dir.exists() && dir.isDirectory) {
+            ctx.logger.section("Embed HTML Project Directory")
+            ctx.logger.log("Embedding entire project directory: ${dir.absolutePath}")
+            val (count, size) = RuntimeAssetEmbedder.embedProjectFiles(
+                zipOut = zipOut,
+                projectDir = dir,
+                config = RuntimeAssetEmbedder.EmbedConfig(
+                    runtimeName = "html",
+                    assetPrefix = "assets/html",
+                    excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
+                    runtimeType = "html"
+                ),
+                logger = ctx.logger
+            )
+            ctx.logger.logKeyValue("htmlProjectFilesEmbedded", count)
+            ctx.logger.logKeyValue("htmlProjectTotalSize", "${size / 1024} KB")
+            if (count > 0) return EmbedResult(true, count, "$count project files embedded from directory")
+        }
+
         if (ctx.htmlFiles.isEmpty()) {
             ctx.logger.warn("HTML app but htmlFiles is empty! htmlConfig=${ctx.config.htmlEntryFile}")
             return EmbedResult(false, message = "No HTML files")

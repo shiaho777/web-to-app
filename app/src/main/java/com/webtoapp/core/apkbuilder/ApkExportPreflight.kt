@@ -91,7 +91,8 @@ object ApkExportPreflight {
                     ?.let { com.webtoapp.core.golang.GoRuntime(context).getProjectDir(it) }
             } else null,
             frontendProjectDir = if (appType == AppType.FRONTEND) {
-                htmlConfig?.projectDir?.takeIf { it.isNotBlank() }?.let(::File)
+                htmlConfig?.projectId?.takeIf { it.isNotBlank() }
+                    ?.let { File(context.filesDir, "html_projects/$it") }
             } else null,
             multiWebProjectDir = if (appType == AppType.MULTI_WEB) {
                 multiWebConfig?.projectId?.takeIf { it.isNotBlank() }

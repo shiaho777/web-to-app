@@ -250,6 +250,7 @@ class ApkBuilder(private val context: Context) {
                 val pythonAppProjectDir: File?,
                 val goAppProjectDir: File?,
                 val frontendProjectDir: File?,
+                val htmlProjectDir: File?,
                 val encryptionKey: SecretKey?
             )
 
@@ -324,7 +325,13 @@ class ApkBuilder(private val context: Context) {
                 val bgmPlaylistPaths = if (webApp.bgmEnabled) webApp.bgmConfig?.playlist?.map { it.path } ?: emptyList() else emptyList()
                 val bgmLrcDataList = if (webApp.bgmEnabled) webApp.bgmConfig?.playlist?.map { it.lrcData } ?: emptyList() else emptyList()
                 val galleryItems = if (webApp.appType == com.webtoapp.data.model.AppType.GALLERY) webApp.galleryConfig?.items ?: emptyList() else emptyList()
-                val frontendProjectDir = if (webApp.appType == com.webtoapp.data.model.AppType.FRONTEND) webApp.htmlConfig?.projectDir?.let { File(it) } else null
+                val htmlProjectId = webApp.htmlConfig?.projectId?.takeIf { it.isNotBlank() }
+                val htmlProjectDir = if (webApp.appType == com.webtoapp.data.model.AppType.HTML) {
+                    htmlProjectId?.let { File(context.filesDir, "html_projects/$it") }
+                } else null
+                val frontendProjectDir = if (webApp.appType == com.webtoapp.data.model.AppType.FRONTEND) {
+                    htmlProjectId?.let { File(context.filesDir, "html_projects/$it") }
+                } else null
 
                 PreparedResources(
                     templateApk = templateDeferred.await(),
@@ -339,6 +346,7 @@ class ApkBuilder(private val context: Context) {
                     pythonAppProjectDir = pythonDirDeferred.await(),
                     goAppProjectDir = goDirDeferred.await(),
                     frontendProjectDir = frontendProjectDir,
+                    htmlProjectDir = htmlProjectDir,
                     encryptionKey = encKeyDeferred.await()
                 )
             }
@@ -374,6 +382,7 @@ class ApkBuilder(private val context: Context) {
             val pythonAppProjectDir = prepared.pythonAppProjectDir
             val goAppProjectDir = prepared.goAppProjectDir
             val frontendProjectDir = prepared.frontendProjectDir
+            val htmlProjectDir = prepared.htmlProjectDir
             val encryptionKey = prepared.encryptionKey
 
             logger.section("Prepared Resources")
@@ -399,6 +408,8 @@ class ApkBuilder(private val context: Context) {
             logger.logKeyValue("goAppProjectDir", goAppProjectDir?.absolutePath)
             logger.logKeyValue("frontendProjectDir", frontendProjectDir?.absolutePath)
             logger.logKeyValue("frontendProjectDir.exists", frontendProjectDir?.exists())
+            logger.logKeyValue("htmlProjectDir", htmlProjectDir?.absolutePath)
+            logger.logKeyValue("htmlProjectDir.exists", htmlProjectDir?.exists())
             if (encryptionConfig.enabled) {
                 logger.section("Encryption Key")
                 logger.log("Encryption key generated (using target signature)")
@@ -491,6 +502,7 @@ class ApkBuilder(private val context: Context) {
                 phpAppProjectDir,
                 pythonAppProjectDir,
                 goAppProjectDir,
+                htmlProjectDir,
                 errorPageMediaPath = webApp.webViewConfig.errorPageConfig.customMediaPath
                     ?.takeIf { it.isNotBlank() && !it.startsWith("data:") && !it.startsWith("http") && !it.startsWith("file://") },
                 perfConfig
@@ -748,6 +760,7 @@ class ApkBuilder(private val context: Context) {
         phpAppProjectDir: File? = null,
         pythonAppProjectDir: File? = null,
         goAppProjectDir: File? = null,
+        htmlProjectDir: File? = null,
         errorPageMediaPath: String? = null,
         perfConfig: com.webtoapp.core.linux.PerformanceOptimizer.OptimizeConfig? = null,
         onProgress: (Int, String) -> Unit
@@ -979,6 +992,7 @@ class ApkBuilder(private val context: Context) {
                     "PYTHON_APP" -> pythonAppProjectDir
                     "GO_APP" -> goAppProjectDir
                     "FRONTEND" -> frontendProjectDir
+                    "HTML" -> htmlProjectDir
                     else -> null
                 }
                 val secondaryProjectDir = when (config.appType) {
@@ -2984,6 +2998,12 @@ private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
     }
     if (forcedRunConfig?.enabled == true) {
         result = result.copy(foregroundService = true, wakeLock = true)
+    }
+    if (webViewConfig.enableNativeBridge && webViewConfig.nativeBridgeCapabilities.notification) {
+        result = result.copy(notifications = true)
+    }
+    if (webViewConfig.enableNotificationPolyfill) {
+        result = result.copy(notifications = true)
     }
     return result
 }
