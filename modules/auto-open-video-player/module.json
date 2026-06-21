@@ -1,10 +1,15 @@
 {
   "id": "auto-open-video-player",
   "name": "Auto Open Video Player",
-  "description": "Detects video URLs and automatically opens them in an external Android video player using an intent. Features a 5-second countdown banner to cancel and stay in the browser, plus a fallback floating button to manually trigger the player. Prompts the user to choose their preferred player.",
+  "description": "Detects video URLs (MP4, MKV, AVI, MOV, WMV, FLV, WEBM, M4V, MPG, MPEG, 3GP, TS, M3U8) and automatically opens them in an external Android video player using an intent. Features a 5-second countdown banner to cancel and stay in the browser, plus a fallback '📺' floating button to manually trigger the player if cancelled. Prompts the user to choose their preferred player.",
   "icon": "open_in_new",
   "category": "INTERACTION",
-  "tags": ["video", "player", "external", "intent"],
+  "tags": [
+    "video",
+    "player",
+    "external",
+    "intent"
+  ],
   "version": "1.0.0",
   "minAppVersion": 33,
   "author": {
@@ -12,9 +17,16 @@
     "url": "https://github.com/Stremiouser666"
   },
   "runAt": "DOCUMENT_START",
-  "permissions": ["DOM_ACCESS", "CSS_INJECT"],
+  "permissions": [
+    "DOM_ACCESS",
+    "CSS_INJECT"
+  ],
   "urlMatches": [
-    { "pattern": "*", "isRegex": false, "exclude": false }
+    {
+      "pattern": "*",
+      "isRegex": false,
+      "exclude": false
+    }
   ],
   "hasCss": false
 }
