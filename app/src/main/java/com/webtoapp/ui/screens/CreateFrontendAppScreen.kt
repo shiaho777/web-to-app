@@ -44,6 +44,9 @@ import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.webtoapp.util.ZipProjectImporter
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -177,6 +180,39 @@ fun CreateFrontendAppScreen(
         }
     }
 
+    var zipImporting by remember { mutableStateOf(false) }
+    var zipError by remember { mutableStateOf<String?>(null) }
+
+    val zipPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { zipUri ->
+            zipImporting = true
+            zipError = null
+            scope.launch {
+                try {
+                    val analysis = withContext(Dispatchers.IO) {
+                        ZipProjectImporter.importZip(context, zipUri)
+                    }
+                    val importedDir = File(analysis.extractDir)
+                    folderImportPath?.let { path -> File(path).deleteRecursively() }
+                    folderImportPath = importedDir.parentFile?.absolutePath ?: importedDir.absolutePath
+                    projectPath = importedDir.absolutePath
+                    projectName = importedDir.name
+                    isDetecting = true
+                    detectionResult = ProjectDetector.detectProject(importedDir.absolutePath)
+                    isDetecting = false
+                } catch (e: ZipProjectImporter.ZipImportException) {
+                    zipError = e.message
+                } catch (e: Exception) {
+                    zipError = e.message ?: Strings.zipImportFailed.format("")
+                } finally {
+                    zipImporting = false
+                }
+            }
+        }
+    }
+
     val canImport = projectPath != null &&
                    detectionResult != null &&
                    detectionResult?.issues?.none { it.severity == IssueSeverity.ERROR } == true &&
@@ -258,6 +294,34 @@ fun CreateFrontendAppScreen(
                                 Icon(Icons.Outlined.FolderOpen, null)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(Strings.selectProjectFolder)
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            PremiumOutlinedButton(
+                                onClick = { zipPickerLauncher.launch("application/zip") },
+                                modifier = Modifier.fillMaxWidth(),
+                                enabled = !zipImporting
+                            ) {
+                                if (zipImporting) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(18.dp),
+                                        strokeWidth = 2.dp
+                                    )
+                                } else {
+                                    Icon(Icons.Outlined.FolderZip, null)
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(if (zipImporting) Strings.zipImporting else Strings.phpImportZip)
+                            }
+
+                            if (zipError != null) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    zipError!!,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
