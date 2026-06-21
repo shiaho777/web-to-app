@@ -147,6 +147,34 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 activity, Manifest.permission.CAMERA
             ) == PackageManager.PERMISSION_GRANTED
 
+            if (params?.isCaptureEnabled == true && hasCameraPermission) {
+                val acceptTypes = params.acceptTypes ?: arrayOf("image/*")
+                val isVideo = acceptTypes.any {
+                    it?.lowercase()?.startsWith("video/") == true
+                }
+                val captureAction = if (isVideo) MediaStore.ACTION_VIDEO_CAPTURE else MediaStore.ACTION_IMAGE_CAPTURE
+                val captureIntent = Intent(captureAction)
+                if (captureAction == MediaStore.ACTION_IMAGE_CAPTURE) {
+                    try {
+                        val photoFile = createImageFile()
+                        cameraPhotoUri = FileProvider.getUriForFile(
+                            activity,
+                            "${activity.packageName}.fileprovider",
+                            photoFile
+                        )
+                        captureIntent.putExtra(MediaStore.EXTRA_OUTPUT, cameraPhotoUri)
+                        captureIntent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    } catch (e: Exception) {
+                        AppLogger.e("ShellPermission", "Camera capture file creation failed", e)
+                    }
+                }
+                if (captureIntent.resolveActivity(activity.packageManager) != null) {
+                    fileChooserActivityLauncher.launch(captureIntent)
+                    AppLogger.d("ShellPermission", "Direct camera capture launched: action=$captureAction")
+                    return
+                }
+            }
+
             val extraIntents = mutableListOf<Intent>()
 
             if (hasCameraPermission) {
@@ -366,6 +394,9 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val granted = permissions.values.any { it }
+        if (granted && pendingGeolocationOrigin != null) {
+            GeolocationPermissionsSingleton.addAllowedOrigin(pendingGeolocationOrigin!!)
+        }
         pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, granted, false)
         pendingGeolocationOrigin = null
         pendingGeolocationCallback = null
@@ -455,13 +486,36 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         }
     }
 
-    fun handleGeolocationPermission(origin: String?, callback: GeolocationPermissions.Callback?) {
+    fun handleGeolocationPermission(
+        origin: String?,
+        callback: GeolocationPermissions.Callback?,
+        policy: String = "ALWAYS_ASK",
+        accuracy: String = "COARSE"
+    ) {
+        when (policy.uppercase()) {
+            "DENY_ALL" -> {
+                AppLogger.d("ShellActivity", "Geolocation denied by policy DENY_ALL for origin: $origin")
+                callback?.invoke(origin, false, false)
+                return
+            }
+            "REMEMBER_PER_HOST" -> {
+                val remembered = GeolocationPermissionsSingleton.getAllowedOrigins()
+                val isAllowed = remembered.any { origin != null && it == origin }
+                if (isAllowed) {
+                    callback?.invoke(origin, true, false)
+                    return
+                }
+            }
+        }
+
         pendingGeolocationOrigin = origin
         pendingGeolocationCallback = callback
-        locationPermissionLauncher.launch(arrayOf(
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        ))
+        val perms = if (accuracy.equals("FINE", ignoreCase = true)) {
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+        } else {
+            arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+        locationPermissionLauncher.launch(perms)
     }
 
     fun handleDownloadWithPermission(
@@ -605,5 +659,19 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE)
             )
         }
+    }
+}
+
+internal object GeolocationPermissionsSingleton {
+    private val allowedOrigins = mutableSetOf<String>()
+
+    fun getAllowedOrigins(): Set<String> = synchronized(allowedOrigins) { allowedOrigins.toSet() }
+
+    fun addAllowedOrigin(origin: String) {
+        synchronized(allowedOrigins) { allowedOrigins.add(origin) }
+    }
+
+    fun clear() {
+        synchronized(allowedOrigins) { allowedOrigins.clear() }
     }
 }

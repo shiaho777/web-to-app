@@ -68,6 +68,7 @@ class ShellActivity : AppCompatActivity() {
     private var pendingFloatingWindowLaunch = false
 
     private var webViewStateBundle: Bundle? = null
+    private var shellConfig: com.webtoapp.core.shell.ShellConfig? = null
     private fun applyStatusBarColor(
         colorMode: String,
         customColor: String?,
@@ -196,7 +197,15 @@ class ShellActivity : AppCompatActivity() {
     }
 
     fun handlePermissionRequest(request: PermissionRequest) = permissionDelegate.handlePermissionRequest(request)
-    fun handleGeolocationPermission(origin: String?, callback: GeolocationPermissions.Callback?) = permissionDelegate.handleGeolocationPermission(origin, callback)
+    fun handleGeolocationPermission(origin: String?, callback: GeolocationPermissions.Callback?) {
+        val cfg = shellConfig
+        permissionDelegate.handleGeolocationPermission(
+            origin = origin,
+            callback = callback,
+            policy = cfg?.webViewConfig?.geolocationPolicy ?: "ALWAYS_ASK",
+            accuracy = cfg?.webViewConfig?.geolocationAccuracy ?: "COARSE"
+        )
+    }
 
     fun handleDownloadWithPermission(
         url: String,
@@ -255,6 +264,7 @@ class ShellActivity : AppCompatActivity() {
         }
 
         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "配置加载成功: ${config.appName}")
+        shellConfig = config
         AppLogger.d("ShellActivity", "WebView UA config from shell: userAgentMode=${config.webViewConfig.userAgentMode}, customUserAgent=${config.webViewConfig.customUserAgent}, userAgent=${config.webViewConfig.userAgent}")
         clearBrowsingDataOnLaunch = config.webViewConfig.clearBrowsingDataOnLaunch
         if (clearBrowsingDataOnLaunch) {

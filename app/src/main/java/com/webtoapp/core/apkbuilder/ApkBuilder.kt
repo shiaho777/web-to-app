@@ -3005,6 +3005,9 @@ private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
     if (webViewConfig.enableNotificationPolyfill) {
         result = result.copy(notifications = true)
     }
+    if (webViewConfig.geolocationEnabled) {
+        result = result.copy(location = true)
+    }
     return result
 }
 

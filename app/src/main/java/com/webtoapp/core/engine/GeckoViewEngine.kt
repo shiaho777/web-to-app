@@ -362,6 +362,7 @@ class GeckoViewEngine(
         setupContentDelegate(session, callback)
         setupNavigationDelegate(session, callback)
         setupProgressDelegate(session, callback)
+        setupPermissionDelegate(session)
     }
 
     private fun setupContentDelegate(session: GeckoSession, callback: BrowserEngineCallback) {
@@ -464,6 +465,54 @@ class GeckoViewEngine(
                 securityInfo: GeckoSession.ProgressDelegate.SecurityInformation
             ) {
 
+            }
+        }
+    }
+
+    private fun setupPermissionDelegate(session: GeckoSession) {
+        session.permissionDelegate = object : GeckoSession.PermissionDelegate {
+            override fun onContentPermissionRequest(
+                session: GeckoSession,
+                perm: GeckoSession.PermissionDelegate.ContentPermission
+            ): GeckoResult<Int>? {
+                val cfg = lastConfig
+                if (perm.permission == GeckoSession.PermissionDelegate.PERMISSION_GEOLOCATION) {
+                    if (cfg == null || !cfg.geolocationEnabled) {
+                        return GeckoResult.fromValue(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
+                    }
+                    val policy = cfg.geolocationPolicy.name
+                    when (policy) {
+                        "DENY_ALL" -> {
+                            return GeckoResult.fromValue(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY)
+                        }
+                        "REMEMBER_PER_HOST" -> {
+                            val allowed = com.webtoapp.ui.shell.GeolocationPermissionsSingleton.getAllowedOrigins()
+                            if (perm.uri != null && allowed.contains(perm.uri)) {
+                                return GeckoResult.fromValue(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                            }
+                        }
+                    }
+                    return GeckoResult.fromValue(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+                }
+                return GeckoResult.fromValue(GeckoSession.PermissionDelegate.ContentPermission.VALUE_ALLOW)
+            }
+
+            override fun onMediaPermissionRequest(
+                session: GeckoSession,
+                uri: String,
+                video: Array<out String>?,
+                audio: Array<out String>?,
+                callback: GeckoSession.PermissionDelegate.MediaCallback
+            ) {
+                callback.grant(video, audio)
+            }
+
+            override fun onAndroidPermissionsRequest(
+                session: GeckoSession,
+                permissions: Array<out String>?,
+                callback: GeckoSession.PermissionDelegate.Callback
+            ) {
+                callback.grant()
             }
         }
     }
