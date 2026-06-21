@@ -1,0 +1,33 @@
+{
+  "id": "redirect-blocker",
+  "name": "Redirect Blocker",
+  "description": "Hardened redirect protection: sanitizes document.write/open, neutralizes malicious transparent overlays, removes meta-refreshes, and strictly validates all navigation (history, anchors, and form submissions). Includes a per-site whitelist UI to allow trusted redirects when blocked.",
+  "icon": "shield_lock",
+  "category": "SECURITY",
+  "tags": [
+    "security",
+    "redirect",
+    "privacy",
+    "adblock"
+  ],
+  "version": "1.4.0",
+  "minAppVersion": 33,
+  "author": {
+    "name": "Mook H",
+    "url": "https://github.com/MookH"
+  },
+  "runAt": "DOCUMENT_START",
+  "permissions": [
+    "DOM_ACCESS",
+    "CSS_INJECT",
+    "STORAGE"
+  ],
+  "urlMatches": [
+    {
+      "pattern": "*",
+      "isRegex": false,
+      "exclude": false
+    }
+  ],
+  "hasCss": false
+}
