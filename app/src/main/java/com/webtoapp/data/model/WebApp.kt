@@ -724,7 +724,8 @@ data class PhpAppConfig(
     val phpPort: Int = 0,
     val envVars: Map<String, String> = emptyMap(),
     val hasComposerJson: Boolean = false,
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+    val phpExtensions: Map<String, Boolean> = emptyMap()
 )
 
 data class PythonAppConfig(

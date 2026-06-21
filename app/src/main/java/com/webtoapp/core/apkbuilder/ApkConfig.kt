@@ -776,7 +776,8 @@ data class PhpAppBlock(
     val entryFile: String = "index.php",
     val port: Int = 0,
     val envVars: Map<String, String> = emptyMap(),
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+    val phpExtensions: Map<String, Boolean> = emptyMap()
 )
 
 data class PythonAppBlock(

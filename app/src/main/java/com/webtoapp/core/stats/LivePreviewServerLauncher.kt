@@ -172,6 +172,7 @@ object LivePreviewServerLauncher {
             entryFile = entryFile,
             port = config.phpPort,
             envVars = config.envVars,
+            phpExtensions = config.phpExtensions,
         )
         if (port <= 0) return null
         return ServerHandle("http://127.0.0.1:$port/") { runtime.stopServer() }

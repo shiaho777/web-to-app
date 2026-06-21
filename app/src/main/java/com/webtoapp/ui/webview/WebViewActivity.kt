@@ -1416,7 +1416,8 @@ fun WebViewScreen(
             documentRoot = actualDocRoot,
             entryFile = actualEntryFile,
             port = config.phpPort,
-            envVars = config.envVars
+            envVars = config.envVars,
+            phpExtensions = config.phpExtensions
         )
 
         if (port > 0) {

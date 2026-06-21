@@ -122,6 +122,16 @@ fun CreatePhpAppScreen(
                     projectId = config.projectId
                     selectedProjectDir = config.projectName
                     localProjectDir = PhpAppRuntime(context).getProjectDir(config.projectId).absolutePath
+                    phpExtensions = mapOf(
+                        "pdo_sqlite" to true,
+                        "json" to true,
+                        "mbstring" to true,
+                        "openssl" to true,
+                        "curl" to false,
+                        "gd" to false,
+                        "zip" to false,
+                        "xml" to false
+                    ).toMutableMap().apply { putAll(config.phpExtensions) }
                 }
             }
         }
@@ -356,7 +366,8 @@ fun CreatePhpAppScreen(
                                 entryFile = entryFile,
                                 envVars = envVars,
                                 hasComposerJson = localProjectDir?.let { File(it, "composer.json").exists() } ?: false,
-                                landscapeMode = landscapeMode
+                                landscapeMode = landscapeMode,
+                                phpExtensions = phpExtensions
                             ),
                             appIcon,
                             "AURORA"

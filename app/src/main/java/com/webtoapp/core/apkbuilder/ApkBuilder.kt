@@ -3545,7 +3545,8 @@ private fun WebApp.buildPhpAppBlock(): PhpAppBlock = PhpAppBlock(
     entryFile = phpAppConfig?.entryFile ?: "index.php",
     port = phpAppConfig?.phpPort ?: 0,
     envVars = phpAppConfig?.envVars ?: emptyMap(),
-    landscapeMode = phpAppConfig?.landscapeMode ?: false
+    landscapeMode = phpAppConfig?.landscapeMode ?: false,
+    phpExtensions = phpAppConfig?.phpExtensions ?: emptyMap()
 )
 
 private fun WebApp.buildPythonAppBlock(): PythonAppBlock = PythonAppBlock(

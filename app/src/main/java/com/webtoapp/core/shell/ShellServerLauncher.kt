@@ -66,7 +66,8 @@ object ShellServerLauncher {
                 documentRoot = config.phpAppConfig.documentRoot,
                 entryFile = entryFile,
                 port = config.phpAppConfig.port,
-                envVars = config.phpAppConfig.envVars
+                envVars = config.phpAppConfig.envVars,
+                phpExtensions = config.phpAppConfig.phpExtensions
             )
             if (port > 0) {
                 LaunchResult(

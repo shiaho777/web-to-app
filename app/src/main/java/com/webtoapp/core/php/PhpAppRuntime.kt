@@ -66,7 +66,8 @@ class PhpAppRuntime(private val context: Context) {
         documentRoot: String = "",
         entryFile: String = "index.php",
         port: Int = 0,
-        envVars: Map<String, String> = emptyMap()
+        envVars: Map<String, String> = emptyMap(),
+        phpExtensions: Map<String, Boolean> = emptyMap()
     ): Int = withContext(Dispatchers.IO) {
         try {
             if (!isPhpAvailable()) {
@@ -117,7 +118,7 @@ class PhpAppRuntime(private val context: Context) {
 
             val command = buildPhpCommand(
                 com.webtoapp.core.wordpress.WordPressDependencyManager.buildPhpExecPrefix(context),
-                serverPort, actualDocRoot, routerScript, entryFile
+                serverPort, actualDocRoot, routerScript, entryFile, phpExtensions
             )
 
             AppLogger.i(TAG, "PHP 二进制: $phpBinary")
@@ -331,7 +332,7 @@ class PhpAppRuntime(private val context: Context) {
         return scriptFile.absolutePath
     }
 
-    private fun buildPhpCommand(execPrefix: List<String>, serverPort: Int, documentRoot: String, routerScript: String, entryFile: String): List<String> {
+    private fun buildPhpCommand(execPrefix: List<String>, serverPort: Int, documentRoot: String, routerScript: String, entryFile: String, phpExtensions: Map<String, Boolean> = emptyMap()): List<String> {
         val tmpDir = context.cacheDir.absolutePath
         val sessionDir = File(context.filesDir, "php_app_deps/sessions")
         sessionDir.mkdirs()
@@ -376,6 +377,13 @@ class PhpAppRuntime(private val context: Context) {
         iniSettings.forEach { (key, value) ->
             phpArgs.add("-d")
             phpArgs.add("$key=$value")
+        }
+
+        phpExtensions.forEach { (name, enabled) ->
+            if (enabled && name.isNotBlank()) {
+                phpArgs.add("-d")
+                phpArgs.add("extension=$name")
+            }
         }
 
         phpArgs.add(routerScript)

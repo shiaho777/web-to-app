@@ -823,7 +823,10 @@ data class PhpAppShellConfig(
     val envVars: Map<String, String> = emptyMap(),
 
     @SerializedName("landscapeMode")
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+
+    @SerializedName("phpExtensions")
+    val phpExtensions: Map<String, Boolean> = emptyMap()
 )
 
 data class PythonAppShellConfig(
