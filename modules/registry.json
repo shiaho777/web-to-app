@@ -529,19 +529,23 @@
       "iconUrl": "https://lh3.googleusercontent.com/chrome-extension/kbfnbcaeplbcioakkpcpgfkobkghlhen"
     },
     {
-      "id": "auto-open-video-player",
-      "path": "auto-open-video-player",
+      "id": "wta-auto-open-video-player",
+      "path": "wta-auto-open-video-player",
       "name": "Auto Open Video Player",
-      "description": "Detects video URLs and automatically opens them in an external Android video player using an intent. Features a 5-second countdown banner to cancel and stay in the browser, plus a fallback floating button to manually trigger the player. Prompts the user to choose their preferred player.",
+      "description": "Advanced video auto-opener with 5-second countdown override. Features comprehensive interception (XHR, Fetch, JWPlayer, HTML5 Media), a persistent draggable fallback button for manual triggering, and smart exclusion lists. Automatically detects and streams MP4, MKV, AVI, MOV, WMV, FLV, WEBM, M4V, MPG, MPEG, 3GP, TS, M3U8.",
       "icon": "open_in_new",
       "category": "INTERACTION",
       "tags": [
         "video",
         "player",
-        "external",
-        "intent"
+        "automation",
+        "interception"
       ],
-      "version": "1.0.0",
+      "version": {
+        "code": 1,
+        "name": "1.0.0",
+        "changelog": "Initial release."
+      },
       "minAppVersion": 33,
       "author": {
         "name": "Stremiouser666",
@@ -558,8 +562,7 @@
           "isRegex": false,
           "exclude": false
         }
-      ],
-      "hasCss": false
+      ]
     }
   ]
 }
