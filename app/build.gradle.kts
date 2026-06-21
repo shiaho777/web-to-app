@@ -169,6 +169,9 @@ android {
             excludes += "**/libgeckoffi.so"
             excludes += "**/libmozavutil.so"
             excludes += "**/libmozavcodec.so"
+
+            excludes += "**/libcrypto_engine.so"
+            excludes += "**/libhardware_control.so"
         }
     }
     androidResources {
@@ -202,6 +205,8 @@ tasks.register<Copy>("syncCloneHostDex") {
     description = "Extracts classes.jar from clone-host AAR and converts it to a DEX asset for APK cloning."
     group = "build"
     dependsOn(":clone-host:assembleRelease")
+
+    enabled = false
 
     val dexOutputDir = file("src/main/assets/clone_host")
     val intermediateDir = layout.buildDirectory.dir("intermediates/clone-host-extract")
