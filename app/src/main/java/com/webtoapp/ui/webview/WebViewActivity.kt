@@ -69,6 +69,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import com.webtoapp.ui.shared.WindowHelper
 import com.webtoapp.ui.shell.ShellWebViewNavigation
+import com.webtoapp.ui.shell.GeolocationPermissionsSingleton
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import com.webtoapp.core.wordpress.WordPressDependencyManager
@@ -123,6 +124,8 @@ class WebViewActivity : AppCompatActivity() {
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeolocationOrigin: String? = null
     private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
+    private var geolocationPolicy: String = "ALWAYS_ASK"
+    private var geolocationAccuracy: String = "COARSE"
 
     private var immersiveFullscreenEnabled: Boolean = false
     private var showStatusBarInFullscreen: Boolean = false
@@ -302,6 +305,38 @@ class WebViewActivity : AppCompatActivity() {
                 this, android.Manifest.permission.CAMERA
             ) == android.content.pm.PackageManager.PERMISSION_GRANTED
 
+            if (params?.isCaptureEnabled == true && hasCam) {
+                val acceptTypes = params.acceptTypes ?: arrayOf("image/*")
+                val isVideo = acceptTypes.any {
+                    it?.lowercase()?.startsWith("video/") == true
+                }
+                val captureAction = if (isVideo) {
+                    android.provider.MediaStore.ACTION_VIDEO_CAPTURE
+                } else {
+                    android.provider.MediaStore.ACTION_IMAGE_CAPTURE
+                }
+                val captureIntent = android.content.Intent(captureAction)
+                if (captureAction == android.provider.MediaStore.ACTION_IMAGE_CAPTURE) {
+                    try {
+                        val ts = java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(java.util.Date())
+                        val dir = java.io.File(cacheDir, "camera_photos").apply { mkdirs() }
+                        val photoFile = java.io.File.createTempFile("IMG_${ts}_", ".jpg", dir)
+                        cameraPhotoUri = androidx.core.content.FileProvider.getUriForFile(
+                            this, "${packageName}.fileprovider", photoFile
+                        )
+                        captureIntent.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, cameraPhotoUri)
+                        captureIntent.addFlags(android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    } catch (e: Exception) {
+                        AppLogger.e("WebViewActivity", "Camera capture file creation failed", e)
+                    }
+                }
+                if (captureIntent.resolveActivity(packageManager) != null) {
+                    fileChooserActivityLauncher.launch(captureIntent)
+                    AppLogger.d("WebViewActivity", "Direct camera capture launched: action=$captureAction")
+                    return
+                }
+            }
+
             val extraIntents = mutableListOf<android.content.Intent>()
             if (hasCam) {
                 try {
@@ -377,6 +412,9 @@ class WebViewActivity : AppCompatActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val granted = permissions.values.any { it }
+        if (granted && pendingGeolocationOrigin != null) {
+            GeolocationPermissionsSingleton.addAllowedOrigin(pendingGeolocationOrigin!!)
+        }
         pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, granted, false)
         pendingGeolocationOrigin = null
         pendingGeolocationCallback = null
@@ -452,12 +490,32 @@ class WebViewActivity : AppCompatActivity() {
     }
 
     fun handleGeolocationPermission(origin: String?, callback: GeolocationPermissions.Callback?) {
+        when (geolocationPolicy.uppercase()) {
+            "DENY_ALL" -> {
+                callback?.invoke(origin, false, false)
+                return
+            }
+            "REMEMBER_PER_HOST" -> {
+                val isAllowed = GeolocationPermissionsSingleton.getAllowedOrigins()
+                    .any { origin != null && it == origin }
+                if (isAllowed) {
+                    callback?.invoke(origin, true, false)
+                    return
+                }
+            }
+        }
+
         pendingGeolocationOrigin = origin
         pendingGeolocationCallback = callback
-        locationPermissionLauncher.launch(arrayOf(
-            android.Manifest.permission.ACCESS_FINE_LOCATION,
-            android.Manifest.permission.ACCESS_COARSE_LOCATION
-        ))
+        val perms = if (geolocationAccuracy.equals("FINE", ignoreCase = true)) {
+            arrayOf(
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        } else {
+            arrayOf(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+        locationPermissionLauncher.launch(perms)
     }
 
     private var usageTracker: AppUsageTracker? = null
@@ -866,6 +924,8 @@ fun WebViewScreen(
             (context as? WebViewActivity)?.let { activity ->
                 activity.showNavigationBarInFullscreen = app.webViewConfig.showNavigationBarInFullscreen
                 activity.keyboardAdjustMode = app.webViewConfig.keyboardAdjustMode
+                activity.geolocationPolicy = app.webViewConfig.geolocationPolicy.name
+                activity.geolocationAccuracy = app.webViewConfig.geolocationAccuracy.name
 
                 activity.refreshWindowConfig()
             }
