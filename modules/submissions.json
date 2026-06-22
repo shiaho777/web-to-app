@@ -1,24 +1,35 @@
 {
   "schema": 1,
-  "generatedAt": "2026-06-22T14:42:48Z",
+  "generatedAt": "2026-06-22T15:05:30Z",
   "submissions": {
-    "wta-hello-world": {
-      "submittedAt": "2026-05-15T00:00:00Z",
+    "wta-auto-open-video-player": {
+      "prNumber": 134,
+      "prUrl": "https://github.com/shiaho777/web-to-app/pull/134",
+      "submittedAt": "2026-06-22T14:42:48Z",
+      "submitter": {
+        "login": "Stremiouser666",
+        "name": "Steveies",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/184891406?v=4",
+        "profileUrl": "https://github.com/Stremiouser666"
+      }
+    },
+    "wta-auto-scroll": {
+      "submittedAt": "2026-05-23T15:28:53+08:00",
       "direct": true,
       "submitter": {
         "login": "shiaho777",
         "name": "shiaho",
-        "avatarUrl": "https://avatars.githubusercontent.com/shiaho777",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/222622008?v=4",
         "profileUrl": "https://github.com/shiaho777"
       }
     },
-    "wta-web-tint": {
-      "submittedAt": "2026-06-17T21:43:16+08:00",
+    "wta-hello-world": {
+      "submittedAt": "2026-05-16T01:13:57+08:00",
       "direct": true,
       "submitter": {
         "login": "shiaho777",
         "name": "shiaho",
-        "avatarUrl": "https://avatars.githubusercontent.com/shiaho777",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/222622008?v=4",
         "profileUrl": "https://github.com/shiaho777"
       }
     },
@@ -28,7 +39,7 @@
       "submitter": {
         "login": "shiaho777",
         "name": "shiaho",
-        "avatarUrl": "https://avatars.githubusercontent.com/shiaho777",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/222622008?v=4",
         "profileUrl": "https://github.com/shiaho777"
       }
     },
@@ -38,17 +49,7 @@
       "submitter": {
         "login": "shiaho777",
         "name": "shiaho",
-        "avatarUrl": "https://avatars.githubusercontent.com/shiaho777",
-        "profileUrl": "https://github.com/shiaho777"
-      }
-    },
-    "wta-auto-scroll": {
-      "submittedAt": "2026-05-23T15:28:53+08:00",
-      "direct": true,
-      "submitter": {
-        "login": "shiaho777",
-        "name": "shiaho",
-        "avatarUrl": "https://avatars.githubusercontent.com/shiaho777",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/222622008?v=4",
         "profileUrl": "https://github.com/shiaho777"
       }
     },
@@ -58,120 +59,19 @@
       "submitter": {
         "login": "shiaho777",
         "name": "shiaho",
-        "avatarUrl": "https://avatars.githubusercontent.com/shiaho777",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/222622008?v=4",
         "profileUrl": "https://github.com/shiaho777"
       }
     },
-    "wta-auto-open-video-player": {
-      "prNumber": 134,
-      "prUrl": "https://github.com/shiaho777/web-to-app/pull/134",
-      "submittedAt": "2026-06-22T14:42:48Z",
+    "wta-web-tint": {
+      "submittedAt": "2026-06-17T21:43:16+08:00",
+      "direct": true,
       "submitter": {
-        "login": "Stremiouser666",
-        "name": "Steveies",
-        "avatarUrl": "https://avatars.githubusercontent.com/Stremiouser666",
-        "profileUrl": "https://github.com/Stremiouser666"
+        "login": "shiaho777",
+        "name": "shiaho",
+        "avatarUrl": "https://avatars.githubusercontent.com/u/222622008?v=4",
+        "profileUrl": "https://github.com/shiaho777"
       }
-    },
-    "chrome-ext-dark-reader": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-ublock-origin-lite": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-adguard-adblocker": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-adblock-plus": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-adblock": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-privacy-badger": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-ublacklist": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-return-youtube-dislike": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-sponsorblock": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-enhancer-for-youtube": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-video-speed-controller": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-google-translate": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-languagetool": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-just-read": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-json-formatter": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-wappalyzer": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-colorzilla": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-stylus": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-tampermonkey": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
-    },
-    "chrome-ext-grammarly": {
-      "submittedAt": "2026-06-18T00:00:00Z",
-      "direct": true,
-      "submitter": { "login": "shiaho777", "name": "shiaho", "avatarUrl": "https://avatars.githubusercontent.com/shiaho777", "profileUrl": "https://github.com/shiaho777" }
     }
   }
 }
