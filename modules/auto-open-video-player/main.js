@@ -18,7 +18,13 @@
   // ── URL registry ───────────────────────────────────────────────
   const detected = new Map();
   let currentUrl  = null;
-  let countdownStarted = false;
+  let countdownTimer = null;
+  let countdownVal = COUNTDOWN;
+  // "idle"    → no countdown running
+  // "pending" → a video was found but the UI isn't built yet (start after buildUI)
+  // "running" → countdown is visible and ticking
+  let countdownState = 'idle';
+  let cancelled = false;
 
   function pickBest() {
     for (const [url] of detected) if (/\.mp4/i.test(url) && !url.includes('download')) return url;
@@ -33,17 +39,32 @@
     const best = pickBest();
     if (best && best !== currentUrl) {
       currentUrl = best;
-      if (!countdownStarted) startCountdown();
+      // After the user cancels once, don't auto-interrupt again — but keep
+      // currentUrl fresh so the manual fallback button opens the best source.
+      if (cancelled) {
+        updateFallbackLabel();
+      } else {
+        startCountdown();
+      }
     }
   }
 
   // ── Open in player ─────────────────────────────────────────────
+  // Use an anchor element + click() rather than reassigning location.href so
+  // that, if no app can resolve the intent, the page stays put instead of
+  // navigating to an invalid intent: URL (which would blank the page).
   function openInPlayer(url) {
-    window.location.href =
+    if (!url) return;
+    const a = document.createElement('a');
+    a.href =
       `intent:${url}#Intent;` +
       `action=android.intent.action.VIEW;` +
       `type=video/*;` +
       `end`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => a.remove(), 1000);
   }
 
   // ── XHR intercept ─────────────────────────────────────────────
@@ -205,8 +226,6 @@
   `;
 
   let host, shadow, countdownBar, countdownNum, cancelBtn, fallbackBtn;
-  let countdownTimer = null, countdownVal = COUNTDOWN;
-  let cancelled = false;
 
   // Drag state for fallback button
   let isDragging = false, dragMoved = false, startX, startY;
@@ -244,7 +263,7 @@
     fallbackBtn.id = 'fallback-btn';
     fallbackBtn.innerHTML = `
       <span class="fb-icon">📺</span>
-      <span>Open with<span class="fb-sub">Choose Player</span></span>`;
+      <span class="fb-text">Open with<span class="fb-sub">Choose Player</span></span>`;
 
     fallbackBtn.addEventListener('pointerdown', e => {
       isDragging = true; dragMoved = false;
@@ -274,11 +293,17 @@
   }
 
   function startCountdown() {
-    if (countdownStarted || cancelled) return;
-    countdownStarted = true;
-    countdownVal = COUNTDOWN;
+    if (countdownState === 'running' || cancelled) return;
 
-    if (!countdownBar) return; // UI not ready yet — will be called again after buildUI
+    // Defer until the UI exists; init() will resume once buildUI() finishes.
+    if (!countdownBar) {
+      countdownState = 'pending';
+      return;
+    }
+
+    if (countdownTimer) clearInterval(countdownTimer);
+    countdownState = 'running';
+    countdownVal = COUNTDOWN;
     countdownBar.classList.add('visible');
     countdownNum.textContent = countdownVal;
 
@@ -287,6 +312,7 @@
       countdownNum.textContent = countdownVal;
       if (countdownVal <= 0) {
         clearInterval(countdownTimer);
+        countdownTimer = null;
         countdownBar.classList.remove('visible');
         openInPlayer(currentUrl);
       }
@@ -295,11 +321,22 @@
 
   function cancel() {
     cancelled = true;
-    countdownStarted = false;
-    clearInterval(countdownTimer);
+    countdownState = 'idle';
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
     countdownBar.classList.remove('visible');
-    // Show fallback button so user can still open manually
+    // Show fallback button so user can still open manually.
     fallbackBtn.classList.add('visible');
+    updateFallbackLabel();
+  }
+
+  function updateFallbackLabel() {
+    if (!fallbackBtn) return;
+    const text = fallbackBtn.querySelector('.fb-text');
+    if (!text || !currentUrl) return;
+    // Surface which URL the button will open, so a later-found better source
+    // is visible to the user after cancel.
+    const short = currentUrl.length > 40 ? currentUrl.slice(0, 37) + '…' : currentUrl;
+    text.innerHTML = `Open with<span class="fb-sub">${short}</span>`;
   }
 
   // ── Also scan page URL and inline scripts ─────────────────────
@@ -323,25 +360,29 @@
     });
   }
 
+  // Debounce the heavy DOM scans so a chatty SPA doesn't re-scan every
+  // animation frame. We coalesce bursts of mutations into one pass.
+  let scanQueued = false;
+  function scheduleScan() {
+    if (scanQueued) return;
+    scanQueued = true;
+    setTimeout(() => { scanQueued = false; checkVideoLinks(); }, 200);
+  }
+
   // ── Init ───────────────────────────────────────────────────────
   checkPageUrl();
 
   function init() {
     buildUI();
 
-    // If countdown was already triggered before UI was ready, start it now
-    if (countdownStarted) {
-      countdownStarted = false;
-      startCountdown();
-    } else if (currentUrl) {
-      startCountdown();
-    }
+    // If a video showed up before the UI was built, resume the pending countdown.
+    if (countdownState === 'pending') startCountdown();
 
     checkVideoLinks();
     scanInlineScripts();
     setTimeout(() => { checkVideoLinks(); scanInlineScripts(); }, 2000);
 
-    new MutationObserver(() => checkVideoLinks())
+    new MutationObserver(() => scheduleScan())
       .observe(document.documentElement, { childList: true, subtree: true });
   }
 
