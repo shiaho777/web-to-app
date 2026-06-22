@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "updatedAt": "2026-06-18T00:00:00Z",
+  "updatedAt": "2026-06-21T00:00:00Z",
   "modules": [
     {
       "id": "wta-hello-world",
@@ -527,6 +527,42 @@
       "storeId": "kbfnbcaeplbcioakkpcpgfkobkghlhen",
       "homepage": "https://www.grammarly.com",
       "iconUrl": "https://lh3.googleusercontent.com/chrome-extension/kbfnbcaeplbcioakkpcpgfkobkghlhen"
+    },
+    {
+      "id": "wta-auto-open-video-player",
+      "path": "wta-auto-open-video-player",
+      "name": "Auto Open Video Player",
+      "description": "Advanced video auto-opener with 5-second countdown override. Features comprehensive interception (XHR, Fetch, JWPlayer, HTML5 Media), a persistent draggable fallback button for manual triggering, and smart exclusion lists. Automatically detects and streams MP4, MKV, AVI, MOV, WMV, FLV, WEBM, M4V, MPG, MPEG, 3GP, TS, M3U8.",
+      "icon": "open_in_new",
+      "category": "INTERACTION",
+      "tags": [
+        "video",
+        "player",
+        "automation",
+        "interception"
+      ],
+      "version": {
+        "code": 1,
+        "name": "1.0.0",
+        "changelog": "Initial release."
+      },
+      "minAppVersion": 33,
+      "author": {
+        "name": "Stremiouser666",
+        "url": "https://github.com/Stremiouser666"
+      },
+      "runAt": "DOCUMENT_START",
+      "permissions": [
+        "DOM_ACCESS",
+        "CSS_INJECT"
+      ],
+      "urlMatches": [
+        {
+          "pattern": "*",
+          "isRegex": false,
+          "exclude": false
+        }
+      ]
     }
   ]
 }
