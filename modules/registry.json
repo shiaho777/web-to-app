@@ -530,7 +530,7 @@
     },
     {
       "id": "wta-auto-open-video-player",
-      "path": "wta-auto-open-video-player",
+      "path": "auto-open-video-player",
       "name": "Auto Open Video Player",
       "description": "Advanced video auto-opener with 5-second countdown override. Features comprehensive interception (XHR, Fetch, JWPlayer, HTML5 Media), a persistent draggable fallback button for manual triggering, and smart exclusion lists. Automatically detects and streams MP4, MKV, AVI, MOV, WMV, FLV, WEBM, M4V, MPG, MPEG, 3GP, TS, M3U8.",
       "icon": "open_in_new",
