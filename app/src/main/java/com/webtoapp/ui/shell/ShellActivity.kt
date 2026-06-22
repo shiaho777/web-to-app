@@ -478,7 +478,8 @@ class ShellActivity : AppCompatActivity() {
                                     context = this@ShellActivity,
                                     scope = lifecycleScope,
                                     webViewProvider = { wv },
-                                    capabilities = capabilities
+                                    capabilities = capabilities,
+                                    corsBypass = config.webViewConfig.enableCorsBypass
                                 )
                                 wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
                             }

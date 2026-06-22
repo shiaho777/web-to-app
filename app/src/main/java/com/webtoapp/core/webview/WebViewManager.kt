@@ -1454,7 +1454,7 @@ class WebViewManager(
 
             webChromeClient = createWebChromeClient(config, callbacks)
 
-            if (config.enablePrivateNetworkBridge) {
+            if (config.enablePrivateNetworkBridge || config.enableCorsBypass) {
                 installPrivateNetworkApiBridge(this, config)
             }
 
@@ -3224,7 +3224,11 @@ class WebViewManager(
     }
 
     private fun privateNetworkScriptWithScope(config: WebViewConfig): String {
-        val scope = config.privateNetworkScope.name
+        val scope = if (config.enableCorsBypass) {
+            com.webtoapp.data.model.PrivateNetworkScope.CORS_BYPASS.name
+        } else {
+            config.privateNetworkScope.name
+        }
         val prelude = "(function(){window.__wta_private_network_scope__=${"\""}$scope${"\""};})();"
         return prelude + PrivateNetworkApiBridgeScriptHolder.SCRIPT
     }
@@ -5557,8 +5561,10 @@ class WebViewManager(
                         // 「私网桥接 → 作用域」
                         // LOCAL_ONLY（默认）：只对私网地址桥接，公网请求走浏览器原生 fetch/XHR
                         // ALL              ：任何非同源地址都用桥接（绕过浏览器同源策略 / DNS 不可达）
+                        // CORS_BYPASS      ：任意 http(s) URL 都桥接（含公网），用于绕过 CORS
                         var scope = (typeof window.__wta_private_network_scope__ === 'string')
                             ? window.__wta_private_network_scope__ : 'LOCAL_ONLY';
+                        if (scope === 'CORS_BYPASS') return true;
                         if (scope === 'LOCAL_ONLY' && !isPrivateHost(parsed.hostname)) return false;
                         if (parsed.hostname.toLowerCase() === window.location.hostname.toLowerCase() && parsed.port === window.location.port) {
                             return false;
@@ -5717,7 +5723,26 @@ class WebViewManager(
                         // 这条策略和上方 cleartextProxy 完全删除是一致的反模式纠正——
                         // 区别是 cleartextProxy 当时把整条路径全删掉了，私网桥接保留了
                         // GET/HEAD 这条窄路径用于打通 mixed-content / cleartext 限制。
+                        //
+                        // CORS_BYPASS scope（enableCorsBypass 开关打开）：放开方法与 body
+                        // 限制，所有 http(s) 请求都经 NativeBridge.httpRequest 原生重发，
+                        // 从而绕过浏览器的同源策略 / CORS。bodyToBase64 已能可靠序列化
+                        // string / URLSearchParams / ArrayBuffer / typed array / Blob /
+                        // FormData / Request / ReadableStream；遇到无法序列化的极端类型
+                        // 才退回原生 fetch（仍受 CORS，但比丢数据好）。
+                        var isCorsBypass = (typeof window.__wta_private_network_scope__ === 'string')
+                            && window.__wta_private_network_scope__ === 'CORS_BYPASS';
                         if (!shouldBridge(payload.url)) return nativeFetch(input, init);
+                        if (isCorsBypass) {
+                            return nativeHttpRequest(payload).then(function(result) {
+                                var bytes = base64ToBytes(result.bodyBase64 || '');
+                                return new Response(bytes, {
+                                    status: Number(result.status || 0),
+                                    statusText: String(result.statusText || ''),
+                                    headers: result.headers || {}
+                                });
+                            });
+                        }
                         if (payload.method !== 'GET' && payload.method !== 'HEAD') {
                             return nativeFetch(input, init);
                         }
@@ -5794,8 +5819,12 @@ class WebViewManager(
                         // 带 body 的请求方法（POST/PUT/PATCH/DELETE/…）退回原生 XHR，
                         // 否则 send(body) 时 FormData / Blob / ArrayBuffer 等都可能在
                         // 序列化时丢失，服务器收到空 body 报 400。
-                        var bridgeable = shouldBridge(this._url) &&
-                            (this._method === 'GET' || this._method === 'HEAD');
+                        // CORS_BYPASS scope（enableCorsBypass 开关）：放开方法限制，
+                        // 所有 http(s) 请求都走 NativeBridge.httpRequest 原生重发。
+                        var isCorsBypass = (typeof window.__wta_private_network_scope__ === 'string')
+                            && window.__wta_private_network_scope__ === 'CORS_BYPASS';
+                        var bridgeable = shouldBridge(this._url) && (isCorsBypass ||
+                            (this._method === 'GET' || this._method === 'HEAD'));
                         if (!bridgeable) {
                             this._native = true;
                             return this._xhr.open(method, url, async, user, password);

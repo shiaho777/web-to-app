@@ -58,7 +58,9 @@ class NativeBridge(
     private val webViewProvider: () -> WebView? = { null },
 
     private val capabilities: com.webtoapp.data.model.NativeBridgeCapabilities =
-        com.webtoapp.data.model.NativeBridgeCapabilities()
+        com.webtoapp.data.model.NativeBridgeCapabilities(),
+
+    private val corsBypass: Boolean = false
 ) {
     companion object {
         const val JS_INTERFACE_NAME = "NativeBridge"
@@ -426,6 +428,11 @@ if (NativeBridge.isFullscreen()) {
             val scheme = uri.scheme?.lowercase(Locale.ROOT) ?: return false
             if (scheme != "http" && scheme != "https") return false
             return isPrivateNetworkHost(uri.host)
+        }
+
+        internal fun isHttpUrl(url: String): Boolean {
+            val scheme = runCatching { URI(url).scheme }.getOrNull()?.lowercase(Locale.ROOT)
+            return scheme == "http" || scheme == "https"
         }
     }
 
@@ -1229,20 +1236,27 @@ if (NativeBridge.isFullscreen()) {
 
     @JavascriptInterface
     fun httpRequest(requestJson: String): String {
-        if (!capabilities.privateNetwork) {
+        if (!capabilities.privateNetwork && !corsBypass) {
             return privateNetworkBridgeError("disabled", "Native private network capability disabled")
         }
         return try {
             val request = org.json.JSONObject(requestJson)
             val url = request.optString("url").trim()
-            if (!isPrivateNetworkUrl(url)) {
+            if (corsBypass) {
+                if (!isHttpUrl(url)) {
+                    AppLogger.w("NativeBridge", "Blocked CORS-bypass request to non-HTTP(S) URL: $url")
+                    return privateNetworkBridgeError("URL_NOT_ALLOWED", "Only HTTP(S) URLs are allowed")
+                }
+            } else if (!isPrivateNetworkUrl(url)) {
                 AppLogger.w("NativeBridge", "Blocked private-network bridge request to non-private URL: $url")
                 return privateNetworkBridgeError("URL_NOT_ALLOWED", "Only private network HTTP(S) URLs are allowed")
             }
-            val pageUrl = webViewProvider()?.url.orEmpty()
-            if (!isPrivateNetworkUrl(pageUrl)) {
-                AppLogger.w("NativeBridge", "Blocked private-network bridge request from non-local page: $pageUrl -> $url")
-                return privateNetworkBridgeError("CALLER_NOT_ALLOWED", "Only packaged local pages can use the private network bridge")
+            if (!corsBypass) {
+                val pageUrl = webViewProvider()?.url.orEmpty()
+                if (!isPrivateNetworkUrl(pageUrl)) {
+                    AppLogger.w("NativeBridge", "Blocked private-network bridge request from non-local page: $pageUrl -> $url")
+                    return privateNetworkBridgeError("CALLER_NOT_ALLOWED", "Only packaged local pages can use the private network bridge")
+                }
             }
 
             val method = request.optString("method", "GET").uppercase(Locale.ROOT)

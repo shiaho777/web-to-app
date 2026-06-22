@@ -16,6 +16,7 @@ import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.StorageController
 import org.mozilla.geckoview.WebResponse
+import org.mozilla.geckoview.WebExtension
 
 data class ProxyConfig(
     val mode: String = "NONE",
@@ -39,6 +40,63 @@ class GeckoViewEngine(
 
         @Volatile
         private var runtimeConfigFingerprint: String = ""
+
+        @Volatile
+        private var nativeBridgeExtension: WebExtension? = null
+
+        @Volatile
+        private var activeNativeBridge: com.webtoapp.core.webview.NativeBridge? = null
+
+        private const val NATIVE_BRIDGE_APP = "wta_native_bridge"
+
+        fun ensureNativeBridgeExtension(runtime: GeckoRuntime): WebExtension? {
+            nativeBridgeExtension?.let { return it }
+            synchronized(this) {
+                nativeBridgeExtension?.let { return it }
+                val url = "resource://android/assets/web_extensions/wta_native_bridge/"
+                val ext = WebExtension(url)
+                ext.setMessageDelegate(object : WebExtension.MessageDelegate {
+                    override fun onMessage(
+                        nativeApp: String,
+                        message: Any,
+                        sender: WebExtension.MessageSender
+                    ): GeckoResult<Any>? {
+                        val bridge = activeNativeBridge
+                        if (bridge == null) {
+                            return GeckoResult.fromValue(errorJson("REQUEST_FAILED", "Native bridge not ready"))
+                        }
+                        val requestJson = when (message) {
+                            is String -> message
+                            else -> message.toString()
+                        }
+                        return try {
+                            val response = bridge.httpRequest(requestJson)
+                            GeckoResult.fromValue(response)
+                        } catch (e: Exception) {
+                            GeckoResult.fromValue(errorJson("REQUEST_FAILED", e.message ?: e::class.java.simpleName))
+                        }
+                    }
+                }, NATIVE_BRIDGE_APP)
+                val result = runtime.registerWebExtension(ext)
+                result.then({
+                    AppLogger.d(TAG, "Native bridge WebExtension registered")
+                    null
+                }, { throwable ->
+                    AppLogger.e(TAG, "Failed to register native bridge WebExtension", throwable)
+                    null
+                })
+                nativeBridgeExtension = ext
+                return ext
+            }
+        }
+
+        private fun errorJson(code: String, message: String): String {
+            return org.json.JSONObject().apply {
+                put("ok", false)
+                put("error", code)
+                put("message", message)
+            }.toString()
+        }
 
         private fun currentConfigFingerprint(): String {
             val ech = currentDnsConfig?.echEffective == true
@@ -306,6 +364,8 @@ class GeckoViewEngine(
     private var lastGeckoUaMode: Int = GeckoSessionSettings.USER_AGENT_MODE_MOBILE
     private var lastUserAgentOverride: String? = null
 
+    private var bridgeScope: kotlinx.coroutines.CoroutineScope? = null
+
     override fun createView(
         context: Context,
         config: WebViewConfig,
@@ -320,6 +380,19 @@ class GeckoViewEngine(
         ensureRuntimeForConfig(context)
 
         val runtime = getRuntime(context)
+
+        if (config.enableCorsBypass || config.enablePrivateNetworkBridge) {
+            if (bridgeScope == null) bridgeScope = kotlinx.coroutines.MainScope()
+            val bridge = com.webtoapp.core.webview.NativeBridge(
+                context = context.applicationContext,
+                scope = bridgeScope!!,
+                webViewProvider = { null },
+                capabilities = config.nativeBridgeCapabilities,
+                corsBypass = config.enableCorsBypass
+            )
+            activeNativeBridge = bridge
+            ensureNativeBridgeExtension(runtime)
+        }
 
         val geckoUaMode = when (config.userAgentMode) {
             UserAgentMode.CHROME_DESKTOP, UserAgentMode.SAFARI_DESKTOP,

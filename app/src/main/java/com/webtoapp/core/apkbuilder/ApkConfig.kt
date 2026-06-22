@@ -156,6 +156,7 @@ data class ApkConfig(
     val databaseEnabled: Boolean get() = webViewBehavior.databaseEnabled
     val enableCookiePersistence: Boolean get() = webViewBehavior.enableCookiePersistence
     val enablePrivateNetworkBridge: Boolean get() = webViewBehavior.enablePrivateNetworkBridge
+    val enableCorsBypass: Boolean get() = webViewBehavior.enableCorsBypass
     val allowMixedContent: Boolean get() = webViewBehavior.allowMixedContent
     val enableBlobDownloadInterception: Boolean get() = webViewBehavior.enableBlobDownloadInterception
     val enableCloudflareCompat: Boolean get() = webViewBehavior.enableCloudflareCompat
@@ -536,6 +537,7 @@ data class WebViewBehaviorBlock(
     val enableCookiePersistence: Boolean = true,
     val enablePrivateNetworkBridge: Boolean = false,
     val privateNetworkScope: String = "LOCAL_ONLY",
+    val enableCorsBypass: Boolean = false,
     val allowMixedContent: Boolean = false,
     val mixedContentMode: String = "COMPATIBILITY",
     val enableBlobDownloadInterception: Boolean = true,

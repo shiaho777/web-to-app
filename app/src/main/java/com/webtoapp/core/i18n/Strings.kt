@@ -35473,6 +35473,21 @@ object Strings {
         AppLanguage.ENGLISH -> "Allow pages to access intranet/local network resources via NativeBridge. Disable for security-sensitive scenarios."
         AppLanguage.ARABIC -> "السماح للصفحات بالوصول إلى موارد الشبكة الداخلية/المحلية عبر NativeBridge. أوقفه للسيناريوهات الحساسة أمنيًا."
     }
+    val corsBypassTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "跨域请求绕过 (CORS Bypass)"
+        AppLanguage.ENGLISH -> "CORS Bypass"
+        AppLanguage.ARABIC -> "تجاوز CORS"
+    }
+    val corsBypassDesc: String get() = when (lang) {
+        AppLanguage.CHINESE -> "让纯静态单页应用能直接请求外部 API，绕过浏览器的跨域 (CORS) 限制。请求经原生网络栈重发。"
+        AppLanguage.ENGLISH -> "Let static single-page apps call external APIs directly, bypassing browser CORS limits. Requests are re-sent via the native network stack."
+        AppLanguage.ARABIC -> "السماح لتطبيقات الصفحة الواحدة الثابتة باستدعاء واجهات برمجة خارجية مباشرة، متجاوزة قيود CORS الخاصة بالمتصفح. تُعاد الطلبات عبر مكدس الشبكة الأصلي."
+    }
+    val corsBypassWarning: String get() = when (lang) {
+        AppLanguage.CHINESE -> "⚠️ 安全提示：开启后，该应用内加载的所有网页（含第三方内容）都能经原生网络栈向任意地址发送任意 HTTP 请求，不再受同源策略保护。仅对你自己开发的应用开启；打包不可信网站时请保持关闭。"
+        AppLanguage.ENGLISH -> "⚠️ Security note: once enabled, every page loaded in this app (including third-party content) can send arbitrary HTTP requests to any URL via the native network stack, no longer protected by the same-origin policy. Only enable for apps you develop yourself; keep it off when packaging untrusted sites."
+        AppLanguage.ARABIC -> "⚠️ تنبيه أمني: بمجرد التفعيل، يمكن لكل صفحة تُحمّل في هذا التطبيق (بما في ذلك محتوى الطرف الثالث) إرسال طلبات HTTP عشوائية إلى أي عنوان عبر مكدس الشبكة الأصلي، دون حماية سياسة نفس الأصل. فعّله فقط للتطبيقات التي تطورها بنفسك؛ أبقه مطفأً عند تغليف مواقع غير موثوقة."
+    }
 
     val mixedContentTitle: String get() = when (lang) {
         AppLanguage.CHINESE -> "混合内容加载"

@@ -322,6 +322,7 @@ data class WebViewConfig(
     val mixedContentMode: MixedContentMode = MixedContentMode.COMPATIBILITY,
     val enablePrivateNetworkBridge: Boolean = false,
     val privateNetworkScope: PrivateNetworkScope = PrivateNetworkScope.LOCAL_ONLY,
+    val enableCorsBypass: Boolean = false,
 
     val acceptThirdPartyCookies: Boolean = false,
     val thirdPartyCookieMode: ThirdPartyCookieMode = ThirdPartyCookieMode.SAME_SITE_LAX,
@@ -1344,6 +1345,8 @@ enum class PrivateNetworkScope {
     LOCAL_ONLY,
 
     ALL,
+
+    CORS_BYPASS,
 }
 
 enum class ThirdPartyCookieMode {

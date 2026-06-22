@@ -261,6 +261,7 @@ internal object ApkConfigJsonFactory {
         "enableCookiePersistence" to webViewBehavior.enableCookiePersistence,
         "enablePrivateNetworkBridge" to webViewBehavior.enablePrivateNetworkBridge,
         "privateNetworkScope" to webViewBehavior.privateNetworkScope,
+        "enableCorsBypass" to webViewBehavior.enableCorsBypass,
         "allowMixedContent" to webViewBehavior.allowMixedContent,
         "mixedContentMode" to webViewBehavior.mixedContentMode,
         "enableBlobDownloadInterception" to webViewBehavior.enableBlobDownloadInterception,

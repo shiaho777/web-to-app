@@ -144,6 +144,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         privateNetworkScope = try {
             com.webtoapp.data.model.PrivateNetworkScope.valueOf(config.webViewConfig.privateNetworkScope)
         } catch (e: Exception) { com.webtoapp.data.model.PrivateNetworkScope.LOCAL_ONLY },
+        enableCorsBypass = config.webViewConfig.enableCorsBypass,
         allowMixedContent = config.webViewConfig.allowMixedContent,
         mixedContentMode = try {
             com.webtoapp.data.model.MixedContentMode.valueOf(config.webViewConfig.mixedContentMode)

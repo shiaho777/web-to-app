@@ -613,7 +613,8 @@ class WebViewActivity : AppCompatActivity() {
                                 context = this@WebViewActivity,
                                 scope = lifecycleScope,
                                 webViewProvider = { wv },
-                                capabilities = previewWvConfig.nativeBridgeCapabilities
+                                capabilities = previewWvConfig.nativeBridgeCapabilities,
+                                corsBypass = previewWvConfig.enableCorsBypass
                             )
                             wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
                         } else {
@@ -2762,7 +2763,8 @@ fun WebViewScreen(
                                                 context = context,
                                                 scope = scope,
                                                 webViewProvider = { this },
-                                                capabilities = effectiveWebApp.webViewConfig.nativeBridgeCapabilities
+                                                capabilities = effectiveWebApp.webViewConfig.nativeBridgeCapabilities,
+                                                corsBypass = effectiveWebApp.webViewConfig.enableCorsBypass
                                             )
                                             addJavascriptInterface(
                                                 nb,

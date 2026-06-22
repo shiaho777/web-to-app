@@ -1,0 +1,15 @@
+{
+  "manifest_version": 2,
+  "name": "WTA Native Bridge",
+  "version": "1.0",
+  "description": "Exposes the WebToApp native HTTP bridge to pages (CORS bypass / private network).",
+  "content_security_policy": "script-src 'self'; object-src 'self'",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content_script.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ]
+}

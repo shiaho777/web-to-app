@@ -3211,6 +3211,7 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     enableCookiePersistence = webViewConfig.enableCookiePersistence,
     enablePrivateNetworkBridge = webViewConfig.enablePrivateNetworkBridge,
     privateNetworkScope = webViewConfig.privateNetworkScope.name,
+    enableCorsBypass = webViewConfig.enableCorsBypass,
     allowMixedContent = webViewConfig.allowMixedContent,
     mixedContentMode = webViewConfig.mixedContentMode.name,
     enableBlobDownloadInterception = webViewConfig.enableBlobDownloadInterception,

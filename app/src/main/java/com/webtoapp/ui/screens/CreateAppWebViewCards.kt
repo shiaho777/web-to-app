@@ -2866,6 +2866,20 @@ fun SpecialSettingsCard(
                         }
 
                         SpecialAdvancedRow(
+                            title = Strings.corsBypassTitle,
+                            subtitle = Strings.corsBypassDesc,
+                            icon = Icons.Outlined.Security,
+                            checked = config.enableCorsBypass,
+                            onCheckedChange = { onConfigChange(config.copy(enableCorsBypass = it)) }
+                        ) {
+                            Text(
+                                text = Strings.corsBypassWarning,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        SpecialAdvancedRow(
                             title = Strings.thirdPartyCookiesTitle,
                             subtitle = Strings.thirdPartyCookiesDesc,
                             icon = Icons.Outlined.Cookie,
