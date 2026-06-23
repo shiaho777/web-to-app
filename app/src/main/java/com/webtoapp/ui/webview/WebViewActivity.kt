@@ -673,7 +673,7 @@ class WebViewActivity : AppCompatActivity() {
                                     return@evaluateJavascript
                                 }
 
-                                ShellWebViewNavigation.goBackOrFinish(this@WebViewActivity, wv)
+                                ShellWebViewNavigation.goBackOrFinish(this@WebViewActivity, wv, useJsHistoryBack = effectiveWebApp.webViewConfig.enableBackStatePreservation)
                             }
                         } else {
                             finish()

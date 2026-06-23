@@ -168,7 +168,8 @@ object ShellActivityInit {
         forcedRunManager: ForcedRunManager,
         getCustomView: () -> android.view.View?,
         getWebView: () -> WebView?,
-        hideCustomView: () -> Unit
+        hideCustomView: () -> Unit,
+        getShellConfig: () -> ShellConfig?
     ): OnBackPressedCallback {
         return object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -197,7 +198,8 @@ object ShellActivityInit {
                                     return@evaluateJavascript
                                 }
 
-                                ShellWebViewNavigation.goBackOrFinish(activity, wv)
+                                val useJsHistoryBack = getShellConfig()?.webViewConfig?.enableBackStatePreservation ?: false
+                                ShellWebViewNavigation.goBackOrFinish(activity, wv, useJsHistoryBack = useJsHistoryBack)
                             }
                         } else {
                             activity.finish()

@@ -3177,6 +3177,7 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     kernelFlavor = webViewConfig.kernelFlavor.name,
     enableImageRepair = webViewConfig.enableImageRepair,
     enableScrollMemory = webViewConfig.enableScrollMemory,
+    enableBackStatePreservation = webViewConfig.enableBackStatePreservation,
     followSystemDarkMode = webViewConfig.followSystemDarkMode,
     enableClipboardPolyfill = webViewConfig.enableClipboardPolyfill,
     enableNotificationPolyfill = webViewConfig.enableNotificationPolyfill,

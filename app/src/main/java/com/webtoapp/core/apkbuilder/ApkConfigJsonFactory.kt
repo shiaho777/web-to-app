@@ -227,6 +227,7 @@ internal object ApkConfigJsonFactory {
         "kernelFlavor" to webViewBehavior.kernelFlavor,
         "enableImageRepair" to webViewBehavior.enableImageRepair,
         "enableScrollMemory" to webViewBehavior.enableScrollMemory,
+        "enableBackStatePreservation" to webViewBehavior.enableBackStatePreservation,
         "followSystemDarkMode" to webViewBehavior.followSystemDarkMode,
         "enableClipboardPolyfill" to webViewBehavior.enableClipboardPolyfill,
         "enableNotificationPolyfill" to webViewBehavior.enableNotificationPolyfill,

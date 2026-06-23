@@ -1212,6 +1212,9 @@ data class WebViewShellConfig(
     @SerializedName("enableScrollMemory")
     val enableScrollMemory: Boolean = false,
 
+    @SerializedName("enableBackStatePreservation")
+    val enableBackStatePreservation: Boolean = false,
+
     @SerializedName("followSystemDarkMode")
     val followSystemDarkMode: Boolean = false,
 

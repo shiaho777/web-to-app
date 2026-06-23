@@ -6,11 +6,49 @@ import androidx.appcompat.app.AppCompatActivity
 object ShellWebViewNavigation {
 
     fun goBackOrFinish(activity: AppCompatActivity, webView: WebView?) {
+        goBackOrFinish(activity, webView, useJsHistoryBack = false)
+    }
+
+    fun goBackOrFinish(
+        activity: AppCompatActivity,
+        webView: WebView?,
+        useJsHistoryBack: Boolean
+    ) {
         val wv = webView ?: run {
             activity.finish()
             return
         }
 
+        if (useJsHistoryBack) {
+            goBackViaJsHistory(activity, wv)
+            return
+        }
+        goBackNative(activity, wv)
+    }
+
+    private fun goBackViaJsHistoryBack(activity: AppCompatActivity, webView: WebView) {
+        // Prefer JS history.back() over the native WebView.goBack(): the JS
+        // route runs through the page's own popstate/pageshow handlers and is
+        // more likely to restore the previous DOM via bfcache instead of doing
+        // a fresh load. If the page has nowhere to go back to, fall back to the
+        // native resolver (which will finish the activity when at the bottom of
+        // the history stack).
+        val js = """(function(){
+            try {
+                if (history.length > 1 && window.location.href !== 'about:blank') {
+                    history.back();
+                    return 'back';
+                }
+            } catch (e) {}
+            return 'none';
+        })();""".trimIndent()
+        webView.evaluateJavascript(js) { result ->
+            if ("back" == result) return@evaluateJavascript
+            goBackNative(activity, webView)
+        }
+    }
+
+    private fun goBackNative(activity: AppCompatActivity, wv: WebView) {
         val list = wv.copyBackForwardList()
         val currentIndex = list.currentIndex
         val currentItem = list.getItemAtIndex(currentIndex)

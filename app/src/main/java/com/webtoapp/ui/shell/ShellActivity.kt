@@ -528,7 +528,8 @@ class ShellActivity : AppCompatActivity() {
             forcedRunManager = forcedRunManager,
             getCustomView = { customView },
             getWebView = { webView },
-            hideCustomView = ::hideCustomView
+            hideCustomView = ::hideCustomView,
+            getShellConfig = { shellConfig }
         ))
     }
 

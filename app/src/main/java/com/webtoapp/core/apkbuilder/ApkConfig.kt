@@ -145,6 +145,7 @@ data class ApkConfig(
     val enableKernelDisguise: Boolean get() = webViewBehavior.enableKernelDisguise
     val enableImageRepair: Boolean get() = webViewBehavior.enableImageRepair
     val enableScrollMemory: Boolean get() = webViewBehavior.enableScrollMemory
+    val enableBackStatePreservation: Boolean get() = webViewBehavior.enableBackStatePreservation
     val followSystemDarkMode: Boolean get() = webViewBehavior.followSystemDarkMode
     val enableClipboardPolyfill: Boolean get() = webViewBehavior.enableClipboardPolyfill
     val enableNotificationPolyfill: Boolean get() = webViewBehavior.enableNotificationPolyfill
@@ -505,6 +506,7 @@ data class WebViewBehaviorBlock(
     val kernelFlavor: String = "SYSTEM_DEFAULT",
     val enableImageRepair: Boolean = false,
     val enableScrollMemory: Boolean = false,
+    val enableBackStatePreservation: Boolean = false,
     val followSystemDarkMode: Boolean = false,
     val enableClipboardPolyfill: Boolean = false,
     val enableNotificationPolyfill: Boolean = false,

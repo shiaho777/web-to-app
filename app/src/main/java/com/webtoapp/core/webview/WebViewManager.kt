@@ -55,6 +55,7 @@ class WebViewManager(
     private val downloadBridgeScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val blobCacheHookHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val cloudflareCompatScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val backStateGuardScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
 
     companion object {
 
@@ -529,6 +530,49 @@ class WebViewManager(
                 }
             }catch(e){}
         })();"""
+
+        private const val BACK_STATE_GUARD_JS = """
+        (function() {
+            'use strict';
+            if (window.__wtaBackStateGuard) return;
+            window.__wtaBackStateGuard = true;
+
+            // During a back/forward navigation the page may try to reload itself
+            // (common SPA pattern: listen for popstate, then location.reload() to
+            // "refresh data"). That reload destroys the DOM and the ajax page state
+            // the user is trying to return to. We neutralize reloads that happen
+            // inside the popstate/pageshow window so the restored state survives.
+            var suppressReloadUntil = 0;
+
+            window.addEventListener('popstate', function() {
+                suppressReloadUntil = Date.now() + 500;
+            }, true);
+            window.addEventListener('pageshow', function(ev) {
+                // bfcache restore: page state already intact, nothing to do.
+                if (ev && ev.persisted) return;
+                suppressReloadUntil = Date.now() + 500;
+            }, true);
+
+            var rawReload = location.reload.bind(location);
+            location.reload = function(forcedReload) {
+                if (Date.now() < suppressReloadUntil) {
+                    // Swallow the reload triggered by the back-navigation handler.
+                    return;
+                }
+                return rawReload(forcedReload);
+            };
+            // Also guard history.go(0), which some sites use instead of reload().
+            var rawGo = history.go.bind(history);
+            history.go = function(delta) {
+                if (arguments.length === 0) { return rawGo(); }
+                var d = Number(delta);
+                if (d === 0 && Date.now() < suppressReloadUntil) {
+                    return;
+                }
+                return rawGo(d);
+            };
+        })();
+        """
 
         private const val IMAGE_REPAIR_JS = """
             (function() {
@@ -1460,6 +1504,10 @@ class WebViewManager(
 
             if (config.enableCloudflareCompat) {
                 installCloudflareCompatDocumentStart(this)
+            }
+
+            if (config.enableBackStatePreservation) {
+                installBackStateGuardDocumentStart(this)
             }
 
             if (config.downloadEnabled) {
@@ -3270,6 +3318,24 @@ class WebViewManager(
             AppLogger.d("WebViewManager", "Cloudflare compat installed at document start")
         } catch (e: Exception) {
             AppLogger.w("WebViewManager", "Document-start Cloudflare compat install failed", e)
+        }
+    }
+
+    private fun installBackStateGuardDocumentStart(webView: WebView) {
+        if (backStateGuardScriptHandlers.containsKey(webView)) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            AppLogger.d("WebViewManager", "Document-start script unsupported; back-state guard will use runtime fallback")
+            return
+        }
+        try {
+            backStateGuardScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                BACK_STATE_GUARD_JS,
+                setOf("*")
+            )
+            AppLogger.d("WebViewManager", "Back-state guard installed at document start")
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "Document-start back-state guard install failed", e)
         }
     }
 

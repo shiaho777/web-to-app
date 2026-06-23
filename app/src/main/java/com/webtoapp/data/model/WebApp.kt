@@ -312,6 +312,7 @@ data class WebViewConfig(
     val mediaAutoplayScope: MediaAutoplayScope = MediaAutoplayScope.VIDEO_ONLY,
     val enableImageRepair: Boolean = false,
     val enableScrollMemory: Boolean = false,
+    val enableBackStatePreservation: Boolean = false,
 
     val enableKernelDisguise: Boolean = false,
     val kernelDisguiseLevel: KernelDisguiseLevel = KernelDisguiseLevel.STANDARD,

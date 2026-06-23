@@ -2642,6 +2642,14 @@ fun SpecialSettingsCard(
                             )
                             WtaSectionDivider()
                             WtaToggleRow(
+                                title = Strings.backStatePreservationTitle,
+                                subtitle = Strings.backStatePreservationDesc,
+                                icon = Icons.Outlined.History,
+                                checked = config.enableBackStatePreservation,
+                                onCheckedChange = { onConfigChange(config.copy(enableBackStatePreservation = it)) }
+                            )
+                            WtaSectionDivider()
+                            WtaToggleRow(
                                 title = Strings.followSystemDarkModeTitle,
                                 subtitle = Strings.followSystemDarkModeDesc,
                                 icon = Icons.Outlined.DarkMode,

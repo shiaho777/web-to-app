@@ -100,6 +100,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         kernelFlavor = com.webtoapp.core.kernel.KernelFlavor.fromString(config.webViewConfig.kernelFlavor),
         enableImageRepair = config.webViewConfig.enableImageRepair,
         enableScrollMemory = config.webViewConfig.enableScrollMemory,
+        enableBackStatePreservation = config.webViewConfig.enableBackStatePreservation,
         followSystemDarkMode = config.webViewConfig.followSystemDarkMode,
         enableClipboardPolyfill = config.webViewConfig.enableClipboardPolyfill,
         enableNotificationPolyfill = config.webViewConfig.enableNotificationPolyfill,

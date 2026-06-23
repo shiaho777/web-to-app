@@ -35352,6 +35352,16 @@ object Strings {
         AppLanguage.ENGLISH -> "Remember scroll position and restore it when navigating back. May conflict with SPAs that manage their own scroll; disable if needed."
         AppLanguage.ARABIC -> "تذكر موضع التمرير واستعادته عند العودة. قد يتعارض مع تطبيقات SPA التي تدير التمرير بنفسها؛ أوقفه عند الحاجة."
     }
+    val backStatePreservationTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "返回状态保留"
+        AppLanguage.ENGLISH -> "Back Navigation State Preservation"
+        AppLanguage.ARABIC -> "الحفاظ على حالة التنقل للخلف"
+    }
+    val backStatePreservationDesc: String get() = when (lang) {
+        AppLanguage.CHINESE -> "尝试保留 ajax 翻页/SPA 的返回状态：拦截页面在返回时的自动刷新，返回键优先走 history.back 以命中页面缓存。尽力而为，不保证所有网站生效；少数依赖返回刷新数据的网站可能受影响。"
+        AppLanguage.ENGLISH -> "Best-effort preservation of ajax pagination / SPA state on back: blocks the page's auto-reload on back navigation and prefers history.back() to hit the page cache. Not guaranteed on all sites; a few sites that refresh data on back may be affected."
+        AppLanguage.ARABIC -> "محاولة للحفاظ على حالة ترقيم الصفحات عبر ajax / SPA عند الرجوع: يمنع إعادة التحميل التلقائية للصفحة عند الرجوع ويفضل history.back() للوصول إلى ذاكرة التخزين المؤقت للصفحة. غير مضمون على جميع المواقع؛ قد تتأثر بعض المواقع التي تعتمد على تحديث البيانات عند الرجوع."
+    }
 
     val followSystemDarkModeTitle: String get() = when (lang) {
         AppLanguage.CHINESE -> "网页跟随系统深色"
