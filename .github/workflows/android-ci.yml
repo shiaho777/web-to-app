@@ -53,6 +53,7 @@ jobs:
           ./gradlew --no-daemon --no-configuration-cache \
             -Dkotlin.compiler.execution.strategy=in-process \
             -PskipShellTemplateSync=true \
+            -PallowDebugSignedRelease=true \
             :app:compileDebugKotlin \
             :shell:compileDebugKotlin \
             :app:testDebugUnitTest
