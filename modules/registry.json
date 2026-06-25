@@ -541,11 +541,7 @@
         "automation",
         "interception"
       ],
-      "version": {
-        "code": 1,
-        "name": "1.0.0",
-        "changelog": "Initial release."
-      },
+      "version": "1.0.0",
       "minAppVersion": 33,
       "author": {
         "name": "Stremiouser666",
