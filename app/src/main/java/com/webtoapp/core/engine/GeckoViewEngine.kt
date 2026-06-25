@@ -55,8 +55,8 @@ class GeckoViewEngine(
                 nativeBridgeExtension?.let { return it }
                 val url = "resource://android/assets/web_extensions/wta_native_bridge/"
                 val controller = runtime.webExtensionController
-                val result = controller.installBuiltIn(url)
-                result.then({ ext ->
+                val installResult = controller.installBuiltIn(url)
+                installResult.accept { ext ->
                     ext?.setMessageDelegate(object : WebExtension.MessageDelegate {
                         override fun onMessage(
                             nativeApp: String,
@@ -81,11 +81,10 @@ class GeckoViewEngine(
                     }, NATIVE_BRIDGE_APP)
                     nativeBridgeExtension = ext
                     AppLogger.d(TAG, "Native bridge WebExtension installed")
-                    null
-                }, { throwable ->
+                }.exceptionally { throwable ->
                     AppLogger.e(TAG, "Failed to install native bridge WebExtension", throwable)
                     null
-                })
+                }
                 return null
             }
         }
