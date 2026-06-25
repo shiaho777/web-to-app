@@ -66,7 +66,8 @@ class ApkExportPreflightTest {
             appType = AppType.FRONTEND,
             htmlConfig = HtmlConfig(
                 entryFile = "index.html",
-                files = listOf(HtmlFile("index.html", index.absolutePath, HtmlFileType.HTML))
+                files = listOf(HtmlFile("index.html", index.absolutePath, HtmlFileType.HTML)),
+                loadMode = HtmlLoadMode.LOCAL_HTTP
             )
         )
 
@@ -88,7 +89,8 @@ class ApkExportPreflightTest {
             appType = AppType.HTML,
             htmlConfig = HtmlConfig(
                 projectDir = projectDir.absolutePath,
-                entryFile = "index.html"
+                entryFile = "index.html",
+                loadMode = HtmlLoadMode.LOCAL_HTTP
             )
         )
 
@@ -112,7 +114,8 @@ class ApkExportPreflightTest {
             appType = AppType.HTML,
             htmlConfig = HtmlConfig(
                 projectDir = projectDir.absolutePath,
-                entryFile = "index.html"
+                entryFile = "index.html",
+                loadMode = HtmlLoadMode.LOCAL_HTTP
             )
         )
 
@@ -145,10 +148,7 @@ class ApkExportPreflightTest {
         val fileConfig = fileApp.toApkConfig("com.example.file", context)
         val serverConfig = serverApp.toApkConfig("com.example.server", context)
 
-        assertThat(fileConfig.htmlUsesFileScheme).isFalse()
-        assertThat(fileConfig.targetUrl).isEqualTo(
-            buildPackagedHtmlShellEntryUrl("com.example.file", "index.html")
-        )
+        assertThat(fileConfig.htmlUsesFileScheme).isTrue()
         assertThat(serverConfig.htmlUsesFileScheme).isFalse()
     }
 
@@ -177,7 +177,7 @@ class ApkExportPreflightTest {
             name = "Html",
             url = "",
             appType = AppType.HTML,
-            htmlConfig = HtmlConfig(entryFile = "main/index.html")
+            htmlConfig = HtmlConfig(entryFile = "main/index.html", loadMode = HtmlLoadMode.LOCAL_HTTP)
         )
 
         val config = app.toApkConfig("com.example.frontend", context)

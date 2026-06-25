@@ -366,7 +366,8 @@ class ExportSecurityRegressionTest {
             appType = AppType.HTML,
             htmlConfig = HtmlConfig(
                 projectDir = projectDir.absolutePath,
-                entryFile = "index.html"
+                entryFile = "index.html",
+                loadMode = HtmlLoadMode.LOCAL_HTTP
             ),
             apkExportConfig = ApkExportConfig()
         ).toApkConfig("com.example.offline", context)
@@ -424,7 +425,8 @@ class ExportSecurityRegressionTest {
             appType = AppType.HTML,
             htmlConfig = HtmlConfig(
                 projectDir = projectDir.absolutePath,
-                entryFile = "index.html"
+                entryFile = "index.html",
+                loadMode = HtmlLoadMode.LOCAL_HTTP
             ),
             announcementEnabled = true,
             announcement = Announcement(

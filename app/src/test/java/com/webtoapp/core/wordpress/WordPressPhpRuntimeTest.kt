@@ -30,7 +30,8 @@ class WordPressPhpRuntimeTest {
             String::class.java,
             Int::class.javaPrimitiveType,
             String::class.java,
-            String::class.java
+            String::class.java,
+            Map::class.java
         )
         method.isAccessible = true
 
@@ -40,7 +41,8 @@ class WordPressPhpRuntimeTest {
             "/tmp/php",
             18500,
             context.filesDir.absolutePath,
-            File(context.cacheDir, "php_router_server.php").absolutePath
+            File(context.cacheDir, "php_router_server.php").absolutePath,
+            emptyMap<String, Boolean>()
         ) as List<String>
 
         assertThat(command).contains("disable_functions=header,headers_list,headers_sent,header_remove,setcookie,setrawcookie")
