@@ -83,7 +83,6 @@ fun FloatingWindowConfigCard(
         WtaFeatureCardHeader(
             icon = Icons.Outlined.PictureInPicture,
             title = Strings.floatingWindowTitle,
-            subtitle = if (!config.enabled) Strings.notEnabled else null,
             enabled = config.enabled,
             trailing = {
                 WtaSwitch(
