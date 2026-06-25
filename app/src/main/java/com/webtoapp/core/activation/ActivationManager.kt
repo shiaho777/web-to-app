@@ -86,7 +86,7 @@ class ActivationManager(private val context: Context) {
 
     private suspend fun getCachedRemoteCode(appId: Long): String? {
         return context.activationDataStore.data.first()
-            [stringPreferencesKey("remote_code_$appId")]
+            .let { it[stringPreferencesKey("remote_code_$appId")] }
     }
 
     fun buildRemoteRequest(

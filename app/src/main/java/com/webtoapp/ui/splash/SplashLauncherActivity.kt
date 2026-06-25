@@ -139,7 +139,7 @@ fun SplashLauncherScreen(
                 )
                 if (activationRequireEveryTime) {
                     val result = activation.reverifyRemoteWithCachedCode(activationAppId, remoteRequest)
-                    isActivated = result is ActivationResult.Success || result is ActivationResult.AlreadyActivated
+                    isActivated = result is com.webtoapp.core.activation.ActivationResult.Success || result is com.webtoapp.core.activation.ActivationResult.AlreadyActivated
                     showActivationDialog = !isActivated
                 } else {
                     val ok = activation.isActivated(activationAppId).first() &&
