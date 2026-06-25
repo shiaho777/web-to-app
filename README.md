@@ -9,7 +9,7 @@
 **WebToApp is an on-device APK builder for websites, HTML apps, media projects, and local server runtimes.**
 Turn a URL, a project folder, or a media library into an installable Android app you can preview, sign, install, share, or export without sending the build to a remote service.
 
-**English** · [简体中文](.github/docs/README_CN.md)
+**English** · [简体中文](.github/docs/README_CN.md) · [Tiếng Việt](.github/docs/README_VN.md)
 
 [![Stars](https://img.shields.io/github/stars/shiaho777/web-to-app?style=for-the-badge)](https://github.com/shiaho777/web-to-app/stargazers)
 [![Forks](https://img.shields.io/github/forks/shiaho777/web-to-app?style=for-the-badge)](https://github.com/shiaho777/web-to-app/network/members)
