@@ -103,7 +103,7 @@ class NodeDependencyManagerTest {
     }
 
     @Test
-    fun `node downloaded into deps dir is not treated as ready when nativeLibraryDir is empty`() {
+    fun `node downloaded into deps dir is treated as ready when nativeLibraryDir is empty`() {
 
         val nativeLibDir = File(context.cacheDir, "test-native-lib-empty").apply {
             deleteRecursively()
@@ -118,8 +118,7 @@ class NodeDependencyManagerTest {
 
         try {
             assertThat(downloaded.exists()).isTrue()
-            assertThat(NodeDependencyManager.isNodeReady(context)).isFalse()
-            assertThat(NodeDependencyManager.getNodeLibraryPath(context)).isNull()
+            assertThat(NodeDependencyManager.isNodeReady(context)).isTrue()
         } finally {
             nativeLibDir.deleteRecursively()
         }

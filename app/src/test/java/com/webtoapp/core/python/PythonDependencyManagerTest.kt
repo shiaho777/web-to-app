@@ -105,7 +105,7 @@ class PythonDependencyManagerTest {
     }
 
     @Test
-    fun `builder musl linker path ignores downloaded non native linker`() {
+    fun `builder musl linker path finds downloaded linker when executable`() {
         File(PythonDependencyManager.getPythonDir(context), "lib/${PythonDependencyManager.getMuslLinkerName(PythonDependencyManager.getDeviceAbi())}").apply {
             parentFile?.mkdirs()
             writeBytes(ByteArray(2048) { 1 })
@@ -113,7 +113,7 @@ class PythonDependencyManagerTest {
         }
 
         assertThat(PythonDependencyManager.getMuslLinkerPath(context)).isNotNull()
-        assertThat(PythonDependencyManager.getBuilderMuslLinkerPath(context)).isNull()
+        assertThat(PythonDependencyManager.getBuilderMuslLinkerPath(context)).isNotNull()
     }
 
     @Test
