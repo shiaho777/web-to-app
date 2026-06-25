@@ -69,13 +69,11 @@ class PlayPolicyCheckerTest {
     }
 
     @Test
-    fun `every report carries TARGET_SDK_REWRITE info`() {
+    fun `every report carries SERVER_RUNTIME_APP_TYPE info when applicable`() {
 
-        val report = PlayPolicyChecker.check(baseApp())
+        val report = PlayPolicyChecker.check(baseApp().copy(appType = com.webtoapp.data.model.AppType.WEB))
 
-        val info = report.violations.firstOrNull { it.ruleId == "TARGET_SDK_REWRITE" }
-        assertThat(info).isNotNull()
-        assertThat(info!!.severity).isEqualTo(PlayPolicyChecker.Severity.INFO)
+        assertThat(report.violations.map { it.ruleId }).doesNotContain("TARGET_SDK_REWRITE")
     }
 
     @Test
@@ -89,11 +87,11 @@ class PlayPolicyCheckerTest {
                 fixHint = "rule.serverRuntime.fix"
             ),
             PlayPolicyChecker.Violation(
-                ruleId = "TARGET_SDK_REWRITE",
-                severity = PlayPolicyChecker.Severity.INFO,
-                featurePath = "rule.targetSdkRewrite.path",
-                policyArea = "rule.targetSdkRewrite.area",
-                fixHint = "rule.targetSdkRewrite.fix"
+                ruleId = "FORCED_RUN_ENABLED",
+                severity = PlayPolicyChecker.Severity.BLOCKER,
+                featurePath = "rule.forcedRun.path",
+                policyArea = "rule.forcedRun.area",
+                fixHint = "rule.forcedRun.fix"
             )
         )
 

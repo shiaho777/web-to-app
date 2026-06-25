@@ -95,7 +95,7 @@ class ErrorPageManagerTest {
         val manager = ErrorPageManager(
             ErrorPageConfig(
                 mode = ErrorPageMode.CUSTOM_MEDIA,
-                customMediaPath = "/storage/error.mp4",
+                customMediaPath = "https://example.com/error.mp4",
                 retryButtonText = "重试加载"
             )
         )
@@ -104,7 +104,7 @@ class ErrorPageManagerTest {
 
         assertThat(html).contains("<video")
         assertThat(html).contains("重试加载")
-        assertThat(html).contains("/storage/error.mp4")
+        assertThat(html).contains("https://example.com/error.mp4")
     }
 
     @Test
@@ -112,14 +112,14 @@ class ErrorPageManagerTest {
         val manager = ErrorPageManager(
             ErrorPageConfig(
                 mode = ErrorPageMode.CUSTOM_MEDIA,
-                customMediaPath = "/storage/error.png"
+                customMediaPath = "https://example.com/error.png"
             )
         )
 
         val html = manager.generateErrorPage(-6, "timeout", "https://example.com")
 
         assertThat(html).contains("<img")
-        assertThat(html).contains("/storage/error.png")
+        assertThat(html).contains("https://example.com/error.png")
     }
 
     @Test
