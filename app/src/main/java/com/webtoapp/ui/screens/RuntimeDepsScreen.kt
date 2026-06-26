@@ -1,6 +1,7 @@
 package com.webtoapp.ui.screens
 
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -83,6 +84,7 @@ import com.webtoapp.ui.components.PremiumOutlinedButton
 import com.webtoapp.ui.design.WtaBadge
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaColors
 import com.webtoapp.ui.theme.AppColors
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
@@ -881,7 +883,7 @@ private fun StatusOverviewCard(
                         }
                         else -> Unit
                     }
-                      }
+                }
             }
         }
     }
