@@ -3,7 +3,6 @@ package com.webtoapp.core.appearance
 import android.webkit.WebView
 import com.webtoapp.core.kernel.BrowserKernel
 import com.webtoapp.core.logging.AppLogger
-import com.webtoapp.core.webview.OAuthCompatEngine
 
 object BrowserDisguiseEngine {
 
@@ -13,8 +12,6 @@ object BrowserDisguiseEngine {
         val kernelInjected: Boolean,
         val disguiseInjected: Boolean,
         val disguiseCoverage: Float,
-        val oauthInjected: Boolean,
-        val oauthProvider: String?,
         val diagnosticInjected: Boolean,
         val totalJsSize: Int
     ) {
@@ -22,7 +19,6 @@ object BrowserDisguiseEngine {
             val parts = mutableListOf<String>()
             if (kernelInjected) parts.add("Kernel")
             if (disguiseInjected) parts.add("Disguise(${"%.0f".format(disguiseCoverage * 100)}%)")
-            if (oauthInjected) parts.add("OAuth($oauthProvider)")
             if (diagnosticInjected) parts.add("Diag")
             return "Injected: [${parts.joinToString(" → ")}] ${totalJsSize}chars"
         }
@@ -37,13 +33,9 @@ object BrowserDisguiseEngine {
     ): InjectionResult {
         var kernelInjected = false
         var disguiseInjected = false
-        var oauthInjected = false
         var diagnosticInjected = false
-        var oauthProvider: String? = null
         var totalJsSize = 0
         var disguiseCoverage = 0f
-
-        @Suppress("UNUSED_PARAMETER") val ignoredOauthUrl = url
 
         if (disguiseConfig?.enabled == true && !cachedDisguiseJs.isNullOrEmpty()) {
             try {
@@ -73,8 +65,6 @@ object BrowserDisguiseEngine {
             kernelInjected = kernelInjected,
             disguiseInjected = disguiseInjected,
             disguiseCoverage = disguiseCoverage,
-            oauthInjected = oauthInjected,
-            oauthProvider = oauthProvider,
             diagnosticInjected = diagnosticInjected,
             totalJsSize = totalJsSize
         )

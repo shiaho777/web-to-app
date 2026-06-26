@@ -12,13 +12,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ListAlt
-import androidx.compose.material.icons.automirrored.outlined.Login
 import androidx.compose.material.icons.automirrored.outlined.ViewList
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -1092,6 +1090,112 @@ fun BrowserAdvancedConfigCard(
                             }
                         }
                     }
+
+                    WtaSection(
+                        title = Strings.tlsFingerprintTitle,
+                        description = Strings.tlsFingerprintSubtitle,
+                        headerStyle = WtaSectionHeaderStyle.Quiet
+                    ) {
+                        WtaSettingCard {
+                            WtaToggleRow(
+                                title = Strings.tlsFingerprintTitle,
+                                subtitle = Strings.tlsFingerprintDescription,
+                                icon = Icons.Outlined.Security,
+                                checked = config.tlsFingerprintEnabled,
+                                onCheckedChange = { onConfigChange(config.copy(tlsFingerprintEnabled = it)) }
+                            )
+
+                            AnimatedVisibility(
+                                visible = config.tlsFingerprintEnabled,
+                                enter = CardExpandTransition,
+                                exit = CardCollapseTransition
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal),
+                                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                                ) {
+                                    WtaSectionDivider()
+
+                                    Text(
+                                        text = Strings.tlsFingerprintTemplateLabel,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+
+                                    FlowRow(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        val templates = listOf(
+                                            "CHROME_131" to "Chrome 131",
+                                            "FIREFOX_133" to "Firefox 133",
+                                            "SAFARI_18" to "Safari 18",
+                                            "CUSTOM" to "Custom"
+                                        )
+                                        templates.forEach { (id, label) ->
+                                            FilterChip(
+                                                selected = config.tlsFingerprintTemplate == id,
+                                                onClick = { onConfigChange(config.copy(tlsFingerprintTemplate = id)) },
+                                                label = { Text(label, style = MaterialTheme.typography.bodySmall) },
+                                                leadingIcon = if (config.tlsFingerprintTemplate == id) {{
+                                                    Icon(
+                                                        Icons.Filled.Check,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                }} else null
+                                            )
+                                        }
+                                    }
+
+                                    AnimatedVisibility(
+                                        visible = config.tlsFingerprintTemplate == "CUSTOM",
+                                        enter = CardExpandTransition,
+                                        exit = CardCollapseTransition
+                                    ) {
+                                        var customCiphersText by remember(config.tlsFingerprintCustomCiphers) {
+                                            mutableStateOf(config.tlsFingerprintCustomCiphers.joinToString("\n"))
+                                        }
+                                        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)) {
+                                            Text(
+                                                text = Strings.tlsFingerprintCustomCiphersLabel,
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            PremiumTextField(
+                                                value = customCiphersText,
+                                                onValueChange = { newText ->
+                                                    customCiphersText = newText
+                                                    val parsed = newText.lineSequence()
+                                                        .map { it.trim() }
+                                                        .filter { it.isNotBlank() }
+                                                        .toList()
+                                                    onConfigChange(config.copy(tlsFingerprintCustomCiphers = parsed))
+                                                },
+                                                modifier = Modifier.fillMaxWidth(),
+                                                placeholder = { Text(Strings.tlsFingerprintCustomCiphersHint) },
+                                                textStyle = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+                                    }
+
+                                    Text(
+                                        text = Strings.tlsFingerprintGeckoWarning,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.tertiary
+                                    )
+
+                                    if (config.proxyMode == "STATIC" &&
+                                        (config.proxyType == "SOCKS5" || config.proxyType == "SOCKS")) {
+                                        Text(
+                                            text = Strings.tlsFingerprintProxyIntegration,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1142,8 +1246,6 @@ fun ApkExportSettingsCard(
     onConfigChange: (ApkExportConfig) -> Unit,
     onOpenPermissionConfig: (() -> Unit)? = null
 ) {
-    var showOAuthGuide by remember { mutableStateOf(false) }
-
     Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)) {
 
         WtaSection(
@@ -1203,14 +1305,6 @@ fun ApkExportSettingsCard(
                     }
                 }
             }
-
-            WtaStatusBanner(
-                title = Strings.oauthReturnGuideTitle,
-                message = Strings.oauthReturnGuideSummary,
-                tone = WtaStatusTone.Info,
-                actionLabel = Strings.oauthReturnGuideButton,
-                onAction = { showOAuthGuide = true }
-            )
         }
 
         ApkExportSection(
@@ -1219,48 +1313,6 @@ fun ApkExportSettingsCard(
             onOpenPermissionConfig = onOpenPermissionConfig
         )
     }
-
-    if (showOAuthGuide) {
-        OAuthReturnGuideDialog(onDismiss = { showOAuthGuide = false })
-    }
-}
-
-@Composable
-private fun OAuthReturnGuideDialog(
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(Icons.AutoMirrored.Outlined.Login, contentDescription = null) },
-        title = { Text(Strings.oauthReturnGuideTitle) },
-        text = {
-            Column(
-                modifier = Modifier
-                    .heightIn(max = 420.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = Strings.oauthReturnGuideIntro,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                WtaStatusBanner(
-                    message = Strings.oauthReturnGuideReason,
-                    tone = WtaStatusTone.Info,
-                    messageMaxLines = 8
-                )
-                Text(
-                    text = Strings.oauthReturnGuideSteps,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(Strings.understood)
-            }
-        }
-    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)

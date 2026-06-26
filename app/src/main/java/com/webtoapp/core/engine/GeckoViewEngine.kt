@@ -2,7 +2,6 @@ package com.webtoapp.core.engine
 
 import android.content.Context
 import com.webtoapp.core.logging.AppLogger
-import com.webtoapp.core.webview.OAuthCompatEngine
 import android.view.View
 import com.webtoapp.data.model.UserAgentMode
 import com.webtoapp.data.model.WebViewConfig
@@ -98,7 +97,7 @@ class GeckoViewEngine(
             val ech = currentDnsConfig?.echEffective == true
             val proxy = currentProxyConfig?.let { buildProxyPrefs(it) } ?: emptyMap()
             val proxyKey = proxy.entries.joinToString(",") { "${it.key}=${it.value}" }
-            return "ech=$ech|proxy=$proxyKey"
+            return "ech=$ech|proxy=$proxyKey|tlsMitm=$tlsMitmActive"
         }
 
         fun getRuntime(context: Context): GeckoRuntime {
@@ -146,6 +145,13 @@ class GeckoViewEngine(
 
         @Volatile
         private var currentProxyConfig: ProxyConfig? = null
+
+        @Volatile
+        private var tlsMitmActive: Boolean = false
+
+        fun setTlsMitmActive(active: Boolean) {
+            tlsMitmActive = active
+        }
 
         fun applyDnsConfig(config: com.webtoapp.data.model.DnsConfig) {
             currentDnsConfig = config
@@ -271,6 +277,10 @@ class GeckoViewEngine(
             }
 
             currentProxyConfig?.let { prefs.putAll(buildProxyPrefs(it)) }
+
+            if (tlsMitmActive) {
+                prefs["security.enterprise_roots.enabled"] = true
+            }
 
             val yaml = buildString {
                 append("prefs:\n")

@@ -1455,6 +1455,15 @@ data class WebViewShellConfig(
     @SerializedName("hostsMappings")
     val hostsMappings: List<HostMappingShellEntry> = emptyList(),
 
+    @SerializedName("tlsFingerprintEnabled")
+    val tlsFingerprintEnabled: Boolean = false,
+
+    @SerializedName("tlsFingerprintTemplate")
+    val tlsFingerprintTemplate: String = "CHROME_131",
+
+    @SerializedName("tlsFingerprintCustomCiphers")
+    val tlsFingerprintCustomCiphers: List<String> = emptyList(),
+
     @SerializedName("dnsMode")
     val dnsMode: String = "SYSTEM",
 
