@@ -2836,6 +2836,7 @@ builtins.__import__ = _w2a_import
         if (translateEnabled) return true
         if (proxyMode != "NONE") return true
         if (dnsMode != "SYSTEM") return true
+        if (tlsFingerprintEnabled) return true
         if (pwaOfflineEnabled) return true
         if (enablePrivateNetworkBridge) return true
         if (enableCloudflareCompat && webViewBehavior.cloudflareCompatMode == "ALWAYS") return true
@@ -2908,6 +2909,7 @@ fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = 
         floatingWindow = buildFloatingWindowBlock(),
         proxy = buildProxyBlock(),
         dns = buildDnsBlock(),
+        tlsFingerprint = buildTlsFingerprintBlock(),
         errorPage = buildErrorPageBlock(),
         splash = buildSplashBlock(),
         media = buildMediaBlock(),
@@ -3309,6 +3311,12 @@ private fun WebApp.buildDnsBlock(): DnsBlock = DnsBlock(
         bypassSystemDns = webViewConfig.dnsConfig.bypassSystemDns,
         echEnabled = webViewConfig.dnsConfig.echEnabled
     )
+)
+
+private fun WebApp.buildTlsFingerprintBlock(): TlsFingerprintBlock = TlsFingerprintBlock(
+    enabled = webViewConfig.tlsFingerprintEnabled,
+    template = webViewConfig.tlsFingerprintTemplate,
+    customCipherSuites = webViewConfig.tlsFingerprintCustomCiphers
 )
 
 private fun WebApp.buildErrorPageBlock(): ErrorPageBlock {

@@ -26412,42 +26412,6 @@ object Strings {
         AppLanguage.ARABIC -> "يتم مطابقة النطاق الرئيسي والنطاق الفرعي www تلقائيًا. أضف نطاقات إضافية هنا (واحد لكل سطر)"
     }
 
-    val oauthReturnGuideTitle: String get() = when (lang) {
-        AppLanguage.CHINESE -> "登录回跳说明"
-        AppLanguage.ENGLISH -> "Login Return Guide"
-        AppLanguage.ARABIC -> "دليل الرجوع بعد تسجيل الدخول"
-    }
-
-    val oauthReturnGuideSummary: String get() = when (lang) {
-        AppLanguage.CHINESE -> "Google 等 OAuth 登录会在系统浏览器完成。若登录后没有回到应用，需要让网站把授权结果跳到 APK 专属回跳协议。"
-        AppLanguage.ENGLISH -> "OAuth providers such as Google finish sign-in in the system browser. If login does not return to the app, make your website redirect the result to the APK callback scheme."
-        AppLanguage.ARABIC -> "تكتمل عمليات OAuth مثل Google في متصفح النظام. إذا لم يعد تسجيل الدخول إلى التطبيق، اجعل موقعك يعيد نتيجة التفويض إلى مخطط الرجوع الخاص بملف APK."
-    }
-
-    val oauthReturnGuideButton: String get() = when (lang) {
-        AppLanguage.CHINESE -> "查看接法"
-        AppLanguage.ENGLISH -> "View Setup"
-        AppLanguage.ARABIC -> "عرض الإعداد"
-    }
-
-    val oauthReturnGuideIntro: String get() = when (lang) {
-        AppLanguage.CHINESE -> "这不是用户输错配置。Google 不允许在嵌入式 WebView 里直接完成 OAuth 登录，所以生成的应用会把授权页交给系统浏览器/Custom Tabs。浏览器里的 Cookie 不会自动同步回 WebView，网站必须完成一次回跳。"
-        AppLanguage.ENGLISH -> "This is not a bad user setting. Google does not allow OAuth sign-in to complete inside embedded WebViews, so the generated app sends the authorization page to the system browser or Custom Tabs. Browser cookies are not automatically shared back to WebView, so your website must perform a return redirect."
-        AppLanguage.ARABIC -> "هذه ليست إعدادات خاطئة من المستخدم. لا تسمح Google بإكمال تسجيل دخول OAuth داخل WebView مضمّن، لذلك يرسل التطبيق الناتج صفحة التفويض إلى متصفح النظام أو Custom Tabs. لا تتم مشاركة ملفات تعريف ارتباط المتصفح تلقائيًا مع WebView، لذلك يجب أن ينفذ موقعك إعادة توجيه للرجوع."
-    }
-
-    val oauthReturnGuideReason: String get() = when (lang) {
-        AppLanguage.CHINESE -> "如果网站只在外部浏览器里完成登录，APK 内的 WebView 仍然没有自己的登录态，看起来就像“授权没生效”。导出的 WEB APK 会自动注册 wta-包名 回跳协议，服务端可在 OAuth callback 后带着一次性 token 拉回应用。"
-        AppLanguage.ENGLISH -> "If the website only signs in inside the external browser, the APK WebView still has no app-side session, which looks like authorization failed. Exported WEB APKs automatically register a wta-package callback scheme, so your server can return to the app with a one-time token after the OAuth callback."
-        AppLanguage.ARABIC -> "إذا سجّل الموقع الدخول داخل المتصفح الخارجي فقط، فلن تحصل WebView داخل APK على جلسة خاصة بها، وسيبدو الأمر كأن التفويض فشل. تسجل ملفات WEB APK المصدرة مخطط رجوع wta-package تلقائيًا، بحيث يمكن للخادم الرجوع إلى التطبيق برمز لمرة واحدة بعد callback الخاص بـ OAuth."
-    }
-
-    val oauthReturnGuideSteps: String get() = when (lang) {
-        AppLanguage.CHINESE -> "推荐流程：\n1. 在 Google Console 中配置你网站自己的 OAuth redirect URI，例如 https://example.com/oauth/google/callback。\n2. 服务端处理 callback，生成一次性登录 token。\n3. 服务端重定向到 APK 专属协议：wta-com-example-app://oauth-return?url=https%3A%2F%2Fexample.com%2Fapp-login%3Ftoken%3Dxxx。\n4. APK 收到后会加载 url 参数里的 HTTPS 地址，并校验它属于应用目标域名。\n5. WebView 加载该地址后，由网站设置应用内 Cookie 或本地会话。"
-        AppLanguage.ENGLISH -> "Recommended flow:\n1. Configure your website OAuth redirect URI in Google Console, for example https://example.com/oauth/google/callback.\n2. Let your server handle the callback and create a one-time login token.\n3. Redirect to the APK callback scheme: wta-com-example-app://oauth-return?url=https%3A%2F%2Fexample.com%2Fapp-login%3Ftoken%3Dxxx.\n4. The APK loads the HTTPS URL from the url parameter and verifies that it belongs to the app target domain.\n5. When WebView loads that URL, your website sets the in-app cookie or local session."
-        AppLanguage.ARABIC -> "التدفق المقترح:\n1. اضبط OAuth redirect URI الخاص بموقعك في Google Console، مثل https://example.com/oauth/google/callback.\n2. اجعل الخادم يعالج callback وينشئ رمز تسجيل دخول لمرة واحدة.\n3. أعد التوجيه إلى مخطط رجوع APK: wta-com-example-app://oauth-return?url=https%3A%2F%2Fexample.com%2Fapp-login%3Ftoken%3Dxxx.\n4. سيحمّل APK رابط HTTPS من معامل url ويتحقق من أنه ينتمي إلى نطاق التطبيق المستهدف.\n5. عند تحميل WebView لهذا الرابط، يضبط موقعك ملف تعريف الارتباط أو الجلسة المحلية داخل التطبيق."
-    }
-
     val encryptLevelFast: String get() = when (lang) {
         AppLanguage.CHINESE -> "快速（较低安全性）"
         AppLanguage.ENGLISH -> "Fast (lower security)"
@@ -30707,6 +30671,46 @@ object Strings {
         AppLanguage.CHINESE -> "支持 PAC 自动配置脚本 / 固定代理服务器"
         AppLanguage.ENGLISH -> "PAC auto-config script / Static proxy server"
         AppLanguage.ARABIC -> "دعم سكربت التكوين التلقائي PAC / خادم وكيل ثابت"
+    }
+    val tlsFingerprintTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "TLS 指纹伪装"
+        AppLanguage.ENGLISH -> "TLS Fingerprint Spoofing"
+        AppLanguage.ARABIC -> "انتحال بصمة TLS"
+    }
+    val tlsFingerprintSubtitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "伪装 TLS 握手指纹，绕过 JA3/JA4 检测"
+        AppLanguage.ENGLISH -> "Spoof TLS handshake fingerprint to bypass JA3/JA4 detection"
+        AppLanguage.ARABIC -> "انتحال بصمة مصافحة TLS لتجاوز كشف JA3/JA4"
+    }
+    val tlsFingerprintDescription: String get() = when (lang) {
+        AppLanguage.CHINESE -> "通过本地 MITM 桥终止并重新发起 TLS 握手，模拟目标浏览器的 TLS 指纹。会增加约 50-100ms 连接延迟。"
+        AppLanguage.ENGLISH -> "Terminates and re-initiates TLS handshake via a local MITM bridge to simulate the target browser's TLS fingerprint. Adds ~50-100ms connection latency."
+        AppLanguage.ARABIC -> "ينهي ويعيد بدء مصافحة TLS عبر جسر MITM محلي لمحاكاة بصمة TLS للمتصفح المستهدف. يضيف حوالي ٥٠-١٠٠ مللي ثانية تأخير."
+    }
+    val tlsFingerprintTemplateLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "指纹模板"
+        AppLanguage.ENGLISH -> "Fingerprint Template"
+        AppLanguage.ARABIC -> "قالب البصمة"
+    }
+    val tlsFingerprintCustomCiphersLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自定义 Cipher Suite"
+        AppLanguage.ENGLISH -> "Custom Cipher Suites"
+        AppLanguage.ARABIC -> "مجموعات تشفير مخصصة"
+    }
+    val tlsFingerprintCustomCiphersHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "每行一个，如 TLS_AES_128_GCM_SHA256"
+        AppLanguage.ENGLISH -> "One per line, e.g. TLS_AES_128_GCM_SHA256"
+        AppLanguage.ARABIC -> "واحد في كل سطر، مثال TLS_AES_128_GCM_SHA256"
+    }
+    val tlsFingerprintGeckoWarning: String get() = when (lang) {
+        AppLanguage.CHINESE -> "GeckoView 引擎下证书信任可能不完全生效，建议使用系统 WebView 引擎"
+        AppLanguage.ENGLISH -> "Certificate trust may not fully work with GeckoView engine. System WebView engine is recommended."
+        AppLanguage.ARABIC -> "قد لا يعمل信任 الشهادة بشكل كامل مع محرك GeckoView. يُوصى بمحرك WebView للنظام."
+    }
+    val tlsFingerprintProxyIntegration: String get() = when (lang) {
+        AppLanguage.CHINESE -> "与 SOCKS5 代理组合使用时，TLS 重握手将通过代理隧道进行"
+        AppLanguage.ENGLISH -> "When combined with SOCKS5 proxy, TLS re-handshake goes through the proxy tunnel"
+        AppLanguage.ARABIC -> "عند الدمج مع وكيل SOCKS5، تتم إعادة مصافحة TLS عبر نفق الوكيل"
     }
     val proxyModeNone: String get() = when (lang) {
         AppLanguage.CHINESE -> "无代理"

@@ -383,6 +383,10 @@ data class WebViewConfig(
     val hostsMappingEnabled: Boolean = false,
     val hostsMappings: List<HostMappingEntry> = emptyList(),
 
+    val tlsFingerprintEnabled: Boolean = false,
+    val tlsFingerprintTemplate: String = "CHROME_131",
+    val tlsFingerprintCustomCiphers: List<String> = emptyList(),
+
     val dnsMode: String = "SYSTEM",
     val dnsConfig: DnsConfig = DnsConfig()
 )

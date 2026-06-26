@@ -17,6 +17,7 @@ data class ApkConfig(
     val floatingWindow: FloatingWindowBlock = FloatingWindowBlock(),
     val proxy: ProxyBlock = ProxyBlock(),
     val dns: DnsBlock = DnsBlock(),
+    val tlsFingerprint: TlsFingerprintBlock = TlsFingerprintBlock(),
     val errorPage: ErrorPageBlock = ErrorPageBlock(),
     val splash: SplashBlock = SplashBlock(),
     val media: MediaBlock = MediaBlock(),
@@ -226,6 +227,10 @@ data class ApkConfig(
     val proxyPassword: String get() = proxy.password
     val hostsMappingEnabled: Boolean get() = proxy.hostsMappingEnabled
     val hostsMappings: List<com.webtoapp.data.model.HostMappingEntry> get() = proxy.hostsMappings
+
+    val tlsFingerprintEnabled: Boolean get() = tlsFingerprint.enabled
+    val tlsFingerprintTemplate: String get() = tlsFingerprint.template
+    val tlsFingerprintCustomCiphers: List<String> get() = tlsFingerprint.customCipherSuites
 
     val dnsMode: String get() = dns.mode
     val dnsConfig: DnsApkConfig get() = dns.config
@@ -629,6 +634,12 @@ data class ProxyBlock(
 data class DnsBlock(
     val mode: String = "SYSTEM",
     val config: DnsApkConfig = DnsApkConfig()
+)
+
+data class TlsFingerprintBlock(
+    val enabled: Boolean = false,
+    val template: String = "CHROME_131",
+    val customCipherSuites: List<String> = emptyList()
 )
 
 data class ErrorPageBlock(

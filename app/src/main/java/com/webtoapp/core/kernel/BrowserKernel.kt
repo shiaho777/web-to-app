@@ -7,7 +7,6 @@ import android.webkit.WebView
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewFeature
 import com.webtoapp.core.logging.AppLogger
-import com.webtoapp.core.webview.OAuthCompatEngine
 
 object BrowserKernel {
 

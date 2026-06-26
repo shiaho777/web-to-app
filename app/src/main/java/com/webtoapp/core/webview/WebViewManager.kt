@@ -12,7 +12,6 @@ import android.os.Build
 import android.view.ViewGroup
 import android.webkit.*
 import androidx.annotation.RequiresApi
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.webkit.ScriptHandler
 import androidx.webkit.WebSettingsCompat
 import androidx.webkit.WebViewCompat
@@ -1231,93 +1230,74 @@ class WebViewManager(
             )
         }
 
-        if (config.proxyMode != "NONE") {
-            LocalHttpHostMappingBridge.stop()
-            AppLogger.d("WebViewManager", "Applying proxy: mode=${config.proxyMode}")
+        val tlsFingerprintEnabled = config.tlsFingerprintEnabled &&
+            config.tlsFingerprintTemplate.isNotBlank()
 
-            val proxyManager = PacProxyManager(context)
-            val proxyMode = config.proxyMode
-            val proxyHost = config.proxyHost
-            val proxyPort = config.proxyPort
-            val proxyType = config.proxyType
-            val pacUrl = config.pacUrl
-            val bypassRules = config.proxyBypassRules
-            proxyApplyJob?.cancel()
-            proxyApplyJob = proxyScope.launch {
-                try {
-                    proxyManager.applyProxy(
-                        proxyMode = proxyMode,
-                        staticProxyHost = proxyHost,
-                        staticProxyPort = proxyPort,
-                        staticProxyType = proxyType,
-                        pacUrl = pacUrl,
-                        bypassRules = bypassRules,
-                        username = config.proxyUsername,
-                        password = config.proxyPassword
-                    )
-                } catch (e: Exception) {
-                    AppLogger.e("WebViewManager", "Failed to apply proxy config", e)
-                }
-            }
-
-            GeckoViewEngine.applyProxyConfig(
-                ProxyConfig(
-                    mode = proxyMode,
-                    host = proxyHost,
-                    port = proxyPort,
-                    type = proxyType,
-                    pacUrl = pacUrl,
+        if (tlsFingerprintEnabled) {
+            val template = TlsFingerprintTemplate.fromId(config.tlsFingerprintTemplate)
+            val upstreamSocks = if (config.proxyMode == "STATIC" &&
+                (config.proxyType == "SOCKS5" || config.proxyType == "SOCKS")) {
+                LocalHttpToSocksBridge.Upstream(
+                    host = config.proxyHost,
+                    port = config.proxyPort,
                     username = config.proxyUsername,
                     password = config.proxyPassword
                 )
-            )
-        } else {
-            proxyApplyJob?.cancel()
-            PacProxyManager(context).clearProxy()
-
-            GeckoViewEngine.applyProxyConfig(
-                ProxyConfig(mode = "NONE")
-            )
-            if (hostsMappingCanApply || dohCanApplyViaLocalProxy) {
-                val bridgePort = LocalHttpHostMappingBridge.start(
-                    config = LocalHttpHostMappingBridge.Config(
-                        mappings = if (hostsMappingCanApply) config.hostsMappings else emptyList(),
-                        dnsMode = config.dnsMode,
-                        dnsConfig = config.dnsConfig
-                    ),
-                    dnsManager = dnsManager
-                )
-                if (bridgePort > 0) {
-                    val bridgeMode = if (hostsMappingCanApply && dohCanApplyViaLocalProxy) {
-                        "hosts mapping + DoH"
-                    } else if (dohCanApplyViaLocalProxy) {
-                        "DoH"
-                    } else {
-                        "hosts mapping"
-                    }
-                    AppLogger.d("WebViewManager", "Applying $bridgeMode proxy on 127.0.0.1:$bridgePort")
-                    proxyApplyJob = proxyScope.launch {
-                        try {
-                            PacProxyManager(context).applyProxy(
-                                proxyMode = "STATIC",
-                                staticProxyHost = "127.0.0.1",
-                                staticProxyPort = bridgePort,
-                                staticProxyType = "HTTP",
-                                bypassRules = emptyList()
-                            )
-                        } catch (e: Exception) {
-                            AppLogger.e("WebViewManager", "Failed to apply local DNS/hosts proxy", e)
-                        }
-                    }
-                } else {
-                    AppLogger.w("WebViewManager", "Local DNS/hosts bridge failed to start")
-                }
             } else {
-                LocalHttpHostMappingBridge.stop()
-                if (hostsMappingEnabled) {
-                    AppLogger.w("WebViewManager", "Hosts mapping skipped because proxyMode=${config.proxyMode}")
-                }
+                null
             }
+
+            val mitmPort = TlsMitmBridge.start(
+                config = TlsMitmBridge.Config(
+                    template = template,
+                    customCipherSuites = if (TlsFingerprintTemplate.isCustom(config.tlsFingerprintTemplate)) {
+                        config.tlsFingerprintCustomCiphers
+                    } else {
+                        emptyList()
+                    },
+                    upstreamSocks = upstreamSocks
+                ),
+                caDir = context.filesDir
+            )
+
+            if (mitmPort > 0) {
+                AppLogger.d("WebViewManager", "TLS MITM bridge started on 127.0.0.1:$mitmPort template=${template.id} socks=${upstreamSocks != null}")
+                GeckoViewEngine.setTlsMitmActive(true)
+                proxyApplyJob?.cancel()
+                proxyApplyJob = proxyScope.launch {
+                    try {
+                        PacProxyManager(context).applyProxy(
+                            proxyMode = "STATIC",
+                            staticProxyHost = "127.0.0.1",
+                            staticProxyPort = mitmPort,
+                            staticProxyType = "HTTP",
+                            bypassRules = emptyList()
+                        )
+                    } catch (e: Exception) {
+                        AppLogger.e("WebViewManager", "Failed to apply TLS MITM proxy", e)
+                    }
+                }
+
+                GeckoViewEngine.applyProxyConfig(
+                    ProxyConfig(
+                        mode = "STATIC",
+                        host = "127.0.0.1",
+                        port = mitmPort,
+                        type = "HTTP"
+                    )
+                )
+
+                LocalHttpHostMappingBridge.stop()
+                LocalHttpToSocksBridge.stop()
+            } else {
+                AppLogger.e("WebViewManager", "TLS MITM bridge failed to start, falling back to normal proxy")
+                TlsMitmBridge.stop()
+                applyNormalProxy(config, dnsManager, hostsMappingCanApply, dohCanApplyViaLocalProxy, hostsMappingEnabled)
+            }
+        } else {
+            TlsMitmBridge.stop()
+            GeckoViewEngine.setTlsMitmActive(false)
+            applyNormalProxy(config, dnsManager, hostsMappingCanApply, dohCanApplyViaLocalProxy, hostsMappingEnabled)
         }
 
         managedWebViews[webView] = true
@@ -1562,6 +1542,103 @@ class WebViewManager(
         startExtensionPanelSync(webView)
     }
 
+    private fun applyNormalProxy(
+        config: WebViewConfig,
+        dnsManager: com.webtoapp.core.dns.DnsManager,
+        hostsMappingCanApply: Boolean,
+        dohCanApplyViaLocalProxy: Boolean,
+        hostsMappingEnabled: Boolean
+    ) {
+        if (config.proxyMode != "NONE") {
+            LocalHttpHostMappingBridge.stop()
+            AppLogger.d("WebViewManager", "Applying proxy: mode=${config.proxyMode}")
+
+            val proxyManager = PacProxyManager(context)
+            val proxyMode = config.proxyMode
+            val proxyHost = config.proxyHost
+            val proxyPort = config.proxyPort
+            val proxyType = config.proxyType
+            val pacUrl = config.pacUrl
+            val bypassRules = config.proxyBypassRules
+            proxyApplyJob?.cancel()
+            proxyApplyJob = proxyScope.launch {
+                try {
+                    proxyManager.applyProxy(
+                        proxyMode = proxyMode,
+                        staticProxyHost = proxyHost,
+                        staticProxyPort = proxyPort,
+                        staticProxyType = proxyType,
+                        pacUrl = pacUrl,
+                        bypassRules = bypassRules,
+                        username = config.proxyUsername,
+                        password = config.proxyPassword
+                    )
+                } catch (e: Exception) {
+                    AppLogger.e("WebViewManager", "Failed to apply proxy config", e)
+                }
+            }
+
+            GeckoViewEngine.applyProxyConfig(
+                ProxyConfig(
+                    mode = proxyMode,
+                    host = proxyHost,
+                    port = proxyPort,
+                    type = proxyType,
+                    pacUrl = pacUrl,
+                    username = config.proxyUsername,
+                    password = config.proxyPassword
+                )
+            )
+        } else {
+            proxyApplyJob?.cancel()
+            PacProxyManager(context).clearProxy()
+
+            GeckoViewEngine.applyProxyConfig(
+                ProxyConfig(mode = "NONE")
+            )
+            if (hostsMappingCanApply || dohCanApplyViaLocalProxy) {
+                val bridgePort = LocalHttpHostMappingBridge.start(
+                    config = LocalHttpHostMappingBridge.Config(
+                        mappings = if (hostsMappingCanApply) config.hostsMappings else emptyList(),
+                        dnsMode = config.dnsMode,
+                        dnsConfig = config.dnsConfig
+                    ),
+                    dnsManager = dnsManager
+                )
+                if (bridgePort > 0) {
+                    val bridgeMode = if (hostsMappingCanApply && dohCanApplyViaLocalProxy) {
+                        "hosts mapping + DoH"
+                    } else if (dohCanApplyViaLocalProxy) {
+                        "DoH"
+                    } else {
+                        "hosts mapping"
+                    }
+                    AppLogger.d("WebViewManager", "Applying $bridgeMode proxy on 127.0.0.1:$bridgePort")
+                    proxyApplyJob = proxyScope.launch {
+                        try {
+                            PacProxyManager(context).applyProxy(
+                                proxyMode = "STATIC",
+                                staticProxyHost = "127.0.0.1",
+                                staticProxyPort = bridgePort,
+                                staticProxyType = "HTTP",
+                                bypassRules = emptyList()
+                            )
+                        } catch (e: Exception) {
+                            AppLogger.e("WebViewManager", "Failed to apply local DNS/hosts proxy", e)
+                        }
+                    }
+                } else {
+                    AppLogger.w("WebViewManager", "Local DNS/hosts bridge failed to start")
+                }
+            } else {
+                LocalHttpHostMappingBridge.stop()
+                if (hostsMappingEnabled) {
+                    AppLogger.w("WebViewManager", "Hosts mapping skipped because proxyMode=${config.proxyMode}")
+                }
+            }
+        }
+    }
+
     private fun resolveUserAgent(config: WebViewConfig): String? {
         AppLogger.d("WebViewManager", "resolveUserAgent: userAgentMode=${config.userAgentMode}, customUserAgent=${config.customUserAgent?.take(30)}, desktopMode=${config.desktopMode}")
 
@@ -1759,16 +1836,6 @@ class WebViewManager(
                 val isUserGesture = request.hasGesture()
                 if (request.isForMainFrame) {
                     AppLogger.d("WebViewManager", "Main-frame navigation request: $url")
-                }
-
-                if (request.isForMainFrame && OAuthCompatEngine.isOAuthUrl(url)) {
-                    val provider = OAuthCompatEngine.getProviderType(url)
-                    AppLogger.i("WebViewManager", "OAuth main-frame intercepted [$provider], routing to CCT: $url")
-                    if (launchInCustomTab(url)) {
-
-                        return true
-                    }
-
                 }
 
                 if (handleSpecialUrl(url, isUserGesture)) {
@@ -2349,6 +2416,12 @@ class WebViewManager(
                     true
                 }
 
+                if (TlsMitmBridge.isRunning() && isMitmSslError(error)) {
+                    AppLogger.d("WebViewManager", "Proceeding with MITM TLS certificate for: $errorUrl")
+                    handler?.proceed()
+                    return
+                }
+
                 if (!isMainFrameSslError) {
 
                     handler?.cancel()
@@ -2598,65 +2671,6 @@ class WebViewManager(
         }
     }
 
-    private fun isCustomTabAvailable(): Boolean {
-        return try {
-            val pm = context.packageManager
-
-            val chromePackages = listOf(
-                "com.android.chrome",
-                "com.chrome.beta",
-                "com.chrome.dev",
-                "com.chrome.canary",
-                "com.brave.browser",
-                "com.microsoft.emmx",
-                "org.mozilla.firefox",
-                "com.opera.browser"
-            )
-            val hasKnownCctBrowser = chromePackages.any { pkg ->
-                try {
-                    pm.getPackageInfo(pkg, 0)
-                    true
-                } catch (_: Exception) {
-                    false
-                }
-            }
-            if (hasKnownCctBrowser) return true
-
-            val serviceIntent = android.content.Intent("android.support.customtabs.action.CustomTabsService")
-            val resolvedServices = pm.queryIntentServices(serviceIntent, 0)
-            resolvedServices.isNotEmpty()
-        } catch (e: Exception) {
-            AppLogger.w("WebViewManager", "Failed to check CCT availability", e)
-            false
-        }
-    }
-
-    private fun launchInCustomTab(url: String): Boolean {
-        return try {
-
-            if (isCustomTabAvailable()) {
-                val customTabsIntent = CustomTabsIntent.Builder()
-                    .setShowTitle(true)
-                    .setUrlBarHidingEnabled(false)
-                    .build()
-                customTabsIntent.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                customTabsIntent.launchUrl(context, Uri.parse(url))
-                AppLogger.i("WebViewManager", "OAuth → CCT: $url")
-                return true
-            }
-
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-            AppLogger.i("WebViewManager", "OAuth → external browser (no CCT): $url")
-            true
-        } catch (e: Exception) {
-
-            AppLogger.e("WebViewManager", "Failed to launch CCT/external browser for OAuth: $url", e)
-            false
-        }
-    }
-
     private fun shouldUseConservativeScriptMode(pageUrl: String?): Boolean {
         val url = pageUrl?.takeIf { it.isNotBlank() } ?: return false
         val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return false
@@ -2702,6 +2716,28 @@ class WebViewManager(
 
         return com.webtoapp.core.perf.NativePerfEngine.extractHost(target)?.lowercase()
             ?: runCatching { Uri.parse(target).host?.lowercase() }.getOrNull()
+    }
+
+    private fun isMitmSslError(error: android.net.http.SslError?): Boolean {
+        if (error == null) return false
+        val cert = error.certificate?.let { sslCert ->
+            try {
+                val certField = sslCert.javaClass.getDeclaredField("mX509Certificate")
+                certField.isAccessible = true
+                certField.get(sslCert) as? java.security.cert.X509Certificate
+            } catch (_: Exception) {
+                null
+            }
+        }
+        if (cert != null) {
+            return TlsMitmCaManager.isSignedByLocalCa(cert)
+        }
+        return TlsMitmBridge.isRunning() && (
+            error.primaryError == android.net.http.SslError.SSL_UNTRUSTED ||
+            error.primaryError == android.net.http.SslError.SSL_EXPIRED ||
+            error.primaryError == android.net.http.SslError.SSL_NOTYETVALID ||
+            error.primaryError == android.net.http.SslError.SSL_IDMISMATCH
+        )
     }
 
     private fun refetchWithHeaderModifications(
@@ -2944,14 +2980,6 @@ class WebViewManager(
                                 override fun shouldOverrideUrlLoading(tempView: WebView?, request: WebResourceRequest?): Boolean {
                                     val url = request?.url?.toString()
                                     if (url != null) {
-
-                                        if (OAuthCompatEngine.isOAuthUrl(url)) {
-                                            AppLogger.i("WebViewManager", "OAuth popup intercepted (SAME_WINDOW), routing to CCT: $url")
-                                            if (launchInCustomTab(url)) {
-                                                tempView?.destroy()
-                                                return true
-                                            }
-                                        }
                                         val safeUrl = normalizeHttpUrlForSecurity(url)
                                         originalWebView.loadUrl(safeUrl)
                                         tempView?.destroy()
@@ -2974,16 +3002,10 @@ class WebViewManager(
                                     val url = request?.url?.toString()
                                     if (url != null) {
                                         try {
-
-                                            if (OAuthCompatEngine.isOAuthUrl(url)) {
-                                                AppLogger.i("WebViewManager", "OAuth popup intercepted (EXTERNAL_BROWSER), routing to CCT: $url")
-                                                launchInCustomTab(url)
-                                            } else {
-                                                val safeUrl = normalizeHttpUrlForSecurity(url)
-                                                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(safeUrl))
-                                                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                                                context.startActivity(intent)
-                                            }
+                                            val safeUrl = normalizeHttpUrlForSecurity(url)
+                                            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(safeUrl))
+                                            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                            context.startActivity(intent)
                                         } catch (e: Exception) {
                                             AppLogger.e("WebViewManager", "Cannot open external browser: $url", e)
                                         }
