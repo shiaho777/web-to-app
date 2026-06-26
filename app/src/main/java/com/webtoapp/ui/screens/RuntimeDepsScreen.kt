@@ -1,7 +1,6 @@
 package com.webtoapp.ui.screens
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -67,7 +66,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -83,6 +81,8 @@ import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.PremiumFilterChip
 import com.webtoapp.ui.components.PremiumOutlinedButton
 import com.webtoapp.ui.design.WtaBadge
+import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.theme.AppColors
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
@@ -734,36 +734,24 @@ private fun StatusOverviewCard(
     onResume: () -> Unit,
     onCancel: () -> Unit = {}
 ) {
-    val gradientColors = if (allReady) {
-        listOf(com.webtoapp.ui.design.WtaColors.semantic.success, MaterialTheme.colorScheme.primary)
-    } else {
-        listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.tertiary)
-    }
-
-    Surface(
+    WtaCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(WtaRadius.Card),
-        color = Color.Transparent
+        tone = WtaCardTone.Surface,
+        contentPadding = PaddingValues(16.dp)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Brush.linearGradient(gradientColors))
-                .padding(16.dp)
-        ) {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Box(
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                Box(
                         modifier = Modifier
                             .size(48.dp)
                             .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.2f)),
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                     ) {
                         if (isDownloading && !isPaused) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(28.dp),
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 strokeWidth = 2.5.dp
                             )
                         } else {
@@ -774,7 +762,8 @@ private fun StatusOverviewCard(
                                     else -> Icons.Outlined.Speed
                                 },
                                 contentDescription = null,
-                                tint = Color.White,
+                                tint = if (allReady) WtaColors.semantic.success
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(28.dp)
                             )
                         }
@@ -784,26 +773,26 @@ private fun StatusOverviewCard(
                         Text(
                             text = if (allReady) Strings.depAllReady else Strings.depSomeNotReady,
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
                             text = "$readyCount / $totalCount",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.85f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = formatSize(totalCacheSize),
                             style = MaterialTheme.typography.titleLarge,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
                             text = Strings.depTotalStorage,
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.75f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -813,7 +802,7 @@ private fun StatusOverviewCard(
                     Text(
                         text = if (isPaused) "${Strings.depDlPaused} · $downloadLabel" else downloadLabel,
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.9f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(6.dp))
                     LinearProgressIndicator(
@@ -821,9 +810,10 @@ private fun StatusOverviewCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
-                        .clip(RoundedCornerShape(WtaRadius.Button)),
-                        color = if (isPaused) Color.White.copy(alpha = 0.5f) else Color.White,
-                        trackColor = Color.White.copy(alpha = 0.25f)
+                            .clip(RoundedCornerShape(WtaRadius.Button)),
+                        color = if (isPaused) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            else MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
 
                     when (val dlState = engineState) {
@@ -833,33 +823,33 @@ private fun StatusOverviewCard(
                                 Text(
                                     text = "${DependencyDownloadEngine.formatSize(dlState.bytesDownloaded)} / ${DependencyDownloadEngine.formatSize(dlState.totalBytes)}",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White.copy(alpha = 0.8f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = DependencyDownloadEngine.formatSpeed(dlState.speedBytesPerSec),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White.copy(alpha = 0.8f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = "${Strings.depDlEta} ${DependencyDownloadEngine.formatEta(dlState.etaSeconds)}",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White.copy(alpha = 0.8f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(modifier = Modifier.weight(1f))
                                 IconButton(onClick = { if (isPaused) onResume() else onPause() }) {
                                     Icon(
                                         imageVector = if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
                                         contentDescription = if (isPaused) Strings.depDlResume else Strings.depDlPause,
-                                        tint = Color.White
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 IconButton(onClick = onCancel) {
                                     Icon(
                                         imageVector = Icons.Filled.Close,
                                         contentDescription = Strings.depDlCancel,
-                                        tint = Color.White
+                                        tint = MaterialTheme.colorScheme.error
                                     )
                                 }
                             }
@@ -870,28 +860,28 @@ private fun StatusOverviewCard(
                                 Text(
                                     text = "${DependencyDownloadEngine.formatSize(dlState.bytesDownloaded)} / ${DependencyDownloadEngine.formatSize(dlState.totalBytes)} · ${Strings.depDlPaused}",
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White.copy(alpha = 0.8f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(modifier = Modifier.weight(1f))
                                 IconButton(onClick = { if (isPaused) onResume() else onPause() }) {
                                     Icon(
                                         imageVector = if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
                                         contentDescription = if (isPaused) Strings.depDlResume else Strings.depDlPause,
-                                        tint = Color.White
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                                 IconButton(onClick = onCancel) {
                                     Icon(
                                         imageVector = Icons.Filled.Close,
                                         contentDescription = Strings.depDlCancel,
-                                        tint = Color.White
+                                        tint = MaterialTheme.colorScheme.error
                                     )
                                 }
                             }
                         }
                         else -> Unit
                     }
-                }
+                      }
             }
         }
     }
