@@ -165,7 +165,7 @@ class PrintBridge(
                     ?: Strings.printDocument
 
                 val printAdapter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    WebView.createPrintDocumentAdapter(webView, jobName)
+                    webView.createPrintDocumentAdapter(jobName)
                 } else {
                     @Suppress("DEPRECATION")
                     webView.createPrintDocumentAdapter()
