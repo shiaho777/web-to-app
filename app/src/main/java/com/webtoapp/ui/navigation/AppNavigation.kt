@@ -315,7 +315,6 @@ fun AppNavigation() {
                             enableJavaScript = enableJs,
                             enableLocalStorage = enableStorage,
                             loadMode = loadMode,
-                            landscapeMode = landscape,
                             port = port,
                             portConflictMode = portConflictMode
                         )
@@ -568,7 +567,6 @@ fun AppNavigation() {
                             enableJavaScript = enableJs,
                             enableLocalStorage = enableStorage,
                             loadMode = loadMode,
-                            landscapeMode = landscape,
                             port = port,
                             portConflictMode = portConflictMode
                         )

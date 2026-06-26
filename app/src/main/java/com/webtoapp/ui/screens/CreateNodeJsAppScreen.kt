@@ -69,7 +69,6 @@ fun CreateNodeJsAppScreen(
 
     var buildMode by remember { mutableStateOf(NodeJsBuildMode.API_BACKEND) }
     var entryFile by remember { mutableStateOf("index.js") }
-    var landscapeMode by remember { mutableStateOf(false) }
     var envVars by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var newEnvKey by remember { mutableStateOf("") }
     var newEnvValue by remember { mutableStateOf("") }
@@ -117,7 +116,6 @@ fun CreateNodeJsAppScreen(
                 app.nodejsConfig?.let { config ->
                     buildMode = config.buildMode
                     entryFile = config.entryFile
-                    landscapeMode = config.landscapeMode
                     envVars = config.envVars.toMutableMap()
                     customNodeExtensions = config.customNodeExtensions
                     detectedFramework = config.framework
@@ -342,7 +340,6 @@ fun CreateNodeJsAppScreen(
             envVars = envVars,
             hasNodeModules = dependencies.isNotEmpty(),
             nodeVersion = nodeEngineVersion ?: "",
-            landscapeMode = landscapeMode,
             customNodeExtensions = customNodeExtensions
         )
     }

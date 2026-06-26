@@ -71,7 +71,6 @@ fun CreateWordPressAppScreen(
     var adminUser by remember { mutableStateOf("admin") }
     var adminEmail by remember { mutableStateOf("") }
     var adminPassword by remember { mutableStateOf("admin") }
-    var landscapeMode by remember { mutableStateOf(false) }
     var sourceType by remember { mutableStateOf("BLANK") }
 
     var permalink by remember { mutableStateOf("postname") }
@@ -225,7 +224,6 @@ fun CreateWordPressAppScreen(
                                 siteLanguage = siteLanguage,
                                 autoInstall = true,
                                 sourceType = sourceType,
-                                landscapeMode = landscapeMode,
                                 customPhpExtensions = customPhpExtensions
                             ),
                             appIcon,
@@ -337,16 +335,6 @@ fun CreateWordPressAppScreen(
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(Strings.wpLandscapeMode)
-                        WtaSwitch(checked = landscapeMode, onCheckedChange = { landscapeMode = it })
-                    }
                 }
             }
 

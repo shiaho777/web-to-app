@@ -2664,7 +2664,6 @@ fun WebViewScreen(
                             displayMode = multiWebConfig.displayMode,
                             refreshInterval = multiWebConfig.refreshInterval,
                             showSiteIcons = multiWebConfig.showSiteIcons,
-                            landscapeMode = multiWebConfig.landscapeMode,
                             projectId = multiWebConfig.projectId
                         ),
                         extensionModuleIds = mwApp.extensionModuleIds,

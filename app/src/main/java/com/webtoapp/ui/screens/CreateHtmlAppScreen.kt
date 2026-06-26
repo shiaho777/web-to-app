@@ -79,8 +79,7 @@ private data class HtmlEditorStateSnapshot(
     val appIcon: Uri? = null,
     val enableJavaScript: Boolean = true,
     val enableLocalStorage: Boolean = true,
-    val loadMode: HtmlLoadMode = HtmlLoadMode.FILE,
-    val landscapeMode: Boolean = false
+    val loadMode: HtmlLoadMode = HtmlLoadMode.FILE
 )
 
 private fun HtmlProjectProcessor.ProjectIssue.isActionableAnalysisIssue(): Boolean {
@@ -107,10 +106,9 @@ fun CreateHtmlAppScreen(
         enableJavaScript: Boolean,
         enableLocalStorage: Boolean,
         loadMode: HtmlLoadMode,
-        landscapeMode: Boolean,
         port: Int,
         portConflictMode: PortConflictMode
-    ) -> Unit = { _, _, _, _, _, _, _, _, _, _ -> },
+    ) -> Unit = { _, _, _, _, _, _, _, _, _ -> },
     importDir: String? = null,
     importProjectName: String? = null
 ) {
@@ -153,7 +151,6 @@ fun CreateHtmlAppScreen(
     var loadMode by remember { mutableStateOf(HtmlLoadMode.FILE) }
     var serverPort by remember { mutableStateOf(0) }
     var portConflictMode by remember { mutableStateOf(PortConflictMode.AUTO_KILL) }
-    var landscapeMode by remember { mutableStateOf(false) }
 
     var themeType by remember { mutableStateOf("AURORA") }
 
@@ -195,7 +192,6 @@ fun CreateHtmlAppScreen(
                 loadMode = config.loadMode
                 serverPort = config.port
                 portConflictMode = config.portConflictMode
-                landscapeMode = config.landscapeMode
             }
 
             themeType = app.themeType
@@ -355,8 +351,7 @@ fun CreateHtmlAppScreen(
                 appIcon = appIcon,
                 enableJavaScript = enableJavaScript,
                 enableLocalStorage = enableLocalStorage,
-                loadMode = loadMode,
-                landscapeMode = landscapeMode
+                loadMode = loadMode
             )
         }
     }
@@ -370,20 +365,18 @@ fun CreateHtmlAppScreen(
                 appIcon = appIcon,
                 enableJavaScript = enableJavaScript,
                 enableLocalStorage = enableLocalStorage,
-                loadMode = loadMode,
-                landscapeMode = landscapeMode
+                loadMode = loadMode
             )
         }
     }
 
-    val hasUnsavedChanges = remember(appName, manualFiles, appIcon, enableJavaScript, enableLocalStorage, loadMode, serverPort, portConflictMode, landscapeMode, baselineSnapshot) {
+    val hasUnsavedChanges = remember(appName, manualFiles, appIcon, enableJavaScript, enableLocalStorage, loadMode, serverPort, portConflictMode, baselineSnapshot) {
         appName != baselineSnapshot.appName ||
         manualFiles != baselineSnapshot.manualFiles ||
         appIcon != baselineSnapshot.appIcon ||
         enableJavaScript != baselineSnapshot.enableJavaScript ||
         enableLocalStorage != baselineSnapshot.enableLocalStorage ||
-        loadMode != baselineSnapshot.loadMode ||
-        landscapeMode != baselineSnapshot.landscapeMode
+        loadMode != baselineSnapshot.loadMode
     }
     var showExitConfirmDialog by remember { mutableStateOf(false) }
 
@@ -506,7 +499,6 @@ fun CreateHtmlAppScreen(
                                         enableJavaScript = enableJavaScript,
                                         enableLocalStorage = enableLocalStorage,
                                         loadMode = loadMode,
-                                        landscapeMode = landscapeMode,
                                         port = serverPort,
                                         portConflictMode = portConflictMode
                                     )
@@ -524,7 +516,6 @@ fun CreateHtmlAppScreen(
                                     enableJavaScript = enableJavaScript,
                                     enableLocalStorage = enableLocalStorage,
                                     loadMode = loadMode,
-                                    landscapeMode = landscapeMode,
                                     port = serverPort,
                                     portConflictMode = portConflictMode
                                 )
@@ -557,7 +548,6 @@ fun CreateHtmlAppScreen(
                                             enableJavaScript,
                                             enableLocalStorage,
                                             loadMode,
-                                            landscapeMode,
                                             serverPort,
                                             portConflictMode
                                         )
@@ -571,7 +561,6 @@ fun CreateHtmlAppScreen(
                                         enableJavaScript,
                                         enableLocalStorage,
                                         loadMode,
-                                        landscapeMode,
                                         serverPort,
                                         portConflictMode
                                     )
@@ -599,7 +588,6 @@ fun CreateHtmlAppScreen(
                                             enableJavaScript,
                                             enableLocalStorage,
                                             loadMode,
-                                            landscapeMode,
                                             serverPort,
                                             portConflictMode
                                         )
@@ -613,7 +601,6 @@ fun CreateHtmlAppScreen(
                                         enableJavaScript,
                                         enableLocalStorage,
                                         loadMode,
-                                        landscapeMode,
                                         serverPort,
                                         portConflictMode
                                     )
@@ -1126,29 +1113,6 @@ fun CreateHtmlAppScreen(
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    if (!isEditMode) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                            Text(Strings.landscapeModeLabel)
-                            Text(
-                                text = Strings.landscapeModeHintHtml,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        WtaSwitch(
-                            checked = landscapeMode,
-                            onCheckedChange = { landscapeMode = it }
-                        )
-                    }
-                    }
 
                     Spacer(modifier = Modifier.height(8.dp))
                     HorizontalDivider()

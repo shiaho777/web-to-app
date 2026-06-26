@@ -370,7 +370,6 @@ internal object ApkConfigJsonFactory {
         "enableJavaScript" to html.enableJavaScript,
         "enableLocalStorage" to html.enableLocalStorage,
         "backgroundColor" to html.backgroundColor,
-        "landscapeMode" to html.landscapeMode,
         "loadMode" to html.loadMode,
         "port" to html.port,
         "portConflictMode" to html.portConflictMode
@@ -483,7 +482,6 @@ internal object ApkConfigJsonFactory {
         "siteLanguage" to wordpress.siteLanguage,
         "autoInstall" to wordpress.autoInstall,
         "phpPort" to wordpress.phpPort,
-        "landscapeMode" to wordpress.landscapeMode,
         "customPhpExtensions" to wordpress.customPhpExtensions
     )
 
@@ -492,7 +490,6 @@ internal object ApkConfigJsonFactory {
         "port" to nodejs.port,
         "entryFile" to nodejs.entryFile,
         "envVars" to nodejs.envVars,
-        "landscapeMode" to nodejs.landscapeMode,
         "customNodeExtensions" to nodejs.customNodeExtensions
     )
 
@@ -502,7 +499,6 @@ internal object ApkConfigJsonFactory {
         "entryFile" to phpApp.entryFile,
         "port" to phpApp.port,
         "envVars" to phpApp.envVars,
-        "landscapeMode" to phpApp.landscapeMode,
         "phpExtensions" to phpApp.phpExtensions,
         "customPhpExtensions" to phpApp.customPhpExtensions
     )
@@ -514,7 +510,6 @@ internal object ApkConfigJsonFactory {
         "serverType" to pythonApp.serverType,
         "port" to pythonApp.port,
         "envVars" to pythonApp.envVars,
-        "landscapeMode" to pythonApp.landscapeMode,
         "customPythonExtensions" to pythonApp.customPythonExtensions
     )
 
@@ -524,8 +519,7 @@ internal object ApkConfigJsonFactory {
         "targetArch" to goApp.targetArch,
         "port" to goApp.port,
         "staticDir" to goApp.staticDir,
-        "envVars" to goApp.envVars,
-        "landscapeMode" to goApp.landscapeMode
+        "envVars" to goApp.envVars
     )
 
     private fun ApkConfig.multiWebConfigPayload(): Map<String, Any?> = linkedMapOf(
@@ -533,7 +527,6 @@ internal object ApkConfigJsonFactory {
         "displayMode" to multiWeb.displayMode,
         "refreshInterval" to multiWeb.refreshInterval,
         "showSiteIcons" to multiWeb.showSiteIcons,
-        "landscapeMode" to multiWeb.landscapeMode,
         "projectId" to multiWeb.projectId
     )
 

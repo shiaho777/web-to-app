@@ -50,7 +50,6 @@ fun CreateMultiWebAppScreen(
 
     var appName by remember { mutableStateOf("") }
     var appIcon by remember { mutableStateOf<Uri?>(null) }
-    var landscapeMode by remember { mutableStateOf(false) }
     var injectScripts by remember { mutableStateOf<List<com.webtoapp.data.model.UserScript>>(emptyList()) }
 
     var sites by remember { mutableStateOf<List<MultiWebSite>>(emptyList()) }
@@ -88,7 +87,6 @@ fun CreateMultiWebAppScreen(
                 app.multiWebConfig?.let { config ->
                     sites = config.sites
                     refreshInterval = config.refreshInterval
-                    landscapeMode = config.landscapeMode
                 }
                 injectScripts = app.webViewConfig.injectScripts
             }
@@ -115,7 +113,6 @@ fun CreateMultiWebAppScreen(
                             displayMode = "TABS",
                             refreshInterval = refreshInterval,
                             showSiteIcons = true,
-                            landscapeMode = landscapeMode,
                             projectId = ""
                         ),
                         appIcon,

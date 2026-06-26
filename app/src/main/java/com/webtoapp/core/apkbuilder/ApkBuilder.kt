@@ -3390,7 +3390,6 @@ private fun com.webtoapp.data.model.HtmlConfig?.toHtmlBlock(): HtmlBlock = HtmlB
     enableJavaScript = this?.enableJavaScript ?: true,
     enableLocalStorage = this?.enableLocalStorage ?: true,
     backgroundColor = this?.backgroundColor ?: "#FFFFFF",
-    landscapeMode = this?.landscapeMode ?: false,
     loadMode = this?.loadMode?.name ?: HtmlLoadMode.AUTO.name,
     port = this?.port ?: 0,
     portConflictMode = this?.portConflictMode?.name ?: "AUTO_KILL"
@@ -3544,7 +3543,6 @@ private fun WebApp.buildWordpressBlock(): WordpressBlock = WordpressBlock(
     siteLanguage = wordpressConfig?.siteLanguage ?: "zh_CN",
     autoInstall = wordpressConfig?.autoInstall ?: true,
     phpPort = wordpressConfig?.phpPort ?: 0,
-    landscapeMode = wordpressConfig?.landscapeMode ?: false,
     customPhpExtensions = wordpressConfig?.customPhpExtensions ?: emptyList()
 )
 
@@ -3553,7 +3551,6 @@ private fun WebApp.buildNodejsBlock(): NodejsBlock = NodejsBlock(
     port = nodejsConfig?.serverPort ?: 0,
     entryFile = nodejsConfig?.entryFile ?: "",
     envVars = nodejsConfig?.envVars ?: emptyMap(),
-    landscapeMode = nodejsConfig?.landscapeMode ?: false,
     customNodeExtensions = nodejsConfig?.customNodeExtensions ?: emptyList()
 )
 
@@ -3563,7 +3560,6 @@ private fun WebApp.buildPhpAppBlock(): PhpAppBlock = PhpAppBlock(
     entryFile = phpAppConfig?.entryFile ?: "index.php",
     port = phpAppConfig?.phpPort ?: 0,
     envVars = phpAppConfig?.envVars ?: emptyMap(),
-    landscapeMode = phpAppConfig?.landscapeMode ?: false,
     phpExtensions = phpAppConfig?.phpExtensions ?: emptyMap(),
     customPhpExtensions = phpAppConfig?.customPhpExtensions ?: emptyList()
 )
@@ -3575,7 +3571,6 @@ private fun WebApp.buildPythonAppBlock(): PythonAppBlock = PythonAppBlock(
     serverType = pythonAppConfig?.serverType ?: "builtin",
     port = pythonAppConfig?.serverPort ?: 0,
     envVars = pythonAppConfig?.envVars ?: emptyMap(),
-    landscapeMode = pythonAppConfig?.landscapeMode ?: false,
     customPythonExtensions = pythonAppConfig?.customPythonExtensions ?: emptyList()
 )
 
@@ -3585,8 +3580,7 @@ private fun WebApp.buildGoAppBlock(): GoAppBlock = GoAppBlock(
     targetArch = goAppConfig?.targetArch ?: "arm64-v8a",
     port = goAppConfig?.serverPort ?: 0,
     staticDir = goAppConfig?.staticDir ?: "",
-    envVars = goAppConfig?.envVars ?: emptyMap(),
-    landscapeMode = goAppConfig?.landscapeMode ?: false
+    envVars = goAppConfig?.envVars ?: emptyMap()
 )
 
 private fun WebApp.buildMultiWebBlock(context: android.content.Context?, packageName: String): MultiWebBlock {
@@ -3629,7 +3623,6 @@ private fun WebApp.buildMultiWebBlock(context: android.content.Context?, package
         displayMode = multiWebConfig?.displayMode ?: "TABS",
         refreshInterval = multiWebConfig?.refreshInterval ?: 30,
         showSiteIcons = multiWebConfig?.showSiteIcons ?: true,
-        landscapeMode = multiWebConfig?.landscapeMode ?: false,
         projectId = multiWebConfig?.projectId ?: ""
     )
 }

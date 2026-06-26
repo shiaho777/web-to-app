@@ -61,7 +61,6 @@ fun CreatePythonAppScreen(
     var entryFile by remember { mutableStateOf("app.py") }
     var entryModule by remember { mutableStateOf("") }
     var serverType by remember { mutableStateOf("builtin") }
-    var landscapeMode by remember { mutableStateOf(false) }
     var envVars by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var newEnvKey by remember { mutableStateOf("") }
     var newEnvValue by remember { mutableStateOf("") }
@@ -103,7 +102,6 @@ fun CreatePythonAppScreen(
                     entryFile = config.entryFile
                     entryModule = config.entryModule
                     serverType = config.serverType
-                    landscapeMode = config.landscapeMode
                     envVars = config.envVars.toMutableMap()
                     customPythonExtensions = config.customPythonExtensions
                     detectedFramework = config.framework
@@ -338,7 +336,6 @@ fun CreatePythonAppScreen(
                                 envVars = envVars,
                                 requirementsFile = if (localProjectDir?.let { File(it, "requirements.txt").exists() } == true) "requirements.txt" else "",
                                 hasPipDeps = localProjectDir?.let { File(it, "requirements.txt").exists() } ?: false,
-                                landscapeMode = landscapeMode,
                                 customPythonExtensions = customPythonExtensions
                             ),
                             appIcon,

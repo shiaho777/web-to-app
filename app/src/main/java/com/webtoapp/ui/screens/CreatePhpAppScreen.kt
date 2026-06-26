@@ -67,7 +67,6 @@ fun CreatePhpAppScreen(
 
     var documentRoot by remember { mutableStateOf("") }
     var entryFile by remember { mutableStateOf("index.php") }
-    var landscapeMode by remember { mutableStateOf(false) }
     var envVars by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var newEnvKey by remember { mutableStateOf("") }
     var newEnvValue by remember { mutableStateOf("") }
@@ -118,7 +117,6 @@ fun CreatePhpAppScreen(
                 app.phpAppConfig?.let { config ->
                     documentRoot = config.documentRoot
                     entryFile = config.entryFile
-                    landscapeMode = config.landscapeMode
                     envVars = config.envVars.toMutableMap()
                     detectedFramework = config.framework
                     projectId = config.projectId
@@ -369,7 +367,6 @@ fun CreatePhpAppScreen(
                                 entryFile = entryFile,
                                 envVars = envVars,
                                 hasComposerJson = localProjectDir?.let { File(it, "composer.json").exists() } ?: false,
-                                landscapeMode = landscapeMode,
                                 phpExtensions = phpExtensions,
                                 customPhpExtensions = customPhpExtensions
                             ),

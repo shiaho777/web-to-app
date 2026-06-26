@@ -785,9 +785,6 @@ data class WordPressShellConfig(
     @SerializedName("phpPort")
     val phpPort: Int = 0,
 
-    @SerializedName("landscapeMode")
-    val landscapeMode: Boolean = false,
-
     @SerializedName("customPhpExtensions")
     val customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
 )
@@ -804,9 +801,6 @@ data class NodeJsShellConfig(
 
     @SerializedName("envVars")
     val envVars: Map<String, String> = emptyMap(),
-
-    @SerializedName("landscapeMode")
-    val landscapeMode: Boolean = false,
 
     @SerializedName("customNodeExtensions")
     val customNodeExtensions: List<com.webtoapp.data.model.CustomNodeExtension> = emptyList()
@@ -827,9 +821,6 @@ data class PhpAppShellConfig(
 
     @SerializedName("envVars")
     val envVars: Map<String, String> = emptyMap(),
-
-    @SerializedName("landscapeMode")
-    val landscapeMode: Boolean = false,
 
     @SerializedName("phpExtensions")
     val phpExtensions: Map<String, Boolean> = emptyMap(),
@@ -857,9 +848,6 @@ data class PythonAppShellConfig(
     @SerializedName("envVars")
     val envVars: Map<String, String> = emptyMap(),
 
-    @SerializedName("landscapeMode")
-    val landscapeMode: Boolean = false,
-
     @SerializedName("customPythonExtensions")
     val customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> = emptyList()
 )
@@ -881,10 +869,7 @@ data class GoAppShellConfig(
     val staticDir: String = "",
 
     @SerializedName("envVars")
-    val envVars: Map<String, String> = emptyMap(),
-
-    @SerializedName("landscapeMode")
-    val landscapeMode: Boolean = false
+    val envVars: Map<String, String> = emptyMap()
 )
 
 data class MultiWebShellConfig(
@@ -899,9 +884,6 @@ data class MultiWebShellConfig(
 
     @SerializedName("showSiteIcons")
     val showSiteIcons: Boolean = true,
-
-    @SerializedName("landscapeMode")
-    val landscapeMode: Boolean = false,
 
     @SerializedName("projectId")
     val projectId: String = ""
@@ -985,9 +967,6 @@ data class HtmlShellConfig(
 
     @SerializedName("backgroundColor")
     val backgroundColor: String = "#FFFFFF",
-
-    @SerializedName("landscapeMode")
-    val landscapeMode: Boolean = false,
 
     @SerializedName("loadMode")
     val loadMode: String = "AUTO",

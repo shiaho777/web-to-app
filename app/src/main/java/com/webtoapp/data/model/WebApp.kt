@@ -701,7 +701,6 @@ data class NodeJsConfig(
     val envVars: Map<String, String> = emptyMap(),
     val hasNodeModules: Boolean = false,
     val nodeVersion: String = "",
-    val landscapeMode: Boolean = false,
     val customNodeExtensions: List<CustomNodeExtension> = emptyList()
 )
 
@@ -721,7 +720,6 @@ data class WordPressConfig(
     val sourceType: String = "BLANK",
     val sourceProjectId: String = "",
     val phpPort: Int = 0,
-    val landscapeMode: Boolean = false,
     val customPhpExtensions: List<CustomPhpExtension> = emptyList()
 )
 
@@ -734,7 +732,6 @@ data class PhpAppConfig(
     val phpPort: Int = 0,
     val envVars: Map<String, String> = emptyMap(),
     val hasComposerJson: Boolean = false,
-    val landscapeMode: Boolean = false,
     val phpExtensions: Map<String, Boolean> = emptyMap(),
     val customPhpExtensions: List<CustomPhpExtension> = emptyList()
 )
@@ -786,7 +783,6 @@ data class PythonAppConfig(
     val pythonVersion: String = "",
     val requirementsFile: String = "requirements.txt",
     val hasPipDeps: Boolean = false,
-    val landscapeMode: Boolean = false,
     val customPythonExtensions: List<CustomPythonExtension> = emptyList()
 )
 
@@ -798,8 +794,7 @@ data class GoAppConfig(
     val targetArch: String = "arm64",
     val serverPort: Int = 0,
     val envVars: Map<String, String> = emptyMap(),
-    val staticDir: String = "",
-    val landscapeMode: Boolean = false
+    val staticDir: String = ""
 )
 
 data class MultiWebConfig(
@@ -807,7 +802,6 @@ data class MultiWebConfig(
     val displayMode: String = "TABS",
     val refreshInterval: Int = 30,
     val showSiteIcons: Boolean = true,
-    val landscapeMode: Boolean = false,
     val projectId: String = ""
 )
 
@@ -861,7 +855,6 @@ data class HtmlConfig(
     val enableLocalStorage: Boolean = true,
     val allowFileAccess: Boolean = true,
     val backgroundColor: String = "#FFFFFF",
-    val landscapeMode: Boolean = false,
     val loadMode: HtmlLoadMode = HtmlLoadMode.FILE,
     val port: Int = 0,
     val portConflictMode: PortConflictMode = PortConflictMode.AUTO_KILL

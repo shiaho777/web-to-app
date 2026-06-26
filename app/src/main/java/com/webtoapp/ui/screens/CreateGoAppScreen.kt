@@ -60,7 +60,6 @@ fun CreateGoAppScreen(
 
     var binaryName by remember { mutableStateOf("") }
     var staticDir by remember { mutableStateOf("") }
-    var landscapeMode by remember { mutableStateOf(false) }
     var envVars by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var newEnvKey by remember { mutableStateOf("") }
     var newEnvValue by remember { mutableStateOf("") }
@@ -111,7 +110,6 @@ fun CreateGoAppScreen(
                 app.goAppConfig?.let { config ->
                     binaryName = config.binaryName
                     staticDir = config.staticDir
-                    landscapeMode = config.landscapeMode
                     envVars = config.envVars.toMutableMap()
                     detectedFramework = config.framework
                     projectId = config.projectId
@@ -263,7 +261,6 @@ fun CreateGoAppScreen(
                                 serverPort = 0,
                                 envVars = envVars,
                                 staticDir = staticDir,
-                                landscapeMode = landscapeMode
                             ),
                             appIcon,
                             "AURORA"

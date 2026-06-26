@@ -785,7 +785,6 @@ class MainViewModel(
         enableJavaScript: Boolean = true,
         enableLocalStorage: Boolean = true,
         loadMode: HtmlLoadMode = HtmlLoadMode.FILE,
-        landscapeMode: Boolean = false,
         port: Int = 0,
         portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL
     ) = createApp("HTML", iconUri) { savedIconPath, currentThemeType, categoryId ->
@@ -815,7 +814,6 @@ class MainViewModel(
                 enableJavaScript = enableJavaScript,
                 enableLocalStorage = enableLocalStorage,
                 loadMode = loadMode,
-                landscapeMode = landscapeMode,
                 port = port,
                 portConflictMode = portConflictMode
             ),
@@ -1301,7 +1299,6 @@ class MainViewModel(
         enableJavaScript: Boolean = true,
         enableLocalStorage: Boolean = true,
         loadMode: HtmlLoadMode = HtmlLoadMode.FILE,
-        landscapeMode: Boolean = false,
         port: Int = 0,
         portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL
     ) = updateApp(appId, "HTML", iconUri) { existingApp, savedIconPath ->
@@ -1332,7 +1329,6 @@ class MainViewModel(
             enableJavaScript = enableJavaScript,
             enableLocalStorage = enableLocalStorage,
             loadMode = loadMode,
-            landscapeMode = landscapeMode,
             port = port,
             portConflictMode = portConflictMode
         )

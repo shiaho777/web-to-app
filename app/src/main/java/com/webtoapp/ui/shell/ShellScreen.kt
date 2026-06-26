@@ -187,15 +187,8 @@ fun ShellScreen(
         } else {
 
             val typeSpecificLandscape = when (appType) {
-                "HTML", "FRONTEND" -> config.htmlConfig.landscapeMode
                 "IMAGE", "VIDEO" -> config.mediaConfig.landscape
                 "GALLERY" -> config.galleryConfig.orientation.uppercase() == "LANDSCAPE"
-                "WORDPRESS" -> config.wordpressConfig.landscapeMode
-                "NODEJS_APP" -> config.nodejsConfig.landscapeMode
-                "PHP_APP" -> config.phpAppConfig.landscapeMode
-                "PYTHON_APP" -> config.pythonAppConfig.landscapeMode
-                "GO_APP" -> config.goAppConfig.landscapeMode
-                "MULTI_WEB" -> config.multiWebConfig.landscapeMode
                 else -> config.webViewConfig.landscapeMode
             }
             if (typeSpecificLandscape) "LANDSCAPE" else "PORTRAIT"
