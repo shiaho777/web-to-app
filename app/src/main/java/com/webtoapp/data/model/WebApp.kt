@@ -718,7 +718,8 @@ data class WordPressConfig(
     val sourceType: String = "BLANK",
     val sourceProjectId: String = "",
     val phpPort: Int = 0,
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+    val customPhpExtensions: List<CustomPhpExtension> = emptyList()
 )
 
 data class CustomPhpExtension(

@@ -51,7 +51,7 @@ class WordPressPhpRuntime(private val context: Context) {
         return WordPressDependencyManager.isPhpReady(context)
     }
 
-    suspend fun startServer(documentRoot: String, port: Int = 0): Int = withContext(Dispatchers.IO) {
+    suspend fun startServer(documentRoot: String, port: Int = 0, customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()): Int = withContext(Dispatchers.IO) {
         try {
 
             if (!isPhpAvailable()) {
@@ -81,9 +81,10 @@ class WordPressPhpRuntime(private val context: Context) {
 
             val phpBinary = getPhpBinaryPath()
             val routerScript = extractRouterScript()
+            val customExtDir = prepareCustomExtensionsDir(documentRoot, customPhpExtensions)
             val command = buildPhpCommand(
                 WordPressDependencyManager.buildPhpExecPrefix(context),
-                serverPort, documentRoot, routerScript
+                serverPort, documentRoot, routerScript, customPhpExtensions, customExtDir
             )
 
             AppLogger.i(TAG, "启动 PHP 服务器: ${command.joinToString(" ")}")
@@ -205,7 +206,7 @@ class WordPressPhpRuntime(private val context: Context) {
         return scriptFile.absolutePath
     }
 
-    private fun buildPhpCommand(execPrefix: List<String>, serverPort: Int, documentRoot: String, routerScript: String): List<String> {
+    private fun buildPhpCommand(execPrefix: List<String>, serverPort: Int, documentRoot: String, routerScript: String, customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList(), customExtDir: File? = null): List<String> {
         val tmpDir = context.cacheDir.absolutePath
         val sessionDir = File(context.filesDir, "wordpress_deps/php/sessions")
         sessionDir.mkdirs()
@@ -246,10 +247,26 @@ class WordPressPhpRuntime(private val context: Context) {
             "opcache.jit_buffer_size" to "0"
         )
 
+        customExtDir?.let {
+            iniSettings["extension_dir"] = it.absolutePath
+        }
+
         iniSettings.forEach { (key, value) ->
             phpArgs.add("-d")
             phpArgs.add("$key=$value")
         }
+
+        customPhpExtensions
+            .filter { it.enabled && it.name.isNotBlank() }
+            .sortedBy { it.loadOrder }
+            .forEach { ext ->
+                val directive = when (ext.kind) {
+                    com.webtoapp.data.model.CustomPhpExtension.Kind.EXTENSION -> "extension"
+                    com.webtoapp.data.model.CustomPhpExtension.Kind.ZEND_EXTENSION -> "zend_extension"
+                }
+                phpArgs.add("-d")
+                phpArgs.add("$directive=${ext.effectiveSoName()}")
+            }
 
         phpArgs.add(routerScript)
         phpArgs.add(serverPort.toString())
@@ -257,6 +274,33 @@ class WordPressPhpRuntime(private val context: Context) {
         phpArgs.add("index.php")
 
         return phpArgs
+    }
+
+    private fun prepareCustomExtensionsDir(
+        documentRoot: String,
+        customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension>
+    ): File? {
+        if (customPhpExtensions.isEmpty()) return null
+
+        val projectExtDir = File(documentRoot, "php_exts")
+        val runtimeExtDir = File(context.filesDir, "php_app_deps/ext/wp_${File(documentRoot).name}")
+        runtimeExtDir.deleteRecursively()
+        runtimeExtDir.mkdirs()
+
+        if (projectExtDir.isDirectory) {
+            projectExtDir.listFiles()?.filter { it.isFile && it.extension == "so" }?.forEach { soFile ->
+                try {
+                    val dest = File(runtimeExtDir, soFile.name)
+                    soFile.copyTo(dest, overwrite = true)
+                    dest.setExecutable(true, false)
+                    AppLogger.d(TAG, "已复制自定义扩展: ${soFile.name}")
+                } catch (e: Exception) {
+                    AppLogger.w(TAG, "复制自定义扩展失败: ${soFile.name}", e)
+                }
+            }
+        }
+
+        return runtimeExtDir.takeIf { it.exists() }
     }
 
     private suspend fun waitForServerReady(port: Int): Boolean {

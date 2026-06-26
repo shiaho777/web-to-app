@@ -4,6 +4,8 @@ import android.content.Context
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.Strings
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.zip.ZipFile
 
@@ -24,6 +26,9 @@ object SampleProjectExtractor {
 
     private const val SAMPLE_CONTENT_VERSION = 6
 
+    private val hiddenAssetsLock = Any()
+    private val hiddenAssetsCache = mutableMapOf<String, Set<String>>()
+
     fun getLanguageSuffix(): String {
         return when (Strings.currentLanguage.value) {
             AppLanguage.CHINESE -> ""
@@ -36,8 +41,8 @@ object SampleProjectExtractor {
         context: Context,
         projectId: String,
         forceRefresh: Boolean = false
-    ): Result<String> {
-        return try {
+    ): Result<String> = withContext(Dispatchers.IO) {
+        try {
             val outputDir = File(context.filesDir, "sample_projects/$projectId")
 
             val versionFile = File(outputDir, ".version")
@@ -48,7 +53,7 @@ object SampleProjectExtractor {
 
                 if (outputDir.listFiles()?.any { it.name != ".version" } == true) {
                     AppLogger.d(TAG, "示例项目已存在且版本匹配: ${outputDir.absolutePath}")
-                    return Result.success(outputDir.absolutePath)
+                    return@withContext Result.success(outputDir.absolutePath)
                 }
             }
 
@@ -120,30 +125,39 @@ object SampleProjectExtractor {
         targetDir: File,
         visibleNames: Set<String>,
     ) {
-        val sourceApk = context.applicationInfo?.sourceDir?.takeIf { it.isNotBlank() } ?: return
-        val apkFile = File(sourceApk)
-        if (!apkFile.exists() || !apkFile.isFile) return
-
-        val prefix = "assets/${assetPath.trimStart('/')}/"
-
-        val hiddenChildren = mutableSetOf<String>()
-        try {
-            ZipFile(apkFile).use { zip ->
-                val entries = zip.entries()
-                while (entries.hasMoreElements()) {
-                    val name = entries.nextElement().name
-                    if (!name.startsWith(prefix)) continue
-                    val rel = name.removePrefix(prefix)
-                    if (rel.isEmpty()) continue
-                    val firstSeg = rel.substringBefore('/')
-                    if (firstSeg.startsWith(".") && firstSeg !in visibleNames) {
-                        hiddenChildren.add(firstSeg)
+        val hiddenChildren = synchronized(hiddenAssetsLock) {
+            hiddenAssetsCache[assetPath]?.let { cached ->
+                cached - visibleNames
+            } ?: run {
+                val sourceApk = context.applicationInfo?.sourceDir?.takeIf { it.isNotBlank() }
+                val apkFile = sourceApk?.let { File(it) }
+                if (apkFile == null || !apkFile.exists() || !apkFile.isFile) {
+                    hiddenAssetsCache[assetPath] = emptySet()
+                    emptySet()
+                } else {
+                    val prefix = "assets/${assetPath.trimStart('/')}/"
+                    val collected = mutableSetOf<String>()
+                    try {
+                        ZipFile(apkFile).use { zip ->
+                            val entries = zip.entries()
+                            while (entries.hasMoreElements()) {
+                                val name = entries.nextElement().name
+                                if (!name.startsWith(prefix)) continue
+                                val rel = name.removePrefix(prefix)
+                                if (rel.isEmpty()) continue
+                                val firstSeg = rel.substringBefore('/')
+                                if (firstSeg.startsWith(".")) {
+                                    collected.add(firstSeg)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        AppLogger.w(TAG, "扫描 APK 隐藏 assets 失败: $assetPath", e)
                     }
+                    hiddenAssetsCache[assetPath] = collected
+                    collected - visibleNames
                 }
             }
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "扫描 APK 隐藏 assets 失败: $assetPath", e)
-            return
         }
 
         if (hiddenChildren.isEmpty()) return
@@ -186,10 +200,7 @@ object SampleProjectExtractor {
         AppLogger.i(TAG, "复制共享 sample 依赖: $assetPath -> ${target.absolutePath}")
         copyAssetFolder(context, assetPath, target)
         if (!target.walkTopDown().any { it.isFile }) {
-            val copied = copyAssetFolderFromApk(context, assetPath, target)
-            if (!copied) {
-                AppLogger.w(TAG, "共享 sample 依赖为空: $assetPath（如果是 Go vendor 还没预生成可忽略）")
-            }
+            AppLogger.w(TAG, "共享 sample 依赖为空: $assetPath（如果是 Go vendor 还没预生成可忽略）")
         }
     }
 

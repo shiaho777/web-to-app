@@ -786,7 +786,10 @@ data class WordPressShellConfig(
     val phpPort: Int = 0,
 
     @SerializedName("landscapeMode")
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+
+    @SerializedName("customPhpExtensions")
+    val customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
 )
 
 data class NodeJsShellConfig(

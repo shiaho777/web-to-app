@@ -481,7 +481,8 @@ internal object ApkConfigJsonFactory {
         "siteLanguage" to wordpress.siteLanguage,
         "autoInstall" to wordpress.autoInstall,
         "phpPort" to wordpress.phpPort,
-        "landscapeMode" to wordpress.landscapeMode
+        "landscapeMode" to wordpress.landscapeMode,
+        "customPhpExtensions" to wordpress.customPhpExtensions
     )
 
     private fun ApkConfig.nodejsConfigPayload(): Map<String, Any?> = linkedMapOf(

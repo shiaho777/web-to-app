@@ -271,7 +271,11 @@ object ShellServerLauncher {
             }
 
             val runtime = com.webtoapp.core.wordpress.WordPressPhpRuntime(context)
-            val port = runtime.startServer(wpDir.absolutePath, config.wordpressConfig.phpPort)
+            val port = runtime.startServer(
+                wpDir.absolutePath,
+                config.wordpressConfig.phpPort,
+                config.wordpressConfig.customPhpExtensions
+            )
             if (port <= 0) {
                 runtime.stopServer()
                 return LaunchResult(

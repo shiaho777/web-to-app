@@ -3538,7 +3538,8 @@ private fun WebApp.buildWordpressBlock(): WordpressBlock = WordpressBlock(
     siteLanguage = wordpressConfig?.siteLanguage ?: "zh_CN",
     autoInstall = wordpressConfig?.autoInstall ?: true,
     phpPort = wordpressConfig?.phpPort ?: 0,
-    landscapeMode = wordpressConfig?.landscapeMode ?: false
+    landscapeMode = wordpressConfig?.landscapeMode ?: false,
+    customPhpExtensions = wordpressConfig?.customPhpExtensions ?: emptyList()
 )
 
 private fun WebApp.buildNodejsBlock(): NodejsBlock = NodejsBlock(

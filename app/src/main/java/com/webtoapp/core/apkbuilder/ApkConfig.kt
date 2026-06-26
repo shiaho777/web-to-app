@@ -774,7 +774,8 @@ data class WordpressBlock(
     val siteLanguage: String = "zh_CN",
     val autoInstall: Boolean = true,
     val phpPort: Int = 0,
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+    val customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
 )
 
 data class NodejsBlock(
