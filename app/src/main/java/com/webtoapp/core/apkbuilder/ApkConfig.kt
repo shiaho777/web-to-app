@@ -161,6 +161,7 @@ data class ApkConfig(
     val enableCorsBypass: Boolean get() = webViewBehavior.enableCorsBypass
     val allowMixedContent: Boolean get() = webViewBehavior.allowMixedContent
     val enableBlobDownloadInterception: Boolean get() = webViewBehavior.enableBlobDownloadInterception
+    val downloadEnabled: Boolean get() = webViewBehavior.downloadEnabled
     val enableCloudflareCompat: Boolean get() = webViewBehavior.enableCloudflareCompat
     val primeUserActivation: Boolean get() = webViewBehavior.primeUserActivation
 
