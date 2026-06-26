@@ -23746,6 +23746,18 @@ object Strings {
         AppLanguage.ARABIC -> "تم تعطيل مصدر Hosts"
     }
 
+    val downloading: String get() = when (lang) {
+        AppLanguage.CHINESE -> "下载中"
+        AppLanguage.ENGLISH -> "Downloading"
+        AppLanguage.ARABIC -> "جاري التنزيل"
+    }
+
+    val downloadCanceled: String get() = when (lang) {
+        AppLanguage.CHINESE -> "下载已取消"
+        AppLanguage.ENGLISH -> "Download canceled"
+        AppLanguage.ARABIC -> "تم إلغاء التنزيل"
+    }
+
     val hostsSourcesSummary: String get() = when (lang) {
         AppLanguage.CHINESE -> "已启用 %d / 已下载 %d"
         AppLanguage.ENGLISH -> "Enabled %d / Downloaded %d"

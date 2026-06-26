@@ -5,6 +5,7 @@ import android.net.Uri
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
 import java.io.File
@@ -1593,7 +1594,14 @@ class AdBlocker {
         }
     }
 
-    suspend fun importHostsFromUrl(url: String, context: Context? = null): Result<Int> = withContext(Dispatchers.IO) {
+    suspend fun importHostsFromUrl(url: String, context: Context? = null): Result<Int> =
+        importHostsFromUrl(url, context, null)
+
+    suspend fun importHostsFromUrl(
+        url: String,
+        context: Context? = null,
+        onProgress: ((DownloadProgress) -> Unit)?
+    ): Result<Int> = withContext(Dispatchers.IO) {
         try {
 
             var content: String? = null
@@ -1608,11 +1616,36 @@ class AdBlocker {
                 connection.readTimeout = 30000
                 connection.setRequestProperty("User-Agent", "WebToApp/1.0")
                 if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                    connection.disconnect()
                     return@withContext Result.failure(
                         Exception("HTTP ${connection.responseCode}: ${connection.responseMessage}")
                     )
                 }
-                content = connection.inputStream.use { it.bufferedReader().readText() }
+
+                val totalBytes = connection.contentLengthLong
+                val startTime = System.currentTimeMillis()
+                content = connection.inputStream.use { stream ->
+                    val buffer = ByteArray(8192)
+                    val builder = StringBuilder()
+                    var downloaded = 0L
+                    while (true) {
+                        ensureActive()
+                        val read = stream.read(buffer)
+                        if (read <= 0) break
+                        downloaded += read
+                        builder.append(String(buffer, 0, read))
+                        if (onProgress != null) {
+                            onProgress(
+                                DownloadProgress(
+                                    downloadedBytes = downloaded,
+                                    totalBytes = totalBytes,
+                                    elapsedMillis = System.currentTimeMillis() - startTime
+                                )
+                            )
+                        }
+                    }
+                    builder.toString()
+                }
                 connection.disconnect()
 
                 if (context != null) {
@@ -1620,6 +1653,13 @@ class AdBlocker {
                 }
             }
 
+            onProgress?.invoke(
+                DownloadProgress(
+                    downloadedBytes = content.length.toLong(),
+                    totalBytes = content.length.toLong(),
+                    elapsedMillis = 0
+                )
+            )
             val count = parseFilterContent(content)
             enabledHostsSources.add(url)
             disabledHostsSources.remove(url)
@@ -2043,3 +2083,19 @@ data class HostsSource(
     val url: String,
     val description: String
 )
+
+data class DownloadProgress(
+    val downloadedBytes: Long,
+    val totalBytes: Long,
+    val elapsedMillis: Long
+) {
+    val isIndeterminate: Boolean get() = totalBytes <= 0
+    val fraction: Float get() = if (isIndeterminate) 0f else (downloadedBytes.toFloat() / totalBytes).coerceIn(0f, 1f)
+    val speedBytesPerSec: Long get() = if (elapsedMillis > 0) (downloadedBytes * 1000 / elapsedMillis) else 0
+    val etaSeconds: Long get() {
+        val speed = speedBytesPerSec
+        if (speed <= 0 || isIndeterminate) return -1
+        val remaining = totalBytes - downloadedBytes
+        return if (remaining <= 0) 0 else remaining / speed
+    }
+}

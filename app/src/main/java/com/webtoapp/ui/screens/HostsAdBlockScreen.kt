@@ -4,6 +4,11 @@ import android.net.Uri
 import com.webtoapp.ui.components.PremiumOutlinedButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,7 +28,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.adblock.AdBlocker
 import com.webtoapp.core.adblock.HostsSource
+import com.webtoapp.core.adblock.DownloadProgress
 import com.webtoapp.core.i18n.Strings
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import com.webtoapp.ui.design.WtaBackground
 import androidx.compose.ui.graphics.Color
@@ -40,7 +47,6 @@ fun HostsAdBlockScreen(
     val adBlocker = remember { org.koin.java.KoinJavaComponent.get<com.webtoapp.core.adblock.AdBlocker>(com.webtoapp.core.adblock.AdBlocker::class.java) }
 
     var hostsRulesCount by remember { mutableIntStateOf(adBlocker.getImportedHostsRuleCount()) }
-    var isImporting by remember { mutableStateOf(false) }
     var showUrlDialog by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
     var showDeleteSourceDialog by remember { mutableStateOf<HostsSource?>(null) }
@@ -49,12 +55,15 @@ fun HostsAdBlockScreen(
     var enabledSources by remember { mutableStateOf(adBlocker.getEnabledHostsSources()) }
     var disabledSources by remember { mutableStateOf(adBlocker.getDisabledHostsSources()) }
 
+    val downloadProgress = remember { mutableStateMapOf<String, DownloadProgress>() }
+    val downloadJobs = remember { mutableStateMapOf<String, Job>() }
+    var expandedSources by remember { mutableStateOf(emptySet<String>()) }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             scope.launch {
-                isImporting = true
                 val result = adBlocker.importHostsFromFile(context, it)
                 result.fold(
                     onSuccess = { count ->
@@ -72,7 +81,6 @@ fun HostsAdBlockScreen(
                         )
                     }
                 )
-                isImporting = false
             }
         }
     }
@@ -186,8 +194,7 @@ fun HostsAdBlockScreen(
 
                     EnhancedElevatedCard(
                         onClick = { filePickerLauncher.launch("*/*") },
-                        modifier = Modifier.weight(weight = 1f, fill = true),
-                        enabled = !isImporting
+                        modifier = Modifier.weight(weight = 1f, fill = true)
                     ) {
                         Column(
                             modifier = Modifier
@@ -210,8 +217,7 @@ fun HostsAdBlockScreen(
 
                     EnhancedElevatedCard(
                         onClick = { showUrlDialog = true },
-                        modifier = Modifier.weight(weight = 1f, fill = true),
-                        enabled = !isImporting
+                        modifier = Modifier.weight(weight = 1f, fill = true)
                     ) {
                         Column(
                             modifier = Modifier
@@ -246,33 +252,59 @@ fun HostsAdBlockScreen(
             items(AdBlocker.POPULAR_HOSTS_SOURCES) { source ->
                 val isDownloaded = enabledSources.contains(source.url) || disabledSources.contains(source.url)
                 val isEnabled = enabledSources.contains(source.url)
+                val isDownloading = downloadProgress.containsKey(source.url)
+                val progress = downloadProgress[source.url]
+                val isExpanded = expandedSources.contains(source.url)
+
                 HostsSourceCard(
                     source = source,
                     isDownloaded = isDownloaded,
                     isEnabled = isEnabled,
-                    isImporting = isImporting,
+                    isDownloading = isDownloading,
+                    progress = progress,
+                    isExpanded = isExpanded,
                     onImport = {
-                        scope.launch {
-                            isImporting = true
-                            val result = adBlocker.importHostsFromUrl(source.url, context)
+                        expandedSources = expandedSources + source.url
+                        val job = scope.launch {
+                            downloadProgress[source.url] = DownloadProgress(0, 0, 0)
+                            val result = adBlocker.importHostsFromUrl(source.url, context) { p ->
+                                downloadProgress[source.url] = p
+                            }
+                            downloadProgress.remove(source.url)
+                            downloadJobs.remove(source.url)
                             result.fold(
                                 onSuccess = { count ->
                                     hostsRulesCount = adBlocker.getImportedHostsRuleCount()
                                     enabledSources = adBlocker.getEnabledHostsSources()
                                     disabledSources = adBlocker.getDisabledHostsSources()
                                     adBlocker.saveHostsRules(context)
+                                    expandedSources = expandedSources - source.url
                                     snackbarHostState.showSnackbar(
                                         String.format(java.util.Locale.getDefault(), Strings.importHostsSuccess, count)
                                     )
                                 },
                                 onFailure = { error ->
-                                    snackbarHostState.showSnackbar(
-                                        "${Strings.importHostsFailed}: ${error.message}"
-                                    )
+                                    if (error is kotlinx.coroutines.CancellationException) {
+                                        snackbarHostState.showSnackbar(Strings.downloadCanceled)
+                                    } else {
+                                        snackbarHostState.showSnackbar(
+                                            "${Strings.importHostsFailed}: ${error.message}"
+                                        )
+                                    }
+                                    expandedSources = expandedSources - source.url
                                 }
                             )
-                            isImporting = false
                         }
+                        downloadJobs[source.url] = job
+                    },
+                    onToggleDownload = {
+                        downloadJobs[source.url]?.cancel()
+                        downloadProgress.remove(source.url)
+                        downloadJobs.remove(source.url)
+                        expandedSources = expandedSources - source.url
+                    },
+                    onToggleExpand = {
+                        expandedSources = if (isExpanded) expandedSources - source.url else expandedSources + source.url
                     },
                     onToggle = {
                         scope.launch {
@@ -337,29 +369,11 @@ fun HostsAdBlockScreen(
                 }
             }
         }
-
-        if (isImporting) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Card {
-                    Row(
-                        modifier = Modifier.padding(24.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Text(Strings.importingHosts)
-                    }
-                }
-            }
-        }
     }
 
     if (showUrlDialog) {
         AlertDialog(
-            onDismissRequest = { if (!isImporting) showUrlDialog = false },
+            onDismissRequest = { showUrlDialog = false },
             title = { Text(Strings.importFromUrl) },
             text = {
                 Column {
@@ -369,8 +383,7 @@ fun HostsAdBlockScreen(
                         label = { Text(Strings.importHostsUrl) },
                         placeholder = { Text(Strings.importHostsUrlHint) },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isImporting
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             },
@@ -379,7 +392,6 @@ fun HostsAdBlockScreen(
                     onClick = {
                         if (importUrl.isNotBlank()) {
                             scope.launch {
-                                isImporting = true
                                 showUrlDialog = false
                                 val result = adBlocker.importHostsFromUrl(importUrl, context)
                                 result.fold(
@@ -399,20 +411,16 @@ fun HostsAdBlockScreen(
                                         )
                                     }
                                 )
-                                isImporting = false
                             }
                         }
                     },
-                    enabled = importUrl.isNotBlank() && !isImporting
+                    enabled = importUrl.isNotBlank()
                 ) {
                     Text(Strings.downloadAndImport)
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = { showUrlDialog = false; importUrl = "" },
-                    enabled = !isImporting
-                ) {
+                TextButton(onClick = { showUrlDialog = false; importUrl = "" }) {
                     Text(Strings.btnCancel)
                 }
             }
@@ -492,8 +500,12 @@ private fun HostsSourceCard(
     source: HostsSource,
     isDownloaded: Boolean,
     isEnabled: Boolean,
-    isImporting: Boolean,
+    isDownloading: Boolean,
+    progress: DownloadProgress?,
+    isExpanded: Boolean,
     onImport: () -> Unit,
+    onToggleDownload: () -> Unit,
+    onToggleExpand: () -> Unit,
     onToggle: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -517,7 +529,20 @@ private fun HostsSourceCard(
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Medium
                         )
-                        if (isDownloaded) {
+                        if (isDownloading) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.tertiaryContainer
+                            ) {
+                                Text(
+                                    Strings.downloading,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    color = MaterialTheme.colorScheme.tertiary
+                                )
+                            }
+                        } else if (isDownloaded) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Surface(
                                 shape = MaterialTheme.shapes.small,
@@ -543,85 +568,166 @@ private fun HostsSourceCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            if (isDownloaded) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    FilledTonalButton(
-                        onClick = onImport,
-                        enabled = !isImporting,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
+                if (isDownloading) {
+                    IconButton(onClick = onToggleExpand, modifier = Modifier.size(28.dp)) {
                         Icon(
-                            Icons.Outlined.Refresh,
+                            if (isExpanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(Strings.retry, style = MaterialTheme.typography.labelMedium)
-                    }
-
-                    FilledTonalButton(
-                        onClick = onToggle,
-                        enabled = !isImporting,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(
-                            if (isEnabled) Icons.Outlined.Block else Icons.Outlined.CheckCircle,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            if (isEnabled) Strings.disable else Strings.enable,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                    }
-
-                    FilledTonalButton(
-                        onClick = onDelete,
-                        enabled = !isImporting,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Icon(
-                            Icons.Outlined.Delete,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(Strings.delete, style = MaterialTheme.typography.labelMedium)
                     }
                 }
-            } else {
-                FilledTonalButton(
-                    onClick = onImport,
-                    enabled = !isImporting,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        Icons.Outlined.Download,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        Strings.downloadAndImport,
-                        style = MaterialTheme.typography.labelMedium
-                    )
+            }
+
+            AnimatedVisibility(
+                visible = isDownloading && isExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                DownloadProgressPanel(
+                    progress = progress,
+                    onCancel = onToggleDownload
+                )
+            }
+
+            if (!isDownloading) {
+                Spacer(modifier = Modifier.height(12.dp))
+                if (isDownloaded) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        FilledTonalButton(
+                            onClick = onImport,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Outlined.Refresh, null, Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(Strings.retry, style = MaterialTheme.typography.labelMedium)
+                        }
+
+                        FilledTonalButton(
+                            onClick = onToggle,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                if (isEnabled) Icons.Outlined.Block else Icons.Outlined.CheckCircle,
+                                null, Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                if (isEnabled) Strings.disable else Strings.enable,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+
+                        FilledTonalButton(
+                            onClick = onDelete,
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                            colors = ButtonDefaults.filledTonalButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Icon(Icons.Outlined.Delete, null, Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(Strings.delete, style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                } else {
+                    FilledTonalButton(
+                        onClick = onImport,
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Outlined.Download, null, Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(Strings.downloadAndImport, style = MaterialTheme.typography.labelMedium)
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DownloadProgressPanel(
+    progress: DownloadProgress?,
+    onCancel: () -> Unit
+) {
+    val p = progress ?: DownloadProgress(0, 0, 0)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+    ) {
+        if (p.isIndeterminate) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.tertiary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        } else {
+            LinearProgressIndicator(
+                progress = { p.fraction },
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.tertiary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                formatDownloadStats(p),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            TextButton(
+                onClick = onCancel,
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+            ) {
+                Icon(Icons.Outlined.Cancel, null, Modifier.size(14.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(Strings.cancel, style = MaterialTheme.typography.labelSmall)
+            }
+        }
+    }
+}
+
+private fun formatDownloadStats(p: DownloadProgress): String {
+    val downloaded = formatBytes(p.downloadedBytes)
+    return if (p.isIndeterminate) {
+        downloaded
+    } else {
+        val total = formatBytes(p.totalBytes)
+        val percent = (p.fraction * 100).toInt()
+        val eta = p.etaSeconds
+        val etaStr = if (eta < 0) "" else " · ${formatEta(eta)}"
+        "$downloaded / $total ($percent%)$etaStr"
+    }
+}
+
+private fun formatBytes(bytes: Long): String {
+    if (bytes < 1024) return "${bytes} B"
+    val kb = bytes / 1024.0
+    if (kb < 1024) return String.format(java.util.Locale.getDefault(), "%.1f KB", kb)
+    val mb = kb / 1024.0
+    return String.format(java.util.Locale.getDefault(), "%.1f MB", mb)
+}
+
+private fun formatEta(seconds: Long): String {
+    return when {
+        seconds < 60 -> "${seconds}s"
+        seconds < 3600 -> "${seconds / 60}m ${seconds % 60}s"
+        else -> "${seconds / 3600}h ${(seconds % 3600) / 60}m"
     }
 }
