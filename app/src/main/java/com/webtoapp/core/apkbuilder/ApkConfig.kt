@@ -792,7 +792,8 @@ data class PhpAppBlock(
     val port: Int = 0,
     val envVars: Map<String, String> = emptyMap(),
     val landscapeMode: Boolean = false,
-    val phpExtensions: Map<String, Boolean> = emptyMap()
+    val phpExtensions: Map<String, Boolean> = emptyMap(),
+    val customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
 )
 
 data class PythonAppBlock(

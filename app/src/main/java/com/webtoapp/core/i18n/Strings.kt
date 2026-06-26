@@ -26483,6 +26483,41 @@ object Strings {
         AppLanguage.ENGLISH -> "Enable PHP extensions required by your project"
         AppLanguage.ARABIC -> "تمكين إضافات PHP المطلوبة لمشروعك"
     }
+    val phpCustomExtensions: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自定义扩展"
+        AppLanguage.ENGLISH -> "Custom Extensions"
+        AppLanguage.ARABIC -> "الإضافات المخصصة"
+    }
+    val phpAddCustomExtension: String get() = when (lang) {
+        AppLanguage.CHINESE -> "添加自定义扩展"
+        AppLanguage.ENGLISH -> "Add Custom Extension"
+        AppLanguage.ARABIC -> "إضافة إضافة مخصصة"
+    }
+    val phpAddCustomExtensionButton: String get() = when (lang) {
+        AppLanguage.CHINESE -> "添加扩展"
+        AppLanguage.ENGLISH -> "Add Extension"
+        AppLanguage.ARABIC -> "إضافة الإضافة"
+    }
+    val phpCustomExtensionHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "将 .so 文件放入项目 php_exts/ 目录。扩展名用于加载指令，.so 文件名留空则自动补全。"
+        AppLanguage.ENGLISH -> "Place .so files in project php_exts/. Extension name is used for the load directive; leave .so filename blank to auto-complete."
+        AppLanguage.ARABIC -> "ضع ملفات .so في دليل المشروع php_exts/. يستخدم اسم الإضافة لتوجيه التحميل؛ اترك اسم ملف .so فارغاً للإكمال التلقائي."
+    }
+    val phpCustomExtensionName: String get() = when (lang) {
+        AppLanguage.CHINESE -> "扩展名"
+        AppLanguage.ENGLISH -> "Extension Name"
+        AppLanguage.ARABIC -> "اسم الإضافة"
+    }
+    val phpCustomExtensionSoName: String get() = when (lang) {
+        AppLanguage.CHINESE -> ".so 文件名（可选）"
+        AppLanguage.ENGLISH -> ".so Filename (Optional)"
+        AppLanguage.ARABIC -> "اسم ملف .so (اختياري)"
+    }
+    val phpCustomExtensionOrder: String get() = when (lang) {
+        AppLanguage.CHINESE -> "加载顺序"
+        AppLanguage.ENGLISH -> "Load Order"
+        AppLanguage.ARABIC -> "ترتيب التحميل"
+    }
     val phpDatabaseConfig: String get() = when (lang) {
         AppLanguage.CHINESE -> "数据库配置"
         AppLanguage.ENGLISH -> "Database Configuration"

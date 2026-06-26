@@ -826,7 +826,10 @@ data class PhpAppShellConfig(
     val landscapeMode: Boolean = false,
 
     @SerializedName("phpExtensions")
-    val phpExtensions: Map<String, Boolean> = emptyMap()
+    val phpExtensions: Map<String, Boolean> = emptyMap(),
+
+    @SerializedName("customPhpExtensions")
+    val customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
 )
 
 data class PythonAppShellConfig(

@@ -67,7 +67,8 @@ class PhpAppRuntime(private val context: Context) {
         entryFile: String = "index.php",
         port: Int = 0,
         envVars: Map<String, String> = emptyMap(),
-        phpExtensions: Map<String, Boolean> = emptyMap()
+        phpExtensions: Map<String, Boolean> = emptyMap(),
+        customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
     ): Int = withContext(Dispatchers.IO) {
         try {
             if (!isPhpAvailable()) {
@@ -116,9 +117,11 @@ class PhpAppRuntime(private val context: Context) {
 
             val routerScript = extractRouterScript()
 
+            val customExtDir = prepareCustomExtensionsDir(projectDir, customPhpExtensions)
+
             val command = buildPhpCommand(
                 com.webtoapp.core.wordpress.WordPressDependencyManager.buildPhpExecPrefix(context),
-                serverPort, actualDocRoot, routerScript, entryFile, phpExtensions
+                serverPort, actualDocRoot, routerScript, entryFile, phpExtensions, customPhpExtensions, customExtDir
             )
 
             AppLogger.i(TAG, "PHP 二进制: $phpBinary")
@@ -332,7 +335,16 @@ class PhpAppRuntime(private val context: Context) {
         return scriptFile.absolutePath
     }
 
-    private fun buildPhpCommand(execPrefix: List<String>, serverPort: Int, documentRoot: String, routerScript: String, entryFile: String, phpExtensions: Map<String, Boolean> = emptyMap()): List<String> {
+    private fun buildPhpCommand(
+        execPrefix: List<String>,
+        serverPort: Int,
+        documentRoot: String,
+        routerScript: String,
+        entryFile: String,
+        phpExtensions: Map<String, Boolean> = emptyMap(),
+        customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList(),
+        customExtDir: File? = null
+    ): List<String> {
         val tmpDir = context.cacheDir.absolutePath
         val sessionDir = File(context.filesDir, "php_app_deps/sessions")
         sessionDir.mkdirs()
@@ -374,6 +386,10 @@ class PhpAppRuntime(private val context: Context) {
             "disable_functions" to "header,headers_list,headers_sent,header_remove,setcookie,setrawcookie"
         )
 
+        customExtDir?.let {
+            iniSettings["extension_dir"] = it.absolutePath
+        }
+
         iniSettings.forEach { (key, value) ->
             phpArgs.add("-d")
             phpArgs.add("$key=$value")
@@ -386,12 +402,51 @@ class PhpAppRuntime(private val context: Context) {
             }
         }
 
+        customPhpExtensions
+            .filter { it.enabled && it.name.isNotBlank() }
+            .sortedBy { it.loadOrder }
+            .forEach { ext ->
+                val directive = when (ext.kind) {
+                    com.webtoapp.data.model.CustomPhpExtension.Kind.EXTENSION -> "extension"
+                    com.webtoapp.data.model.CustomPhpExtension.Kind.ZEND_EXTENSION -> "zend_extension"
+                }
+                phpArgs.add("-d")
+                phpArgs.add("$directive=${ext.effectiveSoName()}")
+            }
+
         phpArgs.add(routerScript)
         phpArgs.add(serverPort.toString())
         phpArgs.add(documentRoot)
         phpArgs.add(entryFile.ifBlank { "index.php" })
 
         return phpArgs
+    }
+
+    private fun prepareCustomExtensionsDir(
+        projectDir: String,
+        customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension>
+    ): File? {
+        if (customPhpExtensions.isEmpty()) return null
+
+        val projectExtDir = File(projectDir, "php_exts")
+        val runtimeExtDir = File(context.filesDir, "php_app_deps/ext/${File(projectDir).name}")
+        runtimeExtDir.deleteRecursively()
+        runtimeExtDir.mkdirs()
+
+        if (projectExtDir.isDirectory) {
+            projectExtDir.listFiles()?.filter { it.isFile && it.extension == "so" }?.forEach { soFile ->
+                try {
+                    val dest = File(runtimeExtDir, soFile.name)
+                    soFile.copyTo(dest, overwrite = true)
+                    dest.setExecutable(true, false)
+                    AppLogger.d(TAG, "已复制自定义扩展: ${soFile.name}")
+                } catch (e: Exception) {
+                    AppLogger.w(TAG, "复制自定义扩展失败: ${soFile.name}", e)
+                }
+            }
+        }
+
+        return runtimeExtDir.takeIf { it.exists() }
     }
 
     private suspend fun waitForServerReady(port: Int): Boolean {

@@ -721,6 +721,21 @@ data class WordPressConfig(
     val landscapeMode: Boolean = false
 )
 
+data class CustomPhpExtension(
+    val name: String = "",
+    val soFileName: String = "",
+    val kind: Kind = Kind.EXTENSION,
+    val enabled: Boolean = true,
+    val loadOrder: Int = 0
+) {
+    enum class Kind {
+        EXTENSION,
+        ZEND_EXTENSION
+    }
+
+    fun effectiveSoName(): String = soFileName.takeIf { it.isNotBlank() } ?: "$name.so"
+}
+
 data class PhpAppConfig(
     val projectId: String = "",
     val projectName: String = "",
@@ -731,7 +746,8 @@ data class PhpAppConfig(
     val envVars: Map<String, String> = emptyMap(),
     val hasComposerJson: Boolean = false,
     val landscapeMode: Boolean = false,
-    val phpExtensions: Map<String, Boolean> = emptyMap()
+    val phpExtensions: Map<String, Boolean> = emptyMap(),
+    val customPhpExtensions: List<CustomPhpExtension> = emptyList()
 )
 
 data class PythonAppConfig(

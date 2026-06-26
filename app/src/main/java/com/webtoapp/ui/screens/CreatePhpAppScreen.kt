@@ -96,6 +96,8 @@ fun CreatePhpAppScreen(
         "xml" to false
     )) }
 
+    var customPhpExtensions by remember { mutableStateOf<List<com.webtoapp.data.model.CustomPhpExtension>>(emptyList()) }
+
     var detectedDbFiles by remember { mutableStateOf<List<String>>(emptyList()) }
     var sqlitePath by remember { mutableStateOf("") }
 
@@ -132,6 +134,7 @@ fun CreatePhpAppScreen(
                         "zip" to false,
                         "xml" to false
                     ).toMutableMap().apply { putAll(config.phpExtensions) }
+                    customPhpExtensions = config.customPhpExtensions
                 }
             }
         }
@@ -367,7 +370,8 @@ fun CreatePhpAppScreen(
                                 envVars = envVars,
                                 hasComposerJson = localProjectDir?.let { File(it, "composer.json").exists() } ?: false,
                                 landscapeMode = landscapeMode,
-                                phpExtensions = phpExtensions
+                                phpExtensions = phpExtensions,
+                                customPhpExtensions = customPhpExtensions
                             ),
                             appIcon,
                             "AURORA"
@@ -562,7 +566,9 @@ fun CreatePhpAppScreen(
                     extensions = phpExtensions,
                     onToggle = { ext, enabled ->
                         phpExtensions = phpExtensions.toMutableMap().apply { put(ext, enabled) }
-                    }
+                    },
+                    customExtensions = customPhpExtensions,
+                    onCustomExtensionsChange = { customPhpExtensions = it }
                 )
 
                 if (detectedDbFiles.isNotEmpty()) {
@@ -838,8 +844,15 @@ private fun PhpDocRootCard(
 @Composable
 private fun PhpExtensionsCard(
     extensions: Map<String, Boolean>,
-    onToggle: (String, Boolean) -> Unit
+    onToggle: (String, Boolean) -> Unit,
+    customExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList(),
+    onCustomExtensionsChange: (List<com.webtoapp.data.model.CustomPhpExtension>) -> Unit = {}
 ) {
+    var newExtName by remember { mutableStateOf("") }
+    var newExtSoName by remember { mutableStateOf("") }
+    var newExtKind by remember { mutableStateOf(com.webtoapp.data.model.CustomPhpExtension.Kind.EXTENSION) }
+    var newExtOrder by remember { mutableStateOf("0") }
+
     EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             RuntimeSectionHeader(
@@ -866,6 +879,136 @@ private fun PhpExtensionsCard(
                     )
                 }
             }
+
+            if (customExtensions.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(Strings.phpCustomExtensions, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(8.dp))
+                customExtensions.sortedBy { it.loadOrder }.forEach { ext ->
+                    CustomPhpExtensionRow(
+                        extension = ext,
+                        onEnabledChange = { enabled ->
+                            onCustomExtensionsChange(
+                                customExtensions.map { if (it.name == ext.name) it.copy(enabled = enabled) else it }
+                            )
+                        },
+                        onRemove = {
+                            onCustomExtensionsChange(customExtensions.filter { it.name != ext.name })
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(Strings.phpAddCustomExtension, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(Strings.phpCustomExtensionHint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            PremiumTextField(
+                value = newExtName,
+                onValueChange = { newExtName = it },
+                label = { Text(Strings.phpCustomExtensionName) },
+                placeholder = { Text("ioncube_loader") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            PremiumTextField(
+                value = newExtSoName,
+                onValueChange = { newExtSoName = it },
+                label = { Text(Strings.phpCustomExtensionSoName) },
+                placeholder = { Text("ioncube_loader.so") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                PremiumTextField(
+                    value = newExtOrder,
+                    onValueChange = { newExtOrder = it.filter { c -> c.isDigit() || c == '-' } },
+                    label = { Text(Strings.phpCustomExtensionOrder) },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.weight(1.5f)) {
+                    com.webtoapp.data.model.CustomPhpExtension.Kind.entries.forEachIndexed { index, kind ->
+                        SegmentedButton(
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = com.webtoapp.data.model.CustomPhpExtension.Kind.entries.size),
+                            onClick = { newExtKind = kind },
+                            selected = newExtKind == kind,
+                            label = { Text(if (kind == com.webtoapp.data.model.CustomPhpExtension.Kind.EXTENSION) "EXT" else "ZEND") }
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            PremiumButton(
+                onClick = {
+                    val name = newExtName.trim()
+                    if (name.isNotBlank() && customExtensions.none { it.name == name }) {
+                        onCustomExtensionsChange(
+                            customExtensions + com.webtoapp.data.model.CustomPhpExtension(
+                                name = name,
+                                soFileName = newExtSoName.trim(),
+                                kind = newExtKind,
+                                loadOrder = newExtOrder.toIntOrNull() ?: 0
+                            )
+                        )
+                        newExtName = ""
+                        newExtSoName = ""
+                        newExtKind = com.webtoapp.data.model.CustomPhpExtension.Kind.EXTENSION
+                        newExtOrder = "0"
+                    }
+                },
+                enabled = newExtName.trim().isNotBlank() && customExtensions.none { it.name == newExtName.trim() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(Strings.phpAddCustomExtensionButton)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CustomPhpExtensionRow(
+    extension: com.webtoapp.data.model.CustomPhpExtension,
+    onEnabledChange: (Boolean) -> Unit,
+    onRemove: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Switch(
+            checked = extension.enabled,
+            onCheckedChange = onEnabledChange
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = extension.name,
+                style = MaterialTheme.typography.bodyMedium,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = "${extension.kind.name.lowercase().replaceFirstChar { it.uppercase() }} · ${extension.effectiveSoName()} · order ${extension.loadOrder}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        IconButton(onClick = onRemove) {
+            Icon(Icons.Default.Delete, contentDescription = Strings.btnDelete)
         }
     }
 }

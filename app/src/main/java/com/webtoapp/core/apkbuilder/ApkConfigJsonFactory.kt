@@ -499,7 +499,8 @@ internal object ApkConfigJsonFactory {
         "port" to phpApp.port,
         "envVars" to phpApp.envVars,
         "landscapeMode" to phpApp.landscapeMode,
-        "phpExtensions" to phpApp.phpExtensions
+        "phpExtensions" to phpApp.phpExtensions,
+        "customPhpExtensions" to phpApp.customPhpExtensions
     )
 
     private fun ApkConfig.pythonAppConfigPayload(): Map<String, Any?> = linkedMapOf(
