@@ -12,9 +12,10 @@ object AdBlockFilterCache {
     private const val TAG = "AdBlockFilterCache"
     private const val CACHE_DIR = "adblock_cache"
     private const val URL_CACHE_DIR = "url_cache"
+    private const val SOURCE_CONTENT_DIR = "source_content"
     private const val COMPILED_STATE_FILE = "compiled_state.bin"
     private const val CONTENT_HASH_FILE = "content_hash.txt"
-    private const val CACHE_VERSION = 1
+    private const val CACHE_VERSION = 2
     private const val URL_CACHE_TTL_MS = 24 * 60 * 60 * 1000L
 
     suspend fun getCachedUrlContent(context: Context, url: String): String? = withContext(Dispatchers.IO) {
@@ -55,11 +56,44 @@ object AdBlockFilterCache {
         }
     }
 
+    suspend fun saveSourceContent(context: Context, sourceKey: String, content: String) = withContext(Dispatchers.IO) {
+        try {
+            val keyHash = md5(sourceKey)
+            val dir = File(context.filesDir, "$CACHE_DIR/$SOURCE_CONTENT_DIR").also { it.mkdirs() }
+            File(dir, "$keyHash.txt").writeText(content)
+            AppLogger.d(TAG, "Saved source content: $sourceKey (${content.length / 1024}KB)")
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to save source content", e)
+        }
+    }
+
+    suspend fun getSourceContent(context: Context, sourceKey: String): String? = withContext(Dispatchers.IO) {
+        try {
+            val keyHash = md5(sourceKey)
+            val file = File(context.filesDir, "$CACHE_DIR/$SOURCE_CONTENT_DIR/$keyHash.txt")
+            if (!file.exists()) return@withContext null
+            file.readText()
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to read source content", e)
+            null
+        }
+    }
+
+    suspend fun removeSourceContent(context: Context, sourceKey: String) = withContext(Dispatchers.IO) {
+        try {
+            val keyHash = md5(sourceKey)
+            File(context.filesDir, "$CACHE_DIR/$SOURCE_CONTENT_DIR/$keyHash.txt").delete()
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to remove source content", e)
+        }
+    }
+
     suspend fun saveCompiledState(
         context: Context,
         exactHosts: Set<String>,
         hostsFileHosts: Set<String>,
         enabledSources: Set<String>,
+        disabledSources: Set<String>,
         networkBlockPatterns: List<SerializableNetworkFilter>,
         networkExceptionPatterns: List<SerializableNetworkFilter>,
         cosmeticBlockFilters: List<AdBlocker.CosmeticFilter>,
@@ -86,6 +120,9 @@ object AdBlockFilterCache {
 
                 out.writeInt(enabledSources.size)
                 enabledSources.forEach { out.writeUTF(it) }
+
+                out.writeInt(disabledSources.size)
+                disabledSources.forEach { out.writeUTF(it) }
 
                 out.writeInt(networkBlockPatterns.size)
                 networkBlockPatterns.forEach { writeNetworkFilter(out, it) }
@@ -155,6 +192,10 @@ object AdBlockFilterCache {
                 val enabledSources = LinkedHashSet<String>(sourcesCount)
                 repeat(sourcesCount) { enabledSources.add(input.readUTF()) }
 
+                val disabledCount = input.readInt()
+                val disabledSources = LinkedHashSet<String>(disabledCount)
+                repeat(disabledCount) { disabledSources.add(input.readUTF()) }
+
                 val blockCount = input.readInt()
                 val networkBlockFilters = ArrayList<SerializableNetworkFilter>(blockCount)
                 repeat(blockCount) { networkBlockFilters.add(readNetworkFilter(input)) }
@@ -191,6 +232,7 @@ object AdBlockFilterCache {
                     exactHosts = exactHosts,
                     hostsFileHosts = hostsFileHosts,
                     enabledSources = enabledSources,
+                    disabledSources = disabledSources,
                     networkBlockFilters = networkBlockFilters,
                     networkExceptionFilters = networkExceptionFilters,
                     cosmeticBlockFilters = cosmeticBlockFilters,
@@ -323,6 +365,7 @@ object AdBlockFilterCache {
         val exactHosts: Set<String>,
         val hostsFileHosts: Set<String>,
         val enabledSources: Set<String>,
+        val disabledSources: Set<String>,
         val networkBlockFilters: List<SerializableNetworkFilter>,
         val networkExceptionFilters: List<SerializableNetworkFilter>,
         val cosmeticBlockFilters: List<AdBlocker.CosmeticFilter>,

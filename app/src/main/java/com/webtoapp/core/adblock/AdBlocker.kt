@@ -680,6 +680,7 @@ class AdBlocker {
     private val exactHosts = mutableSetOf<String>()
     private val hostsFileHosts = mutableSetOf<String>()
     private val enabledHostsSources = mutableSetOf<String>()
+    private val disabledHostsSources = mutableSetOf<String>()
 
     private val sourceRuleCounts = mutableMapOf<String, Int>()
 
@@ -956,6 +957,59 @@ class AdBlocker {
     fun getNetworkFilterCount(): Int = networkBlockFilters.size + networkExceptionFilters.size
     fun getCosmeticFilterCount(): Int = cosmeticBlockFilters.size + cosmeticExceptionFilters.size
 
+    suspend fun setHostsSourceEnabled(context: Context, sourceKey: String, enable: Boolean): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            if (enable) {
+                if (!enabledHostsSources.add(sourceKey)) {
+                    if (!disabledHostsSources.remove(sourceKey)) return@withContext Result.success(Unit)
+                } else {
+                    disabledHostsSources.remove(sourceKey)
+                }
+            } else {
+                if (!disabledHostsSources.add(sourceKey)) return@withContext Result.success(Unit)
+                enabledHostsSources.remove(sourceKey)
+            }
+            rebuildHostsFromSourceContents(context)
+            invalidateCache()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun removeHostsSource(context: Context, sourceKey: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            enabledHostsSources.remove(sourceKey)
+            disabledHostsSources.remove(sourceKey)
+            sourceRuleCounts.remove(sourceKey)
+            AdBlockFilterCache.removeSourceContent(context, sourceKey)
+            rebuildHostsFromSourceContents(context)
+            invalidateCache()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private suspend fun rebuildHostsFromSourceContents(context: Context) {
+        hostsFileHosts.clear()
+        exactHosts.clear()
+        networkBlockFilters.clear()
+        networkExceptionFilters.clear()
+        anchorDomainIndex.clear()
+        exceptionAnchorDomainIndex.clear()
+        cosmeticBlockFilters.clear()
+        cosmeticExceptionFilters.clear()
+        scriptletRules.clear()
+
+        val activeSources = enabledHostsSources.toList()
+        for (sourceKey in activeSources) {
+            val content = AdBlockFilterCache.getSourceContent(context, sourceKey) ?: continue
+            val count = parseFilterContent(content)
+            sourceRuleCounts[sourceKey] = count
+        }
+    }
+
     fun getStats(): Map<String, Int> = mapOf(
         "exactHosts" to exactHosts.size,
         "hostsFile" to hostsFileHosts.size,
@@ -1004,12 +1058,17 @@ class AdBlocker {
     fun clearHostsFileRules() {
         hostsFileHosts.clear()
         enabledHostsSources.clear()
+        disabledHostsSources.clear()
         sourceRuleCounts.clear()
         synchronized(blockResultCache) { blockResultCache.clear() }
     }
 
     fun getEnabledHostsSources(): Set<String> = enabledHostsSources.toSet()
     fun isHostsSourceEnabled(url: String): Boolean = enabledHostsSources.contains(url)
+    fun getDisabledHostsSources(): Set<String> = disabledHostsSources.toSet()
+    fun isHostsSourceDisabled(url: String): Boolean = disabledHostsSources.contains(url)
+    fun isHostsSourceDownloaded(url: String): Boolean =
+        enabledHostsSources.contains(url) || disabledHostsSources.contains(url)
 
     private fun parseAndAddRule(rawRule: String) {
         val rule = rawRule.trim()
@@ -1521,9 +1580,13 @@ class AdBlocker {
         try {
             val inputStream = context.contentResolver.openInputStream(uri)
                 ?: return@withContext Result.failure(Exception("Cannot open file"))
-            val count = inputStream.use { stream ->
-                parseFilterContent(stream.bufferedReader().readText())
-            }
+            val content = inputStream.use { stream -> stream.bufferedReader().readText() }
+            val count = parseFilterContent(content)
+            val sourceKey = "file:${uri}"
+            enabledHostsSources.add(sourceKey)
+            disabledHostsSources.remove(sourceKey)
+            sourceRuleCounts[sourceKey] = count
+            AdBlockFilterCache.saveSourceContent(context, sourceKey, content)
             Result.success(count)
         } catch (e: Exception) {
             Result.failure(e)
@@ -1559,7 +1622,11 @@ class AdBlocker {
 
             val count = parseFilterContent(content)
             enabledHostsSources.add(url)
+            disabledHostsSources.remove(url)
             sourceRuleCounts[url] = count
+            if (context != null) {
+                AdBlockFilterCache.saveSourceContent(context, url, content)
+            }
             Result.success(count)
         } catch (e: Exception) {
             Result.failure(e)
@@ -1636,10 +1703,16 @@ class AdBlocker {
 
             val sourcesFile = File(context.filesDir, "adblock_hosts_sources.txt")
             sourcesFile.writeText(
-                enabledHostsSources.joinToString("\n") { url ->
-                    val count = sourceRuleCounts[url] ?: 0
-                    "$url\t$count"
-                }
+                buildString {
+                    enabledHostsSources.forEach { url ->
+                        val count = sourceRuleCounts[url] ?: 0
+                        appendLine("$url\t$count\t1")
+                    }
+                    disabledHostsSources.forEach { url ->
+                        val count = sourceRuleCounts[url] ?: 0
+                        appendLine("$url\t$count\t0")
+                    }
+                }.trimEnd()
             )
 
             saveCompiledStateToCache(context)
@@ -1681,16 +1754,16 @@ class AdBlocker {
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .forEach { line ->
-                val tab = line.indexOf('\t')
-                if (tab > 0) {
-                    val url = line.substring(0, tab)
-                    val count = line.substring(tab + 1).toIntOrNull() ?: 0
-                    enabledHostsSources.add(url)
-                    sourceRuleCounts[url] = count
+                val parts = line.split("\t")
+                val url = parts.getOrNull(0) ?: return@forEach
+                val count = parts.getOrNull(1)?.toIntOrNull() ?: 0
+                val enabledFlag = parts.getOrNull(2)
+                if (enabledFlag == "0") {
+                    disabledHostsSources.add(url)
                 } else {
-
-                    enabledHostsSources.add(line)
+                    enabledHostsSources.add(url)
                 }
+                sourceRuleCounts[url] = count
             }
     }
 
@@ -1703,6 +1776,7 @@ class AdBlocker {
             exactHosts = exactHosts.toSet(),
             hostsFileHosts = hostsFileHosts.toSet(),
             enabledSources = enabledHostsSources.toSet(),
+            disabledSources = disabledHostsSources.toSet(),
             networkBlockPatterns = blockPatterns,
             networkExceptionPatterns = exceptionPatterns,
             cosmeticBlockFilters = cosmeticBlockFilters.toList(),
@@ -1715,6 +1789,7 @@ class AdBlocker {
         exactHosts.clear()
         hostsFileHosts.clear()
         enabledHostsSources.clear()
+        disabledHostsSources.clear()
         sourceRuleCounts.clear()
         networkBlockFilters.clear()
         networkExceptionFilters.clear()
@@ -1728,6 +1803,7 @@ class AdBlocker {
         exactHosts.addAll(state.exactHosts)
         hostsFileHosts.addAll(state.hostsFileHosts)
         enabledHostsSources.addAll(state.enabledSources)
+        disabledHostsSources.addAll(state.disabledSources)
 
         state.networkBlockFilters.forEachIndexed { idx, sf ->
             val filter = sf.toNetworkFilter()

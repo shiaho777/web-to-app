@@ -23704,6 +23704,54 @@ object Strings {
         AppLanguage.ARABIC -> "تنزيل واستيراد"
     }
 
+    val hostsSourceEnabled: String get() = when (lang) {
+        AppLanguage.CHINESE -> "已启用"
+        AppLanguage.ENGLISH -> "Enabled"
+        AppLanguage.ARABIC -> "مفعّل"
+    }
+
+    val hostsSourceDisabled: String get() = when (lang) {
+        AppLanguage.CHINESE -> "已禁用"
+        AppLanguage.ENGLISH -> "Disabled"
+        AppLanguage.ARABIC -> "معطّل"
+    }
+
+    val deleteHostsSource: String get() = when (lang) {
+        AppLanguage.CHINESE -> "删除 Hosts 源"
+        AppLanguage.ENGLISH -> "Delete Hosts Source"
+        AppLanguage.ARABIC -> "حذف مصدر Hosts"
+    }
+
+    val deleteHostsSourceConfirm: String get() = when (lang) {
+        AppLanguage.CHINESE -> "确定要删除 \"%s\" 及其规则吗？"
+        AppLanguage.ENGLISH -> "Are you sure you want to delete \"%s\" and its rules?"
+        AppLanguage.ARABIC -> "هل أنت متأكد من حذف \"%s\" وقواعده؟"
+    }
+
+    val hostsSourceDeleted: String get() = when (lang) {
+        AppLanguage.CHINESE -> "Hosts 源已删除"
+        AppLanguage.ENGLISH -> "Hosts source deleted"
+        AppLanguage.ARABIC -> "تم حذف مصدر Hosts"
+    }
+
+    val hostsSourceEnabledToast: String get() = when (lang) {
+        AppLanguage.CHINESE -> "Hosts 源已启用"
+        AppLanguage.ENGLISH -> "Hosts source enabled"
+        AppLanguage.ARABIC -> "تم تفعيل مصدر Hosts"
+    }
+
+    val hostsSourceDisabledToast: String get() = when (lang) {
+        AppLanguage.CHINESE -> "Hosts 源已禁用"
+        AppLanguage.ENGLISH -> "Hosts source disabled"
+        AppLanguage.ARABIC -> "تم تعطيل مصدر Hosts"
+    }
+
+    val hostsSourcesSummary: String get() = when (lang) {
+        AppLanguage.CHINESE -> "已启用 %d / 已下载 %d"
+        AppLanguage.ENGLISH -> "Enabled %d / Downloaded %d"
+        AppLanguage.ARABIC -> "مفعّل %d / تم تنزيله %d"
+    }
+
     val galleryApp: String get() = when (lang) {
         AppLanguage.CHINESE -> "媒体画廊"
         AppLanguage.ENGLISH -> "Media Gallery"
