@@ -134,6 +134,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
             findInPage = config.webViewConfig.nativeBridgeFindInPage,
             orientation = config.webViewConfig.nativeBridgeOrientation,
             fullscreen = config.webViewConfig.nativeBridgeFullscreen,
+            print = config.webViewConfig.nativeBridgePrint,
         ),
         javaScriptCanOpenWindows = config.webViewConfig.javaScriptCanOpenWindows,
         jsOpenWindowsPolicy = try {
@@ -155,6 +156,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
             com.webtoapp.data.model.BlobInterceptScope.valueOf(config.webViewConfig.blobInterceptScope)
         } catch (e: Exception) { com.webtoapp.data.model.BlobInterceptScope.ALL },
         blobInterceptThresholdMb = config.webViewConfig.blobInterceptThresholdMb,
+        enablePrintBridge = config.webViewConfig.enablePrintBridge,
         enableCloudflareCompat = config.webViewConfig.enableCloudflareCompat,
         cloudflareCompatMode = try {
             com.webtoapp.data.model.CloudflareCompatMode.valueOf(config.webViewConfig.cloudflareCompatMode)

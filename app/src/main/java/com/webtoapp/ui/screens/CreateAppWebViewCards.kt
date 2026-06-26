@@ -3073,6 +3073,11 @@ fun SpecialSettingsCard(
                                     onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(fullscreen = !caps.fullscreen))) },
                                     label = { Text(Strings.nativeBridgeCapsFullscreen) }
                                 )
+                                FilterChip(
+                                    selected = caps.print,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(print = !caps.print))) },
+                                    label = { Text(Strings.nativeBridgeCapsPrint) }
+                                )
                             }
                         }
 
@@ -3130,6 +3135,14 @@ fun SpecialSettingsCard(
                                 )
                             }
                         }
+
+                        SpecialAdvancedRow(
+                            title = Strings.enablePrintBridgeTitle,
+                            subtitle = Strings.enablePrintBridgeDesc,
+                            icon = Icons.Outlined.Print,
+                            checked = config.enablePrintBridge,
+                            onCheckedChange = { onConfigChange(config.copy(enablePrintBridge = it)) }
+                        )
 
                         SpecialAdvancedRow(
                             title = Strings.primeUserActivationTitle,

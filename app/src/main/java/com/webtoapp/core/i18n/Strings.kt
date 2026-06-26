@@ -35926,6 +35926,7 @@ object Strings {
     val nativeBridgeCapsFindInPage: String get() = when (lang) { AppLanguage.CHINESE -> "页内查找"; AppLanguage.ENGLISH -> "Find in Page"; AppLanguage.ARABIC -> "البحث في الصفحة" }
     val nativeBridgeCapsOrientation: String get() = when (lang) { AppLanguage.CHINESE -> "屏幕方向"; AppLanguage.ENGLISH -> "Orientation"; AppLanguage.ARABIC -> "اتجاه الشاشة" }
     val nativeBridgeCapsFullscreen: String get() = when (lang) { AppLanguage.CHINESE -> "全屏"; AppLanguage.ENGLISH -> "Fullscreen"; AppLanguage.ARABIC -> "ملء الشاشة" }
+    val nativeBridgeCapsPrint: String get() = when (lang) { AppLanguage.CHINESE -> "打印"; AppLanguage.ENGLISH -> "Print"; AppLanguage.ARABIC -> "طباعة" }
 
     val geolocationAccuracyLabel: String get() = when (lang) { AppLanguage.CHINESE -> "精度"; AppLanguage.ENGLISH -> "Accuracy"; AppLanguage.ARABIC -> "الدقة" }
     val geolocationAccuracyCoarse: String get() = when (lang) { AppLanguage.CHINESE -> "粗略"; AppLanguage.ENGLISH -> "Coarse"; AppLanguage.ARABIC -> "تقريبية" }
@@ -36626,6 +36627,48 @@ object Strings {
         AppLanguage.CHINESE -> "屏蔽错误信息"
         AppLanguage.ENGLISH -> "Suppress Errors"
         AppLanguage.ARABIC -> "إخفاء معلومات الخطأ"
+    }
+
+    val printStarted: String get() = when (lang) {
+        AppLanguage.CHINESE -> "打印对话框已打开"
+        AppLanguage.ENGLISH -> "Print dialog opened"
+        AppLanguage.ARABIC -> "تم فتح مربع حوار الطباعة"
+    }
+
+    val printNotAvailable: String get() = when (lang) {
+        AppLanguage.CHINESE -> "打印功能不可用"
+        AppLanguage.ENGLISH -> "Printing is not available"
+        AppLanguage.ARABIC -> "الطباعة غير متاحة"
+    }
+
+    val printFailed: String get() = when (lang) {
+        AppLanguage.CHINESE -> "打印失败"
+        AppLanguage.ENGLISH -> "Print failed"
+        AppLanguage.ARABIC -> "فشل الطباعة"
+    }
+
+    val printPreparing: String get() = when (lang) {
+        AppLanguage.CHINESE -> "正在准备打印..."
+        AppLanguage.ENGLISH -> "Preparing print..."
+        AppLanguage.ARABIC -> "جاري تحضير الطباعة..."
+    }
+
+    val printDocument: String get() = when (lang) {
+        AppLanguage.CHINESE -> "文档"
+        AppLanguage.ENGLISH -> "Document"
+        AppLanguage.ARABIC -> "مستند"
+    }
+
+    val enablePrintBridgeTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "打印支持"
+        AppLanguage.ENGLISH -> "Print Support"
+        AppLanguage.ARABIC -> "دعم الطباعة"
+    }
+
+    val enablePrintBridgeDesc: String get() = when (lang) {
+        AppLanguage.CHINESE -> "拦截 window.print() 并唤起系统打印对话框，支持网页打印和 PDF 导出"
+        AppLanguage.ENGLISH -> "Intercept window.print() to open the system print dialog, supporting web page printing and PDF export"
+        AppLanguage.ARABIC -> "اعتراض window.print() لفتح مربع حوار طباعة النظام، يدعم طباعة صفحات الويب وتصدير PDF"
     }
 }
 

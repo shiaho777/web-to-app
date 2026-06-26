@@ -345,6 +345,8 @@ data class WebViewConfig(
     val blobInterceptScope: BlobInterceptScope = BlobInterceptScope.ALL,
     val blobInterceptThresholdMb: Int = 5,
 
+    val enablePrintBridge: Boolean = true,
+
     val primeUserActivation: Boolean = false,
     val primeUserActivationMode: PrimeUserActivationMode = PrimeUserActivationMode.SYNTHETIC_TAP,
     val primeUserActivationTiming: PrimeUserActivationTiming = PrimeUserActivationTiming.ON_PAGE_FINISHED,
@@ -1420,6 +1422,7 @@ data class NativeBridgeCapabilities(
     val findInPage: Boolean = true,
     val orientation: Boolean = true,
     val fullscreen: Boolean = true,
+    val print: Boolean = true,
 )
 
 enum class GeolocationAccuracy {

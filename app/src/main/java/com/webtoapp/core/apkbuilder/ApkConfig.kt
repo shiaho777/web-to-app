@@ -161,6 +161,7 @@ data class ApkConfig(
     val enableCorsBypass: Boolean get() = webViewBehavior.enableCorsBypass
     val allowMixedContent: Boolean get() = webViewBehavior.allowMixedContent
     val enableBlobDownloadInterception: Boolean get() = webViewBehavior.enableBlobDownloadInterception
+    val enablePrintBridge: Boolean get() = webViewBehavior.enablePrintBridge
     val downloadEnabled: Boolean get() = webView.downloadEnabled
     val enableCloudflareCompat: Boolean get() = webViewBehavior.enableCloudflareCompat
     val primeUserActivation: Boolean get() = webViewBehavior.primeUserActivation
@@ -543,6 +544,7 @@ data class WebViewBehaviorBlock(
     val nativeBridgeFindInPage: Boolean = true,
     val nativeBridgeOrientation: Boolean = true,
     val nativeBridgeFullscreen: Boolean = true,
+    val nativeBridgePrint: Boolean = true,
     val databaseEnabled: Boolean = true,
     val enableCookiePersistence: Boolean = true,
     val enablePrivateNetworkBridge: Boolean = false,
@@ -553,6 +555,7 @@ data class WebViewBehaviorBlock(
     val enableBlobDownloadInterception: Boolean = true,
     val blobInterceptScope: String = "ALL",
     val blobInterceptThresholdMb: Int = 5,
+    val enablePrintBridge: Boolean = true,
     val enableCloudflareCompat: Boolean = true,
     val cloudflareCompatMode: String = "AUTO_DETECT",
     val primeUserActivation: Boolean = false,

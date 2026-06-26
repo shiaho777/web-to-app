@@ -213,6 +213,13 @@ private fun HtmlPreviewScreen(
                             lifecycleScope?.let { scope ->
                                 val downloadBridge = com.webtoapp.core.webview.DownloadBridge(ctx, scope)
                                 addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
+
+                                val printBridge = com.webtoapp.core.webview.PrintBridge(
+                                    context = ctx,
+                                    scope = scope,
+                                    webViewProvider = { this }
+                                )
+                                addJavascriptInterface(printBridge, com.webtoapp.core.webview.PrintBridge.JS_INTERFACE_NAME)
                             }
 
                             val projectRoot: File? = filePath?.let { File(it).parentFile }
@@ -349,6 +356,7 @@ private fun WebView.setupWebView(
             onPageFinished()
 
             view?.evaluateJavascript(com.webtoapp.core.webview.DownloadBridge.getInjectionScript(), null)
+            view?.evaluateJavascript(com.webtoapp.core.webview.PrintBridge.getInjectionScript(), null)
         }
 
         override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {

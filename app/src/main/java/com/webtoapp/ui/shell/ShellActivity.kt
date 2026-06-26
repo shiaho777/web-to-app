@@ -452,6 +452,15 @@ class ShellActivity : AppCompatActivity() {
                             val downloadBridge = com.webtoapp.core.webview.DownloadBridge(this@ShellActivity, lifecycleScope)
                             wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
 
+                            if (config.webViewConfig.enablePrintBridge) {
+                                val printBridge = com.webtoapp.core.webview.PrintBridge(
+                                    context = this@ShellActivity,
+                                    scope = lifecycleScope,
+                                    webViewProvider = { wv }
+                                )
+                                wv.addJavascriptInterface(printBridge, com.webtoapp.core.webview.PrintBridge.JS_INTERFACE_NAME)
+                            }
+
                             if (config.webViewConfig.enableNativeBridge) {
                                 val capabilities = com.webtoapp.data.model.NativeBridgeCapabilities(
                                     clipboard = config.webViewConfig.nativeBridgeClipboard,
@@ -473,6 +482,7 @@ class ShellActivity : AppCompatActivity() {
                                     findInPage = config.webViewConfig.nativeBridgeFindInPage,
                                     orientation = config.webViewConfig.nativeBridgeOrientation,
                                     fullscreen = config.webViewConfig.nativeBridgeFullscreen,
+                                    print = config.webViewConfig.nativeBridgePrint,
                                 )
                                 val nativeBridge = com.webtoapp.core.webview.NativeBridge(
                                     context = this@ShellActivity,

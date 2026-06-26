@@ -1311,6 +1311,9 @@ data class WebViewShellConfig(
     @SerializedName("nativeBridgeFullscreen")
     val nativeBridgeFullscreen: Boolean = true,
 
+    @SerializedName("nativeBridgePrint")
+    val nativeBridgePrint: Boolean = true,
+
     @SerializedName("javaScriptCanOpenWindows")
     val javaScriptCanOpenWindows: Boolean = false,
 
@@ -1346,6 +1349,9 @@ data class WebViewShellConfig(
 
     @SerializedName("blobInterceptThresholdMb")
     val blobInterceptThresholdMb: Int = 5,
+
+    @SerializedName("enablePrintBridge")
+    val enablePrintBridge: Boolean = true,
 
     @SerializedName("enableCloudflareCompat")
     val enableCloudflareCompat: Boolean = true,

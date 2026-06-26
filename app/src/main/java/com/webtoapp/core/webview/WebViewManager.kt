@@ -55,6 +55,7 @@ class WebViewManager(
     private val blobCacheHookHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val cloudflareCompatScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val backStateGuardScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val printBridgeScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
 
     companion object {
 
@@ -1504,6 +1505,10 @@ class WebViewManager(
 
             if (config.enableShareBridge) {
                 addJavascriptInterface(ShareBridge(context), "NativeShareBridge")
+            }
+
+            if (config.enablePrintBridge) {
+                installPrintBridgeDocumentStart(this)
             }
 
             gmBridge?.destroy()
@@ -3247,6 +3252,7 @@ class WebViewManager(
                 removeJavascriptInterface("NativeBridge")
                 removeJavascriptInterface("DownloadBridge")
                 removeJavascriptInterface("NativeShareBridge")
+                removeJavascriptInterface("AndroidPrint")
                 removeJavascriptInterface(com.webtoapp.core.extension.GreasemonkeyBridge.JS_INTERFACE_NAME)
                 removeJavascriptInterface(com.webtoapp.core.extension.ChromeExtensionRuntime.JS_BRIDGE_NAME)
 
@@ -3272,6 +3278,10 @@ class WebViewManager(
             runCatching { handler.remove() }
         }
         downloadBridgeScriptHandlers.clear()
+        printBridgeScriptHandlers.values.toList().forEach { handler ->
+            runCatching { handler.remove() }
+        }
+        printBridgeScriptHandlers.clear()
         blobCacheHookHandlers.values.toList().forEach { handler ->
             runCatching { handler.remove() }
         }
@@ -3518,6 +3528,9 @@ class WebViewManager(
             if (currentConfig?.downloadEnabled == true && currentConfig?.enableBlobDownloadInterception != true) {
                 injectBlobCacheHookScript(webView)
             }
+            if (currentConfig?.enablePrintBridge == true && !minimizeLocalRuntimeInjection) {
+                injectPrintBridgeScript(webView)
+            }
             if (!scriptlessMode && !minimizeLocalRuntimeInjection) {
                 injectExtensionPanelScript(webView)
             } else {
@@ -3626,6 +3639,34 @@ class WebViewManager(
             AppLogger.d("WebViewManager", "Download bridge script injected")
         } catch (e: Exception) {
             AppLogger.e("WebViewManager", "Download bridge script injection failed", e)
+        }
+    }
+
+    private fun installPrintBridgeDocumentStart(webView: WebView) {
+        if (printBridgeScriptHandlers.containsKey(webView)) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            AppLogger.i("WebViewManager", "[PrintBridge] Document-start script unsupported; will use onPageStarted fallback")
+            return
+        }
+        try {
+            printBridgeScriptHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                PrintBridge.getInjectionScript(),
+                setOf("*")
+            )
+            AppLogger.i("WebViewManager", "[PrintBridge] Installed at document start (applies to all hosts)")
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "[PrintBridge] Document-start install failed, will use onPageStarted fallback", e)
+        }
+    }
+
+    private fun injectPrintBridgeScript(webView: WebView) {
+        if (printBridgeScriptHandlers.containsKey(webView)) return
+        try {
+            webView.evaluateJavascript(PrintBridge.getInjectionScript(), null)
+            AppLogger.d("WebViewManager", "[PrintBridge] Script injected via evaluateJavascript")
+        } catch (e: Exception) {
+            AppLogger.e("WebViewManager", "[PrintBridge] Script injection failed", e)
         }
     }
 
