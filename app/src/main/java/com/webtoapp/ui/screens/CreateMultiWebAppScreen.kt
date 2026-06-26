@@ -3,11 +3,6 @@ package com.webtoapp.ui.screens
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -31,7 +26,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.MultiWebConfig
 import com.webtoapp.data.model.MultiWebSite
@@ -65,8 +59,6 @@ fun CreateMultiWebAppScreen(
 
     var sites by remember { mutableStateOf<List<MultiWebSite>>(emptyList()) }
 
-    var displayMode by remember { mutableStateOf("TABS") }
-
     var existingApps by remember { mutableStateOf<List<com.webtoapp.data.model.WebApp>>(emptyList()) }
     LaunchedEffect(Unit) {
         val repo = org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(
@@ -92,7 +84,6 @@ fun CreateMultiWebAppScreen(
                 app.iconPath?.let { appIcon = android.net.Uri.parse(it) }
                 app.multiWebConfig?.let { config ->
                     sites = config.sites
-                    displayMode = config.displayMode
                     refreshInterval = config.refreshInterval
                     landscapeMode = config.landscapeMode
                 }
@@ -122,7 +113,7 @@ fun CreateMultiWebAppScreen(
                         appName.ifBlank { "Multi-Site App" },
                         MultiWebConfig(
                             sites = sites,
-                            displayMode = displayMode,
+                            displayMode = "TABS",
                             refreshInterval = refreshInterval,
                             showSiteIcons = true,
                             landscapeMode = landscapeMode,
@@ -165,69 +156,6 @@ fun CreateMultiWebAppScreen(
                             )
                         }
                     }
-            }
-
-            WtaCreateFlowSection(title = Strings.appConfig) {
-                EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            Strings.multiWebDisplayMode,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                            val modes = listOf("TABS", "CARDS", "FEED", "DRAWER")
-                            val modeLabels = listOf(
-                                Strings.multiWebModeTabs,
-                                Strings.multiWebModeCards,
-                                Strings.multiWebModeFeed,
-                                Strings.multiWebModeDrawer
-                            )
-                            modes.forEachIndexed { index, mode ->
-                                SegmentedButton(
-                                    shape = SegmentedButtonDefaults.itemShape(index, modes.size),
-                                    onClick = { displayMode = mode },
-                                    selected = displayMode == mode
-                                ) {
-                                    Text(modeLabels[index])
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            when (displayMode) {
-                                "TABS" -> Strings.multiWebModeTabsDesc
-                                "CARDS" -> Strings.multiWebModeCardsDesc
-                                "FEED" -> Strings.multiWebModeFeedDesc
-                                else -> Strings.multiWebModeDrawerDesc
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        AnimatedVisibility(
-                            visible = displayMode == "FEED",
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
-                        ) {
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(top = 8.dp),
-                                shape = RoundedCornerShape(10.dp),
-                                color = accentColor.copy(alpha = 0.08f)
-                            ) {
-                                Text(
-                                    Strings.multiWebFeedTip,
-                                    modifier = Modifier.padding(12.dp),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = accentColor,
-                                    lineHeight = 18.sp
-                                )
-                            }
-                        }
-                    }
-                }
             }
 
             WtaCreateFlowSection(title = Strings.preview) {
@@ -292,7 +220,7 @@ fun CreateMultiWebAppScreen(
                                 sites.forEachIndexed { index, site ->
                                     SiteItem(
                                         site = site,
-                                        showFeedConfig = displayMode == "FEED",
+                                        showFeedConfig = false,
                                         onEdit = {
                                             editingSite = site
                                             showAddSiteDialog = true
@@ -356,7 +284,7 @@ fun CreateMultiWebAppScreen(
     if (showAddSiteDialog) {
         AddSiteDialog(
             editingSite = editingSite,
-            showFeedFields = displayMode == "FEED",
+            showFeedFields = false,
             newSortIndex = sites.size,
             existingApps = existingApps,
             pendingLocalSiteUri = pendingLocalSiteUri,
