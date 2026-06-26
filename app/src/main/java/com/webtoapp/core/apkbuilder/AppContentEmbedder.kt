@@ -83,7 +83,16 @@ class HtmlContentEmbedder : AppContentEmbedder {
                     runtimeName = "html",
                     assetPrefix = "assets/html",
                     excludeDirs = setOf("node_modules", ".git", ".cache", "__pycache__", ".next", ".nuxt"),
-                    runtimeType = "html"
+                    runtimeType = "html",
+                    fileHook = if (ctx.encryptionConfig.enabled && ctx.encryptor != null) {
+                        { zipOut, assetPath, file ->
+                            val assetName = assetPath.removePrefix("assets/")
+                            val encryptedData = ctx.encryptor!!.encrypt(file.readBytes(), assetName)
+                            ZipUtils.writeEntryDeflated(zipOut, "${assetPath}.enc", encryptedData)
+                            ctx.logger.log("File encrypted: ${assetPath}.enc (${encryptedData.size} bytes)")
+                            true
+                        }
+                    } else null
                 ),
                 logger = ctx.logger
             )
