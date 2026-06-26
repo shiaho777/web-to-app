@@ -134,6 +134,16 @@ private fun TabsMode(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
 
+    LaunchedEffect(selectedTab, sites.size) {
+        val site = sites.getOrNull(selectedTab)
+        if (site != null) {
+            webViewCallbacks.onTitleChanged(site.name.ifBlank { extractDomain(site.url) })
+            if (site.url.isNotBlank()) {
+                webViewCallbacks.onPageStarted(site.url)
+            }
+        }
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0),
