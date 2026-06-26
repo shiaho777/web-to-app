@@ -101,6 +101,7 @@ object LivePreviewServerLauncher {
             entryFile = config.entryFile.ifBlank { "index.js" },
             port = config.serverPort,
             envVars = config.envVars,
+            customNodeExtensions = config.customNodeExtensions
         )
         if (port <= 0) return null
         return ServerHandle("http://127.0.0.1:$port") { runtime.stopServer() }

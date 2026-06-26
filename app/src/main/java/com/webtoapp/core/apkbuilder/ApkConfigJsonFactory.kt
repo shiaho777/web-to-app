@@ -490,7 +490,8 @@ internal object ApkConfigJsonFactory {
         "port" to nodejs.port,
         "entryFile" to nodejs.entryFile,
         "envVars" to nodejs.envVars,
-        "landscapeMode" to nodejs.landscapeMode
+        "landscapeMode" to nodejs.landscapeMode,
+        "customNodeExtensions" to nodejs.customNodeExtensions
     )
 
     private fun ApkConfig.phpAppConfigPayload(): Map<String, Any?> = linkedMapOf(

@@ -3547,7 +3547,8 @@ private fun WebApp.buildNodejsBlock(): NodejsBlock = NodejsBlock(
     port = nodejsConfig?.serverPort ?: 0,
     entryFile = nodejsConfig?.entryFile ?: "",
     envVars = nodejsConfig?.envVars ?: emptyMap(),
-    landscapeMode = nodejsConfig?.landscapeMode ?: false
+    landscapeMode = nodejsConfig?.landscapeMode ?: false,
+    customNodeExtensions = nodejsConfig?.customNodeExtensions ?: emptyList()
 )
 
 private fun WebApp.buildPhpAppBlock(): PhpAppBlock = PhpAppBlock(

@@ -806,7 +806,10 @@ data class NodeJsShellConfig(
     val envVars: Map<String, String> = emptyMap(),
 
     @SerializedName("landscapeMode")
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+
+    @SerializedName("customNodeExtensions")
+    val customNodeExtensions: List<com.webtoapp.data.model.CustomNodeExtension> = emptyList()
 )
 
 data class PhpAppShellConfig(

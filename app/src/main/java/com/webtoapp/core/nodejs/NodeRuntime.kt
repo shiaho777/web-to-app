@@ -40,7 +40,8 @@ class NodeRuntime(private val context: Context) {
         projectDir: String,
         entryFile: String = "index.js",
         port: Int = 0,
-        envVars: Map<String, String> = emptyMap()
+        envVars: Map<String, String> = emptyMap(),
+        customNodeExtensions: List<com.webtoapp.data.model.CustomNodeExtension> = emptyList()
     ): Int = withContext(Dispatchers.IO) {
         try {
             if (!isNodeAvailable()) {
@@ -50,12 +51,23 @@ class NodeRuntime(private val context: Context) {
 
             _serverState.value = ServerState.Starting
 
+            val customExtDir = prepareCustomNodeExtensionsDir(projectDir, customNodeExtensions)
+            val effectiveEnvVars = if (customExtDir != null) {
+                val mutableEnv = envVars.toMutableMap()
+                val baseNodePath = envVars["NODE_PATH"] ?: File(projectDir, "node_modules").absolutePath
+                mutableEnv["NODE_PATH"] = "$baseNodePath:${customExtDir.absolutePath}"
+                mutableEnv["LD_LIBRARY_PATH"] = customExtDir.absolutePath
+                mutableEnv
+            } else {
+                envVars
+            }
+
             val attempt1 = NodeServiceClient.startServer(
                 context = context,
                 projectDir = projectDir,
                 entryFile = entryFile,
                 portPref = port,
-                envVars = envVars
+                envVars = effectiveEnvVars
             )
 
             val result = if (attempt1 is NodeServiceClient.StartResult.Failure && attempt1.v8Exhausted) {
@@ -278,6 +290,35 @@ $filesHtml
 
     fun getProjectDir(projectId: String): File {
         return File(NodeDependencyManager.getNodeProjectsDir(context), projectId)
+    }
+
+    private fun prepareCustomNodeExtensionsDir(
+        projectDir: String,
+        customNodeExtensions: List<com.webtoapp.data.model.CustomNodeExtension>
+    ): File? {
+        if (customNodeExtensions.isEmpty()) return null
+
+        val projectExtDir = File(projectDir, "nodejs_exts")
+        val runtimeExtDir = File(context.filesDir, "nodejs_app_deps/ext/${File(projectDir).name}")
+        runtimeExtDir.deleteRecursively()
+        runtimeExtDir.mkdirs()
+
+        if (projectExtDir.isDirectory) {
+            projectExtDir.listFiles()
+                ?.filter { it.isFile && it.extension == "node" }
+                ?.forEach { nodeFile ->
+                    try {
+                        val dest = File(runtimeExtDir, nodeFile.name)
+                        nodeFile.copyTo(dest, overwrite = true)
+                        dest.setExecutable(true, false)
+                        AppLogger.d("NodeRuntime", "已复制自定义 Node 扩展: ${nodeFile.name}")
+                    } catch (e: Exception) {
+                        AppLogger.w("NodeRuntime", "复制自定义 Node 扩展失败: ${nodeFile.name}", e)
+                    }
+                }
+        }
+
+        return runtimeExtDir.takeIf { it.exists() }
     }
 
     private fun flattenSingleProjectRoot(projectDir: File) {

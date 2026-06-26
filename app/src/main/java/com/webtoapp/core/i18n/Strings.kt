@@ -26563,6 +26563,51 @@ object Strings {
         AppLanguage.ENGLISH -> "Load Order"
         AppLanguage.ARABIC -> "ترتيب التحميل"
     }
+    val nodeExtensions: String get() = when (lang) {
+        AppLanguage.CHINESE -> "Node.js 扩展"
+        AppLanguage.ENGLISH -> "Node.js Extensions"
+        AppLanguage.ARABIC -> "إضافات Node.js"
+    }
+    val nodeExtensionsHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "将 .node 文件放入项目 nodejs_exts/ 目录。扩展名用于排序，.node 文件名留空则自动补全。"
+        AppLanguage.ENGLISH -> "Place .node files in project nodejs_exts/. Extension name is used for ordering; leave .node filename blank to auto-complete."
+        AppLanguage.ARABIC -> "ضع ملفات .node في دليل المشروع nodejs_exts/. يستخدم اسم الإضافة للترتيب؛ اترك اسم ملف .node فارغاً للإكمال التلقائي."
+    }
+    val nodeCustomExtensions: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自定义扩展"
+        AppLanguage.ENGLISH -> "Custom Extensions"
+        AppLanguage.ARABIC -> "الإضافات المخصصة"
+    }
+    val nodeAddCustomExtension: String get() = when (lang) {
+        AppLanguage.CHINESE -> "添加自定义扩展"
+        AppLanguage.ENGLISH -> "Add Custom Extension"
+        AppLanguage.ARABIC -> "إضافة إضافة مخصصة"
+    }
+    val nodeAddCustomExtensionButton: String get() = when (lang) {
+        AppLanguage.CHINESE -> "添加扩展"
+        AppLanguage.ENGLISH -> "Add Extension"
+        AppLanguage.ARABIC -> "إضافة الإضافة"
+    }
+    val nodeCustomExtensionHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "将 .node 文件放入项目 nodejs_exts/ 目录"
+        AppLanguage.ENGLISH -> "Place .node files in project nodejs_exts/"
+        AppLanguage.ARABIC -> "ضع ملفات .node في دليل المشروع nodejs_exts/"
+    }
+    val nodeCustomExtensionName: String get() = when (lang) {
+        AppLanguage.CHINESE -> "扩展名"
+        AppLanguage.ENGLISH -> "Extension Name"
+        AppLanguage.ARABIC -> "اسم الإضافة"
+    }
+    val nodeCustomExtensionNodeName: String get() = when (lang) {
+        AppLanguage.CHINESE -> ".node 文件名（可选）"
+        AppLanguage.ENGLISH -> ".node Filename (Optional)"
+        AppLanguage.ARABIC -> "اسم ملف .node (اختياري)"
+    }
+    val nodeCustomExtensionOrder: String get() = when (lang) {
+        AppLanguage.CHINESE -> "加载顺序"
+        AppLanguage.ENGLISH -> "Load Order"
+        AppLanguage.ARABIC -> "ترتيب التحميل"
+    }
     val pythonCustomPath: String get() = when (lang) {
         AppLanguage.CHINESE -> "自定义路径"
         AppLanguage.ENGLISH -> "Custom Path"

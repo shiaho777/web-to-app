@@ -236,7 +236,8 @@ object ShellServerLauncher {
                 projectDir = projectDir.absolutePath,
                 entryFile = entryFile,
                 port = config.nodejsConfig.port,
-                envVars = envVars
+                envVars = envVars,
+                customNodeExtensions = config.nodejsConfig.customNodeExtensions
             )
             if (port > 0) {
                 LaunchResult(

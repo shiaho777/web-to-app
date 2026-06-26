@@ -699,7 +699,8 @@ data class NodeJsConfig(
     val envVars: Map<String, String> = emptyMap(),
     val hasNodeModules: Boolean = false,
     val nodeVersion: String = "",
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+    val customNodeExtensions: List<CustomNodeExtension> = emptyList()
 )
 
 data class WordPressConfig(
@@ -760,7 +761,14 @@ data class CustomPythonExtension(
     fun effectiveSoName(): String = soFileName.takeIf { it.isNotBlank() } ?: "${name}.so"
 }
 
-
+data class CustomNodeExtension(
+    val name: String = "",
+    val nodeFileName: String = "",
+    val enabled: Boolean = true,
+    val loadOrder: Int = 0
+) {
+    fun effectiveNodeName(): String = nodeFileName.takeIf { it.isNotBlank() } ?: "${name}.node"
+}
 
 data class PythonAppConfig(
     val projectId: String = "",

@@ -344,6 +344,7 @@ data class ApkConfig(
     val nodejsEntryFile: String get() = nodejs.entryFile
     val nodejsEnvVars: Map<String, String> get() = nodejs.envVars
     val nodejsLandscapeMode: Boolean get() = nodejs.landscapeMode
+    val nodejsCustomNodeExtensions: List<com.webtoapp.data.model.CustomNodeExtension> get() = nodejs.customNodeExtensions
 
     val phpAppFramework: String get() = phpApp.framework
     val phpAppDocumentRoot: String get() = phpApp.documentRoot
@@ -784,7 +785,8 @@ data class NodejsBlock(
     val port: Int = 0,
     val entryFile: String = "",
     val envVars: Map<String, String> = emptyMap(),
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+    val customNodeExtensions: List<com.webtoapp.data.model.CustomNodeExtension> = emptyList()
 )
 
 data class PhpAppBlock(
