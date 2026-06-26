@@ -356,8 +356,21 @@ class FloatingWindowService : Service() {
                 mimeType: String,
                 contentLength: Long
             ) {
-
                 AppLogger.d(TAG, "悬浮窗下载请求: url=$url, mime=$mimeType")
+                com.webtoapp.util.DownloadHelper.handleDownload(
+                    context = this@FloatingWindowService,
+                    url = url,
+                    userAgent = userAgent,
+                    contentDisposition = contentDisposition,
+                    mimeType = mimeType,
+                    contentLength = contentLength,
+                    scope = serviceScope,
+                    onBlobDownload = { blobUrl, filename ->
+                        floatingWindowManager.getWebView()?.evaluateJavascript(
+                            buildBlobDownloadJs(blobUrl, filename), null
+                        )
+                    }
+                )
             }
 
             override fun onUrlChanged(webView: WebView?, url: String?) {
@@ -434,5 +447,93 @@ class FloatingWindowService : Service() {
                 dismissPendingIntent
             )
             .build()
+    }
+
+    private fun buildBlobDownloadJs(blobUrl: String, filename: String): String {
+        val safeBlobUrl = org.json.JSONObject.quote(blobUrl)
+        val safeFilename = org.json.JSONObject.quote(filename)
+        return """
+            (function() {
+                try {
+                    const blobUrl = $safeBlobUrl;
+                    let filename = $safeFilename;
+                    const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024;
+                    const CHUNK_SIZE = 512 * 1024;
+
+                    if (window.__wtaBlobNameMap) {
+                        var cachedName = window.__wtaBlobNameMap.get(blobUrl);
+                        if (cachedName) filename = cachedName;
+                    }
+
+                    function uint8ToBase64(u8) {
+                        const S = 8192; const p = [];
+                        for (let i = 0; i < u8.length; i += S) p.push(String.fromCharCode.apply(null, u8.subarray(i, i + S)));
+                        return btoa(p.join(''));
+                    }
+
+                    function processChunked(blob, fname) {
+                        const mimeType = blob.type || 'application/octet-stream';
+                        if (!window.AndroidDownload || !window.AndroidDownload.startChunkedDownload) {
+                            processSmall(blob, fname); return;
+                        }
+                        const did = window.AndroidDownload.startChunkedDownload(fname, mimeType, blob.size);
+                        let off = 0, ci = 0; const tc = Math.ceil(blob.size / CHUNK_SIZE);
+                        function next() {
+                            if (off >= blob.size) { window.AndroidDownload.finishChunkedDownload(did); return; }
+                            blob.slice(off, off + CHUNK_SIZE).arrayBuffer().then(function(ab) {
+                                window.AndroidDownload.appendChunk(did, uint8ToBase64(new Uint8Array(ab)), ci, tc);
+                                off += CHUNK_SIZE; ci++;
+                                setTimeout(next, 0);
+                            });
+                        }
+                        next();
+                    }
+
+                    function processSmall(blob, fname) {
+                        const reader = new FileReader();
+                        reader.onloadend = function() {
+                            const base64Data = reader.result.split(',')[1];
+                            const mimeType = blob.type || 'application/octet-stream';
+                            if (window.AndroidDownload && window.AndroidDownload.saveBase64File) {
+                                window.AndroidDownload.saveBase64File(base64Data, fname, mimeType);
+                            }
+                        };
+                        reader.readAsDataURL(blob);
+                    }
+
+                    if (blobUrl.startsWith('data:')) {
+                        const parts = blobUrl.split(',');
+                        const meta = parts[0];
+                        const base64Data = parts[1];
+                        const mimeMatch = meta.match(/data:([^;]+)/);
+                        const mimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+                        if (window.AndroidDownload && window.AndroidDownload.saveBase64File) {
+                            window.AndroidDownload.saveBase64File(base64Data, filename, mimeType);
+                        }
+                    } else if (blobUrl.startsWith('blob:')) {
+                        const cachedBlob = window.__wtaBlobMap && window.__wtaBlobMap.get(blobUrl);
+                        function dispatch(blob) {
+                            if (blob.size > LARGE_FILE_THRESHOLD) {
+                                processChunked(blob, filename);
+                            } else {
+                                processSmall(blob, filename);
+                            }
+                        }
+                        if (cachedBlob) {
+                            dispatch(cachedBlob);
+                        } else {
+                            fetch(blobUrl)
+                                .then(function(r) { return r.blob(); })
+                                .then(dispatch)
+                                .catch(function(err) {
+                                    console.error('[FloatingWindow] Blob fetch failed:', err);
+                                });
+                        }
+                    }
+                } catch(e) {
+                    console.error('[FloatingWindow] Download error:', e);
+                }
+            })();
+        """.trimIndent()
     }
 }

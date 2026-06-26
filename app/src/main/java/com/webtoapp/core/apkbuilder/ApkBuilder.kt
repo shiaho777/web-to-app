@@ -2755,6 +2755,10 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.SYSTEM_ALERT_WINDOW"
         }
 
+        if (config.downloadEnabled) {
+            permissions += "android.permission.DOWNLOAD_WITHOUT_NOTIFICATION"
+        }
+
         if (rp.bluetooth) {
             permissions += "android.permission.NEARBY_WIFI_DEVICES"
         }

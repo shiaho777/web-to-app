@@ -2130,7 +2130,6 @@ fun WebViewScreen(
                     contentDisposition = contentDisposition,
                     mimeType = mimeType,
                     contentLength = contentLength,
-                    method = DownloadHelper.DownloadMethod.DOWNLOAD_MANAGER,
                     scope = scope,
                     onBlobDownload = { blobUrl, filename ->
                         val safeBlobUrl = org.json.JSONObject.quote(blobUrl)

@@ -463,9 +463,16 @@ class GeckoViewEngine(
                 val contentType = response.headers["Content-Type"] ?: "application/octet-stream"
                 val contentDisposition = response.headers["Content-Disposition"] ?: ""
                 val contentLength = response.headers["Content-Length"]?.toLongOrNull() ?: -1L
+                val ua = lastUserAgentOverride ?: lastConfig?.let { cfg ->
+                    when (cfg.userAgentMode) {
+                        UserAgentMode.DEFAULT -> ""
+                        UserAgentMode.CUSTOM -> cfg.customUserAgent ?: ""
+                        else -> cfg.userAgentMode.userAgentString
+                    }
+                } ?: ""
                 callback.onDownloadStart(
                     response.uri,
-                    "",
+                    ua,
                     contentDisposition,
                     contentType,
                     contentLength
@@ -508,6 +515,22 @@ class GeckoViewEngine(
                 if (uri.startsWith("tel:") || uri.startsWith("mailto:") || uri.startsWith("intent:")) {
                     callback.onExternalLink(uri)
                     return GeckoResult.fromValue(AllowOrDeny.DENY)
+                }
+
+                val cfg = lastConfig
+                if (cfg != null && cfg.openExternalLinks && request.target == GeckoSession.NavigationDelegate.TARGET_USER_REQUESTED) {
+                    val scheme = runCatching { android.net.Uri.parse(uri).scheme?.lowercase() }.getOrNull()
+                    if (scheme == "http" || scheme == "https") {
+                        val targetHost = runCatching { android.net.Uri.parse(uri).host?.lowercase() }.getOrNull()
+                        val currentHost = runCatching { currentUrl?.let { android.net.Uri.parse(it).host?.lowercase() } }.getOrNull()
+                        if (targetHost != null && currentHost != null &&
+                            targetHost != currentHost &&
+                            !targetHost.endsWith(".$currentHost") &&
+                            !currentHost.endsWith(".$targetHost")) {
+                            callback.onExternalLink(uri)
+                            return GeckoResult.fromValue(AllowOrDeny.DENY)
+                        }
+                    }
                 }
 
                 return GeckoResult.fromValue(AllowOrDeny.ALLOW)

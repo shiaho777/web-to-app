@@ -356,7 +356,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                     contentDisposition = download.contentDisposition,
                     mimeType = download.mimeType,
                     contentLength = download.contentLength,
-                    method = DownloadHelper.DownloadMethod.DOWNLOAD_MANAGER,
                     scope = activity.lifecycleScope
                 )
             }
@@ -364,7 +363,15 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             Toast.makeText(activity, Strings.storagePermissionRequired, Toast.LENGTH_SHORT).show()
 
             pendingDownload?.let { download ->
-                DownloadHelper.openInBrowser(activity, download.url)
+                DownloadHelper.handleDownload(
+                    context = activity,
+                    url = download.url,
+                    userAgent = download.userAgent,
+                    contentDisposition = download.contentDisposition,
+                    mimeType = download.mimeType,
+                    contentLength = download.contentLength,
+                    scope = activity.lifecycleScope
+                )
             }
         }
         pendingDownload = null
@@ -628,7 +635,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 contentDisposition = contentDisposition,
                 mimeType = mimeType,
                 contentLength = contentLength,
-                method = DownloadHelper.DownloadMethod.DOWNLOAD_MANAGER,
                 scope = activity.lifecycleScope,
                 onBlobDownload = onBlobDownload
             )
@@ -648,7 +654,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 contentDisposition = contentDisposition,
                 mimeType = mimeType,
                 contentLength = contentLength,
-                method = DownloadHelper.DownloadMethod.DOWNLOAD_MANAGER,
                 scope = activity.lifecycleScope,
                 onBlobDownload = onBlobDownload
             )

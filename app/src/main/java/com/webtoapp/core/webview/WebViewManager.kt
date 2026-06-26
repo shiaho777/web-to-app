@@ -1838,7 +1838,7 @@ class WebViewManager(
                     AppLogger.d("WebViewManager", "Main-frame navigation request: $url")
                 }
 
-                if (handleSpecialUrl(url, isUserGesture)) {
+                if (handleSpecialUrl(url, isUserGesture, view)) {
                     return true
                 }
 
@@ -1851,7 +1851,7 @@ class WebViewManager(
                     }
                     if (shouldTry) {
                         val decoded = tryDecodeBase64DeepLink(url)
-                        if (decoded != null && handleSpecialUrl(decoded, true)) {
+                        if (decoded != null && handleSpecialUrl(decoded, true, view)) {
                             return true
                         }
                     }
@@ -3081,7 +3081,7 @@ class WebViewManager(
         }
     }
 
-    private fun handleSpecialUrl(url: String, isUserGesture: Boolean): Boolean {
+    private fun handleSpecialUrl(url: String, isUserGesture: Boolean, webView: WebView? = null): Boolean {
         val uri = Uri.parse(url)
         val scheme = uri.scheme?.lowercase() ?: return false
 
@@ -3179,8 +3179,7 @@ class WebViewManager(
 
                     if (!fallbackUrl.isNullOrEmpty()) {
                         AppLogger.d("WebViewManager", "Using fallback URL: $fallbackUrl")
-
-                        managedWebViews.keys.firstOrNull()?.loadUrl(fallbackUrl)
+                        webView?.loadUrl(fallbackUrl) ?: managedWebViews.keys.firstOrNull()?.loadUrl(fallbackUrl)
                         return true
                     }
 
@@ -3190,7 +3189,7 @@ class WebViewManager(
 
                     if (!fallbackUrl.isNullOrEmpty()) {
                         AppLogger.d("WebViewManager", "Using fallback URL after security error: $fallbackUrl")
-                        managedWebViews.keys.firstOrNull()?.loadUrl(fallbackUrl)
+                        webView?.loadUrl(fallbackUrl) ?: managedWebViews.keys.firstOrNull()?.loadUrl(fallbackUrl)
                         return true
                     }
                     return true
@@ -3219,7 +3218,8 @@ class WebViewManager(
         if (currentUrl == null) return false
         val targetHost = runCatching { Uri.parse(targetUrl).host?.lowercase() }.getOrNull() ?: return false
         val currentHost = runCatching { Uri.parse(currentUrl).host?.lowercase() }.getOrNull() ?: return false
-        return !targetHost.endsWith(currentHost) && !currentHost.endsWith(targetHost)
+        if (targetHost == currentHost) return false
+        return !targetHost.endsWith(".$currentHost") && !currentHost.endsWith(".$targetHost")
     }
 
     fun destroyWebView(webView: WebView) {
