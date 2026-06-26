@@ -232,16 +232,6 @@ class AdBlocker {
                 description = "Japanese websites — blocks ads on JP domains & Japanese ad networks"
             ),
             HostsSource(
-                name = "List-KR (Korea)",
-                url = "https://raw.githubusercontent.com/ADBFilter/KoreanAdblockList/main/koreanlist.txt",
-                description = "Korean websites — blocks ads on KR domains & Korean ad networks"
-            ),
-            HostsSource(
-                name = "ABP Indonesia",
-                url = "https://raw.githubusercontent.com/nicemayi/nicemayi-abp/master/nicemayi.txt",
-                description = "Indonesian websites — regional ad network and popup blocking"
-            ),
-            HostsSource(
                 name = "EasyList China",
                 url = "https://easylist-downloads.adblockplus.org/easylistchina.txt",
                 description = "Chinese websites — blocks ads on CN domains"
@@ -251,11 +241,6 @@ class AdBlocker {
                 url = "https://adguardteam.github.io/AdGuardSDNSFilter/Filters/filter.txt",
                 description = com.webtoapp.core.i18n.Strings.hostsAdGuardDesc
             ),
-            HostsSource(
-                name = "Anti-AD",
-                url = "https://anti-ad.net/hosts.txt",
-                description = com.webtoapp.core.i18n.Strings.hostsAntiADDesc
-            )
         )
 
         @Deprecated("Use getPopularHostsSources() instead for i18n support")
