@@ -125,6 +125,7 @@ object LivePreviewServerLauncher {
             port = config.serverPort,
             envVars = config.envVars,
             installDeps = config.hasPipDeps,
+            customPythonExtensions = config.customPythonExtensions
         )
         if (port <= 0) return null
         return ServerHandle("http://127.0.0.1:$port") { runtime.stopServer() }

@@ -855,7 +855,10 @@ data class PythonAppShellConfig(
     val envVars: Map<String, String> = emptyMap(),
 
     @SerializedName("landscapeMode")
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+
+    @SerializedName("customPythonExtensions")
+    val customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> = emptyList()
 )
 
 data class GoAppShellConfig(

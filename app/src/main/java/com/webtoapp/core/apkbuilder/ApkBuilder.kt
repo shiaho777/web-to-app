@@ -3568,7 +3568,8 @@ private fun WebApp.buildPythonAppBlock(): PythonAppBlock = PythonAppBlock(
     serverType = pythonAppConfig?.serverType ?: "builtin",
     port = pythonAppConfig?.serverPort ?: 0,
     envVars = pythonAppConfig?.envVars ?: emptyMap(),
-    landscapeMode = pythonAppConfig?.landscapeMode ?: false
+    landscapeMode = pythonAppConfig?.landscapeMode ?: false,
+    customPythonExtensions = pythonAppConfig?.customPythonExtensions ?: emptyList()
 )
 
 private fun WebApp.buildGoAppBlock(): GoAppBlock = GoAppBlock(

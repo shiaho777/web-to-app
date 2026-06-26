@@ -26518,6 +26518,56 @@ object Strings {
         AppLanguage.ENGLISH -> "Load Order"
         AppLanguage.ARABIC -> "ترتيب التحميل"
     }
+    val pythonExtensions: String get() = when (lang) {
+        AppLanguage.CHINESE -> "Python 扩展"
+        AppLanguage.ENGLISH -> "Python Extensions"
+        AppLanguage.ARABIC -> "إضافات Python"
+    }
+    val pythonExtensionsHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "将 .so / .pyd 文件放入项目 python_exts/ 目录。扩展名用于加载顺序，.so 文件名留空则自动补全。"
+        AppLanguage.ENGLISH -> "Place .so / .pyd files in project python_exts/. Extension name is used for load order; leave .so filename blank to auto-complete."
+        AppLanguage.ARABIC -> "ضع ملفات .so / .pyd في دليل المشروع python_exts/. يستخدم اسم الإضافة لترتيب التحميل؛ اترك اسم ملف .so فارغاً للإكمال التلقائي."
+    }
+    val pythonCustomExtensions: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自定义扩展"
+        AppLanguage.ENGLISH -> "Custom Extensions"
+        AppLanguage.ARABIC -> "الإضافات المخصصة"
+    }
+    val pythonAddCustomExtension: String get() = when (lang) {
+        AppLanguage.CHINESE -> "添加自定义扩展"
+        AppLanguage.ENGLISH -> "Add Custom Extension"
+        AppLanguage.ARABIC -> "إضافة إضافة مخصصة"
+    }
+    val pythonAddCustomExtensionButton: String get() = when (lang) {
+        AppLanguage.CHINESE -> "添加扩展"
+        AppLanguage.ENGLISH -> "Add Extension"
+        AppLanguage.ARABIC -> "إضافة الإضافة"
+    }
+    val pythonCustomExtensionHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "将 .so / .pyd 文件放入项目 python_exts/ 目录"
+        AppLanguage.ENGLISH -> "Place .so / .pyd files in project python_exts/"
+        AppLanguage.ARABIC -> "ضع ملفات .so / .pyd في دليل المشروع python_exts/"
+    }
+    val pythonCustomExtensionName: String get() = when (lang) {
+        AppLanguage.CHINESE -> "扩展名"
+        AppLanguage.ENGLISH -> "Extension Name"
+        AppLanguage.ARABIC -> "اسم الإضافة"
+    }
+    val pythonCustomExtensionSoName: String get() = when (lang) {
+        AppLanguage.CHINESE -> ".so / .pyd 文件名（可选）"
+        AppLanguage.ENGLISH -> ".so / .pyd Filename (Optional)"
+        AppLanguage.ARABIC -> "اسم ملف .so / .pyd (اختياري)"
+    }
+    val pythonCustomExtensionOrder: String get() = when (lang) {
+        AppLanguage.CHINESE -> "加载顺序"
+        AppLanguage.ENGLISH -> "Load Order"
+        AppLanguage.ARABIC -> "ترتيب التحميل"
+    }
+    val pythonCustomPath: String get() = when (lang) {
+        AppLanguage.CHINESE -> "自定义路径"
+        AppLanguage.ENGLISH -> "Custom Path"
+        AppLanguage.ARABIC -> "مسار مخصص"
+    }
     val phpDatabaseConfig: String get() = when (lang) {
         AppLanguage.CHINESE -> "数据库配置"
         AppLanguage.ENGLISH -> "Database Configuration"

@@ -359,6 +359,7 @@ data class ApkConfig(
     val pythonAppPort: Int get() = pythonApp.port
     val pythonAppEnvVars: Map<String, String> get() = pythonApp.envVars
     val pythonAppLandscapeMode: Boolean get() = pythonApp.landscapeMode
+    val pythonAppCustomPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> get() = pythonApp.customPythonExtensions
 
     val goAppFramework: String get() = goApp.framework
     val goAppBinaryName: String get() = goApp.binaryName
@@ -804,7 +805,8 @@ data class PythonAppBlock(
     val serverType: String = "builtin",
     val port: Int = 0,
     val envVars: Map<String, String> = emptyMap(),
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+    val customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> = emptyList()
 )
 
 data class GoAppBlock(

@@ -62,7 +62,8 @@ class PythonRuntime(private val context: Context) {
         framework: String = "raw",
         port: Int = 0,
         envVars: Map<String, String> = emptyMap(),
-        installDeps: Boolean = true
+        installDeps: Boolean = true,
+        customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> = emptyList()
     ): Int = withContext(Dispatchers.IO) {
         try {
             if (!isPythonAvailable()) {
@@ -156,6 +157,8 @@ class PythonRuntime(private val context: Context) {
 
             createBootstrapScript(projDir, serverPort)
 
+            val customExtDir = prepareCustomExtensionsDir(projDir.absolutePath, customPythonExtensions)
+
             val command = buildPythonCommand(pythonBin, framework, entryFile, serverPort, muslLinker, pythonHome)
 
             AppLogger.i(TAG, "Starting Python server: ${command.joinToString(" ")}")
@@ -179,10 +182,14 @@ class PythonRuntime(private val context: Context) {
                 add("${pythonHome}/lib/python${PythonDependencyManager.PYTHON_VERSION}")
                 add("${pythonHome}/lib/python${PythonDependencyManager.PYTHON_VERSION}/lib-dynload")
                 if (sitePackages.exists()) add(sitePackages.absolutePath)
+                customExtDir?.let { add(it.absolutePath) }
                 add(projDir.absolutePath)
             }.joinToString(":")
             env["PYTHONPATH"] = pythonPath
-            env["LD_LIBRARY_PATH"] = "${pythonHome}/lib"
+            env["LD_LIBRARY_PATH"] = buildList {
+                add("${pythonHome}/lib")
+                customExtDir?.let { add(it.absolutePath) }
+            }.joinToString(":")
 
             AppLogger.i(TAG, "=== Python server startup diagnostics ===")
             AppLogger.i(TAG, "PYTHONHOME=$pythonHome")
@@ -340,6 +347,35 @@ class PythonRuntime(private val context: Context) {
             else -> listOf("app.py", "main.py", "server.py", "index.py", "run.py")
                 .firstOrNull { File(projectDir, it).exists() } ?: "app.py"
         }
+    }
+
+    private fun prepareCustomExtensionsDir(
+        projectDir: String,
+        customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension>
+    ): File? {
+        if (customPythonExtensions.isEmpty()) return null
+
+        val projectExtDir = File(projectDir, "python_exts")
+        val runtimeExtDir = File(context.filesDir, "python_app_deps/ext/${File(projectDir).name}")
+        runtimeExtDir.deleteRecursively()
+        runtimeExtDir.mkdirs()
+
+        if (projectExtDir.isDirectory) {
+            projectExtDir.listFiles()
+                ?.filter { it.isFile && (it.extension == "so" || it.extension == "pyd") }
+                ?.forEach { soFile ->
+                    try {
+                        val dest = File(runtimeExtDir, soFile.name)
+                        soFile.copyTo(dest, overwrite = true)
+                        dest.setExecutable(true, false)
+                        AppLogger.d(TAG, "已复制自定义 Python 扩展: ${soFile.name}")
+                    } catch (e: Exception) {
+                        AppLogger.w(TAG, "复制自定义 Python 扩展失败: ${soFile.name}", e)
+                    }
+                }
+        }
+
+        return runtimeExtDir.takeIf { it.exists() }
     }
 
     fun createProject(projectId: String, sourceDir: File): File {

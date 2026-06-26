@@ -120,7 +120,8 @@ object ShellServerLauncher {
                 framework = framework,
                 port = pyConfig.port,
                 envVars = pyConfig.envVars,
-                installDeps = true
+                installDeps = true,
+                customPythonExtensions = pyConfig.customPythonExtensions
             )
             if (port > 0) {
                 LaunchResult(

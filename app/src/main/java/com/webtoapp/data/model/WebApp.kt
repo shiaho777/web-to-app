@@ -722,6 +722,20 @@ data class WordPressConfig(
     val customPhpExtensions: List<CustomPhpExtension> = emptyList()
 )
 
+data class PhpAppConfig(
+    val projectId: String = "",
+    val projectName: String = "",
+    val framework: String = "",
+    val documentRoot: String = "",
+    val entryFile: String = "index.php",
+    val phpPort: Int = 0,
+    val envVars: Map<String, String> = emptyMap(),
+    val hasComposerJson: Boolean = false,
+    val landscapeMode: Boolean = false,
+    val phpExtensions: Map<String, Boolean> = emptyMap(),
+    val customPhpExtensions: List<CustomPhpExtension> = emptyList()
+)
+
 data class CustomPhpExtension(
     val name: String = "",
     val soFileName: String = "",
@@ -737,19 +751,16 @@ data class CustomPhpExtension(
     fun effectiveSoName(): String = soFileName.takeIf { it.isNotBlank() } ?: "$name.so"
 }
 
-data class PhpAppConfig(
-    val projectId: String = "",
-    val projectName: String = "",
-    val framework: String = "",
-    val documentRoot: String = "",
-    val entryFile: String = "index.php",
-    val phpPort: Int = 0,
-    val envVars: Map<String, String> = emptyMap(),
-    val hasComposerJson: Boolean = false,
-    val landscapeMode: Boolean = false,
-    val phpExtensions: Map<String, Boolean> = emptyMap(),
-    val customPhpExtensions: List<CustomPhpExtension> = emptyList()
-)
+data class CustomPythonExtension(
+    val name: String = "",
+    val soFileName: String = "",
+    val enabled: Boolean = true,
+    val loadOrder: Int = 0
+) {
+    fun effectiveSoName(): String = soFileName.takeIf { it.isNotBlank() } ?: "${name}.so"
+}
+
+
 
 data class PythonAppConfig(
     val projectId: String = "",
@@ -765,7 +776,8 @@ data class PythonAppConfig(
     val pythonVersion: String = "",
     val requirementsFile: String = "requirements.txt",
     val hasPipDeps: Boolean = false,
-    val landscapeMode: Boolean = false
+    val landscapeMode: Boolean = false,
+    val customPythonExtensions: List<CustomPythonExtension> = emptyList()
 )
 
 data class GoAppConfig(

@@ -511,7 +511,8 @@ internal object ApkConfigJsonFactory {
         "serverType" to pythonApp.serverType,
         "port" to pythonApp.port,
         "envVars" to pythonApp.envVars,
-        "landscapeMode" to pythonApp.landscapeMode
+        "landscapeMode" to pythonApp.landscapeMode,
+        "customPythonExtensions" to pythonApp.customPythonExtensions
     )
 
     private fun ApkConfig.goAppConfigPayload(): Map<String, Any?> = linkedMapOf(

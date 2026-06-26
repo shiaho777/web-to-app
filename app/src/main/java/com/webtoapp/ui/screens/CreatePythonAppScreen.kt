@@ -65,6 +65,7 @@ fun CreatePythonAppScreen(
     var envVars by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var newEnvKey by remember { mutableStateOf("") }
     var newEnvValue by remember { mutableStateOf("") }
+    var customPythonExtensions by remember { mutableStateOf<List<com.webtoapp.data.model.CustomPythonExtension>>(emptyList()) }
 
     var selectedProjectDir by remember { mutableStateOf<String?>(null) }
     var sourceProjectPath by remember { mutableStateOf<String?>(null) }
@@ -104,6 +105,7 @@ fun CreatePythonAppScreen(
                     serverType = config.serverType
                     landscapeMode = config.landscapeMode
                     envVars = config.envVars.toMutableMap()
+                    customPythonExtensions = config.customPythonExtensions
                     detectedFramework = config.framework
                     projectId = config.projectId
                     selectedProjectDir = config.projectName
@@ -336,7 +338,8 @@ fun CreatePythonAppScreen(
                                 envVars = envVars,
                                 requirementsFile = if (localProjectDir?.let { File(it, "requirements.txt").exists() } == true) "requirements.txt" else "",
                                 hasPipDeps = localProjectDir?.let { File(it, "requirements.txt").exists() } ?: false,
-                                landscapeMode = landscapeMode
+                                landscapeMode = landscapeMode,
+                                customPythonExtensions = customPythonExtensions
                             ),
                             appIcon,
                             "AURORA"
@@ -573,6 +576,11 @@ fun CreatePythonAppScreen(
                         }
                     },
                     onRemove = { key -> envVars = envVars.toMutableMap().apply { remove(key) } }
+                )
+
+                PythonExtensionsCard(
+                    customExtensions = customPythonExtensions,
+                    onCustomExtensionsChange = { customPythonExtensions = it }
                 )
             }
             }
