@@ -518,7 +518,7 @@ class GeckoViewEngine(
                 }
 
                 val cfg = lastConfig
-                if (cfg != null && cfg.openExternalLinks && request.target == GeckoSession.NavigationDelegate.TARGET_USER_REQUESTED) {
+                if (cfg != null && cfg.openExternalLinks) {
                     val scheme = runCatching { android.net.Uri.parse(uri).scheme?.lowercase() }.getOrNull()
                     if (scheme == "http" || scheme == "https") {
                         val targetHost = runCatching { android.net.Uri.parse(uri).host?.lowercase() }.getOrNull()
