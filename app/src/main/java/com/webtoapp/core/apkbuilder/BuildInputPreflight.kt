@@ -86,7 +86,7 @@ object BuildInputPreflight {
                     label = "PHP runtime (libphp.so)",
                     path = request.phpBinaryPath,
                     minSize = 1024L * 1024L,
-                    hint = "PHP runtime not initialized; open Settings → Runtime Engines and enable PHP"
+                    hint = "PHP runtime not downloaded — go to Settings → Runtime Engines → PHP 8.4 and tap Download. This is required even for built-in sample projects; the sample only provides app code, the PHP interpreter is a separate component."
                 )
             }
             "NODEJS_APP" -> {
@@ -100,7 +100,7 @@ object BuildInputPreflight {
                     label = "Node.js runtime (libnode.so)",
                     path = request.nodeBinaryPath,
                     minSize = 1024L * 1024L,
-                    hint = "Node.js runtime not downloaded; open Settings → Runtime Engines and download Node.js"
+                    hint = "Node.js runtime not downloaded — go to Settings → Runtime Engines and tap Download for Node.js. This is required even for built-in sample projects; the sample only provides app code, the Node.js interpreter is a separate component."
                 )
             }
             "PHP_APP" -> {
@@ -114,7 +114,7 @@ object BuildInputPreflight {
                     label = "PHP runtime (libphp.so)",
                     path = request.phpBinaryPath,
                     minSize = 1024L * 1024L,
-                    hint = "PHP runtime not initialized; open Settings → Runtime Engines and enable PHP"
+                    hint = "PHP runtime not downloaded — go to Settings → Runtime Engines → PHP 8.4 and tap Download. This is required even for built-in sample projects; the sample only provides app code, the PHP interpreter is a separate component."
                 )
             }
             "PYTHON_APP" -> {
