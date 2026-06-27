@@ -20,7 +20,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.FactCheck
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Code
@@ -28,7 +27,6 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Inbox
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.StarOutline
@@ -74,7 +72,6 @@ fun SkillDrawer(
     onPinSession: (String, Boolean) -> Unit,
     onPickFile: (String) -> Unit,
     onPickSkill: (Skill) -> Unit,
-    onPickPlan: (String) -> Unit,
 
     onCreateSkill: () -> Unit = {},
 
@@ -108,7 +105,6 @@ fun SkillDrawer(
                                 AiCodingUiState.DrawerTab.Sessions -> Icons.Outlined.History
                                 AiCodingUiState.DrawerTab.Files -> Icons.Outlined.Folder
                                 AiCodingUiState.DrawerTab.Skills -> Icons.Outlined.AutoAwesome
-                                AiCodingUiState.DrawerTab.Plans -> Icons.AutoMirrored.Outlined.FactCheck
                             },
                             contentDescription = null,
                             modifier = Modifier.size(WtaSize.Icon)
@@ -137,10 +133,6 @@ fun SkillDrawer(
                 onCreate = onCreateSkill,
                 onEdit = onEditSkill
             )
-            AiCodingUiState.DrawerTab.Plans -> PlansTab(
-                sessions = state.sessions,
-                onPick = onPickPlan
-            )
         }
     }
 }
@@ -149,7 +141,6 @@ private fun AiCodingUiState.DrawerTab.label() = when (this) {
     AiCodingUiState.DrawerTab.Sessions -> Strings.aiCodingTabSessions
     AiCodingUiState.DrawerTab.Files -> Strings.aiCodingTabFiles
     AiCodingUiState.DrawerTab.Skills -> Strings.aiCodingTabSkills
-    AiCodingUiState.DrawerTab.Plans -> Strings.aiCodingTabPlans
 }
 
 @Composable
@@ -436,30 +427,6 @@ private fun categoryLabel(c: Skill.Category) = when (c) {
     Skill.Category.Module -> Strings.aiCodingCategoryModule
     Skill.Category.Tool -> Strings.aiCodingCategoryTool
     Skill.Category.Custom -> Strings.aiCodingCategoryCustom
-}
-
-@Composable
-private fun PlansTab(sessions: List<AgentSession>, onPick: (String) -> Unit) {
-    val plans = sessions.flatMap { s -> s.planSlugs.map { slug -> s to slug } }
-    if (plans.isEmpty()) {
-        WtaFullEmptyState(
-            title = Strings.aiCodingEmptyPlans,
-            message = Strings.aiCodingEmptyPlansHint,
-            icon = Icons.Outlined.Inbox
-        )
-        return
-    }
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        items(plans) { (session, slug) ->
-            WtaSettingRow(
-                title = slug,
-                subtitle = session.title.ifBlank { Strings.aiCodingHomeUntitledSession },
-                icon = Icons.AutoMirrored.Outlined.FactCheck,
-                onClick = { onPick("${session.id}::${slug}") }
-            )
-            WtaSectionDivider()
-        }
-    }
 }
 
 private fun filterSessions(all: List<AgentSession>, query: String): List<AgentSession> {

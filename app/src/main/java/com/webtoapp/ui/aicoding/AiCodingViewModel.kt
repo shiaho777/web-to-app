@@ -602,6 +602,8 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun cancelTurn() {
+        val sid = streamingSessionId
+        if (sid != null) savePartialMessage(sid)
         service?.cancel()
         _ui.update {
             it.copy(
@@ -616,6 +618,25 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
         }
         streamingSessionId = null
         streamText.clear(); streamThinking.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
+    }
+
+    private fun savePartialMessage(sid: String) {
+        val text = streamText.toString().trim()
+        val thinking = streamThinking.toString().takeIf { it.isNotBlank() }
+        val tools = streamTools.values.toList()
+        if (text.isBlank() && thinking.isNullOrBlank() && tools.isEmpty()) return
+        sessionStore.appendMessage(
+            sid,
+            AgentMessage(
+                role = AgentMessage.Role.ASSISTANT,
+                content = text.ifBlank { Strings.aiCodingNoOutput } + "\n\n" + Strings.aiCodingAbortedHint,
+                isError = true,
+                thinking = thinking,
+                thinkingDurationMs = _ui.value.streamingThinkingDurationMs
+                    ?: _ui.value.streamingThinkingStartedAt?.let { start -> System.currentTimeMillis() - start },
+                toolCalls = tools
+            )
+        )
     }
 
     fun dismissBanner() {
@@ -1269,6 +1290,7 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
                 saved?.let { maybeAutoTitle(it) }
             }
             AgentEvent.Aborted -> {
+                savePartialMessage(sid)
                 streamingSessionId = null
                 _ui.update {
                     it.copy(
@@ -1304,8 +1326,7 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
                         streamingThinkingStartedAt = null,
                         streamingThinkingDurationMs = null,
                         pendingToolCalls = emptyList(),
-                        currentActivity = null,
-                        error = ev.message
+                        currentActivity = null
                     )
                 }
             }
@@ -1435,6 +1456,9 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
     }
 
     private suspend fun attachSession(id: String) {
+        if (streamingSessionId != null && streamingSessionId != id) {
+            cancelTurn()
+        }
         val session = sessionStore.get(id) ?: return
         planManager = PlanManager(session.id, files, service!!.permissionChecker)
         registryFactory = ToolRegistryFactory(planManager!!, skillRegistry, imageRegistry)

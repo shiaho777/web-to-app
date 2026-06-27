@@ -82,7 +82,7 @@ data class AiCodingUiState(
     val outputTokens: Int = 0
 ) {
     enum class Phase { Idle, Connecting, Streaming, AwaitingTool, AwaitingUser, Error }
-    enum class DrawerTab { Sessions, Files, Skills, Plans }
+    enum class DrawerTab { Sessions, Files, Skills }
 
     val canSend: Boolean get() = phase == Phase.Idle && currentSession != null
     val isWorking: Boolean get() = phase != Phase.Idle && phase != Phase.Error

@@ -77,7 +77,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.DisposableEffect
 import com.webtoapp.core.aicoding.skill.Skill
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.ui.aicoding.components.AiCodingActionBar
 import com.webtoapp.ui.aicoding.components.ChoiceBottomSheet
 import com.webtoapp.ui.aicoding.components.Composer
 import com.webtoapp.ui.aicoding.components.MaterialIconBadgeRound
@@ -224,9 +223,6 @@ fun AiCodingScreen(
                             scope.launch { drawerState.close() }
                             vm.pickSkill(skill)
                         },
-                        onPickPlan = { _ ->
-                            scope.launch { drawerState.close() }
-                        },
                         onCreateSkill = {
                             scope.launch { drawerState.close() }
                             onOpenSkillEditor(null)
@@ -289,13 +285,6 @@ fun AiCodingScreen(
                     .fillMaxSize()
                     .imePadding()
             ) {
-                AiCodingActionBar(
-                    state = state,
-                    onOpenSkillTab = { vm.openDrawer(AiCodingUiState.DrawerTab.Skills) }
-                )
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = WtaAlpha.Divider)
-                )
                 if (state.planActive) {
                     PlanBanner(
                         planFilePath = state.planFilePath,
@@ -668,10 +657,6 @@ private fun EmptyConversationHint(
                 RecentSessionRow(session = session, onClick = { onPickSession(session.id) })
             }
         }
-
-        item("tips") {
-            TipsCard()
-        }
     }
 }
 
@@ -783,44 +768,6 @@ private fun RecentSessionRow(
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(WtaSize.IconSmall + 2.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun TipsCard() {
-    WtaCard(
-        tone = WtaCardTone.Elevated,
-        contentPadding = PaddingValues(WtaSpacing.Medium + 2.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Outlined.Bolt,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(WtaSize.IconSmall)
-            )
-            Spacer(Modifier.width(WtaSpacing.Small))
-            Text(
-                text = Strings.aiCodingHomeTipsTitle,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        Spacer(Modifier.height(WtaSpacing.Small - 2.dp))
-        listOf(
-            Strings.aiCodingHomeTip1,
-            Strings.aiCodingHomeTip2,
-            Strings.aiCodingHomeTip3
-        ).forEach { line ->
-            Text(
-                text = "• $line",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(vertical = 2.dp)
             )
         }
     }
