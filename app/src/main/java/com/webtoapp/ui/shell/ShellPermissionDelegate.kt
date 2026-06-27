@@ -409,29 +409,6 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         pendingGeolocationCallback = null
     }
 
-    private val notificationPermissionLauncher = activity.registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            AppLogger.d("ShellActivity", "通知权限已授予")
-        } else {
-            AppLogger.d("ShellActivity", "通知权限被拒绝")
-        }
-    }
-
-    fun requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val hasPermission = ContextCompat.checkSelfPermission(
-                activity,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (!hasPermission) {
-                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-        }
-    }
-
     fun handlePermissionRequest(request: PermissionRequest) {
         val resources = request.resources
         val androidPermissions = mutableListOf<String>()

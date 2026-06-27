@@ -83,6 +83,8 @@ class ShellStartupPermissions(private val activity: AppCompatActivity) {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
         Manifest.permission.ACTIVITY_RECOGNITION ->
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+        Manifest.permission.POST_NOTIFICATIONS ->
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
         else -> true
     }
 
@@ -170,7 +172,8 @@ class ShellStartupPermissions(private val activity: AppCompatActivity) {
             Manifest.permission.RECEIVE_SMS,
             Manifest.permission.READ_CALL_LOG,
             Manifest.permission.WRITE_CALL_LOG,
-            Manifest.permission.PROCESS_OUTGOING_CALLS
+            Manifest.permission.PROCESS_OUTGOING_CALLS,
+            Manifest.permission.POST_NOTIFICATIONS
         )
     }
 }
