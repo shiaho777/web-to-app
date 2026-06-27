@@ -19,7 +19,7 @@ import com.webtoapp.core.stats.AppUsageStatsDao
 
 @Database(
     entities = [WebApp::class, AppCategory::class, AppUsageStats::class, AppHealthRecord::class],
-    version = 38,
+    version = 39,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -624,6 +624,8 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_37_38 = createAddColumnMigration(37, 38, "activationRemoteConfig")
 
+        private val MIGRATION_38_39 = createAddColumnMigration(38, 39, "adBlockSubscriptions", "TEXT", "'[]'")
+
         private val MIGRATION_27_28_COLUMNS = """
             id, name, url, iconPath, packageName, appType,
             mediaConfig, galleryConfig, htmlConfig,
@@ -780,7 +782,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_34_35,
                     MIGRATION_35_36,
                     MIGRATION_36_37,
-                    MIGRATION_37_38
+                    MIGRATION_37_38,
+                    MIGRATION_38_39
                 )
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6, 7)
