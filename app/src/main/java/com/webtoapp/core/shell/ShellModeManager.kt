@@ -187,6 +187,9 @@ data class ShellConfig(
     @SerializedName("adBlockRules")
     val adBlockRules: List<String> = emptyList(),
 
+    @SerializedName("adBlockSubscriptions")
+    val adBlockSubscriptions: List<String> = emptyList(),
+
     @SerializedName("announcementEnabled")
     val announcementEnabled: Boolean = false,
 

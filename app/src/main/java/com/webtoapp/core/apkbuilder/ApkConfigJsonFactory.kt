@@ -43,6 +43,7 @@ internal object ApkConfigJsonFactory {
         "activationRemoteOfflinePolicy" to activation.remoteOfflinePolicy,
         "adBlockEnabled" to adBlock.enabled,
         "adBlockRules" to adBlock.rules,
+        "adBlockSubscriptions" to adBlock.subscriptions,
         "announcementEnabled" to announcement.enabled,
         "announcementTitle" to announcement.title,
         "announcementContent" to announcement.content,

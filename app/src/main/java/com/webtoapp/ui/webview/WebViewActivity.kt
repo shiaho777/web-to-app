@@ -989,7 +989,15 @@ fun WebViewScreen(
 
             if (previewApp.adBlockEnabled) {
                 adBlocker.initialize(previewApp.adBlockRules, useDefaultRules = false)
+                for (subUrl in previewApp.adBlockSubscriptions) {
+                    if (subUrl.isNotBlank() && !adBlocker.isHostsSourceDownloaded(subUrl)) {
+                        try { adBlocker.importHostsFromUrl(subUrl, context) } catch (_: Exception) {}
+                    }
+                }
                 adBlocker.setEnabled(true)
+            } else {
+                adBlocker.initialize(emptyList(), useDefaultRules = false)
+                adBlocker.setEnabled(false)
             }
 
             (activity as? WebViewActivity)?.fullscreenVideoOrientation =
@@ -1044,7 +1052,15 @@ fun WebViewScreen(
 
                 if (app.adBlockEnabled) {
                     adBlocker.initialize(app.adBlockRules, useDefaultRules = false)
+                    for (subUrl in app.adBlockSubscriptions) {
+                        if (subUrl.isNotBlank() && !adBlocker.isHostsSourceDownloaded(subUrl)) {
+                            try { adBlocker.importHostsFromUrl(subUrl, context) } catch (_: Exception) {}
+                        }
+                    }
                     adBlocker.setEnabled(true)
+                } else {
+                    adBlocker.initialize(emptyList(), useDefaultRules = false)
+                    adBlocker.setEnabled(false)
                 }
 
                 if (app.activationEnabled) {
@@ -3019,6 +3035,19 @@ fun WebViewScreen(
             alpha = if (overlayIsDark) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha,
             heightDp = statusBarHeightDp,
             modifier = Modifier.align(Alignment.TopStart)
+        )
+    }
+
+    if (webApp?.adBlockEnabled == true && webApp.webViewConfig.adBlockToggleEnabled) {
+        com.webtoapp.ui.shell.AdBlockToggleFab(
+            initialEnabled = true,
+            forcedRunActive = false,
+            adBlocker = adBlocker,
+            onToggle = { enabled ->
+                webViewRef?.reload()
+                val message = if (enabled) Strings.adBlockEnabled else Strings.adBlockDisabled
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
         )
     }
     }

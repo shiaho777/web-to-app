@@ -96,6 +96,7 @@ class BatchImportService(
             webViewConfig = app.webViewConfig,
             adBlockEnabled = app.adBlockEnabled,
             adBlockRules = app.adBlockRules,
+            adBlockSubscriptions = app.adBlockSubscriptions,
             extensionModuleIds = app.extensionModuleIds,
             extensionEnabled = app.extensionEnabled,
             splashEnabled = app.splashEnabled,
@@ -120,6 +121,7 @@ class BatchImportService(
             url = template.url,
             adBlockEnabled = template.adBlockEnabled,
             adBlockRules = template.adBlockRules,
+            adBlockSubscriptions = template.adBlockSubscriptions,
             extensionModuleIds = template.extensionModuleIds,
             extensionEnabled = template.extensionEnabled || template.extensionModuleIds.isNotEmpty()
         )
@@ -156,6 +158,7 @@ data class AppTemplate(
     val webViewConfig: com.webtoapp.data.model.WebViewConfig = com.webtoapp.data.model.WebViewConfig(),
     val adBlockEnabled: Boolean = false,
     val adBlockRules: List<String> = emptyList(),
+    val adBlockSubscriptions: List<String> = emptyList(),
     val extensionModuleIds: List<String> = emptyList(),
     val extensionEnabled: Boolean = false,
     val splashEnabled: Boolean = false,

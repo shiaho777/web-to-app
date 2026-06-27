@@ -67,6 +67,7 @@ data class WebApp(
 
     val adBlockEnabled: Boolean = false,
     val adBlockRules: List<String> = emptyList(),
+    val adBlockSubscriptions: List<String> = emptyList(),
 
     val webViewConfig: WebViewConfig = WebViewConfig(),
 

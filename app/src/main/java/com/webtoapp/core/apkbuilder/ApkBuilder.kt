@@ -914,7 +914,18 @@ class ApkBuilder(private val context: Context) {
                 }
 
                 if (config.adBlock.enabled) {
-                    val compiledRules = WebToAppApplication.adBlock.getCompiledRulesText()
+                    val globalAdBlock = WebToAppApplication.adBlock
+                    for (subUrl in config.adBlock.subscriptions) {
+                        if (subUrl.isNotBlank() && !globalAdBlock.isHostsSourceDownloaded(subUrl)) {
+                            try {
+                                globalAdBlock.importHostsFromUrl(subUrl, context).getOrThrow()
+                                logger.log("AdBlock subscription imported at build: $subUrl")
+                            } catch (e: Exception) {
+                                logger.log("AdBlock subscription import failed: $subUrl — ${e.message}")
+                            }
+                        }
+                    }
+                    val compiledRules = globalAdBlock.getCompiledRulesText()
                     if (compiledRules.isNotEmpty()) {
                         val rulesData = compiledRules.toByteArray(Charsets.UTF_8)
                         writeEntryDeflated(zipOut, "assets/wta_adblock_compiled.txt", rulesData)
@@ -3051,7 +3062,8 @@ private fun WebApp.buildActivationBlock(): ActivationBlock = ActivationBlock(
 
 private fun WebApp.buildAdBlockBlock(): AdBlockBlock = AdBlockBlock(
     enabled = adBlockEnabled,
-    rules = adBlockRules
+    rules = adBlockRules,
+    subscriptions = adBlockSubscriptions
 )
 
 private fun WebApp.buildAnnouncementBlock(): AnnouncementBlock = AnnouncementBlock(
