@@ -21690,6 +21690,12 @@ object Strings {
         AppLanguage.ARABIC -> "مدعوم فقط بواسطة محرك GeckoView"
     }
 
+    val dnsEchGeckoBadge: String get() = when (lang) {
+        AppLanguage.CHINESE -> "仅 Gecko"
+        AppLanguage.ENGLISH -> "Gecko only"
+        AppLanguage.ARABIC -> "Gecko فقط"
+    }
+
     val isolatedBrowserEnvironment: String get() = when (lang) {
         AppLanguage.CHINESE -> "独立浏览器环境：支持指纹伪装、多开隔离"
         AppLanguage.ENGLISH -> "Isolated browser environment: fingerprint spoofing, multi-instance isolation"
