@@ -4058,27 +4058,56 @@ class WebViewManager(
                         'use strict';
 
                         if (typeof NativeShareBridge !== 'undefined') {
-                            // Implement navigator.share
+                            function __wta_readFileAsBase64(file) {
+                                return new Promise(function(resolve, reject) {
+                                    var reader = new FileReader();
+                                    reader.onload = function() {
+                                        try {
+                                            var arr = new Uint8Array(reader.result);
+                                            var chunkSize = 0x8000;
+                                            var binary = '';
+                                            for (var i = 0; i < arr.length; i += chunkSize) {
+                                                binary += String.fromCharCode.apply(null, arr.subarray(i, i + chunkSize));
+                                            }
+                                            resolve(btoa(binary));
+                                        } catch(e) { reject(e); }
+                                    };
+                                    reader.onerror = function() { reject(reader.error); };
+                                    reader.readAsArrayBuffer(file);
+                                });
+                            }
+
                             navigator.share = function(data) {
                                 return new Promise(function(resolve, reject) {
                                     try {
                                         var title = data.title || '';
                                         var text = data.text || '';
                                         var url = data.url || '';
-                                        NativeShareBridge.shareText(title, text, url);
-                                        resolve();
+                                        var files = data.files;
+
+                                        if (files && files.length > 0) {
+                                            var file = files[0];
+                                            __wta_readFileAsBase64(file).then(function(base64) {
+                                                NativeShareBridge.shareFile(title, base64, file.type || 'application/octet-stream', file.name || 'shared_file');
+                                                resolve();
+                                            }).catch(function(e) { reject(e); });
+                                        } else {
+                                            NativeShareBridge.shareText(title, text, url);
+                                            resolve();
+                                        }
                                     } catch(e) {
                                         reject(e);
                                     }
                                 });
                             };
 
-                            // Implement navigator.canShare
                             navigator.canShare = function(data) {
-                                // Basic support for text and url
                                 if (!data) return false;
-                                if (data.files) return false; // File sharing not yet supported
-                                return true;
+                                if (data.files && data.files.length > 0) {
+                                    return typeof NativeShareBridge.canShareFiles === 'function'
+                                        ? NativeShareBridge.canShareFiles() : true;
+                                }
+                                return !!(data.text || data.url || data.title);
                             };
                         }
                     })();
