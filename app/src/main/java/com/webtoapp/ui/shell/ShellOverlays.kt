@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -167,36 +168,85 @@ fun BoxScope.ShellAdBlockToggle(
     forcedRunActive: Boolean,
     webViewRef: WebView?
 ) {
+    if (!config.adBlockEnabled || !config.webViewConfig.adBlockToggleEnabled) return
+
     val context = LocalContext.current
     val adBlocker = WebToAppApplication.adBlock
+    val prefs = remember(context) {
+        context.getSharedPreferences("wta_adblock_toggle", android.content.Context.MODE_PRIVATE)
+    }
+    val initialEnabled = remember(config.packageName) {
+        prefs.getBoolean("enabled_${config.packageName}", config.adBlockEnabled)
+    }
 
-    if (config.adBlockEnabled && config.webViewConfig.adBlockToggleEnabled) {
-        var adBlockCurrentlyEnabled by remember { mutableStateOf(config.adBlockEnabled) }
+    AdBlockToggleFab(
+        initialEnabled = initialEnabled,
+        forcedRunActive = forcedRunActive,
+        adBlocker = adBlocker,
+        onToggle = { enabled ->
+            prefs.edit().putBoolean("enabled_${config.packageName}", enabled).apply()
+            webViewRef?.reload()
+            val message = if (enabled) Strings.adBlockEnabled else Strings.adBlockDisabled
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    )
+}
 
-        FloatingActionButton(
-            onClick = {
-                adBlockCurrentlyEnabled = !adBlockCurrentlyEnabled
-                adBlocker.setEnabled(adBlockCurrentlyEnabled)
-                webViewRef?.reload()
-                val message = if (adBlockCurrentlyEnabled)
-                    Strings.adBlockEnabled
-                else
-                    Strings.adBlockDisabled
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = if (forcedRunActive) 72.dp else 16.dp),
-            elevation = FloatingActionButtonDefaults.elevation(
-                defaultElevation = 0.dp,
-                pressedElevation = 0.dp,
-                focusedElevation = 0.dp,
-                hoveredElevation = 0.dp
-            ),
-            containerColor = if (adBlockCurrentlyEnabled)
-                MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.surfaceVariant
+@Composable
+fun BoxScope.AdBlockToggleFab(
+    initialEnabled: Boolean,
+    forcedRunActive: Boolean,
+    adBlocker: com.webtoapp.core.adblock.AdBlocker,
+    onToggle: (Boolean) -> Unit
+) {
+    var adBlockCurrentlyEnabled by rememberSaveable { mutableStateOf(initialEnabled) }
+
+    val blockedCount by androidx.compose.runtime.produceState(
+        initialValue = adBlocker.getBlockedCount(),
+        adBlockCurrentlyEnabled
+    ) {
+        if (!adBlockCurrentlyEnabled) {
+            value = 0L
+            return@produceState
+        }
+        while (true) {
+            value = adBlocker.getBlockedCount()
+            kotlinx.coroutines.delay(2000)
+        }
+    }
+
+    FloatingActionButton(
+        onClick = {
+            adBlockCurrentlyEnabled = !adBlockCurrentlyEnabled
+            adBlocker.setEnabled(adBlockCurrentlyEnabled)
+            onToggle(adBlockCurrentlyEnabled)
+        },
+        modifier = Modifier
+            .align(Alignment.BottomEnd)
+            .padding(end = 16.dp, bottom = if (forcedRunActive) 72.dp else 16.dp),
+        elevation = FloatingActionButtonDefaults.elevation(
+            defaultElevation = if (adBlockCurrentlyEnabled) 4.dp else 0.dp,
+            pressedElevation = 2.dp,
+            focusedElevation = 4.dp,
+            hoveredElevation = 4.dp
+        ),
+        containerColor = if (adBlockCurrentlyEnabled)
+            MaterialTheme.colorScheme.primaryContainer
+        else
+            MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        BadgedBox(
+            badge = {
+                if (adBlockCurrentlyEnabled && blockedCount > 0) {
+                    val displayCount = if (blockedCount > 999) "999+" else blockedCount.toString()
+                    Badge(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    ) {
+                        Text(displayCount, style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
         ) {
             Icon(
                 imageVector = if (adBlockCurrentlyEnabled)
@@ -210,7 +260,8 @@ fun BoxScope.ShellAdBlockToggle(
                 tint = if (adBlockCurrentlyEnabled)
                     MaterialTheme.colorScheme.primary
                 else
-                    MaterialTheme.colorScheme.onSurfaceVariant
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(8.dp)
             )
         }
     }

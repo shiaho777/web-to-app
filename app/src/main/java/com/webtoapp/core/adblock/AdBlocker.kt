@@ -689,11 +689,18 @@ class AdBlocker {
 
     private var enabled = false
 
+    @Volatile
+    private var blockedCount: Long = 0L
+
     fun setEnabled(enable: Boolean) {
         enabled = enable
+        if (!enable) blockedCount = 0L
         synchronized(blockResultCache) { blockResultCache.clear() }
     }
     fun isEnabled(): Boolean = enabled
+
+    fun getBlockedCount(): Long = blockedCount
+    fun resetBlockedCount() { blockedCount = 0L }
 
     fun invalidateCache() {
         synchronized(blockResultCache) { blockResultCache.clear() }
@@ -745,12 +752,17 @@ class AdBlocker {
 
         val cacheKey = lowerUrl.hashCode() xor (if (isThirdParty) 0x9e3779b9.toInt() else 0)
         synchronized(blockResultCache) {
-            blockResultCache[cacheKey]?.let { return it }
+            val cached = blockResultCache[cacheKey]
+            if (cached != null) {
+                if (cached) blockedCount++
+                return cached
+            }
         }
 
         val result = shouldBlockInternal(lowerUrl, urlHost, pageHost, resType, isThirdParty)
         synchronized(blockResultCache) {
             blockResultCache[cacheKey] = result
+            if (result) blockedCount++
         }
         return result
     }

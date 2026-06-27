@@ -8985,6 +8985,30 @@ object Strings {
         AppLanguage.ARABIC -> "قواعد الحظر المخصصة (اختياري)"
     }
 
+    val adBlockNoRules: String get() = when (lang) {
+        AppLanguage.CHINESE -> "尚未添加自定义规则。内置社区过滤规则仍然生效。"
+        AppLanguage.ENGLISH -> "No custom rules added yet. Built-in community filter lists still apply."
+        AppLanguage.ARABIC -> "لم تتم إضافة قواعد مخصصة بعد. قوائم التصفية المجتمعية المدمجة لا تزال سارية."
+    }
+
+    val adBlockSubscriptionsLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "订阅规则源"
+        AppLanguage.ENGLISH -> "Filter List Subscriptions"
+        AppLanguage.ARABIC -> "اشتراكات قوائم التصفية"
+    }
+
+    val adBlockSubscriptionsDesc: String get() = when (lang) {
+        AppLanguage.CHINESE -> "勾选后将下载并编译社区维护的过滤规则,烘焙进生成的 APK"
+        AppLanguage.ENGLISH -> "Selected lists are downloaded and compiled into the generated APK"
+        AppLanguage.ARABIC -> "يتم تنزيل القوائم المحددة وتجميعها في ملف APK الذي تم إنشاؤه"
+    }
+
+    val adBlockRuntimeControls: String get() = when (lang) {
+        AppLanguage.CHINESE -> "运行时控件"
+        AppLanguage.ENGLISH -> "Runtime Controls"
+        AppLanguage.ARABIC -> "عناصر تحكم وقت التشغيل"
+    }
+
     val adBlockEnabled: String get() = when (lang) {
         AppLanguage.CHINESE -> "广告拦截已开启"
         AppLanguage.ENGLISH -> "Ad Block Enabled"
@@ -12539,11 +12563,6 @@ object Strings {
         AppLanguage.ENGLISH -> "Skills"
         AppLanguage.ARABIC -> "المهارات"
     }
-    val aiCodingTabPlans: String get() = when (lang) {
-        AppLanguage.CHINESE -> "计划"
-        AppLanguage.ENGLISH -> "Plans"
-        AppLanguage.ARABIC -> "الخطط"
-    }
     val aiCodingDrawerSearchHint: String get() = when (lang) {
         AppLanguage.CHINESE -> "搜索…"
         AppLanguage.ENGLISH -> "Search…"
@@ -12837,16 +12856,6 @@ object Strings {
         AppLanguage.ENGLISH -> "Skills"
         AppLanguage.ARABIC -> "المهارات"
     }
-    val aiCodingSlashChipTooltip: String get() = when (lang) {
-        AppLanguage.CHINESE -> "插入 / 打开技能 + 命令"
-        AppLanguage.ENGLISH -> "Insert / to open skills + commands"
-        AppLanguage.ARABIC -> "إدراج / لفتح المهارات والأوامر"
-    }
-    val aiCodingAutoModeTooltip: String get() = when (lang) {
-        AppLanguage.CHINESE -> "自动批准模型的写入和编辑（点一下切回手动）"
-        AppLanguage.ENGLISH -> "Auto-approve writes and edits (tap to switch back)"
-        AppLanguage.ARABIC -> "الموافقة التلقائية على الكتابة والتعديل (اضغط للعودة)"
-    }
     val aiCodingChangesReviewHeader: String get() = when (lang) {
         AppLanguage.CHINESE -> "%d 个改动"
         AppLanguage.ENGLISH -> "%d changes"
@@ -12882,11 +12891,6 @@ object Strings {
         AppLanguage.ENGLISH -> "Undid %d changes"
         AppLanguage.ARABIC -> "تم التراجع عن %d تغييرات"
     }
-    val aiCodingPickSkillHint: String get() = when (lang) {
-        AppLanguage.CHINESE -> "在输入框输入 / 浏览技能，或直接描述需求"
-        AppLanguage.ENGLISH -> "Type / in the composer to browse skills, or just describe what you want"
-        AppLanguage.ARABIC -> "اكتب / في الحقل لتصفح المهارات أو صف ما تحتاجه"
-    }
     val aiCodingPlanModeBadge: String get() = when (lang) {
         AppLanguage.CHINESE -> "Plan 模式"
         AppLanguage.ENGLISH -> "Plan Mode"
@@ -12911,26 +12915,6 @@ object Strings {
         AppLanguage.CHINESE -> "Plan"
         AppLanguage.ENGLISH -> "Plan"
         AppLanguage.ARABIC -> "تخطيط"
-    }
-    val aiCodingPlanOn: String get() = when (lang) {
-        AppLanguage.CHINESE -> "Plan 中"
-        AppLanguage.ENGLISH -> "Plan on"
-        AppLanguage.ARABIC -> "التخطيط مفعل"
-    }
-    val aiCodingModeConversation: String get() = when (lang) {
-        AppLanguage.CHINESE -> "对话"
-        AppLanguage.ENGLISH -> "Chat"
-        AppLanguage.ARABIC -> "محادثة"
-    }
-    val aiCodingModeSplit: String get() = when (lang) {
-        AppLanguage.CHINESE -> "分屏"
-        AppLanguage.ENGLISH -> "Split"
-        AppLanguage.ARABIC -> "تقسيم"
-    }
-    val aiCodingModePreview: String get() = when (lang) {
-        AppLanguage.CHINESE -> "预览"
-        AppLanguage.ENGLISH -> "Preview"
-        AppLanguage.ARABIC -> "معاينة"
     }
     val aiCodingOpenDrawer: String get() = when (lang) {
         AppLanguage.CHINESE -> "打开侧边栏"
@@ -12971,26 +12955,6 @@ object Strings {
         AppLanguage.CHINESE -> "未命名会话"
         AppLanguage.ENGLISH -> "Untitled session"
         AppLanguage.ARABIC -> "جلسة بدون عنوان"
-    }
-    val aiCodingHomeTipsTitle: String get() = when (lang) {
-        AppLanguage.CHINESE -> "小贴士"
-        AppLanguage.ENGLISH -> "Tips"
-        AppLanguage.ARABIC -> "نصائح"
-    }
-    val aiCodingHomeTip1: String get() = when (lang) {
-        AppLanguage.CHINESE -> "输入 / 触发斜杠命令：/plan、/compact、/clear"
-        AppLanguage.ENGLISH -> "Type / for slash commands: /plan, /compact, /clear"
-        AppLanguage.ARABIC -> "اكتب / لأوامر الشرطة المائلة: /plan، /compact، /clear"
-    }
-    val aiCodingHomeTip2: String get() = when (lang) {
-        AppLanguage.CHINESE -> "顶部按钮可在对话、分屏、预览之间切换"
-        AppLanguage.ENGLISH -> "Use the top buttons to switch chat, split, and preview"
-        AppLanguage.ARABIC -> "استخدم الأزرار العلوية للتبديل بين المحادثة والتقسيم والمعاينة"
-    }
-    val aiCodingHomeTip3: String get() = when (lang) {
-        AppLanguage.CHINESE -> "侧边栏存放历史会话、文件、技能与计划"
-        AppLanguage.ENGLISH -> "Drawer holds sessions, files, skills, and plans"
-        AppLanguage.ARABIC -> "اللوحة الجانبية تحتوي على الجلسات والملفات والمهارات والخطط"
     }
     val aiCodingPreviewToolbarPrefix: String get() = when (lang) {
         AppLanguage.CHINESE -> "预览 · %s"
@@ -13096,11 +13060,6 @@ object Strings {
         AppLanguage.ENGLISH -> "No matching files"
         AppLanguage.ARABIC -> "لا توجد ملفات مطابقة"
     }
-    val aiCodingClearSkill: String get() = when (lang) {
-        AppLanguage.CHINESE -> "清除技能"
-        AppLanguage.ENGLISH -> "Clear skill"
-        AppLanguage.ARABIC -> "مسح المهارة"
-    }
     val aiCodingPreviewEmpty: String get() = when (lang) {
         AppLanguage.CHINESE -> "项目里还没有可预览的页面"
         AppLanguage.ENGLISH -> "Nothing to preview yet"
@@ -13110,21 +13069,6 @@ object Strings {
         AppLanguage.CHINESE -> "暂无预览"
         AppLanguage.ENGLISH -> "Preview"
         AppLanguage.ARABIC -> "معاينة"
-    }
-    val aiCodingPreviewToolbarFile: String get() = when (lang) {
-        AppLanguage.CHINESE -> "(无文件)"
-        AppLanguage.ENGLISH -> "(no file)"
-        AppLanguage.ARABIC -> "(لا يوجد ملف)"
-    }
-    val aiCodingPreviewErrors: String get() = when (lang) {
-        AppLanguage.CHINESE -> "%d 错误"
-        AppLanguage.ENGLISH -> "%d err"
-        AppLanguage.ARABIC -> "%d خطأ"
-    }
-    val aiCodingPreviewWarnings: String get() = when (lang) {
-        AppLanguage.CHINESE -> "%d 警告"
-        AppLanguage.ENGLISH -> "%d warn"
-        AppLanguage.ARABIC -> "%d تحذير"
     }
     val aiCodingPhaseConnecting: String get() = when (lang) {
         AppLanguage.CHINESE -> "连接中…"
@@ -13250,6 +13194,11 @@ object Strings {
         AppLanguage.CHINESE -> "(无输出)"
         AppLanguage.ENGLISH -> "(no output)"
         AppLanguage.ARABIC -> "(لا يوجد ناتج)"
+    }
+    val aiCodingAbortedHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "[已中断]"
+        AppLanguage.ENGLISH -> "[Interrupted]"
+        AppLanguage.ARABIC -> "[تمت المقاطعة]"
     }
     val aiCodingMissingTextModel: String get() = when (lang) {
         AppLanguage.CHINESE -> "请先在 AI 设置中配置一个可编程模型"
@@ -13450,21 +13399,6 @@ object Strings {
         AppLanguage.CHINESE -> "调整搜索词或清空"
         AppLanguage.ENGLISH -> "Adjust the search or clear it"
         AppLanguage.ARABIC -> "عدّل البحث أو امسحه"
-    }
-    val aiCodingEmptyPlans: String get() = when (lang) {
-        AppLanguage.CHINESE -> "还没有计划"
-        AppLanguage.ENGLISH -> "No plans yet"
-        AppLanguage.ARABIC -> "لا توجد خطط بعد"
-    }
-    val aiCodingEmptyPlansHint: String get() = when (lang) {
-        AppLanguage.CHINESE -> "进入 plan 模式后会出现"
-        AppLanguage.ENGLISH -> "Plans appear after entering plan mode"
-        AppLanguage.ARABIC -> "تظهر الخطط بعد الدخول في وضع التخطيط"
-    }
-    val aiCodingSlashHint: String get() = when (lang) {
-        AppLanguage.CHINESE -> "未命名"
-        AppLanguage.ENGLISH -> "(untitled)"
-        AppLanguage.ARABIC -> "(بدون عنوان)"
     }
     val aiCodingNotifIdle: String get() = when (lang) {
         AppLanguage.CHINESE -> "AI 编程已就绪"

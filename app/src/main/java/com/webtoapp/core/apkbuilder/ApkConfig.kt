@@ -67,6 +67,7 @@ data class ApkConfig(
 
     val adBlockEnabled: Boolean get() = adBlock.enabled
     val adBlockRules: List<String> get() = adBlock.rules
+    val adBlockSubscriptions: List<String> get() = adBlock.subscriptions
 
     val announcementEnabled: Boolean get() = announcement.enabled
     val announcementTitle: String get() = announcement.title
@@ -409,7 +410,8 @@ data class ActivationBlock(
 
 data class AdBlockBlock(
     val enabled: Boolean = false,
-    val rules: List<String> = emptyList()
+    val rules: List<String> = emptyList(),
+    val subscriptions: List<String> = emptyList()
 )
 
 data class AnnouncementBlock(

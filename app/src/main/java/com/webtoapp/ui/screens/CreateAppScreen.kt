@@ -416,6 +416,7 @@ fun CreateAppScreen(
                 editState = editState,
                 onEnabledChange = { viewModel.updateEditState { copy(adBlockEnabled = it) } },
                 onRulesChange = { viewModel.updateEditState { copy(adBlockRules = it) } },
+                onSubscriptionsChange = { viewModel.updateEditState { copy(adBlockSubscriptions = it) } },
                 onToggleEnabledChange = {
                     viewModel.updateEditState {
                         copy(webViewConfig = webViewConfig.copy(adBlockToggleEnabled = it))

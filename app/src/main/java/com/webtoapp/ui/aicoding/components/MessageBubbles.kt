@@ -36,6 +36,8 @@ import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.HourglassTop
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.RadioButtonUnchecked
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -985,21 +987,19 @@ fun TodoChecklist(todos: List<com.webtoapp.core.aicoding.todo.TodoManager.Item>)
         Spacer(Modifier.height(WtaSpacing.Small - 2.dp))
         todos.forEach { item ->
             Row(verticalAlignment = Alignment.CenterVertically) {
-                val (label, color) = when (item.status) {
+                val (icon, color) = when (item.status) {
                     com.webtoapp.core.aicoding.todo.TodoManager.Item.Status.Completed ->
-                        "✓" to WtaColors.semantic.success
+                        Icons.Outlined.CheckCircle to WtaColors.semantic.success
                     com.webtoapp.core.aicoding.todo.TodoManager.Item.Status.InProgress ->
-                        "▶" to MaterialTheme.colorScheme.primary
-                    else -> "○" to MaterialTheme.colorScheme.onSurfaceVariant
+                        Icons.Outlined.PlayArrow to MaterialTheme.colorScheme.primary
+                    else -> Icons.Outlined.RadioButtonUnchecked to MaterialTheme.colorScheme.onSurfaceVariant
                 }
-                Box(modifier = Modifier.size(14.dp), contentAlignment = Alignment.Center) {
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = color
-                    )
-                }
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = color,
+                    modifier = Modifier.size(14.dp)
+                )
                 Spacer(Modifier.width(WtaSpacing.Small))
                 Text(
                     text = item.subject,
