@@ -28994,15 +28994,15 @@ object Strings {
     }
 
     val phpStartFailed: String get() = when (lang) {
-        AppLanguage.CHINESE -> "PHP 启动失败"
-        AppLanguage.ENGLISH -> "PHP start failed"
-        AppLanguage.ARABIC -> "فشل بدء PHP"
+        AppLanguage.CHINESE -> "PHP 运行时 (libphp.so) 未安装 — PHP 运行时未初始化；请打开设置 → 运行时引擎 → PHP 8.4，点击下载"
+        AppLanguage.ENGLISH -> "PHP runtime (libphp.so) not installed — PHP runtime not initialized; open Settings → Runtime Engines → PHP 8.4 and tap Download"
+        AppLanguage.ARABIC -> "PHP runtime (libphp.so) not installed — PHP runtime not initialized; افتح الإعدادات → محركات التشغيل → PHP 8.4 وانقر تنزيل"
     }
 
     val nodeRuntimeNotFound: String get() = when (lang) {
-        AppLanguage.CHINESE -> "Node.js 运行时未找到。请使用最新版 WebToApp 重新构建此应用。"
-        AppLanguage.ENGLISH -> "Node.js runtime not found. Please rebuild this app with the latest WebToApp."
-        AppLanguage.ARABIC -> "لم يتم العثور على وقت تشغيل Node.js. يرجى إعادة بناء هذا التطبيق باستخدام أحدث إصدار من WebToApp."
+        AppLanguage.CHINESE -> "Node.js 运行时 (libnode.so) 未安装 — Node.js 运行时未下载；请打开设置 → 运行时引擎，下载 Node.js"
+        AppLanguage.ENGLISH -> "Node.js runtime (libnode.so) not installed — Node.js runtime not downloaded; open Settings → Runtime Engines and download Node.js"
+        AppLanguage.ARABIC -> "Node.js runtime (libnode.so) not installed — Node.js runtime not downloaded; افتح الإعدادات → محركات التشغيل ونزّل Node.js"
     }
 
     val nodeServerStartFailed: String get() = when (lang) {
@@ -29084,9 +29084,9 @@ object Strings {
     }
 
     val goStartFailed: String get() = when (lang) {
-        AppLanguage.CHINESE -> "Go 启动失败"
-        AppLanguage.ENGLISH -> "Go failed to start"
-        AppLanguage.ARABIC -> "فشل تشغيل Go"
+        AppLanguage.CHINESE -> "Go 运行时（预编译二进制）未找到 — Go 应用需要目标 ABI 的预编译二进制文件；请在项目设置中先构建二进制"
+        AppLanguage.ENGLISH -> "Go runtime (prebuilt binary) not found — Go app needs a prebuilt binary for the target ABI; build the binary first in the project settings"
+        AppLanguage.ARABIC -> "Go runtime (prebuilt binary) not found — تطبيق Go يحتاج إلى ملف ثنائي مُجمَّع مسبقًا لـ ABI الهدف؛ ابنِ الملف الثنائي أولًا في إعدادات المشروع"
     }
 
     val startingGoServer: String get() = when (lang) {
