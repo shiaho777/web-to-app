@@ -64,13 +64,6 @@ fun DnsConfigCard(
                             Strings.dnsConfigTitle,
                             style = MaterialTheme.typography.titleMedium
                         )
-                        if (!enabled) {
-                            Text(
-                                Strings.dnsModeSystemDesc,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
                 }
                 WtaSwitch(

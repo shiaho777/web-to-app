@@ -423,6 +423,21 @@ fun CreateAppScreen(
                 }
             )
 
+            com.webtoapp.ui.components.DnsConfigCard(
+                dnsMode = editState.webViewConfig.dnsMode,
+                dnsConfig = editState.webViewConfig.dnsConfig,
+                onDnsModeChange = { mode ->
+                    viewModel.updateEditState {
+                        copy(webViewConfig = webViewConfig.copy(dnsMode = mode))
+                    }
+                },
+                onDnsConfigChange = { config ->
+                    viewModel.updateEditState {
+                        copy(webViewConfig = webViewConfig.copy(dnsConfig = config))
+                    }
+                }
+            )
+
             com.webtoapp.ui.components.DisguiseConfigCard(
                 config = editState.disguiseConfig,
                 onConfigChange = { viewModel.updateEditState { copy(disguiseConfig = it) } }

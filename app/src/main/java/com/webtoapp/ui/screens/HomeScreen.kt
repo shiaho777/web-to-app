@@ -1816,13 +1816,6 @@ fun BuildApkDialog(
         mutableStateOf(webApp.apkExportConfig?.notificationConfig ?: com.webtoapp.data.model.NotificationExportConfig())
     }
 
-    var dnsMode by remember(webApp.id) {
-        mutableStateOf(webApp.webViewConfig.dnsMode)
-    }
-    var dnsConfig by remember(webApp.id) {
-        mutableStateOf(webApp.webViewConfig.dnsConfig)
-    }
-
     var selectedEngineType by remember(webApp.id) {
         mutableStateOf(webApp.apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW")
     }
@@ -1844,10 +1837,6 @@ fun BuildApkDialog(
 
     fun currentBuildConfig(): WebApp {
         return webApp.copy(
-            webViewConfig = webApp.webViewConfig.copy(
-                dnsMode = dnsMode,
-                dnsConfig = dnsConfig
-            ),
             apkExportConfig = (webApp.apkExportConfig ?: com.webtoapp.data.model.ApkExportConfig()).copy(
                 encryptionConfig = encryptionConfig,
                 isolationConfig = isolationConfig,
@@ -1905,8 +1894,6 @@ fun BuildApkDialog(
         backgroundRunConfig,
         notificationEnabled,
         notificationConfig,
-        dnsMode,
-        dnsConfig,
         selectedEngineType
     ) {
         preflightReport = ApkExportPreflight.check(context, currentBuildConfig())
@@ -1997,13 +1984,6 @@ fun BuildApkDialog(
                     config = notificationConfig,
                     onEnabledChange = { notificationEnabled = it },
                     onConfigChange = { notificationConfig = it }
-                )
-
-                com.webtoapp.ui.components.DnsConfigCard(
-                    dnsMode = dnsMode,
-                    dnsConfig = dnsConfig,
-                    onDnsModeChange = { dnsMode = it },
-                    onDnsConfigChange = { dnsConfig = it }
                 )
 
                 if (webApp.appType == com.webtoapp.data.model.AppType.WEB) {
