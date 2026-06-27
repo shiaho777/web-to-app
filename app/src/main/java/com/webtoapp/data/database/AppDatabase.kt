@@ -19,7 +19,7 @@ import com.webtoapp.core.stats.AppUsageStatsDao
 
 @Database(
     entities = [WebApp::class, AppCategory::class, AppUsageStats::class, AppHealthRecord::class],
-    version = 39,
+    version = 40,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -624,7 +624,185 @@ abstract class AppDatabase : RoomDatabase() {
 
         private val MIGRATION_37_38 = createAddColumnMigration(37, 38, "activationRemoteConfig")
 
-        private val MIGRATION_38_39 = createAddColumnMigration(38, 39, "adBlockSubscriptions", "TEXT", "'[]'")
+        private val MIGRATION_38_39_COLUMNS = """
+            id, name, url, iconPath, packageName, appType,
+            mediaConfig, galleryConfig, htmlConfig,
+            wordpressConfig, nodejsConfig, phpAppConfig, pythonAppConfig, goAppConfig, multiWebConfig,
+            activationEnabled, activationCodeList, activationRequireEveryTime, isActivated,
+            adsEnabled, adConfig,
+            announcementEnabled, announcement,
+            adBlockEnabled, adBlockRules, adBlockSubscriptions,
+            webViewConfig,
+            splashEnabled, splashConfig,
+            bgmEnabled, bgmConfig,
+            apkExportConfig, themeType,
+            translateEnabled, translateConfig,
+            extensionEnabled, extensionModuleIds, extensionFabIcon,
+            autoStartConfig, forcedRunConfig,
+            blackTechConfig, disguiseConfig, browserDisguiseConfig, deviceDisguiseConfig,
+            activationDialogConfig, activationRemoteConfig,
+            categoryId, createdAt, updatedAt
+        """.trimIndent()
+
+        private val MIGRATION_38_39_SELECT = """
+            id, name, url, iconPath, packageName, appType,
+            mediaConfig, galleryConfig, htmlConfig,
+            wordpressConfig, nodejsConfig, phpAppConfig, pythonAppConfig, goAppConfig, multiWebConfig,
+            activationEnabled, activationCodeList, activationRequireEveryTime, isActivated,
+            adsEnabled, adConfig,
+            announcementEnabled, announcement,
+            adBlockEnabled, adBlockRules, '[]',
+            webViewConfig,
+            splashEnabled, splashConfig,
+            bgmEnabled, bgmConfig,
+            apkExportConfig, themeType,
+            translateEnabled, translateConfig,
+            extensionEnabled, extensionModuleIds, extensionFabIcon,
+            autoStartConfig, forcedRunConfig,
+            blackTechConfig, disguiseConfig, browserDisguiseConfig, deviceDisguiseConfig,
+            activationDialogConfig, activationRemoteConfig,
+            categoryId, createdAt, updatedAt
+        """.trimIndent()
+
+        private val MIGRATION_38_39 = object : Migration(38, 39) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                AppLogger.i("AppDatabase", "Migration 38->39: adding adBlockSubscriptions column")
+                val createTableSql = """
+                    CREATE TABLE IF NOT EXISTS web_apps_new (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        url TEXT NOT NULL,
+                        iconPath TEXT,
+                        packageName TEXT,
+                        appType TEXT NOT NULL DEFAULT 'WEB',
+                        mediaConfig TEXT,
+                        galleryConfig TEXT,
+                        htmlConfig TEXT,
+                        wordpressConfig TEXT,
+                        nodejsConfig TEXT,
+                        phpAppConfig TEXT,
+                        pythonAppConfig TEXT,
+                        goAppConfig TEXT,
+                        multiWebConfig TEXT,
+                        activationEnabled INTEGER NOT NULL DEFAULT 0,
+                        activationCodeList TEXT NOT NULL DEFAULT '[]',
+                        activationRequireEveryTime INTEGER NOT NULL DEFAULT 0,
+                        isActivated INTEGER NOT NULL DEFAULT 0,
+                        adsEnabled INTEGER NOT NULL DEFAULT 0,
+                        adConfig TEXT,
+                        announcementEnabled INTEGER NOT NULL DEFAULT 0,
+                        announcement TEXT,
+                        adBlockEnabled INTEGER NOT NULL DEFAULT 0,
+                        adBlockRules TEXT NOT NULL DEFAULT '[]',
+                        adBlockSubscriptions TEXT NOT NULL DEFAULT '[]',
+                        webViewConfig TEXT NOT NULL,
+                        splashEnabled INTEGER NOT NULL DEFAULT 0,
+                        splashConfig TEXT,
+                        bgmEnabled INTEGER NOT NULL DEFAULT 0,
+                        bgmConfig TEXT,
+                        apkExportConfig TEXT,
+                        themeType TEXT NOT NULL DEFAULT 'AURORA',
+                        translateEnabled INTEGER NOT NULL DEFAULT 0,
+                        translateConfig TEXT,
+                        extensionEnabled INTEGER NOT NULL DEFAULT 0,
+                        extensionModuleIds TEXT NOT NULL DEFAULT '[]',
+                        extensionFabIcon TEXT,
+                        autoStartConfig TEXT,
+                        forcedRunConfig TEXT,
+                        blackTechConfig TEXT,
+                        disguiseConfig TEXT,
+                        browserDisguiseConfig TEXT,
+                        deviceDisguiseConfig TEXT,
+                        activationDialogConfig TEXT,
+                        activationRemoteConfig TEXT,
+                        categoryId INTEGER,
+                        createdAt INTEGER NOT NULL DEFAULT 0,
+                        updatedAt INTEGER NOT NULL DEFAULT 0
+                    )
+                """.trimIndent()
+                db.execSQL(createTableSql)
+                db.execSQL("INSERT INTO web_apps_new ($MIGRATION_38_39_COLUMNS) SELECT $MIGRATION_38_39_SELECT FROM web_apps")
+                db.execSQL("DROP TABLE web_apps")
+                db.execSQL("ALTER TABLE web_apps_new RENAME TO web_apps")
+                listOf(
+                    "CREATE INDEX IF NOT EXISTS index_web_apps_updatedAt ON web_apps(updatedAt)",
+                    "CREATE INDEX IF NOT EXISTS index_web_apps_categoryId ON web_apps(categoryId)",
+                    "CREATE INDEX IF NOT EXISTS index_web_apps_isActivated ON web_apps(isActivated)",
+                    "CREATE INDEX IF NOT EXISTS index_web_apps_appType_url ON web_apps(appType, url)",
+                    "CREATE INDEX IF NOT EXISTS index_web_apps_appType_iconPath_url ON web_apps(appType, iconPath, url)"
+                ).forEach { db.execSQL(it) }
+            }
+        }
+
+        private val MIGRATION_39_40 = object : Migration(39, 40) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                AppLogger.i("AppDatabase", "Migration 39->40: rebuilding web_apps to fix adBlockSubscriptions column def")
+                rebuildWebAppsTable(
+                    db = db,
+                    createTableSql = """
+                        CREATE TABLE IF NOT EXISTS web_apps_new (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            name TEXT NOT NULL,
+                            url TEXT NOT NULL,
+                            iconPath TEXT,
+                            packageName TEXT,
+                            appType TEXT NOT NULL DEFAULT 'WEB',
+                            mediaConfig TEXT,
+                            galleryConfig TEXT,
+                            htmlConfig TEXT,
+                            wordpressConfig TEXT,
+                            nodejsConfig TEXT,
+                            phpAppConfig TEXT,
+                            pythonAppConfig TEXT,
+                            goAppConfig TEXT,
+                            multiWebConfig TEXT,
+                            activationEnabled INTEGER NOT NULL DEFAULT 0,
+                            activationCodeList TEXT NOT NULL DEFAULT '[]',
+                            activationRequireEveryTime INTEGER NOT NULL DEFAULT 0,
+                            isActivated INTEGER NOT NULL DEFAULT 0,
+                            adsEnabled INTEGER NOT NULL DEFAULT 0,
+                            adConfig TEXT,
+                            announcementEnabled INTEGER NOT NULL DEFAULT 0,
+                            announcement TEXT,
+                            adBlockEnabled INTEGER NOT NULL DEFAULT 0,
+                            adBlockRules TEXT NOT NULL DEFAULT '[]',
+                            adBlockSubscriptions TEXT NOT NULL DEFAULT '[]',
+                            webViewConfig TEXT NOT NULL,
+                            splashEnabled INTEGER NOT NULL DEFAULT 0,
+                            splashConfig TEXT,
+                            bgmEnabled INTEGER NOT NULL DEFAULT 0,
+                            bgmConfig TEXT,
+                            apkExportConfig TEXT,
+                            themeType TEXT NOT NULL DEFAULT 'AURORA',
+                            translateEnabled INTEGER NOT NULL DEFAULT 0,
+                            translateConfig TEXT,
+                            extensionEnabled INTEGER NOT NULL DEFAULT 0,
+                            extensionModuleIds TEXT NOT NULL DEFAULT '[]',
+                            extensionFabIcon TEXT,
+                            autoStartConfig TEXT,
+                            forcedRunConfig TEXT,
+                            blackTechConfig TEXT,
+                            disguiseConfig TEXT,
+                            browserDisguiseConfig TEXT,
+                            deviceDisguiseConfig TEXT,
+                            activationDialogConfig TEXT,
+                            activationRemoteConfig TEXT,
+                            categoryId INTEGER,
+                            createdAt INTEGER NOT NULL DEFAULT 0,
+                            updatedAt INTEGER NOT NULL DEFAULT 0
+                        )
+                    """.trimIndent(),
+                    columnNames = MIGRATION_38_39_COLUMNS,
+                    postSql = listOf(
+                        "CREATE INDEX IF NOT EXISTS index_web_apps_updatedAt ON web_apps(updatedAt)",
+                        "CREATE INDEX IF NOT EXISTS index_web_apps_categoryId ON web_apps(categoryId)",
+                        "CREATE INDEX IF NOT EXISTS index_web_apps_isActivated ON web_apps(isActivated)",
+                        "CREATE INDEX IF NOT EXISTS index_web_apps_appType_url ON web_apps(appType, url)",
+                        "CREATE INDEX IF NOT EXISTS index_web_apps_appType_iconPath_url ON web_apps(appType, iconPath, url)"
+                    )
+                )
+            }
+        }
 
         private val MIGRATION_27_28_COLUMNS = """
             id, name, url, iconPath, packageName, appType,
@@ -783,7 +961,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_35_36,
                     MIGRATION_36_37,
                     MIGRATION_37_38,
-                    MIGRATION_38_39
+                    MIGRATION_38_39,
+                    MIGRATION_39_40
                 )
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6, 7)
