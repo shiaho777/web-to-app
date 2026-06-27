@@ -1,6 +1,7 @@
 package com.webtoapp.core.wordpress
 
 import android.content.Context
+import com.webtoapp.core.linux.LocalDnsBridgeProxy
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.port.PortManager
 import com.webtoapp.util.destroyGracefullyCompat
@@ -38,6 +39,8 @@ class WordPressPhpRuntime(private val context: Context) {
     private var phpProcess: Process? = null
 
     private var currentPort: Int = 0
+
+    private var dnsProxyStarted: Boolean = false
 
     private val phpOutputBuffer = StringBuffer()
 
@@ -97,6 +100,13 @@ class WordPressPhpRuntime(private val context: Context) {
             env["HOME"] = context.filesDir.absolutePath
             env["TMPDIR"] = context.cacheDir.absolutePath
             env["PHP_INI_SCAN_DIR"] = ""
+
+            val proxyPort = LocalDnsBridgeProxy.start()
+            if (proxyPort > 0) {
+                LocalDnsBridgeProxy.proxyEnvFor(proxyPort).forEach { (k, v) -> env[k] = v }
+                dnsProxyStarted = true
+                AppLogger.i(TAG, "已启用 DNS 桥接代理 (port=$proxyPort) 供 WordPress PHP 进程解析外部域名")
+            }
 
             phpOutputBuffer.setLength(0)
             phpProcess = processBuilder.start()
@@ -165,6 +175,10 @@ class WordPressPhpRuntime(private val context: Context) {
             if (currentPort > 0) {
                 PortManager.release(currentPort)
             }
+            if (dnsProxyStarted) {
+                LocalDnsBridgeProxy.stop()
+                dnsProxyStarted = false
+            }
             phpProcess = null
             currentPort = 0
             _serverState.value = ServerState.Stopped
@@ -223,7 +237,7 @@ class WordPressPhpRuntime(private val context: Context) {
             "error_log" to "/dev/stderr",
             "disable_functions" to "header,headers_list,headers_sent,header_remove,setcookie,setrawcookie",
             "memory_limit" to "256M",
-            "max_execution_time" to "120",
+            "max_execution_time" to "0",
             "max_input_time" to "60",
             "file_uploads" to "On",
             "upload_max_filesize" to "64M",

@@ -1,6 +1,7 @@
 package com.webtoapp.core.php
 
 import android.content.Context
+import com.webtoapp.core.linux.LocalDnsBridgeProxy
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.wordpress.WordPressDependencyManager
@@ -39,6 +40,8 @@ class PhpAppRuntime(private val context: Context) {
     private var phpProcess: Process? = null
 
     private var currentPort: Int = 0
+
+    private var dnsProxyStarted: Boolean = false
 
     private val phpOutputBuffer = StringBuffer()
     private val phpStderrBuffer = StringBuffer()
@@ -141,6 +144,13 @@ class PhpAppRuntime(private val context: Context) {
 
             envVars.forEach { (k, v) -> env[k] = v }
 
+            val proxyPort = LocalDnsBridgeProxy.start()
+            if (proxyPort > 0) {
+                LocalDnsBridgeProxy.proxyEnvFor(proxyPort).forEach { (k, v) -> env[k] = v }
+                dnsProxyStarted = true
+                AppLogger.i(TAG, "已启用 DNS 桥接代理 (port=$proxyPort) 供 PHP 进程解析外部域名")
+            }
+
             phpOutputBuffer.setLength(0)
             phpStderrBuffer.setLength(0)
             phpProcess = processBuilder.start()
@@ -208,6 +218,10 @@ class PhpAppRuntime(private val context: Context) {
 
             if (currentPort > 0) {
                 PortManager.release(currentPort)
+            }
+            if (dnsProxyStarted) {
+                LocalDnsBridgeProxy.stop()
+                dnsProxyStarted = false
             }
             phpProcess = null
             currentPort = 0
@@ -360,7 +374,7 @@ class PhpAppRuntime(private val context: Context) {
             "log_errors" to "On",
             "error_log" to "$tmpDir/php_app_errors.log",
             "memory_limit" to "256M",
-            "max_execution_time" to "120",
+            "max_execution_time" to "0",
             "max_input_time" to "60",
             "file_uploads" to "On",
             "upload_max_filesize" to "64M",
