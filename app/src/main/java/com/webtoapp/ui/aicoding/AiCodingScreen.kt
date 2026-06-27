@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -548,15 +549,17 @@ private fun Conversation(
                     coroutineScope.launch {
                         followBottom = true
                         if (totalContentItems > 0) {
-                            listState.animateScrollToItem(totalContentItems - 1)
-
+                            val targetIndex = totalContentItems - 1
+                            if (listState.layoutInfo.visibleItemsInfo.none { it.index == targetIndex }) {
+                                listState.scrollToItem(targetIndex)
+                            }
                             val info = listState.layoutInfo
                             val viewportBottom =
                                 info.viewportEndOffset - info.afterContentPadding
                             val last = info.visibleItemsInfo.lastOrNull()
                             if (last != null) {
                                 val gap = (last.offset + last.size) - viewportBottom
-                                if (gap > 0) listState.scrollBy(gap.toFloat())
+                                if (gap > 0) listState.animateScrollBy(gap.toFloat())
                             }
                         }
                     }
