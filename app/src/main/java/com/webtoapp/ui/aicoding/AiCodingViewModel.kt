@@ -603,7 +603,9 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
 
     fun cancelTurn() {
         val sid = streamingSessionId
-        if (sid != null) savePartialMessage(sid)
+        if (sid != null) {
+            viewModelScope.launch { savePartialMessage(sid) }
+        }
         service?.cancel()
         _ui.update {
             it.copy(
@@ -620,7 +622,7 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
         streamText.clear(); streamThinking.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
     }
 
-    private fun savePartialMessage(sid: String) {
+    private suspend fun savePartialMessage(sid: String) {
         val text = streamText.toString().trim()
         val thinking = streamThinking.toString().takeIf { it.isNotBlank() }
         val tools = streamTools.values.toList()
