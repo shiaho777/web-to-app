@@ -301,13 +301,6 @@ class ShellActivity : AppCompatActivity() {
         ShellActivityInit.setTaskDescription(this, config.appName)
 
         try {
-            permissionDelegate.requestNotificationPermissionIfNeeded()
-            com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "通知权限请求完成")
-        } catch (e: Exception) {
-            com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "通知权限请求失败", e)
-        }
-
-        try {
             startupPermissions.requestConfiguredPermissions(
                 floatingWindowHandlesOverlay = config.webViewConfig.floatingWindowConfig.enabled
             )
