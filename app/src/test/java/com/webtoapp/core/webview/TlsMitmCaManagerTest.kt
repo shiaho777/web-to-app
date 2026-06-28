@@ -48,7 +48,7 @@ class TlsMitmCaManagerTest {
         TlsMitmCaManager.init(newCaDir)
         val secondCert = TlsMitmCaManager.getCaCertificate()
         assertThat(secondCert).isNotNull()
-        assertThat(secondCert!!.encoded).isEqualTo(firstCert.encoded)
+        assertThat(secondCert!!.encoded).isEqualTo(firstCert!!.encoded)
 
         newCaDir.deleteRecursively()
     }
