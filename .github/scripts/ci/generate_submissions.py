@@ -99,6 +99,15 @@ def _commit_metadata(sha: str) -> dict[str, str]:
     }
 
 
+def _all_commits_for(path: Path) -> list[str]:
+    """Return every commit SHA that touched `path`, newest first."""
+    try:
+        out = _git("log", "--format=%H", "--", str(path.relative_to(REPO_ROOT)))
+        return [line.strip() for line in out.splitlines() if line.strip()]
+    except subprocess.CalledProcessError:
+        return []
+
+
 # ───────────────────────── GitHub API helpers ──────────────────────────
 
 @dataclass
@@ -152,8 +161,40 @@ class GitHubClient:
         except urllib.error.URLError:
             return None
 
+    def commit_author_login(self, sha: str) -> str:
+        """Resolve the GitHub login of a commit's author via the commit API."""
+        url = f"https://api.github.com/repos/{self.owner}/{self.repo}/commits/{sha}"
+        try:
+            commit_info = self._request(url)
+            author = commit_info.get("author") or {}
+            return author.get("login") or ""
+        except (urllib.error.HTTPError, urllib.error.URLError):
+            return ""
+
 
 # ───────────────────────── core logic ──────────────────────────────────
+
+@dataclass
+class Contributor:
+    """A secondary contributor to a module (everyone except the original submitter)."""
+
+    login: str = ""
+    name: str = ""
+    avatar: str = ""
+    profile: str = ""
+
+    def to_json(self) -> dict[str, str]:
+        out: dict[str, str] = {}
+        if self.login:
+            out["login"] = self.login
+        if self.name:
+            out["name"] = self.name
+        if self.avatar:
+            out["avatarUrl"] = self.avatar
+        if self.profile:
+            out["profileUrl"] = self.profile
+        return out
+
 
 @dataclass
 class Submission:
@@ -167,6 +208,7 @@ class Submission:
     submitter_name: str = ""
     submitter_avatar: str = ""
     submitter_profile: str = ""
+    contributors: list[Contributor] = field(default_factory=list)
 
     def to_json(self) -> dict[str, Any]:
         out: dict[str, Any] = {}
@@ -189,6 +231,8 @@ class Submission:
             submitter["profileUrl"] = self.submitter_profile
         if submitter:
             out["submitter"] = submitter
+        if self.contributors:
+            out["contributors"] = [c.to_json() for c in self.contributors if c.login]
         return out
 
 
@@ -365,6 +409,59 @@ def _resolve_for_path(
     )
 
 
+def _resolve_contributors(
+    module_path: Path,
+    submitter_login: str,
+    client: GitHubClient | None,
+    cache: dict[str, Any],
+) -> list[Contributor]:
+    """
+    Collect secondary contributors for a module folder.
+
+    Walks every commit that touched the folder, resolves each distinct
+    author's GitHub login via the commit API, and returns everyone except
+    the original submitter (and bots/github-actions). Offline mode and
+    unresolvable logins yield an empty list — contributors are a
+    best-effort enrichment, never a hard requirement.
+    """
+    if client is None:
+        return []
+
+    shas = _all_commits_for(module_path)
+    seen_logins: set[str] = set()
+    if submitter_login:
+        seen_logins.add(submitter_login.lower())
+    seen_logins.add("github-actions[bot]")
+    seen_logins.add("web-flow")
+
+    contributors: list[Contributor] = []
+    users = cache.setdefault("users", {})
+    for sha in shas:
+        login = client.commit_author_login(sha)
+        if not login or login.lower() in seen_logins:
+            continue
+        seen_logins.add(login.lower())
+
+        cached = users.get(login)
+        if cached is None:
+            resolved = client.user(login)
+            cached = {
+                "name": (resolved or {}).get("name") or login,
+                "avatar": (resolved or {}).get("avatar_url") or "",
+                "profile": (resolved or {}).get("html_url") or f"https://github.com/{login}",
+            }
+            users[login] = cached
+
+        contributors.append(Contributor(
+            login=login,
+            name=cached.get("name") or login,
+            avatar=cached.get("avatar") or "",
+            profile=cached.get("profile") or f"https://github.com/{login}",
+        ))
+
+    return contributors
+
+
 # ───────────────────────── CLI entry ───────────────────────────────────
 
 def main() -> int:
@@ -446,6 +543,9 @@ def main() -> int:
             # going on.
             skipped.append(folder.name)
             continue
+        submission.contributors = _resolve_contributors(
+            folder, submission.submitter_login, client, cache
+        )
         submissions[module_id] = submission.to_json()
 
     output = {

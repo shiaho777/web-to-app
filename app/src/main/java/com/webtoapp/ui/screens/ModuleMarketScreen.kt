@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +14,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,17 +36,22 @@ import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -90,6 +100,7 @@ import androidx.compose.material.icons.filled.MergeType
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Folder
@@ -145,6 +156,9 @@ fun ModuleMarketScreen(
     val filteredChromeExt = filtered.filter { it.entry.sourceType == "CHROME_EXTENSION" }
     val currentList = if (selectedTab == 0) filteredCustom else filteredChromeExt
 
+    val aggregatedContributors = remember(views) { aggregateContributors(views) }
+    var showContributors by remember { mutableStateOf(false) }
+
     Scaffold(
         containerColor = Color.Transparent,
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -157,6 +171,19 @@ fun ModuleMarketScreen(
                     }
                 },
                 actions = {
+                    if (aggregatedContributors.isNotEmpty()) {
+                        IconButton(onClick = { showContributors = true }) {
+                            BadgedBox(badge = {
+                                if (aggregatedContributors.size > 0) {
+                                    Badge {
+                                        Text(aggregatedContributors.size.toString())
+                                    }
+                                }
+                            }) {
+                                Icon(Icons.Default.Group, contentDescription = Strings.moduleMarketContributorsTitle)
+                            }
+                        }
+                    }
                     IconButton(onClick = {
                         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(repo.contributingUrl)))
                     }) {
@@ -318,6 +345,55 @@ fun ModuleMarketScreen(
             }
         }
     }
+
+    if (showContributors && aggregatedContributors.isNotEmpty()) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { showContributors = false },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            ContributorsBoard(
+                contributors = aggregatedContributors,
+                onOpenProfile = { url ->
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                }
+            )
+        }
+    }
+}
+
+private data class AggregatedContributor(
+    val login: String,
+    val name: String,
+    val avatarUrl: String,
+    val profileUrl: String,
+    val moduleCount: Int
+)
+
+private fun aggregateContributors(views: List<MarketModuleView>): List<AggregatedContributor> {
+    val counts = mutableMapOf<String, AggregatedContributor>()
+    for (view in views) {
+        val submission = view.submission ?: continue
+        val all = listOfNotNull(submission.submitter) + submission.contributors
+        for (person in all) {
+            if (person.login.isBlank()) continue
+            val key = person.login.lowercase()
+            val existing = counts[key]
+            if (existing == null) {
+                counts[key] = AggregatedContributor(
+                    login = person.login,
+                    name = person.name.ifBlank { person.login },
+                    avatarUrl = person.avatarUrl,
+                    profileUrl = person.profileUrl,
+                    moduleCount = 1
+                )
+            } else {
+                counts[key] = existing.copy(moduleCount = existing.moduleCount + 1)
+            }
+        }
+    }
+    return counts.values.sortedByDescending { it.moduleCount }
 }
 
 private suspend fun installModule(
@@ -689,6 +765,7 @@ private fun SubmissionStrip(
 ) {
     val context = LocalContext.current
     val submitter = submission.submitter
+    val contributors = submission.contributors
     val timeAgo = submission.submittedAt?.let { formatRelativeTime(it) }
     val prUrl = submission.prUrl
 
@@ -697,49 +774,37 @@ private fun SubmissionStrip(
         verticalAlignment = Alignment.CenterVertically
     ) {
 
-        val avatarModifier = Modifier
-            .size(22.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .let { base ->
-                if (submitter?.profileUrl?.isNotBlank() == true) {
-                    base.clickable { onOpenSubmitter(submitter.profileUrl) }
-                } else base
-            }
-        if (submitter?.avatarUrl?.isNotBlank() == true) {
-            AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(submitter.avatarUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = null,
-                modifier = avatarModifier
-            )
-        } else {
-            Box(modifier = avatarModifier, contentAlignment = Alignment.Center) {
-                Text(
-                    submitter?.login?.take(1)?.uppercase().orEmpty(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+        PeopleAvatarStack(
+            people = listOfNotNull(submitter) + contributors,
+            onOpenProfile = onOpenSubmitter
+        )
 
         Spacer(Modifier.width(8.dp))
 
         Column(modifier = Modifier.weight(1f)) {
             val loginText = submitter?.login?.takeIf { it.isNotBlank() }
             if (loginText != null) {
-                Text(
-                    Strings.moduleMarketSubmittedBy.replace("%s", loginText),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = if (submitter?.profileUrl?.isNotBlank() == true) {
-                        Modifier.clickable { onOpenSubmitter(submitter.profileUrl) }
-                    } else Modifier
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        Strings.moduleMarketSubmittedBy.replace("%s", loginText),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = if (submitter?.profileUrl?.isNotBlank() == true) {
+                            Modifier.clickable { onOpenSubmitter(submitter.profileUrl) }
+                        } else Modifier
+                    )
+                    if (contributors.isNotEmpty()) {
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            Strings.moduleMarketWithContributors.replace("%d", contributors.size.toString()),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    }
+                }
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -811,6 +876,198 @@ private fun SubmissionStrip(
                     contentDescription = Strings.moduleMarketViewPullRequest,
                     modifier = Modifier.size(16.dp)
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PeopleAvatarStack(
+    people: List<ModuleSubmitter>,
+    onOpenProfile: (String) -> Unit,
+    maxVisible: Int = 4
+) {
+    val context = LocalContext.current
+    val visible = people.take(maxVisible)
+    val overflow = people.size - visible.size
+    val avatarSize = 22.dp
+    val overlap = 12.dp
+
+    val totalWidth = avatarSize + (overlap * (visible.size - 1).coerceAtLeast(0)) +
+        (if (overflow > 0) avatarSize else 0.dp)
+
+    Box(modifier = Modifier.size(width = totalWidth, height = avatarSize)) {
+        visible.forEachIndexed { index, person ->
+            Box(
+                modifier = Modifier
+                    .offset(x = overlap * index)
+                    .size(avatarSize)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .border(1.5.dp, MaterialTheme.colorScheme.surface, CircleShape)
+                    .let { base ->
+                        if (person.profileUrl.isNotBlank()) {
+                            base.clickable { onOpenProfile(person.profileUrl) }
+                        } else base
+                    }
+            ) {
+                if (person.avatarUrl.isNotBlank()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(person.avatarUrl)
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            person.login.take(1).uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+        if (overflow > 0) {
+            Box(
+                modifier = Modifier
+                    .offset(x = overlap * visible.size)
+                    .size(avatarSize)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .border(1.5.dp, MaterialTheme.colorScheme.surface, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "+$overflow",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContributorsBoard(
+    contributors: List<AggregatedContributor>,
+    onOpenProfile: (String) -> Unit
+) {
+    val context = LocalContext.current
+    val scrollState = rememberScrollState()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(bottom = 24.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Group,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    Strings.moduleMarketContributorsTitle,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    "${contributors.size} · " + contributors.joinToString(" · ") { it.moduleCount.toString() }.take(40),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 420.dp)
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            contributors.forEach { contributor ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .let { base ->
+                            if (contributor.profileUrl.isNotBlank()) {
+                                base.clickable { onOpenProfile(contributor.profileUrl) }
+                            } else base
+                        }
+                        .padding(vertical = 6.dp, horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (contributor.avatarUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(context)
+                                .data(contributor.avatarUrl)
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                contributor.login.take(1).uppercase(),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            contributor.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            "@" + contributor.login,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Text(
+                            contributor.moduleCount.toString(),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
             }
         }
     }

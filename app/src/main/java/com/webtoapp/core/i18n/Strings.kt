@@ -16524,9 +16524,9 @@ object Strings {
         AppLanguage.ARABIC -> "تحميل الوسائط"
     }
     val builtinMediaDownloaderDesc: String get() = when (lang) {
-        AppLanguage.CHINESE -> "自动检测并下载网页视频、图片。支持B站、抖音、小红书、Instagram、Facebook、TikTok，以及通用网页视频检测"
-        AppLanguage.ENGLISH -> "Auto-detect and download web videos and images. Supports Bilibili, Douyin, Xiaohongshu, Instagram, Facebook, TikTok, and generic web video detection"
-        AppLanguage.ARABIC -> "الكشف التلقائي وتحميل فيديوهات وصور الويب. يدعم بيليبيلي ودوين وشياوهونغشو وإنستغرام وفيسبوك وتيك توك والكشف العام عن الفيديو"
+        AppLanguage.CHINESE -> "自动检测并下载网页视频、图片。支持 YouTube、B站、抖音、小红书、Instagram、Facebook、TikTok，以及通用网页视频检测"
+        AppLanguage.ENGLISH -> "Auto-detect and download web videos and images. Supports YouTube, Bilibili, Douyin, Xiaohongshu, Instagram, Facebook, TikTok, and generic web video detection"
+        AppLanguage.ARABIC -> "الكشف التلقائي وتحميل فيديوهات وصور الويب. يدعم يوتيوب وبيليبيلي ودوين وشياوهونغشو وإنستغرام وفيسبوك وتيك توك والكشف العام عن الفيديو"
     }
     val builtinVideoDownloader: String get() = when (lang) {
         AppLanguage.CHINESE -> "视频下载"
@@ -16564,9 +16564,9 @@ object Strings {
         AppLanguage.ARABIC -> "تحسين الفيديو"
     }
     val builtinVideoEnhancerDesc: String get() = when (lang) {
-        AppLanguage.CHINESE -> "倍速播放、画中画、后台播放"
-        AppLanguage.ENGLISH -> "Speed control, picture-in-picture, background play"
-        AppLanguage.ARABIC -> "التحكم في السرعة، صورة داخل صورة، التشغيل في الخلفية"
+        AppLanguage.CHINESE -> "倍速播放、画中画、后台播放、YouTube 净化"
+        AppLanguage.ENGLISH -> "Speed control, picture-in-picture, background play, YouTube cleanup"
+        AppLanguage.ARABIC -> "التحكم في السرعة، صورة داخل صورة، التشغيل في الخلفية، تنظيف يوتيوب"
     }
     val builtinWebAnalyzer: String get() = when (lang) {
         AppLanguage.CHINESE -> "网页分析"
@@ -23337,6 +23337,18 @@ object Strings {
         AppLanguage.CHINESE -> "由 @%s 提交"
         AppLanguage.ENGLISH -> "Submitted by @%s"
         AppLanguage.ARABIC -> "قدّم بواسطة @%s"
+    }
+
+    val moduleMarketWithContributors: String get() = when (lang) {
+        AppLanguage.CHINESE -> "及 %d 位贡献者"
+        AppLanguage.ENGLISH -> "+ %d contributor(s)"
+        AppLanguage.ARABIC -> "+ %d مساهم"
+    }
+
+    val moduleMarketContributorsTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "贡献者"
+        AppLanguage.ENGLISH -> "Contributors"
+        AppLanguage.ARABIC -> "المساهمون"
     }
 
     val moduleMarketViewPullRequest: String get() = when (lang) {

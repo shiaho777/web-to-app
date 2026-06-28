@@ -75,7 +75,10 @@ data class ModuleSubmission(
     val direct: Boolean = false,
 
     @SerializedName("submitter")
-    val submitter: ModuleSubmitter? = null
+    val submitter: ModuleSubmitter? = null,
+
+    @SerializedName("contributors")
+    val contributors: List<ModuleSubmitter> = emptyList()
 )
 
 data class ModuleSubmitter(
