@@ -108,7 +108,11 @@ object ChromeWebStoreSearch {
             val wrbFr = envelope.optJSONArray(0) ?: return null
             val innerJson = wrbFr.optString(2).ifEmpty { return null }
             val wrapper = JSONArray(innerJson)
-            val rows = wrapper.optJSONArray(0) ?: return null
+            val rows = wrapper.optJSONArray(0)
+            if (rows == null) {
+                if (wrapper.length() == 0) return emptyList()
+                return null
+            }
 
             val results = mutableListOf<CwsSearchResult>()
             for (i in 0 until rows.length()) {

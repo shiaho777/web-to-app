@@ -2355,7 +2355,8 @@ object Strings {
                 "اضبط NODE_ENV=production في بيئات الإنتاج"
             )
         }
-        else -> when (framework) {
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH, AppLanguage.GERMAN,
+        AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> when (framework) {
             "Express" -> listOf(
                 "Ensure app.listen() binds to 0.0.0.0 instead of localhost",
                 "Use express.static() to serve static files",
@@ -2397,7 +2398,6 @@ object Strings {
                 "Set NODE_ENV=production for production builds"
             )
         }
-
     }
 
     val njsDownloadDeps: String get() = when (lang) {
@@ -42352,7 +42352,8 @@ object Strings {
             "tornado" -> "Tornado: تتم تهيئة IOLoop تلقائياً، ودعم WebSocket متاح، وتم تفعيل الوضع غير المتزامن."
             else -> null
         }
-        else -> when (framework?.lowercase()) {
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH, AppLanguage.GERMAN,
+        AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> when (framework?.lowercase()) {
             "flask" -> "Flask: Debug mode is auto-disabled for production. Static files are served from the static/ folder."
             "tornado" -> "Tornado: IOLoop is auto-configured, WebSocket support is available, and non-blocking mode is enabled."
             else -> null
@@ -42684,7 +42685,8 @@ object Strings {
             "net_http" -> "net/http: خادم المكتبة القياسية مع تفعيل الإيقاف السلس."
             else -> null
         }
-        else -> when (framework?.lowercase()) {
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH, AppLanguage.GERMAN,
+        AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> when (framework?.lowercase()) {
             "gin" -> "Gin: GIN_MODE is auto-set to release, and the router is tuned for production."
             "fiber" -> "Fiber: Prefork is disabled on Android, and the Fasthttp engine stays active."
             "echo" -> "Echo: Logger and Recover middleware are auto-configured."
