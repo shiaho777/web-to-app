@@ -346,13 +346,13 @@ enum class AiFeature(
     val icon: String,
     val defaultCapabilities: List<ModelCapability> = emptyList()
 ) {
-    AI_CODING("Code", listOf(ModelCapability.TEXT, ModelCapability.CODE)),
+    AI_CODING("Code", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL)),
     AI_CODING_IMAGE("Image", listOf(ModelCapability.IMAGE_GENERATION)),
     ICON_GENERATION("AutoAwesome", listOf(ModelCapability.IMAGE_GENERATION)),
-    MODULE_DEVELOPMENT("Extension", listOf(ModelCapability.TEXT, ModelCapability.CODE, ModelCapability.FUNCTION_CALL)),
-    LRC_GENERATION("MusicNote", listOf(ModelCapability.AUDIO, ModelCapability.TEXT)),
-    TRANSLATION("Translate", listOf(ModelCapability.TEXT)),
-    GENERAL("Chat", listOf(ModelCapability.TEXT));
+    MODULE_DEVELOPMENT("Extension", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL)),
+    LRC_GENERATION("MusicNote", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL)),
+    TRANSLATION("Translate", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL)),
+    GENERAL("Chat", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL));
 
     val displayName: String get() = when (this) {
         AI_CODING -> Strings.featureAiCoding
@@ -376,54 +376,34 @@ enum class AiFeature(
 }
 
 enum class ModelCapability {
-    TEXT, AUDIO, IMAGE, IMAGE_GENERATION, VIDEO, CODE, FUNCTION_CALL, LONG_CONTEXT;
+    TEXT, MULTIMODAL, IMAGE_GENERATION;
 
     val displayName: String get() = when (this) {
         TEXT -> Strings.capabilityText
-        AUDIO -> Strings.capabilityAudio
-        IMAGE -> Strings.capabilityImage
+        MULTIMODAL -> Strings.capabilityMultimodal
         IMAGE_GENERATION -> Strings.capabilityImageGen
-        VIDEO -> Strings.capabilityVideo
-        CODE -> Strings.capabilityCode
-        FUNCTION_CALL -> Strings.capabilityFunctionCall
-        LONG_CONTEXT -> Strings.capabilityLongContext
     }
 
     val description: String get() = when (this) {
         TEXT -> Strings.capabilityTextDesc
-        AUDIO -> Strings.capabilityAudioDesc
-        IMAGE -> Strings.capabilityImageDesc
+        MULTIMODAL -> Strings.capabilityMultimodalDesc
         IMAGE_GENERATION -> Strings.capabilityImageGenDesc
-        VIDEO -> Strings.capabilityVideoDesc
-        CODE -> Strings.capabilityCodeDesc
-        FUNCTION_CALL -> Strings.capabilityFunctionCallDesc
-        LONG_CONTEXT -> Strings.capabilityLongContextDesc
     }
 }
 
 fun ModelCapability.getLocalizedDisplayName(): String {
     return when (this) {
         ModelCapability.TEXT -> com.webtoapp.core.i18n.Strings.textGeneration
-        ModelCapability.AUDIO -> com.webtoapp.core.i18n.Strings.audioUnderstanding
-        ModelCapability.IMAGE -> com.webtoapp.core.i18n.Strings.imageUnderstanding
+        ModelCapability.MULTIMODAL -> com.webtoapp.core.i18n.Strings.multimodalModel
         ModelCapability.IMAGE_GENERATION -> com.webtoapp.core.i18n.Strings.imageGeneration
-        ModelCapability.VIDEO -> com.webtoapp.core.i18n.Strings.imageUnderstanding
-        ModelCapability.CODE -> com.webtoapp.core.i18n.Strings.codeGeneration
-        ModelCapability.FUNCTION_CALL -> com.webtoapp.core.i18n.Strings.functionCall
-        ModelCapability.LONG_CONTEXT -> com.webtoapp.core.i18n.Strings.longContext
     }
 }
 
 fun ModelCapability.getLocalizedDescription(): String {
     return when (this) {
         ModelCapability.TEXT -> com.webtoapp.core.i18n.Strings.basicTextDialogue
-        ModelCapability.AUDIO -> com.webtoapp.core.i18n.Strings.understandAndTranscribeAudio
-        ModelCapability.IMAGE -> com.webtoapp.core.i18n.Strings.understandAndAnalyzeImages
+        ModelCapability.MULTIMODAL -> com.webtoapp.core.i18n.Strings.multimodalModelDesc
         ModelCapability.IMAGE_GENERATION -> com.webtoapp.core.i18n.Strings.generateImages
-        ModelCapability.VIDEO -> com.webtoapp.core.i18n.Strings.understandAndAnalyzeImages
-        ModelCapability.CODE -> com.webtoapp.core.i18n.Strings.generateAndUnderstandCode
-        ModelCapability.FUNCTION_CALL -> com.webtoapp.core.i18n.Strings.supportToolCall
-        ModelCapability.LONG_CONTEXT -> com.webtoapp.core.i18n.Strings.supportLongTextInput
     }
 }
 

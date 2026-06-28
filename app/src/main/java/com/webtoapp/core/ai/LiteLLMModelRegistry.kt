@@ -120,21 +120,16 @@ class LiteLLMModelRegistry private constructor() {
 
     fun getCapabilities(modelId: String, provider: AiProvider? = null): List<ModelCapability>? {
         val info = findModel(modelId, provider) ?: return null
-        val caps = mutableListOf(ModelCapability.TEXT)
 
-        if (info.supportsVision) caps.add(ModelCapability.IMAGE)
-        if (info.supportsFunctionCalling) caps.add(ModelCapability.FUNCTION_CALL)
-        if (info.supportsAudioInput || info.supportsAudioOutput) caps.add(ModelCapability.AUDIO)
-        if (info.isImageGeneration) caps.add(ModelCapability.IMAGE_GENERATION)
-
-        val id = modelId.lowercase()
-        if (id.contains("code") || id.contains("codestral") || id.contains("starcoder") ||
-            id.contains("codellama") || id.contains("codegemma") || id.contains("codeqwen") ||
-            id.contains("deepseek-coder")) {
-            caps.add(ModelCapability.CODE)
+        if (info.isImageGeneration) {
+            return listOf(ModelCapability.IMAGE_GENERATION)
         }
 
-        return caps
+        if (info.supportsVision || info.supportsAudioInput || info.supportsAudioOutput) {
+            return listOf(ModelCapability.MULTIMODAL)
+        }
+
+        return listOf(ModelCapability.TEXT)
     }
 
     fun getDefaultModels(provider: AiProvider): List<String> {

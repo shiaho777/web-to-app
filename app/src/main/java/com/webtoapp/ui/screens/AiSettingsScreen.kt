@@ -487,23 +487,22 @@ private fun SavedModelItem(
                 }
             }
 
-            if (model.capabilities.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    items(model.capabilities) { capability ->
-                        Surface(
-                            shape = MaterialTheme.shapes.extraSmall,
-                            color = MaterialTheme.colorScheme.secondaryContainer
-                        ) {
-                            Text(
-                                capability.displayName,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
-                    }
+            val category = model.capabilities.firstOrNull() ?: ModelCapability.TEXT
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                shape = MaterialTheme.shapes.extraSmall,
+                color = when (category) {
+                    ModelCapability.MULTIMODAL -> MaterialTheme.colorScheme.primaryContainer
+                    ModelCapability.IMAGE_GENERATION -> MaterialTheme.colorScheme.tertiaryContainer
+                    else -> MaterialTheme.colorScheme.secondaryContainer
                 }
+            ) {
+                Text(
+                    category.displayName,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
             }
 
             val supportedFeatures = model.getSupportedFeatures()
@@ -821,13 +820,6 @@ private fun AddApiKeyDialog(
     )
 }
 
-private enum class ModelSortType(val displayName: String) {
-    NAME(Strings.sortByName),
-    CONTEXT(Strings.sortByContext),
-    PRICE_LOW(Strings.sortByPriceLow),
-    PRICE_HIGH(Strings.sortByPriceHigh)
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun AddModelDialog(
@@ -844,13 +836,12 @@ private fun AddModelDialog(
     var selectedModels by remember { mutableStateOf<Set<AiModel>>(emptySet()) }
     var customModelId by remember { mutableStateOf("") }
     var alias by remember { mutableStateOf("") }
-    var selectedCapabilities by remember { mutableStateOf<Set<ModelCapability>>(setOf(ModelCapability.TEXT)) }
+    var selectedCategory by remember { mutableStateOf(ModelCapability.TEXT) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var sortType by remember { mutableStateOf(ModelSortType.NAME) }
     var isBatchMode by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
 
-    val filteredAndSortedModels = remember(models, sortType, searchQuery) {
+    val filteredAndSortedModels = remember(models, searchQuery) {
         val filtered = if (searchQuery.isBlank()) {
             models
         } else {
@@ -860,12 +851,7 @@ private fun AddModelDialog(
                 it.id.lowercase().contains(query)
             }
         }
-        when (sortType) {
-            ModelSortType.NAME -> filtered.sortedBy { it.name }
-            ModelSortType.CONTEXT -> filtered.sortedByDescending { it.contextLength }
-            ModelSortType.PRICE_LOW -> filtered.sortedBy { it.inputPrice }
-            ModelSortType.PRICE_HIGH -> filtered.sortedByDescending { it.inputPrice }
-        }
+        filtered.sortedBy { it.name }
     }
 
     LaunchedEffect(selectedApiKey) {
@@ -1018,18 +1004,6 @@ private fun AddModelDialog(
                                 }
                             }
 
-                            LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                items(ModelSortType.entries.size) { index ->
-                                    val type = ModelSortType.entries[index]
-                                    PremiumFilterChip(
-                                        selected = sortType == type,
-                                        onClick = { sortType = type },
-                                        label = { Text(type.displayName, style = MaterialTheme.typography.labelSmall) },
-                                        modifier = Modifier.height(28.dp)
-                                    )
-                                }
-                            }
-
                             if (isBatchMode && selectedModels.isNotEmpty()) {
                                 Text(
                                     Strings.selectedModelsCount.format(selectedModels.size),
@@ -1090,62 +1064,27 @@ private fun AddModelDialog(
                                         }
 
                                         Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(model.name, style = MaterialTheme.typography.bodyMedium)
-                                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                    if (model.contextLength > 0) {
-                                                        Text(
-                                                            "${model.contextLength / 1000}K",
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = MaterialTheme.colorScheme.primary
-                                                        )
-                                                    }
-                                                    if (model.inputPrice > 0) {
-                                                        Text(
-                                                            "$${String.format(java.util.Locale.getDefault(), "%.2f", model.inputPrice)}",
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = MaterialTheme.colorScheme.tertiary
-                                                        )
-                                                    } else if (model.inputPrice == 0.0 && model.contextLength > 0) {
-                                                        Text(
-                                                            Strings.free,
-                                                            style = MaterialTheme.typography.labelSmall,
-                                                            color = MaterialTheme.colorScheme.primary
-                                                        )
-                                                    }
-                                                }
-                                            }
+                                            Text(model.name, style = MaterialTheme.typography.bodyMedium)
                                             Text(
                                                 model.id,
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
-                                            if (model.capabilities.isNotEmpty()) {
-                                                Row(
-                                                    modifier = Modifier.padding(top = 4.dp),
-                                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                                ) {
-                                                    model.capabilities.take(3).forEach { cap ->
-                                                        Surface(
-                                                            shape = MaterialTheme.shapes.extraSmall,
-                                                            color = when (cap) {
-                                                                ModelCapability.AUDIO -> MaterialTheme.colorScheme.primaryContainer
-                                                                ModelCapability.IMAGE -> MaterialTheme.colorScheme.tertiaryContainer
-                                                                else -> MaterialTheme.colorScheme.secondaryContainer
-                                                            }
-                                                        ) {
-                                                            Text(
-                                                                cap.displayName,
-                                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                                style = MaterialTheme.typography.labelSmall
-                                                            )
-                                                        }
-                                                    }
+                                            val category = model.capabilities.firstOrNull() ?: ModelCapability.TEXT
+                                            Surface(
+                                                modifier = Modifier.padding(top = 4.dp),
+                                                shape = MaterialTheme.shapes.extraSmall,
+                                                color = when (category) {
+                                                    ModelCapability.MULTIMODAL -> MaterialTheme.colorScheme.primaryContainer
+                                                    ModelCapability.IMAGE_GENERATION -> MaterialTheme.colorScheme.tertiaryContainer
+                                                    else -> MaterialTheme.colorScheme.secondaryContainer
                                                 }
+                                            ) {
+                                                Text(
+                                                    category.displayName,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                    style = MaterialTheme.typography.labelSmall
+                                                )
                                             }
                                         }
                                     }
@@ -1176,12 +1115,7 @@ private fun AddModelDialog(
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            Text(Strings.capabilityTags, style = MaterialTheme.typography.labelMedium)
-                            Text(
-                                Strings.selectCapabilitiesHint,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text(Strings.modelCategory, style = MaterialTheme.typography.labelMedium)
 
                             FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
@@ -1190,14 +1124,8 @@ private fun AddModelDialog(
                             ) {
                                 ModelCapability.entries.forEach { capability ->
                                     PremiumFilterChip(
-                                        selected = capability in selectedCapabilities,
-                                        onClick = {
-                                            selectedCapabilities = if (capability in selectedCapabilities) {
-                                                selectedCapabilities - capability
-                                            } else {
-                                                selectedCapabilities + capability
-                                            }
-                                        },
+                                        selected = selectedCategory == capability,
+                                        onClick = { selectedCategory = capability },
                                         label = { Text(capability.displayName) }
                                     )
                                 }
@@ -1221,17 +1149,15 @@ private fun AddModelDialog(
                             val modelsToSave = if (isBatchMode && selectedModels.isNotEmpty()) {
 
                                 selectedModels.map { model ->
-                                    val capabilities = model.capabilities.toSet().ifEmpty { setOf(ModelCapability.TEXT) }
-                                    val defaultMappings = capabilities.associateWith { capability ->
-                                        AiFeature.entries.filter { feature ->
-                                            feature.defaultCapabilities.contains(capability)
-                                        }.toSet()
-                                    }
+                                    val category = model.capabilities.firstOrNull() ?: ModelCapability.TEXT
+                                    val defaultMappings = mapOf(category to AiFeature.entries.filter { feature ->
+                                        feature.defaultCapabilities.contains(category)
+                                    }.toSet())
                                     SavedModel(
                                         model = model,
                                         apiKeyId = selectedApiKey.id,
                                         alias = null,
-                                        capabilities = capabilities.toList(),
+                                        capabilities = listOf(category),
                                         featureMappings = defaultMappings
                                     )
                                 }
@@ -1244,17 +1170,15 @@ private fun AddModelDialog(
                                     isCustom = true
                                 )
 
-                                val defaultMappings = selectedCapabilities.associateWith { capability ->
-                                    AiFeature.entries.filter { feature ->
-                                        feature.defaultCapabilities.contains(capability)
-                                    }.toSet()
-                                }
+                                val defaultMappings = mapOf(selectedCategory to AiFeature.entries.filter { feature ->
+                                    feature.defaultCapabilities.contains(selectedCategory)
+                                }.toSet())
 
                                 listOf(SavedModel(
                                     model = model,
                                     apiKeyId = selectedApiKey.id,
                                     alias = alias.ifBlank { null },
-                                    capabilities = selectedCapabilities.toList(),
+                                    capabilities = listOf(selectedCategory),
                                     featureMappings = defaultMappings
                                 ))
                             }
@@ -1283,11 +1207,9 @@ private fun EditModelDialog(
     onConfirm: (SavedModel) -> Unit
 ) {
     var alias by remember { mutableStateOf(model.alias ?: "") }
-    var selectedCapabilities by remember { mutableStateOf(model.capabilities.toSet()) }
-    var featureMappings by remember {
-        mutableStateOf(model.featureMappings.mapValues { it.value.toSet() })
+    var selectedCategory by remember {
+        mutableStateOf(model.capabilities.firstOrNull() ?: ModelCapability.TEXT)
     }
-    var expandedCapability by remember { mutableStateOf<ModelCapability?>(null) }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -1327,7 +1249,7 @@ private fun EditModelDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Text(Strings.capabilityTags, style = MaterialTheme.typography.labelMedium)
+                    Text(Strings.modelCategory, style = MaterialTheme.typography.labelMedium)
 
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
@@ -1336,46 +1258,9 @@ private fun EditModelDialog(
                     ) {
                         ModelCapability.entries.forEach { capability ->
                             PremiumFilterChip(
-                                selected = capability in selectedCapabilities,
-                                onClick = {
-                                    selectedCapabilities = if (capability in selectedCapabilities) {
-                                        selectedCapabilities - capability
-                                    } else {
-                                        selectedCapabilities + capability
-                                    }
-                                },
+                                selected = selectedCategory == capability,
+                                onClick = { selectedCategory = capability },
                                 label = { Text(capability.displayName) }
-                            )
-                        }
-                    }
-
-                    if (selectedCapabilities.isNotEmpty()) {
-                        HorizontalDivider()
-
-                        Text(
-                            Strings.featureSceneConfig,
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                        Text(
-                            Strings.selectFeaturesForCapability,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        selectedCapabilities.forEach { capability ->
-                            CapabilityFeatureCard(
-                                capability = capability,
-                                selectedFeatures = featureMappings[capability]
-                                    ?: AiFeature.entries.filter { it.defaultCapabilities.contains(capability) }.toSet(),
-                                isExpanded = expandedCapability == capability,
-                                onExpandToggle = {
-                                    expandedCapability = if (expandedCapability == capability) null else capability
-                                },
-                                onFeaturesChanged = { features ->
-                                    featureMappings = featureMappings.toMutableMap().apply {
-                                        this[capability] = features.toSet()
-                                    }
-                                }
                             )
                         }
                     }
@@ -1393,133 +1278,17 @@ private fun EditModelDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     PremiumButton(
                         onClick = {
+                            val defaultMappings = mapOf(selectedCategory to AiFeature.entries.filter { feature ->
+                                feature.defaultCapabilities.contains(selectedCategory)
+                            }.toSet())
                             onConfirm(model.copy(
                                 alias = alias.ifBlank { null },
-                                capabilities = selectedCapabilities.toList(),
-                                featureMappings = featureMappings.mapValues { it.value.toSet() }
+                                capabilities = listOf(selectedCategory),
+                                featureMappings = defaultMappings
                             ))
                         }
                     ) {
                         Text(Strings.btnSave)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
-@Composable
-private fun CapabilityFeatureCard(
-    capability: ModelCapability,
-    selectedFeatures: Set<AiFeature>,
-    isExpanded: Boolean,
-    onExpandToggle: () -> Unit,
-    onFeaturesChanged: (Set<AiFeature>) -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = if (com.webtoapp.ui.theme.LocalIsDarkTheme.current) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onExpandToggle() },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                    Text(
-                        capability.displayName,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        Strings.selectedCount.format(selectedFeatures.size),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Icon(
-                    if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (isExpanded) Strings.collapse else Strings.expand
-                )
-            }
-
-            AnimatedVisibility(visible = isExpanded) {
-                Column(modifier = Modifier.padding(top = 12.dp)) {
-                    Text(
-                        Strings.selectCapabilitiesForFeatures,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        AiFeature.entries.forEach { feature ->
-                            val isDefault = feature.defaultCapabilities.contains(capability)
-                            PremiumFilterChip(
-                                selected = feature in selectedFeatures,
-                                onClick = {
-                                    val newFeatures = if (feature in selectedFeatures) {
-                                        selectedFeatures - feature
-                                    } else {
-                                        selectedFeatures + feature
-                                    }
-                                    onFeaturesChanged(newFeatures)
-                                },
-                                label = {
-                                    Text(
-                                        feature.displayName + if (isDefault) " *" else "",
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                },
-                                leadingIcon = if (feature in selectedFeatures) {
-                                    { Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
-                                } else null
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        TextButton(
-                            onClick = {
-
-                                val defaults = AiFeature.entries.filter {
-                                    it.defaultCapabilities.contains(capability)
-                                }.toSet()
-                                onFeaturesChanged(defaults)
-                            },
-                            modifier = Modifier.height(32.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp)
-                        ) {
-                            Text(Strings.restoreDefault, style = MaterialTheme.typography.labelSmall)
-                        }
-                        TextButton(
-                            onClick = { onFeaturesChanged(AiFeature.entries.toSet()) },
-                            modifier = Modifier.height(32.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp)
-                        ) {
-                            Text(Strings.selectAll, style = MaterialTheme.typography.labelSmall)
-                        }
-                        TextButton(
-                            onClick = { onFeaturesChanged(emptySet()) },
-                            modifier = Modifier.height(32.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp)
-                        ) {
-                            Text(Strings.clearAll, style = MaterialTheme.typography.labelSmall)
-                        }
                     }
                 }
             }
