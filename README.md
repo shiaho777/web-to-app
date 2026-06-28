@@ -95,7 +95,7 @@ WebToApp has a GitHub-backed module market for community JS/CSS extensions. The 
 ```
 modules/
 ├── registry.json        # app-facing catalog
-├── submissions.json     # CI-generated PR / submitter metadata
+├── submissions.json     # CI-generated PR / contributor metadata
 ├── README.md            # contributor guide
 ├── hello-world/
 ├── night-shift/
@@ -104,7 +104,7 @@ modules/
 └── auto-scroll/
 ```
 
-The app fetches both `registry.json` and `submissions.json`, and only shows modules that appear in both. That keeps the in-app catalog aligned with PRs that have actually been merged.
+The app fetches both `registry.json` and `submissions.json`, and only shows modules that appear in both. That keeps the in-app catalog aligned with PRs that have actually been merged. The submissions file also records every contributor per module, so the catalog shows stacked avatars for everyone who touched a module and a contributors leaderboard ranked by contribution count.
 
 - Users open **Extension Modules** and tap the storefront icon.
 - Contributors add a folder under `modules/`, update `registry.json`, and open a PR.
@@ -132,7 +132,7 @@ The full app has many switches. The sections below group the important ones with
 <details>
 <summary><b>Extensions and automation</b></summary>
 
-- Built-in modules: video download, Bilibili/Douyin/Xiaohongshu extractors, video enhancer, web analyzer, find-in-page, dark mode, privacy tools, content enhancer, and element blocker.
+- Built-in modules: video download with YouTube/Bilibili/Douyin/Xiaohongshu extractors, video enhancer with YouTube cleanup (ad skip, max quality, background play, SponsorBlock), web analyzer, find-in-page, dark mode, privacy tools, content enhancer, and element blocker.
 - Userscript support for Greasemonkey/Tampermonkey-style `.user.js` scripts.
 - `GM_*` bridge with storage, requests, styles, menu commands, and promise-based `GM.*` APIs based on script grants.
 - MV3 Chrome extension runtime for manifest-based content scripts in isolated or main worlds.
