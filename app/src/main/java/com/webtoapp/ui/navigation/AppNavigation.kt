@@ -39,6 +39,7 @@ import com.webtoapp.ui.screens.CreatePhpAppScreen
 import com.webtoapp.ui.screens.CreatePythonAppScreen
 import com.webtoapp.ui.screens.CreateWordPressAppScreen
 import com.webtoapp.ui.screens.ExtensionModuleScreen
+import com.webtoapp.ui.screens.FileManagerScreen
 import com.webtoapp.ui.screens.HomeScreen
 import com.webtoapp.ui.screens.HostsAdBlockScreen
 import com.webtoapp.ui.screens.LinuxEnvironmentScreen
@@ -101,6 +102,7 @@ object Routes {
     const val STATS = "stats"
     const val ABOUT = "about"
     const val PLAY_STORE = "play_store?appId={appId}&autoStart={autoStart}"
+    const val FILE_MANAGER = "file_manager"
 
     fun playStore(appId: Long? = null, autoStart: Boolean = false): String {
         val id = appId?.toString() ?: ""
@@ -200,7 +202,8 @@ fun AppNavigation() {
                         onOpenPlayStore = { navController.navigate(Routes.playStore()) },
                         onExportAabForApp = { appId ->
                             navController.navigate(Routes.playStore(appId = appId, autoStart = true))
-                        }
+                        },
+                        onOpenFileManager = { navController.navigate(Routes.FILE_MANAGER) }
                     )
             }
 
@@ -718,6 +721,10 @@ fun AppNavigation() {
                     autoStartExport = autoStart,
                     viewModel = viewModel
                 )
+            }
+
+            composable(Routes.FILE_MANAGER) {
+                FileManagerScreen(onBack = { navController.popBackStack() })
             }
 
             composable(Routes.ABOUT) {

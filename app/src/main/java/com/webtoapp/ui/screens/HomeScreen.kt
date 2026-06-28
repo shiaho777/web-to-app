@@ -136,6 +136,7 @@ fun HomeScreen(
     onOpenMore: () -> Unit = {},
     onOpenPlayStore: () -> Unit = {},
     onExportAabForApp: (Long) -> Unit = {},
+    onOpenFileManager: () -> Unit = {},
 ) {
     val apps by viewModel.filteredSummaries.collectAsStateWithLifecycle()
     val allWebApps by viewModel.webApps.collectAsStateWithLifecycle()
@@ -383,6 +384,11 @@ fun HomeScreen(
                                 text = { Text(Strings.menuGooglePlay) },
                                 onClick = { showMoreMenu = false; onOpenPlayStore() },
                                 leadingIcon = { Icon(Icons.Outlined.PlayCircleOutline, null, Modifier.size(20.dp)) }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(Strings.menuFileManager) },
+                                onClick = { showMoreMenu = false; onOpenFileManager() },
+                                leadingIcon = { Icon(Icons.Outlined.Folder, null, Modifier.size(20.dp)) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.menuBatchImport) },
