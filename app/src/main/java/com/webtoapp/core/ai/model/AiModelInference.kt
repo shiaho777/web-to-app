@@ -11,14 +11,14 @@ internal class AiModelInference(
         registry.getCapabilities(modelId, provider)?.let { return it }
 
         val id = modelId.lowercase()
-        val capabilities = mutableListOf(ModelCapability.TEXT)
 
         if (
-            id.contains("audio") || id.contains("whisper") ||
-            id.contains("gemini-1.5") || id.contains("gemini-2") || id.contains("gemini-3") ||
-            id.contains("gpt-4o") || id.contains("realtime")
+            id.contains("dall-e") || id.contains("imagen") ||
+            id.contains("image-generation") || id.contains("gpt-image") ||
+            id.contains("stable-diffusion") || id.contains("sdxl") ||
+            id.contains("flux") || id.contains("playground")
         ) {
-            capabilities.add(ModelCapability.AUDIO)
+            return listOf(ModelCapability.IMAGE_GENERATION)
         }
 
         if (
@@ -30,30 +30,13 @@ internal class AiModelInference(
             id.contains("glm-4v") || id.contains("step-1v") || id.contains("step-2v") ||
             id.contains("yi-vision") || id.contains("internvl") ||
             id.contains("moonshot-v") || id.contains("kimi-v") ||
-            id.contains("hunyuan-vision") || id.contains("grok-2-vision") || id.contains("grok-3")
+            id.contains("hunyuan-vision") || id.contains("grok-2-vision") || id.contains("grok-3") ||
+            id.contains("audio") || id.contains("whisper") || id.contains("realtime")
         ) {
-            capabilities.add(ModelCapability.IMAGE)
+            return listOf(ModelCapability.MULTIMODAL)
         }
 
-        if (
-            id.contains("code") || id.contains("codex") ||
-            id.contains("deepseek-coder") || id.contains("codestral") ||
-            id.contains("starcoder") || id.contains("codegemma") ||
-            id.contains("codellama") || id.contains("codeqwen")
-        ) {
-            capabilities.add(ModelCapability.CODE)
-        }
-
-        if (
-            id.contains("dall-e") || id.contains("imagen") ||
-            id.contains("image-generation") || id.contains("gpt-image") ||
-            id.contains("stable-diffusion") || id.contains("sdxl") ||
-            id.contains("flux") || id.contains("playground")
-        ) {
-            capabilities.add(ModelCapability.IMAGE_GENERATION)
-        }
-
-        return capabilities
+        return listOf(ModelCapability.TEXT)
     }
 
     fun inferContextLength(modelId: String, provider: AiProvider? = null): Int {
