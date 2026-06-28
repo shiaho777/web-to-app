@@ -26,12 +26,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.OpenInNew
@@ -52,7 +54,9 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.Divider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -161,6 +165,31 @@ fun ModuleMarketScreen(
 
     val aggregatedContributors = remember(views) { aggregateContributors(views) }
     var showContributors by remember { mutableStateOf(false) }
+
+    var highlightModuleId by remember { mutableStateOf<String?>(null) }
+    val listState = rememberLazyListState()
+
+    fun focusModule(moduleId: String) {
+        val targetView = views.firstOrNull { it.entry.id == moduleId } ?: return
+        val isChromeExt = targetView.entry.sourceType == "CHROME_EXTENSION"
+        selectedTab = if (isChromeExt) 1 else 0
+        selectedCategory = null
+        searchQuery = ""
+        scope.launch {
+            kotlinx.coroutines.delay(200)
+            val targetList = views.filter {
+                (isChromeExt && it.entry.sourceType == "CHROME_EXTENSION") ||
+                (!isChromeExt && it.entry.sourceType != "CHROME_EXTENSION")
+            }
+            val targetIndex = targetList.indexOfFirst { it.entry.id == moduleId }
+            if (targetIndex >= 0) {
+                listState.animateScrollToItem(targetIndex + 1)
+                highlightModuleId = moduleId
+                kotlinx.coroutines.delay(2500)
+                if (highlightModuleId == moduleId) highlightModuleId = null
+            }
+        }
+    }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -293,7 +322,9 @@ fun ModuleMarketScreen(
                                 onOpenContributing = {
                                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(repo.contributingUrl)))
                                 },
-                                resolveIcon = { entry -> repo.resolveIconUrl(entry) }
+                                resolveIcon = { entry -> repo.resolveIconUrl(entry) },
+                                listState = listState,
+                                highlightModuleId = highlightModuleId
                             )
                         }
                     }
@@ -335,7 +366,9 @@ fun ModuleMarketScreen(
                                 onOpenContributing = {
                                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(repo.contributingUrl)))
                                 },
-                                resolveIcon = { entry -> repo.resolveIconUrl(entry) }
+                                resolveIcon = { entry -> repo.resolveIconUrl(entry) },
+                                listState = listState,
+                                highlightModuleId = highlightModuleId
                             )
                         }
                     }
@@ -361,6 +394,11 @@ fun ModuleMarketScreen(
                 totalModules = views.size,
                 onOpenProfile = { url ->
                     context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                },
+                onModuleClick = { moduleName ->
+                    showContributors = false
+                    val target = views.firstOrNull { it.entry.name == moduleName }
+                    if (target != null) focusModule(target.entry.id)
                 }
             )
         }
@@ -440,9 +478,12 @@ private fun ModuleListContent(
     onOpenPullRequest: (String) -> Unit,
     onOpenSubmitter: (String) -> Unit,
     onOpenContributing: () -> Unit,
-    resolveIcon: (ModuleMarketEntry) -> String?
+    resolveIcon: (ModuleMarketEntry) -> String?,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    highlightModuleId: String?
 ) {
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -456,6 +497,7 @@ private fun ModuleListContent(
                 isInstalling = installingId == view.entry.id,
                 installProgress = if (installingId == view.entry.id) installProgress else null,
                 iconUrl = resolveIcon(view.entry),
+                isHighlighted = highlightModuleId == view.entry.id,
                 onInstall = { onInstall(view.entry) },
                 onOpenSource = { onOpenSource(view.entry) },
                 onOpenPullRequest = onOpenPullRequest,
@@ -666,14 +708,25 @@ private fun MarketModuleCard(
     isInstalling: Boolean,
     installProgress: InstallProgress?,
     iconUrl: String?,
+    isHighlighted: Boolean,
     onInstall: () -> Unit,
     onOpenSource: () -> Unit,
     onOpenPullRequest: (String) -> Unit,
     onOpenSubmitter: (String) -> Unit
 ) {
+    var expanded by remember { mutableStateOf(false) }
+    val cardTone = if (isHighlighted) WtaCardTone.Highlighted else WtaCardTone.Surface
+    val cardModifier = if (isHighlighted) {
+        Modifier
+            .fillMaxWidth()
+            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(WtaRadius.Card))
+    } else {
+        Modifier.fillMaxWidth()
+    }
+
     WtaCard(
-        modifier = Modifier.fillMaxWidth(),
-        tone = WtaCardTone.Surface,
+        modifier = cardModifier,
+        tone = cardTone,
         contentPadding = PaddingValues(WtaSpacing.Large)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -729,6 +782,15 @@ private fun MarketModuleCard(
             IconButton(onClick = onOpenSource, modifier = Modifier.size(36.dp)) {
                 Icon(Icons.Default.OpenInNew, contentDescription = Strings.moduleMarketViewSource)
             }
+            TextButton(onClick = { expanded = !expanded }) {
+                Icon(
+                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(Strings.moduleMarketDetails, style = MaterialTheme.typography.labelLarge)
+            }
             Spacer(Modifier.weight(1f))
             InstallButton(
                 state = view.state,
@@ -736,6 +798,194 @@ private fun MarketModuleCard(
                 installProgress = installProgress,
                 onClick = onInstall
             )
+        }
+
+        AnimatedVisibility(visible = expanded) {
+            ModuleDetailsPanel(
+                view = view,
+                onOpenPullRequest = onOpenPullRequest,
+                onOpenSubmitter = onOpenSubmitter
+            )
+        }
+    }
+}
+
+@Composable
+private fun ModuleDetailsRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false).padding(start = 12.dp)
+        )
+    }
+}
+
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun ModuleDetailsPanel(
+    view: MarketModuleView,
+    onOpenPullRequest: (String) -> Unit,
+    onOpenSubmitter: (String) -> Unit
+) {
+    val entry = view.entry
+    val submission = view.submission
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+            .padding(12.dp)
+    ) {
+        ModuleDetailsRow(Strings.moduleMarketCategory, entry.category)
+        ModuleDetailsRow(Strings.moduleMarketRunAt, entry.runAt)
+        ModuleDetailsRow(Strings.moduleMarketPermissions, entry.permissions.joinToString(", ").ifBlank { "—" })
+
+        if (entry.urlMatches.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                Strings.moduleMarketUrlMatches,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            entry.urlMatches.take(4).forEach { rule ->
+                Text(
+                    "  " + rule.pattern,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            if (entry.urlMatches.size > 4) {
+                Text(
+                    "  +${entry.urlMatches.size - 4}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        if (entry.tags.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                Strings.moduleMarketTags,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(4.dp))
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                entry.tags.forEach { tag ->
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Text(
+                            tag,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+            }
+        }
+
+        submission?.let { sub ->
+            Spacer(Modifier.height(10.dp))
+            androidx.compose.material3.Divider(
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+            Spacer(Modifier.height(8.dp))
+
+            sub.prNumber?.let { num ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { sub.prUrl?.let(onOpenPullRequest) }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.MergeType,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "#$num",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    sub.submittedAt?.let {
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            Strings.moduleMarketMergedAt + " " + formatRelativeTime(it).orEmpty(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            sub.submitter?.let { submitter ->
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (submitter.avatarUrl.isNotBlank()) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(androidx.compose.ui.platform.LocalContext.current)
+                                .data(submitter.avatarUrl).crossfade(true).build(),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp).clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        )
+                    }
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        Strings.moduleMarketSubmittedBy.replace("%s", submitter.login),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = if (submitter.profileUrl.isNotBlank()) {
+                            Modifier.clickable { onOpenSubmitter(submitter.profileUrl) }
+                        } else Modifier
+                    )
+                }
+            }
+
+            if (sub.contributors.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    PeopleAvatarStack(
+                        people = sub.contributors,
+                        onOpenProfile = onOpenSubmitter
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        Strings.moduleMarketWithContributors.replace("%d", sub.contributors.size.toString()),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
@@ -974,7 +1224,8 @@ private fun PeopleAvatarStack(
 private fun ContributorsBoard(
     contributors: List<AggregatedContributor>,
     totalModules: Int,
-    onOpenProfile: (String) -> Unit
+    onOpenProfile: (String) -> Unit,
+    onModuleClick: (String) -> Unit
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -1117,7 +1368,9 @@ private fun ContributorsBoard(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .padding(vertical = 4.dp),
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .clickable { onModuleClick(name) }
+                                            .padding(vertical = 6.dp, horizontal = 4.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Box(
@@ -1130,9 +1383,18 @@ private fun ContributorsBoard(
                                         Text(
                                             name,
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            fontWeight = FontWeight.Medium,
                                             maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.weight(1f, fill = false)
+                                        )
+                                        Spacer(Modifier.width(4.dp))
+                                        Icon(
+                                            Icons.Default.ChevronRight,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(16.dp)
                                         )
                                     }
                                 }

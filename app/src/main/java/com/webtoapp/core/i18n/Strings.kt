@@ -23375,6 +23375,48 @@ object Strings {
         AppLanguage.ARABIC -> "عرض ملف GitHub"
     }
 
+    val moduleMarketDetails: String get() = when (lang) {
+        AppLanguage.CHINESE -> "详情"
+        AppLanguage.ENGLISH -> "Details"
+        AppLanguage.ARABIC -> "التفاصيل"
+    }
+
+    val moduleMarketCategory: String get() = when (lang) {
+        AppLanguage.CHINESE -> "分类"
+        AppLanguage.ENGLISH -> "Category"
+        AppLanguage.ARABIC -> "الفئة"
+    }
+
+    val moduleMarketTags: String get() = when (lang) {
+        AppLanguage.CHINESE -> "标签"
+        AppLanguage.ENGLISH -> "Tags"
+        AppLanguage.ARABIC -> "الوسوم"
+    }
+
+    val moduleMarketPermissions: String get() = when (lang) {
+        AppLanguage.CHINESE -> "权限"
+        AppLanguage.ENGLISH -> "Permissions"
+        AppLanguage.ARABIC -> "الأذونات"
+    }
+
+    val moduleMarketUrlMatches: String get() = when (lang) {
+        AppLanguage.CHINESE -> "生效地址"
+        AppLanguage.ENGLISH -> "URL matches"
+        AppLanguage.ARABIC -> "مطابقة الروابط"
+    }
+
+    val moduleMarketRunAt: String get() = when (lang) {
+        AppLanguage.CHINESE -> "注入时机"
+        AppLanguage.ENGLISH -> "Inject at"
+        AppLanguage.ARABIC -> "وقت الحقن"
+    }
+
+    val moduleMarketMergedAt: String get() = when (lang) {
+        AppLanguage.CHINESE -> "合并于"
+        AppLanguage.ENGLISH -> "Merged"
+        AppLanguage.ARABIC -> "مدمج"
+    }
+
     val moduleMarketViewPullRequest: String get() = when (lang) {
         AppLanguage.CHINESE -> "查看合并的 PR"
         AppLanguage.ENGLISH -> "View merged PR"
