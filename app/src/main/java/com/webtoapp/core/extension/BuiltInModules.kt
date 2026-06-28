@@ -21,7 +21,7 @@ object BuiltInModules {
         description = Strings.builtinMediaDownloaderDesc,
         icon = "download",
         category = ModuleCategory.MEDIA,
-        tags = listOf(Strings.tagVideo, Strings.tagDownload, "MP4", "bilibili", "douyin", "xiaohongshu", "instagram", "facebook", "tiktok"),
+        tags = listOf(Strings.tagVideo, Strings.tagDownload, "MP4", "bilibili", "douyin", "xiaohongshu", "instagram", "facebook", "tiktok", "youtube"),
         version = ModuleVersion(5, "5.2.0", Strings.versionV4Ui),
         author = ModuleAuthor("WebToApp"),
         builtIn = true,
@@ -211,9 +211,11 @@ object BuiltInModules {
     function isInstagram() { return host.includes('instagram.com'); }
     function isFacebook() { return host.includes('facebook.com') || host.includes('fb.watch'); }
     function isTikTok() { return host.includes('tiktok.com'); }
+    function isYouTube() { return host.includes('youtube.com') || host.includes('youtu.be'); }
 
     function getPlatform() {
         if (isBilibili()) return 'bilibili';
+        if (isYouTube()) return 'youtube';
         if (isDouyin()) return 'douyin';
         if (isXiaohongshu()) return 'xiaohongshu';
         if (isInstagram()) return 'instagram';
@@ -394,6 +396,49 @@ object BuiltInModules {
         return mediaList;
     }
 
+    function getYouTubeMedia() {
+        mediaList = [];
+        try {
+            var pr = window.ytInitialPlayerResponse;
+            if (!pr) {
+                var scripts = document.querySelectorAll('script');
+                for (var i = 0; i < scripts.length; i++) {
+                    var text = scripts[i].textContent;
+                    if (text && text.indexOf('ytInitialPlayerResponse') >= 0) {
+                        var match = text.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\});/);
+                        if (match) { try { pr = JSON.parse(match[1]); } catch(e) {} break; }
+                    }
+                }
+            }
+            if (!pr) return mediaList;
+            var sd = pr.streamingData;
+            if (!sd) return mediaList;
+
+            function addStream(fmt, type) {
+                if (!fmt || !fmt.url) return;
+                var q = '';
+                if (fmt.qualityLabel) q = fmt.qualityLabel;
+                else if (fmt.audioQuality) q = fmt.audioQuality.replace('AUDIO_QUALITY_', '').toLowerCase();
+                else if (fmt.bitrate) q = Math.round(fmt.bitrate / 1000) + 'kbps';
+                mediaList.push({ type: type, src: fmt.url, q: q, mimeType: fmt.mimeType || '', i: mediaList.length });
+            }
+
+            (sd.formats || []).forEach(function(f) { addStream(f, 'video'); });
+            var bestVideo = null, bestAudio = null;
+            (sd.adaptiveFormats || []).forEach(function(f) {
+                var mt = (f.mimeType || '');
+                if (mt.indexOf('video') >= 0 && mt.indexOf('mp4') >= 0) {
+                    if (!bestVideo || (f.bitrate || 0) > (bestVideo.bitrate || 0)) bestVideo = f;
+                } else if (mt.indexOf('audio') >= 0 && mt.indexOf('mp4') >= 0) {
+                    if (!bestAudio || (f.bitrate || 0) > (bestAudio.bitrate || 0)) bestAudio = f;
+                }
+            });
+            if (bestVideo) addStream(bestVideo, 'video');
+            if (bestAudio) addStream(bestAudio, 'audio');
+        } catch (e) {}
+        return mediaList;
+    }
+
     let audioUrl = null;
     let audioTitle = '';
 
@@ -567,6 +612,17 @@ object BuiltInModules {
             return tiktokHtml;
         }
 
+        if (platform === 'youtube') {
+            getYouTubeMedia();
+            if (!mediaList.length) return noMediaPanel('▶️');
+            var ytItems = mediaList.map(function(m, i) {
+                var label = m.type === 'audio' ? T.audio : T.video;
+                var sub = m.q || (m.type === 'audio' ? 'm4a' : 'mp4');
+                return '<div class="wta-media-item" style="padding:16px;border-radius:12px"><div style="width:48px;height:48px;background:linear-gradient(135deg,#FF0000,#CC0000);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-size:20px">' + (m.type === 'audio' ? '🎵' : '🎬') + '</div><div style="flex:1"><div style="font-weight:600;color:var(--wta-on-surface,#1f2937)">' + label + '</div><div class="wta-media-subtitle">' + sub + '</div></div><button class="wta-media-item-btn" style="background:linear-gradient(135deg,#FF0000,#CC0000);color:#fff;padding:10px 20px;border-radius:8px" data-wta-action="mediaDL" data-wta-arg="yt_' + i + '">' + T.download + '</button></div>';
+            }).join('');
+            return '<div class="wta-media-subtitle" style="margin-bottom:16px">' + T.detected.replace('{0}', mediaList.length) + '</div>' + ytItems;
+        }
+
         detectGenericVideos();
         if (!mediaList.length) return noMediaPanel('🎬');
         let html = '<div class="wta-media-subtitle" style="margin-bottom:16px">' + T.detected.replace('{0}', mediaList.length) + '</div>';
@@ -610,6 +666,18 @@ object BuiltInModules {
             if (!url) return;
             const fn = 'bilibili_' + type + '_' + Date.now() + (type === 'video' ? '.m4s' : '.m4a');
             downloadItem(url, fn, { Referer: 'https://www.bilibili.com' }, type === 'audio' ? 'audio' : undefined);
+            __WTA_MODULE_UI__.closePanel();
+            return;
+        }
+
+        if (action.startsWith('yt_')) {
+            const idx = parseInt(action.slice(3));
+            getYouTubeMedia();
+            const m = mediaList[idx];
+            if (!m) return;
+            const ext = m.type === 'audio' ? '.m4a' : '.mp4';
+            const fn = 'youtube_' + m.type + '_' + (m.q || Date.now()).replace(/[^a-zA-Z0-9]/g, '') + ext;
+            downloadItem(m.src, fn);
             __WTA_MODULE_UI__.closePanel();
             return;
         }
@@ -690,32 +758,44 @@ object BuiltInModules {
 .wta-video-empty{text-align:center;padding:40px;color:var(--wta-on-surface-variant,#9ca3af)}
 .wta-video-empty-icon{font-size:48px;margin-bottom:16px}
 .wta-video-section{margin-bottom:16px}
-.wta-video-section-title{font-size:14px;color:var(--wta-on-surface-variant,#6b7280);margin-bottom:12px}
+.wta-video-section-title{font-size:14px;color:var(--wta-on-surface-variant,#6b7280);margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .wta-video-speed-grid{display:flex;flex-wrap:wrap;gap:8px}
 .wta-video-speed-btn{padding:10px 16px;border-radius:10px;border:1px solid var(--wta-outline,#e5e7eb);background:var(--wta-surface-dim,#f9fafb);font-size:14px;cursor:pointer;color:var(--wta-on-surface,#374151);transition:all .2s}
 .wta-video-speed-btn:active{background:var(--wta-accent-soft,rgba(99,102,241,.1))}
 .wta-video-feature-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .wta-video-feature-btn{padding:14px;border-radius:12px;border:none;background:var(--wta-surface-dim,#f3f4f6);font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--wta-on-surface,#374151);transition:all .2s}
 .wta-video-feature-btn:active{background:var(--wta-accent-soft,rgba(99,102,241,.1))}
-.wta-video-feature-icon{font-size:20px}"""
+.wta-video-feature-icon{font-size:20px}
+.wta-video-yt-toggle{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:12px;background:var(--wta-surface-dim,#f9fafb);margin-bottom:8px}
+.wta-video-yt-toggle-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wta-video-yt-toggle-title{font-size:14px;color:var(--wta-on-surface,#374151);display:flex;align-items:center;gap:6px}
+.wta-video-yt-toggle-desc{font-size:11px;color:var(--wta-on-surface-variant,#9ca3af);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wta-video-yt-chip{padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600}
+.wta-video-yt-chip-on{background:rgba(205,68,50,.15);color:#cc4432}
+.wta-video-yt-chip-off{background:var(--wta-outline,#e5e7eb);color:var(--wta-on-surface-variant,#9ca3af)}"""
 
     private const val VIDEO_ENHANCER_CODE = """
 (function() {
     'use strict';
 
-    // 多语言支持
     const LANG = (navigator.language || 'zh').toLowerCase().startsWith('ar') ? 'ar' :
                  (navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en';
     const I18N = {
-        zh: { name: '视频增强', noVideo: '未检测到视频', speed: '播放速度', speedSet: '播放速度: ', features: '功能', pip: '画中画', loop: '循环播放', back10: '后退10秒', fwd10: '前进10秒', pipOn: '已开启画中画', pipOff: '退出画中画', pipUnavail: '画中画不可用', loopOn: '已开启循环', loopOff: '已关闭循环', fwd: '前进', back: '后退', sec: '秒' },
-        en: { name: 'Video Enhance', noVideo: 'No video detected', speed: 'Playback Speed', speedSet: 'Speed: ', features: 'Features', pip: 'PiP', loop: 'Loop', back10: 'Back 10s', fwd10: 'Forward 10s', pipOn: 'PiP enabled', pipOff: 'PiP disabled', pipUnavail: 'PiP unavailable', loopOn: 'Loop enabled', loopOff: 'Loop disabled', fwd: 'Forward ', back: 'Back ', sec: 's' },
-        ar: { name: 'تحسين الفيديو', noVideo: 'لم يتم الكشف عن فيديو', speed: 'سرعة التشغيل', speedSet: 'السرعة: ', features: 'الميزات', pip: 'صورة داخل صورة', loop: 'تكرار', back10: 'رجوع 10ث', fwd10: 'تقديم 10ث', pipOn: 'تم تفعيل PiP', pipOff: 'تم إيقاف PiP', pipUnavail: 'PiP غير متاح', loopOn: 'تم تفعيل التكرار', loopOff: 'تم إيقاف التكرار', fwd: 'تقديم ', back: 'رجوع ', sec: 'ث' }
+        zh: { name: '视频增强', noVideo: '未检测到视频', speed: '播放速度', speedSet: '播放速度: ', features: '功能', pip: '画中画', loop: '循环播放', back10: '后退10秒', fwd10: '前进10秒', pipOn: '已开启画中画', pipOff: '退出画中画', pipUnavail: '画中画不可用', loopOn: '已开启循环', loopOff: '已关闭循环', fwd: '前进', back: '后退', sec: '秒', ytSection: 'YouTube 净化', ytAdSkip: '自动跳过广告', ytAdSkipDesc: '监视并点击跳过按钮', ytAutoQuality: '最高画质', ytAutoQualityDesc: '自动切换到最高清晰度', ytBgPlay: '后台播放', ytBgPlayDesc: '切到后台不暂停', ytSponsor: '跳过赞助段', ytSponsorDesc: 'SponsorBlock 赞助/片头', ytAdSkipped: '已跳过广告', ytQualitySet: '画质已设为最高', ytSponsorSkipped: '已跳过赞助段', ytSponsorFail: 'SponsorBlock 暂不可用', on: '已开启', off: '已关闭' },
+        en: { name: 'Video Enhance', noVideo: 'No video detected', speed: 'Playback Speed', speedSet: 'Speed: ', features: 'Features', pip: 'PiP', loop: 'Loop', back10: 'Back 10s', fwd10: 'Forward 10s', pipOn: 'PiP enabled', pipOff: 'PiP disabled', pipUnavail: 'PiP unavailable', loopOn: 'Loop enabled', loopOff: 'Loop disabled', fwd: 'Forward ', back: 'Back ', sec: 's', ytSection: 'YouTube Cleanup', ytAdSkip: 'Auto-skip ads', ytAdSkipDesc: 'Watch and click skip buttons', ytAutoQuality: 'Max quality', ytAutoQualityDesc: 'Auto-select top resolution', ytBgPlay: 'Background play', ytBgPlayDesc: 'Keep audio when backgrounded', ytSponsor: 'Skip sponsors', ytSponsorDesc: 'SponsorBlock intro/sponsor', ytAdSkipped: 'Ad skipped', ytQualitySet: 'Quality set to max', ytSponsorSkipped: 'Sponsor segment skipped', ytSponsorFail: 'SponsorBlock unavailable', on: 'On', off: 'Off' },
+        ar: { name: 'تحسين الفيديو', noVideo: 'لم يتم الكشف عن فيديو', speed: 'سرعة التشغيل', speedSet: 'السرعة: ', features: 'الميزات', pip: 'صورة داخل صورة', loop: 'تكرار', back10: 'رجوع 10ث', fwd10: 'تقديم 10ث', pipOn: 'تم تفعيل PiP', pipOff: 'تم إيقاف PiP', pipUnavail: 'PiP غير متاح', loopOn: 'تم تفعيل التكرار', loopOff: 'تم إيقاف التكرار', fwd: 'تقديم ', back: 'رجوع ', sec: 'ث', ytSection: 'تنظيف يوتيوب', ytAdSkip: 'تخطي الإعلانات تلقائياً', ytAdSkipDesc: 'مراقبة والنقر على تخطي', ytAutoQuality: 'أعلى جودة', ytAutoQualityDesc: 'اختيار أعلى دقة تلقائياً', ytBgPlay: 'التشغيل في الخلفية', ytBgPlayDesc: 'إبقاء الصوت في الخلفية', ytSponsor: 'تخطي الرعاة', ytSponsorDesc: 'SponsorBlock مقدمة/رعاية', ytAdSkipped: 'تم تخطي الإعلان', ytQualitySet: 'تم ضبط الجودة على الأعلى', ytSponsorSkipped: 'تم تخطي مقطع الراعي', ytSponsorFail: 'SponsorBlock غير متاح', on: 'مفعل', off: 'متوقف' }
     };
     const T = I18N[LANG] || I18N.en;
 
     const MODULE = { id: (typeof __MODULE_INFO__ !== 'undefined' ? __MODULE_INFO__.id : 'video-enhancer'), name: T.name, icon: '🎬', color: '#8b5cf6' };
     let currentSpeed = 1.0;
     const speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0];
+
+    const host = location.hostname;
+    const isYouTube = host.includes('youtube.com') || host.includes('youtu.be');
+    const YT_KEY = 'wta_venh_yt';
+    let ytCfg = { adSkip: true, autoQuality: true, bgPlay: true, sponsor: false };
+    try { const saved = localStorage.getItem(YT_KEY); if (saved) ytCfg = Object.assign(ytCfg, JSON.parse(saved)); } catch(e) {}
 
     function getVideo() { return document.querySelector('video'); }
 
@@ -731,22 +811,139 @@ object BuiltInModules {
         else { v.requestPictureInPicture().then(() => __WTA_MODULE_UI__.toast(T.pipOn)).catch(() => __WTA_MODULE_UI__.toast(T.pipUnavail)); }
     }
 
+    function saveYt() { try { localStorage.setItem(YT_KEY, JSON.stringify(ytCfg)); } catch(e) {} }
+
+    let ytAdObserver = null;
+    let ytQualityDone = false;
+    let ytSponsorTimer = null;
+    let ytSponsorSegments = [];
+    let ytSponsorVideoId = null;
+
+    function clickAdSkip() {
+        const btn = document.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern, [id^="skip-button"]');
+        if (btn) { btn.click(); __WTA_MODULE_UI__.toast(T.ytAdSkipped); return true; }
+        return false;
+    }
+
+    function selectMaxQuality() {
+        try {
+            const settingsBtn = document.querySelector('.ytp-settings-button');
+            if (!settingsBtn) return false;
+            settingsBtn.click();
+            const menuItems = document.querySelectorAll('.ytp-menuitem');
+            let qualityItem = null;
+            menuItems.forEach(function(m) { if (m.textContent && m.textContent.toLowerCase().indexOf('quality') >= 0) qualityItem = m; });
+            if (!qualityItem) { document.body.click(); return false; }
+            qualityItem.click();
+            const options = document.querySelectorAll('.ytp-quality-menu .ytp-menuitem, .ytp-panel-menu .ytp-menuitem');
+            let picked = false;
+            options.forEach(function(o, i) { if (!picked && i === 0) { o.click(); picked = true; } });
+            if (!picked) document.body.click();
+            return picked;
+        } catch(e) { return false; }
+    }
+
+    function fetchSponsorSegments(videoId) {
+        if (!ytCfg.sponsor) return;
+        if (ytSponsorVideoId === videoId && ytSponsorSegments.length) return;
+        ytSponsorVideoId = videoId;
+        ytSponsorSegments = [];
+        const url = 'https://sponsor.ajay.app/api/skipSegments?videoID=' + encodeURIComponent(videoId) + '&categories=["sponsor","intro","outro","selfpromo"]';
+        fetch(url).then(function(r) { return r.status === 200 ? r.json() : []; }).then(function(segs) {
+            ytSponsorSegments = (segs || []).map(function(s) { return { start: s.segment[0], end: s.segment[1] }; });
+        }).catch(function() { ytSponsorSegments = []; });
+    }
+
+    function getYouTubeVideoId() {
+        const url = location.href;
+        const m = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/) || url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+        return m ? m[1] : null;
+    }
+
+    function checkSponsor() {
+        if (!ytCfg.sponsor || !ytSponsorSegments.length) return;
+        const v = getVideo();
+        if (!v) return;
+        const t = v.currentTime;
+        for (var i = 0; i < ytSponsorSegments.length; i++) {
+            var s = ytSponsorSegments[i];
+            if (t >= s.start && t < s.end - 0.3) { v.currentTime = s.end; __WTA_MODULE_UI__.toast(T.ytSponsorSkipped); break; }
+        }
+    }
+
+    function startYouTubeWatchers() {
+        if (!isYouTube || ytAdObserver) return;
+
+        ytAdObserver = new MutationObserver(function() {
+            if (ytCfg.adSkip) clickAdSkip();
+            if (ytCfg.autoQuality && !ytQualityDone) {
+                const v = getVideo();
+                if (v && v.readyState >= 2) { if (selectMaxQuality()) { ytQualityDone = true; __WTA_MODULE_UI__.toast(T.ytQualitySet); } }
+            }
+        });
+        ytAdObserver.observe(document.body, { childList: true, subtree: true });
+
+        if (ytCfg.sponsor) {
+            const vid = getYouTubeVideoId();
+            if (vid) fetchSponsorSegments(vid);
+            ytSponsorTimer = setInterval(checkSponsor, 1000);
+        }
+
+        document.addEventListener('visibilitychange', function() {
+            if (ytCfg.bgPlay && document.hidden) {
+                const v = getVideo();
+                if (v && v.paused) v.play().catch(function(){});
+            }
+        });
+    }
+
+    function stopYouTubeWatchers() {
+        if (ytAdObserver) { ytAdObserver.disconnect(); ytAdObserver = null; }
+        if (ytSponsorTimer) { clearInterval(ytSponsorTimer); ytSponsorTimer = null; }
+        ytQualityDone = false;
+    }
+
+    function restartYtWatchers() {
+        stopYouTubeWatchers();
+        if (ytCfg.adSkip || ytCfg.autoQuality || ytCfg.bgPlay || ytCfg.sponsor) startYouTubeWatchers();
+    }
+
+    function ytToggleRow(action, label, desc, enabled) {
+        return '<div class="wta-video-yt-toggle">' +
+            '<div class="wta-video-yt-toggle-info">' +
+            '<div class="wta-video-yt-toggle-title">' + label +
+            '<span class="wta-video-yt-chip ' + (enabled ? 'wta-video-yt-chip-on' : 'wta-video-yt-chip-off') + '">' + (enabled ? T.on : T.off) + '</span></div>' +
+            '<div class="wta-video-yt-toggle-desc">' + desc + '</div></div>' +
+            '<button class="wta-video-feature-btn" style="padding:8px 16px;flex-direction:row" data-wta-action="' + action + '">' +
+            '<span style="font-size:16px">' + (enabled ? '✓' : '○') + '</span></button></div>';
+    }
+
     function getPanelHtml() {
         const v = getVideo();
-        if (!v) return '<div class="wta-video-empty"><div class="wta-video-empty-icon">🎬</div><div>' + T.noVideo + '</div></div>';
-
-        return '<div class="wta-video-panel">' +
+        const html = '<div class="wta-video-panel">' +
             '<div class="wta-video-section"><div class="wta-video-section-title">' + T.speed + '</div>' +
             '<div class="wta-video-speed-grid">' +
             speeds.map(function(s) { return '<button class="wta-video-speed-btn' + (currentSpeed === s ? ' wta-video-speed-active' : '') + '" data-wta-action="setSpeed" data-wta-arg="' + s + '">' + s + 'x</button>'; }).join('') +
-            '</div></div>' +
-            '<div class="wta-video-section"><div class="wta-video-section-title">' + T.features + '</div>' +
+            '</div></div>';
+
+        const featuresHtml = '<div class="wta-video-section"><div class="wta-video-section-title">' + T.features + '</div>' +
             '<div class="wta-video-feature-grid">' +
             '<button class="wta-video-feature-btn" data-wta-action="togglePiP"><span class="wta-video-feature-icon">📺</span>' + T.pip + '</button>' +
             '<button class="wta-video-feature-btn" data-wta-action="toggleLoop"><span class="wta-video-feature-icon">🔁</span>' + T.loop + '</button>' +
             '<button class="wta-video-feature-btn" data-wta-action="skipBack"><span class="wta-video-feature-icon">⏪</span>' + T.back10 + '</button>' +
             '<button class="wta-video-feature-btn" data-wta-action="skipFwd"><span class="wta-video-feature-icon">⏩</span>' + T.fwd10 + '</button>' +
-            '</div></div></div>';
+            '</div></div>';
+
+        if (!v && !isYouTube) return '<div class="wta-video-empty"><div class="wta-video-empty-icon">🎬</div><div>' + T.noVideo + '</div></div>';
+        if (!isYouTube) return html + featuresHtml + '</div>';
+
+        return html + featuresHtml +
+            '<div class="wta-video-section"><div class="wta-video-section-title">▶️ ' + T.ytSection + '</div>' +
+            ytToggleRow('ytAdSkip', T.ytAdSkip, T.ytAdSkipDesc, ytCfg.adSkip) +
+            ytToggleRow('ytAutoQuality', T.ytAutoQuality, T.ytAutoQualityDesc, ytCfg.autoQuality) +
+            ytToggleRow('ytBgPlay', T.ytBgPlay, T.ytBgPlayDesc, ytCfg.bgPlay) +
+            ytToggleRow('ytSponsor', T.ytSponsor, T.ytSponsorDesc, ytCfg.sponsor) +
+            '</div></div>';
     }
 
     window.__wta_module_action_setSpeed = function(s) { setSpeed(parseFloat(s)); };
@@ -754,10 +951,28 @@ object BuiltInModules {
     window.__wta_module_action_toggleLoop = function() { var v = getVideo(); if (v) { v.loop = !v.loop; __WTA_MODULE_UI__.toast(v.loop ? T.loopOn : T.loopOff); } };
     window.__wta_module_action_skipBack = function() { var v = getVideo(); if (v) { v.currentTime -= 10; __WTA_MODULE_UI__.toast(T.back + '10' + T.sec); } };
     window.__wta_module_action_skipFwd = function() { var v = getVideo(); if (v) { v.currentTime += 10; __WTA_MODULE_UI__.toast(T.fwd + '10' + T.sec); } };
+    window.__wta_module_action_ytAdSkip = function() { ytCfg.adSkip = !ytCfg.adSkip; saveYt(); restartYtWatchers(); };
+    window.__wta_module_action_ytAutoQuality = function() { ytCfg.autoQuality = !ytCfg.autoQuality; saveYt(); restartYtWatchers(); };
+    window.__wta_module_action_ytBgPlay = function() { ytCfg.bgPlay = !ytCfg.bgPlay; saveYt(); restartYtWatchers(); };
+    window.__wta_module_action_ytSponsor = function() {
+        ytCfg.sponsor = !ytCfg.sponsor; saveYt();
+        if (ytCfg.sponsor) {
+            const vid = getYouTubeVideoId();
+            if (vid) fetchSponsorSegments(vid);
+            if (!ytSponsorTimer) ytSponsorTimer = setInterval(checkSponsor, 1000);
+        }
+    };
 
     function register() {
         if (typeof __WTA_MODULE_UI__ === 'undefined') { setTimeout(register, 100); return; }
         __WTA_MODULE_UI__.register({ ...MODULE, uiConfig: (typeof __MODULE_UI_CONFIG__ !== 'undefined' ? __MODULE_UI_CONFIG__ : undefined), runMode: (typeof __MODULE_RUN_MODE__ !== 'undefined' ? __MODULE_RUN_MODE__ : 'INTERACTIVE'), onAction: c => c.innerHTML = getPanelHtml() });
+        if (isYouTube) {
+            if (ytCfg.adSkip || ytCfg.autoQuality || ytCfg.bgPlay || ytCfg.sponsor) {
+                setTimeout(startYouTubeWatchers, 800);
+            }
+            let lastUrl = location.href;
+            setInterval(function() { if (location.href !== lastUrl) { lastUrl = location.href; ytQualityDone = false; if (ytCfg.sponsor) { const vid = getYouTubeVideoId(); if (vid) fetchSponsorSegments(vid); } } }, 1500);
+        }
     }
     document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', register) : register();
 })();
