@@ -2009,6 +2009,7 @@ fun WebViewScreen(
                 if (url == "about:blank") return
                 isLoading = true
                 currentUrl = url ?: ""
+                errorMessage = null
                 jsScrollTop.set(0)
                 if (!false) {
                 } else {
@@ -2031,6 +2032,9 @@ fun WebViewScreen(
                 if (url == "about:blank") return
                 isLoading = false
                 isRefreshing = false
+                if (url != null && !url.startsWith("file:///")) {
+                    errorMessage = null
+                }
                 currentUrl = url ?: ""
                 webViewRef?.let {
                     canGoBack = it.canGoBack()
