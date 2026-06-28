@@ -559,6 +559,30 @@
           "exclude": false
         }
       ]
-    }
+    },
+    {
+      "id": "wta-youtube-player",
+  "path": "youtube-player",
+  "name": "YouTube Stream Extractor",
+  "description": "Injects a floating button that extracts YouTube video IDs and launches a clean, fullscreen, ad-free video player overlay. Includes automatic CodePen proxy fallback.",
+  "icon": "smart_display",
+  "category": "VIDEO",
+  "tags": ["youtube", "player", "fullscreen"],
+  "version": "5.0.0",
+  "minAppVersion": 33,
+  "author": {
+    "name": "Stremiouser666",
+    "url": "https://github.com/Stremiouser666"
+  },
+  "runAt": "DOCUMENT_END",
+  "permissions": ["DOM_ACCESS"],
+  "urlMatches": [
+    { "pattern": "*://youtube.com/*", "isRegex": false, "exclude": false },
+    { "pattern": "*://www.youtube.com/*", "isRegex": false, "exclude": false },
+    { "pattern": "*://m.youtube.com/*", "isRegex": false, "exclude": false },
+    { "pattern": "*://youtu.be/*", "isRegex": false, "exclude": false }
+  ],
+  "hasCss": false
+}
   ]
 }

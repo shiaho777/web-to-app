@@ -1,0 +1,25 @@
+{
+  "id": "wta-youtube-player",
+  "name": "YouTube Stream Extractor",
+  "description": "Injects a floating button that extracts YouTube video IDs and launches a clean, fullscreen, ad-free video player overlay. Includes automatic CodePen proxy fallback.",
+  "icon": "smart_display",
+  "category": "VIDEO",
+  "tags": ["youtube", "player", "fullscreen"],
+  "version": {
+    "code": 1,
+    "name": "5.0.0",
+    "changelog": "Initial release"
+  },
+  "author": {
+    "name": "Stremiouser666",
+    "url": "https://github.com/Stremiouser666"
+  },
+  "runAt": "DOCUMENT_END",
+  "urlMatches": [
+    { "pattern": "*://youtube.com/*", "isRegex": false, "exclude": false },
+    { "pattern": "*://www.youtube.com/*", "isRegex": false, "exclude": false },
+    { "pattern": "*://m.youtube.com/*", "isRegex": false, "exclude": false },
+    { "pattern": "*://youtu.be/*", "isRegex": false, "exclude": false }
+  ],
+  "permissions": ["DOM_ACCESS"]
+}
