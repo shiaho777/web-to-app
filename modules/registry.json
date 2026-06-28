@@ -563,12 +563,12 @@
     {
       "id": "wta-youtube-player",
   "path": "youtube-player",
-  "name": "YouTube Stream Extractor",
-  "description": "Injects a floating button that extracts YouTube video IDs and launches a clean, fullscreen, ad-free video player overlay. Includes automatic CodePen proxy fallback.",
+  "name": "YouTube Fullscreen Player",
+  "description": "Adds a floating button on YouTube pages that opens the current video in a clean fullscreen playback overlay via the privacy-friendly youtube-nocookie embed. For ad-skipping, max-quality, and sponsor-segment skipping, enable the built-in Video Enhance module on its YouTube Cleanup panel.",
   "icon": "smart_display",
   "category": "VIDEO",
   "tags": ["youtube", "player", "fullscreen"],
-  "version": "5.0.0",
+  "version": "5.1.0",
   "minAppVersion": 33,
   "author": {
     "name": "Stremiouser666",
