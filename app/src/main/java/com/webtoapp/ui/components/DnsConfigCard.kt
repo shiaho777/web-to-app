@@ -69,19 +69,6 @@ fun DnsConfigCard(
             )
 
             AnimatedVisibility(
-                visible = !enabled,
-                enter = expandVertically(animationSpec = WtaMotion.settleSpring()),
-                exit = shrinkVertically(animationSpec = WtaMotion.snapSpring())
-            ) {
-                WtaStatusBanner(
-                    modifier = Modifier.padding(top = WtaSpacing.Medium),
-                    message = Strings.dnsModeSystemDesc,
-                    tone = WtaStatusTone.Info,
-                    showIcon = false
-                )
-            }
-
-            AnimatedVisibility(
                 visible = enabled,
                 enter = expandVertically(animationSpec = WtaMotion.settleSpring()),
                 exit = shrinkVertically(animationSpec = WtaMotion.snapSpring())
@@ -199,22 +186,12 @@ private fun DnsHeader(
                 )
             }
             Spacer(Modifier.width(WtaSpacing.IconTextGap))
-            Column {
-                Text(
-                    text = Strings.dnsConfigTitle,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = dnsStatusText(enabled, dnsConfig),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+            Text(
+                text = Strings.dnsConfigTitle,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
         WtaSwitch(
             checked = enabled,
@@ -293,11 +270,4 @@ private fun DohModeSection(
             else WtaStatusTone.Info
         )
     }
-}
-
-private fun dnsStatusText(enabled: Boolean, dnsConfig: DnsConfig): String {
-    if (!enabled) return Strings.dnsModeSystemDesc
-    val providerName = DnsProvider.fromKey(dnsConfig.provider).displayName
-    val modeName = if (dnsConfig.dohMode == "strict") Strings.dohModeStrict else Strings.dohModeAutomatic
-    return "$providerName · $modeName"
 }
