@@ -1,25 +1,7 @@
 {
   "schema": 1,
-  "generatedAt": "2026-06-28T16:33:21Z",
+  "generatedAt": "2026-06-28T16:40:25Z",
   "submissions": {
-    "wta-auto-open-video-player": {
-      "submittedAt": "2026-06-22T15:42:48+01:00",
-      "direct": true,
-      "submitter": {
-        "login": "Stremiouser666",
-        "name": "Steveies",
-        "avatarUrl": "https://avatars.githubusercontent.com/u/184891406?v=4",
-        "profileUrl": "https://github.com/Stremiouser666"
-      },
-      "contributors": [
-        {
-          "login": "shiaho777",
-          "name": "shiaho",
-          "avatarUrl": "https://avatars.githubusercontent.com/u/222622008?v=4",
-          "profileUrl": "https://github.com/shiaho777"
-        }
-      ]
-    },
     "wta-auto-scroll": {
       "submittedAt": "2026-05-23T15:28:53+08:00",
       "direct": true,
@@ -79,24 +61,6 @@
         "avatarUrl": "https://avatars.githubusercontent.com/u/222622008?v=4",
         "profileUrl": "https://github.com/shiaho777"
       }
-    },
-    "wta-youtube-player": {
-      "submittedAt": "2026-06-28T06:58:42+01:00",
-      "direct": true,
-      "submitter": {
-        "login": "Stremiouser666",
-        "name": "Steveies",
-        "avatarUrl": "https://avatars.githubusercontent.com/u/184891406?v=4",
-        "profileUrl": "https://github.com/Stremiouser666"
-      },
-      "contributors": [
-        {
-          "login": "shiaho777",
-          "name": "shiaho",
-          "avatarUrl": "https://avatars.githubusercontent.com/u/222622008?v=4",
-          "profileUrl": "https://github.com/shiaho777"
-        }
-      ]
     }
   }
 }
