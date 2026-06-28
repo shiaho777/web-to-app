@@ -48,10 +48,10 @@ class AiConfigManagerTest {
             id = "gson-m1",
             model = AiModel(id = "test-model", name = "Test Model", provider = AiProvider.OPENAI),
             apiKeyId = "key-1",
-            capabilities = listOf(ModelCapability.TEXT, ModelCapability.CODE),
+            capabilities = listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL),
             featureMappings = mapOf(
                 ModelCapability.TEXT to setOf(AiFeature.AI_CODING, AiFeature.GENERAL),
-                ModelCapability.CODE to setOf(AiFeature.AI_CODING)
+                ModelCapability.MULTIMODAL to setOf(AiFeature.AI_CODING)
             )
         )
         val json = gson.toJson(listOf(model))
@@ -188,10 +188,10 @@ class AiConfigManagerTest {
             id = "m1",
             model = AiModel(id = "gemini-2.0-flash", name = "Gemini 2.0 Flash", provider = AiProvider.GOOGLE),
             apiKeyId = "k1",
-            capabilities = listOf(ModelCapability.TEXT, ModelCapability.CODE),
+            capabilities = listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL),
             featureMappings = mapOf(
                 ModelCapability.TEXT to setOf(AiFeature.GENERAL, AiFeature.TRANSLATION),
-                ModelCapability.CODE to setOf(AiFeature.AI_CODING)
+                ModelCapability.MULTIMODAL to setOf(AiFeature.AI_CODING)
             ),
             isDefault = true
         )
@@ -214,7 +214,7 @@ class AiConfigManagerTest {
         assertTrue("Model 1 should be default", models[0].isDefault)
         assertEquals(2, models[0].featureMappings.size)
         assertNotNull(models[0].featureMappings[ModelCapability.TEXT])
-        assertNotNull(models[0].featureMappings[ModelCapability.CODE])
+        assertNotNull(models[0].featureMappings[ModelCapability.MULTIMODAL])
         assertTrue(models[0].featureMappings[ModelCapability.TEXT]!!.contains(AiFeature.TRANSLATION))
         assertEquals(1, models[1].featureMappings.size)
         println("✅ Step 2: Models with featureMappings save/read OK")

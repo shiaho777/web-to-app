@@ -208,8 +208,7 @@ class ApkExportPreflightTest {
                 siteLanguage = "zh_CN",
                 autoInstall = true,
                 sourceType = "SAMPLE",
-                phpPort = 8088,
-                landscapeMode = true
+                phpPort = 8088
             )
         )
 
@@ -227,7 +226,6 @@ class ApkExportPreflightTest {
         assertThat(config.wordpressSiteLanguage).isEqualTo("zh_CN")
         assertThat(config.wordpressAutoInstall).isTrue()
         assertThat(config.wordpressPhpPort).isEqualTo(8088)
-        assertThat(config.wordpressLandscapeMode).isTrue()
     }
 
     @Test
