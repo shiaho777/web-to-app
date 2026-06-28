@@ -104,7 +104,7 @@ modules/
 └── auto-scroll/
 ```
 
-The app fetches both `registry.json` and `submissions.json`, and only shows modules that appear in both. That keeps the in-app catalog aligned with PRs that have actually been merged. The submissions file also records every contributor per module, so the catalog shows stacked avatars for everyone who touched a module and a contributors leaderboard ranked by contribution count.
+The app fetches both `registry.json` and `submissions.json`, and only shows modules that appear in both. That keeps the in-app catalog aligned with PRs that have actually been merged. The submissions file also records every contributor per module, so the catalog shows stacked avatars for everyone who touched a module and a contributors leaderboard ranked by contribution count. Catalog files and module icons are routed through a global mirror first, with raw.githubusercontent.com and jsDelivr as automatic fallbacks, so the store loads fast everywhere (including mainland China).
 
 - Users open **Extension Modules** and tap the storefront icon.
 - Contributors add a folder under `modules/`, update `registry.json`, and open a PR.

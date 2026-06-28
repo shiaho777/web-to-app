@@ -104,7 +104,7 @@ modules/
 └── auto-scroll/
 ```
 
-App 会同时拉取 `registry.json` 和 `submissions.json`，只展示两边都存在的模块，保证应用内市场和已经合并的 PR 对齐。submissions 文件还会记录每个模块的全部贡献者，因此应用内会以叠加头像的形式展示所有参与过该模块的人，并按贡献模块数排出一个贡献者榜单。
+App 会同时拉取 `registry.json` 和 `submissions.json`，只展示两边都存在的模块，保证应用内市场和已经合并的 PR 对齐。submissions 文件还会记录每个模块的全部贡献者，因此应用内会以叠加头像的形式展示所有参与过该模块的人，并按贡献模块数排出一个贡献者榜单。目录文件和模块图标会优先走全球镜像加速，raw.githubusercontent.com 和 jsDelivr 作为自动回退，因此商店在全球（含中国大陆）都能快速加载。
 
 - 用户打开 **扩展模块** 页面，点击右上角商店图标即可安装。
 - 贡献者在 `modules/` 下添加文件夹，更新 `registry.json`，然后提交 PR。
