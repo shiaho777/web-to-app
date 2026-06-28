@@ -436,6 +436,12 @@ fun CreateAppScreen(
                     viewModel.updateEditState {
                         copy(webViewConfig = webViewConfig.copy(dnsConfig = config))
                     }
+                },
+                engineType = editState.apkExportConfig.engineType,
+                onEngineTypeChange = { type ->
+                    viewModel.updateEditState {
+                        copy(apkExportConfig = apkExportConfig.copy(engineType = type))
+                    }
                 }
             )
 

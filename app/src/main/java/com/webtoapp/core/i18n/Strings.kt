@@ -33361,6 +33361,18 @@ object Strings {
         AppLanguage.JAPANESE -> "Gecko only"
         AppLanguage.KOREAN -> "Gecko only"
     }
+    val dnsEchEngineWarn: String get() = when (lang) {
+        AppLanguage.CHINESE -> "ECH 需 GeckoView 引擎才能加密 SNI。已自动切换到 GeckoView，构建后请确保已下载 GeckoView 运行时。"
+        AppLanguage.ENGLISH -> "ECH needs the GeckoView engine to encrypt SNI. Switched to GeckoView automatically — make sure the GeckoView runtime is downloaded before building."
+        AppLanguage.ARABIC -> "يحتاج ECH إلى محرك GeckoView لتشفير SNI. تم التبديل إلى GeckoView تلقائياً — تأكد من تنزيل وقت تشغيل GeckoView قبل البناء."
+        AppLanguage.PORTUGUESE -> "ECH needs the GeckoView engine to encrypt SNI. Switched to GeckoView automatically — make sure the GeckoView runtime is downloaded before building."
+        AppLanguage.SPANISH -> "ECH needs the GeckoView engine to encrypt SNI. Switched to GeckoView automatically — make sure the GeckoView runtime is downloaded before building."
+        AppLanguage.FRENCH -> "ECH needs the GeckoView engine to encrypt SNI. Switched to GeckoView automatically — make sure the GeckoView runtime is downloaded before building."
+        AppLanguage.GERMAN -> "ECH needs the GeckoView engine to encrypt SNI. Switched to GeckoView automatically — make sure the GeckoView runtime is downloaded before building."
+        AppLanguage.RUSSIAN -> "ECH needs the GeckoView engine to encrypt SNI. Switched to GeckoView automatically — make sure the GeckoView runtime is downloaded before building."
+        AppLanguage.JAPANESE -> "ECH needs the GeckoView engine to encrypt SNI. Switched to GeckoView automatically — make sure the GeckoView runtime is downloaded before building."
+        AppLanguage.KOREAN -> "ECH needs the GeckoView engine to encrypt SNI. Switched to GeckoView automatically — make sure the GeckoView runtime is downloaded before building."
+    }
 
     val disguiseMultiIconTitle: String get() = when (lang) {
         AppLanguage.CHINESE -> "图标与应用"

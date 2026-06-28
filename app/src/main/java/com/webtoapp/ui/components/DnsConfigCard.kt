@@ -53,9 +53,22 @@ fun DnsConfigCard(
     dnsConfig: DnsConfig,
     onDnsModeChange: (String) -> Unit,
     onDnsConfigChange: (DnsConfig) -> Unit,
+    engineType: String = "SYSTEM_WEBVIEW",
+    onEngineTypeChange: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val enabled = dnsMode != "SYSTEM"
+    val isGecko = engineType == "GECKOVIEW"
+
+    fun toggleEch(on: Boolean) {
+        if (!on) {
+            onDnsConfigChange(dnsConfig.copy(echEnabled = false))
+            return
+        }
+        if (dnsMode == "SYSTEM") onDnsModeChange("DOH")
+        if (!isGecko) onEngineTypeChange("GECKOVIEW")
+        onDnsConfigChange(dnsConfig.copy(echEnabled = true))
+    }
 
     WtaSettingCard(
         modifier = modifier,
@@ -127,9 +140,7 @@ fun DnsConfigCard(
                         title = Strings.dnsEchLabel,
                         subtitle = Strings.dnsEchDesc,
                         icon = Icons.Outlined.Shield,
-                        onClick = {
-                            onDnsConfigChange(dnsConfig.copy(echEnabled = !dnsConfig.echEnabled))
-                        },
+                        onClick = { toggleEch(!dnsConfig.echEnabled) },
                         trailingMaxWidth = 200.dp
                     ) {
                         WtaBadge(
@@ -141,9 +152,14 @@ fun DnsConfigCard(
                         Spacer(Modifier.width(WtaSpacing.Small))
                         WtaSwitch(
                             checked = dnsConfig.echEnabled,
-                            onCheckedChange = {
-                                onDnsConfigChange(dnsConfig.copy(echEnabled = it))
-                            }
+                            onCheckedChange = { toggleEch(it) }
+                        )
+                    }
+
+                    if (dnsConfig.echEnabled && !isGecko) {
+                        WtaStatusBanner(
+                            message = Strings.dnsEchEngineWarn,
+                            tone = WtaStatusTone.Warning
                         )
                     }
                 }
