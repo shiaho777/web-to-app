@@ -55600,6 +55600,30 @@ object Strings {
         AppLanguage.JAPANESE -> "Build Logs"
         AppLanguage.KOREAN -> "Build Logs"
     }
+    val fileManagerSectionUserFiles: String get() = when (lang) {
+        AppLanguage.CHINESE -> "我的文件"
+        AppLanguage.ENGLISH -> "My Files"
+        AppLanguage.ARABIC -> "ملفاتي"
+        AppLanguage.PORTUGUESE -> "My Files"
+        AppLanguage.SPANISH -> "My Files"
+        AppLanguage.FRENCH -> "My Files"
+        AppLanguage.GERMAN -> "My Files"
+        AppLanguage.RUSSIAN -> "My Files"
+        AppLanguage.JAPANESE -> "My Files"
+        AppLanguage.KOREAN -> "My Files"
+    }
+    val fileManagerOpen: String get() = when (lang) {
+        AppLanguage.CHINESE -> "打开"
+        AppLanguage.ENGLISH -> "Open"
+        AppLanguage.ARABIC -> "فتح"
+        AppLanguage.PORTUGUESE -> "Open"
+        AppLanguage.SPANISH -> "Open"
+        AppLanguage.FRENCH -> "Open"
+        AppLanguage.GERMAN -> "Open"
+        AppLanguage.RUSSIAN -> "Open"
+        AppLanguage.JAPANESE -> "Open"
+        AppLanguage.KOREAN -> "Open"
+    }
     val fileManagerClear: String get() = when (lang) {
         AppLanguage.CHINESE -> "清空"
         AppLanguage.ENGLISH -> "Clear"

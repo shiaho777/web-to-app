@@ -31,7 +31,9 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.FolderShared
 import androidx.compose.material.icons.outlined.GetApp
+import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -74,7 +76,8 @@ private enum class FileSection(val dirName: String) {
     APK("built_apks"),
     AAB("built_aabs"),
     CLONED("cloned_apks"),
-    LOGS("build_logs");
+    LOGS("build_logs"),
+    WEB_TO_APP("WebToApp");
 
     val isLogs: Boolean get() = this == LOGS
 }
@@ -181,6 +184,7 @@ fun FileManagerScreen(onBack: () -> Unit) {
                                 )
                             }
                         },
+                        onOpen = { entry -> openFile(context, entry.file, snackbarHostState, scope) },
                         onView = { entry ->
                             viewingLog = entry
                             logLoading = true
@@ -209,6 +213,7 @@ fun FileManagerScreen(onBack: () -> Unit) {
             FileSection.AAB -> Strings.fileManagerSectionAab
             FileSection.CLONED -> Strings.fileManagerSectionCloned
             FileSection.LOGS -> Strings.fileManagerSectionLogs
+            FileSection.WEB_TO_APP -> Strings.fileManagerSectionUserFiles
         }
         ConfirmDialog(
             message = String.format(Strings.fileManagerClearConfirmDir, dirLabel),
@@ -341,18 +346,25 @@ private fun SectionCard(
     onToggle: () -> Unit,
     onShare: (FileEntry) -> Unit,
     onInstall: (FileEntry) -> Unit,
+    onOpen: (FileEntry) -> Unit,
     onView: (FileEntry) -> Unit,
     onDelete: (FileEntry) -> Unit,
     onClear: () -> Unit
 ) {
     val canInstall = snapshot.section == FileSection.APK || snapshot.section == FileSection.CLONED
+    val canOpen = snapshot.section == FileSection.WEB_TO_APP
     val sectionLabel = when (snapshot.section) {
         FileSection.APK -> Strings.fileManagerSectionApk
         FileSection.AAB -> Strings.fileManagerSectionAab
         FileSection.CLONED -> Strings.fileManagerSectionCloned
         FileSection.LOGS -> Strings.fileManagerSectionLogs
+        FileSection.WEB_TO_APP -> Strings.fileManagerSectionUserFiles
     }
-    val sectionIcon = if (snapshot.section.isLogs) Icons.Outlined.Article else Icons.Outlined.Folder
+    val sectionIcon = when {
+        snapshot.section.isLogs -> Icons.Outlined.Article
+        snapshot.section == FileSection.WEB_TO_APP -> Icons.Outlined.FolderShared
+        else -> Icons.Outlined.Folder
+    }
 
     WtaCard(tone = WtaCardTone.Surface) {
         Column {
@@ -429,8 +441,10 @@ private fun SectionCard(
                                 entry = entry,
                                 canView = snapshot.section.isLogs,
                                 canInstall = canInstall,
+                                canOpen = canOpen,
                                 onShare = { onShare(entry) },
                                 onInstall = { onInstall(entry) },
+                                onOpen = { onOpen(entry) },
                                 onView = { onView(entry) },
                                 onDelete = { onDelete(entry) }
                             )
@@ -448,8 +462,10 @@ private fun FileEntryRow(
     entry: FileEntry,
     canView: Boolean,
     canInstall: Boolean,
+    canOpen: Boolean,
     onShare: () -> Unit,
     onInstall: () -> Unit,
+    onOpen: () -> Unit,
     onView: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -478,6 +494,16 @@ private fun FileEntryRow(
                 Icon(
                     Icons.Outlined.GetApp,
                     Strings.install,
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        if (canOpen) {
+            IconButton(onClick = onOpen) {
+                Icon(
+                    Icons.Outlined.OpenInNew,
+                    Strings.fileManagerOpen,
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -555,11 +581,43 @@ private fun shareFile(
     }
 }
 
-private fun guessMimeType(file: File): String = when (file.extension.lowercase(Locale.getDefault())) {
-    "apk" -> "application/vnd.android.package-archive"
-    "aab" -> "application/octet-stream"
-    "log", "txt" -> "text/plain"
-    else -> "application/octet-stream"
+private fun openFile(
+    context: Context,
+    file: File,
+    snackbarHostState: SnackbarHostState,
+    scope: kotlinx.coroutines.CoroutineScope
+) {
+    if (!file.exists()) {
+        scope.launch { snackbarHostState.showSnackbar(file.name) }
+        return
+    }
+    try {
+        val uri = FileProvider.getUriForFile(
+            context,
+            context.packageName + ".fileprovider",
+            file
+        )
+        val viewIntent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, guessMimeType(file))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        val chooser = Intent.createChooser(viewIntent, Strings.fileManagerOpen)
+        context.startActivity(chooser)
+    } catch (e: Exception) {
+        scope.launch { snackbarHostState.showSnackbar(e.message ?: e.javaClass.simpleName) }
+    }
+}
+
+private fun guessMimeType(file: File): String {
+    val ext = file.extension.lowercase(Locale.getDefault())
+    return when (ext) {
+        "apk" -> "application/vnd.android.package-archive"
+        "aab" -> "application/octet-stream"
+        else -> android.webkit.MimeTypeMap.getSingleton()
+            .getMimeTypeFromExtension(ext)
+            ?: "application/octet-stream"
+    }
 }
 
 private fun copyToClipboard(context: Context, label: String, text: String) {
