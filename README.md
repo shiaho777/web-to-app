@@ -6,8 +6,7 @@
 
 ### Build Android APKs from web projects, directly on your phone.
 
-**WebToApp is an on-device APK builder for websites, HTML apps, media projects, and local server runtimes.**
-Turn a URL, a project folder, or a media library into an installable Android app you can preview, sign, install, share, or export without sending the build to a remote service.
+**An on-device APK workshop that goes far beyond URL wrapping — it can fork and exec full server runtimes, ship a hardened anti-censorship network stack, sign bundles for Google Play, and run MV3 browser extensions, all without a PC or a remote build server.**
 
 **English** · [简体中文](.github/docs/README_CN.md)
 
@@ -19,11 +18,12 @@ Turn a URL, a project folder, or a media library into an installable Android app
 </div>
 
 <p align="center">
-  <a href="#why-webtoapp">Why WebToApp</a> ·
+  <a href="#what-makes-webtoapp-different">What's different</a> ·
   <a href="#what-you-can-build">What you can build</a> ·
-  <a href="#highlights">Highlights</a> ·
-  <a href="#module-market">Module Market</a> ·
-  <a href="#feature-map">Feature map</a> ·
+  <a href="#capability-overview">Capability overview</a> ·
+  <a href="#full-feature-map">Feature map</a> ·
+  <a href="#module-market">Module market</a> ·
+  <a href="#architecture">Architecture</a> ·
   <a href="#build-from-source">Build</a>
 </p>
 
@@ -35,189 +35,185 @@ Turn a URL, a project folder, or a media library into an installable Android app
 
 ---
 
-## Why WebToApp
+## What makes WebToApp different
 
-Most "website to app" tools stop at wrapping a URL. WebToApp is closer to a pocket-sized APK workshop: it combines a configurable WebView, local server runtimes, APK signing, extension modules, project import/export, and app management in one Android app.
+Most "website to app" tools stop at wrapping a URL in a WebView. WebToApp is closer to a pocket-sized APK workshop, and the hard parts are exactly where it diverges:
 
-- **Build on the device** - package and sign APKs inside the app, with no remote build queue.
-- **Go beyond static pages** - package websites, HTML/front-end builds, Node.js, PHP, Python, Go, WordPress, media apps, galleries, and multi-site apps.
-- **Keep control of the output** - choose package name, icon, permissions, signing key, signature schemes, runtime options, and export format.
-- **Extend after shipping** - add JS/CSS modules, userscripts, or MV3 Chrome extensions without rebuilding the host app.
-- **Stay inspectable** - the Android client, module catalog, and build logic live in this repository.
+- **It runs real server runtimes on-device.** Node.js, PHP, Python, Go, and WordPress are fork+exec'd as native binaries straight from app storage — like Termux, packaged into an installable APK. URL-wrapper tools cannot do this at all.
+- **It ships a hardened, anti-censorship network stack.** DNS-over-HTTPS, TLS fingerprint spoofing (Chrome / Firefox / Safari JA3 templates) with a local MITM bridge, Encrypted Client Hello (ECH) on the GeckoView engine to encrypt the SNI, per-app proxies, and CORS bypass for locked-down SPAs.
+- **The whole build is self-contained.** Binary AXML/ARSC patching, permission pruning, V1/V2/V3 signing, and Google Play-ready AAB export all happen inside the app via `apksig` — no remote build queue, no PC.
+- **It stays extensible after shipping.** Add JS/CSS modules, Tampermonkey-style userscripts, or MV3 Chrome extensions (live-searched and installed from the Chrome Web Store) without rebuilding the host.
 
-## What You Can Build
+---
 
-| Input | Output | Useful for |
+## Capability overview
+
+A quick scan of what's in the box. Each links to the detailed feature map below.
+
+| Area | Highlights |
+| --- | --- |
+| **Build targets** | Web · HTML · Frontend · WordPress · Node.js · PHP · Python · Go · Image · Video · Gallery · Multi-Web |
+| **Browser engines** | System WebView by default; optional GeckoView (Firefox) runtime for ECH / SNI encryption |
+| **Network & anti-censorship** | DoH (7 providers), TLS fingerprint spoofing + MITM bridge, ECH, static/PAC/SOCKS5 proxies, CORS bypass |
+| **Privacy & hardening** | 50+ vector browser fingerprint disguise, resource encryption (AES-256-GCM), anti-debug, activation gating |
+| **Local runtimes** | Native Node.js, PHP 8.4 + Composer, Python (Flask/Django/FastAPI), Go, WordPress over SQLite |
+| **Extensions** | Built-in modules, userscripts with `GM_*`, MV3 Chrome extensions, live Chrome Web Store search |
+| **APK/AAB output** | On-device V1/V2/V3 signing, Google Play AAB export with targetSdk rewrite, keystore management |
+| **AI coding** | Prompt-driven generation of web apps, modules, userscripts, and runtime projects |
+
+---
+
+## What you can build
+
+| Input | Output | Good for |
 | --- | --- | --- |
-| Website URL | WebView-based APK | Landing pages, tools, dashboards, documentation, internal systems |
+| Website URL | WebView-based APK | Landing pages, tools, dashboards, docs, internal systems |
 | HTML / static front-end | Localhost-backed APK | React, Vue, Vite, static builds, offline web apps |
 | Node.js / PHP / Python / Go | APK with an on-device local server | Small server apps, admin tools, demos, prototypes |
-| WordPress | APK running WordPress over local PHP + SQLite | Portable sites, theme/plugin demos, local content packages |
+| WordPress | APK running WordPress over local PHP + SQLite | Portable sites, theme/plugin demos, content packages |
 | Images / video / galleries | Media-focused APK | Albums, course materials, portfolios, offline viewers |
 | Multiple sites | Tab/card/feed/drawer multi-web APK | Link hubs, portals, app collections |
-| Installed APK | Rebranded clone or shortcut disguise | Icon/name/package experiments and app repackaging research |
+| Installed APK | Rebranded clone or shortcut disguise | Icon/name/package experiments, repackaging research |
 
-Supported `AppType` values include Web, HTML, Frontend, WordPress, Node.js, PHP, Python, Go, Image, Video, Gallery, and Multi-Web.
+---
 
-## The Flow
+## Full feature map
 
-1. **Create** an app from a URL, project folder, media set, or local runtime template.
-2. **Customize** the WebView, toolbar, splash screen, modules, permissions, signing, and runtime behavior.
-3. **Preview** on the phone before producing the final APK.
-4. **Build and sign** the APK on-device through `com.android.tools.build:apksig`.
-5. **Install, share, export, or back up** the generated app and its project data.
+WebToApp has a large number of switches. The sections below group them by use case, kept collapsible so the top of the page stays scannable.
 
-## Highlights
+<details>
+<summary><b>🌐 Browser engine & networking</b></summary>
 
-| Area | What stands out |
-| --- | --- |
-| APK builder | Binary AXML/ARSC patching, resource injection, permission pruning, V1/V2/V3 signing, Google Play-ready AAB export with on-device signing |
-| WebView control | User-Agent, desktop mode, JS/CSS injection, DNS-over-HTTPS, proxies, custom error pages, PWA cache strategy |
-| Browser engines | System WebView by default, optional GeckoView runtime for Firefox-style rendering |
-| Local runtimes | Node.js, PHP 8.4, Python, Go, and WordPress running through local HTTP servers |
-| Extensions | Built-in modules, userscripts with `GM_*` APIs, MV3 Chrome extension content scripts, QR/export-code sharing |
-| Privacy and hardening | Ad blocking, resource encryption, runtime checks, WebView isolation, activation code gating |
-| App experience | Splash screens, BGM/LRC lyrics, floating windows, status bar themes, notifications, deep links, usage stats |
-| AI Coding | Prompt-driven generation for web apps, extension modules, and runtime projects inside the mobile workflow |
+- **Dual engine** — System WebView by default, or an optional GeckoView (Firefox) runtime downloaded on first use.
+- **Kernel flavor disguise** — present as Chrome, Edge, Samsung Internet, Firefox, or Safari-style while keeping the real engine.
+- **Desktop mode**, custom User-Agent, and JS/CSS injection at document-start / end / idle.
+- **Popup handling** — same window, external browser, popup window, or block.
+- **Proxies** — static HTTP/HTTPS/SOCKS5, PAC, authentication, bypass rules, and a local HTTP-to-SOCKS bridge.
+- **DNS-over-HTTPS** — Cloudflare, Google, AdGuard, NextDNS, CleanBrowsing, Quad9, Mullvad, plus custom endpoints; strict or automatic modes.
+- **Encrypted Client Hello (ECH)** — encrypt the SNI in the TLS handshake (GeckoView only; auto-wires DoH + GeckoView when toggled).
+- **TLS fingerprint spoofing** — impersonate Chrome 131 / Firefox 133 / Safari 18 JA3 profiles (or custom ciphers), served through a local TLS-MITM bridge so the outgoing ClientHello matches a real browser.
+- **CORS bypass** — let static SPAs call external APIs that would otherwise be blocked by CORS.
+- **Failover** — automatic fallback to mirror URLs when the primary target is unreachable.
+- **PWA** offline cache strategies, custom error pages, per-app host overrides, and payment-scheme handlers.
+- **Compatibility toggles** — blob download interception, scroll memory, image repair, clipboard / orientation / notification polyfills, private-network bridging, and Native Bridge capability gates.
 
-## Get The App
+</details>
 
-Releases are published on [GitHub Releases](https://github.com/shiaho777/web-to-app/releases).
+<details>
+<summary><b>🛡️ Privacy, fingerprint defense & hardening</b></summary>
 
-The WebToApp host app pins `targetSdk = 28` deliberately — not as a limitation, but as the enabling choice that lets generated apps run Node.js, PHP, Python, Go, and WordPress as native binaries straight from app storage, the way Termux does. Most "URL to APK" tools can only wrap a WebView; running full server runtimes on-device is the hard part, and 28 is what makes it possible. Because of this, the host ships through GitHub Releases.
+- **Browser fingerprint disguise across 50+ vectors** — User-Agent, WebGL, Canvas, AudioContext, ClientRects, timezone, language, memory, media devices, WebRTC, fonts, battery, permissions, performance, storage, notifications, CSS media, iframe propagation, and error-stack cleanup.
+- **Hosts-rule ad blocker** with cosmetic MutationObserver filtering, **20 built-in community filter lists** (EasyList, uBlock Origin, AdGuard, AdAway, plus 8 language-specific lists), per-source enable/disable/delete, and custom subscription rules bundled into the APK.
+- **Resource encryption** (PBKDF2 + AES-256-GCM) for packaged config, HTML, media, and BGM; optional custom encryption password stronger than package/certificate-derived keys.
+- **Runtime hardening** when encryption is on — anti-debug, anti-Frida, DEX-tamper checks; threat response of log-only, silent exit, or randomized crash.
+- **WebView/content isolation** for storage, WebRTC, Canvas, Audio, WebGL, fonts, headers, and IP surfaces.
+- **Activation-code gating** — local verification, or your own HTTPS endpoint signed with EC P-256. See the [remote activation docs](.github/docs/remote-activation.md).
 
-This trade-off only applies to the host and to fork-based runtime apps. Generated Web, HTML, front-end, and media apps are fully publishable to Google Play: the on-device AAB exporter rewrites `targetSdk` to the Play-required level (currently 35) and signs the bundle locally, so they ship to the Play Store directly. Apps that fork local native runtimes (Node.js, PHP, Python, Go, WordPress) stay APK-only, since Play Store apps cannot fork binaries on modern Android.
+</details>
 
-## Module Market
+<details>
+<summary><b>📦 Local server runtimes (fork + exec on-device)</b></summary>
 
-WebToApp has a GitHub-backed module market for community JS/CSS extension modules. The catalog is just files in this repository, so contributions use a normal pull request flow.
+- **Node.js** runs in a dedicated `:nodejs` OS process via a native `node_launcher` wrapper loading `libnode.so`; supports custom native `.node` extensions.
+- **PHP 8.4** from `pmmp/PHP-Binaries`, downloaded once on first use, with Composer and custom native extensions (`zend_extension`, `.so`).
+- **Python** — Flask, Django, FastAPI via uvicorn, Tornado, the built-in HTTP server; pip dependencies resolved into `.pypackages`, custom native extensions supported.
+- **Go** — on-device `go build`, `vendor/` offline builds, static serving, and the native `go_exec_loader` wrapper.
+- **WordPress** over local PHP + SQLite (`sqlite-database-integration`), with theme and plugin import.
+- **Linux Environment** screen manages toolchains and dependencies for Node, PHP, and Python.
+- **Port Manager** coordinates runtime ports across generated apps via broadcast receivers.
+- A **local DNS bridge proxy** (HTTP CONNECT in the Android JVM) gives runtimes working DNS resolution and outbound HTTP where the musl/packed binary can't reach the system resolver.
+
+</details>
+
+<details>
+<summary><b>🧩 Extensions & automation</b></summary>
+
+- **Built-in modules** — video download (YouTube / Bilibili / Douyin / Xiaohongshu extractors), video enhancer with YouTube cleanup (ad skip, max quality, background play, SponsorBlock), web analyzer, find-in-page, dark mode, privacy tools, content enhancer, element blocker, and YouTube launcher.
+- **Userscripts** — Greasemonkey/Tampermonkey-style `.user.js` with a `GM_*` bridge (storage, requests, styles, menu commands) and promise-based `GM.*` APIs gated by script grants.
+- **MV3 Chrome extension runtime** for manifest content scripts in isolated or main worlds, with `chrome.*` polyfills for runtime, storage, tabs, scripting, and declarative network-request parsing.
+- **In-app Chrome Web Store search** — browse and install browser extensions by keyword (or paste a store URL / extension ID), with offline fallback to manual import.
+- **Export codes** (`WTA1:` gzip + Base64) and QR sharing via ZXing.
+- **AI Coding** skills to generate modules, userscripts, MV3 extensions, front-end apps, and local runtime projects.
+
+</details>
+
+<details>
+<summary><b>📱 App experience</b></summary>
+
+- **Splash screens** — image or video, with skip behavior, trim ranges, and fixed orientation.
+- **Background music** — playlists with synced LRC lyrics, lyric animations, custom font/color/stroke/shadow, and online music search.
+- **Toolbar, status bar (light & dark), navigation, floating-window mode, and long-press menu styles.**
+- **Announcement templates** for launch, interval, and no-network moments.
+- **Translation overlay** — 20 target languages via Google, MyMemory, LibreTranslate, Lingva, or Auto engines.
+- **Print bridge** — intercept `window.print()` and blob/data-URL PDFs to the Android print framework / PDF export.
+- **Notifications** — Web Notification polyfill, scheduled and persistent notifications with progress, URL-polling foreground service, deep links, boot auto-start, scheduled launch, and background-run service.
+- **Per-app usage stats** with Vico charts and URL health monitoring.
+
+</details>
+
+<details>
+<summary><b>🔧 APK / AAB export & signing</b></summary>
+
+- **Custom package name**, `versionName`, `versionCode`, icon, label, architecture target, and export format.
+- **Build-time permission injection** with unused permissions pruned from the template manifest.
+- **One-tap AAB export** — auto-builds the APK on demand, converts it to a Play-ready signed AAB with `targetSdk` rewritten to the Play-required level (currently 35) and protobuf metadata generated locally; cancellable mid-build.
+- **Keystore management** — create, import, export, delete, and certificate-fingerprint viewing; PKCS12/PFX/JKS/BKS import including Android Studio upload-key cases where store and key passwords differ.
+- **Signature schemes** — V1, V2, V3 independently controlled, with auto-fallback for legacy certificates; custom V1 signer filename for `META-INF/<name>.SF` / `.RSA`.
+- **Performance options** — image compression, WebP conversion, code minification, lazy loading, DNS prefetch, and preload hints.
+- **Full project and app-data backup/restore.**
+
+</details>
+
+<details>
+<summary><b>🗂 File manager & project tooling</b></summary>
+
+- **File manager** — a single screen to view, share, install, open, and clear build outputs (APK builds, AAB exports, app clones, build logs) and a user-files directory, with a read-only build-log viewer.
+- **Website scraper** for offline packs — HTML, CSS, JS, images, fonts, `url()`, `srcset`, `@import`, path rewriting, same-domain limits, depth limits, and size limits.
+- **Multi-Web layouts** — tabs, cards, feeds, drawers, per-site icons/theme colors/extraction selectors/refresh intervals, and shared JS/CSS.
+- **Gallery apps** — categorized media, grid/list/timeline views, shuffle/single-loop, sorting, thumbnail bar, overlays, auto-next, and playback memory.
+- **App Modifier** — shortcut disguise or real binary clone with manifest/resource patching and re-signing.
+
+</details>
+
+<details>
+<summary><b>🔬 Specialized tools & research features</b></summary>
+
+- **Forced-run**, **BlackTech**, **device disguise**, and **Icon Storm** are included for technical demonstration and must only be used with informed user consent.
+
+</details>
+
+---
+
+## Module market
+
+WebToApp has a GitHub-backed module market for community JS/CSS extension modules. The catalog is just files in this repository, so contributions use a normal pull-request flow.
 
 ```
 modules/
 ├── registry.json        # app-facing catalog
 ├── submissions.json     # CI-generated PR / contributor metadata
 ├── README.md            # contributor guide
-├── hello-world/
-├── night-shift/
-├── reading-mode/
-├── floating-search/
-└── auto-scroll/
+└── <module-folder>/     # each module
 ```
 
-The app fetches both `registry.json` and `submissions.json`, and only shows modules that appear in both. That keeps the in-app catalog aligned with PRs that have actually been merged. The submissions file also records every contributor per module, so the catalog shows stacked avatars for everyone who touched a module and a contributors leaderboard ranked by contribution count. Catalog files and module icons are routed through a global mirror first, with raw.githubusercontent.com and jsDelivr as automatic fallbacks, so the store loads fast everywhere (including mainland China).
+The app fetches both `registry.json` and `submissions.json` and only shows modules present in both, keeping the in-app catalog aligned with actually-merged PRs. The submissions file also records every contributor per module, so the catalog shows stacked avatars and a contributors leaderboard. Catalog files and module icons route through a global mirror first, with `raw.githubusercontent.com` and jsDelivr as automatic fallbacks, so the store loads fast everywhere (including mainland China).
 
 - Users open **Extension Modules** and tap the storefront icon.
 - Contributors add a folder under `modules/`, update `registry.json`, and open a PR.
 - The default client cache is one hour, so merged modules propagate without an app update.
 
-The community market only carries JS/CSS extension modules. Browser extensions (MV3 Chrome extensions) are no longer a community catalog — instead the **Browser Extensions** tab searches the Chrome Web Store live: type a keyword, browse results, and install on demand through the existing CRX download pipeline. If live search is unreachable, you can still install any extension by pasting its store URL or 32-character ID. Live search requires a network that can reach Google.
+The community market carries only JS/CSS extension modules. **Browser extensions (MV3)** are no longer a community catalog — instead the **Browser Extensions** tab searches the Chrome Web Store live: type a keyword, browse results, and install on demand through the existing CRX pipeline. Live search requires a network that can reach Google.
 
-## Feature Map
+## Architecture
 
-The full app has many switches. The sections below group the important ones without making the top of the README feel like a settings dump.
+- The repository has **three Gradle modules**: `app` (the full builder and host), `shell` (the runtime host embedded into generated APKs), and `clone-host` (host code for app cloning — compiled to a `classes.jar`, converted to DEX via d8, and bundled as an asset for `AppCloner`).
+- Runtime code is authored in `app` and synchronized into `shell`, so shared WebView/runtime behavior has one source of truth (`core/shell`, `core/webview`, `core/engine`, `core/extension`, `ui/shell`, etc.).
+- The APK builder patches template APKs at the binary AXML/ARSC level, injects config/resources, prunes permissions, and signs with `apksig`. A separate encrypted build path (`EncryptedApkBuilder`) offers resource encryption, shelling, and integrity checks.
+- The host pins `targetSdk = 28` deliberately — it is what lets generated apps fork+exec native runtimes (Node.js, PHP, Python, Go, WordPress) from app storage, a capability URL-wrapper tools lack. The AAB exporter separately rewrites `targetSdk` for Play Store distribution.
+- Server runtimes and the optional GeckoView native runtime are downloaded on first use rather than bundled into the base APK.
+- The configuration center is `WebApp` (`data/model/WebApp.kt`) and its `*Config` classes — the single source of truth for all feature settings, carried through a full packaging passthrough chain into the generated APK.
 
-<details>
-<summary><b>Browser engine and networking</b></summary>
-
-- Desktop mode, custom User-Agent, and JS/CSS injection at document start, end, or idle.
-- Kernel flavor disguise for Chrome, Edge, Samsung Internet, Firefox, or Safari-style presentation while keeping the real engine unchanged.
-- Popup handling: same window, external browser, popup window, or block.
-- Static HTTP/HTTPS/SOCKS5 proxies, PAC proxies, authentication, bypass rules, and a local HTTP-to-SOCKS bridge.
-- DNS-over-HTTPS providers: Cloudflare, Google, AdGuard, NextDNS, CleanBrowsing, Quad9, Mullvad, plus custom endpoints.
-- PWA offline cache strategies, custom error pages, per-app hosts overrides, and payment scheme handlers.
-- Optional compatibility toggles for blob downloads, scroll memory, image repair, clipboard, orientation, notification polyfills, private network bridging, and Native Bridge capability gates.
-
-</details>
-
-<details>
-<summary><b>Extensions and automation</b></summary>
-
-- Built-in modules: video download with YouTube/Bilibili/Douyin/Xiaohongshu extractors, video enhancer with YouTube cleanup (ad skip, max quality, background play, SponsorBlock), web analyzer, find-in-page, dark mode, privacy tools, content enhancer, and element blocker.
-- Userscript support for Greasemonkey/Tampermonkey-style `.user.js` scripts.
-- `GM_*` bridge with storage, requests, styles, menu commands, and promise-based `GM.*` APIs based on script grants.
-- MV3 Chrome extension runtime for manifest-based content scripts in isolated or main worlds.
-- In-app Chrome Web Store search: browse and install browser extensions by keyword (or paste a store URL / extension ID), with offline fallback to manual import.
-- `chrome.*` polyfills for runtime, storage, tabs, scripting, and declarative network request parsing.
-- Export codes (`WTA1:` gzip + Base64) and QR sharing through ZXing.
-- AI Coding skills for generating modules, userscripts, MV3 extensions, front-end apps, and local runtime projects.
-
-</details>
-
-<details>
-<summary><b>On-device runtimes</b></summary>
-
-- **Node.js** runs in a dedicated `:nodejs` OS process through a native `node_launcher` wrapper that loads `libnode.so`.
-- **PHP** uses PHP 8.4 from `pmmp/PHP-Binaries`, downloaded once on first use, with Composer support.
-- **Python** supports Flask, Django, FastAPI via uvicorn, Tornado, a built-in HTTP server, and pip dependencies in `.pypackages`.
-- **Go** supports on-device `go build`, `vendor/` offline builds, static serving, and the native `go_exec_loader` wrapper.
-- **WordPress** runs on local PHP with SQLite through `sqlite-database-integration`, with theme and plugin import.
-- A Linux Environment screen manages toolchains and dependencies for Node, PHP, and Python.
-- Port Manager coordinates runtime ports across generated apps through broadcast receivers.
-
-</details>
-
-<details>
-<summary><b>App experience</b></summary>
-
-- Image or video splash screens with skip behavior, trim ranges, and fixed orientation.
-- Background music playlists with synced LRC lyrics, lyric animations, custom font/color/stroke/shadow, and online music search.
-- Toolbar, status bar, dark-mode status bar, navigation behavior, floating window mode, and long-press menu styles.
-- Announcement templates for launch, interval, and no-network moments.
-- Translation overlay with 20 target languages and Google, MyMemory, LibreTranslate, Lingva, or Auto engines.
-- Web Notification polyfill, scheduled and persistent notifications with progress updates, URL polling foreground service, deep links, boot auto-start, scheduled launch, and background-run service.
-- Per-app usage stats with Vico charts and URL health monitoring.
-
-</details>
-
-<details>
-<summary><b>Security, privacy, and controlled access</b></summary>
-
-- Resource encryption for packaged config, HTML, media, and BGM through PBKDF2 + AES-256-GCM.
-- Optional custom encryption password for stronger protection than package/certificate-derived defaults.
-- Runtime anti-debug, anti-Frida, and DEX-tamper checks when resource encryption is enabled.
-- Threat responses: log only, silent exit, or randomized crash.
-- WebView/content isolation for storage, WebRTC, Canvas, Audio, WebGL, fonts, headers, and IP surfaces.
-- Browser fingerprint disguise across 28 vectors, including UA, WebGL, Canvas, AudioContext, ClientRects, timezone, language, memory, media devices, WebRTC, fonts, battery, permissions, performance, storage, notifications, CSS media, iframe propagation, and error stack cleanup.
-- Hosts-rule ad blocker with cosmetic MutationObserver filtering and 23 built-in community filter lists.
-- Activation code gating with local verification or your own HTTPS endpoint signed with EC P-256. See [remote activation docs](.github/docs/remote-activation.md).
-
-</details>
-
-<details>
-<summary><b>APK export and signing</b></summary>
-
-- Custom package name, `versionName`, `versionCode`, icon, label, architecture target, and export format.
-- Build-time permission injection for the generated APK, with unused permissions pruned from the template manifest.
-- Performance options: image compression, WebP conversion, code minification, lazy loading, DNS prefetch, and preload hints.
-- Full project backup/restore and app data backup/restore.
-- On-device AAB export with Play-required `targetSdk` rewrite and protobuf metadata generated locally, signed with your keystore.
-- Keystore creation, import, export, deletion, and certificate fingerprint viewing.
-- PKCS12/PFX/JKS/BKS import, including Android Studio upload-key cases where store password and key password differ.
-- Signature scheme controls for V1, V2, and V3, with auto-fallback for legacy certificate compatibility.
-- Custom V1 signature filename for `META-INF/<name>.SF` and `META-INF/<name>.RSA`.
-
-</details>
-
-<details>
-<summary><b>Specialized tools and research features</b></summary>
-
-- Website Scraper for offline packs: HTML, CSS, JS, images, fonts, CSS `url()`, `srcset`, `@import`, path rewriting, same-domain limits, depth limits, and size limits.
-- Multi-Web layouts: tabs, cards, feeds, drawers, per-site icons, theme colors, extraction selectors, refresh intervals, and shared JS/CSS.
-- Gallery apps with categorized media, grid/list/timeline views, shuffle/single-loop playback, sorting, thumbnail bar, overlays, auto-next, and playback memory.
-- App Modifier for shortcut disguise or real binary clone with manifest/resource patching and re-signing.
-- Forced-run, BlackTech, device disguise, and Icon Storm features are included for technical demonstration and must only be used with informed user consent.
-
-</details>
-
-## Architecture Notes
-
-- The repository has two Gradle modules: `app` is the full builder and host; `shell` is the runtime host embedded into generated APKs.
-- Runtime code is authored in `app` and synchronized into `shell`, so shared WebView/runtime behavior has one source of truth.
-- The APK builder patches template APKs at the binary AXML/ARSC level, injects config/resources, prunes permissions, and signs with `apksig`.
-- The host pins `targetSdk = 28` deliberately — it is what lets generated apps fork and exec native runtimes (Node.js, PHP, Python, Go, WordPress) from app storage, a capability URL-wrapper tools lack; the AAB exporter separately rewrites `targetSdk` for Play Store distribution.
-- Server runtimes and optional GeckoView native runtime are downloaded on first use instead of bundled into the base APK.
-
-## Tech Stack
+## Tech stack
 
 - Kotlin, Jetpack Compose, Material 3
 - Koin for dependency injection
@@ -231,12 +227,12 @@ The full app has many switches. The sections below group the important ones with
 - Vico Compose-M3 for charts
 - ZXing for QR sharing
 - Apache Commons Compress + xz for project import and website scraping
-- Native C++ through JNI for `node_launcher` and `go_exec_loader`
+- Native C++ via JNI for `node_launcher` and `go_exec_loader`
 - Robolectric for unit tests
 
 See [app/build.gradle.kts](app/build.gradle.kts) for the complete dependency list.
 
-## Build From Source
+## Build from source
 
 Requirements: Android Studio Hedgehog or newer, JDK 17. The Gradle wrapper pins Gradle 9.4.1.
 
