@@ -59,8 +59,6 @@
     }
 
     function createPlayButton() {
-        const currentUrl = window.location.href;
-
         const playBtn = document.createElement('button');
         playBtn.textContent = '▶';
         playBtn.title = 'Play Fullscreen';
@@ -72,6 +70,9 @@
         playBtn.onclick = () => {
             playBtn.textContent = '⏳';
             playBtn.disabled = true;
+
+            // FIX 1: Grab the URL inside the onclick event
+            const currentUrl = window.location.href;
 
             const videoId = extractYouTubeVideoId(currentUrl);
             if (!videoId) {
@@ -87,6 +88,22 @@
         };
 
         document.body.appendChild(playBtn);
+
+        // FIX 2: Check URL visibility and poll for dynamic changes
+        function checkUrl() {
+            const videoId = extractYouTubeVideoId(window.location.href);
+            playBtn.style.display = videoId ? 'flex' : 'none';
+        }
+        
+        checkUrl();
+        
+        let lastUrl = window.location.href;
+        setInterval(() => {
+            if (window.location.href !== lastUrl) {
+                lastUrl = window.location.href;
+                checkUrl();
+            }
+        }, 500);
     }
 
     createPlayButton();
