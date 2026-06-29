@@ -1,14 +1,7 @@
 <?php
-/**
- * PHP Router Server — CLI SAPI HTTP 服务器
- *
- * 绕过 pmmpthread 对 cli-server SAPI 的限制，
- * 使用 stream_socket_server 在 CLI SAPI 下提供 HTTP 服务。
- *
- * 用法: php -n [options] php_router_server.php PORT DOCROOT ENTRYFILE
- */
 
-// ==================== 配置 ====================
+set_time_limit(0);
+
 $port      = (int)($argv[1] ?? 8080);
 $docRoot   = realpath($argv[2] ?? '.');
 $entryFile = $argv[3] ?? 'index.php';

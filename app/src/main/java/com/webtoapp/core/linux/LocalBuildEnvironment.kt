@@ -411,7 +411,7 @@ object LocalBuildEnvironment {
 
             "zend.assertions" to "-1",
 
-            "max_execution_time" to "0",
+            "max_execution_time" to "86400",
 
         )
         val out = mutableListOf<String>()

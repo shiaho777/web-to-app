@@ -374,7 +374,7 @@ class PhpAppRuntime(private val context: Context) {
             "log_errors" to "On",
             "error_log" to "$tmpDir/php_app_errors.log",
             "memory_limit" to "256M",
-            "max_execution_time" to "0",
+            "max_execution_time" to "86400",
             "max_input_time" to "60",
             "file_uploads" to "On",
             "upload_max_filesize" to "64M",
