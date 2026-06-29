@@ -452,6 +452,17 @@ class ShellActivity : AppCompatActivity() {
                                     webViewProvider = { wv }
                                 )
                                 wv.addJavascriptInterface(printBridge, com.webtoapp.core.webview.PrintBridge.JS_INTERFACE_NAME)
+                                try {
+                                    androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
+                                        wv,
+                                        com.webtoapp.core.webview.PrintBridge.getInjectionScript(),
+                                        setOf("*")
+                                    )
+                                    com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "[PrintBridge] Installed at document start (applies to all hosts)")
+                                } catch (e: Exception) {
+                                    wv.evaluateJavascript(com.webtoapp.core.webview.PrintBridge.getInjectionScript(), null)
+                                    com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "[PrintBridge] Document-start unsupported, used evaluateJavascript fallback", e)
+                                }
                             }
 
                             if (config.webViewConfig.enableNativeBridge) {
