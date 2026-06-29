@@ -6,9 +6,9 @@
   "category": "VIDEO",
   "tags": ["youtube", "player", "fullscreen"],
   "version": {
-    "code": 2,
-    "name": "5.1.0",
-    "changelog": "Streamlined to a single-purpose one-click fullscreen launcher; dead code removed. Ad/sponsor cleanup moved to the built-in Video Enhance module."
+    "code": 3,
+    "name": "5.1.1",
+    "changelog": "Fixed an issue where the play button wouldn't appear on the first clicked video from the homepage by implementing URL polling. Dead code removed. Ad/sponsor cleanup moved to the built-in Video Enhance module."
   },
   "author": {
     "name": "Stremiouser666",
