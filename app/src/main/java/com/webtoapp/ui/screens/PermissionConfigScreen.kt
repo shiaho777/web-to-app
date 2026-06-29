@@ -113,7 +113,7 @@ private data class PermissionGroup(
 
 private val PERMISSION_GROUPS = listOf(
     PermissionGroup(
-        title = { "基础功能" },
+        title = { Strings.exportPermGroupBasic },
         icon = Icons.Outlined.Tune,
         items = listOf(
             PermissionItem("camera", Icons.Outlined.PhotoCamera, { Strings.permissionCamera }, { Strings.permissionCameraDesc }, { it.camera }) { p, v -> p.copy(camera = v) },
@@ -123,7 +123,7 @@ private val PERMISSION_GROUPS = listOf(
         )
     ),
     PermissionGroup(
-        title = { "存储与媒体" },
+        title = { Strings.exportPermGroupStorage },
         icon = Icons.Outlined.Folder,
         items = listOf(
             PermissionItem("readExternalStorage", Icons.Outlined.FolderOpen, { Strings.permissionReadExternalStorage }, { Strings.permissionReadExternalStorageDesc }, { it.readExternalStorage }) { p, v -> p.copy(readExternalStorage = v) },
@@ -134,7 +134,7 @@ private val PERMISSION_GROUPS = listOf(
         )
     ),
     PermissionGroup(
-        title = { "网络与连接" },
+        title = { Strings.exportPermGroupNetwork },
         icon = Icons.Outlined.Wifi,
         items = listOf(
             PermissionItem("bluetooth", Icons.Outlined.Bluetooth, { Strings.permissionBluetooth }, { Strings.permissionBluetoothDesc }, { it.bluetooth }) { p, v -> p.copy(bluetooth = v) },
@@ -143,7 +143,7 @@ private val PERMISSION_GROUPS = listOf(
         )
     ),
     PermissionGroup(
-        title = { "传感器" },
+        title = { Strings.exportPermGroupSensors },
         icon = Icons.Outlined.Sensors,
         items = listOf(
             PermissionItem("bodySensors", Icons.AutoMirrored.Outlined.DirectionsRun, { Strings.permissionBodySensors }, { Strings.permissionBodySensorsDesc }, { it.bodySensors }) { p, v -> p.copy(bodySensors = v) },
@@ -151,7 +151,7 @@ private val PERMISSION_GROUPS = listOf(
         )
     ),
     PermissionGroup(
-        title = { "通讯录与日历" },
+        title = { Strings.exportPermGroupContacts },
         icon = Icons.Outlined.Contacts,
         items = listOf(
             PermissionItem("readContacts", Icons.Outlined.Contacts, { Strings.permissionReadContacts }, { Strings.permissionReadContactsDesc }, { it.readContacts }) { p, v -> p.copy(readContacts = v) },
@@ -161,7 +161,7 @@ private val PERMISSION_GROUPS = listOf(
         )
     ),
     PermissionGroup(
-        title = { "电话与短信" },
+        title = { Strings.exportPermGroupPhone },
         icon = Icons.Outlined.Phone,
         items = listOf(
             PermissionItem("readPhoneState", Icons.Outlined.Smartphone, { Strings.permissionReadPhoneState }, { Strings.permissionReadPhoneStateDesc }, { it.readPhoneState }) { p, v -> p.copy(readPhoneState = v) },
@@ -175,7 +175,7 @@ private val PERMISSION_GROUPS = listOf(
         )
     ),
     PermissionGroup(
-        title = { "系统服务" },
+        title = { Strings.exportPermGroupSystem },
         icon = Icons.Outlined.Settings,
         items = listOf(
             PermissionItem("foregroundService", Icons.Outlined.PlayCircleOutline, { Strings.permissionForegroundService }, { Strings.permissionForegroundServiceDesc }, { it.foregroundService }) { p, v -> p.copy(foregroundService = v) },
