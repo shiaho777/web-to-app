@@ -237,7 +237,7 @@ class WordPressPhpRuntime(private val context: Context) {
             "error_log" to "/dev/stderr",
             "disable_functions" to "header,headers_list,headers_sent,header_remove,setcookie,setrawcookie",
             "memory_limit" to "256M",
-            "max_execution_time" to "0",
+            "max_execution_time" to "86400",
             "max_input_time" to "60",
             "file_uploads" to "On",
             "upload_max_filesize" to "64M",
