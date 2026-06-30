@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Stop
+import androidx.compose.material.icons.outlined.SmartToy
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -60,7 +62,9 @@ fun Composer(
     onDismissMention: () -> Unit,
     onToggleAutoApprove: () -> Unit,
 
-    onTriggerSlash: () -> Unit
+    onTriggerSlash: () -> Unit,
+
+    onOpenModelPicker: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -114,7 +118,9 @@ fun Composer(
         ModeChipRow(
             autoApprove = state.autoApprove,
             onToggleAuto = onToggleAutoApprove,
-            onTriggerSlash = onTriggerSlash
+            onTriggerSlash = onTriggerSlash,
+            currentModelLabel = state.currentModelLabel,
+            onOpenModelPicker = onOpenModelPicker
         )
     }
 }
@@ -319,7 +325,9 @@ private fun SuggestionRow(
 private fun ModeChipRow(
     autoApprove: Boolean,
     onToggleAuto: () -> Unit,
-    onTriggerSlash: () -> Unit
+    onTriggerSlash: () -> Unit,
+    currentModelLabel: String,
+    onOpenModelPicker: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -345,6 +353,47 @@ private fun ModeChipRow(
             primary = false,
             onClick = onTriggerSlash
         )
+
+        Spacer(Modifier.weight(1f))
+
+        ModelChip(
+            label = currentModelLabel.ifBlank { Strings.aiCodingModelChipLabel },
+            onClick = onOpenModelPicker
+        )
+    }
+}
+
+@Composable
+private fun ModelChip(
+    label: String,
+    onClick: () -> Unit
+) {
+    com.webtoapp.ui.design.WtaCard(
+        onClick = onClick,
+        tone = com.webtoapp.ui.design.WtaCardTone.Highlighted,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            horizontal = WtaSpacing.Small + 2.dp,
+            vertical = WtaSpacing.Tiny + 2.dp
+        )
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Outlined.SmartToy,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(WtaSize.IconSmall - 2.dp)
+            )
+            Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier.widthIn(max = 140.dp)
+            )
+        }
     }
 }
 

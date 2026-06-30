@@ -42,7 +42,9 @@ data class AiCodingUiState(
     val slashCommands: List<SlashCommand> = emptyList(),
 
     val modelPickerOpen: Boolean = false,
-    val modelChoices: List<ModelChoice> = emptyList(),
+    val modelProviderGroups: List<ProviderGroup> = emptyList(),
+    val selectedProviderKeyId: String? = null,
+    val currentModelLabel: String = "",
 
     val mentionPickerOpen: Boolean = false,
 
@@ -122,4 +124,13 @@ data class ModelChoice(
     val subtitle: String,
 
     val selected: Boolean
+)
+
+data class ProviderGroup(
+
+    val apiKeyId: String,
+
+    val displayName: String,
+
+    val models: List<ModelChoice>
 )

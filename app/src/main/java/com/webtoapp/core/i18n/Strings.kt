@@ -18520,6 +18520,42 @@ object Strings {
         AppLanguage.JAPANESE -> "Select model"
         AppLanguage.KOREAN -> "Select model"
     }
+    val aiCodingModelChipLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "模型"
+        AppLanguage.ENGLISH -> "Model"
+        AppLanguage.ARABIC -> "النموذج"
+        AppLanguage.PORTUGUESE -> "Model"
+        AppLanguage.SPANISH -> "Model"
+        AppLanguage.FRENCH -> "Model"
+        AppLanguage.GERMAN -> "Model"
+        AppLanguage.RUSSIAN -> "Model"
+        AppLanguage.JAPANESE -> "Model"
+        AppLanguage.KOREAN -> "Model"
+    }
+    val aiCodingModelPickerProviders: String get() = when (lang) {
+        AppLanguage.CHINESE -> "供应商"
+        AppLanguage.ENGLISH -> "Providers"
+        AppLanguage.ARABIC -> "المزوّدون"
+        AppLanguage.PORTUGUESE -> "Providers"
+        AppLanguage.SPANISH -> "Providers"
+        AppLanguage.FRENCH -> "Providers"
+        AppLanguage.GERMAN -> "Providers"
+        AppLanguage.RUSSIAN -> "Providers"
+        AppLanguage.JAPANESE -> "Providers"
+        AppLanguage.KOREAN -> "Providers"
+    }
+    val aiCodingModelPickerModels: String get() = when (lang) {
+        AppLanguage.CHINESE -> "模型"
+        AppLanguage.ENGLISH -> "Models"
+        AppLanguage.ARABIC -> "النماذج"
+        AppLanguage.PORTUGUESE -> "Models"
+        AppLanguage.SPANISH -> "Models"
+        AppLanguage.FRENCH -> "Models"
+        AppLanguage.GERMAN -> "Models"
+        AppLanguage.RUSSIAN -> "Models"
+        AppLanguage.JAPANESE -> "Models"
+        AppLanguage.KOREAN -> "Models"
+    }
     val aiCodingServiceNotConnected: String get() = when (lang) {
         AppLanguage.CHINESE -> "AI 服务未连接"
         AppLanguage.ENGLISH -> "AI service is not connected"
