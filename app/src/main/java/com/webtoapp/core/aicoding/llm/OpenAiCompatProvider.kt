@@ -5,6 +5,7 @@ import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.network.NetworkModule
 import com.webtoapp.data.model.AiProvider
 import com.webtoapp.util.GsonProvider
@@ -24,12 +25,18 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
     override fun supports(provider: AiProvider) = provider != AiProvider.ANTHROPIC && provider != AiProvider.GOOGLE && provider != AiProvider.OLLAMA
 
     override fun chatStream(req: ChatRequest): Flow<LlmEvent> = callbackFlow {
+        trySend(LlmEvent.Started)
+        executeCall(req, isRetry = false)
+        awaitClose { }
+    }
+
+    private fun kotlinx.coroutines.channels.ProducerScope<LlmEvent>.executeCall(req: ChatRequest, isRetry: Boolean) {
         val url = HttpHelpers.joinUrl(HttpHelpers.baseUrl(req.apiKey), req.apiKey.getEffectiveChatEndpoint())
-        val body = buildBody(req)
+        val effectiveReq = if (isRetry) req.copy(temperature = 1f) else req
+        val body = buildBody(effectiveReq)
         val builder = Request.Builder().url(url).header("Content-Type", "application/json")
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
         HttpHelpers.applyAuth(builder, req.apiKey)
-        trySend(LlmEvent.Started)
         val call = client.newCall(builder.build())
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) { trySend(LlmEvent.Error(e.message ?: "Network error")); close() }
@@ -37,6 +44,11 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                 if (!response.isSuccessful) {
                     val eb = runCatching { response.body?.string() }.getOrNull().orEmpty()
                     response.body?.close()
+                    if (!isRetry && response.code == 400 && looksLikeTemperatureConstraint(eb)) {
+                        AppLogger.w("OpenAiCompatProvider", "Model rejected temperature=${req.temperature}; retrying with temperature=1")
+                        executeCall(req, isRetry = true)
+                        return
+                    }
                     val (msg, rec) = HttpHelpers.classifyHttpError(response.code, eb)
                     trySend(LlmEvent.Error(msg, rec)); close(); return
                 }
@@ -83,7 +95,11 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                 } finally { runCatching { response.body?.close() }; close() }
             }
         })
-        awaitClose { call.cancel() }
+    }
+
+    private fun looksLikeTemperatureConstraint(errorBody: String): Boolean {
+        val lower = errorBody.lowercase()
+        return "temperature" in lower && ("only 1 is allowed" in lower || "must be" in lower || "invalid" in lower)
     }
 
     private fun kotlinx.coroutines.channels.ProducerScope<LlmEvent>.emitFinish(names: Map<String, String>, args: Map<String, StringBuilder>, fr: FinishReason) {
