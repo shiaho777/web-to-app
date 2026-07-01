@@ -314,6 +314,7 @@ internal object ApkConfigJsonFactory {
         "tlsFingerprintEnabled" to tlsFingerprint.enabled,
         "tlsFingerprintTemplate" to tlsFingerprint.template,
         "tlsFingerprintCustomCiphers" to tlsFingerprint.customCipherSuites,
+        "antiCapture" to webView.antiCapture,
         "showFloatingBackButton" to webView.showFloatingBackButton,
         "downloadEnabled" to webView.downloadEnabled,
         "floatingWindowConfig" to floatingWindowConfigPayload(),

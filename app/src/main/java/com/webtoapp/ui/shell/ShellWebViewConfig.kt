@@ -277,6 +277,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         tlsFingerprintEnabled = config.webViewConfig.tlsFingerprintEnabled,
         tlsFingerprintTemplate = config.webViewConfig.tlsFingerprintTemplate,
         tlsFingerprintCustomCiphers = config.webViewConfig.tlsFingerprintCustomCiphers,
+        antiCapture = config.webViewConfig.antiCapture,
 
         dnsMode = config.webViewConfig.dnsMode,
         dnsConfig = com.webtoapp.data.model.DnsConfig(

@@ -1463,6 +1463,9 @@ data class WebViewShellConfig(
     @SerializedName("tlsFingerprintCustomCiphers")
     val tlsFingerprintCustomCiphers: List<String> = emptyList(),
 
+    @SerializedName("antiCapture")
+    val antiCapture: Boolean = false,
+
     @SerializedName("dnsMode")
     val dnsMode: String = "SYSTEM",
 

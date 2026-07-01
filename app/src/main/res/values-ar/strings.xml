@@ -735,4 +735,11 @@
     <string name="update_download_prepare_stage">تحضير تحميل التحديث</string>
     <string name="update_download_no_link">استجابة التحديث تفتقر إلى رابط تحميل صالح، لم يتم متابعة عملية التحميل.</string>
     <string name="no_exception_object">لم يتم إرجاع كائن استثناء</string>
+    <string name="anti_capture_title">منع التقاط الحزم</string>
+    <string name="anti_capture_desc">عند التفعيل، لا تستطيع أدوات التقاط الحزم اعتراض محتوى الويب؛ سيتجاهل التطبيق وكيل النظام ويرفض شهود الالتقاط.</string>
+    <string name="ad_block_subscriptions">قوائم التصفية</string>
+    <string name="ad_block_no_downloaded_sources_short">غير محمّل</string>
+    <string name="ad_block_no_subscription_selected">لم يتم اختيار قائمة تصفية</string>
+    <string name="ad_block_enabled_sources_label">قوائم التصفية المفعّلة</string>
+    <string name="ad_block_add_more_sources">إضافة المزيد من قوائم التصفية</string>
 </resources>

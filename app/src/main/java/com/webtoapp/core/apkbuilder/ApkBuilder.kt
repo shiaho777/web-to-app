@@ -3186,7 +3186,8 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
         pwaOfflineEnabled = pwaOfflineEnabled && !clearBrowsingDataOnLaunch,
         pwaOfflineStrategy = pwaOfflineStrategy,
         keyboardAdjustMode = keyboardAdjustMode.name,
-        downloadEnabled = downloadEnabled
+        downloadEnabled = downloadEnabled,
+        antiCapture = antiCapture
     )
 }
 

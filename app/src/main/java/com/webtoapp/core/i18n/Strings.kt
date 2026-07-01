@@ -13028,6 +13028,46 @@ object Strings {
         AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "Select Filter Lists"
     }
 
+    val adBlockSubscriptions: String get() = when (lang) {
+        AppLanguage.CHINESE -> "过滤规则源"
+        AppLanguage.ENGLISH -> "Filter Lists"
+        AppLanguage.ARABIC -> "قوائم التصفية"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH,
+        AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "Filter Lists"
+    }
+
+    val adBlockNoDownloadedSourcesShort: String get() = when (lang) {
+        AppLanguage.CHINESE -> "未下载"
+        AppLanguage.ENGLISH -> "Not downloaded"
+        AppLanguage.ARABIC -> "غير محمّل"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH,
+        AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "Not downloaded"
+    }
+
+    val adBlockNoSubscriptionSelected: String get() = when (lang) {
+        AppLanguage.CHINESE -> "未选择规则源"
+        AppLanguage.ENGLISH -> "No filter list selected"
+        AppLanguage.ARABIC -> "لم يتم اختيار قائمة تصفية"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH,
+        AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "No filter list selected"
+    }
+
+    val adBlockEnabledSourcesLabel: String get() = when (lang) {
+        AppLanguage.CHINESE -> "已启用规则源"
+        AppLanguage.ENGLISH -> "Enabled filter lists"
+        AppLanguage.ARABIC -> "قوائم التصفية المفعّلة"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH,
+        AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "Enabled filter lists"
+    }
+
+    val adBlockAddMoreSources: String get() = when (lang) {
+        AppLanguage.CHINESE -> "添加更多规则源"
+        AppLanguage.ENGLISH -> "Add more filter lists"
+        AppLanguage.ARABIC -> "إضافة المزيد من قوائم التصفية"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH,
+        AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "Add more filter lists"
+    }
+
     val adBlockManageSubscriptions: String get() = when (lang) {
         AppLanguage.CHINESE -> "管理过滤规则源（%d）"
         AppLanguage.ENGLISH -> "Manage Filter Lists (%d)"
@@ -49901,6 +49941,32 @@ object Strings {
         AppLanguage.RUSSIAN -> "TLS Fingerprint Spoofing"
         AppLanguage.JAPANESE -> "TLS Fingerprint Spoofing"
         AppLanguage.KOREAN -> "TLS Fingerprint Spoofing"
+    }
+
+    val antiCaptureTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "防抓包"
+        AppLanguage.ENGLISH -> "Anti Packet Capture"
+        AppLanguage.ARABIC -> "منع التقاط الحزم"
+        AppLanguage.PORTUGUESE -> "Anti Packet Capture"
+        AppLanguage.SPANISH -> "Anti Packet Capture"
+        AppLanguage.FRENCH -> "Anti Packet Capture"
+        AppLanguage.GERMAN -> "Anti Packet Capture"
+        AppLanguage.RUSSIAN -> "Anti Packet Capture"
+        AppLanguage.JAPANESE -> "Anti Packet Capture"
+        AppLanguage.KOREAN -> "Anti Packet Capture"
+    }
+
+    val antiCaptureDesc: String get() = when (lang) {
+        AppLanguage.CHINESE -> "开启后，常规抓包软件（如 Charles、Fiddler）将无法截获网页内容；应用将忽略系统代理并拒绝抓包证书。不影响应用内自定义代理。"
+        AppLanguage.ENGLISH -> "When enabled, common packet-capture tools (e.g. Charles, Fiddler) cannot intercept web content; the app ignores system proxy and rejects capture certificates. App-internal proxies are unaffected."
+        AppLanguage.ARABIC -> "عند التفعيل، لا تستطيع أدوات التقاط الحزم الشائعة (مثل Charles وFiddler) اعتراض محتوى الويب؛ سيتجاهل التطبيق وكيل النظام ويرفض شهود الالتقاط. لا يؤثر على الوكلاء الداخليين للتطبيق."
+        AppLanguage.PORTUGUESE -> "When enabled, common packet-capture tools (e.g. Charles, Fiddler) cannot intercept web content; the app ignores system proxy and rejects capture certificates. App-internal proxies are unaffected."
+        AppLanguage.SPANISH -> "When enabled, common packet-capture tools (e.g. Charles, Fiddler) cannot intercept web content; the app ignores system proxy and rejects capture certificates. App-internal proxies are unaffected."
+        AppLanguage.FRENCH -> "When enabled, common packet-capture tools (e.g. Charles, Fiddler) cannot intercept web content; the app ignores system proxy and rejects capture certificates. App-internal proxies are unaffected."
+        AppLanguage.GERMAN -> "When enabled, common packet-capture tools (e.g. Charles, Fiddler) cannot intercept web content; the app ignores system proxy and rejects capture certificates. App-internal proxies are unaffected."
+        AppLanguage.RUSSIAN -> "When enabled, common packet-capture tools (e.g. Charles, Fiddler) cannot intercept web content; the app ignores system proxy and rejects capture certificates. App-internal proxies are unaffected."
+        AppLanguage.JAPANESE -> "When enabled, common packet-capture tools (e.g. Charles, Fiddler) cannot intercept web content; the app ignores system proxy and rejects capture certificates. App-internal proxies are unaffected."
+        AppLanguage.KOREAN -> "When enabled, common packet-capture tools (e.g. Charles, Fiddler) cannot intercept web content; the app ignores system proxy and rejects capture certificates. App-internal proxies are unaffected."
     }
     val tlsFingerprintSubtitle: String get() = when (lang) {
         AppLanguage.CHINESE -> "伪装 TLS 握手指纹，绕过 JA3/JA4 检测"

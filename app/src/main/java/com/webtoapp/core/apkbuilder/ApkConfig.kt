@@ -234,6 +234,7 @@ data class ApkConfig(
     val tlsFingerprintEnabled: Boolean get() = tlsFingerprint.enabled
     val tlsFingerprintTemplate: String get() = tlsFingerprint.template
     val tlsFingerprintCustomCiphers: List<String> get() = tlsFingerprint.customCipherSuites
+    val antiCaptureEnabled: Boolean get() = webView.antiCapture
 
     val dnsMode: String get() = dns.mode
     val dnsConfig: DnsApkConfig get() = dns.config
@@ -488,7 +489,8 @@ data class WebViewBlock(
     val pwaOfflineEnabled: Boolean = false,
     val pwaOfflineStrategy: String = "NETWORK_FIRST",
     val keyboardAdjustMode: String = "RESIZE",
-    val downloadEnabled: Boolean = true
+    val downloadEnabled: Boolean = true,
+    val antiCapture: Boolean = false
 )
 
 data class WebViewBehaviorBlock(

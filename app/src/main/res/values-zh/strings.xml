@@ -735,4 +735,11 @@
     <string name="update_download_prepare_stage">准备更新下载</string>
     <string name="update_download_start_failed_title">更新下载启动失败</string>
     <string name="update_download_start_stage">启动更新下载</string>
+    <string name="anti_capture_title">防抓包</string>
+    <string name="anti_capture_desc">开启后，常规抓包软件将无法截获网页内容；应用将忽略系统代理并拒绝抓包证书。不影响应用内自定义代理。</string>
+    <string name="ad_block_subscriptions">过滤规则源</string>
+    <string name="ad_block_no_downloaded_sources_short">未下载</string>
+    <string name="ad_block_no_subscription_selected">未选择规则源</string>
+    <string name="ad_block_enabled_sources_label">已启用规则源</string>
+    <string name="ad_block_add_more_sources">添加更多规则源</string>
 </resources>

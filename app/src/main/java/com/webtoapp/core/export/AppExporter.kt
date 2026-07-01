@@ -313,11 +313,15 @@ class AppExporter(private val context: Context) {
             .writeText(generateAppConfig(webApp))
 
         File(appDir, "res/values/strings.xml").writeText(generateStrings(webApp))
+        val rawTrustConfig = webApp.apkExportConfig?.networkTrustConfig ?: NetworkTrustConfig()
+        val effectiveTrustConfig = if (webApp.webViewConfig.antiCapture) {
+            rawTrustConfig.copy(trustUserCa = false)
+        } else {
+            rawTrustConfig
+        }
         File(appDir, "res/xml/network_security_config.xml")
-            .writeText(NetworkSecurityConfigBuilder.build(webApp.apkExportConfig?.networkTrustConfig ?: NetworkTrustConfig()))
-        NetworkSecurityConfigBuilder.customRawEntries(
-            webApp.apkExportConfig?.networkTrustConfig ?: NetworkTrustConfig()
-        ).forEach { entry ->
+            .writeText(NetworkSecurityConfigBuilder.build(effectiveTrustConfig))
+        NetworkSecurityConfigBuilder.customRawEntries(effectiveTrustConfig).forEach { entry ->
             entry.sourceFile.copyTo(File(appDir, "res/raw/${entry.resourceName}.cer"), overwrite = true)
         }
 

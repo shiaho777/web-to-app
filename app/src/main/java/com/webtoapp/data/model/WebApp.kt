@@ -390,6 +390,8 @@ data class WebViewConfig(
     val tlsFingerprintTemplate: String = "CHROME_131",
     val tlsFingerprintCustomCiphers: List<String> = emptyList(),
 
+    val antiCapture: Boolean = false,
+
     val dnsMode: String = "SYSTEM",
     val dnsConfig: DnsConfig = DnsConfig()
 )

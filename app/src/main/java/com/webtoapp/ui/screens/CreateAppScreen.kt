@@ -414,6 +414,7 @@ fun CreateAppScreen(
 
             AdBlockCard(
                 editState = editState,
+                onEnabledChange = { viewModel.updateEditState { copy(adBlockEnabled = it) } },
                 onRulesChange = { viewModel.updateEditState { copy(adBlockRules = it) } },
                 onSubscriptionsChange = { viewModel.updateEditState { copy(adBlockSubscriptions = it) } }
             )
