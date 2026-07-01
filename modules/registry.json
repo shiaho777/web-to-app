@@ -289,6 +289,39 @@
         }
       ],
       "hasCss": false
+    },
+    {
+      "id": "wta-fallback-storage-bridge",
+      "path": "fallback-storage-bridge",
+      "name": "Fallback Storage Bridge",
+      "description": "A last-resort helper module that intercepts native browser storage and bridges it directly to the app's framework. Try this if your settings or sessions keep resetting despite adjusting the standard app configurations. Experimental and functionality may vary by site.",
+      "icon": "save",
+      "category": "FUNCTION_ENHANCE",
+      "tags": [
+        "storage",
+        "persistence",
+        "fallback",
+        "utility"
+      ],
+      "version": "1.0.0",
+      "minAppVersion": 33,
+      "author": {
+        "name": "Stremiouser666",
+        "url": "https://github.com/Stremiouser666"
+      },
+      "runAt": "DOCUMENT_START",
+      "permissions": [
+        "DOM_ACCESS",
+        "STORAGE"
+      ],
+      "urlMatches": [
+        {
+          "pattern": "*",
+          "isRegex": false,
+          "exclude": false
+        }
+      ],
+      "hasCss": false
     }
   ]
 }
