@@ -290,7 +290,7 @@ data class WebViewConfig(
     val followSystemDarkMode: Boolean = false,
     val longPressMenuEnabled: Boolean = false,
     val longPressMenuStyle: LongPressMenuStyle = LongPressMenuStyle.DISABLED,
-    val adBlockToggleEnabled: Boolean = false,
+
     val popupBlockerEnabled: Boolean = false,
     val popupBlockerToggleEnabled: Boolean = false,
 
@@ -324,7 +324,7 @@ data class WebViewConfig(
     val mixedContentMode: MixedContentMode = MixedContentMode.COMPATIBILITY,
     val enablePrivateNetworkBridge: Boolean = false,
     val privateNetworkScope: PrivateNetworkScope = PrivateNetworkScope.LOCAL_ONLY,
-    val enableCorsBypass: Boolean = false,
+    val enableCorsBypass: Boolean = true,
 
     val acceptThirdPartyCookies: Boolean = false,
     val thirdPartyCookieMode: ThirdPartyCookieMode = ThirdPartyCookieMode.SAME_SITE_LAX,
@@ -389,6 +389,8 @@ data class WebViewConfig(
     val tlsFingerprintEnabled: Boolean = false,
     val tlsFingerprintTemplate: String = "CHROME_131",
     val tlsFingerprintCustomCiphers: List<String> = emptyList(),
+
+    val antiCapture: Boolean = false,
 
     val dnsMode: String = "SYSTEM",
     val dnsConfig: DnsConfig = DnsConfig()

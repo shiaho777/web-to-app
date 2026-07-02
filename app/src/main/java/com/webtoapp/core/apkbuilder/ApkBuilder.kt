@@ -38,6 +38,16 @@ import javax.crypto.SecretKey
 import com.webtoapp.util.AppConstants
 import com.webtoapp.util.TextFileClassifier
 
+private fun resolveOutputDir(context: Context): File {
+    val external = context.getExternalFilesDir(null)
+    if (external != null) {
+        val dir = File(external, "built_apks")
+        if (dir.exists() || dir.mkdirs()) return dir
+        AppLogger.w("ApkBuilder", "External built_apks dir unavailable, falling back to filesDir")
+    }
+    return File(context.filesDir, "built_apks").apply { mkdirs() }
+}
+
 class ApkBuilder(private val context: Context) {
 
     companion object {
@@ -68,7 +78,7 @@ class ApkBuilder(private val context: Context) {
     private val encryptedApkBuilder = EncryptedApkBuilder(context)
     private val keyManager = KeyManager.getInstance(context)
 
-    private val outputDir = File(context.getExternalFilesDir(null), "built_apks").apply { mkdirs() }
+    private val outputDir = resolveOutputDir(context)
     private val tempDir = File(context.cacheDir, "apk_build_temp").apply { mkdirs() }
 
     private val originalAppName = "WebToApp"
@@ -2903,7 +2913,15 @@ builtins.__import__ = _w2a_import
     }
 
     fun getLogDirectory(): String {
-        return File(context.getExternalFilesDir(null), "build_logs").absolutePath
+        val external = context.getExternalFilesDir(null)
+        val dir = if (external != null) {
+            val d = File(external, "build_logs")
+            if (d.exists() || d.mkdirs()) d else File(context.filesDir, "build_logs")
+        } else {
+            File(context.filesDir, "build_logs")
+        }
+        dir.mkdirs()
+        return dir.absolutePath
     }
 }
 
@@ -3061,7 +3079,7 @@ private fun WebApp.buildActivationBlock(): ActivationBlock = ActivationBlock(
 )
 
 private fun WebApp.buildAdBlockBlock(): AdBlockBlock = AdBlockBlock(
-    enabled = adBlockEnabled,
+    enabled = adBlockSubscriptions.isNotEmpty() || adBlockRules.isNotEmpty(),
     rules = adBlockRules,
     subscriptions = adBlockSubscriptions
 )
@@ -3157,7 +3175,7 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
         injectScripts = resolvedInjectScripts,
         longPressMenuEnabled = longPressMenuEnabled,
         longPressMenuStyle = longPressMenuStyle.name,
-        adBlockToggleEnabled = adBlockToggleEnabled,
+
         popupBlockerEnabled = popupBlockerEnabled,
         popupBlockerToggleEnabled = popupBlockerToggleEnabled,
         openExternalLinks = openExternalLinks,
@@ -3168,7 +3186,8 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
         pwaOfflineEnabled = pwaOfflineEnabled && !clearBrowsingDataOnLaunch,
         pwaOfflineStrategy = pwaOfflineStrategy,
         keyboardAdjustMode = keyboardAdjustMode.name,
-        downloadEnabled = downloadEnabled
+        downloadEnabled = downloadEnabled,
+        antiCapture = antiCapture
     )
 }
 

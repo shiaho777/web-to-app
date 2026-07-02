@@ -330,7 +330,9 @@ fun AiCodingScreen(
                     onDismissMention = vm::dismissMention,
                     onToggleAutoApprove = { vm.setAutoApprove(!state.autoApprove) },
 
-                    onTriggerSlash = { vm.setComposerText("/") }
+                    onTriggerSlash = { vm.setComposerText("/") },
+
+                    onOpenModelPicker = vm::openModelPicker
                 )
             }
         }
@@ -365,7 +367,8 @@ fun AiCodingScreen(
     }
     if (state.modelPickerOpen) {
         com.webtoapp.ui.aicoding.components.ModelPickerDialog(
-            choices = state.modelChoices,
+            groups = state.modelProviderGroups,
+            initialSelectedProviderKeyId = state.selectedProviderKeyId,
             onSelect = vm::selectModel,
             onDismiss = vm::dismissModelPicker
         )

@@ -157,7 +157,6 @@ fun HostsAdBlockScreen(
                                     String.format(
                                         java.util.Locale.getDefault(),
                                         Strings.hostsSourcesSummary,
-                                        enabledSources.size,
                                         downloadedCount
                                     ),
                                     style = MaterialTheme.typography.bodyMedium,
@@ -251,7 +250,6 @@ fun HostsAdBlockScreen(
 
             items(AdBlocker.POPULAR_HOSTS_SOURCES) { source ->
                 val isDownloaded = enabledSources.contains(source.url) || disabledSources.contains(source.url)
-                val isEnabled = enabledSources.contains(source.url)
                 val isDownloading = downloadProgress.containsKey(source.url)
                 val progress = downloadProgress[source.url]
                 val isExpanded = expandedSources.contains(source.url)
@@ -259,7 +257,6 @@ fun HostsAdBlockScreen(
                 HostsSourceCard(
                     source = source,
                     isDownloaded = isDownloaded,
-                    isEnabled = isEnabled,
                     isDownloading = isDownloading,
                     progress = progress,
                     isExpanded = isExpanded,
@@ -307,19 +304,6 @@ fun HostsAdBlockScreen(
                     },
                     onToggleExpand = {
                         expandedSources = if (isExpanded) expandedSources - source.url else expandedSources + source.url
-                    },
-                    onToggle = {
-                        scope.launch {
-                            val enable = !isEnabled
-                            adBlocker.setHostsSourceEnabled(context, source.url, enable)
-                            enabledSources = adBlocker.getEnabledHostsSources()
-                            disabledSources = adBlocker.getDisabledHostsSources()
-                            hostsRulesCount = adBlocker.getImportedHostsRuleCount()
-                            adBlocker.saveHostsRules(context)
-                            snackbarHostState.showSnackbar(
-                                if (enable) Strings.hostsSourceEnabledToast else Strings.hostsSourceDisabledToast
-                            )
-                        }
                     },
                     onDelete = {
                         showDeleteSourceDialog = source
@@ -501,14 +485,12 @@ fun HostsAdBlockScreen(
 private fun HostsSourceCard(
     source: HostsSource,
     isDownloaded: Boolean,
-    isEnabled: Boolean,
     isDownloading: Boolean,
     progress: DownloadProgress?,
     isExpanded: Boolean,
     onImport: () -> Unit,
     onToggleDownload: () -> Unit,
     onToggleExpand: () -> Unit,
-    onToggle: () -> Unit,
     onDelete: () -> Unit
 ) {
     EnhancedElevatedCard(
@@ -548,15 +530,13 @@ private fun HostsSourceCard(
                             Spacer(modifier = Modifier.width(8.dp))
                             Surface(
                                 shape = MaterialTheme.shapes.small,
-                                color = if (isEnabled) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.surfaceVariant
+                                color = MaterialTheme.colorScheme.primaryContainer
                             ) {
                                 Text(
-                                    if (isEnabled) Strings.hostsSourceEnabled else Strings.hostsSourceDisabled,
+                                    Strings.hostsSourceDownloaded,
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    color = if (isEnabled) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
@@ -612,27 +592,12 @@ private fun HostsSourceCard(
                         }
 
                         FilledTonalButton(
-                            onClick = onToggle,
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Icon(
-                                if (isEnabled) Icons.Outlined.Block else Icons.Outlined.CheckCircle,
-                                null, Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                if (isEnabled) Strings.disable else Strings.enable,
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
-
-                        FilledTonalButton(
                             onClick = onDelete,
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                             colors = ButtonDefaults.filledTonalButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error
-                            )
+                            ),
+                            modifier = Modifier.weight(1f)
                         ) {
                             Icon(Icons.Outlined.Delete, null, Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))

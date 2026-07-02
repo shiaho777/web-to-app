@@ -215,12 +215,6 @@ fun BoxScope.ShellScaffoldLayout(
                 canGoForward = canGoForward,
                 webViewRef = webViewRef
             )
-
-            ShellAdBlockToggle(
-                config = config,
-                forcedRunActive = forcedRunActive,
-                webViewRef = webViewRef
-            )
         }
     }
 }

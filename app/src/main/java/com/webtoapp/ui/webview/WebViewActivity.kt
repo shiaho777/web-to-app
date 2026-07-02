@@ -70,7 +70,6 @@ import kotlinx.coroutines.launch
 import com.webtoapp.ui.shared.WindowHelper
 import com.webtoapp.ui.shell.ShellWebViewNavigation
 import com.webtoapp.ui.shell.GeolocationPermissionsSingleton
-import com.webtoapp.ui.shell.AdBlockToggleFab
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import com.webtoapp.core.wordpress.WordPressDependencyManager
@@ -3043,19 +3042,6 @@ fun WebViewScreen(
         )
     }
 
-    val activeWebApp = webApp
-    if (activeWebApp != null && activeWebApp.adBlockEnabled && activeWebApp.webViewConfig.adBlockToggleEnabled) {
-        AdBlockToggleFab(
-            initialEnabled = true,
-            forcedRunActive = false,
-            adBlocker = adBlocker,
-            onToggle = { enabled ->
-                webViewRef?.reload()
-                val message = if (enabled) Strings.adBlockEnabled else Strings.adBlockDisabled
-                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            }
-        )
-    }
     }
 
     if (showActivationDialog) {

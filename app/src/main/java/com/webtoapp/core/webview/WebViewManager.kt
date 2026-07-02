@@ -1231,6 +1231,8 @@ class WebViewManager(
             )
         }
 
+        GeckoViewEngine.applyAntiCapture(config.antiCapture)
+
         val tlsFingerprintEnabled = config.tlsFingerprintEnabled &&
             config.tlsFingerprintTemplate.isNotBlank()
 
@@ -1556,6 +1558,7 @@ class WebViewManager(
     ) {
         if (config.proxyMode != "NONE") {
             LocalHttpHostMappingBridge.stop()
+            AntiCaptureProxy.clear()
             AppLogger.d("WebViewManager", "Applying proxy: mode=${config.proxyMode}")
 
             val proxyManager = PacProxyManager(context)
@@ -1639,6 +1642,12 @@ class WebViewManager(
                 LocalHttpHostMappingBridge.stop()
                 if (hostsMappingEnabled) {
                     AppLogger.w("WebViewManager", "Hosts mapping skipped because proxyMode=${config.proxyMode}")
+                }
+                if (config.antiCapture) {
+                    AntiCaptureProxy.apply()
+                    AppLogger.i("WebViewManager", "Anti-capture enabled: forcing direct connection, ignoring system proxy")
+                } else {
+                    AntiCaptureProxy.clear()
                 }
             }
         }

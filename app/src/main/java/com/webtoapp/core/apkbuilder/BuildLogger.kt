@@ -7,9 +7,19 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
+private fun resolveBuildLogsDir(context: Context): File {
+    val external = context.getExternalFilesDir(null)
+    if (external != null) {
+        val dir = File(external, "build_logs")
+        if (dir.exists() || dir.mkdirs()) return dir
+        AppLogger.w("BuildLogger", "External build_logs dir unavailable, falling back to filesDir")
+    }
+    return File(context.filesDir, "build_logs").apply { mkdirs() }
+}
+
 class BuildLogger(private val context: Context) {
 
-    private val logDir = File(context.getExternalFilesDir(null), "build_logs").apply { mkdirs() }
+    private val logDir = resolveBuildLogsDir(context)
     private var currentLogFile: File? = null
 
     private fun dateFormat() = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())

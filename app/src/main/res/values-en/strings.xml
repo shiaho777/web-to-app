@@ -734,4 +734,11 @@
     <string name="update_download_prepare_stage">Preparing update download</string>
     <string name="update_download_no_link">Update response missing valid download link, download process not continued.</string>
     <string name="no_exception_object">No exception object returned</string>
+    <string name="anti_capture_title">Anti Packet Capture</string>
+    <string name="anti_capture_desc">When enabled, common packet-capture tools cannot intercept web content; the app ignores system proxy and rejects capture certificates.</string>
+    <string name="ad_block_subscriptions">Filter Lists</string>
+    <string name="ad_block_no_downloaded_sources_short">Not downloaded</string>
+    <string name="ad_block_no_subscription_selected">No filter list selected</string>
+    <string name="ad_block_enabled_sources_label">Enabled filter lists</string>
+    <string name="ad_block_add_more_sources">Add more filter lists</string>
 </resources>

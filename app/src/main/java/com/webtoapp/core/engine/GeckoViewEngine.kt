@@ -152,8 +152,16 @@ class GeckoViewEngine(
         @Volatile
         private var tlsMitmActive: Boolean = false
 
+        @Volatile
+        private var antiCaptureActive: Boolean = false
+
         fun setTlsMitmActive(active: Boolean) {
             tlsMitmActive = active
+        }
+
+        fun applyAntiCapture(active: Boolean) {
+            antiCaptureActive = active
+            AppLogger.d(TAG, "applyAntiCapture: active=$active")
         }
 
         fun applyDnsConfig(config: com.webtoapp.data.model.DnsConfig) {
@@ -282,9 +290,17 @@ class GeckoViewEngine(
                 prefs["network.dns.force_use_https_rr"] = true
             }
 
-            currentProxyConfig?.let { prefs.putAll(buildProxyPrefs(it)) }
+            val appProxy = currentProxyConfig
+            val hasAppProxy = appProxy != null && appProxy.mode != "NONE"
+            if (antiCaptureActive && !hasAppProxy) {
+                prefs["network.proxy.type"] = 0
+            } else {
+                appProxy?.let { prefs.putAll(buildProxyPrefs(it)) }
+            }
 
-            if (tlsMitmActive) {
+            if (antiCaptureActive) {
+                prefs["security.enterprise_roots.enabled"] = false
+            } else if (tlsMitmActive) {
                 prefs["security.enterprise_roots.enabled"] = true
             }
 

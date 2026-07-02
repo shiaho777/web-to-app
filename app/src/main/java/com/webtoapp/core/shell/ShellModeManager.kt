@@ -1134,8 +1134,7 @@ data class WebViewShellConfig(
     @SerializedName("longPressMenuStyle")
     val longPressMenuStyle: String = "DISABLED",
 
-    @SerializedName("adBlockToggleEnabled")
-    val adBlockToggleEnabled: Boolean = false,
+
 
     @SerializedName("popupBlockerEnabled")
     val popupBlockerEnabled: Boolean = false,
@@ -1315,7 +1314,7 @@ data class WebViewShellConfig(
     val privateNetworkScope: String = "LOCAL_ONLY",
 
     @SerializedName("enableCorsBypass")
-    val enableCorsBypass: Boolean = false,
+    val enableCorsBypass: Boolean = true,
 
     @SerializedName("allowMixedContent")
     val allowMixedContent: Boolean = false,
@@ -1463,6 +1462,9 @@ data class WebViewShellConfig(
 
     @SerializedName("tlsFingerprintCustomCiphers")
     val tlsFingerprintCustomCiphers: List<String> = emptyList(),
+
+    @SerializedName("antiCapture")
+    val antiCapture: Boolean = false,
 
     @SerializedName("dnsMode")
     val dnsMode: String = "SYSTEM",

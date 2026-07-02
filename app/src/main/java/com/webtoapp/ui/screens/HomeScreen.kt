@@ -578,13 +578,6 @@ fun HomeScreen(
                         val scope = sharedScope
                         val previewSpec = previewSpecs[app.id] ?: AppPreviewSpec()
 
-                        StaggeredAnimatedItem(
-                            index = index,
-                            modifier = Modifier.animateItem(
-                                placementSpec = com.webtoapp.ui.design.WtaMotion.settleSpring()
-                            )
-                        ) {
-
                         val dismissState = rememberSwipeToDismissBoxState(
                             confirmValueChange = { value ->
                                 if (value == SwipeToDismissBoxValue.EndToStart) {
@@ -810,12 +803,8 @@ fun HomeScreen(
                                         }
                                     }
                                 }
-                            } else null,
-                            modifier = Modifier.animateItem(
-                                placementSpec = com.webtoapp.ui.design.WtaMotion.settleSpring()
-                            )
+                            } else null
                         )
-                        }
                         }
                     }
 
@@ -2205,11 +2194,11 @@ fun BuildApkDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text(Strings.playStoreExportAabButton)
+                        Text("AAB", maxLines = 1)
                     }
                     Spacer(Modifier.width(4.dp))
                     TextButton(onClick = onDismiss) {
-                        Text(if (analysisReport != null) Strings.close else Strings.btnCancel)
+                        Text(if (analysisReport != null) Strings.close else Strings.btnCancel, maxLines = 1)
                     }
                     Spacer(Modifier.width(8.dp))
                     PremiumButton(
@@ -2234,7 +2223,9 @@ fun BuildApkDialog(
                                 builtApk != null -> Strings.install
                                 buildFailureReport != null || preflightReport?.hasErrors == true -> Strings.btnRetry
                                 else -> Strings.btnStartBuild
-                            }
+                            },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }

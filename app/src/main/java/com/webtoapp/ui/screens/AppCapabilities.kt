@@ -60,7 +60,7 @@ fun buildAppCapabilities(editState: EditState): List<AppCapability> = listOf(
         level = WtaCapabilityLevel.Advanced,
         icon = Icons.Outlined.Security,
         keywords = listOf("广告", "拦截", "adblock", "规则", "浏览器"),
-        configured = editState.adBlockEnabled || editState.adBlockRules.isNotEmpty()
+        configured = editState.adBlockSubscriptions.isNotEmpty() || editState.adBlockRules.isNotEmpty()
     ),
     AppCapability(
         id = "browser",

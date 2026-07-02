@@ -996,8 +996,9 @@ class JarSigner(private val context: Context) {
             }
         }
 
-        if (outputApk.exists()) {
-            outputApk.delete()
+        if (outputApk.exists() && !outputApk.delete()) {
+            AppLogger.e(TAG, "Can't overwrite existing output: ${outputApk.absolutePath}")
+            return false
         }
 
         return true

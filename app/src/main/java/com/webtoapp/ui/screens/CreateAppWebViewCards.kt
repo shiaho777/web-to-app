@@ -12,6 +12,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -35,6 +38,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.webtoapp.R
 import com.webtoapp.core.i18n.Strings
@@ -428,140 +433,395 @@ fun AdBlockCard(
     editState: EditState,
     onEnabledChange: (Boolean) -> Unit,
     onRulesChange: (List<String>) -> Unit,
-    onSubscriptionsChange: (List<String>) -> Unit,
-    onToggleEnabledChange: (Boolean) -> Unit = {}
+    onSubscriptionsChange: (List<String>) -> Unit
 ) {
     var newRule by remember { mutableStateOf("") }
+    var showSubscriptionDialog by remember { mutableStateOf(false) }
     val enabled = editState.adBlockEnabled
     val rules = editState.adBlockRules
-    val rulesCount = rules.size
     val subscriptions = editState.adBlockSubscriptions
-    val popularSources = remember { com.webtoapp.core.adblock.AdBlocker.getPopularHostsSources() }
+    val adBlocker = remember { com.webtoapp.WebToAppApplication.adBlock }
+    val allSources = remember { com.webtoapp.core.adblock.AdBlocker.getPopularHostsSources() }
+    val downloadedSources = remember(allSources, Unit) {
+        allSources.filter { adBlocker.isHostsSourceDownloaded(it.url) }
+    }
+    val validSubscriptions = subscriptions.filter { url -> downloadedSources.any { it.url == url } }
 
-    WtaSettingCard(
-        contentPadding = PaddingValues(WtaSpacing.Large)
-    ) {
-        Column {
-            AdBlockHeader(
-                enabled = enabled,
-                rulesCount = rulesCount,
-                subscriptionsCount = subscriptions.size,
-                onToggle = onEnabledChange
-            )
+    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(com.webtoapp.ui.design.WtaRadius.Control))
+                            .background(
+                                if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+                                else MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.Outlined.Shield,
+                            contentDescription = null,
+                            tint = if (enabled) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = Strings.adBlocking,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        if (enabled && validSubscriptions.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = Strings.adBlockSubscriptionsCount.format(validSubscriptions.size),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+                com.webtoapp.ui.design.WtaSwitch(
+                    checked = enabled,
+                    onCheckedChange = onEnabledChange
+                )
+            }
 
             AnimatedVisibility(
                 visible = enabled,
-                enter = CardExpandTransition,
-                exit = CardCollapseTransition
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
             ) {
-                Column(
-                    modifier = Modifier.padding(top = WtaSpacing.Medium),
-                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)
-                ) {
-                    SubscriptionSourcesSection(
-                        popularSources = popularSources,
-                        subscriptions = subscriptions,
-                        onSubscriptionsChange = onSubscriptionsChange
-                    )
+                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    if (validSubscriptions.isEmpty()) {
+                        com.webtoapp.ui.design.WtaCard(
+                            tone = com.webtoapp.ui.design.WtaCardTone.Surface,
+                            shape = RoundedCornerShape(com.webtoapp.ui.design.WtaRadius.Chip),
+                            contentPadding = PaddingValues(0.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 12.dp, top = 10.dp, bottom = 10.dp, end = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Outlined.FilterList,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    if (downloadedSources.isEmpty()) Strings.adBlockNoDownloadedSourcesShort
+                                    else Strings.adBlockNoSubscriptionSelected,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (downloadedSources.isNotEmpty()) {
+                                    IconButton(onClick = { showSubscriptionDialog = true }) {
+                                        Icon(
+                                            Icons.Outlined.Add,
+                                            contentDescription = Strings.add,
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = Strings.adBlockEnabledSourcesLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            IconButton(
+                                onClick = {
+                                    onSubscriptionsChange(emptyList())
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Outlined.DeleteSweep,
+                                    contentDescription = Strings.clearAll,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        validSubscriptions.forEach { url ->
+                            val source = downloadedSources.firstOrNull { it.url == url }
+                            com.webtoapp.ui.design.WtaCard(
+                                tone = com.webtoapp.ui.design.WtaCardTone.Elevated,
+                                shape = RoundedCornerShape(com.webtoapp.ui.design.WtaRadius.Chip),
+                                contentPadding = PaddingValues(0.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.Shield,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(20.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(modifier = Modifier.width(10.dp))
+                                    Text(
+                                        source?.name ?: url,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    IconButton(onClick = {
+                                        onSubscriptionsChange(subscriptions.filter { it != url })
+                                    }) {
+                                        Icon(
+                                            Icons.Outlined.Close,
+                                            contentDescription = Strings.delete,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
 
-                    WtaSectionDivider()
+                    if (downloadedSources.isNotEmpty()) {
+                        com.webtoapp.ui.components.PremiumButton(
+                            onClick = { showSubscriptionDialog = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Outlined.Add, null, Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(if (validSubscriptions.isEmpty()) Strings.adBlockSelectSubscriptions
+                                else Strings.adBlockAddMoreSources)
+                        }
+                    }
+
+                    com.webtoapp.ui.design.WtaDivider()
 
                     CustomRulesSection(
                         rules = rules,
-                        rulesCount = rulesCount,
+                        rulesCount = rules.size,
                         newRule = newRule,
                         onNewRuleChange = { newRule = it },
                         onRulesChange = onRulesChange
-                    )
-
-                    WtaSectionDivider()
-
-                    RuntimeControlsSection(
-                        toggleEnabled = editState.webViewConfig.adBlockToggleEnabled,
-                        onToggleEnabledChange = onToggleEnabledChange
                     )
                 }
             }
         }
     }
+
+    if (showSubscriptionDialog) {
+        AdBlockSubscriptionSelectorDialog(
+            allSources = downloadedSources,
+            selectedUrls = subscriptions.toSet(),
+            onSelectionChange = { newSelection ->
+                onSubscriptionsChange(newSelection.toList())
+            },
+            onDismiss = { showSubscriptionDialog = false }
+        )
+    }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SubscriptionSourcesSection(
-    popularSources: List<com.webtoapp.core.adblock.HostsSource>,
-    subscriptions: List<String>,
-    onSubscriptionsChange: (List<String>) -> Unit
+fun AdBlockSubscriptionSelectorDialog(
+    allSources: List<com.webtoapp.core.adblock.HostsSource>,
+    selectedUrls: Set<String>,
+    onSelectionChange: (Set<String>) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val scope = androidx.compose.runtime.rememberCoroutineScope()
-    var importingUrl by remember { mutableStateOf<String?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
 
-    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
-        Text(
-            text = Strings.adBlockSubscriptionsLabel,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        WtaStatusBanner(
-            message = Strings.adBlockSubscriptionsDesc,
-            tone = WtaStatusTone.Info
-        )
+    val filteredSources = allSources.filter { source ->
+        searchQuery.isBlank() ||
+            source.name.contains(searchQuery, ignoreCase = true) ||
+            source.description.contains(searchQuery, ignoreCase = true)
+    }
 
-        popularSources.chunked(2).forEach { row ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)
-            ) {
-                row.forEach { source ->
-                    val isSelected = subscriptions.contains(source.url)
-                    WtaChip(
-                        selected = isSelected,
-                        onClick = {
-                            val newSubs = if (isSelected) {
-                                subscriptions.filter { it != source.url }
-                            } else {
-                                subscriptions + source.url
-                            }
-                            onSubscriptionsChange(newSubs)
-                            if (!isSelected) {
-                                scope.launch {
-                                    importingUrl = source.url
-                                    try {
-                                        com.webtoapp.WebToAppApplication.adBlock
-                                            .importHostsFromUrl(source.url, context)
-                                    } catch (_: Exception) {
-                                    } finally {
-                                        importingUrl = null
-                                    }
+    val allFilteredSelected = filteredSources.isNotEmpty() &&
+        filteredSources.all { it.url in selectedUrls }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        WtaCard(
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .fillMaxHeight(0.85f),
+            tone = WtaCardTone.Surface,
+            contentPadding = PaddingValues(0.dp),
+            shape = RoundedCornerShape(WtaRadius.Card)
+        ) {
+            Column {
+                TopAppBar(
+                    title = { Text(Strings.adBlockSelectSubscriptions) },
+                    navigationIcon = {
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Default.Close, Strings.btnCancel)
+                        }
+                    },
+                    actions = {
+                        TextButton(onClick = onDismiss) {
+                            Text(Strings.doneWithCount.format(selectedUrls.size))
+                        }
+                    }
+                )
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp)
+                ) {
+                    PremiumTextField(
+                        value = searchQuery,
+                        onValueChange = { searchQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text(Strings.searchModulesHint) },
+                        leadingIcon = { Icon(Icons.Default.Search, null) },
+                        trailingIcon = {
+                            if (searchQuery.isNotBlank()) {
+                                IconButton(onClick = { searchQuery = "" }) {
+                                    Icon(Icons.Default.Clear, Strings.clear)
                                 }
                             }
                         },
-                        label = source.name,
-                        modifier = Modifier.weight(1f),
-                        showSelectedCheck = true
+                        singleLine = true,
+                        shape = RoundedCornerShape(WtaRadius.Control)
                     )
-                }
-                repeat(2 - row.size) {
-                    Spacer(Modifier.weight(1f))
-                }
-            }
-        }
 
-        importingUrl?.let { url ->
-            val sourceName = popularSources.firstOrNull { it.url == url }?.name ?: url
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
-            ) {
-                androidx.compose.material3.CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    strokeWidth = 2.dp
-                )
-                Text(
-                    text = sourceName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        TextButton(
+                            onClick = {
+                                if (allFilteredSelected) {
+                                    onSelectionChange(selectedUrls - filteredSources.map { it.url }.toSet())
+                                } else {
+                                    onSelectionChange(selectedUrls + filteredSources.map { it.url })
+                                }
+                            }
+                        ) {
+                            Text(
+                                if (allFilteredSelected) Strings.clearAll else Strings.selectAll
+                            )
+                        }
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier.weight(weight = 1f, fill = true),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filteredSources, key = { it.url }) { source ->
+                            val isSelected = source.url in selectedUrls
+                            WtaCard(
+                                onClick = {
+                                    onSelectionChange(
+                                        if (isSelected) selectedUrls - source.url
+                                        else selectedUrls + source.url
+                                    )
+                                },
+                                tone = if (isSelected) WtaCardTone.Highlighted else WtaCardTone.Surface,
+                                shape = RoundedCornerShape(WtaRadius.Control),
+                                contentPadding = PaddingValues(0.dp),
+                                border = if (isSelected) {
+                                    BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                } else null
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = null
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            source.name,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = FontWeight.Medium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                        if (source.description.isNotBlank()) {
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                source.description,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (filteredSources.isEmpty()) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(32.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Icon(
+                                            Icons.Outlined.SearchOff,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(48.dp),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            Strings.noMatchingModules,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        item { Spacer(modifier = Modifier.height(16.dp)) }
+                    }
+                }
             }
         }
     }
@@ -592,13 +852,6 @@ private fun CustomRulesSection(
                     compact = true
                 )
             }
-        }
-
-        if (rulesCount == 0) {
-            WtaStatusBanner(
-                message = Strings.adBlockNoRules,
-                tone = WtaStatusTone.Info
-            )
         }
 
         Row(
@@ -663,74 +916,6 @@ private fun CustomRulesSection(
     }
 }
 
-@Composable
-private fun RuntimeControlsSection(
-    toggleEnabled: Boolean,
-    onToggleEnabledChange: (Boolean) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
-        Text(
-            text = Strings.adBlockRuntimeControls,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        WtaToggleRow(
-            title = Strings.adBlockToggleEnabled,
-            subtitle = Strings.adBlockToggleDescription,
-            checked = toggleEnabled,
-            onCheckedChange = onToggleEnabledChange
-        )
-    }
-}
-
-@Composable
-private fun AdBlockHeader(
-    enabled: Boolean,
-    rulesCount: Int,
-    subscriptionsCount: Int,
-    onToggle: (Boolean) -> Unit
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            modifier = Modifier.weight(1f),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(WtaSize.IconPlate)
-                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
-                    .background(
-                        if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = WtaAlpha.MutedContainer)
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = WtaAlpha.Medium)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    Icons.Outlined.Shield,
-                    contentDescription = null,
-                    modifier = Modifier.size(WtaSize.Icon),
-                    tint = if (enabled) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Spacer(Modifier.width(WtaSpacing.IconTextGap))
-            Text(
-                text = Strings.adBlocking,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-        WtaSwitch(
-            checked = enabled,
-            onCheckedChange = onToggle
-        )
-    }
-}
 
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
@@ -2963,6 +3148,14 @@ fun SpecialSettingsCard(
                                 icon = Icons.Outlined.Build,
                                 checked = config.enableCompatPolyfills,
                                 onCheckedChange = { onConfigChange(config.copy(enableCompatPolyfills = it)) }
+                            )
+                            WtaSectionDivider()
+                            WtaToggleRow(
+                                title = Strings.antiCaptureTitle,
+                                subtitle = Strings.antiCaptureDesc,
+                                icon = Icons.Outlined.Shield,
+                                checked = config.antiCapture,
+                                onCheckedChange = { onConfigChange(config.copy(antiCapture = it)) }
                             )
                         }
                     }

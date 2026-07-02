@@ -77,9 +77,56 @@ private enum class FileSection(val dirName: String) {
     AAB("built_aabs"),
     CLONED("cloned_apks"),
     LOGS("build_logs"),
-    WEB_TO_APP("WebToApp");
+    USER_PROJECTS("");
 
     val isLogs: Boolean get() = this == LOGS
+    val isUserProjects: Boolean get() = this == USER_PROJECTS
+}
+
+private val USER_PROJECT_DIRS = listOf(
+    "html_projects",
+    "frontend_builds",
+    "nodejs_projects",
+    "php_projects",
+    "python_projects",
+    "go_projects",
+    "wordpress_projects",
+    "docs_projects",
+    "scraped_sites",
+    "sample_projects"
+)
+
+private fun scanUserProjects(filesBase: java.io.File): SectionSnapshot {
+    val entries = USER_PROJECT_DIRS.flatMap { projectDirName ->
+        val projectDir = java.io.File(filesBase, projectDirName)
+        if (!projectDir.exists() || !projectDir.isDirectory) return@flatMap emptyList<FileEntry>()
+        projectDir.listFiles { f -> f.isDirectory }
+            ?.sortedByDescending { it.lastModified() }
+            ?.map { sub ->
+                FileEntry(
+                    file = sub,
+                    name = "$projectDirName/${sub.name}",
+                    size = dirSize(sub),
+                    lastModified = sub.lastModified()
+                )
+            }
+            ?: emptyList()
+    }
+    return SectionSnapshot(FileSection.USER_PROJECTS, entries)
+}
+
+private fun dirSize(dir: java.io.File): Long {
+    var size = 0L
+    val stack = ArrayDeque<java.io.File>()
+    stack.addLast(dir)
+    while (stack.isNotEmpty()) {
+        val current = stack.removeLast()
+        current.listFiles()?.forEach { f ->
+            if (f.isFile) size += f.length()
+            else if (f.isDirectory) stack.addLast(f)
+        }
+    }
+    return size
 }
 
 private data class FileEntry(
@@ -117,25 +164,31 @@ fun FileManagerScreen(onBack: () -> Unit) {
     suspend fun rescan() {
         loading = true
         val result = withContext(Dispatchers.IO) {
-            val base = context.getExternalFilesDir(null) ?: return@withContext emptyList<SectionSnapshot>()
+            val externalBase = context.getExternalFilesDir(null)
+            val filesBase = context.filesDir
             FileSection.entries.map { section ->
-                val dir = File(base, section.dirName)
-                val entries = if (!dir.exists()) {
-                    emptyList()
+                if (section.isUserProjects) {
+                    scanUserProjects(filesBase)
                 } else {
-                    dir.listFiles { f -> f.isFile }
-                        ?.sortedByDescending { it.lastModified() }
-                        ?.map { f ->
-                            FileEntry(
-                                file = f,
-                                name = f.name,
-                                size = f.length(),
-                                lastModified = f.lastModified()
-                            )
-                        }
-                        ?: emptyList()
+                    val base = externalBase ?: return@map SectionSnapshot(section, emptyList())
+                    val dir = File(base, section.dirName)
+                    val entries = if (!dir.exists()) {
+                        emptyList()
+                    } else {
+                        dir.listFiles { f -> f.isFile }
+                            ?.sortedByDescending { it.lastModified() }
+                            ?.map { f ->
+                                FileEntry(
+                                    file = f,
+                                    name = f.name,
+                                    size = f.length(),
+                                    lastModified = f.lastModified()
+                                )
+                            }
+                            ?: emptyList()
+                    }
+                    SectionSnapshot(section, entries)
                 }
-                SectionSnapshot(section, entries)
             }
         }
         snapshots = result
@@ -213,7 +266,7 @@ fun FileManagerScreen(onBack: () -> Unit) {
             FileSection.AAB -> Strings.fileManagerSectionAab
             FileSection.CLONED -> Strings.fileManagerSectionCloned
             FileSection.LOGS -> Strings.fileManagerSectionLogs
-            FileSection.WEB_TO_APP -> Strings.fileManagerSectionUserFiles
+            FileSection.USER_PROJECTS -> Strings.fileManagerSectionUserFiles
         }
         ConfirmDialog(
             message = String.format(Strings.fileManagerClearConfirmDir, dirLabel),
@@ -222,8 +275,17 @@ fun FileManagerScreen(onBack: () -> Unit) {
                 pendingClear = null
                 scope.launch {
                     withContext(Dispatchers.IO) {
-                        val base = context.getExternalFilesDir(null)
-                        base?.let { File(it, toClear.dirName).listFiles()?.forEach { f -> f.delete() } }
+                        if (toClear.isUserProjects) {
+                            val filesBase = context.filesDir
+                            USER_PROJECT_DIRS.forEach { dirName ->
+                                java.io.File(filesBase, dirName)
+                                    .listFiles { f -> f.isDirectory }
+                                    ?.forEach { sub -> sub.deleteRecursively() }
+                            }
+                        } else {
+                            val base = context.getExternalFilesDir(null)
+                            base?.let { File(it, toClear.dirName).listFiles()?.forEach { f -> f.delete() } }
+                        }
                     }
                     rescan()
                 }
@@ -239,7 +301,10 @@ fun FileManagerScreen(onBack: () -> Unit) {
                 val toDelete = pendingDelete ?: return@ConfirmDialog
                 pendingDelete = null
                 scope.launch {
-                    withContext(Dispatchers.IO) { toDelete.file.delete() }
+                    withContext(Dispatchers.IO) {
+                        if (toDelete.file.isDirectory) toDelete.file.deleteRecursively()
+                        else toDelete.file.delete()
+                    }
                     rescan()
                 }
             },
@@ -352,17 +417,17 @@ private fun SectionCard(
     onClear: () -> Unit
 ) {
     val canInstall = snapshot.section == FileSection.APK || snapshot.section == FileSection.CLONED
-    val canOpen = snapshot.section == FileSection.WEB_TO_APP
+    val canOpen = false
     val sectionLabel = when (snapshot.section) {
         FileSection.APK -> Strings.fileManagerSectionApk
         FileSection.AAB -> Strings.fileManagerSectionAab
         FileSection.CLONED -> Strings.fileManagerSectionCloned
         FileSection.LOGS -> Strings.fileManagerSectionLogs
-        FileSection.WEB_TO_APP -> Strings.fileManagerSectionUserFiles
+        FileSection.USER_PROJECTS -> Strings.fileManagerSectionUserFiles
     }
     val sectionIcon = when {
         snapshot.section.isLogs -> Icons.Outlined.Article
-        snapshot.section == FileSection.WEB_TO_APP -> Icons.Outlined.FolderShared
+        snapshot.section.isUserProjects -> Icons.Outlined.FolderShared
         else -> Icons.Outlined.Folder
     }
 
@@ -442,6 +507,7 @@ private fun SectionCard(
                                 canView = snapshot.section.isLogs,
                                 canInstall = canInstall,
                                 canOpen = canOpen,
+                                canShare = !snapshot.section.isUserProjects,
                                 onShare = { onShare(entry) },
                                 onInstall = { onInstall(entry) },
                                 onOpen = { onOpen(entry) },
@@ -463,6 +529,7 @@ private fun FileEntryRow(
     canView: Boolean,
     canInstall: Boolean,
     canOpen: Boolean,
+    canShare: Boolean,
     onShare: () -> Unit,
     onInstall: () -> Unit,
     onOpen: () -> Unit,
@@ -514,8 +581,10 @@ private fun FileEntryRow(
                 Icon(Icons.Outlined.Article, Strings.fileManagerView, modifier = Modifier.size(20.dp))
             }
         }
-        IconButton(onClick = onShare) {
-            Icon(Icons.Outlined.Share, Strings.share, modifier = Modifier.size(20.dp))
+        if (canShare) {
+            IconButton(onClick = onShare) {
+                Icon(Icons.Outlined.Share, Strings.share, modifier = Modifier.size(20.dp))
+            }
         }
         IconButton(onClick = onDelete) {
             Icon(
