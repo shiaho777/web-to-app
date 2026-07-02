@@ -3098,9 +3098,7 @@ fun WebViewScreen(
 com.webtoapp.ui.components.announcement.AnnouncementDialog(
             config = com.webtoapp.ui.components.announcement.AnnouncementConfig(
                 announcement = ann,
-                template = ann.template.toUiTemplate(),
-                showEmoji = ann.showEmoji,
-                animationEnabled = ann.animationEnabled
+                template = ann.template.toUiTemplate()
             ),
             onDismiss = {
                 showAnnouncementDialog = false

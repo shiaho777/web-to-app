@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -55,9 +56,7 @@ fun AnnouncementCard(
         AnnouncementDialog(
             config = AnnouncementConfig(
                 announcement = announcement,
-                template = announcement.template.toUiTemplate(),
-                showEmoji = announcement.showEmoji,
-                animationEnabled = announcement.animationEnabled
+                template = announcement.template.toUiTemplate()
             ),
             onDismiss = { showPreview = false },
             onLinkClick = {  }
@@ -98,8 +97,6 @@ fun AnnouncementCard(
                             )
                         }
                     )
-
-                    WtaSectionDivider(modifier = Modifier.padding(horizontal = 0.dp))
 
                     PremiumTextField(
                         value = announcement.title,
@@ -169,185 +166,6 @@ fun AnnouncementCard(
                         )
                     }
 
-                    WtaSectionDivider(modifier = Modifier.padding(horizontal = 0.dp))
-
-                    Text(
-                        Strings.displayFrequency,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        PremiumFilterChip(
-                            selected = announcement.showOnce,
-                            onClick = { onAnnouncementChange(announcement.copy(showOnce = true)) },
-                            label = { Text(Strings.showOnce) },
-                            leadingIcon = if (announcement.showOnce) {
-                                { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                            } else null
-                        )
-                        PremiumFilterChip(
-                            selected = !announcement.showOnce,
-                            onClick = { onAnnouncementChange(announcement.copy(showOnce = false)) },
-                            label = { Text(Strings.everyLaunch) },
-                            leadingIcon = if (!announcement.showOnce) {
-                                { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                            } else null
-                        )
-                    }
-
-                    WtaSectionDivider(modifier = Modifier.padding(horizontal = 0.dp))
-
-                    Text(
-                        Strings.announcementTriggerSettings,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-
-                    WtaToggleRow(
-                        title = Strings.announcementTriggerOnLaunch,
-                        subtitle = Strings.announcementTriggerOnLaunchHint,
-                        icon = Icons.Outlined.RocketLaunch,
-                        checked = announcement.triggerOnLaunch,
-                        onCheckedChange = {
-                            onAnnouncementChange(announcement.copy(triggerOnLaunch = it))
-                        }
-                    )
-
-                    WtaToggleRow(
-                        title = Strings.announcementTriggerOnNoNetwork,
-                        subtitle = Strings.announcementTriggerOnNoNetworkHint,
-                        icon = Icons.Outlined.CloudOff,
-                        checked = announcement.triggerOnNoNetwork,
-                        onCheckedChange = {
-                            onAnnouncementChange(announcement.copy(triggerOnNoNetwork = it))
-                        }
-                    )
-
-                    var intervalExpanded by remember { mutableStateOf(false) }
-                    val intervalOptions = listOf(0, 1, 3, 5, 10, 15, 30, 60)
-
-                    WtaSettingRow(
-                        title = Strings.announcementTriggerInterval,
-                        subtitle = Strings.announcementTriggerIntervalHint,
-                        icon = Icons.Outlined.Timer
-                    ) {
-                        ExposedDropdownMenuBox(
-                            expanded = intervalExpanded,
-                            onExpandedChange = { intervalExpanded = it },
-                            modifier = Modifier.width(110.dp)
-                        ) {
-                            FilledTonalButton(
-                                onClick = { intervalExpanded = true },
-                                modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(WtaRadius.Button)
-                            ) {
-                                Text(
-                                    if (announcement.triggerIntervalMinutes == 0)
-                                        Strings.announcementIntervalDisabled
-                                    else
-                                        "${announcement.triggerIntervalMinutes} ${Strings.minutesShort}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    maxLines = 1
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = intervalExpanded)
-                            }
-                            ExposedDropdownMenu(
-                                expanded = intervalExpanded,
-                                onDismissRequest = { intervalExpanded = false }
-                            ) {
-                                intervalOptions.forEach { interval ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                if (interval == announcement.triggerIntervalMinutes) {
-                                                    Icon(
-                                                        Icons.Filled.Check, null,
-                                                        modifier = Modifier.size(16.dp),
-                                                        tint = MaterialTheme.colorScheme.primary
-                                                    )
-                                                    Spacer(modifier = Modifier.width(8.dp))
-                                                }
-                                                Text(
-                                                    if (interval == 0) Strings.announcementIntervalDisabled
-                                                    else "$interval ${Strings.minutesShort}"
-                                                )
-                                            }
-                                        },
-                                        onClick = {
-                                            onAnnouncementChange(announcement.copy(triggerIntervalMinutes = interval))
-                                            intervalExpanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    AnimatedVisibility(
-                        visible = announcement.triggerIntervalMinutes > 0
-                    ) {
-                        WtaToggleRow(
-                            title = Strings.announcementTriggerIntervalIncludeLaunch,
-                            subtitle = Strings.announcementTriggerOnLaunchHint,
-                            icon = Icons.Outlined.PlayCircle,
-                            checked = announcement.triggerIntervalIncludeLaunch,
-                            onCheckedChange = {
-                                onAnnouncementChange(announcement.copy(triggerIntervalIncludeLaunch = it))
-                            }
-                        )
-                    }
-
-                    WtaSectionDivider(modifier = Modifier.padding(horizontal = 0.dp))
-
-                    Text(
-                        Strings.announcementAdvancedOptions,
-                        style = MaterialTheme.typography.labelLarge
-                    )
-
-                    WtaToggleRow(
-                        title = Strings.showEmoji,
-                        subtitle = Strings.announcementEmojiHint,
-                        icon = Icons.Outlined.EmojiEmotions,
-                        checked = announcement.showEmoji,
-                        onCheckedChange = {
-                            onAnnouncementChange(announcement.copy(showEmoji = it))
-                        }
-                    )
-
-                    WtaToggleRow(
-                        title = Strings.enableAnimation,
-                        subtitle = Strings.announcementAnimationHint,
-                        icon = Icons.Outlined.Animation,
-                        checked = announcement.animationEnabled,
-                        onCheckedChange = {
-                            onAnnouncementChange(announcement.copy(animationEnabled = it))
-                        }
-                    )
-
-                    WtaToggleRow(
-                        title = Strings.announcementRequireConfirmLabel,
-                        subtitle = Strings.announcementRequireConfirmHint,
-                        icon = Icons.Outlined.TaskAlt,
-                        checked = announcement.requireConfirmation,
-                        onCheckedChange = {
-                            onAnnouncementChange(announcement.copy(requireConfirmation = it))
-                        }
-                    )
-
-                    WtaToggleRow(
-                        title = Strings.announcementAllowNeverShowLabel,
-                        subtitle = Strings.announcementAllowNeverShowHint,
-                        icon = Icons.Outlined.VisibilityOff,
-                        checked = announcement.allowNeverShow,
-                        onCheckedChange = {
-                            onAnnouncementChange(announcement.copy(allowNeverShow = it))
-                        }
-                    )
-
                     PremiumOutlinedButton(
                         onClick = { showPreview = true },
                         modifier = Modifier.fillMaxWidth(),
@@ -357,8 +175,206 @@ fun AnnouncementCard(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(Strings.previewAnnouncementEffect)
                     }
+
+                    WtaSectionDivider(modifier = Modifier.padding(horizontal = 0.dp))
+
+                    AnnouncementTriggerSection(
+                        announcement = announcement,
+                        onAnnouncementChange = onAnnouncementChange
+                    )
+
+                    WtaSectionDivider(modifier = Modifier.padding(horizontal = 0.dp))
+
+                    AnnouncementAdvancedSection(
+                        announcement = announcement,
+                        onAnnouncementChange = onAnnouncementChange
+                    )
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AnnouncementTriggerSection(
+    announcement: Announcement,
+    onAnnouncementChange: (Announcement) -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(true) }
+
+    WtaSection(
+        title = Strings.announcementTriggerSettings,
+        headerStyle = WtaSectionHeaderStyle.Quiet,
+        collapsible = true,
+        initiallyExpanded = true,
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            WtaToggleRow(
+                title = Strings.announcementTriggerOnLaunch,
+                subtitle = Strings.announcementTriggerOnLaunchHint,
+                icon = Icons.Outlined.RocketLaunch,
+                checked = announcement.triggerOnLaunch,
+                onCheckedChange = {
+                    onAnnouncementChange(announcement.copy(triggerOnLaunch = it))
+                }
+            )
+
+            WtaToggleRow(
+                title = Strings.announcementTriggerOnNoNetwork,
+                subtitle = Strings.announcementTriggerOnNoNetworkHint,
+                icon = Icons.Outlined.CloudOff,
+                checked = announcement.triggerOnNoNetwork,
+                onCheckedChange = {
+                    onAnnouncementChange(announcement.copy(triggerOnNoNetwork = it))
+                }
+            )
+
+            var intervalExpanded by remember { mutableStateOf(false) }
+            val intervalOptions = listOf(0, 1, 3, 5, 10, 15, 30, 60)
+
+            WtaSettingRow(
+                title = Strings.announcementTriggerInterval,
+                subtitle = Strings.announcementTriggerIntervalHint,
+                icon = Icons.Outlined.Timer
+            ) {
+                ExposedDropdownMenuBox(
+                    expanded = intervalExpanded,
+                    onExpandedChange = { intervalExpanded = it },
+                    modifier = Modifier.width(110.dp)
+                ) {
+                    FilledTonalButton(
+                        onClick = { intervalExpanded = true },
+                        modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(WtaRadius.Button)
+                    ) {
+                        Text(
+                            if (announcement.triggerIntervalMinutes == 0)
+                                Strings.announcementIntervalDisabled
+                            else
+                                "${announcement.triggerIntervalMinutes} ${Strings.minutesShort}",
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = intervalExpanded)
+                    }
+                    ExposedDropdownMenu(
+                        expanded = intervalExpanded,
+                        onDismissRequest = { intervalExpanded = false }
+                    ) {
+                        intervalOptions.forEach { interval ->
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        if (interval == announcement.triggerIntervalMinutes) {
+                                            Icon(
+                                                Icons.Filled.Check, null,
+                                                modifier = Modifier.size(16.dp),
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                        }
+                                        Text(
+                                            if (interval == 0) Strings.announcementIntervalDisabled
+                                            else "$interval ${Strings.minutesShort}"
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    onAnnouncementChange(announcement.copy(triggerIntervalMinutes = interval))
+                                    intervalExpanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = announcement.triggerIntervalMinutes > 0
+            ) {
+                WtaToggleRow(
+                    title = Strings.announcementTriggerIntervalIncludeLaunch,
+                    subtitle = Strings.announcementTriggerOnLaunchHint,
+                    icon = Icons.Outlined.PlayCircle,
+                    checked = announcement.triggerIntervalIncludeLaunch,
+                    onCheckedChange = {
+                        onAnnouncementChange(announcement.copy(triggerIntervalIncludeLaunch = it))
+                    }
+                )
+            }
+
+            WtaSectionDivider()
+
+            Text(
+                Strings.displayFrequency,
+                style = MaterialTheme.typography.labelLarge
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                PremiumFilterChip(
+                    selected = announcement.showOnce,
+                    onClick = { onAnnouncementChange(announcement.copy(showOnce = true)) },
+                    label = { Text(Strings.showOnce) },
+                    leadingIcon = if (announcement.showOnce) {
+                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
+                    } else null
+                )
+                PremiumFilterChip(
+                    selected = !announcement.showOnce,
+                    onClick = { onAnnouncementChange(announcement.copy(showOnce = false)) },
+                    label = { Text(Strings.everyLaunch) },
+                    leadingIcon = if (!announcement.showOnce) {
+                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
+                    } else null
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AnnouncementAdvancedSection(
+    announcement: Announcement,
+    onAnnouncementChange: (Announcement) -> Unit
+) {
+    var expanded by rememberSaveable { mutableStateOf(false) }
+
+    WtaSection(
+        title = Strings.announcementAdvancedOptions,
+        headerStyle = WtaSectionHeaderStyle.Quiet,
+        collapsible = true,
+        initiallyExpanded = false,
+        expanded = expanded,
+        onExpandedChange = { expanded = it }
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            WtaToggleRow(
+                title = Strings.announcementRequireConfirmLabel,
+                subtitle = Strings.announcementRequireConfirmHint,
+                icon = Icons.Outlined.TaskAlt,
+                checked = announcement.requireConfirmation,
+                onCheckedChange = {
+                    onAnnouncementChange(announcement.copy(requireConfirmation = it))
+                }
+            )
+
+            WtaToggleRow(
+                title = Strings.announcementAllowNeverShowLabel,
+                subtitle = Strings.announcementAllowNeverShowHint,
+                icon = Icons.Outlined.VisibilityOff,
+                checked = announcement.allowNeverShow,
+                onCheckedChange = {
+                    onAnnouncementChange(announcement.copy(allowNeverShow = it))
+                }
+            )
         }
     }
 }

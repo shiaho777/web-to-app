@@ -407,9 +407,7 @@ fun AnnouncementDialog(
     com.webtoapp.ui.components.announcement.AnnouncementDialog(
         config = com.webtoapp.ui.components.announcement.AnnouncementConfig(
             announcement = announcement,
-            template = announcement.template.toUiTemplate(),
-            showEmoji = announcement.showEmoji,
-            animationEnabled = announcement.animationEnabled
+            template = announcement.template.toUiTemplate()
         ),
         onDismiss = onDismiss,
         onLinkClick = { url -> onLinkClick(url) }

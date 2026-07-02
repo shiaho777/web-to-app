@@ -5,14 +5,12 @@ import android.net.Uri
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.webtoapp.data.converter.Converters
 import com.webtoapp.data.database.AppDatabase
 import com.webtoapp.data.model.AppCategory
 import com.webtoapp.data.model.WebApp
-import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.data.repository.WebAppRepository
 import com.webtoapp.core.stats.AppUsageStats
 import com.webtoapp.util.threadLocalCompat
@@ -113,9 +111,7 @@ class DataBackupManager(private val context: Context) {
         }
 
         private val gson: Gson by lazy {
-            GsonBuilder()
-                .setPrettyPrinting()
-                .create()
+            Converters.gson
         }
     }
 
@@ -453,39 +449,11 @@ class DataBackupManager(private val context: Context) {
     }
 
     private fun parseWebAppWithDefaults(appObject: JsonObject): WebApp {
-        val app = gson.fromJson(appObject, WebApp::class.java)
-        val mergedWebViewConfig = parseWebViewConfigWithDefaults(appObject.get("webViewConfig"))
-        return app.copy(webViewConfig = mergedWebViewConfig)
-    }
-
-    private fun parseWebViewConfigWithDefaults(rawValue: JsonElement?): WebViewConfig {
-        val defaults = gson.toJsonTree(WebViewConfig())
-        val merged = mergeMissingDefaults(defaults, rawValue)
+        val defaults = gson.toJsonTree(WebApp(name = "", url = ""))
+        val merged = Converters.mergeMissingDefaults(defaults, appObject)
         return runCatching {
-            gson.fromJson(merged, WebViewConfig::class.java)
-        }.getOrDefault(WebViewConfig())
-    }
-
-    private fun mergeMissingDefaults(defaults: JsonElement, current: JsonElement?): JsonElement {
-        if (!defaults.isJsonObject) {
-            return current?.deepCopy() ?: defaults.deepCopy()
-        }
-
-        val merged = JsonObject()
-        val currentObj = if (current != null && current.isJsonObject) current.asJsonObject else JsonObject()
-        currentObj.entrySet().forEach { (key, value) ->
-            merged.add(key, value)
-        }
-
-        defaults.asJsonObject.entrySet().forEach { (key, defaultValue) ->
-            val currentValue = if (merged.has(key)) merged.get(key) else null
-            if (currentValue == null || currentValue.isJsonNull) {
-                merged.add(key, defaultValue.deepCopy())
-            } else {
-                merged.add(key, mergeMissingDefaults(defaultValue, currentValue))
-            }
-        }
-        return merged
+            gson.fromJson(merged, WebApp::class.java)
+        }.getOrNull() ?: throw com.google.gson.JsonParseException("Failed to parse WebApp with defaults")
     }
 
     private fun restoreExtensionFiles(modulesJsonBytes: ByteArray?, builtInStatesJsonBytes: ByteArray?) {

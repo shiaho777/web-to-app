@@ -6483,32 +6483,6 @@ object Strings {
         AppLanguage.KOREAN -> "Every Launch"
     }
 
-    val showEmoji: String get() = when (lang) {
-        AppLanguage.CHINESE -> "显示表情"
-        AppLanguage.ENGLISH -> "Show Emoji"
-        AppLanguage.ARABIC -> "عرض الرموز التعبيرية"
-        AppLanguage.PORTUGUESE -> "Show Emoji"
-        AppLanguage.SPANISH -> "Show Emoji"
-        AppLanguage.FRENCH -> "Show Emoji"
-        AppLanguage.GERMAN -> "Show Emoji"
-        AppLanguage.RUSSIAN -> "Show Emoji"
-        AppLanguage.JAPANESE -> "Show Emoji"
-        AppLanguage.KOREAN -> "Show Emoji"
-    }
-
-    val enableAnimation: String get() = when (lang) {
-        AppLanguage.CHINESE -> "启用动画"
-        AppLanguage.ENGLISH -> "Enable Animation"
-        AppLanguage.ARABIC -> "تفعيل الرسوم المتحركة"
-        AppLanguage.PORTUGUESE -> "Enable Animation"
-        AppLanguage.SPANISH -> "Enable Animation"
-        AppLanguage.FRENCH -> "Enable Animation"
-        AppLanguage.GERMAN -> "Enable Animation"
-        AppLanguage.RUSSIAN -> "Enable Animation"
-        AppLanguage.JAPANESE -> "Enable Animation"
-        AppLanguage.KOREAN -> "Enable Animation"
-    }
-
     val announcementTriggerSettings: String get() = when (lang) {
         AppLanguage.CHINESE -> "触发机制"
         AppLanguage.ENGLISH -> "Trigger Settings"
@@ -6689,32 +6663,6 @@ object Strings {
         AppLanguage.RUSSIAN -> "Allow users to permanently dismiss this announcement"
         AppLanguage.JAPANESE -> "Allow users to permanently dismiss this announcement"
         AppLanguage.KOREAN -> "Allow users to permanently dismiss this announcement"
-    }
-
-    val announcementEmojiHint: String get() = when (lang) {
-        AppLanguage.CHINESE -> "在公告弹窗中显示装饰性表情图标"
-        AppLanguage.ENGLISH -> "Show decorative emoji icons in announcement popup"
-        AppLanguage.ARABIC -> "عرض رموز تعبيرية زخرفية في الإعلان المنبثق"
-        AppLanguage.PORTUGUESE -> "Show decorative emoji icons in announcement popup"
-        AppLanguage.SPANISH -> "Show decorative emoji icons in announcement popup"
-        AppLanguage.FRENCH -> "Show decorative emoji icons in announcement popup"
-        AppLanguage.GERMAN -> "Show decorative emoji icons in announcement popup"
-        AppLanguage.RUSSIAN -> "Show decorative emoji icons in announcement popup"
-        AppLanguage.JAPANESE -> "Show decorative emoji icons in announcement popup"
-        AppLanguage.KOREAN -> "Show decorative emoji icons in announcement popup"
-    }
-
-    val announcementAnimationHint: String get() = when (lang) {
-        AppLanguage.CHINESE -> "公告弹出时播放入场动画效果"
-        AppLanguage.ENGLISH -> "Play entrance animation when announcement appears"
-        AppLanguage.ARABIC -> "تشغيل رسوم متحركة عند ظهور الإعلان"
-        AppLanguage.PORTUGUESE -> "Play entrance animation when announcement appears"
-        AppLanguage.SPANISH -> "Play entrance animation when announcement appears"
-        AppLanguage.FRENCH -> "Play entrance animation when announcement appears"
-        AppLanguage.GERMAN -> "Play entrance animation when announcement appears"
-        AppLanguage.RUSSIAN -> "Play entrance animation when announcement appears"
-        AppLanguage.JAPANESE -> "Play entrance animation when announcement appears"
-        AppLanguage.KOREAN -> "Play entrance animation when announcement appears"
     }
 
     val adBlocking: String get() = when (lang) {
@@ -49954,6 +49902,30 @@ object Strings {
         AppLanguage.RUSSIAN -> "Anti Packet Capture"
         AppLanguage.JAPANESE -> "Anti Packet Capture"
         AppLanguage.KOREAN -> "Anti Packet Capture"
+    }
+
+    val vpnBlockTitle: String get() = when (lang) {
+        AppLanguage.CHINESE -> "检测到抓包工具"
+        AppLanguage.ENGLISH -> "Capture Tool Detected"
+        AppLanguage.ARABIC -> "تم اكتشاف أداة التقاط"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH,
+        AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "Capture Tool Detected"
+    }
+
+    val vpnBlockMessage: String get() = when (lang) {
+        AppLanguage.CHINESE -> "检测到 VPN 或抓包工具正在运行。请关闭 HttpCanary、ADB 等抓包/VPN 应用后重试。"
+        AppLanguage.ENGLISH -> "A VPN or packet-capture tool is active. Please disable HttpCanary, ADB capture, or similar tools and retry."
+        AppLanguage.ARABIC -> "أداة VPN أو التقاط حزم نشطة. يرجى تعطيل HttpCanary وأدوات مشابهة وإعادة المحاولة."
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH,
+        AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "A VPN or packet-capture tool is active. Please disable HttpCanary, ADB capture, or similar tools and retry."
+    }
+
+    val vpnBlockRetry: String get() = when (lang) {
+        AppLanguage.CHINESE -> "我已关闭，重试"
+        AppLanguage.ENGLISH -> "I've disabled it, retry"
+        AppLanguage.ARABIC -> "لقد عطلتها، أعد المحاولة"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH,
+        AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "I've disabled it, retry"
     }
 
     val antiCaptureDesc: String get() = when (lang) {

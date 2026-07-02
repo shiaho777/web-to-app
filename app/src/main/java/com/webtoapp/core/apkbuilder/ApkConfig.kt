@@ -76,8 +76,6 @@ data class ApkConfig(
     val announcementLink: String get() = announcement.link
     val announcementLinkText: String get() = announcement.linkText
     val announcementTemplate: String get() = announcement.template
-    val announcementShowEmoji: Boolean get() = announcement.showEmoji
-    val announcementAnimationEnabled: Boolean get() = announcement.animationEnabled
     val announcementShowOnce: Boolean get() = announcement.showOnce
     val announcementRequireConfirmation: Boolean get() = announcement.requireConfirmation
     val announcementAllowNeverShow: Boolean get() = announcement.allowNeverShow
@@ -428,8 +426,6 @@ data class AnnouncementBlock(
     val link: String = "",
     val linkText: String = "",
     val template: String = "MINIMAL",
-    val showEmoji: Boolean = true,
-    val animationEnabled: Boolean = true,
     val showOnce: Boolean = true,
     val requireConfirmation: Boolean = false,
     val allowNeverShow: Boolean = false,

@@ -107,8 +107,6 @@ fun ShellAnnouncementDialog(
         } catch (e: Exception) {
             com.webtoapp.data.model.AnnouncementTemplateType.MINIMAL
         },
-        showEmoji = config.announcementShowEmoji,
-        animationEnabled = config.announcementAnimationEnabled,
         requireConfirmation = config.announcementRequireConfirmation,
         allowNeverShow = config.announcementAllowNeverShow
     )
@@ -116,9 +114,7 @@ fun ShellAnnouncementDialog(
     com.webtoapp.ui.components.announcement.AnnouncementDialog(
         config = com.webtoapp.ui.components.announcement.AnnouncementConfig(
             announcement = shellAnnouncement,
-            template = shellAnnouncement.template.toUiTemplate(),
-            showEmoji = shellAnnouncement.showEmoji,
-            animationEnabled = shellAnnouncement.animationEnabled
+            template = shellAnnouncement.template.toUiTemplate()
         ),
         onDismiss = {
             onDismiss()

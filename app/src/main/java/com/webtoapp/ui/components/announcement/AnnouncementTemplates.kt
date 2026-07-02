@@ -86,9 +86,7 @@ enum class AnnouncementTemplate(
 data class AnnouncementConfig(
     val announcement: Announcement,
     val template: AnnouncementTemplate = AnnouncementTemplate.MINIMAL,
-    val primaryColor: Color = Color(0xFF4F46E5),
-    val showEmoji: Boolean = true,
-    val animationEnabled: Boolean = true
+    val primaryColor: Color = Color(0xFF4F46E5)
 )
 
 private val announcementStyleTemplates = listOf(
@@ -491,18 +489,16 @@ private fun SimpleDialog(
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (config.showEmoji) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(styleBadgeColor(style)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Outlined.CropSquare, null, tint = styleAccentColor(style), modifier = Modifier.size(18.dp))
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(styleBadgeColor(style)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Outlined.CropSquare, null, tint = styleAccentColor(style), modifier = Modifier.size(18.dp))
                 }
+                Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = config.announcement.title.ifBlank { Strings.popupAnnouncement },
@@ -550,18 +546,16 @@ private fun AccentDialog(
                     .padding(20.dp)
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (config.showEmoji) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(Color.White.copy(alpha = 0.9f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Outlined.Gradient, null, tint = styleAccentColor(style), modifier = Modifier.size(18.dp))
-                        }
-                        Spacer(modifier = Modifier.width(12.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Color.White.copy(alpha = 0.9f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Outlined.Gradient, null, tint = styleAccentColor(style), modifier = Modifier.size(18.dp))
                     }
+                    Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = config.announcement.title.ifBlank { Strings.popupAnnouncement },
@@ -615,18 +609,16 @@ private fun DarkDialog(
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (config.showEmoji) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(Color.White.copy(alpha = 0.06f)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(Icons.Filled.DarkMode, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color.White.copy(alpha = 0.06f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Filled.DarkMode, null, tint = Color.White, modifier = Modifier.size(18.dp))
                 }
+                Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = config.announcement.title.ifBlank { Strings.popupAnnouncement },

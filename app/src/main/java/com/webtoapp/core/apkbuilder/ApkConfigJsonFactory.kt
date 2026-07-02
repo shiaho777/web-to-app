@@ -51,8 +51,6 @@ internal object ApkConfigJsonFactory {
         "announcementLink" to announcement.link,
         "announcementLinkText" to announcement.linkText,
         "announcementTemplate" to announcement.template,
-        "announcementShowEmoji" to announcement.showEmoji,
-        "announcementAnimationEnabled" to announcement.animationEnabled,
         "announcementShowOnce" to announcement.showOnce,
         "announcementRequireConfirmation" to announcement.requireConfirmation,
         "announcementAllowNeverShow" to announcement.allowNeverShow,

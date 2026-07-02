@@ -145,8 +145,6 @@ data class Announcement(
     val enabled: Boolean = true,
     val version: Int = 1,
     val template: AnnouncementTemplateType = AnnouncementTemplateType.XIAOHONGSHU,
-    val showEmoji: Boolean = true,
-    val animationEnabled: Boolean = true,
     val requireConfirmation: Boolean = false,
     val allowNeverShow: Boolean = true,
     val triggerOnLaunch: Boolean = true,
