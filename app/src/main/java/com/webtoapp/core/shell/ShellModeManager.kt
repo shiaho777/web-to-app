@@ -1314,7 +1314,7 @@ data class WebViewShellConfig(
     val privateNetworkScope: String = "LOCAL_ONLY",
 
     @SerializedName("enableCorsBypass")
-    val enableCorsBypass: Boolean = false,
+    val enableCorsBypass: Boolean = true,
 
     @SerializedName("allowMixedContent")
     val allowMixedContent: Boolean = false,

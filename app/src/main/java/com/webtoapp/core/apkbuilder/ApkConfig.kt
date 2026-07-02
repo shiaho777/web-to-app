@@ -551,7 +551,7 @@ data class WebViewBehaviorBlock(
     val enableCookiePersistence: Boolean = true,
     val enablePrivateNetworkBridge: Boolean = false,
     val privateNetworkScope: String = "LOCAL_ONLY",
-    val enableCorsBypass: Boolean = false,
+    val enableCorsBypass: Boolean = true,
     val allowMixedContent: Boolean = false,
     val mixedContentMode: String = "COMPATIBILITY",
     val enableBlobDownloadInterception: Boolean = true,
