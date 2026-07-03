@@ -489,8 +489,11 @@ data class SavedModel(
     val capabilities: List<ModelCapability>,
     val featureMappings: Map<ModelCapability, Set<AiFeature>> = emptyMap(),
     val isDefault: Boolean = false,
+    val userContextLength: Int? = null,
     val createdAt: Long = System.currentTimeMillis()
 ) {
+
+    val effectiveContextLength: Int get() = userContextLength ?: model.contextLength
 
     fun getSupportedFeatures(): Set<AiFeature> {
         val features = mutableSetOf<AiFeature>()

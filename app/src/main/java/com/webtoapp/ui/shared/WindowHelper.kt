@@ -226,18 +226,22 @@ object WindowHelper {
         when (mode) {
             KeyboardAdjustMode.RESIZE -> {
 
-                @Suppress("DEPRECATION")
-                activity.window.setSoftInputMode(
-                    WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
-                        WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
-                )
-
                 if (decorFitsSystemWindows) {
+                    @Suppress("DEPRECATION")
+                    activity.window.setSoftInputMode(
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE or
+                            WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
+                    )
                     clearImePadding(contentView)
                     AppLogger.d(tag, "键盘模式: RESIZE (系统调整)")
                 } else {
+                    @Suppress("DEPRECATION")
+                    activity.window.setSoftInputMode(
+                        WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING or
+                            WindowManager.LayoutParams.SOFT_INPUT_STATE_UNSPECIFIED
+                    )
                     installManualImePadding(activity, contentView)
-                    AppLogger.d(tag, "键盘模式: RESIZE (边到边 + 系统调整)")
+                    AppLogger.d(tag, "键盘模式: RESIZE (边到边 + 手动动画)")
                 }
             }
 
@@ -258,6 +262,7 @@ object WindowHelper {
 
     private fun installManualImePadding(activity: Activity, contentView: View) {
         var imeAnimating = false
+        var targetImeBottom = 0
 
         fun applyImeBottomPadding(bottom: Int) {
             if (contentView.paddingBottom != bottom) {
@@ -296,12 +301,11 @@ object WindowHelper {
                     val rootInsets = ViewCompat.getRootWindowInsets(contentView)
                     val imeVisible = rootInsets?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
                     val imeBottom = rootInsets?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
-                    applyImeBottomPadding(if (imeVisible) imeBottom else 0)
+                    targetImeBottom = if (imeVisible) imeBottom else 0
+                    applyImeBottomPadding(targetImeBottom)
 
                     if (imeVisible) {
-                        contentView.postDelayed({
-                            checkAndScrollWebViewToFocusedInput(activity)
-                        }, 100)
+                        checkAndScrollWebViewToFocusedInput(activity)
                     }
                 }
             }
@@ -309,9 +313,9 @@ object WindowHelper {
 
         ViewCompat.setOnApplyWindowInsetsListener(contentView) { _, windowInsets ->
             if (!imeAnimating) {
-                val imeVisible = windowInsets.isVisible(WindowInsetsCompat.Type.ime())
                 val imeBottom = windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-                applyImeBottomPadding(if (imeVisible) imeBottom else 0)
+                targetImeBottom = imeBottom
+                applyImeBottomPadding(imeBottom)
             }
             windowInsets
         }

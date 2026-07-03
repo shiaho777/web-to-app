@@ -18639,6 +18639,28 @@ object Strings {
         AppLanguage.JAPANESE -> "Compact skipped: %s"
         AppLanguage.KOREAN -> "Compact skipped: %s"
     }
+
+    val aiCodingContextCapacity: String get() = when (lang) {
+        AppLanguage.CHINESE -> "上下文容量"
+        AppLanguage.ENGLISH -> "Context Capacity"
+        AppLanguage.ARABIC -> "سعة السياق"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH, AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "Context Capacity"
+    }
+
+    val aiCodingContextCapacityHint: String get() = when (lang) {
+        AppLanguage.CHINESE -> "模型支持的最大上下文 token 数（留空使用默认值 %d）"
+        AppLanguage.ENGLISH -> "Max context tokens the model supports (leave empty for default %d)"
+        AppLanguage.ARABIC -> "الحد الأقصى لرموز السياق التي يدعمها النموذج (اتركه فارغًا للافتراضي %d)"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH, AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "Max context tokens the model supports (leave empty for default %d)"
+    }
+
+    val aiCodingCompactNow: String get() = when (lang) {
+        AppLanguage.CHINESE -> "压缩上下文"
+        AppLanguage.ENGLISH -> "Compact Context"
+        AppLanguage.ARABIC -> "ضغط السياق"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH, AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "Compact Context"
+    }
+
     val aiCodingPermissionRequired: String get() = when (lang) {
         AppLanguage.CHINESE -> "AI 想运行工具"
         AppLanguage.ENGLISH -> "AI wants to run a tool"
@@ -18939,6 +18961,14 @@ object Strings {
         AppLanguage.JAPANESE -> "This turn hit the model's max output length, so the content may be truncated. Ask the AI to continue to finish the rest."
         AppLanguage.KOREAN -> "This turn hit the model's max output length, so the content may be truncated. Ask the AI to continue to finish the rest."
     }
+
+    val aiCodingContinuing: String get() = when (lang) {
+        AppLanguage.CHINESE -> "输出达到长度限制，正在自动续写…"
+        AppLanguage.ENGLISH -> "Output hit length limit, auto-continuing…"
+        AppLanguage.ARABIC -> "بلغ الإخراج حد الطول، يتابع تلقائيًا…"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH, AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE, AppLanguage.KOREAN -> "Output hit length limit, auto-continuing…"
+    }
+
     val aiCodingFileSaved: String get() = when (lang) {
         AppLanguage.CHINESE -> "已保存 %s"
         AppLanguage.ENGLISH -> "Saved %s"

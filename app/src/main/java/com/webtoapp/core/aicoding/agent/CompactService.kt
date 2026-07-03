@@ -21,11 +21,14 @@ class CompactService(
 
     private val minRecentTokens: Int = 8_000,
 
-    private val autoCompactThresholdTokens: Int = 80_000
+    private val autoCompactThresholdFraction: Float = 0.75f
 ) {
 
-    fun shouldCompact(messages: List<AgentMessage>): Boolean =
-        estimateTokens(messages) >= autoCompactThresholdTokens
+    fun shouldCompact(messages: List<AgentMessage>, contextLength: Int = 128_000): Boolean =
+        estimateTokens(messages) >= (contextLength * autoCompactThresholdFraction).toInt()
+
+    fun estimateTokens(messages: List<AgentMessage>): Int =
+        messages.sumOf { estimateTokens(it) }
 
     suspend fun compact(
         messages: List<AgentMessage>,
@@ -155,9 +158,6 @@ class CompactService(
         }
         return sb.toString().trim()
     }
-
-    private fun estimateTokens(messages: List<AgentMessage>): Int =
-        messages.sumOf { estimateTokens(it) }
 
     private fun estimateTokens(m: AgentMessage): Int {
         val charBudget = m.content.length +

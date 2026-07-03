@@ -34,8 +34,9 @@ object NetworkModule {
     val streamingClient: OkHttpClient by lazy {
         defaultClient.newBuilder()
             .connectTimeout(90, TimeUnit.SECONDS)
-            .readTimeout(300, TimeUnit.SECONDS)
+            .readTimeout(600, TimeUnit.SECONDS)
             .writeTimeout(90, TimeUnit.SECONDS)
+            .pingInterval(30, TimeUnit.SECONDS)
             .build()
     }
 

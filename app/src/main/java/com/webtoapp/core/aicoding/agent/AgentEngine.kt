@@ -36,7 +36,7 @@ class AgentEngine(
         val registry: ToolRegistry,
         val temperature: Float = 0.7f,
         val maxTurns: Int = 8,
-        val maxTokens: Int = 8192
+        val maxTokens: Int = 16384
     )
 
     fun run(input: Input): Flow<AgentEvent> = channelFlow {
@@ -56,6 +56,7 @@ class AgentEngine(
 
         var totalToolCalls = 0
         val accText = StringBuilder()
+        val maxContinuations = 3
 
         try {
             for (turn in 1..input.maxTurns) {
@@ -67,57 +68,81 @@ class AgentEngine(
                 val pending = LinkedHashMap<String, Pair<String, StringBuilder>>()
                 var finishReason = FinishReason.STOP
                 var hardError: String? = null
+                var continuationCount = 0
 
-                gateway.chatStream(
-                    ChatRequest(
-                        apiKey = input.toolContext.textApiKey,
-                        model = input.toolContext.textModel.model,
-                        messages = messages.toList(),
-                        tools = declarations,
-                        temperature = input.temperature,
-                        maxTokens = input.maxTokens,
-                        useTools = true
-                    )
-                ).collect { ev ->
-                    when (ev) {
-                        is LlmEvent.Started -> Unit
-                        is LlmEvent.TextDelta -> {
-                            turnText.append(ev.delta)
-                            accText.append(ev.delta)
-                            send(AgentEvent.TextDelta(ev.delta, accText.toString()))
-                        }
-                        is LlmEvent.ThinkingDelta -> {
-                            turnThinking.append(ev.delta)
-                            send(AgentEvent.ThinkingDelta(ev.delta, turnThinking.toString()))
-                        }
-                        is LlmEvent.ToolCallBegin -> {
-                            pending[ev.id] = ev.name to StringBuilder()
+                do {
+                    if (abortController.aborted) { send(AgentEvent.Aborted); return@channelFlow }
 
-                            val marker = "\u2063TC:${ev.id}\u2063"
-                            accText.append(marker)
-                            send(AgentEvent.TextDelta(marker, accText.toString()))
-                            send(AgentEvent.ToolCallStarted(ev.id, ev.name))
-                        }
-                        is LlmEvent.ToolCallArgsDelta -> {
-                            pending[ev.id]?.second?.append(ev.argsDelta)
-                            send(AgentEvent.ToolCallArgsDelta(ev.id, ev.argsDelta))
-                        }
-                        is LlmEvent.ToolCallEnd -> {
-                            val entry = pending.getOrPut(ev.id) { ev.name to StringBuilder() }
-                            if (ev.argumentsJson.length >= entry.second.length) {
-                                entry.second.clear()
-                                entry.second.append(ev.argumentsJson)
-                            }
-                        }
-                        is LlmEvent.Done -> finishReason = ev.finishReason
-                        is LlmEvent.Error -> if (!ev.recoverable) hardError = ev.message
-                                              else send(AgentEvent.Notice(ev.message))
+                    val isContinuation = continuationCount > 0
+                    val requestMessages = if (isContinuation && turnText.isNotEmpty()) {
+                        messages + LlmMessage(
+                            role = LlmMessage.Role.ASSISTANT,
+                            content = turnText.toString(),
+                            reasoningContent = turnThinking.toString().takeIf { it.isNotEmpty() }
+                        )
+                    } else {
+                        messages.toList()
                     }
-                }
+
+                    gateway.chatStream(
+                        ChatRequest(
+                            apiKey = input.toolContext.textApiKey,
+                            model = input.toolContext.textModel.model,
+                            messages = requestMessages,
+                            tools = declarations,
+                            temperature = input.temperature,
+                            maxTokens = input.maxTokens,
+                            useTools = !isContinuation
+                        )
+                    ).collect { ev ->
+                        when (ev) {
+                            is LlmEvent.Started -> Unit
+                            is LlmEvent.TextDelta -> {
+                                turnText.append(ev.delta)
+                                accText.append(ev.delta)
+                                send(AgentEvent.TextDelta(ev.delta, accText.toString()))
+                            }
+                            is LlmEvent.ThinkingDelta -> {
+                                turnThinking.append(ev.delta)
+                                send(AgentEvent.ThinkingDelta(ev.delta, turnThinking.toString()))
+                            }
+                            is LlmEvent.ToolCallBegin -> {
+                                pending[ev.id] = ev.name to StringBuilder()
+
+                                val marker = "\u2063TC:${ev.id}\u2063"
+                                accText.append(marker)
+                                send(AgentEvent.TextDelta(marker, accText.toString()))
+                                send(AgentEvent.ToolCallStarted(ev.id, ev.name))
+                            }
+                            is LlmEvent.ToolCallArgsDelta -> {
+                                pending[ev.id]?.second?.append(ev.argsDelta)
+                                send(AgentEvent.ToolCallArgsDelta(ev.id, ev.argsDelta))
+                            }
+                            is LlmEvent.ToolCallEnd -> {
+                                val entry = pending.getOrPut(ev.id) { ev.name to StringBuilder() }
+                                if (ev.argumentsJson.length >= entry.second.length) {
+                                    entry.second.clear()
+                                    entry.second.append(ev.argumentsJson)
+                                }
+                            }
+                            is LlmEvent.Done -> finishReason = ev.finishReason
+                            is LlmEvent.Error -> if (!ev.recoverable) hardError = ev.message
+                                                  else send(AgentEvent.Notice(ev.message))
+                        }
+                    }
+
+                    if (hardError != null) break
+                    if (finishReason == FinishReason.LENGTH && continuationCount < maxContinuations && turnText.isNotEmpty()) {
+                        continuationCount++
+                        send(AgentEvent.Notice(Strings.aiCodingContinuing))
+                        continue
+                    }
+                    break
+                } while (true)
 
                 if (hardError != null) { send(AgentEvent.Failed(hardError!!)); return@channelFlow }
 
-                if (finishReason == FinishReason.LENGTH) {
+                if (finishReason == FinishReason.LENGTH && continuationCount >= maxContinuations) {
                     send(AgentEvent.Notice(Strings.aiCodingOutputTruncated))
                 }
 

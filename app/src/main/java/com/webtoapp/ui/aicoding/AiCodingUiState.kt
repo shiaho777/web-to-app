@@ -81,7 +81,10 @@ data class AiCodingUiState(
     val info: String? = null,
 
     val inputTokens: Int = 0,
-    val outputTokens: Int = 0
+    val outputTokens: Int = 0,
+    val estimatedContextTokens: Int = 0,
+    val contextCapacity: Int = 0,
+    val compacting: Boolean = false
 ) {
     enum class Phase { Idle, Connecting, Streaming, AwaitingTool, AwaitingUser, Error }
     enum class DrawerTab { Sessions, Files, Skills }

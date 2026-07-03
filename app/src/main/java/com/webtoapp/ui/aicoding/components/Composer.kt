@@ -19,10 +19,12 @@ import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.DataUsage
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material.icons.outlined.SmartToy
+import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -64,7 +66,8 @@ fun Composer(
 
     onTriggerSlash: () -> Unit,
 
-    onOpenModelPicker: () -> Unit = {}
+    onOpenModelPicker: () -> Unit = {},
+    onCompactContext: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -120,7 +123,11 @@ fun Composer(
             onToggleAuto = onToggleAutoApprove,
             onTriggerSlash = onTriggerSlash,
             currentModelLabel = state.currentModelLabel,
-            onOpenModelPicker = onOpenModelPicker
+            onOpenModelPicker = onOpenModelPicker,
+            estimatedTokens = state.estimatedContextTokens,
+            contextCapacity = state.contextCapacity,
+            compacting = state.compacting,
+            onCompactContext = onCompactContext
         )
     }
 }
@@ -327,8 +334,14 @@ private fun ModeChipRow(
     onToggleAuto: () -> Unit,
     onTriggerSlash: () -> Unit,
     currentModelLabel: String,
-    onOpenModelPicker: () -> Unit
+    onOpenModelPicker: () -> Unit,
+    estimatedTokens: Int,
+    contextCapacity: Int,
+    compacting: Boolean,
+    onCompactContext: () -> Unit
 ) {
+    var showCompactMenu by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -354,6 +367,18 @@ private fun ModeChipRow(
             onClick = onTriggerSlash
         )
 
+        if (contextCapacity > 0) {
+            val usageLabel = formatTokenUsage(estimatedTokens, contextCapacity)
+            val usageRatio = if (contextCapacity > 0) estimatedTokens.toFloat() / contextCapacity else 0f
+            val usageHigh = usageRatio >= 0.75f
+            ContextChip(
+                label = usageLabel,
+                warning = usageHigh,
+                compacting = compacting,
+                onClick = { showCompactMenu = true }
+            )
+        }
+
         Spacer(Modifier.weight(1f))
 
         ModelChip(
@@ -361,6 +386,28 @@ private fun ModeChipRow(
             onClick = onOpenModelPicker
         )
     }
+
+    if (showCompactMenu) {
+        androidx.compose.material3.DropdownMenu(
+            expanded = true,
+            onDismissRequest = { showCompactMenu = false }
+        ) {
+            androidx.compose.material3.DropdownMenuItem(
+                text = { Text(Strings.aiCodingCompactNow) },
+                onClick = {
+                    showCompactMenu = false
+                    onCompactContext()
+                },
+                enabled = !compacting
+            )
+        }
+    }
+}
+
+private fun formatTokenUsage(used: Int, capacity: Int): String {
+    val usedK = if (used >= 1000) "${used / 1000}K" else used.toString()
+    val capK = if (capacity >= 1000) "${capacity / 1000}K" else capacity.toString()
+    return "$usedK / $capK"
 }
 
 @Composable
@@ -392,6 +439,49 @@ private fun ModelChip(
                 maxLines = 1,
                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.widthIn(max = 140.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ContextChip(
+    label: String,
+    warning: Boolean,
+    compacting: Boolean,
+    onClick: () -> Unit
+) {
+    com.webtoapp.ui.design.WtaCard(
+        onClick = onClick,
+        tone = com.webtoapp.ui.design.WtaCardTone.Surface,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            horizontal = WtaSpacing.Small,
+            vertical = WtaSpacing.Tiny + 2.dp
+        )
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (compacting) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.size(12.dp),
+                    strokeWidth = 1.5.dp
+                )
+            } else {
+                Icon(
+                    imageVector = if (warning) Icons.Outlined.Warning else Icons.Outlined.DataUsage,
+                    contentDescription = null,
+                    tint = if (warning) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(12.dp)
+                )
+            }
+            Spacer(Modifier.width(WtaSpacing.Tiny))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                color = if (warning) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
             )
         }
     }

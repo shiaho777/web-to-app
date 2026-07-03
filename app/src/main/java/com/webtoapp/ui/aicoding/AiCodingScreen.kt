@@ -332,7 +332,8 @@ fun AiCodingScreen(
 
                     onTriggerSlash = { vm.setComposerText("/") },
 
-                    onOpenModelPicker = vm::openModelPicker
+                    onOpenModelPicker = vm::openModelPicker,
+                    onCompactContext = vm::compactNow
                 )
             }
         }

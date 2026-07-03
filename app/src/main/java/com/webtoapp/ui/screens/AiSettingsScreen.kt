@@ -1210,6 +1210,9 @@ private fun EditModelDialog(
     var selectedCategory by remember {
         mutableStateOf(model.capabilities.firstOrNull() ?: ModelCapability.TEXT)
     }
+    var contextLengthText by remember {
+        mutableStateOf(model.userContextLength?.toString() ?: "")
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -1249,6 +1252,27 @@ private fun EditModelDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
+                    OutlinedTextField(
+                        value = contextLengthText,
+                        onValueChange = { input ->
+                            contextLengthText = input.filter { it.isDigit() }.take(7)
+                        },
+                        label = { Text(Strings.aiCodingContextCapacity) },
+                        placeholder = { Text(model.model.contextLength.toString()) },
+                        supportingText = {
+                            Text(
+                                Strings.aiCodingContextCapacityHint.format(model.model.contextLength),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
                     Text(Strings.modelCategory, style = MaterialTheme.typography.labelMedium)
 
                     FlowRow(
@@ -1284,7 +1308,8 @@ private fun EditModelDialog(
                             onConfirm(model.copy(
                                 alias = alias.ifBlank { null },
                                 capabilities = listOf(selectedCategory),
-                                featureMappings = defaultMappings
+                                featureMappings = defaultMappings,
+                                userContextLength = contextLengthText.ifBlank { null }?.toIntOrNull()
                             ))
                         }
                     ) {

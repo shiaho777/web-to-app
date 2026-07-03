@@ -691,7 +691,7 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
         _ui.update { it.copy(pendingChoice = null) }
     }
 
-    private fun compactNow() {
+    fun compactNow() {
         val session = _ui.value.currentSession ?: return
         val service = service ?: run {
             _ui.update { it.copy(error = Strings.aiCodingServiceNotConnected) }
@@ -708,21 +708,24 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
                 return@launch
             }
 
-            _ui.update { it.copy(info = Strings.aiCodingCompacting) }
+            _ui.update { it.copy(compacting = true, info = Strings.aiCodingCompacting) }
             val svc = compactService ?: CompactService(gateway).also { compactService = it }
             val result = svc.compact(session.messages, textModel, textKey)
             if (result.didCompact) {
                 sessionStore.replaceMessages(session.id, result.messages)
                 _ui.update {
                     it.copy(
+                        compacting = false,
                         info = Strings.aiCodingCompactedManual.format(
                             session.messages.size,
                             result.messages.size
-                        )
+                        ),
+                        estimatedContextTokens = svc.estimateTokens(result.messages),
+                        contextCapacity = textModel.effectiveContextLength
                     )
                 }
             } else {
-                _ui.update { it.copy(info = Strings.aiCodingCompactSkipped.format(result.reason)) }
+                _ui.update { it.copy(compacting = false, info = Strings.aiCodingCompactSkipped.format(result.reason)) }
             }
         }
     }
@@ -884,7 +887,8 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
         val imageKey = imageModel?.let { m -> keys.firstOrNull { it.id == m.apiKeyId } }
 
         val compactSvc = compactService ?: CompactService(service!!.gateway).also { compactService = it }
-        val workingSession = if (compactSvc.shouldCompact(session.messages)) {
+        val contextLength = textModel.effectiveContextLength
+        val workingSession = if (compactSvc.shouldCompact(session.messages, contextLength)) {
             val result = compactSvc.compact(session.messages, textModel, textKey)
             if (result.didCompact) {
                 sessionStore.replaceMessages(session.id, result.messages)
@@ -895,6 +899,8 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
 
         streamingSessionId = workingSession.id
         streamText.clear(); streamThinking.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
+        val compactSvc2 = compactService ?: CompactService(service!!.gateway).also { compactService = it }
+        val estTokens = compactSvc2.estimateTokens(workingSession.messages)
         _ui.update {
             it.copy(
                 phase = AiCodingUiState.Phase.Connecting,
@@ -905,7 +911,9 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
                 pendingToolCalls = emptyList(),
                 currentActivity = null,
                 error = null,
-                info = null
+                info = null,
+                estimatedContextTokens = estTokens,
+                contextCapacity = textModel.effectiveContextLength
             )
         }
 
