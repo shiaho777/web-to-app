@@ -1459,6 +1459,8 @@ class WebViewManager(
 
             isScrollbarFadingEnabled = true
             scrollBarStyle = WebView.SCROLLBARS_INSIDE_OVERLAY
+            isVerticalScrollBarEnabled = false
+            isHorizontalScrollBarEnabled = false
 
             com.webtoapp.core.perf.NativePerfEngine.optimizeWebViewSettings(this)
 
@@ -1837,6 +1839,12 @@ class WebViewManager(
                     val isOAuthPageSubResource = !isOAuthRequest && isHttpOrHttps &&
                         mainFrameUrl != null && isOAuthServiceRequest(mainFrameUrl)
 
+                }
+
+                val antiCapture = currentConfig?.antiCapture == true
+                if (antiCapture && isHttpOrHttps) {
+                    val obfuscated = refetchAndObfuscate(url, requestHeaders ?: emptyMap())
+                    if (obfuscated != null) return obfuscated
                 }
 
                 return super.shouldInterceptRequest(view, request)
@@ -2856,6 +2864,72 @@ class WebViewManager(
             WebResourceResponse(mime, charset, status, reason, respHeaders, bodyStream)
         } catch (e: Exception) {
             AppLogger.w("WebViewManager", "modifyHeaders refetch failed: $url", e)
+            null
+        }
+    }
+
+    private fun refetchAndObfuscate(
+        url: String,
+        requestHeaders: Map<String, String>
+    ): WebResourceResponse? {
+        return try {
+            val connection = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 20_000
+            connection.readTimeout = 30_000
+            connection.instanceFollowRedirects = true
+
+            requestHeaders.forEach { (k, v) ->
+                val lk = k.lowercase()
+                if (lk !in SKIP_HEADERS && lk != "accept-encoding") {
+                    try { connection.setRequestProperty(k, v) } catch (_: Exception) {}
+                }
+            }
+
+            val cookies = CookieManager.getInstance().getCookie(url)
+            if (!cookies.isNullOrEmpty()) connection.setRequestProperty("Cookie", cookies)
+
+            val status = connection.responseCode
+            if (status <= 0) {
+                connection.disconnect()
+                return null
+            }
+            val reason = connection.responseMessage?.takeIf { it.isNotBlank() } ?: "OK"
+
+            val respHeaders = LinkedHashMap<String, String>()
+            connection.headerFields?.forEach { (key, values) ->
+                if (key == null) return@forEach
+                if (key.equals("Set-Cookie", ignoreCase = true)) return@forEach
+                respHeaders[key] = values.joinToString(", ")
+            }
+
+            connection.headerFields?.get("Set-Cookie")?.forEach { c ->
+                try { CookieManager.getInstance().setCookie(url, c) } catch (_: Exception) {}
+            }
+
+            val contentType = connection.contentType ?: "application/octet-stream"
+            val mime = contentType.substringBefore(";").trim().ifEmpty { "application/octet-stream" }
+            val charset = Regex("charset=([^;]+)", RegexOption.IGNORE_CASE)
+                .find(contentType)?.groupValues?.get(1)?.trim()?.ifEmpty { null } ?: "utf-8"
+            val encoding = connection.contentEncoding
+
+            val rawStream = (try {
+                if (status >= 400) connection.errorStream else connection.inputStream
+            } catch (_: Exception) { null }) ?: ByteArrayInputStream(ByteArray(0))
+
+            CookieManager.getInstance().flush()
+
+            if (!ContentObfuscator.shouldObfuscate(mime)) {
+                return WebResourceResponse(mime, charset, status, reason, respHeaders, rawStream)
+            }
+
+            val obfuscatedStream = ContentObfuscator.obfuscate(rawStream, mime, encoding)
+            respHeaders.remove("Content-Encoding")
+            respHeaders["Content-Encoding"] = "identity"
+            AppLogger.d("WebViewManager", "Content obfuscated: $url (mime=$mime)")
+            WebResourceResponse(mime, charset, status, reason, respHeaders, obfuscatedStream)
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "refetchAndObfuscate failed: $url", e)
             null
         }
     }
