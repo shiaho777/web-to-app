@@ -265,22 +265,6 @@ class WebViewManager(
                     document.querySelector('canvas')
                 ];
 
-                var body=document.body;
-                if(body){
-                    var bodyW=body.scrollWidth;
-                    var bodyH=body.scrollHeight;
-                    if(bodyW>vw*1.1){
-                        var scale=Math.min(vw/bodyW,vh/bodyH);
-                        body.style.transformOrigin='0 0';
-                        body.style.transform='scale('+scale+')';
-                        body.style.overflow='hidden';
-                        body.style.width=(bodyW)+'px';
-                        body.style.height=(bodyH)+'px';
-                        document.documentElement.style.overflow='hidden';
-                        return;
-                    }
-                }
-
                 for(var i=0;i<targets.length;i++){
                     var el=targets[i];
                     if(!el)continue;
