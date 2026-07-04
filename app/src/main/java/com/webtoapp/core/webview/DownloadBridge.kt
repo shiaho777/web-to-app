@@ -85,30 +85,17 @@ class DownloadBridge(
 
             return """
             (function() {
-                // 避免重复注入
                 if (window._downloadBridgeInjected) return;
                 window._downloadBridgeInjected = true;
 
                 console.log('[DownloadBridge] Starting injection...');
-
-                // Save原始方法
                 const originalCreateElement = document.createElement.bind(document);
-
-                // Blob URL 缓存 hook（与 document-start 轻量 hook 共用同一实现与 __wtaBlobMap）
                 ${getBlobCacheHookScript()}
-
-                // Blob URL 映射表 - 暴露到 window 以便原生回调注入的 JS 也能查到
-                // 页面内的 JS 常在 a.click() 之后立刻调用 URL.revokeObjectURL，
-                // 等原生 onDownloadStart 回调再注入 fetch(blobUrl) 时 URL 早已失效，
-                // 所以必须依赖这份缓存直接拿 Blob 对象（Blob 有引用就一直活着，不受 URL 撤销影响）
                 const blobUrlMap = window.__wtaBlobMap || (window.__wtaBlobMap = new Map());
-
-                // 拦截 document.createElement，监控 <a> 标签的创建和点击
                 document.createElement = function(tagName) {
                     const element = originalCreateElement(tagName);
 
                     if (tagName.toLowerCase() === 'a') {
-                        // 拦截 click 方法
                         const originalClick = element.click.bind(element);
                         element.click = function() {
                             const href = element.href || '';
@@ -116,21 +103,18 @@ class DownloadBridge(
 
                             console.log('[DownloadBridge] <a>.click() intercepted:', href.substring(0, 100), 'download:', download);
 
-                            // Handle blob: URL
                             if (href.startsWith('blob:') && download) {
                                 console.log('[DownloadBridge] Handling blob download programmatically');
                                 handleBlobDownload(href, download);
-                                return; // 阻止默认行为
+                                return;
                             }
 
-                            // Handle data: URL
                             if (href.startsWith('data:') && download) {
                                 console.log('[DownloadBridge] Handling data URL download programmatically');
                                 handleDataUrlDownload(href, download);
-                                return; // 阻止默认行为
+                                return;
                             }
 
-                            // 其他情况执行原始 click
                             return originalClick();
                         };
                     }
@@ -138,10 +122,8 @@ class DownloadBridge(
                     return element;
                 };
 
-                // 拦截 a 标签的点击事件（处理已存在的 a 标签）
                 document.addEventListener('click', function(e) {
                     let target = e.target;
-                    // 向上查找 a 标签
                     while (target && target.tagName !== 'A') {
                         target = target.parentElement;
                     }
@@ -150,7 +132,6 @@ class DownloadBridge(
                         const href = target.href || '';
                         const download = target.getAttribute('download');
 
-                        // Handle blob: URL
                         if (href.startsWith('blob:') && download) {
                             e.preventDefault();
                             e.stopPropagation();
@@ -159,7 +140,6 @@ class DownloadBridge(
                             return false;
                         }
 
-                        // Handle data: URL
                         if (href.startsWith('data:') && download) {
                             e.preventDefault();
                             e.stopPropagation();
@@ -170,19 +150,8 @@ class DownloadBridge(
                     }
                 }, true);
 
-                // 大文件阈值 (10MB) - 超过此大小使用分块处理
                 const LARGE_FILE_THRESHOLD = 10 * 1024 * 1024;
-                // 分块大小 (512KB) - 比默认 1MB 更小，减少单块峰值内存
-                // 对 250MB+ 的导出来说，1MB 分块叠加 JS 字符串 + base64 临时内存会压垮 V8 heap
                 const CHUNK_SIZE = 512 * 1024;
-
-                // ────────────────────────────────────────────────────────
-                // 「Blob 下载拦截 → 范围 / 阈值」运行时调度
-                // - window.__wta_blob_intercept_scope__ 由 caller 在注入时塞进去
-                //     'ALL'（默认）：拦截所有 blob 下载
-                //     'SIZE_OVER_THRESHOLD'：仅当 blob.size > 阈值才拦截，否则放行给浏览器原生下载
-                // - window.__wta_blob_intercept_threshold_bytes__：阈值（字节）。
-                //   未设置时退化为 0，等价于 ALL（不拦截被覆盖到 SIZE_OVER_THRESHOLD 时全部放行）。
                 function shouldInterceptBlob(blob) {
                     var scope = (typeof window.__wta_blob_intercept_scope__ === 'string')
                         ? window.__wta_blob_intercept_scope__ : 'ALL';
@@ -191,23 +160,17 @@ class DownloadBridge(
                         ? window.__wta_blob_intercept_threshold_bytes__ : 0;
                     return !!(blob && typeof blob.size === 'number' && blob.size > threshold);
                 }
-                // ────────────────────────────────────────────────────────
-
-                // Handle Blob URL 下载 - 优化版本，支持大文件分块处理
                 async function handleBlobDownload(blobUrl, filename) {
                     try {
                         console.log('[DownloadBridge] handleBlobDownload:', blobUrl, filename);
 
-                        // Show下载中提示
                         if (window.AndroidDownload && window.AndroidDownload.showToast) {
                             window.AndroidDownload.showToast('$msgPreparingDownload' + filename);
                         }
 
-                        // 优先从缓存获取 Blob
                         let blob = blobUrlMap.get(blobUrl);
 
                         if (!blob) {
-                            // 尝试 fetch
                             console.log('[DownloadBridge] Blob not in cache, trying fetch...');
                             try {
                                 const response = await fetch(blobUrl);
@@ -221,7 +184,6 @@ class DownloadBridge(
 
                         console.log('[DownloadBridge] Blob obtained, type:', blob.type, 'size:', blob.size);
 
-                        // 「Blob 下载拦截 → 范围」门禁：阈值之下时直接放行让浏览器原生处理。
                         if (!shouldInterceptBlob(blob)) {
                             console.log('[DownloadBridge] Below intercept threshold, deferring to native download');
                             try {
@@ -240,12 +202,9 @@ class DownloadBridge(
 
                         const mimeType = blob.type || getMimeTypeFromFilename(filename) || 'application/octet-stream';
 
-                        // 小文件直接处理，大文件分块处理
                         if (blob.size <= LARGE_FILE_THRESHOLD) {
-                            // 小文件: 直接转Base64
                             await processSmallBlob(blob, filename, mimeType);
                         } else {
-                            // 大文件: 使用分块处理避免 DOM 冻结
                             await processLargeBlobInChunks(blob, filename, mimeType);
                         }
                     } catch (error) {
@@ -254,7 +213,6 @@ class DownloadBridge(
                     }
                 }
 
-                // 处理小文件
                 async function processSmallBlob(blob, filename, mimeType) {
                     return new Promise((resolve, reject) => {
                         const reader = new FileReader();
@@ -289,11 +247,9 @@ class DownloadBridge(
                     });
                 }
 
-                // 分块处理大文件 - 使用 requestIdleCallback 避免阻塞主线程
                 async function processLargeBlobInChunks(blob, filename, mimeType) {
                     console.log('[DownloadBridge] Processing large file in chunks:', blob.size, 'bytes');
 
-                    // 通知原生端开始分块下载
                     if (window.AndroidDownload && window.AndroidDownload.startChunkedDownload) {
                         const downloadId = window.AndroidDownload.startChunkedDownload(filename, mimeType, blob.size);
 
@@ -301,7 +257,6 @@ class DownloadBridge(
                         const totalChunks = Math.ceil(blob.size / CHUNK_SIZE);
                         let currentChunk = 0;
 
-                        // Efficient Base64 encoder using sub-batch processing to avoid DOM freeze
                         function uint8ToBase64(uint8Array) {
                             const SUB_BATCH = 8192;
                             const parts = [];
@@ -313,7 +268,6 @@ class DownloadBridge(
 
                         const processNextChunk = () => {
                             if (offset >= blob.size) {
-                                // 所有分块处理完成
                                 window.AndroidDownload.finishChunkedDownload(downloadId);
                                 console.log('[DownloadBridge] Large file download complete');
                                 return;
@@ -324,26 +278,22 @@ class DownloadBridge(
                                 const bytes = new Uint8Array(arrayBuffer);
                                 const base64Chunk = uint8ToBase64(bytes);
 
-                                // 发送分块到原生端
                                 window.AndroidDownload.appendChunk(downloadId, base64Chunk, currentChunk, totalChunks);
 
                                 offset += CHUNK_SIZE;
                                 currentChunk++;
 
-                                // 让出主线程，防止 DOM 冻结
                                 setTimeout(processNextChunk, 0);
                             });
                         };
 
                         processNextChunk();
                     } else {
-                        // 回退到普通处理 (可能导致 DOM 冻结)
                         console.warn('[DownloadBridge] Chunked download not supported, falling back to regular processing');
                         await processSmallBlob(blob, filename, mimeType);
                     }
                 }
 
-                // Handle Data URL 下载
                 function handleDataUrlDownload(dataUrl, filename) {
                     try {
                         console.log('[DownloadBridge] handleDataUrlDownload:', filename);
@@ -352,7 +302,6 @@ class DownloadBridge(
                         const meta = parts[0];
                         const base64Data = parts[1];
 
-                        // 提取 MIME 类型
                         const mimeMatch = meta.match(/data:([^;]+)/);
                         const mimeType = mimeMatch ? mimeMatch[1] : getMimeTypeFromFilename(filename) || 'application/octet-stream';
 
@@ -368,7 +317,6 @@ class DownloadBridge(
                     }
                 }
 
-                // 根据文件名猜测 MIME 类型
                 function getMimeTypeFromFilename(filename) {
                     const ext = filename.split('.').pop().toLowerCase();
                     const mimeTypes = {
@@ -395,20 +343,17 @@ class DownloadBridge(
                     return mimeTypes[ext] || null;
                 }
 
-                // 提供全局下载方法供 HTML 应用调用
                 window.nativeDownload = function(data, filename, mimeType) {
                     mimeType = mimeType || getMimeTypeFromFilename(filename) || 'application/octet-stream';
 
                     console.log('[DownloadBridge] nativeDownload called:', filename, mimeType);
 
                     if (typeof data === 'string') {
-                        // 字符串数据，转为 Base64
                         const base64 = btoa(unescape(encodeURIComponent(data)));
                         if (window.AndroidDownload && window.AndroidDownload.saveBase64File) {
                             window.AndroidDownload.saveBase64File(base64, filename, mimeType);
                         }
                     } else if (data instanceof Blob) {
-                        // Blob 数据
                         const reader = new FileReader();
                         reader.onloadend = function() {
                             const base64Data = reader.result.split(',')[1];
@@ -418,7 +363,6 @@ class DownloadBridge(
                         };
                         reader.readAsDataURL(data);
                     } else if (data instanceof ArrayBuffer) {
-                        // ArrayBuffer 数据
                         const bytes = new Uint8Array(data);
                         let binary = '';
                         for (let i = 0; i < bytes.byteLength; i++) {
@@ -431,18 +375,15 @@ class DownloadBridge(
                     }
                 };
 
-                // 提供 JSON 导出快捷方法
                 window.nativeDownloadJSON = function(obj, filename) {
                     const json = JSON.stringify(obj, null, 2);
                     window.nativeDownload(json, filename || 'data.json', 'application/json');
                 };
 
-                // 提供文本导出快捷方法
                 window.nativeDownloadText = function(text, filename) {
                     window.nativeDownload(text, filename || 'text.txt', 'text/plain');
                 };
 
-                // Check桥接是否可用
                 window.isNativeDownloadAvailable = function() {
                     return !!(window.AndroidDownload && window.AndroidDownload.saveBase64File);
                 };

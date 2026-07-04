@@ -243,7 +243,6 @@ class WebViewManager(
             if(window.__wtaViewportFitApplied)return;
             window.__wtaViewportFitApplied=true;
 
-            // 1. Force viewport meta tag
             var meta=document.querySelector('meta[name="viewport"]');
             if(!meta){
                 meta=document.createElement('meta');
@@ -252,13 +251,11 @@ class WebViewManager(
             }
             meta.content='width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no';
 
-            // 2. Detect and scale oversized canvas / content
             function fitContent(){
                 var vw=window.innerWidth;
                 var vh=window.innerHeight;
                 if(!vw||!vh)return;
 
-                // Find the main container or canvas
                 var targets=[
                     document.getElementById('unity-container'),
                     document.getElementById('unity-canvas'),
@@ -272,7 +269,6 @@ class WebViewManager(
                 if(body){
                     var bodyW=body.scrollWidth;
                     var bodyH=body.scrollHeight;
-                    // If body is significantly wider than viewport, scale it
                     if(bodyW>vw*1.1){
                         var scale=Math.min(vw/bodyW,vh/bodyH);
                         body.style.transformOrigin='0 0';
@@ -299,7 +295,6 @@ class WebViewManager(
                         el.style.position='absolute';
                         el.style.left=((vw-w*s)/2)+'px';
                         el.style.top=((vh-h*s)/2)+'px';
-                        // Prevent scroll on parent
                         document.documentElement.style.overflow='hidden';
                         document.body.style.overflow='hidden';
                         break;
@@ -307,7 +302,6 @@ class WebViewManager(
                 }
             }
 
-            // Run after DOM ready and after a delay (Unity loads async)
             if(document.readyState==='loading'){
                 document.addEventListener('DOMContentLoaded',function(){
                     setTimeout(fitContent,300);
@@ -320,7 +314,6 @@ class WebViewManager(
                 setTimeout(fitContent,3000);
             }
 
-            // Also run on window resize
             window.addEventListener('resize',function(){setTimeout(fitContent,200);});
         })();"""
 
@@ -348,14 +341,13 @@ class WebViewManager(
             var rawPushState=history.pushState?history.pushState.bind(history):null;
             var rawReplaceState=history.replaceState?history.replaceState.bind(history):null;
 
-            // ★ 用户交互守卫：防止在用户主动滚动/触摸时执行恢复，避免"秒拉回"
             var userInteracting=false;
             var interactionTimer=null;
-            var INTERACTION_COOLDOWN=1500; // 用户停止触摸后 1.5s 才允许恢复
+            var INTERACTION_COOLDOWN=1500;
 
             function markUserInteraction(){
                 userInteracting=true;
-                clearRestoreTimers(); // 立即取消所有待执行的恢复定时器
+                clearRestoreTimers();
                 clearTimeout(interactionTimer);
                 interactionTimer=setTimeout(function(){
                     userInteracting=false;
@@ -417,11 +409,9 @@ class WebViewManager(
             }
 
             function restorePos(maxAttempts){
-                // ★ 用户正在交互时，跳过恢复，避免"秒拉回"
                 if(userInteracting)return false;
                 var y=readSavedY();
                 if(y<0)return false;
-                // ★ 如果当前滚动位置已经 >= 保存的位置，说明用户已经滚到了更远处，不需要恢复
                 var currentY=getScrollY();
                 if(currentY>0&&currentY>=y-5)return false;
                 if('scrollRestoration' in history){
@@ -429,7 +419,6 @@ class WebViewManager(
                 }
                 var attempts=maxAttempts||60;
                 function apply(remaining){
-                    // ★ 每次递归前检查用户交互状态
                     if(userInteracting)return;
                     if(remaining<=0)return;
                     var docH=getDocumentHeight();
@@ -451,7 +440,6 @@ class WebViewManager(
 
             function scheduleRestore(){
                 clearRestoreTimers();
-                // ★ 用户正在交互时，延迟调度恢复而非立即执行
                 if(userInteracting){
                     restoreTimers.push(setTimeout(function(){
                         if(!userInteracting)restorePos(60);
@@ -492,16 +480,13 @@ class WebViewManager(
                 }
             });
             document.addEventListener('click',function(){savePos();},true);
-            // ★ 用户滚动时标记交互 + 保存位置，取消恢复定时器
             window.addEventListener('scroll',function(){
                 markUserInteraction();
                 saveSoon();
             },{passive:true});
-            // ★ 触摸开始时立即标记交互，防止恢复定时器抢占
             window.addEventListener('touchstart',function(){
                 markUserInteraction();
             },{passive:true});
-            // ★ 触摸结束时延长冷却期，防止恢复在手指刚抬起时抢跑
             window.addEventListener('touchend',function(){
                 markUserInteraction();
             },{passive:true});
@@ -537,18 +522,12 @@ class WebViewManager(
             if (window.__wtaBackStateGuard) return;
             window.__wtaBackStateGuard = true;
 
-            // During a back/forward navigation the page may try to reload itself
-            // (common SPA pattern: listen for popstate, then location.reload() to
-            // "refresh data"). That reload destroys the DOM and the ajax page state
-            // the user is trying to return to. We neutralize reloads that happen
-            // inside the popstate/pageshow window so the restored state survives.
             var suppressReloadUntil = 0;
 
             window.addEventListener('popstate', function() {
                 suppressReloadUntil = Date.now() + 500;
             }, true);
             window.addEventListener('pageshow', function(ev) {
-                // bfcache restore: page state already intact, nothing to do.
                 if (ev && ev.persisted) return;
                 suppressReloadUntil = Date.now() + 500;
             }, true);
@@ -556,12 +535,10 @@ class WebViewManager(
             var rawReload = location.reload.bind(location);
             location.reload = function(forcedReload) {
                 if (Date.now() < suppressReloadUntil) {
-                    // Swallow the reload triggered by the back-navigation handler.
                     return;
                 }
                 return rawReload(forcedReload);
             };
-            // Also guard history.go(0), which some sites use instead of reload().
             var rawGo = history.go.bind(history);
             history.go = function(delta) {
                 if (arguments.length === 0) { return rawGo(); }
@@ -585,18 +562,14 @@ class WebViewManager(
                 function repairImage(img) {
                     if (!img || !img.src || repaired.has(img)) return;
                     if (img.src.startsWith('data:') || img.src.startsWith('blob:')) return;
-                    // 只修复真正加载失败的图片（error 事件触发后才进入此函数）
                     repaired.add(img);
                     var originalSrc = img.src;
 
-                    // 尝试用 no-referrer 重新加载
                     img.referrerPolicy = 'no-referrer';
                     img.src = '';
                     setTimeout(function() { img.src = originalSrc; }, 50);
                 }
 
-                // 只监听 error 事件，不主动扫描 naturalWidth=0 的图片
-                // （懒加载图片在加载前 naturalWidth=0 是正常的）
                 function attachErrorListener(img) {
                     if (img.__wtaErrorListening) return;
                     img.__wtaErrorListening = true;
@@ -605,13 +578,11 @@ class WebViewManager(
                     }, { once: true });
                 }
 
-                // 为现有图片添加 error 监听
                 var images = document.querySelectorAll('img');
                 for (var i = 0; i < images.length; i++) {
                     attachErrorListener(images[i]);
                 }
 
-                // 监听 DOM 变化，为动态加载的图片添加 error 监听
                 var observer = new MutationObserver(function(mutations) {
                     for (var m = 0; m < mutations.length; m++) {
                         var nodes = mutations[m].addedNodes;
@@ -633,7 +604,6 @@ class WebViewManager(
                     observer.observe(observerTarget, { childList: true, subtree: true });
                 }
 
-                // 30 秒后停止 observer 防止性能问题
                 setTimeout(function() { observer.disconnect(); }, 30000);
             })();
         """
@@ -661,7 +631,6 @@ class WebViewManager(
                 'use strict';
                 if (typeof window.NativeBridge === 'undefined') return;
 
-                // 1. Override navigator.clipboard
                 var clipboardProxy = {
                     writeText: function(text) {
                         return new Promise(function(resolve, reject) {
@@ -716,7 +685,6 @@ class WebViewManager(
                     navigator.clipboard = clipboardProxy;
                 }
 
-                // 2. Patch Permissions API for clipboard
                 if (navigator.permissions && navigator.permissions.query) {
                     var origQuery = navigator.permissions.query.bind(navigator.permissions);
                     navigator.permissions.query = function(desc) {
@@ -2117,13 +2085,10 @@ class WebViewManager(
                                         .replace("\n", "\\n")
                                         .replace("\r", "")
                                     view.evaluateJavascript("""
-                                        // AdBlocker: DOCUMENT_END dynamic cosmetic hiding
                                         (function() {
                                             'use strict';
                                             if (window.__wta_cosmetic_observer__) return;
                                             window.__wta_cosmetic_observer__ = true;
-
-                                            // Re-inject cosmetic CSS if not present
                                             if (!document.querySelector('style[data-wta="cosmetic"]')) {
                                                 var style = document.createElement('style');
                                                 style.setAttribute('type', 'text/css');
@@ -2132,8 +2097,6 @@ class WebViewManager(
                                                 (document.head || document.documentElement).appendChild(style);
                                             }
 
-                                            // MutationObserver: hide dynamically inserted ad elements
-                                            // Uses requestIdleCallback for non-blocking processing
                                             var selectors = '$escapedCss'.match(/([^{]+)\{/g);
                                             if (selectors && selectors.length > 0) {
                                                 var selectorList = selectors.map(function(s) {
@@ -2165,7 +2128,6 @@ class WebViewManager(
                                                     });
                                                 }
 
-                                                // Auto-disconnect after 30s to avoid permanent performance cost
                                                 setTimeout(function() { observer.disconnect(); }, 30000);
                                             }
                                         })();
@@ -4020,15 +3982,10 @@ class WebViewManager(
 
             if (config.enableZoomPolyfill && !conservativeMode) {
                 scripts.add("""
-                    // CSS zoom polyfill for Android WebView
                     (function() {
                         'use strict';
-
-                        // 标记 polyfill 已加载
                         if (window.__webtoapp_zoom_polyfill__) return;
                         window.__webtoapp_zoom_polyfill__ = true;
-
-                        // 存储元素原始宽度
                         var originalWidths = new WeakMap();
 
                         function convertZoomToTransform(el) {
@@ -4041,15 +3998,12 @@ class WebViewManager(
                                     scale = parseFloat(zoom) / 100;
                                 }
                                 if (!isNaN(scale) && scale > 0 && scale !== 1) {
-                                    // 保存原始宽度
                                     if (!originalWidths.has(el)) {
                                         originalWidths.set(el, el.style.width || '');
                                     }
-                                    // 清除 zoom 并应用 transform
                                     el.style.zoom = '';
                                     el.style.transform = 'scale(' + scale + ')';
                                     el.style.transformOrigin = 'top left';
-                                    // 缩小时需要扩展宽度以避免内容被裁切
                                     if (scale < 1) {
                                         el.style.width = (100 / scale) + '%';
                                     }
@@ -4057,7 +4011,6 @@ class WebViewManager(
                             }
                         }
 
-                        // MutationObserver 监听 style 属性变化
                         var observer = new MutationObserver(function(mutations) {
                             mutations.forEach(function(mutation) {
                                 if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
@@ -4067,7 +4020,6 @@ class WebViewManager(
                                     mutation.addedNodes.forEach(function(node) {
                                         if (node.nodeType === 1) {
                                             convertZoomToTransform(node);
-                                            // 也检查子元素
                                             if (node.querySelectorAll) {
                                                 node.querySelectorAll('*').forEach(function(child) {
                                                     convertZoomToTransform(child);
@@ -4079,7 +4031,6 @@ class WebViewManager(
                             });
                         });
 
-                        // 设置 observer 的函数
                         function setupObserver() {
                             var observerTarget = document.documentElement || document.body;
                             if (observerTarget instanceof Node) {
@@ -4089,7 +4040,6 @@ class WebViewManager(
                                     subtree: true,
                                     attributeFilter: ['style']
                                 });
-                                // 初始扫描
                                 if (document.body) {
                                     convertZoomToTransform(document.body);
                                     document.body.querySelectorAll('*').forEach(function(el) {
@@ -4099,14 +4049,12 @@ class WebViewManager(
                             }
                         }
 
-                        // DOM 就绪后设置 observer
                         if (document.readyState === 'loading') {
                             document.addEventListener('DOMContentLoaded', setupObserver);
                         } else {
                             setupObserver();
                         }
 
-                        // Override CSSStyleDeclaration.zoom setter（最关键的拦截）
                         try {
                             var zoomDescriptor = Object.getOwnPropertyDescriptor(CSSStyleDeclaration.prototype, 'zoom');
                             Object.defineProperty(CSSStyleDeclaration.prototype, 'zoom', {
@@ -4125,7 +4073,6 @@ class WebViewManager(
                                             return;
                                         }
                                     }
-                                    // 重置为默认
                                     if (value === '' || value === '1' || value === 'normal' || value === 'initial') {
                                         this.transform = '';
                                         this.transformOrigin = '';
@@ -4135,7 +4082,6 @@ class WebViewManager(
                                     }
                                 },
                                 get: function() {
-                                    // 返回基于 transform 计算的 zoom 值
                                     var transform = this.transform;
                                     if (transform && transform.indexOf('scale(') !== -1) {
                                         var match = transform.match(/scale\(([\d.]+)\)/);
@@ -4159,7 +4105,6 @@ class WebViewManager(
 
             if (config.enableShareBridge && !conservativeMode) {
                 scripts.add("""
-                    // navigator.share polyfill for Android WebView
                     (function() {
                         'use strict';
 
@@ -4230,27 +4175,23 @@ class WebViewManager(
 
             if (config.enableClipboardPolyfill && !conservativeMode) {
                 scripts.add("""
-                    // Clipboard API polyfill for Android WebView (HTTP compatibility)
                     (function() {
                         'use strict';
 
                         if (window.__webtoapp_clipboard_polyfill__) return;
                         window.__webtoapp_clipboard_polyfill__ = true;
 
-                        // Check if NativeBridge is available (injected by WebView)
                         var hasBridge = typeof NativeBridge !== 'undefined';
                         if (!hasBridge) {
                             return;
                         }
 
-                        // Determine if we're in a non-secure context where clipboard API won't work natively
                         var isSecureContext = window.isSecureContext;
                         var needsPolyfill = !isSecureContext ||
                             !navigator.clipboard ||
                             typeof navigator.clipboard.readText !== 'function';
 
                         if (!needsPolyfill) {
-                            // Even in secure contexts, wrap to provide fallback
                             var originalWriteText = navigator.clipboard.writeText.bind(navigator.clipboard);
                             var originalReadText = navigator.clipboard.readText.bind(navigator.clipboard);
 
@@ -4279,7 +4220,6 @@ class WebViewManager(
                             return;
                         }
 
-                        // Full polyfill for non-secure contexts
                         var clipboardPolyfill = {
                             writeText: function(text) {
                                 return new Promise(function(resolve, reject) {
@@ -4306,7 +4246,6 @@ class WebViewManager(
                             write: function(data) {
                                 return new Promise(function(resolve, reject) {
                                     try {
-                                        // ClipboardItem API - extract text/plain
                                         if (data && data.length > 0) {
                                             var item = data[0];
                                             if (item.getType) {
@@ -4316,7 +4255,7 @@ class WebViewManager(
                                                     NativeBridge.copyToClipboard(text);
                                                     resolve();
                                                 }).catch(function() {
-                                                    resolve(); // Silently succeed for non-text items
+                                                    resolve();
                                                 });
                                             } else {
                                                 resolve();
@@ -4346,7 +4285,6 @@ class WebViewManager(
                             dispatchEvent: function() { return true; }
                         };
 
-                        // Override navigator.clipboard
                         try {
                             Object.defineProperty(navigator, 'clipboard', {
                                 value: clipboardPolyfill,
@@ -4355,7 +4293,6 @@ class WebViewManager(
                                 enumerable: true
                             });
                         } catch(e) {
-                            // Fallback: direct assignment
                             try {
                                 navigator.clipboard = clipboardPolyfill;
                             } catch(e2) {
@@ -4363,7 +4300,6 @@ class WebViewManager(
                             }
                         }
 
-                        // Also override Permissions API for clipboard to always return 'granted'
                         if (navigator.permissions && navigator.permissions.query) {
                             var originalQuery = navigator.permissions.query.bind(navigator.permissions);
                             navigator.permissions.query = function(desc) {
@@ -4380,7 +4316,6 @@ class WebViewManager(
                             };
                         }
 
-                        // Polyfill document.execCommand for legacy clipboard access
                         var originalExecCommand = document.execCommand.bind(document);
                         document.execCommand = function(command) {
                             if (command === 'copy') {
@@ -4400,13 +4335,11 @@ class WebViewManager(
 
             if (config.hideUrlPreview && !conservativeMode) {
                 scripts.add("""
-                // Hide link URL preview for privacy
                 (function() {
                     'use strict';
                     if (window.__wtaLinkPreviewHidden) return;
                     window.__wtaLinkPreviewHidden = true;
 
-                    // --- CSS ---
                     var style = document.createElement('style');
                     style.id = 'webtoapp-hide-url-preview';
                     style.textContent = '\n' +
@@ -4417,7 +4350,6 @@ class WebViewManager(
                         '}\n';
                     (document.head || document.documentElement).appendChild(style);
 
-                    // --- Helper: check if an element is inside an anchor ---
                     function findAnchorParent(el) {
                         var current = el;
                         var depth = 0;
@@ -4429,7 +4361,6 @@ class WebViewManager(
                         return null;
                     }
 
-                    // --- Block contextmenu on links (suppresses Android preview popup) ---
                     document.addEventListener('contextmenu', function(e) {
                         if (findAnchorParent(e.target)) {
                             e.preventDefault();
@@ -4438,14 +4369,12 @@ class WebViewManager(
                         }
                     }, true);
 
-                    // --- Block selectstart on links ---
                     document.addEventListener('selectstart', function(e) {
                         if (findAnchorParent(e.target)) {
                             e.preventDefault();
                         }
                     }, true);
 
-                    // --- Remove title attribute from all links ---
                     function removeAllTitles() {
                         document.querySelectorAll('a[title]').forEach(function(link) {
                             link.removeAttribute('title');
@@ -4458,7 +4387,6 @@ class WebViewManager(
                         removeAllTitles();
                     }
 
-                    // Watch for dynamically added links
                     var titleObserver = new MutationObserver(function(mutations) {
                         mutations.forEach(function(mutation) {
                             mutation.addedNodes.forEach(function(node) {
@@ -4484,7 +4412,6 @@ class WebViewManager(
                         });
                     }
 
-                    // Intercept setAttribute to prevent title from being set on links
                     var originalSetAttribute = Element.prototype.setAttribute;
                     Element.prototype.setAttribute = function(name, value) {
                         if (this.tagName === 'A' && name.toLowerCase() === 'title') {
@@ -4498,26 +4425,18 @@ class WebViewManager(
 
             if (config.popupBlockerEnabled && !conservativeMode) {
                 scripts.add("""
-                    // Popup Blocker - blocks unwanted popups and redirects
                     (function() {
                         'use strict';
-
-                        // Track if popup blocker is enabled (can be toggled at runtime)
                         window.__webtoapp_popup_blocker_enabled__ = true;
 
                         var blockedCount = 0;
-                        var allowedDomains = []; // Can be configured later
-
-                        // Store original functions
+                        var allowedDomains = [];
                         var originalOpen = window.open;
                         var originalAlert = window.alert;
                         var originalConfirm = window.confirm;
-
-                        // Helper to check if URL is suspicious
                         function isSuspiciousUrl(url) {
                             if (!url) return true;
                             var lowerUrl = url.toLowerCase();
-                            // Common ad/popup patterns
                             var suspiciousPatterns = [
                                 'doubleclick', 'googlesyndication', 'googleadservices',
                                 'facebook.com/tr', 'analytics', 'tracker',
@@ -4531,7 +4450,6 @@ class WebViewManager(
                             });
                         }
 
-                        // Helper to check if domain is allowed
                         function isDomainAllowed(url) {
                             if (!url || allowedDomains.length === 0) return false;
                             try {
@@ -4544,13 +4462,11 @@ class WebViewManager(
                             }
                         }
 
-                        // Override window.open
                         window.open = function(url, target, features) {
                             if (!window.__webtoapp_popup_blocker_enabled__) {
                                 return originalOpen.apply(window, arguments);
                             }
 
-                            // Allow same-origin and allowed domains
                             var isSameOrigin = false;
                             try {
                                 if (url) {
@@ -4559,28 +4475,20 @@ class WebViewManager(
                                 }
                             } catch(e) { /* URL parse failed, treat as cross-origin */ }
 
-                            // Block conditions
                             var shouldBlock = false;
-
-                            // ★ FIX: Same-origin window.open is always legitimate (menus, search, navigation)
-                            // Never block it — many websites use window.open for UI interactions
                             if (isSameOrigin) {
                                 shouldBlock = false;
                             }
-                            // Block javascript: URLs (common popup tricks, but rarely legitimate)
                             else if (url && url.indexOf('javascript:') === 0) {
                                 shouldBlock = true;
                             }
-                            // Block about:blank only when clearly a popup trick (no target name, no features)
                             else if (!url || url === 'about:blank') {
-                                // about:blank with target/features is often legitimate (iframe containers, etc.)
                                 if (target || features) {
                                     shouldBlock = false;
                                 } else {
                                     shouldBlock = true;
                                 }
                             }
-                            // Block suspicious cross-origin URLs
                             else if (isSuspiciousUrl(url) && !isDomainAllowed(url)) {
                                 shouldBlock = true;
                             }
@@ -4588,7 +4496,6 @@ class WebViewManager(
                             if (shouldBlock) {
                                 blockedCount++;
                                 console.log('[WebToApp PopupBlocker] Blocked popup #' + blockedCount + ':', url || '(empty)');
-                                // Return fake window object to prevent errors
                                 return {
                                     closed: true,
                                     close: function() {},
@@ -4600,7 +4507,6 @@ class WebViewManager(
                                 };
                             }
 
-                            // Allow legitimate popups
                             var result = originalOpen.apply(window, arguments);
                             if (!result) {
                                 return {
@@ -4615,13 +4521,10 @@ class WebViewManager(
                             return result;
                         };
 
-                        // Block popup triggers via setTimeout/setInterval with very short delays
                         var originalSetTimeout = window.setTimeout;
                         var originalSetInterval = window.setInterval;
 
                         window.setTimeout = function(fn, delay) {
-                            // Block immediate timeouts that are clearly popup triggers
-                            // Only block string-based eval with window.open, not function callbacks
                             if (delay === 0 && typeof fn === 'string' && fn.indexOf('window.open(') !== -1) {
                                 console.log('[WebToApp PopupBlocker] Blocked setTimeout popup trigger');
                                 return 0;
@@ -4629,13 +4532,11 @@ class WebViewManager(
                             return originalSetTimeout.apply(window, arguments);
                         };
 
-                        // Expose toggle function
                         window.__webtoapp_toggle_popup_blocker__ = function(enabled) {
                             window.__webtoapp_popup_blocker_enabled__ = enabled;
                             console.log('[WebToApp PopupBlocker] ' + (enabled ? 'Enabled' : 'Disabled'));
                         };
 
-                        // Expose stats
                         window.__webtoapp_popup_blocker_stats__ = function() {
                             return { blocked: blockedCount, enabled: window.__webtoapp_popup_blocker_enabled__ };
                         };
@@ -4645,11 +4546,8 @@ class WebViewManager(
 
             if (config.enableCompatPolyfills) {
                 scripts.add("""
-                    // Compatibility fixes
                     (function() {
                         'use strict';
-
-                        // Fix requestIdleCallback (some WebViews don't support)
                         if (!window.requestIdleCallback) {
                             window.requestIdleCallback = function(callback, options) {
                                 var timeout = (options && options.timeout) || 1;
@@ -4668,7 +4566,6 @@ class WebViewManager(
                             };
                         }
 
-                        // Fix ResizeObserver (some old WebViews don't support)
                         if (!window.ResizeObserver) {
                             window.ResizeObserver = function(callback) {
                                 this.callback = callback;
@@ -4701,7 +4598,6 @@ class WebViewManager(
                             .replace("\n", "\\n")
                             .replace("\r", "")
                         scripts.add("""
-                            // AdBlocker: Cosmetic element hiding
                             (function() {
                                 'use strict';
                                 if (window.__wta_cosmetic_filters__) return;
@@ -5822,10 +5718,6 @@ class WebViewManager(
                     try {
                         var parsed = new URL(String(url), window.location.href);
                         if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
-                        // 「私网桥接 → 作用域」
-                        // LOCAL_ONLY（默认）：只对私网地址桥接，公网请求走浏览器原生 fetch/XHR
-                        // ALL              ：任何非同源地址都用桥接（绕过浏览器同源策略 / DNS 不可达）
-                        // CORS_BYPASS      ：任意 http(s) URL 都桥接（含公网），用于绕过 CORS
                         var scope = (typeof window.__wta_private_network_scope__ === 'string')
                             ? window.__wta_private_network_scope__ : 'LOCAL_ONLY';
                         if (scope === 'CORS_BYPASS') return true;
@@ -5894,11 +5786,6 @@ class WebViewManager(
                             reader.readAsDataURL(body);
                         });
                     }
-                    // 复合类型（FormData / ReadableStream / Request）：借 fetch 自己的
-                    // Response 包装把 body 还原成字节流。Response 构造器会自动设置
-                    // multipart boundary 之类的 Content-Type，但桥接当前不再用于带 body
-                    // 的请求路径（详见 fetch wrapper 注释），这里只是为了让 bodyToBase64
-                    // 在被任何"未来重新开启 POST 桥接"的代码路径调用时也不会无声丢失。
                     if (typeof Response !== 'undefined') {
                         var canWrap = (typeof FormData !== 'undefined' && body instanceof FormData) ||
                             (typeof Request !== 'undefined' && body instanceof Request) ||
@@ -5961,39 +5848,6 @@ class WebViewManager(
                 if (nativeFetch) {
                     window.fetch = function(input, init) {
                         var payload = normalizeFetchInput(input, init);
-                        // 「私网桥接 → 只能桥接 GET/HEAD」
-                        //
-                        // 历史上有用户反馈「app 里点表单提交服务器返回 400 / body 丢了」。
-                        // 根因和上方 cleartextProxy 删除注释里的第 (3) 条完全一致：
-                        //   shouldInterceptRequest(WebResourceRequest) 这个 Android API
-                        //   永远拿不到 POST/PUT/PATCH/DELETE 的请求体，
-                        //   只能在 JS 这一侧把 body 拿到再用 NativeBridge.httpRequest 重发。
-                        //
-                        // 但 fetch 的 body 类型实在太多（FormData / Blob / ReadableStream /
-                        // Request / URLSearchParams / typed array / JSON / 字符串 / null …），
-                        // 任何尝试在 JS 一侧"序列化所有可能 body"的方案都注定漏类型——
-                        // 历史上的 bodyToBase64 fallback 会对 FormData 等悄悄 JSON.stringify
-                        // 出 "{}"，导致 Apache 端 POST 收到空 body 直接 400。
-                        //
-                        // 私网桥接的初衷是为了让本地 HTTP 服务器（Node/PHP/Python/Go）
-                        // 在 cleartext-block + 严格混合内容策略下也能被网页 fetch 到——
-                        // 这个初衷对 GET/HEAD 已经够用：本地后端绝大多数 API 入口、静态
-                        // 资源、SSE 起始握手都是 GET。POST/PUT/PATCH/DELETE 这类带 body
-                        // 的请求一律退回浏览器原生 fetch，由 WebView 自己直发。
-                        // AndroidManifest 里 cleartextTrafficPermitted=true，
-                        // network_security_config 也允许 localhost / RFC1918 私网，
-                        // 原生 fetch 完全有能力把这些请求送到本地服务器。
-                        //
-                        // 这条策略和上方 cleartextProxy 完全删除是一致的反模式纠正——
-                        // 区别是 cleartextProxy 当时把整条路径全删掉了，私网桥接保留了
-                        // GET/HEAD 这条窄路径用于打通 mixed-content / cleartext 限制。
-                        //
-                        // CORS_BYPASS scope（enableCorsBypass 开关打开）：放开方法与 body
-                        // 限制，所有 http(s) 请求都经 NativeBridge.httpRequest 原生重发，
-                        // 从而绕过浏览器的同源策略 / CORS。bodyToBase64 已能可靠序列化
-                        // string / URLSearchParams / ArrayBuffer / typed array / Blob /
-                        // FormData / Request / ReadableStream；遇到无法序列化的极端类型
-                        // 才退回原生 fetch（仍受 CORS，但比丢数据好）。
                         var isCorsBypass = (typeof window.__wta_private_network_scope__ === 'string')
                             && window.__wta_private_network_scope__ === 'CORS_BYPASS';
                         if (!shouldBridge(payload.url)) return nativeFetch(input, init);
@@ -6079,12 +5933,6 @@ class WebViewManager(
                         this._url = new URL(String(url), window.location.href).href;
                         this._async = async !== false;
                         this.readyState = 1;
-                        // 私网桥接只对 GET/HEAD 安全，详见上方 fetch wrapper 的长注释。
-                        // 带 body 的请求方法（POST/PUT/PATCH/DELETE/…）退回原生 XHR，
-                        // 否则 send(body) 时 FormData / Blob / ArrayBuffer 等都可能在
-                        // 序列化时丢失，服务器收到空 body 报 400。
-                        // CORS_BYPASS scope（enableCorsBypass 开关）：放开方法限制，
-                        // 所有 http(s) 请求都走 NativeBridge.httpRequest 原生重发。
                         var isCorsBypass = (typeof window.__wta_private_network_scope__ === 'string')
                             && window.__wta_private_network_scope__ === 'CORS_BYPASS';
                         var bridgeable = shouldBridge(this._url) && (isCorsBypass ||

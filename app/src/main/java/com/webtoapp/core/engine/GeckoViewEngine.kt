@@ -109,12 +109,6 @@ class GeckoViewEngine(
             }
         }
 
-        /**
-         * ECH / 代理等 prefs 经 configFilePath 指定的 yaml 在 GeckoRuntime 创建时读取,
-         * 运行时无法热更新。若当前进程里已存在的 runtime 与本次所需的 createRuntime-time
-         * 配置(ECH + 代理)指纹不一致(典型:runtime 先于 DoH/ECH/代理 配置创建,带不上
-         * 对应 prefs),就销毁并按正确参数重建,确保 SNI 加密与代理真正生效。
-         */
         fun ensureRuntimeForConfig(context: Context) {
             val want = currentConfigFingerprint()
             synchronized(this) {
@@ -257,27 +251,6 @@ class GeckoViewEngine(
 
         private const val GECKO_CONFIG_FILE = "geckoview-config.yaml"
 
-        /**
-         * ECH（Encrypted Client Hello）等 network.dns.* 属于 Gecko preference，
-         * 不是 Gecko 进程命令行参数。GeckoRuntimeSettings.arguments(...) 设置的是
-         * 进程 args（--pref=foo=bar 不会被解析为偏好，会被静默丢弃），因此旧实现的
-         * ECH 从未真正生效（用户实测 sni=plaintext 即此因）。
-         *
-         * Gecko 官方设 preference 的唯一可在 release 包用的途径，是写一个
-         * geckoview-config.yaml 的 prefs: map，并用 configFilePath(...) 强制 runtime
-         * 从该文件读取（默认只有 debuggable / adb debug-app 才读，release 包不读）。
-         * 该文件只能在 runtime 创建时读取，故仍需配合 ensureRuntimeForConfig 重建。
-         *
-         * ECHConfig 公钥存放在 DNS 的 HTTPS(HTTPS RR / SVCB)记录里。Gecko 要拿到它、
-         * 进而加密 SNI，光开 echconfig.enabled 不够，还必须开启 HTTPS RR 的解析与使用：
-         *   - network.dns.echconfig.enabled        : 启用 ECH 本身
-         *   - network.dns.http3_echconfig.enabled  : HTTP/3 上的 ECH
-         *   - network.dns.upgrade_with_https_rr    : 解析并使用 HTTPS RR
-         *   - network.dns.use_https_rr_as_altsvc   : 把 HTTPS RR 当 alt-svc（ECHConfig 经此通道取得）
-         *
-         * 验证:用 GeckoView 引擎打开 https://cloudflare.com/cdn-cgi/trace,看 sni=encrypted。
-         * 系统 WebView(Chromium)不暴露 ECH 开关,无法由 app 控制,sni 必为 plaintext。
-         */
         private fun writeGeckoConfigFile(context: Context, config: com.webtoapp.data.model.DnsConfig?): String {
             val configFile = java.io.File(context.filesDir, GECKO_CONFIG_FILE)
             val prefs = LinkedHashMap<String, Any>()

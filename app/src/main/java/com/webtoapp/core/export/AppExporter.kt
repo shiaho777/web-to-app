@@ -429,29 +429,22 @@ dependencies {
         return """
 package com.webtoapp.generated
 
-/**
- * 自动生成的应用配置
- */
 object AppConfig {
     const val APP_NAME = "${webApp.name}"
     const val TARGET_URL = "${webApp.url}"
 
-    // Activation码配置
     const val ACTIVATION_ENABLED = ${webApp.activationEnabled}
     val ACTIVATION_CODES = listOf(${webApp.getActivationCodeStrings().joinToString { gson.toJson(it) }})
 
-    // Ad拦截配置
     const val AD_BLOCK_ENABLED = ${webApp.adBlockEnabled}
     val AD_BLOCK_RULES = listOf(${webApp.adBlockRules.joinToString { "\"$it\"" }})
 
-    // Announcement配置
     const val ANNOUNCEMENT_ENABLED = ${webApp.announcementEnabled}
     const val ANNOUNCEMENT_TITLE = "${webApp.announcement?.title ?: ""}"
     const val ANNOUNCEMENT_CONTENT = "${webApp.announcement?.content ?: ""}"
     const val ANNOUNCEMENT_LINK = "${webApp.announcement?.linkUrl ?: ""}"
     const val ANNOUNCEMENT_SHOW_ONCE = ${webApp.announcement?.showOnce ?: true}
 
-    // WebView配置
     const val JAVASCRIPT_ENABLED = ${webApp.webViewConfig.javaScriptEnabled}
     const val DOM_STORAGE_ENABLED = ${webApp.webViewConfig.domStorageEnabled}
     const val ZOOM_ENABLED = ${webApp.webViewConfig.zoomEnabled}

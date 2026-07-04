@@ -570,7 +570,6 @@ data class EmbeddedShellModule(
         return """
             (function() {
                 'use strict';
-                // Module配置
                 const __MODULE_CONFIG__ = $configJson;
                 const __MODULE_UI_CONFIG__ = $uiConfigJson;
                 const __MODULE_RUN_MODE__ = '${runMode.escapeForJsSingleQuote()}';
@@ -583,12 +582,10 @@ data class EmbeddedShellModule(
                     runMode: __MODULE_RUN_MODE__
                 };
 
-                // Configure访问函数
                 function getConfig(key, defaultValue) {
                     return __MODULE_CONFIG__[key] !== undefined ? __MODULE_CONFIG__[key] : defaultValue;
                 }
 
-                // CSS 注入
                 ${if (cssCode.isNotBlank()) """
                 (function() {
                     const style = document.createElement('style');
@@ -598,7 +595,6 @@ data class EmbeddedShellModule(
                 })();
                 """ else ""}
 
-                // User代码
                 try {
                     $code
                 } catch(e) {
