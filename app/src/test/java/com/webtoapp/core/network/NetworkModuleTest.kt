@@ -38,8 +38,10 @@ class NetworkModuleTest {
     @Test
     fun `streamingClient has extended read timeout`() {
         val client = NetworkModule.streamingClient
-        assertThat(client.readTimeoutMillis).isEqualTo(TimeUnit.SECONDS.toMillis(300).toInt())
+        assertThat(client.readTimeoutMillis).isEqualTo(TimeUnit.SECONDS.toMillis(600).toInt())
         assertThat(client.connectTimeoutMillis).isEqualTo(TimeUnit.SECONDS.toMillis(90).toInt())
+        assertThat(client.writeTimeoutMillis).isEqualTo(TimeUnit.SECONDS.toMillis(90).toInt())
+        assertThat(client.pingIntervalMillis).isEqualTo(TimeUnit.SECONDS.toMillis(30).toInt())
     }
 
     @Test

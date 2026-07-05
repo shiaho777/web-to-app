@@ -1791,12 +1791,11 @@ class WebViewManager(
                     val isOAuthPageSubResource = !isOAuthRequest && isHttpOrHttps &&
                         mainFrameUrl != null && isOAuthServiceRequest(mainFrameUrl)
 
-                }
-
-                val antiCapture = currentConfig?.antiCapture == true
-                if (antiCapture && isHttpOrHttps) {
-                    val obfuscated = refetchAndObfuscate(url, requestHeaders ?: emptyMap())
-                    if (obfuscated != null) return obfuscated
+                    val antiCapture = currentConfig?.antiCapture == true
+                    if (antiCapture && isHttpOrHttps) {
+                        val obfuscated = refetchAndObfuscate(url, it.requestHeaders ?: emptyMap())
+                        if (obfuscated != null) return obfuscated
+                    }
                 }
 
                 return super.shouldInterceptRequest(view, request)
