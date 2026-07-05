@@ -202,6 +202,8 @@ The app fetches both `registry.json` and `submissions.json` and only shows modul
 - Contributors add a folder under `modules/`, update `registry.json`, and open a PR.
 - The default client cache is one hour, so merged modules propagate without an app update.
 
+The high-level architecture lives here; the canonical submission rules, field schemas, reviewer checklist, and CI validation details live in [`modules/README.md`](modules/README.md).
+
 The community market carries only JS/CSS extension modules. **Browser extensions (MV3)** are no longer a community catalog — instead the **Browser Extensions** tab searches the Chrome Web Store live: type a keyword, browse results, and install on demand through the existing CRX pipeline. Live search requires a network that can reach Google.
 
 ## Architecture

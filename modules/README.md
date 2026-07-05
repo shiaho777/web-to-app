@@ -6,6 +6,10 @@ in-app market shows is fetched directly from this folder over
 There is no other backend. A merged PR is published the moment it lands on
 `main`.
 
+This file is the canonical contribution guide for the Module Market. The root
+`README.md` and `.github/CONTRIBUTING.md` only keep high-level summaries and
+link here for the actual submission rules.
+
 > **English** · [简体中文](#中文)
 
 ---
@@ -285,7 +289,7 @@ A minimal hello-world:
 ```
 
 See [`hello-world/main.js`](hello-world/main.js) and
-[`night-shift/main.js`](night-shift/main.js) for fuller examples.
+[`reading-mode/main.js`](reading-mode/main.js) for fuller examples.
 
 ### Optional: register a panel button
 
@@ -351,7 +355,8 @@ The validator catches:
   registry entries)
 - Duplicate `id`s or `path`s
 - Missing required files (`module.json`, `main.js`)
-- Stray files (warns about `icon.png`, extra dirs, etc.)
+- Stray files (warns about extra dirs, and icon files that exist on disk but
+  are not referenced by `iconUrl`)
 - `hasCss` flag disagreeing with whether `style.css` is present on disk
 - `iconUrl` referencing a missing or oversized file in the module folder
 - Top-level `return` in `main.js` (would break inside the IIFE wrapper)
@@ -378,8 +383,8 @@ For maintainers — this is what gets checked before a merge.
 - [ ] `hasCss` is `true` if and only if `style.css` is present in the folder
 - [ ] If `iconUrl` is set, the file exists, is under 256 KB, and uses one
       of the allowed extensions (`png`, `svg`, `webp`, `jpg`, `jpeg`)
-- [ ] No `icon.png` or other extra files (the runtime ignores them — they
-      just bloat the repo)
+- [ ] No unreferenced icon files or other extra files that the runtime cannot
+      reach from `iconUrl`
 
 ---
 
@@ -390,6 +395,10 @@ For maintainers — this is what gets checked before a merge.
 接从这个文件夹通过 `raw.githubusercontent.com` 拉取的，CDN 兜底是
 `cdn.jsdelivr.net/gh/`。**没有其他后端**。PR 一旦合并到 `main`，下一刻就上
 线。
+
+本文件是模块市场投稿规则的唯一主文档。仓库根目录 `README.md` 和
+`.github/CONTRIBUTING.md` 只保留高层说明，真正的字段规则和提交流程都以这里
+为准。
 
 ### 目录结构
 
@@ -535,7 +544,7 @@ python3 .github/scripts/ci/validate_modules.py
 - modules 目录与 registry 条目不对齐（孤立目录 / 鬼条目）
 - 重复的 `id` 或 `path`
 - 缺少必需文件（`module.json`、`main.js`）
-- 多余文件（`icon.png`、子目录等会给 warning）
+- 多余文件（例如未被 `iconUrl` 引用的图标文件、额外子目录等会给 warning）
 - `hasCss` 标志和 `style.css` 文件存在与否不匹配
 - `iconUrl` 引用了不存在或超过 256 KB 的图片
 - `main.js` 顶层 `return`（在 IIFE 包裹里会变成语法错误）
@@ -557,4 +566,4 @@ python3 .github/scripts/ci/validate_modules.py
 - [ ] `hasCss` 当且仅当目录里有 `style.css` 时才为 `true`
 - [ ] 如果设置了 `iconUrl`，对应文件存在、不超过 256 KB，扩展名是
       `png`/`svg`/`webp`/`jpg`/`jpeg` 之一
-- [ ] 不要塞 `icon.png` 或其他冗余文件（运行时会忽略它们，徒增仓库体积）
+- [ ] 不要放未被 `iconUrl` 引用的图标文件或其他运行时根本用不到的冗余文件

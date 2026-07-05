@@ -6,7 +6,7 @@ rest.
 
 > **English** · [简体中文](#贡献-webtoapp中文)
 
-This guide targets **WebToApp 2.0.6** (`versionCode 41`).
+This guide targets **WebToApp 2.1.7** (`versionCode 46`).
 
 ---
 
@@ -26,8 +26,10 @@ is no need to write code before there's agreement on the shape of the change.
 ## Module Market submissions
 
 The fastest way to ship something useful to every WebToApp user is to publish
-a module. The full schema, reviewer checklist, and PR template live in
-[`modules/README.md`](../modules/README.md). The short version:
+a module. The canonical Module Market guide lives in
+[`modules/README.md`](../modules/README.md). Use that file for the full
+schema, field rules, reviewer checklist, and CI validation details. The short
+version here is only meant to help you pick the right contribution lane:
 
 1. Fork the repo.
 2. Add `modules/<your-module>/module.json` and `main.js` (plus `style.css` if
@@ -35,15 +37,9 @@ a module. The full schema, reviewer checklist, and PR template live in
 3. Add an entry to `modules/registry.json`.
 4. Open a PR.
 
-The catalog has **no backend**. CI regenerates `modules/submissions.json` on
-every push to `main`, and a client only shows a module once it appears in both
-`registry.json` and `submissions.json` — that's how the market guarantees it
-lists only modules whose PR has actually merged. Once merged, every client
-picks up the module on its next refresh (default cache is one hour).
-
-Module changes are validated in CI by `.github/scripts/ci/validate_modules.py`
-(see `.github/workflows/modules-check.yml`). Run it locally before opening a
-PR:
+The market has **no backend**. Clients read `registry.json` and
+`submissions.json`, and only merged modules show up in the catalog. Module
+changes are validated in CI by `.github/scripts/ci/validate_modules.py`:
 
 ```bash
 python3 .github/scripts/ci/validate_modules.py
@@ -60,9 +56,9 @@ python3 .github/scripts/ci/validate_modules.py
 - For non-trivial changes, open an issue first describing the problem and the
   approach you have in mind. This is much cheaper than rewriting after review.
 - **Avoid adding new dependencies.** The list in `app/build.gradle.kts` is
-  intentionally restrained — the project signs and packages APKs in-process
-  and pins `targetSdk = 28` on purpose (see the rationale comment in that
-  file). New dependencies need a strong justification.
+  intentionally restrained — the project signs and packages APKs in-process,
+  and the host pins `targetSdk = 28` on purpose because generated apps rely on
+  fork+exec native runtimes. New dependencies need a strong justification.
 
 ### Local setup
 
@@ -78,9 +74,11 @@ cd web-to-app
 ./gradlew assembleDebug
 ```
 
-The repo has two modules: **`app`** (the full builder) and **`shell`** (the
-runtime-only host embedded in generated APKs). A change to shared runtime code
-usually needs both to compile.
+The repo has three Gradle modules: **`app`** (the full builder and host),
+**`shell`** (the runtime-only host embedded in generated APKs), and
+**`clone-host`** (the host code used by app cloning). Shared runtime code is
+authored in `app` and synchronized into `shell`, so changes there usually need
+both `:app` and `:shell` to compile.
 
 Run the checks before submitting:
 
@@ -200,7 +198,7 @@ logged and otherwise disregarded.
 非常感谢你愿意花时间。WebToApp 的迭代速度取决于"小而聚焦"的贡献——下面三条路
 里挑一条走，其他的先忽略。
 
-本指南对应 **WebToApp 2.0.6**（`versionCode 41`）。
+本指南对应 **WebToApp 2.1.7**（`versionCode 46`）。
 
 ### 你想做什么？
 
@@ -216,7 +214,8 @@ logged and otherwise disregarded.
 ### 模块市场贡献
 
 让你的工作触达每一个用户最快的方式就是提一个模块。Schema、审核 Checklist 和
-PR 模板都在 [`modules/README.md`](../modules/README.md)。简化流程：
+CI 校验细节的主文档是 [`modules/README.md`](../modules/README.md)。这里仅保
+留一个极简入口，方便你先判断自己是不是走这条贡献路线：
 
 1. Fork 本仓库
 2. 新建 `modules/<你的模块>/module.json` 和 `main.js`（需要 CSS 时再加
@@ -224,13 +223,9 @@ PR 模板都在 [`modules/README.md`](../modules/README.md)。简化流程：
 3. 在 `modules/registry.json` 里加一行索引
 4. 提 PR
 
-市场**没有后端**。CI 在每次推送 `main` 时重新生成 `modules/submissions.json`，
-客户端只展示同时出现在 `registry.json` 和 `submissions.json` 里的模块——以此
-保证只列出 PR 已真正合并的模块。合并后所有客户端在下次刷新（默认 1 小时缓存）
-就能看到。
-
-模块改动由 CI 的 `.github/scripts/ci/validate_modules.py` 校验（见
-`.github/workflows/modules-check.yml`），提 PR 前可本地先跑：
+市场**没有后端**。客户端读取 `registry.json` 和 `submissions.json`，只有已合
+并的模块才会在市场出现。模块改动会经过 CI 的
+`.github/scripts/ci/validate_modules.py` 校验，提 PR 前建议先本地跑：
 
 ```bash
 python3 .github/scripts/ci/validate_modules.py
@@ -244,8 +239,8 @@ python3 .github/scripts/ci/validate_modules.py
   类似讨论
 - 较大的改动请先开 issue 说明要解决的问题和方案
 - **谨慎引入新依赖**。`app/build.gradle.kts` 的依赖列表刻意保持精简——本项目
-  全程在设备内签名打包 APK，并特意把 `targetSdk` 锁在 28（理由见该文件里的
-  注释）。新依赖需要充分理由。
+  全程在设备内签名打包 APK，并特意把 `targetSdk` 锁在 28，因为生成应用依赖
+  `fork`、`exec` 原生运行时。新依赖需要充分理由。
 
 **本地环境**
 
@@ -259,8 +254,10 @@ cd web-to-app
 ./gradlew assembleDebug
 ```
 
-仓库有两个模块：**`app`**（完整打包器）和 **`shell`**（嵌入生成 APK 的纯运行
-时宿主）。改动共享的运行时代码通常两个模块都要能编译。
+仓库有三个 Gradle 模块：**`app`**（完整构建器和宿主）、**`shell`**（嵌入生
+成 APK 的运行时宿主）和 **`clone-host`**（应用克隆使用的宿主代码）。共享运
+行时代码以 `app` 为唯一事实来源，再同步到 `shell`，所以改动这部分通常至少
+要保证 `:app` 和 `:shell` 都能编译。
 
 提交前请跑通：
 

@@ -202,6 +202,8 @@ App 会同时拉取 `registry.json` 和 `submissions.json`,只展示两边都存
 - 贡献者在 `modules/` 下添加文件夹,更新 `registry.json`,然后提交 PR。
 - 客户端默认缓存 1 小时,模块合并后不需要发新版 App。
 
+这里保留的是模块市场的高层说明;真正的投稿规则、字段 schema、审核 Checklist 和 CI 校验细节统一写在 [`modules/README.md`](../../modules/README.md)。
+
 社区市场只承载 JS/CSS 扩展模块。**浏览器扩展(MV3)**不再是社区目录 —— **浏览器扩展** Tab 直接实时搜索 Chrome 网上应用店:输入关键词、浏览结果、通过现有的 CRX 下载链路按需安装。如果实时搜索不可达,也可以粘贴商店链接或 32 位扩展 ID 直接安装。实时搜索需要能访问 Google 的网络。
 
 ## 架构说明
