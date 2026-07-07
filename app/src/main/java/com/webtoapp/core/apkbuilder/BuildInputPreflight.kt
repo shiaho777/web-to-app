@@ -242,6 +242,19 @@ object BuildInputPreflight {
         }
     }
 
+    private fun MultiWebSite.isUrlOnlySite(): Boolean {
+        return when (type.uppercase()) {
+            "URL" -> true
+            "EXISTING" -> localFilePath.isBlank()
+            else -> false
+        }
+    }
+
+    private fun MultiWebSite.requiresLocalFile(): Boolean {
+        val t = type.uppercase()
+        return t == "LOCAL" || t == "INLINE_HTML" || (t == "EXISTING" && localFilePath.isNotBlank())
+    }
+
     private fun MutableList<BuildInputIssue>.requireMultiWebSites(
         items: List<MultiWebSite>,
         projectDir: File?
@@ -254,17 +267,16 @@ object BuildInputPreflight {
 
         var requiresLocalProject = false
         enabledSites.forEachIndexed { index, site ->
-            val siteType = site.type.uppercase()
             when {
-                siteType == "URL" -> {
+                site.isUrlOnlySite() -> {
                     if (site.url.isBlank()) {
                         add(BuildInputIssue("multiWebSites[$index]", "Multi-web URL site is missing its URL"))
                     }
                 }
-                site.localFilePath.isBlank() -> {
+                site.requiresLocalFile() && site.localFilePath.isBlank() -> {
                     add(BuildInputIssue("multiWebSites[$index]", "Multi-web local site is missing its file path"))
                 }
-                else -> {
+                site.requiresLocalFile() -> {
                     requiresLocalProject = true
                 }
             }
@@ -278,7 +290,7 @@ object BuildInputPreflight {
         }
 
         enabledSites.forEachIndexed { index, site ->
-            if (site.type.uppercase() == "URL" || site.localFilePath.isBlank()) return@forEachIndexed
+            if (site.isUrlOnlySite() || site.localFilePath.isBlank()) return@forEachIndexed
             val expectedFile = File(projectDir, site.localFilePath.trimStart('/'))
             when {
                 !expectedFile.exists() -> add(
