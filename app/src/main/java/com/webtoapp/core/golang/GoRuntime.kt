@@ -3,6 +3,7 @@ package com.webtoapp.core.golang
 import android.content.Context
 import com.webtoapp.core.i18n.PreviewHtmlSupport.escapeText
 import com.webtoapp.core.i18n.PreviewHtmlSupport.htmlLang
+import com.webtoapp.core.linux.LocalDnsBridgeProxy
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.shell.ShellLogger
@@ -40,6 +41,7 @@ class GoRuntime(private val context: Context) {
     private var currentPort: Int = 0
     private val goOutputBuffer = StringBuffer()
     private val goStderrBuffer = StringBuffer()
+    private var dnsProxyStarted: Boolean = false
 
     fun getProjectsDir(): File = File(context.filesDir, "go_projects").also { it.mkdirs() }
 
@@ -132,6 +134,14 @@ class GoRuntime(private val context: Context) {
 
             envVars.forEach { (k, v) -> env[k] = v }
 
+            val proxyPort = LocalDnsBridgeProxy.start()
+            if (proxyPort > 0) {
+                LocalDnsBridgeProxy.proxyEnvFor(proxyPort).forEach { (k, v) -> env[k] = v }
+                dnsProxyStarted = true
+                AppLogger.i(TAG, "已启用 DNS 桥接代理 (port=$proxyPort) 供 Go 进程解析外部域名")
+                ShellLogger.i(TAG, "已启用 DNS 桥接代理: 127.0.0.1:$proxyPort")
+            }
+
             goOutputBuffer.setLength(0)
             goStderrBuffer.setLength(0)
             goProcess = processBuilder.start()
@@ -176,6 +186,10 @@ class GoRuntime(private val context: Context) {
         } catch (e: Exception) {
             AppLogger.e(TAG, "启动 Go 服务器失败", e)
             ShellLogger.e(TAG, "启动 Go 服务器失败: ${e.message}")
+            if (dnsProxyStarted) {
+                LocalDnsBridgeProxy.stop()
+                dnsProxyStarted = false
+            }
             _serverState.value = ServerState.Error("启动失败: ${e.message}")
             -1
         }
@@ -195,6 +209,10 @@ class GoRuntime(private val context: Context) {
             AppLogger.w(TAG, "停止 Go 服务器异常: ${e.message}")
         } finally {
             if (currentPort > 0) PortManager.release(currentPort)
+            if (dnsProxyStarted) {
+                LocalDnsBridgeProxy.stop()
+                dnsProxyStarted = false
+            }
             goProcess = null
             currentPort = 0
             _serverState.value = ServerState.Stopped

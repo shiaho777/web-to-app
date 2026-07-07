@@ -4,6 +4,9 @@ import android.content.Context
 import android.os.Build
 import com.webtoapp.core.logging.AppLogger
 import java.io.File
+import java.security.KeyStore
+import java.security.cert.X509Certificate
+import java.util.Base64
 
 object GoDependencyManager {
 
@@ -139,6 +142,10 @@ object GoDependencyManager {
             addAll(additionalPathEntries)
             add(processEnv["PATH"].orEmpty())
         }.filter { it.isNotBlank() }.joinToString(File.pathSeparator)
+
+        ensureTrustedCaBundle(context)?.let { bundle ->
+            processEnv["SSL_CERT_FILE"] = processEnv["SSL_CERT_FILE"] ?: bundle.absolutePath
+        }
     }
 
     fun prepareBinary(context: Context, projectDir: File, binaryName: String): String? {
@@ -207,6 +214,37 @@ object GoDependencyManager {
             .filter { it.exists() }
             .sumOf { dir -> dir.walkTopDown().filter { it.isFile }.sumOf { it.length() } } +
             GoToolchainManager.getCacheSize(context)
+    }
+
+    fun ensureTrustedCaBundle(context: Context): File? {
+        val target = File(GoToolchainManager.getToolchainRoot(context), "ssl/android-ca-bundle.pem")
+        return try {
+            val keyStore = KeyStore.getInstance("AndroidCAStore").apply { load(null) }
+            val aliases = keyStore.aliases()
+            val pemBlocks = StringBuilder()
+            val encoder = Base64.getMimeEncoder(64, "\n".toByteArray())
+            var count = 0
+            while (aliases.hasMoreElements()) {
+                val alias = aliases.nextElement()
+                val cert = keyStore.getCertificate(alias) as? X509Certificate ?: continue
+                pemBlocks.append("-----BEGIN CERTIFICATE-----\n")
+                pemBlocks.append(encoder.encodeToString(cert.encoded))
+                pemBlocks.append("\n-----END CERTIFICATE-----\n")
+                count++
+            }
+            if (count == 0) {
+                AppLogger.w(TAG, "AndroidCAStore 导出为空，跳过 CA bundle 生成")
+                return null
+            }
+            target.parentFile?.mkdirs()
+            target.writeText(pemBlocks.toString())
+            target.setReadable(true, false)
+            AppLogger.i(TAG, "Go CA bundle 已导出: ${target.absolutePath} ($count certs)")
+            target
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "导出 AndroidCAStore 失败: ${e.message}", e)
+            null
+        }
     }
 
     private fun findBinaryInProject(projectDir: File, binaryName: String): File? {

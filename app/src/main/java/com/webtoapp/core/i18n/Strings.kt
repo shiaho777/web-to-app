@@ -3597,16 +3597,16 @@ object Strings {
     }
 
     val depGoDesc: String get() = when (lang) {
-        AppLanguage.CHINESE -> "Go 1.26 工具链 (Termux 构建) · 支持 go build / go mod / go run · arm64-v8a"
-        AppLanguage.ENGLISH -> "Go 1.26 toolchain (Termux build) · Supports go build / go mod / go run · arm64-v8a"
-        AppLanguage.ARABIC -> "سلسلة أدوات Go 1.26 (Termux) · تدعم go build / go mod / go run · arm64-v8a"
-        AppLanguage.PORTUGUESE -> "Go 1.26 toolchain (Termux build) · Supports go build / go mod / go run · arm64-v8a"
-        AppLanguage.SPANISH -> "Go 1.26 toolchain (Termux build) · Supports go build / go mod / go run · arm64-v8a"
-        AppLanguage.FRENCH -> "Go 1.26 toolchain (Termux build) · Supports go build / go mod / go run · arm64-v8a"
-        AppLanguage.GERMAN -> "Go 1.26 toolchain (Termux build) · Supports go build / go mod / go run · arm64-v8a"
-        AppLanguage.RUSSIAN -> "Go 1.26 toolchain (Termux build) · Supports go build / go mod / go run · arm64-v8a"
-        AppLanguage.JAPANESE -> "Go 1.26 toolchain (Termux build) · Supports go build / go mod / go run · arm64-v8a"
-        AppLanguage.KOREAN -> "Go 1.26 toolchain (Termux build) · Supports go build / go mod / go run · arm64-v8a"
+        AppLanguage.CHINESE -> "Go 1.26 官方工具链 · 支持 go build / go mod / go run · arm64-v8a"
+        AppLanguage.ENGLISH -> "Go 1.26 official toolchain · Supports go build / go mod / go run · arm64-v8a"
+        AppLanguage.ARABIC -> "سلسلة أدوات Go 1.26 الرسمية · تدعم go build / go mod / go run · arm64-v8a"
+        AppLanguage.PORTUGUESE -> "Go 1.26 official toolchain · Supports go build / go mod / go run · arm64-v8a"
+        AppLanguage.SPANISH -> "Go 1.26 official toolchain · Supports go build / go mod / go run · arm64-v8a"
+        AppLanguage.FRENCH -> "Go 1.26 official toolchain · Supports go build / go mod / go run · arm64-v8a"
+        AppLanguage.GERMAN -> "Go 1.26 official toolchain · Supports go build / go mod / go run · arm64-v8a"
+        AppLanguage.RUSSIAN -> "Go 1.26 official toolchain · Supports go build / go mod / go run · arm64-v8a"
+        AppLanguage.JAPANESE -> "Go 1.26 official toolchain · Supports go build / go mod / go run · arm64-v8a"
+        AppLanguage.KOREAN -> "Go 1.26 official toolchain · Supports go build / go mod / go run · arm64-v8a"
     }
 
     val depWpProjects: String get() = when (lang) {
@@ -9071,6 +9071,19 @@ object Strings {
         AppLanguage.RUSSIAN -> "Background Color"
         AppLanguage.JAPANESE -> "Background Color"
         AppLanguage.KOREAN -> "Background Color"
+    }
+
+    val followPageTop: String get() = when (lang) {
+        AppLanguage.CHINESE -> "跟随网页顶部"
+        AppLanguage.ENGLISH -> "Follow Page Top"
+        AppLanguage.ARABIC -> "اتباع أعلى الصفحة"
+        AppLanguage.PORTUGUESE -> "Follow Page Top"
+        AppLanguage.SPANISH -> "Follow Page Top"
+        AppLanguage.FRENCH -> "Follow Page Top"
+        AppLanguage.GERMAN -> "Follow Page Top"
+        AppLanguage.RUSSIAN -> "Follow Page Top"
+        AppLanguage.JAPANESE -> "Follow Page Top"
+        AppLanguage.KOREAN -> "Follow Page Top"
     }
 
     val selectBackgroundImage: String get() = when (lang) {

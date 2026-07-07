@@ -12,35 +12,29 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import org.apache.commons.compress.archivers.ar.ArArchiveInputStream
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
-import org.apache.commons.compress.compressors.xz.XZCompressorInputStream
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.io.InputStream
 
 object GoToolchainManager {
 
     private const val TAG = "GoToolchainManager"
 
-    const val GO_VERSION = "1.26.3"
+    const val GO_VERSION = "1.26.4"
 
-    private const val TUNA_GO_DEB_URL =
-        "https://mirrors.tuna.tsinghua.edu.cn/termux/apt/termux-main/pool/main/g/golang/golang_3%3A1.26.3_aarch64.deb"
+    private const val USTC_GO_ARCHIVE_URL =
+        "https://mirrors.ustc.edu.cn/golang/go${GO_VERSION}.linux-arm64.tar.gz"
 
-    private const val USTC_GO_DEB_URL =
-        "https://mirrors.ustc.edu.cn/termux/apt/termux-main/pool/main/g/golang/golang_3%3A1.26.3_aarch64.deb"
+    private const val OFFICIAL_GO_ARCHIVE_URL =
+        "https://dl.google.com/go/go${GO_VERSION}.linux-arm64.tar.gz"
 
-    private const val OFFICIAL_GO_DEB_URL =
-        "https://packages.termux.dev/apt/termux-main/pool/main/g/golang/golang_3%3A1.26.3_aarch64.deb"
+    private val CN_GO_ARCHIVE_URLS = listOf(USTC_GO_ARCHIVE_URL)
 
-    private val CN_GO_DEB_URLS = listOf(TUNA_GO_DEB_URL, USTC_GO_DEB_URL)
+    private val OFFSHORE_GO_ARCHIVE_URLS = listOf(OFFICIAL_GO_ARCHIVE_URL)
 
-    private val OFFSHORE_GO_DEB_URLS = listOf(OFFICIAL_GO_DEB_URL)
-
-    private const val GO_DEB_SIZE_BYTES = 34_365_696L
+    private const val GO_ARCHIVE_SIZE_BYTES = 63_740_285L
 
     private const val MAX_RETRY_PER_URL = 2
     private const val RETRY_DELAY_MS = 2_000L
@@ -147,22 +141,22 @@ object GoToolchainManager {
 
                 val depsDir = getToolchainRoot(context)
                 depsDir.mkdirs()
-                val debFile = File(depsDir, "golang-${GO_VERSION}.deb")
+                val archiveFile = File(depsDir, "go-${GO_VERSION}.linux-arm64.tar.gz")
 
-                val urlList = selectGoDebUrls(resolvePreferChinaMirror(context))
-                val ok = downloadWithFallback(urlList, debFile, "Go $GO_VERSION ($abi)", context)
+                val urlList = selectGoArchiveUrls(resolvePreferChinaMirror(context))
+                val ok = downloadWithFallback(urlList, archiveFile, "Go $GO_VERSION ($abi)", context)
                 syncEngineState()
                 if (!ok) {
-                    AppLogger.e(TAG, "Go .deb 下载失败")
+                    AppLogger.e(TAG, "Go 归档下载失败")
                     return@withLock false
                 }
 
-                val actual = debFile.length()
-                val tolerance = (GO_DEB_SIZE_BYTES * 0.10).toLong()
-                if (kotlin.math.abs(actual - GO_DEB_SIZE_BYTES) > tolerance) {
+                val actual = archiveFile.length()
+                val tolerance = (GO_ARCHIVE_SIZE_BYTES * 0.10).toLong()
+                if (kotlin.math.abs(actual - GO_ARCHIVE_SIZE_BYTES) > tolerance) {
                     AppLogger.w(
                         TAG,
-                        "Go .deb 体积异常: 实际 $actual 字节，期望 $GO_DEB_SIZE_BYTES（容差 ±$tolerance）—— 可能镜像变更或下载损坏"
+                        "Go 归档体积异常: 实际 $actual 字节，期望 $GO_ARCHIVE_SIZE_BYTES（容差 ±$tolerance）—— 可能镜像变更或下载损坏"
                     )
 
                 }
@@ -174,8 +168,8 @@ object GoToolchainManager {
 
                 val goRoot = getGoRoot(context)
                 goRoot.deleteRecursively()
-                extractDebToGoRoot(debFile, goRoot)
-                debFile.delete()
+                extractGoArchiveToRoot(archiveFile, goRoot)
+                archiveFile.delete()
 
                 fixupExecBits(goRoot)
                 if (!isGoReady(context)) {
@@ -252,11 +246,11 @@ object GoToolchainManager {
         return false
     }
 
-    internal fun selectGoDebUrls(preferChinaMirror: Boolean): List<String> {
+    internal fun selectGoArchiveUrls(preferChinaMirror: Boolean): List<String> {
         return if (preferChinaMirror) {
-            CN_GO_DEB_URLS + OFFSHORE_GO_DEB_URLS
+            CN_GO_ARCHIVE_URLS + OFFSHORE_GO_ARCHIVE_URLS
         } else {
-            OFFSHORE_GO_DEB_URLS
+            OFFSHORE_GO_ARCHIVE_URLS
         }
     }
 
@@ -303,61 +297,27 @@ object GoToolchainManager {
         return false
     }
 
-    private fun extractDebToGoRoot(debFile: File, destGoRoot: File) {
+    private fun extractGoArchiveToRoot(archiveFile: File, destGoRoot: File) {
         destGoRoot.mkdirs()
-
-        val dataTarStream: Pair<InputStream, String> = ArArchiveInputStream(
-            BufferedInputStream(debFile.inputStream())
-        ).use { ar ->
-            var entry = ar.nextEntry
-            var dataName: String? = null
-            var dataBytes: ByteArray? = null
-            while (entry != null) {
-                if (entry.name.startsWith("data.tar")) {
-                    dataName = entry.name
-                    dataBytes = ar.readBytes()
-                    break
-                }
-                entry = ar.nextEntry
-            }
-            val name = dataName ?: throw IllegalStateException(".deb 中找不到 data.tar.* —— 文件可能损坏")
-            val bytes = dataBytes!!
-
-            val raw = java.io.ByteArrayInputStream(bytes)
-            val decompressed: InputStream = when {
-                name.endsWith(".xz") -> XZCompressorInputStream(raw)
-                name.endsWith(".gz") -> GzipCompressorInputStream(raw)
-                name.endsWith(".zst") || name.endsWith(".zstd") ->
-                    throw IllegalStateException(
-                        "Termux 仓库切到 zstd 压缩，需要在 build.gradle 加 zstd-jni 依赖再试"
-                    )
-                name.endsWith(".tar") -> raw
-                else -> throw IllegalStateException(".deb data 段压缩格式不识别: $name")
-            }
-            decompressed to name
-        }
-
-        val (decompressed, debDataName) = dataTarStream
-        AppLogger.i(TAG, "解 $debDataName ...")
-
-        val marker = "lib/go/"
+        val marker = "go/"
         var copied = 0
         var skipped = 0
         val sampleNames = mutableListOf<String>()
-        TarArchiveInputStream(decompressed).use { tar ->
+        TarArchiveInputStream(
+            GzipCompressorInputStream(BufferedInputStream(archiveFile.inputStream()))
+        ).use { tar ->
             var entry = tar.nextTarEntry
             while (entry != null) {
                 val raw = entry.name
                 if (sampleNames.size < 5) sampleNames += raw
 
-                val name = raw.trimStart('/', '.').let { if (it.startsWith("/")) it.drop(1) else it }
-                val idx = name.indexOf(marker)
-                if (idx < 0) {
+                val name = raw.trimStart('/').removePrefix("./")
+                if (!name.startsWith(marker)) {
                     skipped++
                     entry = tar.nextTarEntry
                     continue
                 }
-                val rel = name.substring(idx + marker.length)
+                val rel = name.removePrefix(marker)
                 if (rel.isEmpty()) {
                     entry = tar.nextTarEntry
                     continue
@@ -402,7 +362,7 @@ object GoToolchainManager {
         }
         AppLogger.i(
             TAG,
-            "Go .deb 解压完成: 复制 $copied 项，跳过 $skipped 项（非 GOROOT 内容）。" +
+            "Go 归档解压完成: 复制 $copied 项，跳过 $skipped 项（非 GOROOT 内容）。" +
                 "tar 前几条 entry 路径样本: ${sampleNames.joinToString(" | ")}"
         )
     }

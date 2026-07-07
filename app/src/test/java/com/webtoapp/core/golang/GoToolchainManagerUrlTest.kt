@@ -8,11 +8,11 @@ import org.junit.Test
 
 class GoToolchainManagerUrlTest {
 
-    private val expectedTunaPath =
-        "/termux/apt/termux-main/pool/main/g/golang/golang_3%3A1.26.3_aarch64.deb"
-
     private val expectedOfficialPath =
-        "/apt/termux-main/pool/main/g/golang/golang_3%3A1.26.3_aarch64.deb"
+        "/go/go1.26.4.linux-arm64.tar.gz"
+
+    private val expectedUstcPath =
+        "/golang/go1.26.4.linux-arm64.tar.gz"
     private val originalLocale: Locale = Locale.getDefault()
 
     @After
@@ -22,22 +22,22 @@ class GoToolchainManagerUrlTest {
 
     @Test
     fun `prefer china mirror true yields CN mirrors first then official fallback`() {
-        val urls = GoToolchainManager.selectGoDebUrls(preferChinaMirror = true)
+        val urls = GoToolchainManager.selectGoArchiveUrls(preferChinaMirror = true)
 
         assertThat(urls).isNotEmpty()
-        assertThat(urls.first()).contains("tsinghua.edu.cn")
-        val official = "https://packages.termux.dev" + expectedOfficialPath
+        assertThat(urls.first()).contains("ustc.edu.cn")
+        val official = "https://dl.google.com" + expectedOfficialPath
         assertThat(urls).contains(official)
-        assertThat(urls.indexOfFirst { it.contains("packages.termux.dev") })
+        assertThat(urls.indexOfFirst { it.contains("dl.google.com") })
             .isEqualTo(urls.size - 1)
     }
 
     @Test
     fun `prefer china mirror false yields official source only`() {
-        val urls = GoToolchainManager.selectGoDebUrls(preferChinaMirror = false)
+        val urls = GoToolchainManager.selectGoArchiveUrls(preferChinaMirror = false)
 
         assertThat(urls).hasSize(1)
-        assertThat(urls.first()).contains("packages.termux.dev")
+        assertThat(urls.first()).contains("dl.google.com")
     }
 
     @Test
@@ -65,18 +65,18 @@ class GoToolchainManagerUrlTest {
     }
 
     @Test
-    fun `tuna mirror URL contains expected termux path`() {
-        val urls = GoToolchainManager.selectGoDebUrls(preferChinaMirror = true)
+    fun `ustc mirror URL contains expected golang path`() {
+        val urls = GoToolchainManager.selectGoArchiveUrls(preferChinaMirror = true)
 
         assertThat(urls).isNotEmpty()
-        val tuna = urls.first { it.contains("tsinghua.edu.cn") }
-        assertThat(tuna).endsWith(expectedTunaPath)
+        val ustc = urls.first { it.contains("ustc.edu.cn") }
+        assertThat(ustc).endsWith(expectedUstcPath)
     }
 
     @Test
-    fun `official source URL contains expected apt path`() {
-        val urls = GoToolchainManager.selectGoDebUrls(preferChinaMirror = true)
-        val official = urls.first { it.contains("packages.termux.dev") }
+    fun `official source URL contains expected go path`() {
+        val urls = GoToolchainManager.selectGoArchiveUrls(preferChinaMirror = true)
+        val official = urls.first { it.contains("dl.google.com") }
         assertThat(official).endsWith(expectedOfficialPath)
     }
 }

@@ -2,6 +2,7 @@ package com.webtoapp.core.golang
 
 import android.content.Context
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.linux.LocalDnsBridgeProxy
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.util.destroyForciblyCompat
 import com.webtoapp.util.waitForCompat
@@ -65,36 +66,46 @@ object GoBuildEnvironment {
 
         val processEnv = pb.environment()
         configureEnvironment(context, processEnv)
+        val proxyPort = LocalDnsBridgeProxy.start()
+        if (proxyPort > 0) {
+            LocalDnsBridgeProxy.proxyEnvFor(proxyPort).forEach { (k, v) -> processEnv[k] = v }
+            onOutput("[env] DNS bridge proxy=http://127.0.0.1:$proxyPort")
+        }
         env.forEach { (k, v) -> processEnv[k] = v }
-
-        val proc = pb.start()
-        val stdoutBuf = StringBuilder()
-        val stderrBuf = StringBuilder()
-        val tOut = Thread {
-            proc.inputStream.bufferedReader().forEachLine { line ->
-                stdoutBuf.appendLine(line)
-                onOutput(line)
+        try {
+            val proc = pb.start()
+            val stdoutBuf = StringBuilder()
+            val stderrBuf = StringBuilder()
+            val tOut = Thread {
+                proc.inputStream.bufferedReader().forEachLine { line ->
+                    stdoutBuf.appendLine(line)
+                    onOutput(line)
+                }
+            }
+            val tErr = Thread {
+                proc.errorStream.bufferedReader().forEachLine { line ->
+                    stderrBuf.appendLine(line)
+                    onOutput(line)
+                }
+            }
+            tOut.start(); tErr.start()
+            val finished = proc.waitForCompat(timeout)
+            tOut.join(2_000); tErr.join(2_000)
+            val exit = if (finished) proc.exitValue() else {
+                proc.destroyForciblyCompat()
+                -1
+            }
+            GoExecutionResult(
+                exitCode = exit,
+                stdout = stdoutBuf.toString(),
+                stderr = stderrBuf.toString(),
+                durationMs = System.currentTimeMillis() - start,
+            )
+        } finally {
+            if (proxyPort > 0) {
+                LocalDnsBridgeProxy.stop()
             }
         }
-        val tErr = Thread {
-            proc.errorStream.bufferedReader().forEachLine { line ->
-                stderrBuf.appendLine(line)
-                onOutput(line)
-            }
-        }
-        tOut.start(); tErr.start()
-        val finished = proc.waitForCompat(timeout)
-        tOut.join(2_000); tErr.join(2_000)
-        val exit = if (finished) proc.exitValue() else {
-            proc.destroyForciblyCompat()
-            -1
-        }
-        GoExecutionResult(
-            exitCode = exit,
-            stdout = stdoutBuf.toString(),
-            stderr = stderrBuf.toString(),
-            durationMs = System.currentTimeMillis() - start,
-        )
     }
 
     fun configureEnvironment(context: Context, processEnv: MutableMap<String, String>) {
@@ -118,6 +129,9 @@ object GoBuildEnvironment {
 
         processEnv["GOPROXY"] = processEnv["GOPROXY"] ?: "https://goproxy.cn,direct"
         processEnv["GOSUMDB"] = processEnv["GOSUMDB"] ?: "sum.golang.google.cn"
+        GoDependencyManager.ensureTrustedCaBundle(context)?.let { bundle ->
+            processEnv["SSL_CERT_FILE"] = processEnv["SSL_CERT_FILE"] ?: bundle.absolutePath
+        }
 
         processEnv["GOBIN"] = File(goPath, "bin").absolutePath
 
