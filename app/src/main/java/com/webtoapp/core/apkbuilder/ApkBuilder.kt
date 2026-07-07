@@ -1715,10 +1715,11 @@ builtins.__import__ = _w2a_import
         }
 
         val pythonHome = com.webtoapp.core.python.PythonDependencyManager.getPythonDir(context)
-        var pythonBinary312 = File(pythonHome, "bin/python3.12")
+        val versionedPythonBinaryName = com.webtoapp.core.python.PythonDependencyManager.getVersionedPythonBinaryName()
+        var pythonBinaryVersioned = File(pythonHome, "bin/$versionedPythonBinaryName")
         var pythonBinary3 = File(pythonHome, "bin/python3")
         var pythonBinary = when {
-            pythonBinary312.exists() && pythonBinary312.length() > 1024 * 1024 -> pythonBinary312
+            pythonBinaryVersioned.exists() && pythonBinaryVersioned.length() > 1024 * 1024 -> pythonBinaryVersioned
             pythonBinary3.exists() && pythonBinary3.length() > 1024 * 1024 -> pythonBinary3
             else -> null
         }
@@ -1732,10 +1733,10 @@ builtins.__import__ = _w2a_import
                 if (downloadSuccess) {
                     logger.log("Python runtime downloaded successfully")
 
-                    pythonBinary312 = File(pythonHome, "bin/python3.12")
+                    pythonBinaryVersioned = File(pythonHome, "bin/$versionedPythonBinaryName")
                     pythonBinary3 = File(pythonHome, "bin/python3")
                     pythonBinary = when {
-                        pythonBinary312.exists() && pythonBinary312.length() > 1024 * 1024 -> pythonBinary312
+                        pythonBinaryVersioned.exists() && pythonBinaryVersioned.length() > 1024 * 1024 -> pythonBinaryVersioned
                         pythonBinary3.exists() && pythonBinary3.length() > 1024 * 1024 -> pythonBinary3
                         else -> null
                     }
@@ -1761,7 +1762,7 @@ builtins.__import__ = _w2a_import
             }
         } else {
             logger.error("⚠️ CRITICAL: Python binary not available! The exported APK will NOT be able to run Python apps. Please ensure Python runtime is downloaded in WebToApp settings.")
-            logger.warn("Python binary not found or too small: python3.12=${pythonBinary312.let { "${it.exists()}/${it.length()}" }}, python3=${pythonBinary3.let { "${it.exists()}/${it.length()}" }}")
+            logger.warn("Python binary not found or too small: ${versionedPythonBinaryName}=${pythonBinaryVersioned.let { "${it.exists()}/${it.length()}" }}, python3=${pythonBinary3.let { "${it.exists()}/${it.length()}" }}")
         }
 
         val muslLinkerName = com.webtoapp.core.python.PythonDependencyManager.getMuslLinkerName(abi)

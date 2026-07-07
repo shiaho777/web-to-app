@@ -20,9 +20,9 @@ object WordPressDependencyManager {
 
     const val PHP_VERSION = "8.4"
 
-    const val WORDPRESS_VERSION = "6.9.1"
+    const val WORDPRESS_VERSION = "7.0"
 
-    const val SQLITE_PLUGIN_VERSION = "2.2.17"
+    const val SQLITE_PLUGIN_VERSION = "2.2.23"
 
     enum class MirrorRegion { CN, GLOBAL }
 

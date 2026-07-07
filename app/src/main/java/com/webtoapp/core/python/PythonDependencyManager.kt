@@ -27,9 +27,9 @@ object PythonDependencyManager {
         RegexOption.IGNORE_CASE
     )
 
-    const val PYTHON_VERSION = "3.12"
-    const val PYTHON_FULL_VERSION = "3.12.12"
-    private const val PYTHON_BUILD_TAG = "20260211"
+    const val PYTHON_VERSION = "3.14"
+    const val PYTHON_FULL_VERSION = "3.14.6"
+    private const val PYTHON_BUILD_TAG = "20260623"
 
     private const val MUSL_VERSION = "1.2.5-r11"
     private const val MUSL_ALPINE_BRANCH = "v3.21"
@@ -99,6 +99,10 @@ object PythonDependencyManager {
     private const val MAX_RETRY_PER_URL = 2
     private const val RETRY_DELAY_MS = 2000L
 
+    fun getVersionedPythonBinaryName(): String = "python$PYTHON_VERSION"
+
+    fun getVersionedPythonLibraryName(): String = "libpython$PYTHON_VERSION.so.1.0"
+
     sealed class DownloadState {
         object Idle : DownloadState()
         data class Downloading(val progress: Float, val currentFile: String, val bytesDownloaded: Long, val totalBytes: Long) : DownloadState()
@@ -145,9 +149,10 @@ object PythonDependencyManager {
             return nativePython
         }
 
-        val downloaded312 = File(getPythonDir(context), "bin/python3.12")
-        if (downloaded312.exists() && downloaded312.length() > 1024 * 1024) {
-            return downloaded312
+        val versionedBinaryName = getVersionedPythonBinaryName()
+        val downloadedVersioned = File(getPythonDir(context), "bin/$versionedBinaryName")
+        if (downloadedVersioned.exists() && downloadedVersioned.length() > 1024 * 1024) {
+            return downloadedVersioned
         }
 
         val downloaded = File(getPythonDir(context), "bin/python3")
@@ -432,7 +437,7 @@ _OrigPopen = subprocess.Popen
 _MUSL = os.environ.get('_WTA_MUSL_LINKER', '')
 _LIB = os.environ.get('_WTA_MUSL_LIB_PATH', '')
 _PYBIN = os.environ.get('_WTA_PYTHON_BIN', '')
-_PYNAMES = ('python3', 'python3.12', 'libpython3.so')
+_PYNAMES = ('python3', '${getVersionedPythonBinaryName()}', 'libpython3.so')
 
 def _is_py(p):
     return p == _PYBIN or os.path.basename(str(p)) in _PYNAMES
@@ -684,17 +689,18 @@ sys.exit(main())
 
             extractTarGz(archiveFile, destDir, stripPrefix = "python/")
 
-            val pythonBin312 = File(destDir, "bin/python3.12")
+            val versionedBinaryName = getVersionedPythonBinaryName()
+            val pythonBinVersioned = File(destDir, "bin/$versionedBinaryName")
             val pythonBin = File(destDir, "bin/python3")
-            if (pythonBin312.exists() && pythonBin312.length() > 1024 * 1024) {
-                pythonBin312.setExecutable(true, false)
-                pythonBin312.setReadable(true, true)
-                AppLogger.i(TAG, "Python runtime ready: ${pythonBin312.absolutePath} (${pythonBin312.length() / 1024} KB)")
+            if (pythonBinVersioned.exists() && pythonBinVersioned.length() > 1024 * 1024) {
+                pythonBinVersioned.setExecutable(true, false)
+                pythonBinVersioned.setReadable(true, true)
+                AppLogger.i(TAG, "Python runtime ready: ${pythonBinVersioned.absolutePath} (${pythonBinVersioned.length() / 1024} KB)")
 
                 if (!pythonBin.exists() || pythonBin.length() < 1024 * 1024) {
-                    pythonBin312.copyTo(pythonBin, overwrite = true)
+                    pythonBinVersioned.copyTo(pythonBin, overwrite = true)
                     pythonBin.setExecutable(true, false)
-                    AppLogger.i(TAG, "Copying python3.12 -> python3 (replacing broken symlink)")
+                    AppLogger.i(TAG, "Copying $versionedBinaryName -> python3 (replacing broken symlink)")
                 }
             } else if (pythonBin.exists() && pythonBin.length() > 1024 * 1024) {
                 pythonBin.setExecutable(true, false)
@@ -702,7 +708,7 @@ sys.exit(main())
                 AppLogger.i(TAG, "Python runtime ready: ${pythonBin.absolutePath}")
             } else {
 
-                AppLogger.w(TAG, "No valid python3.12 or python3 found; searching for other binaries")
+                AppLogger.w(TAG, "No valid $versionedBinaryName or python3 found; searching for other binaries")
                 val found = destDir.walkTopDown()
                     .filter { it.name.startsWith("python3") && it.isFile && it.length() > 1024 * 1024 }
                     .firstOrNull()
@@ -710,7 +716,7 @@ sys.exit(main())
                 if (found != null) {
                     val binDir = File(destDir, "bin")
                     binDir.mkdirs()
-                    val target = File(binDir, "python3.12")
+                    val target = File(binDir, versionedBinaryName)
                     found.copyTo(target, overwrite = true)
                     target.setExecutable(true, false)
                     target.copyTo(File(binDir, "python3"), overwrite = true)

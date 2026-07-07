@@ -100,7 +100,7 @@ object LocalBuildEnvironment {
         return com.webtoapp.core.python.PythonDependencyManager.getPythonExecutablePath(context).takeIf { it.isNotBlank() }
     }
 
-    private const val COMPOSER_VERSION = "2.8.5"
+    private const val COMPOSER_VERSION = "2.10.2"
 
     private val COMPOSER_PHAR_URLS = listOf(
         "https://getcomposer.org/download/$COMPOSER_VERSION/composer.phar",

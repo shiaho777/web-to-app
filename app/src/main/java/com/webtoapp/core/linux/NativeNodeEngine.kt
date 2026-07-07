@@ -20,7 +20,7 @@ object NativeNodeEngine {
 
     private const val TAG = "NativeNodeEngine"
 
-    private const val NODE_VERSION = "18.19.0"
+    private const val NODE_VERSION = "18.20.4"
 
     private val NODE_DOWNLOAD_URLS = mapOf(
         "arm64-v8a" to "https://github.com/nicolo-ribaudo/pnpm-prebuilt-android/releases/download/v8.15.4/pnpm-android-arm64",

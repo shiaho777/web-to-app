@@ -198,7 +198,8 @@ class PythonRuntime(private val context: Context) {
             AppLogger.i(TAG, "musl linker=$muslLinker")
             AppLogger.i(TAG, ".pypackages exists=${sitePackages.exists()}, top-level count=${sitePackages.listFiles()?.size ?: 0}, has files=${PythonDependencyManager.hasInstalledPackages(sitePackages)}")
             AppLogger.i(TAG, "stdlib exists=${File(pythonHome, "lib/python${PythonDependencyManager.PYTHON_VERSION}").exists()}, file count=${File(pythonHome, "lib/python${PythonDependencyManager.PYTHON_VERSION}").walkTopDown().filter { it.isFile }.count()}")
-            AppLogger.i(TAG, "libpython so exists=${File(pythonHome, "lib/libpython3.12.so.1.0").exists()}, size=${File(pythonHome, "lib/libpython3.12.so.1.0").let { if (it.exists()) "${it.length()/1024}KB" else "N/A" }}")
+            val versionedPythonLibrary = File(pythonHome, "lib/${PythonDependencyManager.getVersionedPythonLibraryName()}")
+            AppLogger.i(TAG, "libpython so exists=${versionedPythonLibrary.exists()}, size=${versionedPythonLibrary.let { if (it.exists()) "${it.length()/1024}KB" else "N/A" }}")
             AppLogger.i(TAG, "=========================")
 
             env["PATH"] = "${File(pythonHome, "bin").absolutePath}:${env["PATH"] ?: "/usr/bin"}"
