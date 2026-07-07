@@ -2,6 +2,7 @@ package com.webtoapp.core.webview
 
 import android.content.Context
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.data.model.DownloadLocationMode
 import android.os.Build
 import android.os.Environment
 import android.util.Base64
@@ -19,7 +20,9 @@ import java.io.FileOutputStream
 
 class DownloadBridge(
     private val context: Context,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val downloadLocationMode: DownloadLocationMode = DownloadLocationMode.SYSTEM_DOWNLOAD,
+    private val customDownloadDirUri: String = ""
 ) {
     private val notificationManager = DownloadNotificationManager.getInstance(context)
 
@@ -626,20 +629,34 @@ class DownloadBridge(
     }
 
     private fun saveToDownloadsInternal(bytes: ByteArray, filename: String): File? {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-
-            saveToDownloadsMediaStore(bytes, filename)
-        } else {
-
-            saveToDownloadsLegacy(bytes, filename)
+        return when (downloadLocationMode) {
+            DownloadLocationMode.APP_PRIVATE -> saveToAppPrivateDir(bytes, filename)
+            DownloadLocationMode.CUSTOM -> {
+                saveToCustomDir(bytes, filename) ?: saveToAppPrivateDir(bytes, filename)
+            }
+            DownloadLocationMode.SYSTEM_DOWNLOAD -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    saveToDownloadsMediaStore(bytes, filename)
+                } else {
+                    saveToDownloadsLegacy(bytes, filename) ?: saveToAppPrivateDir(bytes, filename)
+                }
+            }
         }
     }
 
     private fun saveToDownloadsInternalFromFile(sourceFile: File, filename: String): File? {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            saveToDownloadsMediaStoreFromFile(sourceFile, filename)
-        } else {
-            saveToDownloadsLegacyFromFile(sourceFile, filename)
+        return when (downloadLocationMode) {
+            DownloadLocationMode.APP_PRIVATE -> saveToAppPrivateDirFromFile(sourceFile, filename)
+            DownloadLocationMode.CUSTOM -> {
+                saveToCustomDirFromFile(sourceFile, filename) ?: saveToAppPrivateDirFromFile(sourceFile, filename)
+            }
+            DownloadLocationMode.SYSTEM_DOWNLOAD -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    saveToDownloadsMediaStoreFromFile(sourceFile, filename)
+                } else {
+                    saveToDownloadsLegacyFromFile(sourceFile, filename) ?: saveToAppPrivateDirFromFile(sourceFile, filename)
+                }
+            }
         }
     }
 
@@ -866,7 +883,68 @@ class DownloadBridge(
 
     @JavascriptInterface
     fun getDownloadPath(): String {
-        return getPublicDownloadsDir().absolutePath
+        return when (downloadLocationMode) {
+            DownloadLocationMode.APP_PRIVATE -> {
+                context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)?.absolutePath
+                    ?: context.filesDir.absolutePath
+            }
+            DownloadLocationMode.CUSTOM -> {
+                if (customDownloadDirUri.isNotBlank()) customDownloadDirUri
+                else getPublicDownloadsDir().absolutePath
+            }
+            DownloadLocationMode.SYSTEM_DOWNLOAD -> getPublicDownloadsDir().absolutePath
+        }
+    }
+
+    private fun getCustomDir(): File? {
+        if (customDownloadDirUri.isBlank()) return null
+        val dir = File(customDownloadDirUri)
+        if (!dir.exists() && !dir.mkdirs()) return null
+        if (!dir.canWrite()) return null
+        return dir
+    }
+
+    private fun resolveUniqueFile(dir: File, filename: String): File {
+        var targetFile = File(dir, filename)
+        if (!targetFile.exists()) return targetFile
+        var counter = 1
+        val nameWithoutExt = filename.substringBeforeLast(".")
+        val ext = if (filename.contains(".")) ".${filename.substringAfterLast(".")}" else ""
+        while (targetFile.exists()) {
+            targetFile = File(dir, "${nameWithoutExt}_$counter$ext")
+            counter++
+        }
+        return targetFile
+    }
+
+    private fun saveToCustomDir(bytes: ByteArray, filename: String): File? {
+        val dir = getCustomDir() ?: return null
+        val targetFile = resolveUniqueFile(dir, filename)
+        return try {
+            FileOutputStream(targetFile).use { fos -> fos.write(bytes) }
+            AppLogger.d("DownloadBridge", "文件已保存到自定义目录: ${targetFile.absolutePath}")
+            targetFile
+        } catch (e: Exception) {
+            AppLogger.e("DownloadBridge", "自定义目录写入失败", e)
+            null
+        }
+    }
+
+    private fun saveToCustomDirFromFile(sourceFile: File, filename: String): File? {
+        val dir = getCustomDir() ?: return null
+        val targetFile = resolveUniqueFile(dir, filename)
+        return try {
+            java.io.FileInputStream(sourceFile).use { input ->
+                FileOutputStream(targetFile).use { out ->
+                    input.copyTo(out, bufferSize = 64 * 1024)
+                }
+            }
+            AppLogger.d("DownloadBridge", "流式保存到自定义目录: ${targetFile.absolutePath}")
+            targetFile
+        } catch (e: Exception) {
+            AppLogger.e("DownloadBridge", "自定义目录流式写入失败", e)
+            null
+        }
     }
 
     @Suppress("DEPRECATION")

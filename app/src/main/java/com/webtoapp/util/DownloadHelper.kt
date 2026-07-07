@@ -157,7 +157,9 @@ object DownloadHelper {
         showEnhancedNotification: Boolean = true,
         saveToGallery: Boolean = true,
         scope: CoroutineScope? = null,
-        onBlobDownload: ((blobUrl: String, filename: String) -> Unit)? = null
+        onBlobDownload: ((blobUrl: String, filename: String) -> Unit)? = null,
+        downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+        customDownloadDirUri: String = ""
     ) {
 
         if (url.startsWith("blob:")) {
@@ -197,7 +199,11 @@ object DownloadHelper {
             return
         }
 
-        downloadWithManager(context, safeUrl, userAgent, contentDisposition, mimeType, showEnhancedNotification, scope = scope)
+        downloadWithManager(
+            context, safeUrl, userAgent, contentDisposition, mimeType, showEnhancedNotification, scope = scope,
+            downloadLocationMode = downloadLocationMode,
+            customDownloadDirUri = customDownloadDirUri
+        )
     }
 
     private fun saveMediaToGallery(
@@ -260,7 +266,9 @@ object DownloadHelper {
         mimeType: String,
         showEnhancedNotification: Boolean = true,
         retryOnFailure: Boolean = true,
-        scope: CoroutineScope? = null
+        scope: CoroutineScope? = null,
+        downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+        customDownloadDirUri: String = ""
     ) {
         val safeUrl = sanitizeDownloadUrl(url)
         if (safeUrl.isEmpty()) {
@@ -270,6 +278,12 @@ object DownloadHelper {
         }
 
         val fileName = parseFileName(safeUrl, contentDisposition, mimeType)
+
+        if (downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.CUSTOM && customDownloadDirUri.isNotBlank()) {
+            downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri)
+            return
+        }
+
         val downloadId = try {
             val request = buildDownloadManagerRequest(
                 context = context,
@@ -278,7 +292,8 @@ object DownloadHelper {
                 contentDisposition = contentDisposition,
                 mimeType = mimeType,
                 fileName = fileName,
-                showEnhancedNotification = showEnhancedNotification
+                showEnhancedNotification = showEnhancedNotification,
+                downloadLocationMode = downloadLocationMode
             )
             val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             downloadManager.enqueue(request)
@@ -296,14 +311,16 @@ object DownloadHelper {
                     ).show()
 
                     android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        downloadWithManager(context, safeUrl, userAgent, contentDisposition, mimeType, showEnhancedNotification, true, scope)
+                        downloadWithManager(context, safeUrl, userAgent, contentDisposition, mimeType, showEnhancedNotification, true, scope,
+                            downloadLocationMode = downloadLocationMode,
+                            customDownloadDirUri = customDownloadDirUri)
                     }, RETRY_DELAY_MS * (currentRetry + 1))
                     return
                 }
             }
 
             retryCountMap.remove(safeUrl)
-            downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope)
+            downloadInApp(context, safeUrl, userAgent, fileName, mimeType, scope, downloadLocationMode, customDownloadDirUri)
             return
         }
 
@@ -328,7 +345,8 @@ object DownloadHelper {
         contentDisposition: String,
         mimeType: String,
         fileName: String,
-        showEnhancedNotification: Boolean
+        showEnhancedNotification: Boolean,
+        downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
     ): DownloadManager.Request {
         val originHeader = buildOriginHeader(safeUrl)
 
@@ -354,7 +372,14 @@ object DownloadHelper {
             setTitle(fileName)
             setDescription("正在下载...")
 
-            setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+            when (downloadLocationMode) {
+                com.webtoapp.data.model.DownloadLocationMode.APP_PRIVATE -> {
+                    setDestinationInExternalFilesDir(context, Environment.DIRECTORY_DOWNLOADS, fileName)
+                }
+                else -> {
+                    setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                }
+            }
 
             setAllowedNetworkTypes(
                 DownloadManager.Request.NETWORK_WIFI or
@@ -380,7 +405,9 @@ object DownloadHelper {
         userAgent: String,
         fileName: String,
         mimeType: String,
-        scope: CoroutineScope?
+        scope: CoroutineScope?,
+        downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+        customDownloadDirUri: String = ""
     ) {
         val notificationManager = DownloadNotificationManager.getInstance(context)
         val notificationId = notificationManager.showIndeterminateProgress(fileName)
@@ -445,7 +472,7 @@ object DownloadHelper {
                         }
                     }
                 } else {
-                    val targetFile = resolveDownloadTargetFile(context, fileName)
+                    val targetFile = resolveDownloadTargetFile(context, fileName, downloadLocationMode, customDownloadDirUri)
                     connection.inputStream.use { input ->
                         java.io.FileOutputStream(targetFile).use { output ->
                             input.copyTo(output, bufferSize = 64 * 1024)
@@ -476,19 +503,38 @@ object DownloadHelper {
         }
     }
 
-    private fun resolveDownloadTargetFile(context: Context, fileName: String): File {
-        val downloadDir = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            getPublicDownloadsDir()
-        } else {
-            getPublicDownloadsDir().also { if (!it.exists()) it.mkdirs() }
+    private fun resolveDownloadTargetFile(
+        context: Context,
+        fileName: String,
+        downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+        customDownloadDirUri: String = ""
+    ): File {
+        val baseDir = when (downloadLocationMode) {
+            com.webtoapp.data.model.DownloadLocationMode.APP_PRIVATE -> {
+                context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: context.filesDir
+            }
+            com.webtoapp.data.model.DownloadLocationMode.CUSTOM -> {
+                if (customDownloadDirUri.isNotBlank()) {
+                    File(customDownloadDirUri).also { if (!it.exists()) it.mkdirs() }
+                } else {
+                    getPublicDownloadsDir().also { if (!it.exists()) it.mkdirs() }
+                }
+            }
+            else -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    getPublicDownloadsDir()
+                } else {
+                    getPublicDownloadsDir().also { if (!it.exists()) it.mkdirs() }
+                }
+            }
         }
 
-        var targetFile = File(downloadDir, fileName)
+        var targetFile = File(baseDir, fileName)
         var counter = 1
         val nameWithoutExt = fileName.substringBeforeLast(".")
         val ext = if (fileName.contains(".")) ".${fileName.substringAfterLast(".")}" else ""
         while (targetFile.exists()) {
-            targetFile = File(downloadDir, "${nameWithoutExt}_$counter$ext")
+            targetFile = File(baseDir, "${nameWithoutExt}_$counter$ext")
             counter++
         }
         return targetFile

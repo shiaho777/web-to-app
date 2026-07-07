@@ -60,7 +60,12 @@ class NativeBridge(
     private val capabilities: com.webtoapp.data.model.NativeBridgeCapabilities =
         com.webtoapp.data.model.NativeBridgeCapabilities(),
 
-    private val corsBypass: Boolean = false
+    private val corsBypass: Boolean = false,
+
+    private val downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode =
+        com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+
+    private val customDownloadDirUri: String = ""
 ) {
     companion object {
         const val JS_INTERFACE_NAME = "NativeBridge"
@@ -1207,7 +1212,7 @@ if (NativeBridge.isFullscreen()) {
         }
     }
 
-    private val downloadBridge by lazy { DownloadBridge(context, scope) }
+    private val downloadBridge by lazy { DownloadBridge(context, scope, downloadLocationMode, customDownloadDirUri) }
 
     @JavascriptInterface
     fun saveToFile(content: String, filename: String, mimeType: String = "text/plain") {
