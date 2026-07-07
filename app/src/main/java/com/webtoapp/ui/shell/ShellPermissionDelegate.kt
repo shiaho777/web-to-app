@@ -40,6 +40,22 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         val contentLength: Long
     )
 
+    private fun resolveDownloadLocationConfig(): Pair<com.webtoapp.data.model.DownloadLocationMode, String> {
+        val config = try {
+            com.webtoapp.WebToAppApplication.shellMode.getConfig()
+        } catch (e: Exception) {
+            null
+        }
+        val mode = try {
+            com.webtoapp.data.model.DownloadLocationMode.valueOf(
+                config?.webViewConfig?.downloadLocationMode ?: "SYSTEM_DOWNLOAD"
+            )
+        } catch (e: Exception) {
+            com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
+        }
+        return mode to (config?.webViewConfig?.customDownloadDirUri ?: "")
+    }
+
     private var cameraPhotoUri: Uri? = null
 
     private var pendingFilePathCallback: android.webkit.ValueCallback<Array<Uri>>? = null
@@ -349,6 +365,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         if (allGranted) {
 
             pendingDownload?.let { download ->
+                val (mode, customDir) = resolveDownloadLocationConfig()
                 DownloadHelper.handleDownload(
                     context = activity,
                     url = download.url,
@@ -356,13 +373,16 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                     contentDisposition = download.contentDisposition,
                     mimeType = download.mimeType,
                     contentLength = download.contentLength,
-                    scope = activity.lifecycleScope
+                    scope = activity.lifecycleScope,
+                    downloadLocationMode = mode,
+                    customDownloadDirUri = customDir
                 )
             }
         } else {
             Toast.makeText(activity, Strings.storagePermissionRequired, Toast.LENGTH_SHORT).show()
 
             pendingDownload?.let { download ->
+                val (mode, customDir) = resolveDownloadLocationConfig()
                 DownloadHelper.handleDownload(
                     context = activity,
                     url = download.url,
@@ -370,7 +390,9 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                     contentDisposition = download.contentDisposition,
                     mimeType = download.mimeType,
                     contentLength = download.contentLength,
-                    scope = activity.lifecycleScope
+                    scope = activity.lifecycleScope,
+                    downloadLocationMode = mode,
+                    customDownloadDirUri = customDir
                 )
             }
         }
@@ -604,6 +626,8 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
             """.trimIndent(), null)
         }
 
+        val (downloadLocationMode, customDownloadDirUri) = resolveDownloadLocationConfig()
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             DownloadHelper.handleDownload(
                 context = activity,
@@ -613,7 +637,9 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 mimeType = mimeType,
                 contentLength = contentLength,
                 scope = activity.lifecycleScope,
-                onBlobDownload = onBlobDownload
+                onBlobDownload = onBlobDownload,
+                downloadLocationMode = downloadLocationMode,
+                customDownloadDirUri = customDownloadDirUri
             )
             return
         }
@@ -632,7 +658,9 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                 mimeType = mimeType,
                 contentLength = contentLength,
                 scope = activity.lifecycleScope,
-                onBlobDownload = onBlobDownload
+                onBlobDownload = onBlobDownload,
+                downloadLocationMode = downloadLocationMode,
+                customDownloadDirUri = customDownloadDirUri
             )
         } else {
 

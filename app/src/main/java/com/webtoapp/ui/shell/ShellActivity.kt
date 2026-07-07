@@ -487,7 +487,17 @@ class ShellActivity : AppCompatActivity() {
                             translateBridge = TranslateBridge(wv, lifecycleScope)
                             wv.addJavascriptInterface(translateBridge!!, TranslateBridge.JS_INTERFACE_NAME)
 
-                            val downloadBridge = com.webtoapp.core.webview.DownloadBridge(this@ShellActivity, lifecycleScope)
+                            val downloadLocationMode = try {
+                                com.webtoapp.data.model.DownloadLocationMode.valueOf(config.webViewConfig.downloadLocationMode)
+                            } catch (e: Exception) {
+                                com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
+                            }
+                            val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
+                                this@ShellActivity,
+                                lifecycleScope,
+                                downloadLocationMode,
+                                config.webViewConfig.customDownloadDirUri
+                            )
                             wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
 
                             if (config.webViewConfig.enablePrintBridge) {
@@ -538,7 +548,9 @@ class ShellActivity : AppCompatActivity() {
                                     scope = lifecycleScope,
                                     webViewProvider = { wv },
                                     capabilities = capabilities,
-                                    corsBypass = config.webViewConfig.enableCorsBypass
+                                    corsBypass = config.webViewConfig.enableCorsBypass,
+                                    downloadLocationMode = downloadLocationMode,
+                                    customDownloadDirUri = config.webViewConfig.customDownloadDirUri
                                 )
                                 wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
                             } else if (config.webViewConfig.enablePrivateNetworkBridge || config.webViewConfig.enableCorsBypass) {

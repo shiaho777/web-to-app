@@ -116,10 +116,6 @@ class FloatingWindowService : Service() {
                 } else {
                     null
                 }
-                val downloadBridgeFactory: (WebView) -> Unit = { webView ->
-                    val downloadBridge = DownloadBridge(this, serviceScope)
-                    webView.addJavascriptInterface(downloadBridge, DownloadBridge.JS_INTERFACE_NAME)
-                }
 
                 val shellConfig = try {
                     org.koin.core.context.GlobalContext
@@ -129,6 +125,19 @@ class FloatingWindowService : Service() {
                 } catch (e: Exception) {
                     AppLogger.w(TAG, "Shell config unavailable, falling back to raw URL", e)
                     null
+                }
+
+                val downloadLocationMode = try {
+                    com.webtoapp.data.model.DownloadLocationMode.valueOf(
+                        shellConfig?.webViewConfig?.downloadLocationMode ?: "SYSTEM_DOWNLOAD"
+                    )
+                } catch (e: Exception) {
+                    com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
+                }
+                val customDownloadDirUri = shellConfig?.webViewConfig?.customDownloadDirUri ?: ""
+                val downloadBridgeFactory: (WebView) -> Unit = { webView ->
+                    val downloadBridge = DownloadBridge(this, serviceScope, downloadLocationMode, customDownloadDirUri)
+                    webView.addJavascriptInterface(downloadBridge, DownloadBridge.JS_INTERFACE_NAME)
                 }
 
                 val webViewConfigurator = shellConfig?.let { sc ->
@@ -233,6 +242,14 @@ class FloatingWindowService : Service() {
         translateShowButton: Boolean
     ): (WebView) -> Unit {
         val webViewConfig = com.webtoapp.ui.shell.buildWebViewConfig(shellConfig)
+        val downloadLocationMode = try {
+            com.webtoapp.data.model.DownloadLocationMode.valueOf(
+                shellConfig.webViewConfig.downloadLocationMode
+            )
+        } catch (e: Exception) {
+            com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
+        }
+        val customDownloadDirUri = shellConfig.webViewConfig.customDownloadDirUri
         val adBlocker = try {
             com.webtoapp.WebToAppApplication.adBlock
         } catch (e: Exception) {
@@ -275,7 +292,9 @@ class FloatingWindowService : Service() {
                             scope = serviceScope,
                             webViewProvider = { webView },
                             capabilities = capabilities,
-                            corsBypass = shellConfig.webViewConfig.enableCorsBypass
+                            corsBypass = shellConfig.webViewConfig.enableCorsBypass,
+                            downloadLocationMode = downloadLocationMode,
+                            customDownloadDirUri = customDownloadDirUri
                         )
                         webView.addJavascriptInterface(
                             nativeBridge,
@@ -380,7 +399,9 @@ class FloatingWindowService : Service() {
                         floatingWindowManager.getWebView()?.evaluateJavascript(
                             buildBlobDownloadJs(blobUrl, filename), null
                         )
-                    }
+                    },
+                    downloadLocationMode = downloadLocationMode,
+                    customDownloadDirUri = customDownloadDirUri
                 )
             }
 

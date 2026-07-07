@@ -663,7 +663,12 @@ class WebViewActivity : AppCompatActivity() {
                         wv.onResume()
                         wv.resumeTimers()
 
-                        val downloadBridge = com.webtoapp.core.webview.DownloadBridge(this@WebViewActivity, lifecycleScope)
+                        val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
+                            this@WebViewActivity,
+                            lifecycleScope,
+                            previewApp?.webViewConfig?.downloadLocationMode ?: com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+                            previewApp?.webViewConfig?.customDownloadDirUri ?: ""
+                        )
                         wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
 
                         val previewWvConfig = previewApp?.webViewConfig
@@ -681,7 +686,9 @@ class WebViewActivity : AppCompatActivity() {
                                 scope = lifecycleScope,
                                 webViewProvider = { wv },
                                 capabilities = previewWvConfig.nativeBridgeCapabilities,
-                                corsBypass = previewWvConfig.enableCorsBypass
+                                corsBypass = previewWvConfig.enableCorsBypass,
+                                downloadLocationMode = previewWvConfig.downloadLocationMode,
+                                customDownloadDirUri = previewWvConfig.customDownloadDirUri
                             )
                             wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
                         } else if (previewWvConfig?.enablePrivateNetworkBridge == true || previewWvConfig?.enableCorsBypass == true) {
@@ -2255,6 +2262,7 @@ fun WebViewScreen(
                 contentLength: Long
             ) {
 
+                val effectiveApp = webApp ?: previewApp
                 DownloadHelper.handleDownload(
                     context = context,
                     url = url,
@@ -2263,6 +2271,9 @@ fun WebViewScreen(
                     mimeType = mimeType,
                     contentLength = contentLength,
                     scope = scope,
+                    downloadLocationMode = effectiveApp?.webViewConfig?.downloadLocationMode
+                        ?: com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+                    customDownloadDirUri = effectiveApp?.webViewConfig?.customDownloadDirUri ?: "",
                     onBlobDownload = { blobUrl, filename ->
                         val safeBlobUrl = org.json.JSONObject.quote(blobUrl)
                         val safeFilename = org.json.JSONObject.quote(filename)
@@ -2913,7 +2924,9 @@ fun WebViewScreen(
                                                 scope = scope,
                                                 webViewProvider = { this },
                                                 capabilities = effectiveWebApp.webViewConfig.nativeBridgeCapabilities,
-                                                corsBypass = effectiveWebApp.webViewConfig.enableCorsBypass
+                                                corsBypass = effectiveWebApp.webViewConfig.enableCorsBypass,
+                                                downloadLocationMode = effectiveWebApp.webViewConfig.downloadLocationMode,
+                                                customDownloadDirUri = effectiveWebApp.webViewConfig.customDownloadDirUri
                                             )
                                             addJavascriptInterface(
                                                 nb,

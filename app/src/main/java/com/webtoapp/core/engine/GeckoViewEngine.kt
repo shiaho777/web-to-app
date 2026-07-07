@@ -395,7 +395,9 @@ class GeckoViewEngine(
                 scope = bridgeScope!!,
                 webViewProvider = { null },
                 capabilities = config.nativeBridgeCapabilities,
-                corsBypass = config.enableCorsBypass
+                corsBypass = config.enableCorsBypass,
+                downloadLocationMode = config.downloadLocationMode,
+                customDownloadDirUri = config.customDownloadDirUri
             )
             activeNativeBridge = bridge
             ensureNativeBridgeExtension(runtime)
