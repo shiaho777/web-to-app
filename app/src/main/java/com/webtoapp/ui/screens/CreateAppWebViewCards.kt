@@ -3041,6 +3041,25 @@ fun SpecialSettingsCard(
     onConfigChange: (com.webtoapp.data.model.WebViewConfig) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val downloadFolderPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let { treeUri ->
+            val path = safTreeUriToPath(treeUri)
+            if (path != null) {
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        treeUri,
+                        android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                            android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    )
+                } catch (_: Exception) {
+                }
+                onConfigChange(config.copy(customDownloadDirUri = path))
+            }
+        }
+    }
 
     WtaSettingCard {
         Column {
@@ -3518,6 +3537,37 @@ fun SpecialSettingsCard(
                             checked = config.enableBlobDownloadInterception,
                             onCheckedChange = { onConfigChange(config.copy(enableBlobDownloadInterception = it)) }
                         ) {
+                            ChoiceChipRow(
+                                label = Strings.downloadLocationLabel,
+                                options = listOf(
+                                    com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD to Strings.downloadLocationSystem,
+                                    com.webtoapp.data.model.DownloadLocationMode.APP_PRIVATE to Strings.downloadLocationAppPrivate,
+                                    com.webtoapp.data.model.DownloadLocationMode.CUSTOM to Strings.downloadLocationCustom
+                                ),
+                                selected = config.downloadLocationMode,
+                                onSelect = { onConfigChange(config.copy(downloadLocationMode = it)) }
+                            )
+                            if (config.downloadLocationMode == com.webtoapp.data.model.DownloadLocationMode.CUSTOM) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = config.customDownloadDirUri.ifEmpty { Strings.downloadLocationCustomEmpty },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    OutlinedButton(
+                                        onClick = { downloadFolderPickerLauncher.launch(null) }
+                                    ) {
+                                        Text(Strings.downloadLocationCustomPick)
+                                    }
+                                }
+                            }
                             ChoiceChipRow(
                                 label = Strings.blobInterceptScopeLabel,
                                 options = listOf(
@@ -4131,4 +4181,18 @@ private fun CustomMediaPickerRow(
             }
         }
     }
+}
+
+private fun safTreeUriToPath(uri: Uri): String? {
+    if (uri.authority != "com.android.externalstorage.documents") return null
+    val docId = uri.lastPathSegment ?: return null
+    val parts = docId.split(":")
+    if (parts.isEmpty()) return null
+    val type = parts[0]
+    val relativePath = if (parts.size > 1) parts[1] else ""
+    val basePath = when (type) {
+        "primary" -> android.os.Environment.getExternalStorageDirectory().absolutePath
+        else -> "/storage/$type"
+    }
+    return if (relativePath.isNotEmpty()) "$basePath/$relativePath" else basePath
 }
