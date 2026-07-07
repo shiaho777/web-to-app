@@ -1742,3 +1742,48 @@ if (NativeBridge.isFullscreen()) {
         }
     }
 }
+
+private fun privateNetworkOnlyCapabilities(): com.webtoapp.data.model.NativeBridgeCapabilities {
+    return com.webtoapp.data.model.NativeBridgeCapabilities(
+        clipboard = false,
+        vibration = false,
+        geolocation = false,
+        brightness = false,
+        notification = false,
+        notificationScheduled = false,
+        notificationPersistent = false,
+        download = false,
+        privateNetwork = true,
+        screenWake = false,
+        openExternal = false,
+        deviceInfo = false,
+        securityInfo = false,
+        networkInfo = false,
+        toast = false,
+        logging = false,
+        findInPage = false,
+        orientation = false,
+        fullscreen = false,
+        print = false
+    )
+}
+
+class PrivateNetworkNativeBridgeAdapter(
+    context: Context,
+    scope: CoroutineScope,
+    webViewProvider: () -> WebView? = { null },
+    corsBypass: Boolean = false
+) {
+    private val delegate = NativeBridge(
+        context = context,
+        scope = scope,
+        webViewProvider = webViewProvider,
+        capabilities = privateNetworkOnlyCapabilities(),
+        corsBypass = corsBypass
+    )
+
+    @JavascriptInterface
+    fun httpRequest(requestJson: String): String {
+        return delegate.httpRequest(requestJson)
+    }
+}

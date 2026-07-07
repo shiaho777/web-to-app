@@ -281,6 +281,17 @@ class FloatingWindowService : Service() {
                             nativeBridge,
                             com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME
                         )
+                    } else if (shellConfig.webViewConfig.enablePrivateNetworkBridge || shellConfig.webViewConfig.enableCorsBypass) {
+                        val privateNetworkBridge = com.webtoapp.core.webview.PrivateNetworkNativeBridgeAdapter(
+                            context = this@FloatingWindowService,
+                            scope = serviceScope,
+                            webViewProvider = { webView },
+                            corsBypass = shellConfig.webViewConfig.enableCorsBypass
+                        )
+                        webView.addJavascriptInterface(
+                            privateNetworkBridge,
+                            com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME
+                        )
                     } else {
                         webView.removeJavascriptInterface(
                             com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME
