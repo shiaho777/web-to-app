@@ -101,6 +101,7 @@ fun StatusBarConfigCard(
     ) {
         StatusBarPreviewBox(
             heightDp = currentHeightDp,
+            colorMode = config.statusBarColorMode,
             backgroundType = config.statusBarBackgroundType,
             backgroundColor = config.statusBarColor,
             backgroundImage = config.statusBarBackgroundImage,
@@ -138,7 +139,38 @@ fun StatusBarConfigCard(
 
         when (config.statusBarBackgroundType) {
             StatusBarBackgroundType.COLOR -> {
-                ColorSelectionRow(currentColor = config.statusBarColor, onColorClick = { showColorPicker = true })
+                Text(Strings.backgroundColor, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PremiumFilterChip(
+                        selected = config.statusBarColorMode == StatusBarColorMode.THEME,
+                        onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.THEME)) },
+                        label = { Text(Strings.tagTheme) },
+                        leadingIcon = if (config.statusBarColorMode == StatusBarColorMode.THEME) {
+                            { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
+                        } else { { Icon(Icons.Outlined.Palette, null, Modifier.size(18.dp)) } }
+                    )
+                    PremiumFilterChip(
+                        selected = config.statusBarColorMode == StatusBarColorMode.PAGE_TOP,
+                        onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.PAGE_TOP)) },
+                        label = { Text(Strings.followPageTop) },
+                        leadingIcon = if (config.statusBarColorMode == StatusBarColorMode.PAGE_TOP) {
+                            { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
+                        } else { { Icon(Icons.Outlined.Language, null, Modifier.size(18.dp)) } }
+                    )
+                    PremiumFilterChip(
+                        selected = config.statusBarColorMode == StatusBarColorMode.CUSTOM,
+                        onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.CUSTOM)) },
+                        label = { Text(Strings.backgroundColor) },
+                        leadingIcon = if (config.statusBarColorMode == StatusBarColorMode.CUSTOM) {
+                            { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
+                        } else { { Icon(Icons.Outlined.Edit, null, Modifier.size(18.dp)) } }
+                    )
+                }
+
+                if (config.statusBarColorMode == StatusBarColorMode.CUSTOM) {
+                    ColorSelectionRow(currentColor = config.statusBarColor, onColorClick = { showColorPicker = true })
+                }
             }
             StatusBarBackgroundType.IMAGE -> {
                 ImageSelectionRow(
@@ -157,12 +189,22 @@ fun StatusBarConfigCard(
 @Composable
 private fun StatusBarPreviewBox(
     heightDp: Int,
+    colorMode: StatusBarColorMode,
     backgroundType: StatusBarBackgroundType,
     backgroundColor: String?,
     backgroundImage: String?,
     alpha: Float
 ) {
-    val bgColor = remember(backgroundColor) { backgroundColor?.let { parseColor(it) } ?: Color.Black }
+    val themePrimary = MaterialTheme.colorScheme.primary
+    val themeSurface = MaterialTheme.colorScheme.surface
+    val bgColor = remember(colorMode, backgroundColor, themePrimary, themeSurface) {
+        when (colorMode) {
+            StatusBarColorMode.CUSTOM -> backgroundColor?.let { parseColor(it) } ?: Color.Black
+            StatusBarColorMode.PAGE_TOP -> backgroundColor?.let { parseColor(it) } ?: themePrimary
+            StatusBarColorMode.TRANSPARENT -> Color.Transparent
+            StatusBarColorMode.THEME -> themeSurface
+        }
+    }
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(Strings.statusBarPreview, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

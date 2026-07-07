@@ -32,6 +32,7 @@ fun ShellScreen(
     config: ShellConfig,
     deepLinkUrl: String? = null,
     onWebViewCreated: (WebView) -> Unit,
+    onStatusBarAutoColorChanged: (String?) -> Unit = {},
     onFileChooser: (ValueCallback<Array<Uri>>?, WebChromeClient.FileChooserParams?) -> Boolean,
     onShowCustomView: (View, WebChromeClient.CustomViewCallback?) -> Unit,
     onHideCustomView: () -> Unit,
@@ -117,6 +118,8 @@ fun ShellScreen(
     }
 
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var statusBarAutoColor by remember { mutableStateOf<String?>(null) }
+    var statusBarColorTracker by remember { mutableStateOf<com.webtoapp.core.webview.StatusBarPageColorTracker?>(null) }
 
     var showLongPressMenu by remember { mutableStateOf(false) }
     var longPressResult by remember { mutableStateOf<LongPressHandler.LongPressResult?>(null) }
@@ -230,6 +233,25 @@ fun ShellScreen(
 
     }
 
+    fun usesPageTopStatusBarColor(): Boolean {
+        return (config.webViewConfig.statusBarBackgroundType == "COLOR" &&
+            config.webViewConfig.statusBarColorMode == com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP.name) ||
+            (config.webViewConfig.statusBarBackgroundTypeDark == "COLOR" &&
+                config.webViewConfig.statusBarColorModeDark == com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP.name)
+    }
+
+    fun resolveStatusBarOverlayColor(isDark: Boolean): String? {
+        val mode = if (isDark) config.webViewConfig.statusBarColorModeDark else config.webViewConfig.statusBarColorMode
+        val configuredColor = if (isDark) statusBarBackgroundColorDark else statusBarBackgroundColor
+        return when (mode) {
+            com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP.name -> statusBarAutoColor ?: configuredColor ?: if (isDark) "#1C1B1F" else "#FFFBFE"
+            com.webtoapp.data.model.StatusBarColorMode.CUSTOM.name -> configuredColor ?: if (isDark) "#1C1B1F" else "#FFFBFE"
+            com.webtoapp.data.model.StatusBarColorMode.THEME.name -> if (isDark) "#1C1B1F" else "#FFFBFE"
+            com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT.name -> null
+            else -> configuredColor
+        }
+    }
+
     ForcedRunEffects(
         state = forcedRunState,
         config = config.forcedRunConfig,
@@ -281,6 +303,17 @@ fun ShellScreen(
                 longPressTouchY = y
                 showLongPressMenu = true
             },
+            resetStatusBarAutoColor = {
+                if (!usesPageTopStatusBarColor()) return@createShellWebViewCallbacks
+                statusBarColorTracker?.reset()
+                if (statusBarAutoColor != null) {
+                    statusBarAutoColor = null
+                    onStatusBarAutoColorChanged(null)
+                }
+            },
+            scheduleStatusBarAutoColorSample = {
+                statusBarColorTracker?.scheduleSample(56L)
+            },
             onRefreshFinished = { isRefreshing = false }
         )
     }
@@ -307,6 +340,34 @@ fun ShellScreen(
         if (originalOrientation != ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED) {
             activity.requestedOrientation = originalOrientation
             originalOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            statusBarColorTracker?.detach()
+            statusBarColorTracker = null
+            onStatusBarAutoColorChanged(null)
+        }
+    }
+
+    val handleWebViewCreated: (WebView) -> Unit = remember(onWebViewCreated, config) {
+        { webView ->
+            statusBarColorTracker?.detach()
+            val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
+                webView = webView,
+                shouldSample = ::usesPageTopStatusBarColor,
+                onColorChanged = { color ->
+                    if (statusBarAutoColor != color) {
+                        statusBarAutoColor = color
+                        onStatusBarAutoColorChanged(color)
+                    }
+                }
+            )
+            tracker.attach()
+            statusBarColorTracker = tracker
+            onWebViewCreated(webView)
+            tracker.scheduleSample(80L)
         }
     }
 
@@ -340,7 +401,7 @@ fun ShellScreen(
         swipeRefreshEnabled = swipeRefreshEnabled,
         isRefreshing = isRefreshing,
         onRefresh = { isRefreshing = true },
-        onWebViewCreated = onWebViewCreated,
+        onWebViewCreated = handleWebViewCreated,
         onWebViewRefUpdated = { webViewRef = it },
         onShowActivationDialog = { showActivationDialog = true },
         onErrorDismiss = { errorMessage = null },
@@ -418,12 +479,15 @@ fun ShellScreen(
     }
 
     val isDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+    val effectiveColorMode = if (isDarkTheme) config.webViewConfig.statusBarColorModeDark else config.webViewConfig.statusBarColorMode
     val effectiveBgType = if (isDarkTheme) statusBarBackgroundTypeDark else statusBarBackgroundType
-    val effectiveBgColor = if (isDarkTheme) statusBarBackgroundColorDark else statusBarBackgroundColor
+    val effectiveBgColor = resolveStatusBarOverlayColor(isDarkTheme)
     val effectiveBgImage = if (isDarkTheme) statusBarBackgroundImageDark else statusBarBackgroundImage
     val effectiveBgAlpha = if (isDarkTheme) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha
     val showOverlay = (hideToolbar && config.webViewConfig.showStatusBarInFullscreen) ||
-            (!hideToolbar && (effectiveBgType != "COLOR" || effectiveBgColor != null))
+            (!hideToolbar && (effectiveBgType != "COLOR" ||
+                effectiveColorMode == com.webtoapp.data.model.StatusBarColorMode.CUSTOM.name ||
+                effectiveColorMode == com.webtoapp.data.model.StatusBarColorMode.PAGE_TOP.name))
     if (showOverlay) {
         com.webtoapp.ui.components.StatusBarOverlay(
             show = true,

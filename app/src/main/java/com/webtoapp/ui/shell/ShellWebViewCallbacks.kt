@@ -39,6 +39,8 @@ fun createShellWebViewCallbacks(
     updateWebViewRef: (WebView?) -> Unit,
     notifyRecreationKeyIncrement: () -> Unit,
     notifyLongPressMenu: (LongPressHandler.LongPressResult, Float, Float) -> Unit,
+    resetStatusBarAutoColor: () -> Unit = {},
+    scheduleStatusBarAutoColorSample: () -> Unit = {},
     onRefreshFinished: () -> Unit = {}
 ): WebViewCallbacks {
     return object : WebViewCallbacks {
@@ -46,6 +48,7 @@ fun createShellWebViewCallbacks(
             if (url == "about:blank") return
             updateLoading(true)
             updateUrl(url ?: "")
+            resetStatusBarAutoColor()
             com.webtoapp.core.shell.ShellLogger.logWebView("开始加载", url ?: "")
         }
 
@@ -67,6 +70,11 @@ fun createShellWebViewCallbacks(
                 updateNavigation(it.canGoBack(), it.canGoForward())
             }
             if (url != null) updateUrl(url)
+            scheduleStatusBarAutoColorSample()
+        }
+
+        override fun onPageCommitVisible(url: String?) {
+            scheduleStatusBarAutoColorSample()
         }
 
         override fun onPageFinished(url: String?) {
@@ -90,6 +98,7 @@ fun createShellWebViewCallbacks(
                 }
 
             }
+            scheduleStatusBarAutoColorSample()
         }
 
         override fun onProgressChanged(progress: Int) {

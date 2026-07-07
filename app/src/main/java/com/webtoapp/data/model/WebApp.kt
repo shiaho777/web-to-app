@@ -150,6 +150,7 @@ data class Announcement(
 
 enum class StatusBarColorMode {
     THEME,
+    PAGE_TOP,
     TRANSPARENT,
     CUSTOM
 }
