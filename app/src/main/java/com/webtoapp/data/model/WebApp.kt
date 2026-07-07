@@ -251,6 +251,8 @@ data class WebViewConfig(
     val autoRefreshShowCountdown: Boolean = true,
     val fullscreenEnabled: Boolean = true,
     val downloadEnabled: Boolean = true,
+    val downloadLocationMode: DownloadLocationMode = DownloadLocationMode.SYSTEM_DOWNLOAD,
+    val customDownloadDirUri: String = "",
     val openExternalLinks: Boolean = false,
     val hideBrowserToolbar: Boolean = false,
     val toolbarShowTitle: Boolean = true,
@@ -1429,6 +1431,15 @@ enum class BlobInterceptScope {
     ALL,
 
     SIZE_OVER_THRESHOLD,
+}
+
+enum class DownloadLocationMode {
+
+    SYSTEM_DOWNLOAD,
+
+    APP_PRIVATE,
+
+    CUSTOM
 }
 
 enum class PrimeUserActivationMode {

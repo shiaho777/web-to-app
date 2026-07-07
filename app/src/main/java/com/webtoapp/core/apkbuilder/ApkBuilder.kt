@@ -2598,7 +2598,7 @@ builtins.__import__ = _w2a_import
         if (rp.readExternalStorage) {
             permissions += "android.permission.READ_EXTERNAL_STORAGE"
         }
-        if (rp.writeExternalStorage) {
+        if (rp.writeExternalStorage || (config.downloadEnabled && config.downloadLocationMode != "APP_PRIVATE")) {
             permissions += "android.permission.WRITE_EXTERNAL_STORAGE"
         }
         if (rp.readMediaImages) {
@@ -3186,6 +3186,8 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
         pwaOfflineStrategy = pwaOfflineStrategy,
         keyboardAdjustMode = keyboardAdjustMode.name,
         downloadEnabled = downloadEnabled,
+        downloadLocationMode = downloadLocationMode.name,
+        customDownloadDirUri = customDownloadDirUri,
         antiCapture = antiCapture
     )
 }

@@ -315,6 +315,8 @@ internal object ApkConfigJsonFactory {
         "antiCapture" to webView.antiCapture,
         "showFloatingBackButton" to webView.showFloatingBackButton,
         "downloadEnabled" to webView.downloadEnabled,
+        "downloadLocationMode" to webView.downloadLocationMode,
+        "customDownloadDirUri" to webView.customDownloadDirUri,
         "floatingWindowConfig" to floatingWindowConfigPayload(),
         "errorPageConfig" to errorPageConfigPayload()
     )

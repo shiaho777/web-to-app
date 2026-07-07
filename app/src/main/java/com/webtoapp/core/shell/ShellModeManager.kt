@@ -1396,6 +1396,12 @@ data class WebViewShellConfig(
     @SerializedName("downloadEnabled")
     val downloadEnabled: Boolean = true,
 
+    @SerializedName("downloadLocationMode")
+    val downloadLocationMode: String = "SYSTEM_DOWNLOAD",
+
+    @SerializedName("customDownloadDirUri")
+    val customDownloadDirUri: String = "",
+
     @SerializedName("keyboardAdjustMode")
     val keyboardAdjustMode: String = "RESIZE",
 

@@ -162,6 +162,8 @@ data class ApkConfig(
     val enableBlobDownloadInterception: Boolean get() = webViewBehavior.enableBlobDownloadInterception
     val enablePrintBridge: Boolean get() = webViewBehavior.enablePrintBridge
     val downloadEnabled: Boolean get() = webView.downloadEnabled
+    val downloadLocationMode: String get() = webView.downloadLocationMode
+    val customDownloadDirUri: String get() = webView.customDownloadDirUri
     val enableCloudflareCompat: Boolean get() = webViewBehavior.enableCloudflareCompat
     val primeUserActivation: Boolean get() = webViewBehavior.primeUserActivation
 
@@ -486,6 +488,8 @@ data class WebViewBlock(
     val pwaOfflineStrategy: String = "NETWORK_FIRST",
     val keyboardAdjustMode: String = "RESIZE",
     val downloadEnabled: Boolean = true,
+    val downloadLocationMode: String = "SYSTEM_DOWNLOAD",
+    val customDownloadDirUri: String = "",
     val antiCapture: Boolean = false
 )
 
