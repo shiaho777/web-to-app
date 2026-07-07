@@ -3573,7 +3573,7 @@ class WebViewManager(
             if (currentConfig?.downloadEnabled == true && currentConfig?.enableBlobDownloadInterception != true) {
                 injectBlobCacheHookScript(webView)
             }
-            if (currentConfig?.enablePrintBridge == true && !minimizeLocalRuntimeInjection) {
+            if (currentConfig?.enablePrintBridge == true) {
                 injectPrintBridgeScript(webView)
             }
             if (!scriptlessMode && !minimizeLocalRuntimeInjection) {
