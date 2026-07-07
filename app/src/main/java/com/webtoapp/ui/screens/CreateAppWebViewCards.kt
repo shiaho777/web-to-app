@@ -1724,11 +1724,12 @@ private fun ViewportModeSelector(
         else Strings.viewportModeCustom
     }
 
-    SettingsSwitch(
+    WtaChoiceRow(
         title = Strings.viewportModeTitle,
         subtitle = currentModeLabel,
-        checked = viewportExpanded,
-        onCheckedChange = { viewportExpanded = it }
+        value = "",
+        isExpanded = viewportExpanded,
+        onClick = { viewportExpanded = !viewportExpanded }
     )
 
     AnimatedVisibility(
