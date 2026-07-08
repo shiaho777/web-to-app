@@ -1374,7 +1374,10 @@ class MainViewModel(
                     timeoutSeconds = timeoutSeconds
                 )
 
-                val result = scraper.scrape(config, onProgress)
+                val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+                val result = scraper.scrape(config) { progress ->
+                    mainHandler.post { onProgress(progress) }
+                }
 
                 when (result) {
                     is com.webtoapp.core.scraper.WebsiteScraper.ScrapeResult.Success -> {
