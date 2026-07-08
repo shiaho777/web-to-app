@@ -81,7 +81,10 @@ object StatusBarPageColorSampler {
                 var meta = document.querySelector('meta[name="theme-color" i]');
                 return meta ? parseColor(meta.getAttribute('content')) : null;
             }
-            return sampleTopArea(12) ||
+            return sampleTopArea(1) ||
+                sampleTopArea(6) ||
+                sampleTopArea(12) ||
+                sampleTopArea(20) ||
                 sampleTopArea((window.visualViewport && window.visualViewport.offsetTop) || 1) ||
                 colorFromElement(document.body) ||
                 colorFromElement(document.documentElement) ||
