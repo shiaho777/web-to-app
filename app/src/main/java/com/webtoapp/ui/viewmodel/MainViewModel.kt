@@ -160,6 +160,7 @@ class MainViewModel(
         _currentApp.value = null
         _uiState.value = UiState.Idle
         _hasUnsavedChanges.value = false
+        _pwaAnalysisState.value = PwaAnalysisState.Idle
     }
 
     fun editApp(webApp: WebApp) {
@@ -167,6 +168,7 @@ class MainViewModel(
         _uiState.value = UiState.Idle
         _editState.value = webApp.toEditState()
         _hasUnsavedChanges.value = false
+        _pwaAnalysisState.value = PwaAnalysisState.Idle
 
         if (webApp.webViewConfig.injectScripts.any {
             com.webtoapp.core.script.UserScriptStorage.isFileReference(it.code)
