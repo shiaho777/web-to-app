@@ -25,9 +25,9 @@ class WebsiteScraper(private val context: Context) {
         private const val DEFAULT_MAX_FILES = 500
         private const val DEFAULT_MAX_FILE_SIZE = 20L * 1024 * 1024
         private const val DEFAULT_MAX_TOTAL_SIZE = 200L * 1024 * 1024
-        private const val DEFAULT_CONCURRENCY = 6
-        private const val CONNECT_TIMEOUT = 15L
-        private const val READ_TIMEOUT = 30L
+        private const val DEFAULT_CONCURRENCY = 16
+        private const val CONNECT_TIMEOUT = 8L
+        private const val READ_TIMEOUT = 15L
 
         private val HTML_SRC_PATTERN = Pattern.compile(
             """(?:src|href|data-src|data-original|poster)\s*=\s*["']([^"'#]+?)["']""",
@@ -115,11 +115,15 @@ class WebsiteScraper(private val context: Context) {
         .readTimeout(READ_TIMEOUT, TimeUnit.SECONDS)
         .followRedirects(true)
         .followSslRedirects(true)
-        .connectionPool(ConnectionPool(DEFAULT_CONCURRENCY, 30, TimeUnit.SECONDS))
+        .connectionPool(ConnectionPool(32, 5, TimeUnit.MINUTES))
+        .dispatcher(okhttp3.Dispatcher().apply {
+            maxRequests = 64
+            maxRequestsPerHost = 32
+        })
         .build()
 
     private val downloadedUrls = ConcurrentHashMap<String, String>()
-    private val pendingUrls = ConcurrentHashMap<String, Int>()
+    private val processedUrls = ConcurrentHashMap<String, Unit>()
     private val failedUrls = ConcurrentHashMap<String, String>()
     private val fileCounter = AtomicInteger(0)
     private var totalDownloadedBytes = 0L
@@ -145,10 +149,10 @@ class WebsiteScraper(private val context: Context) {
             if (projectDir.exists()) projectDir.deleteRecursively()
             projectDir.mkdirs()
 
-            AppLogger.d(TAG, "Starting scrape: url=${config.url}, projectDir=${projectDir.absolutePath}")
+            AppLogger.d(TAG, "Starting scrape: url=${config.url}, projectDir=${projectDir.absolutePath}, concurrency=${config.concurrency}")
 
             downloadedUrls.clear()
-            pendingUrls.clear()
+            processedUrls.clear()
             failedUrls.clear()
             fileCounter.set(0)
             totalDownloadedBytes = 0L
@@ -162,63 +166,62 @@ class WebsiteScraper(private val context: Context) {
                 message = Strings.scrapeAnalyzing
             ))
 
-            val entryResult = downloadFile(config.url, 0, config)
-            if (entryResult == null) {
-                return@withContext ScrapeResult.Error(Strings.scrapeEntryDownloadFailed.format(config.url))
+            val deadline = System.currentTimeMillis() + config.timeoutSeconds * 1000L
+            val urlChannel = kotlinx.coroutines.channels.Channel<Pair<String, Int>>(kotlinx.coroutines.channels.Channel.UNLIMITED)
+            val activeTasks = AtomicInteger(0)
+
+            fun enqueue(url: String, depth: Int) {
+                if (processedUrls.putIfAbsent(url, Unit) == null) {
+                    activeTasks.incrementAndGet()
+                    urlChannel.trySend(url to depth)
+                }
             }
 
-            val semaphore = kotlinx.coroutines.sync.Semaphore(config.concurrency)
-            var iteration = 0
-            val maxIterations = config.maxDepth * 20
-            val deadline = System.currentTimeMillis() + config.timeoutSeconds * 1000L
+            enqueue(config.url, 0)
 
-            while (pendingUrls.isNotEmpty()
-                && fileCounter.get() < config.maxFiles
-                && iteration < maxIterations
-                && System.currentTimeMillis() < deadline
-            ) {
-                iteration++
-
-                val remainingSlots = config.maxFiles - fileCounter.get()
-                val batch = pendingUrls.entries.toList()
-                    .sortedBy { it.value }
-                    .take(remainingSlots)
-
-                batch.forEach { (url, _) -> pendingUrls.remove(url) }
-
-                if (batch.isEmpty()) break
-
-                AppLogger.d(TAG, "Download iteration $iteration: ${batch.size} URLs pending, ${fileCounter.get()} files done")
-
-                val jobs = batch.map { (url, depth) ->
-                    async {
-                        semaphore.acquire()
+            val workers = (1..config.concurrency).map {
+                launch {
+                    for ((url, depth) in urlChannel) {
                         try {
-                            if (fileCounter.get() < config.maxFiles) {
-                                val totalSize: Long
-                                synchronized(downloadedBytesLock) {
-                                    totalSize = totalDownloadedBytes
-                                }
-                                if (totalSize < config.maxTotalSize) {
-                                    onProgress(ScrapeProgress(
-                                        phase = ScrapeProgress.Phase.DOWNLOADING,
-                                        downloadedFiles = fileCounter.get(),
-                                        totalDiscovered = fileCounter.get() + pendingUrls.size + batch.size,
-                                        downloadedBytes = totalSize,
-                                        currentFile = url.substringAfterLast("/").take(40),
-                                        message = Strings.scrapeDownloadingProgress.format(fileCounter.get())
-                                    ))
-                                    downloadFile(url, depth, config)
+                            if (fileCounter.get() >= config.maxFiles ||
+                                System.currentTimeMillis() >= deadline
+                            ) {
+                                continue
+                            }
+                            val totalSize: Long
+                            synchronized(downloadedBytesLock) {
+                                totalSize = totalDownloadedBytes
+                            }
+                            if (totalSize >= config.maxTotalSize) continue
+
+                            onProgress(ScrapeProgress(
+                                phase = ScrapeProgress.Phase.DOWNLOADING,
+                                downloadedFiles = fileCounter.get(),
+                                totalDiscovered = fileCounter.get() + activeTasks.get(),
+                                downloadedBytes = totalSize,
+                                currentFile = url.substringAfterLast("/").take(40),
+                                message = Strings.scrapeDownloadingProgress.format(fileCounter.get())
+                            ))
+
+                            val (_, discovered) = downloadFile(url, depth, config)
+
+                            for ((newUrl, newDepth) in discovered) {
+                                if (fileCounter.get() < config.maxFiles &&
+                                    System.currentTimeMillis() < deadline
+                                ) {
+                                    enqueue(newUrl, newDepth)
                                 }
                             }
                         } finally {
-                            semaphore.release()
+                            if (activeTasks.decrementAndGet() == 0) {
+                                urlChannel.close()
+                            }
                         }
                     }
                 }
-
-                jobs.awaitAll()
             }
+
+            workers.joinAll()
 
             if (System.currentTimeMillis() >= deadline) {
                 AppLogger.w(TAG, "Scrape timed out after ${config.timeoutSeconds}s, ${fileCounter.get()} files downloaded")
@@ -283,19 +286,19 @@ class WebsiteScraper(private val context: Context) {
         urlString: String,
         depth: Int,
         config: ScrapeConfig
-    ): String? {
+    ): Pair<String?, List<Pair<String, Int>>> {
         val normalizedUrl = normalizeUrl(urlString)
 
         if (downloadedUrls.containsKey(normalizedUrl)) {
-            return downloadedUrls[normalizedUrl]
+            return downloadedUrls[normalizedUrl] to emptyList()
         }
 
         if (config.skipPatterns.any { normalizedUrl.matches(Regex(it)) }) {
-            return null
+            return null to emptyList()
         }
 
         if (downloadedUrls.putIfAbsent(normalizedUrl, "__pending__") != null) {
-            return downloadedUrls[normalizedUrl]?.takeIf { it != "__pending__" }
+            return downloadedUrls[normalizedUrl]?.takeIf { it != "__pending__" } to emptyList()
         }
 
         try {
@@ -312,14 +315,14 @@ class WebsiteScraper(private val context: Context) {
                 failedUrls[normalizedUrl] = "HTTP ${response.code}"
                 downloadedUrls.remove(normalizedUrl)
                 response.close()
-                return null
+                return null to emptyList()
             }
 
             val body = response.body ?: run {
                 failedUrls[normalizedUrl] = "Empty response body"
                 downloadedUrls.remove(normalizedUrl)
                 response.close()
-                return null
+                return null to emptyList()
             }
 
             val contentType = response.header("Content-Type")?.lowercase() ?: ""
@@ -329,7 +332,7 @@ class WebsiteScraper(private val context: Context) {
                 failedUrls[normalizedUrl] = "Too large: ${contentLength / 1024} KB"
                 downloadedUrls.remove(normalizedUrl)
                 response.close()
-                return null
+                return null to emptyList()
             }
 
             val data = body.bytes()
@@ -339,7 +342,7 @@ class WebsiteScraper(private val context: Context) {
                 if (totalDownloadedBytes + data.size > config.maxTotalSize) {
                     failedUrls[normalizedUrl] = "Total size limit exceeded"
                     downloadedUrls.remove(normalizedUrl)
-                    return null
+                    return null to emptyList()
                 }
                 totalDownloadedBytes += data.size
             }
@@ -362,17 +365,18 @@ class WebsiteScraper(private val context: Context) {
 
                 if (isTextContent) {
                     val text = String(data, Charsets.UTF_8)
-                    discoverResources(text, normalizedUrl, depth, config, contentType)
+                    val discovered = discoverResources(text, normalizedUrl, depth, config, contentType)
+                    return localPath to discovered
                 }
             }
 
-            return localPath
+            return localPath to emptyList()
 
         } catch (e: Exception) {
             failedUrls[normalizedUrl] = e.message ?: "Unknown error"
             downloadedUrls.remove(normalizedUrl)
             AppLogger.d(TAG, "Download failed: $normalizedUrl -> ${e.message}")
-            return null
+            return null to emptyList()
         }
     }
 
@@ -382,7 +386,7 @@ class WebsiteScraper(private val context: Context) {
         depth: Int,
         config: ScrapeConfig,
         contentType: String
-    ) {
+    ): List<Pair<String, Int>> {
         val isHtml = contentType.contains("html") ||
             sourceUrl.endsWith(".html") || sourceUrl.endsWith(".htm") ||
             content.trimStart().startsWith("<!") || content.trimStart().startsWith("<html")
@@ -426,6 +430,8 @@ class WebsiteScraper(private val context: Context) {
             }
         }
 
+        val result = mutableListOf<Pair<String, Int>>()
+
         for (rawUrl in discoveredUrls) {
             if (rawUrl.isBlank() || rawUrl.startsWith("data:") || rawUrl.startsWith("javascript:") ||
                 rawUrl.startsWith("mailto:") || rawUrl.startsWith("tel:") || rawUrl.startsWith("#")) {
@@ -435,7 +441,7 @@ class WebsiteScraper(private val context: Context) {
             val resolvedUrl = resolveUrl(rawUrl, sourceUrl) ?: continue
             val normalizedResolved = normalizeUrl(resolvedUrl)
 
-            if (downloadedUrls.containsKey(normalizedResolved) || pendingUrls.containsKey(normalizedResolved)) {
+            if (downloadedUrls.containsKey(normalizedResolved) || processedUrls.containsKey(normalizedResolved)) {
                 continue
             }
 
@@ -458,9 +464,10 @@ class WebsiteScraper(private val context: Context) {
             val isResource = ext in DOWNLOADABLE_EXTENSIONS || !isPageLink
 
             if (isResource || (isPageLink && depth + 1 <= config.maxDepth)) {
-                pendingUrls[normalizedResolved] = depth + 1
+                result.add(normalizedResolved to depth + 1)
             }
         }
+        return result
     }
 
     private fun extractResourceUrls(htmlContent: String): Set<String> {
