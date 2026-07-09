@@ -17,7 +17,7 @@ class StringsKtTranslationParityTest {
                 appendLine("  - list all three branches: AppLanguage.CHINESE / .ENGLISH / .ARABIC")
                 appendLine("  - or defer to Android resources: else -> getString(R.string.x)")
                 appendLine()
-                appendLine("Offending blocks (line number is the line containing 'when (lang)'):")
+                appendLine("Offending blocks (line number is the line containing 'when (Strings.lang)'):")
                 problems.forEach { appendLine("  $it") }
             }
         ).that(problems).isEmpty()
@@ -35,7 +35,7 @@ class StringsKtTranslationParityTest {
 
     private fun analyse(source: String): List<String> {
         val problems = mutableListOf<String>()
-        val whenLangNeedle = "when (lang)"
+        val whenLangNeedle = "when (Strings.lang)"
 
         var index = 0
         while (index < source.length) {
@@ -174,9 +174,13 @@ class StringsKtTranslationParityTest {
     }
 
     private fun isPureGetStringDeferral(source: String, from: Int): Boolean {
+        var start = from
+        if (source.regionMatches(start, "Strings.", 0, "Strings.".length)) {
+            start += "Strings.".length
+        }
         val needle = "getString(R.string."
-        if (!source.regionMatches(from, needle, 0, needle.length)) return false
-        var i = from + needle.length
+        if (!source.regionMatches(start, needle, 0, needle.length)) return false
+        var i = start + needle.length
 
         if (i >= source.length || !(source[i].isLetter() || source[i] == '_')) return false
         while (i < source.length && (source[i].isLetterOrDigit() || source[i] == '_')) i++
