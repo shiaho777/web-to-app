@@ -25,3 +25,8 @@
 - 模板 APK 需要使用 debug 签名或不签名
 - 构建时会自动替换图标和重新签名
 - 包名修改需要额外的 ARSC 处理（当前版本暂不支持）
+- 支持 V1/V2/V3 签名方案
+- 支持 AAB 导出（含 protobuf 元数据生成）
+- 支持 APK 加密构建（EncryptedApkBuilder）
+- 支持 16K page 对齐（Android 16+）
+- 支持性能优化选项（图片压缩、WebP、代码压缩、懒加载、DNS 预取）
