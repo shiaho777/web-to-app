@@ -67,6 +67,7 @@ You'll need:
 - Android Studio Hedgehog or newer
 - JDK 17
 - The Gradle wrapper pins Gradle 9.4.1 — no system Gradle install required
+- Android NDK + CMake through SDK Manager (for native code: `node_launcher`, `go_exec_loader`, APK optimizer)
 
 ```bash
 git clone https://github.com/shiaho777/web-to-app.git
@@ -134,6 +135,15 @@ codebase. A few rules worth calling out:
   pages without a gate. PRs that bypass this will be rejected.
 - **Avoid catching `Exception` to silence errors.** If recovery is impossible,
   log via `AppLogger` and re-throw or return a failed `Result`.
+- **AI Coding skills use YAML frontmatter.** New skills live in `app/src/main/assets/skills/<name>/SKILL.md`.
+  Each skill must declare `name`, `description`, `when_to_use`, `icon`, `icon_color`,
+  `category` (`app`/`module`/`tool`), `allowed_tools`, and `arguments`. The frontmatter
+  drives the in-app skill picker; keep descriptions short (one line) and when_to_use
+  precise.
+- **AI Coding tool implementations** live in `core/aicoding/tool/builtin/`. Each tool
+  must extend `Tool.kt` and declare a schema. New tools need entries in
+  `ToolRegistryFactory.kt` and `Tool.kt` (`TaskTool` variant). AI Coding UI components
+  are in `ui/aicoding/`.
 
 ### Security
 
@@ -302,6 +312,11 @@ cd web-to-app
   都必须经过逐能力白名单（`NativeBridgeCapabilities`）。绝不要在没有门禁的
   情况下把原生能力暴露给任意页面。绕过门禁的 PR 会被拒
 - 不要 catch 然后吞掉异常；用 `AppLogger` 记录后重新抛出或返回失败的 `Result`
+- **AI Coding skill 使用 YAML frontmatter**。新技能放在 `app/src/main/assets/skills/<name>/SKILL.md`。
+  每个 skill 必须声明 `name`、`description`、`when_to_use`、`icon`、`icon_color`、
+  `category`（`app`/`module`/`tool`）、`allowed_tools` 和 `arguments`。
+- **AI Coding 工具实现**在 `core/aicoding/tool/builtin/`。每个工具必须继承 `Tool.kt`
+  并声明 schema。新工具需要在 `ToolRegistryFactory.kt` 和 `Tool.kt` 中注册。
 
 **安全**
 

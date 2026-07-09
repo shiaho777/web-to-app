@@ -204,6 +204,10 @@ specific WebToApp `versionCode` onwards — older clients hide the entry.
 The current `versionCode` is **47** (`v2.1.8`); set this only if you
 genuinely depend on a newer build.
 
+> **Note on app version.** `minAppVersion` uses the WebToApp host's internal
+> `versionCode`, not the user-facing version name. Check the latest
+> `versionCode` in `app/build.gradle.kts` before setting this field.
+
 `iconUrl` is optional. Either a relative path (`"icon.png"`, `"icon.svg"`,
 `"icon.webp"`, `"icon.jpg"`, `"icon.jpeg"`) referencing a file in your
 module folder, or an absolute `https://` URL pointing at off-repo hosting.
