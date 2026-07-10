@@ -148,15 +148,25 @@ class CompactService(
     }
 
     private suspend fun collectText(gateway: LlmGateway, req: ChatRequest): String {
-        val sb = StringBuilder()
-        gateway.chatStream(req).fold(Unit) { _, ev ->
-            when (ev) {
-                is LlmEvent.TextDelta -> sb.append(ev.delta)
-                is LlmEvent.Error -> if (!ev.recoverable) throw IllegalStateException(ev.message)
-                else -> Unit
+        var retries = 0
+        while (true) {
+            val sb = StringBuilder()
+            var retryable: String? = null
+            var retryAfterMs: Long? = null
+            gateway.chatStream(req).fold(Unit) { _, ev ->
+                when (ev) {
+                    is LlmEvent.TextDelta -> sb.append(ev.delta)
+                    is LlmEvent.Error -> if (!ev.recoverable) throw IllegalStateException(ev.message)
+                    else { retryable = ev.message; retryAfterMs = ev.retryAfterMs }
+                    else -> Unit
+                }
             }
+            if (retryable == null) return sb.toString().trim()
+            if (retries >= 5) throw IllegalStateException(retryable)
+            retries++
+            val backoff = retryAfterMs ?: (1000L shl (retries - 1).coerceAtMost(4))
+            kotlinx.coroutines.delay(backoff)
         }
-        return sb.toString().trim()
     }
 
     private fun estimateTokens(m: AgentMessage): Int {

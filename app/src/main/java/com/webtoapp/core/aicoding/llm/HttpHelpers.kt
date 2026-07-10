@@ -40,6 +40,13 @@ internal object HttpHelpers {
             in 500..599 -> "Server error ($code)"
             else -> "Request failed ($code): ${body.take(300)}"
         }
-        return msg to (code == 400 && toolRelated)
+        return msg to (code == 429 || code == 500 || code == 502 || code == 503 || code == 504 || (code == 400 && toolRelated))
+    }
+
+    fun parseRetryAfterMs(headerValue: String?): Long? {
+        if (headerValue.isNullOrBlank()) return null
+        val seconds = headerValue.trim().toLongOrNull()
+        if (seconds != null) return seconds * 1000
+        return null
     }
 }

@@ -29,7 +29,7 @@ internal class GeminiProvider(@Suppress("UNUSED_PARAMETER") context: Context) : 
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) { trySend(LlmEvent.Error(e.message?:"Network error")); close() }
             override fun onResponse(call: Call, response: Response) {
-                if (!response.isSuccessful) { val eb=runCatching{response.body?.string()}.getOrNull().orEmpty(); response.body?.close(); val(m,r)=HttpHelpers.classifyHttpError(response.code,eb); trySend(LlmEvent.Error(m,r)); close(); return }
+                if (!response.isSuccessful) { val eb=runCatching{response.body?.string()}.getOrNull().orEmpty(); val ra=HttpHelpers.parseRetryAfterMs(response.header("Retry-After")); response.body?.close(); val(m,r)=HttpHelpers.classifyHttpError(response.code,eb); trySend(LlmEvent.Error(m,r,ra)); close(); return }
                 try {
                     val source = response.body?.source() ?: run { trySend(LlmEvent.Error("Empty response body")); close(); return }
                     var hasTools = false

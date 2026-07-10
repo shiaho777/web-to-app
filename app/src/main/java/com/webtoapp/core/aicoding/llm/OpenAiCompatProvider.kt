@@ -58,7 +58,7 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                         return
                     }
                     val (msg, rec) = HttpHelpers.classifyHttpError(response.code, eb)
-                    trySend(LlmEvent.Error(msg, rec)); close(); return
+                    trySend(LlmEvent.Error(msg, rec, HttpHelpers.parseRetryAfterMs(response.header("Retry-After")))); close(); return
                 }
                 try {
                     val source = response.body?.source() ?: run { trySend(LlmEvent.Error("Empty response body")); close(); return }

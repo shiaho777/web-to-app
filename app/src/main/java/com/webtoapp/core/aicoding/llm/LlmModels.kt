@@ -38,7 +38,7 @@ sealed class LlmEvent {
     data class ToolCallArgsDelta(val id: String, val argsDelta: String) : LlmEvent()
     data class ToolCallEnd(val id: String, val name: String, val argumentsJson: String) : LlmEvent()
     data class Done(val finishReason: FinishReason) : LlmEvent()
-    data class Error(val message: String, val recoverable: Boolean = false) : LlmEvent()
+    data class Error(val message: String, val recoverable: Boolean = false, val retryAfterMs: Long? = null) : LlmEvent()
 }
 
 enum class FinishReason { STOP, TOOL_CALLS, LENGTH, OTHER }

@@ -19,6 +19,7 @@ import com.webtoapp.core.logging.AppLogger
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 
@@ -57,6 +58,7 @@ class AgentEngine(
         var totalToolCalls = 0
         val accText = StringBuilder()
         val maxContinuations = 3
+        var rateLimitRetries = 0
 
         try {
             for (turn in 1..input.maxTurns) {
@@ -69,6 +71,8 @@ class AgentEngine(
                 var finishReason = FinishReason.STOP
                 var hardError: String? = null
                 var continuationCount = 0
+                var retryableError: String? = null
+                var retryAfterMs: Long? = null
 
                 do {
                     if (abortController.aborted) { send(AgentEvent.Aborted); return@channelFlow }
@@ -127,11 +131,24 @@ class AgentEngine(
                             }
                             is LlmEvent.Done -> finishReason = ev.finishReason
                             is LlmEvent.Error -> if (!ev.recoverable) hardError = ev.message
-                                                  else send(AgentEvent.Notice(ev.message))
+                                                  else { retryableError = ev.message; retryAfterMs = ev.retryAfterMs }
                         }
                     }
 
                     if (hardError != null) break
+                    if (retryableError != null) {
+                        if (rateLimitRetries >= MAX_RATE_LIMIT_RETRIES) {
+                            hardError = retryableError
+                            break
+                        }
+                        rateLimitRetries++
+                        val backoff = retryAfterMs ?: (1000L shl (rateLimitRetries - 1).coerceAtMost(4))
+                        send(AgentEvent.Notice(Strings.aiCodingRateLimitRetry(rateLimitRetries, MAX_RATE_LIMIT_RETRIES, backoff)))
+                        delay(backoff)
+                        retryableError = null
+                        retryAfterMs = null
+                        continue
+                    }
                     if (finishReason == FinishReason.LENGTH && continuationCount < maxContinuations && turnText.isNotEmpty()) {
                         continuationCount++
                         send(AgentEvent.Notice(Strings.aiCodingContinuing))
@@ -317,5 +334,6 @@ class AgentEngine(
     companion object {
         private const val TAG = "AgentEngine"
         private const val MAX_TOOL_RESULT_CHARS = 32_000
+        private const val MAX_RATE_LIMIT_RETRIES = 5
     }
 }
