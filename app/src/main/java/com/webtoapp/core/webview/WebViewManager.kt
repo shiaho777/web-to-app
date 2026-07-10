@@ -5697,11 +5697,11 @@ class WebViewManager(
                         if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
                         var scope = (typeof window.__wta_private_network_scope__ === 'string')
                             ? window.__wta_private_network_scope__ : 'LOCAL_ONLY';
-                        if (scope === 'CORS_BYPASS') return true;
-                        if (scope === 'LOCAL_ONLY' && !isPrivateHost(parsed.hostname)) return false;
                         if (parsed.hostname.toLowerCase() === window.location.hostname.toLowerCase() && parsed.port === window.location.port) {
                             return false;
                         }
+                        if (scope === 'CORS_BYPASS') return true;
+                        if (scope === 'LOCAL_ONLY' && !isPrivateHost(parsed.hostname)) return false;
                         return true;
                     } catch (e) {
                         return false;
