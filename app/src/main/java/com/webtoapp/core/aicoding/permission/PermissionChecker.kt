@@ -17,10 +17,14 @@ class PermissionChecker(
     private val planAllowedTools = setOf(
         "Read", "Glob", "Grep", "ListFiles",
         "AskUserQuestion",
-        "EnterPlanMode", "ExitPlanMode",
-        "TodoWrite", "TodoUpdate"
+        "EnterPlanMode", "ExitPlanMode"
     )
     private val planWriteTools = setOf("Write", "Edit", "Delete")
+
+    fun allowedToolNames(): Set<String>? = when (mode) {
+        PermissionMode.Plan -> planAllowedTools + planWriteTools
+        else -> null
+    }
 
     fun setMode(newMode: PermissionMode) {
         mode = newMode

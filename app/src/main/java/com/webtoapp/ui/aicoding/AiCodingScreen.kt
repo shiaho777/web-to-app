@@ -96,6 +96,14 @@ import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaStatusBanner
 import com.webtoapp.ui.design.WtaStatusTone
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
+import com.webtoapp.ui.design.WtaButton
+import com.webtoapp.ui.design.WtaButtonSize
+import com.webtoapp.ui.design.WtaButtonVariant
 import kotlinx.coroutines.launch
 
 @Composable
@@ -307,6 +315,14 @@ fun AiCodingScreen(
                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = WtaAlpha.Divider)
                 )
 
+                state.pendingPlanReview?.let { review ->
+                    PlanReviewCard(
+                        review = review,
+                        onApprove = vm::approvePlan,
+                        onRequestRevisions = vm::rejectPlan
+                    )
+                }
+
                 com.webtoapp.ui.aicoding.components.ChangesReviewCard(
                     changes = state.pendingChanges,
                     expanded = state.changesReviewExpanded,
@@ -408,6 +424,67 @@ private fun PlanBanner(planFilePath: String?, onExit: () -> Unit) {
             actionLabel = Strings.aiCodingPlanModeExitTooltip,
             onAction = onExit
         )
+    }
+}
+
+@Composable
+private fun PlanReviewCard(
+    review: PlanReview,
+    onApprove: () -> Unit,
+    onRequestRevisions: () -> Unit
+) {
+    Box(
+        modifier = Modifier.padding(
+            horizontal = WtaSpacing.ScreenHorizontal,
+            vertical = WtaSpacing.Tiny + 2.dp
+        )
+    ) {
+        WtaCard(
+            tone = WtaCardTone.Elevated,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(WtaSpacing.Medium)
+            ) {
+                Text(
+                    text = Strings.aiCodingPlanAwaitingReview,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(Modifier.height(WtaSpacing.Small))
+                Text(
+                    text = review.content,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 200.dp)
+                        .verticalScroll(rememberScrollState())
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = WtaSpacing.Small),
+                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+                ) {
+                    WtaButton(
+                        onClick = onApprove,
+                        text = Strings.aiCodingPlanApprove,
+                        variant = WtaButtonVariant.Tonal,
+                        size = WtaButtonSize.Small,
+                        modifier = Modifier.weight(1f)
+                    )
+                    WtaButton(
+                        onClick = onRequestRevisions,
+                        text = Strings.aiCodingPlanRequestRevisions,
+                        variant = WtaButtonVariant.Text,
+                        size = WtaButtonSize.Small
+                    )
+                }
+            }
+        }
     }
 }
 

@@ -45,6 +45,8 @@ sealed class AgentEvent {
 
     data class Completed(val summary: String, val toolCallCount: Int) : AgentEvent()
 
+    data class PlanReviewRequired(val planPath: String) : AgentEvent()
+
     object Aborted : AgentEvent()
 
     data class Failed(val message: String) : AgentEvent()

@@ -1062,17 +1062,37 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
     private fun exitPlanMode() {
         val plan = planManager ?: return
         when (val r = plan.exit()) {
-            is PlanManager.ExitResult.Approved -> {
-                _ui.update { it.copy(planActive = false, planFilePath = null, info = Strings.aiCodingPlanSubmitted.format(r.planPath)) }
+            is PlanManager.ExitResult.Submitted -> {
+                _ui.update { it.copy(pendingPlanReview = PlanReview(planPath = r.planPath, content = r.content)) }
             }
             is PlanManager.ExitResult.NoPlanWritten -> {
-
-                _ui.update { it.copy(planActive = false, planFilePath = null, info = Strings.aiCodingPlanEmpty) }
+                _ui.update { it.copy(info = Strings.aiCodingPlanEmpty) }
             }
             is PlanManager.ExitResult.NotActive -> {
                 _ui.update { it.copy(planActive = false, planFilePath = null) }
             }
         }
+    }
+
+    fun approvePlan() {
+        val plan = planManager ?: return
+        _ui.value.currentSession ?: return
+        plan.approve()
+        _ui.update {
+            it.copy(
+                planActive = false,
+                planFilePath = null,
+                pendingPlanReview = null,
+                composerText = "Plan approved. Proceed with implementation."
+            )
+        }
+        send()
+    }
+
+    fun rejectPlan() {
+        val plan = planManager ?: return
+        plan.revise()
+        _ui.update { it.copy(pendingPlanReview = null, composerText = "") }
     }
 
     private fun loadSkills() {
@@ -1334,6 +1354,34 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
                 }
 
                 saved?.let { maybeAutoTitle(it) }
+            }
+            is AgentEvent.PlanReviewRequired -> {
+                val planContent = files.readText(sid, ev.planPath) ?: ""
+                val text = streamText.toString().trim().ifEmpty { Strings.aiCodingPlanAwaitingReview }
+                sessionStore.appendMessage(
+                    sid,
+                    AgentMessage(
+                        role = AgentMessage.Role.ASSISTANT,
+                        content = text,
+                        thinking = streamThinking.toString().takeIf { it.isNotBlank() },
+                        thinkingDurationMs = _ui.value.streamingThinkingDurationMs
+                            ?: _ui.value.streamingThinkingStartedAt?.let { start -> System.currentTimeMillis() - start },
+                        toolCalls = streamTools.values.toList()
+                    )
+                )
+                streamingSessionId = null
+                _ui.update {
+                    it.copy(
+                        phase = AiCodingUiState.Phase.Idle,
+                        streamingText = "",
+                        streamingThinking = "",
+                        streamingThinkingStartedAt = null,
+                        streamingThinkingDurationMs = null,
+                        pendingToolCalls = emptyList(),
+                        currentActivity = null,
+                        pendingPlanReview = PlanReview(planPath = ev.planPath, content = planContent)
+                    )
+                }
             }
             AgentEvent.Aborted -> {
                 savePartialMessage(sid)

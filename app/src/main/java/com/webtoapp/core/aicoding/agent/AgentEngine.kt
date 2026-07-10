@@ -51,10 +51,6 @@ class AgentEngine(
             messages += LlmMessage(LlmMessage.Role.USER, input.userMessage)
         }
 
-        val declarations = input.registry.all.map { tool ->
-            ToolDeclaration(tool.name, tool.description, tool.parametersSchema)
-        }
-
         var totalToolCalls = 0
         val accText = StringBuilder()
         val maxContinuations = 3
@@ -63,6 +59,11 @@ class AgentEngine(
         try {
             for (turn in 1..input.maxTurns) {
                 if (abortController.aborted) { send(AgentEvent.Aborted); return@channelFlow }
+
+                val allowedNames = permissionChecker.allowedToolNames()
+                val declarations = input.registry.all
+                    .filter { allowedNames == null || it.name in allowedNames }
+                    .map { tool -> ToolDeclaration(tool.name, tool.description, tool.parametersSchema) }
 
                 val turnText = StringBuilder()
 
@@ -197,6 +198,14 @@ class AgentEngine(
                                 toolCallId = call.id,
                                 name = call.name
                             )
+                            if (result.planReviewPath != null) {
+                                send(AgentEvent.PlanReviewRequired(result.planReviewPath))
+                                send(AgentEvent.Completed(
+                                    summary = accText.toString().trim().ifEmpty { "Plan submitted for review." },
+                                    toolCallCount = totalToolCalls
+                                ))
+                                return@channelFlow
+                            }
                         }
                     } else {
                         for (call in batch.calls) {
@@ -210,6 +219,14 @@ class AgentEngine(
                                 toolCallId = call.id,
                                 name = call.name
                             )
+                            if (result.planReviewPath != null) {
+                                send(AgentEvent.PlanReviewRequired(result.planReviewPath))
+                                send(AgentEvent.Completed(
+                                    summary = accText.toString().trim().ifEmpty { "Plan submitted for review." },
+                                    toolCallCount = totalToolCalls
+                                ))
+                                return@channelFlow
+                            }
                         }
                     }
                 }

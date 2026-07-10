@@ -4,13 +4,17 @@ data class ToolResult(
     val text: String,
     val isError: Boolean = false,
     val images: List<ImageAttachment> = emptyList(),
-    val fileChange: FileChange? = null
+    val fileChange: FileChange? = null,
+    val planReviewPath: String? = null
 ) {
     val isMultimodal: Boolean get() = images.isNotEmpty()
 
     companion object {
         fun ok(text: String, fileChange: FileChange? = null): ToolResult =
             ToolResult(text = text, isError = false, fileChange = fileChange)
+
+        fun okPlanReview(text: String, planPath: String): ToolResult =
+            ToolResult(text = text, isError = false, planReviewPath = planPath)
 
         fun error(text: String): ToolResult =
             ToolResult(text = text, isError = true)

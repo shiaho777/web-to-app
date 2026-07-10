@@ -33,6 +33,7 @@ data class AiCodingUiState(
 
     val planActive: Boolean = false,
     val planFilePath: String? = null,
+    val pendingPlanReview: PlanReview? = null,
 
     val todos: List<TodoManager.Item> = emptyList(),
 
@@ -92,6 +93,11 @@ data class AiCodingUiState(
     val canSend: Boolean get() = phase == Phase.Idle && currentSession != null
     val isWorking: Boolean get() = phase != Phase.Idle && phase != Phase.Error
 }
+
+data class PlanReview(
+    val planPath: String,
+    val content: String
+)
 
 data class PendingChange(
     val path: String,

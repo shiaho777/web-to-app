@@ -1506,6 +1506,9 @@ object Strings {
     val aiCodingPlanAlreadyActive: String get() = StringsB.aiCodingPlanAlreadyActive
     val aiCodingPlanSubmitted: String get() = StringsB.aiCodingPlanSubmitted
     val aiCodingPlanEmpty: String get() = StringsB.aiCodingPlanEmpty
+    val aiCodingPlanAwaitingReview: String get() = StringsB.aiCodingPlanAwaitingReview
+    val aiCodingPlanApprove: String get() = StringsB.aiCodingPlanApprove
+    val aiCodingPlanRequestRevisions: String get() = StringsB.aiCodingPlanRequestRevisions
     val aiCodingCompacting: String get() = StringsB.aiCodingCompacting
     val aiCodingCompactedManual: String get() = StringsB.aiCodingCompactedManual
     val aiCodingCompactedAuto: String get() = StringsB.aiCodingCompactedAuto
@@ -23353,6 +23356,30 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Файл плана пуст — напишите план перед выходом"
         AppLanguage.JAPANESE -> "Planファイルが空です — 終了前にプランを書いてください"
         AppLanguage.KOREAN -> "Plan 파일이 비어 있습니다 — 종료 전에 계획을 작성하세요"
+    }
+    val aiCodingPlanAwaitingReview: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Plan 已提交，等待审批"
+        AppLanguage.ENGLISH -> "Plan submitted for review"
+        AppLanguage.ARABIC -> "تم تقديم الخطة للمراجعة"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH,
+        AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE,
+        AppLanguage.KOREAN -> "Plan submitted for review"
+    }
+    val aiCodingPlanApprove: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "批准并开始实现"
+        AppLanguage.ENGLISH -> "Approve"
+        AppLanguage.ARABIC -> "موافقة"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH,
+        AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE,
+        AppLanguage.KOREAN -> "Approve"
+    }
+    val aiCodingPlanRequestRevisions: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "需要修改"
+        AppLanguage.ENGLISH -> "Request revisions"
+        AppLanguage.ARABIC -> "طلب تعديلات"
+        AppLanguage.PORTUGUESE, AppLanguage.SPANISH, AppLanguage.FRENCH,
+        AppLanguage.GERMAN, AppLanguage.RUSSIAN, AppLanguage.JAPANESE,
+        AppLanguage.KOREAN -> "Request revisions"
     }
     val aiCodingCompacting: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "压缩中…"

@@ -43,9 +43,17 @@ class PlanManager(
 
             return ExitResult.NoPlanWritten(planPath)
         }
+        _state.value = current.copy(approvedPlanContent = content)
+        return ExitResult.Submitted(planPath!!, content)
+    }
+
+    fun approve() {
         permissionChecker.setMode(PermissionMode.Default)
-        _state.value = State(active = false, activePlanPath = planPath, approvedPlanContent = content)
-        return ExitResult.Approved(planPath!!, content)
+        _state.value = State(active = false)
+    }
+
+    fun revise() {
+        _state.value = _state.value.copy(approvedPlanContent = null)
     }
 
     fun planExists(): Boolean {
@@ -78,7 +86,7 @@ class PlanManager(
     sealed class ExitResult {
         object NotActive : ExitResult()
         data class NoPlanWritten(val planPath: String?) : ExitResult()
-        data class Approved(val planPath: String, val content: String) : ExitResult()
+        data class Submitted(val planPath: String, val content: String) : ExitResult()
     }
 
     companion object {
