@@ -14,8 +14,13 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.KeyboardAdjustMode
+import java.util.Collections
+import java.util.WeakHashMap
 
 object WindowHelper {
+
+    private val manualImeInstalled =
+        Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap<View, Boolean>()))
 
     fun applyStatusBarColor(
         activity: Activity,
@@ -261,6 +266,12 @@ object WindowHelper {
     }
 
     private fun installManualImePadding(activity: Activity, contentView: View) {
+        if (contentView in manualImeInstalled) {
+            ViewCompat.requestApplyInsets(contentView)
+            return
+        }
+        manualImeInstalled.add(contentView)
+
         var imeAnimating = false
         var targetImeBottom = 0
 
@@ -324,6 +335,7 @@ object WindowHelper {
     }
 
     private fun clearImePadding(contentView: View) {
+        manualImeInstalled.remove(contentView)
         ViewCompat.setWindowInsetsAnimationCallback(contentView, null)
         ViewCompat.setOnApplyWindowInsetsListener(contentView, null)
         if (contentView.paddingBottom != 0) {
@@ -337,28 +349,28 @@ object WindowHelper {
     }
 
     private fun checkAndScrollWebViewToFocusedInput(activity: Activity) {
-        try {
-            val webView = findWebViewInHierarchy(activity.window.decorView)
-            webView?.evaluateJavascript("""
-                (function() {
-                    var el = document.activeElement;
-                    if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA' && !el.isContentEditable)) {
-                        return 'no_input';
-                    }
-                    var rect = el.getBoundingClientRect();
-                    var viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-                    var viewportTop = window.visualViewport ? window.visualViewport.offsetTop : 0;
-                    // 如果元素已经在可视区域内，说明网页自己已经处理了上推
-                    if (rect.top >= viewportTop && rect.bottom <= (viewportTop + viewportHeight)) {
-                        return 'already_visible';
-                    }
-                    // 元素不在可视区域，执行滚动
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    return 'scrolled';
-                })();
-            """.trimIndent(), null)
-        } catch (e: Exception) {
-            AppLogger.w("WindowHelper", "checkAndScrollWebViewToFocusedInput failed", e)
+        val webView = findWebViewInHierarchy(activity.window.decorView) ?: return
+        webView.post {
+            try {
+                webView.evaluateJavascript("""
+                    (function() {
+                        var el = document.activeElement;
+                        if (!el || (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA' && !el.isContentEditable)) {
+                            return 'no_input';
+                        }
+                        var rect = el.getBoundingClientRect();
+                        var viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+                        var viewportTop = window.visualViewport ? window.visualViewport.offsetTop : 0;
+                        if (rect.top >= viewportTop && rect.bottom <= (viewportTop + viewportHeight)) {
+                            return 'already_visible';
+                        }
+                        el.scrollIntoView({ block: 'center' });
+                        return 'scrolled';
+                    })();
+                """.trimIndent(), null)
+            } catch (e: Exception) {
+                AppLogger.w("WindowHelper", "checkAndScrollWebViewToFocusedInput failed", e)
+            }
         }
     }
 
