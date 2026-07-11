@@ -165,7 +165,7 @@ class AgentEngine(
                 }
 
                 val assistantToolCalls = pending.entries.map { (id, pair) ->
-                    LlmToolCall(id, pair.first, pair.second.toString().ifBlank { "{}" })
+                    LlmToolCall(id, pair.first, sanitizeArgumentsJson(pair.second.toString()))
                 }
                 messages += LlmMessage(
                     role = LlmMessage.Role.ASSISTANT,
@@ -341,6 +341,15 @@ class AgentEngine(
             if (el.isJsonObject) el.asJsonObject else JsonObject()
         }
     }.getOrElse { JsonObject() }
+
+    private fun sanitizeArgumentsJson(json: String): String {
+        if (json.isBlank()) return "{}"
+        val valid = runCatching {
+            val el = JsonParser.parseString(json)
+            el.isJsonObject
+        }.getOrDefault(false)
+        return if (valid) json else "{}"
+    }
 
     private fun trimToolText(text: String): String =
         if (text.length <= MAX_TOOL_RESULT_CHARS) text
