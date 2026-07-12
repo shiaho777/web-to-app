@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -104,6 +105,9 @@ fun LanguageSelectionDialog(
     onLanguageSelected: (AppLanguage) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val scrollState = rememberScrollState()
+    val maxListHeight = (LocalConfiguration.current.screenHeightDp * 0.55f).dp
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -114,7 +118,10 @@ fun LanguageSelectionDialog(
         },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = maxListHeight)
+                    .verticalScroll(scrollState),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 AppLanguage.entries.forEach { language ->
@@ -497,7 +504,8 @@ fun LanguageSettingsCard(
 
                 ExposedDropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.heightIn(max = 320.dp)
                 ) {
                     AppLanguage.entries.forEach { language ->
                         DropdownMenuItem(
