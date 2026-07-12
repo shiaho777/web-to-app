@@ -14,7 +14,7 @@ fun WtaBackground(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val bg = MaterialTheme.colorScheme.surface
+    val bg = MaterialTheme.colorScheme.background
     Box(
         modifier = modifier
             .fillMaxSize()

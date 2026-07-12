@@ -147,7 +147,7 @@ class MainActivity : ComponentActivity() {
 
                         Surface(
                             modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.surface
+                            color = MaterialTheme.colorScheme.background
                         ) {
                             if (!hasSelectedLanguage && showLanguageSelection) {
                                 FirstLaunchLanguageScreen(

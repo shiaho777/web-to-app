@@ -319,7 +319,7 @@ fun WtaSettingRow(
     trailingMaxWidth: Dp = WtaSize.RowTrailingMaxWidth,
     contentPadding: PaddingValues = PaddingValues(
         horizontal = WtaSpacing.RowHorizontal,
-        vertical = WtaSpacing.RowVertical
+        vertical = 10.dp
     ),
     onClick: (() -> Unit)? = null,
     trailing: @Composable RowScope.() -> Unit = {}

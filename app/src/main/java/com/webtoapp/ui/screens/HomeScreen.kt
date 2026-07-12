@@ -508,8 +508,8 @@ fun HomeScreen(
 
 
                     LazyColumn(
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     itemsIndexed(
                         apps,
@@ -1082,9 +1082,16 @@ fun AppCard(
     onCaptureScreenshot: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
-    val theme = LocalAppTheme.current
-
     var expanded by remember { mutableStateOf(false) }
+    val colors = MaterialTheme.colorScheme
+    val secondaryText = when (app.appType) {
+        com.webtoapp.data.model.AppType.IMAGE -> app.url.ifBlank { Strings.appTypeImage }
+        com.webtoapp.data.model.AppType.VIDEO -> app.url.ifBlank { Strings.appTypeVideo }
+        com.webtoapp.data.model.AppType.HTML,
+        com.webtoapp.data.model.AppType.FRONTEND -> app.url.ifBlank { Strings.appTypeHtml }
+        com.webtoapp.data.model.AppType.GALLERY -> app.url.ifBlank { Strings.appTypeGallery }
+        else -> app.url
+    }
 
     EnhancedElevatedCard(
         onClick = onClick,
@@ -1093,104 +1100,96 @@ fun AppCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-
             Box {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-            ) {
-                if (app.iconPath != null) {
-                    AsyncImage(
-                        model = ImageRequest.Builder(LocalContext.current)
-                            .data(app.iconPath)
-                            .crossfade(false)
-                            .build(),
-                        contentDescription = app.name,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(MaterialTheme.shapes.medium),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    val defaultIconRes = when (app.appType) {
-                        com.webtoapp.data.model.AppType.WEB -> R.drawable.ic_type_web
-                        com.webtoapp.data.model.AppType.IMAGE -> R.drawable.ic_type_media
-                        com.webtoapp.data.model.AppType.VIDEO -> R.drawable.ic_type_media
-                        com.webtoapp.data.model.AppType.HTML -> R.drawable.ic_type_html
-                        com.webtoapp.data.model.AppType.GALLERY -> R.drawable.ic_type_gallery
-                        com.webtoapp.data.model.AppType.FRONTEND -> R.drawable.ic_type_frontend
-                        com.webtoapp.data.model.AppType.WORDPRESS -> R.drawable.ic_type_wordpress
-                        com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
-                        com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
-                        com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
-                        com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
-                        com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
-                    }
-                    Icon(
-                        painter = painterResource(defaultIconRes),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(12.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-
-            if (healthStatus != null && healthStatus != com.webtoapp.core.stats.HealthStatus.UNKNOWN) {
-                val semantic = com.webtoapp.ui.design.WtaColors.semantic
-                val dotColor = when (healthStatus) {
-                    com.webtoapp.core.stats.HealthStatus.ONLINE -> semantic.success
-                    com.webtoapp.core.stats.HealthStatus.SLOW -> semantic.warning
-                    com.webtoapp.core.stats.HealthStatus.OFFLINE -> semantic.error
-                    else -> semantic.neutral
-                }
                 Box(
                     modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .offset(x = 2.dp, y = 2.dp)
-                        .size(12.dp)
-                        .clip(androidx.compose.foundation.shape.CircleShape)
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(2.dp)
-                        .clip(androidx.compose.foundation.shape.CircleShape)
-                        .background(dotColor)
-                )
-            }
+                        .size(52.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(colors.surfaceContainerHigh),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (app.iconPath != null) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(app.iconPath)
+                                .crossfade(false)
+                                .build(),
+                            contentDescription = app.name,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        val defaultIconRes = when (app.appType) {
+                            com.webtoapp.data.model.AppType.WEB -> R.drawable.ic_type_web
+                            com.webtoapp.data.model.AppType.IMAGE -> R.drawable.ic_type_media
+                            com.webtoapp.data.model.AppType.VIDEO -> R.drawable.ic_type_media
+                            com.webtoapp.data.model.AppType.HTML -> R.drawable.ic_type_html
+                            com.webtoapp.data.model.AppType.GALLERY -> R.drawable.ic_type_gallery
+                            com.webtoapp.data.model.AppType.FRONTEND -> R.drawable.ic_type_frontend
+                            com.webtoapp.data.model.AppType.WORDPRESS -> R.drawable.ic_type_wordpress
+                            com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
+                            com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
+                            com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
+                            com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
+                            com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
+                        }
+                        Icon(
+                            painter = painterResource(defaultIconRes),
+                            contentDescription = null,
+                            modifier = Modifier.size(26.dp),
+                            tint = colors.onSurfaceVariant
+                        )
+                    }
+                }
+
+                if (healthStatus != null && healthStatus != com.webtoapp.core.stats.HealthStatus.UNKNOWN) {
+                    val semantic = com.webtoapp.ui.design.WtaColors.semantic
+                    val dotColor = when (healthStatus) {
+                        com.webtoapp.core.stats.HealthStatus.ONLINE -> semantic.success
+                        com.webtoapp.core.stats.HealthStatus.SLOW -> semantic.warning
+                        com.webtoapp.core.stats.HealthStatus.OFFLINE -> semantic.error
+                        else -> semantic.neutral
+                    }
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .offset(x = 2.dp, y = 2.dp)
+                            .size(12.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(colors.surface)
+                            .padding(2.dp)
+                            .clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(dotColor)
+                    )
+                }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(14.dp))
 
-            Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = app.name,
                     style = MaterialTheme.typography.titleMedium,
+                    color = colors.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = when (app.appType) {
-                        com.webtoapp.data.model.AppType.IMAGE -> app.url.ifBlank { Strings.appTypeImage }
-                        com.webtoapp.data.model.AppType.VIDEO -> app.url.ifBlank { Strings.appTypeVideo }
-                        com.webtoapp.data.model.AppType.HTML,
-                        com.webtoapp.data.model.AppType.FRONTEND -> app.url.ifBlank { Strings.appTypeHtml }
-                        com.webtoapp.data.model.AppType.GALLERY -> app.url.ifBlank { Strings.appTypeGallery }
-                        else -> app.url
-                    },
+                    text = secondaryText,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = colors.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     AppTypeChip(appType = app.appType)
                     if (app.activationEnabled) {
                         FeatureChip(icon = Icons.Outlined.Key, label = Strings.activationCodeVerify)
@@ -1202,93 +1201,79 @@ fun AppCard(
                 }
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+
             Box(
                 modifier = Modifier
-                    .width(40.dp)
-                    .height(60.dp)
-                    .clip(RoundedCornerShape(WtaRadius.Card))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .width(44.dp)
+                    .height(64.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(colors.surfaceContainerHigh)
                     .clickable(enabled = onCaptureScreenshot != null) {
-                        val clickMessage = "thumbnail tapped: appId=${app.id}, hasHandler=${onCaptureScreenshot != null}, hasPath=${screenshotPath != null}, version=$screenshotVersion, loading=$isScreenshotLoading"
-                        com.webtoapp.core.logging.AppLogger.i("ScreenshotFlow", clickMessage)
-                        android.util.Log.i("ScreenshotFlow", clickMessage)
                         onCaptureScreenshot?.invoke()
-                    }
+                    },
+                contentAlignment = Alignment.Center
             ) {
                 if (screenshotPath != null) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-
-                        val screenshotCacheKey = "wta_shot_${app.id}_v$screenshotVersion"
-                        AsyncImage(
-                            model = ImageRequest.Builder(LocalContext.current)
-                                .data(java.io.File(screenshotPath))
-                                .memoryCacheKey(screenshotCacheKey)
-                                .diskCacheKey(screenshotCacheKey)
-                                .crossfade(false)
-                                .build(),
-                            imageLoader = previewImageLoader,
-                            contentDescription = Strings.btnPreview,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(RoundedCornerShape(WtaRadius.Card)),
-                            contentScale = ContentScale.Crop
-                        )
-                        if (isScreenshotLoading) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(14.dp),
-                                    strokeWidth = 1.5.dp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    Box(
+                    val screenshotCacheKey = "wta_shot_${app.id}_v$screenshotVersion"
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(java.io.File(screenshotPath))
+                            .memoryCacheKey(screenshotCacheKey)
+                            .diskCacheKey(screenshotCacheKey)
+                            .crossfade(false)
+                            .build(),
+                        imageLoader = previewImageLoader,
+                        contentDescription = Strings.btnPreview,
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isScreenshotLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(14.dp),
-                                strokeWidth = 1.5.dp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        } else if (onCaptureScreenshot != null) {
-                            Icon(
-                                imageVector = Icons.Outlined.Refresh,
-                                contentDescription = Strings.btnPreview,
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        } else {
-                            Icon(
-                                painter = painterResource(when (app.appType) {
-                                    com.webtoapp.data.model.AppType.WEB -> R.drawable.ic_type_web
-                                    com.webtoapp.data.model.AppType.IMAGE -> R.drawable.ic_type_media
-                                    com.webtoapp.data.model.AppType.VIDEO -> R.drawable.ic_type_media
-                                    com.webtoapp.data.model.AppType.HTML -> R.drawable.ic_type_html
-                                    com.webtoapp.data.model.AppType.GALLERY -> R.drawable.ic_type_gallery
-                                    com.webtoapp.data.model.AppType.FRONTEND -> R.drawable.ic_type_frontend
-                                    com.webtoapp.data.model.AppType.WORDPRESS -> R.drawable.ic_type_wordpress
-                                    com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
-                                    com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
-                                    com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
-                                    com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
-                                    com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
-                                }),
-                                contentDescription = Strings.btnPreview,
-                                modifier = Modifier.size(18.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        contentScale = ContentScale.Crop
+                    )
+                    if (isScreenshotLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            strokeWidth = 1.5.dp,
+                            color = colors.onSurfaceVariant
+                        )
                     }
+                } else if (isScreenshotLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(14.dp),
+                        strokeWidth = 1.5.dp,
+                        color = colors.onSurfaceVariant
+                    )
+                } else if (onCaptureScreenshot != null) {
+                    Icon(
+                        imageVector = Icons.Outlined.Refresh,
+                        contentDescription = Strings.btnPreview,
+                        modifier = Modifier.size(18.dp),
+                        tint = colors.onSurfaceVariant
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(
+                            when (app.appType) {
+                                com.webtoapp.data.model.AppType.WEB -> R.drawable.ic_type_web
+                                com.webtoapp.data.model.AppType.IMAGE -> R.drawable.ic_type_media
+                                com.webtoapp.data.model.AppType.VIDEO -> R.drawable.ic_type_media
+                                com.webtoapp.data.model.AppType.HTML -> R.drawable.ic_type_html
+                                com.webtoapp.data.model.AppType.GALLERY -> R.drawable.ic_type_gallery
+                                com.webtoapp.data.model.AppType.FRONTEND -> R.drawable.ic_type_frontend
+                                com.webtoapp.data.model.AppType.WORDPRESS -> R.drawable.ic_type_wordpress
+                                com.webtoapp.data.model.AppType.NODEJS_APP -> R.drawable.ic_type_nodejs
+                                com.webtoapp.data.model.AppType.PHP_APP -> R.drawable.ic_type_php
+                                com.webtoapp.data.model.AppType.PYTHON_APP -> R.drawable.ic_type_python
+                                com.webtoapp.data.model.AppType.GO_APP -> R.drawable.ic_type_go
+                                com.webtoapp.data.model.AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
+                            }
+                        ),
+                        contentDescription = Strings.btnPreview,
+                        modifier = Modifier.size(18.dp),
+                        tint = colors.onSurfaceVariant
+                    )
                 }
             }
+
+            Spacer(modifier = Modifier.width(2.dp))
 
             Box {
                 com.webtoapp.ui.design.WtaIconButton(
@@ -1301,9 +1286,7 @@ fun AppCard(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
                 ) {
-
                     if (app.appType == com.webtoapp.data.model.AppType.WEB) {
-
                         com.webtoapp.ui.design.WtaDropdownMenuItem(
                             text = Strings.btnEdit,
                             leadingIcon = Icons.Outlined.Edit,
@@ -1313,7 +1296,6 @@ fun AppCard(
                             }
                         )
                     } else {
-
                         com.webtoapp.ui.design.WtaDropdownMenuItem(
                             text = Strings.editCoreConfig,
                             leadingIcon = Icons.Outlined.Tune,
@@ -1469,32 +1451,31 @@ fun EmptyState(
     onCreateApp: () -> Unit
 ) {
     Column(
-        modifier = modifier.padding(horizontal = 40.dp, vertical = 32.dp),
+        modifier = modifier.padding(horizontal = 32.dp, vertical = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
         Box(
             modifier = Modifier
-                .size(88.dp)
-                .clip(androidx.compose.foundation.shape.CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f)),
+                .size(72.dp)
+                .clip(RoundedCornerShape(20.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Outlined.AppShortcut,
                 contentDescription = null,
-                modifier = Modifier.size(40.dp),
-                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f)
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Spacer(modifier = Modifier.height(20.dp))
         Text(
             text = Strings.msgNoApps,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = Strings.emptyStateHint,
             style = MaterialTheme.typography.bodyMedium,
@@ -1503,7 +1484,7 @@ fun EmptyState(
         )
         AnimatedVisibility(visible = showCreateButton) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 com.webtoapp.ui.design.WtaButton(
                     onClick = onCreateApp,
                     text = Strings.createApp,
@@ -1527,35 +1508,35 @@ private fun CreateActionTile(
     val hapticClick = rememberHapticClick(onClick)
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(WtaRadius.Card))
+            .clip(RoundedCornerShape(16.dp))
             .clickable(
                 interactionSource = interactionSource,
                 indication = com.webtoapp.ui.design.rememberWtaIndication(),
                 onClick = hapticClick
             )
-            .padding(vertical = 10.dp, horizontal = 6.dp),
+            .padding(vertical = 8.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(MaterialTheme.colorScheme.primaryContainer),
+                .size(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 painter = painterResource(iconRes),
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                modifier = Modifier.size(22.dp),
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center

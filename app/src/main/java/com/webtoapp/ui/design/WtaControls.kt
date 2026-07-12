@@ -212,13 +212,13 @@ fun WtaChip(
     val hapticClick = rememberHapticClick(onClick)
 
     val containerColor by animateColorAsState(
-        targetValue = if (selected) colors.secondaryContainer
+        targetValue = if (selected) colors.primary
         else colors.surfaceContainerHigh,
         animationSpec = WtaMotion.standardTween(),
         label = "chipBg"
     )
     val contentColor by animateColorAsState(
-        targetValue = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant,
+        targetValue = if (selected) colors.onPrimary else colors.onSurfaceVariant,
         animationSpec = WtaMotion.standardTween(),
         label = "chipContent"
     )

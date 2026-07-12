@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.webtoapp.ui.theme.LocalIsDarkTheme
 
 enum class WtaCardTone {
 
@@ -128,11 +129,17 @@ private data class WtaCardSpec(
 @Composable
 private fun resolveTone(tone: WtaCardTone): WtaCardSpec {
     val colors = MaterialTheme.colorScheme
+    val isDark = LocalIsDarkTheme.current
+    val hairline = if (isDark) {
+        Color.White.copy(alpha = 0.08f)
+    } else {
+        Color.Black.copy(alpha = 0.06f)
+    }
     return when (tone) {
         WtaCardTone.Surface -> WtaCardSpec(
-            container = colors.surfaceContainerLow,
+            container = colors.surface,
             content = colors.onSurface,
-            border = null,
+            border = BorderStroke(1.dp, hairline),
             elevation = WtaElevation.Level0
         )
         WtaCardTone.Elevated -> WtaCardSpec(
@@ -142,8 +149,8 @@ private fun resolveTone(tone: WtaCardTone): WtaCardSpec {
             elevation = WtaElevation.Level1
         )
         WtaCardTone.Highlighted -> WtaCardSpec(
-            container = colors.secondaryContainer,
-            content = colors.onSecondaryContainer,
+            container = colors.primaryContainer,
+            content = colors.onPrimaryContainer,
             border = null,
             elevation = WtaElevation.Level0
         )

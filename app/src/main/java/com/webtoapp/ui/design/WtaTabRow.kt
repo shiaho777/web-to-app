@@ -38,7 +38,7 @@ fun WtaTabRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(WtaRadius.Control))
-            .background(colors.surfaceContainerHighest)
+            .background(colors.surfaceContainerHigh)
     ) {
         Row(
             modifier = Modifier
@@ -53,10 +53,7 @@ fun WtaTabRow(
                         .weight(1f)
                         .height(36.dp)
                         .clip(RoundedCornerShape(WtaRadius.Control))
-                        .background(
-                            if (isSelected) colors.secondaryContainer
-                            else colors.surfaceContainerHighest
-                        )
+                        .background(if (isSelected) colors.surface else colors.surfaceContainerHigh)
                         .clickable { onTabSelected(index) }
                 ) {
                     Row(
@@ -68,16 +65,16 @@ fun WtaTabRow(
                             tab.label,
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                            color = if (isSelected) colors.onSecondaryContainer else colors.onSurfaceVariant
+                            color = if (isSelected) colors.onSurface else colors.onSurfaceVariant
                         )
                         if (tab.count != null && tab.count > 0) {
                             Spacer(modifier = Modifier.width(6.dp))
                             WtaBadge(
                                 text = tab.count.toString(),
                                 compact = true,
-                                containerColor = if (isSelected) colors.primary.copy(alpha = 0.14f)
+                                containerColor = if (isSelected) colors.onSurface.copy(alpha = 0.08f)
                                 else colors.onSurfaceVariant.copy(alpha = 0.10f),
-                                contentColor = if (isSelected) colors.primary else colors.onSurfaceVariant
+                                contentColor = if (isSelected) colors.onSurface else colors.onSurfaceVariant
                             )
                         }
                     }
