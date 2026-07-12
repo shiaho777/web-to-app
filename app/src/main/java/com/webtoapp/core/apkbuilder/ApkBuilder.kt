@@ -2573,6 +2573,8 @@ builtins.__import__ = _w2a_import
 
         val permissions = linkedSetOf<String>()
 
+        permissions += "${config.packageName}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+
         if (config.requiresNetworkPermissions()) {
             permissions += "android.permission.INTERNET"
             permissions += "android.permission.ACCESS_NETWORK_STATE"

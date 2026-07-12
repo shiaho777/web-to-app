@@ -123,6 +123,7 @@ class ExportSecurityRegressionTest {
         val permissions = method.invoke(builder, config) as List<String>
 
         assertThat(permissions).containsExactly(
+            "com.example.zenbox.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
             "android.permission.INTERNET",
             "android.permission.ACCESS_NETWORK_STATE"
         ).inOrder()
@@ -174,6 +175,7 @@ class ExportSecurityRegressionTest {
         val permissions = method.invoke(builder, config) as List<String>
 
         assertThat(permissions).containsExactly(
+            "com.example.recorder.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
             "android.permission.INTERNET",
             "android.permission.ACCESS_NETWORK_STATE",
             "android.permission.CAMERA",
