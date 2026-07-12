@@ -54,6 +54,8 @@ class WebAppRepository(private val webAppDao: WebAppDao) {
 
     suspend fun getWebAppCount(): Int = webAppDao.getCount()
 
+    suspend fun getAllUrls(): List<String> = webAppDao.getAllUrls()
+
     suspend fun upgradeLegacyRemoteHttpWebUrls(updatedAt: Long = System.currentTimeMillis()): Int {
         return webAppDao.upgradeRemoteHttpUrls(
             appType = AppType.WEB,

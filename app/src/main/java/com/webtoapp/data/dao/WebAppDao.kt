@@ -139,4 +139,7 @@ interface WebAppDao {
 
     @Query("UPDATE web_apps SET categoryId = NULL WHERE categoryId = :categoryId")
     suspend fun clearCategoryId(categoryId: Long)
+
+    @Query("SELECT url FROM web_apps")
+    suspend fun getAllUrls(): List<String>
 }

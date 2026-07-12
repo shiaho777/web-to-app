@@ -100,6 +100,14 @@ object Strings {
     val batchImportParsed: String get() = StringsA.batchImportParsed
     val batchImportSuccess: String get() = StringsA.batchImportSuccess
     val batchImportBtn: String get() = StringsA.batchImportBtn
+    val batchImportPaste: String get() = StringsA.batchImportPaste
+    val batchImportClear: String get() = StringsA.batchImportClear
+    val batchImportPickBookmarks: String get() = StringsA.batchImportPickBookmarks
+    val batchImportBookmarksHint: String get() = StringsA.batchImportBookmarksHint
+    val batchImportNoValid: String get() = StringsA.batchImportNoValid
+    fun batchImportParseStats(invalid: Int, duplicates: Int): String = StringsA.batchImportParseStats(invalid, duplicates)
+    fun batchImportSkipped(count: Int): String = StringsA.batchImportSkipped(count)
+    fun batchImportMore(count: Int): String = StringsA.batchImportMore(count)
     val menuLinuxEnvironment: String get() = StringsA.menuLinuxEnvironment
     val createMediaApp: String get() = StringsA.createMediaApp
     val createHtmlApp: String get() = StringsA.createHtmlApp
@@ -5150,16 +5158,16 @@ object StringsA {
         AppLanguage.KOREAN -> "북마크에서 가져오기"
     }
     val batchImportHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "每行一个URL，格式：URL 或 名称|URL"
-        AppLanguage.ENGLISH -> "One URL per line: URL or Name|URL"
-        AppLanguage.ARABIC -> "رابط واحد لكل سطر: URL أو الاسم|URL"
-        AppLanguage.PORTUGUESE -> "Um URL por linha: URL ou Nome|URL"
-        AppLanguage.SPANISH -> "Un URL por línea: URL o Nombre|URL"
-        AppLanguage.FRENCH -> "Une URL par ligne : URL ou Nom|URL"
-        AppLanguage.GERMAN -> "Eine URL pro Zeile: URL oder Name|URL"
-        AppLanguage.RUSSIAN -> "По одному URL на строку: URL или Имя|URL"
-        AppLanguage.JAPANESE -> "1行に1つのURL: URL または 名前|URL"
-        AppLanguage.KOREAN -> "한 줄에 URL 하나: URL 또는 이름|URL"
+        AppLanguage.CHINESE -> "每行一个，支持：URL、名称|URL、名称 URL、Markdown 链接"
+        AppLanguage.ENGLISH -> "One per line: URL, Name|URL, Name URL, or Markdown links"
+        AppLanguage.ARABIC -> "واحد لكل سطر: URL أو الاسم|URL أو روابط Markdown"
+        AppLanguage.PORTUGUESE -> "Um por linha: URL, Nome|URL, Nome URL ou links Markdown"
+        AppLanguage.SPANISH -> "Uno por línea: URL, Nombre|URL, Nombre URL o enlaces Markdown"
+        AppLanguage.FRENCH -> "Un par ligne : URL, Nom|URL, Nom URL ou liens Markdown"
+        AppLanguage.GERMAN -> "Eine pro Zeile: URL, Name|URL, Name URL oder Markdown-Links"
+        AppLanguage.RUSSIAN -> "По одной в строке: URL, Имя|URL, Имя URL или Markdown"
+        AppLanguage.JAPANESE -> "1行1件: URL、名前|URL、名前 URL、Markdownリンク"
+        AppLanguage.KOREAN -> "한 줄에 하나: URL, 이름|URL, 이름 URL, Markdown 링크"
     }
     val batchImportParsed: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已解析 %d 个URL"
@@ -5197,6 +5205,102 @@ object StringsA {
         AppLanguage.JAPANESE -> "インポート"
         AppLanguage.KOREAN -> "가져오기"
     }
+    val batchImportPaste: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "粘贴"
+        AppLanguage.ENGLISH -> "Paste"
+        AppLanguage.ARABIC -> "لصق"
+        AppLanguage.PORTUGUESE -> "Colar"
+        AppLanguage.SPANISH -> "Pegar"
+        AppLanguage.FRENCH -> "Coller"
+        AppLanguage.GERMAN -> "Einfügen"
+        AppLanguage.RUSSIAN -> "Вставить"
+        AppLanguage.JAPANESE -> "貼り付け"
+        AppLanguage.KOREAN -> "붙여넣기"
+    }
+    val batchImportClear: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "清空"
+        AppLanguage.ENGLISH -> "Clear"
+        AppLanguage.ARABIC -> "مسح"
+        AppLanguage.PORTUGUESE -> "Limpar"
+        AppLanguage.SPANISH -> "Borrar"
+        AppLanguage.FRENCH -> "Effacer"
+        AppLanguage.GERMAN -> "Leeren"
+        AppLanguage.RUSSIAN -> "Очистить"
+        AppLanguage.JAPANESE -> "クリア"
+        AppLanguage.KOREAN -> "지우기"
+    }
+    val batchImportPickBookmarks: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择书签 HTML 文件"
+        AppLanguage.ENGLISH -> "Choose bookmarks HTML file"
+        AppLanguage.ARABIC -> "اختر ملف إشارات HTML"
+        AppLanguage.PORTUGUESE -> "Escolher arquivo HTML de favoritos"
+        AppLanguage.SPANISH -> "Elegir archivo HTML de marcadores"
+        AppLanguage.FRENCH -> "Choisir un fichier HTML de favoris"
+        AppLanguage.GERMAN -> "Lesezeichen-HTML-Datei wählen"
+        AppLanguage.RUSSIAN -> "Выбрать HTML-файл закладок"
+        AppLanguage.JAPANESE -> "ブックマークHTMLを選択"
+        AppLanguage.KOREAN -> "북마크 HTML 파일 선택"
+    }
+    val batchImportBookmarksHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "支持 Chrome / Edge / Firefox 导出的 bookmarks.html"
+        AppLanguage.ENGLISH -> "Supports bookmarks.html exported from Chrome, Edge, or Firefox"
+        AppLanguage.ARABIC -> "يدعم bookmarks.html من Chrome أو Edge أو Firefox"
+        AppLanguage.PORTUGUESE -> "Compatível com bookmarks.html do Chrome, Edge ou Firefox"
+        AppLanguage.SPANISH -> "Compatible con bookmarks.html de Chrome, Edge o Firefox"
+        AppLanguage.FRENCH -> "Compatible avec bookmarks.html de Chrome, Edge ou Firefox"
+        AppLanguage.GERMAN -> "Unterstützt bookmarks.html von Chrome, Edge oder Firefox"
+        AppLanguage.RUSSIAN -> "Поддерживается bookmarks.html из Chrome, Edge или Firefox"
+        AppLanguage.JAPANESE -> "Chrome / Edge / Firefox の bookmarks.html に対応"
+        AppLanguage.KOREAN -> "Chrome / Edge / Firefox bookmarks.html 지원"
+    }
+    val batchImportNoValid: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未找到有效的 URL"
+        AppLanguage.ENGLISH -> "No valid URLs found"
+        AppLanguage.ARABIC -> "لم يتم العثور على روابط صالحة"
+        AppLanguage.PORTUGUESE -> "Nenhum URL válido encontrado"
+        AppLanguage.SPANISH -> "No se encontraron URLs válidos"
+        AppLanguage.FRENCH -> "Aucune URL valide trouvée"
+        AppLanguage.GERMAN -> "Keine gültigen URLs gefunden"
+        AppLanguage.RUSSIAN -> "Действительные URL не найдены"
+        AppLanguage.JAPANESE -> "有効なURLが見つかりません"
+        AppLanguage.KOREAN -> "유효한 URL을 찾지 못했습니다"
+    }
+    fun batchImportParseStats(invalid: Int, duplicates: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无效 %d 行，输入内重复 %d 条"
+        AppLanguage.ENGLISH -> "%d invalid lines, %d duplicates in input"
+        AppLanguage.ARABIC -> "%d أسطر غير صالحة، %d مكررات في الإدخال"
+        AppLanguage.PORTUGUESE -> "%d linhas inválidas, %d duplicatas na entrada"
+        AppLanguage.SPANISH -> "%d líneas inválidas, %d duplicados en la entrada"
+        AppLanguage.FRENCH -> "%d lignes invalides, %d doublons dans la saisie"
+        AppLanguage.GERMAN -> "%d ungültige Zeilen, %d Duplikate in der Eingabe"
+        AppLanguage.RUSSIAN -> "Недействительных строк: %d, дубликатов во вводе: %d"
+        AppLanguage.JAPANESE -> "無効 %d 行、入力内の重複 %d 件"
+        AppLanguage.KOREAN -> "무효 %d줄, 입력 중복 %d개"
+    }.let { String.format(it, invalid, duplicates) }
+    fun batchImportSkipped(count: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已跳过重复 %d 条"
+        AppLanguage.ENGLISH -> "Skipped %d duplicates"
+        AppLanguage.ARABIC -> "تم تخطي %d مكررات"
+        AppLanguage.PORTUGUESE -> "%d duplicatas ignoradas"
+        AppLanguage.SPANISH -> "Se omitieron %d duplicados"
+        AppLanguage.FRENCH -> "%d doublons ignorés"
+        AppLanguage.GERMAN -> "%d Duplikate übersprungen"
+        AppLanguage.RUSSIAN -> "Пропущено дубликатов: %d"
+        AppLanguage.JAPANESE -> "重複 %d 件をスキップ"
+        AppLanguage.KOREAN -> "중복 %d개 건너뜀"
+    }.let { String.format(it, count) }
+    fun batchImportMore(count: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "还有 %d 条…"
+        AppLanguage.ENGLISH -> "%d more…"
+        AppLanguage.ARABIC -> "%d إضافية…"
+        AppLanguage.PORTUGUESE -> "mais %d…"
+        AppLanguage.SPANISH -> "%d más…"
+        AppLanguage.FRENCH -> "%d de plus…"
+        AppLanguage.GERMAN -> "%d weitere…"
+        AppLanguage.RUSSIAN -> "ещё %d…"
+        AppLanguage.JAPANESE -> "他 %d 件…"
+        AppLanguage.KOREAN -> "%d개 더…"
+    }.let { String.format(it, count) }
     val menuLinuxEnvironment: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "本地构建环境"
         AppLanguage.ENGLISH -> "Local Build Environment"

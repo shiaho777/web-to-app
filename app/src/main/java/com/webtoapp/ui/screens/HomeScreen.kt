@@ -969,7 +969,7 @@ fun HomeScreen(
             importService = batchImportService,
             onDismiss = { showBatchImportDialog = false },
             onImport = { entries ->
-                batchImportService.importEntries(entries)
+                batchImportService.importEntriesDetailed(entries)
             }
         )
     }
