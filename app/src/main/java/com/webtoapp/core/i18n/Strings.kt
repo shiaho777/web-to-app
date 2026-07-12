@@ -60314,28 +60314,28 @@ object StringsE {
     }
 
     val cloudflareCompatTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Cloudflare 人机验证兼容"
+        AppLanguage.CHINESE -> "Cloudflare 验证兼容"
         AppLanguage.ENGLISH -> "Cloudflare Challenge Compat"
         AppLanguage.ARABIC -> "توافق تحدي Cloudflare"
-        AppLanguage.PORTUGUESE -> "Compat. de Verificação Cloudflare"
-        AppLanguage.SPANISH -> "Compat. de Verificación Cloudflare"
-        AppLanguage.FRENCH -> "Compat. vérification Cloudflare"
+        AppLanguage.PORTUGUESE -> "Compat. de Desafio Cloudflare"
+        AppLanguage.SPANISH -> "Compat. de Desafío Cloudflare"
+        AppLanguage.FRENCH -> "Compat. défi Cloudflare"
         AppLanguage.GERMAN -> "Cloudflare-Challenge-Kompatibilität"
         AppLanguage.RUSSIAN -> "Совместимость с проверкой Cloudflare"
-        AppLanguage.JAPANESE -> "Cloudflare 認証チャレンジ互換"
+        AppLanguage.JAPANESE -> "Cloudflare チャレンジ互換"
         AppLanguage.KOREAN -> "Cloudflare 챌린지 호환"
     }
     val cloudflareCompatDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "自动通过 Cloudflare Turnstile 人机验证。仅在检测到验证页面时生效，不影响其他网站正常使用。关闭后受 Cloudflare 保护的网站可能显示 403。"
-        AppLanguage.ENGLISH -> "Automatically pass Cloudflare Turnstile challenges. Only activates when a challenge page is detected; does not affect other sites. Disabling may cause 403 errors on Cloudflare-protected sites."
-        AppLanguage.ARABIC -> "تجاوز تحديات Cloudflare Turnstile تلقائيًا. يعمل فقط عند اكتشاف صفحة التحدي ولا يؤثر على المواقع الأخرى. الإيقاف قد يسبب أخطاء 403 على المواقع المحمية بـ Cloudflare."
-        AppLanguage.PORTUGUESE -> "Passar automaticamente pelos desafios Cloudflare Turnstile. Só ativa quando uma página de desafio é detectada; não afeta outros sites. Desativar pode causar erros 403 em sites protegidos pelo Cloudflare."
-        AppLanguage.SPANISH -> "Pasar automáticamente los desafíos de Cloudflare Turnstile. Solo se activa cuando se detecta una página de desafío; no afecta a otros sitios. Desactivarlo puede causar errores 403 en sitios protegidos por Cloudflare."
-        AppLanguage.FRENCH -> "Passer automatiquement les défis Cloudflare Turnstile. Ne s'active que lorsqu'une page de défi est détectée ; n'affecte pas les autres sites. La désactivation peut causer des erreurs 403 sur les sites protégés par Cloudflare."
-        AppLanguage.GERMAN -> "Cloudflare-Turnstile-Challenges automatisch bestehen. Wird nur aktiviert, wenn eine Challenge-Seite erkannt wird; betrifft keine anderen Seiten. Das Deaktivieren kann 403-Fehler auf Cloudflare-geschützten Seiten verursachen."
-        AppLanguage.RUSSIAN -> "Автоматически проходить проверки Cloudflare Turnstile. Активируется только при обнаружении страницы проверки; не влияет на другие сайты. Отключение может вызывать ошибки 403 на сайтах, защищённых Cloudflare."
-        AppLanguage.JAPANESE -> "Cloudflare Turnstile チャレンジを自動的に通過します。チャレンジページを検出した時のみ動作し、他のサイトには影響しません。無効化すると Cloudflare で保護されたサイトで 403 エラーが発生する場合があります。"
-        AppLanguage.KOREAN -> "Cloudflare Turnstile 챌린지를 자동으로 통과합니다. 챌린지 페이지가 감지될 때만 활성화되며 다른 사이트에는 영향을 주지 않습니다. 비활성화하면 Cloudflare로 보호된 사이트에서 403 오류가 발생할 수 있습니다."
+        AppLanguage.CHINESE -> "提升 Cloudflare 验证页在 WebView 中的兼容性（环境伪装、第三方 Cookie 等）。不能保证自动通过所有人机验证；交互式 Turnstile 仍可能需要手动完成。"
+        AppLanguage.ENGLISH -> "Improves Cloudflare challenge compatibility in WebView (environment spoofing, third-party cookies, etc.). Does not guarantee automatically passing every challenge; interactive Turnstile may still need manual completion."
+        AppLanguage.ARABIC -> "يحسّن توافق صفحات تحدي Cloudflare في WebView (تمويه البيئة وملفات تعريف الارتباط للطرف الثالث وغيرها). لا يضمن تجاوز كل التحديات تلقائيًا؛ قد يتطلب Turnstile التفاعلي إكمالًا يدويًا."
+        AppLanguage.PORTUGUESE -> "Melhora a compatibilidade de desafios Cloudflare no WebView (simulação de ambiente, cookies de terceiros etc.). Não garante passar automaticamente em todos os desafios; o Turnstile interativo ainda pode exigir conclusão manual."
+        AppLanguage.SPANISH -> "Mejora la compatibilidad de desafíos de Cloudflare en WebView (simulación de entorno, cookies de terceros, etc.). No garantiza superar automáticamente todos los desafíos; Turnstile interactivo aún puede requerir completar manualmente."
+        AppLanguage.FRENCH -> "Améliore la compatibilité des défis Cloudflare dans WebView (usurpation d'environnement, cookies tiers, etc.). Ne garantit pas de réussir automatiquement chaque défi ; Turnstile interactif peut encore nécessiter une validation manuelle."
+        AppLanguage.GERMAN -> "Verbessert die Cloudflare-Challenge-Kompatibilität in WebView (Umgebungs-Spoofing, Drittanbieter-Cookies usw.). Garantiert kein automatisches Bestehen jeder Challenge; interaktives Turnstile kann weiterhin manuell erforderlich sein."
+        AppLanguage.RUSSIAN -> "Повышает совместимость страниц проверки Cloudflare в WebView (подмена среды, сторонние cookie и т.д.). Не гарантирует автоматическое прохождение всех проверок; интерактивный Turnstile может потребовать ручного завершения."
+        AppLanguage.JAPANESE -> "WebView 上の Cloudflare チャレンジ互換性を高めます（環境偽装、サードパーティ Cookie など）。すべてのチャレンジの自動通過は保証しません。対話型 Turnstile は手動完了が必要な場合があります。"
+        AppLanguage.KOREAN -> "WebView에서 Cloudflare 챌린지 호환성을 개선합니다(환경 위장, 서드파티 쿠키 등). 모든 챌린지를 자동으로 통과한다고 보장하지 않으며, 대화형 Turnstile은 수동 완료가 필요할 수 있습니다."
     }
 
     val primeUserActivationTitle: String get() = when (Strings.lang) {

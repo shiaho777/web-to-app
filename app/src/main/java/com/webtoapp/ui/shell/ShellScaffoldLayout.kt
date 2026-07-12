@@ -61,6 +61,7 @@ fun BoxScope.ShellScaffoldLayout(
     onRefresh: () -> Unit,
 
     onWebViewCreated: (WebView) -> Unit,
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {},
     onWebViewRefUpdated: (WebView) -> Unit,
     onShowActivationDialog: () -> Unit,
     onErrorDismiss: () -> Unit,
@@ -178,6 +179,7 @@ fun BoxScope.ShellScaffoldLayout(
                 isRefreshing = isRefreshing,
                 onRefresh = onRefresh,
                 onWebViewCreated = onWebViewCreated,
+        onBrowserSurfaceCreated = onBrowserSurfaceCreated,
                 onWebViewRefUpdated = onWebViewRefUpdated,
                 onShowActivationDialog = onShowActivationDialog,
                 onActivityFinish = onActivityFinish
@@ -325,6 +327,7 @@ private fun ShellContentArea(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     onWebViewCreated: (WebView) -> Unit,
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {},
     onWebViewRefUpdated: (WebView) -> Unit,
     onShowActivationDialog: () -> Unit,
     onActivityFinish: () -> Unit
@@ -389,6 +392,7 @@ private fun ShellContentArea(
             isRefreshing = isRefreshing,
             onRefresh = onRefresh,
             onWebViewCreated = onWebViewCreated,
+        onBrowserSurfaceCreated = onBrowserSurfaceCreated,
             onWebViewRefUpdated = onWebViewRefUpdated,
             onActivityFinish = onActivityFinish
         )

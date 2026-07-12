@@ -94,11 +94,15 @@ private fun SiteContent(
     onRefresh: () -> Unit
 ) {
     val siteCfg = site.siteShellConfig
-    val effectiveConfig = siteCfg ?: ShellConfig(
+    val effectiveConfig = siteCfg?.copy(
+        engineType = siteCfg.engineType.takeIf { it.isNotBlank() && it != "SYSTEM_WEBVIEW" }
+            ?: config.engineType
+    ) ?: ShellConfig(
         appName = site.name,
         appType = "WEB",
         targetUrl = site.url,
-        packageName = config.packageName
+        packageName = config.packageName,
+        engineType = config.engineType
     )
     val siteWvCfg = remember(site.id) { buildWebViewConfig(effectiveConfig) }
     ShellContentRouter(

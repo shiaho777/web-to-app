@@ -394,6 +394,9 @@ data class ShellConfig(
     @SerializedName("language")
     val language: String = "CHINESE",
 
+    @SerializedName("engineType")
+    val engineType: String = "SYSTEM_WEBVIEW",
+
     @SerializedName("galleryConfig")
     val galleryConfig: GalleryShellConfig = GalleryShellConfig(),
 

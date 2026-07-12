@@ -122,6 +122,8 @@ class WebViewManager(
             "imgs.hcaptcha.com",
 
             "challenges.cloudflare.com",
+            "cf-turnstile.com",
+            "turnstile.cloudflare.com",
 
             "arkoselabs.com",
             "client-api.arkoselabs.com",
@@ -1260,7 +1262,9 @@ class WebViewManager(
         val cookieManager = CookieManager.getInstance()
         cookieManager.setAcceptCookie(true)
 
-        val acceptThirdParty = if (!config.acceptThirdPartyCookies) {
+        val acceptThirdParty = if (config.enableCloudflareCompat) {
+            true
+        } else if (!config.acceptThirdPartyCookies) {
             false
         } else when (config.thirdPartyCookieMode) {
             com.webtoapp.data.model.ThirdPartyCookieMode.NONE -> false
@@ -2370,6 +2374,9 @@ class WebViewManager(
 
                     if (isCloudflareResponse) {
                         AppLogger.d("WebViewManager", "Keeping Cloudflare HTTP response visible for: $failedUrl")
+                        if (config.enableCloudflareCompat) {
+                            view?.let { CloudflareCompat.injectCompat(it, failedUrl) }
+                        }
                     }
                     callbacks.onError(statusCode, description)
                 }

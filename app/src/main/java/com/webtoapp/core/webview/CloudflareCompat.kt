@@ -9,7 +9,8 @@ object CloudflareCompat {
 
     private val CLOUDFLARE_CHALLENGE_HOSTS = setOf(
         "challenges.cloudflare.com",
-        "cf-turnstile.com"
+        "cf-turnstile.com",
+        "turnstile.cloudflare.com"
     )
 
     private val CLOUDFLARE_PAGE_INDICATORS = listOf(
@@ -17,8 +18,12 @@ object CloudflareCompat {
         "cf-turnstile",
         "cdn-cgi/challenge-platform",
         "__CF\$cv\$params",
-        "cf-ray",
-        "Just a moment"
+        "cf-browser-verification",
+        "cf-challenge",
+        "Just a moment",
+        "Attention Required",
+        "Checking your browser",
+        "Enable JavaScript and cookies to continue"
     )
 
     fun isCloudflareChallenge(url: String?): Boolean {
@@ -28,7 +33,11 @@ object CloudflareCompat {
         } catch (e: Exception) {
             return false
         }
-        return CLOUDFLARE_CHALLENGE_HOSTS.any { host == it || host.endsWith(".$it") }
+        if (CLOUDFLARE_CHALLENGE_HOSTS.any { host == it || host.endsWith(".$it") }) return true
+        val lower = url.lowercase()
+        return lower.contains("cdn-cgi/challenge-platform") ||
+            lower.contains("__cf_chl") ||
+            lower.contains("cf-browser-verification")
     }
 
     fun hasCloudflareSignal(
@@ -36,6 +45,8 @@ object CloudflareCompat {
         reasonPhrase: String? = null,
         responseHeaders: Map<String, String>? = null
     ): Boolean {
+        if (isCloudflareChallenge(url)) return true
+
         val haystack = buildString {
             append(url.orEmpty())
             append('\n')
@@ -48,9 +59,27 @@ object CloudflareCompat {
             }
         }.lowercase()
 
-        return CLOUDFLARE_PAGE_INDICATORS.any { haystack.contains(it.lowercase()) } ||
-            responseHeaders?.keys?.any { it.equals("cf-ray", ignoreCase = true) } == true ||
-            responseHeaders?.values?.any { it.equals("cloudflare", ignoreCase = true) } == true
+        if (CLOUDFLARE_PAGE_INDICATORS.any { haystack.contains(it.lowercase()) }) return true
+
+        val server = responseHeaders?.entries
+            ?.firstOrNull { it.key.equals("server", ignoreCase = true) }
+            ?.value
+            ?.lowercase()
+            .orEmpty()
+        if (server.contains("cloudflare")) return true
+
+        val hasCfRay = responseHeaders?.keys?.any { it.equals("cf-ray", ignoreCase = true) } == true
+        val hasCfChallenge = responseHeaders?.keys?.any {
+            it.equals("cf-mitigated", ignoreCase = true) ||
+                it.equals("cf-challenge", ignoreCase = true) ||
+                it.startsWith("cf-chl", ignoreCase = true)
+        } == true
+        return hasCfChallenge || (hasCfRay && (
+            haystack.contains("just a moment") ||
+                haystack.contains("challenge") ||
+                haystack.contains("turnstile") ||
+                haystack.contains("attention required")
+        ))
     }
 
     fun stripWebViewMarker(userAgent: String): String {
@@ -61,6 +90,8 @@ object CloudflareCompat {
             .replace(";wv)", ")")
             .replace(" wv)", ")")
     }
+
+    fun shouldEnableThirdPartyCookies(enableCloudflareCompat: Boolean): Boolean = enableCloudflareCompat
 
     fun generateCompatJs(): String = CLOUDFLARE_COMPAT_JS
 
@@ -78,7 +109,6 @@ object CloudflareCompat {
 if(window.__wta_cf_compat__)return;
 window.__wta_cf_compat__=1;
 
-// ── toString 保护：让后续 hook 的 toString() 返回 [native code] ──
 var _ht=new WeakSet();
 var _ots=Function.prototype.toString;
 function _mn(fn){_ht.add(fn);return fn;}
@@ -89,7 +119,6 @@ Function.prototype.toString=_mn(function(){
 });
 }catch(e){}
 
-// ── 1. navigator.webdriver → false ──
 try{
 Object.defineProperty(navigator,'webdriver',{
     get:_mn(function(){return false}),
@@ -97,7 +126,6 @@ Object.defineProperty(navigator,'webdriver',{
 });
 }catch(e){}
 
-// ── 2. window.chrome 基础结构 ──
 try{
 if(!window.chrome)window.chrome={};
 if(!window.chrome.runtime)window.chrome.runtime={
@@ -118,52 +146,45 @@ if(!window.chrome.loadTimes)window.chrome.loadTimes=_mn(function(){
 });
 }catch(e){}
 
-// ── 3. document.visibilityState → 'visible' ──
 try{
 Object.defineProperty(document,'visibilityState',{
     get:_mn(function(){return'visible'}),
-    configurable:true
+    enumerable:true,configurable:true
 });
 Object.defineProperty(document,'hidden',{
     get:_mn(function(){return false}),
-    configurable:true
+    enumerable:true,configurable:true
 });
 }catch(e){}
 
-// ── 4. screen 属性修复（某些 WebView 初始化时 screen 为 0）──
 try{
-if(screen.width===0)Object.defineProperty(screen,'width',{get:_mn(function(){return 412}),configurable:true});
-if(screen.height===0)Object.defineProperty(screen,'height',{get:_mn(function(){return 915}),configurable:true});
-if(screen.availWidth===0)Object.defineProperty(screen,'availWidth',{get:_mn(function(){return 412}),configurable:true});
-if(screen.availHeight===0)Object.defineProperty(screen,'availHeight',{get:_mn(function(){return 891}),configurable:true});
-if(screen.colorDepth===0)Object.defineProperty(screen,'colorDepth',{get:_mn(function(){return 24}),configurable:true});
-}catch(e){}
-
-// ── 5. Worker 构造函数存在性 ──
-try{
-if(!window.Worker){
-    window.Worker=_mn(function(url){
-        this.postMessage=function(){};
-        this.terminate=function(){};
-        this.onmessage=null;
-        this.onerror=null;
+if(!navigator.plugins||navigator.plugins.length===0){
+    var fakePlugin={name:'Chrome PDF Plugin',filename:'internal-pdf-viewer',description:'Portable Document Format',length:1};
+    Object.defineProperty(navigator,'plugins',{
+        get:_mn(function(){return[fakePlugin,fakePlugin,fakePlugin]}),
+        enumerable:true,configurable:true
     });
 }
 }catch(e){}
 
-// ── 6. Notification.permission（Cloudflare 检测环境完整性）──
 try{
-if(!window.Notification){
-    window.Notification=_mn(function(){});
-    window.Notification.permission='default';
-    window.Notification.requestPermission=_mn(function(cb){
-        if(cb)cb('default');
-        return Promise.resolve('default');
+if(!navigator.languages||navigator.languages.length===0){
+    Object.defineProperty(navigator,'languages',{
+        get:_mn(function(){return['en-US','en']}),
+        enumerable:true,configurable:true
     });
 }
 }catch(e){}
 
-// ── 7. navigator.permissions.query 补丁 ──
+try{
+if(typeof Notification!=='undefined'){
+    Object.defineProperty(Notification,'permission',{
+        get:_mn(function(){return'default'}),
+        enumerable:true,configurable:true
+    });
+}
+}catch(e){}
+
 try{
 if(navigator.permissions&&navigator.permissions.query){
     var _opq=navigator.permissions.query.bind(navigator.permissions);
@@ -176,9 +197,15 @@ if(navigator.permissions&&navigator.permissions.query){
 }
 }catch(e){}
 
-// ── 8. document.hasFocus() → true ──
 try{
 document.hasFocus=_mn(function(){return true});
+}catch(e){}
+
+try{
+if(typeof window.outerWidth==='number'&&window.outerWidth===0){
+    Object.defineProperty(window,'outerWidth',{get:_mn(function(){return window.innerWidth}),configurable:true});
+    Object.defineProperty(window,'outerHeight',{get:_mn(function(){return window.innerHeight}),configurable:true});
+}
 }catch(e){}
 
 })();"""

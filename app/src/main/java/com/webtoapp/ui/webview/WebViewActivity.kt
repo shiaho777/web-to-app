@@ -1,4 +1,6 @@
 package com.webtoapp.ui.webview
+import com.webtoapp.core.engine.BrowserSurface
+import com.webtoapp.core.engine.EngineViewFactory
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.AutoRefreshCountdownChip
@@ -117,6 +119,7 @@ class WebViewActivity : AppCompatActivity() {
     }
 
     private var webView: WebView? = null
+    internal var browserSurface: BrowserSurface? = null
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
@@ -564,6 +567,25 @@ class WebViewActivity : AppCompatActivity() {
     private var usageTracker: AppUsageTracker? = null
     private var trackedAppId: Long = -1
 
+
+    private fun loadInBrowser(url: String) {
+        val surface = browserSurface
+        if (surface != null) {
+            surface.loadUrl(url)
+        } else {
+            webView?.loadUrl(url)
+        }
+    }
+
+    private fun reloadBrowser() {
+        val surface = browserSurface
+        if (surface != null) {
+            surface.reload()
+        } else {
+            webView?.reload()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         try {
@@ -905,6 +927,18 @@ fun WebViewScreen(
     val bgmPlayer = remember { BgmPlayer(context) }
 
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var browserSurfaceRef by remember { mutableStateOf<BrowserSurface?>(null) }
+
+    fun loadInBrowser(url: String) {
+        val surface = browserSurfaceRef
+        if (surface != null) surface.loadUrl(url) else webViewRef?.loadUrl(url)
+    }
+
+    fun reloadBrowser() {
+        val surface = browserSurfaceRef
+        if (surface != null) surface.reload() else webViewRef?.reload()
+    }
+
 
     val jsScrollTop = remember { AtomicInteger(0) }
     val scrollBridge: WtaScrollBridge = remember { WtaScrollBridge { y -> jsScrollTop.set(y) } }
@@ -1041,7 +1075,7 @@ fun WebViewScreen(
         val controller = com.webtoapp.core.webview.AutoRefreshController(
             intervalSec = app.webViewConfig.autoRefreshIntervalSec.coerceAtLeast(1),
             showCountdown = app.webViewConfig.autoRefreshShowCountdown,
-            onReload = { webViewRef?.reload() }
+            onReload = { reloadBrowser() }
         )
         autoRefreshController = controller
         controller.start()
@@ -1430,7 +1464,7 @@ fun WebViewScreen(
             )
             wordPressPreviewState = WordPressPreviewState.Ready(url)
             delay(200)
-            webViewRef?.loadUrl(url)
+            loadInBrowser(url)
         } else {
             wordPressPreviewState = WordPressPreviewState.Error(Strings.wpServerError)
         }
@@ -1535,7 +1569,7 @@ fun WebViewScreen(
             AppLogger.i("PhpAppPreview", "PHP server started: $url")
             phpAppPreviewState = PhpAppPreviewState.Ready(url)
             delay(200)
-            webViewRef?.loadUrl(url)
+            loadInBrowser(url)
         } else {
             AppLogger.e("PhpAppPreview", "PHP server failed to start, port=$port, serverState=${phpAppRuntime.serverState.value}")
             val errorDetail = when (val state = phpAppRuntime.serverState.value) {
@@ -1672,7 +1706,7 @@ fun WebViewScreen(
                 AppLogger.i("PythonAppPreview", "LocalHttpServer started: $url")
                 pythonAppPreviewState = PythonAppPreviewState.Ready(url)
                 delay(200)
-                webViewRef?.loadUrl(url)
+                loadInBrowser(url)
             } else if (pythonRuntime.isPythonAvailable()) {
 
                 AppLogger.i("PythonAppPreview", "Python runtime available, starting backend server")
@@ -1692,7 +1726,7 @@ fun WebViewScreen(
                     AppLogger.i("PythonAppPreview", "Python server started: $serverUrl")
                     pythonAppPreviewState = PythonAppPreviewState.Ready(serverUrl)
                     delay(200)
-                    webViewRef?.loadUrl(serverUrl)
+                    loadInBrowser(serverUrl)
                 } else {
 
                     val errMsg = (pythonRuntime.serverState.value as? com.webtoapp.core.python.PythonRuntime.ServerState.Error)
@@ -1713,7 +1747,7 @@ fun WebViewScreen(
                     val targetUrl = "$url/_preview_.html"
                     pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl)
                     delay(200)
-                    webViewRef?.loadUrl(targetUrl)
+                    loadInBrowser(targetUrl)
                 }
             } else {
 
@@ -1727,7 +1761,7 @@ fun WebViewScreen(
                     val targetUrl = "$url/$relPath"
                     pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl)
                     delay(200)
-                    webViewRef?.loadUrl(targetUrl)
+                    loadInBrowser(targetUrl)
                 } else {
                     val previewHtml = pythonRuntime.generatePreviewHtml(
                         projectDir = actualProjectDir,
@@ -1739,7 +1773,7 @@ fun WebViewScreen(
                     val targetUrl = "$url/_preview_.html"
                     pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl)
                     delay(200)
-                    webViewRef?.loadUrl(targetUrl)
+                    loadInBrowser(targetUrl)
                 }
             }
         } catch (e: Exception) {
@@ -1842,7 +1876,7 @@ fun WebViewScreen(
                 AppLogger.i("NodeJsAppPreview", "LocalHttpServer started: $url")
                 nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(url)
                 delay(200)
-                webViewRef?.loadUrl(url)
+                loadInBrowser(url)
             } else if (nodeRuntime.isNodeAvailable()) {
 
                 AppLogger.i("NodeJsAppPreview", "Node.js runtime available, starting backend server")
@@ -1860,7 +1894,7 @@ fun WebViewScreen(
                     AppLogger.i("NodeJsAppPreview", "Node server started: $serverUrl")
                     nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(serverUrl)
                     delay(200)
-                    webViewRef?.loadUrl(serverUrl)
+                    loadInBrowser(serverUrl)
                 } else {
                     AppLogger.e("NodeJsAppPreview", "Node server failed to start, falling back to preview mode")
 
@@ -1876,7 +1910,7 @@ fun WebViewScreen(
                     val targetUrl = "$url/_preview_.html"
                     nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(targetUrl)
                     delay(200)
-                    webViewRef?.loadUrl(targetUrl)
+                    loadInBrowser(targetUrl)
                 }
             } else {
 
@@ -1893,7 +1927,7 @@ fun WebViewScreen(
                     AppLogger.i("NodeJsAppPreview", "Found HTML file: $relPath, URL=$targetUrl")
                     nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(targetUrl)
                     delay(200)
-                    webViewRef?.loadUrl(targetUrl)
+                    loadInBrowser(targetUrl)
                 } else {
 
                     AppLogger.i("NodeJsAppPreview", "No static HTML, generating project preview page")
@@ -1908,7 +1942,7 @@ fun WebViewScreen(
                     AppLogger.i("NodeJsAppPreview", "Preview page generated: $targetUrl")
                     nodeJsAppPreviewState = NodeJsAppPreviewState.Ready(targetUrl)
                     delay(200)
-                    webViewRef?.loadUrl(targetUrl)
+                    loadInBrowser(targetUrl)
                 }
             }
         } catch (e: Exception) {
@@ -1976,7 +2010,7 @@ fun WebViewScreen(
                 AppLogger.i("GoAppPreview", "LocalHttpServer started: $url")
                 goAppPreviewState = GoAppPreviewState.Ready(url)
                 delay(200)
-                webViewRef?.loadUrl(url)
+                loadInBrowser(url)
             } else {
 
                 val goMod = File(projectDir, "go.mod")
@@ -2025,7 +2059,7 @@ fun WebViewScreen(
                         AppLogger.i("GoAppPreview", "Go server started: $serverUrl")
                         goAppPreviewState = GoAppPreviewState.Ready(serverUrl)
                         delay(200)
-                        webViewRef?.loadUrl(serverUrl)
+                        loadInBrowser(serverUrl)
                     } else {
                         AppLogger.e("GoAppPreview", "Go server failed to start, falling back to preview mode")
                         val url = goHttpServer.start(projectDir)
@@ -2040,7 +2074,7 @@ fun WebViewScreen(
                         val targetUrl = "$url/_preview_.html"
                         goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
                         delay(200)
-                        webViewRef?.loadUrl(targetUrl)
+                        loadInBrowser(targetUrl)
                     }
                 } else {
                     AppLogger.w("GoAppPreview", "No executable binary, generating project preview page")
@@ -2053,7 +2087,7 @@ fun WebViewScreen(
                         val targetUrl = "$url/$relPath"
                         goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
                         delay(200)
-                        webViewRef?.loadUrl(targetUrl)
+                        loadInBrowser(targetUrl)
                     } else {
                         val previewHtml = goRuntime.generatePreviewHtml(
                             projectDir = projectDir,
@@ -2065,7 +2099,7 @@ fun WebViewScreen(
                         val targetUrl = "$url/_preview_.html"
                         goAppPreviewState = GoAppPreviewState.Ready(targetUrl)
                         delay(200)
-                        webViewRef?.loadUrl(targetUrl)
+                        loadInBrowser(targetUrl)
                     }
                 }
             }
@@ -2613,7 +2647,7 @@ fun WebViewScreen(
                             }
                         }
                         if (isTestMode || webApp?.webViewConfig?.toolbarShowRefresh == true) {
-                            IconButton(onClick = { webViewRef?.reload() }) {
+                            IconButton(onClick = { reloadBrowser() }) {
                                 Icon(Icons.Default.Refresh, "Refresh")
                             }
                         }
@@ -2811,7 +2845,7 @@ fun WebViewScreen(
                         isRefreshing = isRefreshing,
                         onRefresh = {
                             isRefreshing = true
-                            webViewRef?.reload()
+                            reloadBrowser()
                         }
                     )
                 } else {
@@ -2855,7 +2889,8 @@ fun WebViewScreen(
                                 isEnabled = swipeRefreshEnabled
                                 setOnRefreshListener {
                                     isRefreshing = true
-                                    webViewRef?.reload()
+                                    val surface = tag as? BrowserSurface
+                                    if (surface != null) surface.reload() else reloadBrowser()
                                 }
 
                                 var swipeChildWebView: WebView? = null
@@ -2864,36 +2899,45 @@ fun WebViewScreen(
                                     wv.scrollY > 0 || jsScrollTop.get() > 0
                                 }
 
-                                val createdWebView = WebView(ctx).apply {
+                                val moduleIds = if (isTestMode && !testModuleIds.isNullOrEmpty()) {
+                                    testModuleIds
+                                } else {
+                                    webApp?.extensionModuleIds ?: emptyList()
+                                }
+
+                                val extensionMasterEnabled = if (isTestMode && !testModuleIds.isNullOrEmpty()) {
+                                    true
+                                } else {
+                                    webApp?.extensionEnabled == true
+                                }
+
+                                val previewEngineType = webApp?.apkExportConfig?.engineType
+                                    ?: if (webApp?.webViewConfig?.dnsConfig?.echEffective == true) "GECKOVIEW" else "SYSTEM_WEBVIEW"
+                                val surface = EngineViewFactory.create(
+                                    context = ctx,
+                                    engineTypeName = previewEngineType,
+                                    config = webApp?.webViewConfig ?: com.webtoapp.data.model.WebViewConfig(),
+                                    webViewManager = webViewManager,
+                                    callbacks = webViewCallbacks,
+                                    adBlocker = com.webtoapp.WebToAppApplication.adBlock,
+                                    extensionModuleIds = moduleIds,
+                                    embeddedExtensionModules = emptyList(),
+                                    extensionFabIcon = webApp?.extensionFabIcon.orEmpty(),
+                                    allowGlobalModuleFallback = false,
+                                    extensionEnabled = extensionMasterEnabled,
+                                    browserDisguiseConfig = webApp?.browserDisguiseConfig,
+                                    deviceDisguiseConfig = webApp?.deviceDisguiseConfig
+                                )
+                                tag = surface
+                                browserSurfaceRef = surface
+                                (context as? WebViewActivity)?.browserSurface = surface
+                                val createdWebView = surface.webView
+                                if (createdWebView != null) {
+                                    createdWebView.apply {
                                     layoutParams = ViewGroup.LayoutParams(
                                         ViewGroup.LayoutParams.MATCH_PARENT,
                                         ViewGroup.LayoutParams.MATCH_PARENT
                                     )
-
-                                    val moduleIds = if (isTestMode && !testModuleIds.isNullOrEmpty()) {
-                                        testModuleIds
-                                    } else {
-                                        webApp?.extensionModuleIds ?: emptyList()
-                                    }
-
-                                    val extensionMasterEnabled = if (isTestMode && !testModuleIds.isNullOrEmpty()) {
-                                        true
-                                    } else {
-                                        webApp?.extensionEnabled == true
-                                    }
-                                    webViewManager.configureWebView(
-                                        this,
-                                        webApp?.webViewConfig ?: com.webtoapp.data.model.WebViewConfig(),
-                                        webViewCallbacks,
-                                        moduleIds,
-                                        emptyList(),
-                                        webApp?.extensionFabIcon.orEmpty(),
-                                        allowGlobalModuleFallback = false,
-                                        extensionEnabled = extensionMasterEnabled,
-                                        browserDisguiseConfig = webApp?.browserDisguiseConfig,
-                                        deviceDisguiseConfig = webApp?.deviceDisguiseConfig
-                                    )
-
                                     val effectiveWebApp = webApp
                                     if (effectiveWebApp != null) {
                                         if (effectiveWebApp.webViewConfig.enableNativeBridge) {
@@ -2981,10 +3025,23 @@ fun WebViewScreen(
 
                                     tracker.scheduleSample(80L)
                                     loadUrl(targetUrl)
+                                    }
+                                    swipeChildWebView = createdWebView
+                                    addView(createdWebView)
+                                } else {
+                                    swipeChildWebView = null
+                                    webViewRef = null
+                                    setOnChildScrollUpCallback { _, child ->
+                                        child?.canScrollVertically(-1) == true
+                                    }
+                                    addView(
+                                        surface.view,
+                                        ViewGroup.LayoutParams(
+                                            ViewGroup.LayoutParams.MATCH_PARENT,
+                                            ViewGroup.LayoutParams.MATCH_PARENT
+                                        )
+                                    )
                                 }
-
-                                swipeChildWebView = createdWebView
-                                addView(createdWebView)
                             }
                         },
                         update = { swipeLayout ->

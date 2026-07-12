@@ -2867,7 +2867,7 @@ builtins.__import__ = _w2a_import
         if (tlsFingerprintEnabled) return true
         if (pwaOfflineEnabled) return true
         if (enablePrivateNetworkBridge) return true
-        if (enableCloudflareCompat && webViewBehavior.cloudflareCompatMode == "ALWAYS") return true
+        if (enableCloudflareCompat && webViewBehavior.cloudflareCompatMode == "ALWAYS_ON") return true
         if (failoverEnabled && failoverUrls.isNotEmpty()) return true
         return false
     }

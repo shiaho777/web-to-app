@@ -1,5 +1,7 @@
 package com.webtoapp.ui.shell
 
+import com.webtoapp.core.engine.BrowserSurface
+
 import com.webtoapp.core.logging.AppLogger
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -30,6 +32,7 @@ import com.webtoapp.ui.shared.WindowHelper
 class ShellActivity : AppCompatActivity() {
 
     private var webView: WebView? = null
+    private var browserSurface: BrowserSurface? = null
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
 
@@ -199,7 +202,7 @@ class ShellActivity : AppCompatActivity() {
             }
         }
 
-        if (shouldForwardKeyToWebView(event) && webView?.dispatchKeyEvent(event) == true) {
+        if (shouldForwardKeyToWebView(event) && (browserSurface?.dispatchKeyEvent(event) == true || webView?.dispatchKeyEvent(event) == true)) {
             return true
         }
 
@@ -253,6 +256,15 @@ class ShellActivity : AppCompatActivity() {
         com.webtoapp.core.webview.WebViewManager.beginFreshBrowsingSession()
         com.webtoapp.core.webview.WebViewManager.clearBrowsingData(this, webView)
         webViewStateBundle = null
+    }
+
+
+    private fun loadInBrowser(url: String) {
+        browserSurface?.loadUrl(url) ?: webView?.loadUrl(url)
+    }
+
+    private fun reloadBrowser() {
+        browserSurface?.reload() ?: webView?.reload()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -466,9 +478,19 @@ class ShellActivity : AppCompatActivity() {
                 ShellScreen(
                     config = config,
                     deepLinkUrl = deepLinkUrl.value,
+                    onBrowserSurfaceCreated = { surface ->
+                        browserSurface = surface
+                        if (surface.webView == null) {
+                            webView = null
+                            com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "Browser surface created (GeckoView), ECH engine active")
+                        }
+                    },
                     onWebViewCreated = { wv ->
                         try {
                             webView = wv
+                            if (browserSurface == null || browserSurface?.webView != null) {
+                                browserSurface = BrowserSurface.fromWebView(wv)
+                            }
 
                             wv.resumeTimers()
                             com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebView 创建成功, timers resumed")
@@ -748,7 +770,7 @@ class ShellActivity : AppCompatActivity() {
                 return
             }
             val safeUrl = normalizeShellTargetUrlForSecurity(fullUrl)
-            webView?.loadUrl(safeUrl)
+            loadInBrowser(safeUrl)
             com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "Notification click URL: $safeUrl")
             return
         }
@@ -763,7 +785,7 @@ class ShellActivity : AppCompatActivity() {
             if (!validatedUrl.startsWith("http://") && !validatedUrl.startsWith("https://")) return
             deepLinkUrl.value = validatedUrl
 
-            webView?.loadUrl(validatedUrl)
+            loadInBrowser(validatedUrl)
             com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "onNewIntent Deep Link: $validatedUrl (原始: $url)")
         }
     }
@@ -781,16 +803,16 @@ class ShellActivity : AppCompatActivity() {
 
         }
 
-        webView?.onResume()
+        browserSurface?.onResume() ?: webView?.onResume()
 
-        webView?.resumeTimers()
+        browserSurface?.resumeTimers() ?: webView?.resumeTimers()
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onResume - WebView resumed, timers resumed")
     }
 
     override fun onPause() {
         super.onPause()
 
-        webView?.onPause()
+        browserSurface?.onPause() ?: webView?.onPause()
 
         android.webkit.CookieManager.getInstance().flush()
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onPause - WebView paused, cookies flushed")

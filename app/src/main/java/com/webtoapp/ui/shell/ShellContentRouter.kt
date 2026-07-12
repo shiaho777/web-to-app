@@ -28,6 +28,7 @@ fun ShellContentRouter(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     onWebViewCreated: (WebView) -> Unit,
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {},
     onWebViewRefUpdated: (WebView) -> Unit,
     onActivityFinish: () -> Unit
 ) {
@@ -56,6 +57,7 @@ fun ShellContentRouter(
                 webViewCallbacks = webViewCallbacks,
                 webViewManager = webViewManager,
                 onWebViewCreated = onWebViewCreated,
+                onWebViewRefUpdated = onWebViewRefUpdated,
                 swipeRefreshEnabled = swipeRefreshEnabled,
                 isRefreshing = isRefreshing,
                 onRefresh = onRefresh
@@ -86,6 +88,7 @@ fun ShellContentRouter(
                     webViewCallbacks = webViewCallbacks,
                     webViewManager = webViewManager,
                     onWebViewCreated = onWebViewCreated,
+                onWebViewRefUpdated = onWebViewRefUpdated,
                     swipeRefreshEnabled = swipeRefreshEnabled,
                     isRefreshing = isRefreshing,
                     onRefresh = onRefresh
@@ -100,6 +103,7 @@ fun ShellContentRouter(
                 webViewCallbacks = webViewCallbacks,
                 webViewManager = webViewManager,
                 onWebViewCreated = onWebViewCreated,
+                onWebViewRefUpdated = onWebViewRefUpdated,
                 swipeRefreshEnabled = swipeRefreshEnabled,
                 isRefreshing = isRefreshing,
                 onRefresh = onRefresh
@@ -115,6 +119,7 @@ fun ShellContentRouter(
                 webViewCallbacks = webViewCallbacks,
                 webViewManager = webViewManager,
                 onWebViewCreated = onWebViewCreated,
+                onWebViewRefUpdated = onWebViewRefUpdated,
                 swipeRefreshEnabled = swipeRefreshEnabled,
                 isRefreshing = isRefreshing,
                 onRefresh = onRefresh
@@ -129,6 +134,7 @@ fun ShellContentRouter(
                 webViewCallbacks = webViewCallbacks,
                 webViewManager = webViewManager,
                 onWebViewCreated = onWebViewCreated,
+                onWebViewRefUpdated = onWebViewRefUpdated,
                 swipeRefreshEnabled = swipeRefreshEnabled,
                 isRefreshing = isRefreshing,
                 onRefresh = onRefresh
@@ -169,86 +175,21 @@ fun ShellContentRouter(
 
             val resolvedUrl = normalizeShellTargetUrlForSecurity(deepLinkUrl ?: config.targetUrl)
             AppLogger.d("ShellScreen", "进入 WebView 分支 (else)，加载 URL: $resolvedUrl")
-
-            var swipeChildWebView: WebView? = null
             key(webViewRecreationKey) {
-                AndroidView(
-                    factory = { ctx ->
-                        EdgeSwipeRefreshLayout(ctx).apply {
-                            layoutParams = ViewGroup.LayoutParams(
-                                ViewGroup.LayoutParams.MATCH_PARENT,
-                                ViewGroup.LayoutParams.MATCH_PARENT
-                            )
-                            setColorSchemeColors(
-                                android.graphics.Color.parseColor("#6750A4"),
-                                android.graphics.Color.parseColor("#7F67BE")
-                            )
-                            isEnabled = swipeRefreshEnabled
-                            setOnRefreshListener {
-                                onRefresh()
-                                swipeChildWebView?.reload()
-                            }
-                            setOnChildScrollUpCallback { _, child ->
-                                val wv = child as? WebView ?: return@setOnChildScrollUpCallback false
-                                wv.scrollY > 0
-                            }
-                            val createdWebView = WebView(ctx).apply {
-                                layoutParams = ViewGroup.LayoutParams(
-                                    ViewGroup.LayoutParams.MATCH_PARENT,
-                                    ViewGroup.LayoutParams.MATCH_PARENT
-                                )
-                                webViewManager.configureWebView(
-                                    this,
-                                    webViewConfig,
-                                    webViewCallbacks,
-                                    config.extensionModuleIds,
-                                    config.embeddedExtensionModules,
-                                    config.extensionFabIcon, allowGlobalModuleFallback = false,
-                                    extensionEnabled = config.extensionEnabled,
-                                    browserDisguiseConfig = config.browserDisguiseConfig,
-                                    deviceDisguiseConfig = config.deviceDisguiseConfig)
-
-                                var lastTouchX = 0f
-                                var lastTouchY = 0f
-                                setOnTouchListener { view, event ->
-                                    when (event.action) {
-                                        MotionEvent.ACTION_DOWN,
-                                        MotionEvent.ACTION_MOVE -> {
-                                            lastTouchX = event.x
-                                            lastTouchY = event.y
-                                        }
-                                        MotionEvent.ACTION_UP -> view.performClick()
-                                    }
-                                    false
-                                }
-                                setOnLongClickListener {
-                                    webViewCallbacks.onLongPress(this, lastTouchX, lastTouchY)
-                                }
-
-                                onWebViewCreated(this)
-                                onWebViewRefUpdated(this)
-
-                                if (tag == "state_restored") {
-                                    reload()
-                                } else {
-                                    loadUrl(resolvedUrl)
-                                }
-                            }
-                            swipeChildWebView = createdWebView
-                            addView(createdWebView)
-                        }
-                    },
-                    update = { swipeLayout ->
-                        swipeLayout.isEnabled = swipeRefreshEnabled
-                        if (swipeLayout.isRefreshing != isRefreshing) {
-                            swipeLayout.isRefreshing = isRefreshing
-                        }
-                        if (!isRefreshing && swipeLayout.isRefreshing) {
-                            swipeLayout.isRefreshing = false
-                        }
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
+                ShellBrowserAndroidView(
+                config = config,
+                webViewRecreationKey = webViewRecreationKey,
+                webViewConfig = webViewConfig,
+                webViewCallbacks = webViewCallbacks,
+                webViewManager = webViewManager,
+                swipeRefreshEnabled = swipeRefreshEnabled,
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                onWebViewCreated = onWebViewCreated,
+                onWebViewRefUpdated = onWebViewRefUpdated,
+                initialUrl = resolvedUrl,
+                onSurfaceCreated = onBrowserSurfaceCreated
+            )
             }
         }
     }
@@ -269,103 +210,26 @@ fun ShellLocalFileWebView(
     isRefreshing: Boolean,
     onRefresh: () -> Unit,
     onWebViewCreated: (WebView) -> Unit,
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {},
     onWebViewRefUpdated: (WebView) -> Unit
 ) {
-
-    var swipeChildWebView: WebView? = null
-    key(webViewRecreationKey) {
-        AndroidView(
-            factory = { ctx ->
-                EdgeSwipeRefreshLayout(ctx).apply {
-                    layoutParams = ViewGroup.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT
-                    )
-                    setColorSchemeColors(
-                        android.graphics.Color.parseColor("#6750A4"),
-                        android.graphics.Color.parseColor("#7F67BE")
-                    )
-                    isEnabled = swipeRefreshEnabled
-                    setOnRefreshListener {
-                        onRefresh()
-                        swipeChildWebView?.reload()
-                    }
-                    setOnChildScrollUpCallback { _, child ->
-                        val wv = child as? WebView ?: return@setOnChildScrollUpCallback false
-                        wv.scrollY > 0
-                    }
-                    val createdWebView = WebView(ctx).apply {
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-
-                        webViewManager.configureWebView(
-                            this,
-                            webViewConfig,
-                            webViewCallbacks,
-                            config.extensionModuleIds,
-                            config.embeddedExtensionModules,
-                            config.extensionFabIcon, allowGlobalModuleFallback = false,
-                            extensionEnabled = config.extensionEnabled,
-                            browserDisguiseConfig = config.browserDisguiseConfig,
-                            deviceDisguiseConfig = config.deviceDisguiseConfig)
-
-                        settings.apply {
-                            javaScriptEnabled = enableJavaScript
-                            domStorageEnabled = enableLocalStorage
-                            allowFileAccess = true
-                            allowContentAccess = true
-
-                            @Suppress("DEPRECATION")
-                            allowFileAccessFromFileURLs = true
-                            @Suppress("DEPRECATION")
-                            allowUniversalAccessFromFileURLs = true
-
-                            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
-                            mediaPlaybackRequiresUserGesture = false
-                        }
-
-                        var lastTouchX = 0f
-                        var lastTouchY = 0f
-                        setOnTouchListener { view, event ->
-                            when (event.action) {
-                                MotionEvent.ACTION_DOWN,
-                                MotionEvent.ACTION_MOVE -> {
-                                    lastTouchX = event.x
-                                    lastTouchY = event.y
-                                }
-                                MotionEvent.ACTION_UP -> view.performClick()
-                            }
-                            false
-                        }
-                        setOnLongClickListener {
-                            webViewCallbacks.onLongPress(this, lastTouchX, lastTouchY)
-                        }
-
-                        onWebViewCreated(this)
-                        onWebViewRefUpdated(this)
-
-                        if (tag == "state_restored") {
-                            reload()
-                        } else {
-                            loadUrl(targetUrl)
-                        }
-                    }
-                    swipeChildWebView = createdWebView
-                    addView(createdWebView)
-                }
-            },
-            update = { swipeLayout ->
-                swipeLayout.isEnabled = swipeRefreshEnabled
-                if (swipeLayout.isRefreshing != isRefreshing) {
-                    swipeLayout.isRefreshing = isRefreshing
-                }
-                if (!isRefreshing && swipeLayout.isRefreshing) {
-                    swipeLayout.isRefreshing = false
-                }
-            },
-            modifier = Modifier.fillMaxSize()
-        )
-    }
+    val localConfig = webViewConfig.copy(
+        javaScriptEnabled = enableJavaScript,
+        domStorageEnabled = enableLocalStorage
+    )
+    ShellBrowserAndroidView(
+        config = config,
+        webViewRecreationKey = webViewRecreationKey,
+        webViewConfig = localConfig,
+        webViewCallbacks = webViewCallbacks,
+        webViewManager = webViewManager,
+        swipeRefreshEnabled = swipeRefreshEnabled,
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        onWebViewCreated = onWebViewCreated,
+        onWebViewRefUpdated = onWebViewRefUpdated,
+        initialUrl = targetUrl,
+        onSurfaceCreated = onBrowserSurfaceCreated
+    )
 }
+
