@@ -680,28 +680,6 @@ class WebViewActivity : AppCompatActivity() {
                             )
                             wv.addJavascriptInterface(printBridge, com.webtoapp.core.webview.PrintBridge.JS_INTERFACE_NAME)
                         }
-                        if (previewWvConfig?.enableNativeBridge == true) {
-                            val nativeBridge = com.webtoapp.core.webview.NativeBridge(
-                                context = this@WebViewActivity,
-                                scope = lifecycleScope,
-                                webViewProvider = { wv },
-                                capabilities = previewWvConfig.nativeBridgeCapabilities,
-                                corsBypass = previewWvConfig.enableCorsBypass,
-                                downloadLocationMode = previewWvConfig.downloadLocationMode,
-                                customDownloadDirUri = previewWvConfig.customDownloadDirUri
-                            )
-                            wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
-                        } else if (previewWvConfig?.enablePrivateNetworkBridge == true || previewWvConfig?.enableCorsBypass == true) {
-                            val privateNetworkBridge = com.webtoapp.core.webview.PrivateNetworkNativeBridgeAdapter(
-                                context = this@WebViewActivity,
-                                scope = lifecycleScope,
-                                webViewProvider = { wv },
-                                corsBypass = previewWvConfig.enableCorsBypass
-                            )
-                            wv.addJavascriptInterface(privateNetworkBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
-                        } else {
-                            wv.removeJavascriptInterface(com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
-                        }
 
                         if (previewApp?.translateEnabled == true) {
                             val translateBridge = com.webtoapp.core.webview.TranslateBridge(wv, lifecycleScope)
