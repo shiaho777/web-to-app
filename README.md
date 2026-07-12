@@ -43,6 +43,7 @@ Most "website to app" tools stop at wrapping a URL in a WebView. WebToApp is clo
 - **It ships a hardened, anti-censorship network stack.** DNS-over-HTTPS, TLS fingerprint spoofing (Chrome / Firefox / Safari JA3 templates) with a local MITM bridge, Encrypted Client Hello (ECH) on the GeckoView engine to encrypt the SNI, per-app proxies, and CORS bypass for locked-down SPAs.
 - **The whole build is self-contained.** Binary AXML/ARSC patching, permission pruning, V1/V2/V3 signing, and Google Play-ready AAB export all happen inside the app via `apksig` — no remote build queue, no PC.
 - **It stays extensible after shipping.** Add JS/CSS modules, Tampermonkey-style userscripts, or MV3 Chrome extensions (live-searched and installed from the Chrome Web Store) without rebuilding the host.
+- **The host UI speaks 10 languages out of the box.** Chinese, English, Arabic (RTL), Portuguese, Spanish, French, German, Russian, Japanese, and Korean — switch anytime in Settings; new in-app copy is maintained for all ten.
 
 ---
 
@@ -56,10 +57,11 @@ A quick scan of what's in the box. Each links to the detailed feature map below.
 | **Browser engines** | System WebView by default; optional GeckoView (Firefox) runtime for ECH / SNI encryption |
 | **Network & anti-censorship** | DoH (7 providers), TLS fingerprint spoofing + MITM bridge, ECH, static/PAC/SOCKS5 proxies, CORS bypass |
 | **Privacy & hardening** | 50+ vector browser fingerprint disguise, resource encryption (AES-256-GCM), anti-debug, activation gating |
-| **Local runtimes** | Native Node.js, PHP 8.4 + Composer, Python (Flask/Django/FastAPI), Go, WordPress over SQLite |
+| **Local runtimes** | Native Node.js 18.20, PHP 8.4 + Composer 2.10, Python 3.14, official Go 1.26, WordPress 7.x over SQLite |
 | **Extensions** | Built-in modules, userscripts with `GM_*`, MV3 Chrome extensions, live Chrome Web Store search |
 | **APK/AAB output** | On-device V1/V2/V3 signing, Google Play AAB export with targetSdk rewrite, keystore management |
-| **AI coding** | Prompt-driven generation of web apps, modules, userscripts, and runtime projects |
+| **AI coding** | Prompt-driven generation of web apps, modules, userscripts, and runtime projects; auto-retry on 429/5xx |
+| **Host languages** | **10 UI languages** — 中文 · English · العربية · Português · Español · Français · Deutsch · Русский · 日本語 · 한국어 (Arabic RTL) |
 
 ---
 
@@ -92,10 +94,11 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **DNS-over-HTTPS** — Cloudflare, Google, AdGuard, NextDNS, CleanBrowsing, Quad9, Mullvad, plus custom endpoints; strict or automatic modes.
 - **Encrypted Client Hello (ECH)** — encrypt the SNI in the TLS handshake (GeckoView only; auto-wires DoH + GeckoView when toggled).
 - **TLS fingerprint spoofing** — impersonate Chrome 131 / Firefox 133 / Safari 18 JA3 profiles (or custom ciphers), served through a local TLS-MITM bridge so the outgoing ClientHello matches a real browser.
-- **CORS bypass** — let static SPAs call external APIs that would otherwise be blocked by CORS.
+- **CORS bypass** — on by default for static SPAs that call external APIs blocked by CORS; same-origin traffic is left alone, and CORS-only apps can use a lightweight `PrivateNetworkNativeBridgeAdapter` without the full Native Bridge surface.
 - **Failover** — automatic fallback to mirror URLs when the primary target is unreachable.
 - **PWA** offline cache strategies, custom error pages, per-app host overrides, and payment-scheme handlers.
 - **Compatibility toggles** — blob download interception, scroll memory, image repair, clipboard / orientation / notification polyfills, private-network bridging, and Native Bridge capability gates.
+- **Download location** — system Downloads, app-private storage, or a user-picked SAF folder, wired through the full packaging passthrough chain.
 
 </details>
 
@@ -114,11 +117,11 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <details>
 <summary><b>📦 Local server runtimes (fork + exec on-device)</b></summary>
 
-- **Node.js** runs in a dedicated `:nodejs` OS process via a native `node_launcher` wrapper loading `libnode.so`; supports custom native `.node` extensions.
-- **PHP 8.4** from `pmmp/PHP-Binaries`, downloaded once on first use, with Composer and custom native extensions (`zend_extension`, `.so`).
-- **Python** — Flask, Django, FastAPI via uvicorn, Tornado, the built-in HTTP server; pip dependencies resolved into `.pypackages`, custom native extensions supported.
-- **Go** — on-device `go build`, `vendor/` offline builds, static serving, and the native `go_exec_loader` wrapper.
-- **WordPress** over local PHP + SQLite (`sqlite-database-integration`), with theme and plugin import.
+- **Node.js** (18.20.x) runs in a dedicated `:nodejs` OS process via a native `node_launcher` wrapper loading `libnode.so`; supports custom native `.node` extensions.
+- **PHP 8.4** from `pmmp/PHP-Binaries`, downloaded once on first use, with Composer 2.10.x and custom native extensions (`zend_extension`, `.so`).
+- **Python 3.14** — Flask, Django, FastAPI via uvicorn, Tornado, the built-in HTTP server; pip dependencies resolved into `.pypackages`, custom native extensions supported; binary names are versioned so future bumps do not hard-code paths.
+- **Go 1.26** — official Linux arm64 toolchain (`.tar.gz` from `dl.google.com`, USTC mirror for CN), on-device `go build` / `go mod` / `go run`, `vendor/` offline builds, static serving, and the native `go_exec_loader` wrapper; DNS and CA trust go through the same local JVM bridge used by PHP.
+- **WordPress 7.x** over local PHP + SQLite (`sqlite-database-integration`), with theme and plugin import.
 - **Linux Environment** screen manages toolchains and dependencies for Node, PHP, and Python.
 - **Port Manager** coordinates runtime ports across generated apps via broadcast receivers.
 - A **local DNS bridge proxy** (HTTP CONNECT in the Android JVM) gives runtimes working DNS resolution and outbound HTTP where the musl/packed binary can't reach the system resolver.
@@ -133,7 +136,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **MV3 Chrome extension runtime** for manifest content scripts in isolated or main worlds, with `chrome.*` polyfills for runtime, storage, tabs, scripting, and declarative network-request parsing.
 - **In-app Chrome Web Store search** — browse and install browser extensions by keyword (or paste a store URL / extension ID), with offline fallback to manual import.
 - **Export codes** (`WTA1:` gzip + Base64) and QR sharing via ZXing.
-- **AI Coding** skills to generate modules, userscripts, MV3 extensions, front-end apps, and local runtime projects.
+- **AI Coding** skills to generate modules, userscripts, MV3 extensions, front-end apps, and local runtime projects, with automatic retry/backoff on 429/5xx and plan-mode exit that waits for user approval.
 
 </details>
 
@@ -142,10 +145,12 @@ WebToApp has a large number of switches. The sections below group them by use ca
 
 - **Splash screens** — image or video, with skip behavior, trim ranges, and fixed orientation.
 - **Background music** — playlists with synced LRC lyrics, lyric animations, custom font/color/stroke/shadow, and online music search.
-- **Toolbar, status bar (light & dark), navigation, floating-window mode, and long-press menu styles.**
+- **Toolbar, status bar (light & dark), navigation, floating-window mode, and long-press menu styles.** Status bar color can follow theme, a custom color, full transparency, or **PAGE_TOP** (sample the page’s top pixels so the chrome matches the content).
+- **Download location mode** — system Downloads, app-private directory, or a custom SAF folder picked by the user.
 - **Announcement templates** for launch, interval, and no-network moments.
-- **Translation overlay** — 20 target languages via Google, MyMemory, LibreTranslate, Lingva, or Auto engines.
-- **Print bridge** — intercept `window.print()` and blob/data-URL PDFs to the Android print framework / PDF export.
+- **Host app language** — switch the entire builder UI among 10 languages (中文 / English / العربية / Português / Español / Français / Deutsch / Русский / 日本語 / 한국어); Arabic is full RTL.
+- **Translation overlay** — 20 target languages via Google, MyMemory, LibreTranslate, Lingva, or Auto engines (in-page translate for the *content* of generated apps, separate from host UI language).
+- **Print bridge** — intercept `window.print()` and blob/data-URL PDFs to the Android print framework / PDF export (with an onPageStarted re-inject fallback so late navigations stay hooked).
 - **Notifications** — Web Notification polyfill, scheduled and persistent notifications with progress, URL-polling foreground service, deep links, boot auto-start, scheduled launch, and background-run service.
 - **Per-app usage stats** with Vico charts and URL health monitoring.
 
@@ -168,7 +173,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <summary><b>🗂 File manager & project tooling</b></summary>
 
 - **File manager** — a single screen to view, share, install, open, and clear build outputs (APK builds, AAB exports, app clones, build logs) and a user-files directory, with a read-only build-log viewer.
-- **Website scraper** for offline packs — HTML, CSS, JS, images, fonts, `url()`, `srcset`, `@import`, path rewriting, same-domain limits, depth limits, and size limits.
+- **Website scraper** for offline packs — HTML, CSS, JS, images, fonts, `url()`, `srcset`, `@import`, path rewriting, same-domain limits, depth limits, and size limits; parallel streaming worker pool with main-thread progress callbacks.
 - **Multi-Web layouts** — tabs, cards, feeds, drawers, per-site icons/theme colors/extraction selectors/refresh intervals, and shared JS/CSS.
 - **Gallery apps** — categorized media, grid/list/timeline views, shuffle/single-loop, sorting, thumbnail bar, overlays, auto-next, and playback memory.
 - **App Modifier** — shortcut disguise or real binary clone with manifest/resource patching and re-signing.

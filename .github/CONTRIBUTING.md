@@ -122,16 +122,29 @@ codebase. A few rules worth calling out:
   legacy UI debt against `.github/scripts/ui_design_allowlist.txt`.
 - **Reuse the design tokens** in `ui/design/WtaTokens.kt` for spacing, radius,
   alpha, and elevation. Don't hard-code numbers.
-- **Strings are trilingual.** Add new strings to all three language branches —
-  Chinese, English, Arabic — in `core/i18n/Strings.kt`. If you can't
-  translate, use the English text in all three and flag it in the PR. A
-  translation-parity unit test guards this.
+- **Strings must cover all 10 supported languages.** UI copy lives in
+  `core/i18n/Strings.kt` (facade `object Strings` + in-file `StringsA`…`StringsE`,
+  split only for the JVM constant pool). Supported: Chinese, English, Arabic,
+  Portuguese, Spanish, French, German, Russian, Japanese, Korean.
+  Every new or changed user-facing `when (Strings.lang)` block **must** have
+  real translations for **all 10** branches — do not leave pt/es/fr/de/ru/ja/ko
+  as English placeholders. Brand names and pure format tokens may match English.
+  If you truly cannot translate one language, use English there and flag it in
+  the PR. `StringsKtTranslationParityTest` currently enforces the core three
+  and forbids hardcoded `else -> "..."`; full 10-way coverage is still required
+  by project convention.
 - **No new top-level singletons** unless you discuss it first. The DI graph in
   `di/AppModule.kt` is the source of truth.
 - **The Native Bridge is capability-gated.** Any method exposed to web content
   via `@JavascriptInterface` must be guarded by the per-capability allow-list
   (`NativeBridgeCapabilities`). Never expose a native capability to arbitrary
   pages without a gate. PRs that bypass this will be rejected.
+- **Preview and packaged runtime are two paths.** Bridges and WebView hooks must
+  be registered (and injected, when applicable) both for in-app preview
+  (`WebViewManager` / `WebViewActivity`) and for generated APKs (`ShellActivity`).
+  Shared runtime sources are authored only under `app/` and synced into `shell/`
+  via `./gradlew :shell:syncShellRuntimeSources --rerun-tasks` — do not hand-edit
+  generated `shell/` trees.
 - **Avoid catching `Exception` to silence errors.** If recovery is impossible,
   log via `AppLogger` and re-throw or return a failed `Result`.
 
@@ -295,12 +308,23 @@ cd web-to-app
   `.github/scripts/ui_design_allowlist.txt` 跟踪历史 UI 债务。
 - 复用 `ui/design/WtaTokens.kt` 里的设计 token（间距、圆角、透明度、高度），
   别硬编码数字
-- **字符串三语**：新字符串要在 `core/i18n/Strings.kt` 的中、英、阿拉伯三个
-  分支都补上；不会翻就三处都填英文并在 PR 里标注。有翻译一致性单测在守这点
+- **字符串必须覆盖全部 10 种已支持语言**：文案在 `core/i18n/Strings.kt`
+  （facade `object Strings` + 同文件 `StringsA`…`StringsE`，拆分只为常量池）。
+  已支持：中 / 英 / 阿 / 葡 / 西 / 法 / 德 / 俄 / 日 / 韩。
+  新增或修改面向用户的 `when (Strings.lang)` **必须**为 10 个分支写真实翻译，
+  禁止把 pt/es/fr/de/ru/ja/ko 继续当英文占位。品牌名、纯格式符可与英文相同。
+  某语实在不会翻可暂填英文并在 PR 标明。
+  `StringsKtTranslationParityTest` 目前强制三核心 + 禁止硬编码 `else -> "..."`；
+  项目约定仍要求 10 语全覆盖
 - 引入新的全局单例前请先讨论；`di/AppModule.kt` 是单一事实来源
 - **原生桥是按能力门禁的**：任何通过 `@JavascriptInterface` 暴露给网页的方法，
   都必须经过逐能力白名单（`NativeBridgeCapabilities`）。绝不要在没有门禁的
   情况下把原生能力暴露给任意页面。绕过门禁的 PR 会被拒
+- **预览和打包运行时是两条路径**：桥接类 / WebView hook 要在预览
+  （`WebViewManager` / `WebViewActivity`）和生成 APK（`ShellActivity`）两侧都
+  注册（需要 hook 网页 API 的还要注入脚本）。共享运行时代码只改 `app/`，
+  改完跑 `./gradlew :shell:syncShellRuntimeSources --rerun-tasks`；不要手改
+  `shell/` 下的同步产物
 - 不要 catch 然后吞掉异常；用 `AppLogger` 记录后重新抛出或返回失败的 `Result`
 
 **安全**
