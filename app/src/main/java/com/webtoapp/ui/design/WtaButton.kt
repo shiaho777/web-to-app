@@ -1,40 +1,25 @@
 package com.webtoapp.ui.design
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
@@ -80,54 +65,68 @@ fun WtaButton(
     contentPadding: PaddingValues? = null,
     content: @Composable RowScope.() -> Unit
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
     val hapticClick = rememberHapticClick(onClick)
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val spec = variant.colors(enabled = enabled, pressed = isPressed)
     val heightMin = when (size) {
         WtaButtonSize.Small -> WtaSize.ButtonHeightSmall
         WtaButtonSize.Medium -> WtaSize.ButtonHeightMedium
         WtaButtonSize.Large -> WtaSize.ButtonHeightLarge
     }
     val padding = contentPadding ?: when (size) {
-        WtaButtonSize.Small -> PaddingValues(horizontal = 14.dp, vertical = 6.dp)
-        WtaButtonSize.Medium -> PaddingValues(horizontal = 20.dp, vertical = 10.dp)
+        WtaButtonSize.Small -> PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+        WtaButtonSize.Medium -> PaddingValues(horizontal = 24.dp, vertical = 10.dp)
         WtaButtonSize.Large -> PaddingValues(horizontal = 24.dp, vertical = 14.dp)
     }
-    val shape: Shape = RoundedCornerShape(WtaRadius.Button)
+    val shape = RoundedCornerShape(WtaRadius.Button)
+    val btnModifier = modifier.heightIn(min = heightMin)
+    val colors = MaterialTheme.colorScheme
 
-    val animatedContainer by animateColorAsState(
-        targetValue = spec.container,
-        animationSpec = WtaMotion.standardTween(durationMillis = WtaMotion.DurationQuick),
-        label = "wtaButtonContainer"
-    )
-
-    val borderModifier = if (spec.border != null) Modifier.border(spec.border, shape) else Modifier
-
-    Box(
-        modifier = modifier
-            .heightIn(min = heightMin)
-            .clip(shape)
-            .background(animatedContainer, shape)
-            .then(borderModifier)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = rememberWtaIndication(),
-                enabled = enabled,
-                onClick = hapticClick
-            )
-            .padding(padding),
-        contentAlignment = Alignment.Center
-    ) {
-        CompositionLocalProvider(LocalContentColor provides spec.content) {
-            ProvideTextStyle(MaterialTheme.typography.labelLarge) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                    content = content
-                )
-            }
-        }
+    when (variant) {
+        WtaButtonVariant.Primary -> Button(
+            onClick = hapticClick,
+            modifier = btnModifier,
+            enabled = enabled,
+            shape = shape,
+            contentPadding = padding,
+            content = content
+        )
+        WtaButtonVariant.Tonal -> FilledTonalButton(
+            onClick = hapticClick,
+            modifier = btnModifier,
+            enabled = enabled,
+            shape = shape,
+            contentPadding = padding,
+            content = content
+        )
+        WtaButtonVariant.Outlined -> OutlinedButton(
+            onClick = hapticClick,
+            modifier = btnModifier,
+            enabled = enabled,
+            shape = shape,
+            contentPadding = padding,
+            content = content
+        )
+        WtaButtonVariant.Text -> TextButton(
+            onClick = hapticClick,
+            modifier = btnModifier,
+            enabled = enabled,
+            shape = shape,
+            contentPadding = padding,
+            content = content
+        )
+        WtaButtonVariant.Destructive -> Button(
+            onClick = hapticClick,
+            modifier = btnModifier,
+            enabled = enabled,
+            shape = shape,
+            contentPadding = padding,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colors.error,
+                contentColor = colors.onError,
+                disabledContainerColor = colors.onSurface.copy(alpha = 0.12f),
+                disabledContentColor = colors.onSurface.copy(alpha = WtaAlpha.Disabled)
+            ),
+            content = content
+        )
     }
 }
 
@@ -150,51 +149,5 @@ fun WtaIconButton(
         colors = colors
     ) {
         Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(WtaSize.Icon))
-    }
-}
-
-private data class WtaButtonColorSpec(
-    val container: Color,
-    val content: Color,
-    val border: BorderStroke? = null
-)
-
-@Composable
-private fun WtaButtonVariant.colors(enabled: Boolean, pressed: Boolean): WtaButtonColorSpec {
-    val cs = MaterialTheme.colorScheme
-    val disabledContent = cs.onSurface.copy(alpha = WtaAlpha.Disabled)
-    val disabledContainer = cs.onSurface.copy(alpha = 0.12f)
-
-    return when (this) {
-        WtaButtonVariant.Primary -> WtaButtonColorSpec(
-            container = if (!enabled) disabledContainer
-            else if (pressed) cs.primary.copy(alpha = 0.88f)
-            else cs.primary,
-            content = if (enabled) cs.onPrimary else disabledContent
-        )
-        WtaButtonVariant.Tonal -> WtaButtonColorSpec(
-            container = if (!enabled) disabledContainer
-            else if (pressed) cs.secondaryContainer.copy(alpha = 0.7f)
-            else cs.secondaryContainer,
-            content = if (enabled) cs.onSecondaryContainer else disabledContent
-        )
-        WtaButtonVariant.Outlined -> WtaButtonColorSpec(
-            container = if (pressed && enabled) cs.primary.copy(alpha = 0.08f) else Color.Transparent,
-            content = if (enabled) cs.primary else disabledContent,
-            border = BorderStroke(
-                1.dp,
-                if (enabled) cs.outline.copy(alpha = 0.6f) else cs.outline.copy(alpha = 0.2f)
-            )
-        )
-        WtaButtonVariant.Text -> WtaButtonColorSpec(
-            container = if (pressed && enabled) cs.primary.copy(alpha = 0.08f) else Color.Transparent,
-            content = if (enabled) cs.primary else disabledContent
-        )
-        WtaButtonVariant.Destructive -> WtaButtonColorSpec(
-            container = if (!enabled) disabledContainer
-            else if (pressed) cs.error.copy(alpha = 0.88f)
-            else cs.error,
-            content = if (enabled) cs.onError else disabledContent
-        )
     }
 }

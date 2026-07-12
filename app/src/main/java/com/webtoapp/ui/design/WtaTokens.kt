@@ -72,13 +72,13 @@ object WtaSpacing {
 
 object WtaRadius {
     val Pill: Dp = 999.dp
-    val Card: Dp = 14.dp
-    val Button: Dp = 10.dp
-    val Control: Dp = 10.dp
-    val IconPlate: Dp = 10.dp
+    val Card: Dp = 16.dp
+    val Button: Dp = 20.dp
+    val Control: Dp = 12.dp
+    val IconPlate: Dp = 12.dp
     val Chip: Dp = 8.dp
-    val Badge: Dp = 6.dp
-    val Dialog: Dp = 20.dp
+    val Badge: Dp = 8.dp
+    val Dialog: Dp = 28.dp
 }
 
 object WtaSize {
@@ -91,9 +91,9 @@ object WtaSize {
     val RowTrailingMaxWidth: Dp = 148.dp
     val BannerActionMaxWidth: Dp = 132.dp
     val TouchTarget: Dp = 48.dp
-    val ButtonHeightSmall: Dp = 36.dp
-    val ButtonHeightMedium: Dp = 44.dp
-    val ButtonHeightLarge: Dp = 52.dp
+    val ButtonHeightSmall: Dp = 32.dp
+    val ButtonHeightMedium: Dp = 40.dp
+    val ButtonHeightLarge: Dp = 48.dp
     val TextFieldHeight: Dp = 56.dp
     val AvatarSmall: Dp = 32.dp
     val AvatarMedium: Dp = 40.dp

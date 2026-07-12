@@ -51,10 +51,10 @@ object WtaDefaults {
     fun filledTextFieldColors(): TextFieldColors {
         val colors = MaterialTheme.colorScheme
         return TextFieldDefaults.colors(
-            focusedContainerColor = colors.surfaceContainerHigh.copy(alpha = 0.9f),
-            unfocusedContainerColor = colors.surfaceContainerHigh.copy(alpha = 0.6f),
-            disabledContainerColor = colors.surfaceContainer.copy(alpha = 0.5f),
-            errorContainerColor = colors.errorContainer.copy(alpha = 0.5f),
+            focusedContainerColor = colors.surfaceContainerHighest,
+            unfocusedContainerColor = colors.surfaceContainerHighest,
+            disabledContainerColor = colors.surfaceContainerHighest.copy(alpha = 0.5f),
+            errorContainerColor = colors.errorContainer,
 
             focusedIndicatorColor = colors.primary,
             unfocusedIndicatorColor = Color.Transparent,

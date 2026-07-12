@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -39,22 +38,25 @@ fun WtaTabRow(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(WtaRadius.Control))
-            .background(colors.surfaceContainerHigh.copy(alpha = 0.5f))
+            .background(colors.surfaceContainerHighest)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(3.dp)
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             tabs.forEachIndexed { index, tab ->
                 val isSelected = selectedIndex == index
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(34.dp)
-                        .clip(RoundedCornerShape(WtaRadius.Button))
-                        .background(if (isSelected) colors.surface else Color.Transparent)
+                        .height(36.dp)
+                        .clip(RoundedCornerShape(WtaRadius.Control))
+                        .background(
+                            if (isSelected) colors.secondaryContainer
+                            else colors.surfaceContainerHighest
+                        )
                         .clickable { onTabSelected(index) }
                 ) {
                     Row(
@@ -66,15 +68,15 @@ fun WtaTabRow(
                             tab.label,
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
-                            color = if (isSelected) colors.onSurface else colors.onSurfaceVariant
+                            color = if (isSelected) colors.onSecondaryContainer else colors.onSurfaceVariant
                         )
                         if (tab.count != null && tab.count > 0) {
-                            Spacer(modifier = Modifier.width(5.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             WtaBadge(
                                 text = tab.count.toString(),
                                 compact = true,
-                                containerColor = if (isSelected) colors.primary.copy(alpha = 0.12f)
-                                    else colors.onSurfaceVariant.copy(alpha = 0.08f),
+                                containerColor = if (isSelected) colors.primary.copy(alpha = 0.14f)
+                                else colors.onSurfaceVariant.copy(alpha = 0.10f),
                                 contentColor = if (isSelected) colors.primary else colors.onSurfaceVariant
                             )
                         }

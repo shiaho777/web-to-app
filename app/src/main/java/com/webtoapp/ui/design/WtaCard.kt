@@ -1,26 +1,21 @@
 package com.webtoapp.ui.design
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.webtoapp.ui.theme.LocalIsDarkTheme
 
 enum class WtaCardTone {
 
@@ -43,25 +38,32 @@ fun WtaCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val spec = resolveTone(tone)
-    val shadowModifier = if (spec.elevation > 0.dp) {
-        Modifier.wtaSoftShadow(shape, spec.elevation)
-    } else Modifier
+    val colors = CardDefaults.cardColors(
+        containerColor = spec.container,
+        contentColor = spec.content
+    )
+    val elevation = CardDefaults.cardElevation(defaultElevation = spec.elevation)
+    val resolvedBorder = border ?: spec.border
 
-    Box(
-        modifier = modifier
-            .then(shadowModifier)
-            .clip(shape)
-            .background(spec.container)
-            .then(
-                if (border != null || spec.border != null) {
-                    Modifier.border(
-                        border ?: spec.border!!,
-                        shape
-                    )
-                } else Modifier
-            )
-    ) {
-        Column(modifier = Modifier.padding(contentPadding), content = content)
+    if (resolvedBorder != null) {
+        OutlinedCard(
+            modifier = modifier,
+            shape = shape,
+            colors = colors,
+            border = resolvedBorder,
+            elevation = elevation
+        ) {
+            Column(modifier = Modifier.padding(contentPadding), content = content)
+        }
+    } else {
+        Card(
+            modifier = modifier,
+            shape = shape,
+            colors = colors,
+            elevation = elevation
+        ) {
+            Column(modifier = Modifier.padding(contentPadding), content = content)
+        }
     }
 }
 
@@ -77,39 +79,48 @@ fun WtaCard(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val spec = resolveTone(tone)
-    val interactionSource = remember { MutableInteractionSource() }
     val hapticClick = rememberHapticClick(onClick)
-    val indication = rememberWtaIndication()
-    val shadowModifier = if (spec.elevation > 0.dp) {
-        Modifier.wtaSoftShadow(shape, spec.elevation)
-    } else Modifier
+    val colors = CardDefaults.cardColors(
+        containerColor = spec.container,
+        contentColor = spec.content
+    )
+    val elevation = CardDefaults.cardElevation(
+        defaultElevation = spec.elevation,
+        pressedElevation = spec.elevation,
+        focusedElevation = spec.elevation,
+        hoveredElevation = if (spec.elevation > 0.dp) spec.elevation + 1.dp else 1.dp
+    )
+    val resolvedBorder = border ?: spec.border
 
-    Box(
-        modifier = modifier
-            .then(shadowModifier)
-            .clip(shape)
-            .background(spec.container)
-            .then(
-                if (border != null || spec.border != null) {
-                    Modifier.border(
-                        border ?: spec.border!!,
-                        shape
-                    )
-                } else Modifier
-            )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = indication,
-                enabled = enabled,
-                onClick = hapticClick
-            )
-    ) {
-        Column(modifier = Modifier.padding(contentPadding), content = content)
+    if (resolvedBorder != null) {
+        OutlinedCard(
+            onClick = hapticClick,
+            modifier = modifier,
+            enabled = enabled,
+            shape = shape,
+            colors = colors,
+            border = resolvedBorder,
+            elevation = elevation
+        ) {
+            Column(modifier = Modifier.padding(contentPadding), content = content)
+        }
+    } else {
+        Card(
+            onClick = hapticClick,
+            modifier = modifier,
+            enabled = enabled,
+            shape = shape,
+            colors = colors,
+            elevation = elevation
+        ) {
+            Column(modifier = Modifier.padding(contentPadding), content = content)
+        }
     }
 }
 
 private data class WtaCardSpec(
     val container: Color,
+    val content: Color,
     val border: BorderStroke?,
     val elevation: Dp
 )
@@ -117,33 +128,29 @@ private data class WtaCardSpec(
 @Composable
 private fun resolveTone(tone: WtaCardTone): WtaCardSpec {
     val colors = MaterialTheme.colorScheme
-    val isDark = LocalIsDarkTheme.current
     return when (tone) {
         WtaCardTone.Surface -> WtaCardSpec(
-            container = colors.surface,
-            border = BorderStroke(
-                width = 0.5.dp,
-                color = if (isDark) Color.White.copy(alpha = 0.09f)
-                else Color.Black.copy(alpha = 0.08f)
-            ),
+            container = colors.surfaceContainerLow,
+            content = colors.onSurface,
+            border = null,
             elevation = WtaElevation.Level0
         )
         WtaCardTone.Elevated -> WtaCardSpec(
             container = colors.surfaceContainer,
+            content = colors.onSurface,
             border = null,
             elevation = WtaElevation.Level1
         )
         WtaCardTone.Highlighted -> WtaCardSpec(
-            container = colors.primaryContainer,
+            container = colors.secondaryContainer,
+            content = colors.onSecondaryContainer,
             border = null,
             elevation = WtaElevation.Level0
         )
         WtaCardTone.Critical -> WtaCardSpec(
             container = colors.errorContainer,
-            border = BorderStroke(
-                width = 0.5.dp,
-                color = colors.error.copy(alpha = WtaAlpha.Subtle)
-            ),
+            content = colors.onErrorContainer,
+            border = null,
             elevation = WtaElevation.Level0
         )
     }

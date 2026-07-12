@@ -60,7 +60,7 @@ fun WtaScreen(
     val screenContent: @Composable () -> Unit = {
         Scaffold(
             modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-            containerColor = Color.Transparent,
+            containerColor = MaterialTheme.colorScheme.surface,
             snackbarHost = {
                 snackbarHostState?.let { state ->
                     SnackbarHost(hostState = state) { data ->
@@ -119,7 +119,7 @@ private fun WtaSnackbar(
     val colors = MaterialTheme.colorScheme
     Snackbar(
         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(4.dp),
         containerColor = colors.inverseSurface,
         contentColor = colors.inverseOnSurface,
         actionContentColor = colors.inversePrimary,
@@ -197,10 +197,11 @@ fun WtaTopBar(
             },
             actions = actions,
             colors = TopAppBarDefaults.topAppBarColors(
-
-                containerColor = Color.Transparent,
-                scrolledContainerColor = Color.Transparent,
-                titleContentColor = MaterialTheme.colorScheme.onSurface
+                containerColor = MaterialTheme.colorScheme.surface,
+                scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                titleContentColor = MaterialTheme.colorScheme.onSurface,
+                navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+                actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
             ),
             scrollBehavior = scrollBehavior
         )

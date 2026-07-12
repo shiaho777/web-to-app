@@ -4,35 +4,35 @@ import androidx.compose.ui.graphics.Color
 
 object AppColors {
 
-    val NeutralAccent: Color = Color(0xFF3A3A3A)
+    val NeutralAccent: Color = Color(0xFF1B5EFC)
 
-    val Success: Color = Color(0xFF2D6A3E)
-    val Warning: Color = Color(0xFF8A5A00)
-    val Error: Color = Color(0xFF8A1D1D)
-    val Info: Color = Color(0xFF20486E)
+    val Success: Color = Color(0xFF2E7D32)
+    val Warning: Color = Color(0xFFED6C02)
+    val Error: Color = Color(0xFFBA1A1A)
+    val Info: Color = Color(0xFF0288D1)
     val Gray: Color = Color(0xFF9E9E9E)
 
-    val TypeScript: Color = NeutralAccent
-    val JavaScript: Color = NeutralAccent
-    val React: Color = NeutralAccent
-    val Css: Color = NeutralAccent
-    val WordPress: Color = NeutralAccent
-    val Php: Color = NeutralAccent
-    val Python: Color = NeutralAccent
-    val SQLite: Color = NeutralAccent
-    val NodeJs: Color = NeutralAccent
-    val Go: Color = NeutralAccent
-    val Svelte: Color = NeutralAccent
-    val Laravel: Color = NeutralAccent
-    val GoogleBlue: Color = NeutralAccent
-    val UpdateBlue: Color = NeutralAccent
-    val LightBlue: Color = NeutralAccent
-    val Purple: Color = NeutralAccent
-    val BrandOrange: Color = NeutralAccent
-    val TelegramBlue: Color = NeutralAccent
-    val BilibiliPink: Color = NeutralAccent
-    val GitHubDark: Color = NeutralAccent
-    val GmailRed: Color = NeutralAccent
+    val TypeScript: Color = Color(0xFF3178C6)
+    val JavaScript: Color = Color(0xFFF7DF1E)
+    val React: Color = Color(0xFF61DAFB)
+    val Css: Color = Color(0xFF264DE4)
+    val WordPress: Color = Color(0xFF21759B)
+    val Php: Color = Color(0xFF777BB4)
+    val Python: Color = Color(0xFF3776AB)
+    val SQLite: Color = Color(0xFF003B57)
+    val NodeJs: Color = Color(0xFF339933)
+    val Go: Color = Color(0xFF00ADD8)
+    val Svelte: Color = Color(0xFFFF3E00)
+    val Laravel: Color = Color(0xFFFF2D20)
+    val GoogleBlue: Color = Color(0xFF4285F4)
+    val UpdateBlue: Color = Color(0xFF1A73E8)
+    val LightBlue: Color = Color(0xFF03A9F4)
+    val Purple: Color = Color(0xFF7C4DFF)
+    val BrandOrange: Color = Color(0xFFFF6D00)
+    val TelegramBlue: Color = Color(0xFF229ED9)
+    val BilibiliPink: Color = Color(0xFFFB7299)
+    val GitHubDark: Color = Color(0xFF24292F)
+    val GmailRed: Color = Color(0xFFEA4335)
 
     val EditorDark: Color = Color(0xFF1E1E1E)
 

@@ -23,55 +23,55 @@ data class AnimationSettings(
 val LocalAnimationSettings = staticCompositionLocalOf { AnimationSettings() }
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF111113),
+    primary = Color(0xFF1B5EFC),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFEDEDEF),
-    onPrimaryContainer = Color(0xFF111113),
-    secondary = Color(0xFF474749),
+    primaryContainer = Color(0xFFDAE1FF),
+    onPrimaryContainer = Color(0xFF00174B),
+    secondary = Color(0xFF555F71),
     onSecondary = Color.White,
-    tertiary = Color(0xFF7A7A7D),
-    error = Color(0xFF8A1D1D),
+    tertiary = Color(0xFF6F5675),
+    error = Color(0xFFBA1A1A),
     onError = Color.White,
-    errorContainer = Color(0xFFF9E4E4),
-    onErrorContainer = Color(0xFF3B0F0F),
-    background = Color(0xFFFBFBFC),
-    onBackground = Color(0xFF111113),
-    surface = Color(0xFFFFFFFF),
-    onSurface = Color(0xFF111113),
-    surfaceVariant = Color(0xFFF1F1F3),
-    onSurfaceVariant = Color(0xFF55555A),
-    surfaceContainer = Color(0xFFF6F6F8),
-    surfaceContainerLow = Color(0xFFFAFAFB),
-    surfaceContainerHigh = Color(0xFFEFEFF1),
-    surfaceContainerHighest = Color(0xFFE8E8EB),
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF410002),
+    background = Color(0xFFF9F9FF),
+    onBackground = Color(0xFF1A1B21),
+    surface = Color(0xFFF9F9FF),
+    onSurface = Color(0xFF1A1B21),
+    surfaceVariant = Color(0xFFE1E2EC),
+    onSurfaceVariant = Color(0xFF44464F),
+    surfaceContainer = Color(0xFFEEEFF7),
+    surfaceContainerLow = Color(0xFFF3F3FB),
+    surfaceContainerHigh = Color(0xFFE8E8F0),
+    surfaceContainerHighest = Color(0xFFE2E2EA),
     surfaceContainerLowest = Color(0xFFFFFFFF),
-    outline = Color(0xFFCACACE),
-    outlineVariant = Color(0xFFE4E4E7)
+    outline = Color(0xFF757780),
+    outlineVariant = Color(0xFFC5C6D0)
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Color(0xFFF2F2F4),
-    onPrimary = Color(0xFF111113),
-    primaryContainer = Color(0xFF2A2A2E),
-    onPrimaryContainer = Color(0xFFE4E4E7),
-    secondary = Color(0xFFB8B8BC),
-    error = Color(0xFFE7A3A3),
-    onError = Color(0xFF1A0808),
-    errorContainer = Color(0xFF3B1515),
-    onErrorContainer = Color(0xFFF4D4D4),
-    background = Color(0xFF0B0B0E),
-    onBackground = Color(0xFFE6E6E9),
-    surface = Color(0xFF111114),
-    onSurface = Color(0xFFE6E6E9),
-    surfaceVariant = Color(0xFF1E1E22),
-    onSurfaceVariant = Color(0xFFB0B0B4),
-    surfaceContainer = Color(0xFF17171A),
-    surfaceContainerLow = Color(0xFF121215),
-    surfaceContainerHigh = Color(0xFF1C1C20),
-    surfaceContainerHighest = Color(0xFF242428),
-    surfaceContainerLowest = Color(0xFF08080A),
-    outline = Color(0xFF45454A),
-    outlineVariant = Color(0xFF2B2B2F)
+    primary = Color(0xFFB2C5FF),
+    onPrimary = Color(0xFF002A78),
+    primaryContainer = Color(0xFF0040A8),
+    onPrimaryContainer = Color(0xFFDAE1FF),
+    secondary = Color(0xFFBDC7DC),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    background = Color(0xFF111318),
+    onBackground = Color(0xFFE2E2E9),
+    surface = Color(0xFF111318),
+    onSurface = Color(0xFFE2E2E9),
+    surfaceVariant = Color(0xFF44464F),
+    onSurfaceVariant = Color(0xFFC5C6D0),
+    surfaceContainer = Color(0xFF1E1F25),
+    surfaceContainerLow = Color(0xFF1A1B21),
+    surfaceContainerHigh = Color(0xFF282A2F),
+    surfaceContainerHighest = Color(0xFF33343A),
+    surfaceContainerLowest = Color(0xFF0C0E13),
+    outline = Color(0xFF8F909A),
+    outlineVariant = Color(0xFF44464F)
 )
 
 val LocalIsDarkTheme = staticCompositionLocalOf { false }
@@ -79,7 +79,7 @@ val LocalIsDarkTheme = staticCompositionLocalOf { false }
 @Composable
 fun WebToAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
+    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
     WebToAppTheme(darkTheme, dynamicColor) { _ ->
@@ -90,7 +90,7 @@ fun WebToAppTheme(
 @Composable
 fun WebToAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
+    dynamicColor: Boolean = true,
     content: @Composable (isDarkTheme: Boolean) -> Unit
 ) {
     val context = LocalContext.current
@@ -130,16 +130,11 @@ fun WebToAppTheme(
     )
 
     val themeShapes = Shapes(
-
-        extraSmall = RoundedCornerShape(6.dp),
-
-        small = RoundedCornerShape(10.dp),
-
+        extraSmall = RoundedCornerShape(4.dp),
+        small = RoundedCornerShape(8.dp),
         medium = RoundedCornerShape(12.dp),
-
-        large = RoundedCornerShape(14.dp),
-
-        extraLarge = RoundedCornerShape(20.dp)
+        large = RoundedCornerShape(16.dp),
+        extraLarge = RoundedCornerShape(28.dp)
     )
 
     CompositionLocalProvider(
@@ -207,16 +202,11 @@ fun ShellTheme(
     )
 
     val themeShapes = Shapes(
-
-        extraSmall = RoundedCornerShape(6.dp),
-
-        small = RoundedCornerShape(10.dp),
-
+        extraSmall = RoundedCornerShape(4.dp),
+        small = RoundedCornerShape(8.dp),
         medium = RoundedCornerShape(12.dp),
-
-        large = RoundedCornerShape(14.dp),
-
-        extraLarge = RoundedCornerShape(20.dp)
+        large = RoundedCornerShape(16.dp),
+        extraLarge = RoundedCornerShape(28.dp)
     )
 
     CompositionLocalProvider(

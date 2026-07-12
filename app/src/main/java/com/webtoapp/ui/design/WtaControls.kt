@@ -115,10 +115,10 @@ fun WtaTextField(
         interactionSource = interactionSource,
         shape = shape,
         colors = TextFieldDefaults.colors(
-            focusedContainerColor = colors.surfaceContainerHigh.copy(alpha = 0.9f),
-            unfocusedContainerColor = colors.surfaceContainerHigh.copy(alpha = 0.6f),
-            disabledContainerColor = colors.surfaceContainer.copy(alpha = 0.5f),
-            errorContainerColor = colors.errorContainer.copy(alpha = 0.5f),
+            focusedContainerColor = colors.surfaceContainerHighest,
+            unfocusedContainerColor = colors.surfaceContainerHighest,
+            disabledContainerColor = colors.surfaceContainerHighest.copy(alpha = 0.5f),
+            errorContainerColor = colors.errorContainer,
             focusedIndicatorColor = indicatorColor,
             unfocusedIndicatorColor = Color.Transparent,
             disabledIndicatorColor = Color.Transparent,
@@ -212,13 +212,13 @@ fun WtaChip(
     val hapticClick = rememberHapticClick(onClick)
 
     val containerColor by animateColorAsState(
-        targetValue = if (selected) colors.primary.copy(alpha = 0.95f)
-        else colors.surfaceContainerHigh.copy(alpha = 0.7f),
+        targetValue = if (selected) colors.secondaryContainer
+        else colors.surfaceContainerHigh,
         animationSpec = WtaMotion.standardTween(),
         label = "chipBg"
     )
     val contentColor by animateColorAsState(
-        targetValue = if (selected) colors.onPrimary else colors.onSurfaceVariant,
+        targetValue = if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant,
         animationSpec = WtaMotion.standardTween(),
         label = "chipContent"
     )
