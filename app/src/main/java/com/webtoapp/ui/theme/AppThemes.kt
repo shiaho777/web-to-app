@@ -187,7 +187,7 @@ object AppThemes {
             scrim = Color(0xFF000000)
         ),
         animationStyle = AnimationStyle.SNAPPY,
-        interactionStyle = InteractionStyle.SCALE,
+        interactionStyle = InteractionStyle.RIPPLE,
         gradients = ThemeGradients(
             primary = listOf(Color(0xFF111113), Color(0xFF2A2A2E)),
             secondary = listOf(Color(0xFF474749), Color(0xFF7A7A7D)),

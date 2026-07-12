@@ -112,11 +112,10 @@ fun WtaButton(
             .then(borderModifier)
             .clickable(
                 interactionSource = interactionSource,
-                indication = null,
+                indication = rememberWtaIndication(),
                 enabled = enabled,
                 onClick = hapticClick
             )
-            .wtaPressScale(interactionSource, pressedScale = 0.96f)
             .padding(padding),
         contentAlignment = Alignment.Center
     ) {

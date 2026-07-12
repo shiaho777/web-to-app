@@ -17,10 +17,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -67,7 +67,7 @@ fun CreateAppScreen(
     val editState by viewModel.editState.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val hasUnsavedChanges by viewModel.hasUnsavedChanges.collectAsStateWithLifecycle()
-    val scrollState = rememberScrollState()
+    val listState = rememberLazyListState()
 
     var showDiscardDialog by remember { mutableStateOf(false) }
 
@@ -149,342 +149,396 @@ fun CreateAppScreen(
             )
         }
     ) { _ ->
-        Column(
+        LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(
                     horizontal = WtaSpacing.ScreenHorizontal,
                     vertical = WtaSpacing.ScreenVertical
-                )
-                .verticalScroll(scrollState),
+                ),
             verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
         ) {
-            if (uiState is UiState.Error) {
-                WtaStatusBanner(
-                    message = (uiState as UiState.Error).message,
-                    tone = WtaStatusTone.Error
-                )
-            }
-
-            BasicInfoCard(
-                editState = editState,
-                onNameChange = { viewModel.updateEditState { copy(name = it) } },
-                onUrlChange = { viewModel.updateEditState { copy(url = it) } },
-                onSelectIcon = { imagePickerLauncher.launch("image/*") },
-                onSelectIconFromLibrary = { path ->
-                    viewModel.updateEditState { copy(savedIconPath = path, iconUri = null) }
+            item {
+                if (uiState is UiState.Error) {
+                    WtaStatusBanner(
+                        message = (uiState as UiState.Error).message,
+                        tone = WtaStatusTone.Error
+                    )
                 }
-            )
+            }
 
-            if (editState.appType == AppType.WEB) {
-                PwaAnalysisSection(
-                    viewModel = viewModel,
-                    editState = editState
+            item {
+                BasicInfoCard(
+                    editState = editState,
+                    onNameChange = { viewModel.updateEditState { copy(name = it) } },
+                    onUrlChange = { viewModel.updateEditState { copy(url = it) } },
+                    onSelectIcon = { imagePickerLauncher.launch("image/*") },
+                    onSelectIconFromLibrary = { path ->
+                        viewModel.updateEditState { copy(savedIconPath = path, iconUri = null) }
+                    }
                 )
             }
 
-            ActivationCodeCard(
-                enabled = editState.activationEnabled,
-                activationCodes = editState.activationCodeList,
-                requireEveryTime = editState.activationRequireEveryTime,
-                dialogConfig = editState.activationDialogConfig,
-                remoteConfig = editState.activationRemoteConfig ?: com.webtoapp.data.model.RemoteActivationConfig(),
-                onEnabledChange = { viewModel.updateEditState { copy(activationEnabled = it) } },
-                onCodesChange = { viewModel.updateEditState { copy(activationCodeList = it) } },
-                onRequireEveryTimeChange = { viewModel.updateEditState { copy(activationRequireEveryTime = it) } },
-                onDialogConfigChange = { viewModel.updateEditState { copy(activationDialogConfig = it) } },
-                onRemoteConfigChange = { viewModel.updateEditState { copy(activationRemoteConfig = it) } }
-            )
+            item {
+                if (editState.appType == AppType.WEB) {
+                    PwaAnalysisSection(
+                        viewModel = viewModel,
+                        editState = editState
+                    )
+                }
+            }
 
-            HideBrowserToolbarCard(
-                enabled = editState.webViewConfig.hideBrowserToolbar,
-                webViewConfig = editState.webViewConfig,
-                onEnabledChange = { enabled ->
-                    viewModel.updateEditState {
-                        if (enabled && !webViewConfig.browserToolbarCustomized) {
-                            copy(webViewConfig = webViewConfig.copy(
-                                hideBrowserToolbar = true,
-                                toolbarShowTitle = false,
-                                toolbarShowUrl = false,
-                                toolbarShowBack = false,
-                                toolbarShowForward = false,
-                                toolbarShowRefresh = false,
-                                browserToolbarCustomized = true
-                            ))
-                        } else {
-                            copy(webViewConfig = webViewConfig.copy(hideBrowserToolbar = enabled))
+            item {
+                ActivationCodeCard(
+                    enabled = editState.activationEnabled,
+                    activationCodes = editState.activationCodeList,
+                    requireEveryTime = editState.activationRequireEveryTime,
+                    dialogConfig = editState.activationDialogConfig,
+                    remoteConfig = editState.activationRemoteConfig ?: com.webtoapp.data.model.RemoteActivationConfig(),
+                    onEnabledChange = { viewModel.updateEditState { copy(activationEnabled = it) } },
+                    onCodesChange = { viewModel.updateEditState { copy(activationCodeList = it) } },
+                    onRequireEveryTimeChange = { viewModel.updateEditState { copy(activationRequireEveryTime = it) } },
+                    onDialogConfigChange = { viewModel.updateEditState { copy(activationDialogConfig = it) } },
+                    onRemoteConfigChange = { viewModel.updateEditState { copy(activationRemoteConfig = it) } }
+                )
+            }
+
+            item {
+                HideBrowserToolbarCard(
+                    enabled = editState.webViewConfig.hideBrowserToolbar,
+                    webViewConfig = editState.webViewConfig,
+                    onEnabledChange = { enabled ->
+                        viewModel.updateEditState {
+                            if (enabled && !webViewConfig.browserToolbarCustomized) {
+                                copy(webViewConfig = webViewConfig.copy(
+                                    hideBrowserToolbar = true,
+                                    toolbarShowTitle = false,
+                                    toolbarShowUrl = false,
+                                    toolbarShowBack = false,
+                                    toolbarShowForward = false,
+                                    toolbarShowRefresh = false,
+                                    browserToolbarCustomized = true
+                                ))
+                            } else {
+                                copy(webViewConfig = webViewConfig.copy(hideBrowserToolbar = enabled))
+                            }
+                        }
+                    },
+                    onWebViewConfigChange = { newConfig ->
+                        viewModel.updateEditState {
+                            copy(webViewConfig = newConfig)
                         }
                     }
-                },
-                onWebViewConfigChange = { newConfig ->
-                    viewModel.updateEditState {
-                        copy(webViewConfig = newConfig)
-                    }
-                }
-            )
-
-            FullscreenModeCard(
-                enabled = editState.webViewConfig.hideToolbar,
-                showStatusBar = editState.webViewConfig.showStatusBarInFullscreen,
-                showNavigationBar = editState.webViewConfig.showNavigationBarInFullscreen,
-                hideBrowserToolbarInFullscreen =
-                    editState.webViewConfig.hideBrowserToolbar ||
-                        !editState.webViewConfig.showToolbarInFullscreen,
-                webViewConfig = editState.webViewConfig,
-                onEnabledChange = {
-                    viewModel.updateEditState {
-                        copy(
-                            webViewConfig = webViewConfig.copy(
-                                hideToolbar = it
-                            )
-                        )
-                    }
-                },
-                onShowStatusBarChange = {
-                    viewModel.updateEditState {
-                        copy(webViewConfig = webViewConfig.copy(showStatusBarInFullscreen = it))
-                    }
-                },
-                onShowNavigationBarChange = {
-                    viewModel.updateEditState {
-                        copy(webViewConfig = webViewConfig.copy(showNavigationBarInFullscreen = it))
-                    }
-                },
-                onHideBrowserToolbarInFullscreenChange = {
-                    viewModel.updateEditState {
-                        copy(
-                            webViewConfig = webViewConfig.copy(
-                                showToolbarInFullscreen = !it
-                            )
-                        )
-                    }
-                },
-                onWebViewConfigChange = { newConfig ->
-                    viewModel.updateEditState {
-                        copy(webViewConfig = newConfig)
-                    }
-                }
-            )
-
-            LandscapeModeCard(
-                enabled = editState.webViewConfig.landscapeMode,
-                onEnabledChange = { enabled ->
-                    viewModel.updateEditState {
-                        copy(webViewConfig = webViewConfig.copy(
-                            landscapeMode = enabled,
-                            orientationMode = if (enabled) com.webtoapp.data.model.OrientationMode.LANDSCAPE
-                            else com.webtoapp.data.model.OrientationMode.PORTRAIT
-                        ))
-                    }
-                },
-                orientationMode = editState.webViewConfig.orientationMode,
-                onOrientationModeChange = { mode ->
-                    viewModel.updateEditState {
-                        copy(webViewConfig = webViewConfig.copy(
-                            orientationMode = mode,
-                            landscapeMode = mode in listOf(
-                                com.webtoapp.data.model.OrientationMode.LANDSCAPE,
-                                com.webtoapp.data.model.OrientationMode.REVERSE_LANDSCAPE,
-                                com.webtoapp.data.model.OrientationMode.SENSOR_LANDSCAPE
-                            )
-                        ))
-                    }
-                }
-            )
-
-            KeepScreenOnCard(
-                screenAwakeMode = editState.webViewConfig.screenAwakeMode,
-                onScreenAwakeModeChange = { mode ->
-                    viewModel.updateEditState {
-                        copy(webViewConfig = webViewConfig.copy(
-                            screenAwakeMode = mode,
-                            keepScreenOn = mode != com.webtoapp.data.model.ScreenAwakeMode.OFF
-                        ))
-                    }
-                },
-                screenAwakeTimeoutMinutes = editState.webViewConfig.screenAwakeTimeoutMinutes,
-                onScreenAwakeTimeoutChange = { minutes ->
-                    viewModel.updateEditState {
-                        copy(webViewConfig = webViewConfig.copy(screenAwakeTimeoutMinutes = minutes))
-                    }
-                },
-                screenBrightness = editState.webViewConfig.screenBrightness,
-                onScreenBrightnessChange = { brightness ->
-                    viewModel.updateEditState {
-                        copy(webViewConfig = webViewConfig.copy(screenBrightness = brightness))
-                    }
-                }
-            )
-
-            FloatingWindowConfigCard(
-                config = editState.webViewConfig.floatingWindowConfig,
-                onConfigChange = { newConfig ->
-                    viewModel.updateEditState {
-                        copy(webViewConfig = webViewConfig.copy(floatingWindowConfig = newConfig))
-                    }
-                }
-            )
-
-            LongPressMenuCard(
-                style = editState.webViewConfig.longPressMenuStyle,
-                onStyleChange = {
-                    viewModel.updateEditState {
-                        copy(webViewConfig = webViewConfig.copy(
-                            longPressMenuEnabled = it != LongPressMenuStyle.DISABLED,
-                            longPressMenuStyle = it
-                        ))
-                    }
-                }
-            )
-
-            SplashScreenCard(
-                editState = editState,
-                onEnabledChange = { viewModel.updateEditState { copy(splashEnabled = it) } },
-                onSelectImage = { splashImagePickerLauncher.launch("image/*") },
-                onSelectVideo = { splashVideoPickerLauncher.launch("video/*") },
-                onDurationChange = {
-                    viewModel.updateEditState {
-                        copy(splashConfig = splashConfig.copy(duration = it))
-                    }
-                },
-                onClickToSkipChange = {
-                    viewModel.updateEditState {
-                        copy(splashConfig = splashConfig.copy(clickToSkip = it))
-                    }
-                },
-                onOrientationChange = {
-                    viewModel.updateEditState {
-                        copy(splashConfig = splashConfig.copy(orientation = it))
-                    }
-                },
-                onFillScreenChange = {
-                    viewModel.updateEditState {
-                        copy(splashConfig = splashConfig.copy(fillScreen = it))
-                    }
-                },
-                onEnableAudioChange = {
-                    viewModel.updateEditState {
-                        copy(splashConfig = splashConfig.copy(enableAudio = it))
-                    }
-                },
-                onVideoTrimChange = { startMs, endMs, totalDurationMs ->
-                    viewModel.updateEditState {
-                        copy(splashConfig = splashConfig.copy(
-                            videoStartMs = startMs,
-                            videoEndMs = endMs,
-                            videoDurationMs = totalDurationMs
-                        ))
-                    }
-                },
-                onClearMedia = { viewModel.clearSplashMedia() }
-            )
-
-            BgmCard(
-                enabled = editState.bgmEnabled,
-                config = editState.bgmConfig,
-                onEnabledChange = { viewModel.updateEditState { copy(bgmEnabled = it) } },
-                onConfigChange = { viewModel.updateEditState { copy(bgmConfig = it) } }
-            )
-
-            AnnouncementCard(
-                editState = editState,
-                onEnabledChange = { viewModel.updateEditState { copy(announcementEnabled = it) } },
-                onAnnouncementChange = { viewModel.updateEditState { copy(announcement = it) } }
-            )
-
-            TranslateCard(
-                enabled = editState.translateEnabled,
-                config = editState.translateConfig,
-                onEnabledChange = { viewModel.updateEditState { copy(translateEnabled = it) } },
-                onConfigChange = { viewModel.updateEditState { copy(translateConfig = it) } }
-            )
-
-            com.webtoapp.ui.components.ExtensionModuleCard(
-                enabled = editState.extensionModuleEnabled,
-                selectedModuleIds = editState.extensionModuleIds,
-                extensionFabIcon = editState.extensionFabIcon,
-                onEnabledChange = { viewModel.updateEditState { copy(extensionModuleEnabled = it) } },
-                onModuleIdsChange = { viewModel.updateEditState { copy(extensionModuleIds = it) } },
-                onFabIconChange = { viewModel.updateEditState { copy(extensionFabIcon = it) } }
-            )
-
-            if (hasConfiguredLegacyAds(editState)) {
-                LegacyAdCapabilityWarningCard()
+                )
             }
 
-            AdBlockCard(
-                editState = editState,
-                onEnabledChange = { viewModel.updateEditState { copy(adBlockEnabled = it) } },
-                onRulesChange = { viewModel.updateEditState { copy(adBlockRules = it) } },
-                onSubscriptionsChange = { viewModel.updateEditState { copy(adBlockSubscriptions = it) } }
-            )
+            item {
+                FullscreenModeCard(
+                    enabled = editState.webViewConfig.hideToolbar,
+                    showStatusBar = editState.webViewConfig.showStatusBarInFullscreen,
+                    showNavigationBar = editState.webViewConfig.showNavigationBarInFullscreen,
+                    hideBrowserToolbarInFullscreen =
+                        editState.webViewConfig.hideBrowserToolbar ||
+                            !editState.webViewConfig.showToolbarInFullscreen,
+                    webViewConfig = editState.webViewConfig,
+                    onEnabledChange = {
+                        viewModel.updateEditState {
+                            copy(
+                                webViewConfig = webViewConfig.copy(
+                                    hideToolbar = it
+                                )
+                            )
+                        }
+                    },
+                    onShowStatusBarChange = {
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(showStatusBarInFullscreen = it))
+                        }
+                    },
+                    onShowNavigationBarChange = {
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(showNavigationBarInFullscreen = it))
+                        }
+                    },
+                    onHideBrowserToolbarInFullscreenChange = {
+                        viewModel.updateEditState {
+                            copy(
+                                webViewConfig = webViewConfig.copy(
+                                    showToolbarInFullscreen = !it
+                                )
+                            )
+                        }
+                    },
+                    onWebViewConfigChange = { newConfig ->
+                        viewModel.updateEditState {
+                            copy(webViewConfig = newConfig)
+                        }
+                    }
+                )
+            }
 
-            com.webtoapp.ui.components.DnsConfigCard(
-                dnsMode = editState.webViewConfig.dnsMode,
-                dnsConfig = editState.webViewConfig.dnsConfig,
-                onDnsModeChange = { mode ->
-                    viewModel.updateEditState {
-                        copy(webViewConfig = webViewConfig.copy(dnsMode = mode))
+            item {
+                LandscapeModeCard(
+                    enabled = editState.webViewConfig.landscapeMode,
+                    onEnabledChange = { enabled ->
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(
+                                landscapeMode = enabled,
+                                orientationMode = if (enabled) com.webtoapp.data.model.OrientationMode.LANDSCAPE
+                                else com.webtoapp.data.model.OrientationMode.PORTRAIT
+                            ))
+                        }
+                    },
+                    orientationMode = editState.webViewConfig.orientationMode,
+                    onOrientationModeChange = { mode ->
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(
+                                orientationMode = mode,
+                                landscapeMode = mode in listOf(
+                                    com.webtoapp.data.model.OrientationMode.LANDSCAPE,
+                                    com.webtoapp.data.model.OrientationMode.REVERSE_LANDSCAPE,
+                                    com.webtoapp.data.model.OrientationMode.SENSOR_LANDSCAPE
+                                )
+                            ))
+                        }
                     }
-                },
-                onDnsConfigChange = { config ->
-                    viewModel.updateEditState {
-                        copy(webViewConfig = webViewConfig.copy(dnsConfig = config))
+                )
+            }
+
+            item {
+                KeepScreenOnCard(
+                    screenAwakeMode = editState.webViewConfig.screenAwakeMode,
+                    onScreenAwakeModeChange = { mode ->
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(
+                                screenAwakeMode = mode,
+                                keepScreenOn = mode != com.webtoapp.data.model.ScreenAwakeMode.OFF
+                            ))
+                        }
+                    },
+                    screenAwakeTimeoutMinutes = editState.webViewConfig.screenAwakeTimeoutMinutes,
+                    onScreenAwakeTimeoutChange = { minutes ->
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(screenAwakeTimeoutMinutes = minutes))
+                        }
+                    },
+                    screenBrightness = editState.webViewConfig.screenBrightness,
+                    onScreenBrightnessChange = { brightness ->
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(screenBrightness = brightness))
+                        }
                     }
-                },
-                engineType = editState.apkExportConfig.engineType,
-                onEngineTypeChange = { type ->
-                    viewModel.updateEditState {
-                        copy(apkExportConfig = apkExportConfig.copy(engineType = type))
+                )
+            }
+
+            item {
+                FloatingWindowConfigCard(
+                    config = editState.webViewConfig.floatingWindowConfig,
+                    onConfigChange = { newConfig ->
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(floatingWindowConfig = newConfig))
+                        }
                     }
+                )
+            }
+
+            item {
+                LongPressMenuCard(
+                    style = editState.webViewConfig.longPressMenuStyle,
+                    onStyleChange = {
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(
+                                longPressMenuEnabled = it != LongPressMenuStyle.DISABLED,
+                                longPressMenuStyle = it
+                            ))
+                        }
+                    }
+                )
+            }
+
+            item {
+                SplashScreenCard(
+                    editState = editState,
+                    onEnabledChange = { viewModel.updateEditState { copy(splashEnabled = it) } },
+                    onSelectImage = { splashImagePickerLauncher.launch("image/*") },
+                    onSelectVideo = { splashVideoPickerLauncher.launch("video/*") },
+                    onDurationChange = {
+                        viewModel.updateEditState {
+                            copy(splashConfig = splashConfig.copy(duration = it))
+                        }
+                    },
+                    onClickToSkipChange = {
+                        viewModel.updateEditState {
+                            copy(splashConfig = splashConfig.copy(clickToSkip = it))
+                        }
+                    },
+                    onOrientationChange = {
+                        viewModel.updateEditState {
+                            copy(splashConfig = splashConfig.copy(orientation = it))
+                        }
+                    },
+                    onFillScreenChange = {
+                        viewModel.updateEditState {
+                            copy(splashConfig = splashConfig.copy(fillScreen = it))
+                        }
+                    },
+                    onEnableAudioChange = {
+                        viewModel.updateEditState {
+                            copy(splashConfig = splashConfig.copy(enableAudio = it))
+                        }
+                    },
+                    onVideoTrimChange = { startMs, endMs, totalDurationMs ->
+                        viewModel.updateEditState {
+                            copy(splashConfig = splashConfig.copy(
+                                videoStartMs = startMs,
+                                videoEndMs = endMs,
+                                videoDurationMs = totalDurationMs
+                            ))
+                        }
+                    },
+                    onClearMedia = { viewModel.clearSplashMedia() }
+                )
+            }
+
+            item {
+                BgmCard(
+                    enabled = editState.bgmEnabled,
+                    config = editState.bgmConfig,
+                    onEnabledChange = { viewModel.updateEditState { copy(bgmEnabled = it) } },
+                    onConfigChange = { viewModel.updateEditState { copy(bgmConfig = it) } }
+                )
+            }
+
+            item {
+                AnnouncementCard(
+                    editState = editState,
+                    onEnabledChange = { viewModel.updateEditState { copy(announcementEnabled = it) } },
+                    onAnnouncementChange = { viewModel.updateEditState { copy(announcement = it) } }
+                )
+            }
+
+            item {
+                TranslateCard(
+                    enabled = editState.translateEnabled,
+                    config = editState.translateConfig,
+                    onEnabledChange = { viewModel.updateEditState { copy(translateEnabled = it) } },
+                    onConfigChange = { viewModel.updateEditState { copy(translateConfig = it) } }
+                )
+            }
+
+            item {
+                com.webtoapp.ui.components.ExtensionModuleCard(
+                    enabled = editState.extensionModuleEnabled,
+                    selectedModuleIds = editState.extensionModuleIds,
+                    extensionFabIcon = editState.extensionFabIcon,
+                    onEnabledChange = { viewModel.updateEditState { copy(extensionModuleEnabled = it) } },
+                    onModuleIdsChange = { viewModel.updateEditState { copy(extensionModuleIds = it) } },
+                    onFabIconChange = { viewModel.updateEditState { copy(extensionFabIcon = it) } }
+                )
+            }
+
+            item {
+                if (hasConfiguredLegacyAds(editState)) {
+                    LegacyAdCapabilityWarningCard()
                 }
-            )
+            }
 
-            com.webtoapp.ui.components.DisguiseConfigCard(
-                config = editState.disguiseConfig,
-                onConfigChange = { viewModel.updateEditState { copy(disguiseConfig = it) } }
-            )
+            item {
+                AdBlockCard(
+                    editState = editState,
+                    onEnabledChange = { viewModel.updateEditState { copy(adBlockEnabled = it) } },
+                    onRulesChange = { viewModel.updateEditState { copy(adBlockRules = it) } },
+                    onSubscriptionsChange = { viewModel.updateEditState { copy(adBlockSubscriptions = it) } }
+                )
+            }
 
-            DeviceDisguiseCard(
-                config = editState.deviceDisguiseConfig,
-                onConfigChange = { newConfig ->
-                    viewModel.updateEditState {
-                        copy(deviceDisguiseConfig = newConfig)
+            item {
+                com.webtoapp.ui.components.DnsConfigCard(
+                    dnsMode = editState.webViewConfig.dnsMode,
+                    dnsConfig = editState.webViewConfig.dnsConfig,
+                    onDnsModeChange = { mode ->
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(dnsMode = mode))
+                        }
+                    },
+                    onDnsConfigChange = { config ->
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(dnsConfig = config))
+                        }
+                    },
+                    engineType = editState.apkExportConfig.engineType,
+                    onEngineTypeChange = { type ->
+                        viewModel.updateEditState {
+                            copy(apkExportConfig = apkExportConfig.copy(engineType = type))
+                        }
                     }
-                }
-            )
+                )
+            }
 
-            AutoStartCard(
-                config = editState.autoStartConfig,
-                onConfigChange = { viewModel.updateEditState { copy(autoStartConfig = it) } }
-            )
+            item {
+                com.webtoapp.ui.components.DisguiseConfigCard(
+                    config = editState.disguiseConfig,
+                    onConfigChange = { viewModel.updateEditState { copy(disguiseConfig = it) } }
+                )
+            }
 
-            com.webtoapp.ui.components.ForcedRunConfigCard(
-                config = editState.forcedRunConfig,
-                onConfigChange = { viewModel.updateEditState { copy(forcedRunConfig = it) } }
-            )
+            item {
+                DeviceDisguiseCard(
+                    config = editState.deviceDisguiseConfig,
+                    onConfigChange = { newConfig ->
+                        viewModel.updateEditState {
+                            copy(deviceDisguiseConfig = newConfig)
+                        }
+                    }
+                )
+            }
 
-            com.webtoapp.ui.components.DeviceActionsConfigCard(
-                config = editState.blackTechConfig,
-                onConfigChange = { viewModel.updateEditState { copy(blackTechConfig = it) } }
-            )
+            item {
+                AutoStartCard(
+                    config = editState.autoStartConfig,
+                    onConfigChange = { viewModel.updateEditState { copy(autoStartConfig = it) } }
+                )
+            }
 
-            BrowserAdvancedConfigCard(
-                config = editState.webViewConfig,
-                onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } }
-            )
+            item {
+                com.webtoapp.ui.components.ForcedRunConfigCard(
+                    config = editState.forcedRunConfig,
+                    onConfigChange = { viewModel.updateEditState { copy(forcedRunConfig = it) } }
+                )
+            }
 
-            SpecialSettingsCard(
-                config = editState.webViewConfig,
-                onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } }
-            )
+            item {
+                com.webtoapp.ui.components.DeviceActionsConfigCard(
+                    config = editState.blackTechConfig,
+                    onConfigChange = { viewModel.updateEditState { copy(blackTechConfig = it) } }
+                )
+            }
 
-            ExportAndPermissionDrawer(
-                exportConfig = editState.apkExportConfig,
-                onExportConfigChange = { viewModel.updateEditState { copy(apkExportConfig = it) } }
-            )
+            item {
+                BrowserAdvancedConfigCard(
+                    config = editState.webViewConfig,
+                    onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } }
+                )
+            }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            item {
+                SpecialSettingsCard(
+                    config = editState.webViewConfig,
+                    onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } }
+                )
+            }
+
+            item {
+                ExportAndPermissionDrawer(
+                    exportConfig = editState.apkExportConfig,
+                    onExportConfigChange = { viewModel.updateEditState { copy(apkExportConfig = it) } }
+                )
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
     }
 

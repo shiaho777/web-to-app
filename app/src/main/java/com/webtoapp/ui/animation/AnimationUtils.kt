@@ -35,8 +35,8 @@ import kotlinx.coroutines.delay
 fun StaggeredAnimatedItem(
     index: Int,
     modifier: Modifier = Modifier,
-    staggerDelayMs: Long = 35L,
-    slideOffsetDp: Int = 20,
+    staggerDelayMs: Long = 16L,
+    slideOffsetDp: Int = 8,
     content: @Composable () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
@@ -53,7 +53,7 @@ fun StaggeredAnimatedItem(
         visible = visible,
         enter = slideInVertically(
             initialOffsetY = { slideOffsetPx },
-            animationSpec = WtaMotion.settleSpring()
+            animationSpec = WtaMotion.enterTween(durationMillis = 180)
         ),
         modifier = modifier
     ) {
@@ -89,7 +89,7 @@ fun AnimatedDialogContent(
 ) {
     val scale by animateFloatAsState(
         targetValue = if (visible) 1f else 0.85f,
-        animationSpec = if (visible) WtaMotion.bouncySpring() else WtaMotion.snapSpring(),
+        animationSpec = if (visible) WtaMotion.settleSpring() else WtaMotion.snapSpring(),
         label = "dialogScale"
     )
     Box(
@@ -119,15 +119,15 @@ fun tabSlideDirection(previousTab: Int, currentTab: Int): Int {
 
 fun tabEnterTransition(direction: Int): EnterTransition {
     return slideInHorizontally(
-        initialOffsetX = { fullWidth -> direction * fullWidth },
-        animationSpec = WtaMotion.settleSpring()
+        initialOffsetX = { fullWidth -> direction * (fullWidth / 8) },
+        animationSpec = WtaMotion.enterTween(durationMillis = 200)
     )
 }
 
 fun tabExitTransition(direction: Int): ExitTransition {
     return slideOutHorizontally(
-        targetOffsetX = { fullWidth -> -direction * fullWidth / 4 },
-        animationSpec = WtaMotion.gentleSpring()
+        targetOffsetX = { fullWidth -> -direction * (fullWidth / 12) },
+        animationSpec = WtaMotion.exitTween(durationMillis = 160)
     )
 }
 

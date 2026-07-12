@@ -146,31 +146,17 @@ fun WtaSwitch(
     val interactionSource = remember { MutableInteractionSource() }
     val view = LocalView.current
     val colors = MaterialTheme.colorScheme
-    val isPressed by interactionSource.collectIsPressedAsState()
+    val animSettings = com.webtoapp.ui.theme.LocalAnimationSettings.current
 
     val onChange: (Boolean) -> Unit = { next ->
-        if (enabled) performHaptic(view)
+        if (enabled && animSettings.hapticsEnabled) performHaptic(view)
         onCheckedChange(next)
     }
-
-    val stretchX by animateFloatAsState(
-        targetValue = if (isPressed) 1.12f else 1f,
-        animationSpec = if (isPressed) WtaMotion.pressSpring() else WtaMotion.bouncySpring(),
-        label = "wtaSwitchStretchX"
-    )
-    val stretchY by animateFloatAsState(
-        targetValue = if (isPressed) 0.92f else 1f,
-        animationSpec = if (isPressed) WtaMotion.pressSpring() else WtaMotion.bouncySpring(),
-        label = "wtaSwitchStretchY"
-    )
 
     Switch(
         checked = checked,
         onCheckedChange = onChange,
-        modifier = modifier.graphicsLayer {
-            scaleX = stretchX
-            scaleY = stretchY
-        },
+        modifier = modifier,
         enabled = enabled,
         interactionSource = interactionSource,
         thumbContent = thumbContent,
@@ -236,23 +222,12 @@ fun WtaChip(
         animationSpec = WtaMotion.standardTween(),
         label = "chipContent"
     )
-    val scale by animateFloatAsState(
-        targetValue = if (selected) 1f else 0.97f,
-        animationSpec = WtaMotion.bouncySpring(),
-        label = "chipScale"
-    )
-
     Surface(
         modifier = modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .wtaPressScale(interactionSource, pressedScale = 0.94f)
             .clip(RoundedCornerShape(WtaRadius.Chip))
             .clickable(
                 interactionSource = interactionSource,
-                indication = null,
+                indication = rememberWtaIndication(),
                 enabled = enabled,
                 onClick = hapticClick
             ),

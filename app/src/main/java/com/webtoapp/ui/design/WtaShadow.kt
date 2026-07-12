@@ -15,28 +15,16 @@ fun Modifier.wtaSoftShadow(
     shape: Shape,
     level: Dp = WtaElevation.Level2
 ): Modifier {
-    val (close, far) = wtaShadowColors()
     val base = level.value.coerceIn(0f, 24f)
     if (base <= 0f) return this
-
-    val closeRadius = (base * 0.6f).dp
-
-    val farRadius = (base * 1.8f).dp
-    return this
-        .shadow(
-            elevation = farRadius,
-            shape = shape,
-            ambientColor = far,
-            spotColor = far,
-            clip = false
-        )
-        .shadow(
-            elevation = closeRadius,
-            shape = shape,
-            ambientColor = close,
-            spotColor = close,
-            clip = false
-        )
+    val (ambient, spot) = wtaShadowColors()
+    return this.shadow(
+        elevation = base.dp,
+        shape = shape,
+        ambientColor = ambient,
+        spotColor = spot,
+        clip = false
+    )
 }
 
 @Composable
@@ -44,8 +32,8 @@ fun Modifier.wtaSoftShadow(
 private fun wtaShadowColors(): Pair<Color, Color> {
     val isDark = LocalIsDarkTheme.current
     return if (isDark) {
-        Color(0xBB000000) to Color(0x66000000)
+        Color(0x66000000) to Color(0x88000000)
     } else {
-        Color(0x1A000000) to Color(0x0E000000)
+        Color(0x14000000) to Color(0x1A000000)
     }
 }

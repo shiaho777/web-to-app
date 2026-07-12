@@ -47,8 +47,8 @@ fun WtaAlertDialog(
     LaunchedEffect(Unit) { appeared = true }
 
     val scale by animateFloatAsState(
-        targetValue = if (appeared) 1f else 0.9f,
-        animationSpec = WtaMotion.bouncySpring(),
+        targetValue = if (appeared) 1f else 0.96f,
+        animationSpec = WtaMotion.settleSpring(),
         label = "wtaDialogScale"
     )
 

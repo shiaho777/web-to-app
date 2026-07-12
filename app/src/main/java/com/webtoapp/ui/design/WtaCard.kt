@@ -79,6 +79,7 @@ fun WtaCard(
     val spec = resolveTone(tone)
     val interactionSource = remember { MutableInteractionSource() }
     val hapticClick = rememberHapticClick(onClick)
+    val indication = rememberWtaIndication()
     val shadowModifier = if (spec.elevation > 0.dp) {
         Modifier.wtaSoftShadow(shape, spec.elevation)
     } else Modifier
@@ -98,11 +99,10 @@ fun WtaCard(
             )
             .clickable(
                 interactionSource = interactionSource,
-                indication = null,
+                indication = indication,
                 enabled = enabled,
                 onClick = hapticClick
             )
-            .wtaPressScale(interactionSource, pressedScale = 0.98f)
     ) {
         Column(modifier = Modifier.padding(contentPadding), content = content)
     }
@@ -126,12 +126,12 @@ private fun resolveTone(tone: WtaCardTone): WtaCardSpec {
                 color = if (isDark) Color.White.copy(alpha = 0.09f)
                 else Color.Black.copy(alpha = 0.08f)
             ),
-            elevation = WtaElevation.Level2
+            elevation = WtaElevation.Level0
         )
         WtaCardTone.Elevated -> WtaCardSpec(
             container = colors.surfaceContainer,
             border = null,
-            elevation = WtaElevation.Level2
+            elevation = WtaElevation.Level1
         )
         WtaCardTone.Highlighted -> WtaCardSpec(
             container = colors.primaryContainer,

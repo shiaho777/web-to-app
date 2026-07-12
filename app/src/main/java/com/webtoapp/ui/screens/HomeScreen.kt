@@ -70,8 +70,6 @@ import com.webtoapp.ui.theme.AppColors
 import com.webtoapp.ui.theme.ThemeManager
 import com.webtoapp.ui.theme.LocalAppTheme
 import com.webtoapp.ui.theme.LocalThemeRevealState
-import com.webtoapp.ui.animation.StaggeredAnimatedItem
-import com.webtoapp.ui.animation.breathingFloat
 import com.webtoapp.ui.animation.AnimatedAlertDialog
 import com.webtoapp.ui.viewmodel.MainViewModel
 import com.webtoapp.ui.viewmodel.UiState
@@ -100,7 +98,6 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.ui.graphics.graphicsLayer
-import com.webtoapp.ui.components.liquidGlass
 import com.webtoapp.ui.design.WtaBadge
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -452,11 +449,16 @@ fun HomeScreen(
                     val healthRecords: List<com.webtoapp.core.stats.AppHealthRecord> = healthRecordsState?.value ?: emptyList()
                     val healthMap = remember(healthRecords) { healthRecords.associateBy { it.appId } }
 
-                    LaunchedEffect(apps, healthMonitor) {
+                    LaunchedEffect(apps.map { it.id }) {
                         val monitor = healthMonitor ?: return@LaunchedEffect
-                        val webApps = apps.mapNotNull { viewModel.getWebApp(it.id) }
-                        if (webApps.isNotEmpty()) {
-                            monitor.checkApps(webApps)
+                        delay(800)
+                        val ids = apps.map { it.id }
+                        if (ids.isEmpty()) return@LaunchedEffect
+                        withContext(Dispatchers.IO) {
+                            val webApps = ids.mapNotNull { viewModel.getWebApp(it) }
+                            if (webApps.isNotEmpty()) {
+                                monitor.checkApps(webApps)
+                            }
                         }
                     }
 
@@ -480,7 +482,7 @@ fun HomeScreen(
                     val screenshotLoadingStates = remember { mutableStateMapOf<Long, Boolean>() }
 
                     val previewSpecs = remember { mutableStateMapOf<Long, AppPreviewSpec>() }
-                    LaunchedEffect(apps, listContext) {
+                    LaunchedEffect(apps.map { it.id }, listContext) {
                         val currentIds = apps.map { it.id }.toHashSet()
                         val stale = previewSpecs.keys - currentIds
                         if (stale.isNotEmpty()) {
@@ -492,78 +494,18 @@ fun HomeScreen(
                         if (missingIds.isEmpty()) {
                             return@LaunchedEffect
                         }
-                        withContext(Dispatchers.IO) {
-                            for (id in missingIds) {
-                                val webApp = viewModel.getWebApp(id) ?: continue
-                                val spec = resolveAppPreviewSpec(listContext.applicationContext, webApp)
-                                withContext(Dispatchers.Main) {
-                                    previewSpecs[id] = spec
-                                }
+                        val resolved = withContext(Dispatchers.IO) {
+                            missingIds.mapNotNull { id ->
+                                val webApp = viewModel.getWebApp(id) ?: return@mapNotNull null
+                                id to resolveAppPreviewSpec(listContext.applicationContext, webApp)
                             }
+                        }
+                        resolved.forEach { (id, spec) ->
+                            previewSpecs[id] = spec
                         }
                     }
 
-                    val latestApps = rememberUpdatedState(apps)
-                    val latestPreviewSpecs = rememberUpdatedState(previewSpecs.toMap())
-                    val captureSignature = remember(previewSpecs.toMap()) {
-                        previewSpecs.entries
-                            .mapNotNull { (id, spec) -> spec.captureUrl?.let { "$id:$it" } }
-                            .sorted()
-                            .joinToString("|")
-                    }
 
-                    LaunchedEffect(screenshotService, captureSignature) {
-                        val svc = screenshotService ?: run {
-                            com.webtoapp.core.logging.AppLogger.i(
-                                "ScreenshotFlow",
-                                "init skipped: service unavailable"
-                            )
-                            return@LaunchedEffect
-                        }
-                        if (captureSignature.isEmpty()) {
-                            return@LaunchedEffect
-                        }
-
-                        delay(500)
-
-                        val appsNow = latestApps.value
-                        val specsNow = latestPreviewSpecs.value
-                        val captureTargets = appsNow.mapNotNull { app ->
-                            specsNow[app.id]?.let { spec ->
-                                if (spec.captureUrl != null) app to spec else null
-                            }
-                        }
-                        com.webtoapp.core.logging.AppLogger.i(
-                            "ScreenshotFlow",
-                            "init effect: apps=${appsNow.size}, captureTargets=${captureTargets.size}"
-                        )
-                        for ((app, spec) in captureTargets) {
-                            if (svc.hasScreenshot(app.id)) continue
-                            screenshotLoadingStates[app.id] = true
-                            try {
-                                val fullApp = viewModel.getWebApp(app.id) ?: continue
-                                com.webtoapp.ui.screens.captureAppThumbnail(
-                                    context = listContext.applicationContext,
-                                    screenshotService = svc,
-                                    app = fullApp,
-                                    spec = spec,
-                                )
-                                com.webtoapp.core.logging.AppLogger.i(
-                                    "ScreenshotFlow",
-                                    "initial capture finished: appId=${app.id}, name=${app.name}"
-                                )
-                            } catch (e: Exception) {
-                                com.webtoapp.core.logging.AppLogger.e(
-                                    "ScreenshotFlow",
-                                    "initial capture exception: appId=${app.id}, error=${e.message}",
-                                    e
-                                )
-                            } finally {
-                                screenshotLoadingStates[app.id] = false
-                                screenshotVersions[app.id] = (screenshotVersions[app.id] ?: 0) + 1
-                            }
-                        }
-                    }
 
                     LazyColumn(
                     contentPadding = PaddingValues(16.dp),
@@ -1166,7 +1108,7 @@ fun AppCard(
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
                             .data(app.iconPath)
-                            .crossfade(true)
+                            .crossfade(false)
                             .build(),
                         contentDescription = app.name,
                         modifier = Modifier
@@ -1249,15 +1191,12 @@ fun AppCard(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-
                     AppTypeChip(appType = app.appType)
                     if (app.activationEnabled) {
                         FeatureChip(icon = Icons.Outlined.Key, label = Strings.activationCodeVerify)
-                    }
-                    if (app.adBlockEnabled) {
+                    } else if (app.adBlockEnabled) {
                         FeatureChip(icon = Icons.Outlined.Block, label = Strings.adBlocking)
-                    }
-                    if (app.announcementEnabled) {
+                    } else if (app.announcementEnabled) {
                         FeatureChip(icon = Icons.Outlined.Info, label = Strings.popupAnnouncement)
                     }
                 }
@@ -1286,7 +1225,7 @@ fun AppCard(
                                 .data(java.io.File(screenshotPath))
                                 .memoryCacheKey(screenshotCacheKey)
                                 .diskCacheKey(screenshotCacheKey)
-                                .crossfade(true)
+                                .crossfade(false)
                                 .build(),
                             imageLoader = previewImageLoader,
                             contentDescription = Strings.btnPreview,
@@ -1591,10 +1530,9 @@ private fun CreateActionTile(
             .clip(RoundedCornerShape(WtaRadius.Card))
             .clickable(
                 interactionSource = interactionSource,
-                indication = null,
+                indication = com.webtoapp.ui.design.rememberWtaIndication(),
                 onClick = hapticClick
             )
-            .wtaPressScale(interactionSource, pressedScale = 0.94f)
             .padding(vertical = 10.dp, horizontal = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
