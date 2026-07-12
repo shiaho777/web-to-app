@@ -4655,6 +4655,16 @@ object Strings {
     val playStorePolicyAreaLabel: String get() = StringsE.playStorePolicyAreaLabel
     val playStoreAdviceTitle: String get() = StringsE.playStoreAdviceTitle
     val playStoreAdviceSubtitle: String get() = StringsE.playStoreAdviceSubtitle
+    fun playStoreAppCount(total: Int): String = StringsE.playStoreAppCount(total)
+    val playStoreNoMatch: String get() = StringsE.playStoreNoMatch
+    val playStoreHasApkHint: String get() = StringsE.playStoreHasApkHint
+    val playStoreNoApkHint: String get() = StringsE.playStoreNoApkHint
+    val playStoreExportBlockedHint: String get() = StringsE.playStoreExportBlockedHint
+    val playStoreFixBeforeExport: String get() = StringsE.playStoreFixBeforeExport
+    val playStoreExportWarningTitle: String get() = StringsE.playStoreExportWarningTitle
+    val playStoreExportWarningBody: String get() = StringsE.playStoreExportWarningBody
+    val playStoreExportContinueAnyway: String get() = StringsE.playStoreExportContinueAnyway
+    val playStoreRecentAabs: String get() = StringsE.playStoreRecentAabs
     val apkExportPreflightTitle: String get() = StringsE.apkExportPreflightTitle
     val apkExportPreflightBlocked: String get() = StringsE.apkExportPreflightBlocked
     val apkExportPreflightWarnings: String get() = StringsE.apkExportPreflightWarnings
@@ -61483,16 +61493,136 @@ object StringsE {
         AppLanguage.KOREAN -> "Play 정책 권장사항"
     }
     val playStoreAdviceSubtitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "展开查看可能影响审核的配置项（仅供参考，不阻止导出）"
-        AppLanguage.ENGLISH -> "Expand to see configs that may affect review (advisory only, won't block export)"
-        AppLanguage.ARABIC -> "وسّع لعرض التهيئات التي قد تؤثر على المراجعة (للاستشارية فقط، لن تمنع التصدير)"
-        AppLanguage.PORTUGUESE -> "Expanda para ver configurações que podem afetar a revisão (apenas informativo, não bloqueia a exportação)"
-        AppLanguage.SPANISH -> "Expande para ver configuraciones que pueden afectar la revisión (solo informativo, no bloquea la exportación)"
-        AppLanguage.FRENCH -> "Développez pour voir les configurations pouvant affecter la révision (informatif seulement, ne bloque pas l'exportation)"
-        AppLanguage.GERMAN -> "Ausklappen, um Konfigurationen zu sehen, die die Prüfung beeinflussen könnten (nur Hinweis, blockiert nicht den Export)"
-        AppLanguage.RUSSIAN -> "Разверните, чтобы увидеть конфигурации, которые могут повлиять на проверку (только справочно, не блокирует экспорт)"
-        AppLanguage.JAPANESE -> "展開すると、審査に影響する可能性のある設定を確認できます（参考のみ、エクスポートはブロックしません）"
-        AppLanguage.KOREAN -> "펼쳐서 심사에 영향을 줄 수 있는 설정을 확인하세요 (참고용이며 내보내기를 막지 않음)"
+        AppLanguage.CHINESE -> "自动检测可能影响上架的配置；阻塞项会阻止导出，警告项可确认后继续"
+        AppLanguage.ENGLISH -> "Auto-checks configs that may affect review; blockers stop export, warnings need confirmation"
+        AppLanguage.ARABIC -> "فحص تلقائي للإعدادات التي قد تؤثر على المراجعة؛ العناصر المانعة توقف التصدير والتحذيرات تحتاج تأكيدًا"
+        AppLanguage.PORTUGUESE -> "Verifica automaticamente configurações que podem afetar a revisão; bloqueios impedem a exportação e avisos pedem confirmação"
+        AppLanguage.SPANISH -> "Comprueba automáticamente configuraciones que pueden afectar la revisión; los bloqueos detienen la exportación y los avisos piden confirmación"
+        AppLanguage.FRENCH -> "Vérifie automatiquement les configs pouvant affecter la revue ; les bloqueurs arrêtent l'export, les avertissements demandent confirmation"
+        AppLanguage.GERMAN -> "Prüft automatisch Konfigurationen, die die Prüfung beeinflussen können; Blocker stoppen den Export, Warnungen brauchen Bestätigung"
+        AppLanguage.RUSSIAN -> "Автопроверка конфигураций, влияющих на модерацию; блокирующие проблемы останавливают экспорт, предупреждения требуют подтверждения"
+        AppLanguage.JAPANESE -> "審査に影響しうる設定を自動チェック。ブロッカーはエクスポートを止め、警告は確認後に続行できます"
+        AppLanguage.KOREAN -> "심사에 영향을 줄 수 있는 설정을 자동 검사합니다. 차단 항목은 내보내기를 막고, 경고는 확인 후 계속할 수 있습니다"
+    }
+    fun playStoreAppCount(total: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "共 %d 个应用"
+        AppLanguage.ENGLISH -> "%d apps"
+        AppLanguage.ARABIC -> "%d تطبيقات"
+        AppLanguage.PORTUGUESE -> "%d apps"
+        AppLanguage.SPANISH -> "%d apps"
+        AppLanguage.FRENCH -> "%d apps"
+        AppLanguage.GERMAN -> "%d Apps"
+        AppLanguage.RUSSIAN -> "%d приложений"
+        AppLanguage.JAPANESE -> "%d 件のアプリ"
+        AppLanguage.KOREAN -> "앱 %d개"
+    }.let { String.format(it, total) }
+    val playStoreNoMatch: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有匹配的应用"
+        AppLanguage.ENGLISH -> "No matching apps"
+        AppLanguage.ARABIC -> "لا توجد تطبيقات مطابقة"
+        AppLanguage.PORTUGUESE -> "Nenhum app correspondente"
+        AppLanguage.SPANISH -> "No hay apps coincidentes"
+        AppLanguage.FRENCH -> "Aucune app correspondante"
+        AppLanguage.GERMAN -> "Keine passenden Apps"
+        AppLanguage.RUSSIAN -> "Нет подходящих приложений"
+        AppLanguage.JAPANESE -> "一致するアプリがありません"
+        AppLanguage.KOREAN -> "일치하는 앱이 없습니다"
+    }
+    val playStoreHasApkHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已找到可用 APK，导出 AAB 时会优先复用，速度更快。"
+        AppLanguage.ENGLISH -> "A built APK is available and will be reused for faster AAB export."
+        AppLanguage.ARABIC -> "يتوفر APK مبني وسيُعاد استخدامه لتصدير AAB بسرعة أكبر."
+        AppLanguage.PORTUGUESE -> "Há um APK pronto; ele será reutilizado para exportar o AAB mais rápido."
+        AppLanguage.SPANISH -> "Hay un APK listo; se reutilizará para exportar el AAB más rápido."
+        AppLanguage.FRENCH -> "Un APK existant est disponible et sera réutilisé pour un export AAB plus rapide."
+        AppLanguage.GERMAN -> "Ein fertiges APK ist vorhanden und wird für einen schnelleren AAB-Export wiederverwendet."
+        AppLanguage.RUSSIAN -> "Найден готовый APK — он будет переиспользован для более быстрого экспорта AAB."
+        AppLanguage.JAPANESE -> "利用可能な APK が見つかりました。AAB エクスポート時に再利用して高速化します。"
+        AppLanguage.KOREAN -> "사용 가능한 APK가 있어 AAB 내보내기 시 재사용되어 더 빠릅니다."
+    }
+    val playStoreNoApkHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "尚未找到已构建 APK，导出时会先构建 APK 再打包 AAB。"
+        AppLanguage.ENGLISH -> "No built APK found yet. Export will build an APK first, then package the AAB."
+        AppLanguage.ARABIC -> "لم يتم العثور على APK مبني بعد. سيُبنى APK أولاً ثم يُحزم AAB."
+        AppLanguage.PORTUGUESE -> "Nenhum APK pronto ainda. A exportação fará o APK primeiro e depois o AAB."
+        AppLanguage.SPANISH -> "Aún no hay un APK listo. La exportación construirá el APK y luego empaquetará el AAB."
+        AppLanguage.FRENCH -> "Aucun APK prêt pour l'instant. L'export construira d'abord l'APK puis le AAB."
+        AppLanguage.GERMAN -> "Noch kein fertiges APK gefunden. Beim Export wird zuerst ein APK gebaut und dann das AAB."
+        AppLanguage.RUSSIAN -> "Готовый APK пока не найден. При экспорте сначала соберётся APK, затем AAB."
+        AppLanguage.JAPANESE -> "構築済み APK はまだありません。エクスポート時に先に APK を作り、その後 AAB を作成します。"
+        AppLanguage.KOREAN -> "빌드된 APK가 아직 없습니다. 내보내기 시 APK를 먼저 만든 뒤 AAB를 패키징합니다."
+    }
+    val playStoreExportBlockedHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "存在阻塞问题，请先修复后再导出 AAB。"
+        AppLanguage.ENGLISH -> "Blocking issues found. Fix them before exporting an AAB."
+        AppLanguage.ARABIC -> "توجد مشكلات مانعة. أصلحها قبل تصدير AAB."
+        AppLanguage.PORTUGUESE -> "Há problemas bloqueantes. Corrija-os antes de exportar o AAB."
+        AppLanguage.SPANISH -> "Hay problemas bloqueantes. Corrígelos antes de exportar el AAB."
+        AppLanguage.FRENCH -> "Des problèmes bloquants ont été trouvés. Corrigez-les avant d'exporter l'AAB."
+        AppLanguage.GERMAN -> "Es gibt blockierende Probleme. Beheben Sie sie vor dem AAB-Export."
+        AppLanguage.RUSSIAN -> "Есть блокирующие проблемы. Исправьте их перед экспортом AAB."
+        AppLanguage.JAPANESE -> "ブロッカーがあります。AAB エクスポート前に修正してください。"
+        AppLanguage.KOREAN -> "차단 문제가 있습니다. AAB를 내보내기 전에 수정하세요."
+    }
+    val playStoreFixBeforeExport: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "先修复阻塞项"
+        AppLanguage.ENGLISH -> "Fix blockers first"
+        AppLanguage.ARABIC -> "أصلح العناصر المانعة أولاً"
+        AppLanguage.PORTUGUESE -> "Corrija os bloqueios primeiro"
+        AppLanguage.SPANISH -> "Corrige los bloqueos primero"
+        AppLanguage.FRENCH -> "Corriger les bloqueurs d'abord"
+        AppLanguage.GERMAN -> "Zuerst Blocker beheben"
+        AppLanguage.RUSSIAN -> "Сначала исправьте блокирующие"
+        AppLanguage.JAPANESE -> "先にブロッカーを修正"
+        AppLanguage.KOREAN -> "먼저 차단 항목 수정"
+    }
+    val playStoreExportWarningTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "仍要导出吗？"
+        AppLanguage.ENGLISH -> "Export anyway?"
+        AppLanguage.ARABIC -> "هل تريد التصدير على أي حال؟"
+        AppLanguage.PORTUGUESE -> "Exportar mesmo assim?"
+        AppLanguage.SPANISH -> "¿Exportar de todos modos?"
+        AppLanguage.FRENCH -> "Exporter quand même ?"
+        AppLanguage.GERMAN -> "Trotzdem exportieren?"
+        AppLanguage.RUSSIAN -> "Всё равно экспортировать?"
+        AppLanguage.JAPANESE -> "それでもエクスポートしますか？"
+        AppLanguage.KOREAN -> "그래도 내보낼까요?"
+    }
+    val playStoreExportWarningBody: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "检测到 %d 个警告项。它们不一定阻止导出，但可能影响 Google Play 审核。"
+        AppLanguage.ENGLISH -> "%d warning(s) found. They may not block export, but can affect Google Play review."
+        AppLanguage.ARABIC -> "تم العثور على %d تحذير(ات). قد لا تمنع التصدير، لكنها قد تؤثر على مراجعة Google Play."
+        AppLanguage.PORTUGUESE -> "%d aviso(s) encontrado(s). Eles podem não bloquear a exportação, mas podem afetar a revisão do Google Play."
+        AppLanguage.SPANISH -> "Se encontraron %d aviso(s). Puede que no bloqueen la exportación, pero pueden afectar la revisión de Google Play."
+        AppLanguage.FRENCH -> "%d avertissement(s) trouvé(s). Ils ne bloquent pas forcément l'export, mais peuvent affecter la revue Google Play."
+        AppLanguage.GERMAN -> "%d Warnung(en) gefunden. Sie blockieren den Export nicht zwingend, können aber die Google-Play-Prüfung beeinflussen."
+        AppLanguage.RUSSIAN -> "Найдено предупреждений: %d. Они могут не блокировать экспорт, но повлиять на проверку Google Play."
+        AppLanguage.JAPANESE -> "%d 件の警告があります。エクスポートは可能な場合がありますが、Google Play の審査に影響することがあります。"
+        AppLanguage.KOREAN -> "경고 %d개가 있습니다. 내보내기를 막지는 않을 수 있지만 Google Play 심사에 영향을 줄 수 있습니다."
+    }
+    val playStoreExportContinueAnyway: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "仍然导出"
+        AppLanguage.ENGLISH -> "Export anyway"
+        AppLanguage.ARABIC -> "التصدير على أي حال"
+        AppLanguage.PORTUGUESE -> "Exportar mesmo assim"
+        AppLanguage.SPANISH -> "Exportar de todos modos"
+        AppLanguage.FRENCH -> "Exporter quand même"
+        AppLanguage.GERMAN -> "Trotzdem exportieren"
+        AppLanguage.RUSSIAN -> "Всё равно экспортировать"
+        AppLanguage.JAPANESE -> "それでもエクスポート"
+        AppLanguage.KOREAN -> "그래도 내보내기"
+    }
+    val playStoreRecentAabs: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "最近导出的 AAB"
+        AppLanguage.ENGLISH -> "Recent AAB exports"
+        AppLanguage.ARABIC -> "عمليات تصدير AAB الأخيرة"
+        AppLanguage.PORTUGUESE -> "Exportações AAB recentes"
+        AppLanguage.SPANISH -> "Exportaciones AAB recientes"
+        AppLanguage.FRENCH -> "Exports AAB récents"
+        AppLanguage.GERMAN -> "Aktuelle AAB-Exporte"
+        AppLanguage.RUSSIAN -> "Недавние экспорты AAB"
+        AppLanguage.JAPANESE -> "最近の AAB エクスポート"
+        AppLanguage.KOREAN -> "최근 AAB 내보내기"
     }
     val apkExportPreflightTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "导出前检查"
