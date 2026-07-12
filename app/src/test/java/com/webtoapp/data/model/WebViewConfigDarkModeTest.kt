@@ -73,7 +73,7 @@ class WebViewConfigDarkModeTest {
     @Test
     fun `StatusBarColorMode enum has all expected values`() {
         assertThat(StatusBarColorMode.values().map { it.name }).containsExactly(
-            "THEME", "CUSTOM", "TRANSPARENT"
+            "THEME", "PAGE_TOP", "TRANSPARENT", "CUSTOM"
         )
     }
 
