@@ -1,7 +1,6 @@
 package com.webtoapp.ui.screens
 
 import android.net.Uri
-import com.webtoapp.ui.components.PremiumOutlinedButton
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -9,55 +8,119 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.FileOpen
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import com.webtoapp.ui.components.EnhancedElevatedCard
-import com.webtoapp.ui.components.PremiumTextField
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.adblock.AdBlocker
-import com.webtoapp.core.adblock.HostsSource
 import com.webtoapp.core.adblock.DownloadProgress
+import com.webtoapp.core.adblock.HostsSource
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaButton
+import com.webtoapp.ui.design.WtaButtonSize
+import com.webtoapp.ui.design.WtaButtonVariant
+import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaFullEmptyState
+import com.webtoapp.ui.design.WtaScreen
+import com.webtoapp.ui.design.WtaTextField
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import com.webtoapp.ui.design.WtaBackground
-import androidx.compose.ui.graphics.Color
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+private enum class HostsFilter {
+    ALL,
+    DOWNLOADED,
+    NOT_DOWNLOADED
+}
+
 @Composable
-fun HostsAdBlockScreen(
-    onBack: () -> Unit
-) {
+fun HostsAdBlockScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val adBlocker = remember {
+        org.koin.java.KoinJavaComponent.get<AdBlocker>(AdBlocker::class.java)
+    }
 
-    val adBlocker = remember { org.koin.java.KoinJavaComponent.get<com.webtoapp.core.adblock.AdBlocker>(com.webtoapp.core.adblock.AdBlocker::class.java) }
-
-    var hostsRulesCount by remember { mutableIntStateOf(adBlocker.getImportedHostsRuleCount()) }
+    var hostsRulesCount by remember { mutableIntStateOf(0) }
+    var activeHostsCount by remember { mutableIntStateOf(0) }
+    var enabledSources by remember { mutableStateOf(emptySet<String>()) }
+    var disabledSources by remember { mutableStateOf(emptySet<String>()) }
+    var sourceCounts by remember { mutableStateOf(emptyMap<String, Int>()) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var filter by rememberSaveable { mutableStateOf(HostsFilter.ALL.name) }
     var showUrlDialog by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
     var showDeleteSourceDialog by remember { mutableStateOf<HostsSource?>(null) }
     var importUrl by remember { mutableStateOf("") }
-
-    var enabledSources by remember { mutableStateOf(adBlocker.getEnabledHostsSources()) }
-    var disabledSources by remember { mutableStateOf(adBlocker.getDisabledHostsSources()) }
+    var urlImporting by remember { mutableStateOf(false) }
 
     val downloadProgress = remember { mutableStateMapOf<String, DownloadProgress>() }
     val downloadJobs = remember { mutableStateMapOf<String, Job>() }
-    var expandedSources by remember { mutableStateOf(emptySet<String>()) }
+    val popularSources = remember { AdBlocker.getPopularHostsSources() }
+
+    fun refreshState() {
+        hostsRulesCount = adBlocker.getImportedHostsRuleCount()
+        activeHostsCount = adBlocker.getHostsFileRuleCount()
+        enabledSources = adBlocker.getEnabledHostsSources()
+        disabledSources = adBlocker.getDisabledHostsSources()
+        val keys = adBlocker.getAllDownloadedSourceKeys()
+        sourceCounts = keys.associateWith { adBlocker.getSourceRuleCount(it) }
+    }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -67,12 +130,10 @@ fun HostsAdBlockScreen(
                 val result = adBlocker.importHostsFromFile(context, it)
                 result.fold(
                     onSuccess = { count ->
-                        hostsRulesCount = adBlocker.getImportedHostsRuleCount()
-                        enabledSources = adBlocker.getEnabledHostsSources()
-                        disabledSources = adBlocker.getDisabledHostsSources()
                         adBlocker.saveHostsRules(context)
+                        refreshState()
                         snackbarHostState.showSnackbar(
-                            String.format(java.util.Locale.getDefault(), Strings.importHostsSuccess, count)
+                            String.format(Locale.getDefault(), Strings.importHostsSuccess, count)
                         )
                     },
                     onFailure = { error ->
@@ -87,258 +148,212 @@ fun HostsAdBlockScreen(
 
     LaunchedEffect(Unit) {
         adBlocker.loadHostsRules(context)
-        hostsRulesCount = adBlocker.getImportedHostsRuleCount()
-        enabledSources = adBlocker.getEnabledHostsSources()
-        disabledSources = adBlocker.getDisabledHostsSources()
+        refreshState()
     }
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(Strings.hostsAdBlock, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold)
-                        Text(
-                            Strings.hostsAdBlockSubtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+    val activeFilter = remember(filter) {
+        runCatching { HostsFilter.valueOf(filter) }.getOrDefault(HostsFilter.ALL)
+    }
+
+    val filteredSources = remember(popularSources, query, activeFilter, enabledSources, disabledSources) {
+        val q = query.trim()
+        popularSources.filter { source ->
+            val downloaded = enabledSources.contains(source.url) || disabledSources.contains(source.url)
+            val matchesFilter = when (activeFilter) {
+                HostsFilter.ALL -> true
+                HostsFilter.DOWNLOADED -> downloaded
+                HostsFilter.NOT_DOWNLOADED -> !downloaded
+            }
+            val matchesQuery = q.isEmpty() ||
+                source.name.contains(q, ignoreCase = true) ||
+                source.description.contains(q, ignoreCase = true) ||
+                source.url.contains(q, ignoreCase = true)
+            matchesFilter && matchesQuery
+        }
+    }
+
+    fun importSource(source: HostsSource) {
+        if (downloadJobs.containsKey(source.url)) return
+        val job = scope.launch {
+            downloadProgress[source.url] = DownloadProgress(0, 0, 0)
+            val result = adBlocker.importHostsFromUrl(source.url, context) { p ->
+                downloadProgress[source.url] = p
+            }
+            downloadProgress.remove(source.url)
+            downloadJobs.remove(source.url)
+            result.fold(
+                onSuccess = { count ->
+                    adBlocker.saveHostsRules(context)
+                    refreshState()
+                    snackbarHostState.showSnackbar(
+                        String.format(Locale.getDefault(), Strings.importHostsSuccess, count)
+                    )
+                },
+                onFailure = { error ->
+                    val isCancel = error is kotlinx.coroutines.CancellationException ||
+                        error.message?.contains("cancelled by user", ignoreCase = true) == true
+                    if (isCancel) {
+                        snackbarHostState.showSnackbar(Strings.downloadCanceled)
+                    } else {
+                        snackbarHostState.showSnackbar(
+                            "${Strings.importHostsFailed}: ${error.message}"
                         )
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, Strings.back)
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-
-                    containerColor = Color.Transparent,
-                    scrolledContainerColor = Color.Transparent
-                )
+                }
             )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        WtaBackground(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-        LazyColumn(
-            modifier = Modifier,
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+        }
+        downloadJobs[source.url] = job
+    }
 
-            item {
-                EnhancedElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(
-                                String.format(java.util.Locale.getDefault(), Strings.hostsRulesCount, hostsRulesCount),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            if (enabledSources.isNotEmpty() || disabledSources.isNotEmpty()) {
-                                val downloadedCount = enabledSources.size + disabledSources.size
-                                Text(
-                                    String.format(
-                                        java.util.Locale.getDefault(),
-                                        Strings.hostsSourcesSummary,
-                                        downloadedCount
-                                    ),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                )
-                            }
-                        }
-
-                        if (hostsRulesCount > 0 || enabledSources.isNotEmpty()) {
-                            Icon(
-                                Icons.Outlined.Shield,
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
+    WtaScreen(
+        title = Strings.hostsAdBlock,
+        subtitle = Strings.hostsAdBlockSubtitle,
+        onBack = onBack,
+        snackbarHostState = snackbarHostState,
+        actions = {
+            if (hostsRulesCount > 0 || enabledSources.isNotEmpty() || disabledSources.isNotEmpty()) {
+                IconButton(onClick = { showClearDialog = true }) {
+                    Icon(Icons.Outlined.DeleteSweep, contentDescription = Strings.clearHostsRules)
                 }
             }
-
+        }
+    ) { _ ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             item {
-                Text(
-                    Strings.importFromFile,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium
+                SummaryCard(
+                    rulesCount = hostsRulesCount,
+                    activeCount = activeHostsCount,
+                    sourcesCount = enabledSources.size + disabledSources.size,
+                    enabledCount = enabledSources.size
                 )
             }
 
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-
-                    EnhancedElevatedCard(
+                    ImportActionCard(
+                        title = Strings.importFromFile,
+                        icon = Icons.Outlined.FileOpen,
                         onClick = { filePickerLauncher.launch("*/*") },
-                        modifier = Modifier.weight(weight = 1f, fill = true)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                Icons.Outlined.FileOpen,
-                                contentDescription = null,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                Strings.importFromFile,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
-
-                    EnhancedElevatedCard(
+                        modifier = Modifier.weight(1f)
+                    )
+                    ImportActionCard(
+                        title = Strings.importFromUrl,
+                        icon = Icons.Outlined.Link,
                         onClick = { showUrlDialog = true },
-                        modifier = Modifier.weight(weight = 1f, fill = true)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                Icons.Outlined.Link,
-                                contentDescription = null,
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                Strings.importFromUrl,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    }
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 
             item {
-                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     Strings.popularHostsSources,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
-            items(AdBlocker.POPULAR_HOSTS_SOURCES) { source ->
-                val isDownloaded = enabledSources.contains(source.url) || disabledSources.contains(source.url)
-                val isDownloading = downloadProgress.containsKey(source.url)
-                val progress = downloadProgress[source.url]
-                val isExpanded = expandedSources.contains(source.url)
-
-                HostsSourceCard(
-                    source = source,
-                    isDownloaded = isDownloaded,
-                    isDownloading = isDownloading,
-                    progress = progress,
-                    isExpanded = isExpanded,
-                    onImport = {
-                        expandedSources = expandedSources + source.url
-                        val job = scope.launch {
-                            downloadProgress[source.url] = DownloadProgress(0, 0, 0)
-                            val result = adBlocker.importHostsFromUrl(source.url, context) { p ->
-                                downloadProgress[source.url] = p
+            item {
+                WtaTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = Strings.hostsSearchHint,
+                    leadingIcon = Icons.Outlined.Search,
+                    singleLine = true,
+                    trailingIcon = if (query.isNotEmpty()) {
+                        {
+                            IconButton(onClick = { query = "" }) {
+                                Icon(Icons.Outlined.Clear, contentDescription = Strings.clear)
                             }
+                        }
+                    } else null
+                )
+            }
+
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    WtaChip(
+                        selected = activeFilter == HostsFilter.ALL,
+                        onClick = { filter = HostsFilter.ALL.name },
+                        label = Strings.all,
+                        showSelectedCheck = false
+                    )
+                    WtaChip(
+                        selected = activeFilter == HostsFilter.DOWNLOADED,
+                        onClick = { filter = HostsFilter.DOWNLOADED.name },
+                        label = Strings.hostsFilterDownloaded,
+                        showSelectedCheck = false
+                    )
+                    WtaChip(
+                        selected = activeFilter == HostsFilter.NOT_DOWNLOADED,
+                        onClick = { filter = HostsFilter.NOT_DOWNLOADED.name },
+                        label = Strings.hostsFilterNotDownloaded,
+                        showSelectedCheck = false
+                    )
+                }
+            }
+
+            if (filteredSources.isEmpty()) {
+                item {
+                    WtaFullEmptyState(
+                        title = Strings.hostsNoMatch,
+                        message = Strings.hostsNoMatchHint,
+                        icon = Icons.Outlined.Search,
+                        fillMaxSize = false
+                    )
+                }
+            } else {
+                items(filteredSources, key = { it.url }) { source ->
+                    val downloaded = enabledSources.contains(source.url) || disabledSources.contains(source.url)
+                    val enabled = enabledSources.contains(source.url)
+                    val isDownloading = downloadProgress.containsKey(source.url)
+                    val progress = downloadProgress[source.url]
+                    val ruleCount = sourceCounts[source.url] ?: 0
+
+                    HostsSourceCard(
+                        source = source,
+                        isDownloaded = downloaded,
+                        isEnabled = enabled,
+                        isDownloading = isDownloading,
+                        progress = progress,
+                        ruleCount = ruleCount,
+                        onImport = { importSource(source) },
+                        onCancel = {
+                            downloadJobs[source.url]?.cancel()
                             downloadProgress.remove(source.url)
                             downloadJobs.remove(source.url)
-                            result.fold(
-                                onSuccess = { count ->
-                                    hostsRulesCount = adBlocker.getImportedHostsRuleCount()
-                                    enabledSources = adBlocker.getEnabledHostsSources()
-                                    disabledSources = adBlocker.getDisabledHostsSources()
-                                    adBlocker.saveHostsRules(context)
-                                    expandedSources = expandedSources - source.url
-                                    snackbarHostState.showSnackbar(
-                                        String.format(java.util.Locale.getDefault(), Strings.importHostsSuccess, count)
-                                    )
-                                },
-                                onFailure = { error ->
-                                    val isCancel = error is kotlinx.coroutines.CancellationException ||
-                                        error.message?.contains("cancelled by user", ignoreCase = true) == true
-                                    if (isCancel) {
-                                        snackbarHostState.showSnackbar(Strings.downloadCanceled)
-                                    } else {
-                                        snackbarHostState.showSnackbar(
-                                            "${Strings.importHostsFailed}: ${error.message}"
-                                        )
-                                    }
-                                    expandedSources = expandedSources - source.url
-                                }
-                            )
-                        }
-                        downloadJobs[source.url] = job
-                    },
-                    onToggleDownload = {
-                        downloadJobs[source.url]?.cancel()
-                        downloadProgress.remove(source.url)
-                        downloadJobs.remove(source.url)
-                        expandedSources = expandedSources - source.url
-                    },
-                    onToggleExpand = {
-                        expandedSources = if (isExpanded) expandedSources - source.url else expandedSources + source.url
-                    },
-                    onDelete = {
-                        showDeleteSourceDialog = source
-                    }
-                )
-            }
-
-            if (hostsRulesCount > 0 || enabledSources.isNotEmpty() || disabledSources.isNotEmpty()) {
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    PremiumOutlinedButton(
-                        onClick = { showClearDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Icon(Icons.Outlined.DeleteSweep, null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(Strings.clearHostsRules)
-                    }
+                        },
+                        onToggleEnabled = { checked ->
+                            scope.launch {
+                                adBlocker.setHostsSourceEnabled(context, source.url, checked)
+                                adBlocker.saveHostsRules(context)
+                                refreshState()
+                                snackbarHostState.showSnackbar(
+                                    if (checked) Strings.hostsSourceEnabled else Strings.hostsSourceDisabled
+                                )
+                            }
+                        },
+                        onDelete = { showDeleteSourceDialog = source }
+                    )
                 }
             }
 
             item {
-                Spacer(modifier = Modifier.height(8.dp))
-                EnhancedElevatedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
+                WtaCard(tone = WtaCardTone.Surface) {
+                    Row(modifier = Modifier.padding(16.dp)) {
                         Icon(
                             Icons.Outlined.Info,
                             contentDescription = null,
@@ -354,59 +369,83 @@ fun HostsAdBlockScreen(
                     }
                 }
             }
+
+            if (hostsRulesCount > 0 || enabledSources.isNotEmpty() || disabledSources.isNotEmpty()) {
+                item {
+                    WtaButton(
+                        onClick = { showClearDialog = true },
+                        text = Strings.clearHostsRules,
+                        variant = WtaButtonVariant.Outlined,
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = Icons.Outlined.DeleteSweep
+                    )
+                }
+            }
+
+            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 
     if (showUrlDialog) {
         AlertDialog(
-            onDismissRequest = { showUrlDialog = false },
+            onDismissRequest = {
+                if (!urlImporting) {
+                    showUrlDialog = false
+                    importUrl = ""
+                }
+            },
             title = { Text(Strings.importFromUrl) },
             text = {
-                Column {
-                    PremiumTextField(
-                        value = importUrl,
-                        onValueChange = { importUrl = it },
-                        label = { Text(Strings.importHostsUrl) },
-                        placeholder = { Text(Strings.importHostsUrlHint) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+                WtaTextField(
+                    value = importUrl,
+                    onValueChange = { importUrl = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = Strings.importHostsUrl,
+                    placeholder = Strings.importHostsUrlHint,
+                    singleLine = true,
+                    enabled = !urlImporting
+                )
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        if (importUrl.isNotBlank()) {
-                            scope.launch {
-                                showUrlDialog = false
-                                val result = adBlocker.importHostsFromUrl(importUrl, context)
-                                result.fold(
-                                    onSuccess = { count ->
-                                        hostsRulesCount = adBlocker.getImportedHostsRuleCount()
-                                        enabledSources = adBlocker.getEnabledHostsSources()
-                                        disabledSources = adBlocker.getDisabledHostsSources()
-                                        adBlocker.saveHostsRules(context)
-                                        snackbarHostState.showSnackbar(
-                                            String.format(java.util.Locale.getDefault(), Strings.importHostsSuccess, count)
-                                        )
-                                        importUrl = ""
-                                    },
-                                    onFailure = { error ->
-                                        snackbarHostState.showSnackbar(
-                                            "${Strings.importHostsFailed}: ${error.message}"
-                                        )
-                                    }
-                                )
-                            }
+                        if (importUrl.isBlank() || urlImporting) return@TextButton
+                        scope.launch {
+                            urlImporting = true
+                            val result = adBlocker.importHostsFromUrl(importUrl.trim(), context)
+                            urlImporting = false
+                            result.fold(
+                                onSuccess = { count ->
+                                    adBlocker.saveHostsRules(context)
+                                    refreshState()
+                                    showUrlDialog = false
+                                    importUrl = ""
+                                    snackbarHostState.showSnackbar(
+                                        String.format(Locale.getDefault(), Strings.importHostsSuccess, count)
+                                    )
+                                },
+                                onFailure = { error ->
+                                    snackbarHostState.showSnackbar(
+                                        "${Strings.importHostsFailed}: ${error.message}"
+                                    )
+                                }
+                            )
                         }
                     },
-                    enabled = importUrl.isNotBlank()
+                    enabled = importUrl.isNotBlank() && !urlImporting
                 ) {
-                    Text(Strings.downloadAndImport)
+                    Text(if (urlImporting) Strings.downloading else Strings.downloadAndImport)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showUrlDialog = false; importUrl = "" }) {
+                TextButton(
+                    onClick = {
+                        if (!urlImporting) {
+                            showUrlDialog = false
+                            importUrl = ""
+                        }
+                    }
+                ) {
                     Text(Strings.btnCancel)
                 }
             }
@@ -424,9 +463,7 @@ fun HostsAdBlockScreen(
                         scope.launch {
                             adBlocker.clearHostsFileRules()
                             adBlocker.saveHostsRules(context)
-                            hostsRulesCount = 0
-                            enabledSources = emptySet()
-                            disabledSources = emptySet()
+                            refreshState()
                             showClearDialog = false
                             snackbarHostState.showSnackbar(Strings.hostsCleared)
                         }
@@ -435,7 +472,7 @@ fun HostsAdBlockScreen(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text(Strings.btnConfirm)
+                    Text(Strings.confirm)
                 }
             },
             dismissButton = {
@@ -450,16 +487,22 @@ fun HostsAdBlockScreen(
         AlertDialog(
             onDismissRequest = { showDeleteSourceDialog = null },
             title = { Text(Strings.deleteHostsSource) },
-            text = { Text(String.format(java.util.Locale.getDefault(), Strings.deleteHostsSourceConfirm, source.name)) },
+            text = {
+                Text(
+                    String.format(
+                        Locale.getDefault(),
+                        Strings.deleteHostsSourceConfirm,
+                        source.name
+                    )
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
                         scope.launch {
                             adBlocker.removeHostsSource(context, source.url)
-                            enabledSources = adBlocker.getEnabledHostsSources()
-                            disabledSources = adBlocker.getDisabledHostsSources()
-                            hostsRulesCount = adBlocker.getImportedHostsRuleCount()
                             adBlocker.saveHostsRules(context)
+                            refreshState()
                             showDeleteSourceDialog = null
                             snackbarHostState.showSnackbar(Strings.hostsSourceDeleted)
                         }
@@ -468,7 +511,7 @@ fun HostsAdBlockScreen(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text(Strings.btnConfirm)
+                    Text(Strings.confirm)
                 }
             },
             dismissButton = {
@@ -478,108 +521,179 @@ fun HostsAdBlockScreen(
             }
         )
     }
+}
+
+@Composable
+private fun SummaryCard(
+    rulesCount: Int,
+    activeCount: Int,
+    sourcesCount: Int,
+    enabledCount: Int
+) {
+    WtaCard(tone = WtaCardTone.Highlighted) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Outlined.Shield,
+                contentDescription = null,
+                modifier = Modifier.size(36.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.width(14.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    String.format(Locale.getDefault(), Strings.hostsRulesCount, rulesCount),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    String.format(
+                        Locale.getDefault(),
+                        Strings.hostsActiveRulesCount,
+                        activeCount
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (sourcesCount > 0) {
+                    Text(
+                        String.format(
+                            Locale.getDefault(),
+                            Strings.hostsSourcesEnabledSummary,
+                            enabledCount,
+                            sourcesCount
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun ImportActionCard(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    WtaCard(
+        onClick = onClick,
+        modifier = modifier,
+        tone = WtaCardTone.Surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.height(8.dp))
+            Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        }
+    }
 }
 
 @Composable
 private fun HostsSourceCard(
     source: HostsSource,
     isDownloaded: Boolean,
+    isEnabled: Boolean,
     isDownloading: Boolean,
     progress: DownloadProgress?,
-    isExpanded: Boolean,
+    ruleCount: Int,
     onImport: () -> Unit,
-    onToggleDownload: () -> Unit,
-    onToggleExpand: () -> Unit,
+    onCancel: () -> Unit,
+    onToggleEnabled: (Boolean) -> Unit,
     onDelete: () -> Unit
 ) {
-    EnhancedElevatedCard(
-        modifier = Modifier.fillMaxWidth()
-    ) {
+    WtaCard(tone = WtaCardTone.Surface) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             source.name,
                             style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Medium
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
-                        if (isDownloading) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Surface(
-                                shape = MaterialTheme.shapes.small,
-                                color = MaterialTheme.colorScheme.tertiaryContainer
-                            ) {
-                                Text(
-                                    Strings.downloading,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    color = MaterialTheme.colorScheme.tertiary
-                                )
+                        Spacer(Modifier.width(8.dp))
+                        StatusBadge(
+                            text = when {
+                                isDownloading -> Strings.downloading
+                                isDownloaded && isEnabled -> Strings.hostsSourceEnabled
+                                isDownloaded -> Strings.hostsSourceDisabled
+                                else -> Strings.hostsFilterNotDownloaded
+                            },
+                            tonal = when {
+                                isDownloading -> MaterialTheme.colorScheme.tertiaryContainer
+                                isDownloaded && isEnabled -> MaterialTheme.colorScheme.primaryContainer
+                                isDownloaded -> MaterialTheme.colorScheme.surfaceContainerHighest
+                                else -> MaterialTheme.colorScheme.surfaceVariant
+                            },
+                            content = when {
+                                isDownloading -> MaterialTheme.colorScheme.tertiary
+                                isDownloaded && isEnabled -> MaterialTheme.colorScheme.primary
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
                             }
-                        } else if (isDownloaded) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Surface(
-                                shape = MaterialTheme.shapes.small,
-                                color = MaterialTheme.colorScheme.primaryContainer
-                            ) {
-                                Text(
-                                    Strings.hostsSourceDownloaded,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
+                        )
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(Modifier.height(4.dp))
                     Text(
                         source.description,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
-                }
-
-                if (isDownloading) {
-                    IconButton(onClick = onToggleExpand, modifier = Modifier.size(28.dp)) {
-                        Icon(
-                            if (isExpanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
+                    if (isDownloaded && ruleCount > 0) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            String.format(Locale.getDefault(), Strings.hostsSourceRuleCount, ruleCount),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
+                if (isDownloaded && !isDownloading) {
+                    Switch(
+                        checked = isEnabled,
+                        onCheckedChange = onToggleEnabled
+                    )
                 }
             }
 
             AnimatedVisibility(
-                visible = isDownloading && isExpanded,
+                visible = isDownloading,
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
-                DownloadProgressPanel(
-                    progress = progress,
-                    onCancel = onToggleDownload
-                )
+                DownloadProgressPanel(progress = progress, onCancel = onCancel)
             }
 
             if (!isDownloading) {
-                Spacer(modifier = Modifier.height(12.dp))
                 if (isDownloaded) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         FilledTonalButton(
                             onClick = onImport,
@@ -587,10 +701,9 @@ private fun HostsSourceCard(
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(Icons.Outlined.Refresh, null, Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(Modifier.width(4.dp))
                             Text(Strings.retry, style = MaterialTheme.typography.labelMedium)
                         }
-
                         FilledTonalButton(
                             onClick = onDelete,
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
@@ -600,23 +713,34 @@ private fun HostsSourceCard(
                             modifier = Modifier.weight(1f)
                         ) {
                             Icon(Icons.Outlined.Delete, null, Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(Modifier.width(4.dp))
                             Text(Strings.delete, style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 } else {
-                    FilledTonalButton(
+                    WtaButton(
                         onClick = onImport,
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(Icons.Outlined.Download, null, Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(Strings.downloadAndImport, style = MaterialTheme.typography.labelMedium)
-                    }
+                        text = Strings.downloadAndImport,
+                        variant = WtaButtonVariant.Tonal,
+                        size = WtaButtonSize.Small,
+                        modifier = Modifier.fillMaxWidth(),
+                        leadingIcon = Icons.Outlined.Download
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun StatusBadge(text: String, tonal: androidx.compose.ui.graphics.Color, content: androidx.compose.ui.graphics.Color) {
+    Surface(shape = RoundedCornerShape(999.dp), color = tonal) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = content,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+        )
     }
 }
 
@@ -626,28 +750,16 @@ private fun DownloadProgressPanel(
     onCancel: () -> Unit
 ) {
     val p = progress ?: DownloadProgress(0, 0, 0)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 12.dp)
-    ) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         if (p.isIndeterminate) {
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.tertiary,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
         } else {
             LinearProgressIndicator(
                 progress = { p.fraction },
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.tertiary,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                modifier = Modifier.fillMaxWidth()
             )
         }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
+        Spacer(Modifier.height(6.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -663,7 +775,7 @@ private fun DownloadProgressPanel(
                 contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
             ) {
                 Icon(Icons.Outlined.Cancel, null, Modifier.size(14.dp))
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(Modifier.width(4.dp))
                 Text(Strings.cancel, style = MaterialTheme.typography.labelSmall)
             }
         }
@@ -686,9 +798,9 @@ private fun formatDownloadStats(p: DownloadProgress): String {
 private fun formatBytes(bytes: Long): String {
     if (bytes < 1024) return "${bytes} B"
     val kb = bytes / 1024.0
-    if (kb < 1024) return String.format(java.util.Locale.getDefault(), "%.1f KB", kb)
+    if (kb < 1024) return String.format(Locale.getDefault(), "%.1f KB", kb)
     val mb = kb / 1024.0
-    return String.format(java.util.Locale.getDefault(), "%.1f MB", mb)
+    return String.format(Locale.getDefault(), "%.1f MB", mb)
 }
 
 private fun formatEta(seconds: Long): String {

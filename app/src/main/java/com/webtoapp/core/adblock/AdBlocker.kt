@@ -1065,6 +1065,8 @@ class AdBlocker {
     fun isHostsSourceEnabled(url: String): Boolean = enabledHostsSources.contains(url)
     fun getDisabledHostsSources(): Set<String> = disabledHostsSources.toSet()
     fun isHostsSourceDisabled(url: String): Boolean = disabledHostsSources.contains(url)
+    fun getSourceRuleCount(sourceKey: String): Int = sourceRuleCounts[sourceKey] ?: 0
+    fun getAllDownloadedSourceKeys(): Set<String> = enabledHostsSources + disabledHostsSources
     fun isHostsSourceDownloaded(url: String): Boolean =
         enabledHostsSources.contains(url) || disabledHostsSources.contains(url)
 

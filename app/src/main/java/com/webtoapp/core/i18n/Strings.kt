@@ -2983,6 +2983,16 @@ object Strings {
     val downloading: String get() = StringsD.downloading
     val downloadCanceled: String get() = StringsD.downloadCanceled
     val hostsSourcesSummary: String get() = StringsD.hostsSourcesSummary
+    val hostsSearchHint: String get() = StringsD.hostsSearchHint
+    val hostsFilterDownloaded: String get() = StringsD.hostsFilterDownloaded
+    val hostsFilterNotDownloaded: String get() = StringsD.hostsFilterNotDownloaded
+    val hostsNoMatch: String get() = StringsD.hostsNoMatch
+    val hostsNoMatchHint: String get() = StringsD.hostsNoMatchHint
+    val hostsSourceEnabled: String get() = StringsD.hostsSourceEnabled
+    val hostsSourceDisabled: String get() = StringsD.hostsSourceDisabled
+    val hostsSourceRuleCount: String get() = StringsD.hostsSourceRuleCount
+    val hostsActiveRulesCount: String get() = StringsD.hostsActiveRulesCount
+    val hostsSourcesEnabledSummary: String get() = StringsD.hostsSourcesEnabledSummary
     val galleryApp: String get() = StringsD.galleryApp
     val galleryCreateTitle: String get() = StringsD.galleryCreateTitle
     val galleryTabMedia: String get() = StringsD.galleryTabMedia
@@ -42149,6 +42159,127 @@ object StringsD {
         AppLanguage.RUSSIAN -> "Скачано %d списков фильтров"
         AppLanguage.JAPANESE -> "%d件のフィルターリストをダウンロード済み"
         AppLanguage.KOREAN -> "%d개 필터 목록 다운로드됨"
+    }
+
+    val hostsSearchHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "搜索规则源…"
+        AppLanguage.ENGLISH -> "Search filter lists…"
+        AppLanguage.ARABIC -> "ابحث في قوائم التصفية…"
+        AppLanguage.PORTUGUESE -> "Pesquisar listas de filtro…"
+        AppLanguage.SPANISH -> "Buscar listas de filtros…"
+        AppLanguage.FRENCH -> "Rechercher des listes de filtres…"
+        AppLanguage.GERMAN -> "Filterlisten suchen…"
+        AppLanguage.RUSSIAN -> "Поиск списков фильтров…"
+        AppLanguage.JAPANESE -> "フィルターリストを検索…"
+        AppLanguage.KOREAN -> "필터 목록 검색…"
+    }
+    val hostsFilterDownloaded: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已下载"
+        AppLanguage.ENGLISH -> "Downloaded"
+        AppLanguage.ARABIC -> "تم التنزيل"
+        AppLanguage.PORTUGUESE -> "Baixadas"
+        AppLanguage.SPANISH -> "Descargadas"
+        AppLanguage.FRENCH -> "Téléchargées"
+        AppLanguage.GERMAN -> "Heruntergeladen"
+        AppLanguage.RUSSIAN -> "Скачанные"
+        AppLanguage.JAPANESE -> "ダウンロード済み"
+        AppLanguage.KOREAN -> "다운로드됨"
+    }
+    val hostsFilterNotDownloaded: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未下载"
+        AppLanguage.ENGLISH -> "Not downloaded"
+        AppLanguage.ARABIC -> "غير مُنزّل"
+        AppLanguage.PORTUGUESE -> "Não baixadas"
+        AppLanguage.SPANISH -> "No descargadas"
+        AppLanguage.FRENCH -> "Non téléchargées"
+        AppLanguage.GERMAN -> "Nicht heruntergeladen"
+        AppLanguage.RUSSIAN -> "Не скачаны"
+        AppLanguage.JAPANESE -> "未ダウンロード"
+        AppLanguage.KOREAN -> "미다운로드"
+    }
+    val hostsNoMatch: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有匹配的规则源"
+        AppLanguage.ENGLISH -> "No matching filter lists"
+        AppLanguage.ARABIC -> "لا توجد قوائم تصفية مطابقة"
+        AppLanguage.PORTUGUESE -> "Nenhuma lista de filtro correspondente"
+        AppLanguage.SPANISH -> "No hay listas de filtros coincidentes"
+        AppLanguage.FRENCH -> "Aucune liste de filtres correspondante"
+        AppLanguage.GERMAN -> "Keine passenden Filterlisten"
+        AppLanguage.RUSSIAN -> "Нет подходящих списков фильтров"
+        AppLanguage.JAPANESE -> "一致するフィルターリストがありません"
+        AppLanguage.KOREAN -> "일치하는 필터 목록이 없습니다"
+    }
+    val hostsNoMatchHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "试试换个关键词，或切换筛选条件。"
+        AppLanguage.ENGLISH -> "Try another keyword or change the filter."
+        AppLanguage.ARABIC -> "جرّب كلمة أخرى أو غيّر عامل التصفية."
+        AppLanguage.PORTUGUESE -> "Tente outra palavra-chave ou mude o filtro."
+        AppLanguage.SPANISH -> "Prueba otra palabra clave o cambia el filtro."
+        AppLanguage.FRENCH -> "Essayez un autre mot-clé ou changez le filtre."
+        AppLanguage.GERMAN -> "Versuchen Sie ein anderes Stichwort oder ändern Sie den Filter."
+        AppLanguage.RUSSIAN -> "Попробуйте другое ключевое слово или смените фильтр."
+        AppLanguage.JAPANESE -> "別のキーワードを試すか、フィルタを切り替えてください。"
+        AppLanguage.KOREAN -> "다른 키워드를 사용하거나 필터를 바꿔 보세요."
+    }
+    val hostsSourceEnabled: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已启用"
+        AppLanguage.ENGLISH -> "Enabled"
+        AppLanguage.ARABIC -> "مُفعّل"
+        AppLanguage.PORTUGUESE -> "Ativado"
+        AppLanguage.SPANISH -> "Activado"
+        AppLanguage.FRENCH -> "Activé"
+        AppLanguage.GERMAN -> "Aktiviert"
+        AppLanguage.RUSSIAN -> "Включено"
+        AppLanguage.JAPANESE -> "有効"
+        AppLanguage.KOREAN -> "사용 중"
+    }
+    val hostsSourceDisabled: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已停用"
+        AppLanguage.ENGLISH -> "Disabled"
+        AppLanguage.ARABIC -> "مُعطّل"
+        AppLanguage.PORTUGUESE -> "Desativado"
+        AppLanguage.SPANISH -> "Desactivado"
+        AppLanguage.FRENCH -> "Désactivé"
+        AppLanguage.GERMAN -> "Deaktiviert"
+        AppLanguage.RUSSIAN -> "Отключено"
+        AppLanguage.JAPANESE -> "無効"
+        AppLanguage.KOREAN -> "사용 안 함"
+    }
+    val hostsSourceRuleCount: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 条规则"
+        AppLanguage.ENGLISH -> "%d rules"
+        AppLanguage.ARABIC -> "%d قواعد"
+        AppLanguage.PORTUGUESE -> "%d regras"
+        AppLanguage.SPANISH -> "%d reglas"
+        AppLanguage.FRENCH -> "%d règles"
+        AppLanguage.GERMAN -> "%d Regeln"
+        AppLanguage.RUSSIAN -> "%d правил"
+        AppLanguage.JAPANESE -> "%d件のルール"
+        AppLanguage.KOREAN -> "%d개 규칙"
+    }
+    val hostsActiveRulesCount: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "当前生效 %d 条"
+        AppLanguage.ENGLISH -> "%d rules active now"
+        AppLanguage.ARABIC -> "%d قاعدة مفعّلة الآن"
+        AppLanguage.PORTUGUESE -> "%d regras ativas agora"
+        AppLanguage.SPANISH -> "%d reglas activas ahora"
+        AppLanguage.FRENCH -> "%d règles actives maintenant"
+        AppLanguage.GERMAN -> "%d Regeln derzeit aktiv"
+        AppLanguage.RUSSIAN -> "Сейчас активно %d правил"
+        AppLanguage.JAPANESE -> "現在有効 %d 件"
+        AppLanguage.KOREAN -> "현재 활성 %d개"
+    }
+    val hostsSourcesEnabledSummary: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已启用 %d / %d 个规则源"
+        AppLanguage.ENGLISH -> "%d / %d filter lists enabled"
+        AppLanguage.ARABIC -> "%d / %d قوائم تصفية مفعّلة"
+        AppLanguage.PORTUGUESE -> "%d / %d listas de filtro ativadas"
+        AppLanguage.SPANISH -> "%d / %d listas de filtros activadas"
+        AppLanguage.FRENCH -> "%d / %d listes de filtres activées"
+        AppLanguage.GERMAN -> "%d / %d Filterlisten aktiviert"
+        AppLanguage.RUSSIAN -> "Включено %d / %d списков фильтров"
+        AppLanguage.JAPANESE -> "%d / %d 件のフィルターリストが有効"
+        AppLanguage.KOREAN -> "필터 목록 %d / %d개 사용 중"
     }
 
     val galleryApp: String get() = when (Strings.lang) {
