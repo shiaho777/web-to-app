@@ -1,7 +1,12 @@
 package com.webtoapp.ui.screens
 
-import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,32 +15,33 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.CloudDownload
+import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DeleteForever
-import androidx.compose.material.icons.outlined.Devices
+import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.Javascript
 import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.RocketLaunch
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Speed
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Terminal
@@ -43,17 +49,15 @@ import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,54 +67,93 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.core.download.DependencyDownloadEngine
 import com.webtoapp.core.golang.GoDependencyManager
+import com.webtoapp.core.golang.GoToolchainManager
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.linux.LocalBuildEnvironment
 import com.webtoapp.core.nodejs.NodeDependencyManager
 import com.webtoapp.core.python.PythonDependencyManager
 import com.webtoapp.core.wordpress.WordPressDependencyManager
-import com.webtoapp.ui.components.PremiumButton
-import com.webtoapp.ui.components.PremiumFilterChip
-import com.webtoapp.ui.components.PremiumOutlinedButton
-import com.webtoapp.ui.design.WtaBadge
+import com.webtoapp.ui.design.WtaButton
+import com.webtoapp.ui.design.WtaButtonSize
+import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaColors
-import com.webtoapp.ui.theme.AppColors
-import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaFullEmptyState
 import com.webtoapp.ui.design.WtaScreen
-import com.webtoapp.ui.design.WtaSection
-import com.webtoapp.ui.design.WtaSectionDivider
-import com.webtoapp.ui.design.WtaSettingCard
-import com.webtoapp.ui.design.WtaSettingRow
-import com.webtoapp.ui.design.WtaSpacing
-import com.webtoapp.ui.design.WtaStatusBanner
-import com.webtoapp.ui.design.WtaStatusTone
+import com.webtoapp.ui.design.WtaTextField
+import com.webtoapp.ui.theme.AppColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Locale
+
+private enum class RuntimeFilter {
+    ALL,
+    READY,
+    MISSING
+}
+
+private enum class RuntimeKind {
+    PHP,
+    WORDPRESS,
+    SQLITE,
+    NODE,
+    PYTHON,
+    GO
+}
+
+private data class RuntimeEntry(
+    val kind: RuntimeKind,
+    val title: String,
+    val description: String,
+    val version: String,
+    val icon: ImageVector,
+    val accent: Color,
+    val isReady: Boolean,
+    val cacheSize: Long,
+    val projectCount: Int,
+    val section: RuntimeSection
+)
+
+private enum class RuntimeSection {
+    RUNTIME,
+    PLUGIN
+}
+
+private data class ProjectStat(
+    val name: String,
+    val count: Int,
+    val color: Color
+)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RuntimeDepsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var phpReady by remember { mutableStateOf(WordPressDependencyManager.isPhpReady(context)) }
     var wpReady by remember { mutableStateOf(WordPressDependencyManager.isWordPressReady(context)) }
     var sqliteReady by remember { mutableStateOf(WordPressDependencyManager.isSqlitePluginReady(context)) }
-    var nodeReady by remember { mutableStateOf(com.webtoapp.core.linux.LocalBuildEnvironment.isNpmReady(context)) }
+    var nodeReady by remember { mutableStateOf(LocalBuildEnvironment.isNpmReady(context)) }
     var pythonReady by remember { mutableStateOf(PythonDependencyManager.isPythonReady(context)) }
     var goReady by remember { mutableStateOf(GoDependencyManager.isGoToolchainReady(context)) }
 
@@ -126,32 +169,54 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
     var docsProjectCount by remember { mutableIntStateOf(0) }
 
     var wpMirrorRegion by remember { mutableStateOf(WordPressDependencyManager.getMirrorRegion()) }
-
     var isDownloading by remember { mutableStateOf(false) }
     var isPaused by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
     var downloadProgress by remember { mutableFloatStateOf(0f) }
     var downloadLabel by remember { mutableStateOf("") }
-    var showClearDialog by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
+    var query by rememberSaveable { mutableStateOf("") }
+    var filterName by rememberSaveable { mutableStateOf(RuntimeFilter.ALL.name) }
+    var showClearAllDialog by remember { mutableStateOf(false) }
+    var clearTarget by remember { mutableStateOf<RuntimeKind?>(null) }
 
     val engineState by DependencyDownloadEngine.state.collectAsStateWithLifecycle()
     val wpDownloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
     val nodeDownloadState by NodeDependencyManager.downloadState.collectAsStateWithLifecycle()
     val pythonDownloadState by PythonDependencyManager.downloadState.collectAsStateWithLifecycle()
+    val goDownloadState by GoToolchainManager.downloadState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
+    suspend fun refreshSizesAndProjects() {
         withContext(Dispatchers.IO) {
             wpCacheSize = WordPressDependencyManager.getCacheSize(context)
             nodeCacheSize = NodeDependencyManager.getCacheSize(context)
             pythonCacheSize = PythonDependencyManager.getCacheSize(context)
             goCacheSize = GoDependencyManager.getCacheSize(context)
-
             wpProjectCount = countSubdirs(WordPressDependencyManager.getWordPressProjectsDir(context))
             nodeProjectCount = countSubdirs(NodeDependencyManager.getNodeProjectsDir(context))
             pythonProjectCount = countSubdirs(File(context.filesDir, "python_projects"))
             goProjectCount = countSubdirs(File(context.filesDir, "go_projects"))
             docsProjectCount = countSubdirs(File(context.filesDir, "docs_projects"))
         }
+    }
+
+    fun refreshReadyFlags() {
+        phpReady = WordPressDependencyManager.isPhpReady(context)
+        wpReady = WordPressDependencyManager.isWordPressReady(context)
+        sqliteReady = WordPressDependencyManager.isSqlitePluginReady(context)
+        nodeReady = LocalBuildEnvironment.isNpmReady(context)
+        pythonReady = PythonDependencyManager.isPythonReady(context)
+        goReady = GoDependencyManager.isGoToolchainReady(context)
+    }
+
+    suspend fun fullRefresh() {
+        isRefreshing = true
+        refreshReadyFlags()
+        refreshSizesAndProjects()
+        isRefreshing = false
+    }
+
+    LaunchedEffect(Unit) {
+        fullRefresh()
     }
 
     LaunchedEffect(engineState) {
@@ -176,95 +241,439 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
             is DependencyDownloadEngine.State.Complete -> {
                 isDownloading = false
                 isPaused = false
-                phpReady = WordPressDependencyManager.isPhpReady(context)
-                wpReady = WordPressDependencyManager.isWordPressReady(context)
-                sqliteReady = WordPressDependencyManager.isSqlitePluginReady(context)
-
-                nodeReady = com.webtoapp.core.linux.LocalBuildEnvironment.isNpmReady(context)
-                pythonReady = PythonDependencyManager.isPythonReady(context)
-                goReady = GoDependencyManager.isGoToolchainReady(context)
-                wpCacheSize = withContext(Dispatchers.IO) { WordPressDependencyManager.getCacheSize(context) }
-                nodeCacheSize = withContext(Dispatchers.IO) { NodeDependencyManager.getCacheSize(context) }
-                pythonCacheSize = withContext(Dispatchers.IO) { PythonDependencyManager.getCacheSize(context) }
-                goCacheSize = withContext(Dispatchers.IO) { GoDependencyManager.getCacheSize(context) }
+                refreshReadyFlags()
+                refreshSizesAndProjects()
             }
             is DependencyDownloadEngine.State.Error -> {
                 isDownloading = false
                 isPaused = false
                 snackbarHostState.showSnackbar(es.message)
             }
-            else -> {
-                isDownloading = false
-                isPaused = false
-            }
+            else -> Unit
         }
     }
 
     LaunchedEffect(wpDownloadState) {
-        when (wpDownloadState) {
-            is WordPressDependencyManager.DownloadState.Complete -> {
-                wpCacheSize = withContext(Dispatchers.IO) { WordPressDependencyManager.getCacheSize(context) }
-            }
+        when (val s = wpDownloadState) {
             is WordPressDependencyManager.DownloadState.Error -> {
-                snackbarHostState.showSnackbar((wpDownloadState as WordPressDependencyManager.DownloadState.Error).message)
+                snackbarHostState.showSnackbar(s.message)
             }
             else -> Unit
         }
     }
-
     LaunchedEffect(nodeDownloadState) {
-        when (nodeDownloadState) {
-            is NodeDependencyManager.DownloadState.Complete -> {
-                nodeCacheSize = withContext(Dispatchers.IO) { NodeDependencyManager.getCacheSize(context) }
-            }
+        when (val s = nodeDownloadState) {
             is NodeDependencyManager.DownloadState.Error -> {
-                snackbarHostState.showSnackbar((nodeDownloadState as NodeDependencyManager.DownloadState.Error).message)
+                snackbarHostState.showSnackbar(s.message)
             }
             else -> Unit
         }
     }
-
     LaunchedEffect(pythonDownloadState) {
-        when (pythonDownloadState) {
-            is PythonDependencyManager.DownloadState.Complete -> {
-                pythonCacheSize = withContext(Dispatchers.IO) { PythonDependencyManager.getCacheSize(context) }
-                pythonReady = PythonDependencyManager.isPythonReady(context)
-            }
+        when (val s = pythonDownloadState) {
             is PythonDependencyManager.DownloadState.Error -> {
-                snackbarHostState.showSnackbar((pythonDownloadState as PythonDependencyManager.DownloadState.Error).message)
+                snackbarHostState.showSnackbar(s.message)
+            }
+            else -> Unit
+        }
+    }
+    LaunchedEffect(goDownloadState) {
+        when (val s = goDownloadState) {
+            is GoToolchainManager.DownloadState.Error -> {
+                snackbarHostState.showSnackbar(s.message)
             }
             else -> Unit
         }
     }
 
     val totalCacheSize = wpCacheSize + nodeCacheSize + pythonCacheSize + goCacheSize
-    val allRuntimesReady = phpReady && wpReady && sqliteReady && nodeReady && pythonReady && goReady
     val readyCount = listOf(phpReady, wpReady, sqliteReady, nodeReady, pythonReady, goReady).count { it }
+    val totalCount = 6
+    val allReady = readyCount == totalCount
+    val filter = runCatching { RuntimeFilter.valueOf(filterName) }.getOrDefault(RuntimeFilter.ALL)
 
-    val installWpDeps: () -> Unit = {
-        scope.launch {
-            isDownloading = true
-            val success = WordPressDependencyManager.downloadAllDependencies(context)
-            isDownloading = false
-            if (success) {
-                phpReady = WordPressDependencyManager.isPhpReady(context)
-                wpReady = WordPressDependencyManager.isWordPressReady(context)
-                sqliteReady = WordPressDependencyManager.isSqlitePluginReady(context)
-                wpCacheSize = withContext(Dispatchers.IO) { WordPressDependencyManager.getCacheSize(context) }
+    val entries = remember(
+        phpReady, wpReady, sqliteReady, nodeReady, pythonReady, goReady,
+        wpCacheSize, nodeCacheSize, pythonCacheSize, goCacheSize,
+        wpProjectCount, nodeProjectCount, pythonProjectCount, goProjectCount
+    ) {
+        listOf(
+            RuntimeEntry(
+                kind = RuntimeKind.PHP,
+                title = Strings.depPhpRuntime,
+                description = Strings.depPhpDesc,
+                version = WordPressDependencyManager.PHP_VERSION,
+                icon = Icons.Outlined.Code,
+                accent = AppColors.Php,
+                isReady = phpReady,
+                cacheSize = wpCacheSize,
+                projectCount = 0,
+                section = RuntimeSection.RUNTIME
+            ),
+            RuntimeEntry(
+                kind = RuntimeKind.WORDPRESS,
+                title = Strings.depWpCore,
+                description = Strings.depWpCoreDesc,
+                version = WordPressDependencyManager.WORDPRESS_VERSION,
+                icon = Icons.Outlined.Language,
+                accent = AppColors.WordPress,
+                isReady = wpReady,
+                cacheSize = wpCacheSize,
+                projectCount = wpProjectCount,
+                section = RuntimeSection.RUNTIME
+            ),
+            RuntimeEntry(
+                kind = RuntimeKind.NODE,
+                title = Strings.depNodeRuntime,
+                description = Strings.depNodeDesc,
+                version = NodeDependencyManager.NODE_VERSION,
+                icon = Icons.Outlined.Javascript,
+                accent = AppColors.NodeJs,
+                isReady = nodeReady,
+                cacheSize = nodeCacheSize,
+                projectCount = nodeProjectCount,
+                section = RuntimeSection.RUNTIME
+            ),
+            RuntimeEntry(
+                kind = RuntimeKind.PYTHON,
+                title = Strings.depPythonRuntime,
+                description = Strings.depPythonDesc,
+                version = PythonDependencyManager.PYTHON_VERSION,
+                icon = Icons.Outlined.Terminal,
+                accent = AppColors.Python,
+                isReady = pythonReady,
+                cacheSize = pythonCacheSize,
+                projectCount = pythonProjectCount,
+                section = RuntimeSection.RUNTIME
+            ),
+            RuntimeEntry(
+                kind = RuntimeKind.GO,
+                title = Strings.depGoRuntime,
+                description = Strings.depGoDesc,
+                version = GoToolchainManager.GO_VERSION,
+                icon = Icons.Outlined.RocketLaunch,
+                accent = AppColors.Go,
+                isReady = goReady,
+                cacheSize = goCacheSize,
+                projectCount = goProjectCount,
+                section = RuntimeSection.RUNTIME
+            ),
+            RuntimeEntry(
+                kind = RuntimeKind.SQLITE,
+                title = Strings.depSqlitePlugin,
+                description = Strings.depSqliteDesc,
+                version = WordPressDependencyManager.SQLITE_PLUGIN_VERSION,
+                icon = Icons.Outlined.Storage,
+                accent = AppColors.SQLite,
+                isReady = sqliteReady,
+                cacheSize = 0L,
+                projectCount = 0,
+                section = RuntimeSection.PLUGIN
+            )
+        )
+    }
+
+    val filteredEntries = remember(entries, query, filter) {
+        val q = query.trim()
+        entries.filter { entry ->
+            val statusOk = when (filter) {
+                RuntimeFilter.ALL -> true
+                RuntimeFilter.READY -> entry.isReady
+                RuntimeFilter.MISSING -> !entry.isReady
+            }
+            if (!statusOk) return@filter false
+            if (q.isEmpty()) return@filter true
+            entry.title.contains(q, ignoreCase = true) ||
+                entry.description.contains(q, ignoreCase = true) ||
+                entry.version.contains(q, ignoreCase = true) ||
+                entry.kind.name.contains(q, ignoreCase = true)
+        }
+    }
+
+    val projectStats = remember(wpProjectCount, nodeProjectCount, pythonProjectCount, goProjectCount, docsProjectCount) {
+        listOf(
+            ProjectStat(Strings.depWpProjects, wpProjectCount, AppColors.WordPress),
+            ProjectStat(Strings.depNodeProjects, nodeProjectCount, AppColors.NodeJs),
+            ProjectStat(Strings.depPythonProjects, pythonProjectCount, AppColors.Python),
+            ProjectStat(Strings.depGoProjects, goProjectCount, AppColors.Go),
+            ProjectStat(Strings.depDocsProjects, docsProjectCount, AppColors.NeutralAccent)
+        )
+    }
+
+    fun applyMirror(region: String) {
+        onMirrorChange(region) { wpMirrorRegion = it }
+    }
+
+    suspend fun installKind(kind: RuntimeKind): Boolean {
+        return when (kind) {
+            RuntimeKind.PHP, RuntimeKind.WORDPRESS, RuntimeKind.SQLITE -> {
+                WordPressDependencyManager.downloadAllDependencies(context)
+            }
+            RuntimeKind.NODE -> {
+                runCatching {
+                    LocalBuildEnvironment.ensureInstalled(context)
+                    true
+                }.getOrElse { false }
+            }
+            RuntimeKind.PYTHON -> PythonDependencyManager.downloadPythonRuntime(context)
+            RuntimeKind.GO -> GoToolchainManager.installGoToolchain(context)
+        }
+    }
+
+    suspend fun clearKind(kind: RuntimeKind) {
+        withContext(Dispatchers.IO) {
+            when (kind) {
+                RuntimeKind.PHP, RuntimeKind.WORDPRESS, RuntimeKind.SQLITE -> {
+                    WordPressDependencyManager.clearCache(context)
+                }
+                RuntimeKind.NODE -> NodeDependencyManager.clearCache(context)
+                RuntimeKind.PYTHON -> PythonDependencyManager.clearCache(context)
+                RuntimeKind.GO -> GoDependencyManager.clearCache(context)
             }
         }
     }
 
-    if (showClearDialog) {
+    fun runInstall(kind: RuntimeKind, reinstall: Boolean = false) {
+        if (isDownloading) return
+        scope.launch {
+            isDownloading = true
+            isPaused = false
+            try {
+                if (reinstall) {
+                    clearKind(kind)
+                    refreshReadyFlags()
+                }
+                val success = installKind(kind)
+                refreshReadyFlags()
+                refreshSizesAndProjects()
+                snackbarHostState.showSnackbar(
+                    if (success) Strings.depInstallSuccess else Strings.depInstallFailed
+                )
+            } catch (e: Exception) {
+                snackbarHostState.showSnackbar(e.message ?: Strings.depInstallFailed)
+            } finally {
+                isDownloading = false
+                isPaused = false
+            }
+        }
+    }
+
+    fun runDownloadAll() {
+        if (isDownloading || allReady) return
+        scope.launch {
+            isDownloading = true
+            isPaused = false
+            try {
+                val wpSuccess = if (!phpReady || !wpReady || !sqliteReady) {
+                    WordPressDependencyManager.downloadAllDependencies(context)
+                } else true
+                val nodeSuccess = if (!nodeReady) {
+                    runCatching {
+                        LocalBuildEnvironment.ensureInstalled(context)
+                        true
+                    }.getOrElse { false }
+                } else true
+                val pythonSuccess = if (!pythonReady) {
+                    PythonDependencyManager.downloadPythonRuntime(context)
+                } else true
+                val goSuccess = if (!goReady) {
+                    GoToolchainManager.installGoToolchain(context)
+                } else true
+                refreshReadyFlags()
+                refreshSizesAndProjects()
+                if (wpSuccess && nodeSuccess && pythonSuccess && goSuccess) {
+                    snackbarHostState.showSnackbar(Strings.depAllReady)
+                } else {
+                    snackbarHostState.showSnackbar(Strings.depInstallFailed)
+                }
+            } catch (e: Exception) {
+                snackbarHostState.showSnackbar(e.message ?: Strings.depInstallFailed)
+            } finally {
+                isDownloading = false
+                isPaused = false
+            }
+        }
+    }
+
+    WtaScreen(
+        title = Strings.runtimeDepsTitle,
+        subtitle = Strings.runtimeDepsSubtitle,
+        snackbarHostState = snackbarHostState,
+        onBack = onBack,
+        actions = {
+            IconButton(
+                onClick = {
+                    scope.launch { fullRefresh() }
+                },
+                enabled = !isDownloading && !isRefreshing
+            ) {
+                if (isRefreshing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(Icons.Outlined.Refresh, contentDescription = Strings.refresh)
+                }
+            }
+            if (totalCacheSize > 0) {
+                IconButton(
+                    onClick = { showClearAllDialog = true },
+                    enabled = !isDownloading
+                ) {
+                    Icon(Icons.Outlined.DeleteSweep, contentDescription = Strings.depClearAll)
+                }
+            }
+        }
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                StatusOverviewCard(
+                    readyCount = readyCount,
+                    totalCount = totalCount,
+                    allReady = allReady,
+                    totalCacheSize = totalCacheSize,
+                    isDownloading = isDownloading,
+                    isPaused = isPaused,
+                    downloadProgress = downloadProgress,
+                    downloadLabel = downloadLabel,
+                    onPause = { DependencyDownloadEngine.pause() },
+                    onResume = { DependencyDownloadEngine.resume() },
+                    onCancel = { DependencyDownloadEngine.cancel() }
+                )
+            }
+
+            item {
+                WtaTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = Strings.depSearchHint,
+                    leadingIcon = Icons.Outlined.Search,
+                    singleLine = true
+                )
+            }
+
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    WtaChip(
+                        selected = filter == RuntimeFilter.ALL,
+                        onClick = { filterName = RuntimeFilter.ALL.name },
+                        label = Strings.filterAll
+                    )
+                    WtaChip(
+                        selected = filter == RuntimeFilter.READY,
+                        onClick = { filterName = RuntimeFilter.READY.name },
+                        label = Strings.depFilterReady
+                    )
+                    WtaChip(
+                        selected = filter == RuntimeFilter.MISSING,
+                        onClick = { filterName = RuntimeFilter.MISSING.name },
+                        label = Strings.depFilterMissing
+                    )
+                }
+            }
+
+            item {
+                DownloadMirrorCard(
+                    mirrorRegion = wpMirrorRegion,
+                    allReady = allReady,
+                    isDownloading = isDownloading,
+                    onMirrorChange = ::applyMirror,
+                    onDownloadAll = ::runDownloadAll
+                )
+            }
+
+            if (filteredEntries.isEmpty()) {
+                item {
+                    WtaFullEmptyState(
+                        title = Strings.depNoMatch,
+                        message = Strings.runtimeDepsSubtitle,
+                        icon = Icons.Outlined.Storage,
+                        fillMaxSize = false
+                    )
+                }
+            } else {
+                val runtimes = filteredEntries.filter { it.section == RuntimeSection.RUNTIME }
+                val plugins = filteredEntries.filter { it.section == RuntimeSection.PLUGIN }
+
+                if (runtimes.isNotEmpty()) {
+                    item {
+                        SectionLabel(Strings.depSectionRuntimes)
+                    }
+                    items(runtimes, key = { it.kind.name }) { entry ->
+                        RuntimeEntryCard(
+                            entry = entry,
+                            busy = isDownloading,
+                            onInstall = { runInstall(entry.kind, reinstall = false) },
+                            onReinstall = { runInstall(entry.kind, reinstall = true) },
+                            onClear = { clearTarget = entry.kind }
+                        )
+                    }
+                }
+
+                if (plugins.isNotEmpty()) {
+                    item {
+                        SectionLabel(Strings.depSectionRuntimePlugins)
+                    }
+                    items(plugins, key = { it.kind.name }) { entry ->
+                        RuntimeEntryCard(
+                            entry = entry,
+                            busy = isDownloading,
+                            onInstall = { runInstall(entry.kind, reinstall = false) },
+                            onReinstall = { runInstall(entry.kind, reinstall = true) },
+                            onClear = { clearTarget = entry.kind }
+                        )
+                    }
+                }
+            }
+
+            item {
+                SectionLabel(Strings.depSectionProjects)
+            }
+            item {
+                ProjectsCard(projectStats)
+            }
+
+            item {
+                SectionLabel(Strings.depSectionStorage)
+            }
+            item {
+                StorageCard(
+                    wpCacheSize = wpCacheSize,
+                    nodeCacheSize = nodeCacheSize,
+                    pythonCacheSize = pythonCacheSize,
+                    goCacheSize = goCacheSize,
+                    totalSize = totalCacheSize,
+                    enabled = !isDownloading && totalCacheSize > 0,
+                    onClearTarget = { kind -> clearTarget = kind },
+                    onClearAll = { showClearAllDialog = true }
+                )
+            }
+
+            item { Spacer(Modifier.height(24.dp)) }
+        }
+    }
+
+    if (showClearAllDialog) {
         AlertDialog(
-            onDismissRequest = { showClearDialog = false },
-            icon = { Icon(Icons.Filled.DeleteSweep, null) },
+            onDismissRequest = { showClearAllDialog = false },
+            icon = { Icon(Icons.Outlined.DeleteSweep, null) },
             title = { Text(Strings.depClearAll) },
             text = { Text(Strings.depClearConfirm) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        showClearDialog = false
+                        showClearAllDialog = false
                         scope.launch {
                             withContext(Dispatchers.IO) {
                                 WordPressDependencyManager.clearCache(context)
@@ -272,427 +681,63 @@ fun RuntimeDepsScreen(onBack: () -> Unit) {
                                 PythonDependencyManager.clearCache(context)
                                 GoDependencyManager.clearCache(context)
                             }
-                            wpCacheSize = 0L
-                            nodeCacheSize = 0L
-                            pythonCacheSize = 0L
-                            goCacheSize = 0L
-
-                            phpReady = WordPressDependencyManager.isPhpReady(context)
-                            wpReady = false
-                            sqliteReady = false
-                            nodeReady = com.webtoapp.core.linux.LocalBuildEnvironment.isNpmReady(context)
-                            pythonReady = false
-                            goReady = GoDependencyManager.isGoToolchainReady(context)
+                            refreshReadyFlags()
+                            refreshSizesAndProjects()
                             snackbarHostState.showSnackbar(Strings.depClearDone)
                         }
-                    }
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
                 ) {
                     Text(Strings.btnConfirm)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showClearDialog = false }) {
+                TextButton(onClick = { showClearAllDialog = false }) {
                     Text(Strings.btnCancel)
                 }
             }
         )
     }
 
-    WtaScreen(
-        title = Strings.runtimeDepsTitle,
-        snackbarHostState = snackbarHostState,
-        onBack = onBack
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-                .padding(
-                    horizontal = WtaSpacing.ScreenHorizontal,
-                    vertical = WtaSpacing.ScreenVertical
-                ),
-            verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
-        ) {
-            StatusOverviewCard(
-                readyCount = readyCount,
-                totalCount = 6,
-                allReady = allRuntimesReady,
-                totalCacheSize = totalCacheSize,
-                isDownloading = isDownloading,
-                isPaused = isPaused,
-                downloadProgress = downloadProgress,
-                downloadLabel = downloadLabel,
-                engineState = engineState,
-                onPause = { DependencyDownloadEngine.pause() },
-                onResume = { DependencyDownloadEngine.resume() },
-                onCancel = { DependencyDownloadEngine.cancel() }
-            )
-
-            WtaSection(title = Strings.depSectionRuntimes) {
-                WtaSettingCard {
-                    RuntimeItemRow(
-                        icon = Icons.Outlined.Code,
-                        iconColor = AppColors.Php,
-                        title = Strings.depPhpRuntime,
-                        description = Strings.depPhpDesc,
-                        isReady = phpReady,
-                        onInstall = installWpDeps
-                    )
-                    WtaSectionDivider()
-                    RuntimeItemRow(
-                        icon = Icons.Outlined.Language,
-                        iconColor = AppColors.WordPress,
-                        title = Strings.depWpCore,
-                        description = Strings.depWpCoreDesc,
-                        isReady = wpReady,
-                        onInstall = installWpDeps
-                    )
-                    WtaSectionDivider()
-                    RuntimeItemRow(
-                        icon = Icons.Outlined.Javascript,
-                        iconColor = AppColors.NodeJs,
-                        title = Strings.depNodeRuntime,
-                        description = Strings.depNodeDesc,
-                        isReady = nodeReady,
-                        onInstall = {
-                            scope.launch {
-                                isDownloading = true
-
-                                val success = runCatching {
-                                    com.webtoapp.core.linux.LocalBuildEnvironment.ensureInstalled(context)
-                                    true
-                                }.getOrElse { false }
-                                isDownloading = false
-                                if (success) {
-                                    nodeReady = com.webtoapp.core.linux.LocalBuildEnvironment.isNpmReady(context)
-                                    nodeCacheSize = withContext(Dispatchers.IO) { NodeDependencyManager.getCacheSize(context) }
-                                }
-                            }
-                        }
-                    )
-                    WtaSectionDivider()
-                    RuntimeItemRow(
-                        icon = Icons.Outlined.Terminal,
-                        iconColor = AppColors.Python,
-                        title = Strings.depPythonRuntime,
-                        description = Strings.depPythonDesc,
-                        isReady = pythonReady,
-                        onInstall = {
-                            scope.launch {
-                                isDownloading = true
-                                val success = PythonDependencyManager.downloadPythonRuntime(context)
-                                isDownloading = false
-                                if (success) {
-                                    pythonReady = PythonDependencyManager.isPythonReady(context)
-                                    pythonCacheSize = withContext(Dispatchers.IO) { PythonDependencyManager.getCacheSize(context) }
-                                }
-                            }
-                        }
-                    )
-                    WtaSectionDivider()
-                    RuntimeItemRow(
-                        icon = Icons.Outlined.RocketLaunch,
-                        iconColor = AppColors.Go,
-                        title = Strings.depGoRuntime,
-                        description = Strings.depGoDesc,
-                        isReady = goReady,
-                        onInstall = {
-                            scope.launch {
-                                isDownloading = true
-                                val success = com.webtoapp.core.golang.GoToolchainManager
-                                    .installGoToolchain(context)
-                                isDownloading = false
-                                if (success) {
-                                    goReady = GoDependencyManager.isGoToolchainReady(context)
-                                    goCacheSize = withContext(Dispatchers.IO) {
-                                        GoDependencyManager.getCacheSize(context)
-                                    }
-                                }
-                            }
-                        }
-                    )
-                }
-            }
-
-            WtaSection(title = Strings.depSectionRuntimePlugins) {
-                WtaSettingCard {
-                    RuntimeItemRow(
-                        icon = Icons.Outlined.Storage,
-                        iconColor = AppColors.SQLite,
-                        title = Strings.depSqlitePlugin,
-                        description = Strings.depSqliteDesc,
-                        isReady = sqliteReady,
-                        onInstall = installWpDeps
-                    )
-                }
-            }
-
-            WtaSection(title = Strings.depSectionProjects) {
-                WtaSettingCard {
-                    val items = listOf(
-                        ProjectEntry(Strings.depWpProjects, wpProjectCount, AppColors.WordPress),
-                        ProjectEntry(Strings.depNodeProjects, nodeProjectCount, AppColors.NodeJs),
-                        ProjectEntry(Strings.depPythonProjects, pythonProjectCount, AppColors.Python),
-                        ProjectEntry(Strings.depGoProjects, goProjectCount, AppColors.Go),
-                        ProjectEntry(Strings.depDocsProjects, docsProjectCount, AppColors.NeutralAccent)
-                    )
-                    items.forEachIndexed { index, entry ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(entry.color)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = entry.name,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Text(
-                                text = Strings.depProjectCount(entry.count),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (entry.count > 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline,
-                                fontWeight = if (entry.count > 0) FontWeight.Medium else FontWeight.Normal
-                            )
-                        }
-                        if (index < items.lastIndex) {
-                            WtaSectionDivider()
-                        }
-                    }
-                }
-            }
-
-            WtaSection(title = Strings.depSectionDownload) {
-                WtaSettingCard {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = Strings.depMirrorSource,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = Strings.depMirrorDesc,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            val currentRegion = wpMirrorRegion
-                            PremiumFilterChip(
-                                selected = currentRegion == WordPressDependencyManager.MirrorRegion.CN,
-                                onClick = { onMirrorChange("cn") { wpMirrorRegion = it } },
-                                label = { Text(Strings.depMirrorCN) },
-                                leadingIcon = if (currentRegion == WordPressDependencyManager.MirrorRegion.CN) {
-                                    { Icon(Icons.Filled.CheckCircle, null, Modifier.size(16.dp)) }
-                                } else null
-                            )
-                            PremiumFilterChip(
-                                selected = currentRegion == WordPressDependencyManager.MirrorRegion.GLOBAL,
-                                onClick = { onMirrorChange("global") { wpMirrorRegion = it } },
-                                label = { Text(Strings.depMirrorGlobal) },
-                                leadingIcon = if (currentRegion == WordPressDependencyManager.MirrorRegion.GLOBAL) {
-                                    { Icon(Icons.Filled.CheckCircle, null, Modifier.size(16.dp)) }
-                                } else null
-                            )
-                            PremiumFilterChip(
-                                selected = currentRegion != WordPressDependencyManager.MirrorRegion.CN &&
-                                    currentRegion != WordPressDependencyManager.MirrorRegion.GLOBAL,
-                                onClick = { onMirrorChange("auto") { wpMirrorRegion = it } },
-                                label = { Text(Strings.depMirrorAuto) }
-                            )
-                        }
-
-                        if (!allRuntimesReady) {
-                            Spacer(modifier = Modifier.height(16.dp))
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            PremiumButton(
-                                onClick = {
-                                    scope.launch {
-                                        isDownloading = true
-                                        val wpSuccess = WordPressDependencyManager.downloadAllDependencies(context)
-                                        if (wpSuccess) {
-                                            phpReady = WordPressDependencyManager.isPhpReady(context)
-                                            wpReady = WordPressDependencyManager.isWordPressReady(context)
-                                            sqliteReady = WordPressDependencyManager.isSqlitePluginReady(context)
-                                            wpCacheSize = withContext(Dispatchers.IO) { WordPressDependencyManager.getCacheSize(context) }
-                                        }
-
-                                        val nodeSuccess = runCatching {
-                                            com.webtoapp.core.linux.LocalBuildEnvironment.ensureInstalled(context)
-                                            true
-                                        }.getOrElse { false }
-                                        if (nodeSuccess) {
-                                            nodeReady = com.webtoapp.core.linux.LocalBuildEnvironment.isNpmReady(context)
-                                            nodeCacheSize = withContext(Dispatchers.IO) { NodeDependencyManager.getCacheSize(context) }
-                                        }
-                                        val pythonSuccess = PythonDependencyManager.downloadPythonRuntime(context)
-                                        if (pythonSuccess) {
-                                            pythonReady = PythonDependencyManager.isPythonReady(context)
-                                            pythonCacheSize = withContext(Dispatchers.IO) { PythonDependencyManager.getCacheSize(context) }
-                                        }
-
-                                        val goSuccess = com.webtoapp.core.golang.GoToolchainManager.installGoToolchain(context)
-                                        if (goSuccess) {
-                                            goReady = GoDependencyManager.isGoToolchainReady(context)
-                                            goCacheSize = withContext(Dispatchers.IO) { GoDependencyManager.getCacheSize(context) }
-                                        }
-                                        isDownloading = false
-                                        if (wpSuccess && nodeSuccess && pythonSuccess && goSuccess) {
-                                            snackbarHostState.showSnackbar(Strings.depAllReady)
-                                        }
-                                    }
-                                },
-                                enabled = !isDownloading,
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(WtaRadius.Control),
-                                contentPadding = PaddingValues(vertical = 12.dp)
-                            ) {
-                                if (isDownloading) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(18.dp),
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        strokeWidth = 2.dp
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(Strings.depStatusDownloading)
-                                } else {
-                                    Icon(Icons.Outlined.CloudDownload, null, Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(Strings.depDownloadAll)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            WtaSection(title = Strings.depSectionStorage) {
-                WtaSettingCard {
-                    StorageSummary(
-                        wpCacheSize = wpCacheSize,
-                        nodeCacheSize = nodeCacheSize,
-                        pythonCacheSize = pythonCacheSize,
-                        goCacheSize = goCacheSize,
-                        totalSize = totalCacheSize
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    var confirmClearTarget by remember { mutableStateOf<String?>(null) }
-
-                    data class CacheChip(
-                        val target: String,
-                        val label: String,
-                        val size: Long
-                    )
-
-                    val cacheChips = listOfNotNull(
-                        if (wpCacheSize > 0) CacheChip("WordPress", "WordPress", wpCacheSize) else null,
-                        if (nodeCacheSize > 0) CacheChip("Node.js", "Node.js", nodeCacheSize) else null,
-                        if (pythonCacheSize > 0) CacheChip("Python", "Python", pythonCacheSize) else null,
-                        if (goCacheSize > 0) CacheChip("Go", "Go", goCacheSize) else null,
-                    )
-
-                    if (cacheChips.isNotEmpty()) {
-
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            cacheChips.forEach { chip ->
-                                PremiumOutlinedButton(
-                                    onClick = { confirmClearTarget = chip.target },
-                                    shape = RoundedCornerShape(WtaRadius.Control)
-                                ) {
-                                    Text(
-                                        text = "${chip.label} · ${formatSize(chip.size)}",
-                                        maxLines = 1
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    if (confirmClearTarget != null) {
-                        AlertDialog(
-                            onDismissRequest = { confirmClearTarget = null },
-                            title = { Text(Strings.depConfirmClearCache(confirmClearTarget!!)) },
-                            confirmButton = {
-                                TextButton(onClick = {
-                                    val target = confirmClearTarget
-                                    confirmClearTarget = null
-                                    scope.launch {
-
-                                        withContext(Dispatchers.IO) {
-                                            when (target) {
-                                                "WordPress" -> WordPressDependencyManager.clearCache(context)
-                                                "Node.js" -> NodeDependencyManager.clearCache(context)
-                                                "Python" -> PythonDependencyManager.clearCache(context)
-                                                "Go" -> GoDependencyManager.clearCache(context)
-                                            }
-                                        }
-                                        when (target) {
-                                            "WordPress" -> {
-
-                                                wpCacheSize = 0L
-                                                wpReady = false
-                                                sqliteReady = false
-
-                                                phpReady = WordPressDependencyManager.isPhpReady(context)
-                                            }
-                                            "Node.js" -> {
-                                                nodeCacheSize = 0L
-
-                                                nodeReady = com.webtoapp.core.linux.LocalBuildEnvironment.isNpmReady(context)
-                                            }
-                                            "Python" -> { pythonCacheSize = 0L; pythonReady = false }
-                                            "Go" -> {
-                                                goCacheSize = 0L
-                                                goReady = GoDependencyManager.isGoToolchainReady(context)
-                                            }
-                                        }
-                                    }
-                                }) { Text(Strings.confirm) }
-                            },
-                            dismissButton = {
-                                TextButton(onClick = { confirmClearTarget = null }) { Text(Strings.btnCancel) }
-                            }
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    FilledTonalButton(
-                        onClick = { showClearDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(WtaRadius.Control),
-                        enabled = totalCacheSize > 0,
-                        colors = ButtonDefaults.filledTonalButtonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Icon(Icons.Outlined.DeleteForever, null, Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(Strings.depClearAll)
-                    }
-                }
-            }
+    clearTarget?.let { kind ->
+        val label = when (kind) {
+            RuntimeKind.PHP, RuntimeKind.WORDPRESS, RuntimeKind.SQLITE -> "WordPress"
+            RuntimeKind.NODE -> "Node.js"
+            RuntimeKind.PYTHON -> "Python"
+            RuntimeKind.GO -> "Go"
         }
+        AlertDialog(
+            onDismissRequest = { clearTarget = null },
+            icon = { Icon(Icons.Outlined.Delete, null, tint = MaterialTheme.colorScheme.error) },
+            title = { Text(Strings.depClearRuntime) },
+            text = { Text(Strings.depConfirmClearCache(label)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val target = kind
+                        clearTarget = null
+                        scope.launch {
+                            clearKind(target)
+                            refreshReadyFlags()
+                            refreshSizesAndProjects()
+                            snackbarHostState.showSnackbar(Strings.depClearDone)
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(Strings.confirm)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { clearTarget = null }) {
+                    Text(Strings.btnCancel)
+                }
+            }
+        )
     }
 }
 
@@ -722,6 +767,17 @@ private fun onMirrorChange(
 }
 
 @Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 4.dp, bottom = 2.dp)
+    )
+}
+
+@Composable
 private fun StatusOverviewCard(
     readyCount: Int,
     totalCount: Int,
@@ -731,285 +787,525 @@ private fun StatusOverviewCard(
     isPaused: Boolean,
     downloadProgress: Float,
     downloadLabel: String,
-    engineState: DependencyDownloadEngine.State,
     onPause: () -> Unit,
     onResume: () -> Unit,
-    onCancel: () -> Unit = {}
+    onCancel: () -> Unit
 ) {
-    WtaCard(
-        modifier = Modifier.fillMaxWidth(),
-        tone = WtaCardTone.Surface,
-        contentPadding = PaddingValues(16.dp)
-    ) {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+    WtaCard(tone = WtaCardTone.Highlighted) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (isDownloading && !isPaused) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(28.dp),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                strokeWidth = 2.5.dp
-                            )
-                        } else {
-                            Icon(
-                                imageVector = when {
-                                    isPaused -> Icons.Filled.Pause
-                                    allReady -> Icons.Filled.CheckCircle
-                                    else -> Icons.Outlined.Speed
-                                },
-                                contentDescription = null,
-                                tint = if (allReady) WtaColors.semantic.success
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = if (allReady) Strings.depAllReady else Strings.depSomeNotReady,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.SemiBold
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isDownloading && !isPaused) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(26.dp),
+                            strokeWidth = 2.5.dp
                         )
-                        Text(
-                            text = "$readyCount / $totalCount",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = formatSize(totalCacheSize),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = Strings.depTotalStorage,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        Icon(
+                            imageVector = when {
+                                isPaused -> Icons.Filled.Pause
+                                allReady -> Icons.Filled.CheckCircle
+                                else -> Icons.Outlined.Speed
+                            },
+                            contentDescription = null,
+                            tint = if (allReady) WtaColors.semantic.success
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(26.dp)
                         )
                     }
                 }
-
-                if (isDownloading) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                Spacer(Modifier.width(14.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (isPaused) "${Strings.depDlPaused} · $downloadLabel" else downloadLabel,
+                        text = if (allReady) Strings.depAllReady else Strings.depSomeNotReady,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = Strings.depReadyOfTotal(readyCount, totalCount),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(6.dp))
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = formatSize(totalCacheSize),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = Strings.depTotalStorage,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            AnimatedVisibility(
+                visible = isDownloading,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = if (isPaused) {
+                            "${Strings.depDlPaused} · $downloadLabel"
+                        } else {
+                            downloadLabel.ifBlank { Strings.depStatusDownloading }
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
                     LinearProgressIndicator(
-                        progress = { downloadProgress },
+                        progress = { downloadProgress.coerceIn(0f, 1f) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
-                            .clip(RoundedCornerShape(WtaRadius.Button)),
-                        color = if (isPaused) MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                            else MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            .clip(RoundedCornerShape(999.dp))
                     )
-
-                    when (val dlState = engineState) {
-                        is DependencyDownloadEngine.State.Downloading -> {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "${DependencyDownloadEngine.formatSize(dlState.bytesDownloaded)} / ${DependencyDownloadEngine.formatSize(dlState.totalBytes)}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = DependencyDownloadEngine.formatSpeed(dlState.speedBytesPerSec),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "${Strings.depDlEta} ${DependencyDownloadEngine.formatEta(dlState.etaSeconds)}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.weight(1f))
-                                IconButton(onClick = { if (isPaused) onResume() else onPause() }) {
-                                    Icon(
-                                        imageVector = if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
-                                        contentDescription = if (isPaused) Strings.depDlResume else Strings.depDlPause,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                IconButton(onClick = onCancel) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Close,
-                                        contentDescription = Strings.depDlCancel,
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                        }
-                        is DependencyDownloadEngine.State.Paused -> {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "${DependencyDownloadEngine.formatSize(dlState.bytesDownloaded)} / ${DependencyDownloadEngine.formatSize(dlState.totalBytes)} · ${Strings.depDlPaused}",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.weight(1f))
-                                IconButton(onClick = { if (isPaused) onResume() else onPause() }) {
-                                    Icon(
-                                        imageVector = if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
-                                        contentDescription = if (isPaused) Strings.depDlResume else Strings.depDlPause,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                IconButton(onClick = onCancel) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Close,
-                                        contentDescription = Strings.depDlCancel,
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                        }
-                        else -> Unit
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        WtaButton(
+                            onClick = { if (isPaused) onResume() else onPause() },
+                            text = if (isPaused) Strings.depDlResume else Strings.depDlPause,
+                            variant = WtaButtonVariant.Tonal,
+                            size = WtaButtonSize.Small,
+                            leadingIcon = if (isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                            modifier = Modifier.weight(1f)
+                        )
+                        WtaButton(
+                            onClick = onCancel,
+                            text = Strings.depDlCancel,
+                            variant = WtaButtonVariant.Outlined,
+                            size = WtaButtonSize.Small,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
-        }
-    }
-
-@Composable
-private fun RuntimeItemRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    iconColor: Color,
-    title: String,
-    description: String,
-    isReady: Boolean,
-    onInstall: (() -> Unit)?
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(WtaRadius.Control))
-                .background(iconColor.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(22.dp))
-        }
-
-        Spacer(modifier = Modifier.width(14.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-            Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        if (isReady) {
-            WtaBadge(
-                text = Strings.depStatusReady,
-                icon = Icons.Filled.CheckCircle,
-                containerColor = AppColors.Success.copy(alpha = 0.12f),
-                contentColor = AppColors.Success
-            )
-        } else if (onInstall != null) {
-            FilledTonalButton(
-                onClick = onInstall,
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
-                modifier = Modifier.height(32.dp),
-                shape = RoundedCornerShape(WtaRadius.Button)
-            ) {
-                Icon(Icons.Filled.Download, null, modifier = Modifier.size(14.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(Strings.depInstall, style = MaterialTheme.typography.labelSmall)
-            }
-        } else {
-            WtaBadge(
-                text = Strings.depStatusNotInstalled,
-                containerColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                contentColor = MaterialTheme.colorScheme.outline
-            )
         }
     }
 }
 
-private data class ProjectEntry(val name: String, val count: Int, val color: Color)
+@Composable
+private fun DownloadMirrorCard(
+    mirrorRegion: WordPressDependencyManager.MirrorRegion?,
+    allReady: Boolean,
+    isDownloading: Boolean,
+    onMirrorChange: (String) -> Unit,
+    onDownloadAll: () -> Unit
+) {
+    val isCn = mirrorRegion == WordPressDependencyManager.MirrorRegion.CN
+    val isGlobal = mirrorRegion == WordPressDependencyManager.MirrorRegion.GLOBAL
+    val isAuto = !isCn && !isGlobal
+
+    WtaCard(tone = WtaCardTone.Surface) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = Strings.depMirrorSource,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = Strings.depMirrorDesc,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                WtaChip(
+                    selected = isCn,
+                    onClick = { onMirrorChange("cn") },
+                    label = Strings.depMirrorCN,
+                    enabled = !isDownloading
+                )
+                WtaChip(
+                    selected = isGlobal,
+                    onClick = { onMirrorChange("global") },
+                    label = Strings.depMirrorGlobal,
+                    enabled = !isDownloading
+                )
+                WtaChip(
+                    selected = isAuto,
+                    onClick = { onMirrorChange("auto") },
+                    label = Strings.depMirrorAuto,
+                    enabled = !isDownloading
+                )
+            }
+
+            if (!allReady) {
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                WtaButton(
+                    onClick = onDownloadAll,
+                    text = if (isDownloading) Strings.depStatusDownloading else Strings.depDownloadAll,
+                    variant = WtaButtonVariant.Primary,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isDownloading,
+                    leadingIcon = if (isDownloading) null else Icons.Outlined.CloudDownload
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RuntimeEntryCard(
+    entry: RuntimeEntry,
+    busy: Boolean,
+    onInstall: () -> Unit,
+    onReinstall: () -> Unit,
+    onClear: () -> Unit
+) {
+    WtaCard(tone = WtaCardTone.Surface) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(entry.accent.copy(alpha = 0.12f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        entry.icon,
+                        contentDescription = null,
+                        tint = entry.accent,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = entry.title,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        StatusBadge(
+                            text = if (entry.isReady) Strings.depStatusReady else Strings.depStatusNotInstalled,
+                            ready = entry.isReady
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = entry.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        MetaChip("v${entry.version}")
+                        if (entry.cacheSize > 0) {
+                            MetaChip(formatSize(entry.cacheSize))
+                        }
+                        if (entry.projectCount > 0) {
+                            MetaChip(Strings.depProjectCount(entry.projectCount))
+                        }
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (!entry.isReady) {
+                    WtaButton(
+                        onClick = onInstall,
+                        text = Strings.depInstall,
+                        variant = WtaButtonVariant.Tonal,
+                        size = WtaButtonSize.Small,
+                        enabled = !busy,
+                        leadingIcon = Icons.Filled.Download,
+                        modifier = Modifier.weight(1f)
+                    )
+                } else {
+                    WtaButton(
+                        onClick = onReinstall,
+                        text = Strings.depReinstall,
+                        variant = WtaButtonVariant.Tonal,
+                        size = WtaButtonSize.Small,
+                        enabled = !busy,
+                        leadingIcon = Icons.Outlined.Refresh,
+                        modifier = Modifier.weight(1f)
+                    )
+                    WtaButton(
+                        onClick = onClear,
+                        text = Strings.depClearRuntime,
+                        variant = WtaButtonVariant.Outlined,
+                        size = WtaButtonSize.Small,
+                        enabled = !busy,
+                        leadingIcon = Icons.Outlined.Delete,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusBadge(text: String, ready: Boolean) {
+    val container = if (ready) {
+        AppColors.Success.copy(alpha = 0.12f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHighest
+    }
+    val content = if (ready) {
+        AppColors.Success
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = container,
+        contentColor = content
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+        )
+    }
+}
+
+@Composable
+private fun MetaChip(text: String) {
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+        )
+    }
+}
+
+@Composable
+private fun ProjectsCard(stats: List<ProjectStat>) {
+    WtaCard(tone = WtaCardTone.Surface) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            stats.forEachIndexed { index, stat ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(stat.color)
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        text = stat.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = Strings.depProjectCount(stat.count),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (index < stats.lastIndex) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                    )
+                }
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun StorageSummary(
+private fun StorageCard(
     wpCacheSize: Long,
     nodeCacheSize: Long,
     pythonCacheSize: Long,
     goCacheSize: Long,
-    totalSize: Long
+    totalSize: Long,
+    enabled: Boolean,
+    onClearTarget: (RuntimeKind) -> Unit,
+    onClearAll: () -> Unit
 ) {
-    val wpColor = AppColors.WordPress
-    val nodeColor = AppColors.NodeJs
-    val pythonColor = AppColors.Python
-    val goColor = AppColors.Go
-
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(text = Strings.depTotalStorage, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-        Text(text = formatSize(totalSize), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
-    }
-
-    if (totalSize > 0) {
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(
+    WtaCard(tone = WtaCardTone.Surface) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(8.dp)
-                .clip(RoundedCornerShape(WtaRadius.Button))
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            listOf(
-                wpCacheSize to wpColor,
-                nodeCacheSize to nodeColor,
-                pythonCacheSize to pythonColor,
-                goCacheSize to goColor
-            ).filter { it.first > 0 }.forEach { (size, color) ->
-                val fraction = (size.toFloat() / totalSize).coerceAtLeast(0.01f)
-                Box(
-                    modifier = Modifier
-                        .weight(fraction, true)
-                        .fillMaxHeight()
-                        .background(color)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = Strings.depTotalStorage,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = formatSize(totalSize),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        val legendEntries = listOfNotNull(
-            if (wpCacheSize > 0) Triple("WordPress", wpCacheSize, wpColor) else null,
-            if (nodeCacheSize > 0) Triple("Node.js", nodeCacheSize, nodeColor) else null,
-            if (pythonCacheSize > 0) Triple("Python", pythonCacheSize, pythonColor) else null,
-            if (goCacheSize > 0) Triple("Go", goCacheSize, goColor) else null,
-        )
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            legendEntries.forEach { (label, size, color) ->
-                StorageLegendItem(label, size, color)
+            if (totalSize > 0) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                ) {
+                    listOf(
+                        wpCacheSize to AppColors.WordPress,
+                        nodeCacheSize to AppColors.NodeJs,
+                        pythonCacheSize to AppColors.Python,
+                        goCacheSize to AppColors.Go
+                    ).filter { it.first > 0 }.forEach { (size, color) ->
+                        val fraction = (size.toFloat() / totalSize).coerceAtLeast(0.01f)
+                        Box(
+                            modifier = Modifier
+                                .weight(fraction, true)
+                                .fillMaxHeight()
+                                .background(color)
+                        )
+                    }
+                }
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (wpCacheSize > 0) {
+                        StorageLegendItem("WordPress", wpCacheSize, AppColors.WordPress)
+                    }
+                    if (nodeCacheSize > 0) {
+                        StorageLegendItem("Node.js", nodeCacheSize, AppColors.NodeJs)
+                    }
+                    if (pythonCacheSize > 0) {
+                        StorageLegendItem("Python", pythonCacheSize, AppColors.Python)
+                    }
+                    if (goCacheSize > 0) {
+                        StorageLegendItem("Go", goCacheSize, AppColors.Go)
+                    }
+                }
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (wpCacheSize > 0) {
+                        WtaButton(
+                            onClick = { onClearTarget(RuntimeKind.WORDPRESS) },
+                            text = "WordPress · ${formatSize(wpCacheSize)}",
+                            variant = WtaButtonVariant.Outlined,
+                            size = WtaButtonSize.Small,
+                            enabled = enabled
+                        )
+                    }
+                    if (nodeCacheSize > 0) {
+                        WtaButton(
+                            onClick = { onClearTarget(RuntimeKind.NODE) },
+                            text = "Node.js · ${formatSize(nodeCacheSize)}",
+                            variant = WtaButtonVariant.Outlined,
+                            size = WtaButtonSize.Small,
+                            enabled = enabled
+                        )
+                    }
+                    if (pythonCacheSize > 0) {
+                        WtaButton(
+                            onClick = { onClearTarget(RuntimeKind.PYTHON) },
+                            text = "Python · ${formatSize(pythonCacheSize)}",
+                            variant = WtaButtonVariant.Outlined,
+                            size = WtaButtonSize.Small,
+                            enabled = enabled
+                        )
+                    }
+                    if (goCacheSize > 0) {
+                        WtaButton(
+                            onClick = { onClearTarget(RuntimeKind.GO) },
+                            text = "Go · ${formatSize(goCacheSize)}",
+                            variant = WtaButtonVariant.Outlined,
+                            size = WtaButtonSize.Small,
+                            enabled = enabled
+                        )
+                    }
+                }
+            } else {
+                Text(
+                    text = Strings.depStorageEmpty,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
+
+            WtaButton(
+                onClick = onClearAll,
+                text = Strings.depClearAll,
+                variant = WtaButtonVariant.Outlined,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
+                leadingIcon = Icons.Outlined.DeleteForever
+            )
         }
     }
 }
@@ -1023,8 +1319,12 @@ private fun StorageLegendItem(label: String, size: Long, color: Color) {
                 .clip(CircleShape)
                 .background(color)
         )
-        Spacer(modifier = Modifier.width(6.dp))
-        Text(text = "$label ${formatSize(size)}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = "$label ${formatSize(size)}",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -1032,8 +1332,8 @@ private fun formatSize(bytes: Long): String {
     return when {
         bytes < 1024 -> "$bytes B"
         bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-        bytes < 1024L * 1024 * 1024 -> String.format(java.util.Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024.0))
-        else -> String.format(java.util.Locale.getDefault(), "%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
+        bytes < 1024L * 1024 * 1024 -> String.format(Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024.0))
+        else -> String.format(Locale.getDefault(), "%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
     }
 }
 

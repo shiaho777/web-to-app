@@ -4830,6 +4830,17 @@ object Strings {
     val rulePathServerRuntime: String get() = StringsE.rulePathServerRuntime
     val ruleAreaServerRuntime: String get() = StringsE.ruleAreaServerRuntime
     val ruleFixServerRuntime: String get() = StringsE.ruleFixServerRuntime
+    val runtimeDepsSubtitle: String get() = StringsE.runtimeDepsSubtitle
+    val depSearchHint: String get() = StringsE.depSearchHint
+    val depFilterReady: String get() = StringsE.depFilterReady
+    val depFilterMissing: String get() = StringsE.depFilterMissing
+    val depReinstall: String get() = StringsE.depReinstall
+    val depClearRuntime: String get() = StringsE.depClearRuntime
+    val depInstallSuccess: String get() = StringsE.depInstallSuccess
+    val depInstallFailed: String get() = StringsE.depInstallFailed
+    val depNoMatch: String get() = StringsE.depNoMatch
+    val depStorageEmpty: String get() = StringsE.depStorageEmpty
+    fun depReadyOfTotal(ready: Int, total: Int): String = StringsE.depReadyOfTotal(ready, total)
     fun depConfirmClearCache(name: String): String = StringsE.depConfirmClearCache(name)
 }
 
@@ -63608,6 +63619,150 @@ object StringsE {
     }
 
 
+
+
+    val runtimeDepsSubtitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装、更新并管理打包所需的运行时与依赖"
+        AppLanguage.ENGLISH -> "Install, update, and manage runtimes needed for packaging"
+        AppLanguage.ARABIC -> "ثبّت وحدّث وأدر أوقات التشغيل اللازمة للتعبئة"
+        AppLanguage.PORTUGUESE -> "Instale, atualize e gerencie runtimes necessários para empacotar"
+        AppLanguage.SPANISH -> "Instala, actualiza y gestiona runtimes necesarios para empaquetar"
+        AppLanguage.FRENCH -> "Installez, mettez à jour et gérez les runtimes nécessaires au packaging"
+        AppLanguage.GERMAN -> "Installieren, aktualisieren und verwalten Sie Runtimes für die Paketierung"
+        AppLanguage.RUSSIAN -> "Устанавливайте, обновляйте и управляйте средами для упаковки"
+        AppLanguage.JAPANESE -> "パッケージングに必要なランタイムをインストール・更新・管理"
+        AppLanguage.KOREAN -> "패키징에 필요한 런타임을 설치·업데이트·관리"
+    }
+
+    val depSearchHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "搜索运行时或依赖…"
+        AppLanguage.ENGLISH -> "Search runtimes or dependencies…"
+        AppLanguage.ARABIC -> "ابحث عن أوقات التشغيل أو التبعيات…"
+        AppLanguage.PORTUGUESE -> "Pesquisar runtimes ou dependências…"
+        AppLanguage.SPANISH -> "Buscar runtimes o dependencias…"
+        AppLanguage.FRENCH -> "Rechercher des runtimes ou dépendances…"
+        AppLanguage.GERMAN -> "Runtimes oder Abhängigkeiten suchen…"
+        AppLanguage.RUSSIAN -> "Поиск сред или зависимостей…"
+        AppLanguage.JAPANESE -> "ランタイムや依存関係を検索…"
+        AppLanguage.KOREAN -> "런타임 또는 종속성 검색…"
+    }
+
+    val depFilterReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已就绪"
+        AppLanguage.ENGLISH -> "Ready"
+        AppLanguage.ARABIC -> "جاهز"
+        AppLanguage.PORTUGUESE -> "Pronto"
+        AppLanguage.SPANISH -> "Listo"
+        AppLanguage.FRENCH -> "Prêt"
+        AppLanguage.GERMAN -> "Bereit"
+        AppLanguage.RUSSIAN -> "Готово"
+        AppLanguage.JAPANESE -> "準備完了"
+        AppLanguage.KOREAN -> "준비됨"
+    }
+
+    val depFilterMissing: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未安装"
+        AppLanguage.ENGLISH -> "Missing"
+        AppLanguage.ARABIC -> "غير مثبت"
+        AppLanguage.PORTUGUESE -> "Ausente"
+        AppLanguage.SPANISH -> "Faltante"
+        AppLanguage.FRENCH -> "Manquant"
+        AppLanguage.GERMAN -> "Fehlt"
+        AppLanguage.RUSSIAN -> "Не установлено"
+        AppLanguage.JAPANESE -> "未インストール"
+        AppLanguage.KOREAN -> "미설치"
+    }
+
+    val depReinstall: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重新安装"
+        AppLanguage.ENGLISH -> "Reinstall"
+        AppLanguage.ARABIC -> "إعادة التثبيت"
+        AppLanguage.PORTUGUESE -> "Reinstalar"
+        AppLanguage.SPANISH -> "Reinstalar"
+        AppLanguage.FRENCH -> "Réinstaller"
+        AppLanguage.GERMAN -> "Neu installieren"
+        AppLanguage.RUSSIAN -> "Переустановить"
+        AppLanguage.JAPANESE -> "再インストール"
+        AppLanguage.KOREAN -> "재설치"
+    }
+
+    val depClearRuntime: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "清理"
+        AppLanguage.ENGLISH -> "Clear"
+        AppLanguage.ARABIC -> "مسح"
+        AppLanguage.PORTUGUESE -> "Limpar"
+        AppLanguage.SPANISH -> "Borrar"
+        AppLanguage.FRENCH -> "Effacer"
+        AppLanguage.GERMAN -> "Leeren"
+        AppLanguage.RUSSIAN -> "Очистить"
+        AppLanguage.JAPANESE -> "クリア"
+        AppLanguage.KOREAN -> "삭제"
+    }
+
+    val depInstallSuccess: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装完成"
+        AppLanguage.ENGLISH -> "Installation complete"
+        AppLanguage.ARABIC -> "اكتمل التثبيت"
+        AppLanguage.PORTUGUESE -> "Instalação concluída"
+        AppLanguage.SPANISH -> "Instalación completada"
+        AppLanguage.FRENCH -> "Installation terminée"
+        AppLanguage.GERMAN -> "Installation abgeschlossen"
+        AppLanguage.RUSSIAN -> "Установка завершена"
+        AppLanguage.JAPANESE -> "インストール完了"
+        AppLanguage.KOREAN -> "설치 완료"
+    }
+
+    val depInstallFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装失败，请检查网络后重试"
+        AppLanguage.ENGLISH -> "Install failed. Check your network and try again"
+        AppLanguage.ARABIC -> "فشل التثبيت. تحقق من الشبكة وحاول مجددًا"
+        AppLanguage.PORTUGUESE -> "Falha na instalação. Verifique a rede e tente novamente"
+        AppLanguage.SPANISH -> "Error de instalación. Revisa la red e inténtalo de nuevo"
+        AppLanguage.FRENCH -> "Échec de l'installation. Vérifiez le réseau et réessayez"
+        AppLanguage.GERMAN -> "Installation fehlgeschlagen. Netzwerk prüfen und erneut versuchen"
+        AppLanguage.RUSSIAN -> "Ошибка установки. Проверьте сеть и повторите"
+        AppLanguage.JAPANESE -> "インストールに失敗しました。ネットワークを確認して再試行"
+        AppLanguage.KOREAN -> "설치 실패. 네트워크를 확인한 뒤 다시 시도하세요"
+    }
+
+    val depNoMatch: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有匹配的运行时"
+        AppLanguage.ENGLISH -> "No matching runtimes"
+        AppLanguage.ARABIC -> "لا توجد أوقات تشغيل مطابقة"
+        AppLanguage.PORTUGUESE -> "Nenhum runtime correspondente"
+        AppLanguage.SPANISH -> "No hay runtimes coincidentes"
+        AppLanguage.FRENCH -> "Aucun runtime correspondant"
+        AppLanguage.GERMAN -> "Keine passenden Runtimes"
+        AppLanguage.RUSSIAN -> "Нет подходящих сред"
+        AppLanguage.JAPANESE -> "一致するランタイムがありません"
+        AppLanguage.KOREAN -> "일치하는 런타임 없음"
+    }
+
+    val depStorageEmpty: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "暂无缓存占用"
+        AppLanguage.ENGLISH -> "No cache storage used yet"
+        AppLanguage.ARABIC -> "لا يوجد استخدام لذاكرة التخزين المؤقت بعد"
+        AppLanguage.PORTUGUESE -> "Nenhum armazenamento de cache em uso"
+        AppLanguage.SPANISH -> "Aún no se usa almacenamiento de caché"
+        AppLanguage.FRENCH -> "Aucun stockage de cache utilisé pour l'instant"
+        AppLanguage.GERMAN -> "Noch kein Cache-Speicher belegt"
+        AppLanguage.RUSSIAN -> "Кэш пока не занимает место"
+        AppLanguage.JAPANESE -> "キャッシュの使用量はまだありません"
+        AppLanguage.KOREAN -> "아직 사용 중인 캐시 저장소 없음"
+    }
+
+    fun depReadyOfTotal(ready: Int, total: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "$ready / $total 已就绪"
+        AppLanguage.ENGLISH -> "$ready / $total ready"
+        AppLanguage.ARABIC -> "$ready / $total جاهز"
+        AppLanguage.PORTUGUESE -> "$ready / $total prontos"
+        AppLanguage.SPANISH -> "$ready / $total listos"
+        AppLanguage.FRENCH -> "$ready / $total prêts"
+        AppLanguage.GERMAN -> "$ready / $total bereit"
+        AppLanguage.RUSSIAN -> "$ready / $total готово"
+        AppLanguage.JAPANESE -> "$ready / $total 準備完了"
+        AppLanguage.KOREAN -> "$ready / $total 준비됨"
+    }
 
     fun depConfirmClearCache(name: String): String = when (Strings.lang) {
         AppLanguage.CHINESE -> "确认清理 $name 缓存？"
