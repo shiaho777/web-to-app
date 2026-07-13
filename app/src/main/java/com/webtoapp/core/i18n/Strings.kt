@@ -4835,14 +4835,6 @@ object Strings {
     val rulePathServerRuntime: String get() = StringsE.rulePathServerRuntime
     val ruleAreaServerRuntime: String get() = StringsE.ruleAreaServerRuntime
     val ruleFixServerRuntime: String get() = StringsE.ruleFixServerRuntime
-    val extensionStudioSubtitle: String get() = StringsE.extensionStudioSubtitle
-    val extensionStudioTitle: String get() = StringsE.extensionStudioTitle
-    val extensionStudioHint: String get() = StringsE.extensionStudioHint
-    val extensionMetricEnabled: String get() = StringsE.extensionMetricEnabled
-    val extensionFilterEnabled: String get() = StringsE.extensionFilterEnabled
-    val extensionFilterDisabled: String get() = StringsE.extensionFilterDisabled
-    fun extensionResultCount(shown: Int, enabled: Int): String = StringsE.extensionResultCount(shown, enabled)
-    fun extensionStudioBreakdown(customEnabled: Int, customTotal: Int, scriptEnabled: Int, scriptTotal: Int): String = StringsE.extensionStudioBreakdown(customEnabled, customTotal, scriptEnabled, scriptTotal)
     val appModifierSubtitle: String get() = StringsE.appModifierSubtitle
     val appModifierLibraryTitle: String get() = StringsE.appModifierLibraryTitle
     val appModifierLibraryHint: String get() = StringsE.appModifierLibraryHint
@@ -63754,111 +63746,6 @@ object StringsE {
 
 
 
-
-
-    val extensionStudioSubtitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "管理脚本、模块与浏览器扩展，决定网页运行时的能力"
-        AppLanguage.ENGLISH -> "Manage scripts, modules, and browser extensions that power web runtime features"
-        AppLanguage.ARABIC -> "إدارة السكربتات والوحدات وإضافات المتصفح التي تشغّل ميزات وقت التشغيل"
-        AppLanguage.PORTUGUESE -> "Gerencie scripts, módulos e extensões que impulsionam o runtime web"
-        AppLanguage.SPANISH -> "Gestiona scripts, módulos y extensiones que impulsan el runtime web"
-        AppLanguage.FRENCH -> "Gérez scripts, modules et extensions qui alimentent le runtime web"
-        AppLanguage.GERMAN -> "Verwalte Skripte, Module und Browser-Erweiterungen für die Web-Laufzeit"
-        AppLanguage.RUSSIAN -> "Управляйте скриптами, модулями и расширениями для web runtime"
-        AppLanguage.JAPANESE -> "Web ランタイムを支えるスクリプト・モジュール・拡張機能を管理"
-        AppLanguage.KOREAN -> "웹 런타임을 구동하는 스크립트·모듈·확장 기능을 관리"
-    }
-
-    val extensionStudioTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "扩展工作室"
-        AppLanguage.ENGLISH -> "Extension studio"
-        AppLanguage.ARABIC -> "استوديو الإضافات"
-        AppLanguage.PORTUGUESE -> "Estúdio de extensões"
-        AppLanguage.SPANISH -> "Estudio de extensiones"
-        AppLanguage.FRENCH -> "Studio d'extensions"
-        AppLanguage.GERMAN -> "Erweiterungsstudio"
-        AppLanguage.RUSSIAN -> "Студия расширений"
-        AppLanguage.JAPANESE -> "拡張スタジオ"
-        AppLanguage.KOREAN -> "확장 스튜디오"
-    }
-
-    val extensionStudioHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "启用后会注入到匹配页面；可从市场、AI 或本地导入"
-        AppLanguage.ENGLISH -> "Enabled items inject into matching pages; install from market, AI, or local import"
-        AppLanguage.ARABIC -> "العناصر المفعّلة تُحقن في الصفحات المطابقة؛ ثبّت من المتجر أو AI أو الاستيراد المحلي"
-        AppLanguage.PORTUGUESE -> "Itens ativos injetam em páginas correspondentes; instale do market, IA ou importação local"
-        AppLanguage.SPANISH -> "Los activos se inyectan en páginas coincidentes; instala desde market, IA o importación local"
-        AppLanguage.FRENCH -> "Les éléments activés s'injectent dans les pages correspondantes ; market, IA ou import local"
-        AppLanguage.GERMAN -> "Aktive Einträge werden in passende Seiten injiziert; Markt, KI oder lokaler Import"
-        AppLanguage.RUSSIAN -> "Включённые элементы внедряются на подходящие страницы; market, AI или локальный импорт"
-        AppLanguage.JAPANESE -> "有効な項目は一致ページに注入。マーケット / AI / ローカル取り込み"
-        AppLanguage.KOREAN -> "활성화된 항목은 일치 페이지에 주입됩니다. 마켓·AI·로컬 가져오기"
-    }
-
-    val extensionMetricEnabled: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已启用"
-        AppLanguage.ENGLISH -> "Enabled"
-        AppLanguage.ARABIC -> "مفعّل"
-        AppLanguage.PORTUGUESE -> "Ativos"
-        AppLanguage.SPANISH -> "Activos"
-        AppLanguage.FRENCH -> "Activés"
-        AppLanguage.GERMAN -> "Aktiv"
-        AppLanguage.RUSSIAN -> "Включено"
-        AppLanguage.JAPANESE -> "有効"
-        AppLanguage.KOREAN -> "사용 중"
-    }
-
-    val extensionFilterEnabled: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已启用"
-        AppLanguage.ENGLISH -> "Enabled"
-        AppLanguage.ARABIC -> "مفعّل"
-        AppLanguage.PORTUGUESE -> "Ativos"
-        AppLanguage.SPANISH -> "Activos"
-        AppLanguage.FRENCH -> "Activés"
-        AppLanguage.GERMAN -> "Aktiv"
-        AppLanguage.RUSSIAN -> "Включённые"
-        AppLanguage.JAPANESE -> "有効"
-        AppLanguage.KOREAN -> "사용 중"
-    }
-
-    val extensionFilterDisabled: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已关闭"
-        AppLanguage.ENGLISH -> "Disabled"
-        AppLanguage.ARABIC -> "معطّل"
-        AppLanguage.PORTUGUESE -> "Desativados"
-        AppLanguage.SPANISH -> "Desactivados"
-        AppLanguage.FRENCH -> "Désactivés"
-        AppLanguage.GERMAN -> "Deaktiviert"
-        AppLanguage.RUSSIAN -> "Отключённые"
-        AppLanguage.JAPANESE -> "無効"
-        AppLanguage.KOREAN -> "꺼짐"
-    }
-
-    fun extensionResultCount(shown: Int, enabled: Int): String = when (Strings.lang) {
-        AppLanguage.CHINESE -> "显示 $shown · 全局启用 $enabled"
-        AppLanguage.ENGLISH -> "Showing $shown · $enabled enabled overall"
-        AppLanguage.ARABIC -> "عرض $shown · $enabled مفعّل إجمالًا"
-        AppLanguage.PORTUGUESE -> "Mostrando $shown · $enabled ativos no total"
-        AppLanguage.SPANISH -> "Mostrando $shown · $enabled activos en total"
-        AppLanguage.FRENCH -> "Affichage $shown · $enabled activés au total"
-        AppLanguage.GERMAN -> "$shown angezeigt · $enabled insgesamt aktiv"
-        AppLanguage.RUSSIAN -> "Показано $shown · включено всего $enabled"
-        AppLanguage.JAPANESE -> "表示 $shown · 全体の有効 $enabled"
-        AppLanguage.KOREAN -> "표시 $shown · 전체 사용 중 $enabled"
-    }
-
-    fun extensionStudioBreakdown(customEnabled: Int, customTotal: Int, scriptEnabled: Int, scriptTotal: Int): String = when (Strings.lang) {
-        AppLanguage.CHINESE -> "模块 $customEnabled/$customTotal 启用 · 脚本/扩展 $scriptEnabled/$scriptTotal 启用"
-        AppLanguage.ENGLISH -> "Modules $customEnabled/$customTotal enabled · scripts/extensions $scriptEnabled/$scriptTotal enabled"
-        AppLanguage.ARABIC -> "الوحدات $customEnabled/$customTotal مفعّلة · السكربتات/الإضافات $scriptEnabled/$scriptTotal مفعّلة"
-        AppLanguage.PORTUGUESE -> "Módulos $customEnabled/$customTotal ativos · scripts/extensões $scriptEnabled/$scriptTotal ativos"
-        AppLanguage.SPANISH -> "Módulos $customEnabled/$customTotal activos · scripts/extensiones $scriptEnabled/$scriptTotal activos"
-        AppLanguage.FRENCH -> "Modules $customEnabled/$customTotal activés · scripts/extensions $scriptEnabled/$scriptTotal activés"
-        AppLanguage.GERMAN -> "Module $customEnabled/$customTotal aktiv · Skripte/Erweiterungen $scriptEnabled/$scriptTotal aktiv"
-        AppLanguage.RUSSIAN -> "Модули $customEnabled/$customTotal · скрипты/расширения $scriptEnabled/$scriptTotal"
-        AppLanguage.JAPANESE -> "モジュール $customEnabled/$customTotal 有効 · スクリプト/拡張 $scriptEnabled/$scriptTotal 有効"
-        AppLanguage.KOREAN -> "모듈 $customEnabled/$customTotal 사용 · 스크립트/확장 $scriptEnabled/$scriptTotal 사용"
-    }
 
     val appModifierSubtitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "选择应用，重塑名称、图标与启动体验"
