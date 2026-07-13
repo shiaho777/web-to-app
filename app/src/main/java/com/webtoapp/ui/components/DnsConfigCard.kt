@@ -189,7 +189,7 @@ private fun DnsHeader(
                     .clip(RoundedCornerShape(WtaRadius.IconPlate))
                     .background(
                         if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = WtaAlpha.MutedContainer)
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = WtaAlpha.Medium)
+                        else MaterialTheme.colorScheme.surfaceVariant
                     ),
                 contentAlignment = Alignment.Center
             ) {

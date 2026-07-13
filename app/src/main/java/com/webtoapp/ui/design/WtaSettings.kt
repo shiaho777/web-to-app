@@ -313,6 +313,7 @@ fun WtaSettingRow(
     icon: ImageVector? = null,
     iconContent: (@Composable () -> Unit)? = null,
     enabled: Boolean = true,
+    active: Boolean? = null,
     tone: WtaRowTone = WtaRowTone.Normal,
     titleMaxLines: Int = 2,
     subtitleMaxLines: Int = 3,
@@ -327,6 +328,13 @@ fun WtaSettingRow(
     val accentColor = when (tone) {
         WtaRowTone.Normal -> MaterialTheme.colorScheme.primary
         WtaRowTone.Danger -> MaterialTheme.colorScheme.error
+    }
+    val iconActive = enabled && (active ?: true)
+    val iconTint = if (iconActive) accentColor else MaterialTheme.colorScheme.onSurfaceVariant
+    val iconPlate = if (iconActive) {
+        accentColor.copy(alpha = WtaAlpha.MutedContainer)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
     }
     val contentColor = if (enabled) {
         when (tone) {
@@ -360,7 +368,7 @@ fun WtaSettingRow(
                     modifier = Modifier
                         .size(WtaSize.IconPlate)
                         .clip(RoundedCornerShape(WtaRadius.IconPlate))
-                        .background(accentColor.copy(alpha = WtaAlpha.MutedContainer)),
+                        .background(iconPlate),
                     contentAlignment = Alignment.Center
                 ) {
                     if (iconContent != null) {
@@ -370,7 +378,7 @@ fun WtaSettingRow(
                             icon,
                             contentDescription = null,
                             modifier = Modifier.size(WtaSize.Icon),
-                            tint = accentColor
+                            tint = iconTint
                         )
                     }
                 }
@@ -426,6 +434,7 @@ fun WtaToggleRow(
         subtitle = subtitle,
         icon = icon,
         enabled = enabled,
+        active = checked,
         modifier = modifier,
         onClick = { onCheckedChange(!checked) }
     ) {
