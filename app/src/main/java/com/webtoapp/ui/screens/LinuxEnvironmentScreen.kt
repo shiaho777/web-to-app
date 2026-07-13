@@ -1,170 +1,303 @@
 package com.webtoapp.ui.screens
 
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.webtoapp.ui.components.PremiumButton
-
-import androidx.compose.animation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.CleaningServices
+import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.DeveloperMode
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Layers
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.RocketLaunch
+import androidx.compose.material.icons.outlined.Speed
+import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.core.download.DependencyDownloadEngine
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.core.linux.*
+import com.webtoapp.core.linux.EnvironmentInfo
+import com.webtoapp.core.linux.EnvironmentState
+import com.webtoapp.core.linux.InstallProgress
+import com.webtoapp.core.linux.LinuxEnvironmentManager
 import com.webtoapp.core.python.PythonDependencyManager
 import com.webtoapp.core.wordpress.WordPressDependencyManager
-import com.webtoapp.ui.aicoding.components.MarkdownText
-import com.webtoapp.ui.design.*
+import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaButton
+import com.webtoapp.ui.design.WtaButtonSize
+import com.webtoapp.ui.design.WtaButtonVariant
+import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaColors
+import com.webtoapp.ui.design.WtaScreen
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.util.Locale
 
-private enum class RuntimeKey { PHP, COMPOSER, PYTHON }
+private enum class OptionalRuntime {
+    PHP,
+    COMPOSER,
+    PYTHON
+}
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LinuxEnvironmentScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val scrollState = rememberScrollState()
     val snackbarHostState = remember { SnackbarHostState() }
 
     val envManager = remember { LinuxEnvironmentManager.getInstance(context) }
     val envState by envManager.state.collectAsStateWithLifecycle()
     val installProgress by envManager.installProgress.collectAsStateWithLifecycle()
-
     val phpDlState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
     val pythonDlState by PythonDependencyManager.downloadState.collectAsStateWithLifecycle()
 
     var envInfo by remember { mutableStateOf<EnvironmentInfo?>(null) }
+    var isRefreshing by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showClearCacheDialog by remember { mutableStateOf(false) }
-
-    val installJobs = remember { mutableStateMapOf<RuntimeKey, Job>() }
-    var expandedRuntimes by remember { mutableStateOf(emptySet<RuntimeKey>()) }
     var runtimeError by remember { mutableStateOf<String?>(null) }
+    val installJobs = remember { mutableStateMapOf<OptionalRuntime, Job>() }
 
-    LaunchedEffect(Unit) {
+    suspend fun refresh() {
+        isRefreshing = true
         envManager.checkEnvironment()
         envInfo = envManager.getEnvironmentInfo()
+        isRefreshing = false
     }
 
-    fun refreshInfo() {
-        scope.launch { envInfo = envManager.getEnvironmentInfo() }
+    LaunchedEffect(Unit) {
+        refresh()
     }
 
-    fun startInstall(key: RuntimeKey, installer: suspend () -> Result<Unit>) {
+    fun startOptionalInstall(
+        key: OptionalRuntime,
+        label: String,
+        installer: suspend () -> Result<Unit>
+    ) {
+        if (installJobs.containsKey(key)) return
         runtimeError = null
-        expandedRuntimes = expandedRuntimes + key
         val job = scope.launch {
-            val r = installer()
+            val result = installer()
             installJobs.remove(key)
-            expandedRuntimes = expandedRuntimes - key
-            r.fold(
+            result.fold(
                 onSuccess = {
-                    refreshInfo()
-                    snackbarHostState.showSnackbar("${key.name} ${Strings.installed.lowercase()}")
+                    envInfo = envManager.getEnvironmentInfo()
+                    snackbarHostState.showSnackbar(Strings.linuxEnvInstalledToast(label))
                 },
                 onFailure = { error ->
-                    val isCancel = error is kotlinx.coroutines.CancellationException
-                    if (isCancel) {
+                    val canceled = error is kotlinx.coroutines.CancellationException
+                    if (canceled) {
                         snackbarHostState.showSnackbar(Strings.downloadCanceled)
                     } else {
-                        runtimeError = "${key.name}: ${error.message}"
-                        snackbarHostState.showSnackbar("${key.name}: ${error.message}")
+                        val message = error.message ?: Strings.unknownError
+                        runtimeError = Strings.linuxEnvInstallFailedToast(label, message)
+                        snackbarHostState.showSnackbar(runtimeError!!)
                     }
-                    refreshInfo()
+                    envInfo = envManager.getEnvironmentInfo()
                 }
             )
         }
         installJobs[key] = job
     }
 
-    fun cancelInstall(key: RuntimeKey) {
+    fun cancelOptionalInstall(key: OptionalRuntime) {
         installJobs[key]?.cancel()
         installJobs.remove(key)
-        expandedRuntimes = expandedRuntimes - key
         DependencyDownloadEngine.cancel()
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text(Strings.buildEnvironment) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, Strings.back)
-                    }
-                },
-                actions = {
-                    if (envInfo != null) {
-                        IconButton(onClick = { showResetDialog = true }) {
-                            Icon(Icons.Outlined.RestartAlt, Strings.btnReset)
-                        }
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(scrollState)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            StatusSection(envState, installProgress) {
-                scope.launch {
-                    envManager.initialize { _, _ -> }
-                    refreshInfo()
+    val isCoreBusy = envState is EnvironmentState.Downloading || envState is EnvironmentState.Installing
+    val info = envInfo
+
+    WtaScreen(
+        title = Strings.menuLinuxEnvironment,
+        subtitle = Strings.linuxEnvSubtitle,
+        snackbarHostState = snackbarHostState,
+        onBack = onBack,
+        actions = {
+            IconButton(
+                onClick = { scope.launch { refresh() } },
+                enabled = !isCoreBusy && !isRefreshing
+            ) {
+                if (isRefreshing) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(Icons.Outlined.Refresh, contentDescription = Strings.refresh)
                 }
             }
-
-            envInfo?.let { info ->
-                ToolsCard(
+            if (info != null) {
+                IconButton(
+                    onClick = { showResetDialog = true },
+                    enabled = !isCoreBusy && installJobs.isEmpty()
+                ) {
+                    Icon(Icons.Outlined.RestartAlt, contentDescription = Strings.btnReset)
+                }
+            }
+        }
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            item {
+                ReadinessHero(
+                    state = envState,
+                    progress = installProgress,
                     info = info,
-                    installJobs = installJobs,
-                    expandedRuntimes = expandedRuntimes,
-                    phpDlState = phpDlState,
-                    pythonDlState = pythonDlState,
-                    runtimeError = runtimeError,
-                    onInstallPhp = {
-                        startInstall(RuntimeKey.PHP) {
-                            envManager.installPhpRuntime { _, _ -> }
+                    busy = isCoreBusy,
+                    onInstallCore = {
+                        scope.launch {
+                            val result = envManager.initialize { _, _ -> }
+                            envInfo = envManager.getEnvironmentInfo()
+                            result.fold(
+                                onSuccess = {
+                                    snackbarHostState.showSnackbar(Strings.envReady)
+                                },
+                                onFailure = { error ->
+                                    snackbarHostState.showSnackbar(
+                                        error.message ?: Strings.unknownError
+                                    )
+                                }
+                            )
                         }
-                    },
-                    onInstallComposer = {
-                        startInstall(RuntimeKey.COMPOSER) {
-                            envManager.installComposer { _, _ -> }
-                        }
-                    },
-                    onInstallPython = {
-                        startInstall(RuntimeKey.PYTHON) {
-                            envManager.installPythonRuntime { _, _ -> }
-                        }
-                    },
-                    onCancelInstall = ::cancelInstall,
-                    onToggleExpand = { key ->
-                        expandedRuntimes = if (key in expandedRuntimes) expandedRuntimes - key else expandedRuntimes + key
                     }
                 )
-
-                StorageCard(info) { showClearCacheDialog = true }
-
-                CapabilitiesCard()
             }
+
+            if (info != null) {
+                item { SectionHeader(Strings.linuxEnvCoreTools, Strings.linuxEnvCoreHint) }
+                item {
+                    CoreToolchainCard(info = info)
+                }
+
+                item { SectionHeader(Strings.linuxEnvPackageManagers, Strings.linuxEnvPmHint) }
+                item {
+                    PackageManagerMosaic(info = info)
+                }
+
+                item { SectionHeader(Strings.linuxEnvOptionalRuntimes, Strings.linuxEnvOptionalHint) }
+                item {
+                    OptionalRuntimesCard(
+                        info = info,
+                        installJobs = installJobs,
+                        phpDlState = phpDlState,
+                        pythonDlState = pythonDlState,
+                        runtimeError = runtimeError,
+                        onInstallPhp = {
+                            startOptionalInstall(OptionalRuntime.PHP, "PHP") {
+                                envManager.installPhpRuntime { _, _ -> }
+                            }
+                        },
+                        onInstallComposer = {
+                            startOptionalInstall(OptionalRuntime.COMPOSER, "Composer") {
+                                envManager.installComposer { _, _ -> }
+                            }
+                        },
+                        onInstallPython = {
+                            startOptionalInstall(OptionalRuntime.PYTHON, "Python") {
+                                envManager.installPythonRuntime { _, _ -> }
+                            }
+                        },
+                        onCancel = ::cancelOptionalInstall
+                    )
+                }
+
+                item { SectionHeader(Strings.linuxEnvMaintenance, null) }
+                item {
+                    MaintenanceCard(
+                        info = info,
+                        enabled = !isCoreBusy && installJobs.isEmpty(),
+                        onClearCache = { showClearCacheDialog = true },
+                        onReset = { showResetDialog = true }
+                    )
+                }
+
+                item { SectionHeader(Strings.linuxEnvCapabilities, null) }
+                item { CapabilitiesBoard() }
+            } else {
+                item {
+                    WtaCard(tone = WtaCardTone.Surface, contentPadding = PaddingValues(0.dp)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                Strings.preparingBuildEnv,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            item { Spacer(Modifier.height(28.dp)) }
         }
     }
 
@@ -172,19 +305,30 @@ fun LinuxEnvironmentScreen(onBack: () -> Unit) {
         WtaAlertDialog(
             onDismissRequest = { showResetDialog = false },
             icon = Icons.Outlined.RestartAlt,
+            iconTint = MaterialTheme.colorScheme.error,
             title = Strings.resetEnvironment,
             text = Strings.resetEnvConfirm,
             confirmButton = {
-                TextButton(onClick = {
-                    showResetDialog = false
-                    scope.launch {
-                        envManager.reset()
-                        refreshInfo()
-                    }
-                }) { Text(Strings.btnReset) }
+                TextButton(
+                    onClick = {
+                        showResetDialog = false
+                        scope.launch {
+                            envManager.reset()
+                            envInfo = envManager.getEnvironmentInfo()
+                            snackbarHostState.showSnackbar(Strings.linuxEnvResetDone)
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(Strings.btnReset)
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showResetDialog = false }) { Text(Strings.btnCancel) }
+                TextButton(onClick = { showResetDialog = false }) {
+                    Text(Strings.btnCancel)
+                }
             }
         )
     }
@@ -196,503 +340,967 @@ fun LinuxEnvironmentScreen(onBack: () -> Unit) {
             title = Strings.clearCacheTitle,
             text = Strings.clearCacheConfirm,
             confirmButton = {
-                TextButton(onClick = {
-                    showClearCacheDialog = false
-                    scope.launch {
-                        envManager.clearCache()
-                        refreshInfo()
+                TextButton(
+                    onClick = {
+                        showClearCacheDialog = false
+                        scope.launch {
+                            val result = envManager.clearCache()
+                            envInfo = envManager.getEnvironmentInfo()
+                            result.fold(
+                                onSuccess = { freed ->
+                                    snackbarHostState.showSnackbar(
+                                        Strings.linuxEnvCacheFreed(formatSize(freed))
+                                    )
+                                },
+                                onFailure = { error ->
+                                    snackbarHostState.showSnackbar(
+                                        error.message ?: Strings.unknownError
+                                    )
+                                }
+                            )
+                        }
                     }
-                }) { Text(Strings.clean) }
+                ) {
+                    Text(Strings.clean)
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showClearCacheDialog = false }) { Text(Strings.btnCancel) }
+                TextButton(onClick = { showClearCacheDialog = false }) {
+                    Text(Strings.btnCancel)
+                }
             }
         )
     }
 }
 
 @Composable
-private fun StatusSection(
+private fun SectionHeader(title: String, hint: String?) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        if (!hint.isNullOrBlank()) {
+            Text(
+                text = hint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReadinessHero(
     state: EnvironmentState,
     progress: InstallProgress,
-    onInstall: () -> Unit
+    info: EnvironmentInfo?,
+    busy: Boolean,
+    onInstallCore: () -> Unit
 ) {
-    val isReady = state is EnvironmentState.Ready
-    val isInstalling = state is EnvironmentState.Downloading || state is EnvironmentState.Installing
+    val coreReady = info?.let { it.nodeReady && it.npmReady } == true
+    val optionalReady = listOfNotNull(
+        info?.phpReady,
+        info?.composerReady,
+        info?.pythonReady,
+        info?.pnpmReady,
+        info?.yarnReady,
+        info?.esbuildAvailable
+    ).count { it }
+    val optionalTotal = 6
+    val score = when {
+        info == null -> 0f
+        coreReady -> 0.55f + (optionalReady / optionalTotal.toFloat()) * 0.45f
+        info.nodeReady -> 0.28f
+        else -> 0.08f
+    }
+    val animatedScore by animateFloatAsState(
+        targetValue = if (busy) progress.progress.coerceIn(0.05f, 0.95f) else score,
+        label = "readiness"
+    )
 
-    WtaSettingCard {
-        Column(modifier = Modifier.padding(WtaSpacing.Large)) {
-            WtaSettingRow(
-                title = when (state) {
-                    is EnvironmentState.Ready -> Strings.envReady
-                    is EnvironmentState.NotInstalled -> Strings.envNotInstalled
-                    is EnvironmentState.NodeInstalledNpmMissing -> Strings.nodeInstalledNpmMissing
-                    is EnvironmentState.Downloading -> Strings.envDownloading
-                    is EnvironmentState.Installing -> Strings.envInstalling
-                    is EnvironmentState.Error -> Strings.envInstallFailed
-                    else -> Strings.ready
-                },
-                subtitle = when (state) {
-                    is EnvironmentState.Ready -> Strings.canBuildFrontend
-                    is EnvironmentState.NotInstalled -> Strings.builtInPackagerReady
-                    is EnvironmentState.NodeInstalledNpmMissing -> Strings.nodeInstalledNpmMissingHint
-                    is EnvironmentState.Downloading -> "${state.component} · ${(state.progress * 100).toInt()}%"
-                    is EnvironmentState.Installing -> "${state.step} · ${(state.progress * 100).toInt()}%"
-                    is EnvironmentState.Error -> state.message
-                    else -> Strings.canBuildFrontend
-                },
-                icon = when {
-                    isReady -> Icons.Outlined.CheckCircle
-                    isInstalling -> Icons.Outlined.Downloading
-                    state is EnvironmentState.Error -> Icons.Outlined.ErrorOutline
-                    else -> Icons.Outlined.Build
-                },
-                trailing = {
-                    if (isReady) {
-                        Icon(
-                            Icons.Filled.CheckCircle,
-                            null,
-                            tint = WtaColors.semantic.success,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            )
+    val title = when (state) {
+        is EnvironmentState.Ready -> Strings.envReady
+        is EnvironmentState.NotInstalled, is EnvironmentState.NodeNotInstalled -> Strings.envNotInstalled
+        is EnvironmentState.NodeInstalledNpmMissing -> Strings.nodeInstalledNpmMissing
+        is EnvironmentState.Downloading -> Strings.envDownloading
+        is EnvironmentState.Installing -> Strings.envInstalling
+        is EnvironmentState.Error -> Strings.envInstallFailed
+    }
+    val subtitle = when (state) {
+        is EnvironmentState.Ready -> Strings.canBuildFrontend
+        is EnvironmentState.NotInstalled, is EnvironmentState.NodeNotInstalled -> Strings.builtInPackagerReady
+        is EnvironmentState.NodeInstalledNpmMissing -> Strings.nodeInstalledNpmMissingHint
+        is EnvironmentState.Downloading -> "${state.component} · ${(state.progress * 100).toInt()}%"
+        is EnvironmentState.Installing -> state.step.ifBlank { progress.currentStep }
+        is EnvironmentState.Error -> state.message
+    }
+    val ringColor = when {
+        state is EnvironmentState.Error -> MaterialTheme.colorScheme.error
+        coreReady -> WtaColors.semantic.success
+        busy -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.outline
+    }
 
-            AnimatedVisibility(visible = isInstalling) {
-                Column(modifier = Modifier.padding(top = WtaSpacing.Medium)) {
-                    val progressValue = when (state) {
-                        is EnvironmentState.Downloading -> state.progress
-                        is EnvironmentState.Installing -> state.progress
-                        else -> 0f
-                    }
-                    LinearProgressIndicator(
-                        progress = { progressValue },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
+    WtaCard(tone = WtaCardTone.Highlighted, contentPadding = PaddingValues(0.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ReadinessRing(
+                    progress = animatedScore,
+                    color = ringColor,
+                    busy = busy,
+                    coreReady = coreReady
+                )
+                Spacer(Modifier.width(16.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
                     )
-                    if (progress.currentStep.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (info != null) {
+                        Spacer(Modifier.height(8.dp))
                         Text(
-                            progress.currentStep,
-                            style = MaterialTheme.typography.bodySmall,
+                            text = Strings.linuxEnvReadinessScore(
+                                (if (info.nodeReady) 1 else 0) + (if (info.npmReady) 1 else 0) + optionalReady,
+                                2 + optionalTotal
+                            ),
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
 
-            AnimatedVisibility(visible = state is EnvironmentState.NotInstalled || state is EnvironmentState.Error) {
-                Column(modifier = Modifier.padding(top = WtaSpacing.Medium)) {
-                    PremiumButton(
-                        onClick = onInstall,
-                        enabled = !isInstalling,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(if (state is EnvironmentState.Error) Icons.Default.Refresh else Icons.Default.Download, null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(if (state is EnvironmentState.Error) Strings.reinstallEsbuild else Strings.installAdvancedBuildTool)
+            AnimatedVisibility(
+                visible = busy,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LinearProgressIndicator(
+                        progress = { progress.progress.coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                    )
+                    if (progress.currentStep.isNotBlank()) {
+                        Text(
+                            text = progress.currentStep,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
+            }
+
+            if (info != null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    MetricPill(
+                        label = Strings.buildTools,
+                        value = formatSize(info.storageUsed),
+                        modifier = Modifier.weight(1f)
+                    )
+                    MetricPill(
+                        label = Strings.cache,
+                        value = formatSize(info.cacheSize),
+                        modifier = Modifier.weight(1f)
+                    )
+                    MetricPill(
+                        label = Strings.linuxEnvOptionalShort,
+                        value = "$optionalReady/$optionalTotal",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            if (!coreReady || state is EnvironmentState.Error || state is EnvironmentState.NodeInstalledNpmMissing) {
+                WtaButton(
+                    onClick = onInstallCore,
+                    text = when {
+                        state is EnvironmentState.Error -> Strings.linuxEnvRepair
+                        state is EnvironmentState.NodeInstalledNpmMissing -> Strings.linuxEnvRepair
+                        busy -> Strings.envInstalling
+                        else -> Strings.linuxEnvInstallCore
+                    },
+                    variant = WtaButtonVariant.Primary,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !busy,
+                    leadingIcon = when {
+                        state is EnvironmentState.Error || state is EnvironmentState.NodeInstalledNpmMissing -> Icons.Outlined.Refresh
+                        else -> Icons.Outlined.RocketLaunch
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ToolsCard(
+private fun ReadinessRing(
+    progress: Float,
+    color: Color,
+    busy: Boolean,
+    coreReady: Boolean
+) {
+    val track = MaterialTheme.colorScheme.surfaceContainerHighest
+    Box(
+        modifier = Modifier.size(84.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val stroke = 8.dp.toPx()
+            val inset = stroke / 2f
+            drawArc(
+                color = track,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = Size(size.width - stroke, size.height - stroke),
+                style = Stroke(width = stroke, cap = StrokeCap.Round)
+            )
+            drawArc(
+                color = color,
+                startAngle = -90f,
+                sweepAngle = 360f * progress.coerceIn(0f, 1f),
+                useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = Size(size.width - stroke, size.height - stroke),
+                style = Stroke(width = stroke, cap = StrokeCap.Round)
+            )
+        }
+        when {
+            busy -> CircularProgressIndicator(
+                modifier = Modifier.size(28.dp),
+                strokeWidth = 2.5.dp,
+                color = color
+            )
+            coreReady -> Icon(
+                Icons.Filled.CheckCircle,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(30.dp)
+            )
+            else -> Icon(
+                Icons.Outlined.Build,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(28.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun MetricPill(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun CoreToolchainCard(info: EnvironmentInfo) {
+    WtaCard(tone = WtaCardTone.Surface, contentPadding = PaddingValues(0.dp)) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            CoreToolRow(
+                icon = Icons.Outlined.Code,
+                name = "Node.js",
+                version = info.nodeVersion,
+                ready = info.nodeReady,
+                role = Strings.linuxEnvRoleRuntime
+            )
+            DividerLine()
+            CoreToolRow(
+                icon = Icons.Outlined.Terminal,
+                name = "npm",
+                version = info.npmVersion,
+                ready = info.npmReady,
+                role = Strings.linuxEnvRolePackageManager
+            )
+        }
+    }
+}
+
+@Composable
+private fun CoreToolRow(
+    icon: ImageVector,
+    name: String,
+    version: String?,
+    ready: Boolean,
+    role: String
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(
+                    if (ready) WtaColors.semantic.success.copy(alpha = 0.12f)
+                    else MaterialTheme.colorScheme.surfaceContainerHigh
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (ready) WtaColors.semantic.success else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(22.dp)
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(
+                text = if (ready) (version ?: Strings.installed) else Strings.notInstalled,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = role,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+            )
+        }
+        StatusDot(ready = ready)
+    }
+}
+
+@Composable
+private fun StatusDot(ready: Boolean) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = if (ready) WtaColors.semantic.success.copy(alpha = 0.14f)
+        else MaterialTheme.colorScheme.surfaceContainerHighest
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            if (ready) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(12.dp),
+                    tint = WtaColors.semantic.success
+                )
+            }
+            Text(
+                text = if (ready) Strings.linuxEnvToolReady else Strings.linuxEnvToolMissing,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (ready) WtaColors.semantic.success else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun PackageManagerMosaic(info: EnvironmentInfo) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            ToolTile(
+                name = "pnpm",
+                version = info.pnpmVersion,
+                ready = info.pnpmReady,
+                icon = Icons.Outlined.DeveloperMode,
+                modifier = Modifier.weight(1f)
+            )
+            ToolTile(
+                name = "yarn",
+                version = info.yarnVersion,
+                ready = info.yarnReady,
+                icon = Icons.Outlined.Layers,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            ToolTile(
+                name = "esbuild",
+                version = null,
+                ready = info.esbuildAvailable,
+                icon = Icons.Outlined.Speed,
+                subtitle = if (info.esbuildAvailable) Strings.linuxEnvEsbuildReady else Strings.linuxEnvEsbuildMissing,
+                modifier = Modifier.weight(1f)
+            )
+            ToolTile(
+                name = "npm",
+                version = info.npmVersion,
+                ready = info.npmReady,
+                icon = Icons.Outlined.Terminal,
+                subtitle = Strings.linuxEnvNpmDefault,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ToolTile(
+    name: String,
+    version: String?,
+    ready: Boolean,
+    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null
+) {
+    WtaCard(
+        modifier = modifier,
+        tone = WtaCardTone.Surface,
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(
+                            if (ready) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            else MaterialTheme.colorScheme.surfaceContainerHigh
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = if (ready) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (ready) WtaColors.semantic.success
+                            else MaterialTheme.colorScheme.outlineVariant
+                        )
+                )
+            }
+            Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(
+                text = subtitle
+                    ?: if (ready) (version ?: Strings.installed) else Strings.notInstalled,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun OptionalRuntimesCard(
     info: EnvironmentInfo,
-    installJobs: Map<RuntimeKey, Job>,
-    expandedRuntimes: Set<RuntimeKey>,
+    installJobs: Map<OptionalRuntime, Job>,
     phpDlState: WordPressDependencyManager.DownloadState,
     pythonDlState: PythonDependencyManager.DownloadState,
     runtimeError: String?,
     onInstallPhp: () -> Unit,
     onInstallComposer: () -> Unit,
     onInstallPython: () -> Unit,
-    onCancelInstall: (RuntimeKey) -> Unit,
-    onToggleExpand: (RuntimeKey) -> Unit
+    onCancel: (OptionalRuntime) -> Unit
 ) {
-    WtaSettingCard {
-        Column(modifier = Modifier.padding(WtaSpacing.Large)) {
-            ToolRow(Icons.Outlined.Code, "Node.js", versionStatus(info.nodeReady, info.nodeVersion), info.nodeReady)
-            WtaSectionDivider()
-            ToolRow(Icons.Outlined.Terminal, "npm", versionStatus(info.npmReady, info.npmVersion), info.npmReady)
-            WtaSectionDivider()
-            ToolRow(Icons.Outlined.DeveloperMode, "pnpm", versionStatus(info.pnpmReady, info.pnpmVersion), info.pnpmReady)
-            WtaSectionDivider()
-            ToolRow(Icons.Outlined.Layers, "yarn", versionStatus(info.yarnReady, info.yarnVersion), info.yarnReady)
-            WtaSectionDivider()
-            ToolRow(Icons.Outlined.Speed, "esbuild", if (info.esbuildAvailable) Strings.installed else Strings.notInstalled, info.esbuildAvailable)
-            WtaSectionDivider()
-
-            RuntimeToolRow(
+    WtaCard(tone = WtaCardTone.Surface, contentPadding = PaddingValues(0.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+        ) {
+            OptionalRuntimeBlock(
                 icon = Icons.Outlined.Code,
                 name = "PHP",
-                status = versionStatus(info.phpReady, info.phpVersion),
-                isAvailable = info.phpReady,
-                isInstalling = RuntimeKey.PHP in installJobs,
-                isExpanded = RuntimeKey.PHP in expandedRuntimes,
-                dlState = phpDlState,
-                installLabel = Strings.installPhpRuntime,
+                detail = versionLine(info.phpReady, info.phpVersion),
+                ready = info.phpReady,
+                installing = OptionalRuntime.PHP in installJobs,
+                progress = progressFromWp(phpDlState),
+                actionLabel = Strings.installPhpRuntime,
+                enabled = true,
                 onInstall = onInstallPhp,
-                onCancel = { onCancelInstall(RuntimeKey.PHP) },
-                onToggleExpand = { onToggleExpand(RuntimeKey.PHP) }
+                onCancel = { onCancel(OptionalRuntime.PHP) }
             )
-            WtaSectionDivider()
-
-            val composerEnabled = info.phpReady && !info.composerReady
-            RuntimeToolRow(
+            DividerLine()
+            OptionalRuntimeBlock(
                 icon = Icons.Outlined.Inventory2,
                 name = "Composer",
-                status = when {
-                    info.composerReady -> versionStatus(true, info.composerVersion)
+                detail = when {
+                    info.composerReady -> versionLine(true, info.composerVersion)
                     !info.phpReady -> Strings.composerNeedsPhp
                     else -> Strings.notInstalled
                 },
-                isAvailable = info.composerReady,
-                isInstalling = RuntimeKey.COMPOSER in installJobs,
-                isExpanded = RuntimeKey.COMPOSER in expandedRuntimes,
-                dlState = null,
-                installLabel = Strings.installComposerLabel,
-                enabled = composerEnabled,
+                ready = info.composerReady,
+                installing = OptionalRuntime.COMPOSER in installJobs,
+                progress = null,
+                actionLabel = Strings.installComposerLabel,
+                enabled = info.phpReady && !info.composerReady,
+                locked = !info.phpReady,
                 onInstall = onInstallComposer,
-                onCancel = { onCancelInstall(RuntimeKey.COMPOSER) },
-                onToggleExpand = { onToggleExpand(RuntimeKey.COMPOSER) }
+                onCancel = { onCancel(OptionalRuntime.COMPOSER) }
             )
-            WtaSectionDivider()
-
-            RuntimeToolRow(
+            DividerLine()
+            OptionalRuntimeBlock(
                 icon = Icons.Outlined.Terminal,
                 name = "Python",
-                status = versionStatus(info.pythonReady, info.pythonVersion),
-                isAvailable = info.pythonReady,
-                isInstalling = RuntimeKey.PYTHON in installJobs,
-                isExpanded = RuntimeKey.PYTHON in expandedRuntimes,
-                dlState = pythonDlState,
-                installLabel = Strings.installPythonRuntime,
+                detail = versionLine(info.pythonReady, info.pythonVersion),
+                ready = info.pythonReady,
+                installing = OptionalRuntime.PYTHON in installJobs,
+                progress = progressFromPython(pythonDlState),
+                actionLabel = Strings.installPythonRuntime,
+                enabled = true,
                 onInstall = onInstallPython,
-                onCancel = { onCancelInstall(RuntimeKey.PYTHON) },
-                onToggleExpand = { onToggleExpand(RuntimeKey.PYTHON) }
+                onCancel = { onCancel(OptionalRuntime.PYTHON) }
             )
-            WtaSectionDivider()
-
-            ToolRow(Icons.Outlined.Inventory, "pip", if (info.pipReady) Strings.installed else Strings.notInstalled, info.pipReady)
+            DividerLine()
+            OptionalRuntimeBlock(
+                icon = Icons.Outlined.Layers,
+                name = "pip",
+                detail = if (info.pipReady) Strings.installed else Strings.linuxEnvPipFollowsPython,
+                ready = info.pipReady,
+                installing = false,
+                progress = null,
+                actionLabel = "",
+                enabled = false,
+                showAction = false,
+                onInstall = {},
+                onCancel = {}
+            )
 
             runtimeError?.let { msg ->
-                Spacer(modifier = Modifier.height(WtaSpacing.Small))
+                Spacer(Modifier.height(4.dp))
                 Text(
-                    msg,
+                    text = msg,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
         }
     }
 }
 
-@Composable
-private fun ToolRow(
-    icon: ImageVector,
-    name: String,
-    status: String,
-    isAvailable: Boolean
-) {
-    WtaSettingRow(
-        title = name,
-        subtitle = status,
-        icon = icon,
-        trailing = {
-            if (isAvailable) {
-                Icon(
-                    Icons.Filled.Check,
-                    null,
-                    tint = WtaColors.semantic.success,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
-    )
-}
+private data class InstallProgressUi(
+    val fraction: Float,
+    val indeterminate: Boolean,
+    val label: String
+)
 
 @Composable
-private fun RuntimeToolRow(
+private fun OptionalRuntimeBlock(
     icon: ImageVector,
     name: String,
-    status: String,
-    isAvailable: Boolean,
-    isInstalling: Boolean,
-    isExpanded: Boolean,
-    dlState: Any?,
-    installLabel: String,
-    enabled: Boolean = true,
+    detail: String,
+    ready: Boolean,
+    installing: Boolean,
+    progress: InstallProgressUi?,
+    actionLabel: String,
+    enabled: Boolean,
+    locked: Boolean = false,
+    showAction: Boolean = true,
     onInstall: () -> Unit,
-    onCancel: () -> Unit,
-    onToggleExpand: () -> Unit
-) {
-    Column {
-        WtaSettingRow(
-            title = name,
-            subtitle = status,
-            icon = icon,
-            enabled = enabled || isAvailable,
-            trailing = {
-                when {
-                    isAvailable -> Icon(
-                        Icons.Filled.Check,
-                        null,
-                        tint = WtaColors.semantic.success,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    isInstalling && dlState != null -> {
-                        Surface(
-                            shape = MaterialTheme.shapes.small,
-                            color = MaterialTheme.colorScheme.tertiaryContainer
-                        ) {
-                            Text(
-                                Strings.downloading,
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                color = MaterialTheme.colorScheme.tertiary
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(4.dp))
-                        IconButton(onClick = onToggleExpand, modifier = Modifier.size(28.dp)) {
-                            Icon(
-                                if (isExpanded) Icons.Outlined.KeyboardArrowUp else Icons.Outlined.KeyboardArrowDown,
-                                null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                    isInstalling -> CircularProgressIndicator(
-                        modifier = Modifier.size(18.dp),
-                        strokeWidth = 2.dp
-                    )
-                    enabled -> TextButton(
-                        onClick = onInstall,
-                        contentPadding = PaddingValues(horizontal = 0.dp)
-                    ) {
-                        Text(installLabel, style = MaterialTheme.typography.labelSmall)
-                    }
-                }
-            }
-        )
-
-        AnimatedVisibility(
-            visible = isInstalling && isExpanded && dlState != null,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
-        ) {
-            RuntimeDownloadPanel(
-                dlState = dlState,
-                onCancel = onCancel
-            )
-        }
-    }
-}
-
-@Composable
-private fun RuntimeDownloadPanel(
-    dlState: Any?,
     onCancel: () -> Unit
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(
-                start = WtaSize.IconPlate + WtaSpacing.IconTextGap,
-                top = WtaSpacing.Tiny,
-                bottom = WtaSpacing.Small
-            )
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        val (fraction, isIndeterminate, statsText) = extractDlInfo(dlState)
-
-        if (isIndeterminate) {
-            LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.tertiary,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-        } else {
-            LinearProgressIndicator(
-                progress = { fraction },
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.tertiary,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-        }
-
-        Spacer(modifier = Modifier.height(6.dp))
-
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                statsText,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-            TextButton(
-                onClick = onCancel,
-                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
-            ) {
-                Icon(Icons.Outlined.Cancel, null, Modifier.size(14.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(Strings.cancel, style = MaterialTheme.typography.labelSmall)
-            }
-        }
-    }
-}
-
-private fun extractDlInfo(dlState: Any?): Triple<Float, Boolean, String> {
-    return when (dlState) {
-        is WordPressDependencyManager.DownloadState.Downloading -> {
-            val indeterminate = dlState.totalBytes <= 0
-            val fraction = if (indeterminate) 0f else dlState.progress
-            val stats = if (indeterminate) {
-                formatBytes(dlState.bytesDownloaded)
-            } else {
-                val percent = (dlState.progress * 100).toInt()
-                "${formatBytes(dlState.bytesDownloaded)} / ${formatBytes(dlState.totalBytes)} ($percent%)"
-            }
-            Triple(fraction, indeterminate, "${dlState.currentFile} · $stats")
-        }
-        is WordPressDependencyManager.DownloadState.Extracting -> {
-            Triple(0f, true, "${Strings.extracting}: ${dlState.fileName}")
-        }
-        is WordPressDependencyManager.DownloadState.Paused -> {
-            val fraction = dlState.progress
-            Triple(fraction, false, "${Strings.depDlPaused} · ${formatBytes(dlState.bytesDownloaded)}")
-        }
-        is WordPressDependencyManager.DownloadState.Error -> {
-            Triple(0f, true, dlState.message)
-        }
-        is PythonDependencyManager.DownloadState.Downloading -> {
-            val indeterminate = dlState.totalBytes <= 0
-            val fraction = if (indeterminate) 0f else dlState.progress
-            val stats = if (indeterminate) {
-                formatBytes(dlState.bytesDownloaded)
-            } else {
-                val percent = (dlState.progress * 100).toInt()
-                "${formatBytes(dlState.bytesDownloaded)} / ${formatBytes(dlState.totalBytes)} ($percent%)"
-            }
-            Triple(fraction, indeterminate, "${dlState.currentFile} · $stats")
-        }
-        is PythonDependencyManager.DownloadState.Extracting -> {
-            Triple(0f, true, "${Strings.extracting}: ${dlState.fileName}")
-        }
-        is PythonDependencyManager.DownloadState.Paused -> {
-            val fraction = dlState.progress
-            Triple(fraction, false, "${Strings.depDlPaused} · ${formatBytes(dlState.bytesDownloaded)}")
-        }
-        is PythonDependencyManager.DownloadState.Error -> {
-            Triple(0f, true, dlState.message)
-        }
-        else -> Triple(0f, true, Strings.downloading)
-    }
-}
-
-@Composable
-private fun StorageCard(info: EnvironmentInfo, onClearCache: () -> Unit) {
-    WtaSettingCard {
-        Column(modifier = Modifier.padding(WtaSpacing.Large)) {
-            WtaSettingRow(
-                title = Strings.buildTools,
-                subtitle = formatSize(info.storageUsed),
-                icon = Icons.Outlined.Storage
-            )
-            WtaSectionDivider()
-            WtaSettingRow(
-                title = Strings.cache,
-                subtitle = formatSize(info.cacheSize),
-                icon = Icons.Outlined.CleaningServices,
-                trailing = {
-                    if (info.cacheSize > 0) {
-                        TextButton(onClick = onClearCache) {
-                            Text(Strings.btnClearCache, style = MaterialTheme.typography.labelSmall)
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        when {
+                            ready -> WtaColors.semantic.success.copy(alpha = 0.12f)
+                            locked -> MaterialTheme.colorScheme.surfaceContainerHighest
+                            else -> MaterialTheme.colorScheme.surfaceContainerHigh
                         }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    if (locked) Icons.Outlined.Lock else icon,
+                    contentDescription = null,
+                    tint = when {
+                        ready -> WtaColors.semantic.success
+                        locked -> MaterialTheme.colorScheme.outline
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = detail,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            when {
+                ready -> StatusDot(ready = true)
+                installing -> {
+                    WtaButton(
+                        onClick = onCancel,
+                        text = Strings.depDlCancel,
+                        variant = WtaButtonVariant.Outlined,
+                        size = WtaButtonSize.Small
+                    )
+                }
+                showAction && enabled -> {
+                    WtaButton(
+                        onClick = onInstall,
+                        text = actionLabel,
+                        variant = WtaButtonVariant.Tonal,
+                        size = WtaButtonSize.Small
+                    )
+                }
+                locked -> {
+                    Surface(
+                        shape = RoundedCornerShape(999.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest
+                    ) {
+                        Text(
+                            text = Strings.linuxEnvLocked,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
+            }
+        }
+
+        AnimatedVisibility(
+            visible = installing,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (progress == null || progress.indeterminate) {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(5.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                    )
+                } else {
+                    LinearProgressIndicator(
+                        progress = { progress.fraction.coerceIn(0f, 1f) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(5.dp)
+                            .clip(RoundedCornerShape(999.dp))
+                    )
+                }
+                Text(
+                    text = progress?.label ?: Strings.linuxEnvInstallingTool(name),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MaintenanceCard(
+    info: EnvironmentInfo,
+    enabled: Boolean,
+    onClearCache: () -> Unit,
+    onReset: () -> Unit
+) {
+    WtaCard(tone = WtaCardTone.Surface, contentPadding = PaddingValues(0.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                StorageStat(
+                    icon = Icons.Outlined.Storage,
+                    title = Strings.buildTools,
+                    value = formatSize(info.storageUsed),
+                    modifier = Modifier.weight(1f)
+                )
+                StorageStat(
+                    icon = Icons.Outlined.CleaningServices,
+                    title = Strings.cache,
+                    value = formatSize(info.cacheSize),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            WtaButton(
+                onClick = onClearCache,
+                text = Strings.btnClearCache,
+                variant = WtaButtonVariant.Tonal,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled && info.cacheSize > 0,
+                leadingIcon = Icons.Outlined.CleaningServices
+            )
+            WtaButton(
+                onClick = onReset,
+                text = Strings.resetEnvironment,
+                variant = WtaButtonVariant.Outlined,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled,
+                leadingIcon = Icons.Outlined.RestartAlt
             )
         }
     }
 }
 
 @Composable
-private fun CapabilitiesCard() {
-    var expanded by remember { mutableStateOf(false) }
-
-    WtaSettingCard {
-        Column(modifier = Modifier.padding(WtaSpacing.Large)) {
-            WtaSettingRow(
-                title = Strings.supportedFeatures,
-                icon = Icons.Outlined.Info,
-                onClick = { expanded = !expanded },
-                trailing = {
-                    Icon(
-                        if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                        null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
+private fun StorageStat(
+    icon: ImageVector,
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(
+                title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            AnimatedVisibility(visible = expanded) {
-                Column(modifier = Modifier.padding(top = WtaSpacing.Medium)) {
-                    MarkdownText(
-                        text = CAPABILITIES_MD,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
         }
     }
 }
 
-private const val CAPABILITIES_MD = """
-## 能做什么
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CapabilitiesBoard() {
+    val items = listOf(
+        Strings.linuxEnvCapFrontend,
+        Strings.linuxEnvCapStatic,
+        Strings.linuxEnvCapNode,
+        Strings.linuxEnvCapPhp,
+        Strings.linuxEnvCapPython,
+        Strings.linuxEnvCapEsbuild,
+        Strings.linuxEnvCapAutoDetect,
+        Strings.linuxEnvCapComposerDep
+    )
+    WtaCard(tone = WtaCardTone.Surface, contentPadding = PaddingValues(0.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = Strings.supportedFeatures,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items.forEach { label ->
+                    Surface(
+                        shape = RoundedCornerShape(999.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ) {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+            Text(
+                text = Strings.linuxEnvCapFooter,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
 
-### 设备内构建
-- **前端项目** — React / Vue / Next.js / Nuxt / Angular / Svelte / Vite，自动检测框架并执行构建脚本
-- **静态 HTML** — 直接打包，无需构建工具
-- **Node.js 应用** — 本地 HTTP server 运行时模式
-- **PHP 应用** — 本地 PHP 运行时 + Composer 依赖管理
-- **Python 应用** — 本地 Python 运行时 + pip 依赖安装
+@Composable
+private fun DividerLine() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(1.dp)
+            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+    )
+}
 
-### 构建能力
-- 导入已有项目并自动检测框架
-- 支持 Vite / Webpack 等主流打包器
-- TypeScript 预编译
-- 静态资源处理与 HTML 优化
-- esbuild 可选加速（设备内原生编译）
-- 构建产物性能优化
-
-### 依赖关系
-- **Composer** 需要 **PHP** 运行时先安装
-- **Go** 项目需要预构建（设备内 Go 工具链仅支持 arm64-v8a）
-"""
-
-private fun versionStatus(ready: Boolean, version: String?): String {
+private fun versionLine(ready: Boolean, version: String?): String {
     return if (!ready) Strings.notInstalled else version ?: Strings.installed
+}
+
+private fun progressFromWp(state: WordPressDependencyManager.DownloadState): InstallProgressUi? {
+    return when (state) {
+        is WordPressDependencyManager.DownloadState.Downloading -> {
+            val indeterminate = state.totalBytes <= 0
+            val label = if (indeterminate) {
+                "${state.currentFile} · ${formatBytes(state.bytesDownloaded)}"
+            } else {
+                val percent = (state.progress * 100).toInt()
+                "${state.currentFile} · ${formatBytes(state.bytesDownloaded)} / ${formatBytes(state.totalBytes)} ($percent%)"
+            }
+            InstallProgressUi(
+                fraction = if (indeterminate) 0f else state.progress,
+                indeterminate = indeterminate,
+                label = label
+            )
+        }
+        is WordPressDependencyManager.DownloadState.Extracting -> {
+            InstallProgressUi(0f, true, "${Strings.extracting}: ${state.fileName}")
+        }
+        is WordPressDependencyManager.DownloadState.Paused -> {
+            InstallProgressUi(state.progress, false, "${Strings.depDlPaused} · ${formatBytes(state.bytesDownloaded)}")
+        }
+        is WordPressDependencyManager.DownloadState.Error -> {
+            InstallProgressUi(0f, true, state.message)
+        }
+        else -> null
+    }
+}
+
+private fun progressFromPython(state: PythonDependencyManager.DownloadState): InstallProgressUi? {
+    return when (state) {
+        is PythonDependencyManager.DownloadState.Downloading -> {
+            val indeterminate = state.totalBytes <= 0
+            val label = if (indeterminate) {
+                "${state.currentFile} · ${formatBytes(state.bytesDownloaded)}"
+            } else {
+                val percent = (state.progress * 100).toInt()
+                "${state.currentFile} · ${formatBytes(state.bytesDownloaded)} / ${formatBytes(state.totalBytes)} ($percent%)"
+            }
+            InstallProgressUi(
+                fraction = if (indeterminate) 0f else state.progress,
+                indeterminate = indeterminate,
+                label = label
+            )
+        }
+        is PythonDependencyManager.DownloadState.Extracting -> {
+            InstallProgressUi(0f, true, "${Strings.extracting}: ${state.fileName}")
+        }
+        is PythonDependencyManager.DownloadState.Paused -> {
+            InstallProgressUi(state.progress, false, "${Strings.depDlPaused} · ${formatBytes(state.bytesDownloaded)}")
+        }
+        is PythonDependencyManager.DownloadState.Error -> {
+            InstallProgressUi(0f, true, state.message)
+        }
+        else -> null
+    }
 }
 
 private fun formatSize(bytes: Long): String = when {
     bytes < 1024 -> "$bytes B"
     bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-    bytes < 1024 * 1024 * 1024 -> String.format(java.util.Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024.0))
-    else -> String.format(java.util.Locale.getDefault(), "%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
+    bytes < 1024L * 1024 * 1024 -> String.format(Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024.0))
+    else -> String.format(Locale.getDefault(), "%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
 }
 
 private fun formatBytes(bytes: Long): String {
-    if (bytes < 1024) return "${bytes} B"
+    if (bytes < 1024) return "$bytes B"
     val kb = bytes / 1024.0
-    if (kb < 1024) return String.format(java.util.Locale.getDefault(), "%.1f KB", kb)
+    if (kb < 1024) return String.format(Locale.getDefault(), "%.1f KB", kb)
     val mb = kb / 1024.0
-    return String.format(java.util.Locale.getDefault(), "%.1f MB", mb)
+    return String.format(Locale.getDefault(), "%.1f MB", mb)
 }

@@ -4830,6 +4830,42 @@ object Strings {
     val rulePathServerRuntime: String get() = StringsE.rulePathServerRuntime
     val ruleAreaServerRuntime: String get() = StringsE.ruleAreaServerRuntime
     val ruleFixServerRuntime: String get() = StringsE.ruleFixServerRuntime
+    val linuxEnvSubtitle: String get() = StringsE.linuxEnvSubtitle
+    val linuxEnvCoreTools: String get() = StringsE.linuxEnvCoreTools
+    val linuxEnvCoreHint: String get() = StringsE.linuxEnvCoreHint
+    val linuxEnvPackageManagers: String get() = StringsE.linuxEnvPackageManagers
+    val linuxEnvPmHint: String get() = StringsE.linuxEnvPmHint
+    val linuxEnvOptionalRuntimes: String get() = StringsE.linuxEnvOptionalRuntimes
+    val linuxEnvOptionalHint: String get() = StringsE.linuxEnvOptionalHint
+    val linuxEnvOptionalShort: String get() = StringsE.linuxEnvOptionalShort
+    val linuxEnvMaintenance: String get() = StringsE.linuxEnvMaintenance
+    val linuxEnvCapabilities: String get() = StringsE.linuxEnvCapabilities
+    val linuxEnvInstallCore: String get() = StringsE.linuxEnvInstallCore
+    val linuxEnvRepair: String get() = StringsE.linuxEnvRepair
+    val linuxEnvToolReady: String get() = StringsE.linuxEnvToolReady
+    val linuxEnvToolMissing: String get() = StringsE.linuxEnvToolMissing
+    val linuxEnvRoleRuntime: String get() = StringsE.linuxEnvRoleRuntime
+    val linuxEnvRolePackageManager: String get() = StringsE.linuxEnvRolePackageManager
+    val linuxEnvEsbuildReady: String get() = StringsE.linuxEnvEsbuildReady
+    val linuxEnvEsbuildMissing: String get() = StringsE.linuxEnvEsbuildMissing
+    val linuxEnvNpmDefault: String get() = StringsE.linuxEnvNpmDefault
+    val linuxEnvPipFollowsPython: String get() = StringsE.linuxEnvPipFollowsPython
+    val linuxEnvLocked: String get() = StringsE.linuxEnvLocked
+    val linuxEnvResetDone: String get() = StringsE.linuxEnvResetDone
+    val linuxEnvCapFrontend: String get() = StringsE.linuxEnvCapFrontend
+    val linuxEnvCapStatic: String get() = StringsE.linuxEnvCapStatic
+    val linuxEnvCapNode: String get() = StringsE.linuxEnvCapNode
+    val linuxEnvCapPhp: String get() = StringsE.linuxEnvCapPhp
+    val linuxEnvCapPython: String get() = StringsE.linuxEnvCapPython
+    val linuxEnvCapEsbuild: String get() = StringsE.linuxEnvCapEsbuild
+    val linuxEnvCapAutoDetect: String get() = StringsE.linuxEnvCapAutoDetect
+    val linuxEnvCapComposerDep: String get() = StringsE.linuxEnvCapComposerDep
+    val linuxEnvCapFooter: String get() = StringsE.linuxEnvCapFooter
+    fun linuxEnvReadinessScore(ready: Int, total: Int): String = StringsE.linuxEnvReadinessScore(ready, total)
+    fun linuxEnvInstalledToast(name: String): String = StringsE.linuxEnvInstalledToast(name)
+    fun linuxEnvInstallFailedToast(name: String, message: String): String = StringsE.linuxEnvInstallFailedToast(name, message)
+    fun linuxEnvCacheFreed(size: String): String = StringsE.linuxEnvCacheFreed(size)
+    fun linuxEnvInstallingTool(name: String): String = StringsE.linuxEnvInstallingTool(name)
     val runtimeDepsSubtitle: String get() = StringsE.runtimeDepsSubtitle
     val depSearchHint: String get() = StringsE.depSearchHint
     val depFilterReady: String get() = StringsE.depFilterReady
@@ -63620,6 +63656,475 @@ object StringsE {
 
 
 
+
+
+    val linuxEnvSubtitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "把手机变成可构建 React / Vue / PHP / Python 项目的工作站"
+        AppLanguage.ENGLISH -> "Turn this device into a workstation for React, Vue, PHP, and Python builds"
+        AppLanguage.ARABIC -> "حوّل هذا الجهاز إلى محطة عمل لبناء React و Vue و PHP و Python"
+        AppLanguage.PORTUGUESE -> "Transforme este dispositivo em uma estação de build para React, Vue, PHP e Python"
+        AppLanguage.SPANISH -> "Convierte este dispositivo en una estación de build para React, Vue, PHP y Python"
+        AppLanguage.FRENCH -> "Transformez cet appareil en station de build pour React, Vue, PHP et Python"
+        AppLanguage.GERMAN -> "Mache dieses Gerät zur Build-Workstation für React, Vue, PHP und Python"
+        AppLanguage.RUSSIAN -> "Превратите устройство в рабочую станцию для сборки React, Vue, PHP и Python"
+        AppLanguage.JAPANESE -> "この端末を React / Vue / PHP / Python のビルド作業環境に"
+        AppLanguage.KOREAN -> "이 기기를 React / Vue / PHP / Python 빌드 워크스테이션으로"
+    }
+
+    val linuxEnvCoreTools: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "核心工具链"
+        AppLanguage.ENGLISH -> "Core toolchain"
+        AppLanguage.ARABIC -> "سلسلة الأدوات الأساسية"
+        AppLanguage.PORTUGUESE -> "Toolchain principal"
+        AppLanguage.SPANISH -> "Toolchain principal"
+        AppLanguage.FRENCH -> "Toolchain principale"
+        AppLanguage.GERMAN -> "Kern-Toolchain"
+        AppLanguage.RUSSIAN -> "Основная toolchain"
+        AppLanguage.JAPANESE -> "コアツールチェーン"
+        AppLanguage.KOREAN -> "핵심 툴체인"
+    }
+
+    val linuxEnvCoreHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js + npm 是前端本地构建的最小完备集"
+        AppLanguage.ENGLISH -> "Node.js + npm is the minimum complete set for local frontend builds"
+        AppLanguage.ARABIC -> "Node.js + npm هما الحد الأدنى الكامل للبناء المحلي للواجهات"
+        AppLanguage.PORTUGUESE -> "Node.js + npm é o conjunto mínimo completo para builds frontend locais"
+        AppLanguage.SPANISH -> "Node.js + npm es el conjunto mínimo completo para builds frontend locales"
+        AppLanguage.FRENCH -> "Node.js + npm est le minimum complet pour les builds frontend locaux"
+        AppLanguage.GERMAN -> "Node.js + npm ist das minimale vollständige Set für lokale Frontend-Builds"
+        AppLanguage.RUSSIAN -> "Node.js + npm — минимальный полный набор для локальной frontend-сборки"
+        AppLanguage.JAPANESE -> "Node.js + npm がローカルフロントエンドビルドの最小構成"
+        AppLanguage.KOREAN -> "Node.js + npm은 로컬 프론트엔드 빌드의 최소 완비 세트"
+    }
+
+    val linuxEnvPackageManagers: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "包管理与加速器"
+        AppLanguage.ENGLISH -> "Package managers & accelerators"
+        AppLanguage.ARABIC -> "مديري الحزم والمسرّعات"
+        AppLanguage.PORTUGUESE -> "Gerenciadores e aceleradores"
+        AppLanguage.SPANISH -> "Gestores y aceleradores"
+        AppLanguage.FRENCH -> "Gestionnaires et accélérateurs"
+        AppLanguage.GERMAN -> "Paketmanager & Beschleuniger"
+        AppLanguage.RUSSIAN -> "Менеджеры пакетов и ускорители"
+        AppLanguage.JAPANESE -> "パッケージマネージャと加速器"
+        AppLanguage.KOREAN -> "패키지 매니저 및 가속기"
+    }
+
+    val linuxEnvPmHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "随核心工具链一起准备；esbuild 可显著加快部分构建"
+        AppLanguage.ENGLISH -> "Prepared with the core toolchain; esbuild can speed up many builds"
+        AppLanguage.ARABIC -> "تُجهَّز مع السلسلة الأساسية؛ يمكن لـ esbuild تسريع كثير من عمليات البناء"
+        AppLanguage.PORTUGUESE -> "Preparados com a toolchain principal; o esbuild pode acelerar vários builds"
+        AppLanguage.SPANISH -> "Se preparan con la toolchain principal; esbuild puede acelerar muchos builds"
+        AppLanguage.FRENCH -> "Préparés avec la toolchain principale ; esbuild peut accélérer de nombreux builds"
+        AppLanguage.GERMAN -> "Werden mit der Kern-Toolchain vorbereitet; esbuild beschleunigt viele Builds"
+        AppLanguage.RUSSIAN -> "Готовятся вместе с основной toolchain; esbuild ускоряет многие сборки"
+        AppLanguage.JAPANESE -> "コアと同時に準備。esbuild で多くのビルドを高速化"
+        AppLanguage.KOREAN -> "핵심 툴체인과 함께 준비되며 esbuild로 많은 빌드를 가속"
+    }
+
+    val linuxEnvOptionalRuntimes: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "可选运行时"
+        AppLanguage.ENGLISH -> "Optional runtimes"
+        AppLanguage.ARABIC -> "أوقات تشغيل اختيارية"
+        AppLanguage.PORTUGUESE -> "Runtimes opcionais"
+        AppLanguage.SPANISH -> "Runtimes opcionales"
+        AppLanguage.FRENCH -> "Runtimes optionnels"
+        AppLanguage.GERMAN -> "Optionale Runtimes"
+        AppLanguage.RUSSIAN -> "Дополнительные среды"
+        AppLanguage.JAPANESE -> "オプションランタイム"
+        AppLanguage.KOREAN -> "선택 런타임"
+    }
+
+    val linuxEnvOptionalHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "按项目需要安装。Composer 依赖 PHP"
+        AppLanguage.ENGLISH -> "Install only what your projects need. Composer requires PHP"
+        AppLanguage.ARABIC -> "ثبّت ما تحتاجه مشاريعك فقط. Composer يحتاج PHP"
+        AppLanguage.PORTUGUESE -> "Instale só o que seus projetos precisam. Composer exige PHP"
+        AppLanguage.SPANISH -> "Instala solo lo que necesiten tus proyectos. Composer requiere PHP"
+        AppLanguage.FRENCH -> "Installez seulement ce dont vos projets ont besoin. Composer nécessite PHP"
+        AppLanguage.GERMAN -> "Installiere nur, was deine Projekte brauchen. Composer benötigt PHP"
+        AppLanguage.RUSSIAN -> "Ставьте только нужное. Composer требует PHP"
+        AppLanguage.JAPANESE -> "必要なものだけ。Composer は PHP が前提"
+        AppLanguage.KOREAN -> "프로젝트에 필요한 것만 설치. Composer는 PHP 필요"
+    }
+
+    val linuxEnvOptionalShort: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "可选"
+        AppLanguage.ENGLISH -> "Optional"
+        AppLanguage.ARABIC -> "اختياري"
+        AppLanguage.PORTUGUESE -> "Opcional"
+        AppLanguage.SPANISH -> "Opcional"
+        AppLanguage.FRENCH -> "Optionnel"
+        AppLanguage.GERMAN -> "Optional"
+        AppLanguage.RUSSIAN -> "Опционально"
+        AppLanguage.JAPANESE -> "オプション"
+        AppLanguage.KOREAN -> "선택"
+    }
+
+    val linuxEnvMaintenance: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "维护"
+        AppLanguage.ENGLISH -> "Maintenance"
+        AppLanguage.ARABIC -> "الصيانة"
+        AppLanguage.PORTUGUESE -> "Manutenção"
+        AppLanguage.SPANISH -> "Mantenimiento"
+        AppLanguage.FRENCH -> "Maintenance"
+        AppLanguage.GERMAN -> "Wartung"
+        AppLanguage.RUSSIAN -> "Обслуживание"
+        AppLanguage.JAPANESE -> "メンテナンス"
+        AppLanguage.KOREAN -> "유지관리"
+    }
+
+    val linuxEnvCapabilities: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "这台工作站能做什么"
+        AppLanguage.ENGLISH -> "What this workstation can do"
+        AppLanguage.ARABIC -> "ما الذي يمكن لمحطة العمل هذه فعله"
+        AppLanguage.PORTUGUESE -> "O que esta estação pode fazer"
+        AppLanguage.SPANISH -> "Qué puede hacer esta estación"
+        AppLanguage.FRENCH -> "Ce que cette station peut faire"
+        AppLanguage.GERMAN -> "Was diese Workstation kann"
+        AppLanguage.RUSSIAN -> "Что умеет эта рабочая станция"
+        AppLanguage.JAPANESE -> "この作業環境でできること"
+        AppLanguage.KOREAN -> "이 워크스테이션으로 할 수 있는 일"
+    }
+
+    val linuxEnvInstallCore: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装核心构建环境"
+        AppLanguage.ENGLISH -> "Install core build environment"
+        AppLanguage.ARABIC -> "تثبيت بيئة البناء الأساسية"
+        AppLanguage.PORTUGUESE -> "Instalar ambiente de build principal"
+        AppLanguage.SPANISH -> "Instalar entorno de build principal"
+        AppLanguage.FRENCH -> "Installer l'environnement de build principal"
+        AppLanguage.GERMAN -> "Kern-Build-Umgebung installieren"
+        AppLanguage.RUSSIAN -> "Установить основную среду сборки"
+        AppLanguage.JAPANESE -> "コアビルド環境をインストール"
+        AppLanguage.KOREAN -> "핵심 빌드 환경 설치"
+    }
+
+    val linuxEnvRepair: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "修复 / 补齐工具链"
+        AppLanguage.ENGLISH -> "Repair / complete toolchain"
+        AppLanguage.ARABIC -> "إصلاح / إكمال سلسلة الأدوات"
+        AppLanguage.PORTUGUESE -> "Reparar / completar toolchain"
+        AppLanguage.SPANISH -> "Reparar / completar toolchain"
+        AppLanguage.FRENCH -> "Réparer / compléter la toolchain"
+        AppLanguage.GERMAN -> "Toolchain reparieren / vervollständigen"
+        AppLanguage.RUSSIAN -> "Исправить / дополнить toolchain"
+        AppLanguage.JAPANESE -> "ツールチェーンを修復 / 補完"
+        AppLanguage.KOREAN -> "툴체인 복구 / 보완"
+    }
+
+    val linuxEnvToolReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "就绪"
+        AppLanguage.ENGLISH -> "Ready"
+        AppLanguage.ARABIC -> "جاهز"
+        AppLanguage.PORTUGUESE -> "Pronto"
+        AppLanguage.SPANISH -> "Listo"
+        AppLanguage.FRENCH -> "Prêt"
+        AppLanguage.GERMAN -> "Bereit"
+        AppLanguage.RUSSIAN -> "Готово"
+        AppLanguage.JAPANESE -> "準備完了"
+        AppLanguage.KOREAN -> "준비됨"
+    }
+
+    val linuxEnvToolMissing: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "缺失"
+        AppLanguage.ENGLISH -> "Missing"
+        AppLanguage.ARABIC -> "مفقود"
+        AppLanguage.PORTUGUESE -> "Ausente"
+        AppLanguage.SPANISH -> "Falta"
+        AppLanguage.FRENCH -> "Manquant"
+        AppLanguage.GERMAN -> "Fehlt"
+        AppLanguage.RUSSIAN -> "Отсутствует"
+        AppLanguage.JAPANESE -> "未導入"
+        AppLanguage.KOREAN -> "없음"
+    }
+
+    val linuxEnvRoleRuntime: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "运行时 · 执行脚本与构建"
+        AppLanguage.ENGLISH -> "Runtime · execute scripts and builds"
+        AppLanguage.ARABIC -> "وقت تشغيل · تنفيذ السكربتات والبناء"
+        AppLanguage.PORTUGUESE -> "Runtime · executar scripts e builds"
+        AppLanguage.SPANISH -> "Runtime · ejecutar scripts y builds"
+        AppLanguage.FRENCH -> "Runtime · exécuter scripts et builds"
+        AppLanguage.GERMAN -> "Runtime · Skripte und Builds ausführen"
+        AppLanguage.RUSSIAN -> "Runtime · запуск скриптов и сборок"
+        AppLanguage.JAPANESE -> "ランタイム · スクリプトとビルドを実行"
+        AppLanguage.KOREAN -> "런타임 · 스크립트 및 빌드 실행"
+    }
+
+    val linuxEnvRolePackageManager: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "包管理 · 安装项目依赖"
+        AppLanguage.ENGLISH -> "Package manager · install project dependencies"
+        AppLanguage.ARABIC -> "مدير حزم · تثبيت تبعيات المشروع"
+        AppLanguage.PORTUGUESE -> "Gerenciador · instalar dependências do projeto"
+        AppLanguage.SPANISH -> "Gestor · instalar dependencias del proyecto"
+        AppLanguage.FRENCH -> "Gestionnaire · installer les dépendances du projet"
+        AppLanguage.GERMAN -> "Paketmanager · Projektabhängigkeiten installieren"
+        AppLanguage.RUSSIAN -> "Менеджер пакетов · установка зависимостей"
+        AppLanguage.JAPANESE -> "パッケージ管理 · 依存関係をインストール"
+        AppLanguage.KOREAN -> "패키지 관리 · 프로젝트 종속성 설치"
+    }
+
+    val linuxEnvEsbuildReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "原生加速可用"
+        AppLanguage.ENGLISH -> "Native acceleration ready"
+        AppLanguage.ARABIC -> "التسريع الأصلي جاهز"
+        AppLanguage.PORTUGUESE -> "Aceleração nativa pronta"
+        AppLanguage.SPANISH -> "Aceleración nativa lista"
+        AppLanguage.FRENCH -> "Accélération native prête"
+        AppLanguage.GERMAN -> "Native Beschleunigung bereit"
+        AppLanguage.RUSSIAN -> "Нативное ускорение готово"
+        AppLanguage.JAPANESE -> "ネイティブ加速が利用可能"
+        AppLanguage.KOREAN -> "네이티브 가속 준비됨"
+    }
+
+    val linuxEnvEsbuildMissing: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装核心环境时一并准备"
+        AppLanguage.ENGLISH -> "Prepared when you install the core environment"
+        AppLanguage.ARABIC -> "يُجهَّز عند تثبيت البيئة الأساسية"
+        AppLanguage.PORTUGUESE -> "Preparado ao instalar o ambiente principal"
+        AppLanguage.SPANISH -> "Se prepara al instalar el entorno principal"
+        AppLanguage.FRENCH -> "Préparé lors de l'installation de l'environnement principal"
+        AppLanguage.GERMAN -> "Wird mit der Kern-Umgebung vorbereitet"
+        AppLanguage.RUSSIAN -> "Подготавливается при установке основной среды"
+        AppLanguage.JAPANESE -> "コア環境のインストール時に準備"
+        AppLanguage.KOREAN -> "핵심 환경 설치 시 함께 준비"
+    }
+
+    val linuxEnvNpmDefault: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "默认包管理器"
+        AppLanguage.ENGLISH -> "Default package manager"
+        AppLanguage.ARABIC -> "مدير الحزم الافتراضي"
+        AppLanguage.PORTUGUESE -> "Gerenciador de pacotes padrão"
+        AppLanguage.SPANISH -> "Gestor de paquetes predeterminado"
+        AppLanguage.FRENCH -> "Gestionnaire de paquets par défaut"
+        AppLanguage.GERMAN -> "Standard-Paketmanager"
+        AppLanguage.RUSSIAN -> "Менеджер пакетов по умолчанию"
+        AppLanguage.JAPANESE -> "デフォルトのパッケージマネージャ"
+        AppLanguage.KOREAN -> "기본 패키지 매니저"
+    }
+
+    val linuxEnvPipFollowsPython: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "随 Python 一起可用"
+        AppLanguage.ENGLISH -> "Available with Python"
+        AppLanguage.ARABIC -> "متاح مع Python"
+        AppLanguage.PORTUGUESE -> "Disponível com Python"
+        AppLanguage.SPANISH -> "Disponible con Python"
+        AppLanguage.FRENCH -> "Disponible avec Python"
+        AppLanguage.GERMAN -> "Mit Python verfügbar"
+        AppLanguage.RUSSIAN -> "Доступен вместе с Python"
+        AppLanguage.JAPANESE -> "Python と同時に利用可能"
+        AppLanguage.KOREAN -> "Python과 함께 사용 가능"
+    }
+
+    val linuxEnvLocked: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "需先装 PHP"
+        AppLanguage.ENGLISH -> "Needs PHP first"
+        AppLanguage.ARABIC -> "يحتاج PHP أولاً"
+        AppLanguage.PORTUGUESE -> "Precisa de PHP antes"
+        AppLanguage.SPANISH -> "Requiere PHP primero"
+        AppLanguage.FRENCH -> "Nécessite PHP d'abord"
+        AppLanguage.GERMAN -> "Zuerst PHP nötig"
+        AppLanguage.RUSSIAN -> "Сначала нужен PHP"
+        AppLanguage.JAPANESE -> "先に PHP が必要"
+        AppLanguage.KOREAN -> "먼저 PHP 필요"
+    }
+
+    val linuxEnvResetDone: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建环境已重置"
+        AppLanguage.ENGLISH -> "Build environment reset"
+        AppLanguage.ARABIC -> "تمت إعادة تعيين بيئة البناء"
+        AppLanguage.PORTUGUESE -> "Ambiente de build redefinido"
+        AppLanguage.SPANISH -> "Entorno de build restablecido"
+        AppLanguage.FRENCH -> "Environnement de build réinitialisé"
+        AppLanguage.GERMAN -> "Build-Umgebung zurückgesetzt"
+        AppLanguage.RUSSIAN -> "Среда сборки сброшена"
+        AppLanguage.JAPANESE -> "ビルド環境をリセットしました"
+        AppLanguage.KOREAN -> "빌드 환경이 재설정됨"
+    }
+
+    val linuxEnvCapFrontend: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "React / Vue / Next / Nuxt / Vite"
+        AppLanguage.ENGLISH -> "React / Vue / Next / Nuxt / Vite"
+        AppLanguage.ARABIC -> "React / Vue / Next / Nuxt / Vite"
+        AppLanguage.PORTUGUESE -> "React / Vue / Next / Nuxt / Vite"
+        AppLanguage.SPANISH -> "React / Vue / Next / Nuxt / Vite"
+        AppLanguage.FRENCH -> "React / Vue / Next / Nuxt / Vite"
+        AppLanguage.GERMAN -> "React / Vue / Next / Nuxt / Vite"
+        AppLanguage.RUSSIAN -> "React / Vue / Next / Nuxt / Vite"
+        AppLanguage.JAPANESE -> "React / Vue / Next / Nuxt / Vite"
+        AppLanguage.KOREAN -> "React / Vue / Next / Nuxt / Vite"
+    }
+
+    val linuxEnvCapStatic: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "静态 HTML 直接打包"
+        AppLanguage.ENGLISH -> "Static HTML packaging"
+        AppLanguage.ARABIC -> "تعبئة HTML ثابت"
+        AppLanguage.PORTUGUESE -> "Empacotamento de HTML estático"
+        AppLanguage.SPANISH -> "Empaquetado de HTML estático"
+        AppLanguage.FRENCH -> "Packaging HTML statique"
+        AppLanguage.GERMAN -> "Statisches HTML-Packaging"
+        AppLanguage.RUSSIAN -> "Упаковка статического HTML"
+        AppLanguage.JAPANESE -> "静的 HTML のパッケージ化"
+        AppLanguage.KOREAN -> "정적 HTML 패키징"
+    }
+
+    val linuxEnvCapNode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js 本地服务模式"
+        AppLanguage.ENGLISH -> "Node.js local server mode"
+        AppLanguage.ARABIC -> "وضع خادم Node.js المحلي"
+        AppLanguage.PORTUGUESE -> "Modo servidor local Node.js"
+        AppLanguage.SPANISH -> "Modo servidor local de Node.js"
+        AppLanguage.FRENCH -> "Mode serveur local Node.js"
+        AppLanguage.GERMAN -> "Node.js-Local-Server-Modus"
+        AppLanguage.RUSSIAN -> "Локальный серверный режим Node.js"
+        AppLanguage.JAPANESE -> "Node.js ローカルサーバーモード"
+        AppLanguage.KOREAN -> "Node.js 로컬 서버 모드"
+    }
+
+    val linuxEnvCapPhp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP + Composer 依赖"
+        AppLanguage.ENGLISH -> "PHP + Composer dependencies"
+        AppLanguage.ARABIC -> "تبعيات PHP + Composer"
+        AppLanguage.PORTUGUESE -> "Dependências PHP + Composer"
+        AppLanguage.SPANISH -> "Dependencias PHP + Composer"
+        AppLanguage.FRENCH -> "Dépendances PHP + Composer"
+        AppLanguage.GERMAN -> "PHP + Composer-Abhängigkeiten"
+        AppLanguage.RUSSIAN -> "Зависимости PHP + Composer"
+        AppLanguage.JAPANESE -> "PHP + Composer 依存関係"
+        AppLanguage.KOREAN -> "PHP + Composer 종속성"
+    }
+
+    val linuxEnvCapPython: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python + pip 依赖"
+        AppLanguage.ENGLISH -> "Python + pip dependencies"
+        AppLanguage.ARABIC -> "تبعيات Python + pip"
+        AppLanguage.PORTUGUESE -> "Dependências Python + pip"
+        AppLanguage.SPANISH -> "Dependencias Python + pip"
+        AppLanguage.FRENCH -> "Dépendances Python + pip"
+        AppLanguage.GERMAN -> "Python + pip-Abhängigkeiten"
+        AppLanguage.RUSSIAN -> "Зависимости Python + pip"
+        AppLanguage.JAPANESE -> "Python + pip 依存関係"
+        AppLanguage.KOREAN -> "Python + pip 종속성"
+    }
+
+    val linuxEnvCapEsbuild: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "esbuild 原生加速"
+        AppLanguage.ENGLISH -> "Native esbuild acceleration"
+        AppLanguage.ARABIC -> "تسريع esbuild الأصلي"
+        AppLanguage.PORTUGUESE -> "Aceleração nativa do esbuild"
+        AppLanguage.SPANISH -> "Aceleración nativa de esbuild"
+        AppLanguage.FRENCH -> "Accélération native esbuild"
+        AppLanguage.GERMAN -> "Native esbuild-Beschleunigung"
+        AppLanguage.RUSSIAN -> "Нативное ускорение esbuild"
+        AppLanguage.JAPANESE -> "esbuild ネイティブ加速"
+        AppLanguage.KOREAN -> "esbuild 네이티브 가속"
+    }
+
+    val linuxEnvCapAutoDetect: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动检测框架与包管理器"
+        AppLanguage.ENGLISH -> "Auto-detect framework & package manager"
+        AppLanguage.ARABIC -> "اكتشاف تلقائي للإطار ومدير الحزم"
+        AppLanguage.PORTUGUESE -> "Detectar framework e gerenciador automaticamente"
+        AppLanguage.SPANISH -> "Detectar framework y gestor automáticamente"
+        AppLanguage.FRENCH -> "Détection auto du framework et du gestionnaire"
+        AppLanguage.GERMAN -> "Framework & Paketmanager automatisch erkennen"
+        AppLanguage.RUSSIAN -> "Автоопределение фреймворка и менеджера"
+        AppLanguage.JAPANESE -> "フレームワークとパッケージマネージャを自動検出"
+        AppLanguage.KOREAN -> "프레임워크 및 패키지 매니저 자동 감지"
+    }
+
+    val linuxEnvCapComposerDep: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Composer 依赖 PHP 先安装"
+        AppLanguage.ENGLISH -> "Composer depends on PHP first"
+        AppLanguage.ARABIC -> "Composer يعتمد على تثبيت PHP أولاً"
+        AppLanguage.PORTUGUESE -> "Composer depende do PHP primeiro"
+        AppLanguage.SPANISH -> "Composer depende de PHP primero"
+        AppLanguage.FRENCH -> "Composer dépend d'abord de PHP"
+        AppLanguage.GERMAN -> "Composer setzt zuerst PHP voraus"
+        AppLanguage.RUSSIAN -> "Composer сначала требует PHP"
+        AppLanguage.JAPANESE -> "Composer は先に PHP が必要"
+        AppLanguage.KOREAN -> "Composer는 먼저 PHP가 필요"
+    }
+
+    val linuxEnvCapFooter: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "先装核心链，再按项目补可选运行时。工具链全部跑在设备本地。"
+        AppLanguage.ENGLISH -> "Install the core chain first, then add optional runtimes per project. Everything runs on-device."
+        AppLanguage.ARABIC -> "ثبّت السلسلة الأساسية أولاً، ثم أضف أوقات التشغيل الاختيارية حسب المشروع. كل شيء يعمل على الجهاز."
+        AppLanguage.PORTUGUESE -> "Instale a cadeia principal primeiro e depois adicione runtimes opcionais por projeto. Tudo roda no dispositivo."
+        AppLanguage.SPANISH -> "Instala primero la cadena principal y luego añade runtimes opcionales por proyecto. Todo corre en el dispositivo."
+        AppLanguage.FRENCH -> "Installez d'abord la chaîne principale, puis ajoutez des runtimes optionnels par projet. Tout s'exécute sur l'appareil."
+        AppLanguage.GERMAN -> "Installiere zuerst die Kern-Kette, dann optionale Runtimes je Projekt. Alles läuft auf dem Gerät."
+        AppLanguage.RUSSIAN -> "Сначала основная цепочка, затем опциональные среды под проект. Всё работает на устройстве."
+        AppLanguage.JAPANESE -> "まずコアを入れ、プロジェクトごとにオプションを追加。すべて端末内で実行。"
+        AppLanguage.KOREAN -> "먼저 핵심 체인을 설치하고, 프로젝트별로 선택 런타임을 추가하세요. 모두 기기에서 실행됩니다."
+    }
+
+    fun linuxEnvReadinessScore(ready: Int, total: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "就绪度 $ready / $total"
+        AppLanguage.ENGLISH -> "Readiness $ready / $total"
+        AppLanguage.ARABIC -> "الجاهزية $ready / $total"
+        AppLanguage.PORTUGUESE -> "Prontidão $ready / $total"
+        AppLanguage.SPANISH -> "Preparación $ready / $total"
+        AppLanguage.FRENCH -> "Préparation $ready / $total"
+        AppLanguage.GERMAN -> "Bereitschaft $ready / $total"
+        AppLanguage.RUSSIAN -> "Готовность $ready / $total"
+        AppLanguage.JAPANESE -> "準備度 $ready / $total"
+        AppLanguage.KOREAN -> "준비도 $ready / $total"
+    }
+
+    fun linuxEnvInstalledToast(name: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "$name 已安装"
+        AppLanguage.ENGLISH -> "$name installed"
+        AppLanguage.ARABIC -> "تم تثبيت $name"
+        AppLanguage.PORTUGUESE -> "$name instalado"
+        AppLanguage.SPANISH -> "$name instalado"
+        AppLanguage.FRENCH -> "$name installé"
+        AppLanguage.GERMAN -> "$name installiert"
+        AppLanguage.RUSSIAN -> "$name установлен"
+        AppLanguage.JAPANESE -> "$name をインストールしました"
+        AppLanguage.KOREAN -> "$name 설치됨"
+    }
+
+    fun linuxEnvInstallFailedToast(name: String, message: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "$name 安装失败：$message"
+        AppLanguage.ENGLISH -> "$name install failed: $message"
+        AppLanguage.ARABIC -> "فشل تثبيت $name: $message"
+        AppLanguage.PORTUGUESE -> "Falha ao instalar $name: $message"
+        AppLanguage.SPANISH -> "Error al instalar $name: $message"
+        AppLanguage.FRENCH -> "Échec de l'installation de $name : $message"
+        AppLanguage.GERMAN -> "Installation von $name fehlgeschlagen: $message"
+        AppLanguage.RUSSIAN -> "Ошибка установки $name: $message"
+        AppLanguage.JAPANESE -> "$name のインストールに失敗: $message"
+        AppLanguage.KOREAN -> "$name 설치 실패: $message"
+    }
+
+    fun linuxEnvCacheFreed(size: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已释放 $size 缓存"
+        AppLanguage.ENGLISH -> "Freed $size of cache"
+        AppLanguage.ARABIC -> "تم تحرير $size من ذاكرة التخزين المؤقت"
+        AppLanguage.PORTUGUESE -> "Liberados $size de cache"
+        AppLanguage.SPANISH -> "Se liberaron $size de caché"
+        AppLanguage.FRENCH -> "$size de cache libérés"
+        AppLanguage.GERMAN -> "$size Cache freigegeben"
+        AppLanguage.RUSSIAN -> "Освобождено $size кэша"
+        AppLanguage.JAPANESE -> "キャッシュ $size を解放"
+        AppLanguage.KOREAN -> "캐시 $size 확보"
+    }
+
+    fun linuxEnvInstallingTool(name: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在安装 $name…"
+        AppLanguage.ENGLISH -> "Installing $name…"
+        AppLanguage.ARABIC -> "جارٍ تثبيت $name…"
+        AppLanguage.PORTUGUESE -> "Instalando $name…"
+        AppLanguage.SPANISH -> "Instalando $name…"
+        AppLanguage.FRENCH -> "Installation de $name…"
+        AppLanguage.GERMAN -> "$name wird installiert…"
+        AppLanguage.RUSSIAN -> "Установка $name…"
+        AppLanguage.JAPANESE -> "$name をインストール中…"
+        AppLanguage.KOREAN -> "$name 설치 중…"
+    }
 
     val runtimeDepsSubtitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "安装、更新并管理打包所需的运行时与依赖"
