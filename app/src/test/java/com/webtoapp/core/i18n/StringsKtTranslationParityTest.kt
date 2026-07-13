@@ -7,15 +7,16 @@ import java.io.File
 class StringsKtTranslationParityTest {
 
     @Test
-    fun `every when(lang) block covers all three languages`() {
+    fun `every when(lang) block covers all supported languages`() {
         val source = readStringsKt()
         val problems = analyse(source)
         assertWithMessage(
             buildString {
                 appendLine("Strings.kt has when(lang) blocks that fail i18n parity rules.")
                 appendLine("Each block must either:")
-                appendLine("  - list all three branches: AppLanguage.CHINESE / .ENGLISH / .ARABIC")
+                appendLine("  - list all ten AppLanguage branches (zh/en/ar/pt/es/fr/de/ru/ja/ko)")
                 appendLine("  - or defer to Android resources: else -> getString(R.string.x)")
+                appendLine("    (resource locales are only zh/en/ar; other languages fall back to English)")
                 appendLine()
                 appendLine("Offending blocks (line number is the line containing 'when (Strings.lang)'):")
                 problems.forEach { appendLine("  $it") }
@@ -46,7 +47,6 @@ class StringsKtTranslationParityTest {
             }
 
             if (mode == ScanMode.Code && source.regionMatches(index, whenLangNeedle, 0, whenLangNeedle.length)) {
-
                 val braceIdx = findOpeningBrace(source, index + whenLangNeedle.length)
                 if (braceIdx != null) {
                     val openerLine = lineOf(source, index)
@@ -75,30 +75,37 @@ class StringsKtTranslationParityTest {
                 i++
                 continue
             }
-
             return null
         }
         return null
     }
 
     private data class BlockAnalysis(
-        val hasChinese: Boolean,
-        val hasEnglish: Boolean,
-        val hasArabic: Boolean,
+        val present: Set<String>,
         val nonDeferralElseAtTopLevel: Boolean,
     )
 
+    private val requiredLanguages = listOf(
+        "CHINESE",
+        "ENGLISH",
+        "ARABIC",
+        "PORTUGUESE",
+        "SPANISH",
+        "FRENCH",
+        "GERMAN",
+        "RUSSIAN",
+        "JAPANESE",
+        "KOREAN",
+    )
+
     private fun analyseBlock(source: String, openingBraceIndex: Int): Pair<BlockAnalysis, Int> {
-        var hasChinese = false
-        var hasEnglish = false
-        var hasArabic = false
+        val present = mutableSetOf<String>()
         var nonDeferralElseAtTopLevel = false
 
         var depth = 1
         var i = openingBraceIndex + 1
 
         while (i < source.length && depth > 0) {
-
             val (next, _) = skipNonCode(source, i)
             if (next != i) {
                 i = next
@@ -114,7 +121,7 @@ class StringsKtTranslationParityTest {
                 '}' -> {
                     depth--
                     if (depth == 0) {
-                        return BlockAnalysis(hasChinese, hasEnglish, hasArabic, nonDeferralElseAtTopLevel) to i
+                        return BlockAnalysis(present, nonDeferralElseAtTopLevel) to i
                     }
                     i++
                     continue
@@ -122,10 +129,11 @@ class StringsKtTranslationParityTest {
             }
 
             if (depth == 1) {
-
-                if (matchAt(source, i, "AppLanguage.CHINESE")) hasChinese = true
-                if (matchAt(source, i, "AppLanguage.ENGLISH")) hasEnglish = true
-                if (matchAt(source, i, "AppLanguage.ARABIC")) hasArabic = true
+                for (lang in requiredLanguages) {
+                    if (matchAt(source, i, "AppLanguage.$lang")) {
+                        present += lang
+                    }
+                }
 
                 if (matchAt(source, i, "else") && isAtWordStart(source, i) &&
                     looksLikeArrowAfter(source, i + 4)
@@ -142,7 +150,7 @@ class StringsKtTranslationParityTest {
             i++
         }
 
-        return BlockAnalysis(hasChinese, hasEnglish, hasArabic, nonDeferralElseAtTopLevel) to (source.length - 1)
+        return BlockAnalysis(present, nonDeferralElseAtTopLevel) to (source.length - 1)
     }
 
     private fun isAtWordStart(source: String, i: Int): Boolean {
@@ -186,7 +194,6 @@ class StringsKtTranslationParityTest {
         while (i < source.length && (source[i].isLetterOrDigit() || source[i] == '_')) i++
 
         if (i < source.length && source[i] == ',') {
-
             var parenDepth = 1
             i++
             while (i < source.length && parenDepth > 0) {
@@ -246,7 +253,8 @@ class StringsKtTranslationParityTest {
         }
 
         if (ch == '"' && index + 2 < source.length &&
-            source[index + 1] == '"' && source[index + 2] == '"') {
+            source[index + 1] == '"' && source[index + 2] == '"'
+        ) {
             var i = index + 3
             while (i + 2 < source.length) {
                 if (source[i] == '"' && source[i + 1] == '"' && source[i + 2] == '"') {
@@ -292,22 +300,17 @@ class StringsKtTranslationParityTest {
     private fun inspect(analysis: BlockAnalysis, openerLine: Int): List<String> {
         val problems = mutableListOf<String>()
 
-        val anyBranch = analysis.hasChinese || analysis.hasEnglish || analysis.hasArabic
+        val anyBranch = analysis.present.isNotEmpty()
         if (!anyBranch && !analysis.nonDeferralElseAtTopLevel) {
-
             return problems
         }
         if (analysis.nonDeferralElseAtTopLevel) {
             problems += "L$openerLine: when(lang) contains 'else ->' that is not a getString(R.string.*) deferral. " +
-                "Hard-coded else branches mask missing translations — list all three AppLanguage cases instead."
+                "Hard-coded else branches mask missing translations — list all AppLanguage cases instead."
             return problems
         }
-        if (!(analysis.hasChinese && analysis.hasEnglish && analysis.hasArabic)) {
-            val missing = buildList {
-                if (!analysis.hasChinese) add("CHINESE")
-                if (!analysis.hasEnglish) add("ENGLISH")
-                if (!analysis.hasArabic) add("ARABIC")
-            }
+        val missing = requiredLanguages.filter { it !in analysis.present }
+        if (missing.isNotEmpty()) {
             problems += "L$openerLine: when(lang) is missing branches for: ${missing.joinToString(", ")}"
         }
         return problems

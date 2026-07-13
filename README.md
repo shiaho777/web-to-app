@@ -30,7 +30,7 @@
 ---
 
 <div align="center">
-<img src=".github/assets/social-preview.jpg" width="90%" alt="WebToApp: My Apps home, Create App picker, main toolbox, and per-app APK actions running on an Android phone" />
+<img src=".github/assets/social-preview.jpg" width="90%" alt="WebToApp screenshots: My Apps, Create App, toolbox, and APK actions on Android" />
 </div>
 
 ---

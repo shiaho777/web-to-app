@@ -57,11 +57,15 @@ class ModuleMarketRepository private constructor(
 
         private val SOURCES: List<String> = listOf(
             "https://raw.githubusercontent.com/$OWNER/$REPO/$BRANCH/$MODULES_DIR",
-
             "https://cdn.jsdelivr.net/gh/$OWNER/$REPO@$BRANCH/$MODULES_DIR"
         )
 
-        private const val MIRROR_PREFIX = "https://v4.gh-proxy.org/"
+        private val GITHUB_CN_PROXIES = listOf(
+            "https://gh-proxy.com/",
+            "https://ghfast.top/",
+            "https://gh-proxy.org/",
+            "https://v4.gh-proxy.org/"
+        )
     }
 
     private val gson: Gson = GsonBuilder().setLenient().create()
@@ -125,7 +129,7 @@ class ModuleMarketRepository private constructor(
                     fromCache = true
                 )
             } else {
-                _state.value = MarketState.Error("Could not reach the module market. Check your network and try again.")
+                _state.value = MarketState.Error(Strings.moduleMarketReachError)
             }
             return@withContext
         }
@@ -138,7 +142,7 @@ class ModuleMarketRepository private constructor(
         }
 
         if (parsedRegistry == null) {
-            _state.value = MarketState.Error("Module registry was malformed.")
+            _state.value = MarketState.Error(Strings.moduleMarketMalformedError)
             return@withContext
         }
 
@@ -283,19 +287,28 @@ class ModuleMarketRepository private constructor(
         if (raw.startsWith("https://") || raw.startsWith("http://")) return raw
 
         val normalised = raw.removePrefix("./").removePrefix("/")
-        return "$MIRROR_PREFIX${SOURCES.first()}/${entry.path}/$normalised"
+        val origin = "${SOURCES.first()}/${entry.path}/$normalised"
+        val proxy = mirrorPrefixes().firstOrNull()
+        return if (proxy != null) "$proxy$origin" else origin
     }
 
     val contributingUrl: String =
         "https://github.com/$OWNER/$REPO/blob/$BRANCH/$MODULES_DIR/README.md"
 
-    private fun fetchRaw(relativePath: String): String? {
-        for (base in SOURCES) {
-            val mirroredUrl = "$MIRROR_PREFIX$base/$relativePath"
-            fetchOnce(mirroredUrl)?.let { return it }
+    private fun mirrorPrefixes(): List<String> {
+        return com.webtoapp.core.network.CnMirrorProbe.getOrderedProxies(GITHUB_CN_PROXIES)
+    }
 
-            val directUrl = "$base/$relativePath"
-            fetchOnce(directUrl)?.let { return it }
+    private fun fetchRaw(relativePath: String): String? {
+        val prefixes = mirrorPrefixes()
+        for (base in SOURCES) {
+            val origin = "$base/$relativePath"
+            if (base.contains("raw.githubusercontent.com") || base.contains("github.com")) {
+                for (prefix in prefixes) {
+                    fetchOnce("$prefix$origin")?.let { return it }
+                }
+            }
+            fetchOnce(origin)?.let { return it }
         }
         return null
     }
