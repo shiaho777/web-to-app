@@ -44,6 +44,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -192,9 +193,10 @@ fun ThinkingBlock(
     initiallyExpanded: Boolean = isLive,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember(content.hashCode()) { mutableStateOf(initiallyExpanded) }
+    var expanded by remember(content.hashCode()) { mutableStateOf(initiallyExpanded && isLive) }
     LaunchedEffect(isLive) {
         if (!isLive) expanded = false
+        else expanded = true
     }
     WtaCard(
         tone = WtaCardTone.Elevated,
@@ -440,7 +442,7 @@ private fun buildSegments(
     var cursor = 0
     INLINE_TOOL_MARKER.findAll(text).forEach { match ->
         val before = text.substring(cursor, match.range.first)
-        if (before.isNotEmpty()) out += TimelineSegment.Prose(before)
+        if (before.isNotBlank()) out += TimelineSegment.Prose(before.trimEnd())
         val id = match.groupValues[1]
         val tc = toolsById[id]
         if (tc != null) {
@@ -451,7 +453,7 @@ private fun buildSegments(
     }
     if (cursor < text.length) {
         val tail = text.substring(cursor)
-        if (tail.isNotEmpty()) out += TimelineSegment.Prose(tail)
+        if (tail.isNotBlank()) out += TimelineSegment.Prose(tail.trimEnd())
     }
     return out
 }
@@ -464,96 +466,107 @@ fun ToolCallCard(tc: RecordedToolCall, live: Boolean) {
         tc.ok -> Icons.Outlined.CheckCircle to WtaColors.semantic.success
         else -> Icons.Outlined.ErrorOutline to MaterialTheme.colorScheme.error
     }
-    var expanded by remember(tc.toolCallId) { mutableStateOf(live && running) }
-    LaunchedEffect(running) {
-        if (!running && live) expanded = false
+    var expanded by remember(tc.toolCallId) { mutableStateOf(running) }
+    LaunchedEffect(running, live) {
+        expanded = running
     }
-    WtaCard(
-        tone = WtaCardTone.Elevated,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { expanded = !expanded }
-                .padding(horizontal = WtaSpacing.Small + 2.dp, vertical = WtaSpacing.Small),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = tint,
-                modifier = Modifier.size(WtaSize.IconSmall)
-            )
-            Spacer(Modifier.width(WtaSpacing.Small))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = tc.name,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                val subtitle = subtitleFor(tc)
-                if (subtitle.isNotBlank()) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
-                    )
-                }
+    val subtitle = remember(tc.argumentsJson, tc.activity, tc.resultPreview, running) {
+        subtitleFor(tc).ifBlank {
+            when {
+                running -> tc.activity.orEmpty()
+                !tc.ok -> tc.resultPreview.take(80)
+                else -> ""
             }
-            if (running) {
-                Text(
-                    text = Strings.aiCodingToolStreaming,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
-            }
-            Icon(
-                imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(WtaSize.IconSmall)
-            )
         }
-        AnimatedVisibility(
-            visible = expanded,
-            enter = expandVertically() + fadeIn(),
-            exit = shrinkVertically() + fadeOut()
-        ) {
-            Column(
+    }
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        shape = MaterialTheme.shapes.medium,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = WtaSpacing.Small + 2.dp)
-                    .padding(bottom = WtaSpacing.Small + 2.dp)
+                    .clickable { expanded = !expanded }
+                    .padding(horizontal = WtaSpacing.Small + 2.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                val handled = SpecialToolBody(tc, running = running)
-                if (!handled) {
-                    if (tc.argumentsJson.isNotBlank()) {
-                        ToolBlockLabel(Strings.aiCodingToolArgsLabel)
-                        Spacer(Modifier.height(2.dp))
-                        ToolMonoBlock(prettyJsonOrRaw(tc.argumentsJson))
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = tint,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(Modifier.width(WtaSpacing.Small))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = tc.name,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1
+                    )
+                    if (subtitle.isNotBlank()) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
                     }
-                    if (running) {
-                        Spacer(Modifier.height(WtaSpacing.Tiny + 2.dp))
-                        ToolBlockLabel(Strings.aiCodingToolResultLabel)
-                        Spacer(Modifier.height(2.dp))
-                        if (tc.resultPreview.isNotBlank()) {
-                            ToolMonoBlock(text = tc.resultPreview, spinner = true)
-                        } else {
-                            ToolMonoBlock(
-                                text = (tc.activity ?: Strings.aiCodingPhaseToolRunning),
-                                spinner = true
-                            )
+                }
+                if (running) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(12.dp),
+                        strokeWidth = 1.5.dp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
+                }
+                Icon(
+                    imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = WtaSpacing.Small + 2.dp)
+                        .padding(bottom = WtaSpacing.Small)
+                ) {
+                    val handled = SpecialToolBody(tc, running = running)
+                    if (!handled) {
+                        if (tc.argumentsJson.isNotBlank()) {
+                            ToolBlockLabel(Strings.aiCodingToolArgsLabel)
+                            Spacer(Modifier.height(2.dp))
+                            ToolMonoBlock(prettyJsonOrRaw(tc.argumentsJson))
                         }
-                    } else if (tc.resultPreview.isNotBlank()) {
-                        Spacer(Modifier.height(WtaSpacing.Tiny + 2.dp))
-                        ToolBlockLabel(Strings.aiCodingToolResultLabel)
-                        Spacer(Modifier.height(2.dp))
-                        ToolMonoBlock(text = tc.resultPreview)
+                        if (running) {
+                            Spacer(Modifier.height(WtaSpacing.Tiny + 2.dp))
+                            ToolBlockLabel(Strings.aiCodingToolResultLabel)
+                            Spacer(Modifier.height(2.dp))
+                            if (tc.resultPreview.isNotBlank() && tc.resultPreview != RecordedToolCall.RUNNING_SENTINEL) {
+                                ToolMonoBlock(text = tc.resultPreview, spinner = true)
+                            } else {
+                                ToolMonoBlock(
+                                    text = (tc.activity ?: Strings.aiCodingPhaseToolRunning),
+                                    spinner = true
+                                )
+                            }
+                        } else if (tc.resultPreview.isNotBlank()) {
+                            Spacer(Modifier.height(WtaSpacing.Tiny + 2.dp))
+                            ToolBlockLabel(Strings.aiCodingToolResultLabel)
+                            Spacer(Modifier.height(2.dp))
+                            ToolMonoBlock(text = tc.resultPreview)
+                        }
                     }
                 }
             }
@@ -974,42 +987,93 @@ private fun AttachmentList(paths: List<String>) {
 @Composable
 fun TodoChecklist(todos: List<com.webtoapp.core.aicoding.todo.TodoManager.Item>) {
     if (todos.isEmpty()) return
-    WtaCard(
-        tone = WtaCardTone.Elevated,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(WtaSpacing.Medium)
+    val done = todos.count { it.status == com.webtoapp.core.aicoding.todo.TodoManager.Item.Status.Completed }
+    val total = todos.size
+    var expanded by remember(total) { mutableStateOf(true) }
+    LaunchedEffect(done, total) {
+        if (done == total && total > 0) expanded = false
+    }
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Text(
-            text = Strings.aiCodingTodoListHeader,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(Modifier.height(WtaSpacing.Small - 2.dp))
-        todos.forEach { item ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                val (icon, color) = when (item.status) {
-                    com.webtoapp.core.aicoding.todo.TodoManager.Item.Status.Completed ->
-                        Icons.Outlined.CheckCircle to WtaColors.semantic.success
-                    com.webtoapp.core.aicoding.todo.TodoManager.Item.Status.InProgress ->
-                        Icons.Outlined.PlayArrow to MaterialTheme.colorScheme.primary
-                    else -> Icons.Outlined.RadioButtonUnchecked to MaterialTheme.colorScheme.onSurfaceVariant
-                }
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded }
+                    .padding(horizontal = WtaSpacing.Medium, vertical = WtaSpacing.Small + 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Icon(
-                    imageVector = icon,
+                    imageVector = Icons.Outlined.CheckCircle,
                     contentDescription = null,
-                    tint = color,
-                    modifier = Modifier.size(14.dp)
+                    tint = if (done == total) WtaColors.semantic.success else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
                 )
                 Spacer(Modifier.width(WtaSpacing.Small))
-                Text(
-                    text = item.subject,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (item.status == com.webtoapp.core.aicoding.todo.TodoManager.Item.Status.Completed)
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    else MaterialTheme.colorScheme.onSurface
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = Strings.aiCodingTodoListHeader,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "$done / $total",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Icon(
+                    imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
                 )
             }
-            Spacer(Modifier.height(WtaSpacing.Tiny))
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = WtaSpacing.Medium)
+                        .padding(bottom = WtaSpacing.Medium),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    todos.forEach { item ->
+                        val (icon, color) = when (item.status) {
+                            com.webtoapp.core.aicoding.todo.TodoManager.Item.Status.Completed ->
+                                Icons.Outlined.CheckCircle to WtaColors.semantic.success
+                            com.webtoapp.core.aicoding.todo.TodoManager.Item.Status.InProgress ->
+                                Icons.Outlined.PlayArrow to MaterialTheme.colorScheme.primary
+                            else -> Icons.Outlined.RadioButtonUnchecked to MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                tint = color,
+                                modifier = Modifier.size(15.dp)
+                            )
+                            Spacer(Modifier.width(WtaSpacing.Small))
+                            Text(
+                                text = item.subject,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (item.status == com.webtoapp.core.aicoding.todo.TodoManager.Item.Status.Completed)
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                else MaterialTheme.colorScheme.onSurface,
+                                fontWeight = if (item.status == com.webtoapp.core.aicoding.todo.TodoManager.Item.Status.InProgress)
+                                    FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

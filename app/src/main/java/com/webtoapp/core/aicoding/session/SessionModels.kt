@@ -23,7 +23,7 @@ data class SessionConfig(
     val textModelId: String? = null,
     val imageModelId: String? = null,
     val temperature: Float = 0.7f,
-    val maxTurns: Int = 8,
+    val maxTurns: Int = 24,
 
     val customRules: List<String> = emptyList()
 )

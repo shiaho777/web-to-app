@@ -36,7 +36,7 @@ class AgentEngine(
         val toolContext: ToolContext,
         val registry: ToolRegistry,
         val temperature: Float = 0.7f,
-        val maxTurns: Int = 8,
+        val maxTurns: Int = 24,
         val maxTokens: Int = 16384
     )
 
@@ -174,7 +174,7 @@ class AgentEngine(
                     reasoningContent = turnThinking.toString().takeIf { it.isNotEmpty() }
                 )
 
-                if (assistantToolCalls.isEmpty() || finishReason != FinishReason.TOOL_CALLS) {
+                if (assistantToolCalls.isEmpty()) {
                     send(AgentEvent.Completed(
                         summary = turnText.toString().trim().ifEmpty { accText.toString().trim() },
                         toolCallCount = totalToolCalls
@@ -263,6 +263,14 @@ class AgentEngine(
         val tool = input.registry[call.name]
             ?: return ToolResult.error("Unknown tool: ${call.name}")
         val args = parseArgs(call.argumentsJson)
+
+        out.send(
+            AgentEvent.ToolExecuting(
+                toolCallId = call.id,
+                name = call.name,
+                activity = tool.activityDescription(args) ?: call.name
+            )
+        )
 
         val decision = permissionChecker.check(tool, args, input.toolContext)
         if (decision == PermissionDecision.Deny) {

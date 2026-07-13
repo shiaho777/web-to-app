@@ -31,6 +31,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -55,7 +56,11 @@ class AgentService : Service() {
     val permissionPrompter = PermissionPrompter()
     val permissionChecker = PermissionChecker(permissionPrompter, initialMode = PermissionMode.Default)
 
-    private val _events = MutableSharedFlow<AgentEvent>(replay = 0, extraBufferCapacity = 256)
+    private val _events = MutableSharedFlow<AgentEvent>(
+        replay = 0,
+        extraBufferCapacity = 16384,
+        onBufferOverflow = BufferOverflow.SUSPEND
+    )
     val events: SharedFlow<AgentEvent> = _events.asSharedFlow()
 
     private val _isRunning = MutableStateFlow(false)
@@ -200,7 +205,7 @@ class AgentService : Service() {
         val toolContext: ToolContext,
         val registry: ToolRegistry,
         val temperature: Float = 0.7f,
-        val maxTurns: Int = 8
+        val maxTurns: Int = 24
     )
 
     companion object {

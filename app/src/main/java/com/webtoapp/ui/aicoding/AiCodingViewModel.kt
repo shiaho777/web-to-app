@@ -114,6 +114,7 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
     private val streamTools = LinkedHashMap<String, RecordedToolCall>()
     private val streamToolArgs = HashMap<String, StringBuilder>()
     private val readFilesThisTurn = mutableSetOf<String>()
+    private var lastToolUiPushAt = 0L
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
@@ -1121,6 +1122,15 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private fun maybePushToolUi(force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastToolUiPushAt < 48L) return
+        lastToolUiPushAt = now
+        _ui.update {
+            it.copy(pendingToolCalls = streamTools.values.toList())
+        }
+    }
+
     private fun observeStreams() {
         viewModelScope.launch {
             combine(sessionStore.sessionsFlow, sessionStore.currentSessionIdFlow) { all, currentId ->
@@ -1261,23 +1271,21 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
                 }
             }
             is AgentEvent.ToolCallArgsDelta -> {
-
                 val buf = streamToolArgs.getOrPut(ev.toolCallId) { StringBuilder() }
                 buf.append(ev.delta)
                 val prev = streamTools[ev.toolCallId]
                 if (prev != null) {
                     streamTools[ev.toolCallId] = prev.copy(argumentsJson = buf.toString())
-                    _ui.update { it.copy(pendingToolCalls = streamTools.values.toList()) }
+                    maybePushToolUi()
                 }
             }
             is AgentEvent.ToolProgress -> {
-
                 val prev = streamTools[ev.toolCallId]
                 if (prev != null) {
                     val capped = if (ev.accumulated.length <= STREAM_PREVIEW_CHARS) ev.accumulated
                                  else ev.accumulated.takeLast(STREAM_PREVIEW_CHARS)
                     streamTools[ev.toolCallId] = prev.copy(resultPreview = capped)
-                    _ui.update { it.copy(pendingToolCalls = streamTools.values.toList()) }
+                    maybePushToolUi()
                 }
             }
             is AgentEvent.ToolFinished -> {
@@ -1286,12 +1294,12 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
                     toolCallId = ev.toolCallId,
                     name = ev.name,
                     argumentsJson = ev.argumentsJson,
-
                     resultPreview = ev.result.text.take(2000),
                     ok = !ev.result.isError,
                     activity = prev?.activity
                 )
                 streamToolArgs.remove(ev.toolCallId)
+                lastToolUiPushAt = 0L
                 _ui.update {
                     it.copy(
                         phase = AiCodingUiState.Phase.Streaming,
@@ -1337,7 +1345,11 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
                 _ui.update { it.copy(info = ev.message) }
             }
             is AgentEvent.Completed -> {
-                val text = streamText.toString().trim().ifEmpty { ev.summary }
+                val rawText = streamText.toString()
+                val text = stripToolMarkers(rawText).trim().ifEmpty {
+                    stripToolMarkers(ev.summary).trim()
+                }
+                val contentForTimeline = rawText.ifBlank { text }
                 val producedFiles = streamTools.values
                     .filter { it.ok && it.name in setOf("Write", "Edit", "Delete", "GenerateImage") }
                     .mapNotNull { tc ->
@@ -1366,7 +1378,7 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
                     sid,
                     AgentMessage(
                         role = AgentMessage.Role.ASSISTANT,
-                        content = finalContent,
+                        content = if (isDegenerate) finalContent else contentForTimeline.ifBlank { finalContent },
                         thinking = streamThinking.toString().takeIf { it.isNotBlank() },
                         thinkingDurationMs = _ui.value.streamingThinkingDurationMs
                             ?: _ui.value.streamingThinkingStartedAt?.let { start -> System.currentTimeMillis() - start },
@@ -1377,6 +1389,8 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
                     )
                 )
                 streamingSessionId = null
+                streamText.clear(); streamThinking.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
+                lastToolUiPushAt = 0L
                 _ui.update {
                     it.copy(
                         phase = AiCodingUiState.Phase.Idle,
@@ -1386,7 +1400,9 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
                         streamingThinkingDurationMs = null,
                         pendingToolCalls = emptyList(),
                         currentActivity = null,
-                        info = Strings.aiCodingTurnDoneToolCount.format(ev.toolCallCount)
+                        info = if (ev.toolCallCount > 0)
+                            Strings.aiCodingTurnDoneToolCount.format(ev.toolCallCount)
+                        else null
                     )
                 }
 
@@ -1599,19 +1615,22 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
             planManager = null
             registryFactory = null
         }
-        todoManager.clear()
+        val sessionChanged = _ui.value.currentSession?.id != session.id
+        if (sessionChanged) {
+            todoManager.clear()
+        }
         _ui.update {
             it.copy(
                 currentSession = session,
-                planActive = false,
-                planFilePath = null,
+                planActive = if (sessionChanged) false else it.planActive,
+                planFilePath = if (sessionChanged) null else it.planFilePath,
                 projectFiles = files.listAll(session.id),
 
-                pendingChanges = emptyList(),
-                changesReviewExpanded = false,
+                pendingChanges = if (sessionChanged) emptyList() else it.pendingChanges,
+                changesReviewExpanded = if (sessionChanged) false else it.changesReviewExpanded,
 
-                previewFilePath = null,
-                drawerOpen = false
+                previewFilePath = if (sessionChanged) null else it.previewFilePath,
+                drawerOpen = if (sessionChanged) false else it.drawerOpen
             )
         }
     }
