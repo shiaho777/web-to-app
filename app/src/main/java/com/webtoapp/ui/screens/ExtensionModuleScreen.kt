@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.compose.animation.*
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -36,6 +37,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +53,12 @@ import com.webtoapp.core.extension.*
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.components.QrCodeShareDialog
 import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaTextField
+import com.webtoapp.ui.design.WtaScreen
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaButtonVariant
+import com.webtoapp.ui.design.WtaButtonSize
+import com.webtoapp.ui.design.WtaButton
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaDivider
@@ -68,6 +76,12 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
 import com.webtoapp.R
+
+private enum class ModuleStatusFilter {
+    ALL,
+    ENABLED,
+    DISABLED
+}
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -88,8 +102,11 @@ fun ExtensionModuleScreen(
     val loadError by extensionManager.loadError.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var selectedCategory by remember { mutableStateOf<ModuleCategory?>(null) }
-    var searchQuery by remember { mutableStateOf("") }
+    var selectedCategory by rememberSaveable { mutableStateOf<String?>(null) }
+    var statusFilterName by rememberSaveable { mutableStateOf(ModuleStatusFilter.ALL.name) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    val selectedCategoryEnum = selectedCategory?.let { runCatching { ModuleCategory.valueOf(it) }.getOrNull() }
+    val statusFilter = runCatching { ModuleStatusFilter.valueOf(statusFilterName) }.getOrDefault(ModuleStatusFilter.ALL)
     var showImportDialog by remember { mutableStateOf(false) }
 
     val extensionFileManager = remember { ExtensionFileManager(context) }
@@ -225,18 +242,29 @@ fun ExtensionModuleScreen(
     val userScriptModules = allModules.filter { it.sourceType != ModuleSourceType.CUSTOM }
 
     val filteredModules = extensionModules.filter { module ->
-        val matchesCategory = selectedCategory == null || module.category == selectedCategory
+        val matchesCategory = selectedCategoryEnum == null || module.category == selectedCategoryEnum
+        val matchesStatus = when (statusFilter) {
+            ModuleStatusFilter.ALL -> true
+            ModuleStatusFilter.ENABLED -> module.enabled
+            ModuleStatusFilter.DISABLED -> !module.enabled
+        }
         val matchesSearch = searchQuery.isBlank() ||
             module.name.contains(searchQuery, ignoreCase = true) ||
             module.description.contains(searchQuery, ignoreCase = true) ||
             module.tags.any { it.contains(searchQuery, ignoreCase = true) }
-        matchesCategory && matchesSearch
+        matchesCategory && matchesStatus && matchesSearch
     }
 
     val filteredUserScripts = userScriptModules.filter { module ->
-        searchQuery.isBlank() ||
+        val matchesStatus = when (statusFilter) {
+            ModuleStatusFilter.ALL -> true
+            ModuleStatusFilter.ENABLED -> module.enabled
+            ModuleStatusFilter.DISABLED -> !module.enabled
+        }
+        val matchesSearch = searchQuery.isBlank() ||
             module.name.contains(searchQuery, ignoreCase = true) ||
             module.description.contains(searchQuery, ignoreCase = true)
+        matchesStatus && matchesSearch
     }.let { list ->
 
         val seenExtIds = HashSet<String>()
@@ -248,6 +276,10 @@ fun ExtensionModuleScreen(
             }
         }
     }
+
+    val enabledModuleCount = allModules.count { it.enabled }
+    val customEnabledCount = extensionModules.count { it.enabled }
+    val scriptEnabledCount = userScriptModules.count { it.enabled }
 
     LaunchedEffect(loadError) {
         val error = loadError ?: return@LaunchedEffect
@@ -268,95 +300,115 @@ fun ExtensionModuleScreen(
         extensionManager.clearLoadError()
     }
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text(Strings.extensionModule) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = Strings.back)
-                    }
-                },
-                actions = {
-                    var showMoreMenu by remember { mutableStateOf(false) }
-                    Box {
-                        IconButton(onClick = { showMoreMenu = true }) {
-                            Icon(Icons.Outlined.MoreVert, contentDescription = Strings.more)
-                        }
-                        DropdownMenu(
-                            expanded = showMoreMenu,
-                            onDismissRequest = { showMoreMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(Strings.communityExtStoreTitle) },
-                                onClick = { showMoreMenu = false; onNavigateToMarket() },
-                                leadingIcon = { Icon(Icons.Default.Storefront, null, Modifier.size(20.dp)) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(Strings.aiDevelop) },
-                                onClick = { showMoreMenu = false; onNavigateToAiDeveloper() },
-                                leadingIcon = { Icon(Icons.Default.AutoAwesome, null, Modifier.size(20.dp)) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(Strings.manualCreate) },
-                                onClick = { showMoreMenu = false; onNavigateToEditor(null) },
-                                leadingIcon = { Icon(Icons.Default.Code, null, Modifier.size(20.dp)) }
-                            )
-                            WtaDivider()
-                            DropdownMenuItem(
-                                text = { Text(Strings.importUserScript) },
-                                onClick = { showMoreMenu = false; userScriptPickerLauncher.launch("*/*") },
-                                leadingIcon = { Icon(Icons.Default.Description, null, Modifier.size(20.dp)) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(Strings.importChromeExtension) },
-                                onClick = { showMoreMenu = false; chromeExtPickerLauncher.launch("*/*") },
-                                leadingIcon = { Icon(Icons.Default.Extension, null, Modifier.size(20.dp)) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(Strings.importJsPackage) },
-                                onClick = { showMoreMenu = false; jsZipPickerLauncher.launch("*/*") },
-                                leadingIcon = { Icon(Icons.Default.FolderZip, null, Modifier.size(20.dp)) }
-                            )
-                        }
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        WtaBackground(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
+    var showMoreMenu by remember { mutableStateOf(false) }
+    val pagerState = rememberPagerState(pageCount = { 2 })
 
-            PremiumTextField(
+    WtaScreen(
+        title = Strings.extensionModule,
+        subtitle = Strings.extensionStudioSubtitle,
+        snackbarHostState = snackbarHostState,
+        onBack = onNavigateBack,
+        actions = {
+            IconButton(onClick = { showImportDialog = true }) {
+                Icon(Icons.Default.Add, contentDescription = Strings.addModule)
+            }
+            Box {
+                IconButton(onClick = { showMoreMenu = true }) {
+                    Icon(Icons.Outlined.MoreVert, contentDescription = Strings.more)
+                }
+                DropdownMenu(
+                    expanded = showMoreMenu,
+                    onDismissRequest = { showMoreMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text(Strings.communityExtStoreTitle) },
+                        onClick = { showMoreMenu = false; onNavigateToMarket() },
+                        leadingIcon = { Icon(Icons.Default.Storefront, null, Modifier.size(20.dp)) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(Strings.aiDevelop) },
+                        onClick = { showMoreMenu = false; onNavigateToAiDeveloper() },
+                        leadingIcon = { Icon(Icons.Default.AutoAwesome, null, Modifier.size(20.dp)) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(Strings.manualCreate) },
+                        onClick = { showMoreMenu = false; onNavigateToEditor(null) },
+                        leadingIcon = { Icon(Icons.Default.Code, null, Modifier.size(20.dp)) }
+                    )
+                    WtaDivider()
+                    DropdownMenuItem(
+                        text = { Text(Strings.importUserScript) },
+                        onClick = { showMoreMenu = false; userScriptPickerLauncher.launch("*/*") },
+                        leadingIcon = { Icon(Icons.Default.Description, null, Modifier.size(20.dp)) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(Strings.importChromeExtension) },
+                        onClick = { showMoreMenu = false; chromeExtPickerLauncher.launch("*/*") },
+                        leadingIcon = { Icon(Icons.Default.Extension, null, Modifier.size(20.dp)) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(Strings.importJsPackage) },
+                        onClick = { showMoreMenu = false; jsZipPickerLauncher.launch("*/*") },
+                        leadingIcon = { Icon(Icons.Default.FolderZip, null, Modifier.size(20.dp)) }
+                    )
+                }
+            }
+        }
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            ExtensionStudioSummary(
+                total = allModules.size,
+                enabled = enabledModuleCount,
+                custom = extensionModules.size,
+                scripts = userScriptModules.size,
+                customEnabled = customEnabledCount,
+                scriptsEnabled = scriptEnabledCount,
+                onOpenMarket = onNavigateToMarket,
+                onCreate = { showImportDialog = true }
+            )
+
+            WtaTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text(Strings.searchModules) },
-                leadingIcon = {
-                    Icon(Icons.Outlined.Search, contentDescription = null)
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotBlank()) {
+                placeholder = Strings.searchModules,
+                leadingIcon = Icons.Outlined.Search,
+                singleLine = true,
+                trailingIcon = if (searchQuery.isNotBlank()) {
+                    {
                         IconButton(onClick = { searchQuery = "" }) {
                             Icon(Icons.Outlined.Close, contentDescription = Strings.clear)
                         }
                     }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(WtaRadius.Button)
+                } else null
             )
 
-            val pagerState = rememberPagerState(pageCount = { 2 })
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                WtaChip(
+                    selected = statusFilter == ModuleStatusFilter.ALL,
+                    onClick = { statusFilterName = ModuleStatusFilter.ALL.name },
+                    label = Strings.all
+                )
+                WtaChip(
+                    selected = statusFilter == ModuleStatusFilter.ENABLED,
+                    onClick = { statusFilterName = ModuleStatusFilter.ENABLED.name },
+                    label = Strings.extensionFilterEnabled
+                )
+                WtaChip(
+                    selected = statusFilter == ModuleStatusFilter.DISABLED,
+                    onClick = { statusFilterName = ModuleStatusFilter.DISABLED.name },
+                    label = Strings.extensionFilterDisabled
+                )
+            }
+
             WtaTabRow(
                 tabs = listOf(
                     WtaTab(Strings.extensionModulesTab, extensionModules.size),
@@ -372,19 +424,17 @@ fun ExtensionModuleScreen(
                 modifier = Modifier.fillMaxSize()
             ) { page ->
                 when (page) {
-
                     0 -> ExtensionModulesTabContent(
                         filteredModules = filteredModules,
                         isLoading = isModulesLoading,
                         extensionManager = extensionManager,
-                        selectedCategory = selectedCategory,
+                        selectedCategory = selectedCategoryEnum,
                         searchQuery = searchQuery,
-                        onCategoryChange = { selectedCategory = it },
+                        onCategoryChange = { selectedCategory = it?.name },
                         onNavigateToEditor = onNavigateToEditor,
                         onNavigateToAiDeveloper = onNavigateToAiDeveloper,
                         onClearSearch = { searchQuery = "" }
                     )
-
                     1 -> UserScriptsTabContent(
                         filteredUserScripts = filteredUserScripts,
                         extensionManager = extensionManager,
@@ -398,6 +448,7 @@ fun ExtensionModuleScreen(
             }
         }
     }
+
 
     if (isImporting) {
         Dialog(onDismissRequest = {  }) {
@@ -1134,8 +1185,6 @@ fun ExtensionModuleScreen(
             }
         )
     }
-
-        }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
@@ -1184,13 +1233,14 @@ fun ModuleCard(
         }
     }
 
-        Box(
+        WtaCard(
+            tone = WtaCardTone.Surface,
+            contentPadding = PaddingValues(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(WtaRadius.Card))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                .graphicsLayer { alpha = if (module.enabled) 1f else 0.62f }
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
+            Column {
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1310,6 +1360,14 @@ fun ModuleCard(
                     }
                 }
 
+                Switch(
+                    checked = module.enabled,
+                    onCheckedChange = {
+                        scope.launch {
+                            extensionManager.toggleModule(module.id)
+                        }
+                    }
+                )
                 Box {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = Strings.more)
@@ -1649,60 +1707,28 @@ private fun ExtensionModulesTabContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                PremiumFilterChip(
+                WtaChip(
                     selected = selectedCategory == null,
                     onClick = { onCategoryChange(null) },
-                    label = { Text(Strings.all) },
-                    leadingIcon = if (selectedCategory == null) {
-                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                    } else null
+                    label = Strings.all
                 )
             }
             items(ModuleCategory.values().toList()) { category ->
-                PremiumFilterChip(
+                WtaChip(
                     selected = selectedCategory == category,
                     onClick = { onCategoryChange(if (selectedCategory == category) null else category) },
-                    label = { Text(category.getDisplayName()) },
-                    leadingIcon = if (selectedCategory == category) {
-                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                    } else null
+                    label = category.getDisplayName()
                 )
             }
         }
 
         val stats = extensionManager.getStatistics()
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatItem(
-                icon = Icons.Outlined.Extension,
-                value = stats.totalCount.toString(),
-                label = Strings.totalModulesLabel
-            )
-            StatItem(
-                icon = Icons.Outlined.Verified,
-                value = stats.builtInCount.toString(),
-                label = Strings.builtInLabel
-            )
-            StatItem(
-                icon = Icons.Outlined.Build,
-                value = stats.userCount.toString(),
-                label = Strings.customLabel
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp)
-                .height(0.5.dp)
-                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+        Text(
+            text = Strings.extensionResultCount(filteredModules.size, stats.enabledCount),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
         )
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -1803,6 +1829,7 @@ private fun UserScriptsTabContent(
         items(filteredUserScripts, key = { it.id }) { module ->
             UserScriptCard(
                 module = module,
+                extensionManager = extensionManager,
                 onDelete = {
                     scope.launch {
                         extensionManager.deleteModule(module.id)
@@ -1895,8 +1922,10 @@ private fun UserScriptsTabContent(
 @Composable
 private fun UserScriptCard(
     module: ExtensionModule,
+    extensionManager: ExtensionManager,
     onDelete: () -> Unit
 ) {
+    val scope = rememberCoroutineScope()
     var showMenu by remember { mutableStateOf(false) }
     var showSourceDialog by remember { mutableStateOf(false) }
 
@@ -2000,6 +2029,14 @@ private fun UserScriptCard(
                     }
                 }
 
+                Switch(
+                    checked = module.enabled,
+                    onCheckedChange = {
+                        scope.launch {
+                            extensionManager.toggleModule(module.id)
+                        }
+                    }
+                )
                 Box {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = Strings.more)
@@ -2103,6 +2140,145 @@ private fun UserScriptCard(
     }
 }
 
+
+
+
+@Composable
+private fun ExtensionStudioSummary(
+    total: Int,
+    enabled: Int,
+    custom: Int,
+    scripts: Int,
+    customEnabled: Int,
+    scriptsEnabled: Int,
+    onOpenMarket: () -> Unit,
+    onCreate: () -> Unit
+) {
+    WtaCard(
+        tone = WtaCardTone.Highlighted,
+        contentPadding = PaddingValues(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.Extension,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = Strings.extensionStudioTitle,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = Strings.extensionStudioHint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SummaryMetric(
+                    value = total.toString(),
+                    label = Strings.totalModulesLabel,
+                    modifier = Modifier.weight(1f)
+                )
+                SummaryMetric(
+                    value = enabled.toString(),
+                    label = Strings.extensionMetricEnabled,
+                    modifier = Modifier.weight(1f)
+                )
+                SummaryMetric(
+                    value = custom.toString(),
+                    label = Strings.customLabel,
+                    modifier = Modifier.weight(1f)
+                )
+                SummaryMetric(
+                    value = scripts.toString(),
+                    label = Strings.userScriptsTab,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            Text(
+                text = Strings.extensionStudioBreakdown(customEnabled, custom, scriptsEnabled, scripts),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                WtaButton(
+                    onClick = onOpenMarket,
+                    text = Strings.communityExtStoreTitle,
+                    variant = WtaButtonVariant.Tonal,
+                    size = WtaButtonSize.Small,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Default.Storefront
+                )
+                WtaButton(
+                    onClick = onCreate,
+                    text = Strings.addModule,
+                    variant = WtaButtonVariant.Primary,
+                    size = WtaButtonSize.Small,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Default.Add
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SummaryMetric(
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
 
 @Composable
 private fun AddEntryRow(
