@@ -1494,6 +1494,11 @@ object Strings {
     val aiCodingHomeRecentTitle: String get() = StringsB.aiCodingHomeRecentTitle
     val aiCodingHomeRecentSeeAll: String get() = StringsB.aiCodingHomeRecentSeeAll
     val aiCodingHomeUntitledSession: String get() = StringsB.aiCodingHomeUntitledSession
+    val aiCodingHomeStartersTitle: String get() = StringsB.aiCodingHomeStartersTitle
+    val aiCodingStarterPrompt1: String get() = StringsB.aiCodingStarterPrompt1
+    val aiCodingStarterPrompt2: String get() = StringsB.aiCodingStarterPrompt2
+    val aiCodingStarterPrompt3: String get() = StringsB.aiCodingStarterPrompt3
+    val aiCodingStarterPrompt4: String get() = StringsB.aiCodingStarterPrompt4
     val aiCodingPreviewToolbarPrefix: String get() = StringsB.aiCodingPreviewToolbarPrefix
     val aiCodingPreviewNoFile: String get() = StringsB.aiCodingPreviewNoFile
     val aiCodingPreviewSwitchHeader: String get() = StringsB.aiCodingPreviewSwitchHeader
@@ -23554,16 +23559,16 @@ object StringsB {
         AppLanguage.KOREAN -> "무언가 만들기"
     }
     val aiCodingHomeSubtitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "选择一个技能开始，或直接描述你想做的事"
-        AppLanguage.ENGLISH -> "Pick a skill to focus on, or just describe what you want"
-        AppLanguage.ARABIC -> "اختر مهارة للتركيز عليها، أو صف ما تريد فقط"
-        AppLanguage.PORTUGUESE -> "Escolha uma habilidade para focar, ou apenas descreva o que quer"
-        AppLanguage.SPANISH -> "Elige una habilidad para enfocarte, o simplemente describe lo que quieres"
-        AppLanguage.FRENCH -> "Choisissez une compétence à cibler, ou décrivez simplement ce que vous voulez"
-        AppLanguage.GERMAN -> "Wähle eine Fähigkeit zum Fokussieren, oder beschreibe einfach, was du willst"
-        AppLanguage.RUSSIAN -> "Выберите навык для фокуса или просто опишите, что хотите"
-        AppLanguage.JAPANESE -> "スキルを選んで集中するか、やりたいことをそのまま記述してください"
-        AppLanguage.KOREAN -> "스킬을 선택해 집중하거나, 원하는 것을 그냥 설명하세요"
+        AppLanguage.CHINESE -> "直接在下方输入即可开始，不必先新建会话"
+        AppLanguage.ENGLISH -> "Type below to start right away — no need to create a session first"
+        AppLanguage.ARABIC -> "اكتب أدناه للبدء مباشرة — لا حاجة لإنشاء جلسة أولاً"
+        AppLanguage.PORTUGUESE -> "Digite abaixo para começar — sem precisar criar sessão antes"
+        AppLanguage.SPANISH -> "Escribe abajo para empezar — no hace falta crear sesión primero"
+        AppLanguage.FRENCH -> "Tapez ci-dessous pour commencer — pas besoin de créer une session"
+        AppLanguage.GERMAN -> "Tippe unten, um sofort zu starten — keine neue Sitzung nötig"
+        AppLanguage.RUSSIAN -> "Пишите ниже, чтобы начать сразу — создавать сессию заранее не нужно"
+        AppLanguage.JAPANESE -> "下に入力するだけで開始。先にセッションを作る必要はありません"
+        AppLanguage.KOREAN -> "아래에서 바로 입력하세요. 먼저 세션을 만들 필요 없습니다"
     }
     val aiCodingHomeSkillsTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "推荐技能"
@@ -23624,6 +23629,66 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Сессия без названия"
         AppLanguage.JAPANESE -> "無題のセッション"
         AppLanguage.KOREAN -> "제목 없는 세션"
+    }
+    val aiCodingHomeStartersTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "试试这些"
+        AppLanguage.ENGLISH -> "Try these"
+        AppLanguage.ARABIC -> "جرّب هذه"
+        AppLanguage.PORTUGUESE -> "Experimente estes"
+        AppLanguage.SPANISH -> "Prueba estos"
+        AppLanguage.FRENCH -> "Essayez ceci"
+        AppLanguage.GERMAN -> "Probiere diese"
+        AppLanguage.RUSSIAN -> "Попробуйте эти"
+        AppLanguage.JAPANESE -> "これを試す"
+        AppLanguage.KOREAN -> "이런 걸 해보세요"
+    }
+    val aiCodingStarterPrompt1: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "做一个简洁的待办清单网页应用"
+        AppLanguage.ENGLISH -> "Build a clean todo list web app"
+        AppLanguage.ARABIC -> "أنشئ تطبيق قائمة مهام ويب أنيق"
+        AppLanguage.PORTUGUESE -> "Crie um app web limpo de lista de tarefas"
+        AppLanguage.SPANISH -> "Crea una app web limpia de lista de tareas"
+        AppLanguage.FRENCH -> "Créez une app web de todo list épurée"
+        AppLanguage.GERMAN -> "Baue eine schlichte Todo-Listen-Web-App"
+        AppLanguage.RUSSIAN -> "Сделайте чистое веб-приложение списка дел"
+        AppLanguage.JAPANESE -> "シンプルなToDoリストWebアプリを作る"
+        AppLanguage.KOREAN -> "깔끔한 할 일 목록 웹 앱 만들기"
+    }
+    val aiCodingStarterPrompt2: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "做一个带暗色模式的个人作品集主页"
+        AppLanguage.ENGLISH -> "Make a personal portfolio homepage with dark mode"
+        AppLanguage.ARABIC -> "اصنع صفحة محفظة شخصية مع الوضع الداكن"
+        AppLanguage.PORTUGUESE -> "Faça uma homepage de portfólio com modo escuro"
+        AppLanguage.SPANISH -> "Haz una homepage de portafolio con modo oscuro"
+        AppLanguage.FRENCH -> "Faites une page portfolio perso avec mode sombre"
+        AppLanguage.GERMAN -> "Erstelle eine Portfolio-Homepage mit Dark Mode"
+        AppLanguage.RUSSIAN -> "Сделайте портфолио-главную с тёмной темой"
+        AppLanguage.JAPANESE -> "ダークモード付きの個人ポートフォリオホームを作る"
+        AppLanguage.KOREAN -> "다크 모드 개인 포트폴리오 홈페이지 만들기"
+    }
+    val aiCodingStarterPrompt3: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "把这段需求变成可预览的 HTML 页面"
+        AppLanguage.ENGLISH -> "Turn this idea into a previewable HTML page"
+        AppLanguage.ARABIC -> "حوّل هذه الفكرة إلى صفحة HTML قابلة للمعاينة"
+        AppLanguage.PORTUGUESE -> "Transforme esta ideia em uma página HTML pré-visualizável"
+        AppLanguage.SPANISH -> "Convierte esta idea en una página HTML previsualizable"
+        AppLanguage.FRENCH -> "Transformez cette idée en page HTML prévisualisable"
+        AppLanguage.GERMAN -> "Mach aus dieser Idee eine vorschaufähige HTML-Seite"
+        AppLanguage.RUSSIAN -> "Превратите идею в HTML-страницу с превью"
+        AppLanguage.JAPANESE -> "このアイデアをプレビュー可能なHTMLページにする"
+        AppLanguage.KOREAN -> "이 아이디어를 미리보기 가능한 HTML 페이지로 만들기"
+    }
+    val aiCodingStarterPrompt4: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "帮我搭建一个移动端优先的落地页"
+        AppLanguage.ENGLISH -> "Help me scaffold a mobile-first landing page"
+        AppLanguage.ARABIC -> "ساعدني في بناء صفحة هبوط مخصصة للجوال"
+        AppLanguage.PORTUGUESE -> "Ajude-me a montar uma landing page mobile-first"
+        AppLanguage.SPANISH -> "Ayúdame a armar una landing page mobile-first"
+        AppLanguage.FRENCH -> "Aidez-moi à monter une landing page mobile-first"
+        AppLanguage.GERMAN -> "Hilf mir, eine mobile-first Landingpage aufzubauen"
+        AppLanguage.RUSSIAN -> "Помогите собрать mobile-first лендинг"
+        AppLanguage.JAPANESE -> "モバイルファーストのランディングページを組み立てて"
+        AppLanguage.KOREAN -> "모바일 우선 랜딩 페이지 뼈대 만들기"
     }
     val aiCodingPreviewToolbarPrefix: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "预览 · %s"

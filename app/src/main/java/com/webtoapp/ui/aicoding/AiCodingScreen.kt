@@ -309,6 +309,7 @@ fun AiCodingScreen(
                     onPickSession = vm::selectSession,
                     onOpenSkills = { vm.openDrawer(AiCodingUiState.DrawerTab.Skills) },
                     onOpenSessions = { vm.openDrawer(AiCodingUiState.DrawerTab.Sessions) },
+                    onFillComposer = vm::setComposerText,
                     modifier = Modifier.weight(1f)
                 )
                 HorizontalDivider(
@@ -496,6 +497,7 @@ private fun Conversation(
     onPickSession: (String) -> Unit,
     onOpenSkills: () -> Unit,
     onOpenSessions: () -> Unit,
+    onFillComposer: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
@@ -569,6 +571,7 @@ private fun Conversation(
             onPickSession = onPickSession,
             onOpenSkills = onOpenSkills,
             onOpenSessions = onOpenSessions,
+            onFillComposer = onFillComposer,
             modifier = modifier
         )
         return
@@ -674,11 +677,23 @@ private fun EmptyConversationHint(
     onPickSession: (String) -> Unit,
     onOpenSkills: () -> Unit,
     onOpenSessions: () -> Unit,
+    onFillComposer: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val featuredSkills = remember(state.skills) { featuredSkills(state.skills) }
     val recentSessions = remember(state.sessions) {
-        state.sessions.sortedByDescending { it.updatedAt }.take(3)
+        state.sessions
+            .filter { it.messages.isNotEmpty() }
+            .sortedByDescending { it.updatedAt }
+            .take(3)
+    }
+    val starterPrompts = remember {
+        listOf(
+            Strings.aiCodingStarterPrompt1,
+            Strings.aiCodingStarterPrompt2,
+            Strings.aiCodingStarterPrompt3,
+            Strings.aiCodingStarterPrompt4
+        )
     }
 
     LazyColumn(
@@ -711,6 +726,17 @@ private fun EmptyConversationHint(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+
+        item("starters-header") {
+            SectionHeader(
+                title = Strings.aiCodingHomeStartersTitle,
+                actionLabel = null,
+                onAction = null
+            )
+        }
+        item("starters-grid") {
+            StarterPromptsRow(prompts = starterPrompts, onPick = onFillComposer)
         }
 
         if (featuredSkills.isNotEmpty()) {
@@ -806,6 +832,33 @@ private fun SkillChipsRow(skills: List<Skill>, onPick: (Skill) -> Unit) {
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun StarterPromptsRow(prompts: List<String>, onPick: (String) -> Unit) {
+    androidx.compose.foundation.layout.FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+    ) {
+        prompts.forEach { prompt ->
+            WtaCard(
+                onClick = { onPick(prompt) },
+                tone = WtaCardTone.Elevated,
+                contentPadding = PaddingValues(
+                    horizontal = WtaSpacing.Medium,
+                    vertical = WtaSpacing.Small + 2.dp
+                )
+            ) {
+                Text(
+                    text = prompt,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 2
+                )
             }
         }
     }

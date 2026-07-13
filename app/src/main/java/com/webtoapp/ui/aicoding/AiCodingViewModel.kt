@@ -42,6 +42,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class AiCodingViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -92,6 +94,8 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
     }
 
     private val prefs = com.webtoapp.core.aicoding.AiCodingPrefs(ctx)
+
+    private val sessionEnsureMutex = Mutex()
 
     private var planManager: PlanManager? = null
     private var registryFactory: ToolRegistryFactory? = null
@@ -732,9 +736,8 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
 
     fun send() {
         val current = _ui.value
-        if (!current.canSend) return
+        if (current.phase != AiCodingUiState.Phase.Idle) return
         val rawMessage = current.composerText.trim().ifEmpty { return }
-        val session = current.currentSession ?: return
 
         if (rawMessage == "/model" || rawMessage.startsWith("/model ")) {
             val arg = rawMessage.removePrefix("/model").trim()
@@ -746,6 +749,7 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
         val expandedBase = expandSlashSkill(rawMessage) ?: rawMessage
 
         viewModelScope.launch {
+            val session = ensureActiveSession() ?: return@launch
             val starterNote = seedSlashSkillStarter(rawMessage, session.id)
             val expandedMessage = expandedBase + starterNote
             val mentionedPaths = extractMentionPaths(expandedMessage, session.id)
@@ -1122,6 +1126,11 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
             combine(sessionStore.sessionsFlow, sessionStore.currentSessionIdFlow) { all, currentId ->
                 all to currentId
             }.collect { (all, currentId) ->
+                val currentMissing = currentId == null || all.none { it.id == currentId }
+                if (all.isEmpty() || currentMissing) {
+                    ensureActiveSession()
+                    return@collect
+                }
                 val current = all.firstOrNull { it.id == currentId }
                 _ui.update {
                     it.copy(
@@ -1132,6 +1141,34 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
                 }
             }
         }
+    }
+
+    private suspend fun ensureActiveSession(): AgentSession? = sessionEnsureMutex.withLock {
+        val all = sessionStore.sessionsFlow.first()
+        val currentId = sessionStore.currentSessionIdFlow.first()
+        val existing = all.firstOrNull { it.id == currentId }
+            ?: all.maxByOrNull { it.updatedAt }
+            ?: all.firstOrNull()
+        if (existing != null) {
+            if (currentId != existing.id) {
+                sessionStore.setCurrent(existing.id)
+            }
+            if (_ui.value.currentSession?.id != existing.id) {
+                attachSession(existing.id)
+            } else {
+                _ui.update {
+                    it.copy(
+                        sessions = all,
+                        currentSession = existing,
+                        projectFiles = files.listAll(existing.id)
+                    )
+                }
+            }
+            return@withLock sessionStore.get(existing.id) ?: existing
+        }
+        val created = sessionStore.create(activeSkillName = null)
+        attachSession(created.id)
+        sessionStore.get(created.id) ?: created
     }
 
     private fun observeTodos() {
@@ -1554,8 +1591,14 @@ class AiCodingViewModel(application: Application) : AndroidViewModel(application
             cancelTurn()
         }
         val session = sessionStore.get(id) ?: return
-        planManager = PlanManager(session.id, files, service!!.permissionChecker)
-        registryFactory = ToolRegistryFactory(planManager!!, skillRegistry, imageRegistry)
+        val checker = service?.permissionChecker
+        if (checker != null) {
+            planManager = PlanManager(session.id, files, checker)
+            registryFactory = ToolRegistryFactory(planManager!!, skillRegistry, imageRegistry)
+        } else {
+            planManager = null
+            registryFactory = null
+        }
         todoManager.clear()
         _ui.update {
             it.copy(
