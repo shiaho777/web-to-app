@@ -4830,6 +4830,29 @@ object Strings {
     val rulePathServerRuntime: String get() = StringsE.rulePathServerRuntime
     val ruleAreaServerRuntime: String get() = StringsE.ruleAreaServerRuntime
     val ruleFixServerRuntime: String get() = StringsE.ruleFixServerRuntime
+    val appModifierSubtitle: String get() = StringsE.appModifierSubtitle
+    val appModifierLibraryTitle: String get() = StringsE.appModifierLibraryTitle
+    val appModifierLibraryHint: String get() = StringsE.appModifierLibraryHint
+    val appModifierMetricTotal: String get() = StringsE.appModifierMetricTotal
+    val appModifierLoading: String get() = StringsE.appModifierLoading
+    val appModifierLoadFailed: String get() = StringsE.appModifierLoadFailed
+    val appModifierSortName: String get() = StringsE.appModifierSortName
+    val appModifierSortSize: String get() = StringsE.appModifierSortSize
+    val appModifierSortRecent: String get() = StringsE.appModifierSortRecent
+    val appModifierBadgeUser: String get() = StringsE.appModifierBadgeUser
+    val appModifierBadgeSystem: String get() = StringsE.appModifierBadgeSystem
+    val appModifierIdentitySection: String get() = StringsE.appModifierIdentitySection
+    val appModifierPreviewTitle: String get() = StringsE.appModifierPreviewTitle
+    val appModifierNewIdentity: String get() = StringsE.appModifierNewIdentity
+    val appModifierCustomIcon: String get() = StringsE.appModifierCustomIcon
+    val appModifierOutputMode: String get() = StringsE.appModifierOutputMode
+    val appModifierModeShortcutDesc: String get() = StringsE.appModifierModeShortcutDesc
+    val appModifierModeCloneDesc: String get() = StringsE.appModifierModeCloneDesc
+    val appModifierRecommended: String get() = StringsE.appModifierRecommended
+    val appModifierCloneNeedsOriginalIcon: String get() = StringsE.appModifierCloneNeedsOriginalIcon
+    val appModifierShortcutHint: String get() = StringsE.appModifierShortcutHint
+    val appModifierWorking: String get() = StringsE.appModifierWorking
+    fun appModifierResultCount(count: Int): String = StringsE.appModifierResultCount(count)
     val linuxEnvSubtitle: String get() = StringsE.linuxEnvSubtitle
     val linuxEnvCoreTools: String get() = StringsE.linuxEnvCoreTools
     val linuxEnvCoreHint: String get() = StringsE.linuxEnvCoreHint
@@ -63657,6 +63680,306 @@ object StringsE {
 
 
 
+
+
+    val appModifierSubtitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择应用，重塑名称、图标与启动体验"
+        AppLanguage.ENGLISH -> "Pick an app, then reshape its name, icon, and launch experience"
+        AppLanguage.ARABIC -> "اختر تطبيقًا ثم أعد تشكيل اسمه وأيقونته وتجربة التشغيل"
+        AppLanguage.PORTUGUESE -> "Escolha um app e redefina nome, ícone e experiência de abertura"
+        AppLanguage.SPANISH -> "Elige una app y redefine nombre, icono y experiencia de apertura"
+        AppLanguage.FRENCH -> "Choisissez une app, puis refaçonnez son nom, son icône et son lancement"
+        AppLanguage.GERMAN -> "App wählen und Name, Symbol sowie Start-Erlebnis neu gestalten"
+        AppLanguage.RUSSIAN -> "Выберите приложение и измените имя, иконку и запуск"
+        AppLanguage.JAPANESE -> "アプリを選び、名前・アイコン・起動体験を再構成"
+        AppLanguage.KOREAN -> "앱을 고른 뒤 이름, 아이콘, 실행 경험을 재구성"
+    }
+
+    val appModifierLibraryTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "设备应用库"
+        AppLanguage.ENGLISH -> "Device app library"
+        AppLanguage.ARABIC -> "مكتبة تطبيقات الجهاز"
+        AppLanguage.PORTUGUESE -> "Biblioteca de apps do dispositivo"
+        AppLanguage.SPANISH -> "Biblioteca de apps del dispositivo"
+        AppLanguage.FRENCH -> "Bibliothèque d'apps de l'appareil"
+        AppLanguage.GERMAN -> "Geräte-App-Bibliothek"
+        AppLanguage.RUSSIAN -> "Библиотека приложений устройства"
+        AppLanguage.JAPANESE -> "端末アプライブラリ"
+        AppLanguage.KOREAN -> "기기 앱 라이브러리"
+    }
+
+    val appModifierLibraryHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "一次扫描，本地筛选与排序，进入身份改造"
+        AppLanguage.ENGLISH -> "Scan once, filter locally, then reshape identity"
+        AppLanguage.ARABIC -> "امسح مرة واحدة، صفِّ محليًا، ثم أعد تشكيل الهوية"
+        AppLanguage.PORTUGUESE -> "Escaneie uma vez, filtre localmente e redefina a identidade"
+        AppLanguage.SPANISH -> "Escanea una vez, filtra en local y redefine la identidad"
+        AppLanguage.FRENCH -> "Scannez une fois, filtrez localement, puis refaçonnez l'identité"
+        AppLanguage.GERMAN -> "Einmal scannen, lokal filtern, Identität umgestalten"
+        AppLanguage.RUSSIAN -> "Одно сканирование, локальные фильтры и смена идентичности"
+        AppLanguage.JAPANESE -> "一度スキャンし、端末内で絞り込み、アイデンティティを再構成"
+        AppLanguage.KOREAN -> "한 번 스캔 후 로컬에서 필터링하고 정체성을 재구성"
+    }
+
+    val appModifierMetricTotal: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "全部"
+        AppLanguage.ENGLISH -> "Total"
+        AppLanguage.ARABIC -> "الإجمالي"
+        AppLanguage.PORTUGUESE -> "Total"
+        AppLanguage.SPANISH -> "Total"
+        AppLanguage.FRENCH -> "Total"
+        AppLanguage.GERMAN -> "Gesamt"
+        AppLanguage.RUSSIAN -> "Всего"
+        AppLanguage.JAPANESE -> "合計"
+        AppLanguage.KOREAN -> "전체"
+    }
+
+    val appModifierLoading: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在扫描已安装应用…"
+        AppLanguage.ENGLISH -> "Scanning installed apps…"
+        AppLanguage.ARABIC -> "جارٍ فحص التطبيقات المثبتة…"
+        AppLanguage.PORTUGUESE -> "Verificando apps instalados…"
+        AppLanguage.SPANISH -> "Escaneando apps instaladas…"
+        AppLanguage.FRENCH -> "Analyse des apps installées…"
+        AppLanguage.GERMAN -> "Installierte Apps werden gescannt…"
+        AppLanguage.RUSSIAN -> "Сканирование установленных приложений…"
+        AppLanguage.JAPANESE -> "インストール済みアプリをスキャン中…"
+        AppLanguage.KOREAN -> "설치된 앱 스캔 중…"
+    }
+
+    val appModifierLoadFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法加载应用列表"
+        AppLanguage.ENGLISH -> "Could not load app list"
+        AppLanguage.ARABIC -> "تعذّر تحميل قائمة التطبيقات"
+        AppLanguage.PORTUGUESE -> "Não foi possível carregar a lista de apps"
+        AppLanguage.SPANISH -> "No se pudo cargar la lista de apps"
+        AppLanguage.FRENCH -> "Impossible de charger la liste des apps"
+        AppLanguage.GERMAN -> "App-Liste konnte nicht geladen werden"
+        AppLanguage.RUSSIAN -> "Не удалось загрузить список приложений"
+        AppLanguage.JAPANESE -> "アプリ一覧を読み込めませんでした"
+        AppLanguage.KOREAN -> "앱 목록을 불러오지 못했습니다"
+    }
+
+    val appModifierSortName: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "名称"
+        AppLanguage.ENGLISH -> "Name"
+        AppLanguage.ARABIC -> "الاسم"
+        AppLanguage.PORTUGUESE -> "Nome"
+        AppLanguage.SPANISH -> "Nombre"
+        AppLanguage.FRENCH -> "Nom"
+        AppLanguage.GERMAN -> "Name"
+        AppLanguage.RUSSIAN -> "Имя"
+        AppLanguage.JAPANESE -> "名前"
+        AppLanguage.KOREAN -> "이름"
+    }
+
+    val appModifierSortSize: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "体积"
+        AppLanguage.ENGLISH -> "Size"
+        AppLanguage.ARABIC -> "الحجم"
+        AppLanguage.PORTUGUESE -> "Tamanho"
+        AppLanguage.SPANISH -> "Tamaño"
+        AppLanguage.FRENCH -> "Taille"
+        AppLanguage.GERMAN -> "Größe"
+        AppLanguage.RUSSIAN -> "Размер"
+        AppLanguage.JAPANESE -> "サイズ"
+        AppLanguage.KOREAN -> "크기"
+    }
+
+    val appModifierSortRecent: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "最近更新"
+        AppLanguage.ENGLISH -> "Recently updated"
+        AppLanguage.ARABIC -> "حدّث مؤخرًا"
+        AppLanguage.PORTUGUESE -> "Atualizados recentemente"
+        AppLanguage.SPANISH -> "Actualizados recientemente"
+        AppLanguage.FRENCH -> "Récemment mis à jour"
+        AppLanguage.GERMAN -> "Zuletzt aktualisiert"
+        AppLanguage.RUSSIAN -> "Недавно обновлённые"
+        AppLanguage.JAPANESE -> "最近の更新"
+        AppLanguage.KOREAN -> "최근 업데이트"
+    }
+
+    val appModifierBadgeUser: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "用户"
+        AppLanguage.ENGLISH -> "User"
+        AppLanguage.ARABIC -> "مستخدم"
+        AppLanguage.PORTUGUESE -> "Usuário"
+        AppLanguage.SPANISH -> "Usuario"
+        AppLanguage.FRENCH -> "Utilisateur"
+        AppLanguage.GERMAN -> "Benutzer"
+        AppLanguage.RUSSIAN -> "Польз."
+        AppLanguage.JAPANESE -> "ユーザー"
+        AppLanguage.KOREAN -> "사용자"
+    }
+
+    val appModifierBadgeSystem: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "系统"
+        AppLanguage.ENGLISH -> "System"
+        AppLanguage.ARABIC -> "نظام"
+        AppLanguage.PORTUGUESE -> "Sistema"
+        AppLanguage.SPANISH -> "Sistema"
+        AppLanguage.FRENCH -> "Système"
+        AppLanguage.GERMAN -> "System"
+        AppLanguage.RUSSIAN -> "Система"
+        AppLanguage.JAPANESE -> "システム"
+        AppLanguage.KOREAN -> "시스템"
+    }
+
+    val appModifierIdentitySection: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "身份改造"
+        AppLanguage.ENGLISH -> "Identity reshape"
+        AppLanguage.ARABIC -> "إعادة تشكيل الهوية"
+        AppLanguage.PORTUGUESE -> "Reconstrução de identidade"
+        AppLanguage.SPANISH -> "Reforma de identidad"
+        AppLanguage.FRENCH -> "Refonte d'identité"
+        AppLanguage.GERMAN -> "Identität umgestalten"
+        AppLanguage.RUSSIAN -> "Смена идентичности"
+        AppLanguage.JAPANESE -> "アイデンティティ再構成"
+        AppLanguage.KOREAN -> "정체성 재구성"
+    }
+
+    val appModifierPreviewTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "改造预览"
+        AppLanguage.ENGLISH -> "Identity preview"
+        AppLanguage.ARABIC -> "معاينة الهوية"
+        AppLanguage.PORTUGUESE -> "Prévia da identidade"
+        AppLanguage.SPANISH -> "Vista previa de identidad"
+        AppLanguage.FRENCH -> "Aperçu de l'identité"
+        AppLanguage.GERMAN -> "Identitätsvorschau"
+        AppLanguage.RUSSIAN -> "Превью идентичности"
+        AppLanguage.JAPANESE -> "アイデンティティのプレビュー"
+        AppLanguage.KOREAN -> "정체성 미리보기"
+    }
+
+    val appModifierNewIdentity: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "新身份"
+        AppLanguage.ENGLISH -> "New identity"
+        AppLanguage.ARABIC -> "هوية جديدة"
+        AppLanguage.PORTUGUESE -> "Nova identidade"
+        AppLanguage.SPANISH -> "Nueva identidad"
+        AppLanguage.FRENCH -> "Nouvelle identité"
+        AppLanguage.GERMAN -> "Neue Identität"
+        AppLanguage.RUSSIAN -> "Новая идентичность"
+        AppLanguage.JAPANESE -> "新しいアイデンティティ"
+        AppLanguage.KOREAN -> "새 정체성"
+    }
+
+    val appModifierCustomIcon: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自定义图标"
+        AppLanguage.ENGLISH -> "Custom icon"
+        AppLanguage.ARABIC -> "أيقونة مخصصة"
+        AppLanguage.PORTUGUESE -> "Ícone personalizado"
+        AppLanguage.SPANISH -> "Icono personalizado"
+        AppLanguage.FRENCH -> "Icône personnalisée"
+        AppLanguage.GERMAN -> "Benutzerdefiniertes Symbol"
+        AppLanguage.RUSSIAN -> "Своя иконка"
+        AppLanguage.JAPANESE -> "カスタムアイコン"
+        AppLanguage.KOREAN -> "사용자 지정 아이콘"
+    }
+
+    val appModifierOutputMode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "输出方式"
+        AppLanguage.ENGLISH -> "Output mode"
+        AppLanguage.ARABIC -> "وضع الإخراج"
+        AppLanguage.PORTUGUESE -> "Modo de saída"
+        AppLanguage.SPANISH -> "Modo de salida"
+        AppLanguage.FRENCH -> "Mode de sortie"
+        AppLanguage.GERMAN -> "Ausgabemodus"
+        AppLanguage.RUSSIAN -> "Режим вывода"
+        AppLanguage.JAPANESE -> "出力方式"
+        AppLanguage.KOREAN -> "출력 방식"
+    }
+
+    val appModifierModeShortcutDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "桌面快捷方式，兼容性最好，可附带开屏/激活/公告"
+        AppLanguage.ENGLISH -> "Home-screen shortcut with best compatibility; splash, activation, and notice supported"
+        AppLanguage.ARABIC -> "اختصار على الشاشة الرئيسية بأفضل توافق، مع شاشة افتتاح/تفعيل/إعلان"
+        AppLanguage.PORTUGUESE -> "Atalho na tela inicial com melhor compatibilidade; splash, ativação e aviso suportados"
+        AppLanguage.SPANISH -> "Acceso directo con mejor compatibilidad; admite splash, activación y aviso"
+        AppLanguage.FRENCH -> "Raccourci d'accueil le plus compatible ; splash, activation et annonce pris en charge"
+        AppLanguage.GERMAN -> "Startbildschirm-Verknüpfung mit bester Kompatibilität; Splash, Aktivierung und Hinweis möglich"
+        AppLanguage.RUSSIAN -> "Ярлык на рабочем столе с лучшей совместимостью; splash, активация и объявление"
+        AppLanguage.JAPANESE -> "互換性が高いホーム画面ショートカット。スプラッシュ/認証/お知らせ対応"
+        AppLanguage.KOREAN -> "호환성이 가장 좋은 홈 화면 바로가기. 스플래시/활성화/공지 지원"
+    }
+
+    val appModifierModeCloneDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重打包并安装独立副本，仅适合无签名校验的应用"
+        AppLanguage.ENGLISH -> "Repackage and install a separate copy; only for apps without signature checks"
+        AppLanguage.ARABIC -> "إعادة تعبئة وتثبيت نسخة منفصلة؛ فقط للتطبيقات بدون تحقق توقيع"
+        AppLanguage.PORTUGUESE -> "Reempacota e instala uma cópia separada; só para apps sem verificação de assinatura"
+        AppLanguage.SPANISH -> "Reempaqueta e instala una copia aparte; solo apps sin verificación de firma"
+        AppLanguage.FRENCH -> "Reconditionne et installe une copie séparée ; uniquement sans vérification de signature"
+        AppLanguage.GERMAN -> "Neu packen und separate Kopie installieren; nur ohne Signaturprüfung"
+        AppLanguage.RUSSIAN -> "Перепаковать и установить отдельную копию; только без проверки подписи"
+        AppLanguage.JAPANESE -> "再パッケージして別コピーをインストール。署名検証のないアプリ向け"
+        AppLanguage.KOREAN -> "재패키징 후 별도 사본 설치. 서명 검증 없는 앱에만 적합"
+    }
+
+    val appModifierRecommended: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "推荐"
+        AppLanguage.ENGLISH -> "Recommended"
+        AppLanguage.ARABIC -> "موصى به"
+        AppLanguage.PORTUGUESE -> "Recomendado"
+        AppLanguage.SPANISH -> "Recomendado"
+        AppLanguage.FRENCH -> "Recommandé"
+        AppLanguage.GERMAN -> "Empfohlen"
+        AppLanguage.RUSSIAN -> "Рекомендуется"
+        AppLanguage.JAPANESE -> "おすすめ"
+        AppLanguage.KOREAN -> "추천"
+    }
+
+    val appModifierCloneNeedsOriginalIcon: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自定义图标时暂不支持克隆安装，请改用快捷方式或恢复原图标"
+        AppLanguage.ENGLISH -> "Clone install is unavailable with a custom icon. Use shortcut mode or restore the original icon"
+        AppLanguage.ARABIC -> "تثبيت النسخة غير متاح مع أيقونة مخصصة. استخدم الاختصار أو استعد الأيقونة الأصلية"
+        AppLanguage.PORTUGUESE -> "Clone indisponível com ícone personalizado. Use atalho ou restaure o ícone original"
+        AppLanguage.SPANISH -> "El clon no está disponible con icono personalizado. Usa acceso directo o restaura el icono original"
+        AppLanguage.FRENCH -> "Clone indisponible avec une icône personnalisée. Utilisez le raccourci ou restaurez l'icône d'origine"
+        AppLanguage.GERMAN -> "Klon mit benutzerdefiniertem Symbol nicht verfügbar. Verknüpfung nutzen oder Originalsymbol wiederherstellen"
+        AppLanguage.RUSSIAN -> "Клон недоступен с пользовательской иконкой. Используйте ярлык или верните оригинальную иконку"
+        AppLanguage.JAPANESE -> "カスタムアイコン時はクローン不可。ショートカットを使うか元のアイコンに戻す"
+        AppLanguage.KOREAN -> "사용자 지정 아이콘에서는 클론 설치 불가. 바로가기를 쓰거나 원본 아이콘 복원"
+    }
+
+    val appModifierShortcutHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "快捷方式会请求桌面固定权限，并尽量保留开屏、激活码与公告配置。"
+        AppLanguage.ENGLISH -> "Shortcut mode asks to pin on the home screen and keeps splash, activation, and announcement settings when possible."
+        AppLanguage.ARABIC -> "وضع الاختصار يطلب التثبيت على الشاشة الرئيسية ويحتفظ بإعدادات الافتتاح والتفعيل والإعلان قدر الإمكان."
+        AppLanguage.PORTUGUESE -> "O modo atalho pede fixação na tela inicial e mantém splash, ativação e anúncio quando possível."
+        AppLanguage.SPANISH -> "El modo acceso directo pide fijar en el inicio y conserva splash, activación y aviso cuando es posible."
+        AppLanguage.FRENCH -> "Le mode raccourci demande l'épinglage à l'accueil et conserve splash, activation et annonce si possible."
+        AppLanguage.GERMAN -> "Der Verknüpfungsmodus bittet um Anheften und behält Splash, Aktivierung und Hinweis nach Möglichkeit bei."
+        AppLanguage.RUSSIAN -> "Режим ярлыка запрашивает закрепление на рабочем столе и сохраняет splash, активацию и объявление, если возможно."
+        AppLanguage.JAPANESE -> "ショートカットはホーム固定を要求し、可能な限りスプラッシュ/認証/お知らせを保持します。"
+        AppLanguage.KOREAN -> "바로가기 모드는 홈 화면 고정을 요청하며 가능하면 스플래시, 활성화, 공지 설정을 유지합니다."
+    }
+
+    val appModifierWorking: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "处理中…"
+        AppLanguage.ENGLISH -> "Working…"
+        AppLanguage.ARABIC -> "جارٍ العمل…"
+        AppLanguage.PORTUGUESE -> "Processando…"
+        AppLanguage.SPANISH -> "Procesando…"
+        AppLanguage.FRENCH -> "Traitement…"
+        AppLanguage.GERMAN -> "Wird verarbeitet…"
+        AppLanguage.RUSSIAN -> "Обработка…"
+        AppLanguage.JAPANESE -> "処理中…"
+        AppLanguage.KOREAN -> "처리 중…"
+    }
+
+    fun appModifierResultCount(count: Int): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "$count 个应用"
+        AppLanguage.ENGLISH -> "$count apps"
+        AppLanguage.ARABIC -> "$count تطبيقات"
+        AppLanguage.PORTUGUESE -> "$count apps"
+        AppLanguage.SPANISH -> "$count apps"
+        AppLanguage.FRENCH -> "$count apps"
+        AppLanguage.GERMAN -> "$count Apps"
+        AppLanguage.RUSSIAN -> "$count приложений"
+        AppLanguage.JAPANESE -> "$count 件のアプリ"
+        AppLanguage.KOREAN -> "앱 ${count}개"
+    }
 
     val linuxEnvSubtitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "把手机变成可构建 React / Vue / PHP / Python 项目的工作站"
