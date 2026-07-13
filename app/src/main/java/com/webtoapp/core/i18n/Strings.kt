@@ -4619,6 +4619,21 @@ object Strings {
     val fileManagerDeleteConfirmFile: String get() = StringsE.fileManagerDeleteConfirmFile
     val fileManagerLogViewerTitle: String get() = StringsE.fileManagerLogViewerTitle
     val fileManagerTotalUsage: String get() = StringsE.fileManagerTotalUsage
+    val fileManagerSearchHint: String get() = StringsE.fileManagerSearchHint
+    val fileManagerNoMatch: String get() = StringsE.fileManagerNoMatch
+    val fileManagerNoMatchHint: String get() = StringsE.fileManagerNoMatchHint
+    val fileManagerEmptyHint: String get() = StringsE.fileManagerEmptyHint
+    val fileManagerFilteredHint: String get() = StringsE.fileManagerFilteredHint
+    val fileManagerSelect: String get() = StringsE.fileManagerSelect
+    val fileManagerSort: String get() = StringsE.fileManagerSort
+    val fileManagerSortNewest: String get() = StringsE.fileManagerSortNewest
+    val fileManagerSortLargest: String get() = StringsE.fileManagerSortLargest
+    val fileManagerSortName: String get() = StringsE.fileManagerSortName
+    val fileManagerDeleteConfirmMany: String get() = StringsE.fileManagerDeleteConfirmMany
+    val fileManagerCleared: String get() = StringsE.fileManagerCleared
+    val fileManagerInstallStarted: String get() = StringsE.fileManagerInstallStarted
+    val fileManagerInstallFailed: String get() = StringsE.fileManagerInstallFailed
+    val fileManagerLogTruncated: String get() = StringsE.fileManagerLogTruncated
     val playStoreTitle: String get() = StringsE.playStoreTitle
     val playStoreSubtitle: String get() = StringsE.playStoreSubtitle
     val playStoreSelectApp: String get() = StringsE.playStoreSelectApp
@@ -61066,6 +61081,186 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Всего: %s · %d файлов"
         AppLanguage.JAPANESE -> "合計: %s · %d ファイル"
         AppLanguage.KOREAN -> "합계: %s · 파일 %d개"
+    }
+    val fileManagerSearchHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "搜索文件名…"
+        AppLanguage.ENGLISH -> "Search files…"
+        AppLanguage.ARABIC -> "ابحث عن الملفات…"
+        AppLanguage.PORTUGUESE -> "Pesquisar arquivos…"
+        AppLanguage.SPANISH -> "Buscar archivos…"
+        AppLanguage.FRENCH -> "Rechercher des fichiers…"
+        AppLanguage.GERMAN -> "Dateien suchen…"
+        AppLanguage.RUSSIAN -> "Поиск файлов…"
+        AppLanguage.JAPANESE -> "ファイルを検索…"
+        AppLanguage.KOREAN -> "파일 검색…"
+    }
+    val fileManagerNoMatch: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有匹配的文件"
+        AppLanguage.ENGLISH -> "No matching files"
+        AppLanguage.ARABIC -> "لا توجد ملفات مطابقة"
+        AppLanguage.PORTUGUESE -> "Nenhum arquivo correspondente"
+        AppLanguage.SPANISH -> "No hay archivos coincidentes"
+        AppLanguage.FRENCH -> "Aucun fichier correspondant"
+        AppLanguage.GERMAN -> "Keine passenden Dateien"
+        AppLanguage.RUSSIAN -> "Нет подходящих файлов"
+        AppLanguage.JAPANESE -> "一致するファイルがありません"
+        AppLanguage.KOREAN -> "일치하는 파일이 없습니다"
+    }
+    val fileManagerNoMatchHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "试试换个关键词，或切换分类筛选。"
+        AppLanguage.ENGLISH -> "Try another keyword or switch category filters."
+        AppLanguage.ARABIC -> "جرّب كلمة أخرى أو غيّر تصفية الفئة."
+        AppLanguage.PORTUGUESE -> "Tente outra palavra-chave ou mude o filtro de categoria."
+        AppLanguage.SPANISH -> "Prueba otra palabra clave o cambia el filtro de categoría."
+        AppLanguage.FRENCH -> "Essayez un autre mot-clé ou changez le filtre de catégorie."
+        AppLanguage.GERMAN -> "Versuchen Sie ein anderes Stichwort oder wechseln Sie den Kategoriefilter."
+        AppLanguage.RUSSIAN -> "Попробуйте другое ключевое слово или смените фильтр категории."
+        AppLanguage.JAPANESE -> "別のキーワードを試すか、カテゴリフィルタを切り替えてください。"
+        AppLanguage.KOREAN -> "다른 키워드를 사용하거나 카테고리 필터를 바꿔 보세요."
+    }
+    val fileManagerEmptyHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建 APK、导出 AAB 或导入项目后，文件会显示在这里。"
+        AppLanguage.ENGLISH -> "Files appear here after you build APKs, export AABs, or import projects."
+        AppLanguage.ARABIC -> "تظهر الملفات هنا بعد بناء APK أو تصدير AAB أو استيراد المشاريع."
+        AppLanguage.PORTUGUESE -> "Os arquivos aparecem aqui após criar APKs, exportar AABs ou importar projetos."
+        AppLanguage.SPANISH -> "Los archivos aparecen aquí después de crear APKs, exportar AABs o importar proyectos."
+        AppLanguage.FRENCH -> "Les fichiers apparaissent ici après la création d'APK, l'export d'AAB ou l'import de projets."
+        AppLanguage.GERMAN -> "Dateien erscheinen hier, nachdem Sie APKs bauen, AABs exportieren oder Projekte importieren."
+        AppLanguage.RUSSIAN -> "Файлы появятся здесь после сборки APK, экспорта AAB или импорта проектов."
+        AppLanguage.JAPANESE -> "APK のビルド、AAB のエクスポート、またはプロジェクトのインポート後にここに表示されます。"
+        AppLanguage.KOREAN -> "APK 빌드, AAB 내보내기 또는 프로젝트 가져오기 후 여기에 파일이 표시됩니다."
+    }
+    val fileManagerFilteredHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "当前为筛选结果"
+        AppLanguage.ENGLISH -> "Showing filtered results"
+        AppLanguage.ARABIC -> "عرض النتائج المصفّاة"
+        AppLanguage.PORTUGUESE -> "Mostrando resultados filtrados"
+        AppLanguage.SPANISH -> "Mostrando resultados filtrados"
+        AppLanguage.FRENCH -> "Affichage des résultats filtrés"
+        AppLanguage.GERMAN -> "Gefilterte Ergebnisse"
+        AppLanguage.RUSSIAN -> "Показаны отфильтрованные результаты"
+        AppLanguage.JAPANESE -> "絞り込み結果を表示中"
+        AppLanguage.KOREAN -> "필터링된 결과 표시 중"
+    }
+    val fileManagerSelect: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择"
+        AppLanguage.ENGLISH -> "Select"
+        AppLanguage.ARABIC -> "تحديد"
+        AppLanguage.PORTUGUESE -> "Selecionar"
+        AppLanguage.SPANISH -> "Seleccionar"
+        AppLanguage.FRENCH -> "Sélectionner"
+        AppLanguage.GERMAN -> "Auswählen"
+        AppLanguage.RUSSIAN -> "Выбрать"
+        AppLanguage.JAPANESE -> "選択"
+        AppLanguage.KOREAN -> "선택"
+    }
+    val fileManagerSort: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "排序"
+        AppLanguage.ENGLISH -> "Sort"
+        AppLanguage.ARABIC -> "ترتيب"
+        AppLanguage.PORTUGUESE -> "Ordenar"
+        AppLanguage.SPANISH -> "Ordenar"
+        AppLanguage.FRENCH -> "Trier"
+        AppLanguage.GERMAN -> "Sortieren"
+        AppLanguage.RUSSIAN -> "Сортировка"
+        AppLanguage.JAPANESE -> "並べ替え"
+        AppLanguage.KOREAN -> "정렬"
+    }
+    val fileManagerSortNewest: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "最新优先"
+        AppLanguage.ENGLISH -> "Newest first"
+        AppLanguage.ARABIC -> "الأحدث أولاً"
+        AppLanguage.PORTUGUESE -> "Mais recentes primeiro"
+        AppLanguage.SPANISH -> "Más recientes primero"
+        AppLanguage.FRENCH -> "Plus récents d'abord"
+        AppLanguage.GERMAN -> "Neueste zuerst"
+        AppLanguage.RUSSIAN -> "Сначала новые"
+        AppLanguage.JAPANESE -> "新しい順"
+        AppLanguage.KOREAN -> "최신순"
+    }
+    val fileManagerSortLargest: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "最大优先"
+        AppLanguage.ENGLISH -> "Largest first"
+        AppLanguage.ARABIC -> "الأكبر أولاً"
+        AppLanguage.PORTUGUESE -> "Maiores primeiro"
+        AppLanguage.SPANISH -> "Más grandes primero"
+        AppLanguage.FRENCH -> "Plus grands d'abord"
+        AppLanguage.GERMAN -> "Größte zuerst"
+        AppLanguage.RUSSIAN -> "Сначала большие"
+        AppLanguage.JAPANESE -> "大きい順"
+        AppLanguage.KOREAN -> "용량 큰 순"
+    }
+    val fileManagerSortName: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "按名称"
+        AppLanguage.ENGLISH -> "Name"
+        AppLanguage.ARABIC -> "الاسم"
+        AppLanguage.PORTUGUESE -> "Nome"
+        AppLanguage.SPANISH -> "Nombre"
+        AppLanguage.FRENCH -> "Nom"
+        AppLanguage.GERMAN -> "Name"
+        AppLanguage.RUSSIAN -> "Имя"
+        AppLanguage.JAPANESE -> "名前"
+        AppLanguage.KOREAN -> "이름"
+    }
+    val fileManagerDeleteConfirmMany: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "确定删除已选的 %d 项？此操作不可撤销。"
+        AppLanguage.ENGLISH -> "Delete %d selected items? This cannot be undone."
+        AppLanguage.ARABIC -> "حذف %d عنصرًا محددًا؟ لا يمكن التراجع."
+        AppLanguage.PORTUGUESE -> "Excluir %d itens selecionados? Isso não pode ser desfeito."
+        AppLanguage.SPANISH -> "¿Eliminar %d elementos seleccionados? Esto no se puede deshacer."
+        AppLanguage.FRENCH -> "Supprimer %d éléments sélectionnés ? Action irréversible."
+        AppLanguage.GERMAN -> "%d ausgewählte Elemente löschen? Dies kann nicht rückgängig gemacht werden."
+        AppLanguage.RUSSIAN -> "Удалить выбранные элементы (%d)? Это нельзя отменить."
+        AppLanguage.JAPANESE -> "選択した %d 件を削除しますか？この操作は取り消せません。"
+        AppLanguage.KOREAN -> "선택한 %d개를 삭제할까요? 되돌릴 수 없습니다."
+    }
+    val fileManagerCleared: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已清空"
+        AppLanguage.ENGLISH -> "Cleared"
+        AppLanguage.ARABIC -> "تم المسح"
+        AppLanguage.PORTUGUESE -> "Limpo"
+        AppLanguage.SPANISH -> "Vaciado"
+        AppLanguage.FRENCH -> "Vidé"
+        AppLanguage.GERMAN -> "Geleert"
+        AppLanguage.RUSSIAN -> "Очищено"
+        AppLanguage.JAPANESE -> "クリアしました"
+        AppLanguage.KOREAN -> "비웠습니다"
+    }
+    val fileManagerInstallStarted: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已打开系统安装界面"
+        AppLanguage.ENGLISH -> "Opened the system installer"
+        AppLanguage.ARABIC -> "تم فتح مثبت النظام"
+        AppLanguage.PORTUGUESE -> "Instalador do sistema aberto"
+        AppLanguage.SPANISH -> "Se abrió el instalador del sistema"
+        AppLanguage.FRENCH -> "Installateur système ouvert"
+        AppLanguage.GERMAN -> "System-Installer geöffnet"
+        AppLanguage.RUSSIAN -> "Открыт системный установщик"
+        AppLanguage.JAPANESE -> "システムインストーラーを開きました"
+        AppLanguage.KOREAN -> "시스템 설치 화면을 열었습니다"
+    }
+    val fileManagerInstallFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法启动安装，请检查文件是否有效"
+        AppLanguage.ENGLISH -> "Could not start install. Check that the file is valid."
+        AppLanguage.ARABIC -> "تعذر بدء التثبيت. تحقق من صلاحية الملف."
+        AppLanguage.PORTUGUESE -> "Não foi possível iniciar a instalação. Verifique se o arquivo é válido."
+        AppLanguage.SPANISH -> "No se pudo iniciar la instalación. Comprueba que el archivo sea válido."
+        AppLanguage.FRENCH -> "Impossible de lancer l'installation. Vérifiez que le fichier est valide."
+        AppLanguage.GERMAN -> "Installation konnte nicht gestartet werden. Prüfen Sie die Datei."
+        AppLanguage.RUSSIAN -> "Не удалось начать установку. Проверьте файл."
+        AppLanguage.JAPANESE -> "インストールを開始できません。ファイルを確認してください。"
+        AppLanguage.KOREAN -> "설치를 시작할 수 없습니다. 파일이 유효한지 확인하세요."
+    }
+    val fileManagerLogTruncated: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "日志较长，仅显示前部内容。可分享完整文件。"
+        AppLanguage.ENGLISH -> "Log is large; showing the beginning. Share the full file if needed."
+        AppLanguage.ARABIC -> "السجل كبير؛ يُعرض الجزء الأول. شارك الملف الكامل عند الحاجة."
+        AppLanguage.PORTUGUESE -> "O log é grande; mostrando o início. Compartilhe o arquivo completo se precisar."
+        AppLanguage.SPANISH -> "El registro es grande; se muestra el inicio. Comparte el archivo completo si lo necesitas."
+        AppLanguage.FRENCH -> "Le journal est volumineux ; début affiché. Partagez le fichier complet si besoin."
+        AppLanguage.GERMAN -> "Protokoll ist groß; Anfang wird angezeigt. Bei Bedarf die vollständige Datei teilen."
+        AppLanguage.RUSSIAN -> "Журнал большой; показан только начало. При необходимости поделитесь полным файлом."
+        AppLanguage.JAPANESE -> "ログが大きいため先頭のみ表示。必要なら完全なファイルを共有してください。"
+        AppLanguage.KOREAN -> "로그가 커서 앞부분만 표시합니다. 필요하면 전체 파일을 공유하세요."
     }
     val playStoreTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "导出 AAB"
