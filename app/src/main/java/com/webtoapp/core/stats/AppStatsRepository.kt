@@ -59,14 +59,36 @@ class AppStatsRepository(private val dao: AppUsageStatsDao) {
 
     suspend fun getOverallStats(): OverallStats {
         return try {
+            val launches = dao.getTotalLaunchCount()
+            val usage = dao.getTotalUsageMs()
+            val active = dao.getActiveAppCount()
+            val avg = if (launches > 0) usage / launches else 0L
             OverallStats(
-                totalLaunchCount = dao.getTotalLaunchCount(),
-                totalUsageMs = dao.getTotalUsageMs(),
-                activeAppCount = dao.getActiveAppCount()
+                totalLaunchCount = launches,
+                totalUsageMs = usage,
+                activeAppCount = active,
+                avgSessionMs = avg
             )
         } catch (e: Exception) {
             AppLogger.e(TAG, "获取汇总统计失败: ${e.message}")
             OverallStats()
+        }
+    }
+
+    suspend fun clearAllStats() {
+        try {
+            dao.deleteAllStats()
+            AppLogger.i(TAG, "已清空全部使用统计")
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "清空使用统计失败: ${e.message}")
+        }
+    }
+
+    suspend fun clearStatsForApp(appId: Long) {
+        try {
+            dao.deleteByAppId(appId)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "清空应用统计失败: appId=$appId, ${e.message}")
         }
     }
 
@@ -107,17 +129,48 @@ class AppStatsRepository(private val dao: AppUsageStatsDao) {
 data class OverallStats(
     val totalLaunchCount: Int = 0,
     val totalUsageMs: Long = 0,
-    val activeAppCount: Int = 0
+    val activeAppCount: Int = 0,
+    val avgSessionMs: Long = 0
 ) {
     val formattedTotalUsage: String
-        get() {
-            val totalSeconds = totalUsageMs / 1000
-            val hours = totalSeconds / 3600
-            val minutes = (totalSeconds % 3600) / 60
-            return when {
-                hours > 0 -> "${hours}h ${minutes}m"
-                minutes > 0 -> "${minutes}m"
-                else -> "<1m"
-            }
+        get() = StatsFormat.formatDuration(totalUsageMs)
+
+    val formattedAvgSession: String
+        get() = StatsFormat.formatDuration(avgSessionMs)
+}
+
+object StatsFormat {
+    fun formatDuration(durationMs: Long): String {
+        if (durationMs <= 0L) return com.webtoapp.core.i18n.Strings.statsDurationUnderOneMinute
+        val totalSeconds = durationMs / 1000
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        return when {
+            hours > 0 -> String.format(
+                com.webtoapp.core.i18n.Strings.statsDurationHoursMinutes,
+                hours,
+                minutes
+            )
+            minutes > 0 -> String.format(
+                com.webtoapp.core.i18n.Strings.statsDurationMinutes,
+                minutes
+            )
+            else -> com.webtoapp.core.i18n.Strings.statsDurationUnderOneMinute
         }
+    }
+
+    fun formatRelative(timestamp: Long): String {
+        if (timestamp <= 0L) return com.webtoapp.core.i18n.Strings.statsNeverUsed
+        val diff = System.currentTimeMillis() - timestamp
+        val minutes = diff / 60_000
+        val hours = minutes / 60
+        val days = hours / 24
+        return when {
+            minutes < 1 -> com.webtoapp.core.i18n.Strings.statsJustNow
+            minutes < 60 -> String.format(com.webtoapp.core.i18n.Strings.statsMinutesAgo, minutes)
+            hours < 24 -> String.format(com.webtoapp.core.i18n.Strings.statsHoursAgo, hours)
+            days < 30 -> String.format(com.webtoapp.core.i18n.Strings.statsDaysAgo, days)
+            else -> String.format(com.webtoapp.core.i18n.Strings.statsMonthsAgo, (days / 30).coerceAtLeast(1))
+        }
+    }
 }

@@ -239,6 +239,13 @@ fun AppNavigation() {
                             healthMonitor.checkApps(apps)
                             overallStats.value = statsRepository.getOverallStats()
                         }
+                    },
+                    onClearAllStats = {
+                        statsRepository.clearAllStats()
+                        overallStats.value = statsRepository.getOverallStats()
+                    },
+                    onRefreshOverall = {
+                        overallStats.value = statsRepository.getOverallStats()
                     }
                 )
             }

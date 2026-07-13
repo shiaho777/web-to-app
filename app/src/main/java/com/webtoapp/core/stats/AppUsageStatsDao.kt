@@ -33,6 +33,9 @@ interface AppUsageStatsDao {
     @Query("DELETE FROM app_usage_stats WHERE appId = :appId")
     suspend fun deleteByAppId(appId: Long)
 
+    @Query("DELETE FROM app_usage_stats")
+    suspend fun deleteAllStats()
+
     @Query("""
         UPDATE app_usage_stats
         SET launchCount = launchCount + 1, lastUsedAt = :timestamp

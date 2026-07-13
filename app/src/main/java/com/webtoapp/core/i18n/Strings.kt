@@ -84,6 +84,29 @@ object Strings {
     val statsMostTime: String get() = StringsA.statsMostTime
     val statsLaunches: String get() = StringsA.statsLaunches
     val statsNoData: String get() = StringsA.statsNoData
+    val statsSubtitle: String get() = StringsA.statsSubtitle
+    val statsSearchHint: String get() = StringsA.statsSearchHint
+    val statsSortLaunches: String get() = StringsA.statsSortLaunches
+    val statsSortTime: String get() = StringsA.statsSortTime
+    val statsSortRecent: String get() = StringsA.statsSortRecent
+    val statsRankings: String get() = StringsA.statsRankings
+    val statsAvgSession: String get() = StringsA.statsAvgSession
+    val statsLastSession: String get() = StringsA.statsLastSession
+    val statsClearAll: String get() = StringsA.statsClearAll
+    val statsClearConfirm: String get() = StringsA.statsClearConfirm
+    val statsCleared: String get() = StringsA.statsCleared
+    val statsNoMatch: String get() = StringsA.statsNoMatch
+    val statsNeverUsed: String get() = StringsA.statsNeverUsed
+    val statsJustNow: String get() = StringsA.statsJustNow
+    val statsMinutesAgo: String get() = StringsA.statsMinutesAgo
+    val statsHoursAgo: String get() = StringsA.statsHoursAgo
+    val statsDaysAgo: String get() = StringsA.statsDaysAgo
+    val statsMonthsAgo: String get() = StringsA.statsMonthsAgo
+    val statsDurationHoursMinutes: String get() = StringsA.statsDurationHoursMinutes
+    val statsDurationMinutes: String get() = StringsA.statsDurationMinutes
+    val statsDurationUnderOneMinute: String get() = StringsA.statsDurationUnderOneMinute
+    val statsHealthCheckHint: String get() = StringsA.statsHealthCheckHint
+    val healthLastChecked: String get() = StringsA.healthLastChecked
     val healthTitle: String get() = StringsA.healthTitle
     val healthOnline: String get() = StringsA.healthOnline
     val healthSlow: String get() = StringsA.healthSlow
@@ -5037,6 +5060,282 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Данных об использовании пока нет"
         AppLanguage.JAPANESE -> "使用データはまだありません"
         AppLanguage.KOREAN -> "아직 사용 데이터가 없습니다"
+    }
+    val statsSubtitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "查看应用打开次数、使用时长与网站健康状态"
+        AppLanguage.ENGLISH -> "Review launches, time spent, and website health"
+        AppLanguage.ARABIC -> "راجع عمليات الفتح ومدة الاستخدام وصحة المواقع"
+        AppLanguage.PORTUGUESE -> "Veja aberturas, tempo de uso e saúde dos sites"
+        AppLanguage.SPANISH -> "Revisa aperturas, tiempo de uso y salud de sitios"
+        AppLanguage.FRENCH -> "Consultez les lancements, le temps passé et la santé des sites"
+        AppLanguage.GERMAN -> "Starts, Nutzungsdauer und Website-Status ansehen"
+        AppLanguage.RUSSIAN -> "Просматривайте запуски, время использования и состояние сайтов"
+        AppLanguage.JAPANESE -> "起動回数、使用時間、サイトの健全性を確認"
+        AppLanguage.KOREAN -> "실행 횟수, 사용 시간, 사이트 상태 확인"
+    }
+    val statsSearchHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "搜索应用…"
+        AppLanguage.ENGLISH -> "Search apps…"
+        AppLanguage.ARABIC -> "ابحث عن التطبيقات…"
+        AppLanguage.PORTUGUESE -> "Pesquisar apps…"
+        AppLanguage.SPANISH -> "Buscar apps…"
+        AppLanguage.FRENCH -> "Rechercher des apps…"
+        AppLanguage.GERMAN -> "Apps suchen…"
+        AppLanguage.RUSSIAN -> "Поиск приложений…"
+        AppLanguage.JAPANESE -> "アプリを検索…"
+        AppLanguage.KOREAN -> "앱 검색…"
+    }
+    val statsSortLaunches: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "按启动"
+        AppLanguage.ENGLISH -> "Launches"
+        AppLanguage.ARABIC -> "حسب الفتح"
+        AppLanguage.PORTUGUESE -> "Aberturas"
+        AppLanguage.SPANISH -> "Aperturas"
+        AppLanguage.FRENCH -> "Lancements"
+        AppLanguage.GERMAN -> "Starts"
+        AppLanguage.RUSSIAN -> "Запуски"
+        AppLanguage.JAPANESE -> "起動順"
+        AppLanguage.KOREAN -> "실행순"
+    }
+    val statsSortTime: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "按时长"
+        AppLanguage.ENGLISH -> "Time"
+        AppLanguage.ARABIC -> "حسب المدة"
+        AppLanguage.PORTUGUESE -> "Tempo"
+        AppLanguage.SPANISH -> "Tiempo"
+        AppLanguage.FRENCH -> "Temps"
+        AppLanguage.GERMAN -> "Dauer"
+        AppLanguage.RUSSIAN -> "Время"
+        AppLanguage.JAPANESE -> "時間順"
+        AppLanguage.KOREAN -> "시간순"
+    }
+    val statsSortRecent: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "最近使用"
+        AppLanguage.ENGLISH -> "Recent"
+        AppLanguage.ARABIC -> "الأحدث"
+        AppLanguage.PORTUGUESE -> "Recentes"
+        AppLanguage.SPANISH -> "Recientes"
+        AppLanguage.FRENCH -> "Récents"
+        AppLanguage.GERMAN -> "Zuletzt"
+        AppLanguage.RUSSIAN -> "Недавние"
+        AppLanguage.JAPANESE -> "最近"
+        AppLanguage.KOREAN -> "최근"
+    }
+    val statsRankings: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "应用排行"
+        AppLanguage.ENGLISH -> "App rankings"
+        AppLanguage.ARABIC -> "ترتيب التطبيقات"
+        AppLanguage.PORTUGUESE -> "Ranking de apps"
+        AppLanguage.SPANISH -> "Ranking de apps"
+        AppLanguage.FRENCH -> "Classement des apps"
+        AppLanguage.GERMAN -> "App-Ranking"
+        AppLanguage.RUSSIAN -> "Рейтинг приложений"
+        AppLanguage.JAPANESE -> "アプリランキング"
+        AppLanguage.KOREAN -> "앱 순위"
+    }
+    val statsAvgSession: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "平均每次"
+        AppLanguage.ENGLISH -> "Avg session"
+        AppLanguage.ARABIC -> "متوسط الجلسة"
+        AppLanguage.PORTUGUESE -> "Sessão média"
+        AppLanguage.SPANISH -> "Sesión media"
+        AppLanguage.FRENCH -> "Session moy."
+        AppLanguage.GERMAN -> "Ø Sitzung"
+        AppLanguage.RUSSIAN -> "Средняя сессия"
+        AppLanguage.JAPANESE -> "平均セッション"
+        AppLanguage.KOREAN -> "평균 세션"
+    }
+    val statsLastSession: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "上次会话"
+        AppLanguage.ENGLISH -> "Last session"
+        AppLanguage.ARABIC -> "آخر جلسة"
+        AppLanguage.PORTUGUESE -> "Última sessão"
+        AppLanguage.SPANISH -> "Última sesión"
+        AppLanguage.FRENCH -> "Dernière session"
+        AppLanguage.GERMAN -> "Letzte Sitzung"
+        AppLanguage.RUSSIAN -> "Последняя сессия"
+        AppLanguage.JAPANESE -> "前回のセッション"
+        AppLanguage.KOREAN -> "마지막 세션"
+    }
+    val statsClearAll: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "清空统计"
+        AppLanguage.ENGLISH -> "Clear stats"
+        AppLanguage.ARABIC -> "مسح الإحصائيات"
+        AppLanguage.PORTUGUESE -> "Limpar estatísticas"
+        AppLanguage.SPANISH -> "Borrar estadísticas"
+        AppLanguage.FRENCH -> "Effacer les stats"
+        AppLanguage.GERMAN -> "Statistiken leeren"
+        AppLanguage.RUSSIAN -> "Очистить статистику"
+        AppLanguage.JAPANESE -> "統計をクリア"
+        AppLanguage.KOREAN -> "통계 지우기"
+    }
+    val statsClearConfirm: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "确定清空全部使用统计？此操作不可撤销。"
+        AppLanguage.ENGLISH -> "Clear all usage statistics? This cannot be undone."
+        AppLanguage.ARABIC -> "مسح جميع إحصائيات الاستخدام؟ لا يمكن التراجع."
+        AppLanguage.PORTUGUESE -> "Limpar todas as estatísticas de uso? Isso não pode ser desfeito."
+        AppLanguage.SPANISH -> "¿Borrar todas las estadísticas de uso? Esto no se puede deshacer."
+        AppLanguage.FRENCH -> "Effacer toutes les statistiques d'utilisation ? Action irréversible."
+        AppLanguage.GERMAN -> "Alle Nutzungsstatistiken löschen? Dies kann nicht rückgängig gemacht werden."
+        AppLanguage.RUSSIAN -> "Очистить всю статистику использования? Это нельзя отменить."
+        AppLanguage.JAPANESE -> "すべての使用統計をクリアしますか？この操作は取り消せません。"
+        AppLanguage.KOREAN -> "모든 사용 통계를 지울까요? 되돌릴 수 없습니다."
+    }
+    val statsCleared: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "统计已清空"
+        AppLanguage.ENGLISH -> "Statistics cleared"
+        AppLanguage.ARABIC -> "تم مسح الإحصائيات"
+        AppLanguage.PORTUGUESE -> "Estatísticas limpas"
+        AppLanguage.SPANISH -> "Estadísticas borradas"
+        AppLanguage.FRENCH -> "Statistiques effacées"
+        AppLanguage.GERMAN -> "Statistiken gelöscht"
+        AppLanguage.RUSSIAN -> "Статистика очищена"
+        AppLanguage.JAPANESE -> "統計をクリアしました"
+        AppLanguage.KOREAN -> "통계를 지웠습니다"
+    }
+    val statsNoMatch: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有匹配的应用"
+        AppLanguage.ENGLISH -> "No matching apps"
+        AppLanguage.ARABIC -> "لا توجد تطبيقات مطابقة"
+        AppLanguage.PORTUGUESE -> "Nenhum app correspondente"
+        AppLanguage.SPANISH -> "No hay apps coincidentes"
+        AppLanguage.FRENCH -> "Aucune app correspondante"
+        AppLanguage.GERMAN -> "Keine passenden Apps"
+        AppLanguage.RUSSIAN -> "Нет подходящих приложений"
+        AppLanguage.JAPANESE -> "一致するアプリがありません"
+        AppLanguage.KOREAN -> "일치하는 앱이 없습니다"
+    }
+    val statsNeverUsed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "从未使用"
+        AppLanguage.ENGLISH -> "Never used"
+        AppLanguage.ARABIC -> "لم يُستخدم أبدًا"
+        AppLanguage.PORTUGUESE -> "Nunca usado"
+        AppLanguage.SPANISH -> "Nunca usado"
+        AppLanguage.FRENCH -> "Jamais utilisé"
+        AppLanguage.GERMAN -> "Nie verwendet"
+        AppLanguage.RUSSIAN -> "Никогда не использовалось"
+        AppLanguage.JAPANESE -> "未使用"
+        AppLanguage.KOREAN -> "사용 기록 없음"
+    }
+    val statsJustNow: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "刚刚"
+        AppLanguage.ENGLISH -> "Just now"
+        AppLanguage.ARABIC -> "الآن"
+        AppLanguage.PORTUGUESE -> "Agora mesmo"
+        AppLanguage.SPANISH -> "Justo ahora"
+        AppLanguage.FRENCH -> "À l'instant"
+        AppLanguage.GERMAN -> "Gerade eben"
+        AppLanguage.RUSSIAN -> "Только что"
+        AppLanguage.JAPANESE -> "たった今"
+        AppLanguage.KOREAN -> "방금"
+    }
+    val statsMinutesAgo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 分钟前"
+        AppLanguage.ENGLISH -> "%d min ago"
+        AppLanguage.ARABIC -> "قبل %d دقيقة"
+        AppLanguage.PORTUGUESE -> "há %d min"
+        AppLanguage.SPANISH -> "hace %d min"
+        AppLanguage.FRENCH -> "il y a %d min"
+        AppLanguage.GERMAN -> "vor %d Min."
+        AppLanguage.RUSSIAN -> "%d мин назад"
+        AppLanguage.JAPANESE -> "%d 分前"
+        AppLanguage.KOREAN -> "%d분 전"
+    }
+    val statsHoursAgo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 小时前"
+        AppLanguage.ENGLISH -> "%d h ago"
+        AppLanguage.ARABIC -> "قبل %d ساعة"
+        AppLanguage.PORTUGUESE -> "há %d h"
+        AppLanguage.SPANISH -> "hace %d h"
+        AppLanguage.FRENCH -> "il y a %d h"
+        AppLanguage.GERMAN -> "vor %d Std."
+        AppLanguage.RUSSIAN -> "%d ч назад"
+        AppLanguage.JAPANESE -> "%d 時間前"
+        AppLanguage.KOREAN -> "%d시간 전"
+    }
+    val statsDaysAgo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 天前"
+        AppLanguage.ENGLISH -> "%d d ago"
+        AppLanguage.ARABIC -> "قبل %d يوم"
+        AppLanguage.PORTUGUESE -> "há %d d"
+        AppLanguage.SPANISH -> "hace %d d"
+        AppLanguage.FRENCH -> "il y a %d j"
+        AppLanguage.GERMAN -> "vor %d T."
+        AppLanguage.RUSSIAN -> "%d дн. назад"
+        AppLanguage.JAPANESE -> "%d 日前"
+        AppLanguage.KOREAN -> "%d일 전"
+    }
+    val statsMonthsAgo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 个月前"
+        AppLanguage.ENGLISH -> "%d mo ago"
+        AppLanguage.ARABIC -> "قبل %d شهر"
+        AppLanguage.PORTUGUESE -> "há %d mês(es)"
+        AppLanguage.SPANISH -> "hace %d mes(es)"
+        AppLanguage.FRENCH -> "il y a %d mois"
+        AppLanguage.GERMAN -> "vor %d Mon."
+        AppLanguage.RUSSIAN -> "%d мес. назад"
+        AppLanguage.JAPANESE -> "%d か月前"
+        AppLanguage.KOREAN -> "%d개월 전"
+    }
+    val statsDurationHoursMinutes: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%dh %dm"
+        AppLanguage.ENGLISH -> "%dh %dm"
+        AppLanguage.ARABIC -> "%dس %dد"
+        AppLanguage.PORTUGUESE -> "%dh %dm"
+        AppLanguage.SPANISH -> "%dh %dm"
+        AppLanguage.FRENCH -> "%dh %dm"
+        AppLanguage.GERMAN -> "%d Std. %d Min."
+        AppLanguage.RUSSIAN -> "%dч %dм"
+        AppLanguage.JAPANESE -> "%d時間 %d分"
+        AppLanguage.KOREAN -> "%d시간 %d분"
+    }
+    val statsDurationMinutes: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%dm"
+        AppLanguage.ENGLISH -> "%dm"
+        AppLanguage.ARABIC -> "%dد"
+        AppLanguage.PORTUGUESE -> "%dm"
+        AppLanguage.SPANISH -> "%dm"
+        AppLanguage.FRENCH -> "%dm"
+        AppLanguage.GERMAN -> "%d Min."
+        AppLanguage.RUSSIAN -> "%dм"
+        AppLanguage.JAPANESE -> "%d分"
+        AppLanguage.KOREAN -> "%d분"
+    }
+    val statsDurationUnderOneMinute: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "<1 分钟"
+        AppLanguage.ENGLISH -> "<1m"
+        AppLanguage.ARABIC -> "<1د"
+        AppLanguage.PORTUGUESE -> "<1m"
+        AppLanguage.SPANISH -> "<1m"
+        AppLanguage.FRENCH -> "<1m"
+        AppLanguage.GERMAN -> "<1 Min."
+        AppLanguage.RUSSIAN -> "<1м"
+        AppLanguage.JAPANESE -> "1分未満"
+        AppLanguage.KOREAN -> "1분 미만"
+    }
+    val statsHealthCheckHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "仅检测以 http/https 开头的网页应用。点击右上角可全部检测。"
+        AppLanguage.ENGLISH -> "Only checks web apps with http/https URLs. Use the top-right action to check all."
+        AppLanguage.ARABIC -> "يتحقق فقط من تطبيقات الويب ذات روابط http/https. استخدم الإجراء أعلى اليمين للتحقق من الكل."
+        AppLanguage.PORTUGUESE -> "Verifica apenas apps web com URLs http/https. Use a ação no canto superior direito para checar todos."
+        AppLanguage.SPANISH -> "Solo comprueba apps web con URLs http/https. Usa la acción superior derecha para comprobar todas."
+        AppLanguage.FRENCH -> "Vérifie uniquement les apps web avec des URL http/https. Utilisez l'action en haut à droite pour tout vérifier."
+        AppLanguage.GERMAN -> "Prüft nur Web-Apps mit http/https-URLs. Oben rechts alle prüfen."
+        AppLanguage.RUSSIAN -> "Проверяет только веб-приложения с URL http/https. Кнопка справа вверху проверяет все."
+        AppLanguage.JAPANESE -> "http/https の Web アプリのみ検査します。右上の操作ですべて検査できます。"
+        AppLanguage.KOREAN -> "http/https 웹 앱만 검사합니다. 오른쪽 위 작업으로 전체 검사할 수 있습니다."
+    }
+    val healthLastChecked: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "上次检测"
+        AppLanguage.ENGLISH -> "Last checked"
+        AppLanguage.ARABIC -> "آخر فحص"
+        AppLanguage.PORTUGUESE -> "Última verificação"
+        AppLanguage.SPANISH -> "Última comprobación"
+        AppLanguage.FRENCH -> "Dernière vérif."
+        AppLanguage.GERMAN -> "Zuletzt geprüft"
+        AppLanguage.RUSSIAN -> "Последняя проверка"
+        AppLanguage.JAPANESE -> "最終検査"
+        AppLanguage.KOREAN -> "마지막 검사"
     }
     val healthTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "网站健康"

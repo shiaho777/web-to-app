@@ -34,32 +34,13 @@ data class AppUsageStats(
 ) {
 
     val formattedTotalUsage: String
-        get() {
-            val totalSeconds = totalUsageMs / 1000
-            val hours = totalSeconds / 3600
-            val minutes = (totalSeconds % 3600) / 60
-            return when {
-                hours > 0 -> "${hours}h ${minutes}m"
-                minutes > 0 -> "${minutes}m"
-                else -> "<1m"
-            }
-        }
+        get() = StatsFormat.formatDuration(totalUsageMs)
 
     val formattedLastUsed: String
-        get() {
-            if (lastUsedAt == 0L) return "从未使用"
-            val diff = System.currentTimeMillis() - lastUsedAt
-            val minutes = diff / 60_000
-            val hours = minutes / 60
-            val days = hours / 24
-            return when {
-                minutes < 1 -> "刚刚"
-                minutes < 60 -> "${minutes}分钟前"
-                hours < 24 -> "${hours}小时前"
-                days < 30 -> "${days}天前"
-                else -> "${days / 30}个月前"
-            }
-        }
+        get() = StatsFormat.formatRelative(lastUsedAt)
+
+    val formattedLastSession: String
+        get() = StatsFormat.formatDuration(lastSessionDurationMs)
 }
 
 enum class HealthStatus {

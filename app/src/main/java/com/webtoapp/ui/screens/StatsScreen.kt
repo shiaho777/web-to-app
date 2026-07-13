@@ -1,17 +1,53 @@
 package com.webtoapp.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.outlined.Apps
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material.icons.outlined.MonitorHeart
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material.icons.outlined.TouchApp
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,22 +55,38 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.res.painterResource
-import com.webtoapp.R
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.webtoapp.R
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.ui.theme.AppColors
-import com.webtoapp.core.stats.*
+import com.webtoapp.core.stats.AppHealthRecord
+import com.webtoapp.core.stats.AppUsageStats
+import com.webtoapp.core.stats.HealthStatus
+import com.webtoapp.core.stats.OverallStats
+import com.webtoapp.core.stats.StatsFormat
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.WebApp
-import com.webtoapp.ui.design.WtaBackground
-import com.webtoapp.ui.components.EnhancedElevatedCard
+import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaColors
+import com.webtoapp.ui.design.WtaFullEmptyState
+import com.webtoapp.ui.design.WtaScreen
+import com.webtoapp.ui.design.WtaTab
+import com.webtoapp.ui.design.WtaTabRow
+import com.webtoapp.ui.design.WtaTextField
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+private enum class StatsSortMode {
+    LAUNCHES,
+    TIME,
+    RECENT
+}
+
 @Composable
 fun StatsScreen(
     apps: List<WebApp>,
@@ -43,67 +95,104 @@ fun StatsScreen(
     overallStats: OverallStats,
     onBack: () -> Unit,
     onCheckHealth: (WebApp) -> Unit = {},
-    onCheckAllHealth: () -> Unit = {}
+    onCheckAllHealth: () -> Unit = {},
+    onClearAllStats: (suspend () -> Unit)? = null,
+    onRefreshOverall: (suspend () -> Unit)? = null
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf(Strings.statsTitle, Strings.healthTitle)
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var sortMode by rememberSaveable { mutableStateOf(StatsSortMode.LAUNCHES.name) }
+    var showClearConfirm by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val activeSort = remember(sortMode) {
+        runCatching { StatsSortMode.valueOf(sortMode) }.getOrDefault(StatsSortMode.LAUNCHES)
+    }
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = { Text(Strings.statsTitle) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                    }
-                },
-                actions = {
-                    if (selectedTab == 1) {
-                        IconButton(onClick = onCheckAllHealth) {
-                            Icon(Icons.Outlined.Refresh, contentDescription = Strings.healthCheckNow)
-                        }
-                    }
+    LaunchedEffect(allStats) {
+        onRefreshOverall?.invoke()
+    }
+
+    val tabs = listOf(
+        WtaTab(label = Strings.statsTitle),
+        WtaTab(
+            label = Strings.healthTitle,
+            count = apps.count { it.appType == AppType.WEB && it.url.startsWith("http") }
+        )
+    )
+
+    WtaScreen(
+        title = Strings.statsTitle,
+        subtitle = Strings.statsSubtitle,
+        onBack = onBack,
+        snackbarHostState = snackbarHostState,
+        actions = {
+            if (selectedTab == 0 && onClearAllStats != null && allStats.isNotEmpty()) {
+                IconButton(onClick = { showClearConfirm = true }) {
+                    Icon(Icons.Outlined.DeleteSweep, contentDescription = Strings.statsClearAll)
                 }
-            )
-        }
-    ) { padding ->
-        WtaBackground(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
-
-                TabRow(
-                    selectedTabIndex = selectedTab,
-
-                    containerColor = Color.Transparent
-                ) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = selectedTab == index,
-                            onClick = { selectedTab = index },
-                            text = { Text(title) },
-                            icon = {
-                                Icon(
-                                    if (index == 0) Icons.Outlined.BarChart else Icons.Outlined.MonitorHeart,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        )
-                    }
-                }
-
-                when (selectedTab) {
-                    0 -> UsageStatsTab(apps, allStats, overallStats)
-                    1 -> HealthMonitorTab(apps, healthRecords, onCheckHealth)
+            }
+            if (selectedTab == 1) {
+                IconButton(onClick = onCheckAllHealth) {
+                    Icon(Icons.Outlined.Refresh, contentDescription = Strings.healthCheckNow)
                 }
             }
         }
+    ) { _ ->
+        Column(modifier = Modifier.fillMaxSize()) {
+            WtaTabRow(
+                tabs = tabs,
+                selectedIndex = selectedTab,
+                onTabSelected = { selectedTab = it },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+
+            when (selectedTab) {
+                0 -> UsageStatsTab(
+                    apps = apps,
+                    allStats = allStats,
+                    overallStats = overallStats,
+                    query = query,
+                    onQueryChange = { query = it },
+                    sortMode = activeSort,
+                    onSortChange = { sortMode = it.name }
+                )
+                1 -> HealthMonitorTab(
+                    apps = apps,
+                    healthRecords = healthRecords,
+                    query = query,
+                    onQueryChange = { query = it },
+                    onCheckHealth = onCheckHealth
+                )
+            }
+        }
+    }
+
+    if (showClearConfirm) {
+        AlertDialog(
+            onDismissRequest = { showClearConfirm = false },
+            title = { Text(Strings.statsClearAll) },
+            text = { Text(Strings.statsClearConfirm) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearConfirm = false
+                        scope.launch {
+                            onClearAllStats?.invoke()
+                            onRefreshOverall?.invoke()
+                            snackbarHostState.showSnackbar(Strings.statsCleared)
+                        }
+                    }
+                ) {
+                    Text(Strings.confirm)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearConfirm = false }) {
+                    Text(Strings.btnCancel)
+                }
+            }
+        )
     }
 }
 
@@ -111,71 +200,118 @@ fun StatsScreen(
 private fun UsageStatsTab(
     apps: List<WebApp>,
     allStats: List<AppUsageStats>,
-    overallStats: OverallStats
+    overallStats: OverallStats,
+    query: String,
+    onQueryChange: (String) -> Unit,
+    sortMode: StatsSortMode,
+    onSortChange: (StatsSortMode) -> Unit
 ) {
-    val sortedByLaunches = remember(allStats) {
-        allStats.filter { it.launchCount > 0 }.sortedByDescending { it.launchCount }
+    val appMap = remember(apps) { apps.associateBy { it.id } }
+    val ranked = remember(allStats, apps, query, sortMode) {
+        val q = query.trim()
+        val base = allStats
+            .asSequence()
+            .filter { it.launchCount > 0 || it.totalUsageMs > 0 }
+            .mapNotNull { stats ->
+                val app = appMap[stats.appId] ?: return@mapNotNull null
+                if (q.isNotEmpty() &&
+                    !app.name.contains(q, ignoreCase = true) &&
+                    !app.url.contains(q, ignoreCase = true)
+                ) {
+                    return@mapNotNull null
+                }
+                app to stats
+            }
+            .toList()
+        when (sortMode) {
+            StatsSortMode.LAUNCHES -> base.sortedByDescending { it.second.launchCount }
+            StatsSortMode.TIME -> base.sortedByDescending { it.second.totalUsageMs }
+            StatsSortMode.RECENT -> base.sortedByDescending { it.second.lastUsedAt }
+        }
     }
-    val sortedByTime = remember(allStats) {
-        allStats.filter { it.totalUsageMs > 0 }.sortedByDescending { it.totalUsageMs }
-    }
+    val maxTime = ranked.maxOfOrNull { it.second.totalUsageMs } ?: 0L
+    val maxLaunches = ranked.maxOfOrNull { it.second.launchCount } ?: 0
 
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        item { OverallStatsCard(overallStats) }
 
         item {
-            OverallStatsCard(overallStats)
+            WtaTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = Strings.statsSearchHint,
+                leadingIcon = Icons.Outlined.Search,
+                singleLine = true,
+                trailingIcon = if (query.isNotEmpty()) {
+                    {
+                        IconButton(onClick = { onQueryChange("") }) {
+                            Icon(Icons.Outlined.Clear, contentDescription = Strings.clear)
+                        }
+                    }
+                } else null
+            )
+        }
+
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                WtaChip(
+                    selected = sortMode == StatsSortMode.LAUNCHES,
+                    onClick = { onSortChange(StatsSortMode.LAUNCHES) },
+                    label = Strings.statsSortLaunches,
+                    showSelectedCheck = false
+                )
+                WtaChip(
+                    selected = sortMode == StatsSortMode.TIME,
+                    onClick = { onSortChange(StatsSortMode.TIME) },
+                    label = Strings.statsSortTime,
+                    showSelectedCheck = false
+                )
+                WtaChip(
+                    selected = sortMode == StatsSortMode.RECENT,
+                    onClick = { onSortChange(StatsSortMode.RECENT) },
+                    label = Strings.statsSortRecent,
+                    showSelectedCheck = false
+                )
+            }
         }
 
         item {
             Text(
-                Strings.statsMostUsed,
+                Strings.statsRankings,
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 8.dp)
+                fontWeight = FontWeight.SemiBold
             )
         }
 
-        if (sortedByLaunches.isEmpty()) {
+        if (ranked.isEmpty()) {
             item {
-                EmptyStatsCard()
+                WtaFullEmptyState(
+                    title = if (query.isNotBlank()) Strings.statsNoMatch else Strings.statsNoData,
+                    message = if (query.isNotBlank()) null else Strings.statsSubtitle,
+                    icon = Icons.Outlined.BarChart,
+                    fillMaxSize = false
+                )
             }
         } else {
-            items(sortedByLaunches.take(10), key = { "launches_${it.appId}" }) { stats ->
-                val app = apps.find { it.id == stats.appId }
-                if (app != null) {
-                    UsageStatsCard(
-                        app = app,
-                        stats = stats,
-                        rank = sortedByLaunches.indexOf(stats) + 1
-                    )
-                }
-            }
-        }
-
-        item {
-            Text(
-                Strings.statsMostTime,
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-        }
-
-        if (sortedByTime.isEmpty()) {
-            item {
-                EmptyStatsCard()
-            }
-        } else {
-            items(sortedByTime.take(10), key = { "time_${it.appId}" }) { stats ->
-                val app = apps.find { it.id == stats.appId }
-                if (app != null) {
-                    UsageTimeCard(
-                        app = app,
-                        stats = stats,
-                        maxMs = sortedByTime.first().totalUsageMs
-                    )
-                }
+            itemsIndexed(ranked, key = { _, pair -> pair.second.appId }) { index, (app, stats) ->
+                UsageRankCard(
+                    app = app,
+                    stats = stats,
+                    rank = index + 1,
+                    sortMode = sortMode,
+                    maxLaunches = maxLaunches,
+                    maxTime = maxTime
+                )
             }
         }
 
@@ -185,32 +321,67 @@ private fun UsageStatsTab(
 
 @Composable
 private fun OverallStatsCard(stats: OverallStats) {
-    EnhancedElevatedCard(
+    WtaCard(tone = WtaCardTone.Highlighted) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                StatItem(
+                    icon = Icons.Outlined.TouchApp,
+                    value = stats.totalLaunchCount.toString(),
+                    label = Strings.statsTotalLaunches,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                StatItem(
+                    icon = Icons.Outlined.Timer,
+                    value = stats.formattedTotalUsage,
+                    label = Strings.statsTotalUsage,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+                StatItem(
+                    icon = Icons.Outlined.Apps,
+                    value = stats.activeAppCount.toString(),
+                    label = Strings.statsActiveApps,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+            HorizontalMetricRow(
+                label = Strings.statsAvgSession,
+                value = stats.formattedAvgSession
+            )
+        }
+    }
+}
+
+@Composable
+private fun HorizontalMetricRow(label: String, value: String) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            StatItem(
-                icon = Icons.Outlined.TouchApp,
-                value = stats.totalLaunchCount.toString(),
-                label = Strings.statsTotalLaunches,
-                color = MaterialTheme.colorScheme.primary
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            StatItem(
-                icon = Icons.Outlined.Timer,
-                value = stats.formattedTotalUsage,
-                label = Strings.statsTotalUsage,
-                color = MaterialTheme.colorScheme.tertiary
-            )
-            StatItem(
-                icon = Icons.Outlined.Apps,
-                value = stats.activeAppCount.toString(),
-                label = Strings.statsActiveApps,
-                color = MaterialTheme.colorScheme.secondary
+            Text(
+                value,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -230,7 +401,8 @@ private fun StatItem(
             modifier = Modifier.size(48.dp)
         ) {
             Icon(
-                icon, null,
+                icon,
+                contentDescription = null,
                 modifier = Modifier.padding(12.dp),
                 tint = color
             )
@@ -238,7 +410,7 @@ private fun StatItem(
         Spacer(Modifier.height(8.dp))
         Text(
             value,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             color = color
         )
@@ -251,75 +423,119 @@ private fun StatItem(
 }
 
 @Composable
-private fun UsageStatsCard(
+private fun UsageRankCard(
     app: WebApp,
     stats: AppUsageStats,
-    rank: Int
+    rank: Int,
+    sortMode: StatsSortMode,
+    maxLaunches: Int,
+    maxTime: Long
 ) {
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Row(
+    val progress = when (sortMode) {
+        StatsSortMode.LAUNCHES -> if (maxLaunches > 0) stats.launchCount.toFloat() / maxLaunches else 0f
+        StatsSortMode.TIME -> if (maxTime > 0) stats.totalUsageMs.toFloat() / maxTime else 0f
+        StatsSortMode.RECENT -> 1f
+    }.coerceIn(0f, 1f)
+    val accent = when (sortMode) {
+        StatsSortMode.LAUNCHES -> MaterialTheme.colorScheme.primary
+        StatsSortMode.TIME -> MaterialTheme.colorScheme.tertiary
+        StatsSortMode.RECENT -> MaterialTheme.colorScheme.secondary
+    }
+
+    WtaCard(tone = WtaCardTone.Surface) {
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-
-            Surface(
-                shape = CircleShape,
-                color = when (rank) {
-                    1 -> MaterialTheme.colorScheme.primary
-                    2 -> MaterialTheme.colorScheme.primaryContainer
-                    3 -> MaterialTheme.colorScheme.surfaceContainerHighest
-                    else -> MaterialTheme.colorScheme.surfaceVariant
-                },
-                modifier = Modifier.size(32.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = CircleShape,
+                    color = when (rank) {
+                        1 -> MaterialTheme.colorScheme.primary
+                        2 -> MaterialTheme.colorScheme.primaryContainer
+                        3 -> MaterialTheme.colorScheme.surfaceContainerHighest
+                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            "#$rank",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = when (rank) {
+                                1 -> MaterialTheme.colorScheme.onPrimary
+                                2 -> MaterialTheme.colorScheme.onPrimaryContainer
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                AppIconSmall(app)
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        "#$rank",
-                        style = MaterialTheme.typography.labelMedium,
+                        app.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        stats.formattedLastUsed,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        when (sortMode) {
+                            StatsSortMode.LAUNCHES -> stats.launchCount.toString()
+                            StatsSortMode.TIME -> stats.formattedTotalUsage
+                            StatsSortMode.RECENT -> stats.formattedTotalUsage
+                        },
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = when (rank) {
-                            1 -> MaterialTheme.colorScheme.onPrimary
-                            2 -> MaterialTheme.colorScheme.onPrimaryContainer
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                        color = accent
+                    )
+                    Text(
+                        when (sortMode) {
+                            StatsSortMode.LAUNCHES -> Strings.statsLaunches
+                            StatsSortMode.TIME -> Strings.statsTotalUsage
+                            StatsSortMode.RECENT -> "${stats.launchCount} ${Strings.statsLaunches}"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
 
-            Spacer(Modifier.width(12.dp))
-
-            AppIconSmall(app)
-
-            Spacer(Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                Text(
-                    app.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    stats.formattedLastUsed,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            if (sortMode != StatsSortMode.RECENT) {
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = accent,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
 
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    "${stats.launchCount}",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                MetaChip(
+                    label = Strings.statsLastSession,
+                    value = stats.formattedLastSession
                 )
-                Text(
-                    Strings.statsLaunches,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                MetaChip(
+                    label = Strings.statsTotalUsage,
+                    value = stats.formattedTotalUsage
                 )
             }
         }
@@ -327,46 +543,21 @@ private fun UsageStatsCard(
 }
 
 @Composable
-private fun UsageTimeCard(
-    app: WebApp,
-    stats: AppUsageStats,
-    maxMs: Long
-) {
-    val fraction = if (maxMs > 0) (stats.totalUsageMs.toFloat() / maxMs).coerceIn(0f, 1f) else 0f
-
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                AppIconSmall(app)
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    app.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(weight = 1f, fill = true),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    stats.formattedTotalUsage,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-            LinearProgressIndicator(
-                progress = { fraction },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(6.dp)
-                    .clip(RoundedCornerShape(3.dp)),
-                color = MaterialTheme.colorScheme.tertiary,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
+private fun MetaChip(label: String, value: String) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                value,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -376,41 +567,85 @@ private fun UsageTimeCard(
 private fun HealthMonitorTab(
     apps: List<WebApp>,
     healthRecords: List<AppHealthRecord>,
+    query: String,
+    onQueryChange: (String) -> Unit,
     onCheckHealth: (WebApp) -> Unit
 ) {
     val recordMap = remember(healthRecords) { healthRecords.associateBy { it.appId } }
-    val webApps = remember(apps) { apps.filter { it.appType == AppType.WEB && it.url.startsWith("http") } }
+    val webApps = remember(apps, query) {
+        val q = query.trim()
+        apps.filter {
+            it.appType == AppType.WEB &&
+                it.url.startsWith("http") &&
+                (q.isEmpty() ||
+                    it.name.contains(q, ignoreCase = true) ||
+                    it.url.contains(q, ignoreCase = true))
+        }.sortedWith(
+            compareBy<WebApp> { app ->
+                when (recordMap[app.id]?.status) {
+                    HealthStatus.OFFLINE -> 0
+                    HealthStatus.SLOW -> 1
+                    HealthStatus.UNKNOWN, null -> 2
+                    HealthStatus.ONLINE -> 3
+                }
+            }.thenBy { it.name.lowercase() }
+        )
+    }
 
     LazyColumn(
-        contentPadding = PaddingValues(16.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-
         item {
-            HealthOverviewCard(webApps, recordMap)
+            HealthOverviewCard(
+                apps = apps.filter { it.appType == AppType.WEB && it.url.startsWith("http") },
+                recordMap = recordMap
+            )
         }
 
-        items(webApps) { app ->
-            val record = recordMap[app.id]
-            HealthStatusCard(app, record, onCheckHealth)
+        item {
+            Text(
+                Strings.statsHealthCheckHint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        item {
+            WtaTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = Strings.statsSearchHint,
+                leadingIcon = Icons.Outlined.Search,
+                singleLine = true,
+                trailingIcon = if (query.isNotEmpty()) {
+                    {
+                        IconButton(onClick = { onQueryChange("") }) {
+                            Icon(Icons.Outlined.Clear, contentDescription = Strings.clear)
+                        }
+                    }
+                } else null
+            )
         }
 
         if (webApps.isEmpty()) {
             item {
-                EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            Strings.statsNoData,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                WtaFullEmptyState(
+                    title = if (query.isNotBlank()) Strings.statsNoMatch else Strings.statsNoData,
+                    message = Strings.statsHealthCheckHint,
+                    icon = Icons.Outlined.MonitorHeart,
+                    fillMaxSize = false
+                )
+            }
+        } else {
+            itemsIndexed(webApps, key = { _, app -> app.id }) { _, app ->
+                HealthStatusCard(
+                    app = app,
+                    record = recordMap[app.id],
+                    onCheckHealth = onCheckHealth
+                )
             }
         }
 
@@ -427,9 +662,9 @@ private fun HealthOverviewCard(
     val slow = apps.count { recordMap[it.id]?.status == HealthStatus.SLOW }
     val offline = apps.count { recordMap[it.id]?.status == HealthStatus.OFFLINE }
     val unknown = apps.size - online - slow - offline
-    val semantic = com.webtoapp.ui.design.WtaColors.semantic
+    val semantic = WtaColors.semantic
 
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    WtaCard(tone = WtaCardTone.Highlighted) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -474,7 +709,7 @@ private fun HealthStatusCard(
     record: AppHealthRecord?,
     onCheckHealth: (WebApp) -> Unit
 ) {
-    val semantic = com.webtoapp.ui.design.WtaColors.semantic
+    val semantic = WtaColors.semantic
     val statusColor = when (record?.status) {
         HealthStatus.ONLINE -> semantic.success
         HealthStatus.SLOW -> semantic.warning
@@ -488,28 +723,24 @@ private fun HealthStatusCard(
         else -> Strings.healthUnknown
     }
 
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
+    WtaCard(tone = WtaCardTone.Surface) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .clickable { onCheckHealth(app) }
                 .padding(12.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-
                 Box(
                     modifier = Modifier
                         .size(10.dp)
                         .clip(CircleShape)
                         .background(statusColor)
                 )
-
                 Spacer(Modifier.width(10.dp))
-
                 AppIconSmall(app)
-
                 Spacer(Modifier.width(12.dp))
-
-                Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         app.name,
                         style = MaterialTheme.typography.bodyMedium,
@@ -525,7 +756,6 @@ private fun HealthStatusCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = statusColor.copy(alpha = 0.12f)
@@ -540,7 +770,7 @@ private fun HealthStatusCard(
                 }
             }
 
-            if (record != null && record.status != HealthStatus.UNKNOWN) {
+            if (record != null) {
                 Spacer(Modifier.height(8.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -549,6 +779,12 @@ private fun HealthStatusCard(
                     if (record.responseTimeMs > 0) {
                         Text(
                             "${Strings.healthResponseTime}: ${record.responseTimeMs}ms",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        Text(
+                            "${Strings.healthLastChecked}: ${StatsFormat.formatRelative(record.checkedAt)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -561,7 +797,7 @@ private fun HealthStatusCard(
                         )
                     }
                 }
-                if (record.errorMessage != null) {
+                if (!record.errorMessage.isNullOrBlank()) {
                     Text(
                         record.errorMessage,
                         style = MaterialTheme.typography.bodySmall,
@@ -569,34 +805,13 @@ private fun HealthStatusCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                } else if (record.responseTimeMs > 0) {
+                    Text(
+                        "${Strings.healthLastChecked}: ${StatsFormat.formatRelative(record.checkedAt)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyStatsCard() {
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(32.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    Icons.Outlined.BarChart,
-                    null,
-                    modifier = Modifier.size(40.dp),
-                    tint = MaterialTheme.colorScheme.outline
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    Strings.statsNoData,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }
@@ -637,7 +852,8 @@ private fun AppIconSmall(app: WebApp) {
                 AppType.MULTI_WEB -> R.drawable.ic_type_multi_web
             }
             Icon(
-                painterResource(defaultIconRes), null,
+                painterResource(defaultIconRes),
+                contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(8.dp),
