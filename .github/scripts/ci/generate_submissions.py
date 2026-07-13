@@ -99,6 +99,26 @@ def _commit_metadata(sha: str) -> dict[str, str]:
     }
 
 
+
+
+_PR_REF_RE = re.compile(r"(?:\(|\s)#(\d+)(?:\)|\b)")
+
+
+def _pr_numbers_from_text(*texts: str) -> list[int]:
+    """Extract GitHub PR numbers mentioned in commit subjects / bodies."""
+    found: list[int] = []
+    seen: set[int] = set()
+    for text in texts:
+        if not text:
+            continue
+        for match in _PR_REF_RE.finditer(text):
+            num = int(match.group(1))
+            if num not in seen:
+                seen.add(num)
+                found.append(num)
+    return found
+
+
 def _all_commits_for(path: Path) -> list[str]:
     """Return every commit SHA that touched `path`, newest first."""
     try:
@@ -170,6 +190,22 @@ class GitHubClient:
             return author.get("login") or ""
         except (urllib.error.HTTPError, urllib.error.URLError):
             return ""
+
+    def get_pull(self, number: int) -> dict[str, Any] | None:
+        """Fetch a single pull request by number."""
+        url = (
+            f"https://api.github.com/repos/{self.owner}/{self.repo}"
+            f"/pulls/{int(number)}"
+        )
+        try:
+            return self._request(url)
+        except urllib.error.HTTPError as e:
+            if e.code != 404:
+                print(f"⚠️  GitHub API error for PR #{number}: {e}", file=sys.stderr)
+            return None
+        except urllib.error.URLError as e:
+            print(f"⚠️  GitHub API URLError for PR #{number}: {e}", file=sys.stderr)
+            return None
 
 
 # ───────────────────────── core logic ──────────────────────────────────
@@ -308,11 +344,25 @@ def _resolve_for_path(
             submitter_name=meta["author_name"],
         )
 
+    meta = _commit_metadata(target_sha)
     pulls = client.pulls_for_commit(target_sha)
-    merged_pulls = [
-        p for p in pulls
-        if p.get("merged_at") and p.get("base", {}).get("ref") == "main"
+
+    # Squash / rebase merges often leave commits/{sha}/pulls empty even though
+    # the subject carries "(#123)". Fall back to parsing PR refs from git
+    # metadata and fetching those PRs directly.
+    if not pulls:
+        for pr_number in _pr_numbers_from_text(meta.get("subject", "")):
+            pr_payload = client.get_pull(pr_number)
+            if pr_payload:
+                pulls.append(pr_payload)
+
+    merged_pulls = [p for p in pulls if p.get("merged_at")]
+    merged_on_main = [
+        p for p in merged_pulls
+        if (p.get("base") or {}).get("ref", "main") == "main"
     ]
+    if merged_on_main:
+        merged_pulls = merged_on_main
 
     if merged_pulls:
         # Prefer the earliest-merged PR — that is the one that introduced
@@ -339,6 +389,7 @@ def _resolve_for_path(
                 }
                 cache["users"][login] = cached
             display_name = cached.get("name") or login
+            avatar = cached.get("avatar") or avatar
 
         return Submission(
             pr_number=pr.get("number"),
@@ -376,10 +427,16 @@ def _resolve_for_path(
         # protection, so attribute it to the repo owner as a fallback.
         login = client.owner
 
-    if maintainers and login.lower() not in {m.lower() for m in maintainers}:
-        # We resolved a login and it isn't on the maintainer allowlist.
-        # Branch protection should prevent strangers from direct-pushing,
-        # but keep the check as defence in depth for unprotected repos.
+    # Prefer PR attribution above. For true direct pushes we still record
+    # any resolved GitHub author — modules only land on main after review
+    # or maintainer push, so hiding non-maintainer authors made real
+    # contributor modules disappear from the in-app market.
+    if (
+        maintainers
+        and login
+        and login.lower() not in {m.lower() for m in maintainers}
+        and login.lower() in {"github-actions[bot]", "web-flow", "dependabot[bot]"}
+    ):
         return None
 
     avatar = ""
