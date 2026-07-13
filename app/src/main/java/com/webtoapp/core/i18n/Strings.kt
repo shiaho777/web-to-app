@@ -345,6 +345,19 @@ object Strings {
     val portManagerReleaseRemoteSuccess: String get() = StringsA.portManagerReleaseRemoteSuccess
     val portManagerReleaseRemoteFailed: String get() = StringsA.portManagerReleaseRemoteFailed
     val portManagerScanFailed: String get() = StringsA.portManagerScanFailed
+    val portManagerSubtitle: String get() = StringsA.portManagerSubtitle
+    val portManagerSearchHint: String get() = StringsA.portManagerSearchHint
+    val portManagerFilterAll: String get() = StringsA.portManagerFilterAll
+    val portManagerNoMatch: String get() = StringsA.portManagerNoMatch
+    val portManagerRespondingCount: String get() = StringsA.portManagerRespondingCount
+    val portManagerTypeLocalHttp: String get() = StringsA.portManagerTypeLocalHttp
+    val portManagerTypeNodeJs: String get() = StringsA.portManagerTypeNodeJs
+    val portManagerTypePhp: String get() = StringsA.portManagerTypePhp
+    val portManagerTypePython: String get() = StringsA.portManagerTypePython
+    val portManagerTypeGo: String get() = StringsA.portManagerTypeGo
+    val portManagerTypeUnknown: String get() = StringsA.portManagerTypeUnknown
+    val portManagerCopyPort: String get() = StringsA.portManagerCopyPort
+    val portManagerPortCopied: String get() = StringsA.portManagerPortCopied
     val runtimeDepsTitle: String get() = StringsA.runtimeDepsTitle
     val depSectionRuntimes: String get() = StringsA.depSectionRuntimes
     val depSectionRuntimePlugins: String get() = StringsA.depSectionRuntimePlugins
@@ -8730,6 +8743,163 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Ошибка сканирования"
         AppLanguage.JAPANESE -> "スキャン失敗"
         AppLanguage.KOREAN -> "스캔 실패"
+    }
+
+    val portManagerSubtitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "查看、打开或释放本机与其它 WebToApp 实例的端口"
+        AppLanguage.ENGLISH -> "Inspect, open, or free ports used by this and other WebToApp instances"
+        AppLanguage.ARABIC -> "اعرض وافتح أو حرّر المنافذ المستخدمة بواسطة هذا التطبيق ونسخ WebToApp الأخرى"
+        AppLanguage.PORTUGUESE -> "Veja, abra ou libere portas usadas por esta e outras instâncias do WebToApp"
+        AppLanguage.SPANISH -> "Consulta, abre o libera puertos usados por esta y otras instancias de WebToApp"
+        AppLanguage.FRENCH -> "Consultez, ouvrez ou libérez les ports de cette instance et d'autres WebToApp"
+        AppLanguage.GERMAN -> "Ports dieser und anderer WebToApp-Instanzen ansehen, öffnen oder freigeben"
+        AppLanguage.RUSSIAN -> "Просматривайте, открывайте или освобождайте порты этого и других экземпляров WebToApp"
+        AppLanguage.JAPANESE -> "このアプリや他の WebToApp インスタンスが使うポートを確認・開放・解放"
+        AppLanguage.KOREAN -> "이 앱과 다른 WebToApp 인스턴스가 사용하는 포트 확인·열기·해제"
+    }
+    val portManagerSearchHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "搜索端口、项目或类型…"
+        AppLanguage.ENGLISH -> "Search port, project, or type…"
+        AppLanguage.ARABIC -> "ابحث عن المنفذ أو المشروع أو النوع…"
+        AppLanguage.PORTUGUESE -> "Pesquisar porta, projeto ou tipo…"
+        AppLanguage.SPANISH -> "Buscar puerto, proyecto o tipo…"
+        AppLanguage.FRENCH -> "Rechercher port, projet ou type…"
+        AppLanguage.GERMAN -> "Port, Projekt oder Typ suchen…"
+        AppLanguage.RUSSIAN -> "Поиск порта, проекта или типа…"
+        AppLanguage.JAPANESE -> "ポート・プロジェクト・種類を検索…"
+        AppLanguage.KOREAN -> "포트, 프로젝트 또는 유형 검색…"
+    }
+    val portManagerFilterAll: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "全部类型"
+        AppLanguage.ENGLISH -> "All types"
+        AppLanguage.ARABIC -> "كل الأنواع"
+        AppLanguage.PORTUGUESE -> "Todos os tipos"
+        AppLanguage.SPANISH -> "Todos los tipos"
+        AppLanguage.FRENCH -> "Tous les types"
+        AppLanguage.GERMAN -> "Alle Typen"
+        AppLanguage.RUSSIAN -> "Все типы"
+        AppLanguage.JAPANESE -> "すべての種類"
+        AppLanguage.KOREAN -> "모든 유형"
+    }
+    val portManagerNoMatch: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有匹配的端口服务"
+        AppLanguage.ENGLISH -> "No matching port services"
+        AppLanguage.ARABIC -> "لا توجد خدمات منافذ مطابقة"
+        AppLanguage.PORTUGUESE -> "Nenhum serviço de porta correspondente"
+        AppLanguage.SPANISH -> "No hay servicios de puerto coincidentes"
+        AppLanguage.FRENCH -> "Aucun service de port correspondant"
+        AppLanguage.GERMAN -> "Keine passenden Port-Dienste"
+        AppLanguage.RUSSIAN -> "Нет подходящих портовых служб"
+        AppLanguage.JAPANESE -> "一致するポートサービスがありません"
+        AppLanguage.KOREAN -> "일치하는 포트 서비스가 없습니다"
+    }
+    val portManagerRespondingCount: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 个响应中"
+        AppLanguage.ENGLISH -> "%d responding"
+        AppLanguage.ARABIC -> "%d يستجيب"
+        AppLanguage.PORTUGUESE -> "%d respondendo"
+        AppLanguage.SPANISH -> "%d respondiendo"
+        AppLanguage.FRENCH -> "%d qui répondent"
+        AppLanguage.GERMAN -> "%d antworten"
+        AppLanguage.RUSSIAN -> "%d отвечают"
+        AppLanguage.JAPANESE -> "%d 件が応答中"
+        AppLanguage.KOREAN -> "%d개 응답 중"
+    }
+    val portManagerTypeLocalHttp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "静态服务"
+        AppLanguage.ENGLISH -> "Static server"
+        AppLanguage.ARABIC -> "خادم ثابت"
+        AppLanguage.PORTUGUESE -> "Servidor estático"
+        AppLanguage.SPANISH -> "Servidor estático"
+        AppLanguage.FRENCH -> "Serveur statique"
+        AppLanguage.GERMAN -> "Statischer Server"
+        AppLanguage.RUSSIAN -> "Статический сервер"
+        AppLanguage.JAPANESE -> "静的サーバー"
+        AppLanguage.KOREAN -> "정적 서버"
+    }
+    val portManagerTypeNodeJs: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Node.js"
+        AppLanguage.ENGLISH -> "Node.js"
+        AppLanguage.ARABIC -> "Node.js"
+        AppLanguage.PORTUGUESE -> "Node.js"
+        AppLanguage.SPANISH -> "Node.js"
+        AppLanguage.FRENCH -> "Node.js"
+        AppLanguage.GERMAN -> "Node.js"
+        AppLanguage.RUSSIAN -> "Node.js"
+        AppLanguage.JAPANESE -> "Node.js"
+        AppLanguage.KOREAN -> "Node.js"
+    }
+    val portManagerTypePhp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PHP"
+        AppLanguage.ENGLISH -> "PHP"
+        AppLanguage.ARABIC -> "PHP"
+        AppLanguage.PORTUGUESE -> "PHP"
+        AppLanguage.SPANISH -> "PHP"
+        AppLanguage.FRENCH -> "PHP"
+        AppLanguage.GERMAN -> "PHP"
+        AppLanguage.RUSSIAN -> "PHP"
+        AppLanguage.JAPANESE -> "PHP"
+        AppLanguage.KOREAN -> "PHP"
+    }
+    val portManagerTypePython: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python"
+        AppLanguage.ENGLISH -> "Python"
+        AppLanguage.ARABIC -> "Python"
+        AppLanguage.PORTUGUESE -> "Python"
+        AppLanguage.SPANISH -> "Python"
+        AppLanguage.FRENCH -> "Python"
+        AppLanguage.GERMAN -> "Python"
+        AppLanguage.RUSSIAN -> "Python"
+        AppLanguage.JAPANESE -> "Python"
+        AppLanguage.KOREAN -> "Python"
+    }
+    val portManagerTypeGo: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Go"
+        AppLanguage.ENGLISH -> "Go"
+        AppLanguage.ARABIC -> "Go"
+        AppLanguage.PORTUGUESE -> "Go"
+        AppLanguage.SPANISH -> "Go"
+        AppLanguage.FRENCH -> "Go"
+        AppLanguage.GERMAN -> "Go"
+        AppLanguage.RUSSIAN -> "Go"
+        AppLanguage.JAPANESE -> "Go"
+        AppLanguage.KOREAN -> "Go"
+    }
+    val portManagerTypeUnknown: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未知"
+        AppLanguage.ENGLISH -> "Unknown"
+        AppLanguage.ARABIC -> "غير معروف"
+        AppLanguage.PORTUGUESE -> "Desconhecido"
+        AppLanguage.SPANISH -> "Desconocido"
+        AppLanguage.FRENCH -> "Inconnu"
+        AppLanguage.GERMAN -> "Unbekannt"
+        AppLanguage.RUSSIAN -> "Неизвестно"
+        AppLanguage.JAPANESE -> "不明"
+        AppLanguage.KOREAN -> "알 수 없음"
+    }
+    val portManagerCopyPort: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "复制端口"
+        AppLanguage.ENGLISH -> "Copy port"
+        AppLanguage.ARABIC -> "نسخ المنفذ"
+        AppLanguage.PORTUGUESE -> "Copiar porta"
+        AppLanguage.SPANISH -> "Copiar puerto"
+        AppLanguage.FRENCH -> "Copier le port"
+        AppLanguage.GERMAN -> "Port kopieren"
+        AppLanguage.RUSSIAN -> "Копировать порт"
+        AppLanguage.JAPANESE -> "ポートをコピー"
+        AppLanguage.KOREAN -> "포트 복사"
+    }
+    val portManagerPortCopied: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "端口已复制"
+        AppLanguage.ENGLISH -> "Port copied"
+        AppLanguage.ARABIC -> "تم نسخ المنفذ"
+        AppLanguage.PORTUGUESE -> "Porta copiada"
+        AppLanguage.SPANISH -> "Puerto copiado"
+        AppLanguage.FRENCH -> "Port copié"
+        AppLanguage.GERMAN -> "Port kopiert"
+        AppLanguage.RUSSIAN -> "Порт скопирован"
+        AppLanguage.JAPANESE -> "ポートをコピーしました"
+        AppLanguage.KOREAN -> "포트를 복사했습니다"
     }
 
     val runtimeDepsTitle: String get() = when (Strings.lang) {

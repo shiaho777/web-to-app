@@ -1,69 +1,119 @@
 package com.webtoapp.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
-import com.webtoapp.ui.components.PremiumButton
-import com.webtoapp.ui.components.PremiumOutlinedButton
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Apps
-import androidx.compose.material.icons.outlined.Devices
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Clear
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
+import androidx.compose.material.icons.outlined.OpenInBrowser
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SettingsEthernet
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.outlined.Stop
+import androidx.compose.material.icons.outlined.Sync
+import androidx.compose.material.icons.outlined.SyncDisabled
+import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.ui.theme.AppColors
 import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.port.ProcessPortScanner
 import com.webtoapp.core.port.ProcessPortScanner.RunningService
 import com.webtoapp.core.port.ProcessPortScanner.ServiceType
 import com.webtoapp.core.port.WtaAppPortDiscovery
-import com.webtoapp.core.port.WtaAppPortDiscovery.WtaAppPortReport
 import com.webtoapp.core.port.WtaAppPortDiscovery.RemoteAllocation
+import com.webtoapp.core.port.WtaAppPortDiscovery.WtaAppPortReport
+import com.webtoapp.ui.design.WtaButton
+import com.webtoapp.ui.design.WtaButtonSize
+import com.webtoapp.ui.design.WtaButtonVariant
+import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaColors
+import com.webtoapp.ui.design.WtaFullEmptyState
+import com.webtoapp.ui.design.WtaScreen
+import com.webtoapp.ui.design.WtaTab
+import com.webtoapp.ui.design.WtaTabRow
+import com.webtoapp.ui.design.WtaTextField
 import com.webtoapp.util.openUrl
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.webtoapp.ui.design.WtaBackground
-import com.webtoapp.ui.components.EnhancedElevatedCard
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PortManagerScreen(
-    onBack: () -> Unit
-) {
+fun PortManagerScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
-    var selectedTab by remember { mutableStateOf(0) }
-
+    var selectedTab by rememberSaveable { mutableStateOf(0) }
     var isScanning by remember { mutableStateOf(false) }
     var services by remember { mutableStateOf<List<RunningService>>(emptyList()) }
     var showKillAllDialog by remember { mutableStateOf(false) }
     var showKillDialog by remember { mutableStateOf<RunningService?>(null) }
-    var autoRefresh by remember { mutableStateOf(false) }
-    var showRangeStats by remember { mutableStateOf(false) }
+    var autoRefresh by rememberSaveable { mutableStateOf(false) }
+    var showRangeStats by rememberSaveable { mutableStateOf(false) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var typeFilter by rememberSaveable { mutableStateOf("ALL") }
 
     var isScanningWtaApps by remember { mutableStateOf(false) }
     var wtaReports by remember { mutableStateOf<List<WtaAppPortReport>>(emptyList()) }
@@ -86,6 +136,7 @@ fun PortManagerScreen(
         isScanningWtaApps = true
         try {
             wtaReports = WtaAppPortDiscovery.queryAllApps(context)
+            scanErrorThrowable = null
         } catch (e: Exception) {
             scanErrorThrowable = e
             snackbarHostState.showSnackbar("${Strings.portManagerScanFailed}: ${e.message ?: ""}")
@@ -120,13 +171,10 @@ fun PortManagerScreen(
     fun killService(service: RunningService) {
         scope.launch {
             val success = ProcessPortScanner.killProcess(service.port)
-            if (success) {
-                snackbarHostState.showSnackbar(
-                    Strings.portManagerServiceKilled.format(service.port)
-                )
-            } else {
-                snackbarHostState.showSnackbar(Strings.portManagerKillFailed)
-            }
+            snackbarHostState.showSnackbar(
+                if (success) Strings.portManagerServiceKilled.format(service.port)
+                else Strings.portManagerKillFailed
+            )
             delay(300)
             doScan()
         }
@@ -141,15 +189,12 @@ fun PortManagerScreen(
         }
     }
 
-    fun releaseRemotePort(report: WtaAppPortReport, alloc: RemoteAllocation) {
+    fun releaseRemote(report: WtaAppPortReport, alloc: RemoteAllocation) {
         scope.launch {
-            val ok = WtaAppPortDiscovery.releaseRemotePort(
-                context, report.app.packageName, alloc.port
-            )
+            val ok = WtaAppPortDiscovery.releaseRemotePort(context, report.app.packageName, alloc.port)
             if (ok) {
                 snackbarHostState.showSnackbar(
-                    Strings.portManagerReleaseRemoteSuccess
-                        .format(report.app.displayName, alloc.port)
+                    Strings.portManagerReleaseRemoteSuccess.format(report.app.displayName, alloc.port)
                 )
                 delay(300)
                 doScanWtaApps()
@@ -167,126 +212,160 @@ fun PortManagerScreen(
         }
     }
 
-    Scaffold(
-        containerColor = Color.Transparent,
-        topBar = {
-            TopAppBar(
-                title = { Text(Strings.portManagerTitle) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, Strings.back)
-                    }
-                },
-                actions = {
+    fun copyPort(port: Int) {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        clipboard.setPrimaryClip(ClipData.newPlainText("port", port.toString()))
+        scope.launch { snackbarHostState.showSnackbar(Strings.portManagerPortCopied) }
+    }
 
-                    IconButton(onClick = { autoRefresh = !autoRefresh }) {
-                        Icon(
-                            if (autoRefresh) Icons.Default.SyncDisabled else Icons.Default.Sync,
-                            Strings.portManagerAutoRefresh,
-                            tint = if (autoRefresh) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+    val filteredServices = remember(services, query, typeFilter) {
+        val q = query.trim()
+        services.filter { service ->
+            val typeOk = typeFilter == "ALL" || service.type.name == typeFilter
+            val queryOk = q.isEmpty() ||
+                service.port.toString().contains(q) ||
+                service.owner.contains(q, ignoreCase = true) ||
+                service.type.label.contains(q, ignoreCase = true) ||
+                service.url.contains(q, ignoreCase = true) ||
+                service.processName.contains(q, ignoreCase = true)
+            typeOk && queryOk
+        }
+    }
 
-                    IconButton(
-                        onClick = { refresh() },
-                        enabled = !isScanning && !isScanningWtaApps
-                    ) {
-                        if (isScanning || isScanningWtaApps) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(Icons.Default.Refresh, Strings.portManagerAutoRefresh)
-                        }
-                    }
-
-                    if (selectedTab == 0 && services.isNotEmpty()) {
-                        IconButton(onClick = { showKillAllDialog = true }) {
-                            Icon(
-                                Icons.Default.DeleteSweep,
-                                Strings.portManagerKillAll,
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
+    val filteredReports = remember(wtaReports, query) {
+        val q = query.trim()
+        if (q.isEmpty()) wtaReports
+        else wtaReports.filter { report ->
+            report.app.displayName.contains(q, ignoreCase = true) ||
+                report.app.packageName.contains(q, ignoreCase = true) ||
+                report.allocations.any {
+                    it.port.toString().contains(q) ||
+                        it.owner.contains(q, ignoreCase = true) ||
+                        it.range.contains(q, ignoreCase = true)
                 }
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { padding ->
-        WtaBackground(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-        ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
+        }
+    }
 
-            TabRow(
-                selectedTabIndex = selectedTab,
-
-                containerColor = Color.Transparent
-            ) {
-                Tab(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    text = { Text(Strings.portManagerTabThisApp) },
-                    icon = { Icon(Icons.Outlined.SettingsEthernet, contentDescription = null) }
-                )
-                Tab(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    text = { Text(Strings.portManagerTabAllApps) },
-                    icon = { Icon(Icons.Outlined.Apps, contentDescription = null) }
+    WtaScreen(
+        title = Strings.portManagerTitle,
+        subtitle = Strings.portManagerSubtitle,
+        onBack = onBack,
+        snackbarHostState = snackbarHostState,
+        actions = {
+            IconButton(onClick = { autoRefresh = !autoRefresh }) {
+                Icon(
+                    if (autoRefresh) Icons.Outlined.SyncDisabled else Icons.Outlined.Sync,
+                    contentDescription = Strings.portManagerAutoRefresh,
+                    tint = if (autoRefresh) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+            IconButton(
+                onClick = { refresh() },
+                enabled = !isScanning && !isScanningWtaApps
+            ) {
+                if (isScanning || isScanningWtaApps) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(Icons.Outlined.Refresh, contentDescription = Strings.refresh)
+                }
+            }
+            if (selectedTab == 0 && services.isNotEmpty()) {
+                IconButton(onClick = { showKillAllDialog = true }) {
+                    Icon(
+                        Icons.Outlined.DeleteSweep,
+                        contentDescription = Strings.portManagerKillAll,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        }
+    ) { _ ->
+        Column(modifier = Modifier.fillMaxSize()) {
+            WtaTabRow(
+                tabs = listOf(
+                    WtaTab(label = Strings.portManagerTabThisApp, count = services.size),
+                    WtaTab(
+                        label = Strings.portManagerTabAllApps,
+                        count = wtaReports.sumOf { it.allocations.size }.takeIf { it > 0 }
+                    )
+                ),
+                selectedIndex = selectedTab,
+                onTabSelected = { selectedTab = it },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+
+            WtaTextField(
+                value = query,
+                onValueChange = { query = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                placeholder = Strings.portManagerSearchHint,
+                leadingIcon = Icons.Outlined.Search,
+                singleLine = true,
+                trailingIcon = if (query.isNotEmpty()) {
+                    {
+                        IconButton(onClick = { query = "" }) {
+                            Icon(Icons.Outlined.Clear, contentDescription = Strings.clear)
+                        }
+                    }
+                } else null
+            )
 
             when (selectedTab) {
                 0 -> ThisAppTabContent(
-                    services = services,
+                    services = filteredServices,
+                    allServices = services,
                     isScanning = isScanning,
                     showRangeStats = showRangeStats,
                     onToggleRangeStats = { showRangeStats = !showRangeStats },
+                    typeFilter = typeFilter,
+                    onTypeFilterChange = { typeFilter = it },
+                    hasActiveQuery = query.isNotBlank() || typeFilter != "ALL",
                     nowMs = nowMs,
                     onKillRequest = { showKillDialog = it },
-                    onOpenInBrowser = ::openInBrowser
+                    onOpenInBrowser = ::openInBrowser,
+                    onCopyPort = ::copyPort
                 )
-                else -> AllAppsTabContent(
-                    reports = wtaReports,
+                1 -> AllAppsTabContent(
+                    reports = filteredReports,
                     isScanning = isScanningWtaApps,
+                    hasActiveQuery = query.isNotBlank(),
                     nowMs = nowMs,
-                    onReleaseRequest = ::releaseRemotePort
+                    onReleaseRequest = ::releaseRemote
                 )
             }
         }
     }
 
     scanErrorThrowable?.let { err ->
-        com.webtoapp.ui.components.WtaErrorDialog(
-            scope = "Port manager scan",
-            message = err.message ?: Strings.portManagerScanFailed,
-            throwable = err,
-            onDismiss = { scanErrorThrowable = null }
+        AlertDialog(
+            onDismissRequest = { scanErrorThrowable = null },
+            title = { Text(Strings.portManagerScanFailed) },
+            text = { Text(err.message ?: Strings.portManagerScanFailed) },
+            confirmButton = {
+                TextButton(onClick = { scanErrorThrowable = null }) {
+                    Text(Strings.close)
+                }
+            }
         )
     }
 
     if (showKillAllDialog) {
         AlertDialog(
             onDismissRequest = { showKillAllDialog = false },
-            icon = { Icon(Icons.Default.Warning, null, tint = MaterialTheme.colorScheme.error) },
+            icon = { Icon(Icons.Outlined.Warning, null, tint = MaterialTheme.colorScheme.error) },
             title = { Text(Strings.portManagerKillAll) },
             text = { Text(Strings.portManagerKillAllConfirm) },
             confirmButton = {
-                PremiumButton(
+                TextButton(
                     onClick = {
                         showKillAllDialog = false
                         killAllServices()
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
+                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
                     Text(Strings.portManagerKillAll)
@@ -303,7 +382,7 @@ fun PortManagerScreen(
     showKillDialog?.let { service ->
         AlertDialog(
             onDismissRequest = { showKillDialog = null },
-            icon = { Icon(Icons.Default.Stop, null, tint = MaterialTheme.colorScheme.error) },
+            icon = { Icon(Icons.Outlined.Stop, null, tint = MaterialTheme.colorScheme.error) },
             title = { Text(Strings.portManagerKillService) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
@@ -331,14 +410,14 @@ fun PortManagerScreen(
                 }
             },
             confirmButton = {
-                PremiumButton(
+                TextButton(
                     onClick = {
                         val s = service
                         showKillDialog = null
                         killService(s)
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
+                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
                     Text(Strings.portManagerKill)
@@ -351,7 +430,94 @@ fun PortManagerScreen(
             }
         )
     }
+}
+
+@Composable
+private fun ThisAppTabContent(
+    services: List<RunningService>,
+    allServices: List<RunningService>,
+    isScanning: Boolean,
+    showRangeStats: Boolean,
+    onToggleRangeStats: () -> Unit,
+    typeFilter: String,
+    onTypeFilterChange: (String) -> Unit,
+    hasActiveQuery: Boolean,
+    nowMs: Long,
+    onKillRequest: (RunningService) -> Unit,
+    onOpenInBrowser: (String) -> Unit,
+    onCopyPort: (Int) -> Unit
+) {
+    val typesPresent = remember(allServices) {
+        allServices.map { it.type }.distinct().sortedBy { it.name }
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            PortStatsCard(
+                services = allServices,
+                showRangeStats = showRangeStats,
+                onToggleRangeStats = onToggleRangeStats
+            )
         }
+
+        if (typesPresent.isNotEmpty()) {
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    WtaChip(
+                        selected = typeFilter == "ALL",
+                        onClick = { onTypeFilterChange("ALL") },
+                        label = Strings.portManagerFilterAll,
+                        showSelectedCheck = false
+                    )
+                    typesPresent.forEach { type ->
+                        val count = allServices.count { it.type == type }
+                        WtaChip(
+                            selected = typeFilter == type.name,
+                            onClick = {
+                                onTypeFilterChange(
+                                    if (typeFilter == type.name) "ALL" else type.name
+                                )
+                            },
+                            label = "${type.label} ($count)",
+                            showSelectedCheck = false
+                        )
+                    }
+                }
+            }
+        }
+
+        if (services.isEmpty() && !isScanning) {
+            item {
+                WtaFullEmptyState(
+                    title = if (hasActiveQuery) Strings.portManagerNoMatch else Strings.portManagerNoServices,
+                    message = if (hasActiveQuery) null else Strings.portManagerAllReleased,
+                    icon = if (hasActiveQuery) Icons.Outlined.Search else Icons.Outlined.CheckCircle,
+                    fillMaxSize = false
+                )
+            }
+        } else {
+            items(services, key = { it.port }) { service ->
+                ServiceCard(
+                    service = service,
+                    nowMs = nowMs,
+                    onKill = { onKillRequest(service) },
+                    onOpen = { onOpenInBrowser(service.url) },
+                    onCopy = { onCopyPort(service.port) }
+                )
+            }
+        }
+
+        item { Spacer(Modifier.height(24.dp)) }
+    }
 }
 
 @Composable
@@ -360,86 +526,84 @@ private fun PortStatsCard(
     showRangeStats: Boolean,
     onToggleRangeStats: () -> Unit
 ) {
-    EnhancedElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+    val responding = services.count { it.isResponding }
+    WtaCard(tone = WtaCardTone.Highlighted) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    Strings.portManagerRunningServices,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        Strings.portManagerRunningServices,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    if (services.isNotEmpty()) {
+                        Text(
+                            String.format(Strings.portManagerRespondingCount, responding),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "${services.size}",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (services.isNotEmpty())
+                        color = if (services.isNotEmpty()) {
                             MaterialTheme.colorScheme.primary
-                        else
+                        } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
-
-                    IconButton(
-                        onClick = onToggleRangeStats,
-                        modifier = Modifier.size(28.dp)
-                    ) {
+                    IconButton(onClick = onToggleRangeStats, modifier = Modifier.size(32.dp)) {
                         Icon(
-                            Icons.Default.BarChart,
-                            Strings.portManagerPortRanges,
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            Icons.Outlined.BarChart,
+                            contentDescription = Strings.portManagerPortRanges,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
             }
 
             if (services.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(12.dp))
-
-                val grouped = services.groupBy { it.type }
+                Spacer(Modifier.height(12.dp))
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    grouped.forEach { (type, list) ->
+                    services.groupBy { it.type }.forEach { (type, list) ->
                         ServiceTypeChip(type = type, count = list.size)
                     }
                 }
             }
 
-            AnimatedVisibility(visible = showRangeStats) {
+            AnimatedVisibility(
+                visible = showRangeStats,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
                 Column(modifier = Modifier.padding(top = 12.dp)) {
                     HorizontalDivider()
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(Modifier.height(8.dp))
                     Text(
                         Strings.portManagerPortRanges,
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-
+                    Spacer(Modifier.height(6.dp))
                     val rangeStats = remember(services) { PortManager.getRangeStats() }
+                    val semantic = WtaColors.semantic
                     rangeStats.forEach { stat ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 2.dp),
+                                .padding(vertical = 3.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -447,20 +611,20 @@ private fun PortStatsCard(
                                 stat.range.name,
                                 style = MaterialTheme.typography.labelSmall,
                                 fontFamily = FontFamily.Monospace,
-                                modifier = Modifier.width(76.dp)
+                                modifier = Modifier.width(80.dp)
                             )
                             LinearProgressIndicator(
                                 progress = { stat.usagePercent },
                                 modifier = Modifier
-                                    .weight(weight = 1f, fill = true)
+                                    .weight(1f)
                                     .height(6.dp)
                                     .clip(RoundedCornerShape(3.dp)),
                                 color = when {
-                                    stat.usagePercent > 0.8f -> MaterialTheme.colorScheme.error
-                                    stat.usagePercent > 0.5f -> AppColors.Warning
+                                    stat.usagePercent > 0.8f -> semantic.error
+                                    stat.usagePercent > 0.5f -> semantic.warning
                                     else -> MaterialTheme.colorScheme.primary
                                 },
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                             Text(
                                 "${stat.allocated}/${stat.total}",
@@ -479,12 +643,13 @@ private fun PortStatsCard(
 
 @Composable
 private fun ServiceTypeChip(type: ServiceType, count: Int) {
+    val color = Color(type.color)
     Surface(
         shape = RoundedCornerShape(16.dp),
-        color = Color(type.color).copy(alpha = 0.2f)
+        color = color.copy(alpha = 0.16f)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
@@ -492,12 +657,12 @@ private fun ServiceTypeChip(type: ServiceType, count: Int) {
                 modifier = Modifier
                     .size(8.dp)
                     .clip(CircleShape)
-                    .background(Color(type.color))
+                    .background(color)
             )
             Text(
                 "${type.label}: $count",
                 style = MaterialTheme.typography.labelMedium,
-                color = Color(type.color)
+                color = color
             )
         }
     }
@@ -508,202 +673,133 @@ private fun ServiceCard(
     service: RunningService,
     nowMs: Long,
     onKill: () -> Unit,
-    onOpen: () -> Unit
+    onOpen: () -> Unit,
+    onCopy: () -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
+    var expanded by rememberSaveable(service.port) { mutableStateOf(false) }
     val uptimeText = remember(nowMs, service.allocatedAt) {
-        if (service.allocatedAt > 0) {
-            PortManager.formatDuration(nowMs - service.allocatedAt)
-        } else {
-            ""
-        }
+        if (service.allocatedAt > 0) PortManager.formatDuration(nowMs - service.allocatedAt) else ""
     }
+    val semantic = WtaColors.semantic
+    val statusColor = if (service.isResponding) semantic.success else semantic.warning
 
-    EnhancedElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { expanded = !expanded },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+    WtaCard(tone = WtaCardTone.Surface) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.weight(weight = 1f, fill = true)
-                ) {
-
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(service.type.color).copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
-                    ) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(Color(service.type.color))
+                )
+                Spacer(Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            service.type.label.take(2),
-                            style = MaterialTheme.typography.labelMedium,
+                            "${Strings.portManagerPort} ${service.port}",
+                            style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color(service.type.color)
+                            fontFamily = FontFamily.Monospace
                         )
-                    }
-
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        Spacer(Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = Color(service.type.color).copy(alpha = 0.14f)
                         ) {
                             Text(
-                                "${Strings.portManagerPort} ${service.port}",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                fontFamily = FontFamily.Monospace
+                                service.type.label,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(service.type.color)
                             )
-
-                            if (service.responseTimeMs >= 0) {
-                                Surface(
-                                    shape = RoundedCornerShape(4.dp),
-                                    color = when {
-                                        service.responseTimeMs < 100 -> AppColors.Success.copy(alpha = 0.15f)
-                                        service.responseTimeMs < 500 -> AppColors.Warning.copy(alpha = 0.15f)
-                                        else -> MaterialTheme.colorScheme.error.copy(alpha = 0.15f)
-                                    }
-                                ) {
-                                    Text(
-                                        "${service.responseTimeMs}ms",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontFamily = FontFamily.Monospace,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                                        color = when {
-                                            service.responseTimeMs < 100 -> AppColors.Success
-                                            service.responseTimeMs < 500 -> AppColors.Warning
-                                            else -> MaterialTheme.colorScheme.error
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                service.owner,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(weight = 1f, fill = false)
-                            )
-                            if (uptimeText.isNotEmpty()) {
-                                Text(
-                                    "• $uptimeText",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                    fontFamily = FontFamily.Monospace
-                                )
-                            }
                         }
                     }
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-
-                    val statusColor by animateColorAsState(
-                        if (service.isResponding) AppColors.Success else AppColors.Warning,
-                        label = "statusColor"
-                    )
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(statusColor)
-                    )
-
-                    val rotation by animateFloatAsState(
-                        if (expanded) 180f else 0f,
-                        label = "rotation"
-                    )
-                    Icon(
-                        Icons.Default.ExpandMore,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .graphicsLayer { rotationZ = rotation },
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    Text(
+                        buildString {
+                            append(service.owner)
+                            if (uptimeText.isNotEmpty()) append(" · $uptimeText")
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(statusColor)
+                )
+                Spacer(Modifier.width(6.dp))
+                Icon(
+                    if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
-            AnimatedVisibility(visible = expanded) {
-                Column(
-                    modifier = Modifier.padding(top = 12.dp)
-                ) {
+            AnimatedVisibility(
+                visible = expanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(modifier = Modifier.padding(top = 12.dp)) {
                     HorizontalDivider()
-                    Spacer(modifier = Modifier.height(12.dp))
-
+                    Spacer(Modifier.height(10.dp))
                     DetailRow("URL", service.url)
                     DetailRow("PID", if (service.pid > 0) service.pid.toString() else Strings.portManagerUnknown)
-                    DetailRow(Strings.portManagerProcess, service.processName.ifEmpty { Strings.portManagerUnknown })
-                    DetailRow(Strings.portManagerStatus, if (service.isResponding) Strings.portManagerResponding else Strings.portManagerNotResponding)
+                    DetailRow(
+                        Strings.portManagerProcess,
+                        service.processName.ifEmpty { Strings.portManagerUnknown }
+                    )
+                    DetailRow(
+                        Strings.portManagerStatus,
+                        if (service.isResponding) Strings.portManagerResponding else Strings.portManagerNotResponding
+                    )
                     if (service.responseTimeMs >= 0) {
                         DetailRow(Strings.portManagerLatency, "${service.responseTimeMs}ms")
                     }
                     if (uptimeText.isNotEmpty()) {
                         DetailRow(Strings.portManagerUptime, uptimeText)
                     }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
+                    Spacer(Modifier.height(12.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-
-                        PremiumOutlinedButton(
+                        WtaButton(
                             onClick = onOpen,
-                            modifier = Modifier.weight(weight = 1f, fill = true),
-                            enabled = service.isResponding
-                        ) {
-                            Icon(
-                                Icons.Default.OpenInBrowser,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(Strings.portManagerOpen)
-                        }
-
-                        PremiumButton(
-                            onClick = onKill,
-                            modifier = Modifier.weight(weight = 1f, fill = true),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Icon(
-                                Icons.Default.Stop,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(Strings.portManagerKill)
-                        }
+                            text = Strings.portManagerOpen,
+                            variant = WtaButtonVariant.Outlined,
+                            size = WtaButtonSize.Small,
+                            enabled = service.isResponding,
+                            leadingIcon = Icons.Outlined.OpenInBrowser,
+                            modifier = Modifier.weight(1f)
+                        )
+                        WtaButton(
+                            onClick = onCopy,
+                            text = Strings.portManagerCopyPort,
+                            variant = WtaButtonVariant.Tonal,
+                            size = WtaButtonSize.Small,
+                            leadingIcon = Icons.Outlined.ContentCopy,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
+                    Spacer(Modifier.height(8.dp))
+                    WtaButton(
+                        onClick = onKill,
+                        text = Strings.portManagerKill,
+                        variant = WtaButtonVariant.Primary,
+                        size = WtaButtonSize.Small,
+                        leadingIcon = Icons.Outlined.Stop,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
@@ -726,112 +822,50 @@ private fun DetailRow(label: String, value: String) {
         Text(
             value,
             style = MaterialTheme.typography.bodySmall,
-            fontFamily = FontFamily.Monospace
+            fontFamily = FontFamily.Monospace,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(start = 12.dp)
         )
     }
 }
 
 @Composable
-private fun EmptyState() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                Icons.Default.CheckCircle,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-            )
-            Text(
-                Strings.portManagerNoServices,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                Strings.portManagerAllReleased,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun ColumnScope.ThisAppTabContent(
-    services: List<RunningService>,
-    isScanning: Boolean,
-    showRangeStats: Boolean,
-    onToggleRangeStats: () -> Unit,
-    nowMs: Long,
-    onKillRequest: (RunningService) -> Unit,
-    onOpenInBrowser: (String) -> Unit
-) {
-    PortStatsCard(
-        services = services,
-        showRangeStats = showRangeStats,
-        onToggleRangeStats = onToggleRangeStats
-    )
-
-    if (services.isEmpty() && !isScanning) {
-        EmptyState()
-    } else {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(services, key = { it.port }) { service ->
-                ServiceCard(
-                    service = service,
-                    nowMs = nowMs,
-                    onKill = { onKillRequest(service) },
-                    onOpen = { onOpenInBrowser(service.url) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ColumnScope.AllAppsTabContent(
+private fun AllAppsTabContent(
     reports: List<WtaAppPortReport>,
     isScanning: Boolean,
+    hasActiveQuery: Boolean,
     nowMs: Long,
     onReleaseRequest: (WtaAppPortReport, RemoteAllocation) -> Unit
 ) {
-    if (reports.isEmpty() && !isScanning) {
-        WtaAppsEmptyState()
-        return
-    }
-
-    if (reports.isEmpty() && isScanning) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
+    when {
+        reports.isEmpty() && isScanning -> {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
         }
-        return
-    }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(reports, key = { it.app.packageName }) { report ->
-            WtaAppPortReportCard(
-                report = report,
-                nowMs = nowMs,
-                onRelease = { alloc -> onReleaseRequest(report, alloc) }
+        reports.isEmpty() -> {
+            WtaFullEmptyState(
+                title = if (hasActiveQuery) Strings.portManagerNoMatch else Strings.portManagerNoWtaApps,
+                message = if (hasActiveQuery) null else Strings.portManagerNoWtaAppsHint,
+                icon = if (hasActiveQuery) Icons.Outlined.Search else Icons.Outlined.Apps
             )
+        }
+        else -> {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(reports, key = { it.app.packageName }) { report ->
+                    WtaAppPortReportCard(
+                        report = report,
+                        nowMs = nowMs,
+                        onRelease = { alloc -> onReleaseRequest(report, alloc) }
+                    )
+                }
+                item { Spacer(Modifier.height(24.dp)) }
+            }
         }
     }
 }
@@ -842,74 +876,65 @@ private fun WtaAppPortReportCard(
     nowMs: Long,
     onRelease: (RemoteAllocation) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(report.allocations.isNotEmpty()) }
+    var expanded by rememberSaveable(report.app.packageName) {
+        mutableStateOf(report.allocations.isNotEmpty())
+    }
+    val semantic = WtaColors.semantic
+    val statusText = when {
+        !report.responded -> Strings.portManagerWtaAppOffline
+        report.allocations.isEmpty() -> Strings.portManagerWtaAppNoPorts
+        else -> Strings.portManagerWtaAppPortsCount.format(report.allocations.size)
+    }
+    val statusColor = when {
+        !report.responded -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+        report.allocations.isEmpty() -> semantic.success
+        else -> MaterialTheme.colorScheme.primary
+    }
 
-    EnhancedElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { expanded = !expanded },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
+    WtaCard(tone = WtaCardTone.Surface) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
-                    contentAlignment = Alignment.Center
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier.size(40.dp)
                 ) {
-                    Icon(
-                        Icons.Outlined.Devices,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            Icons.Outlined.Apps,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
                 }
-
-                Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                Spacer(Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = report.app.displayName,
+                        report.app.displayName,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = report.app.packageName,
+                        report.app.packageName,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontFamily = FontFamily.Monospace,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                }
-
-                val statusText = when {
-                    !report.responded -> Strings.portManagerWtaAppOffline
-                    report.allocations.isEmpty() -> Strings.portManagerWtaAppNoPorts
-                    else -> Strings.portManagerWtaAppPortsCount.format(report.allocations.size)
-                }
-                val statusColor = when {
-                    !report.responded -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    report.allocations.isEmpty() -> AppColors.Success
-                    else -> MaterialTheme.colorScheme.primary
                 }
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = statusColor.copy(alpha = 0.12f)
                 ) {
                     Text(
-                        text = statusText,
+                        statusText,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall,
                         color = statusColor,
@@ -918,7 +943,11 @@ private fun WtaAppPortReportCard(
                 }
             }
 
-            AnimatedVisibility(visible = expanded && report.allocations.isNotEmpty()) {
+            AnimatedVisibility(
+                visible = expanded && report.allocations.isNotEmpty(),
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
                 Column(
                     modifier = Modifier.padding(top = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -943,6 +972,7 @@ private fun RemoteAllocationRow(
     nowMs: Long,
     onRelease: () -> Unit
 ) {
+    val semantic = WtaColors.semantic
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -954,28 +984,27 @@ private fun RemoteAllocationRow(
             modifier = Modifier
                 .size(8.dp)
                 .clip(CircleShape)
-                .background(if (allocation.alive) AppColors.Success else AppColors.Warning)
+                .background(if (allocation.alive) semantic.success else semantic.warning)
         )
-
-        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+        Column(modifier = Modifier.weight(1f)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = allocation.port.toString(),
+                    allocation.port.toString(),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = FontFamily.Monospace
                 )
                 Text(
-                    text = allocation.range,
+                    allocation.range,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Text(
-                text = allocation.owner,
+                allocation.owner,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -983,59 +1012,22 @@ private fun RemoteAllocationRow(
             )
             if (allocation.allocatedAt > 0) {
                 Text(
-                    text = PortManager.formatDuration((nowMs - allocation.allocatedAt).coerceAtLeast(0)),
+                    PortManager.formatDuration((nowMs - allocation.allocatedAt).coerceAtLeast(0)),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     fontFamily = FontFamily.Monospace
                 )
             }
         }
-
         TextButton(
             onClick = onRelease,
-            colors = ButtonDefaults.textButtonColors(
+            colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
                 contentColor = MaterialTheme.colorScheme.error
             )
         ) {
-            Icon(
-                Icons.Default.Stop,
-                contentDescription = null,
-                modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
+            Icon(Icons.Outlined.Stop, null, Modifier.size(16.dp))
+            Spacer(Modifier.width(4.dp))
             Text(Strings.portManagerKill, style = MaterialTheme.typography.labelMedium)
-        }
-    }
-}
-
-@Composable
-private fun WtaAppsEmptyState() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Icon(
-                Icons.Outlined.Apps,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-            )
-            Text(
-                Strings.portManagerNoWtaApps,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                Strings.portManagerNoWtaAppsHint,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-            )
         }
     }
 }

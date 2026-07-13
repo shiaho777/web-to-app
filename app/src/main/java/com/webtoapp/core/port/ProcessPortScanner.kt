@@ -28,13 +28,23 @@ object ProcessPortScanner {
         val responseTimeMs: Long = -1
     )
 
-    enum class ServiceType(val label: String, val color: Long) {
-        LOCAL_HTTP("静态服务", 0xFF4CAF50),
-        NODEJS("Node.js", 0xFF8BC34A),
-        PHP("PHP", 0xFF9C27B0),
-        PYTHON("Python", 0xFF2196F3),
-        GO("Go", 0xFF00BCD4),
-        UNKNOWN("未知", 0xFF9E9E9E)
+    enum class ServiceType(val color: Long) {
+        LOCAL_HTTP(0xFF4CAF50),
+        NODEJS(0xFF8BC34A),
+        PHP(0xFF9C27B0),
+        PYTHON(0xFF2196F3),
+        GO(0xFF00BCD4),
+        UNKNOWN(0xFF9E9E9E);
+
+        val label: String
+            get() = when (this) {
+                LOCAL_HTTP -> com.webtoapp.core.i18n.Strings.portManagerTypeLocalHttp
+                NODEJS -> com.webtoapp.core.i18n.Strings.portManagerTypeNodeJs
+                PHP -> com.webtoapp.core.i18n.Strings.portManagerTypePhp
+                PYTHON -> com.webtoapp.core.i18n.Strings.portManagerTypePython
+                GO -> com.webtoapp.core.i18n.Strings.portManagerTypeGo
+                UNKNOWN -> com.webtoapp.core.i18n.Strings.portManagerTypeUnknown
+            }
     }
 
     private data class HealthCheckResult(
