@@ -1302,7 +1302,11 @@ enum class NotificationType(val key: String) {
     @com.google.gson.annotations.SerializedName("web_api")
     WEB_API("web_api"),
     @com.google.gson.annotations.SerializedName("polling")
-    POLLING("polling")
+    POLLING("polling"),
+    @com.google.gson.annotations.SerializedName("websocket")
+    WEBSOCKET("websocket"),
+    @com.google.gson.annotations.SerializedName("fcm")
+    FCM("fcm")
 }
 
 data class NotificationExportConfig(
@@ -1316,7 +1320,27 @@ data class NotificationExportConfig(
 
     val pollHeaders: String = "",
 
-    val clickUrl: String = ""
+    val clickUrl: String = "",
+
+    val wsUrl: String = "",
+
+    val wsHeaders: String = "",
+
+    val registerUrl: String = "",
+
+    val registerHeaders: String = "",
+
+    val authToken: String = "",
+
+    val fcmProjectId: String = "",
+
+    val fcmApplicationId: String = "",
+
+    val fcmApiKey: String = "",
+
+    val fcmSenderId: String = "",
+
+    val fcmGoogleServicesJson: String = ""
 )
 
 enum class Base64DeepLinkMode {

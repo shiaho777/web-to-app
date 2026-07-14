@@ -2862,6 +2862,8 @@ builtins.__import__ = _w2a_import
 
         if (config.notificationEnabled) {
             components += "com.webtoapp.core.notification.NotificationPollingService"
+            components += "com.webtoapp.core.notification.NotificationWebSocketService"
+            components += "com.webtoapp.core.notification.NotificationFcmService"
         }
 
         if (config.enableNativeBridge && config.webViewBehavior.nativeBridgeNotificationScheduled) {
@@ -3270,7 +3272,10 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     enableBackStatePreservation = webViewConfig.enableBackStatePreservation,
     followSystemDarkMode = webViewConfig.followSystemDarkMode,
     enableClipboardPolyfill = webViewConfig.enableClipboardPolyfill,
-    enableNotificationPolyfill = webViewConfig.enableNotificationPolyfill,
+    enableNotificationPolyfill = webViewConfig.enableNotificationPolyfill ||
+        (apkExportConfig?.let {
+            it.notificationEnabled && it.notificationConfig?.type?.key == "web_api"
+        } == true),
     geolocationEnabled = webViewConfig.geolocationEnabled,
     geolocationAccuracy = webViewConfig.geolocationAccuracy.name,
     geolocationPolicy = webViewConfig.geolocationPolicy.name,
@@ -3607,7 +3612,17 @@ private fun WebApp.buildOptionalServicesBlock(): OptionalServicesBlock = Optiona
             pollIntervalMinutes = it.pollIntervalMinutes,
             pollMethod = it.pollMethod,
             pollHeaders = it.pollHeaders,
-            clickUrl = it.clickUrl
+            clickUrl = it.clickUrl,
+            wsUrl = it.wsUrl,
+            wsHeaders = it.wsHeaders,
+            registerUrl = it.registerUrl,
+            registerHeaders = it.registerHeaders,
+            authToken = it.authToken,
+            fcmProjectId = it.fcmProjectId,
+            fcmApplicationId = it.fcmApplicationId,
+            fcmApiKey = it.fcmApiKey,
+            fcmSenderId = it.fcmSenderId,
+            fcmGoogleServicesJson = it.fcmGoogleServicesJson
         )
     },
     hardeningEnabled = apkExportConfig?.encryptionConfig?.enabled ?: false,

@@ -228,6 +228,26 @@
 
         
         <service
+            android:name=".core.notification.NotificationWebSocketService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="notification_websocket" />
+        </service>
+        
+        <service
+            android:name=".core.notification.NotificationFcmService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+
+        
+        <service
             android:name=".core.floatingwindow.FloatingWindowService"
             android:enabled="true"
             android:exported="false"

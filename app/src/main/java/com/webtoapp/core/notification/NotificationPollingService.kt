@@ -99,6 +99,21 @@ class NotificationPollingService : Service() {
 
         fun isServiceRunning(): Boolean = isRunning
 
+        fun restoreIfNeeded(context: Context) {
+            if (isRunning) return
+            val intent = restoreIntent(context) ?: return
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+                AppLogger.i(TAG, "轮询通知服务已从持久化配置恢复")
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "恢复轮询通知服务失败", e)
+            }
+        }
+
         private fun clearPersistedConfig(context: Context) {
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().apply()
         }

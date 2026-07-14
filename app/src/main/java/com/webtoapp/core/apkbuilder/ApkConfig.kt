@@ -847,7 +847,17 @@ data class NotificationConfig(
     val pollIntervalMinutes: Int = 15,
     val pollMethod: String = "GET",
     val pollHeaders: String = "",
-    val clickUrl: String = ""
+    val clickUrl: String = "",
+    val wsUrl: String = "",
+    val wsHeaders: String = "",
+    val registerUrl: String = "",
+    val registerHeaders: String = "",
+    val authToken: String = "",
+    val fcmProjectId: String = "",
+    val fcmApplicationId: String = "",
+    val fcmApiKey: String = "",
+    val fcmSenderId: String = "",
+    val fcmGoogleServicesJson: String = ""
 )
 
 data class GalleryShellItemConfig(

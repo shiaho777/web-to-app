@@ -105,3 +105,11 @@ fun WebApp.toEditState(): EditState = EditState(
     disguiseConfig = disguiseConfig,
     deviceDisguiseConfig = deviceDisguiseConfig ?: DeviceDisguiseConfig(),
 )
+
+
+fun EditState.hasPreviewableContent(): Boolean = when (appType) {
+    AppType.WEB -> url.isNotBlank()
+    AppType.HTML, AppType.FRONTEND -> htmlConfig?.files?.isNotEmpty() == true
+    AppType.IMAGE, AppType.VIDEO -> url.isNotBlank()
+    else -> true
+}

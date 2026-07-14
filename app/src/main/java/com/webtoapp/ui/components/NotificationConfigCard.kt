@@ -1,7 +1,9 @@
 package com.webtoapp.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -77,7 +79,9 @@ fun NotificationConfigCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     NotificationTypeChip(
@@ -89,6 +93,16 @@ fun NotificationConfigCard(
                         selected = config.type == NotificationType.POLLING,
                         label = Strings.notificationTypePolling,
                         onClick = { onConfigChange(config.copy(type = NotificationType.POLLING)) }
+                    )
+                    NotificationTypeChip(
+                        selected = config.type == NotificationType.WEBSOCKET,
+                        label = Strings.notificationTypeWebsocket,
+                        onClick = { onConfigChange(config.copy(type = NotificationType.WEBSOCKET)) }
+                    )
+                    NotificationTypeChip(
+                        selected = config.type == NotificationType.FCM,
+                        label = Strings.notificationTypeFcm,
+                        onClick = { onConfigChange(config.copy(type = NotificationType.FCM)) }
                     )
                 }
 
@@ -195,6 +209,212 @@ fun NotificationConfigCard(
                                 maxLines = 4
                             )
 
+                            PremiumTextField(
+                                value = config.clickUrl,
+                                onValueChange = { onConfigChange(config.copy(clickUrl = it)) },
+                                label = { Text(Strings.notificationClickUrl) },
+                                placeholder = { Text(Strings.notificationClickUrlPlaceholder) },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        }
+                    }
+                }
+
+                if (config.type == NotificationType.WEBSOCKET) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            Strings.notificationWebsocketDesc,
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    PremiumTextField(
+                        value = config.wsUrl,
+                        onValueChange = { onConfigChange(config.copy(wsUrl = it)) },
+                        label = { Text(Strings.notificationWsUrl) },
+                        placeholder = { Text(Strings.notificationWsUrlPlaceholder) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    PremiumTextField(
+                        value = config.authToken,
+                        onValueChange = { onConfigChange(config.copy(authToken = it)) },
+                        label = { Text(Strings.notificationAuthToken) },
+                        placeholder = { Text(Strings.notificationAuthTokenPlaceholder) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    PremiumTextField(
+                        value = config.registerUrl,
+                        onValueChange = { onConfigChange(config.copy(registerUrl = it)) },
+                        label = { Text(Strings.notificationRegisterUrl) },
+                        placeholder = { Text(Strings.notificationRegisterUrlPlaceholder) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    TextButton(
+                        onClick = { expanded = !expanded },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text(if (expanded) Strings.hideAdvanced else Strings.showAdvanced)
+                    }
+
+                    AnimatedVisibility(visible = expanded) {
+                        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)) {
+                            PremiumTextField(
+                                value = config.wsHeaders,
+                                onValueChange = { onConfigChange(config.copy(wsHeaders = it)) },
+                                label = { Text(Strings.notificationWsHeaders) },
+                                placeholder = { Text(Strings.notificationWsHeadersPlaceholder) },
+                                modifier = Modifier.fillMaxWidth(),
+                                minLines = 2,
+                                maxLines = 4
+                            )
+
+                            PremiumTextField(
+                                value = config.registerHeaders,
+                                onValueChange = { onConfigChange(config.copy(registerHeaders = it)) },
+                                label = { Text(Strings.notificationRegisterHeaders) },
+                                placeholder = { Text(Strings.notificationRegisterHeadersPlaceholder) },
+                                modifier = Modifier.fillMaxWidth(),
+                                minLines = 2,
+                                maxLines = 4
+                            )
+
+                            PremiumTextField(
+                                value = config.clickUrl,
+                                onValueChange = { onConfigChange(config.copy(clickUrl = it)) },
+                                label = { Text(Strings.notificationClickUrl) },
+                                placeholder = { Text(Strings.notificationClickUrlPlaceholder) },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                        }
+                    }
+                }
+
+                if (config.type == NotificationType.FCM) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            Strings.notificationFcmDesc,
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    PremiumTextField(
+                        value = config.fcmGoogleServicesJson,
+                        onValueChange = { raw ->
+                            val parsed = com.webtoapp.core.notification.NotificationFcmManager.parseGoogleServicesJson(raw)
+                            if (parsed != null) {
+                                onConfigChange(
+                                    config.copy(
+                                        fcmGoogleServicesJson = raw,
+                                        fcmProjectId = parsed.projectId,
+                                        fcmApplicationId = parsed.applicationId,
+                                        fcmApiKey = parsed.apiKey,
+                                        fcmSenderId = parsed.senderId
+                                    )
+                                )
+                            } else {
+                                onConfigChange(config.copy(fcmGoogleServicesJson = raw))
+                            }
+                        },
+                        label = { Text(Strings.notificationFcmGoogleServicesJson) },
+                        placeholder = { Text(Strings.notificationFcmGoogleServicesJsonPlaceholder) },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        maxLines = 8
+                    )
+
+                    PremiumTextField(
+                        value = config.fcmProjectId,
+                        onValueChange = { onConfigChange(config.copy(fcmProjectId = it)) },
+                        label = { Text(Strings.notificationFcmProjectId) },
+                        placeholder = { Text(Strings.notificationFcmProjectIdPlaceholder) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    PremiumTextField(
+                        value = config.fcmApplicationId,
+                        onValueChange = { onConfigChange(config.copy(fcmApplicationId = it)) },
+                        label = { Text(Strings.notificationFcmApplicationId) },
+                        placeholder = { Text(Strings.notificationFcmApplicationIdPlaceholder) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    PremiumTextField(
+                        value = config.fcmApiKey,
+                        onValueChange = { onConfigChange(config.copy(fcmApiKey = it)) },
+                        label = { Text(Strings.notificationFcmApiKey) },
+                        placeholder = { Text(Strings.notificationFcmApiKeyPlaceholder) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    PremiumTextField(
+                        value = config.fcmSenderId,
+                        onValueChange = { onConfigChange(config.copy(fcmSenderId = it)) },
+                        label = { Text(Strings.notificationFcmSenderId) },
+                        placeholder = { Text(Strings.notificationFcmSenderIdPlaceholder) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    PremiumTextField(
+                        value = config.registerUrl,
+                        onValueChange = { onConfigChange(config.copy(registerUrl = it)) },
+                        label = { Text(Strings.notificationRegisterUrl) },
+                        placeholder = { Text(Strings.notificationRegisterUrlPlaceholder) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+
+                    TextButton(
+                        onClick = { expanded = !expanded },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text(if (expanded) Strings.hideAdvanced else Strings.showAdvanced)
+                    }
+
+                    AnimatedVisibility(visible = expanded) {
+                        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)) {
+                            PremiumTextField(
+                                value = config.authToken,
+                                onValueChange = { onConfigChange(config.copy(authToken = it)) },
+                                label = { Text(Strings.notificationAuthToken) },
+                                placeholder = { Text(Strings.notificationAuthTokenPlaceholder) },
+                                modifier = Modifier.fillMaxWidth(),
+                                singleLine = true
+                            )
+                            PremiumTextField(
+                                value = config.registerHeaders,
+                                onValueChange = { onConfigChange(config.copy(registerHeaders = it)) },
+                                label = { Text(Strings.notificationRegisterHeaders) },
+                                placeholder = { Text(Strings.notificationRegisterHeadersPlaceholder) },
+                                modifier = Modifier.fillMaxWidth(),
+                                minLines = 2,
+                                maxLines = 4
+                            )
                             PremiumTextField(
                                 value = config.clickUrl,
                                 onValueChange = { onConfigChange(config.copy(clickUrl = it)) },
