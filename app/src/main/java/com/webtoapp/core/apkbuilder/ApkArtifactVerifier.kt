@@ -365,7 +365,7 @@ internal object ApkArtifactVerifier {
         projectDir: File?
     ) {
         val localSites = sites.filter {
-            it.enabled && it.type.uppercase() != "URL" && it.localFilePath.isNotBlank()
+            it.enabled && it.localFilePath.isNotBlank()
         }
         if (localSites.isEmpty()) return
 

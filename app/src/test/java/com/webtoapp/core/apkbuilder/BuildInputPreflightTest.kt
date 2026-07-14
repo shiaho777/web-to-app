@@ -316,4 +316,78 @@ class BuildInputPreflightTest {
         assertThat(result.issues.single().key).isEqualTo("customCa[0]")
         assertThat(result.issues.single().message).contains("valid X.509")
     }
+
+    @Test
+    fun `multi web URL-only EXISTING sites pass without local file path`() {
+        val result = BuildInputPreflight.check(
+            BuildInputPreflightRequest(
+                appType = "MULTI_WEB",
+                multiWebSites = listOf(
+                    MultiWebSite(
+                        id = "site-a",
+                        name = "Baidu",
+                        type = "EXISTING",
+                        url = "https://www.baidu.com",
+                        localFilePath = ""
+                    ),
+                    MultiWebSite(
+                        id = "site-b",
+                        name = "Example",
+                        type = "EXISTING",
+                        url = "https://example.com",
+                        localFilePath = ""
+                    )
+                )
+            )
+        )
+
+        assertThat(result.passed).isTrue()
+        assertThat(result.issues).isEmpty()
+    }
+
+    @Test
+    fun `multi web default URL sites pass without local project dir`() {
+        val result = BuildInputPreflight.check(
+            BuildInputPreflightRequest(
+                appType = "MULTI_WEB",
+                multiWebSites = listOf(
+                    MultiWebSite(
+                        id = "site-a",
+                        name = "One",
+                        url = "https://one.example"
+                    ),
+                    MultiWebSite(
+                        id = "site-b",
+                        name = "Two",
+                        url = "https://two.example"
+                    )
+                )
+            )
+        )
+
+        assertThat(result.passed).isTrue()
+        assertThat(result.issues).isEmpty()
+    }
+
+    @Test
+    fun `multi web EXISTING site with blank url and blank path is rejected`() {
+        val result = BuildInputPreflight.check(
+            BuildInputPreflightRequest(
+                appType = "MULTI_WEB",
+                multiWebSites = listOf(
+                    MultiWebSite(
+                        id = "site-a",
+                        name = "Broken",
+                        type = "EXISTING",
+                        url = "",
+                        localFilePath = ""
+                    )
+                )
+            )
+        )
+
+        assertThat(result.passed).isFalse()
+        assertThat(result.issues.map { it.key }).contains("multiWebSites[0]")
+    }
+
 }
