@@ -143,5 +143,12 @@ data class MarketModuleView(
 
     val installedVersion: String? = null,
 
-    val submission: ModuleSubmission? = null
+    val submission: ModuleSubmission? = null,
+
+    val ratingValue: Double = 0.0,
+    val ratingCount: Int = 0,
+    val userCountValue: Long = 0L,
+    val ratingLabel: String = "",
+    val ratingCountLabel: String = "",
+    val userCountLabel: String = ""
 )

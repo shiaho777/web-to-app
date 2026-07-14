@@ -39,6 +39,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.StarBorder
+import androidx.compose.material.icons.filled.StarHalf
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -90,6 +94,7 @@ import com.webtoapp.core.market.ModuleSubmitter
 import com.webtoapp.core.market.ChromeWebStoreSearch
 import com.webtoapp.core.market.CwsSearchResult
 import com.webtoapp.core.market.CwsTags
+import com.webtoapp.core.extension.BrowserExtensionStore
 import com.webtoapp.ui.components.PremiumFilterChip
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.design.WtaBackground
@@ -195,10 +200,19 @@ fun ModuleMarketScreen(
         cwsError = null
         val result = ChromeWebStoreSearch.search(trimmed, currentLocale)
         if (cwsQuery != trimmed) return@LaunchedEffect
-        cwsSearching = false
-        cwsHasSearched = true
-        result.onSuccess { cwsResults = it }
-            .onFailure { cwsError = it.message ?: Strings.cwsSearchFailed }
+        result.onSuccess { base ->
+            cwsResults = base
+            cwsSearching = false
+            cwsHasSearched = true
+            val enriched = ChromeWebStoreSearch.enrichResults(base, currentLocale)
+            if (cwsQuery == trimmed) {
+                cwsResults = enriched
+            }
+        }.onFailure {
+            cwsSearching = false
+            cwsHasSearched = true
+            cwsError = it.message ?: Strings.cwsSearchFailed
+        }
     }
 
     val cwsViews = remember(cwsResults, installingId, installedModules) {
@@ -214,7 +228,8 @@ fun ModuleMarketScreen(
                 tags = tags.map { it.label },
                 iconUrl = r.iconUrl,
                 sourceType = "CHROME_EXTENSION",
-                storeId = r.storeId
+                storeId = r.storeId,
+                homepage = BrowserExtensionStore.storePageUrl(r.storeId)
             )
             val installed = installedModules.firstOrNull {
                 it.sourceType == ModuleSourceType.CHROME_EXTENSION && it.chromeExtId == r.storeId
@@ -223,7 +238,19 @@ fun ModuleMarketScreen(
                 entry = entry,
                 state = if (installed != null) MarketInstallState.UpToDate else MarketInstallState.NotInstalled,
                 installedVersion = installed?.version?.name,
-                submission = null
+                submission = null,
+                ratingValue = r.ratingValue,
+                ratingCount = r.ratingCount,
+                userCountValue = r.userCountValue,
+                ratingLabel = r.rating.ifBlank {
+                    if (r.ratingValue > 0.0) String.format(java.util.Locale.US, "%.1f", r.ratingValue) else ""
+                },
+                ratingCountLabel = r.ratingCountLabel.ifBlank {
+                    ChromeWebStoreSearch.formatCompactCount(r.ratingCount)
+                },
+                userCountLabel = r.userCount.ifBlank {
+                    ChromeWebStoreSearch.formatUserCount(r.userCountValue)
+                }
             )
         }
     }
@@ -624,6 +651,34 @@ private fun ModuleListContent(
     }
 }
 
+private enum class CwsSortMode {
+    DEFAULT,
+    RATING,
+    REVIEWS,
+    DOWNLOADS
+}
+
+private fun sortCwsViews(views: List<MarketModuleView>, mode: CwsSortMode): List<MarketModuleView> {
+    return when (mode) {
+        CwsSortMode.DEFAULT -> views
+        CwsSortMode.RATING -> views.sortedWith(
+            compareByDescending<MarketModuleView> { it.ratingValue }
+                .thenByDescending { it.ratingCount }
+                .thenByDescending { it.userCountValue }
+        )
+        CwsSortMode.REVIEWS -> views.sortedWith(
+            compareByDescending<MarketModuleView> { it.ratingCount }
+                .thenByDescending { it.ratingValue }
+                .thenByDescending { it.userCountValue }
+        )
+        CwsSortMode.DOWNLOADS -> views.sortedWith(
+            compareByDescending<MarketModuleView> { it.userCountValue }
+                .thenByDescending { it.ratingValue }
+                .thenByDescending { it.ratingCount }
+        )
+    }
+}
+
 @Composable
 private fun CwsSearchContent(
     query: String,
@@ -638,75 +693,296 @@ private fun CwsSearchContent(
     onInstallById: (String) -> Unit,
     listState: androidx.compose.foundation.lazy.LazyListState
 ) {
-    when {
-        isSearching -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator()
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        Strings.cwsSearching,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+    val context = LocalContext.current
+    val extensionManager = remember(context) { ExtensionManager.getInstance(context) }
+    val installedModules by extensionManager.modules.collectAsState()
+    val builtIn by extensionManager.builtInModules.collectAsState()
+    val allInstalled = remember(installedModules, builtIn) { installedModules + builtIn }
+
+    var browseCategory by remember {
+        mutableStateOf(BrowserExtensionStore.Category.FEATURED)
+    }
+    var sortMode by remember { mutableStateOf(CwsSortMode.DEFAULT) }
+
+    val catalogViews = remember(browseCategory, installingId, allInstalled, sortMode) {
+        sortCwsViews(
+            BrowserExtensionStore.byCategory(browseCategory).map { entry ->
+                storeEntryToView(entry, allInstalled)
+            },
+            sortMode
+        )
+    }
+
+    val sortedResults = remember(results, sortMode) {
+        sortCwsViews(results, sortMode)
+    }
+
+    val showBrowse = query.isBlank() && !isSearching && errorMessage == null
+
+    if (isSearching) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator()
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = Strings.cwsSearching,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
-        errorMessage != null -> {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+        return
+    }
+
+    if (errorMessage != null) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = Strings.cwsSearchFailed,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.error
+            )
+            Text(
+                text = errorMessage,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            CwsInstallByIdRow(onInstallById = onInstallById)
+        }
+        return
+    }
+
+    if (showBrowse) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            item(key = "cws-intro") {
                 Text(
-                    Strings.cwsSearchFailed,
+                    text = Strings.cwsBrowseIntro,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            item(key = "cws-categories") {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 4.dp)
+                ) {
+                    items(BrowserExtensionStore.browseCategories(), key = { it.name }) { category ->
+                        PremiumFilterChip(
+                            selected = browseCategory == category,
+                            onClick = { browseCategory = category },
+                            label = { Text(cwsCategoryLabel(category)) }
+                        )
+                    }
+                }
+            }
+            item(key = "cws-sort") {
+                CwsSortRow(sortMode = sortMode, onSortModeChange = { sortMode = it })
+            }
+            item(key = "cws-section-title") {
+                Text(
+                    text = if (browseCategory == BrowserExtensionStore.Category.FEATURED) {
+                        Strings.cwsFeaturedTitle
+                    } else {
+                        cwsCategoryLabel(browseCategory)
+                    },
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            items(catalogViews, key = { it.entry.id }) { view ->
+                CwsResultCard(
+                    view = view,
+                    isInstalling = installingId == view.entry.id,
+                    installProgress = if (installingId == view.entry.id) installProgress else null,
+                    onInstall = { onInstall(view.entry) },
+                    onOpenSource = { onOpenSource(view.entry) }
+                )
+            }
+            item(key = "cws-install-by-id") {
                 CwsInstallByIdRow(onInstallById = onInstallById)
             }
         }
-        query.isEmpty() -> {
-            Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
-                Text(
-                    Strings.cwsSearchIntro,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        return
+    }
+
+    if (hasSearched && sortedResults.isEmpty()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(24.dp)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = Strings.cwsNoResults,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            CwsInstallByIdRow(onInstallById = onInstallById)
         }
-        results.isEmpty() && hasSearched -> {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(
-                    Strings.cwsNoResults,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        return
+    }
+
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        item(key = "cws-sort-search") {
+            CwsSortRow(sortMode = sortMode, onSortModeChange = { sortMode = it })
         }
-        else -> {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                items(results, key = { it.entry.id }) { view ->
-                    CwsResultCard(
-                        view = view,
-                        isInstalling = installingId == view.entry.id,
-                        installProgress = if (installingId == view.entry.id) installProgress else null,
-                        onInstall = { onInstall(view.entry) },
-                        onOpenSource = { onOpenSource(view.entry) }
-                    )
-                }
-            }
+        items(sortedResults, key = { it.entry.id }) { view ->
+            CwsResultCard(
+                view = view,
+                isInstalling = installingId == view.entry.id,
+                installProgress = if (installingId == view.entry.id) installProgress else null,
+                onInstall = { onInstall(view.entry) },
+                onOpenSource = { onOpenSource(view.entry) }
+            )
+        }
+        item(key = "cws-install-by-id-search") {
+            CwsInstallByIdRow(onInstallById = onInstallById)
         }
     }
 }
 
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun CwsSortRow(
+    sortMode: CwsSortMode,
+    onSortModeChange: (CwsSortMode) -> Unit
+) {
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 2.dp)
+    ) {
+        item {
+            Text(
+                Strings.cwsSortLabel,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(end = 4.dp, top = 10.dp)
+            )
+        }
+        items(CwsSortMode.values().toList(), key = { it.name }) { mode ->
+            PremiumFilterChip(
+                selected = sortMode == mode,
+                onClick = { onSortModeChange(mode) },
+                label = { Text(cwsSortLabel(mode)) }
+            )
+        }
+    }
+}
+
+private fun cwsSortLabel(mode: CwsSortMode): String = when (mode) {
+    CwsSortMode.DEFAULT -> Strings.cwsSortDefault
+    CwsSortMode.RATING -> Strings.cwsSortRating
+    CwsSortMode.REVIEWS -> Strings.cwsSortReviews
+    CwsSortMode.DOWNLOADS -> Strings.cwsSortDownloads
+}
+
+private fun storeEntryToView(
+    entry: BrowserExtensionStore.StoreEntry,
+    installedModules: List<com.webtoapp.core.extension.ExtensionModule>
+): MarketModuleView {
+    val tags = CwsTags.fromName(entry.name).map { it.label }
+    val marketEntry = ModuleMarketEntry(
+        id = "cws-${entry.storeId}",
+        path = "",
+        name = entry.name,
+        description = entry.description,
+        icon = "package",
+        category = "OTHER",
+        tags = tags,
+        iconUrl = entry.iconUrl,
+        sourceType = "CHROME_EXTENSION",
+        storeId = entry.storeId,
+        homepage = BrowserExtensionStore.storePageUrl(entry.storeId),
+        author = com.webtoapp.core.extension.ModuleAuthor(
+            name = entry.author,
+            url = entry.homepage
+        )
+    )
+    val installed = installedModules.firstOrNull {
+        it.sourceType == ModuleSourceType.CHROME_EXTENSION && it.chromeExtId == entry.storeId
+    }
+    return MarketModuleView(
+        entry = marketEntry,
+        state = if (installed != null) MarketInstallState.UpToDate else MarketInstallState.NotInstalled,
+        installedVersion = installed?.version?.name,
+        submission = null,
+        ratingValue = entry.ratingValue,
+        ratingCount = entry.ratingCount,
+        userCountValue = entry.userCountValue,
+        ratingLabel = entry.ratingLabel,
+        ratingCountLabel = entry.ratingCountLabel,
+        userCountLabel = entry.userCountLabel
+    )
+}
+
+@Composable
+private fun CwsInstallByIdRow(onInstallById: (String) -> Unit) {
+    var idInput by remember { mutableStateOf("") }
+    val cleanId = idInput.trim().lowercase()
+    val extracted = extractStoreId(cleanId)
+    val canInstall = extracted.length == 32 && extracted.all { it.isLetterOrDigit() }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        PremiumTextField(
+            value = idInput,
+            onValueChange = { idInput = it },
+            modifier = Modifier.weight(1f),
+            placeholder = { Text(Strings.browserExtStoreInstallByIdHint) },
+            singleLine = true,
+            shape = RoundedCornerShape(WtaRadius.Button)
+        )
+        WtaButton(
+            onClick = {
+                if (canInstall) {
+                    onInstallById(extracted)
+                    idInput = ""
+                }
+            },
+            text = Strings.moduleMarketInstall,
+            variant = WtaButtonVariant.Primary,
+            size = WtaButtonSize.Small,
+            enabled = canInstall,
+            leadingIcon = Icons.Default.CloudDownload
+        )
+    }
+}
+
+private fun extractStoreId(input: String): String {
+    if (input.length == 32 && input.all { it.isLetterOrDigit() }) return input
+    val patterns = listOf(
+        Regex("/detail/[^/]*/([a-z]{32})"),
+        Regex("([a-z]{32})")
+    )
+    for (pattern in patterns) {
+        pattern.find(input)?.let { return it.groupValues[1] }
+    }
+    return input
+}
+
 @Composable
 private fun CwsResultCard(
     view: MarketModuleView,
@@ -716,30 +992,56 @@ private fun CwsResultCard(
     onOpenSource: () -> Unit
 ) {
     WtaCard(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(),
         tone = WtaCardTone.Surface,
         contentPadding = PaddingValues(WtaSpacing.Large)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.Top) {
             ModuleIcon(
                 iconUrl = view.entry.iconUrl,
                 fallbackLetter = view.entry.name.take(1).uppercase(),
-                size = 48.dp
+                size = 52.dp
             )
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     view.entry.name,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+                if (view.entry.author?.name?.isNotBlank() == true) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        view.entry.author!!.name,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                if (view.ratingValue > 0.0 || view.userCountValue > 0L || view.ratingCount > 0) {
+                    Spacer(Modifier.height(6.dp))
+                    CwsMetricsRow(view = view)
+                }
+                if (view.entry.description.isNotBlank()) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        view.entry.description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 if (view.entry.tags.isNotEmpty()) {
                     Spacer(Modifier.height(6.dp))
-                    androidx.compose.foundation.layout.FlowRow(
+                    Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         view.entry.tags.take(3).forEach { tag ->
                             Surface(
@@ -804,6 +1106,93 @@ private fun CwsResultCard(
     }
 }
 
+@Composable
+private fun CwsMetricsRow(view: MarketModuleView) {
+    val starColor = Color(0xFFFFC107)
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        if (view.ratingValue > 0.0) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CwsStarRating(rating = view.ratingValue, tint = starColor)
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    view.ratingLabel.ifBlank {
+                        String.format(java.util.Locale.US, "%.1f", view.ratingValue)
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                if (view.ratingCount > 0 || view.ratingCountLabel.isNotBlank()) {
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        "(${view.ratingCountLabel.ifBlank { ChromeWebStoreSearch.formatCompactCount(view.ratingCount) }})",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+        if (view.userCountValue > 0L || view.userCountLabel.isNotBlank()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Download,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.width(3.dp))
+                Text(
+                    view.userCountLabel.ifBlank {
+                        ChromeWebStoreSearch.formatUserCount(view.userCountValue)
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CwsStarRating(
+    rating: Double,
+    tint: Color,
+    maxStars: Int = 5
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        val clamped = rating.coerceIn(0.0, maxStars.toDouble())
+        for (i in 1..maxStars) {
+            val filled = clamped >= i
+            val half = !filled && clamped >= i - 0.5
+            Icon(
+                imageVector = when {
+                    filled -> Icons.Default.Star
+                    half -> Icons.Default.StarHalf
+                    else -> Icons.Default.StarBorder
+                },
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = if (filled || half) tint else MaterialTheme.colorScheme.outlineVariant
+            )
+        }
+    }
+}
+
+private fun cwsCategoryLabel(category: BrowserExtensionStore.Category): String {
+    return when (category) {
+        BrowserExtensionStore.Category.FEATURED -> Strings.cwsCategoryFeatured
+        BrowserExtensionStore.Category.AD_BLOCKING -> Strings.cwsCategoryAdBlocking
+        BrowserExtensionStore.Category.PRIVACY -> Strings.cwsCategoryPrivacy
+        BrowserExtensionStore.Category.YOUTUBE -> Strings.cwsCategoryYoutube
+        BrowserExtensionStore.Category.PRODUCTIVITY -> Strings.cwsCategoryProductivity
+        BrowserExtensionStore.Category.DEVELOPER -> Strings.cwsCategoryDeveloper
+        BrowserExtensionStore.Category.STYLING -> Strings.cwsCategoryStyling
+    }
+}
+
 private fun formatBytes(bytes: Long): String {
     if (bytes < 1024) return "${bytes}B"
     val kb = bytes / 1024.0
@@ -820,53 +1209,6 @@ private fun formatSpeed(bytesPerSec: Long): String {
     return String.format(java.util.Locale.US, "%.1fMB/s", mb)
 }
 
-@Composable
-private fun CwsInstallByIdRow(onInstallById: (String) -> Unit) {
-    var idInput by remember { mutableStateOf("") }
-    val cleanId = idInput.trim().lowercase()
-    val extracted = extractStoreId(cleanId)
-    val canInstall = extracted.length == 32 && extracted.all { it.isLetterOrDigit() }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        PremiumTextField(
-            value = idInput,
-            onValueChange = { idInput = it },
-            modifier = Modifier.weight(1f),
-            placeholder = { Text(Strings.browserExtStoreInstallByIdHint) },
-            singleLine = true,
-            shape = RoundedCornerShape(WtaRadius.Button)
-        )
-        WtaButton(
-            onClick = {
-                if (canInstall) {
-                    onInstallById(extracted)
-                    idInput = ""
-                }
-            },
-            text = Strings.moduleMarketInstall,
-            variant = WtaButtonVariant.Primary,
-            size = WtaButtonSize.Small,
-            enabled = canInstall,
-            leadingIcon = Icons.Default.CloudDownload
-        )
-    }
-}
-
-private fun extractStoreId(input: String): String {
-    if (input.length == 32 && input.all { it.isLetterOrDigit() }) return input
-    val patterns = listOf(
-        Regex("/detail/[^/]*/([a-z]{32})"),
-        Regex("([a-z]{32})")
-    )
-    for (pattern in patterns) {
-        pattern.find(input)?.let { return it.groupValues[1] }
-    }
-    return input
-}
 
 @Composable
 private fun ContributionGuideCard(
