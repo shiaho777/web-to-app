@@ -23,7 +23,7 @@ object BgmStorage {
 
     private val SAFE_NAME_REGEX = Regex("[^a-zA-Z0-9\u4e00-\u9fa5_-]")
 
-    private val IMAGE_COVER_EXTENSIONS = setOf("png", "jpg", "jpeg")
+    private val IMAGE_COVER_EXTENSIONS = setOf("png", "jpg", "jpeg", "jpe", "jfif", "webp", "bmp", "gif", "heic", "heif")
 
     fun getBgmDir(context: Context): File {
         val dir = File(context.filesDir, BGM_DIR)
@@ -57,8 +57,9 @@ object BgmStorage {
 
                 val coverFile = files.find { file ->
                     val fileNameWithoutExt = file.substringBeforeLast(".")
-                    val ext = file.substringAfterLast(".").lowercase()
-                    fileNameWithoutExt == nameWithoutExt && ext in IMAGE_COVER_EXTENSIONS
+                    val ext = normalizeCoverExtension(file.substringAfterLast(".").lowercase())
+                    fileNameWithoutExt.equals(nameWithoutExt, ignoreCase = true) &&
+                        ext in IMAGE_COVER_EXTENSIONS
                 }
 
                 val bgmPath = "asset:///$ASSETS_BGM_DIR/$mp3File"
@@ -105,8 +106,8 @@ object BgmStorage {
             val nameWithoutExt = mp3File.nameWithoutExtension
 
             val coverFile = files.find { file ->
-                file.nameWithoutExtension == nameWithoutExt &&
-                file.extension.lowercase() in IMAGE_COVER_EXTENSIONS
+                file.nameWithoutExtension.equals(nameWithoutExt, ignoreCase = true) &&
+                    normalizeCoverExtension(file.extension.lowercase()) in IMAGE_COVER_EXTENSIONS
             }
 
             val lrcFile = files.find { file ->
@@ -132,11 +133,7 @@ object BgmStorage {
         return try {
             val bgmDir = getBgmDir(context)
 
-            val safeName = if (customName.isNullOrBlank()) {
-                "bgm_${UUID.randomUUID()}"
-            } else {
-                customName.replace(SAFE_NAME_REGEX, "_")
-            }
+            val safeName = sanitizeBgmName(customName)
             val fileName = "${safeName}.mp3"
             val destFile = File(bgmDir, fileName)
 
@@ -168,26 +165,125 @@ object BgmStorage {
     fun saveCover(context: Context, uri: Uri, bgmName: String): String? {
         return try {
             val bgmDir = getBgmDir(context)
+            val safeName = sanitizeBgmName(bgmName)
+            val extension = resolveCoverExtension(context, uri)
 
-            val mimeType = context.contentResolver.getType(uri)
-            val extension = when {
-                mimeType?.contains("png") == true -> "png"
-                mimeType?.contains("jpeg") == true || mimeType?.contains("jpg") == true -> "jpg"
-                else -> "png"
+            IMAGE_COVER_EXTENSIONS.forEach { ext ->
+                val stale = File(bgmDir, "$safeName.$ext")
+                if (stale.exists()) {
+                    stale.delete()
+                }
             }
 
-            val destFile = File(bgmDir, "$bgmName.$extension")
+            val destFile = File(bgmDir, "$safeName.$extension")
+            val inputStream = context.contentResolver.openInputStream(uri)
+            if (inputStream == null) {
+                AppLogger.e(TAG, "无法打开封面文件: $uri")
+                return null
+            }
 
-            context.contentResolver.openInputStream(uri)?.use { input ->
+            inputStream.use { input ->
                 FileOutputStream(destFile).use { output ->
                     input.copyTo(output)
                 }
             }
 
+            if (!destFile.exists() || destFile.length() == 0L) {
+                AppLogger.e(TAG, "封面文件保存失败或为空: ${destFile.absolutePath}")
+                return null
+            }
+
             destFile.absolutePath
         } catch (e: Exception) {
-            AppLogger.e(TAG, "Operation failed", e)
+            AppLogger.e(TAG, "保存封面失败", e)
             null
+        }
+    }
+
+    private fun sanitizeBgmName(raw: String?): String {
+        val value = raw?.trim().orEmpty()
+        if (value.isBlank()) {
+            return "bgm_${UUID.randomUUID()}"
+        }
+        return value.replace(SAFE_NAME_REGEX, "_")
+    }
+
+    internal fun resolveCoverExtension(context: Context, uri: Uri): String {
+        val mimeType = context.contentResolver.getType(uri)?.lowercase().orEmpty()
+        extensionFromMime(mimeType)?.let { return it }
+
+        val pathHint = sequenceOf(
+            uri.lastPathSegment,
+            uri.path
+        ).filterNotNull()
+            .map { it.substringAfterLast('/') }
+            .map { it.substringAfterLast('.', missingDelimiterValue = "") }
+            .map { it.lowercase() }
+            .firstOrNull { it in IMAGE_COVER_EXTENSIONS }
+        if (pathHint != null) {
+            return normalizeCoverExtension(pathHint)
+        }
+
+        val magic = runCatching {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                val header = ByteArray(12)
+                val read = input.read(header)
+                if (read <= 0) null else header.copyOf(read)
+            }
+        }.getOrNull()
+        extensionFromMagic(magic)?.let { return it }
+
+        return "jpg"
+    }
+
+    private fun extensionFromMime(mimeType: String): String? {
+        return when {
+            mimeType.contains("jpeg") || mimeType.contains("jpg") -> "jpg"
+            mimeType.contains("png") -> "png"
+            mimeType.contains("webp") -> "webp"
+            mimeType.contains("gif") -> "gif"
+            mimeType.contains("bmp") -> "bmp"
+            mimeType.contains("heic") || mimeType.contains("heif") -> "heic"
+            else -> null
+        }
+    }
+
+    private fun extensionFromMagic(header: ByteArray?): String? {
+        if (header == null || header.isEmpty()) return null
+        if (header.size >= 3 &&
+            header[0] == 0xFF.toByte() &&
+            header[1] == 0xD8.toByte() &&
+            header[2] == 0xFF.toByte()
+        ) {
+            return "jpg"
+        }
+        if (header.size >= 8 &&
+            header[0] == 0x89.toByte() &&
+            header[1] == 0x50.toByte() &&
+            header[2] == 0x4E.toByte() &&
+            header[3] == 0x47.toByte()
+        ) {
+            return "png"
+        }
+        if (header.size >= 6) {
+            val gif = String(header, 0, 6, Charsets.US_ASCII)
+            if (gif == "GIF87a" || gif == "GIF89a") return "gif"
+        }
+        if (header.size >= 12) {
+            val riff = String(header, 0, 4, Charsets.US_ASCII)
+            val webp = String(header, 8, 4, Charsets.US_ASCII)
+            if (riff == "RIFF" && webp == "WEBP") return "webp"
+        }
+        if (header.size >= 2 && header[0] == 0x42.toByte() && header[1] == 0x4D.toByte()) {
+            return "bmp"
+        }
+        return null
+    }
+
+    private fun normalizeCoverExtension(ext: String): String {
+        return when (ext.lowercase()) {
+            "jpeg", "jpe", "jfif" -> "jpg"
+            else -> ext.lowercase()
         }
     }
 

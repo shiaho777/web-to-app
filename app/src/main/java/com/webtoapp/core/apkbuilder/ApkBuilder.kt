@@ -253,6 +253,7 @@ class ApkBuilder(private val context: Context) {
                 val htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
                 val bgmPlaylistPaths: List<String>,
                 val bgmLrcDataList: List<LrcData?>,
+                val bgmCoverPaths: List<String?>,
                 val galleryItems: List<com.webtoapp.data.model.GalleryItem>,
                 val wordPressProjectDir: File?,
                 val nodejsProjectDir: File?,
@@ -334,6 +335,7 @@ class ApkBuilder(private val context: Context) {
                 ) webApp.htmlConfig?.files ?: emptyList() else emptyList()
                 val bgmPlaylistPaths = if (webApp.bgmEnabled) webApp.bgmConfig?.playlist?.map { it.path } ?: emptyList() else emptyList()
                 val bgmLrcDataList = if (webApp.bgmEnabled) webApp.bgmConfig?.playlist?.map { it.lrcData } ?: emptyList() else emptyList()
+                val bgmCoverPaths = if (webApp.bgmEnabled) webApp.bgmConfig?.playlist?.map { it.coverPath } ?: emptyList() else emptyList()
                 val galleryItems = if (webApp.appType == com.webtoapp.data.model.AppType.GALLERY) webApp.galleryConfig?.items ?: emptyList() else emptyList()
                 val htmlProjectId = webApp.htmlConfig?.projectId?.takeIf { it.isNotBlank() }
                 val htmlProjectDir = if (webApp.appType == com.webtoapp.data.model.AppType.HTML) {
@@ -349,6 +351,7 @@ class ApkBuilder(private val context: Context) {
                     htmlFiles = htmlFiles,
                     bgmPlaylistPaths = bgmPlaylistPaths,
                     bgmLrcDataList = bgmLrcDataList,
+                    bgmCoverPaths = bgmCoverPaths,
                     galleryItems = galleryItems,
                     wordPressProjectDir = wpDirDeferred.await(),
                     nodejsProjectDir = nodeDirDeferred.await(),
@@ -385,6 +388,7 @@ class ApkBuilder(private val context: Context) {
             val htmlFiles = prepared.htmlFiles
             val bgmPlaylistPaths = prepared.bgmPlaylistPaths
             val bgmLrcDataList = prepared.bgmLrcDataList
+            val bgmCoverPaths = prepared.bgmCoverPaths
             val galleryItems = prepared.galleryItems
             val wordPressProjectDir = prepared.wordPressProjectDir
             val nodejsProjectDir = prepared.nodejsProjectDir
@@ -513,7 +517,7 @@ class ApkBuilder(private val context: Context) {
             modifyApk(
                 templateApk, unsignedApk, config, webApp.iconPath,
                 webApp.getSplashMediaPath(), mediaContentPath,
-                bgmPlaylistPaths, bgmLrcDataList, htmlFiles, galleryItems,
+                bgmPlaylistPaths, bgmLrcDataList, bgmCoverPaths, htmlFiles, galleryItems,
                 encryptionConfig, encryptionKey,
                 architecture.abiFilters,
                 wordPressProjectDir,
@@ -769,6 +773,7 @@ class ApkBuilder(private val context: Context) {
         mediaContentPath: String? = null,
         bgmPlaylistPaths: List<String> = emptyList(),
         bgmLrcDataList: List<LrcData?> = emptyList(),
+        bgmCoverPaths: List<String?> = emptyList(),
         htmlFiles: List<com.webtoapp.data.model.HtmlFile> = emptyList(),
         galleryItems: List<com.webtoapp.data.model.GalleryItem> = emptyList(),
         encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED,
@@ -1013,7 +1018,7 @@ class ApkBuilder(private val context: Context) {
 
                 if (config.bgmEnabled && bgmPlaylistPaths.isNotEmpty()) {
                     logger.log("Embedding BGM: ${bgmPlaylistPaths.size} files")
-                    addBgmToAssets(zipOut, bgmPlaylistPaths, bgmLrcDataList, assetEncryptor, encryptionConfig)
+                    addBgmToAssets(zipOut, bgmPlaylistPaths, bgmLrcDataList, bgmCoverPaths, assetEncryptor, encryptionConfig)
                 }
 
                 val projectDir = when (config.appType) {
@@ -1948,6 +1953,7 @@ builtins.__import__ = _w2a_import
         zipOut: ZipOutputStream,
         bgmPaths: List<String>,
         lrcDataList: List<LrcData?>,
+        coverPaths: List<String?> = emptyList(),
         encryptor: AssetEncryptor? = null,
         encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED
     ) {
@@ -1960,7 +1966,6 @@ builtins.__import__ = _w2a_import
 
                 val bgmFile = File(bgmPath)
                 if (!bgmFile.exists()) {
-
                     if (bgmPath.startsWith("asset:///")) {
                         val assetPath = bgmPath.removePrefix("asset:///")
                         bgmBytes = context.assets.open(assetPath).use { it.readBytes() }
@@ -1983,12 +1988,10 @@ builtins.__import__ = _w2a_import
 
                 if (bgmBytes != null) {
                     if (encryptionConfig.enabled && encryptor != null) {
-
                         val encryptedData = encryptor.encrypt(bgmBytes, assetName)
                         writeEntryDeflated(zipOut, "assets/${assetName}.enc", encryptedData)
                         AppLogger.d("ApkBuilder", "BGM encrypted and embedded: assets/${assetName}.enc (${encryptedData.size} bytes)")
                     } else {
-
                         writeEntryStoredSimple(zipOut, "assets/$assetName", bgmBytes)
                         AppLogger.d("ApkBuilder", "BGM embedded(STORED): assets/$assetName (${bgmBytes.size} bytes)")
                     }
@@ -2009,11 +2012,58 @@ builtins.__import__ = _w2a_import
                         AppLogger.d("ApkBuilder", "LRC embedded: assets/$lrcAssetName")
                     }
                 }
+
+                val coverPath = coverPaths.getOrNull(index)
+                val coverAssetName = resolveBgmCoverAssetName(index, coverPath)
+                if (coverAssetName != null && !coverPath.isNullOrBlank()) {
+                    val coverBytes = loadBgmCoverBytes(coverPath)
+                    if (coverBytes != null && coverBytes.isNotEmpty()) {
+                        if (encryptionConfig.enabled && encryptor != null) {
+                            val encryptedCover = encryptor.encrypt(coverBytes, coverAssetName)
+                            writeEntryDeflated(zipOut, "assets/${coverAssetName}.enc", encryptedCover)
+                            AppLogger.d("ApkBuilder", "BGM cover encrypted and embedded: assets/${coverAssetName}.enc")
+                        } else {
+                            writeEntryStoredSimple(zipOut, "assets/$coverAssetName", coverBytes)
+                            AppLogger.d("ApkBuilder", "BGM cover embedded: assets/$coverAssetName (${coverBytes.size} bytes)")
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 AppLogger.e("ApkBuilder", "Failed to embed BGM: $bgmPath", e)
             }
         }
     }
+
+    private fun resolveBgmCoverAssetName(index: Int, coverPath: String?): String? {
+        if (coverPath.isNullOrBlank()) return null
+        val rawExt = when {
+            coverPath.startsWith("asset:///") -> coverPath.substringAfterLast('.', "jpg")
+            else -> File(coverPath).extension
+        }.lowercase().ifBlank { "jpg" }
+        val ext = when (rawExt) {
+            "jpeg", "jpe", "jfif" -> "jpg"
+            "png", "jpg", "webp", "gif", "bmp", "heic", "heif" -> rawExt
+            else -> "jpg"
+        }
+        return "bgm/bgm_$index.$ext"
+    }
+
+    private fun loadBgmCoverBytes(coverPath: String): ByteArray? {
+        return try {
+            if (coverPath.startsWith("asset:///")) {
+                val assetPath = coverPath.removePrefix("asset:///")
+                context.assets.open(assetPath).use { it.readBytes() }
+            } else {
+                val file = File(coverPath)
+                if (!file.exists() || !file.canRead() || file.length() == 0L) null
+                else file.readBytes()
+            }
+        } catch (e: Exception) {
+            AppLogger.e("ApkBuilder", "Failed to load BGM cover: $coverPath", e)
+            null
+        }
+    }
+
 
     private fun addHtmlFilesToAssets(
         zipOut: ZipOutputStream,
@@ -3591,11 +3641,23 @@ private fun WebApp.buildGalleryBlock(): GalleryBlock {
 
 private fun WebApp.buildBgmBlock(): BgmBlock {
     val playlist = bgmConfig?.playlist?.mapIndexed { index, item ->
+        val coverExt = item.coverPath?.let { path ->
+            val raw = when {
+                path.startsWith("asset:///") -> path.substringAfterLast('.', "jpg")
+                else -> java.io.File(path).extension
+            }.lowercase().ifBlank { "jpg" }
+            when (raw) {
+                "jpeg", "jpe", "jfif" -> "jpg"
+                "png", "jpg", "webp", "gif", "bmp", "heic", "heif" -> raw
+                else -> "jpg"
+            }
+        }
         BgmShellItem(
             id = item.id,
             name = item.name,
             assetPath = "bgm/bgm_$index.mp3",
             lrcAssetPath = if (item.lrcData != null) "bgm/bgm_$index.lrc" else null,
+            coverAssetPath = coverExt?.let { "bgm/bgm_$index.$it" },
             sortOrder = item.sortOrder
         )
     } ?: emptyList()
