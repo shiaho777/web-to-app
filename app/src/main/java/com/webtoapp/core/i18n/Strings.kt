@@ -4085,6 +4085,15 @@ object Strings {
     val writeCodeHint: String get() = StringsE.writeCodeHint
     val htmlCodePlaceholder: String get() = StringsE.htmlCodePlaceholder
     val codeEditorTitle: String get() = StringsE.codeEditorTitle
+    val codeEditorFind: String get() = StringsE.codeEditorFind
+    val codeEditorFindHint: String get() = StringsE.codeEditorFindHint
+    val codeEditorFindNext: String get() = StringsE.codeEditorFindNext
+    val codeEditorFindPrev: String get() = StringsE.codeEditorFindPrev
+    val codeEditorReplace: String get() = StringsE.codeEditorReplace
+    val codeEditorReplaceAll: String get() = StringsE.codeEditorReplaceAll
+    val codeEditorReplaceHint: String get() = StringsE.codeEditorReplaceHint
+    val codeEditorMatchCase: String get() = StringsE.codeEditorMatchCase
+    val codeEditorNoMatches: String get() = StringsE.codeEditorNoMatches
     val orWriteDirectly: String get() = StringsE.orWriteDirectly
     val deviceDisguiseTitle: String get() = StringsE.deviceDisguiseTitle
     val deviceDisguiseHint: String get() = StringsE.deviceDisguiseHint
@@ -55630,6 +55639,123 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Редактор кода"
         AppLanguage.JAPANESE -> "コードエディタ"
         AppLanguage.KOREAN -> "코드 편집기"
+    }
+
+    val codeEditorFind: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "查找"
+        AppLanguage.ENGLISH -> "Find"
+        AppLanguage.ARABIC -> "بحث"
+        AppLanguage.PORTUGUESE -> "Localizar"
+        AppLanguage.SPANISH -> "Buscar"
+        AppLanguage.FRENCH -> "Rechercher"
+        AppLanguage.GERMAN -> "Suchen"
+        AppLanguage.RUSSIAN -> "Найти"
+        AppLanguage.JAPANESE -> "検索"
+        AppLanguage.KOREAN -> "찾기"
+    }
+
+    val codeEditorFindHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "输入要查找的内容"
+        AppLanguage.ENGLISH -> "Find in code"
+        AppLanguage.ARABIC -> "ابحث في الكود"
+        AppLanguage.PORTUGUESE -> "Localizar no código"
+        AppLanguage.SPANISH -> "Buscar en el código"
+        AppLanguage.FRENCH -> "Rechercher dans le code"
+        AppLanguage.GERMAN -> "Im Code suchen"
+        AppLanguage.RUSSIAN -> "Найти в коде"
+        AppLanguage.JAPANESE -> "コード内を検索"
+        AppLanguage.KOREAN -> "코드에서 찾기"
+    }
+
+    val codeEditorFindNext: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下一个"
+        AppLanguage.ENGLISH -> "Next"
+        AppLanguage.ARABIC -> "التالي"
+        AppLanguage.PORTUGUESE -> "Próximo"
+        AppLanguage.SPANISH -> "Siguiente"
+        AppLanguage.FRENCH -> "Suivant"
+        AppLanguage.GERMAN -> "Weiter"
+        AppLanguage.RUSSIAN -> "Далее"
+        AppLanguage.JAPANESE -> "次へ"
+        AppLanguage.KOREAN -> "다음"
+    }
+
+    val codeEditorFindPrev: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "上一个"
+        AppLanguage.ENGLISH -> "Previous"
+        AppLanguage.ARABIC -> "السابق"
+        AppLanguage.PORTUGUESE -> "Anterior"
+        AppLanguage.SPANISH -> "Anterior"
+        AppLanguage.FRENCH -> "Précédent"
+        AppLanguage.GERMAN -> "Zurück"
+        AppLanguage.RUSSIAN -> "Назад"
+        AppLanguage.JAPANESE -> "前へ"
+        AppLanguage.KOREAN -> "이전"
+    }
+
+    val codeEditorReplace: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "替换"
+        AppLanguage.ENGLISH -> "Replace"
+        AppLanguage.ARABIC -> "استبدال"
+        AppLanguage.PORTUGUESE -> "Substituir"
+        AppLanguage.SPANISH -> "Reemplazar"
+        AppLanguage.FRENCH -> "Remplacer"
+        AppLanguage.GERMAN -> "Ersetzen"
+        AppLanguage.RUSSIAN -> "Заменить"
+        AppLanguage.JAPANESE -> "置換"
+        AppLanguage.KOREAN -> "바꾸기"
+    }
+
+    val codeEditorReplaceAll: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "全部替换"
+        AppLanguage.ENGLISH -> "Replace all"
+        AppLanguage.ARABIC -> "استبدال الكل"
+        AppLanguage.PORTUGUESE -> "Substituir tudo"
+        AppLanguage.SPANISH -> "Reemplazar todo"
+        AppLanguage.FRENCH -> "Tout remplacer"
+        AppLanguage.GERMAN -> "Alle ersetzen"
+        AppLanguage.RUSSIAN -> "Заменить все"
+        AppLanguage.JAPANESE -> "すべて置換"
+        AppLanguage.KOREAN -> "모두 바꾸기"
+    }
+
+    val codeEditorReplaceHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "替换为"
+        AppLanguage.ENGLISH -> "Replace with"
+        AppLanguage.ARABIC -> "استبدال بـ"
+        AppLanguage.PORTUGUESE -> "Substituir por"
+        AppLanguage.SPANISH -> "Reemplazar con"
+        AppLanguage.FRENCH -> "Remplacer par"
+        AppLanguage.GERMAN -> "Ersetzen durch"
+        AppLanguage.RUSSIAN -> "Заменить на"
+        AppLanguage.JAPANESE -> "置換後"
+        AppLanguage.KOREAN -> "바꿀 내용"
+    }
+
+    val codeEditorMatchCase: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "区分大小写"
+        AppLanguage.ENGLISH -> "Match case"
+        AppLanguage.ARABIC -> "مطابقة حالة الأحرف"
+        AppLanguage.PORTUGUESE -> "Diferenciar maiúsculas"
+        AppLanguage.SPANISH -> "Coincidir mayúsculas"
+        AppLanguage.FRENCH -> "Respecter la casse"
+        AppLanguage.GERMAN -> "Groß/Klein beachten"
+        AppLanguage.RUSSIAN -> "Учитывать регистр"
+        AppLanguage.JAPANESE -> "大文字小文字を区別"
+        AppLanguage.KOREAN -> "대소문자 구분"
+    }
+
+    val codeEditorNoMatches: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未找到匹配"
+        AppLanguage.ENGLISH -> "No matches"
+        AppLanguage.ARABIC -> "لا توجد نتائج"
+        AppLanguage.PORTUGUESE -> "Sem resultados"
+        AppLanguage.SPANISH -> "Sin coincidencias"
+        AppLanguage.FRENCH -> "Aucune correspondance"
+        AppLanguage.GERMAN -> "Keine Treffer"
+        AppLanguage.RUSSIAN -> "Совпадений нет"
+        AppLanguage.JAPANESE -> "一致なし"
+        AppLanguage.KOREAN -> "결과 없음"
     }
     val orWriteDirectly: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "或直接编写"
