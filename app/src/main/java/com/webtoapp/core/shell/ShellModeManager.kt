@@ -1611,6 +1611,9 @@ data class BgmShellItem(
     @SerializedName("lrcAssetPath")
     val lrcAssetPath: String? = null,
 
+    @SerializedName("coverAssetPath")
+    val coverAssetPath: String? = null,
+
     @SerializedName("sortOrder")
     val sortOrder: Int = 0
 )
