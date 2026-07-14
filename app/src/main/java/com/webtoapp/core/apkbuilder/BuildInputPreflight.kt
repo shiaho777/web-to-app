@@ -242,17 +242,33 @@ object BuildInputPreflight {
         }
     }
 
+    private fun MultiWebSite.hasLocalMaterial(): Boolean {
+        return localFilePath.isNotBlank() || inlineHtml.isNotBlank()
+    }
+
     private fun MultiWebSite.isUrlOnlySite(): Boolean {
+        if (!hasLocalMaterial() && url.isNotBlank()) {
+            return true
+        }
         return when (type.uppercase()) {
-            "URL" -> true
-            "EXISTING" -> localFilePath.isBlank()
-            else -> false
+            "URL", "" -> true
+            "EXISTING" -> !hasLocalMaterial()
+            "LOCAL", "INLINE_HTML" -> !hasLocalMaterial() && url.isNotBlank()
+            else -> !hasLocalMaterial() && url.isNotBlank()
         }
     }
 
     private fun MultiWebSite.requiresLocalFile(): Boolean {
-        val t = type.uppercase()
-        return t == "LOCAL" || t == "INLINE_HTML" || (t == "EXISTING" && localFilePath.isNotBlank())
+        if (isUrlOnlySite()) return false
+        if (type.uppercase() == "INLINE_HTML" && inlineHtml.isNotBlank() && localFilePath.isBlank()) {
+            return false
+        }
+        if (localFilePath.isNotBlank()) return true
+        return when (type.uppercase()) {
+            "LOCAL", "INLINE_HTML" -> true
+            "EXISTING" -> false
+            else -> false
+        }
     }
 
     private fun MutableList<BuildInputIssue>.requireMultiWebSites(
@@ -267,16 +283,22 @@ object BuildInputPreflight {
 
         var requiresLocalProject = false
         enabledSites.forEachIndexed { index, site ->
+            val key = "multiWebSites[$index]"
             when {
                 site.isUrlOnlySite() -> {
                     if (site.url.isBlank()) {
-                        add(BuildInputIssue("multiWebSites[$index]", "Multi-web URL site is missing its URL"))
+                        add(BuildInputIssue(key, "Multi-web URL site is missing its URL"))
                     }
                 }
-                site.requiresLocalFile() && site.localFilePath.isBlank() -> {
-                    add(BuildInputIssue("multiWebSites[$index]", "Multi-web local site is missing its file path"))
+                site.type.uppercase() == "INLINE_HTML" &&
+                    site.inlineHtml.isBlank() &&
+                    site.localFilePath.isBlank() -> {
+                    add(BuildInputIssue(key, "Multi-web inline site is missing HTML content"))
                 }
-                site.requiresLocalFile() -> {
+                site.requiresLocalFile() && site.localFilePath.isBlank() -> {
+                    add(BuildInputIssue(key, "Multi-web local site is missing its file path"))
+                }
+                site.localFilePath.isNotBlank() -> {
                     requiresLocalProject = true
                 }
             }
@@ -292,31 +314,32 @@ object BuildInputPreflight {
         enabledSites.forEachIndexed { index, site ->
             if (site.isUrlOnlySite() || site.localFilePath.isBlank()) return@forEachIndexed
             val expectedFile = File(projectDir, site.localFilePath.trimStart('/'))
+            val key = "multiWebSites[$index]"
             when {
                 !expectedFile.exists() -> add(
                     BuildInputIssue(
-                        "multiWebSites[$index]",
+                        key,
                         "Multi-web local site file does not exist",
                         expectedFile.absolutePath
                     )
                 )
                 !expectedFile.isFile -> add(
                     BuildInputIssue(
-                        "multiWebSites[$index]",
+                        key,
                         "Multi-web local site path is not a file",
                         expectedFile.absolutePath
                     )
                 )
                 !expectedFile.canRead() -> add(
                     BuildInputIssue(
-                        "multiWebSites[$index]",
+                        key,
                         "Multi-web local site file cannot be read",
                         expectedFile.absolutePath
                     )
                 )
                 expectedFile.length() == 0L -> add(
                     BuildInputIssue(
-                        "multiWebSites[$index]",
+                        key,
                         "Multi-web local site file is empty",
                         expectedFile.absolutePath
                     )

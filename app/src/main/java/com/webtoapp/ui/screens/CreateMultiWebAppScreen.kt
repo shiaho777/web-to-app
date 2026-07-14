@@ -229,14 +229,16 @@ fun CreateMultiWebAppScreen(
                                         var sourceProjectId = ""
                                         if (app.htmlConfig != null && app.htmlConfig!!.projectId.isNotBlank()) {
                                             val entryFile = app.htmlConfig!!.files.firstOrNull { it.type == HtmlFileType.HTML }
-                                            localFilePath = entryFile?.name ?: "index.html"
+                                                ?: app.htmlConfig!!.files.firstOrNull()
+                                            localFilePath = entryFile?.name?.takeIf { it.isNotBlank() } ?: "index.html"
                                             sourceProjectId = app.htmlConfig!!.projectId
                                         }
+                                        val siteType = if (localFilePath.isNotBlank()) "EXISTING" else "URL"
                                         MultiWebSite(
                                             id = UUID.randomUUID().toString(),
                                             name = app.name,
                                             url = app.url,
-                                            type = "EXISTING",
+                                            type = siteType,
                                             localFilePath = localFilePath,
                                             sourceAppId = app.id,
                                             sourceProjectId = sourceProjectId,
