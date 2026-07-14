@@ -3,6 +3,7 @@ package com.webtoapp.core.webview
 import android.annotation.SuppressLint
 import android.content.Context
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.port.PortConflictException
 import com.webtoapp.core.port.PortManager
 import java.io.*
 import java.net.InetAddress
@@ -90,7 +91,13 @@ class LocalHttpServer(
         private set
 
     @Synchronized
-    fun start(rootDir: File, enableCrossOriginIsolation: Boolean = false, owner: String = ""): String {
+    fun start(
+        rootDir: File,
+        enableCrossOriginIsolation: Boolean = false,
+        owner: String = "",
+        conflictPolicy: PortManager.ConflictPolicy = PortManager.ConflictPolicy.REASSIGN,
+        preferredPort: Int = -1
+    ): String {
         if (isRunning.get() && rootDirectory == rootDir && crossOriginIsolationEnabled == enableCrossOriginIsolation) {
 
             return buildLoopbackBaseUrl(actualPort)
@@ -104,10 +111,20 @@ class LocalHttpServer(
         try {
 
             val effectiveOwner = owner.ifBlank { rootDir.name }
-            val allocatedPort = if (port > 0) {
-                PortManager.allocateForLocalHttp(effectiveOwner, port)
-            } else {
-                PortManager.allocateForLocalHttp(effectiveOwner)
+            val preferred = when {
+                preferredPort > 0 -> preferredPort
+                preferredPort == 0 -> 0
+                port > 0 -> port
+                else -> 0
+            }
+            val allocatedPort = PortManager.allocateForLocalHttp(
+                owner = effectiveOwner,
+                preferred = preferred,
+                conflictPolicy = if (preferred > 0) conflictPolicy else PortManager.ConflictPolicy.REASSIGN
+            )
+
+            if (allocatedPort == PortManager.PORT_CONFLICT) {
+                throw PortConflictException(preferred)
             }
 
             val bindPort = if (allocatedPort in 1..65535) allocatedPort else 0
@@ -119,6 +136,28 @@ class LocalHttpServer(
             serverSocket = ServerSocket(bindPort, 50, bindAddress)
             actualPort = serverSocket?.localPort ?: bindPort
             isRunning.set(true)
+
+            when {
+                allocatedPort <= 0 -> {
+                    PortManager.trackExternal(
+                        actualPort,
+                        "localhttp:$effectiveOwner",
+                        PortManager.PortRange.LOCAL_HTTP
+                    )
+                }
+                actualPort != allocatedPort -> {
+                    PortManager.release(allocatedPort)
+                    PortManager.trackExternal(
+                        actualPort,
+                        "localhttp:$effectiveOwner",
+                        PortManager.PortRange.LOCAL_HTTP
+                    )
+                }
+            }
+
+            PortManager.registerStopHandler(actualPort) {
+                stopResourcesOnly()
+            }
 
             AppLogger.i(TAG, "服务器启动在端口 $actualPort, 根目录: ${rootDir.absolutePath}")
 
@@ -144,34 +183,47 @@ class LocalHttpServer(
 
             return buildLoopbackBaseUrl(actualPort)
         } catch (e: Exception) {
-
-            isRunning.set(false)
-            if (actualPort > 0) {
-                try { PortManager.release(actualPort) } catch (_: Exception) {}
+            val portToRelease = actualPort
+            stopResourcesOnly()
+            if (portToRelease > 0) {
+                try { PortManager.release(portToRelease) } catch (_: Exception) {}
             }
-            actualPort = 0
-            AppLogger.e(TAG, "启动本地服务器失败(可能缺少 INTERNET 权限或 socket 受限): ${e.message}", e)
+            if (e is PortConflictException) {
+                AppLogger.w(TAG, "本地服务器端口冲突: ${e.port}")
+            } else {
+                AppLogger.e(TAG, "启动本地服务器失败(可能缺少 INTERNET 权限或 socket 受限): ${e.message}", e)
+            }
             throw e
         }
     }
 
     @Synchronized
     fun stop() {
-        if (!isRunning.get()) return
+        if (!isRunning.get() && actualPort == 0 && serverSocket == null) return
 
+        val portToRelease = actualPort
+        stopResourcesOnly()
+        if (portToRelease > 0) {
+            PortManager.release(portToRelease)
+        }
+        AppLogger.i(TAG, "服务器已停止")
+    }
+
+    @Synchronized
+    private fun stopResourcesOnly() {
+        if (!isRunning.get() && serverSocket == null && actualPort == 0) return
         isRunning.set(false)
         try {
-
-            if (actualPort > 0) {
-                PortManager.release(actualPort)
-            }
             serverSocket?.close()
-            serverSocket = null
-            actualPort = 0
-            executor.shutdownNow()
-            AppLogger.i(TAG, "服务器已停止")
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "停止服务器失败", e)
+        } catch (_: Exception) {
+        }
+        serverSocket = null
+        actualPort = 0
+        try {
+            if (!executor.isShutdown) {
+                executor.shutdownNow()
+            }
+        } catch (_: Exception) {
         }
     }
 

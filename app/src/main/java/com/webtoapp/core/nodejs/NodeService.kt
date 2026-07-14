@@ -164,7 +164,15 @@ class NodeService : Service() {
             }
 
             val projectId = File(projectDir).name
-            val serverPort = PortManager.allocateForNodeJs(projectId, portPref)
+            val serverPort = PortManager.allocateForNodeJs(
+                projectId,
+                portPref,
+                conflictPolicy = if (portPref > 0) PortManager.ConflictPolicy.AUTO_KILL else PortManager.ConflictPolicy.REASSIGN
+            )
+            if (serverPort == PortManager.PORT_CONFLICT) {
+                replyFailed(replyTo, requestId, "端口被占用: $portPref")
+                return
+            }
             if (serverPort < 0) {
                 replyFailed(replyTo, requestId, "无法分配端口")
                 return

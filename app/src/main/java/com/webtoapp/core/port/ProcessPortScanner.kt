@@ -66,8 +66,10 @@ object ProcessPortScanner {
         allocations.map { (port, allocation) ->
             val health = healthResults[port]
             val processAlive = PortManager.isProcessAlive(port)
+            val hasStopHandler = PortManager.hasStopHandler(port)
             val type = inferServiceType(allocation.owner)
             val httpResponding = health?.responding == true
+            val managed = processAlive || hasStopHandler || allocation.external
 
             RunningService(
                 port = port,
@@ -75,8 +77,8 @@ object ProcessPortScanner {
                 type = type,
                 owner = extractOwnerName(allocation.owner),
                 url = "http://127.0.0.1:$port",
-                isResponding = httpResponding || processAlive,
-                processName = if (processAlive) getProcessNameFromType(type) else "",
+                isResponding = httpResponding || managed,
+                processName = if (managed) getProcessNameFromType(type) else "",
                 allocatedAt = allocation.allocatedAt,
                 responseTimeMs = health?.responseTimeMs ?: -1
             )

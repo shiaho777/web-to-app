@@ -15,6 +15,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.port.PortConflictException
+import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.webview.WebViewCallbacks
@@ -196,12 +198,21 @@ fun HtmlFrontendShellMode(
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
     var targetUrl by remember { mutableStateOf<String?>(null) }
-    val stableHttpPort = remember(config.packageName, config.siteId) {
-        val portOwner = if (config.siteId.isNotBlank()) "${config.packageName}_${config.siteId}" else config.packageName
-        com.webtoapp.core.webview.LocalHttpServer.stablePortForPackageName(portOwner)
+    val portOwner = remember(config.packageName, config.siteId) {
+        if (config.siteId.isNotBlank()) "${config.packageName}_${config.siteId}" else config.packageName
     }
-    val httpServer = remember(stableHttpPort) {
-        com.webtoapp.core.webview.LocalHttpServer(context, stableHttpPort)
+    val preferredHttpPort = remember(portOwner, config.htmlConfig.port) {
+        if (config.htmlConfig.port > 0) {
+            config.htmlConfig.port
+        } else {
+            com.webtoapp.core.webview.LocalHttpServer.stablePortForPackageName(portOwner)
+        }
+    }
+    val portConflictPolicy = remember(config.htmlConfig.portConflictMode) {
+        PortManager.ConflictPolicy.fromName(config.htmlConfig.portConflictMode)
+    }
+    val httpServer = remember(preferredHttpPort) {
+        com.webtoapp.core.webview.LocalHttpServer(context, preferredHttpPort)
     }
 
     DisposableEffect(httpServer) {
@@ -210,7 +221,13 @@ fun HtmlFrontendShellMode(
 
     val effectiveEntryFile = config.htmlConfig.getValidEntryFile()
 
-    LaunchedEffect(config.versionCode, effectiveEntryFile, config.webViewConfig.enableCrossOriginIsolation) {
+    LaunchedEffect(
+        config.versionCode,
+        effectiveEntryFile,
+        config.webViewConfig.enableCrossOriginIsolation,
+        preferredHttpPort,
+        portConflictPolicy
+    ) {
         withContext(Dispatchers.IO) {
             try {
                 val siteDir = File(context.filesDir, config.siteDirName.ifBlank { "html_shell_site" })
@@ -241,11 +258,17 @@ fun HtmlFrontendShellMode(
 
                     val shouldEnableIsolation = config.webViewConfig.enableCrossOriginIsolation ||
                         com.webtoapp.core.webview.LocalHttpServer.shouldEnableCrossOriginIsolation(siteDir)
-                    val baseUrl = httpServer.start(siteDir, enableCrossOriginIsolation = shouldEnableIsolation)
+                    val baseUrl = httpServer.start(
+                        rootDir = siteDir,
+                        enableCrossOriginIsolation = shouldEnableIsolation,
+                        owner = portOwner,
+                        conflictPolicy = portConflictPolicy,
+                        preferredPort = preferredHttpPort
+                    )
                     targetUrl = buildLocalHttpTargetUrl(baseUrl, resolvedEntry)
                     AppLogger.i(
                         "HtmlShell",
-                        "HTML Shell ready (HTTP server): url=$targetUrl, entry=$resolvedEntry, port=$stableHttpPort, crossOriginIsolation=$shouldEnableIsolation"
+                        "HTML Shell ready (HTTP server): url=$targetUrl, entry=$resolvedEntry, port=${httpServer.actualPort}, crossOriginIsolation=$shouldEnableIsolation"
                     )
                 } else {
 
@@ -262,7 +285,10 @@ fun HtmlFrontendShellMode(
             } catch (e: Exception) {
                 AppLogger.e("HtmlShell", "HTML Shell Launch failed", e)
                 phase = "error"
-                errorMsg = e.message ?: Strings.serverStartFailed
+                errorMsg = when (e) {
+                    is PortConflictException -> "${Strings.portConflictTitle}: ${e.port}"
+                    else -> e.message ?: Strings.serverStartFailed
+                }
                 errorThrowable = e
             }
         }
@@ -370,8 +396,10 @@ fun NodeJsStaticShellMode(
     var errorMsg by remember { mutableStateOf<String?>(null) }
     var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
     var targetUrl by remember { mutableStateOf<String?>(null) }
-    val stableHttpPort = remember(config.packageName, config.siteId) {
-        val portOwner = if (config.siteId.isNotBlank()) "${config.packageName}_${config.siteId}" else config.packageName
+    val portOwner = remember(config.packageName, config.siteId) {
+        if (config.siteId.isNotBlank()) "${config.packageName}_${config.siteId}" else config.packageName
+    }
+    val stableHttpPort = remember(portOwner) {
         com.webtoapp.core.webview.LocalHttpServer.stablePortForPackageName(portOwner)
     }
     val httpServer = remember(stableHttpPort) {
@@ -404,7 +432,12 @@ fun NodeJsStaticShellMode(
                 phase = "starting"
                 val docRoot = resolveStaticDocRoot(siteDir)
                 val resolvedEntry = resolveExtractedHtmlEntry(docRoot, config.nodejsConfig.entryFile)
-                val baseUrl = httpServer.start(docRoot)
+                val baseUrl = httpServer.start(
+                    rootDir = docRoot,
+                    owner = portOwner,
+                    conflictPolicy = PortManager.ConflictPolicy.AUTO_KILL,
+                    preferredPort = stableHttpPort
+                )
                 targetUrl = buildLocalHttpTargetUrl(baseUrl, resolvedEntry)
                 AppLogger.i(
                     "NodeJsStaticShell",
