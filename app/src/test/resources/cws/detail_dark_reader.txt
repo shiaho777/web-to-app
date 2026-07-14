@@ -1,0 +1,6 @@
+property="og:image" content="https://lh3.googleusercontent.com/T66wTLk-gpBBGsMm0SDJJ3VaI8YM0Utr8NaGCSANmXOfb84K-9GmyXORLKoslfxtasKtQ4spDCdq_zlp_t3QQ6SI0A=s128-rj-sc0x00ffffff"
+property="og:title" content="Dark Reader - Chrome Web Store"
+"eimadpbcbfnmbkopoojfekhnkhdbieeh","https://lh3.googleusercontent.com/T66wTLk-gpBBGsMm0SDJJ3VaI8YM0Utr8NaGCSANmXOfb84K-9GmyXORLKoslfxtasKtQ4spDCdq_zlp_t3QQ6SI0A","Dark Reader",4.662096282754418,13128
+4.7 out of 5
+13.1K ratings
+6,000,000 users

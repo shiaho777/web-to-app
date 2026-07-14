@@ -3733,6 +3733,20 @@ object Strings {
     val cwsNoResults: String get() = StringsE.cwsNoResults
     val cwsSearchFailed: String get() = StringsE.cwsSearchFailed
     val cwsSearchIntro: String get() = StringsE.cwsSearchIntro
+    val cwsBrowseIntro: String get() = StringsE.cwsBrowseIntro
+    val cwsFeaturedTitle: String get() = StringsE.cwsFeaturedTitle
+    val cwsCategoryFeatured: String get() = StringsE.cwsCategoryFeatured
+    val cwsCategoryAdBlocking: String get() = StringsE.cwsCategoryAdBlocking
+    val cwsCategoryPrivacy: String get() = StringsE.cwsCategoryPrivacy
+    val cwsCategoryYoutube: String get() = StringsE.cwsCategoryYoutube
+    val cwsCategoryProductivity: String get() = StringsE.cwsCategoryProductivity
+    val cwsCategoryDeveloper: String get() = StringsE.cwsCategoryDeveloper
+    val cwsCategoryStyling: String get() = StringsE.cwsCategoryStyling
+    val cwsSortLabel: String get() = StringsE.cwsSortLabel
+    val cwsSortDefault: String get() = StringsE.cwsSortDefault
+    val cwsSortRating: String get() = StringsE.cwsSortRating
+    val cwsSortReviews: String get() = StringsE.cwsSortReviews
+    val cwsSortDownloads: String get() = StringsE.cwsSortDownloads
     val cwsDlModule: String get() = StringsE.cwsDlModule
     val cwsDlIcon: String get() = StringsE.cwsDlIcon
     val cwsDlTags: String get() = StringsE.cwsDlTags
@@ -51282,6 +51296,189 @@ object StringsE {
         AppLanguage.JAPANESE -> "キーワードを入力して Chrome Web Store を検索（Google にアクセスできるネットワークが必要）"
         AppLanguage.KOREAN -> "키워드를 입력하여 Chrome 웹 스토어를 검색 (Google에 접근 가능한 네트워크 필요)"
     }
+
+    val cwsBrowseIntro: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "浏览精选扩展，或搜索 Chrome 网上应用店（搜索需可访问 Google）"
+        AppLanguage.ENGLISH -> "Browse featured extensions, or search the Chrome Web Store (search needs Google access)"
+        AppLanguage.ARABIC -> "تصفّح الإضافات المميزة أو ابحث في متجر Chrome (البحث يتطلب الوصول إلى Google)"
+        AppLanguage.PORTUGUESE -> "Navegue pelas extensões em destaque ou pesquise na Chrome Web Store (a pesquisa precisa de acesso ao Google)"
+        AppLanguage.SPANISH -> "Explora extensiones destacadas o busca en la Chrome Web Store (la búsqueda necesita acceso a Google)"
+        AppLanguage.FRENCH -> "Parcourez les extensions en vedette ou recherchez dans le Chrome Web Store (la recherche nécessite l’accès à Google)"
+        AppLanguage.GERMAN -> "Beliebte Erweiterungen durchstöbern oder im Chrome Web Store suchen (Suche braucht Google-Zugang)"
+        AppLanguage.RUSSIAN -> "Смотрите избранные расширения или ищите в Chrome Web Store (поиск требует доступа к Google)"
+        AppLanguage.JAPANESE -> "おすすめ拡張機能を閲覧するか、Chrome Web Store を検索（検索には Google へのアクセスが必要）"
+        AppLanguage.KOREAN -> "추천 확장 프로그램을 둘러보거나 Chrome 웹 스토어를 검색하세요 (검색은 Google 접속 필요)"
+    }
+
+    val cwsFeaturedTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "精选扩展"
+        AppLanguage.ENGLISH -> "Featured"
+        AppLanguage.ARABIC -> "مميزة"
+        AppLanguage.PORTUGUESE -> "Em destaque"
+        AppLanguage.SPANISH -> "Destacadas"
+        AppLanguage.FRENCH -> "En vedette"
+        AppLanguage.GERMAN -> "Empfohlen"
+        AppLanguage.RUSSIAN -> "Избранное"
+        AppLanguage.JAPANESE -> "おすすめ"
+        AppLanguage.KOREAN -> "추천"
+    }
+
+    val cwsCategoryFeatured: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "精选"
+        AppLanguage.ENGLISH -> "Featured"
+        AppLanguage.ARABIC -> "مميزة"
+        AppLanguage.PORTUGUESE -> "Destaques"
+        AppLanguage.SPANISH -> "Destacadas"
+        AppLanguage.FRENCH -> "Vedette"
+        AppLanguage.GERMAN -> "Empfohlen"
+        AppLanguage.RUSSIAN -> "Избранное"
+        AppLanguage.JAPANESE -> "おすすめ"
+        AppLanguage.KOREAN -> "추천"
+    }
+
+    val cwsCategoryAdBlocking: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "广告拦截"
+        AppLanguage.ENGLISH -> "Ad blocking"
+        AppLanguage.ARABIC -> "حظر الإعلانات"
+        AppLanguage.PORTUGUESE -> "Bloqueio de anúncios"
+        AppLanguage.SPANISH -> "Bloqueo de anuncios"
+        AppLanguage.FRENCH -> "Blocage de pubs"
+        AppLanguage.GERMAN -> "Werbeblocker"
+        AppLanguage.RUSSIAN -> "Блокировка рекламы"
+        AppLanguage.JAPANESE -> "広告ブロック"
+        AppLanguage.KOREAN -> "광고 차단"
+    }
+
+    val cwsCategoryPrivacy: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "隐私"
+        AppLanguage.ENGLISH -> "Privacy"
+        AppLanguage.ARABIC -> "الخصوصية"
+        AppLanguage.PORTUGUESE -> "Privacidade"
+        AppLanguage.SPANISH -> "Privacidad"
+        AppLanguage.FRENCH -> "Confidentialité"
+        AppLanguage.GERMAN -> "Datenschutz"
+        AppLanguage.RUSSIAN -> "Конфиденциальность"
+        AppLanguage.JAPANESE -> "プライバシー"
+        AppLanguage.KOREAN -> "개인정보"
+    }
+
+    val cwsCategoryYoutube: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "YouTube"
+        AppLanguage.ENGLISH -> "YouTube"
+        AppLanguage.ARABIC -> "YouTube"
+        AppLanguage.PORTUGUESE -> "YouTube"
+        AppLanguage.SPANISH -> "YouTube"
+        AppLanguage.FRENCH -> "YouTube"
+        AppLanguage.GERMAN -> "YouTube"
+        AppLanguage.RUSSIAN -> "YouTube"
+        AppLanguage.JAPANESE -> "YouTube"
+        AppLanguage.KOREAN -> "YouTube"
+    }
+
+    val cwsCategoryProductivity: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "效率"
+        AppLanguage.ENGLISH -> "Productivity"
+        AppLanguage.ARABIC -> "الإنتاجية"
+        AppLanguage.PORTUGUESE -> "Produtividade"
+        AppLanguage.SPANISH -> "Productividad"
+        AppLanguage.FRENCH -> "Productivité"
+        AppLanguage.GERMAN -> "Produktivität"
+        AppLanguage.RUSSIAN -> "Продуктивность"
+        AppLanguage.JAPANESE -> "生産性"
+        AppLanguage.KOREAN -> "생산성"
+    }
+
+    val cwsCategoryDeveloper: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "开发者"
+        AppLanguage.ENGLISH -> "Developer"
+        AppLanguage.ARABIC -> "المطوّرون"
+        AppLanguage.PORTUGUESE -> "Desenvolvedor"
+        AppLanguage.SPANISH -> "Desarrollador"
+        AppLanguage.FRENCH -> "Développeur"
+        AppLanguage.GERMAN -> "Entwickler"
+        AppLanguage.RUSSIAN -> "Разработка"
+        AppLanguage.JAPANESE -> "開発者"
+        AppLanguage.KOREAN -> "개발자"
+    }
+
+    val cwsCategoryStyling: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "外观"
+        AppLanguage.ENGLISH -> "Styling"
+        AppLanguage.ARABIC -> "المظهر"
+        AppLanguage.PORTUGUESE -> "Estilo"
+        AppLanguage.SPANISH -> "Estilo"
+        AppLanguage.FRENCH -> "Style"
+        AppLanguage.GERMAN -> "Design"
+        AppLanguage.RUSSIAN -> "Оформление"
+        AppLanguage.JAPANESE -> "スタイル"
+        AppLanguage.KOREAN -> "스타일"
+    }
+
+    val cwsSortLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "排序"
+        AppLanguage.ENGLISH -> "Sort"
+        AppLanguage.ARABIC -> "الترتيب"
+        AppLanguage.PORTUGUESE -> "Ordenar"
+        AppLanguage.SPANISH -> "Ordenar"
+        AppLanguage.FRENCH -> "Trier"
+        AppLanguage.GERMAN -> "Sortieren"
+        AppLanguage.RUSSIAN -> "Сортировка"
+        AppLanguage.JAPANESE -> "並べ替え"
+        AppLanguage.KOREAN -> "정렬"
+    }
+
+    val cwsSortDefault: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "默认"
+        AppLanguage.ENGLISH -> "Default"
+        AppLanguage.ARABIC -> "افتراضي"
+        AppLanguage.PORTUGUESE -> "Padrão"
+        AppLanguage.SPANISH -> "Predeterminado"
+        AppLanguage.FRENCH -> "Par défaut"
+        AppLanguage.GERMAN -> "Standard"
+        AppLanguage.RUSSIAN -> "По умолчанию"
+        AppLanguage.JAPANESE -> "デフォルト"
+        AppLanguage.KOREAN -> "기본"
+    }
+
+    val cwsSortRating: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "评分"
+        AppLanguage.ENGLISH -> "Rating"
+        AppLanguage.ARABIC -> "التقييم"
+        AppLanguage.PORTUGUESE -> "Avaliação"
+        AppLanguage.SPANISH -> "Valoración"
+        AppLanguage.FRENCH -> "Note"
+        AppLanguage.GERMAN -> "Bewertung"
+        AppLanguage.RUSSIAN -> "Рейтинг"
+        AppLanguage.JAPANESE -> "評価"
+        AppLanguage.KOREAN -> "평점"
+    }
+
+    val cwsSortReviews: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "评论数"
+        AppLanguage.ENGLISH -> "Reviews"
+        AppLanguage.ARABIC -> "المراجعات"
+        AppLanguage.PORTUGUESE -> "Avaliações"
+        AppLanguage.SPANISH -> "Reseñas"
+        AppLanguage.FRENCH -> "Avis"
+        AppLanguage.GERMAN -> "Rezensionen"
+        AppLanguage.RUSSIAN -> "Отзывы"
+        AppLanguage.JAPANESE -> "レビュー数"
+        AppLanguage.KOREAN -> "리뷰 수"
+    }
+
+    val cwsSortDownloads: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下载量"
+        AppLanguage.ENGLISH -> "Users"
+        AppLanguage.ARABIC -> "المستخدمون"
+        AppLanguage.PORTUGUESE -> "Utilizadores"
+        AppLanguage.SPANISH -> "Usuarios"
+        AppLanguage.FRENCH -> "Utilisateurs"
+        AppLanguage.GERMAN -> "Nutzer"
+        AppLanguage.RUSSIAN -> "Пользователи"
+        AppLanguage.JAPANESE -> "ユーザー数"
+        AppLanguage.KOREAN -> "사용자 수"
+    }
+
     val cwsDlModule: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "正在下载扩展"
         AppLanguage.ENGLISH -> "Downloading extension"

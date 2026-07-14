@@ -272,7 +272,7 @@ class ModuleMarketRepository private constructor(
 
     fun githubUrl(entry: ModuleMarketEntry): String =
         if (entry.sourceType == "CHROME_EXTENSION" && entry.storeId != null) {
-            entry.homepage ?: "https://chromewebstore.google.com/detail/${entry.storeId}"
+            "https://chromewebstore.google.com/detail/${entry.storeId}"
         } else {
             "https://github.com/$OWNER/$REPO/tree/$BRANCH/$MODULES_DIR/${entry.path}"
         }
