@@ -62,6 +62,7 @@ A quick scan of what's in the box. Each links to the detailed feature map below.
 | **APK/AAB output** | On-device V1/V2/V3 signing, Google Play AAB export with targetSdk rewrite, keystore management |
 | **AI coding** | Prompt-driven generation of web apps, modules, userscripts, and runtime projects; auto-retry on 429/5xx |
 | **Host languages** | **10 UI languages** — 中文 · English · العربية · Português · Español · Français · Deutsch · Русский · 日本語 · 한국어 (Arabic RTL) |
+| **Notifications** | Web Notification polyfill · URL polling · WebSocket push · FCM (BYO Firebase) · deep links · boot restore |
 
 ---
 
@@ -151,7 +152,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **Host app language** — switch the entire builder UI among 10 languages (中文 / English / العربية / Português / Español / Français / Deutsch / Русский / 日本語 / 한국어); Arabic is full RTL.
 - **Translation overlay** — 20 target languages via Google, MyMemory, LibreTranslate, Lingva, or Auto engines (in-page translate for the *content* of generated apps, separate from host UI language).
 - **Print bridge** — intercept `window.print()` and blob/data-URL PDFs to the Android print framework / PDF export (with an onPageStarted re-inject fallback so late navigations stay hooked).
-- **Notifications** — Web Notification polyfill, scheduled and persistent notifications with progress, URL-polling foreground service, deep links, boot auto-start, scheduled launch, and background-run service.
+- **Notifications** — Web Notification polyfill, URL-polling and **WebSocket** push channels, **FCM** (bring-your-own Firebase project / optional `google-services.json`), scheduled and persistent notifications with progress, optional token-registration callbacks, deep links, boot / update restore, scheduled launch, and background-run service. OEM vendor SDKs are not bundled; non-GMS devices can use the self-hosted WebSocket channel.
 - **Per-app usage stats** with Vico charts and URL health monitoring.
 
 </details>

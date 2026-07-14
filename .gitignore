@@ -69,3 +69,7 @@ admin/
 node_modules/
 __pycache__/
 *.pyc.kotlin/
+
+# Local IDE / agent junk
+.cursor/
+.DS_Store
