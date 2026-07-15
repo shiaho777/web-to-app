@@ -77,12 +77,29 @@ class ApkBuilder(private val context: Context) {
     private val logger = BuildLogger(context)
     private val encryptedApkBuilder = EncryptedApkBuilder(context)
     private val keyManager = KeyManager.getInstance(context)
+    private val buildCache = ApkBuildCache(context)
 
     private val outputDir = resolveOutputDir(context)
     private val tempDir = File(context.cacheDir, "apk_build_temp").apply { mkdirs() }
 
     private val originalAppName = "WebToApp"
     private val originalPackageName = "com.webtoapp"
+
+    fun clearIncrementalCache(webApp: WebApp, packageName: String) {
+        buildCache.clear(webApp, packageName)
+    }
+
+    fun clearIncrementalCache(webApp: WebApp) {
+        val customPkg = webApp.apkExportConfig?.customPackageName?.takeIf {
+            it.isNotBlank() && it.matches(PACKAGE_NAME_REGEX)
+        }
+        val packageName = customPkg ?: generatePackageName(webApp.name)
+        buildCache.clear(webApp, packageName)
+    }
+
+    fun clearAllIncrementalCaches() {
+        buildCache.clearAll()
+    }
 
     fun cleanTempFiles() {
         try {
@@ -122,6 +139,7 @@ class ApkBuilder(private val context: Context) {
 
     suspend fun buildApk(
         webApp: WebApp,
+        forceFullRebuild: Boolean = false,
         onProgress: (Int, String) -> Unit = { _, _ -> }
     ): BuildResult = withContext(Dispatchers.IO) {
         var currentStage = BuildStage.PREPARE
@@ -494,6 +512,43 @@ class ApkBuilder(private val context: Context) {
                 )
             }
 
+            val errorPageMediaPath = webApp.webViewConfig.errorPageConfig.customMediaPath
+                ?.takeIf { it.isNotBlank() && !it.startsWith("data:") && !it.startsWith("http") && !it.startsWith("file://") }
+            val multiWebProjectDir = config.multiWebProjectId.takeIf { it.isNotBlank() }
+                ?.let { File(context.filesDir, "html_projects/$it") }
+
+            logger.section("Incremental Build Plan")
+            val incrementalPlan = buildCache.plan(
+                webApp = webApp,
+                packageName = packageName,
+                config = config,
+                templateApk = templateApk,
+                encryptionEnabled = encryptionConfig.enabled,
+                abiFilters = architecture.abiFilters,
+                projectDirs = listOf(
+                    wordPressProjectDir,
+                    nodejsProjectDir,
+                    frontendProjectDir,
+                    phpAppProjectDir,
+                    pythonAppProjectDir,
+                    goAppProjectDir,
+                    htmlProjectDir,
+                    multiWebProjectDir
+                ),
+                mediaContentPath = mediaContentPath,
+                splashMediaPath = webApp.getSplashMediaPath(),
+                bgmPlaylistPaths = bgmPlaylistPaths,
+                htmlFiles = htmlFiles,
+                galleryItems = galleryItems,
+                errorPageMediaPath = errorPageMediaPath,
+                forceFullRebuild = forceFullRebuild
+            )
+            logger.logKeyValue("incrementalMode", incrementalPlan.mode.name)
+            logger.logKeyValue("incrementalReason", incrementalPlan.reason)
+            logger.logKeyValue("identityFingerprint", incrementalPlan.identityFingerprint.take(16) + "...")
+            logger.logKeyValue("contentFingerprint", incrementalPlan.contentFingerprint.take(16) + "...")
+            var usedIncremental = false
+
             logger.section("Modify APK Content")
             currentStage = BuildStage.MODIFY_APK
             if (encryptionConfig.enabled) {
@@ -504,33 +559,136 @@ class ApkBuilder(private val context: Context) {
                 if (encryptionConfig.enabled) "Encrypting and processing resources..." else "Processing resources..."
             )
 
-            modifyApk(
-                templateApk, unsignedApk, config, webApp.iconPath,
-                webApp.getSplashMediaPath(), mediaContentPath,
-                bgmPlaylistPaths, bgmLrcDataList, bgmCoverPaths, htmlFiles, galleryItems,
-                encryptionConfig, encryptionKey,
-                architecture.abiFilters,
-                wordPressProjectDir,
-                nodejsProjectDir,
-                frontendProjectDir,
-                phpAppProjectDir,
-                pythonAppProjectDir,
-                goAppProjectDir,
-                htmlProjectDir,
-                errorPageMediaPath = webApp.webViewConfig.errorPageConfig.customMediaPath
-                    ?.takeIf { it.isNotBlank() && !it.startsWith("data:") && !it.startsWith("http") && !it.startsWith("file://") },
-                perfConfig
-            ) { progress, stageMessage ->
-                if (stageMessage.isNotBlank()) {
-                    progressMessage.set(stageMessage)
+            when (incrementalPlan.mode) {
+                IncrementalBuildMode.REUSE_UNSIGNED -> {
+                    usedIncremental = true
+                    onProgress(35, "Reusing cached unsigned APK...")
+                    val cached = incrementalPlan.cachedUnsigned
+                        ?: throw IllegalStateException("REUSE_UNSIGNED without cache file")
+                    cached.copyTo(unsignedApk, overwrite = true)
+                    logger.log("Reused cached unsigned APK (${unsignedApk.length() / 1024} KB)")
                 }
-                val msg = when {
-                    stageMessage.isNotBlank() -> stageMessage
-                    perfOptEnabled && encryptionConfig.enabled -> "Optimizing & encrypting resources..."
-                    perfOptEnabled -> "Optimizing resources..."
-                    else -> progressMessage.get()
+                IncrementalBuildMode.CONTENT_OVERLAY -> {
+                    usedIncremental = true
+                    onProgress(30, "Applying content overlay...")
+                    val cached = incrementalPlan.cachedUnsigned
+                        ?: throw IllegalStateException("CONTENT_OVERLAY without cache file")
+                    try {
+                        modifyApk(
+                            sourceApk = cached,
+                            outputApk = unsignedApk,
+                            config = config,
+                            iconPath = webApp.iconPath,
+                            splashMediaPath = webApp.getSplashMediaPath(),
+                            mediaContentPath = mediaContentPath,
+                            bgmPlaylistPaths = bgmPlaylistPaths,
+                            bgmLrcDataList = bgmLrcDataList,
+                            bgmCoverPaths = bgmCoverPaths,
+                            htmlFiles = htmlFiles,
+                            galleryItems = galleryItems,
+                            encryptionConfig = encryptionConfig,
+                            encryptionKey = encryptionKey,
+                            abiFilters = architecture.abiFilters,
+                            wordPressProjectDir = wordPressProjectDir,
+                            nodejsProjectDir = nodejsProjectDir,
+                            frontendProjectDir = frontendProjectDir,
+                            phpAppProjectDir = phpAppProjectDir,
+                            pythonAppProjectDir = pythonAppProjectDir,
+                            goAppProjectDir = goAppProjectDir,
+                            htmlProjectDir = htmlProjectDir,
+                            errorPageMediaPath = errorPageMediaPath,
+                            perfConfig = perfConfig,
+                            mode = ModifyApkMode.CONTENT_OVERLAY
+                        ) { progress, stageMessage ->
+                            if (stageMessage.isNotBlank()) {
+                                progressMessage.set(stageMessage)
+                            }
+                            val msg = stageMessage.ifBlank { "Updating app content..." }
+                            onProgress(30 + (progress * 0.4).toInt(), msg)
+                        }
+                    } catch (e: Exception) {
+                        logger.warn("Content overlay failed, falling back to full rebuild: ${e.message}")
+                        AppLogger.w("ApkBuilder", "Content overlay failed, fallback full", e)
+                        usedIncremental = false
+                        if (unsignedApk.exists()) unsignedApk.delete()
+                        modifyApk(
+                            sourceApk = templateApk,
+                            outputApk = unsignedApk,
+                            config = config,
+                            iconPath = webApp.iconPath,
+                            splashMediaPath = webApp.getSplashMediaPath(),
+                            mediaContentPath = mediaContentPath,
+                            bgmPlaylistPaths = bgmPlaylistPaths,
+                            bgmLrcDataList = bgmLrcDataList,
+                            bgmCoverPaths = bgmCoverPaths,
+                            htmlFiles = htmlFiles,
+                            galleryItems = galleryItems,
+                            encryptionConfig = encryptionConfig,
+                            encryptionKey = encryptionKey,
+                            abiFilters = architecture.abiFilters,
+                            wordPressProjectDir = wordPressProjectDir,
+                            nodejsProjectDir = nodejsProjectDir,
+                            frontendProjectDir = frontendProjectDir,
+                            phpAppProjectDir = phpAppProjectDir,
+                            pythonAppProjectDir = pythonAppProjectDir,
+                            goAppProjectDir = goAppProjectDir,
+                            htmlProjectDir = htmlProjectDir,
+                            errorPageMediaPath = errorPageMediaPath,
+                            perfConfig = perfConfig,
+                            mode = ModifyApkMode.FULL
+                        ) { progress, stageMessage ->
+                            if (stageMessage.isNotBlank()) {
+                                progressMessage.set(stageMessage)
+                            }
+                            val msg = when {
+                                stageMessage.isNotBlank() -> stageMessage
+                                perfOptEnabled && encryptionConfig.enabled -> "Optimizing & encrypting resources..."
+                                perfOptEnabled -> "Optimizing resources..."
+                                else -> progressMessage.get()
+                            }
+                            onProgress(30 + (progress * 0.4).toInt(), msg)
+                        }
+                    }
                 }
-                onProgress(30 + (progress * 0.4).toInt(), msg)
+                IncrementalBuildMode.FULL -> {
+                    modifyApk(
+                        sourceApk = templateApk,
+                        outputApk = unsignedApk,
+                        config = config,
+                        iconPath = webApp.iconPath,
+                        splashMediaPath = webApp.getSplashMediaPath(),
+                        mediaContentPath = mediaContentPath,
+                        bgmPlaylistPaths = bgmPlaylistPaths,
+                        bgmLrcDataList = bgmLrcDataList,
+                        bgmCoverPaths = bgmCoverPaths,
+                        htmlFiles = htmlFiles,
+                        galleryItems = galleryItems,
+                        encryptionConfig = encryptionConfig,
+                        encryptionKey = encryptionKey,
+                        abiFilters = architecture.abiFilters,
+                        wordPressProjectDir = wordPressProjectDir,
+                        nodejsProjectDir = nodejsProjectDir,
+                        frontendProjectDir = frontendProjectDir,
+                        phpAppProjectDir = phpAppProjectDir,
+                        pythonAppProjectDir = pythonAppProjectDir,
+                        goAppProjectDir = goAppProjectDir,
+                        htmlProjectDir = htmlProjectDir,
+                        errorPageMediaPath = errorPageMediaPath,
+                        perfConfig = perfConfig,
+                        mode = ModifyApkMode.FULL
+                    ) { progress, stageMessage ->
+                        if (stageMessage.isNotBlank()) {
+                            progressMessage.set(stageMessage)
+                        }
+                        val msg = when {
+                            stageMessage.isNotBlank() -> stageMessage
+                            perfOptEnabled && encryptionConfig.enabled -> "Optimizing & encrypting resources..."
+                            perfOptEnabled -> "Optimizing resources..."
+                            else -> progressMessage.get()
+                        }
+                        onProgress(30 + (progress * 0.4).toInt(), msg)
+                    }
+                }
             }
 
             onProgress(70, "Signing APK...")
@@ -597,6 +755,17 @@ class ApkBuilder(private val context: Context) {
                         "issueCount" to artifactVerification.issues.size,
                         "issues" to artifactVerification.issues.joinToString(" | ") { it.summary() }
                     )
+                )
+            }
+
+            if (!encryptionConfig.enabled && unsignedApk.isFile && unsignedApk.length() > 0L) {
+                buildCache.saveUnsigned(
+                    webApp = webApp,
+                    packageName = packageName,
+                    unsignedApk = unsignedApk,
+                    identityFingerprint = incrementalPlan.identityFingerprint,
+                    contentFingerprint = incrementalPlan.contentFingerprint,
+                    shellTemplateId = incrementalPlan.shellTemplateId
                 )
             }
 
@@ -681,7 +850,27 @@ class ApkBuilder(private val context: Context) {
             logger.logKeyValue("finalApkSize", "${signedApk.length() / 1024} KB")
             logger.endLog(true, "Build successful")
 
-            BuildResult.Success(signedApk, logger.getCurrentLogPath(), analysisReport)
+            logger.logKeyValue("buildMode", if (usedIncremental) incrementalPlan.mode.name else IncrementalBuildMode.FULL.name)
+            logger.logKeyValue("incrementalUsed", usedIncremental)
+            val resolvedMode = if (usedIncremental) {
+                incrementalPlan.mode.name
+            } else {
+                IncrementalBuildMode.FULL.name
+            }
+            BuildResult.Success(
+                apkFile = signedApk,
+                logPath = logger.getCurrentLogPath(),
+                analysisReport = analysisReport,
+                incremental = usedIncremental,
+                buildMode = resolvedMode,
+                buildReason = if (usedIncremental) {
+                    incrementalPlan.reason
+                } else if (incrementalPlan.mode == IncrementalBuildMode.FULL) {
+                    incrementalPlan.reason
+                } else {
+                    "fallbackFull:" + incrementalPlan.reason
+                }
+            )
 
         } catch (e: Exception) {
             cleanTempFiles()
@@ -778,9 +967,13 @@ class ApkBuilder(private val context: Context) {
         htmlProjectDir: File? = null,
         errorPageMediaPath: String? = null,
         perfConfig: com.webtoapp.core.linux.PerformanceOptimizer.OptimizeConfig? = null,
+        mode: ModifyApkMode = ModifyApkMode.FULL,
         onProgress: (Int, String) -> Unit
     ) {
-        logger.log("modifyApk started, encryption=${encryptionConfig.enabled}, abiFilter=${abiFilters.ifEmpty { "all" }}")
+        logger.log(
+            "modifyApk started, mode=${mode.name}, encryption=${encryptionConfig.enabled}, " +
+                "abiFilter=${abiFilters.ifEmpty { "all" }}, source=${sourceApk.name}"
+        )
         val iconBitmap = iconPath?.let { template.loadBitmap(it) }
             ?: generateDefaultIcon(config.appName, config.themeType)
         var hasConfigFile = false
@@ -803,7 +996,27 @@ class ApkBuilder(private val context: Context) {
 
                 entries.forEach { entry ->
                     processedCount++
-                    onProgress((processedCount * 100) / entries.size, "Repacking base template...")
+                    val progressLabel = if (mode == ModifyApkMode.CONTENT_OVERLAY) {
+                        "Updating cached base..."
+                    } else {
+                        "Repacking base template..."
+                    }
+                    onProgress((processedCount * 100) / entries.size, progressLabel)
+
+                    if (mode == ModifyApkMode.CONTENT_OVERLAY) {
+                        when {
+                            entry.name.startsWith("META-INF/") &&
+                                (entry.name.endsWith(".SF") || entry.name.endsWith(".RSA") ||
+                                    entry.name.endsWith(".DSA") || entry.name == "META-INF/MANIFEST.MF") -> {
+                            }
+                            buildCache.isContentReplaceableEntry(entry.name) -> {
+                            }
+                            else -> {
+                                ZipUtils.copyEntryPreserveMethod(zipIn, zipOut, entry)
+                            }
+                        }
+                        return@forEach
+                    }
 
                     when {
 
@@ -975,15 +1188,17 @@ class ApkBuilder(private val context: Context) {
                         "lazy=${perfConfig.injectLazyLoading}, scripts=${perfConfig.optimizeScripts}")
                 }
 
-                if (iconBitmap != null && replacedIconPaths.isEmpty()) {
-                    addIconsToApk(zipOut, iconBitmap)
-                    logger.log("Added PNG mipmap icons (no existing PNG icons found in template)")
-                } else if (iconBitmap != null) {
-                    logger.log("Replaced ${replacedIconPaths.size} existing PNG icon entries")
-                }
+                if (mode == ModifyApkMode.FULL) {
+                    if (iconBitmap != null && replacedIconPaths.isEmpty()) {
+                        addIconsToApk(zipOut, iconBitmap)
+                        logger.log("Added PNG mipmap icons (no existing PNG icons found in template)")
+                    } else if (iconBitmap != null) {
+                        logger.log("Replaced ${replacedIconPaths.size} existing PNG icon entries")
+                    }
 
-                if (iconBitmap != null) {
-                    addAdaptiveIconPngs(zipOut, iconBitmap, entryNames)
+                    if (iconBitmap != null) {
+                        addAdaptiveIconPngs(zipOut, iconBitmap, entryNames)
+                    }
                 }
 
                 AppLogger.d("ApkBuilder", "Splash config: splashEnabled=${config.splashEnabled}, splashMediaPath=$splashMediaPath, splashType=${config.splashType}")
@@ -1066,7 +1281,7 @@ class ApkBuilder(private val context: Context) {
                     logger.log("Content embedding [${config.appType}]: ${result.message}")
                 }
 
-                if (config.engineType == "GECKOVIEW") {
+                if (mode == ModifyApkMode.FULL && config.engineType == "GECKOVIEW") {
                     onProgress(98, "Injecting native runtime...")
                     logger.section("Inject GeckoView Runtime (native libs + omni.ja)")
                     injectGeckoViewRuntime(zipOut, abiFilters)
@@ -4013,7 +4228,10 @@ sealed class BuildResult {
     data class Success(
         val apkFile: File,
         val logPath: String? = null,
-        val analysisReport: ApkAnalyzer.AnalysisReport? = null
+        val analysisReport: ApkAnalyzer.AnalysisReport? = null,
+        val incremental: Boolean = false,
+        val buildMode: String = "FULL",
+        val buildReason: String = ""
     ) : BuildResult()
     data class Error(
         val message: String,

@@ -4976,6 +4976,18 @@ object Strings {
     val depStorageEmpty: String get() = StringsE.depStorageEmpty
     fun depReadyOfTotal(ready: Int, total: Int): String = StringsE.depReadyOfTotal(ready, total)
     fun depConfirmClearCache(name: String): String = StringsE.depConfirmClearCache(name)
+    val forceFullRebuild: String get() = StringsE.forceFullRebuild
+    val forceFullRebuildDesc: String get() = StringsE.forceFullRebuildDesc
+    val clearIncrementalCache: String get() = StringsE.clearIncrementalCache
+    val incrementalCacheCleared: String get() = StringsE.incrementalCacheCleared
+    val buildModeFull: String get() = StringsE.buildModeFull
+    val buildModeContentOverlay: String get() = StringsE.buildModeContentOverlay
+    val buildModeReuseUnsigned: String get() = StringsE.buildModeReuseUnsigned
+    val buildModeUsed: String get() = StringsE.buildModeUsed
+    val buildSummaryMode: String get() = StringsE.buildSummaryMode
+    val buildSummaryReason: String get() = StringsE.buildSummaryReason
+    val buildAgain: String get() = StringsE.buildAgain
+    val shareApkReadyMode: String get() = StringsE.shareApkReadyMode
 }
 
 object StringsA {
@@ -65806,6 +65818,162 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Очистить кэш $name?"
         AppLanguage.JAPANESE -> "$name のキャッシュをクリアしますか?"
         AppLanguage.KOREAN -> "$name 캐시를 삭제하시겠습니까?"
+    }
+
+    val forceFullRebuild: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "强制完整构建"
+        AppLanguage.ENGLISH -> "Force full rebuild"
+        AppLanguage.ARABIC -> "فرض إعادة بناء كاملة"
+        AppLanguage.PORTUGUESE -> "Forçar rebuild completo"
+        AppLanguage.SPANISH -> "Forzar rebuild completo"
+        AppLanguage.FRENCH -> "Forcer reconstruction complète"
+        AppLanguage.GERMAN -> "Vollständigen Rebuild erzwingen"
+        AppLanguage.RUSSIAN -> "Принудительная полная сборка"
+        AppLanguage.JAPANESE -> "完全再構築を強制"
+        AppLanguage.KOREAN -> "전체 재빌드 강제"
+    }
+
+    val forceFullRebuildDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "忽略增量缓存，始终从模板完整打包"
+        AppLanguage.ENGLISH -> "Ignore incremental cache and always pack from template"
+        AppLanguage.ARABIC -> "تجاهل ذاكرة التخزين المؤقت التدريجية والتعبئة دائمًا من القالب"
+        AppLanguage.PORTUGUESE -> "Ignorar cache incremental e empacotar sempre a partir do template"
+        AppLanguage.SPANISH -> "Ignorar caché incremental y empaquetar siempre desde la plantilla"
+        AppLanguage.FRENCH -> "Ignorer le cache incrémental et toujours empaqueter depuis le modèle"
+        AppLanguage.GERMAN -> "Inkrementellen Cache ignorieren und immer vom Template packen"
+        AppLanguage.RUSSIAN -> "Игнорировать инкрементальный кэш и всегда собирать из шаблона"
+        AppLanguage.JAPANESE -> "増分キャッシュを無視し、常にテンプレートから完全パック"
+        AppLanguage.KOREAN -> "증분 캐시를 무시하고 항상 템플릿에서 전체 패키징"
+    }
+
+    val clearIncrementalCache: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "清除增量缓存"
+        AppLanguage.ENGLISH -> "Clear incremental cache"
+        AppLanguage.ARABIC -> "مسح ذاكرة التخزين المؤقت التدريجية"
+        AppLanguage.PORTUGUESE -> "Limpar cache incremental"
+        AppLanguage.SPANISH -> "Borrar caché incremental"
+        AppLanguage.FRENCH -> "Vider le cache incrémental"
+        AppLanguage.GERMAN -> "Inkrementellen Cache leeren"
+        AppLanguage.RUSSIAN -> "Очистить инкрементальный кэш"
+        AppLanguage.JAPANESE -> "増分キャッシュをクリア"
+        AppLanguage.KOREAN -> "증분 캐시 삭제"
+    }
+
+    val incrementalCacheCleared: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已清除增量缓存"
+        AppLanguage.ENGLISH -> "Incremental cache cleared"
+        AppLanguage.ARABIC -> "تم مسح ذاكرة التخزين المؤقت التدريجية"
+        AppLanguage.PORTUGUESE -> "Cache incremental limpo"
+        AppLanguage.SPANISH -> "Caché incremental borrada"
+        AppLanguage.FRENCH -> "Cache incrémental vidé"
+        AppLanguage.GERMAN -> "Inkrementeller Cache geleert"
+        AppLanguage.RUSSIAN -> "Инкрементальный кэш очищен"
+        AppLanguage.JAPANESE -> "増分キャッシュをクリアしました"
+        AppLanguage.KOREAN -> "증분 캐시가 삭제되었습니다"
+    }
+
+    val buildModeFull: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "完整构建"
+        AppLanguage.ENGLISH -> "Full rebuild"
+        AppLanguage.ARABIC -> "إعادة بناء كاملة"
+        AppLanguage.PORTUGUESE -> "Rebuild completo"
+        AppLanguage.SPANISH -> "Rebuild completo"
+        AppLanguage.FRENCH -> "Reconstruction complète"
+        AppLanguage.GERMAN -> "Vollständiger Rebuild"
+        AppLanguage.RUSSIAN -> "Полная сборка"
+        AppLanguage.JAPANESE -> "完全ビルド"
+        AppLanguage.KOREAN -> "전체 빌드"
+    }
+
+    val buildModeContentOverlay: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "内容增量覆盖"
+        AppLanguage.ENGLISH -> "Content overlay"
+        AppLanguage.ARABIC -> "تراكب المحتوى"
+        AppLanguage.PORTUGUESE -> "Sobreposição de conteúdo"
+        AppLanguage.SPANISH -> "Superposición de contenido"
+        AppLanguage.FRENCH -> "Superposition de contenu"
+        AppLanguage.GERMAN -> "Inhalts-Overlay"
+        AppLanguage.RUSSIAN -> "Наложение контента"
+        AppLanguage.JAPANESE -> "コンテンツオーバーレイ"
+        AppLanguage.KOREAN -> "콘텐츠 오버레이"
+    }
+
+    val buildModeReuseUnsigned: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "复用未签名包"
+        AppLanguage.ENGLISH -> "Reuse unsigned APK"
+        AppLanguage.ARABIC -> "إعادة استخدام APK غير موقّع"
+        AppLanguage.PORTUGUESE -> "Reutilizar APK não assinado"
+        AppLanguage.SPANISH -> "Reutilizar APK sin firmar"
+        AppLanguage.FRENCH -> "Réutiliser l'APK non signé"
+        AppLanguage.GERMAN -> "Unsigniertes APK wiederverwenden"
+        AppLanguage.RUSSIAN -> "Повтор unsigned APK"
+        AppLanguage.JAPANESE -> "未署名 APK を再利用"
+        AppLanguage.KOREAN -> "미서명 APK 재사용"
+    }
+
+    val buildModeUsed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建模式：%s"
+        AppLanguage.ENGLISH -> "Build mode: %s"
+        AppLanguage.ARABIC -> "وضع البناء: %s"
+        AppLanguage.PORTUGUESE -> "Modo de build: %s"
+        AppLanguage.SPANISH -> "Modo de build: %s"
+        AppLanguage.FRENCH -> "Mode de build : %s"
+        AppLanguage.GERMAN -> "Build-Modus: %s"
+        AppLanguage.RUSSIAN -> "Режим сборки: %s"
+        AppLanguage.JAPANESE -> "ビルドモード: %s"
+        AppLanguage.KOREAN -> "빌드 모드: %s"
+    }
+
+    val buildSummaryMode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建模式"
+        AppLanguage.ENGLISH -> "Build mode"
+        AppLanguage.ARABIC -> "وضع البناء"
+        AppLanguage.PORTUGUESE -> "Modo de build"
+        AppLanguage.SPANISH -> "Modo de build"
+        AppLanguage.FRENCH -> "Mode de build"
+        AppLanguage.GERMAN -> "Build-Modus"
+        AppLanguage.RUSSIAN -> "Режим сборки"
+        AppLanguage.JAPANESE -> "ビルドモード"
+        AppLanguage.KOREAN -> "빌드 모드"
+    }
+
+    val buildSummaryReason: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "增量判定"
+        AppLanguage.ENGLISH -> "Incremental reason"
+        AppLanguage.ARABIC -> "سبب الزيادة"
+        AppLanguage.PORTUGUESE -> "Motivo incremental"
+        AppLanguage.SPANISH -> "Motivo incremental"
+        AppLanguage.FRENCH -> "Raison incrémentale"
+        AppLanguage.GERMAN -> "Inkrement-Grund"
+        AppLanguage.RUSSIAN -> "Причина инкремента"
+        AppLanguage.JAPANESE -> "増分判定"
+        AppLanguage.KOREAN -> "증분 판정"
+    }
+
+    val buildAgain: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "再次构建"
+        AppLanguage.ENGLISH -> "Build again"
+        AppLanguage.ARABIC -> "البناء مجددًا"
+        AppLanguage.PORTUGUESE -> "Construir novamente"
+        AppLanguage.SPANISH -> "Construir de nuevo"
+        AppLanguage.FRENCH -> "Construire à nouveau"
+        AppLanguage.GERMAN -> "Erneut bauen"
+        AppLanguage.RUSSIAN -> "Собрать снова"
+        AppLanguage.JAPANESE -> "もう一度ビルド"
+        AppLanguage.KOREAN -> "다시 빌드"
+    }
+
+    val shareApkReadyMode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "APK 已就绪（%s）"
+        AppLanguage.ENGLISH -> "APK ready (%s)"
+        AppLanguage.ARABIC -> "APK جاهز (%s)"
+        AppLanguage.PORTUGUESE -> "APK pronto (%s)"
+        AppLanguage.SPANISH -> "APK listo (%s)"
+        AppLanguage.FRENCH -> "APK prêt (%s)"
+        AppLanguage.GERMAN -> "APK bereit (%s)"
+        AppLanguage.RUSSIAN -> "APK готов (%s)"
+        AppLanguage.JAPANESE -> "APK 準備完了 (%s)"
+        AppLanguage.KOREAN -> "APK 준비됨 (%s)"
     }
 
 }

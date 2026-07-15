@@ -1,6 +1,7 @@
 package com.webtoapp.ui.screens
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.ui.components.PremiumButton
+import com.webtoapp.ui.components.SettingsSwitch
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -638,7 +639,12 @@ fun HomeScreen(
                                     val result = apkBuilder.buildApk(fullApp) { _, _ -> }
                                     when (result) {
                                         is BuildResult.Success -> {
-
+                                            snackbarHostState.showSnackbar(
+                                                Strings.shareApkReadyMode.replace(
+                                                    "%s",
+                                                    incrementalBuildModeLabel(result.buildMode)
+                                                )
+                                            )
                                             try {
                                                 val apkUri = androidx.core.content.FileProvider.getUriForFile(
                                                     listContext,
@@ -1629,6 +1635,16 @@ private fun buildBuildFailureReport(
     )
 }
 
+
+private fun incrementalBuildModeLabel(mode: String?): String {
+    return when (mode) {
+        "CONTENT_OVERLAY" -> Strings.buildModeContentOverlay
+        "REUSE_UNSIGNED" -> Strings.buildModeReuseUnsigned
+        "FULL" -> Strings.buildModeFull
+        else -> mode?.takeIf { it.isNotBlank() } ?: Strings.buildModeFull
+    }
+}
+
 private fun buildDiagnosticLines(error: BuildResult.Error): List<String> {
     val diagnostic = error.diagnostic ?: return emptyList()
     return buildList {
@@ -1716,6 +1732,10 @@ fun BuildApkDialog(
     var analysisReport by remember(webApp.id) { mutableStateOf<com.webtoapp.core.apkbuilder.ApkAnalyzer.AnalysisReport?>(null) }
     var buildFailureReport by remember(webApp.id) { mutableStateOf<BuildFailureReport?>(null) }
     var preflightReport by remember(webApp.id) { mutableStateOf<ApkExportPreflightReport?>(null) }
+    var forceFullRebuild by remember(webApp.id) { mutableStateOf(false) }
+    var lastBuildMode by remember(webApp.id) { mutableStateOf<String?>(null) }
+    var lastBuildReason by remember(webApp.id) { mutableStateOf<String?>(null) }
+    var cacheMessage by remember(webApp.id) { mutableStateOf<String?>(null) }
 
     var encryptionConfig by remember(webApp.id) {
         mutableStateOf(webApp.apkExportConfig?.encryptionConfig ?: com.webtoapp.data.model.ApkEncryptionConfig())
@@ -1790,16 +1810,29 @@ fun BuildApkDialog(
         isBuilding = true
         buildFailureReport = null
         analysisReport = null
+        lastBuildMode = null
+        lastBuildReason = null
+        cacheMessage = null
+        progress = 0
+        progressText = Strings.preparing
         scope.launch {
-            val result = apkBuilder.buildApk(webAppWithConfig) { p, t ->
+            val result = apkBuilder.buildApk(
+                webApp = webAppWithConfig,
+                forceFullRebuild = forceFullRebuild
+            ) { p, t ->
                 progress = p
                 progressText = t
             }
             when (result) {
                 is BuildResult.Success -> {
                     analysisReport = result.analysisReport
+                    lastBuildMode = result.buildMode
+                    lastBuildReason = result.buildReason.takeIf { it.isNotBlank() }
+                    progressText = Strings.buildModeUsed.replace(
+                        "%s",
+                        incrementalBuildModeLabel(result.buildMode)
+                    )
                     isBuilding = false
-
                 }
                 is BuildResult.Error -> {
                     buildFailureReport = buildBuildFailureReport(webAppWithConfig, result)
@@ -1919,6 +1952,31 @@ fun BuildApkDialog(
 
                 HorizontalDivider()
 
+                if (analysisReport == null && !isBuilding) {
+                    SettingsSwitch(
+                        title = Strings.forceFullRebuild,
+                        subtitle = Strings.forceFullRebuildDesc,
+                        checked = forceFullRebuild,
+                        onCheckedChange = { forceFullRebuild = it }
+                    )
+                    TextButton(
+                        onClick = {
+                            apkBuilder.clearIncrementalCache(currentBuildConfig())
+                            cacheMessage = Strings.incrementalCacheCleared
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(Strings.clearIncrementalCache)
+                    }
+                    cacheMessage?.let { msg ->
+                        Text(
+                            msg,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
                 if (analysisReport == null) {
                     Text(
                         Strings.buildApkForApp.replace("%s", webApp.name),
@@ -2035,8 +2093,23 @@ fun BuildApkDialog(
                         totalSizeFormatted = report.totalSizeFormatted,
                         versionName = currentBuildConfig().apkExportConfig
                             ?.customVersionName?.takeIf { it.isNotBlank() } ?: "1.0.0",
-                        versionCode = currentBuildConfig().apkExportConfig?.customVersionCode ?: 1
+                        versionCode = currentBuildConfig().apkExportConfig?.customVersionCode ?: 1,
+                        buildMode = lastBuildMode,
+                        buildReason = lastBuildReason
                     )
+
+                    TextButton(
+                        onClick = {
+                            analysisReport = null
+                            lastBuildMode = null
+                            lastBuildReason = null
+                            buildFailureReport = null
+                            cacheMessage = null
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(Strings.buildAgain)
+                    }
 
                     HorizontalDivider()
 
@@ -2216,7 +2289,9 @@ private fun BuildSummaryCard(
     apkFile: java.io.File,
     totalSizeFormatted: String,
     versionName: String,
-    versionCode: Int
+    versionCode: Int,
+    buildMode: String? = null,
+    buildReason: String? = null
 ) {
     val context = LocalContext.current
     val clipboardManager = LocalClipboardManager.current
@@ -2269,6 +2344,18 @@ private fun BuildSummaryCard(
 
         BuildSummaryRow(label = Strings.buildSummaryAppSize, value = totalSizeFormatted)
         BuildSummaryRow(label = Strings.buildSummaryVersion, value = "$versionName ($versionCode)")
+        if (buildMode != null) {
+            BuildSummaryRow(
+                label = Strings.buildSummaryMode,
+                value = incrementalBuildModeLabel(buildMode)
+            )
+        }
+        if (!buildReason.isNullOrBlank()) {
+            BuildSummaryRow(
+                label = Strings.buildSummaryReason,
+                value = buildReason
+            )
+        }
         BuildSummaryRow(label = Strings.buildSummaryJdk, value = "17")
         BuildSummaryRow(label = Strings.buildSummarySignature, value = "v1+v2+v3")
 
