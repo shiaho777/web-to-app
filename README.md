@@ -59,7 +59,7 @@ A quick scan of what's in the box. Each links to the detailed feature map below.
 | **Privacy & hardening** | 50+ vector browser fingerprint disguise, resource encryption (AES-256-GCM), anti-debug, activation gating |
 | **Local runtimes** | Native Node.js 18.20, PHP 8.4 + Composer 2.10, Python 3.14, official Go 1.26, WordPress 7.x over SQLite |
 | **Extensions** | Built-in modules, userscripts with `GM_*`, MV3 Chrome extensions, live Chrome Web Store search |
-| **APK/AAB output** | On-device V1/V2/V3 signing, Google Play AAB export with targetSdk rewrite, keystore management |
+| **APK/AAB output** | On-device V1/V2/V3 signing, **incremental rebuild** (reuse unsigned / content overlay), Google Play AAB export with targetSdk rewrite, keystore management |
 | **AI coding** | Prompt-driven generation of web apps, modules, userscripts, and runtime projects; auto-retry on 429/5xx |
 | **Host languages** | **10 UI languages** — 中文 · English · العربية · Português · Español · Français · Deutsch · Русский · 日本語 · 한국어 (Arabic RTL) |
 | **Notifications** | Web Notification polyfill · URL polling · WebSocket push · FCM (BYO Firebase) · deep links · boot restore |
@@ -124,7 +124,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **Go 1.26** — official Linux arm64 toolchain (`.tar.gz` from `dl.google.com`, USTC mirror for CN), on-device `go build` / `go mod` / `go run`, `vendor/` offline builds, static serving, and the native `go_exec_loader` wrapper; DNS and CA trust go through the same local JVM bridge used by PHP.
 - **WordPress 7.x** over local PHP + SQLite (`sqlite-database-integration`), with theme and plugin import.
 - **Linux Environment** screen manages toolchains and dependencies for Node, PHP, and Python.
-- **Port Manager** coordinates runtime ports across generated apps via broadcast receivers.
+- **Port Manager** coordinates runtime ports across host previews and generated apps — conflict policies (reassign / auto-kill / alert), real stop handlers, and process tracking so local servers are not left dangling.
 - A **local DNS bridge proxy** (HTTP CONNECT in the Android JVM) gives runtimes working DNS resolution and outbound HTTP where the musl/packed binary can't reach the system resolver.
 
 </details>
@@ -162,7 +162,8 @@ WebToApp has a large number of switches. The sections below group them by use ca
 
 - **Custom package name**, `versionName`, `versionCode`, icon, label, architecture target, and export format.
 - **Build-time permission injection** with unused permissions pruned from the template manifest.
-- **One-tap AAB export** — auto-builds the APK on demand, converts it to a Play-ready signed AAB with `targetSdk` rewritten to the Play-required level (currently 35) and protobuf metadata generated locally; cancellable mid-build.
+- **Incremental APK rebuild** — caches the last **unsigned** base per app under `filesDir/apk_build_cache/`. Unchanged identity + content → sign-only reuse; content-only changes → content overlay without re-expanding the shell template; package/icon/engine/encryption/shell changes (or **Force full rebuild**) → full pack. Encryption always forces a full rebuild. This is **not** detection of an already-installed package on the device.
+- **One-tap AAB export** — auto-builds the APK on demand, converts it to a Play-ready signed AAB with `targetSdk` rewritten to the Play-required level (currently 35) and protobuf metadata generated locally; cancellable mid-build. AAB currently goes through a full APK build path.
 - **Keystore management** — create, import, export, delete, and certificate-fingerprint viewing; PKCS12/PFX/JKS/BKS import including Android Studio upload-key cases where store and key passwords differ.
 - **Signature schemes** — V1, V2, V3 independently controlled, with auto-fallback for legacy certificates; custom V1 signer filename for `META-INF/<name>.SF` / `.RSA`.
 - **Performance options** — image compression, WebP conversion, code minification, lazy loading, DNS prefetch, and preload hints.
@@ -216,7 +217,7 @@ The community market carries only JS/CSS extension modules. **Browser extensions
 
 - The repository has **three Gradle modules**: `app` (the full builder and host), `shell` (the runtime host embedded into generated APKs), and `clone-host` (host code for app cloning — compiled to a `classes.jar`, converted to DEX via d8, and bundled as an asset for `AppCloner`).
 - Runtime code is authored in `app` and synchronized into `shell`, so shared WebView/runtime behavior has one source of truth (`core/shell`, `core/webview`, `core/engine`, `core/extension`, `ui/shell`, etc.).
-- The APK builder patches template APKs at the binary AXML/ARSC level, injects config/resources, prunes permissions, and signs with `apksig`. A separate encrypted build path (`EncryptedApkBuilder`) offers resource encryption, shelling, and integrity checks.
+- The APK builder patches template APKs at the binary AXML/ARSC level, injects config/resources, prunes permissions, and signs with `apksig`. `ApkBuildCache` keeps unsigned bases for incremental rebuilds (`FULL` / `CONTENT_OVERLAY` / `REUSE_UNSIGNED`). A separate encrypted build path (`EncryptedApkBuilder`) offers resource encryption, shelling, and integrity checks (encrypted builds always skip the incremental cache).
 - The host pins `targetSdk = 28` deliberately — it is what lets generated apps fork+exec native runtimes (Node.js, PHP, Python, Go, WordPress) from app storage, a capability URL-wrapper tools lack. The AAB exporter separately rewrites `targetSdk` for Play Store distribution.
 - Server runtimes and the optional GeckoView native runtime are downloaded on first use rather than bundled into the base APK.
 - The configuration center is `WebApp` (`data/model/WebApp.kt`) and its `*Config` classes — the single source of truth for all feature settings, carried through a full packaging passthrough chain into the generated APK.
