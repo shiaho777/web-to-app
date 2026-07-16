@@ -1239,11 +1239,11 @@ fun ModuleTestDialog(
                         onClick = {
                             selectedTestPage?.let { page ->
 
-                                val intent = Intent(context, com.webtoapp.ui.webview.WebViewActivity::class.java).apply {
-                                    putExtra("test_url", page.toDataUrl())
-                                    putStringArrayListExtra("test_module_ids", ArrayList(selectedModules.map { it.id }))
-                                }
-                                context.startActivity(intent)
+                                com.webtoapp.ui.webview.WebViewActivity.startForTest(
+                                    context,
+                                    page.toDataUrl(),
+                                    selectedModules.map { it.id }
+                                )
                                 onDismiss()
                             }
                         },

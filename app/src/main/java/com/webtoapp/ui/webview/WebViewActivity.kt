@@ -6,6 +6,9 @@ import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.AutoRefreshCountdownChip
 
 import android.annotation.SuppressLint
+import android.os.Build
+import android.app.ActivityManager
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -57,6 +60,7 @@ import com.webtoapp.core.webview.LocalHttpServer
 import com.webtoapp.core.webview.LongPressHandler
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.core.webview.WebViewManager
+import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.KeyboardAdjustMode
 import com.webtoapp.data.model.LongPressMenuStyle
@@ -95,28 +99,63 @@ class WebViewActivity : AppCompatActivity() {
         private const val EXTRA_PREVIEW_APP_JSON = "preview_app_json"
 
         fun start(context: Context, appId: Long) {
-            context.startActivity(Intent(context, WebViewActivity::class.java).apply {
-                putExtra(EXTRA_APP_ID, appId)
-            })
+            context.startActivity(
+                buildLaunchIntent(context) {
+                    putExtra(EXTRA_APP_ID, appId)
+                    data = Uri.parse("webtoapp://webapp/$appId")
+                }
+            )
         }
 
         fun startWithUrl(context: Context, url: String) {
-            context.startActivity(Intent(context, WebViewActivity::class.java).apply {
-                putExtra(EXTRA_URL, url)
-            })
+            context.startActivity(
+                buildLaunchIntent(context) {
+                    putExtra(EXTRA_URL, url)
+                    data = Uri.parse("webtoapp://url/${url.hashCode()}")
+                }
+            )
         }
 
         fun startPreview(context: Context, webAppJson: String) {
-            context.startActivity(Intent(context, WebViewActivity::class.java).apply {
-                putExtra(EXTRA_PREVIEW_APP_JSON, webAppJson)
-            })
+            context.startActivity(
+                buildLaunchIntent(context) {
+                    putExtra(EXTRA_PREVIEW_APP_JSON, webAppJson)
+                    data = Uri.parse("webtoapp://preview/${webAppJson.hashCode()}")
+                }
+            )
         }
 
         fun startForTest(context: Context, testUrl: String, moduleIds: List<String>) {
-            context.startActivity(Intent(context, WebViewActivity::class.java).apply {
-                putExtra(EXTRA_TEST_URL, testUrl)
-                putStringArrayListExtra(EXTRA_TEST_MODULE_IDS, ArrayList(moduleIds))
-            })
+            context.startActivity(
+                buildLaunchIntent(context) {
+                    putExtra(EXTRA_TEST_URL, testUrl)
+                    putStringArrayListExtra(EXTRA_TEST_MODULE_IDS, ArrayList(moduleIds))
+                    data = Uri.parse("webtoapp://test/${testUrl.hashCode()}")
+                }
+            )
+        }
+
+        fun buildLaunchIntent(
+            context: Context,
+            separateTasks: Boolean = HostRuntimePrefs.getInstance(context).isSeparateTasksEnabledBlocking(),
+            configure: Intent.() -> Unit
+        ): Intent {
+            return Intent(context, WebViewActivity::class.java).apply {
+                action = Intent.ACTION_VIEW
+                configure()
+                if (separateTasks) {
+                    addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_DOCUMENT or
+                            Intent.FLAG_ACTIVITY_MULTIPLE_TASK or
+                            Intent.FLAG_ACTIVITY_NEW_TASK
+                    )
+                } else {
+                    if (context !is Activity) {
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                }
+            }
         }
     }
 
@@ -579,6 +618,17 @@ class WebViewActivity : AppCompatActivity() {
         }
     }
 
+    private fun applySeparateTaskDescription(label: String) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                @Suppress("DEPRECATION")
+                setTaskDescription(ActivityManager.TaskDescription(label))
+            }
+        } catch (e: Exception) {
+            AppLogger.w("WebViewActivity", "setTaskDescription failed: ${e.message}")
+        }
+    }
+
     private fun reloadBrowser() {
         val surface = browserSurface
         if (surface != null) {
@@ -612,6 +662,9 @@ class WebViewActivity : AppCompatActivity() {
                 usageTracker?.trackLaunch(appId)
             } catch (e: Exception) {
                 AppLogger.w("WebViewActivity", "Usage tracker init failed: ${e.message}")
+            }
+            if (HostRuntimePrefs.getInstance(this).isSeparateTasksEnabledBlocking()) {
+                applySeparateTaskDescription("WebApp #$appId")
             }
         }
         val directUrl = intent.getStringExtra(EXTRA_URL)
@@ -810,6 +863,20 @@ class WebViewActivity : AppCompatActivity() {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
             applyImmersiveFullscreen(customView != null || immersiveFullscreenEnabled)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val previous = this.intent
+        val changed =
+            intent.getLongExtra(EXTRA_APP_ID, -1L) != previous.getLongExtra(EXTRA_APP_ID, -1L) ||
+                intent.getStringExtra(EXTRA_URL) != previous.getStringExtra(EXTRA_URL) ||
+                intent.getStringExtra(EXTRA_TEST_URL) != previous.getStringExtra(EXTRA_TEST_URL) ||
+                intent.getStringExtra(EXTRA_PREVIEW_APP_JSON) != previous.getStringExtra(EXTRA_PREVIEW_APP_JSON)
+        setIntent(intent)
+        if (changed) {
+            recreate()
         }
     }
 

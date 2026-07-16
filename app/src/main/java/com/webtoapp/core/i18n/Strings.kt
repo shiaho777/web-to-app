@@ -3029,6 +3029,8 @@ object Strings {
     val hostsAdBlock: String get() = StringsD.hostsAdBlock
     val hostsAdBlockSubtitle: String get() = StringsD.hostsAdBlockSubtitle
     val menuHostsAdBlock: String get() = StringsD.menuHostsAdBlock
+    val webAppSeparateTasks: String get() = StringsD.webAppSeparateTasks
+    val webAppSeparateTasksDesc: String get() = StringsD.webAppSeparateTasksDesc
     val hostsRulesCount: String get() = StringsD.hostsRulesCount
     val importFromUrl: String get() = StringsD.importFromUrl
     val popularHostsSources: String get() = StringsD.popularHostsSources
@@ -42887,6 +42889,32 @@ object StringsD {
         AppLanguage.RUSSIAN -> "Блокировка Hosts"
         AppLanguage.JAPANESE -> "Hostsブロック"
         AppLanguage.KOREAN -> "Hosts 차단"
+    }
+
+    val webAppSeparateTasks: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WebApp 独立任务"
+        AppLanguage.ENGLISH -> "Separate WebApp tasks"
+        AppLanguage.ARABIC -> "مهام WebApp منفصلة"
+        AppLanguage.PORTUGUESE -> "Tarefas WebApp separadas"
+        AppLanguage.SPANISH -> "Tareas WebApp separadas"
+        AppLanguage.FRENCH -> "Tâches WebApp séparées"
+        AppLanguage.GERMAN -> "Getrennte WebApp-Aufgaben"
+        AppLanguage.RUSSIAN -> "Отдельные задачи WebApp"
+        AppLanguage.JAPANESE -> "WebAppを個別タスクで開く"
+        AppLanguage.KOREAN -> "WebApp 개별 작업"
+    }
+
+    val webAppSeparateTasksDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "开启后，首页预览与桌面快捷方式会为每个 WebApp 单独占用最近任务，可同时打开多个；更占内存。默认关闭。"
+        AppLanguage.ENGLISH -> "When on, home preview and desktop shortcuts open each WebApp in its own recents task so multiple can run at once. Uses more memory. Off by default."
+        AppLanguage.ARABIC -> "عند التفعيل، يفتح كل WebApp مهمة منفصلة من الصفحة الرئيسية أو الاختصار. يستهلك ذاكرة أكثر. متوقف افتراضياً."
+        AppLanguage.PORTUGUESE -> "Quando ativo, prévia e atalhos abrem cada WebApp em uma tarefa própria. Usa mais memória. Desligado por padrão."
+        AppLanguage.SPANISH -> "Si está activo, la vista previa y los accesos abren cada WebApp en una tarea propia. Usa más memoria. Desactivado por defecto."
+        AppLanguage.FRENCH -> "Une fois activé, l'aperçu et les raccourcis ouvrent chaque WebApp dans une tâche distincte. Plus de mémoire. Désactivé par défaut."
+        AppLanguage.GERMAN -> "Wenn aktiv, öffnen Vorschau und Verknüpfungen jedes WebApp in einer eigenen Aufgabe. Mehr Speicher. Standard: aus."
+        AppLanguage.RUSSIAN -> "При включении превью и ярлыки открывают каждый WebApp в отдельной задаче. Больше памяти. По умолчанию выкл."
+        AppLanguage.JAPANESE -> "オンにすると、ホームのプレビューとショートカットが各WebAppを別タスクで開き、複数同時利用できます。メモリ使用量が増えます。初期値はオフ。"
+        AppLanguage.KOREAN -> "켜면 홈 미리보기와 바로가기가 각 WebApp을 별도 최근 작업으로 열어 동시에 사용할 수 있습니다. 메모리를 더 씁니다. 기본값은 끔."
     }
 
     val hostsRulesCount: String get() = when (Strings.lang) {

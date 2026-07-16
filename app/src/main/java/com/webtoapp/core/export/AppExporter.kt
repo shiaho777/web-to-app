@@ -17,9 +17,10 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.webtoapp.core.apkbuilder.NetworkSecurityConfigBuilder
 import com.webtoapp.data.model.NetworkTrustConfig
+import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.data.model.WebApp
-import com.webtoapp.data.model.getActivationCodeStrings
 import com.webtoapp.ui.webview.WebViewActivity
+import com.webtoapp.data.model.getActivationCodeStrings
 import com.webtoapp.util.threadLocalCompat
 import java.io.File
 import java.io.FileOutputStream
@@ -55,11 +56,10 @@ class AppExporter(private val context: Context) {
                 IconCompat.createWithResource(context, android.R.drawable.sym_def_app_icon)
             }
 
-            val launchIntent = Intent(context, WebViewActivity::class.java).apply {
-                action = Intent.ACTION_VIEW
+            val separateTasks = HostRuntimePrefs.getInstance(context).isSeparateTasksEnabledBlocking()
+            val launchIntent = WebViewActivity.buildLaunchIntent(context, separateTasks) {
                 putExtra("app_id", webApp.id)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                data = android.net.Uri.parse("webtoapp://webapp/${webApp.id}")
             }
 
             when {
