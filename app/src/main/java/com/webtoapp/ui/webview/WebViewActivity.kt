@@ -89,7 +89,7 @@ import com.webtoapp.core.stats.AppUsageTracker
 import androidx.compose.ui.text.style.TextOverflow
 import com.webtoapp.ui.components.announcement.toUiTemplate
 
-class WebViewActivity : AppCompatActivity() {
+open class WebViewActivity : AppCompatActivity() {
 
     companion object {
         private const val EXTRA_APP_ID = "app_id"
@@ -100,37 +100,36 @@ class WebViewActivity : AppCompatActivity() {
 
         fun start(context: Context, appId: Long) {
             context.startActivity(
-                buildLaunchIntent(context) {
+                buildLaunchIntent(context, documentUri = Uri.parse("webtoapp://webapp/$appId")) {
                     putExtra(EXTRA_APP_ID, appId)
-                    data = Uri.parse("webtoapp://webapp/$appId")
                 }
             )
         }
 
         fun startWithUrl(context: Context, url: String) {
             context.startActivity(
-                buildLaunchIntent(context) {
+                buildLaunchIntent(context, documentUri = Uri.parse("webtoapp://url/${url.hashCode()}")) {
                     putExtra(EXTRA_URL, url)
-                    data = Uri.parse("webtoapp://url/${url.hashCode()}")
                 }
             )
         }
 
         fun startPreview(context: Context, webAppJson: String) {
             context.startActivity(
-                buildLaunchIntent(context) {
+                buildLaunchIntent(
+                    context,
+                    documentUri = Uri.parse("webtoapp://preview/${webAppJson.hashCode()}")
+                ) {
                     putExtra(EXTRA_PREVIEW_APP_JSON, webAppJson)
-                    data = Uri.parse("webtoapp://preview/${webAppJson.hashCode()}")
                 }
             )
         }
 
         fun startForTest(context: Context, testUrl: String, moduleIds: List<String>) {
             context.startActivity(
-                buildLaunchIntent(context) {
+                buildLaunchIntent(context, documentUri = Uri.parse("webtoapp://test/${testUrl.hashCode()}")) {
                     putExtra(EXTRA_TEST_URL, testUrl)
                     putStringArrayListExtra(EXTRA_TEST_MODULE_IDS, ArrayList(moduleIds))
-                    data = Uri.parse("webtoapp://test/${testUrl.hashCode()}")
                 }
             )
         }
@@ -138,18 +137,28 @@ class WebViewActivity : AppCompatActivity() {
         fun buildLaunchIntent(
             context: Context,
             separateTasks: Boolean = HostRuntimePrefs.getInstance(context).isSeparateTasksEnabledBlocking(),
+            documentUri: Uri? = null,
             configure: Intent.() -> Unit
         ): Intent {
-            return Intent(context, WebViewActivity::class.java).apply {
+            val target = if (separateTasks) {
+                WebViewDocumentActivity::class.java
+            } else {
+                WebViewActivity::class.java
+            }
+            return Intent(context, target).apply {
                 action = Intent.ACTION_VIEW
                 configure()
                 if (separateTasks) {
+                    if (documentUri != null) {
+                        data = documentUri
+                    }
                     addFlags(
                         Intent.FLAG_ACTIVITY_NEW_DOCUMENT or
                             Intent.FLAG_ACTIVITY_MULTIPLE_TASK or
                             Intent.FLAG_ACTIVITY_NEW_TASK
                     )
                 } else {
+                    data = null
                     if (context !is Activity) {
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }

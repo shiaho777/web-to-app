@@ -57,9 +57,11 @@ object AutoStartLauncher {
 
     private fun launchWebViewApp(context: Context, source: String, appId: Long) {
         try {
-            val intent = WebViewActivity.buildLaunchIntent(context) {
+            val intent = WebViewActivity.buildLaunchIntent(
+                context = context,
+                documentUri = android.net.Uri.parse("webtoapp://webapp/$appId")
+            ) {
                 putExtra("app_id", appId)
-                data = android.net.Uri.parse("webtoapp://webapp/$appId")
             }
             context.startActivity(intent)
             AppLogger.d(TAG, "[$source] WebView 应用已启动, appId=$appId")

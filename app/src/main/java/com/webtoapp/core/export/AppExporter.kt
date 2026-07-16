@@ -57,9 +57,12 @@ class AppExporter(private val context: Context) {
             }
 
             val separateTasks = HostRuntimePrefs.getInstance(context).isSeparateTasksEnabledBlocking()
-            val launchIntent = WebViewActivity.buildLaunchIntent(context, separateTasks) {
+            val launchIntent = WebViewActivity.buildLaunchIntent(
+                context = context,
+                separateTasks = separateTasks,
+                documentUri = android.net.Uri.parse("webtoapp://webapp/${webApp.id}")
+            ) {
                 putExtra("app_id", webApp.id)
-                data = android.net.Uri.parse("webtoapp://webapp/${webApp.id}")
             }
 
             when {

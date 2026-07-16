@@ -59,6 +59,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.R
 import com.webtoapp.core.host.HostRuntimePrefs
+import com.webtoapp.ui.webview.WebViewDocumentActivity
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.components.DataBackupCard
@@ -120,7 +121,12 @@ fun AboutScreen(onBack: () -> Unit) {
                         title = Strings.webAppSeparateTasks,
                         checked = separateTasks,
                         onCheckedChange = { enabled ->
-                            scope.launch { hostPrefs.setSeparateTasksEnabled(enabled) }
+                            scope.launch {
+                                hostPrefs.setSeparateTasksEnabled(enabled)
+                                if (!enabled) {
+                                    WebViewDocumentActivity.finishAllDocumentTasks()
+                                }
+                            }
                         },
                         icon = Icons.Outlined.FilterNone
                     )

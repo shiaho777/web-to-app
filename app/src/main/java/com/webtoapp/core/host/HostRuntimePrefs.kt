@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 private val Context.hostRuntimeDataStore: DataStore<Preferences> by preferencesDataStore(name = "host_runtime_prefs")
@@ -35,6 +36,12 @@ class HostRuntimePrefs private constructor(private val context: Context) {
         initialValue = false
     )
 
+    init {
+        scope.launch {
+            separateTasksFlow.collect { cachedSeparateTasks = it }
+        }
+    }
+
     fun isSeparateTasksEnabledBlocking(): Boolean {
         cachedSeparateTasks?.let { return it }
         return try {
@@ -44,7 +51,7 @@ class HostRuntimePrefs private constructor(private val context: Context) {
                 value
             }
         } catch (_: Exception) {
-            separateTasksFlow.value
+            separateTasksFlow.value.also { cachedSeparateTasks = it }
         }
     }
 
