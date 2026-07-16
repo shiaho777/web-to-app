@@ -376,17 +376,7 @@ fun HomeScreen(
                                 leadingIcon = { Icon(Icons.Outlined.Shield, null, Modifier.size(20.dp)) }
                             )
                             DropdownMenuItem(
-                                text = {
-                                    Column {
-                                        Text(Strings.webAppSeparateTasks)
-                                        Text(
-                                            Strings.webAppSeparateTasksDesc,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 3
-                                        )
-                                    }
-                                },
+                                text = { Text(Strings.webAppSeparateTasks) },
                                 onClick = {
                                     scope.launch {
                                         hostPrefs.setSeparateTasksEnabled(!separateTasks)

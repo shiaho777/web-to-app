@@ -114,7 +114,6 @@ fun BrowserKernelScreen(
                 ) {
                     WtaToggleRow(
                         title = Strings.webAppSeparateTasks,
-                        subtitle = Strings.webAppSeparateTasksDesc,
                         checked = separateTasks,
                         onCheckedChange = { enabled ->
                             scope.launch { hostPrefs.setSeparateTasksEnabled(enabled) }
