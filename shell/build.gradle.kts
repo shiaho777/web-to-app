@@ -125,7 +125,6 @@ android {
             excludes += "META-INF/androidx*.version"
             excludes += "META-INF/com.*.version"
             excludes += "META-INF/kotlinx_*.version"
-            excludes += "META-INF/services/kotlinx.coroutines.*"
         }
         jniLibs {
             useLegacyPackaging = true

@@ -16,8 +16,6 @@ def should_skip(name: str) -> bool:
         return True
     if name.startswith("META-INF/") and name.endswith(".kotlin_module"):
         return True
-    if name.startswith("META-INF/services/kotlinx.coroutines."):
-        return True
     if name == "assets/php_router_server.php":
         return True
     if name.startswith("okhttp3/internal/publicsuffix/"):

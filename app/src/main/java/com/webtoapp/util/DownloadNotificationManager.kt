@@ -67,16 +67,23 @@ class DownloadNotificationManager(private val context: Context) {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        try {
+            val name = CHANNEL_NAME.ifBlank { "Downloads" }
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                CHANNEL_NAME,
+                name,
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = Strings.notifDownloadChannelDesc
+                val desc = Strings.notifDownloadChannelDesc
+                if (desc.isNotBlank()) {
+                    description = desc
+                }
                 setShowBadge(false)
             }
             notificationManager.createNotificationChannel(channel)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "createNotificationChannel failed", e)
         }
     }
 

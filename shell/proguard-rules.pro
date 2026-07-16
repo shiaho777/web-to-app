@@ -134,6 +134,23 @@
     <init>(...);
     <fields>;
 }
+-keep class com.webtoapp.core.appearance.** {
+    <init>(...);
+    <fields>;
+}
+-keepclassmembers enum com.webtoapp.core.appearance.** {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+    <fields>;
+}
+-keep class com.webtoapp.core.actions.** {
+    <init>(...);
+    <fields>;
+}
+-keep class com.webtoapp.core.forcedrun.** {
+    <init>(...);
+    <fields>;
+}
 -keep class com.webtoapp.core.feature.** { *; }
 -keep class * implements com.webtoapp.core.feature.FeatureModule { *; }
 -keep class com.webtoapp.feature.compat.** { *; }

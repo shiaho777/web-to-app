@@ -1,6 +1,7 @@
 package com.webtoapp.core.shell
 
 import android.content.Context
+import android.util.Log
 import com.google.gson.annotations.SerializedName
 import com.webtoapp.core.crypto.AssetDecryptor
 import com.webtoapp.core.forcedrun.ForcedRunConfig
@@ -96,9 +97,11 @@ class ShellModeManager(private val context: Context) {
                 config
             }
         } catch (e: Exception) {
+            Log.e(TAG, "加载配置文件失败", e)
             AppLogger.e(TAG, "加载配置文件失败", e)
             null
         } catch (e: Error) {
+            Log.e(TAG, "加载配置文件时发生严重错误", e)
             AppLogger.e(TAG, "加载配置文件时发生严重错误", e)
             null
         }

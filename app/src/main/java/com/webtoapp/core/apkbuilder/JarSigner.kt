@@ -1185,7 +1185,7 @@ class JarSigner(private val context: Context) {
 
             ZipFile(inputApk).use { zipFile ->
                 zipFile.entries().toList().forEach { entry ->
-                    if (!entry.isDirectory && !entry.name.startsWith("META-INF/")) {
+                    if (!entry.isDirectory && (!entry.name.startsWith("META-INF/") || entry.name.startsWith("META-INF/services/"))) {
                         val content = zipFile.getInputStream(entry).readBytes()
                         entries[entry.name] = content
                         digests[entry.name] = computeDigest(ByteArrayInputStream(content))
