@@ -41,10 +41,7 @@ import com.webtoapp.core.engine.EngineType
 import com.webtoapp.core.engine.download.DownloadState
 import com.webtoapp.core.engine.download.GeckoEngineDownloader
 
-import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.ui.design.WtaToggleRow
-import androidx.compose.material.icons.outlined.FilterNone
 import com.webtoapp.util.openUrl
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -66,8 +63,6 @@ fun BrowserKernelScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val hostPrefs = remember { HostRuntimePrefs.getInstance(context) }
-    val separateTasks by hostPrefs.separateTasksFlow.collectAsStateWithLifecycle()
 
     var webViewInfo by remember { mutableStateOf<WebViewInfo?>(null) }
 
@@ -106,22 +101,6 @@ fun BrowserKernelScreen(
             ),
             verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
         ) {
-
-            item {
-                WtaSection(
-                    title = Strings.webAppSeparateTasks,
-                    description = Strings.webAppSeparateTasksDesc
-                ) {
-                    WtaToggleRow(
-                        title = Strings.webAppSeparateTasks,
-                        checked = separateTasks,
-                        onCheckedChange = { enabled ->
-                            scope.launch { hostPrefs.setSeparateTasksEnabled(enabled) }
-                        },
-                        icon = Icons.Outlined.FilterNone
-                    )
-                }
-            }
 
             item {
                 WtaSection(

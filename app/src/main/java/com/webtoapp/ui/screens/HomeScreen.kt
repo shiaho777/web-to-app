@@ -49,7 +49,6 @@ import com.webtoapp.core.apkbuilder.ApkBuilder
 import com.webtoapp.core.apkbuilder.ApkExportPreflight
 import com.webtoapp.core.apkbuilder.ApkExportPreflightReport
 import com.webtoapp.core.apkbuilder.BuildResult
-import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.dao.WebAppSummary
@@ -166,8 +165,6 @@ fun HomeScreen(
         )
     }
     val context = LocalContext.current
-    val hostPrefs = remember { HostRuntimePrefs.getInstance(context) }
-    val separateTasks by hostPrefs.separateTasksFlow.collectAsStateWithLifecycle()
     LaunchedEffect(uiState) {
         when (uiState) {
             is UiState.Success -> {
@@ -374,23 +371,6 @@ fun HomeScreen(
                                 text = { Text(Strings.menuHostsAdBlock) },
                                 onClick = { showMoreMenu = false; onOpenHostsAdBlock() },
                                 leadingIcon = { Icon(Icons.Outlined.Shield, null, Modifier.size(20.dp)) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(Strings.webAppSeparateTasks) },
-                                onClick = {
-                                    scope.launch {
-                                        hostPrefs.setSeparateTasksEnabled(!separateTasks)
-                                    }
-                                },
-                                leadingIcon = { Icon(Icons.Outlined.FilterNone, null, Modifier.size(20.dp)) },
-                                trailingIcon = {
-                                    Switch(
-                                        checked = separateTasks,
-                                        onCheckedChange = { enabled ->
-                                            scope.launch { hostPrefs.setSeparateTasksEnabled(enabled) }
-                                        }
-                                    )
-                                }
                             )
                             HorizontalDivider()
                             DropdownMenuItem(

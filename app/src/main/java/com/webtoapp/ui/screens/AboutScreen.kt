@@ -58,10 +58,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.R
+import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.components.DataBackupCard
+import androidx.compose.material.icons.outlined.FilterNone
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaSettingCard
+import com.webtoapp.ui.design.WtaToggleRow
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaSection
@@ -78,6 +84,9 @@ fun AboutScreen(onBack: () -> Unit) {
     val scrollState = rememberScrollState()
     val versionName = remember(context) { context.currentVersionName() }
     val versionCode = remember(context) { context.currentVersionCode() }
+    val scope = rememberCoroutineScope()
+    val hostPrefs = remember { HostRuntimePrefs.getInstance(context) }
+    val separateTasks by hostPrefs.separateTasksFlow.collectAsStateWithLifecycle()
 
     WtaScreen(
         title = Strings.about,
@@ -100,6 +109,23 @@ fun AboutScreen(onBack: () -> Unit) {
             )
 
             ContactGrid()
+
+            WtaSection(
+                title = Strings.webAppSeparateTasks,
+                description = Strings.webAppSeparateTasksDesc,
+                headerStyle = WtaSectionHeaderStyle.Quiet
+            ) {
+                WtaSettingCard {
+                    WtaToggleRow(
+                        title = Strings.webAppSeparateTasks,
+                        checked = separateTasks,
+                        onCheckedChange = { enabled ->
+                            scope.launch { hostPrefs.setSeparateTasksEnabled(enabled) }
+                        },
+                        icon = Icons.Outlined.FilterNone
+                    )
+                }
+            }
 
             WtaSection(
                 title = Strings.dataBackupTitle,

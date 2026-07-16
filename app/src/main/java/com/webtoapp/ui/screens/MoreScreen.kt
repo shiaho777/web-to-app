@@ -12,14 +12,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.webtoapp.R
-import com.webtoapp.core.host.HostRuntimePrefs
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.ui.design.WtaToggleRow
-import androidx.compose.material.icons.outlined.FilterNone
-import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.launch
-import androidx.compose.runtime.rememberCoroutineScope
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaSection
 import com.webtoapp.ui.design.WtaSectionDivider
@@ -43,11 +36,6 @@ fun MoreScreen(
     onOpenStats: () -> Unit = {},
     onOpenAbout: () -> Unit = {},
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val hostPrefs = remember { HostRuntimePrefs.getInstance(context) }
-    val separateTasks by hostPrefs.separateTasksFlow.collectAsStateWithLifecycle()
-
     WtaScreen(title = Strings.tabMore) {
         Column(
             modifier = Modifier
@@ -122,16 +110,6 @@ fun MoreScreen(
                             title = Strings.menuHostsAdBlock,
                             icon = painterResource(R.drawable.ic_sidebar_adblock),
                             onClick = onOpenHostsAdBlock
-                        )
-                        WtaSectionDivider()
-                        WtaToggleRow(
-                            title = Strings.webAppSeparateTasks,
-                            subtitle = Strings.webAppSeparateTasksDesc,
-                            checked = separateTasks,
-                            onCheckedChange = { enabled ->
-                                scope.launch { hostPrefs.setSeparateTasksEnabled(enabled) }
-                            },
-                            icon = Icons.Outlined.FilterNone
                         )
                     }
                 }
