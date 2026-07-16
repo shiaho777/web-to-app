@@ -113,7 +113,6 @@ fun AboutScreen(onBack: () -> Unit) {
 
             WtaSection(
                 title = Strings.webAppSeparateTasks,
-                description = Strings.webAppSeparateTasksDesc,
                 headerStyle = WtaSectionHeaderStyle.Quiet
             ) {
                 WtaSettingCard {
