@@ -185,7 +185,7 @@ class ApkBuilder(private val context: Context) {
             logger.logKeyValue("customVersionName", webApp.apkExportConfig?.customVersionName)
 
             val architecture = webApp.apkExportConfig?.architecture
-                ?: com.webtoapp.data.model.ApkArchitecture.ARM64
+                ?: com.webtoapp.data.model.ApkArchitecture.UNIVERSAL
             logger.logKeyValue("architecture", architecture.name)
             logger.logKeyValue("abiFilters", architecture.abiFilters.joinToString(", "))
 
@@ -241,18 +241,6 @@ class ApkBuilder(private val context: Context) {
             logger.logKeyValue("finalPackageName", packageName)
 
             val config = webApp.toApkConfigWithModules(packageName, context)
-            val capabilityPlan = CapabilityPlanner.plan(
-                config = config,
-                abiFilters = architecture.abiFilters
-            )
-            logger.section("Capability Plan")
-            logger.logKeyValue("liteOnly", capabilityPlan.liteOnly)
-            logger.logKeyValue("features", capabilityPlan.features.joinToString(", ").ifBlank { "(none)" })
-            logger.logKeyValue("reasons", capabilityPlan.reasons.joinToString(" | ").ifBlank { "(lite)" })
-            val featurePackMerge = FeaturePackMerger.prepare(context, capabilityPlan, logger)
-            if (featurePackMerge.missingFeatures.isNotEmpty()) {
-                logger.warn("Missing feature packs: ${featurePackMerge.missingFeatures.joinToString()}")
-            }
             logger.logKeyValue("versionCode", config.versionCode)
             logger.logKeyValue("versionName", config.versionName)
             logger.logKeyValue("embeddedExtensionModules.size", config.embeddedExtensionModules.size)
@@ -610,9 +598,7 @@ class ApkBuilder(private val context: Context) {
                             htmlProjectDir = htmlProjectDir,
                             errorPageMediaPath = errorPageMediaPath,
                             perfConfig = perfConfig,
-                            mode = ModifyApkMode.CONTENT_OVERLAY,
-                            capabilityPlan = capabilityPlan,
-                            featurePackMerge = featurePackMerge
+                            mode = ModifyApkMode.CONTENT_OVERLAY
                         ) { progress, stageMessage ->
                             if (stageMessage.isNotBlank()) {
                                 progressMessage.set(stageMessage)
@@ -649,9 +635,7 @@ class ApkBuilder(private val context: Context) {
                             htmlProjectDir = htmlProjectDir,
                             errorPageMediaPath = errorPageMediaPath,
                             perfConfig = perfConfig,
-                            mode = ModifyApkMode.FULL,
-                            capabilityPlan = capabilityPlan,
-                            featurePackMerge = featurePackMerge
+                            mode = ModifyApkMode.FULL
                         ) { progress, stageMessage ->
                             if (stageMessage.isNotBlank()) {
                                 progressMessage.set(stageMessage)
@@ -691,9 +675,7 @@ class ApkBuilder(private val context: Context) {
                         htmlProjectDir = htmlProjectDir,
                         errorPageMediaPath = errorPageMediaPath,
                         perfConfig = perfConfig,
-                        mode = ModifyApkMode.FULL,
-                        capabilityPlan = capabilityPlan,
-                        featurePackMerge = featurePackMerge
+                        mode = ModifyApkMode.FULL
                     ) { progress, stageMessage ->
                         if (stageMessage.isNotBlank()) {
                             progressMessage.set(stageMessage)
@@ -986,24 +968,11 @@ class ApkBuilder(private val context: Context) {
         errorPageMediaPath: String? = null,
         perfConfig: com.webtoapp.core.linux.PerformanceOptimizer.OptimizeConfig? = null,
         mode: ModifyApkMode = ModifyApkMode.FULL,
-        capabilityPlan: CapabilityPlan = CapabilityPlan(emptyList(), emptyList(), emptyList(), true),
-        featurePackMerge: FeaturePackMerger.MergeResult? = null,
         onProgress: (Int, String) -> Unit
     ) {
-        val activePlan = if (capabilityPlan.abiFilters.isEmpty() && abiFilters.isNotEmpty()) {
-            capabilityPlan.copy(abiFilters = abiFilters)
-        } else {
-            capabilityPlan
-        }
-        val packMerge = featurePackMerge ?: FeaturePackMerger.prepare(
-            context = context,
-            plan = activePlan,
-            logger = logger
-        )
         logger.log(
             "modifyApk started, mode=${mode.name}, encryption=${encryptionConfig.enabled}, " +
-                "abiFilter=${abiFilters.ifEmpty { "all" }}, liteOnly=${activePlan.liteOnly}, " +
-                "features=${activePlan.features}, source=${sourceApk.name}"
+                "abiFilter=${abiFilters.ifEmpty { "all" }}, source=${sourceApk.name}"
         )
         val iconBitmap = iconPath?.let { template.loadBitmap(it) }
             ?: generateDefaultIcon(config.appName, config.themeType)
@@ -1055,15 +1024,6 @@ class ApkBuilder(private val context: Context) {
                         (entry.name.endsWith(".SF") || entry.name.endsWith(".RSA") ||
                          entry.name.endsWith(".DSA") || entry.name == "META-INF/MANIFEST.MF") -> {
 
-                        }
-
-                        FeaturePackMerger.shouldStripBloatEntry(entry.name, activePlan) -> {
-                            strippedNativeLibSize += entry.size
-                            AppLogger.d("ApkBuilder", "Stripped bloat entry: ${entry.name}")
-                        }
-
-                        shouldStripI18nPack(entry.name, config.language) -> {
-                            AppLogger.d("ApkBuilder", "Stripped unused i18n pack: ${entry.name}")
                         }
 
                         entry.name.startsWith("assets/splash_media.") -> {
@@ -1179,15 +1139,6 @@ class ApkBuilder(private val context: Context) {
 
                 if (!hasConfigFile) {
                     writeConfigEntry(zipOut, config, assetEncryptor, encryptionConfig)
-                }
-
-                injectSelectedI18nPack(zipOut, config.language)
-                writeEntryDeflated(zipOut, "assets/features/enabled.json", packMerge.enabledJson)
-                if (packMerge.extraEntries.isNotEmpty()) {
-                    FeaturePackMerger.writeEntries(zipOut, packMerge.extraEntries)
-                    logger.log("Feature pack entries written: ${packMerge.extraEntries.size}")
-                } else {
-                    logger.log("Feature enabled.json written (packs=${activePlan.features.size}, liteOnly=${activePlan.liteOnly})")
                 }
 
                 if (config.adBlock.enabled) {
@@ -1349,11 +1300,11 @@ class ApkBuilder(private val context: Context) {
 
     private fun isRequiredNativeLib(libName: String, appType: String, engineType: String): Boolean {
 
-        if (libName == "libc++_shared.so") {
+        if (libName == "libcrypto_engine.so" || libName == "libc++_shared.so") {
             return true
         }
 
-        if (libName == "libcrypto_engine.so" || libName == "libapk_optimizer.so" || libName == "libcrypto_optimized.so" || libName == "libperf_engine.so" || libName == "libbrowser_kernel.so") {
+        if (libName == "libapk_optimizer.so" || libName == "libcrypto_optimized.so" || libName == "libperf_engine.so" || libName == "libbrowser_kernel.so") {
             return false
         }
 
@@ -2779,55 +2730,6 @@ builtins.__import__ = _w2a_import
         if (entryName.startsWith("assets/nodejs_runtime/") && appType != "NODEJS_APP") return true
 
         return false
-    }
-
-    private fun shouldStripI18nPack(entryName: String, language: String): Boolean {
-        return entryName.startsWith("assets/i18n/") &&
-            (entryName.endsWith(".pack") || entryName.endsWith(".json"))
-    }
-
-    private fun i18nLanguageCode(language: String): String {
-        return when (language.trim().uppercase()) {
-            "CHINESE", "ZH", "ZH_CN", "ZH-CN" -> "zh"
-            "ENGLISH", "EN" -> "en"
-            "ARABIC", "AR" -> "ar"
-            "PORTUGUESE", "PT" -> "pt"
-            "SPANISH", "ES" -> "es"
-            "FRENCH", "FR" -> "fr"
-            "GERMAN", "DE" -> "de"
-            "RUSSIAN", "RU" -> "ru"
-            "JAPANESE", "JA" -> "ja"
-            "KOREAN", "KO" -> "ko"
-            else -> language.trim().lowercase().ifEmpty { "zh" }
-        }
-    }
-
-    private fun readShellI18nPackBytes(code: String): ByteArray? {
-        val names = listOf(
-            "shell_i18n/$code.pack",
-            "i18n/$code.pack"
-        )
-        for (name in names) {
-            try {
-                context.assets.open(name).use { return it.readBytes() }
-            } catch (_: Exception) {
-            }
-        }
-        return null
-    }
-
-    private fun injectSelectedI18nPack(zipOut: java.util.zip.ZipOutputStream, language: String) {
-        val code = i18nLanguageCode(language)
-        val selected = readShellI18nPackBytes(code)
-        val (outCode, bytes) = when {
-            selected != null -> code to selected
-            else -> {
-                val en = readShellI18nPackBytes("en") ?: return
-                "en" to en
-            }
-        }
-        writeEntryDeflated(zipOut, "assets/i18n/$outCode.pack", bytes)
-        AppLogger.d("ApkBuilder", "Injected i18n pack: assets/i18n/$outCode.pack (${bytes.size} bytes)")
     }
 
     private fun isIconEntry(entryName: String): Boolean {
