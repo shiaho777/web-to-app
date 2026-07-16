@@ -255,11 +255,14 @@ For release builds, configure signing through `local.properties` and `app/build.
 
 ## Contributing
 
+Human PR workflow is in [CONTRIBUTING.md](.github/CONTRIBUTING.md); agent-oriented repo guidance is in [AGENTS.md](AGENTS.md).
+
 | Lane | What you do | Guide |
 | --- | --- | --- |
 | `modules/` | Publish a community module to the in-app market | [modules/README.md](modules/README.md) |
 | Issues | Report a bug or request a feature | [GitHub Issues](https://github.com/shiaho777/web-to-app/issues) |
 | Code | Fix a bug or build a feature in the Android client | [CONTRIBUTING.md](.github/CONTRIBUTING.md) |
+| Agents / AI coding | Work on this repo with a coding agent (layout, LITE shell, export packs, common workflows) | [AGENTS.md](AGENTS.md) |
 
 ## Contact
 
