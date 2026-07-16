@@ -1,6 +1,7 @@
 package com.webtoapp.core.stats
 
 import com.google.common.truth.Truth.assertThat
+import com.webtoapp.core.i18n.Strings
 import org.junit.Test
 
 class AppUsageStatsTest {
@@ -8,31 +9,37 @@ class AppUsageStatsTest {
     @Test
     fun `formattedTotalUsage shows less than 1m for under 60 seconds`() {
         val stats = AppUsageStats(appId = 1, totalUsageMs = 30_000)
-        assertThat(stats.formattedTotalUsage).isEqualTo("<1m")
+        assertThat(stats.formattedTotalUsage).isEqualTo(Strings.statsDurationUnderOneMinute)
     }
 
     @Test
     fun `formattedTotalUsage shows minutes only for under 1 hour`() {
         val stats = AppUsageStats(appId = 1, totalUsageMs = 25 * 60 * 1000L)
-        assertThat(stats.formattedTotalUsage).isEqualTo("25m")
+        assertThat(stats.formattedTotalUsage).isEqualTo(
+            String.format(Strings.statsDurationMinutes, 25)
+        )
     }
 
     @Test
     fun `formattedTotalUsage shows hours and minutes for over 1 hour`() {
         val stats = AppUsageStats(appId = 1, totalUsageMs = 90 * 60 * 1000L)
-        assertThat(stats.formattedTotalUsage).isEqualTo("1h 30m")
+        assertThat(stats.formattedTotalUsage).isEqualTo(
+            String.format(Strings.statsDurationHoursMinutes, 1, 30)
+        )
     }
 
     @Test
-    fun `formattedTotalUsage shows 0m for exactly 0 ms`() {
+    fun `formattedTotalUsage shows under one minute for exactly 0 ms`() {
         val stats = AppUsageStats(appId = 1, totalUsageMs = 0)
-        assertThat(stats.formattedTotalUsage).isEqualTo("<1m")
+        assertThat(stats.formattedTotalUsage).isEqualTo(Strings.statsDurationUnderOneMinute)
     }
 
     @Test
     fun `formattedTotalUsage handles large values`() {
         val stats = AppUsageStats(appId = 1, totalUsageMs = 10 * 3600 * 1000L)
-        assertThat(stats.formattedTotalUsage).isEqualTo("10h 0m")
+        assertThat(stats.formattedTotalUsage).isEqualTo(
+            String.format(Strings.statsDurationHoursMinutes, 10, 0)
+        )
     }
 
     @Test

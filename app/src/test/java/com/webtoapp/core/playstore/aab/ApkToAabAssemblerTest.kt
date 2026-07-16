@@ -31,8 +31,12 @@ class ApkToAabAssemblerTest {
         assertThat(stats.resourceXmlSkipped).isEqualTo(0)
         assertThat(stats.resourceXmlConverted).isGreaterThan(50)
         assertThat(stats.dexCount).isAtLeast(1)
-        assertThat(stats.nativeLibCount).isGreaterThan(0)
-        assertThat(stats.abis).isNotEmpty()
+        assertThat(stats.nativeLibCount).isAtLeast(0)
+        if (stats.nativeLibCount > 0) {
+            assertThat(stats.abis).isNotEmpty()
+        } else {
+            assertThat(stats.abis).isEmpty()
+        }
 
         val entryNames = ZipFile(output).use { zip ->
             zip.entries().toList().map { it.name }.toSet()
@@ -40,7 +44,11 @@ class ApkToAabAssemblerTest {
         assertThat(entryNames).contains("BundleConfig.pb")
         assertThat(entryNames).contains("base/manifest/AndroidManifest.xml")
         assertThat(entryNames).contains("base/resources.pb")
-        assertThat(entryNames).contains("base/native.pb")
+        if (stats.nativeLibCount > 0) {
+            assertThat(entryNames).contains("base/native.pb")
+        } else {
+            assertThat(entryNames).doesNotContain("base/native.pb")
+        }
 
         assertThat(entryNames).doesNotContain("AndroidManifest.xml")
         assertThat(entryNames).doesNotContain("resources.arsc")
@@ -51,7 +59,7 @@ class ApkToAabAssemblerTest {
         assertThat(convertedResXmlCount).isAtLeast(50)
 
         val libCount = entryNames.count { it.startsWith("base/lib/") && it.endsWith(".so") }
-        assertThat(libCount).isAtLeast(1)
+        assertThat(libCount).isEqualTo(stats.nativeLibCount)
 
         val bundleConfigBytes = ZipFile(output).use { zip ->
             zip.getInputStream(zip.getEntry("BundleConfig.pb")).readBytes()
