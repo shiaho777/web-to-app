@@ -1,0 +1,12 @@
+{
+  "id": "ext-panel",
+  "version": 1,
+  "minLiteApi": 1,
+  "dependsOn": [],
+  "entryClass": "com.webtoapp.core.extension.ExtensionPanelScript",
+  "loadOrder": 10,
+  "dex": [
+    "classes.dex"
+  ],
+  "nativeLibs": []
+}

@@ -67,17 +67,36 @@ object EngineViewFactory {
         if (engineType == EngineType.GECKOVIEW) {
             prepareGeckoNetwork(config)
             val engine = EngineManager.getInstance(context).createEngine(EngineType.GECKOVIEW, adBlocker)
-            val geckoEngine = engine as GeckoViewEngine
-            val view = geckoEngine.createView(
+            val view = GeckoEngineAccess.createView(
+                engine = engine,
                 context = context,
                 config = config,
                 callback = callbacks.toBrowserEngineCallback()
+            ) ?: return BrowserSurface.fromWebView(
+                WebView(context).also { wv ->
+                    wv.layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                    webViewManager.configureWebView(
+                        wv,
+                        config,
+                        callbacks,
+                        extensionModuleIds,
+                        embeddedExtensionModules,
+                        extensionFabIcon,
+                        allowGlobalModuleFallback = allowGlobalModuleFallback,
+                        extensionEnabled = extensionEnabled,
+                        browserDisguiseConfig = browserDisguiseConfig,
+                        deviceDisguiseConfig = deviceDisguiseConfig
+                    )
+                }
             )
             view.layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            return BrowserSurface.fromEngine(geckoEngine, view)
+            return BrowserSurface.fromEngine(engine, view)
         }
 
         val webView = WebView(context).apply {
@@ -103,13 +122,13 @@ object EngineViewFactory {
 
     private fun prepareGeckoNetwork(config: WebViewConfig) {
         if (config.dnsMode != "SYSTEM") {
-            GeckoViewEngine.applyDnsConfig(config.dnsConfig)
+            GeckoEngineAccess.applyDnsConfig(config.dnsConfig)
         } else {
-            GeckoViewEngine.applyDnsConfig(
+            GeckoEngineAccess.applyDnsConfig(
                 com.webtoapp.data.model.DnsConfig(provider = "custom", customDohUrl = "")
             )
         }
-        GeckoViewEngine.applyAntiCapture(config.antiCapture)
+        GeckoEngineAccess.applyAntiCapture(config.antiCapture)
 
         val tlsFingerprintEnabled = config.tlsFingerprintEnabled &&
             config.tlsFingerprintTemplate.isNotBlank()
@@ -119,21 +138,21 @@ object EngineViewFactory {
                 TAG,
                 "TLS fingerprint MITM skipped while ECH is effective (MITM would terminate TLS and strip ECH)"
             )
-            GeckoViewEngine.setTlsMitmActive(false)
+            GeckoEngineAccess.setTlsMitmActive(false)
         } else if (tlsFingerprintEnabled) {
             AppLogger.w(
                 TAG,
                 "TLS fingerprint MITM is configured for System WebView path; Gecko path uses native TLS without MITM"
             )
-            GeckoViewEngine.setTlsMitmActive(false)
+            GeckoEngineAccess.setTlsMitmActive(false)
         } else {
-            GeckoViewEngine.setTlsMitmActive(false)
+            GeckoEngineAccess.setTlsMitmActive(false)
         }
 
         when (config.proxyMode) {
             "STATIC" -> {
                 if (config.proxyHost.isNotBlank() && config.proxyPort > 0) {
-                    GeckoViewEngine.applyProxyConfig(
+                    GeckoEngineAccess.applyProxyConfig(
                         ProxyConfig(
                             mode = "STATIC",
                             host = config.proxyHost,
@@ -144,22 +163,22 @@ object EngineViewFactory {
                         )
                     )
                 } else {
-                    GeckoViewEngine.applyProxyConfig(ProxyConfig(mode = "NONE"))
+                    GeckoEngineAccess.applyProxyConfig(ProxyConfig(mode = "NONE"))
                 }
             }
             "PAC" -> {
                 if (config.pacUrl.isNotBlank()) {
-                    GeckoViewEngine.applyProxyConfig(
+                    GeckoEngineAccess.applyProxyConfig(
                         ProxyConfig(
                             mode = "PAC",
                             pacUrl = config.pacUrl
                         )
                     )
                 } else {
-                    GeckoViewEngine.applyProxyConfig(ProxyConfig(mode = "NONE"))
+                    GeckoEngineAccess.applyProxyConfig(ProxyConfig(mode = "NONE"))
                 }
             }
-            else -> GeckoViewEngine.applyProxyConfig(ProxyConfig(mode = "NONE"))
+            else -> GeckoEngineAccess.applyProxyConfig(ProxyConfig(mode = "NONE"))
         }
     }
 }

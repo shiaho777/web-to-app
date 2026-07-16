@@ -1,0 +1,2 @@
+-keep class com.webtoapp.core.feature.** { *; }
+-keep class * implements com.webtoapp.core.feature.FeatureModule { *; }

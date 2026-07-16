@@ -1,0 +1,12 @@
+{
+  "id": "shell-disguise-js",
+  "version": 1,
+  "minLiteApi": 1,
+  "dependsOn": [],
+  "entryClass": "com.webtoapp.core.appearance.BrowserDisguiseJsGenerator",
+  "loadOrder": 10,
+  "dex": [
+    "classes.dex"
+  ],
+  "nativeLibs": []
+}

@@ -15,8 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.Inbox
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -234,7 +233,7 @@ fun WtaLoadingState(
 fun WtaErrorState(
     message: String,
     modifier: Modifier = Modifier,
-    icon: ImageVector = Icons.Outlined.ErrorOutline,
+    icon: ImageVector = Icons.Default.Warning,
     retryLabel: String? = null,
     onRetry: (() -> Unit)? = null
 ) {
@@ -285,7 +284,7 @@ fun WtaFullEmptyState(
     title: String,
     modifier: Modifier = Modifier,
     message: String? = null,
-    icon: ImageVector = Icons.Outlined.Inbox,
+    icon: ImageVector = Icons.Default.Email,
     action: (@Composable () -> Unit)? = null,
     fillMaxSize: Boolean = true
 ) {

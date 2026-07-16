@@ -34,7 +34,8 @@ class EngineManager private constructor(private val context: Context) {
     fun createEngine(type: EngineType, adBlocker: AdBlocker): BrowserEngine {
         return when (type) {
             EngineType.SYSTEM_WEBVIEW -> SystemWebViewEngine(context, adBlocker)
-            EngineType.GECKOVIEW -> GeckoViewEngine(context)
+            EngineType.GECKOVIEW -> GeckoEngineAccess.create(context)
+                ?: SystemWebViewEngine(context, adBlocker)
         }
     }
 

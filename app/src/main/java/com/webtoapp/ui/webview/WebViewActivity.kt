@@ -860,7 +860,7 @@ class WebViewActivity : AppCompatActivity() {
         try {
             com.webtoapp.core.webview.PacProxyManager(this).clearProxy()
         } catch (_: Exception) {}
-        com.webtoapp.core.engine.GeckoViewEngine.applyProxyConfig(
+        com.webtoapp.core.engine.GeckoEngineAccess.applyProxyConfig(
             com.webtoapp.core.engine.ProxyConfig(mode = "NONE")
         )
 

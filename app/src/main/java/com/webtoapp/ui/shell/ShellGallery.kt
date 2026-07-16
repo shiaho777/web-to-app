@@ -11,9 +11,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.Videocam
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -205,8 +203,8 @@ fun ShellGalleryPlayer(
 
                     currentItem?.let { item ->
                         Icon(
-                            if (item.type == "VIDEO") Icons.Outlined.Videocam
-                            else Icons.Outlined.Image,
+                            if (item.type == "VIDEO") Icons.Default.PlayArrow
+                            else Icons.Default.Star,
                             contentDescription = null,
                             tint = Color.White.copy(alpha = 0.7f),
                             modifier = Modifier.size(20.dp)
@@ -233,7 +231,7 @@ fun ShellGalleryPlayer(
                         )
                 ) {
                     Icon(
-                        if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        if (isPlaying) Icons.Default.Close else Icons.Default.PlayArrow,
                         contentDescription = if (isPlaying) Strings.cdPause else Strings.cdPlay,
                         modifier = Modifier.size(36.dp),
                         tint = Color.White
@@ -262,7 +260,7 @@ fun ShellGalleryPlayer(
                     )
             ) {
                 Icon(
-                    Icons.Default.ChevronLeft,
+                    Icons.Default.KeyboardArrowLeft,
                     contentDescription = Strings.cdPrevious,
                     tint = Color.White
                 )
@@ -289,7 +287,7 @@ fun ShellGalleryPlayer(
                     )
             ) {
                 Icon(
-                    Icons.Default.ChevronRight,
+                    Icons.Default.KeyboardArrowRight,
                     contentDescription = Strings.cdNext,
                     tint = Color.White
                 )
@@ -649,7 +647,7 @@ fun ShellGalleryVideoPlayer(
                             }
                         }) {
                             Icon(
-                                Icons.Default.Replay10,
+                                Icons.Default.Refresh,
                                 contentDescription = Strings.cdSeekBack,
                                 tint = Color.White
                             )
@@ -660,7 +658,7 @@ fun ShellGalleryVideoPlayer(
                             modifier = Modifier.size(56.dp)
                         ) {
                             Icon(
-                                if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                if (isPlaying) Icons.Default.Close else Icons.Default.PlayArrow,
                                 contentDescription = if (isPlaying) Strings.cdPause else Strings.cdPlay,
                                 modifier = Modifier.size(36.dp),
                                 tint = Color.White
@@ -673,7 +671,7 @@ fun ShellGalleryVideoPlayer(
                             }
                         }) {
                             Icon(
-                                Icons.Default.Forward10,
+                                Icons.Default.Refresh,
                                 contentDescription = Strings.cdSeekForward,
                                 tint = Color.White
                             )

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">WebToApp</string>
+    <string name="accessibility_service_description" translatable="false">Forced-run protection service. Enabled only when forced-run mode is turned on.</string>
+</resources>

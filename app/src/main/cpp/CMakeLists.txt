@@ -1,17 +1,16 @@
-# CMakeLists.txt for WebToApp Crypto Engine
-
 cmake_minimum_required(VERSION 3.22.1)
 
 project("crypto_engine")
 
-# 设置 C++ 标准
+option(SHELL_LITE_NATIVE "Build only LITE shell natives" OFF)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 添加编译选项（crypto_engine 专用）
-# 注意：不使用全局 add_compile_options，因为 node_bridge 需要导出 JNI 符号
+find_library(log-lib log)
+find_library(dl-lib dl)
 
-# 源文件
+if(NOT SHELL_LITE_NATIVE)
 set(CRYPTO_SOURCES
     crypto_engine.cpp
     anti_debug.cpp
@@ -19,20 +18,27 @@ set(CRYPTO_SOURCES
     aes_gcm.cpp
 )
 
-# 创建共享库
 add_library(
     crypto_engine
     SHARED
     ${CRYPTO_SOURCES}
 )
 
-# crypto_engine 编译选项：隐藏符号、优化
 target_compile_options(crypto_engine PRIVATE
     -fvisibility=hidden
     -ffunction-sections
     -fdata-sections
     -O2
     -DNDEBUG
+)
+set_target_properties(crypto_engine PROPERTIES
+    LINK_FLAGS "-Wl,--gc-sections -Wl,--strip-all -Wl,-z,max-page-size=16384"
+)
+
+target_link_libraries(
+    crypto_engine
+    log
+    ${log-lib}
 )
 
 # ==================== Node.js Bridge ====================
@@ -55,17 +61,10 @@ find_library(
 )
 
 # 链接库
-target_link_libraries(
-    crypto_engine
-    ${log-lib}
-)
 
 # crypto_engine 可以 strip 所有符号
 # ★ 16KB 页面大小对齐：Android 15+ 设备使用 16KB 页面大小，
 # ELF LOAD 段必须对齐到 16KB (16384) 边界，否则应用运行在兼容模式
-set_target_properties(crypto_engine PROPERTIES
-    LINK_FLAGS "-Wl,--gc-sections -Wl,--strip-all -Wl,-z,max-page-size=16384"
-)
 
 # ==================== Optimized Crypto (优化版加密引擎) ====================
 # 修复: 恒定时间 S-Box, 标准 PBKDF2-HMAC-SHA256 (RFC 2898),
@@ -320,3 +319,5 @@ target_link_libraries(
 set_target_properties(browser_kernel PROPERTIES
     LINK_FLAGS "-Wl,--gc-sections -Wl,--strip-all -Wl,-z,max-page-size=16384"
 )
+
+endif()

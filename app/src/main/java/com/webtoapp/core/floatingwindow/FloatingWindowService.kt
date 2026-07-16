@@ -118,10 +118,7 @@ class FloatingWindowService : Service() {
                 }
 
                 val shellConfig = try {
-                    org.koin.core.context.GlobalContext
-                        .get()
-                        .get<com.webtoapp.core.shell.ShellModeManager>()
-                        .getConfig()
+                    com.webtoapp.core.shell.ShellModeManager(this).getConfig()
                 } catch (e: Exception) {
                     AppLogger.w(TAG, "Shell config unavailable, falling back to raw URL", e)
                     null

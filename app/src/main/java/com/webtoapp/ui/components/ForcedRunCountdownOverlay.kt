@@ -8,8 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -71,7 +70,7 @@ fun ForcedRunCountdownOverlay(
 
                 Icon(
                     imageVector = if (allowEmergencyExit && !emergencyPassword.isNullOrEmpty())
-                        Icons.Filled.LockOpen else Icons.Filled.Lock,
+                        Icons.Default.Lock else Icons.Filled.Lock,
                     contentDescription = if (allowEmergencyExit) Strings.tapToEnterPasswordToExit else null,
                     tint = MaterialTheme.colorScheme.onErrorContainer,
                     modifier = Modifier.size(20.dp)

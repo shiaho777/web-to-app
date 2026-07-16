@@ -11,6 +11,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.image.OptimizedImageLoader
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellModeManager
+import com.webtoapp.core.feature.FeatureLoader
 import com.webtoapp.core.startup.AppStartupManager
 import com.webtoapp.core.startup.BackgroundServicesStartup
 import com.webtoapp.core.startup.LegacyHttpUrlMigrationStartup
@@ -172,6 +173,11 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
     }
 
     private fun initShellRuntime() {
+        try {
+            FeatureLoader.loadEnabled(this)
+        } catch (e: Exception) {
+            AppLogger.e("WebToAppApplication", "FeatureLoader failed", e)
+        }
         shellModeManagerLocal = ShellModeManager(this)
         shellActivationManager = ActivationManager(this)
         shellAnnouncementManager = AnnouncementManager(this)

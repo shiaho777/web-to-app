@@ -94,7 +94,7 @@ class PacProxyManager(private val context: Context) {
 
         LocalHttpToSocksBridge.stop()
         LocalHttpHostMappingBridge.stop()
-        TlsMitmBridge.stop()
+        TlsMitmAccess.stop()
     }
 
     private fun setupProxyAuthenticator(username: String, password: String) {

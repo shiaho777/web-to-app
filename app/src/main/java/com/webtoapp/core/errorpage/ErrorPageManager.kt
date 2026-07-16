@@ -1,5 +1,7 @@
 package com.webtoapp.core.errorpage
 
+import com.webtoapp.core.feature.ScriptPackAccess
+
 class ErrorPageManager(private val config: ErrorPageConfig) {
 
     private fun formatErrorCode(code: Int): String {
@@ -140,7 +142,7 @@ class ErrorPageManager(private val config: ErrorPageConfig) {
             ?.replace("\"", "&quot;")
             ?: ""
 
-        val gameJs = if (showGame) ErrorPageGames.getGameJs(gameType) else ""
+        val gameJs = if (showGame) loadErrorGameJs(gameType) else ""
 
         return """
 <!DOCTYPE html>
@@ -373,7 +375,7 @@ function startGame(){
         val resolvedSubtitle = diagnostic?.cause ?: strings.subtitle
         val styleCss = ErrorPageStyles.getStyleCss(style)
         val styleBody = ErrorPageStyles.getStyleBody(style, resolvedTitle, resolvedSubtitle)
-        val gameJs = if (showGame) ErrorPageGames.getGameJs(gameType) else ""
+        val gameJs = if (showGame) loadErrorGameJs(gameType) else ""
 
         val safeUrl = failedUrl
             ?.replace("'", "\\'")
@@ -841,4 +843,12 @@ function wtaCopyDetails(){
         .replace(">", "&gt;")
         .replace("\"", "&quot;")
         .replace("'", "&#39;")
+    private fun loadErrorGameJs(type: MiniGameType): String {
+        return ScriptPackAccess.callStaticString(
+            "com.webtoapp.core.errorpage.ErrorPageGames",
+            "getGameJs",
+            type
+        ).orEmpty()
+    }
+
 }

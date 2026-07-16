@@ -1,0 +1,12 @@
+{
+  "id": "shell-privacy",
+  "version": 1,
+  "minLiteApi": 1,
+  "dependsOn": [],
+  "entryClass": "com.webtoapp.core.privacy.IsolationManager",
+  "loadOrder": 10,
+  "dex": [
+    "classes.dex"
+  ],
+  "nativeLibs": []
+}

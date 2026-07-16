@@ -184,10 +184,21 @@ android {
 val shellTemplateOutput = project(":shell").layout.buildDirectory.file("outputs/apk/release/shell-release.apk")
 val skipShellTemplateSync = providers.gradleProperty("skipShellTemplateSync").map(String::toBoolean).orElse(false)
 
+
+tasks.register("syncShellI18nPacks") {
+    group = "build"
+    description = "Ensure per-language shell i18n packs are generated into app assets for APK export"
+    dependsOn(":shell:syncShellRuntimeAssets")
+}
+
+tasks.matching { it.name.startsWith("merge") && it.name.contains("Assets") }.configureEach {
+    dependsOn("syncShellI18nPacks")
+}
+
 tasks.register<Copy>("syncShellTemplateApk") {
     description = "Builds the dedicated shell template APK and copies it into the app assets."
     group = "build"
-    dependsOn(":shell:assembleRelease")
+    dependsOn(":shell:assembleRelease", ":shell:stripShellTemplateBloat")
     from(shellTemplateOutput)
     into(file("src/main/assets/template"))
     rename { "webview_shell.apk" }
@@ -396,6 +407,7 @@ protobuf {
 }
 
 dependencies {
+    implementation(project(":feature-api"))
 
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
@@ -476,3 +488,10 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
+
+tasks.register("syncFeatureCompatPack") {
+    group = "build"
+    description = "Build feature-compat pack into app assets"
+    dependsOn(":feature-compat:packageFeatureCompatPack")
+}
+

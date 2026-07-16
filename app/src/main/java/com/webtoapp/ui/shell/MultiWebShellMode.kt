@@ -11,7 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -57,7 +57,7 @@ fun MultiWebShellMode(
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(
-                    Icons.Outlined.Language, null,
+                    Icons.Default.Home, null,
                     modifier = Modifier.size(64.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 )
@@ -182,7 +182,7 @@ private fun TabsMode(
                                     )
                                 } else {
                                     Icon(
-                                        Icons.Outlined.Language,
+                                        Icons.Default.Home,
                                         contentDescription = null,
                                         modifier = Modifier.size(if (isSelected) 20.dp else 18.dp),
                                         tint = if (isSelected) MaterialTheme.colorScheme.primary
@@ -414,7 +414,7 @@ private fun SiteCard(
                         if (site.iconEmoji.isNotBlank()) {
                             Text(site.iconEmoji, fontSize = 22.sp)
                         } else {
-                            Icon(Icons.Outlined.Language, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                            Icon(Icons.Default.Home, null, tint = Color.White, modifier = Modifier.size(24.dp))
                         }
                     }
                 }
@@ -544,7 +544,7 @@ private fun FeedMode(
             } else if (feedItems.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Outlined.RssFeed, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
+                        Icon(Icons.AutoMirrored.Filled.List, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("No articles found", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text("Configure CSS selectors to extract articles", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f))
@@ -660,7 +660,7 @@ private fun DrawerMode(
                     }
                 } ?: run {
                     Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Outlined.Language, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+                        Icon(Icons.Default.Home, null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("No site selected", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -683,7 +683,7 @@ private fun DrawerSiteItem(site: MultiWebSiteShellConfig, isSelected: Boolean, o
     ) {
         Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
             if (site.iconEmoji.isNotBlank()) Text(site.iconEmoji, fontSize = 18.sp)
-            else Icon(Icons.Outlined.Language, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(20.dp))
+            else Icon(Icons.Default.Home, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(20.dp))
         }
         Spacer(modifier = Modifier.width(14.dp))
         Column(modifier = Modifier.weight(1f)) {

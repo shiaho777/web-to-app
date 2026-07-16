@@ -1,5 +1,7 @@
 package com.webtoapp.core.extension
 
+import com.webtoapp.core.feature.ScriptPackAccess
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.webkit.*
@@ -75,7 +77,7 @@ class ExtensionPopupManager(
 
     private fun injectPolyfill(webView: WebView?) {
         webView ?: return
-        val polyfill = ChromeExtensionPolyfill.generatePolyfill(
+        val polyfill = ScriptPackAccess.chromePolyfill(
             extensionId = extensionId,
             manifestJson = manifestJson,
             isBackground = false
@@ -89,7 +91,7 @@ class ExtensionPopupManager(
             val mimeType = response.mimeType ?: return false
             if (!mimeType.equals("text/html", ignoreCase = true)) return false
             val html = response.data?.bufferedReader(Charsets.UTF_8)?.use { it.readText() } ?: return false
-            val polyfill = ChromeExtensionPolyfill.generatePolyfill(
+            val polyfill = ScriptPackAccess.chromePolyfill(
                 extensionId = extensionId,
                 manifestJson = manifestJson,
                 isBackground = false

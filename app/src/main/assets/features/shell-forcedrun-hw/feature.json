@@ -1,0 +1,12 @@
+{
+  "id": "shell-forcedrun-hw",
+  "version": 1,
+  "minLiteApi": 1,
+  "dependsOn": [],
+  "entryClass": "com.webtoapp.core.forcedrun.ForcedRunHardwareController",
+  "loadOrder": 10,
+  "dex": [
+    "classes.dex"
+  ],
+  "nativeLibs": []
+}

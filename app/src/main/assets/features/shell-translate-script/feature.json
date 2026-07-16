@@ -1,0 +1,12 @@
+{
+  "id": "shell-translate-script",
+  "version": 1,
+  "minLiteApi": 1,
+  "dependsOn": [],
+  "entryClass": "com.webtoapp.ui.shell.TranslateScriptProvider",
+  "loadOrder": 10,
+  "dex": [
+    "classes.dex"
+  ],
+  "nativeLibs": []
+}

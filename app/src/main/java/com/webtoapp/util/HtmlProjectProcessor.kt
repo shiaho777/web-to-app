@@ -538,8 +538,11 @@ $trimmed
             ))
         }
 
-        val unclosedBraces = content.count { it == '{' } - content.count { it == '}' }
-        if (unclosedBraces != 0) {
+        if (shouldSkipJsBraceCheck(fileName, content)) {
+            return
+        }
+
+        if (!areJsBracesBalanced(content)) {
             issues.add(ProjectIssue(
                 severity = IssueSeverity.WARNING,
                 type = IssueType.SYNTAX_ERROR,
@@ -548,5 +551,147 @@ $trimmed
                 suggestion = Strings.suggestCheckBracesPaired
             ))
         }
+    }
+
+    private fun shouldSkipJsBraceCheck(fileName: String, content: String): Boolean {
+        val lower = fileName.lowercase()
+        if (lower.endsWith(".min.js") ||
+            lower.endsWith(".min.mjs") ||
+            lower.endsWith(".min.cjs") ||
+            lower.contains(".min.") ||
+            lower.endsWith(".umd.js") ||
+            lower.endsWith(".umd.mjs") ||
+            lower.endsWith(".bundle.js") ||
+            lower.endsWith(".prod.js") ||
+            lower.endsWith(".production.js")
+        ) {
+            return true
+        }
+        if (content.length >= 80_000) {
+            return true
+        }
+        if (content.length < 400) {
+            return false
+        }
+        var lines = 0
+        var maxLine = 0
+        var total = 0
+        var start = 0
+        val n = content.length
+        var i = 0
+        while (i <= n) {
+            if (i == n || content[i] == '\n') {
+                val len = i - start
+                if (len > 0) {
+                    lines++
+                    total += len
+                    if (len > maxLine) maxLine = len
+                }
+                start = i + 1
+            }
+            i++
+        }
+        if (lines == 0) return false
+        val avg = total.toDouble() / lines
+        return maxLine >= 500 || (content.length >= 8_000 && avg >= 180)
+    }
+
+    private fun areJsBracesBalanced(content: String): Boolean {
+        var depth = 0
+        var i = 0
+        val n = content.length
+        while (i < n) {
+            val c = content[i]
+            when {
+                c == '/' && i + 1 < n -> {
+                    when (content[i + 1]) {
+                        '/' -> {
+                            i += 2
+                            while (i < n && content[i] != '\n') i++
+                        }
+                        '*' -> {
+                            i += 2
+                            while (i + 1 < n && !(content[i] == '*' && content[i + 1] == '/')) i++
+                            i = (i + 2).coerceAtMost(n)
+                        }
+                        else -> i++
+                    }
+                }
+                c == '"' || c == '\'' -> {
+                    val quote = c
+                    i++
+                    while (i < n) {
+                        val ch = content[i]
+                        when {
+                            ch == '\\' -> i += 2
+                            ch == quote -> {
+                                i++
+                                break
+                            }
+                            else -> i++
+                        }
+                    }
+                }
+                c == '`' -> {
+                    i++
+                    while (i < n) {
+                        val ch = content[i]
+                        when {
+                            ch == '\\' -> i += 2
+                            ch == '`' -> {
+                                i++
+                                break
+                            }
+                            ch == '$' && i + 1 < n && content[i + 1] == '{' -> {
+                                i += 2
+                                var nested = 1
+                                while (i < n && nested > 0) {
+                                    val nc = content[i]
+                                    when {
+                                        nc == '\\' -> i += 2
+                                        nc == '"' || nc == '\'' -> {
+                                            val quote = nc
+                                            i++
+                                            while (i < n) {
+                                                val x = content[i]
+                                                when {
+                                                    x == '\\' -> i += 2
+                                                    x == quote -> {
+                                                        i++
+                                                        break
+                                                    }
+                                                    else -> i++
+                                                }
+                                            }
+                                        }
+                                        nc == '{' -> {
+                                            nested++
+                                            i++
+                                        }
+                                        nc == '}' -> {
+                                            nested--
+                                            i++
+                                        }
+                                        else -> i++
+                                    }
+                                }
+                            }
+                            else -> i++
+                        }
+                    }
+                }
+                c == '{' -> {
+                    depth++
+                    i++
+                }
+                c == '}' -> {
+                    depth--
+                    if (depth < 0) return false
+                    i++
+                }
+                else -> i++
+            }
+        }
+        return depth == 0
     }
 }

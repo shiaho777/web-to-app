@@ -16,17 +16,26 @@
 #      会写出被显式 keep 的所有内容
 #   3. 把崩溃栈对照 build/outputs/mapping/release/mapping.txt 反推
 
--dontobfuscate
+# -dontobfuscate  # shell template: enable obfuscation for size
+
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}
+-assumenosideeffects class com.webtoapp.core.logging.AppLogger {
+    public static void v(...);
+    public static void d(...);
+    public static void i(...);
+}
 
 # 关掉一组容易破坏反射 / Compose / 协程语义的优化模式
 # 这些是 R8 历史上反复出现 bug 的优化通道，关掉它们体积代价可忽略
--optimizations !class/merging/*,!field/*,!method/marking/static,!method/inlining/*,!code/allocation/variable
--optimizationpasses 1
+-optimizationpasses 3
 
 # ============================================================
 # 调试 / 崩溃堆栈可读
 # ============================================================
--keepattributes SourceFile,LineNumberTable
 -keepattributes Signature
 -keepattributes Exceptions
 -keepattributes *Annotation*
@@ -39,7 +48,6 @@
 -keepattributes MethodParameters
 
 # 让崩溃栈打印 R8 重命名前的类名 / 行号
--renamesourcefileattribute SourceFile
 
 # ============================================================
 # Android 组件 — Manifest 引用，必须保名
@@ -49,11 +57,7 @@
 -keep public class * extends android.content.BroadcastReceiver
 -keep public class * extends android.content.ContentProvider
 -keep public class * extends android.accessibilityservice.AccessibilityService
--keep public class * extends androidx.work.ListenableWorker
 -keep public class * extends android.app.Application
--keep public class * extends androidx.fragment.app.Fragment
--keep public class * extends androidx.lifecycle.ViewModel
--keep public class * extends androidx.lifecycle.AndroidViewModel
 
 # ============================================================
 # 通用反射 — Parcelable / Serializable / enum / native
@@ -99,7 +103,6 @@
 # Kotlin
 # ============================================================
 -keep class kotlin.Metadata { *; }
--keep class kotlin.reflect.** { *; }
 -keepclassmembers class **$WhenMappings { <fields>; }
 -keepclassmembers class kotlin.Lazy { public <methods>; }
 -keep class kotlin.jvm.internal.DefaultConstructorMarker { *; }
@@ -121,34 +124,43 @@
 -keepnames class kotlinx.coroutines.flow.** { *; }
 
 # ============================================================
-# 项目自身代码 — 全部保留（开源 + 重反射）
+# 项目自身代码 — 允许 R8 剔除未引用成员（LITE 体积）
 # ============================================================
--keep class com.webtoapp.** { *; }
--keepclassmembers class com.webtoapp.** { *; }
--keep enum com.webtoapp.** { *; }
--keep interface com.webtoapp.** { *; }
-
-# data class 的合成构造器（含默认参数）— Gson 反序列化必须
 -keepclassmembers class com.webtoapp.data.model.** {
     <init>(...);
+    <fields>;
 }
+-keepclassmembers class com.webtoapp.core.shell.** {
+    <init>(...);
+    <fields>;
+}
+-keep class com.webtoapp.core.feature.** { *; }
+-keep class * implements com.webtoapp.core.feature.FeatureModule { *; }
+-keep class com.webtoapp.feature.compat.** { *; }
+-keep class com.webtoapp.ui.shell.ShellActivity { *; }
+-keep class com.webtoapp.core.i18n.Strings
+-keep class com.webtoapp.core.i18n.ShellStringTable { *; }
+-keep class com.webtoapp.core.i18n.AppLanguage { *; }
+-keep class com.webtoapp.ui.shell.GeolocationPermissionsSingleton { *; }
+-keep class com.webtoapp.core.engine.GeckoEngineAccess { *; }
+-keep class com.webtoapp.core.webview.TlsMitmAccess { *; }
+-keep class com.webtoapp.core.notification.FcmAccess { *; }
+-keepclassmembers class com.webtoapp.core.engine.GeckoViewEngine { *; }
+-keepclassmembers class com.webtoapp.core.webview.TlsMitmBridge { *; }
+-keepclassmembers class com.webtoapp.core.webview.TlsMitmCaManager { *; }
+-keepclassmembers class com.webtoapp.core.notification.NotificationFcmManager { *; }
+-keepclassmembers enum com.webtoapp.** {
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+-keep interface com.webtoapp.core.feature.** { *; }
 
-# ============================================================
-# Room — KSP 生成的 _Impl 类已经在 com.webtoapp.** 范围内
-# ============================================================
--keep class * extends androidx.room.RoomDatabase { *; }
--keep @androidx.room.Entity class *
--keep @androidx.room.Dao class *
--keepclassmembers class * {
-    @androidx.room.* <methods>;
-}
--dontwarn androidx.room.paging.**
+-dontwarn androidx.room.**
 
 # ============================================================
 # Gson — 序列化 / 反序列化通过反射
 # ============================================================
 -keep class sun.misc.Unsafe { *; }
--keep class com.google.gson.** { *; }
 -keep class * implements com.google.gson.TypeAdapter
 -keep class * implements com.google.gson.TypeAdapterFactory
 -keep class * implements com.google.gson.JsonSerializer
@@ -159,6 +171,7 @@
     @com.google.gson.annotations.JsonAdapter <fields>;
     @com.google.gson.annotations.Expose <fields>;
 }
+-dontwarn com.google.gson.**
 
 # Gson TypeToken — R8 full mode 会把 `object : TypeToken<List<...>>() {}`
 # 匿名子类的 Signature 属性剥掉，运行时抛 IllegalStateException。
@@ -166,106 +179,42 @@
 -keep,allowobfuscation,allowshrinking class com.google.gson.reflect.TypeToken
 -keep,allowobfuscation,allowshrinking class * extends com.google.gson.reflect.TypeToken
 
-# ============================================================
-# Koin DI — 大量反射 + ServiceLoader
-# ============================================================
--keep class org.koin.** { *; }
--keepclassmembers class * {
-    public <init>(org.koin.core.scope.Scope);
-}
--keepclassmembers class * extends org.koin.core.module.Module { *; }
 -dontwarn org.koin.**
 
 # ============================================================
 # OkHttp / Okio — Platform 反射检测 OS 安全栈
 # ============================================================
 -keep class okhttp3.internal.platform.** { *; }
--keep class okhttp3.internal.publicsuffix.** { *; }
 -dontwarn okhttp3.**
 -dontwarn okio.**
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
 
-# ============================================================
-# Coil — ServiceLoader 加载 fetcher / decoder / mapper
-# ============================================================
--keep class coil.util.** { *; }
--keep class coil.fetch.** { *; }
--keep class coil.decode.** { *; }
--keep class coil.map.** { *; }
 -dontwarn coil.**
 
-# ============================================================
-# apksig — 反射读取 @Asn1Class/@Asn1Field 注解序列化 PKCS#7
-# ============================================================
--keep class com.android.apksig.** { *; }
--keepclassmembers class com.android.apksig.** { *; }
--keep @com.android.apksig.internal.asn1.Asn1Class class *
--keepclassmembers class * {
-    @com.android.apksig.internal.asn1.Asn1Field *;
-}
 -dontwarn com.android.apksig.**
 
-# ============================================================
-# GeckoView — 大量 JNI / 注解反射
-# ============================================================
--keep class org.mozilla.geckoview.** { *; }
--keep class org.mozilla.gecko.** { *; }
--keepclassmembers class * extends org.mozilla.geckoview.GeckoSession$* { *; }
 -dontwarn org.mozilla.geckoview.**
+-dontwarn org.mozilla.gecko.**
 
-# ============================================================
-# ZXing — 反射查找编码格式
-# ============================================================
--keep class com.google.zxing.** { *; }
--keep class com.journeyapps.** { *; }
 -dontwarn com.google.zxing.**
 -dontwarn com.journeyapps.**
 
-# ============================================================
-# Vico 图表 — Compose 渲染器反射
-# ============================================================
--keep class com.patrykandpatrick.vico.** { *; }
 -dontwarn com.patrykandpatrick.vico.**
 
-# ============================================================
-# BillingClient — AIDL stub
-# ============================================================
--keep class com.android.vending.billing.** { *; }
--keep class com.android.billingclient.** { *; }
--keep class com.google.android.gms.internal.** { *; }
 -dontwarn com.android.billingclient.**
+-dontwarn com.android.vending.billing.**
 
-# ============================================================
-# Credentials API + GoogleId — 反射解析 ID Token
-# ============================================================
--keep class androidx.credentials.** { *; }
--keep class com.google.android.libraries.identity.** { *; }
--keep class com.google.android.gms.auth.api.identity.** { *; }
 -dontwarn androidx.credentials.**
 -dontwarn com.google.android.libraries.identity.**
+-dontwarn com.google.android.gms.auth.api.identity.**
 
-# ============================================================
-# DataStore Preferences
-# ============================================================
--keep class androidx.datastore.** { *; }
 -dontwarn androidx.datastore.**
 
-# ============================================================
-# Security crypto (alpha — 可能有反射)
-# ============================================================
--keep class androidx.security.crypto.** { *; }
--keep class com.google.crypto.tink.** { *; }
 -dontwarn androidx.security.crypto.**
 -dontwarn com.google.crypto.tink.**
 
-# ============================================================
-# Compress / xz — ServiceLoader 加载格式
-# ============================================================
--keep class org.apache.commons.compress.compressors.FileNameUtil { *; }
--keep class org.apache.commons.compress.archivers.** { *; }
--keep class org.tukaani.xz.** { *; }
 -dontwarn org.apache.commons.compress.**
 -dontwarn org.tukaani.xz.**
 -dontwarn org.brotli.dec.**
@@ -281,21 +230,14 @@
 # ============================================================
 -dontwarn com.google.android.material.**
 
-# ============================================================
-# Custom Tabs (browser)
-# ============================================================
--keep class androidx.browser.** { *; }
 -dontwarn androidx.browser.**
 
-# ============================================================
-# Haze (背景模糊)
-# ============================================================
--keep class dev.chrisbanes.haze.** { *; }
 -dontwarn dev.chrisbanes.haze.**
 
-# Firebase / FCM
--keep class com.google.firebase.** { *; }
--keep class com.google.android.gms.** { *; }
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
 
+
+-keep class com.webtoapp.core.feature.** { *; }
+-keep class * implements com.webtoapp.core.feature.FeatureModule { *; }
+-keep class com.webtoapp.feature.compat.** { *; }

@@ -26,12 +26,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Science
-import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -218,7 +213,7 @@ private fun WtaSectionHeader(
                 modifier = Modifier.size(WtaSize.TouchTarget)
             ) {
                 Icon(
-                    if (isExpanded) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                    if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = if (isExpanded) Strings.collapse else Strings.expand,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -261,7 +256,7 @@ private fun WtaCapabilityPill(
         ) {
             if (leadingIcon) {
                 Icon(
-                    Icons.Outlined.Science,
+                    Icons.Default.Build,
                     contentDescription = null,
                     modifier = Modifier.size(12.dp)
                 )
@@ -482,7 +477,7 @@ fun WtaChoiceRow(
             label = "expandArrow"
         )
         Icon(
-            Icons.Filled.ExpandMore,
+            Icons.Default.KeyboardArrowDown,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
@@ -582,7 +577,7 @@ fun WtaDangerRow(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    icon: ImageVector = Icons.Outlined.Warning,
+    icon: ImageVector = Icons.Default.Warning,
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
@@ -629,7 +624,7 @@ fun WtaEmptyState(
     title: String,
     modifier: Modifier = Modifier,
     message: String? = null,
-    icon: ImageVector = Icons.Outlined.Info,
+    icon: ImageVector = Icons.Default.Info,
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null
 ) {
@@ -693,9 +688,9 @@ fun WtaStatusBanner(
         WtaStatusTone.Error -> colors.onErrorContainer
     }
     val icon = when (tone) {
-        WtaStatusTone.Error -> Icons.Outlined.ErrorOutline
-        WtaStatusTone.Warning -> Icons.Outlined.Warning
-        else -> Icons.Outlined.Info
+        WtaStatusTone.Error -> Icons.Default.Warning
+        WtaStatusTone.Warning -> Icons.Default.Warning
+        else -> Icons.Default.Info
     }
 
     Surface(

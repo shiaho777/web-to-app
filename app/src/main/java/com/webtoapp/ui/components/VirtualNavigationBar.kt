@@ -5,18 +5,8 @@ import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -105,7 +95,7 @@ fun VirtualNavigationBar(
 
                     if (config.showRefreshButton) {
                         NavButton(
-                            icon = Icons.Filled.Refresh,
+                            icon = Icons.Default.Refresh,
                             contentDescription = Strings.cdRefresh,
                             enabled = true,
                             onClick = onRefresh,
@@ -116,7 +106,7 @@ fun VirtualNavigationBar(
 
                     if (config.showHomeButton) {
                         NavButton(
-                            icon = Icons.Filled.Home,
+                            icon = Icons.Default.Home,
                             contentDescription = Strings.cdHome,
                             enabled = true,
                             onClick = onHome,

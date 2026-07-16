@@ -105,7 +105,7 @@ fun BoxScope.ShellErrorCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    Icons.Default.Error,
+                    Icons.Default.Warning,
                     null,
                     tint = MaterialTheme.colorScheme.error
                 )

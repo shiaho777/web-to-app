@@ -107,7 +107,10 @@ class LanguageManager(private val context: Context) {
         return context.createConfigurationContext(config)
     }
 
-    fun getPromptManager(): AiPromptManager {
-        return AiPromptManager
+    fun getPromptManager(): Any? {
+        return runCatching {
+            Class.forName("com.webtoapp.core.i18n.AiPromptManager").kotlin.objectInstance
+                ?: Class.forName("com.webtoapp.core.i18n.AiPromptManager")
+        }.getOrNull()
     }
 }

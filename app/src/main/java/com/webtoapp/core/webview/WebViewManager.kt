@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.feature.ScriptPackAccess
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -19,13 +20,12 @@ import androidx.webkit.WebViewFeature
 import com.webtoapp.core.adblock.AdBlocker
 import com.webtoapp.core.crypto.SecureAssetLoader
 import com.webtoapp.core.extension.ExtensionManager
-import com.webtoapp.core.extension.ExtensionPanelScript
 import com.webtoapp.core.extension.ModuleRunTime
 import com.webtoapp.data.model.NewWindowBehavior
 import com.webtoapp.data.model.ScriptRunTime
 import com.webtoapp.data.model.UserAgentMode
 import com.webtoapp.data.model.WebViewConfig
-import com.webtoapp.core.engine.GeckoViewEngine
+import com.webtoapp.core.engine.GeckoEngineAccess
 import com.webtoapp.core.engine.ProxyConfig
 import com.webtoapp.core.errorpage.ErrorPageManager
 import com.webtoapp.core.errorpage.ErrorPageMode
@@ -1125,9 +1125,14 @@ class WebViewManager(
 
         this.cachedBrowserDisguiseConfig = browserDisguiseConfig
         this.cachedBrowserDisguiseJs = if (browserDisguiseConfig?.enabled == true) {
-            com.webtoapp.core.appearance.BrowserDisguiseJsGenerator.generate(browserDisguiseConfig).also { js ->
+            val js = ScriptPackAccess.browserDisguiseJs(browserDisguiseConfig)
+            if (js.isNullOrBlank()) {
+                AppLogger.w("WebViewManager", "BrowserDisguiseJsGenerator pack missing")
+                null
+            } else {
                 val coverage = com.webtoapp.core.appearance.BrowserDisguiseConfig.calculateCoverage(browserDisguiseConfig)
                 AppLogger.d("WebViewManager", "Browser Disguise JS cached: ${js.length} chars, coverage=${"%,.0f".format(coverage * 100)}%")
+                js
             }
         } else null
 
@@ -1177,21 +1182,20 @@ class WebViewManager(
         if (config.dnsMode != "SYSTEM") {
             AppLogger.d("WebViewManager", "Applying DoH DNS: mode=${config.dnsMode}, provider=${config.dnsConfig.provider}")
             dnsManager.applyDnsConfig(config.dnsConfig)
-            com.webtoapp.core.engine.GeckoViewEngine.applyDnsConfig(config.dnsConfig)
+            GeckoEngineAccess.applyDnsConfig(config.dnsConfig)
         } else {
             dnsManager.clearDnsConfig()
-            com.webtoapp.core.engine.GeckoViewEngine.applyDnsConfig(
+            GeckoEngineAccess.applyDnsConfig(
                 com.webtoapp.data.model.DnsConfig(provider = "custom", customDohUrl = "")
             )
         }
 
-        GeckoViewEngine.applyAntiCapture(config.antiCapture)
+        GeckoEngineAccess.applyAntiCapture(config.antiCapture)
 
         val tlsFingerprintEnabled = config.tlsFingerprintEnabled &&
             config.tlsFingerprintTemplate.isNotBlank()
 
         if (tlsFingerprintEnabled) {
-            val template = TlsFingerprintTemplate.fromId(config.tlsFingerprintTemplate)
             val upstreamSocks = if (config.proxyMode == "STATIC" &&
                 (config.proxyType == "SOCKS5" || config.proxyType == "SOCKS")) {
                 LocalHttpToSocksBridge.Upstream(
@@ -1204,22 +1208,20 @@ class WebViewManager(
                 null
             }
 
-            val mitmPort = TlsMitmBridge.start(
-                config = TlsMitmBridge.Config(
-                    template = template,
-                    customCipherSuites = if (TlsFingerprintTemplate.isCustom(config.tlsFingerprintTemplate)) {
-                        config.tlsFingerprintCustomCiphers
-                    } else {
-                        emptyList()
-                    },
-                    upstreamSocks = upstreamSocks
-                ),
+            val mitmPort = TlsMitmAccess.start(
+                templateId = config.tlsFingerprintTemplate,
+                customCipherSuites = if (TlsFingerprintTemplate.isCustom(config.tlsFingerprintTemplate)) {
+                    config.tlsFingerprintCustomCiphers
+                } else {
+                    emptyList()
+                },
+                upstreamSocks = upstreamSocks,
                 caDir = context.filesDir
             )
 
             if (mitmPort > 0) {
-                AppLogger.d("WebViewManager", "TLS MITM bridge started on 127.0.0.1:$mitmPort template=${template.id} socks=${upstreamSocks != null}")
-                GeckoViewEngine.setTlsMitmActive(true)
+                AppLogger.d("WebViewManager", "TLS MITM bridge started on 127.0.0.1:$mitmPort template=${config.tlsFingerprintTemplate} socks=${upstreamSocks != null}")
+                GeckoEngineAccess.setTlsMitmActive(true)
                 proxyApplyJob?.cancel()
                 proxyApplyJob = proxyScope.launch {
                     try {
@@ -1235,7 +1237,7 @@ class WebViewManager(
                     }
                 }
 
-                GeckoViewEngine.applyProxyConfig(
+                GeckoEngineAccess.applyProxyConfig(
                     ProxyConfig(
                         mode = "STATIC",
                         host = "127.0.0.1",
@@ -1248,12 +1250,12 @@ class WebViewManager(
                 LocalHttpToSocksBridge.stop()
             } else {
                 AppLogger.e("WebViewManager", "TLS MITM bridge failed to start, falling back to normal proxy")
-                TlsMitmBridge.stop()
+                TlsMitmAccess.stop()
                 applyNormalProxy(config, dnsManager, hostsMappingCanApply, dohCanApplyViaLocalProxy, hostsMappingEnabled)
             }
         } else {
-            TlsMitmBridge.stop()
-            GeckoViewEngine.setTlsMitmActive(false)
+            TlsMitmAccess.stop()
+            GeckoEngineAccess.setTlsMitmActive(false)
             applyNormalProxy(config, dnsManager, hostsMappingCanApply, dohCanApplyViaLocalProxy, hostsMappingEnabled)
         }
 
@@ -1544,7 +1546,7 @@ class WebViewManager(
                 }
             }
 
-            GeckoViewEngine.applyProxyConfig(
+            GeckoEngineAccess.applyProxyConfig(
                 ProxyConfig(
                     mode = proxyMode,
                     host = proxyHost,
@@ -1559,7 +1561,7 @@ class WebViewManager(
             proxyApplyJob?.cancel()
             PacProxyManager(context).clearProxy()
 
-            GeckoViewEngine.applyProxyConfig(
+            GeckoEngineAccess.applyProxyConfig(
                 ProxyConfig(mode = "NONE")
             )
             if (hostsMappingCanApply || dohCanApplyViaLocalProxy) {
@@ -2399,7 +2401,7 @@ class WebViewManager(
                     true
                 }
 
-                if (TlsMitmBridge.isRunning() && isMitmSslError(error)) {
+                if (TlsMitmAccess.isRunning() && isMitmSslError(error)) {
                     AppLogger.d("WebViewManager", "Proceeding with MITM TLS certificate for: $errorUrl")
                     handler?.proceed()
                     return
@@ -2470,15 +2472,11 @@ class WebViewManager(
                             })
                         }
 
-                        addView(com.google.android.material.textfield.TextInputLayout(activity).apply {
+                        addView(android.widget.EditText(activity).apply {
+                            tag = "auth_username"
                             hint = com.webtoapp.core.i18n.Strings.httpAuthUsername
-                            boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
-                            setBoxCornerRadii(12f, 12f, 12f, 12f)
-                            addView(com.google.android.material.textfield.TextInputEditText(activity).apply {
-                                tag = "auth_username"
-                                inputType = android.text.InputType.TYPE_CLASS_TEXT
-                                isSingleLine = true
-                            })
+                            inputType = android.text.InputType.TYPE_CLASS_TEXT
+                            isSingleLine = true
                         })
 
                         addView(android.view.View(activity).apply {
@@ -2487,17 +2485,12 @@ class WebViewManager(
                             )
                         })
 
-                        addView(com.google.android.material.textfield.TextInputLayout(activity).apply {
+                        addView(android.widget.EditText(activity).apply {
+                            tag = "auth_password"
                             hint = com.webtoapp.core.i18n.Strings.httpAuthPassword
-                            boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
-                            setBoxCornerRadii(12f, 12f, 12f, 12f)
-                            endIconMode = com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
-                            addView(com.google.android.material.textfield.TextInputEditText(activity).apply {
-                                tag = "auth_password"
-                                inputType = android.text.InputType.TYPE_CLASS_TEXT or
-                                    android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-                                isSingleLine = true
-                            })
+                            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                                android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                            isSingleLine = true
                         })
                     }
 
@@ -2721,9 +2714,9 @@ class WebViewManager(
             }
         }
         if (cert != null) {
-            return TlsMitmCaManager.isSignedByLocalCa(cert)
+            return TlsMitmAccess.isSignedByLocalCa(cert)
         }
-        return TlsMitmBridge.isRunning() && (
+        return TlsMitmAccess.isRunning() && (
             error.primaryError == android.net.http.SslError.SSL_UNTRUSTED ||
             error.primaryError == android.net.http.SslError.SSL_EXPIRED ||
             error.primaryError == android.net.http.SslError.SSL_NOTYETVALID ||
@@ -3350,7 +3343,7 @@ class WebViewManager(
 
         PacProxyManager(context).clearProxy()
 
-        GeckoViewEngine.applyProxyConfig(
+        GeckoEngineAccess.applyProxyConfig(
             ProxyConfig(mode = "NONE")
         )
     }
@@ -3867,11 +3860,23 @@ class WebViewManager(
 
         try {
 
-            val panelScript = ExtensionPanelScript.getPanelInitScript(extensionFabIcon)
-            webView.evaluateJavascript(panelScript, null)
-
-            val helperScript = ExtensionPanelScript.getModuleHelperScript()
-            webView.evaluateJavascript(helperScript, null)
+            val panelClazz = runCatching {
+                Class.forName("com.webtoapp.core.extension.ExtensionPanelScript")
+            }.getOrNull()
+            if (panelClazz == null) {
+                AppLogger.d("WebViewManager", "ExtensionPanelScript pack missing; skip panel inject")
+                return
+            }
+            val panelScript = panelClazz.getMethod("getPanelInitScript", String::class.java)
+                .invoke(null, extensionFabIcon) as? String
+            if (!panelScript.isNullOrBlank()) {
+                webView.evaluateJavascript(panelScript, null)
+            }
+            val helperScript = panelClazz.getMethod("getModuleHelperScript")
+                .invoke(null) as? String
+            if (!helperScript.isNullOrBlank()) {
+                webView.evaluateJavascript(helperScript, null)
+            }
 
             extensionPanelInjected = true
             AppLogger.d("WebViewManager", "Extension panel script injected")
@@ -3939,9 +3944,8 @@ class WebViewManager(
 
     private fun injectIsolationScript(webView: WebView) {
         try {
-            val isolationManager = com.webtoapp.core.privacy.IsolationManager.getInstance(context)
-            val script = isolationManager.generateIsolationScript()
-
+            val isolationManager = com.webtoapp.core.privacy.IsolationPrivacyAccess.getInstance(context)
+            val script = com.webtoapp.core.privacy.IsolationPrivacyAccess.generateIsolationScript(isolationManager)
             if (script.isNotEmpty()) {
                 webView.evaluateJavascript(script, null)
                 AppLogger.d("WebViewManager", "Isolation script injected")
@@ -4899,14 +4903,14 @@ class WebViewManager(
                 val codeBuilder = StringBuilder()
 
                 if (runAt == ScriptRunTime.DOCUMENT_START) {
-                    codeBuilder.appendLine(com.webtoapp.core.extension.ChromeExtensionMobileCompat.generateCompatScript())
+                    codeBuilder.appendLine(ScriptPackAccess.chromeMobileCompat())
                     codeBuilder.appendLine()
                 }
 
                 for ((extId, extModules) in extensionGroups) {
                     val manifestJson = extModules.firstOrNull()?.manifestJson ?: "{}"
                     codeBuilder.appendLine(
-                        com.webtoapp.core.extension.ChromeExtensionPolyfill.generatePolyfill(
+                        ScriptPackAccess.chromePolyfill(
                             extensionId = extId,
                             manifestJson = manifestJson
                         )
@@ -4927,14 +4931,14 @@ class WebViewManager(
 
                 if (runAt == ScriptRunTime.DOCUMENT_START) {
                     webView.evaluateJavascript(
-                        com.webtoapp.core.extension.ChromeExtensionMobileCompat.generateCompatScript(), null
+                        ScriptPackAccess.chromeMobileCompat(), null
                     )
                 }
                 for ((extId, extModules) in extensionGroups) {
                     val extBuilder = StringBuilder()
                     val manifestJson = extModules.firstOrNull()?.manifestJson ?: "{}"
                     extBuilder.appendLine(
-                        com.webtoapp.core.extension.ChromeExtensionPolyfill.generatePolyfill(
+                        ScriptPackAccess.chromePolyfill(
                             extensionId = extId,
                             manifestJson = manifestJson
                         )
@@ -5106,7 +5110,7 @@ class WebViewManager(
                 window.__WTA_USERSCRIPT_BOOTSTRAPPED__ = true;
                 window.__WTA_USERSCRIPT_POLYFILLS__ = window.__WTA_USERSCRIPT_POLYFILLS__ || {};
                 window.__WTA_USERSCRIPT_REQUIRE_CACHE__ = window.__WTA_USERSCRIPT_REQUIRE_CACHE__ || {};
-                ${com.webtoapp.core.extension.UserScriptWindowScript.getWindowManagerScript()}
+                ${ScriptPackAccess.userscriptWindowManager()}
             })();
         """.trimIndent()
         webView.evaluateJavascript(bootstrap, null)

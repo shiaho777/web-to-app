@@ -672,7 +672,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
     }
 }
 
-internal object GeolocationPermissionsSingleton {
+object GeolocationPermissionsSingleton {
     private val allowedOrigins = mutableSetOf<String>()
 
     fun getAllowedOrigins(): Set<String> = synchronized(allowedOrigins) { allowedOrigins.toSet() }

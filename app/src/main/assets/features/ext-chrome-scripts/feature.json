@@ -1,0 +1,12 @@
+{
+  "id": "ext-chrome-scripts",
+  "version": 1,
+  "minLiteApi": 1,
+  "dependsOn": [],
+  "entryClass": "com.webtoapp.core.extension.ChromeExtensionPolyfill",
+  "loadOrder": 10,
+  "dex": [
+    "classes.dex"
+  ],
+  "nativeLibs": []
+}

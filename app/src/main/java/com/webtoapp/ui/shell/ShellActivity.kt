@@ -182,9 +182,9 @@ class ShellActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareController.getInstance(this)
+        val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareAccess.getInstance(this)
 
-        if (hardwareController.isBlockVolumeKeys) {
+        if (com.webtoapp.core.forcedrun.ForcedRunHardwareAccess.isBlockVolumeKeys(hardwareController)) {
             when (event.keyCode) {
                 KeyEvent.KEYCODE_VOLUME_UP,
                 KeyEvent.KEYCODE_VOLUME_DOWN,
@@ -192,7 +192,7 @@ class ShellActivity : AppCompatActivity() {
             }
         }
 
-        if (hardwareController.isBlockPowerKey && event.keyCode == KeyEvent.KEYCODE_POWER) {
+        if (com.webtoapp.core.forcedrun.ForcedRunHardwareAccess.isBlockPowerKey(hardwareController) && event.keyCode == KeyEvent.KEYCODE_POWER) {
             return true
         }
 
@@ -210,9 +210,9 @@ class ShellActivity : AppCompatActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareController.getInstance(this)
+        val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareAccess.getInstance(this)
 
-        if (hardwareController.isBlockVolumeKeys) {
+        if (com.webtoapp.core.forcedrun.ForcedRunHardwareAccess.isBlockVolumeKeys(hardwareController)) {
             when (keyCode) {
                 KeyEvent.KEYCODE_VOLUME_UP,
                 KeyEvent.KEYCODE_VOLUME_DOWN,
@@ -225,8 +225,8 @@ class ShellActivity : AppCompatActivity() {
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
 
-        val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareController.getInstance(this)
-        if (hardwareController.isBlockTouch) {
+        val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareAccess.getInstance(this)
+        if (com.webtoapp.core.forcedrun.ForcedRunHardwareAccess.isBlockTouch(hardwareController)) {
 
             return true
         }
@@ -319,9 +319,17 @@ class ShellActivity : AppCompatActivity() {
 
         try {
             val appLanguage = when (config.language.uppercase()) {
-                "ENGLISH" -> com.webtoapp.core.i18n.AppLanguage.ENGLISH
-                "ARABIC" -> com.webtoapp.core.i18n.AppLanguage.ARABIC
-                else -> com.webtoapp.core.i18n.AppLanguage.CHINESE
+                "ENGLISH", "EN" -> com.webtoapp.core.i18n.AppLanguage.ENGLISH
+                "ARABIC", "AR" -> com.webtoapp.core.i18n.AppLanguage.ARABIC
+                "PORTUGUESE", "PT" -> com.webtoapp.core.i18n.AppLanguage.PORTUGUESE
+                "SPANISH", "ES" -> com.webtoapp.core.i18n.AppLanguage.SPANISH
+                "FRENCH", "FR" -> com.webtoapp.core.i18n.AppLanguage.FRENCH
+                "GERMAN", "DE" -> com.webtoapp.core.i18n.AppLanguage.GERMAN
+                "RUSSIAN", "RU" -> com.webtoapp.core.i18n.AppLanguage.RUSSIAN
+                "JAPANESE", "JA" -> com.webtoapp.core.i18n.AppLanguage.JAPANESE
+                "KOREAN", "KO" -> com.webtoapp.core.i18n.AppLanguage.KOREAN
+                "CHINESE", "ZH", "ZH_CN", "ZH-CN" -> com.webtoapp.core.i18n.AppLanguage.CHINESE
+                else -> com.webtoapp.core.i18n.AppLanguage.fromCode(config.language.lowercase())
             }
             Strings.setLanguage(appLanguage)
             AppLogger.d("ShellActivity", "设置界面语言: ${config.language} -> $appLanguage")

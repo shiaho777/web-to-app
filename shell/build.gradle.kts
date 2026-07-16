@@ -15,6 +15,11 @@ import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
 
 android {
+    sourceSets {
+        getByName("main") {
+            java.srcDir("src/shellOnly/java")
+        }
+    }
     namespace = "com.webtoapp"
     compileSdk = 36
 
@@ -32,22 +37,9 @@ android {
             useSupportLibrary = true
         }
 
+
         ndk {
-            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
-        }
-
-        externalNativeBuild {
-            cmake {
-                cppFlags += "-std=c++17"
-                arguments += "-DANDROID_STL=c++_shared"
-            }
-        }
-    }
-
-    externalNativeBuild {
-        cmake {
-            path = file("../app/src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
+            abiFilters += listOf("arm64-v8a")
         }
     }
 
@@ -72,7 +64,7 @@ android {
             manifest.srcFile("src/main/AndroidManifest.xml")
 
             java.srcDirs("src/main/java", "src/main/java-overrides")
-            res.srcDirs("../app/src/main/res")
+            res.srcDirs("src/main/res")
             assets.srcDirs("src/main/assets")
         }
     }
@@ -116,6 +108,24 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "org/bouncycastle/pqc/**"
+            excludes += "**/lowmcL*.properties"
+            excludes += "kotlin/**"
+            excludes += "DebugProbesKt.bin"
+            excludes += "META-INF/*.kotlin_module"
+            excludes += "META-INF/versions/**"
+            excludes += "**/dexopt/baseline.prof"
+            excludes += "**/dexopt/baseline.profm"
+            excludes += "dexopt/**"
+            excludes += "assets/dexopt/**"
+            excludes += "kotlin-tooling-metadata.json"
+            excludes += "META-INF/version-control-info.textproto"
+            excludes += "META-INF/com/android/build/gradle/app-metadata.properties"
+            excludes += "META-INF/*.version"
+            excludes += "META-INF/androidx*.version"
+            excludes += "META-INF/com.*.version"
+            excludes += "META-INF/kotlinx_*.version"
+            excludes += "META-INF/services/kotlinx.coroutines.*"
         }
         jniLibs {
             useLegacyPackaging = true
@@ -135,12 +145,64 @@ android {
             excludes += "**/libplugin-container.so"
 
             excludes += "**/libphp.so"
+            excludes += "**/libnode_bridge.so"
+            excludes += "**/libnode_launcher.so"
+            excludes += "**/libgo_exec_loader.so"
+            excludes += "**/libapk_optimizer.so"
+            excludes += "**/libcrypto_optimized.so"
+            excludes += "**/libperf_engine.so"
+            excludes += "**/libsys_optimizer.so"
+            excludes += "**/libhardware_control.so"
+            excludes += "**/libpython3.so"
+            excludes += "**/libmusl-linker.so"
+            excludes += "**/libc++_shared.so"
+            excludes += "**/libcrypto_engine.so"
+            excludes += "**/libbrowser_kernel.so"
         }
     }
     androidResources {
         ignoreAssetsPattern = ""
 
-        localeFilters += listOf("zh", "en", "ar")
+        localeFilters += listOf("en")
+        // keep default density set; locales trimmed above
+
+    }
+}
+
+
+val slimShellStrings by tasks.registering {
+    group = "build"
+    description = "Split shell i18n into per-language packs (all 10 languages)"
+    val input = rootProject.file("app/src/main/java/com/webtoapp/core/i18n/Strings.kt")
+    val slimRoot = layout.buildDirectory.dir("generated/slim-i18n")
+    val output = layout.buildDirectory.file("generated/slim-i18n/com/webtoapp/core/i18n/Strings.kt")
+    val tableOut = layout.buildDirectory.file("generated/slim-i18n/com/webtoapp/core/i18n/ShellStringTable.kt")
+    val assetsOut = layout.buildDirectory.dir("generated/slim-i18n/assets/i18n")
+    inputs.file(input)
+    inputs.file(rootProject.file("scripts/slim_shell_strings.py"))
+    outputs.file(output)
+    outputs.file(tableOut)
+    outputs.dir(assetsOut)
+    doLast {
+        val outFile = output.get().asFile
+        outFile.parentFile.mkdirs()
+        val cmd = listOf(
+            "python3",
+            rootProject.file("scripts/slim_shell_strings.py").absolutePath,
+            input.absolutePath,
+            outFile.absolutePath
+        )
+        val pb = ProcessBuilder(cmd)
+        pb.redirectErrorStream(true)
+        val proc = pb.start()
+        val log = proc.inputStream.bufferedReader().readText()
+        val code = proc.waitFor()
+        val tableFile = tableOut.get().asFile
+        val assetsDir = assetsOut.get().asFile
+        if (code != 0 || !outFile.isFile || !tableFile.isFile || !assetsDir.isDirectory) {
+            throw GradleException("slimShellStrings failed ($code): $log")
+        }
+        logger.lifecycle("[shell-slim] $log".trim())
     }
 }
 
@@ -151,7 +213,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
     from("../app/src/main/java")
 
     include(
-
         "**/ui/shell/**",
         "**/ui/theme/**",
         "**/ui/shared/**",
@@ -174,15 +235,12 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/perf/**",
         "**/core/port/**",
         "**/core/extension/**",
-        "**/core/gecko/**",
         "**/core/notification/**",
         "**/core/backgroundrun/**",
         "**/core/translate/**",
         "**/core/bgm/**",
         "**/core/engine/**",
-        "**/core/scraper/**",
         "**/core/script/**",
-        "**/core/ads/**",
         "**/core/network/**",
         "**/core/errorpage/**",
         "**/core/golang/**",
@@ -192,20 +250,15 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/wordpress/**",
         "**/core/autostart/**",
         "**/core/background/**",
-        "**/core/linux/**",
+        "**/core/linux/LocalDnsBridgeProxy.kt",
         "**/core/download/**",
-        "**/core/sample/**",
-        "**/core/frontend/**",
         "**/core/kernel/**",
 
         "com/webtoapp/data/model/**",
         "com/webtoapp/data/converter/**",
 
-        "**/ui/components/announcement/AnnouncementTemplates.kt",
+                                "**/ui/components/announcement/AnnouncementTemplates.kt",
         "**/ui/components/PremiumComponents.kt",
-        "**/ui/components/PermissionRationale.kt",
-        "**/ui/components/ThemeSelector.kt",
-        "**/ui/components/StatusBarPreview.kt",
         "**/ui/components/EdgeSwipeRefreshLayout.kt",
         "**/ui/components/VirtualNavigationBar.kt",
         "**/ui/components/StatusBarBackground.kt",
@@ -217,11 +270,42 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
     )
 
     exclude(
-
         "**/WebToAppApplication.kt",
 
         "**/core/crypto/EncryptedApkBuilder.kt",
         "**/core/crypto/SecurityInitializer.kt",
+        "**/core/crypto/AssetEncryptor.kt",
+
+        "**/core/sample/**",
+        "**/core/frontend/**",
+        "**/*SampleManager.kt",
+        "**/ui/theme/ThemeManager.kt",
+        "**/core/linux/PerformanceOptimizer.kt",
+
+        "**/core/extension/BuiltInModules.kt",
+        "**/core/extension/BuiltInChromeExtensions.kt",
+        "**/core/extension/BrowserExtensionStore.kt",
+        "**/core/extension/ExtensionPanelScript.kt",
+        "**/core/extension/ChromeExtensionPolyfill.kt",
+        "**/core/extension/ChromeExtensionMobileCompat.kt",
+        "**/core/extension/UserScriptWindowScript.kt",
+        "**/core/extension/panel/**",
+        "**/core/appearance/BrowserDisguiseJsGenerator.kt",
+        "**/ui/shell/TranslateScriptProvider.kt",
+
+        "**/core/privacy/IsolationManager.kt",
+        "**/core/privacy/FingerprintGenerator.kt",
+        "**/core/privacy/IsolationScriptInjector.kt",
+
+        "**/core/errorpage/ErrorPageGames.kt",
+
+        "**/core/bgm/OnlineMusicApi.kt",
+        "**/core/bgm/OnlineMusicDownloader.kt",
+        "**/core/bgm/BgmPlayer.kt",
+
+        "**/core/forcedrun/ForcedRunHardwareController.kt",
+        "**/core/forcedrun/NativeHardwareController.kt",
+
 
         "**/core/autostart/AutoStartLauncher.kt",
         "**/core/autostart/BootReceiver.kt",
@@ -230,10 +314,22 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/util/AppUpdateChecker.kt",
         "**/util/FaviconFetcher.kt",
         "**/util/UrlMetadataFetcher.kt",
-        "**/util/MediaStorage.kt",
         "**/util/ZipProjectImporter.kt",
         "**/util/HtmlProjectHelper.kt",
         "**/util/OfflineManager.kt",
+        "**/util/SvgIconMapper.kt",
+        "**/util/IconLibraryStorage.kt",
+        "**/util/IconStorage.kt",
+        "**/util/ConfigPresetStorage.kt",
+        "**/util/PermissionPresetStorage.kt",
+        "**/util/SplashStorage.kt",
+        "**/util/HtmlProjectProcessor.kt",
+        "**/util/CacheManager.kt",
+        "**/util/HtmlStorage.kt",
+        "**/util/NetworkTrustStorage.kt",
+        "**/util/TextFileClassifier.kt",
+        "**/util/MediaStorage.kt",
+        "**/util/Constants.kt",
 
         "**/core/frontend/GitHubRepoFetcher.kt",
 
@@ -241,26 +337,91 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/extension/CodeSnippets.kt",
         "**/core/extension/ModuleTemplates.kt",
         "**/core/extension/DebugTestPages.kt",
-        "**/core/extension/ModulePreset.kt"
+        "**/core/extension/ModulePreset.kt",
+
+        "**/core/engine/GeckoViewEngine.kt",
+        "**/core/engine/download/GeckoEngineDownloader.kt",
+        "**/core/gecko/**",
+        "**/core/notification/NotificationFcmManager.kt",
+        "**/core/notification/NotificationFcmService.kt",
+        "**/core/webview/TlsMitmBridge.kt",
+        "**/core/webview/TlsMitmCaManager.kt",
+        "**/core/webview/TlsUpstreamConnector.kt",
+
+        "**/core/scraper/**",
+        "**/core/ads/**",
+
+        "**/core/i18n/Strings.kt",
+        "**/core/i18n/AiPromptManager.kt",
+        "**/core/i18n/RandomAppNameGenerator.kt",
+        "**/data/model/AiConfig.kt",
+        "**/data/model/AppCategory.kt",
+        "**/ui/design/WtaPreviews.kt",
+        "**/ui/theme/ThemeAnimations.kt",
+        "**/ui/theme/ThemeRevealAnimation.kt",
+        "**/ui/components/ThemeSelector.kt",
+        "**/ui/components/StatusBarPreview.kt",
+        "**/ui/components/PermissionRationale.kt"
     )
 
     into("src/main/java")
+}
+
+tasks.named("syncShellRuntimeSources").configure {
+    dependsOn(slimShellStrings)
+    doLast {
+        val slim = layout.buildDirectory.file("generated/slim-i18n/com/webtoapp/core/i18n/Strings.kt").get().asFile
+        val table = layout.buildDirectory.file("generated/slim-i18n/com/webtoapp/core/i18n/ShellStringTable.kt").get().asFile
+        val destDir = file("src/main/java/com/webtoapp/core/i18n")
+        destDir.mkdirs()
+        slim.copyTo(destDir.resolve("Strings.kt"), overwrite = true)
+        table.copyTo(destDir.resolve("ShellStringTable.kt"), overwrite = true)
+    }
 }
 
 tasks.matching { it.name.startsWith("compile") && it.name.contains("Kotlin") }.configureEach {
     dependsOn(syncShellRuntimeSources)
 }
 
-val syncShellRuntimeAssets by tasks.registering(Copy::class) {
+val syncShellRuntimeAssets by tasks.registering {
     description = "Mirror runtime-only asset files from app module to shell template (single source of truth: app/src/main/assets)."
     group = "build"
-
-    from("../app/src/main/assets") {
-
-        include("php_router_server.php")
+    dependsOn(slimShellStrings)
+    val phpSrc = rootProject.file("app/src/main/assets/php_router_server.php")
+    val i18nSrc = layout.buildDirectory.dir("generated/slim-i18n/assets/i18n")
+    inputs.file(phpSrc)
+    inputs.dir(i18nSrc)
+    outputs.file(file("src/main/assets/php_router_server.php"))
+    outputs.dir(file("src/main/assets/i18n"))
+    doLast {
+        val assetsDir = file("src/main/assets")
+        assetsDir.mkdirs()
+        val phpOut = assetsDir.resolve("php_router_server.php")
+        if (phpOut.exists()) {
+            phpOut.delete()
+        }
+        val i18nOut = assetsDir.resolve("i18n")
+        i18nOut.mkdirs()
+        i18nOut.listFiles()?.forEach { it.delete() }
+        val enPack = i18nSrc.get().asFile.resolve("en.pack")
+        if (enPack.isFile) {
+            enPack.copyTo(i18nOut.resolve("en.pack"), overwrite = true)
+        } else {
+            i18nSrc.get().asFile.listFiles()?.forEach { src ->
+                if (src.isFile && src.name.endsWith(".pack")) {
+                    src.copyTo(i18nOut.resolve(src.name), overwrite = true)
+                }
+            }
+        }
+        val hostI18n = rootProject.file("app/src/main/assets/shell_i18n")
+        hostI18n.mkdirs()
+        hostI18n.listFiles()?.forEach { it.delete() }
+        i18nSrc.get().asFile.listFiles()?.forEach { src ->
+            if (src.isFile && src.name.endsWith(".pack")) {
+                src.copyTo(hostI18n.resolve(src.name), overwrite = true)
+            }
+        }
     }
-
-    into("src/main/assets")
 }
 
 tasks.matching { it.name.startsWith("merge") && it.name.contains("Assets") }.configureEach {
@@ -339,107 +500,65 @@ abstract class SyncNativeExecutableJniLibsTask : DefaultTask() {
 }
 
 androidComponents {
-    onVariants { variant ->
-        val capName = variant.name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-        val variantBuildTypeName = variant.buildType ?: "release"
-        val cxxBuildType = if (variantBuildTypeName.equals("debug", ignoreCase = true)) "Debug" else "RelWithDebInfo"
-        val nativeBuildTaskName = "buildCMake$cxxBuildType"
-        val syncNodeLauncherTask = tasks.register<SyncNativeExecutableJniLibsTask>("syncNodeLauncherJniLibs$capName") {
-            group = "build"
-            description = "Copies ABI-specific node launcher executables into generated jniLibs for ${variant.name}."
-            variantName.set(variant.name)
-            buildTypeName.set(variantBuildTypeName)
-            executableName.set("node_launcher")
-            packagedLibraryName.set("libnode_launcher.so")
-            cxxRoot.set(layout.buildDirectory.dir("intermediates/cxx/$cxxBuildType"))
-            outputDir.set(layout.buildDirectory.dir("generated/jniLibs/nodeLauncher/${variant.name}"))
-            dependsOn(nativeBuildTaskName)
-        }
-
-        val syncGoLoaderTask = tasks.register<SyncNativeExecutableJniLibsTask>("syncGoExecLoaderJniLibs$capName") {
-            group = "build"
-            description = "Copies ABI-specific Go exec loader executables into generated jniLibs for ${variant.name}."
-            variantName.set(variant.name)
-            buildTypeName.set(variantBuildTypeName)
-            executableName.set("go_exec_loader")
-            packagedLibraryName.set("libgo_exec_loader.so")
-            cxxRoot.set(layout.buildDirectory.dir("intermediates/cxx/$cxxBuildType"))
-            outputDir.set(layout.buildDirectory.dir("generated/jniLibs/goExecLoader/${variant.name}"))
-            dependsOn(nativeBuildTaskName)
-        }
-
-        tasks.matching { it.name == "merge${capName}NativeLibs" }.configureEach {
-            dependsOn(syncNodeLauncherTask)
-            dependsOn(syncGoLoaderTask)
-        }
-
-        variant.sources.jniLibs?.addGeneratedSourceDirectory(
-            syncNodeLauncherTask,
-            SyncNativeExecutableJniLibsTask::outputDir
-        )
-        variant.sources.jniLibs?.addGeneratedSourceDirectory(
-            syncGoLoaderTask,
-            SyncNativeExecutableJniLibsTask::outputDir
-        )
-    }
 }
 
 dependencies {
+    implementation(project(":feature-api"))
 
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    implementation("androidx.documentfile:documentfile:1.0.1")
+    compileOnly("androidx.documentfile:documentfile:1.0.1")
 
-    implementation("com.google.android.material:material:1.10.0")
     implementation("androidx.activity:activity-compose:1.8.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")
 
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("dev.chrisbanes.haze:haze:0.7.1")
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.navigation:navigation-compose:2.7.5")
-
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
+    implementation("androidx.compose.material:material-icons-core")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    implementation("io.coil-kt:coil-compose:2.5.0")
-    implementation("io.coil-kt:coil-video:2.5.0")
-    implementation("io.coil-kt:coil-gif:2.5.0")
+    compileOnly("androidx.room:room-common:2.6.1")
 
     implementation("com.google.code.gson:gson:2.10.1")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:okhttp-dnsoverhttps:4.12.0")
 
-    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
-    implementation("com.google.firebase:firebase-messaging")
-
-    implementation("org.bouncycastle:bcpkix-jdk15to18:1.78.1")
-    implementation("org.bouncycastle:bcprov-jdk15to18:1.78.1")
-
-    implementation("io.insert-koin:koin-android:3.5.3")
-    implementation("io.insert-koin:koin-androidx-compose:3.5.3")
-
     implementation("androidx.webkit:webkit:1.9.0")
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    compileOnly("org.apache.commons:commons-compress:1.26.0")
+}
 
-    implementation("org.apache.commons:commons-compress:1.26.0")
-    implementation("org.tukaani:xz:1.9")
+tasks.register("stripShellTemplateBloat") {
+    group = "build"
+    description = "Remove non-runtime bloat entries from shell release APK"
+    dependsOn("packageRelease")
+    val apk = layout.buildDirectory.file("outputs/apk/release/shell-release.apk")
+    inputs.file(apk)
+    outputs.file(apk)
+    doLast {
+        val file = apk.get().asFile
+        if (!file.isFile) return@doLast
+        val script = rootProject.file("scripts/strip_shell_apk_bloat.py")
+        val pb = ProcessBuilder("python3", script.absolutePath, file.absolutePath)
+        pb.redirectErrorStream(true)
+        val proc = pb.start()
+        val log = proc.inputStream.bufferedReader().readText()
+        val code = proc.waitFor()
+        if (code != 0) {
+            throw GradleException("stripShellTemplateBloat failed ($code): $log")
+        }
+        logger.lifecycle("[shell-slim] $log".trim())
+    }
+}
 
-    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:137.0.20250414091429")
-
-    implementation("androidx.browser:browser:1.8.0")
+tasks.matching { it.name == "packageRelease" }.configureEach {
+    finalizedBy("stripShellTemplateBloat")
 }

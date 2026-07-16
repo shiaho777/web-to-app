@@ -1,0 +1,10 @@
+{
+  "id": "feature-compat",
+  "version": 1,
+  "minLiteApi": 1,
+  "dependsOn": [],
+  "entryClass": "com.webtoapp.feature.compat.CompatFeatureModule",
+  "loadOrder": 0,
+  "dex": ["classes.dex", "classes2.dex"],
+  "nativeLibs": []
+}

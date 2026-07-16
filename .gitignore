@@ -1,8 +1,10 @@
 *.apk
+!app/src/main/assets/template/webview_shell.apk
 *.aar
 *.ap_
 *.aab
 *.dex
+!app/src/main/assets/features/**
 *.class
 *.so
 *.tar.gz

@@ -1,5 +1,7 @@
 package com.webtoapp.core.extension
 
+import com.webtoapp.core.feature.ScriptPackAccess
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.Uri
@@ -83,7 +85,7 @@ class ChromeExtensionRuntime(
             }
         }
 
-        val polyfill = ChromeExtensionPolyfill.generatePolyfill(
+        val polyfill = ScriptPackAccess.chromePolyfill(
             extensionId = extensionId,
             manifestJson = manifestJson,
             isBackground = true

@@ -1043,7 +1043,7 @@ data class ApkExportConfig(
     val customPackageName: String? = null,
     val customVersionName: String? = null,
     val customVersionCode: Int? = null,
-    val architecture: ApkArchitecture = ApkArchitecture.UNIVERSAL,
+    val architecture: ApkArchitecture = ApkArchitecture.ARM64,
     val runtimePermissions: ApkRuntimePermissions = ApkRuntimePermissions(),
     val networkTrustConfig: NetworkTrustConfig = NetworkTrustConfig(),
     val encryptionConfig: ApkEncryptionConfig = ApkEncryptionConfig(),

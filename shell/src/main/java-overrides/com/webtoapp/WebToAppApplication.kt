@@ -8,6 +8,7 @@ import com.webtoapp.core.adblock.AdBlocker
 import com.webtoapp.core.announcement.AnnouncementManager
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellModeManager
+import com.webtoapp.core.feature.FeatureLoader
 
 class WebToAppApplication : Application() {
 
@@ -35,6 +36,12 @@ class WebToAppApplication : Application() {
         }
 
         initShellRuntime()
+
+        try {
+            FeatureLoader.loadEnabled(this)
+        } catch (e: Exception) {
+            AppLogger.e("WebToAppApplication", "FeatureLoader failed", e)
+        }
 
         com.webtoapp.core.perf.SystemPerfOptimizer.initSystem(this)
         com.webtoapp.core.perf.SystemPerfOptimizer.readaheadCriticalFiles(this)
@@ -77,7 +84,7 @@ class WebToAppApplication : Application() {
     private fun clearAppCaches() {
         try {
             com.webtoapp.core.crypto.AesCryptoEngine.clearKeyCache()
-            com.webtoapp.util.HtmlProjectProcessor.clearEncodingCache()
+            runCatching { Class.forName("com.webtoapp.util.HtmlProjectProcessor").getMethod("clearEncodingCache").invoke(null) }
             AppLogger.i("WebToAppApplication", "App caches cleared")
         } catch (e: Exception) {
             AppLogger.e("WebToAppApplication", "Failed to clear app caches", e)
@@ -92,7 +99,10 @@ class WebToAppApplication : Application() {
             shellAdBlocker = null
             shellModeManagerLocal = null
 
-            com.webtoapp.core.extension.ExtensionManager.release()
+            runCatching {
+                Class.forName("com.webtoapp.core.extension.ExtensionManager")
+                    .getMethod("release").invoke(null)
+            }
             com.webtoapp.core.crypto.AesCryptoEngine.clearKeyCache()
             com.webtoapp.core.webview.WebViewPool.release()
             com.webtoapp.core.perf.SystemPerfOptimizer.release()

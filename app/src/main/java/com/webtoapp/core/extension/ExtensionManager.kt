@@ -206,14 +206,8 @@ class ExtensionManager private constructor(private val context: Context) {
     private fun loadBuiltInModules() {
         val builtInStates = loadBuiltInStates()
 
-        val standardModules = BuiltInModules.getAll()
-
-        val chromeExtModules = try {
-            BuiltInChromeExtensions.getAll(context)
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to load built-in Chrome extensions", e)
-            emptyList()
-        }
+        val standardModules = loadBuiltInStandardModules()
+        val chromeExtModules = loadBuiltInChromeModules()
 
         _builtInModules.value = (standardModules + chromeExtModules).map { module ->
 
@@ -223,6 +217,34 @@ class ExtensionManager private constructor(private val context: Context) {
             } else {
                 module
             }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun loadBuiltInStandardModules(): List<ExtensionModule> {
+        return try {
+            val clazz = Class.forName("com.webtoapp.core.extension.BuiltInModules")
+            val result = clazz.getMethod("getAll").invoke(null)
+            (result as? List<ExtensionModule>) ?: emptyList()
+        } catch (e: ClassNotFoundException) {
+            emptyList()
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to load built-in modules", e)
+            emptyList()
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun loadBuiltInChromeModules(): List<ExtensionModule> {
+        return try {
+            val clazz = Class.forName("com.webtoapp.core.extension.BuiltInChromeExtensions")
+            val result = clazz.getMethod("getAll", Context::class.java).invoke(null, context)
+            (result as? List<ExtensionModule>) ?: emptyList()
+        } catch (e: ClassNotFoundException) {
+            emptyList()
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Failed to load built-in Chrome extensions", e)
+            emptyList()
         }
     }
 

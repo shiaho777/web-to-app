@@ -42,8 +42,8 @@ object ShellActivityInit {
     ) {
 
         try {
-            val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareController.getInstance(activity)
-            hardwareController.setTargetActivity(activity)
+            val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareAccess.getInstance(activity)
+            com.webtoapp.core.forcedrun.ForcedRunHardwareAccess.setTargetActivity(hardwareController, activity)
             com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "硬件控制器初始化成功")
         } catch (e: Exception) {
             com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "硬件控制器初始化失败", e)
@@ -100,8 +100,12 @@ object ShellActivityInit {
         if (config.isolationEnabled && config.isolationConfig != null) {
             try {
                 val isolationConfig = config.isolationConfig.toIsolationConfig()
-                val isolationManager = com.webtoapp.core.privacy.IsolationManager.getInstance(activity)
-                isolationManager.initialize(isolationConfig)
+                val isolationManager = com.webtoapp.core.privacy.IsolationPrivacyAccess.getInstance(activity)
+                if (isolationManager == null) {
+                    AppLogger.w("ShellActivity", "独立环境 pack 不可用，已跳过")
+                    return
+                }
+                com.webtoapp.core.privacy.IsolationPrivacyAccess.initialize(isolationManager, isolationConfig)
                 AppLogger.d("ShellActivity", "独立环境已初始化: enabled=${isolationConfig.enabled}")
                 com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "独立环境已初始化")
             } catch (e: Exception) {
@@ -162,20 +166,18 @@ object ShellActivityInit {
                         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebSocket 通知服务已启动: url=${nc.wsUrl}")
                     }
                     nc.type == "fcm" -> {
-                        com.webtoapp.core.notification.NotificationFcmManager.start(
+                        com.webtoapp.core.notification.FcmAccess.start(
                             context = activity,
-                            config = com.webtoapp.core.notification.NotificationFcmManager.FcmConfig(
-                                projectId = nc.fcmProjectId,
-                                applicationId = nc.fcmApplicationId,
-                                apiKey = nc.fcmApiKey,
-                                senderId = nc.fcmSenderId,
-                                registerUrl = nc.registerUrl,
-                                registerHeaders = nc.registerHeaders,
-                                authToken = nc.authToken,
-                                clickUrl = nc.clickUrl,
-                                appName = config.appName,
-                                googleServicesJson = nc.fcmGoogleServicesJson
-                            )
+                            projectId = nc.fcmProjectId,
+                            applicationId = nc.fcmApplicationId,
+                            apiKey = nc.fcmApiKey,
+                            senderId = nc.fcmSenderId,
+                            registerUrl = nc.registerUrl,
+                            registerHeaders = nc.registerHeaders,
+                            authToken = nc.authToken,
+                            clickUrl = nc.clickUrl,
+                            appName = config.appName,
+                            googleServicesJson = nc.fcmGoogleServicesJson
                         )
                         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "FCM 通知通道已启动: project=${nc.fcmProjectId}")
                     }

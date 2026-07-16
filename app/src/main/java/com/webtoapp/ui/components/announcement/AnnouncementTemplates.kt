@@ -18,20 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Campaign
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.outlined.Bolt
-import androidx.compose.material.icons.outlined.Campaign
-import androidx.compose.material.icons.outlined.Celebration
-import androidx.compose.material.icons.outlined.CropSquare
-import androidx.compose.material.icons.outlined.Diamond
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material.icons.outlined.Gradient
-import androidx.compose.material.icons.outlined.MenuBook
-import androidx.compose.material.icons.outlined.Park
-import androidx.compose.material.icons.outlined.PhoneIphone
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -71,16 +59,16 @@ enum class AnnouncementTemplate(
     val type: AnnouncementTemplateType,
     val icon: ImageVector
 ) {
-    MINIMAL(AnnouncementTemplateType.MINIMAL, Icons.Outlined.CropSquare),
+    MINIMAL(AnnouncementTemplateType.MINIMAL, Icons.Default.Check),
     XIAOHONGSHU(AnnouncementTemplateType.XIAOHONGSHU, Icons.AutoMirrored.Filled.ArrowForward),
-    GRADIENT(AnnouncementTemplateType.GRADIENT, Icons.Outlined.Gradient),
-    GLASSMORPHISM(AnnouncementTemplateType.GLASSMORPHISM, Icons.Outlined.PhoneIphone),
-    NEON(AnnouncementTemplateType.NEON, Icons.Outlined.Bolt),
-    CUTE(AnnouncementTemplateType.CUTE, Icons.Outlined.FavoriteBorder),
-    ELEGANT(AnnouncementTemplateType.ELEGANT, Icons.Outlined.Diamond),
-    FESTIVE(AnnouncementTemplateType.FESTIVE, Icons.Outlined.Celebration),
-    DARK(AnnouncementTemplateType.DARK, Icons.Filled.DarkMode),
-    NATURE(AnnouncementTemplateType.NATURE, Icons.Outlined.Park)
+    GRADIENT(AnnouncementTemplateType.GRADIENT, Icons.Default.Star),
+    GLASSMORPHISM(AnnouncementTemplateType.GLASSMORPHISM, Icons.Default.Phone),
+    NEON(AnnouncementTemplateType.NEON, Icons.Default.Warning),
+    CUTE(AnnouncementTemplateType.CUTE, Icons.Default.FavoriteBorder),
+    ELEGANT(AnnouncementTemplateType.ELEGANT, Icons.Default.Star),
+    FESTIVE(AnnouncementTemplateType.FESTIVE, Icons.Default.Favorite),
+    DARK(AnnouncementTemplateType.DARK, Icons.Default.Settings),
+    NATURE(AnnouncementTemplateType.NATURE, Icons.Default.Place)
 }
 
 data class AnnouncementConfig(
@@ -314,7 +302,7 @@ fun AnnouncementTemplateSelector(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Outlined.Campaign, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
+                Icon(Icons.Default.Notifications, null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Spacer(modifier = Modifier.width(10.dp))
             Text(
@@ -496,7 +484,7 @@ private fun SimpleDialog(
                         .background(styleBadgeColor(style)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Outlined.CropSquare, null, tint = styleAccentColor(style), modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Check, null, tint = styleAccentColor(style), modifier = Modifier.size(18.dp))
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
@@ -510,7 +498,7 @@ private fun SimpleDialog(
                     )
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Filled.Close, contentDescription = Strings.close, tint = styleBodyColor(style))
+                    Icon(Icons.Default.Close, contentDescription = Strings.close, tint = styleBodyColor(style))
                 }
             }
             HorizontalDivider(color = styleAccentColor(style).copy(alpha = 0.10f))
@@ -553,7 +541,7 @@ private fun AccentDialog(
                             .background(Color.White.copy(alpha = 0.9f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Outlined.Gradient, null, tint = styleAccentColor(style), modifier = Modifier.size(18.dp))
+                        Icon(Icons.Default.Star, null, tint = styleAccentColor(style), modifier = Modifier.size(18.dp))
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
@@ -573,7 +561,7 @@ private fun AccentDialog(
                         }
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, contentDescription = Strings.close, tint = Color(0xFF1F2350))
+                        Icon(Icons.Default.Close, contentDescription = Strings.close, tint = Color(0xFF1F2350))
                     }
                 }
             }
@@ -616,7 +604,7 @@ private fun DarkDialog(
                         .background(Color.White.copy(alpha = 0.06f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Filled.DarkMode, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Default.Settings, null, tint = Color.White, modifier = Modifier.size(18.dp))
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
@@ -628,7 +616,7 @@ private fun DarkDialog(
                     )
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Filled.Close, contentDescription = Strings.close, tint = Color.White)
+                    Icon(Icons.Default.Close, contentDescription = Strings.close, tint = Color.White)
                 }
             }
             AnnouncementContent(
