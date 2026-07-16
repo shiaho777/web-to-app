@@ -1,240 +1,159 @@
 # AGENTS.md
 
-Single source of truth for coding agents in this repository.
+Instructions for coding agents working in this repository.
 
-Do not split project-architecture / LITE / feature-pack / packaging guidance into extra tutorial MD files.
-Update **this file only** when those rules change. Root `README.md` is user-facing product docs — leave it alone unless the user asks.
-
----
-
-## 1. Code style
+## Code style
 
 - Do not write code comments
 - Prefer minimal, surgical diffs that match existing patterns
 - Do not add copyright or license headers unless asked
+- Prefer fixing root causes over surface patches
+- Do not refactor unrelated code while fixing a bug or adding a feature
 
-## 2. Project layout
+## Project layout
 
 | Path | Role |
 |------|------|
-| `app/` | Full builder host (UI, APK export, editors). **Host preview uses this full DEX.** |
-| `shell/` | LITE runtime template only → `app/src/main/assets/template/webview_shell.apk` |
-| `feature-api/` | SPI, `FeatureLoader`, `FeatureIds`, soft-load helpers (`ScriptPackAccess`, …) |
-| `feature-compat/` | Heavy runtime sources excluded from LITE; packs into `app/src/main/assets/features/` |
-| `modules/` | Module Market catalog (`registry.json` + per-module folders) |
-| `scripts/` | Build helpers (`slim_shell_strings.py`, `package_fine_feature_packs.py`, …) |
+| `app/` | Full builder host: editor UI, export pipeline, runtimes. Host preview/run uses this full DEX. |
+| `shell/` | LITE runtime template only. Built to `app/src/main/assets/template/webview_shell.apk`. |
+| `feature-api/` | Shared SPI: `FeatureLoader`, `FeatureIds`, `FeatureModule`, soft-load helpers (`ScriptPackAccess`, …). |
+| `feature-compat/` | Heavy runtime sources excluded from LITE; packaged into `app/src/main/assets/features/`. |
+| `modules/` | Module Market catalog (`registry.json` + per-module folders). |
+| `scripts/` | Build helpers (`slim_shell_strings.py`, `package_fine_feature_packs.py`, …). |
 
-Runtime Kotlin is **authored under `app/`** and synced into `shell` / `feature-compat` by Gradle. Do not permanently fork copies.
+Runtime Kotlin is authored under `app/` and synced into `shell` / `feature-compat` by Gradle. Edit the `app/` source once; do not permanently fork copies under shell or feature modules.
 
-Public user docs (do not treat as agent architecture source of truth): `README.md`, `.github/docs/README_CN.md`, `.github/CONTRIBUTING.md`, `modules/README.md`.
+User-facing product docs: `README.md`, `.github/docs/README_CN.md`, `.github/CONTRIBUTING.md`, `modules/README.md`.
 
-## 3. i18n
+## How the main pieces connect
 
-- Host UI: 10 languages in `app/.../i18n/Strings.kt` (`Strings` / `StringsA` / `StringsB` / `StringsC`)
-- Any new user-facing host string must include all 10: Chinese, English, Arabic, Portuguese, Spanish, French, German, Russian, Japanese, Korean
-- Shell LITE uses slim i18n (`scripts/slim_shell_strings.py` + packs under `app/src/main/assets/shell_i18n/`). Do not dump full host `Strings.kt` into LITE
+```text
+Editor (Compose screens in app/)
+  ↔ data models (WebApp, configs)
+  ↔ export factory (ApkConfig / ApkConfigJsonFactory)
+  ↔ CapabilityPlanner  →  feature ids
+  ↔ FeaturePackMerger  →  packs into output APK
+  ↔ ApkBuilder / ApkBuildCache  →  signed generated APK
 
-## 4. Android / packaging constraints
+app/ sources
+  → syncShellRuntimeSources  →  shell DEX  →  webview_shell.apk (LITE template)
+  → syncFeatureCompatSources →  feature-compat AAR
+       → packageFeatureCompatPack / package_fine_feature_packs.py
+       → app/src/main/assets/features/<id>/
 
-- Generated apps keep a low `targetSdk` on the shell path (on-device fork+exec runtimes)
-- Avoid new third-party deps unless strongly justified (`app/build.gradle.kts` / `shell/build.gradle.kts`)
-- Notification channels: Web Notification polyfill, polling, WebSocket, FCM (developer-owned Firebase). No OEM vendor push SDKs by default
-- **One shell template only:** `webview_shell.apk` (LITE). Non-LITE capabilities = feature packs. **Never reintroduce a second full template APK**
-- Export incremental rebuild: host-only `app/.../apkbuilder` (`ApkBuildCache` + `ApkBuilder`). Template IDs content-stable (no mtime). Encrypted builds force full rebuild. Do not feed signed/renamed APKs into full `modifyApk` as templates
+Generated APK runtime
+  WebToAppApplication → FeatureLoader.loadEnabled(enabled.json)
+  → PathClassLoader for each pack
+  → *Access / ScriptPackAccess / SPI resolve optional code
+```
 
-## 5. Workflow notes
+Mental model:
 
-- Do not commit secrets, local properties, or IDE/cache junk
-- Do not create commits or push unless the user asks
-- Prefer root-cause fixes over surface patches
+- **Host preview** runs `:app` with nearly all classes on the main classpath.
+- **Generated APK** runs LITE template classes only, plus packs the Planner selected.
+- A flag in the editor is useless at export unless it flows through **model → ApkConfig JSON → shell config → runtime code**, and any heavy code is either in LITE or loaded via pack + soft-load.
+
+## i18n
+
+- Host UI strings live in `app/src/main/java/com/webtoapp/core/i18n/Strings.kt` (split across `Strings` / `StringsA` / `StringsB` / `StringsC`).
+- Any new user-facing host string needs all 10 languages: Chinese, English, Arabic, Portuguese, Spanish, French, German, Russian, Japanese, Korean.
+- Prefer adding properties on the existing split objects; match surrounding style.
+- Shell LITE uses slim i18n (`scripts/slim_shell_strings.py` + packs under `app/src/main/assets/shell_i18n/`). Do not copy the full host `Strings.kt` into the shell template.
+- Shell-only user text may use the slim table / language packs; keep host and shell string systems separate.
+
+## Android and packaging constraints
+
+- Generated apps keep a low `targetSdk` on the shell path because they rely on on-device fork+exec runtimes. Do not raise shell targetSdk casually.
+- Avoid new third-party dependencies unless strongly justified (`app/build.gradle.kts` / `shell/build.gradle.kts`). Prefer platform APIs and existing modules.
+- Notification push channels: Web Notification polyfill, polling, WebSocket, FCM (developer-owned Firebase config). Do not add OEM vendor push SDKs by default.
+- **One shell template only:** `webview_shell.apk` (LITE). Extra capabilities ship as feature packs. Do not reintroduce a second full/fat shell template APK.
+- Export incremental rebuild lives in host-only `app/.../apkbuilder` (`ApkBuildCache` + `ApkBuilder`):
+  - Template / entry identities must be **content-stable** (no mtime-based keys).
+  - Encrypted builds always force a full rebuild.
+  - Do not feed signed or renamed APKs back into full `modifyApk` as templates.
+- Default export ABI lean: prefer arm64 unless the product path explicitly needs multi-ABI.
+
+## Workflow
+
+- Do not commit secrets, `local.properties`, keystores, or IDE/cache junk.
+- Do not create commits or push unless the user asks.
+- When changing export or shell packaging, rebuild the template/packs you touched and sanity-check pure WEB still plans as lite-only when optional flags are off.
+- When changing Planner or feature ids, update/extend `CapabilityPlannerTest`.
 
 ---
 
-## 6. LITE + feature packs — architecture (mandatory)
+## LITE shell and feature packs
 
-Any work on generated APK size, shell runtime, export packaging, engines, servers, extensions, isolation, error pages, or moving code out of the template **must** follow this section.
-
-### 6.1 Big picture
-
-```text
-Host builder (:app)
-  = full sources in one DEX
-  → in-app preview always sees classes
-  → FeatureLoader Class.forName often hits host classpath first
-
-Generated user APK
-  = LITE template (webview_shell.apk)
-  ⊕ packs from CapabilityPlanner + FeaturePackMerger
-  → only LITE classes exist unless a pack was planned and merged
-  → soft-load via FeatureLoader / *Access / ScriptPackAccess
-```
-
-**Preview ≠ export** unless both paths stay valid:
-
-1. Host still has the real class (or can load the pack).
-2. LITE uses Access/SPI **or** Planner always injects the pack when the flag is on.
-3. Shell call sites never hard-type FQCNs excluded from LITE.
-
-#1 recurring bug: host preview works; export crashes or silently no-ops because a class was excluded from shell without soft-load + Planner.
-
-### 6.2 Architecture locks
-
-| Rule | Detail |
-|------|--------|
-| One template | Only `app/src/main/assets/template/webview_shell.apk` from `:shell` release |
-| Size target | Shrink **generated** WebView APKs via LITE ⊕ packs, not only the host builder |
-| Pure WEB default | WEB + system WebView + all optional flags off → `liteOnly`, no packs |
-| Pack when needed | Non-LITE capability → feature id → `features/<id>/` + `enabled.json` |
-| Parent-first classloader | Pack `PathClassLoader` is child of app loader. **Same FQCN cannot be LITE stub + pack real** — child never wins. LITE holds a **different** Access type; real FQCN lives only in pack |
-| Author once | Sources under `app/`; shell/compat sync only |
-| Host-only stays host | `core/apkbuilder`, host screens, sample/market, editor-only helpers must not re-enter LITE |
-| Capability parity | Size without losing enabled-export behavior |
-
-### 6.3 Dual runtime (preview vs export)
+### Dual runtime (preview vs export)
 
 | | Host `:app` | Generated APK |
 |--|-------------|---------------|
-| DEX | Almost all `app/src` | Shell include−exclude + merged packs |
-| Feature classes | On main classpath | Only if kept in LITE or pack loaded |
-| `FeatureLoader.loadClass` | Often succeeds via host DEX | Needs pack DEX if excluded from LITE |
-| Config | Editor / in-memory | Assets JSON via `ShellModeManager` |
+| DEX | Almost all `app/src` | Shell sync include−exclude + merged packs |
+| Optional features | Usually on main classpath | Only if kept in LITE or a pack was planned and loaded |
+| `FeatureLoader.loadClass` | Often hits host DEX first via `Class.forName` | Needs pack DEX when excluded from LITE |
+| Config | Editor / in-memory models | Assets JSON via `ShellModeManager` |
 
-| Symptom | Likely cause |
-|---------|----------------|
-| Preview OK, export `ClassNotFoundException` | Hard ref to excluded class; no pack/soft-load |
-| Preview OK, export feature silently off | Soft-load null; Planner did not attach pack |
-| Export always fat | Planner always packs; or heavy code still in LITE |
-| Pack code never runs | Same FQCN stub in LITE shadows pack |
-| Host compiles, shell does not | LITE still imports excluded type |
+**Preview ≠ export** unless both paths stay valid:
 
-### 6.4 End-to-end pipeline
+1. Host still has the real implementation (or can load the pack).
+2. LITE call sites use Access/SPI, or the Planner always injects the pack when the flag is on.
+3. Nothing still synced into shell hard-types an FQCN that was excluded from LITE.
 
-```text
-app/src/main/java  (author)
-   │
-   ├─ syncShellRuntimeSources (include − exclude) → shell → assembleRelease
-   │     → app/src/main/assets/template/webview_shell.apk
-   │
-   └─ syncFeatureCompatSources → feature-compat AAR
-         → packageFeatureCompatPack
-         → package_fine_feature_packs.py
-         → app/src/main/assets/features/<id>/
+Most common failure: preview works; exported APK crashes or silently skips the feature because code left LITE without soft-load + Planner wiring.
 
-Export
-  ApkConfig/WebApp flags → CapabilityPlanner → feature ids
-  → FeaturePackMerger → assets/features/* + enabled.json in output APK
+### Architecture rules
 
-Runtime (generated)
-  WebToAppApplication → FeatureLoader.loadEnabled
-  → PathClassLoader per pack → *Access / ScriptPackAccess / SPI
-```
+| Rule | Detail |
+|------|--------|
+| One template | `app/src/main/assets/template/webview_shell.apk` from `:shell` release only |
+| Size target | Shrink **generated** WebView APKs (LITE ⊕ packs), not only the host builder app |
+| Pure WEB default | WEB + system WebView + optional flags off → `liteOnly`, no packs |
+| Pack when needed | Non-LITE capability → feature id → `features/<id>/` + `enabled.json` |
+| Parent-first classloader | Pack loader is a child of the app loader. The same FQCN cannot be an empty LITE stub and a real pack class — the parent wins. LITE holds a differently named Access helper; the real FQCN lives only in the pack |
+| Author once | Sources under `app/`; shell and feature-compat only sync |
+| Host-only stays host | `core/apkbuilder`, host screens, sample/market, editor-only helpers must not re-enter LITE |
 
-### 6.5 Where to edit
+### Where each concern is edited
 
 | Concern | Path |
 |---------|------|
-| LITE membership | `shell/build.gradle.kts` → `syncShellRuntimeSources` include/exclude |
-| Compat / heavy sources | `feature-compat/build.gradle.kts` → `syncFeatureCompatSources` |
+| What enters LITE | `shell/build.gradle.kts` → `syncShellRuntimeSources` include/exclude |
+| What enters feature-compat | `feature-compat/build.gradle.kts` → `syncFeatureCompatSources` |
 | Fine DEX packs | `scripts/package_fine_feature_packs.py` (after `packageFeatureCompatPack`) |
-| Pack assets | `app/src/main/assets/features/<id>/` (`feature.json` + `classes.dex`…) |
-| Feature ids | `feature-api/.../FeatureIds.kt` |
+| Pack assets on disk | `app/src/main/assets/features/<id>/` (`feature.json` + `classes.dex` …) |
+| Feature id constants | `feature-api/.../FeatureIds.kt` |
 | Config → packs | `app/.../apkbuilder/CapabilityPlanner.kt` + `CapabilityPlannerTest` |
-| Export merge | `FeaturePackMerger` + `ApkBuilder` (`enabled.json`) |
-| Runtime load | `FeatureLoader` in shell `WebToAppApplication` |
-| Soft-load helpers | `*Access`, `ScriptPackAccess` |
+| Export merge | `FeaturePackMerger` + `ApkBuilder` writes `assets/features/enabled.json` |
+| Runtime load | `FeatureLoader.loadEnabled` in shell `WebToAppApplication` |
+| Soft-load helpers | `*Access` objects, `ScriptPackAccess` |
 
----
+### Soft-load pattern
 
-## 7. Soft-load pattern
+Use this when implementation leaves LITE but runtime may still need it when a flag is on.
 
-Required whenever implementation leaves LITE.
+1. Keep config/model types in LITE if shell JSON still deserializes them (`IsolationConfig`, `ErrorPageConfig`, …).
+2. Exclude heavy impl from shell; include it in feature-compat sync (and fine-pack prefixes when GRANULAR).
+3. Add a LITE Access object that only uses `FeatureLoader.loadClass` / reflection / `ScriptPackAccess.callStaticString`. No hard import of the heavy class from shell call sites.
+4. Wire `CapabilityPlanner.need(FeatureIds.XXX, reason)` when export enables the feature. Default-off features must not force packs on pure WEB.
+5. Fail closed: missing pack → feature off, log, no crash.
+6. Rebuild template + packs; cover Planner with a unit test.
 
-### 7.1 Steps
-
-1. Keep **config/model** types in LITE if shell JSON still deserializes them (`IsolationConfig`, `ErrorPageConfig`, …).
-2. Move **heavy impl** out of shell (exclude) into `feature-compat` sync (+ fine pack prefixes).
-3. Add LITE **Access** object: only `FeatureLoader.loadClass` / reflection / `ScriptPackAccess.callStaticString`. No hard import of heavy class from LITE call sites.
-4. **Planner:** `need(FeatureIds.XXX, reason)` when export enables the feature. Default-off must not force packs on pure WEB.
-5. **Fine pack** in `package_fine_feature_packs.py` for GRANULAR; sources still in feature-compat so COMPAT maps work.
-6. Rebuild shell template + packs.
-7. Tests: host unit tests on real classes; Planner tests for flag → id; fail closed (no pack → no crash, feature off).
-
-### 7.2 Do / do not
-
-**Do:** fail closed; match existing Access patterns; put moved sources in feature-compat for COMPAT phase.
-
-**Do not:** same FQCN stub in LITE + real in pack; leave `import Heavy` in shell-synced sources; soft-load without Planner; put host-only tools back into LITE.
-
-### 7.3 Reference Access implementations
+Reference Access types:
 
 | Access | Pack / area |
 |--------|-------------|
 | `IsolationPrivacyAccess` | `shell-privacy` |
 | `ForcedRunHardwareAccess` | `shell-forcedrun-hw` |
 | `ScriptPackAccess` | `ext-chrome-scripts`, `shell-disguise-js`, `shell-translate-script`, `shell-error-games` |
-| `GeckoEngineAccess` | compat / engine-gecko |
-| `FcmAccess` | compat / push-fcm |
-| `TlsMitmAccess` | compat / net-tls-mitm |
+| `GeckoEngineAccess` | feature-compat / engine-gecko |
+| `FcmAccess` | feature-compat / push-fcm |
+| `TlsMitmAccess` | feature-compat / net-tls-mitm |
 
-### 7.4 SPI (feature-api)
+SPI surface (`feature-api`): `FeatureModule`, `FeatureLoader`, `FeatureRegistry`, `FeatureIds`, plus providers such as `BrowserEngineProvider`, `ServerRuntimeProvider`, `PushChannelProvider` (use existing patterns before inventing new loaders).
 
-Core types live in `:feature-api`:
+### CapabilityPlanner
 
-- `FeatureModule` — pack entry `install(FeatureContext)`
-- `FeatureLoader` — reads `assets/features/enabled.json`, builds `PathClassLoader`, loads dex
-- `FeatureRegistry` — SPI registrations
-- `FeatureIds` + `LITE_FEATURE_API`
-- Planned/partial SPI: `BrowserEngineProvider`, `ServerRuntimeProvider`, `PushChannelProvider`, `NetworkHardeningProvider`, `ExtensionRuntimeProvider`, `ShellAddon`
-
-LITE boot order: Application → `FeatureLoader.loadEnabled` → built-in system WebView path → shell init.
-
-R8: keep `com.webtoapp.core.feature.**`, `FeatureModule` implementors, `ShellActivity`, shell `WebToAppApplication`. Do not blanket-keep `com.webtoapp.**`.
-
-**Parent-first reminder:** soft-load real FQCN only from packs; LITE Access uses a different type name.
-
----
-
-## 8. LITE membership (whitelist intent)
-
-Shell membership is controlled by `shell/build.gradle.kts` sync include/exclude (source of truth in code). Intent:
-
-### 8.1 Always LITE (pure WEB path)
-
-- `ui/shell/**` shell chrome / router / WebView surface (server branches may still hard-link — high ROI to SPI later)
-- `core/shell/**` config load, logger, runtime services
-- `core/webview/**` except TLS MITM / advanced proxy pieces moved to packs
-- System WebView engine path (`SystemWebViewEngine`, engine interfaces)
-- `core/logging/**`, slim `core/i18n/**`, basic `core/errorpage/**` (games soft-loaded)
-- Config models still deserialized at runtime
-- Minimal util needed by shell (not host-only util list)
-
-### 8.2 Must not enter LITE (denylist intent → packs or host)
-
-| Area | Destination |
-|------|-------------|
-| `core/gecko/**`, `GeckoViewEngine` | `engine-gecko` / feature-compat |
-| `core/nodejs|php|python|golang|wordpress/**` | server-* / compat (still largely in LITE today — split carefully) |
-| `NotificationFcm*` | `push-fcm` / compat |
-| `TlsMitm*` | `net-tls-mitm` / compat |
-| Heavy extension scripts (builtins, panel, polyfill, …) | ext-* fine packs |
-| `BrowserDisguiseJsGenerator`, `TranslateScriptProvider` | shell-disguise-js / shell-translate-script |
-| Isolation manager + fingerprint + injector | `shell-privacy` |
-| `ErrorPageGames` | `shell-error-games` |
-| Forced-run hardware controllers | `shell-forcedrun-hw` |
-| Host-only: apkbuilder, sample/frontend, CodeSnippets, ModuleTemplates, DebugTestPages, OnlineMusicApi/Downloader, host BgmPlayer, editor util storage helpers, … | never LITE |
-
-### 8.3 Pure WEB without packs must still support
-
-URL load, JS, storage, zoom, desktop mode, custom UA, basic chrome, static HTML/FRONTEND assets, basic splash, essential permissions, basic error UI (without mini-games).
-
-If a “basic” switch secretly needs Gecko/Firebase/BC, Planner must pull compat until code is moved.
-
----
-
-## 9. CapabilityPlanner
-
-Code: `app/.../apkbuilder/CapabilityPlanner.kt`  
-Tests: `CapabilityPlannerTest`
+Code: `CapabilityPlanner.kt`. Tests: `CapabilityPlannerTest`.
 
 ```text
 Input:  ApkConfig (+ abi filters, PlannerPhase)
@@ -242,184 +161,192 @@ Output: CapabilityPlan(features, reasons, abiFilters, liteOnly)
 liteOnly == true  ⇔  features.isEmpty()
 ```
 
-### 9.1 Phases
-
 | Phase | Behavior |
 |-------|----------|
-| **COMPAT** (default export) | Many granular ids collapse to `FeatureIds.COMPAT` (`feature-compat` fat pack). Capability must still work. |
+| **COMPAT** (default export) | Many granular ids collapse to `FeatureIds.COMPAT` (`feature-compat`). Capability must still work. |
 | **GRANULAR** | Real fine packs + `closeDependencies` |
 
-When adding an id: ensure COMPAT still covers capability (sources in feature-compat), and GRANULAR deps if A needs B.
+**AppType base needs**
 
-### 9.2 LITE-only eligibility
-
-All must hold:
-
-- AppType in WEB / HTML / FRONTEND (others force packs or compat)
-- Engine system WebView (Gecko → pack/compat)
-- No advanced flags from §9.3
-
-### 9.3 AppType → base feature
-
-| AppType | Feature id (granular) | COMPAT |
-|---------|----------------------|--------|
-| WEB / HTML / FRONTEND | (none) if flags clean | (none) |
+| AppType | Granular id | COMPAT |
+|---------|-------------|--------|
+| WEB / HTML / FRONTEND | none if flags clean | none |
 | IMAGE / VIDEO / GALLERY | `shell-media` | compat |
 | MULTI_WEB | `shell-multiweb` | compat |
 | NODEJS_APP | `server-nodejs` | compat |
 | PHP_APP | `server-php` | compat |
 | PYTHON_APP | `server-python` | compat |
 | GO_APP | `server-go` | compat |
-| WORDPRESS | `server-wordpress` (+ php dep when split) | compat |
+| WORDPRESS | `server-wordpress` (+ php when split) | compat |
 
-### 9.4 Flags → feature id
+**Common flags → feature id**
 
-| Condition | Feature id | COMPAT |
-|-----------|------------|--------|
-| Gecko engine | `engine-gecko` | compat |
-| TLS fingerprint | `net-tls-mitm` | compat |
-| Proxy enabled | `net-proxy` | compat |
-| DoH / advanced DNS | `net-doh` | compat |
-| Notification FCM | `push-fcm` | compat |
-| Notification other channels | `notify-channels` | compat |
-| Extensions / modules / userscripts | `ext-modules` | compat |
-| Activation | `shell-activation` | compat |
-| Announcement | `shell-announcement` | compat |
-| Ad block / ads | `ads-adblock` | compat |
-| Disguise (browser/device/…) | `shell-disguise` | compat |
-| Isolation / privacy fingerprint | `shell-privacy` | compat |
-| Error page mini-game | `shell-error-games` | compat |
-| Device actions / blackTech | `shell-device-actions` | compat |
-| Forced run | `shell-forcedrun` | compat |
-| Floating window | `shell-floating` | compat |
-| BGM | `shell-bgm` | compat |
-| Translate | `shell-translate` | compat |
-| Autostart | `shell-autostart` | compat |
-| Background run | `shell-background` | compat |
+| Condition | Feature id |
+|-----------|------------|
+| Gecko engine | `engine-gecko` |
+| TLS fingerprint | `net-tls-mitm` |
+| Proxy enabled | `net-proxy` |
+| DoH / advanced DNS | `net-doh` |
+| FCM notification | `push-fcm` |
+| Other notification channels | `notify-channels` |
+| Extensions / modules / userscripts | `ext-modules` |
+| Activation / announcement | `shell-activation` / `shell-announcement` |
+| Ad block / ads | `ads-adblock` |
+| Disguise | `shell-disguise` (+ `shell-disguise-js` in GRANULAR) |
+| Isolation / privacy | `shell-privacy` |
+| Error page mini-game | `shell-error-games` |
+| Forced run | `shell-forcedrun` (+ `shell-forcedrun-hw`) |
+| Floating window / BGM / translate / autostart / background | matching `shell-*` ids |
 
-### 9.5 GRANULAR dependencies (implemented)
+**GRANULAR deps (implemented):**  
+`server-wordpress` → `server-php`; `shell-forcedrun` → `shell-forcedrun-hw`; `ext-modules` → `ext-builtins` + `ext-panel` + `ext-chrome-scripts`; `shell-disguise` → `shell-disguise-js`; `shell-translate` → `shell-translate-script`.
 
-| Parent | Also add |
-|--------|----------|
-| `server-wordpress` | `server-php` |
-| `shell-forcedrun` | `shell-forcedrun-hw` |
-| `ext-modules` | `ext-builtins`, `ext-panel`, `ext-chrome-scripts` |
-| `shell-disguise` | `shell-disguise-js` |
-| `shell-translate` | `shell-translate-script` |
-| isolation | `shell-privacy` (leaf) |
-| mini-game | `shell-error-games` (leaf) |
+Do not `need()` a granular id that has no pack folder unless COMPAT still supplies the code via `feature-compat`.
 
-Do not `need()` a GRANULAR-only id without a pack folder unless COMPAT collapse still supplies the code.
+### Packaging
 
----
+**LITE template**
 
-## 10. Packaging
-
-### 10.1 LITE template
-
-- Build: `./gradlew :shell:assembleRelease :app:syncShellTemplateApk --no-configuration-cache`
+- Build: `:shell:assembleRelease` + `:app:syncShellTemplateApk`
 - Output: `app/src/main/assets/template/webview_shell.apk`
-- Content-stable template IDs; no second full template; no signed user APKs as templates
-- Shell packaging strips known bloat (BC pqc, kotlin metadata junk, unused natives when liteOnly)
+- Template cache identity must stay content-stable
 
-### 10.2 feature-compat
+**feature-compat**
 
-- Module `:feature-compat` syncs heavy sources excluded from LITE
-- `compileOnly` against shell release classes + `feature-api`
-- Task `packageFeatureCompatPack` → `app/src/main/assets/features/feature-compat/`
-- Layout: `feature.json`, `classes.dex` (+ `classes2.dex`), optional natives/assets/manifest-delta
-- Entry: `com.webtoapp.feature.compat.CompatFeatureModule`
-- After excluding from shell, **always** add moved sources here if enabled export still needs them under COMPAT
+- Syncs heavy sources excluded from LITE
+- `packageFeatureCompatPack` → `app/src/main/assets/features/feature-compat/`
+- After excluding something from shell that is still needed when a flag is on, **include it in feature-compat sync** so COMPAT exports keep working
 
-### 10.3 Fine packs
+**Fine packs**
 
-- Script: `scripts/package_fine_feature_packs.py` (filters classes from feature-compat AAR → d8 → pack folder)
-- Layout: `app/src/main/assets/features/<id>/{feature.json,classes.dex}`
-- Prefer real `FeatureModule` entry when practical; soft-load Access still works once PathClassLoader is registered
+- `scripts/package_fine_feature_packs.py` filters classes from the feature-compat AAR → d8 → `features/<id>/`
+- Current packs include: `feature-compat`, `ext-builtins`, `ext-panel`, `ext-chrome-scripts`, `shell-forcedrun-hw`, `shell-disguise-js`, `shell-translate-script`, `shell-privacy`, `shell-error-games`
 
-### 10.4 Current fine pack inventory
+**Export merge**
 
-| id | Role | Typical trigger |
-|----|------|-----------------|
-| `feature-compat` | Fat bucket (Gecko/FCM/TLS + synced heavies) | COMPAT / advanced needs |
-| `ext-builtins` | Built-in modules / chrome store | extensions |
-| `ext-panel` | Extension panel script | extensions |
-| `ext-chrome-scripts` | Polyfill / mobile compat / userscript window | extensions |
-| `shell-forcedrun-hw` | Hardware forced-run | forced run |
-| `shell-disguise-js` | Browser disguise JS | disguise |
-| `shell-translate-script` | Translate script | translate |
-| `shell-privacy` | Isolation + fingerprint + injector | isolation |
-| `shell-error-games` | Error page mini-games | `showMiniGame` |
+- `FeaturePackMerger` stages pack files and builds `enabled.json`
+- `ApkBuilder` writes them into the generated APK
 
-Ids without a folder are **planned** only.
+### LITE membership (intent; code sync is authoritative)
 
-### 10.5 Export merge
+Usually stay in LITE: shell UI chrome, system WebView path, shell config load, logging, slim i18n, basic error pages (games soft-loaded), config models still deserialized at runtime, minimal util needed by shell.
 
-`FeaturePackMerger.prepare` stages pack files + builds `enabled.json`.  
-`ApkBuilder` writes them into the output APK.  
-Optional: strip unused natives/bloat when `liteOnly`.
+Usually out of LITE (pack or host): Gecko/FCM/TLS MITM heavies, large extension script blobs, isolation generators, forced-run hardware, translate/disguise JS providers, host-only editor tools (apkbuilder, samples, CodeSnippets, ModuleTemplates, OnlineMusic search APIs, …).
 
-### 10.6 Size KPI (generated, arm64-v8a)
+Still largely in LITE and high coupling (split only with full soft-load + Planner): server runtimes, AdBlocker, much of the extension host. Do not half-exclude these.
 
-| Scenario | Goal |
-|----------|------|
-| Pure WEB, no packs | Keep LITE template small (order of ~2–3 MB class; continue careful shrinks) |
-| Optional flags | Only required packs |
-| Advanced COMPAT features | May pull fat `feature-compat`; **must not** regress capability |
+Pure WEB without packs must still do URL load, JS, storage, basic chrome, static HTML/FRONTEND assets, basic splash/permissions, basic error UI.
 
 ---
 
-## 11. Checklists
+## Common change recipes
 
-### 11.1 Move code out of LITE (size)
+These are the default approaches for everyday work. Follow the chain end-to-end; stopping at UI or host-only code is how preview and export diverge.
 
-- [ ] Pure WEB default does not need this code (or tiny LITE fallback exists)
-- [ ] `rg`: no hard imports of excluded FQCN from remaining shell sources
-- [ ] Exclude in `shell/build.gradle.kts`; include in feature-compat if runtime still needs when enabled
-- [ ] Access/soft-load at every LITE call site
-- [ ] `FeatureIds` + `CapabilityPlanner` + unit test
-- [ ] Fine pack prefixes if GRANULAR should ship a small pack
-- [ ] Rebuild template + packs
-- [ ] Measure template; pure WEB still `liteOnly`
-- [ ] Simulate: host preview / export flag ON / export flag OFF
+### 1. Add or change a host UI string
 
-### 11.2 Add a new runtime feature
+1. Add the property in the correct `Strings*` split with all 10 languages.
+2. Reference it from Compose/UI the same way neighbors do.
+3. Do not put host-only copy into shell slim i18n unless the generated app must show it.
 
-- [ ] Classify: **LITE always** | **pack if enabled** | **host-only**
-- [ ] If pack: Access/SPI only from LITE; no hard heavy types
-- [ ] Export config drives `CapabilityPlanner.need(...)`
-- [ ] Shell config JSON / `ShellModeManager` / `ApkConfigJsonFactory` consistent
-- [ ] Do not assume host Koin/full DEX in generated shell
-- [ ] Editor-only UI stays host-side
+### 2. Add an editor setting that must affect the generated APK
 
-### 11.3 Decision tree
+Trace and update **all** of:
 
-```text
-Needed at runtime in generated APK?
-  NO  → host-only; exclude from shell; stop
-  YES → Needed for pure WEB defaults?
-          YES → keep in LITE (or tiny fallback)
-          NO  → pack-if-enabled:
-                  Access + exclude + feature-compat + Planner + pack
-```
+1. Model (`WebApp` / nested config) and editor UI binding  
+2. Export mapping (`ApkBuilder` / `ApkConfig` / `ApkConfigJsonFactory`)  
+3. Shell config types (`ShellModeManager` / shell config data classes) if runtime reads them  
+4. Runtime use site in shell-synced code (or soft-load Access if heavy)  
+5. If the feature is optional and heavy: `FeatureIds` + `CapabilityPlanner` + pack membership  
+6. Unit tests for Planner when ids/flags change  
+
+Missing any step usually yields: editor shows the switch, export ignores it, or export embeds config the runtime never reads.
+
+### 3. Change shell runtime behavior used by every generated app
+
+1. Edit the source under `app/` (shared runtime).  
+2. Confirm the file is included by `syncShellRuntimeSources` (or intentionally excluded + soft-loaded).  
+3. Rebuild shell template if you need to validate packaging.  
+4. Keep changes surgical; shell has a low targetSdk and a thin dependency set.
+
+### 4. Move heavy code out of LITE (size work)
+
+1. Confirm pure WEB default does not need it (or keep a tiny LITE fallback).  
+2. `rg` all call sites; switch LITE path to Access/SPI.  
+3. Exclude from `shell/build.gradle.kts`; include in feature-compat if still needed when enabled.  
+4. Add/adjust fine pack prefixes when GRANULAR should ship a small pack.  
+5. `FeatureIds` + Planner + test.  
+6. Rebuild template + packs; verify pure WEB stays `liteOnly` and flag-on still works.  
+7. Mentally simulate: host preview / export flag ON / export flag OFF.
+
+### 5. Add a host-only feature (editor, market, tooling)
+
+1. Keep implementation under host-only packages (`core/apkbuilder`, host screens, sample/market, …).  
+2. Exclude from shell sync if anything might accidentally be included.  
+3. Do not pull host-only deps into `shell/build.gradle.kts`.
+
+### 6. Touch APK export or incremental rebuild
+
+1. Prefer `ApkBuildCache` / content hashes over timestamps.  
+2. Encrypted builds stay full rebuild.  
+3. Do not use signed outputs as templates.  
+4. If template bytes change, ensure cache keys invalidate correctly.  
+5. Keep Planner + pack merge consistent with what the runtime can load.
+
+### 7. Change notifications / engines / network hardening
+
+1. Prefer existing channel abstractions (polyfill / polling / WebSocket / FCM).  
+2. Gecko, FCM, TLS MITM are pack/compat territory — go through Access + Planner, not hard LITE deps.  
+3. Do not add OEM push SDKs by default.
+
+### 8. Module Market / `modules/`
+
+1. Follow `modules/README.md` catalog layout (`registry.json` + module folders).  
+2. Runtime consumption still goes through the extension/shell paths above if it ships inside generated APKs.
+
+### 9. Fix “works in preview, broken after export”
+
+Checklist in order:
+
+1. Is the class still in the LITE template, or only on the host DEX?  
+2. If excluded, is there Access/soft-load and does `enabled.json` include the pack when the flag is on?  
+3. Did Planner see the same flag the editor set (`ApkConfig` mapping)?  
+4. Did shell config JSON actually contain the field at runtime?  
+5. Parent-first: is a same-FQCN stub in LITE shadowing the pack?  
+6. Rebuild template/packs after sync exclude changes (stale template is a frequent miss).
 
 ---
 
-## 12. Forbidden / high-risk mistakes
+## Easy-to-miss points
 
-- Second full shell template APK
-- Same FQCN stub in LITE + real in pack
-- Exclude class but leave hard imports/ctors in LITE sources
-- Soft-load without Planner (flag ON → silent no-op)
-- Host-only tools back into LITE “for convenience”
-- Measuring only host APK size when the goal is generated WebView APKs
-- Signed/renamed outputs as templates; unstable template IDs
-- OEM push SDKs / unjustified heavy deps in LITE
-- Half-excluding server/extension/adblock without Access + Planner (breaks export)
+- **Shared sources are authored in `app/`.** Editing only a file under `shell/src` is usually wrong; it will be overwritten on sync or diverge from host.
+- **Exclude lists are not enough.** Every former hard reference from remaining LITE code must be removed or soft-loaded, or shell compilation / runtime breaks.
+- **COMPAT vs GRANULAR.** Default export collapses many ids into `feature-compat`. Fine packs alone do not help COMPAT if the classes never entered feature-compat.
+- **Default-off features must stay cheap.** Do not make pure WEB pull packs “just in case.”
+- **Config field names drift.** Editor model, `ApkConfig`, JSON factory, and shell config must stay aligned; Gson silently drops unknown/missing fields.
+- **Shell i18n ≠ host i18n.** Full `Strings.kt` is host-scale; LITE cannot afford it.
+- **Low targetSdk and fork/exec runtimes** constrain “modernize the shell SDK” changes.
+- **Incremental export cache** keys must be content-based; mtime and resigned APKs create false hits/misses.
+- **Soft-load returns null** is a valid flag-off path; do not crash. But flag-on + null means Planner/pack wiring is incomplete.
+- **Measuring the wrong APK.** Host builder size is not the generated WebView app size.
+- **Half-migrating servers/adblock/extensions** without Access + Planner is worse than leaving them in LITE temporarily.
 
 ---
 
-## 13. Verify commands
+## Forbidden / high-risk mistakes
+
+- Second full shell template APK  
+- Same FQCN stub in LITE + real implementation in a pack  
+- Excluding a class but leaving imports/constructors in shell-synced sources  
+- Soft-load without Planner (flag ON → silent no-op)  
+- Putting host-only tools back into LITE for convenience  
+- OEM push SDKs or unjustified heavy dependencies in LITE  
+- Feeding signed/renamed APKs into template/modify paths  
+- Committing secrets, keystores, or local machine config  
+
+---
+
+## Verify commands
 
 ```bash
 ./gradlew :shell:assembleRelease :app:syncShellTemplateApk --no-configuration-cache
@@ -428,41 +355,12 @@ python3 -c "import zipfile,os; p='app/src/main/assets/template/webview_shell.apk
 ./gradlew :app:testDebugUnitTest --tests "com.webtoapp.core.apkbuilder.CapabilityPlannerTest" -x :shell:assembleRelease -x :app:syncShellTemplateApk --no-configuration-cache
 ```
 
-| Check | Expect |
-|-------|--------|
-| Template size | Track APK + `classes.dex` compress/raw |
-| Pure WEB | `liteOnly`, empty features |
-| Flag ON | Planner id present; pack/compat exists; soft-load works |
-| Flag OFF | No crash; feature skipped |
-| Shell compile | No refs to excluded FQCNs |
+Use these when you change shell membership, packs, Planner, or export packaging. For host-only UI/string work, targeted compile/tests on `:app` are usually enough.
 
 ---
 
-## 14. Implementation status (snapshot)
+## Implementation snapshot
 
-**Landed**
+Landed: single LITE template, FeatureLoader + `enabled.json`, feature-compat + fine packs, soft-load Access patterns above, CapabilityPlanner COMPAT/GRANULAR + tests, slim shell i18n, arm64-lean export defaults.
 
-- Single LITE template + FeatureLoader + enabled.json merge
-- feature-compat fat pack + fine packs (ext-*, shell-*, privacy, error-games, …)
-- Soft-load Access patterns listed in §7.3
-- CapabilityPlanner COMPAT/GRANULAR + unit tests
-- Shell excludes for moved/host-only sources; slim i18n; arm64-lean export defaults
-
-**Still open (next size/SPI slices)**
-
-- Server runtimes out of LITE (nodejs/php/python/go/wordpress) via SPI
-- AdBlocker pack-if-enabled
-- Extension host further SPI split
-- Manifest-delta merge for pack components
-- CI size gate for LITE template + pure WEB export
-- Prefer real `FeatureModule` installers on all fine packs
-
----
-
-## 15. Doc maintenance
-
-- **All agent architecture / LITE / pack / planner / packaging rules live in this file only.**
-- Do not recreate `.github/docs/shell-lite/*` tutorial trees or parallel playbooks.
-- Root `README.md` stays product-facing; do not dump agent internals there.
-- When architecture changes: edit AGENTS.md in place; keep sections short, imperative, table-first.
-- Success bar: pure WEB stays small; every enabled export switch still works; host preview and export stay aligned for runtime features.
+Still open: server runtimes out of LITE via SPI, AdBlocker pack-if-enabled, deeper extension-host split, manifest-delta merge for pack components, CI size gates, real `FeatureModule` installers on more fine packs.
