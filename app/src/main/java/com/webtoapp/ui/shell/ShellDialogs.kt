@@ -18,7 +18,6 @@ import com.webtoapp.core.forcedrun.ForcedRunManager
 import com.webtoapp.core.forcedrun.ForcedRunPermissionDialog
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.ui.components.announcement.toUiTemplate
-import com.webtoapp.ui.splash.ActivationDialog
 import kotlinx.coroutines.launch
 
 @Composable
@@ -27,54 +26,49 @@ fun ShellActivationDialog(
     onDismiss: () -> Unit,
     onActivated: () -> Unit
 ) {
-    val context = LocalContext.current
     val activation = WebToAppApplication.activation
-    val announcement = WebToAppApplication.announcement
-    var activationError by remember { mutableStateOf<String?>(null) }
+    var activationStatus by remember {
+        mutableStateOf<com.webtoapp.core.activation.ActivationStatus?>(null)
+    }
 
-    ActivationDialog(
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        activationStatus = try {
+            activation.getActivationStatus(-1L)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    com.webtoapp.ui.components.EnhancedActivationDialog(
         onDismiss = onDismiss,
+        onActivate = { code ->
+            val result = if (config.activationRemoteEnabled) {
+                activation.verifyRemoteActivation(
+                    -1L,
+                    code,
+                    activation.buildRemoteRequest(
+                        verifyUrl = config.activationRemoteVerifyUrl,
+                        publicKeyBase64 = config.activationRemotePublicKey,
+                        offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy)
+                    )
+                )
+            } else {
+                activation.verifyActivationCode(
+                    -1L,
+                    code,
+                    config.activationCodes
+                )
+            }
+            if (result is ActivationResult.Success || result is ActivationResult.AlreadyActivated) {
+                onActivated()
+            }
+            result
+        },
+        activationStatus = activationStatus,
         customTitle = config.activationDialogTitle,
         customSubtitle = config.activationDialogSubtitle,
         customInputLabel = config.activationDialogInputLabel,
-        customButtonText = config.activationDialogButtonText,
-        errorMessage = activationError,
-        onActivate = { code ->
-            val scope = (context as? AppCompatActivity)?.lifecycleScope
-            activationError = null
-            scope?.launch {
-                val result = if (config.activationRemoteEnabled) {
-                    activation.verifyRemoteActivation(
-                        -1L,
-                        code,
-                        activation.buildRemoteRequest(
-                            verifyUrl = config.activationRemoteVerifyUrl,
-                            publicKeyBase64 = config.activationRemotePublicKey,
-                            offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy)
-                        )
-                    )
-                } else {
-                    activation.verifyActivationCode(
-                        -1L,
-                        code,
-                        config.activationCodes
-                    )
-                }
-                when (result) {
-                    is ActivationResult.Success -> {
-                        onActivated()
-                    }
-                    is ActivationResult.Invalid -> {
-                        activationError = result.message.ifBlank {
-                            com.webtoapp.core.i18n.Strings.invalidActivationCode
-                        }
-                    }
-                    else -> {
-                        activationError = com.webtoapp.core.i18n.Strings.invalidActivationCode
-                    }
-                }
-            }
-        }
+        customButtonText = config.activationDialogButtonText
     )
 }
 

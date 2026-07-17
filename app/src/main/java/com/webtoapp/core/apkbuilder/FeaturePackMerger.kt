@@ -49,7 +49,7 @@ object FeaturePackMerger {
             packDir.walkTopDown().filter { it.isFile }.forEach { file ->
                 val rel = file.relativeTo(packDir).invariantSeparatorsPath
                 val bytes = file.readBytes()
-                extra += "$assetDir/$rel" to bytes
+                extra += "assets/$assetDir/$rel" to bytes
             }
             enabledFeatures += EnabledFeature(
                 id = id,

@@ -82,4 +82,27 @@ class CapabilityPlannerTest {
         )
         assertEquals(listOf(FeatureIds.COMPAT), plan.features)
     }
+
+    @Test
+    fun activationStaysLiteOnly() {
+        val plan = CapabilityPlanner.plan(
+            config = config("WEB").copy(
+                activation = ActivationBlock(enabled = true)
+            )
+        )
+        assertTrue(plan.liteOnly)
+        assertTrue(plan.features.isEmpty())
+    }
+
+    @Test
+    fun announcementStaysLiteOnly() {
+        val plan = CapabilityPlanner.plan(
+            config = config("WEB").copy(
+                announcement = AnnouncementBlock(enabled = true, title = "hi")
+            )
+        )
+        assertTrue(plan.liteOnly)
+        assertTrue(plan.features.isEmpty())
+    }
+
 }

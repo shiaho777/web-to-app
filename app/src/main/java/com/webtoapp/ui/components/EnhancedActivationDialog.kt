@@ -9,8 +9,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -90,7 +95,7 @@ fun EnhancedActivationDialog(
                         placeholder = { Text(Strings.activationCodeExample) },
                         leadingIcon = {
                             Icon(
-                                Icons.Outlined.Key,
+                                Icons.Default.Lock,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
@@ -136,7 +141,7 @@ fun EnhancedActivationDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                     }
                     Icon(
-                        if (isLoading) Icons.Outlined.HourglassTop else Icons.Outlined.Verified,
+                        if (isLoading) Icons.Default.Refresh else Icons.Default.Check,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp)
                     )
@@ -197,13 +202,13 @@ private fun ActivationDialogHeader(
     }
 
     val icon: ImageVector = when (result) {
-        is ActivationResult.Success -> Icons.Filled.CheckCircle
-        is ActivationResult.Invalid -> Icons.Filled.Cancel
-        is ActivationResult.DeviceMismatch -> Icons.Filled.PhonelinkErase
-        is ActivationResult.Expired -> Icons.Filled.TimerOff
-        is ActivationResult.UsageExceeded -> Icons.Filled.Block
-        is ActivationResult.AlreadyActivated -> Icons.Filled.Verified
-        else -> Icons.Filled.Shield
+        is ActivationResult.Success -> Icons.Default.Check
+        is ActivationResult.Invalid -> Icons.Default.Close
+        is ActivationResult.DeviceMismatch -> Icons.Default.Phone
+        is ActivationResult.Expired -> Icons.Default.Warning
+        is ActivationResult.UsageExceeded -> Icons.Default.Close
+        is ActivationResult.AlreadyActivated -> Icons.Default.Check
+        else -> Icons.Default.Lock
     }
 
     Column(
@@ -276,7 +281,7 @@ private fun ActivationResultCard(result: ActivationResult) {
     val semantic = com.webtoapp.ui.design.WtaColors.semantic
     val (icon, title, message, containerColor, contentColor, suggestion) = when (result) {
         is ActivationResult.Success -> ResultCardData(
-            icon = Icons.Filled.CheckCircle,
+            icon = Icons.Default.Check,
             title = Strings.activationSuccess,
             message = Strings.activationSuccessDetail,
             containerColor = semantic.successContainer,
@@ -284,7 +289,7 @@ private fun ActivationResultCard(result: ActivationResult) {
             suggestion = null
         )
         is ActivationResult.Invalid -> ResultCardData(
-            icon = Icons.Filled.Cancel,
+            icon = Icons.Default.Close,
             title = Strings.invalidActivationCode,
             message = result.message.ifBlank { Strings.invalidActivationCode },
             containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
@@ -292,7 +297,7 @@ private fun ActivationResultCard(result: ActivationResult) {
             suggestion = Strings.invalidCodeSuggestion
         )
         is ActivationResult.DeviceMismatch -> ResultCardData(
-            icon = Icons.Filled.PhonelinkErase,
+            icon = Icons.Default.Phone,
             title = Strings.activationCodeBoundToOtherDevice,
             message = Strings.deviceMismatchDetail,
             containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
@@ -300,7 +305,7 @@ private fun ActivationResultCard(result: ActivationResult) {
             suggestion = Strings.deviceMismatchSuggestion
         )
         is ActivationResult.Expired -> ResultCardData(
-            icon = Icons.Filled.TimerOff,
+            icon = Icons.Default.Warning,
             title = Strings.activationCodeExpired,
             message = Strings.expiredDetail,
             containerColor = semantic.warningContainer,
@@ -308,7 +313,7 @@ private fun ActivationResultCard(result: ActivationResult) {
             suggestion = Strings.expiredSuggestion
         )
         is ActivationResult.UsageExceeded -> ResultCardData(
-            icon = Icons.Filled.Block,
+            icon = Icons.Default.Close,
             title = Strings.activationCodeUsageExceeded,
             message = Strings.usageExceededDetail,
             containerColor = semantic.warningContainer,
@@ -316,7 +321,7 @@ private fun ActivationResultCard(result: ActivationResult) {
             suggestion = Strings.usageExceededSuggestion
         )
         is ActivationResult.AlreadyActivated -> ResultCardData(
-            icon = Icons.Filled.Verified,
+            icon = Icons.Default.Check,
             title = Strings.appAlreadyActivated,
             message = Strings.alreadyActivatedDetail,
             containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
@@ -376,7 +381,7 @@ private fun ActivationResultCard(result: ActivationResult) {
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Icon(
-                            Icons.Outlined.Lightbulb,
+                            Icons.Default.Info,
                             contentDescription = null,
                             tint = contentColor.copy(alpha = 0.6f),
                             modifier = Modifier.size(16.dp)
@@ -422,7 +427,7 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
-                        imageVector = if (isValid) Icons.Filled.VerifiedUser else Icons.Filled.GppBad,
+                        imageVector = if (isValid) Icons.Default.Check else Icons.Default.Warning,
                         contentDescription = null,
                         tint = primaryColor,
                         modifier = Modifier.size(20.dp)
@@ -453,7 +458,7 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
 
             status.activatedTime?.let { time ->
                 StatusInfoRow(
-                    icon = Icons.Outlined.CalendarMonth,
+                    icon = Icons.Default.Info,
                     label = Strings.activationTime,
                     value = formatTime(time),
                     color = primaryColor
@@ -466,7 +471,7 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
                     val days = remaining / (24 * 60 * 60 * 1000)
                     val hours = (remaining % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000)
                     StatusInfoRow(
-                        icon = Icons.Outlined.Timer,
+                        icon = Icons.Default.Info,
                         label = Strings.remainingTime,
                         value = "${days}${Strings.days} ${hours}${Strings.hours}",
                         color = primaryColor
@@ -490,7 +495,7 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
                     }
                 } else {
                     StatusInfoRow(
-                        icon = Icons.Outlined.EventBusy,
+                        icon = Icons.Default.Warning,
                         label = Strings.expireTime,
                         value = formatTime(it),
                         color = MaterialTheme.colorScheme.error
@@ -501,7 +506,7 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
             status.usageLimit?.let { limit ->
                 val remaining = status.remainingUsage ?: 0
                 StatusInfoRow(
-                    icon = Icons.Outlined.ConfirmationNumber,
+                    icon = Icons.Default.Info,
                     label = Strings.remainingUsage,
                     value = "$remaining / $limit",
                     color = primaryColor
@@ -520,7 +525,7 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
 
             status.deviceId?.let {
                 StatusInfoRow(
-                    icon = Icons.Outlined.PhonelinkLock,
+                    icon = Icons.Default.Lock,
                     label = Strings.deviceBound,
                     value = "",
                     color = primaryColor

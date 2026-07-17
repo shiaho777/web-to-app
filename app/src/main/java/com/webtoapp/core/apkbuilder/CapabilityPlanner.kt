@@ -80,12 +80,6 @@ object CapabilityPlanner {
             need(FeatureIds.EXT_MODULES, "extension")
         }
 
-        if (config.activationEnabled) {
-            need(FeatureIds.SHELL_ACTIVATION, "activation")
-        }
-        if (config.announcementEnabled) {
-            need(FeatureIds.SHELL_ANNOUNCEMENT, "announcement")
-        }
         if (config.adBlockEnabled) {
             need(FeatureIds.SHELL_ADBLOCK, "adblock")
         }

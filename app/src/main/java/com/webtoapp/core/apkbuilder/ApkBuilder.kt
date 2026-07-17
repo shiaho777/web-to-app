@@ -2819,15 +2819,19 @@ builtins.__import__ = _w2a_import
     private fun injectSelectedI18nPack(zipOut: java.util.zip.ZipOutputStream, language: String) {
         val code = i18nLanguageCode(language)
         val selected = readShellI18nPackBytes(code)
-        val (outCode, bytes) = when {
-            selected != null -> code to selected
-            else -> {
-                val en = readShellI18nPackBytes("en") ?: return
-                "en" to en
-            }
+        val en = readShellI18nPackBytes("en")
+        val primaryCode = when {
+            selected != null -> code
+            en != null -> "en"
+            else -> return
         }
-        writeEntryDeflated(zipOut, "assets/i18n/$outCode.pack", bytes)
-        AppLogger.d("ApkBuilder", "Injected i18n pack: assets/i18n/$outCode.pack (${bytes.size} bytes)")
+        val primaryBytes = if (selected != null) selected else en!!
+        writeEntryDeflated(zipOut, "assets/i18n/$primaryCode.pack", primaryBytes)
+        AppLogger.d("ApkBuilder", "Injected i18n pack: assets/i18n/$primaryCode.pack (${primaryBytes.size} bytes)")
+        if (primaryCode != "en" && en != null) {
+            writeEntryDeflated(zipOut, "assets/i18n/en.pack", en)
+            AppLogger.d("ApkBuilder", "Injected i18n fallback pack: assets/i18n/en.pack (${en.size} bytes)")
+        }
     }
 
     private fun isIconEntry(entryName: String): Boolean {

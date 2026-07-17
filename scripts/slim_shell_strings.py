@@ -680,6 +680,7 @@ def collect_used_string_props(repo_root: Path) -> set:
         "LongPressMenu.kt",
         "ForcedRunCountdownOverlay.kt",
         "AutoRefreshCountdownOverlay.kt",
+        "EnhancedActivationDialog.kt",
     ]:
         roots.append(repo_root / "app/src/main/java/com/webtoapp/ui/components" / name)
     util_root = repo_root / "app/src/main/java/com/webtoapp/util"
