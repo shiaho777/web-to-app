@@ -20,6 +20,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.util.SafeNotificationChannels
 import com.webtoapp.core.logging.AppLogger
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -633,16 +634,14 @@ class NotificationWebSocketService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                Strings.websocketNotificationChannelName,
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = Strings.websocketNotificationChannelDescription
-                setShowBadge(true)
-            }
-            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        SafeNotificationChannels.ensure(
+            context = this,
+            id = CHANNEL_ID,
+            name = Strings.websocketNotificationChannelName.ifBlank { "Notifications" },
+            importance = NotificationManager.IMPORTANCE_DEFAULT,
+            description = Strings.websocketNotificationChannelDescription
+        ) {
+            setShowBadge(true)
         }
     }
 

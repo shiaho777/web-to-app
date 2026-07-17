@@ -11,6 +11,7 @@ import android.os.IBinder
 import android.provider.Settings
 import android.webkit.WebView
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.util.SafeNotificationChannels
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellServerLauncher
 import com.webtoapp.core.webview.DownloadBridge
@@ -428,17 +429,14 @@ class FloatingWindowService : Service() {
     fun getWebView(): WebView? = floatingWindowManager.getWebView()
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                NOTIFICATION_CHANNEL_ID,
-                Strings.floatingWindowNotificationChannel,
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = Strings.floatingWindowNotificationChannelDesc
-                setShowBadge(false)
-            }
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
+        SafeNotificationChannels.ensure(
+            context = this,
+            id = NOTIFICATION_CHANNEL_ID,
+            name = Strings.floatingWindowNotificationChannel.ifBlank { "Floating Window" },
+            importance = NotificationManager.IMPORTANCE_LOW,
+            description = Strings.floatingWindowNotificationChannelDesc
+        ) {
+            setShowBadge(false)
         }
     }
 
