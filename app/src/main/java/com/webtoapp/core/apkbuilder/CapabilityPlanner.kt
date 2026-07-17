@@ -37,7 +37,7 @@ object CapabilityPlanner {
             }
         }
 
-        val appType = config.appType.trim().uppercase()
+        val appType = config.appType.trim().uppercase().ifEmpty { "WEB" }
         when (appType) {
             "WEB", "HTML", "FRONTEND" -> Unit
             "IMAGE", "VIDEO", "GALLERY" -> need(FeatureIds.SHELL_MEDIA, "appType=$appType")

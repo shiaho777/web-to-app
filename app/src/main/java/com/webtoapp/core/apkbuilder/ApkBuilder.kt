@@ -1155,6 +1155,10 @@ class ApkBuilder(private val context: Context) {
                             AppLogger.d("ApkBuilder", "APK slim: stripped editor asset: ${entry.name}")
                         }
 
+                        entry.name.startsWith("assets/features/") || entry.name.startsWith("features/") -> {
+                            AppLogger.d("ApkBuilder", "APK slim: stripped stale feature pack entry: ${entry.name}")
+                        }
+
                         perfConfig != null && perfConfig.removeUnusedResources &&
                         com.webtoapp.core.linux.PerformanceOptimizer.getRemovableEntries(entry.name, config.appType) -> {
                             AppLogger.d("ApkBuilder", "Perf: removed unused resource: ${entry.name}")

@@ -49,7 +49,11 @@ object FeaturePackMerger {
             packDir.walkTopDown().filter { it.isFile }.forEach { file ->
                 val rel = file.relativeTo(packDir).invariantSeparatorsPath
                 val bytes = file.readBytes()
-                extra += "assets/$assetDir/$rel" to bytes
+                val entryName = "assets/$assetDir/$rel"
+                require(entryName.startsWith("assets/features/")) {
+                    "feature pack entry must live under assets/features/: $entryName"
+                }
+                extra += entryName to bytes
             }
             enabledFeatures += EnabledFeature(
                 id = id,

@@ -105,4 +105,14 @@ class CapabilityPlannerTest {
         assertTrue(plan.features.isEmpty())
     }
 
+
+    @Test
+    fun blankAppTypeStaysLiteOnly() {
+        val plan = CapabilityPlanner.plan(
+            config = config("")
+        )
+        assertTrue(plan.liteOnly)
+        assertTrue(plan.features.isEmpty())
+    }
+
 }
