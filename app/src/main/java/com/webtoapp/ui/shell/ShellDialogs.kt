@@ -14,6 +14,7 @@ import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.activation.ActivationResult
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellConfig
+import com.webtoapp.core.shell.ShellPreviewSession
 import com.webtoapp.core.forcedrun.ForcedRunManager
 import com.webtoapp.core.forcedrun.ForcedRunPermissionDialog
 import com.webtoapp.data.model.Announcement
@@ -33,7 +34,7 @@ fun ShellActivationDialog(
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
         activationStatus = try {
-            activation.getActivationStatus(-1L)
+            activation.getActivationStatus(ShellPreviewSession.activationAppId())
         } catch (_: Exception) {
             null
         }
@@ -44,7 +45,7 @@ fun ShellActivationDialog(
         onActivate = { code ->
             val result = if (config.activationRemoteEnabled) {
                 activation.verifyRemoteActivation(
-                    -1L,
+                    ShellPreviewSession.activationAppId(),
                     code,
                     activation.buildRemoteRequest(
                         verifyUrl = config.activationRemoteVerifyUrl,
@@ -54,7 +55,7 @@ fun ShellActivationDialog(
                 )
             } else {
                 activation.verifyActivationCode(
-                    -1L,
+                    ShellPreviewSession.activationAppId(),
                     code,
                     config.activationCodes
                 )

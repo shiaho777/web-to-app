@@ -15,6 +15,14 @@ object ShellServerLauncher {
 
     private const val TAG = "ShellServerLauncher"
 
+    private fun resolvePreviewOrFilesDir(context: Context, config: ShellConfig, defaultName: String): File {
+        val preview = config.previewContentDir.trim()
+        if (preview.isNotBlank()) {
+            return File(preview)
+        }
+        return File(context.filesDir, defaultName)
+    }
+
     fun interface RuntimeStopper {
         fun stop()
     }
@@ -49,15 +57,15 @@ object ShellServerLauncher {
         return try {
             ensurePhpBinaryExtracted(context)
 
-            val projectDir = File(context.filesDir, "php_app_site")
+            val projectDir = resolvePreviewOrFilesDir(context, config, "php_app_site")
             val marker = File(projectDir, ".php_extracted")
             val extra = "${config.phpAppConfig.documentRoot}|${config.phpAppConfig.entryFile}"
             val token = buildExtractionToken(context, "php_app", config.versionCode, extra)
-            if (shouldReextractAssets(marker, token)) {
+            if (config.previewContentDir.isBlank() && shouldReextractAssets(marker, token)) {
                 projectDir.deleteRecursively()
                 extractAssetsRecursive(context, "php_app", projectDir)
                 writeExtractionMarker(marker, token)
-            }
+                }
 
             val runtime = com.webtoapp.core.php.PhpAppRuntime(context)
             val entryFile = config.phpAppConfig.entryFile.ifBlank { "index.php" }
@@ -89,7 +97,7 @@ object ShellServerLauncher {
         return try {
             val pyConfig = config.pythonAppConfig
 
-            val projectDir = File(context.filesDir, "python_app_site")
+            val projectDir = resolvePreviewOrFilesDir(context, config, "python_app_site")
             val marker = File(projectDir, ".python_extracted")
             val token = buildExtractionToken(
                 context = context,
@@ -97,11 +105,11 @@ object ShellServerLauncher {
                 configVersionCode = config.versionCode,
                 extra = "${pyConfig.framework}|${pyConfig.entryFile}|${pyConfig.entryModule}"
             )
-            if (shouldReextractAssets(marker, token)) {
+            if (config.previewContentDir.isBlank() && shouldReextractAssets(marker, token)) {
                 projectDir.deleteRecursively()
                 extractAssetsRecursive(context, "python_app", projectDir)
                 writeExtractionMarker(marker, token)
-            }
+                }
 
             val runtime = com.webtoapp.core.python.PythonRuntime(context)
             if (!runtime.isPythonAvailable()) {
@@ -141,7 +149,7 @@ object ShellServerLauncher {
     private suspend fun launchGo(context: Context, config: ShellConfig): LaunchResult {
         return try {
             val goConfig = config.goAppConfig
-            val projectDir = File(context.filesDir, "go_app_site")
+            val projectDir = resolvePreviewOrFilesDir(context, config, "go_app_site")
             val marker = File(projectDir, ".go_extracted")
             val token = buildExtractionToken(
                 context = context,
@@ -149,11 +157,11 @@ object ShellServerLauncher {
                 configVersionCode = config.versionCode,
                 extra = "${goConfig.framework}|${goConfig.binaryName}|${goConfig.staticDir}"
             )
-            if (shouldReextractAssets(marker, token)) {
+            if (config.previewContentDir.isBlank() && shouldReextractAssets(marker, token)) {
                 projectDir.deleteRecursively()
                 extractAssetsRecursive(context, "go_app", projectDir)
                 writeExtractionMarker(marker, token)
-            }
+                }
 
             projectDir.walkTopDown()
                 .filter { it.isFile && it.length() > 1000 }
@@ -210,7 +218,7 @@ object ShellServerLauncher {
                 )
             }
 
-            val projectDir = File(context.filesDir, "nodejs_site")
+            val projectDir = resolvePreviewOrFilesDir(context, config, "nodejs_site")
             val marker = File(projectDir, ".nodejs_extracted")
             val token = buildExtractionToken(
                 context = context,
@@ -218,11 +226,11 @@ object ShellServerLauncher {
                 configVersionCode = config.versionCode,
                 extra = "${config.nodejsConfig.mode}|${config.nodejsConfig.entryFile}"
             )
-            if (shouldReextractAssets(marker, token)) {
+            if (config.previewContentDir.isBlank() && shouldReextractAssets(marker, token)) {
                 projectDir.deleteRecursively()
                 extractAssetsRecursive(context, "nodejs_app", projectDir)
                 writeExtractionMarker(marker, token)
-            }
+                }
 
             val envVars = config.nodejsConfig.envVars.toMutableMap()
             val requestPort = config.nodejsConfig.port.takeIf { it > 0 }
@@ -258,7 +266,7 @@ object ShellServerLauncher {
         return try {
             ensurePhpBinaryExtracted(context)
 
-            val wpDir = File(context.filesDir, "wordpress_site")
+            val wpDir = resolvePreviewOrFilesDir(context, config, "wordpress_site")
             val marker = File(wpDir, ".wp_extracted")
             val token = buildExtractionToken(
                 context,
@@ -266,11 +274,11 @@ object ShellServerLauncher {
                 config.versionCode,
                 config.wordpressConfig.siteTitle
             )
-            if (shouldReextractAssets(marker, token)) {
+            if (config.previewContentDir.isBlank() && shouldReextractAssets(marker, token)) {
                 wpDir.deleteRecursively()
                 extractAssetsRecursive(context, "wordpress", wpDir)
                 writeExtractionMarker(marker, token)
-            }
+                }
 
             val runtime = com.webtoapp.core.wordpress.WordPressPhpRuntime(context)
             val port = runtime.startServer(

@@ -3,7 +3,10 @@ package com.webtoapp.core.feature
 import android.app.Application
 import android.content.Context
 import android.util.Log
+import android.os.Build
+import dalvik.system.InMemoryDexClassLoader
 import dalvik.system.PathClassLoader
+import java.nio.ByteBuffer
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -55,12 +58,16 @@ object FeatureLoader {
                 Triple(item, root, manifest)
             }.sortedBy { it.third.loadOrder }
             for ((item, root, manifest) in items) {
-                loadOne(app, item, root, manifest, configView)
+                try {
+                    loadOne(app, item, root, manifest, configView)
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Feature pack failed: ${manifest.id}", t)
+                }
             }
             loaded = true
             Log.i(TAG, "Loaded ${items.size} feature pack(s)")
-        } catch (e: Exception) {
-            Log.e(TAG, "Feature load failed", e)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Feature load failed", t)
             loaded = true
         }
     }
@@ -86,12 +93,15 @@ object FeatureLoader {
         val extracted = dexFiles.map { src ->
             val dest = File(optimized, src.name)
             if (!dest.isFile || dest.length() != src.length() || dest.lastModified() < src.lastModified()) {
+                if (dest.exists()) {
+                    dest.setWritable(true)
+                }
                 src.copyTo(dest, overwrite = true)
             }
+            ensureDexNotWritable(dest)
             dest
         }
-        val dexPath = extracted.joinToString(File.pathSeparator) { it.absolutePath }
-        val loader = PathClassLoader(dexPath, app.classLoader)
+        val loader = createDexClassLoader(extracted, app.classLoader)
         synchronized(featureLoaders) {
             featureLoaders.add(loader)
         }
@@ -99,20 +109,37 @@ object FeatureLoader {
             runCatching { System.loadLibrary(lib) }
                 .onFailure { Log.w(TAG, "loadLibrary($lib) failed: ${it.message}") }
         }
-        val moduleClass = Class.forName(manifest.entryClass, true, loader)
-        val module = moduleClass.getDeclaredConstructor().newInstance() as FeatureModule
-        val files = object : FeatureFileAccess {
-            override fun featureRoot(featureId: String): File = root
-            override fun openAsset(path: String) = app.assets.open(path)
+        val module = runCatching {
+            val moduleClass = Class.forName(manifest.entryClass, true, loader)
+            if (!FeatureModule::class.java.isAssignableFrom(moduleClass)) {
+                null
+            } else {
+                moduleClass.getDeclaredConstructor().newInstance() as FeatureModule
+            }
+        }.onFailure {
+            Log.w(TAG, "Feature entry not a FeatureModule: ${manifest.entryClass}")
+        }.getOrNull()
+
+        if (module != null) {
+            val files = object : FeatureFileAccess {
+                override fun featureRoot(featureId: String): File = root
+                override fun openAsset(path: String) = app.assets.open(path)
+            }
+            val ctx = FeatureContext(app, registry, configView, files)
+            module.install(ctx)
+            synchronized(installedIds) {
+                installedIds.add(module.id)
+                installedIds.add(manifest.id)
+                installedIds.add(item.id)
+            }
+            Log.i(TAG, "Installed feature ${module.id} v${module.version}")
+        } else {
+            synchronized(installedIds) {
+                installedIds.add(manifest.id)
+                installedIds.add(item.id)
+            }
+            Log.i(TAG, "Registered soft-load pack ${manifest.id}")
         }
-        val ctx = FeatureContext(app, registry, configView, files)
-        module.install(ctx)
-        synchronized(installedIds) {
-            installedIds.add(module.id)
-            installedIds.add(manifest.id)
-            installedIds.add(item.id)
-        }
-        Log.i(TAG, "Installed feature ${module.id} v${module.version}")
     }
 
     private fun resolveFeatureRoot(app: Context, dir: String): File? {
@@ -248,6 +275,38 @@ object FeatureLoader {
             assetsPrefix = json.optString("assetsPrefix")
                 .takeIf { it.isNotBlank() && it != "null" }
         )
+    }
+
+
+    private fun ensureDexNotWritable(file: File) {
+        if (!file.isFile) return
+        if (file.canWrite()) {
+            file.setWritable(false)
+        }
+        if (file.canWrite()) {
+            file.setReadOnly()
+        }
+        if (file.canWrite()) {
+            Log.w(TAG, "DEX still writable after harden: ${file.absolutePath}")
+        }
+    }
+
+    private fun createDexClassLoader(dexFiles: List<File>, parent: ClassLoader): ClassLoader {
+        if (Build.VERSION.SDK_INT >= 27) {
+            try {
+                val buffers = dexFiles.map { file ->
+                    ByteBuffer.wrap(file.readBytes())
+                }.toTypedArray()
+                return InMemoryDexClassLoader(buffers, parent)
+            } catch (e: Exception) {
+                Log.w(TAG, "InMemoryDexClassLoader failed, fallback PathClassLoader: ${e.message}")
+            }
+        }
+        for (file in dexFiles) {
+            ensureDexNotWritable(file)
+        }
+        val dexPath = dexFiles.joinToString(File.pathSeparator) { it.absolutePath }
+        return PathClassLoader(dexPath, parent)
     }
 
     private object EmptyFeatureConfigView : FeatureConfigView {

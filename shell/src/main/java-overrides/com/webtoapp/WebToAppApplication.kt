@@ -9,6 +9,7 @@ import com.webtoapp.core.announcement.AnnouncementManager
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellModeManager
 import com.webtoapp.core.feature.FeatureLoader
+import com.webtoapp.core.feature.ReflectInvoke
 
 class WebToAppApplication : Application() {
 
@@ -20,6 +21,12 @@ class WebToAppApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+
+        try {
+            com.webtoapp.core.i18n.Strings.initialize(this)
+        } catch (e: Exception) {
+            android.util.Log.e("WebToAppApplication", "Strings.initialize failed", e)
+        }
 
         shellModeManagerLocal = ShellModeManager(this)
         val fileLoggingEnabled = try {
@@ -36,11 +43,12 @@ class WebToAppApplication : Application() {
         }
 
         initShellRuntime()
+        applyShellLanguageFromConfig()
 
         try {
             FeatureLoader.loadEnabled(this)
-        } catch (e: Exception) {
-            AppLogger.e("WebToAppApplication", "FeatureLoader failed", e)
+        } catch (t: Throwable) {
+            AppLogger.e("WebToAppApplication", "FeatureLoader failed", t)
         }
 
         com.webtoapp.core.perf.SystemPerfOptimizer.initSystem(this)
@@ -84,7 +92,7 @@ class WebToAppApplication : Application() {
     private fun clearAppCaches() {
         try {
             com.webtoapp.core.crypto.AesCryptoEngine.clearKeyCache()
-            runCatching { Class.forName("com.webtoapp.util.HtmlProjectProcessor").getMethod("clearEncodingCache").invoke(null) }
+            runCatching { ReflectInvoke.call("com.webtoapp.util.HtmlProjectProcessor", "clearEncodingCache") }
             AppLogger.i("WebToAppApplication", "App caches cleared")
         } catch (e: Exception) {
             AppLogger.e("WebToAppApplication", "Failed to clear app caches", e)
@@ -100,8 +108,7 @@ class WebToAppApplication : Application() {
             shellModeManagerLocal = null
 
             runCatching {
-                Class.forName("com.webtoapp.core.extension.ExtensionManager")
-                    .getMethod("release").invoke(null)
+                ReflectInvoke.call("com.webtoapp.core.extension.ExtensionManager", "release")
             }
             com.webtoapp.core.crypto.AesCryptoEngine.clearKeyCache()
             com.webtoapp.core.webview.WebViewPool.release()
@@ -128,6 +135,32 @@ class WebToAppApplication : Application() {
             AppLogger.i("WebToAppApplication", "Dedicated shell runtime initialized: shellMode=$isShell")
         } catch (e: Exception) {
             AppLogger.e("WebToAppApplication", "Shell runtime initialization failed", e)
+        }
+    }
+
+
+    private fun applyShellLanguageFromConfig() {
+        try {
+            val raw = shellModeManagerLocal?.getConfig()?.language.orEmpty()
+            if (raw.isBlank()) {
+                return
+            }
+            val appLanguage = when (raw.uppercase()) {
+                "ENGLISH", "EN" -> com.webtoapp.core.i18n.AppLanguage.ENGLISH
+                "ARABIC", "AR" -> com.webtoapp.core.i18n.AppLanguage.ARABIC
+                "PORTUGUESE", "PT" -> com.webtoapp.core.i18n.AppLanguage.PORTUGUESE
+                "SPANISH", "ES" -> com.webtoapp.core.i18n.AppLanguage.SPANISH
+                "FRENCH", "FR" -> com.webtoapp.core.i18n.AppLanguage.FRENCH
+                "GERMAN", "DE" -> com.webtoapp.core.i18n.AppLanguage.GERMAN
+                "RUSSIAN", "RU" -> com.webtoapp.core.i18n.AppLanguage.RUSSIAN
+                "JAPANESE", "JA" -> com.webtoapp.core.i18n.AppLanguage.JAPANESE
+                "KOREAN", "KO" -> com.webtoapp.core.i18n.AppLanguage.KOREAN
+                "CHINESE", "ZH", "ZH_CN", "ZH-CN" -> com.webtoapp.core.i18n.AppLanguage.CHINESE
+                else -> com.webtoapp.core.i18n.AppLanguage.fromCode(raw.lowercase())
+            }
+            com.webtoapp.core.i18n.Strings.setLanguage(appLanguage)
+        } catch (e: Exception) {
+            AppLogger.e("WebToAppApplication", "applyShellLanguageFromConfig failed", e)
         }
     }
 

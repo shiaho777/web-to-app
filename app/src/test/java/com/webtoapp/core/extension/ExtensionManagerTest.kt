@@ -113,4 +113,26 @@ class ExtensionManagerTest {
             "builtin-auto-scroll", false
         )
     }
+    @Test
+    fun `built-in modules load via soft reflection`() = runTest {
+        val manager = ExtensionManager.getInstance(context)
+        awaitLoaded(manager)
+
+        val builtIns = manager.builtInModules.value
+        assertThat(builtIns).isNotEmpty()
+        assertThat(builtIns.size).isAtLeast(8)
+        assertThat(builtIns.all { it.builtIn }).isTrue()
+        assertThat(builtIns.map { it.id }).containsAtLeast(
+            "builtin-media-downloader",
+            "builtin-video-enhancer",
+            "builtin-web-analyzer",
+            "builtin-find-in-page",
+            "builtin-dark-mode",
+            "builtin-privacy-protection",
+            "builtin-content-enhancer",
+            "builtin-element-blocker"
+        )
+        assertThat(manager.getStatistics().builtInCount).isEqualTo(builtIns.size)
+    }
+
 }

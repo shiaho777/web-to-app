@@ -789,20 +789,19 @@ fun PreviewScreen(appId: Long, onBack: () -> Unit) {
         val app = webApp
         if (app != null && !hasLaunched.value) {
             hasLaunched.value = true
-            when (app.appType) {
-                com.webtoapp.data.model.AppType.IMAGE,
-                com.webtoapp.data.model.AppType.VIDEO -> {
-                    com.webtoapp.ui.media.MediaAppActivity.startForPreview(context, app)
-                }
-
-                com.webtoapp.data.model.AppType.GALLERY -> {
-                    app.galleryConfig?.let { config ->
-                        com.webtoapp.ui.gallery.GalleryPlayerActivity.launch(context, config, 0)
+            val usedShell = com.webtoapp.core.host.ShellPreviewLauncher.start(context, app)
+            if (!usedShell) {
+                when (app.appType) {
+                    com.webtoapp.data.model.AppType.IMAGE,
+                    com.webtoapp.data.model.AppType.VIDEO -> {
+                        com.webtoapp.ui.media.MediaAppActivity.startForPreview(context, app)
                     }
-                }
-
-                else -> {
-                    com.webtoapp.ui.webview.WebViewActivity.start(context, appId)
+                    com.webtoapp.data.model.AppType.GALLERY -> {
+                        app.galleryConfig?.let { config ->
+                            com.webtoapp.ui.gallery.GalleryPlayerActivity.launch(context, config, 0)
+                        }
+                    }
+                    else -> com.webtoapp.ui.webview.WebViewActivity.start(context, appId)
                 }
             }
             onBack()

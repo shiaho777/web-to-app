@@ -16,7 +16,9 @@
 #      会写出被显式 keep 的所有内容
 #   3. 把崩溃栈对照 build/outputs/mapping/release/mapping.txt 反推
 
-# -dontobfuscate  # shell template: enable obfuscation for size
+# Feature packs resolve parent types by original FQCN via PathClassLoader.
+# Obfuscating shell renames Gson/OkHttp/coroutines/com.webtoapp.* and breaks soft-load.
+-dontobfuscate
 
 -assumenosideeffects class android.util.Log {
     public static int v(...);
@@ -100,15 +102,49 @@
 }
 
 # ============================================================
-# Kotlin
+# Kotlin — feature packs load via PathClassLoader/InMemoryDexClassLoader
+# and resolve kotlin.* against the shell parent ClassLoader. R8 must not
+# strip kotlin-stdlib; packs are compiled against full kotlin FQCNs.
 # ============================================================
 -keep class kotlin.Metadata { *; }
+-keep class kotlin.** { *; }
+-keep class kotlin.jvm.** { *; }
+-keep class kotlin.jvm.internal.** { *; }
+-keep class kotlin.coroutines.** { *; }
 -keepclassmembers class **$WhenMappings { <fields>; }
 -keepclassmembers class kotlin.Lazy { public <methods>; }
 -keep class kotlin.jvm.internal.DefaultConstructorMarker { *; }
 -keepclassmembers class kotlin.coroutines.jvm.internal.** { *; }
 -dontwarn kotlin.**
 -dontwarn kotlinx.**
+
+# Feature-pack parent resolution: libraries/shared models must keep FQCNs.
+# Packs are compiled against unobfuscated names and do not ship these types.
+-keep class kotlinx.coroutines.** { *; }
+-keep class com.google.gson.** { *; }
+-keep class okhttp3.** { *; }
+-keep class okio.** { *; }
+-keep class com.webtoapp.core.logging.AppLogger { *; }
+-keep class com.webtoapp.util.GsonProvider { *; }
+-keep class com.webtoapp.core.extension.ExtensionModule { *; }
+-keep class com.webtoapp.core.extension.ModuleAuthor { *; }
+-keep class com.webtoapp.core.extension.ModuleCategory { *; }
+-keep class com.webtoapp.core.extension.ModulePermission { *; }
+-keep class com.webtoapp.core.extension.ModuleRunMode { *; }
+-keep class com.webtoapp.core.extension.ModuleRunTime { *; }
+-keep class com.webtoapp.core.extension.ModuleSourceType { *; }
+-keep class com.webtoapp.core.extension.ModuleUiConfig { *; }
+-keep class com.webtoapp.core.privacy.IsolationConfig { *; }
+-keep class com.webtoapp.core.privacy.FingerprintConfig { *; }
+-keep class com.webtoapp.core.privacy.HeaderConfig { *; }
+-keep class com.webtoapp.core.privacy.IpRange { *; }
+-keep class com.webtoapp.core.privacy.IpSpoofConfig { *; }
+-keep class com.webtoapp.core.errorpage.MiniGameType { *; }
+-keep class com.webtoapp.core.engine.BrowserEngine { *; }
+-keep class com.webtoapp.core.engine.BrowserEngineCallback { *; }
+-keep class com.webtoapp.core.engine.EngineType { *; }
+-keep class com.webtoapp.core.engine.ProxyConfig { *; }
+-keep class com.webtoapp.core.engine.download.EngineFileManager { *; }
 
 # Kotlin Coroutines — ServiceLoader 加载 Dispatchers.Main
 -keepnames class kotlinx.coroutines.internal.MainDispatcherFactory
@@ -258,3 +294,16 @@
 -keep class com.webtoapp.core.feature.** { *; }
 -keep class * implements com.webtoapp.core.feature.FeatureModule { *; }
 -keep class com.webtoapp.feature.compat.** { *; }
+
+# Shared types needed by feature packs but only referenced from pack code (would be shrunk from LITE).
+-keep class androidx.core.** { *; }
+-keep class androidx.activity.** { *; }
+-keep class androidx.fragment.app.** { *; }
+-keep class androidx.legacy.content.** { *; }
+-keep class com.webtoapp.core.notification.PushNotificationHelper { *; }
+-keep class com.webtoapp.core.notification.NotificationWebSocketService { *; }
+-keep class com.webtoapp.core.notification.NotificationWebSocketService$* { *; }
+-keep class com.webtoapp.core.webview.LocalHttpToSocksBridge { *; }
+-keep class com.webtoapp.core.webview.LocalHttpToSocksBridge$* { *; }
+-keep class com.webtoapp.core.webview.LocalHttpToSocksBridge$Socks5Connector { *; }
+

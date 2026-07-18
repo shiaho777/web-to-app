@@ -66,7 +66,7 @@ fun WordPressShellMode(
                     return@withContext
                 }
 
-                val wpDir = File(context.filesDir, config.siteDirName.ifBlank { "wordpress_site" })
+                val wpDir = ShellPathIo.resolveContentDir(context, config, "wordpress_site")
                 val marker = File(wpDir, ".wp_extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
@@ -75,7 +75,7 @@ fun WordPressShellMode(
                     extra = config.wordpressConfig.siteTitle
                 )
 
-                if (shouldReextractAssets(marker, extractionToken)) {
+                if (ShellPathIo.shouldExtractAssets(config) && shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("WordPressShell", "Extracting WordPress files to ${wpDir.absolutePath}")
                     wpDir.deleteRecursively()
                     extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "wordpress" }, wpDir)
@@ -230,7 +230,7 @@ fun HtmlFrontendShellMode(
     ) {
         withContext(Dispatchers.IO) {
             try {
-                val siteDir = File(context.filesDir, config.siteDirName.ifBlank { "html_shell_site" })
+                val siteDir = ShellPathIo.resolveContentDir(context, config, "html_shell_site")
                 val marker = File(siteDir, ".html_extracted")
                 val configuredEntryFile = config.htmlConfig.getValidEntryFile()
                 val extractionToken = buildExtractionToken(
@@ -242,7 +242,7 @@ fun HtmlFrontendShellMode(
 
                 val assetBase = config.siteAssetBase.ifBlank { "html" }
                 val hasBundledAssets = try { context.assets.list(assetBase)?.isNotEmpty() == true } catch (_: Exception) { false }
-                if (hasBundledAssets && shouldReextractAssets(marker, extractionToken)) {
+                if (ShellPathIo.shouldExtractAssets(config) && hasBundledAssets && shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("HtmlShell", "Extracting HTML assets to ${siteDir.absolutePath}")
                     siteDir.deleteRecursively()
                     extractAssetsRecursive(context, assetBase, siteDir)
@@ -413,7 +413,7 @@ fun NodeJsStaticShellMode(
     LaunchedEffect(config.versionCode) {
         withContext(Dispatchers.IO) {
             try {
-                val siteDir = File(context.filesDir, config.siteDirName.ifBlank { "nodejs_static_site" })
+                val siteDir = ShellPathIo.resolveContentDir(context, config, "nodejs_static_site")
                 val marker = File(siteDir, ".nodejs_static_extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
@@ -422,7 +422,7 @@ fun NodeJsStaticShellMode(
                     extra = config.nodejsConfig.entryFile
                 )
 
-                if (shouldReextractAssets(marker, extractionToken)) {
+                if (ShellPathIo.shouldExtractAssets(config) && shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("NodeJsStaticShell", "Extracting nodejs static assets to ${siteDir.absolutePath}")
                     siteDir.deleteRecursively()
                     extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "nodejs_app" }, siteDir)
@@ -551,7 +551,7 @@ fun NodeJsShellMode(
                 AppLogger.i("NodeJsShell", "libnode.so path: $nodePath (size=${java.io.File(nodePath).length()})")
                 com.webtoapp.core.shell.ShellLogger.i("NodeJsShell", "libnode.so 路径: $nodePath (size=${java.io.File(nodePath).length()})")
 
-                val projectDir = File(context.filesDir, config.siteDirName.ifBlank { "nodejs_site" })
+                val projectDir = ShellPathIo.resolveContentDir(context, config, "nodejs_site")
                 val marker = File(projectDir, ".nodejs_extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
@@ -560,7 +560,7 @@ fun NodeJsShellMode(
                     extra = "${config.nodejsConfig.mode}|${config.nodejsConfig.entryFile}"
                 )
 
-                if (shouldReextractAssets(marker, extractionToken)) {
+                if (ShellPathIo.shouldExtractAssets(config) && shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("NodeJsShell", "Extracting Node.js project files to ${projectDir.absolutePath}")
                     com.webtoapp.core.shell.ShellLogger.i("NodeJsShell", "提取 Node.js 项目文件到 ${projectDir.absolutePath}")
                     projectDir.deleteRecursively()
@@ -696,7 +696,7 @@ fun PhpAppShellMode(
                     return@withContext
                 }
 
-                val phpProjectDir = File(context.filesDir, config.siteDirName.ifBlank { "php_app_site" })
+                val phpProjectDir = ShellPathIo.resolveContentDir(context, config, "php_app_site")
                 val marker = File(phpProjectDir, ".php_extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
@@ -704,7 +704,7 @@ fun PhpAppShellMode(
                     configVersionCode = config.versionCode,
                     extra = "${config.phpAppConfig.documentRoot}|${config.phpAppConfig.entryFile}"
                 )
-                if (shouldReextractAssets(marker, extractionToken)) {
+                if (ShellPathIo.shouldExtractAssets(config) && shouldReextractAssets(marker, extractionToken)) {
                     phpProjectDir.deleteRecursively()
                     extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "php_app" }, phpProjectDir)
                     writeExtractionMarker(marker, extractionToken)
@@ -846,7 +846,7 @@ fun PythonAppShellMode(
                 if (!pythonRuntime.isPythonAvailable()) {
                     AppLogger.w("PythonShell", "Python runtime unavailable, falling back to preview mode")
 
-                    val projectDir = File(context.filesDir, config.siteDirName.ifBlank { "python_app_site" })
+                    val projectDir = ShellPathIo.resolveContentDir(context, config, "python_app_site")
                     projectDir.mkdirs()
                     extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "python_app" }, projectDir)
                     val previewHtml = File(projectDir, "_preview_.html")
@@ -862,7 +862,7 @@ fun PythonAppShellMode(
                 }
                 AppLogger.i("PythonShell", "Python runtime ready")
 
-                val projectDir = File(context.filesDir, config.siteDirName.ifBlank { "python_app_site" })
+                val projectDir = ShellPathIo.resolveContentDir(context, config, "python_app_site")
                 val marker = File(projectDir, ".python_extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
@@ -871,7 +871,7 @@ fun PythonAppShellMode(
                     extra = "${pyConfig.framework}|${pyConfig.entryFile}|${pyConfig.entryModule}"
                 )
 
-                if (shouldReextractAssets(marker, extractionToken)) {
+                if (ShellPathIo.shouldExtractAssets(config) && shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("PythonShell", "Extracting Python project files to ${projectDir.absolutePath}")
                     projectDir.deleteRecursively()
                     extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "python_app" }, projectDir)
@@ -990,7 +990,7 @@ fun GoAppShellMode(
             try {
                 val goConfig = config.goAppConfig
 
-                val projectDir = File(context.filesDir, config.siteDirName.ifBlank { "go_app_site" })
+                val projectDir = ShellPathIo.resolveContentDir(context, config, "go_app_site")
                 val marker = File(projectDir, ".go_extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
@@ -999,7 +999,7 @@ fun GoAppShellMode(
                     extra = "${goConfig.framework}|${goConfig.binaryName}|${goConfig.staticDir}"
                 )
 
-                if (shouldReextractAssets(marker, extractionToken)) {
+                if (ShellPathIo.shouldExtractAssets(config) && shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("GoShell", "Extracting Go project files to ${projectDir.absolutePath}")
                     projectDir.deleteRecursively()
                     extractAssetsRecursive(context, config.siteAssetBase.ifBlank { "go_app" }, projectDir)
@@ -1142,7 +1142,7 @@ fun ServerAppShellMode(
         withContext(Dispatchers.IO) {
             try {
                 val assetDir = if (appType == "PYTHON_APP") "python_app" else "go_app"
-                val siteDir = File(context.filesDir, "${assetDir}_site")
+                val siteDir = if (config.previewContentDir.isNotBlank()) File(config.previewContentDir) else File(context.filesDir, "${assetDir}_site")
                 val marker = File(siteDir, ".extracted")
                 val extractionToken = buildExtractionToken(
                     context = context,
@@ -1178,7 +1178,7 @@ fun ServerAppShellMode(
                     AppLogger.e("ServerAppShellMode", "Listing assets/$assetDir failed", e)
                 }
 
-                if (shouldReextractAssets(marker, extractionToken)) {
+                if (ShellPathIo.shouldExtractAssets(config) && shouldReextractAssets(marker, extractionToken)) {
                     AppLogger.i("ServerAppShellMode", "First extract: removing old directory and extracting from assets...")
                     siteDir.deleteRecursively()
                     extractAssetsRecursive(context, assetDir, siteDir)

@@ -495,3 +495,41 @@ tasks.register("syncFeatureCompatPack") {
     dependsOn(":feature-compat:packageFeatureCompatPack")
 }
 
+tasks.register("checkFeaturePackParentTypes") {
+    group = "verification"
+    description = "Fail if feature pack DEX references parent types missing from LITE shell template"
+    dependsOn("syncShellTemplateApk", ":feature-compat:packageFineFeaturePacks")
+    val shellApk = file("src/main/assets/template/webview_shell.apk")
+    val featuresDir = file("src/main/assets/features")
+    val script = rootProject.file("scripts/check_feature_pack_parent_types.py")
+    inputs.file(shellApk)
+    inputs.dir(featuresDir)
+    inputs.file(script)
+    outputs.upToDateWhen { false }
+    doLast {
+        if (!shellApk.isFile) {
+            throw GradleException("shell template missing: $shellApk")
+        }
+        if (!featuresDir.isDirectory) {
+            throw GradleException("features dir missing: $featuresDir")
+        }
+        val pb = ProcessBuilder(
+            "python3",
+            script.absolutePath,
+            "--shell-apk",
+            shellApk.absolutePath,
+            "--features-dir",
+            featuresDir.absolutePath
+        )
+        pb.directory(rootProject.projectDir)
+        pb.redirectErrorStream(true)
+        val proc = pb.start()
+        val log = proc.inputStream.bufferedReader().readText()
+        val code = proc.waitFor()
+        logger.lifecycle(log.trim())
+        if (code != 0) {
+            throw GradleException("checkFeaturePackParentTypes failed ($code)")
+        }
+    }
+}
+

@@ -122,7 +122,12 @@ fun CreateAppScreen(
             try {
                 val appId = viewModel.saveAndPreview()
                 if (appId != null && appId > 0) {
-                    WebViewActivity.start(context, appId)
+                    val app = com.webtoapp.WebToAppApplication.repository.getWebApp(appId)
+                    val usedShell = app != null &&
+                        com.webtoapp.core.host.ShellPreviewLauncher.start(context, app)
+                    if (!usedShell) {
+                        WebViewActivity.start(context, appId)
+                    }
                 } else {
                     snackbarHostState.showSnackbar(Strings.saveFailed)
                 }

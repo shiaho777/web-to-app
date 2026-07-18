@@ -175,8 +175,8 @@ class WebToAppApplication : Application(), ImageLoaderFactory {
     private fun initShellRuntime() {
         try {
             FeatureLoader.loadEnabled(this)
-        } catch (e: Exception) {
-            AppLogger.e("WebToAppApplication", "FeatureLoader failed", e)
+        } catch (t: Throwable) {
+            AppLogger.e("WebToAppApplication", "FeatureLoader failed", t)
         }
         shellModeManagerLocal = ShellModeManager(this)
         shellActivationManager = ActivationManager(this)

@@ -3905,7 +3905,7 @@ private fun WebApp.buildTranslateBlock(): TranslateBlock = TranslateBlock(
 )
 
 private fun WebApp.buildExtensionBlock(): ExtensionBlock = ExtensionBlock(
-    enabled = extensionEnabled,
+    enabled = extensionEnabled || extensionModuleIds.isNotEmpty(),
     moduleIds = extensionModuleIds,
     embeddedModules = emptyList(),
     fabIcon = extensionFabIcon ?: ""
@@ -4191,6 +4191,16 @@ private fun buildOAuthReturnSchemes(packageName: String, appType: com.webtoapp.d
     return listOf("wta-$normalized")
 }
 
+
+fun WebApp.toPreviewShellConfig(context: android.content.Context): com.webtoapp.core.shell.ShellConfig {
+    val packageName = this.packageName?.takeIf { it.isNotBlank() } ?: context.packageName
+    val apkConfig = toApkConfigWithModules(packageName, context)
+    val json = ApkConfigJsonFactory.toShellConfigJson(apkConfig)
+    val shell = com.webtoapp.util.GsonProvider.gson.fromJson(json, com.webtoapp.core.shell.ShellConfig::class.java)
+        ?: error("Failed to map WebApp to ShellConfig for preview")
+    return shell
+}
+
 fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.Context): ApkConfig {
     val baseConfig = toApkConfig(packageName, context)
     val extensionFileManager = com.webtoapp.core.extension.ExtensionFileManager(context)
@@ -4205,16 +4215,29 @@ fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.
                 }
             }
 
-            val resolvedModules = extensionManager.getModulesByIds(extensionModuleIds)
-
-            if (resolvedModules.size < extensionModuleIds.size) {
-                val foundIds = resolvedModules.map { it.id }.toSet()
-                val missingIds = extensionModuleIds.filter { it !in foundIds }
-                AppLogger.w(
-                    "ApkBuilder",
-                    "Extension module resolution: requested ${extensionModuleIds.size}, found ${resolvedModules.size}. " +
-                        "Missing IDs (will NOT be embedded in APK): $missingIds"
-                )
+            var resolvedModules = extensionManager.getModulesByIds(extensionModuleIds)
+            val foundIds = resolvedModules.map { it.id }.toSet()
+            val missingIds = extensionModuleIds.filter { it !in foundIds }
+            if (missingIds.isNotEmpty()) {
+                val fallbackBuiltIns = runCatching {
+                    com.webtoapp.core.extension.BuiltInModules.getAll()
+                        .filter { it.id in missingIds.toSet() }
+                }.getOrElse { emptyList() }
+                if (fallbackBuiltIns.isNotEmpty()) {
+                    AppLogger.w(
+                        "ApkBuilder",
+                        "Extension module soft-load missed ${missingIds.size} id(s); recovered ${fallbackBuiltIns.size} via BuiltInModules hard-ref"
+                    )
+                    resolvedModules = resolvedModules + fallbackBuiltIns
+                }
+                val stillMissing = extensionModuleIds.filter { id -> resolvedModules.none { it.id == id } }
+                if (stillMissing.isNotEmpty()) {
+                    AppLogger.w(
+                        "ApkBuilder",
+                        "Extension module resolution: requested ${extensionModuleIds.size}, found ${resolvedModules.size}. " +
+                            "Missing IDs (will NOT be embedded in APK): $stillMissing"
+                    )
+                }
             }
 
             resolvedModules.map { module ->
@@ -4302,8 +4325,19 @@ fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.
         emptyList()
     }
 
+    val extensionActive = baseConfig.extension.enabled ||
+        extensionModuleIds.isNotEmpty() ||
+        embeddedModules.isNotEmpty()
     return baseConfig.copy(
-        extension = baseConfig.extension.copy(embeddedModules = embeddedModules)
+        extension = baseConfig.extension.copy(
+            enabled = extensionActive,
+            moduleIds = if (baseConfig.extension.moduleIds.isNotEmpty()) {
+                baseConfig.extension.moduleIds
+            } else {
+                extensionModuleIds
+            },
+            embeddedModules = embeddedModules
+        )
     )
 }
 

@@ -3,6 +3,7 @@ package com.webtoapp.core.engine
 import android.content.Context
 import android.view.View
 import com.webtoapp.core.feature.FeatureLoader
+import com.webtoapp.core.feature.ReflectInvoke
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.DnsConfig
 import com.webtoapp.data.model.WebViewConfig
@@ -45,25 +46,25 @@ object GeckoEngineAccess {
     }
 
     fun applyDnsConfig(config: DnsConfig) {
-        invokeStatic("applyDnsConfig", arrayOf(DnsConfig::class.java), arrayOf(config))
+        invokeStatic("applyDnsConfig", config)
     }
 
     fun applyAntiCapture(active: Boolean) {
-        invokeStatic("applyAntiCapture", arrayOf(Boolean::class.javaPrimitiveType!!), arrayOf(active))
+        invokeStatic("applyAntiCapture", active)
     }
 
     fun setTlsMitmActive(active: Boolean) {
-        invokeStatic("setTlsMitmActive", arrayOf(Boolean::class.javaPrimitiveType!!), arrayOf(active))
+        invokeStatic("setTlsMitmActive", active)
     }
 
     fun applyProxyConfig(config: ProxyConfig) {
-        invokeStatic("applyProxyConfig", arrayOf(ProxyConfig::class.java), arrayOf(config))
+        invokeStatic("applyProxyConfig", config)
     }
 
-    private fun invokeStatic(method: String, types: Array<Class<*>>, args: Array<Any?>) {
+    private fun invokeStatic(method: String, vararg args: Any?) {
         try {
             val c = resolveClass() ?: return
-            c.getMethod(method, *types).invoke(null, *args)
+            ReflectInvoke.call(c, method, *args)
         } catch (e: Exception) {
             AppLogger.w(TAG, "invokeStatic $method failed: ${e.message}")
         }

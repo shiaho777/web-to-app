@@ -237,9 +237,23 @@ fun ShellSplashOverlay(
 @Composable
 fun MediaContentDisplay(
     isVideo: Boolean,
-    mediaConfig: com.webtoapp.core.shell.MediaShellConfig
+    mediaConfig: com.webtoapp.core.shell.MediaShellConfig,
+    previewContentDir: String = ""
 ) {
     val context = LocalContext.current
+    val previewMediaFile = remember(previewContentDir) {
+        if (previewContentDir.isBlank()) null
+        else {
+            val f = ShellPathIo.toFile(previewContentDir)
+            when {
+                f.isFile -> f
+                f.isDirectory -> ShellPathIo.resolvePreviewMediaFile(
+                    com.webtoapp.core.shell.ShellConfig(previewContentDir = previewContentDir)
+                )
+                else -> null
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -262,6 +276,26 @@ fun MediaContentDisplay(
             modifier = Modifier.fillMaxSize(),
             onSurfaceCreated = { holder ->
                 try {
+                    val localPreview = previewMediaFile
+                    if (localPreview != null && localPreview.exists()) {
+                        mediaPlayer = android.media.MediaPlayer().apply {
+                            setDataSource(localPreview.absolutePath)
+                            setSurface(holder.surface)
+                            val volume = if (mediaConfig.enableAudio) 1f else 0f
+                            setVolume(volume, volume)
+                            isLooping = mediaConfig.loop
+                            setOnPreparedListener { mp ->
+                                videoWidth = mp.videoWidth
+                                videoHeight = mp.videoHeight
+                                if (mediaConfig.autoPlay) start()
+                            }
+                            setOnVideoSizeChangedListener { _, width, height ->
+                                videoWidth = width
+                                videoHeight = height
+                            }
+                            prepareAsync()
+                        }
+                    } else {
                     val encryptedPath = "$assetPath.enc"
                     val hasEncrypted = try {
                         context.assets.open(encryptedPath).use { true }
@@ -313,6 +347,7 @@ fun MediaContentDisplay(
                         }
                         afd.close()
                     }
+                    }
                 } catch (e: Exception) {
                     AppLogger.e("ShellActivity", "Operation failed", e)
                 }
@@ -338,12 +373,16 @@ fun MediaContentDisplay(
 
             var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
-            LaunchedEffect(Unit) {
+            LaunchedEffect(previewMediaFile) {
                 bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     try {
-                        val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
-                        val imageBytes = decryptor.loadAsset("media_content.png")
-                        android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        if (previewMediaFile != null && previewMediaFile!!.exists()) {
+                            android.graphics.BitmapFactory.decodeFile(previewMediaFile!!.absolutePath)
+                        } else {
+                            val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
+                            val imageBytes = decryptor.loadAsset("media_content.png")
+                            android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        }
                     } catch (e: Exception) {
                         AppLogger.e("MediaContent", "Failed to load image media", e)
                         null

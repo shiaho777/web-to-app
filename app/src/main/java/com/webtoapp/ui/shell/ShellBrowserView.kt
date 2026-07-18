@@ -68,7 +68,9 @@ fun ShellBrowserAndroidView(
                         embeddedExtensionModules = config.embeddedExtensionModules,
                         extensionFabIcon = config.extensionFabIcon,
                         allowGlobalModuleFallback = false,
-                        extensionEnabled = config.extensionEnabled,
+                        extensionEnabled = config.extensionEnabled ||
+                            config.extensionModuleIds.isNotEmpty() ||
+                            config.embeddedExtensionModules.isNotEmpty(),
                         browserDisguiseConfig = config.browserDisguiseConfig,
                         deviceDisguiseConfig = config.deviceDisguiseConfig
                     )

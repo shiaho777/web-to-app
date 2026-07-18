@@ -1,7 +1,6 @@
 package com.webtoapp.core.feature
 
 import android.content.Context
-import java.lang.reflect.Modifier
 
 object ShellFeatureRuntime {
     fun isAvailable(className: String): Boolean = FeatureLoader.loadClass(className) != null
@@ -26,17 +25,7 @@ object ShellFeatureRuntime {
     }
 
     fun callStatic(className: String, method: String, vararg args: Any?): Any? {
-        val clazz = FeatureLoader.loadClass(className) ?: return null
-        return runCatching {
-            val candidates = clazz.methods.filter {
-                it.name == method &&
-                    Modifier.isStatic(it.modifiers) &&
-                    it.parameterCount == args.size
-            }
-            val m = candidates.firstOrNull() ?: return null
-            m.isAccessible = true
-            m.invoke(null, *args)
-        }.getOrNull()
+        return ReflectInvoke.call(className, method, *args)
     }
 
     fun prop(target: Any?, name: String): Any? {

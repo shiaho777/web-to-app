@@ -3,6 +3,7 @@ package com.webtoapp.core.forcedrun
 import android.app.Activity
 import android.content.Context
 import com.webtoapp.core.feature.FeatureLoader
+import com.webtoapp.core.feature.ReflectInvoke
 
 object ForcedRunHardwareAccess {
     private const val CLASS = "com.webtoapp.core.forcedrun.ForcedRunHardwareController"
@@ -12,10 +13,8 @@ object ForcedRunHardwareAccess {
     fun isAvailable(): Boolean = resolve() != null
 
     fun getInstance(context: Context): Any? {
-        return runCatching {
-            val c = resolve() ?: return null
-            c.getMethod("getInstance", Context::class.java).invoke(null, context)
-        }.getOrNull()
+        val c = resolve() ?: return null
+        return ReflectInvoke.call(c, "getInstance", context)
     }
 
     fun setTargetActivity(instance: Any?, activity: Activity?) {

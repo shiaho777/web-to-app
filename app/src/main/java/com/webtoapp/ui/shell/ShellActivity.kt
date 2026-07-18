@@ -31,6 +31,14 @@ import com.webtoapp.ui.shared.WindowHelper
 
 class ShellActivity : AppCompatActivity() {
 
+    companion object {
+        const val EXTRA_PREVIEW = "shell_preview"
+        const val EXTRA_PREVIEW_APP_ID = "shell_preview_app_id"
+    }
+
+    private var isPreviewSession: Boolean = false
+    private var previewAppId: Long = -1L
+
     private var webView: WebView? = null
     private var browserSurface: BrowserSurface? = null
     private var customView: View? = null
@@ -295,16 +303,26 @@ class ShellActivity : AppCompatActivity() {
 
         savedInstanceState?.let { webViewStateBundle = it }
 
-        if (WebToAppApplication.shellMode.requiresCustomPassword()) {
+        isPreviewSession = intent?.getBooleanExtra(EXTRA_PREVIEW, false) == true
+        previewAppId = intent?.getLongExtra(EXTRA_PREVIEW_APP_ID, -1L) ?: -1L
+
+        if (!isPreviewSession && WebToAppApplication.shellMode.requiresCustomPassword()) {
             showPasswordDialog()
             return
         }
 
-        val config = WebToAppApplication.shellMode.getConfig()
+        val config = if (isPreviewSession) {
+            com.webtoapp.core.shell.ShellPreviewSession.config()
+        } else {
+            WebToAppApplication.shellMode.getConfig()
+        }
         if (config == null) {
-            AppLogger.e("ShellActivity", "配置加载失败，无法启动应用")
+            AppLogger.e("ShellActivity", "配置加载失败，无法启动应用 preview=$isPreviewSession")
             com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "配置加载失败，无法启动应用")
             Toast.makeText(this, Strings.appConfigLoadFailed, Toast.LENGTH_LONG).show()
+            if (isPreviewSession) {
+                com.webtoapp.core.shell.ShellPreviewSession.end()
+            }
             finish()
             return
         }
@@ -331,6 +349,7 @@ class ShellActivity : AppCompatActivity() {
                 "CHINESE", "ZH", "ZH_CN", "ZH-CN" -> com.webtoapp.core.i18n.AppLanguage.CHINESE
                 else -> com.webtoapp.core.i18n.AppLanguage.fromCode(config.language.lowercase())
             }
+            Strings.initialize(applicationContext)
             Strings.setLanguage(appLanguage)
             AppLogger.d("ShellActivity", "设置界面语言: ${config.language} -> $appLanguage")
         } catch (e: Exception) {
@@ -754,6 +773,15 @@ class ShellActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
+        if (intent?.getBooleanExtra(EXTRA_PREVIEW, false) == true) {
+            setIntent(intent)
+            isPreviewSession = true
+            previewAppId = intent.getLongExtra(EXTRA_PREVIEW_APP_ID, -1L)
+            if (com.webtoapp.core.shell.ShellPreviewSession.config() != null) {
+                recreate()
+                return
+            }
+        }
 
         val launcherRelaunch = intent?.action == Intent.ACTION_MAIN &&
             intent.hasCategory(Intent.CATEGORY_LAUNCHER)
@@ -842,6 +870,9 @@ class ShellActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onDestroy")
+        if (isPreviewSession && isFinishing) {
+            com.webtoapp.core.shell.ShellPreviewSession.endIfMatches(previewAppId)
+        }
 
         android.webkit.CookieManager.getInstance().flush()
 

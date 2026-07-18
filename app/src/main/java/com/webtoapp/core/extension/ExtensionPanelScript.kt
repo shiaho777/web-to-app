@@ -224,7 +224,7 @@ object ExtensionPanelScript {
             --wta-primary-dark: #000000;
             --wta-on-primary: #FFFFFF;
             --wta-accent-soft: rgba(17, 17, 19, 0.08);
-            --wta-fab-bg: #1A1A1D;
+            --wta-fab-bg: #2C2C33;
             --wta-fab-fg: #FFFFFF;
             --wta-gradient: #111113;
             --wta-gradient-dark: #1A1A1D;
@@ -305,12 +305,12 @@ object ExtensionPanelScript {
             font-size: 20px;
             cursor: pointer;
             z-index: 2147483647 !important;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255,255,255,0.08);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: auto !important;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
-            border: none;
+            border: 1.5px solid rgba(255, 255, 255, 0.28);
             touch-action: none;
             isolation: isolate !important;
         }

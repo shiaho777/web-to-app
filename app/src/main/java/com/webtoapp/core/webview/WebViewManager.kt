@@ -5,6 +5,8 @@ import android.app.Activity
 import android.app.Dialog
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.feature.ScriptPackAccess
+import com.webtoapp.core.feature.ReflectInvoke
+import com.webtoapp.core.feature.FeatureLoader
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -1149,7 +1151,9 @@ class WebViewManager(
 
         this.extensionFabIcon = extensionFabIcon
 
-        this.extensionMasterEnabled = extensionEnabled
+        this.extensionMasterEnabled = extensionEnabled ||
+            extensionModuleIds.isNotEmpty() ||
+            embeddedExtensionModules.isNotEmpty()
 
         this.currentDeviceDisguiseConfig = deviceDisguiseConfig
 
@@ -3729,7 +3733,10 @@ class WebViewManager(
     private fun getExtensionPanelEligibility(): ExtensionPanelEligibility {
         val extensionManager = ExtensionManager.getInstance(context)
 
-        if (!extensionMasterEnabled) {
+        val extensionActive = extensionMasterEnabled ||
+            embeddedModules.any { it.enabled } ||
+            appExtensionModuleIds.isNotEmpty()
+        if (!extensionActive) {
             return ExtensionPanelEligibility(
                 hasEmbeddedModules = false,
                 hasAppModules = false,
@@ -3860,20 +3867,16 @@ class WebViewManager(
 
         try {
 
-            val panelClazz = runCatching {
-                Class.forName("com.webtoapp.core.extension.ExtensionPanelScript")
-            }.getOrNull()
+            val panelClazz = FeatureLoader.loadClass("com.webtoapp.core.extension.ExtensionPanelScript")
             if (panelClazz == null) {
                 AppLogger.d("WebViewManager", "ExtensionPanelScript pack missing; skip panel inject")
                 return
             }
-            val panelScript = panelClazz.getMethod("getPanelInitScript", String::class.java)
-                .invoke(null, extensionFabIcon) as? String
+            val panelScript = ReflectInvoke.call(panelClazz, "getPanelInitScript", extensionFabIcon) as? String
             if (!panelScript.isNullOrBlank()) {
                 webView.evaluateJavascript(panelScript, null)
             }
-            val helperScript = panelClazz.getMethod("getModuleHelperScript")
-                .invoke(null) as? String
+            val helperScript = ReflectInvoke.call(panelClazz, "getModuleHelperScript") as? String
             if (!helperScript.isNullOrBlank()) {
                 webView.evaluateJavascript(helperScript, null)
             }
@@ -4660,9 +4663,10 @@ class WebViewManager(
     }
 
     private fun injectAllExtensionModules(webView: WebView, url: String, runAt: ScriptRunTime) {
-
-        if (!extensionMasterEnabled) {
-
+        val extensionActive = extensionMasterEnabled ||
+            embeddedModules.any { it.enabled } ||
+            appExtensionModuleIds.isNotEmpty()
+        if (!extensionActive) {
             return
         }
 

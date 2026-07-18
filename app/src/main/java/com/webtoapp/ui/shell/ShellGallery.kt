@@ -359,12 +359,7 @@ fun ShellGalleryImageViewer(
         isLoading = true
         try {
 
-            val imageBytes = try {
-                assetDecryptor.loadAsset(item.assetPath)
-            } catch (e: Exception) {
-
-                context.assets.open(item.assetPath).use { it.readBytes() }
-            }
+            val imageBytes = ShellPathIo.readBytes(context, item.assetPath, assetDecryptor)
             bitmap = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
         } catch (e: Exception) {
             AppLogger.e("ShellGallery", "Failed to load image: ${item.assetPath}", e)
@@ -415,7 +410,7 @@ fun ShellGalleryVideoPlayer(
     var duration by remember { mutableLongStateOf(0L) }
     var videoWidth by remember { mutableIntStateOf(0) }
     var videoHeight by remember { mutableIntStateOf(0) }
-    val isEncrypted = remember(item.assetPath) { assetDecryptor.isEncrypted(item.assetPath) }
+    val isEncrypted = remember(item.assetPath) { !ShellPathIo.isLocalFilePath(item.assetPath) && assetDecryptor.isEncrypted(item.assetPath) }
 
     DisposableEffect(item.assetPath, isEncrypted) {
         val mediaPlayer = android.media.MediaPlayer()
@@ -441,6 +436,14 @@ fun ShellGalleryVideoPlayer(
                         onVideoEnded()
                     }
                     mediaPlayer.setOnErrorListener { _, _, _ -> true }
+                }
+
+                if (ShellPathIo.isLocalFilePath(item.assetPath)) {
+                    withContext(Dispatchers.Main) {
+                        mediaPlayer.setDataSource(ShellPathIo.toFile(item.assetPath).absolutePath)
+                        mediaPlayer.prepareAsync()
+                    }
+                    return@launch
                 }
 
                 if (!isEncrypted) {

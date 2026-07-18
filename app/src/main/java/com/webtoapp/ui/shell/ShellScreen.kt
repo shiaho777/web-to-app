@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellConfig
+import com.webtoapp.core.shell.ShellPreviewSession
 import com.webtoapp.core.webview.LongPressHandler
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.core.forcedrun.ForcedRunConfig
@@ -146,16 +147,16 @@ fun ShellScreen(
         if (config.activationEnabled) {
 
             if (config.activationRequireEveryTime) {
-                activation.resetActivation(-1L)
+                activation.resetActivation(ShellPreviewSession.activationAppId())
                 isActivated = false
                 isActivationChecked = true
                 showActivationDialog = true
             } else {
 
                 val activated = if (config.activationRemoteEnabled) {
-                    activation.isActivated(-1L).first() &&
+                    activation.isActivated(ShellPreviewSession.activationAppId()).first() &&
                         activation.isRemoteStartupAllowed(
-                            -1L,
+                            ShellPreviewSession.activationAppId(),
                             activation.buildRemoteRequest(
                                 verifyUrl = config.activationRemoteVerifyUrl,
                                 publicKeyBase64 = config.activationRemotePublicKey,
@@ -163,7 +164,7 @@ fun ShellScreen(
                             )
                         )
                 } else {
-                    activation.resolveStartupActivation(-1L)
+                    activation.resolveStartupActivation(ShellPreviewSession.activationAppId())
                 }
                 isActivated = activated
                 isActivationChecked = true

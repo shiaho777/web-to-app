@@ -353,6 +353,7 @@ Checklist in order:
 ./gradlew :feature-compat:packageFeatureCompatPack --no-configuration-cache
 python3 -c "import zipfile,os; p='app/src/main/assets/template/webview_shell.apk'; print(os.path.getsize(p)); z=zipfile.ZipFile(p); print([(i.filename,i.compress_size) for i in sorted(z.infolist(),key=lambda x:-x.compress_size)[:8]])"
 ./gradlew :app:testDebugUnitTest --tests "com.webtoapp.core.apkbuilder.CapabilityPlannerTest" -x :shell:assembleRelease -x :app:syncShellTemplateApk --no-configuration-cache
+./gradlew :app:checkFeaturePackParentTypes --no-configuration-cache
 ```
 
 Use these when you change shell membership, packs, Planner, or export packaging. For host-only UI/string work, targeted compile/tests on `:app` are usually enough.

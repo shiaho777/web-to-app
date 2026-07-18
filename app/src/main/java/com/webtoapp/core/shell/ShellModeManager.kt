@@ -437,7 +437,10 @@ data class ShellConfig(
     val siteDirName: String = "",
 
     @SerializedName("siteAssetBase")
-    val siteAssetBase: String = ""
+    val siteAssetBase: String = "",
+
+    @SerializedName("previewContentDir")
+    val previewContentDir: String = ""
 )
 
 data class EmbeddedShellModule(

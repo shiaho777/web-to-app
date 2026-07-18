@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.feature.FeatureLoader
+import com.webtoapp.core.feature.ReflectInvoke
 import androidx.core.content.FileProvider
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -223,11 +225,11 @@ class ExtensionManager private constructor(private val context: Context) {
     @Suppress("UNCHECKED_CAST")
     private fun loadBuiltInStandardModules(): List<ExtensionModule> {
         return try {
-            val clazz = Class.forName("com.webtoapp.core.extension.BuiltInModules")
-            val result = clazz.getMethod("getAll").invoke(null)
+            val result = ReflectInvoke.call(
+                "com.webtoapp.core.extension.BuiltInModules",
+                "getAll"
+            )
             (result as? List<ExtensionModule>) ?: emptyList()
-        } catch (e: ClassNotFoundException) {
-            emptyList()
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to load built-in modules", e)
             emptyList()
@@ -237,11 +239,12 @@ class ExtensionManager private constructor(private val context: Context) {
     @Suppress("UNCHECKED_CAST")
     private fun loadBuiltInChromeModules(): List<ExtensionModule> {
         return try {
-            val clazz = Class.forName("com.webtoapp.core.extension.BuiltInChromeExtensions")
-            val result = clazz.getMethod("getAll", Context::class.java).invoke(null, context)
+            val result = ReflectInvoke.call(
+                "com.webtoapp.core.extension.BuiltInChromeExtensions",
+                "getAll",
+                context
+            )
             (result as? List<ExtensionModule>) ?: emptyList()
-        } catch (e: ClassNotFoundException) {
-            emptyList()
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to load built-in Chrome extensions", e)
             emptyList()

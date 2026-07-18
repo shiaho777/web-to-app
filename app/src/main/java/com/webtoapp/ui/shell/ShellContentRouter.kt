@@ -37,7 +37,8 @@ fun ShellContentRouter(
 
             MediaContentDisplay(
                 isVideo = appType == "VIDEO",
-                mediaConfig = config.mediaConfig
+                mediaConfig = config.mediaConfig,
+                previewContentDir = config.previewContentDir
             )
         }
         appType == "GALLERY" -> {

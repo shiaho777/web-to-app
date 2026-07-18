@@ -386,6 +386,9 @@ object ShellStringTable {
             fallback.set(if (english.isNotEmpty()) english else primary.get())
         }
         loadedCode = code
+        if (primary.get().isEmpty()) {
+            android.util.Log.e("ShellStringTable", "i18n pack empty for language=$code")
+        }
     }
 
     fun get(id: Int): String {
@@ -646,6 +649,19 @@ def transform(text: str):
     return result, packs, static_count, dynamic_count
 
 
+
+ALWAYS_KEEP_STRING_PROPS = {
+    "activateApp", "enterCodeToContinue", "activationCode", "activate",
+    "pleaseEnterActivationCode", "activationCodeExample", "btnCancel",
+    "activationSuccess", "activationSuccessHint", "activationSuccessDetail",
+    "activated", "activationExpired", "invalidActivationCode",
+    "activationCodeBoundToOtherDevice", "activationCodeExpired", "activationCodeUsageExceeded",
+    "activationTime", "activationTypePermanent", "activationTypeTimeLimited",
+    "activationTypeUsageLimited", "activationTypeDeviceBound", "activationTypeCombined",
+    "appConfigLoadFailed", "btnConfirm", "btnExit", "cdMediaContent", "cdSplashScreen",
+    "galleryEmpty", "phpStartFailed",
+}
+
 def collect_used_string_props(repo_root: Path) -> set:
     import re
     used = set()
@@ -701,6 +717,7 @@ def collect_used_string_props(repo_root: Path) -> set:
             except Exception:
                 continue
             used.update(pat.findall(body))
+    used.update(ALWAYS_KEEP_STRING_PROPS)
     return used
 
 

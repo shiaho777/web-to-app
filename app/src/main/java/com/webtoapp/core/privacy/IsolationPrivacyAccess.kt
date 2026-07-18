@@ -3,6 +3,7 @@ package com.webtoapp.core.privacy
 import android.content.Context
 import android.webkit.WebView
 import com.webtoapp.core.feature.FeatureLoader
+import com.webtoapp.core.feature.ReflectInvoke
 
 object IsolationPrivacyAccess {
     private const val CLASS = "com.webtoapp.core.privacy.IsolationManager"
@@ -12,10 +13,8 @@ object IsolationPrivacyAccess {
     fun isAvailable(): Boolean = resolve() != null
 
     fun getInstance(context: Context): Any? {
-        return runCatching {
-            val c = resolve() ?: return null
-            c.getMethod("getInstance", Context::class.java).invoke(null, context)
-        }.getOrNull()
+        val c = resolve() ?: return null
+        return ReflectInvoke.call(c, "getInstance", context)
     }
 
     fun initialize(instance: Any?, config: IsolationConfig) {
