@@ -102,15 +102,15 @@ object DependencyDownloadEngine {
     private const val USER_AGENT = "WebToApp/1.0 (Android; DependencyDownloadEngine)"
 
     private val httpClient: OkHttpClient by lazy {
-        NetworkModule.customClient {
-            addInterceptor { chain ->
+        NetworkModule.downloadClient.newBuilder()
+            .addInterceptor { chain ->
                 chain.proceed(
                     chain.request().newBuilder()
                         .header("User-Agent", USER_AGENT)
                         .build()
                 )
             }
-        }
+            .build()
     }
 
     private class SpeedTracker {
