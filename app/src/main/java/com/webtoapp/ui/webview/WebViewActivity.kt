@@ -510,10 +510,64 @@ open class WebViewActivity : AppCompatActivity() {
         val granted = permissions.values.any { it }
         if (granted && pendingGeolocationOrigin != null) {
             GeolocationPermissionsSingleton.addAllowedOrigin(pendingGeolocationOrigin!!)
+            if (isSystemLocationEnabled()) {
+                pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, true, false)
+                pendingGeolocationOrigin = null
+                pendingGeolocationCallback = null
+            } else {
+                showLocationSettingsDialog()
+            }
+        } else {
+            pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, granted, false)
+            pendingGeolocationOrigin = null
+            pendingGeolocationCallback = null
         }
-        pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, granted, false)
+    }
+
+    private val locationSettingsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) {
+        val origin = pendingGeolocationOrigin
+        val cb = pendingGeolocationCallback
+        if (origin != null && cb != null && isSystemLocationEnabled()) {
+            cb.invoke(origin, true, false)
+        } else {
+            cb?.invoke(origin, false, false)
+        }
         pendingGeolocationOrigin = null
         pendingGeolocationCallback = null
+    }
+
+    private fun isSystemLocationEnabled(): Boolean {
+        val lm = getSystemService(Context.LOCATION_SERVICE) as? android.location.LocationManager
+            ?: return false
+        return lm.isProviderEnabled(android.location.LocationManager.GPS_PROVIDER) ||
+            lm.isProviderEnabled(android.location.LocationManager.NETWORK_PROVIDER)
+    }
+
+    private fun showLocationSettingsDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(Strings.geolocationLocationOffTitle)
+            .setMessage(Strings.geolocationLocationOffMessage)
+            .setPositiveButton(Strings.geolocationLocationOffOpenSettings) { _, _ ->
+                try {
+                    locationSettingsLauncher.launch(
+                        android.content.Intent(android.provider.Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    )
+                } catch (e: Exception) {
+                    AppLogger.w("WebViewActivity", "location settings intent failed: ${e.message}")
+                    pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, false, false)
+                    pendingGeolocationOrigin = null
+                    pendingGeolocationCallback = null
+                }
+            }
+            .setNegativeButton(Strings.geolocationLocationOffCancel) { _, _ ->
+                pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, false, false)
+                pendingGeolocationOrigin = null
+                pendingGeolocationCallback = null
+            }
+            .setCancelable(false)
+            .show()
     }
 
     private val notificationPermissionLauncher = registerForActivityResult(

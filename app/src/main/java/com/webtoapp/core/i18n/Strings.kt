@@ -4594,6 +4594,10 @@ object Strings {
     val notificationPolyfillDesc: String get() = StringsE.notificationPolyfillDesc
     val geolocationTitle: String get() = StringsE.geolocationTitle
     val geolocationDesc: String get() = StringsE.geolocationDesc
+    val geolocationLocationOffTitle: String get() = StringsE.geolocationLocationOffTitle
+    val geolocationLocationOffMessage: String get() = StringsE.geolocationLocationOffMessage
+    val geolocationLocationOffOpenSettings: String get() = StringsE.geolocationLocationOffOpenSettings
+    val geolocationLocationOffCancel: String get() = StringsE.geolocationLocationOffCancel
     val orientationPolyfillTitle: String get() = StringsE.orientationPolyfillTitle
     val orientationPolyfillDesc: String get() = StringsE.orientationPolyfillDesc
     val compatPolyfillsTitle: String get() = StringsE.compatPolyfillsTitle
@@ -61912,6 +61916,54 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Разрешить веб-страницам запрашивать местоположение устройства. Если выключено, запросы местоположения отклоняются автоматически."
         AppLanguage.JAPANESE -> "ウェブページがデバイスの位置情報を要求することを許可します。オフの場合、位置情報リクエストは自動的に拒否されます。"
         AppLanguage.KOREAN -> "웹페이지가 기기 위치를 요청하도록 허용합니다. 끄면 위치 요청이 자동으로 거부됩니다."
+    }
+    val geolocationLocationOffTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "位置服务未开启"
+        AppLanguage.ENGLISH -> "Location service is off"
+        AppLanguage.ARABIC -> "خدمة الموقع متوقفة"
+        AppLanguage.PORTUGUESE -> "Serviço de localização desativado"
+        AppLanguage.SPANISH -> "Servicio de ubicación desactivado"
+        AppLanguage.FRENCH -> "Service de localisation désactivé"
+        AppLanguage.GERMAN -> "Standortdienst ist deaktiviert"
+        AppLanguage.RUSSIAN -> "Служба геолокации выключена"
+        AppLanguage.JAPANESE -> "位置情報サービスがオフです"
+        AppLanguage.KOREAN -> "위치 서비스가 꺼져 있습니다"
+    }
+    val geolocationLocationOffMessage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "应用已获得定位权限，但系统位置服务已关闭。请在系统设置中开启位置服务后返回。"
+        AppLanguage.ENGLISH -> "The app has location permission, but the system location service is turned off. Please enable it in system settings and return."
+        AppLanguage.ARABIC -> "يملك التطبيق إذن الموقع، ولكن خدمة تحديد موقع النظام متوقفة. يرجى تفعيلها من إعدادات النظام والعودة."
+        AppLanguage.PORTUGUESE -> "O app tem permissão de localização, mas o serviço de localização do sistema está desativado. Ative-o nas configurações do sistema e volte."
+        AppLanguage.SPANISH -> "La app tiene permiso de ubicación, pero el servicio de ubicación del sistema está desactivado. Actívalo en la configuración del sistema y regresa."
+        AppLanguage.FRENCH -> "L'application a l'autorisation de localisation, mais le service de localisation du système est désactivé. Activez-le dans les paramètres système et revenez."
+        AppLanguage.GERMAN -> "Die App hat Standortberechtigung, aber der System-Standortdienst ist deaktiviert. Bitte aktivieren Sie ihn in den Systemeinstellungen und kehren Sie zurück."
+        AppLanguage.RUSSIAN -> "У приложения есть разрешение на геолокацию, но системная служба геолокации выключена. Включите её в настройках системы и вернитесь."
+        AppLanguage.JAPANESE -> "アプリに位置情報の権限は付与されていますが、システムの位置情報サービスがオフになっています。システム設定で有効にして戻ってください。"
+        AppLanguage.KOREAN -> "앱에 위치 권한이 있지만 시스템 위치 서비스가 꺼져 있습니다. 시스템 설정에서 켜고 돌아오세요."
+    }
+    val geolocationLocationOffOpenSettings: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "去开启"
+        AppLanguage.ENGLISH -> "Turn on"
+        AppLanguage.ARABIC -> "تفعيل"
+        AppLanguage.PORTUGUESE -> "Ativar"
+        AppLanguage.SPANISH -> "Activar"
+        AppLanguage.FRENCH -> "Activer"
+        AppLanguage.GERMAN -> "Aktivieren"
+        AppLanguage.RUSSIAN -> "Включить"
+        AppLanguage.JAPANESE -> "オンにする"
+        AppLanguage.KOREAN -> "켜기"
+    }
+    val geolocationLocationOffCancel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "取消"
+        AppLanguage.ENGLISH -> "Cancel"
+        AppLanguage.ARABIC -> "إلغاء"
+        AppLanguage.PORTUGUESE -> "Cancelar"
+        AppLanguage.SPANISH -> "Cancelar"
+        AppLanguage.FRENCH -> "Annuler"
+        AppLanguage.GERMAN -> "Abbrechen"
+        AppLanguage.RUSSIAN -> "Отмена"
+        AppLanguage.JAPANESE -> "キャンセル"
+        AppLanguage.KOREAN -> "취소"
     }
 
     val orientationPolyfillTitle: String get() = when (Strings.lang) {
