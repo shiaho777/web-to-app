@@ -15,7 +15,7 @@ class EdgeSwipeRefreshLayout @JvmOverloads constructor(
 
     var edgeStartOffsetDp: Float = 12f
     var edgeThresholdDp: Float = 48f
-    var indicatorTravelDp: Float = 64f
+    var indicatorTravelDp: Float = 96f
 
     private var touchStartedInEdge = false
 
