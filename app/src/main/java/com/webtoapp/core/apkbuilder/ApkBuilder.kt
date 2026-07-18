@@ -1123,10 +1123,8 @@ class ApkBuilder(private val context: Context) {
 
                         iconBitmap != null && (isIconEntry(entry.name) || discoveredOldIconPaths.contains(entry.name)) -> {
 
-                            val iconBytes = template.createAdaptiveForegroundIcon(iconBitmap, 432)
-                            writeEntryDeflated(zipOut, entry.name, iconBytes)
+                            replaceIconEntry(zipOut, entry.name, iconBitmap)
                             replacedIconPaths.add(entry.name)
-                            AppLogger.d("ApkBuilder", "Replaced icon entry: ${entry.name} (${iconBytes.size} bytes)")
                         }
 
                         entry.name.startsWith("lib/") -> {
@@ -2883,6 +2881,7 @@ builtins.__import__ = _w2a_import
 
         if (size == null) {
             size = when {
+                entryName.contains("foreground") -> 432
                 entryName.contains("xxxhdpi") -> 192
                 entryName.contains("xxhdpi") -> 144
                 entryName.contains("xhdpi") -> 96
