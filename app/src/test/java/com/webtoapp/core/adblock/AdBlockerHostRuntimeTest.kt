@@ -94,6 +94,7 @@ class AdBlockerHostRuntimeTest {
         assertThat(adBlocker.isEnabled()).isFalse()
         assertThat(adBlocker.shouldBlock("https://ads.example.test/a.js", resourceType = "script")).isFalse()
     }
+<<<<<<< HEAD
 
     @Test
     fun importHostsFromUrlPersistsSourceRegistryBeforeHeavyParseSurvivesProcessDeath() = runBlocking {

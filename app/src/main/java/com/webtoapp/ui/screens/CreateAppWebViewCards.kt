@@ -440,9 +440,15 @@ fun AdBlockCard(
     val enabled = editState.adBlockEnabled
     val rules = editState.adBlockRules
     val subscriptions = editState.adBlockSubscriptions
+    val context = LocalContext.current
     val adBlocker = remember { com.webtoapp.WebToAppApplication.adBlock }
     val allSources = remember { com.webtoapp.core.adblock.AdBlocker.getPopularHostsSources() }
-    val downloadedSources = remember(allSources, Unit) {
+    var hostsEpoch by remember { mutableStateOf(0) }
+    LaunchedEffect(Unit) {
+        adBlocker.loadHostsRules(context)
+        hostsEpoch += 1
+    }
+    val downloadedSources = remember(allSources, hostsEpoch) {
         allSources.filter { adBlocker.isHostsSourceDownloaded(it.url) }
     }
     val validSubscriptions = subscriptions.filter { url -> downloadedSources.any { it.url == url } }
