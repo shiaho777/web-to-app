@@ -11,6 +11,7 @@ import android.os.Message
 import android.os.Messenger
 import android.os.Process
 import android.os.RemoteException
+import com.webtoapp.core.linux.LocalDnsBridgeProxy
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.shell.ShellLogger
@@ -34,6 +35,7 @@ class NodeService : Service() {
     @Volatile private var nodeThread: Thread? = null
     @Volatile private var currentPort: Int = 0
     @Volatile private var isRunning = false
+    @Volatile private var dnsProxyStarted = false
 
     override fun onBind(intent: Intent?): IBinder = incomingMessenger.binder
 
@@ -184,6 +186,19 @@ class NodeService : Service() {
             bootstrapPath.writeText(
                 """
                 'use strict';
+                (function () {
+                    try {
+                        var proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.https_proxy || process.env.http_proxy;
+                        if (proxyUrl) {
+                            var undici = require('undici');
+                            if (undici && undici.ProxyAgent && undici.setGlobalDispatcher) {
+                                undici.setGlobalDispatcher(new undici.ProxyAgent(proxyUrl));
+                            }
+                        }
+                    } catch (e) {
+                        console.error('[wta-bootstrap] proxy dispatcher setup skipped:', (e && e.message) || e);
+                    }
+                })();
                 process.on('uncaughtException', function (err) {
                     console.error('[wta-bootstrap] uncaughtException:', (err && (err.stack || err.message)) || err);
                 });
@@ -201,6 +216,12 @@ class NodeService : Service() {
                 }
                 """.trimIndent()
             )
+
+            val proxyPort = LocalDnsBridgeProxy.start()
+            if (proxyPort > 0) {
+                dnsProxyStarted = true
+                AppLogger.i(TAG, "已启用 DNS 桥接代理 (port=$proxyPort) 供 Node.js 进程解析外部域名")
+            }
 
             setEnvironmentVars(projectDir, serverPort, envVars)
 
@@ -286,6 +307,10 @@ class NodeService : Service() {
             if (currentPort > 0) {
                 PortManager.release(currentPort)
             }
+            if (dnsProxyStarted) {
+                LocalDnsBridgeProxy.stop()
+                dnsProxyStarted = false
+            }
             nodeThread = null
             currentPort = 0
             isRunning = false
@@ -305,6 +330,10 @@ class NodeService : Service() {
                 "NODE_PATH" to File(projectDir, "node_modules").absolutePath
             )
             envMap.putAll(envVars)
+            val dnsProxyPort = LocalDnsBridgeProxy.getListenPort()
+            if (dnsProxyPort > 0) {
+                LocalDnsBridgeProxy.proxyEnvFor(dnsProxyPort).forEach { (k, v) -> envMap[k] = v }
+            }
             for ((key, value) in envMap) {
                 try {
                     android.system.Os.setenv(key, value, true)
