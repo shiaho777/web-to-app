@@ -1200,21 +1200,21 @@ class ApkBuilder(private val context: Context) {
 
                 if (config.adBlock.enabled) {
                     val globalAdBlock = WebToAppApplication.adBlock
-                    for (subUrl in config.adBlock.subscriptions) {
-                        if (subUrl.isNotBlank() && !globalAdBlock.isHostsSourceDownloaded(subUrl)) {
-                            try {
-                                globalAdBlock.importHostsFromUrl(subUrl, context).getOrThrow()
-                                logger.log("AdBlock subscription imported at build: $subUrl")
-                            } catch (e: Exception) {
-                                logger.log("AdBlock subscription import failed: $subUrl — ${e.message}")
-                            }
+                    try {
+                        val compiledRules = globalAdBlock.compileRulesText(
+                            context = context,
+                            subscriptionUrls = config.adBlock.subscriptions
+                        )
+                        if (compiledRules.isNotEmpty()) {
+                            val rulesData = compiledRules.toByteArray(Charsets.UTF_8)
+                            writeEntryDeflated(zipOut, "assets/wta_adblock_compiled.txt", rulesData)
+                            logger.log("AdBlock compiled rules bundled (${rulesData.size} bytes)")
+                        } else {
+                            logger.log("AdBlock enabled but compiled rules empty (subscriptions=${config.adBlock.subscriptions.size}, rules=${config.adBlock.rules.size})")
                         }
-                    }
-                    val compiledRules = globalAdBlock.getCompiledRulesText()
-                    if (compiledRules.isNotEmpty()) {
-                        val rulesData = compiledRules.toByteArray(Charsets.UTF_8)
-                        writeEntryDeflated(zipOut, "assets/wta_adblock_compiled.txt", rulesData)
-                        logger.log("AdBlock compiled rules bundled (${rulesData.size} bytes)")
+                    } catch (e: Exception) {
+                        logger.log("AdBlock compile failed: ${e.message}")
+                        throw e
                     }
                 }
 
@@ -3459,7 +3459,7 @@ private fun WebApp.buildActivationBlock(): ActivationBlock = ActivationBlock(
 )
 
 private fun WebApp.buildAdBlockBlock(): AdBlockBlock = AdBlockBlock(
-    enabled = adBlockSubscriptions.isNotEmpty() || adBlockRules.isNotEmpty(),
+    enabled = adBlockEnabled,
     rules = adBlockRules,
     subscriptions = adBlockSubscriptions
 )

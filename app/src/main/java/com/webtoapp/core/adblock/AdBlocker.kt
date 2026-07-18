@@ -1018,6 +1018,88 @@ class AdBlocker {
         "scriptlets" to scriptletRules.size
     )
 
+    private fun resetEngineRules() {
+        exactHosts.clear()
+        hostsFileHosts.clear()
+        networkBlockFilters.clear()
+        networkExceptionFilters.clear()
+        anchorDomainIndex.clear()
+        exceptionAnchorDomainIndex.clear()
+        cosmeticBlockFilters.clear()
+        cosmeticExceptionFilters.clear()
+        scriptletRules.clear()
+        synchronized(blockResultCache) { blockResultCache.clear() }
+    }
+
+    private fun ingestFilterContent(sourceKey: String, content: String): Int {
+        val count = parseFilterContent(content)
+        enabledHostsSources.add(sourceKey)
+        disabledHostsSources.remove(sourceKey)
+        sourceRuleCounts[sourceKey] = count
+        return count
+    }
+
+    private suspend fun loadSourceContent(context: Context, sourceKey: String): String? {
+        AdBlockFilterCache.getSourceContent(context, sourceKey)?.let { return it }
+        if (sourceKey.startsWith("http://") || sourceKey.startsWith("https://")) {
+            return AdBlockFilterCache.getCachedUrlContent(context, sourceKey)
+        }
+        return null
+    }
+
+    suspend fun prepareRuntimeFilters(
+        context: Context,
+        enabled: Boolean,
+        customRules: List<String> = emptyList(),
+        subscriptionUrls: List<String> = emptyList()
+    ) {
+        if (!enabled) {
+            setEnabled(false)
+            return
+        }
+        val selected = subscriptionUrls.map { it.trim() }.filter { it.isNotEmpty() }
+        if (selected.isEmpty()) {
+            loadHostsRules(context)
+            customRules.forEach { parseAndAddRule(it) }
+            setEnabled(true)
+            return
+        }
+        resetEngineRules()
+        for (sourceKey in selected) {
+            val content = loadSourceContent(context, sourceKey)
+            if (content != null) {
+                ingestFilterContent(sourceKey, content)
+            } else if (sourceKey.startsWith("http://") || sourceKey.startsWith("https://")) {
+                importHostsFromUrl(sourceKey, context)
+            }
+        }
+        customRules.forEach { parseAndAddRule(it) }
+        setEnabled(true)
+    }
+
+    suspend fun compileRulesText(
+        context: Context,
+        subscriptionUrls: List<String> = emptyList(),
+        customRules: List<String> = emptyList()
+    ): String {
+        val compiler = AdBlocker()
+        val selected = subscriptionUrls.map { it.trim() }.filter { it.isNotEmpty() }
+        if (selected.isEmpty()) {
+            compiler.loadHostsRules(context)
+        } else {
+            for (sourceKey in selected) {
+                val content = compiler.loadSourceContent(context, sourceKey)
+                if (content != null) {
+                    compiler.ingestFilterContent(sourceKey, content)
+                } else if (sourceKey.startsWith("http://") || sourceKey.startsWith("https://")) {
+                    compiler.importHostsFromUrl(sourceKey, context)
+                }
+            }
+        }
+        customRules.forEach { compiler.parseAndAddRule(it) }
+        return compiler.getCompiledRulesText()
+    }
+
     fun getCompiledRulesText(): String = buildString {
         exactHosts.forEach { append("||").append(it).append("^\n") }
         hostsFileHosts.forEach { append("||").append(it).append("^\n") }

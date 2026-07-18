@@ -1180,18 +1180,12 @@ fun WebViewScreen(
             isActivated = true
             isActivationChecked = true
 
-            if (previewApp.adBlockEnabled) {
-                adBlocker.initialize(previewApp.adBlockRules, useDefaultRules = false)
-                for (subUrl in previewApp.adBlockSubscriptions) {
-                    if (subUrl.isNotBlank() && !adBlocker.isHostsSourceDownloaded(subUrl)) {
-                        try { adBlocker.importHostsFromUrl(subUrl, context) } catch (_: Exception) {}
-                    }
-                }
-                adBlocker.setEnabled(true)
-            } else {
-                adBlocker.initialize(emptyList(), useDefaultRules = false)
-                adBlocker.setEnabled(false)
-            }
+            adBlocker.prepareRuntimeFilters(
+                context = context,
+                enabled = previewApp.adBlockEnabled,
+                customRules = previewApp.adBlockRules,
+                subscriptionUrls = previewApp.adBlockSubscriptions
+            )
 
             (activity as? WebViewActivity)?.fullscreenVideoOrientation =
                 previewApp.webViewConfig.fullscreenVideoOrientation
@@ -1243,18 +1237,12 @@ fun WebViewScreen(
             webApp = app
             if (app != null) {
 
-                if (app.adBlockEnabled) {
-                    adBlocker.initialize(app.adBlockRules, useDefaultRules = false)
-                    for (subUrl in app.adBlockSubscriptions) {
-                        if (subUrl.isNotBlank() && !adBlocker.isHostsSourceDownloaded(subUrl)) {
-                            try { adBlocker.importHostsFromUrl(subUrl, context) } catch (_: Exception) {}
-                        }
-                    }
-                    adBlocker.setEnabled(true)
-                } else {
-                    adBlocker.initialize(emptyList(), useDefaultRules = false)
-                    adBlocker.setEnabled(false)
-                }
+                adBlocker.prepareRuntimeFilters(
+                    context = context,
+                    enabled = app.adBlockEnabled,
+                    customRules = app.adBlockRules,
+                    subscriptionUrls = app.adBlockSubscriptions
+                )
 
                 if (app.activationEnabled) {
 

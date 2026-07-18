@@ -11,6 +11,9 @@ class RuntimeWarmupStartup(
         appScope.launch {
             com.webtoapp.core.perf.SystemPerfOptimizer.initSystem(appContext)
             com.webtoapp.core.perf.SystemPerfOptimizer.readaheadCriticalFiles(appContext)
+            runCatching {
+                com.webtoapp.WebToAppApplication.adBlock.loadHostsRules(appContext)
+            }
         }
     }
 
