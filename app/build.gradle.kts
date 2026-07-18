@@ -533,3 +533,40 @@ tasks.register("checkFeaturePackParentTypes") {
     }
 }
 
+tasks.register("checkCapabilityChain") {
+    group = "verification"
+    description = "Validate special-settings capability chain: Planner packs, soft-load FQCNs, shell exclude ↔ feature-compat include"
+    dependsOn("syncShellTemplateApk", ":feature-compat:packageFineFeaturePacks")
+    val featuresDir = file("src/main/assets/features")
+    val script = rootProject.file("scripts/check_capability_chain.py")
+    val planner = file("src/main/java/com/webtoapp/core/apkbuilder/CapabilityPlanner.kt")
+    val merger = file("src/main/java/com/webtoapp/core/apkbuilder/FeaturePackMerger.kt")
+    val builder = file("src/main/java/com/webtoapp/core/apkbuilder/ApkBuilder.kt")
+    val shellGradle = rootProject.file("shell/build.gradle.kts")
+    val featureCompatGradle = rootProject.file("feature-compat/build.gradle.kts")
+    val finePackScript = rootProject.file("scripts/package_fine_feature_packs.py")
+    inputs.dir(featuresDir)
+    inputs.files(script, planner, merger, builder, shellGradle, featureCompatGradle, finePackScript)
+    outputs.upToDateWhen { false }
+    doLast {
+        if (!featuresDir.isDirectory) {
+            throw GradleException("features dir missing: $featuresDir")
+        }
+        val pb = ProcessBuilder(
+            "python3",
+            script.absolutePath,
+            "--features-dir",
+            featuresDir.absolutePath
+        )
+        pb.directory(rootProject.projectDir)
+        pb.redirectErrorStream(true)
+        val proc = pb.start()
+        val log = proc.inputStream.bufferedReader().readText()
+        val code = proc.waitFor()
+        logger.lifecycle(log.trim())
+        if (code != 0) {
+            throw GradleException("checkCapabilityChain failed ($code)")
+        }
+    }
+}
+

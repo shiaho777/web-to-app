@@ -251,7 +251,11 @@ class ApkBuilder(private val context: Context) {
             logger.logKeyValue("reasons", capabilityPlan.reasons.joinToString(" | ").ifBlank { "(lite)" })
             val featurePackMerge = FeaturePackMerger.prepare(context, capabilityPlan, logger)
             if (featurePackMerge.missingFeatures.isNotEmpty()) {
-                logger.warn("Missing feature packs: ${featurePackMerge.missingFeatures.joinToString()}")
+                val missing = featurePackMerge.missingFeatures.joinToString()
+                logger.warn("Missing feature packs: $missing")
+                throw IllegalStateException(
+                    "Missing feature packs required by capability plan: $missing"
+                )
             }
             logger.logKeyValue("versionCode", config.versionCode)
             logger.logKeyValue("versionName", config.versionName)

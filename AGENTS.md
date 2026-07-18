@@ -161,10 +161,12 @@ Output: CapabilityPlan(features, reasons, abiFilters, liteOnly)
 liteOnly == true  ⇔  features.isEmpty()
 ```
 
+After planning, GRANULAR runs `closeDependencies` then `materializePackIds`: virtual parents (`ext-modules`, `shell-disguise`, `shell-translate`, `shell-forcedrun`) are dropped once children exist; IDs without a fine pack fall back to `feature-compat`. Export hard-fails if any planned pack is missing from `assets/features/`.
+
 | Phase | Behavior |
 |-------|----------|
 | **COMPAT** (default export) | Many granular ids collapse to `FeatureIds.COMPAT` (`feature-compat`). Capability must still work. |
-| **GRANULAR** | Real fine packs + `closeDependencies` |
+| **GRANULAR** | Real fine packs + `closeDependencies` + `materializePackIds` |
 
 **AppType base needs**
 
@@ -354,6 +356,8 @@ Checklist in order:
 python3 -c "import zipfile,os; p='app/src/main/assets/template/webview_shell.apk'; print(os.path.getsize(p)); z=zipfile.ZipFile(p); print([(i.filename,i.compress_size) for i in sorted(z.infolist(),key=lambda x:-x.compress_size)[:8]])"
 ./gradlew :app:testDebugUnitTest --tests "com.webtoapp.core.apkbuilder.CapabilityPlannerTest" -x :shell:assembleRelease -x :app:syncShellTemplateApk --no-configuration-cache
 ./gradlew :app:checkFeaturePackParentTypes --no-configuration-cache
+./gradlew :app:checkCapabilityChain --no-configuration-cache
+python3 scripts/check_capability_chain.py
 ```
 
 Use these when you change shell membership, packs, Planner, or export packaging. For host-only UI/string work, targeted compile/tests on `:app` are usually enough.

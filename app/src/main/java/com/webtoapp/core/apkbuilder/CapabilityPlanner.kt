@@ -16,6 +16,25 @@ data class CapabilityPlan(
 
 object CapabilityPlanner {
 
+    private val GRANULAR_PACK_IDS = setOf(
+        FeatureIds.COMPAT,
+        FeatureIds.EXT_BUILTINS,
+        FeatureIds.EXT_PANEL,
+        FeatureIds.EXT_CHROME_SCRIPTS,
+        FeatureIds.SHELL_FORCEDRUN_HW,
+        FeatureIds.SHELL_DISGUISE_JS,
+        FeatureIds.SHELL_TRANSLATE_SCRIPT,
+        FeatureIds.SHELL_PRIVACY,
+        FeatureIds.SHELL_ERROR_GAMES
+    )
+
+    private val GRANULAR_VIRTUAL_PARENTS = setOf(
+        FeatureIds.EXT_MODULES,
+        FeatureIds.SHELL_DISGUISE,
+        FeatureIds.SHELL_TRANSLATE,
+        FeatureIds.SHELL_FORCEDRUN
+    )
+
     fun plan(
         config: ApkConfig,
         abiFilters: List<String> = emptyList(),
@@ -121,14 +140,37 @@ object CapabilityPlanner {
         }
 
         val closed = closeDependencies(features, phase)
+        val resolved = materializePackIds(closed, phase)
         val abi = abiFilters.ifEmpty { listOf("arm64-v8a") }
 
         return CapabilityPlan(
-            features = closed.toList(),
+            features = resolved.toList(),
             reasons = reasons.distinct(),
             abiFilters = abi,
-            liteOnly = closed.isEmpty()
+            liteOnly = resolved.isEmpty()
         )
+    }
+
+    private fun materializePackIds(
+        features: Set<String>,
+        phase: PlannerPhase
+    ): LinkedHashSet<String> {
+        if (phase == PlannerPhase.COMPAT) {
+            return LinkedHashSet(features)
+        }
+        val out = LinkedHashSet<String>()
+        var needCompat = false
+        for (id in features) {
+            when (id) {
+                in GRANULAR_PACK_IDS -> out.add(id)
+                in GRANULAR_VIRTUAL_PARENTS -> Unit
+                else -> needCompat = true
+            }
+        }
+        if (needCompat) {
+            out.add(FeatureIds.COMPAT)
+        }
+        return out
     }
 
     private fun closeDependencies(

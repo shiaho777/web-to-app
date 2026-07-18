@@ -59,4 +59,18 @@ class FeaturePackMergerTest {
         assertEquals("features/${FeatureIds.COMPAT}", first.getString("dir"))
         assertEquals(emptyList<String>(), result.missingFeatures)
     }
+
+    @Test
+    fun missingFeatureIsReported() {
+        val context = RuntimeEnvironment.getApplication()
+        val plan = CapabilityPlan(
+            features = listOf("does-not-exist-pack"),
+            reasons = listOf("test"),
+            abiFilters = listOf("arm64-v8a"),
+            liteOnly = false
+        )
+        val result = FeaturePackMerger.prepare(context, plan)
+        assertEquals(listOf("does-not-exist-pack"), result.missingFeatures)
+        assertTrue(result.extraEntries.isEmpty())
+    }
 }

@@ -31,13 +31,9 @@ object FeaturePackMerger {
         for (id in plan.features) {
             val packDir = resolvePackDir(context, id)
             if (packDir == null || !packDir.isDirectory) {
-                if (id == FeatureIds.COMPAT) {
-                    logger?.log("feature-compat pack not packaged yet; shell still embeds full runtime (transition)")
-                    AppLogger.i(TAG, "compat pack missing — transitional fat shell path")
-                    continue
-                }
                 missing += id
                 logger?.warn("Missing feature pack: $id")
+                AppLogger.w(TAG, "Missing feature pack: $id")
                 continue
             }
             val manifestFile = File(packDir, "feature.json")
