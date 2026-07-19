@@ -95,6 +95,7 @@ object Routes {
     const val HOSTS_ADBLOCK = "hosts_adblock"
     const val EXTENSION_MODULES = "extension_modules"
     const val MODULE_MARKET = "module_market"
+    const val MODULE_MARKET_WITH_TAB = "module_market?initialTab={initialTab}"
     const val MODULE_EDITOR = "module_editor"
     const val MODULE_EDITOR_EDIT = "module_editor/{moduleId}"
     const val RUNTIME_DEPS = "runtime_deps"
@@ -753,8 +754,22 @@ fun AppNavigation() {
                 )
             }
 
-            composable(Routes.MODULE_MARKET) {
-                ModuleMarketScreen(onNavigateBack = { navController.popBackStack() })
+            composable(
+                route = "${Routes.MODULE_MARKET}?initialTab={initialTab}",
+                arguments = listOf(
+                    navArgument("initialTab") {
+                        type = androidx.navigation.NavType.StringType
+                        defaultValue = "0"
+                        nullable = true
+                    }
+                )
+            ) { backStackEntry ->
+                val rawTab = backStackEntry.arguments?.getString("initialTab") ?: "0"
+                val initialTab = rawTab.toIntOrNull() ?: 0
+                ModuleMarketScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    initialTab = initialTab
+                )
             }
 
             composable(Routes.MODULE_EDITOR) {

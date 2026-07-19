@@ -64,6 +64,7 @@ object ExtensionPanelScript {
             tabAll: '全部',
             tabModules: '扩展模块',
             tabExtensions: '浏览器扩展',
+            tabUserscripts: '用户脚本',
             search: '搜索扩展...',
             active: '运行中',
             inactive: '未激活',
@@ -112,6 +113,7 @@ object ExtensionPanelScript {
             tabAll: 'All',
             tabModules: 'Modules',
             tabExtensions: 'Browser Ext',
+            tabUserscripts: 'User Scripts',
             search: 'Search extensions...',
             active: 'Active',
             inactive: 'Inactive',
@@ -160,6 +162,7 @@ object ExtensionPanelScript {
             tabAll: 'الكل',
             tabModules: 'الوحدات',
             tabExtensions: 'إضافات المتصفح',
+            tabUserscripts: 'سكربتات المستخدم',
             search: 'بحث...',
             active: 'نشط',
             inactive: 'غير نشط',
@@ -1498,6 +1501,7 @@ object ExtensionPanelScript {
                     <div class="wta-tab active" data-tab="all" data-wta-action="switchTab" data-wta-arg="all">${'$'}{T.tabAll}<span class="wta-tab-count" id="wta-count-all">0</span></div>
                     <div class="wta-tab" data-tab="modules" data-wta-action="switchTab" data-wta-arg="modules">${'$'}{T.tabModules}<span class="wta-tab-count" id="wta-count-modules">0</span></div>
                     <div class="wta-tab" data-tab="extensions" data-wta-action="switchTab" data-wta-arg="extensions">${'$'}{T.tabExtensions}<span class="wta-tab-count" id="wta-count-ext">0</span></div>
+                    <div class="wta-tab" data-tab="userscripts" data-wta-action="switchTab" data-wta-arg="userscripts">${'$'}{T.tabUserscripts}<span class="wta-tab-count" id="wta-count-userscripts">0</span></div>
                 </div>
                 <div class="wta-module-list">
                     <div id="wta-module-grid"></div>
@@ -2118,7 +2122,7 @@ object ExtensionPanelScript {
         getTypeBadge(m) {
             var isChromeExt = m.sourceType === 'CHROME_EXTENSION';
             if (isChromeExt) return '<span class="wta-type-badge chrome">Chrome</span>';
-            if (m.sourceType === 'GREASEMONKEY') return '<span class="wta-type-badge userscript">' + T.typeUserScript + '</span>';
+            if (m.sourceType === 'USERSCRIPT') return '<span class="wta-type-badge userscript">' + T.typeUserScript + '</span>';
             return '<span class="wta-type-badge module">' + T.tabModules + '</span>';
         },
 
@@ -2165,10 +2169,11 @@ object ExtensionPanelScript {
 
             var filtered = this.getFilteredModules();
             var chromeExts = filtered.filter(function(m) { return m.sourceType === 'CHROME_EXTENSION'; });
-            var customModules = filtered.filter(function(m) { return m.sourceType !== 'CHROME_EXTENSION'; });
+            var userScripts = filtered.filter(function(m) { return m.sourceType === 'USERSCRIPT'; });
+            var customModules = filtered.filter(function(m) { return m.sourceType !== 'CHROME_EXTENSION' && m.sourceType !== 'USERSCRIPT'; });
 
             // 更新标签页计数
-            this.updateTabCounts(customModules.length, chromeExts.length);
+            this.updateTabCounts(customModules.length, chromeExts.length, userScripts.length);
 
             if (filtered.length === 0) {
                 container.innerHTML = '<div class="wta-empty-state-v2">' +
@@ -2181,10 +2186,16 @@ object ExtensionPanelScript {
             var self = this;
             var showModules = (this.activeTab === 'all' || this.activeTab === 'modules');
             var showExts = (this.activeTab === 'all' || this.activeTab === 'extensions');
+            var showUserScripts = (this.activeTab === 'all' || this.activeTab === 'userscripts');
 
             if (showModules && customModules.length > 0) {
                 html += '<div class="wta-section-header"><span class="wta-section-title">' + T.tabModules + '</span><span class="wta-section-count">' + customModules.length + '</span></div>';
                 customModules.forEach(function(m) { html += self.renderModuleItem(m); });
+            }
+
+            if (showUserScripts && userScripts.length > 0) {
+                html += '<div class="wta-section-header"><span class="wta-section-title">' + T.tabUserscripts + '</span><span class="wta-section-count">' + userScripts.length + '</span></div>';
+                userScripts.forEach(function(m) { html += self.renderModuleItem(m); });
             }
 
             if (showExts && chromeExts.length > 0) {
@@ -2203,14 +2214,16 @@ object ExtensionPanelScript {
         },
 
         // 更新标签页计数
-        updateTabCounts(moduleCount, extCount) {
-            var total = moduleCount + extCount;
+        updateTabCounts(moduleCount, extCount, userScriptCount) {
+            var total = moduleCount + extCount + userScriptCount;
             var elAll = document.getElementById('wta-count-all');
             var elMod = document.getElementById('wta-count-modules');
             var elExt = document.getElementById('wta-count-ext');
+            var elUs = document.getElementById('wta-count-userscripts');
             if (elAll) elAll.textContent = total;
             if (elMod) elMod.textContent = moduleCount;
             if (elExt) elExt.textContent = extCount;
+            if (elUs) elUs.textContent = userScriptCount;
         },
 
         // Update徽章

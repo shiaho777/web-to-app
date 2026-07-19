@@ -3796,6 +3796,28 @@ object Strings {
     val cwsSortRating: String get() = StringsE.cwsSortRating
     val cwsSortReviews: String get() = StringsE.cwsSortReviews
     val cwsSortDownloads: String get() = StringsE.cwsSortDownloads
+    val greasyForkTab: String get() = StringsE.greasyForkTab
+    val gfSearchHint: String get() = StringsE.gfSearchHint
+    val gfSearching: String get() = StringsE.gfSearching
+    val gfNoResults: String get() = StringsE.gfNoResults
+    val gfSearchFailed: String get() = StringsE.gfSearchFailed
+    val gfSearchIntro: String get() = StringsE.gfSearchIntro
+    val gfBrowseIntro: String get() = StringsE.gfBrowseIntro
+    val gfHotTitle: String get() = StringsE.gfHotTitle
+    val gfCategoryHot: String get() = StringsE.gfCategoryHot
+    val gfSortLabel: String get() = StringsE.gfSortLabel
+    val gfSortDaily: String get() = StringsE.gfSortDaily
+    val gfSortTotal: String get() = StringsE.gfSortTotal
+    val gfSortScore: String get() = StringsE.gfSortScore
+    val gfSortRatings: String get() = StringsE.gfSortRatings
+    val gfSortUpdated: String get() = StringsE.gfSortUpdated
+    val gfInstallFailed: String get() = StringsE.gfInstallFailed
+    val gfFavorite: String get() = StringsE.gfFavorite
+    val gfUnfavorite: String get() = StringsE.gfUnfavorite
+    val gfFavoritesSection: String get() = StringsE.gfFavoritesSection
+    val gfEmptyTitle: String get() = StringsE.gfEmptyTitle
+    val gfFromUserScriptsTitle: String get() = StringsE.gfFromUserScriptsTitle
+    val gfFromUserScriptsDesc: String get() = StringsE.gfFromUserScriptsDesc
     val cwsDlModule: String get() = StringsE.cwsDlModule
     val cwsDlIcon: String get() = StringsE.cwsDlIcon
     val cwsDlTags: String get() = StringsE.cwsDlTags
@@ -52098,6 +52120,271 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Сортировка"
         AppLanguage.JAPANESE -> "並べ替え"
         AppLanguage.KOREAN -> "정렬"
+    }
+
+    val greasyForkTab: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "GreasyFork 脚本"
+        AppLanguage.ENGLISH -> "GreasyFork Scripts"
+        AppLanguage.ARABIC -> "سكربتات GreasyFork"
+        AppLanguage.PORTUGUESE -> "Scripts GreasyFork"
+        AppLanguage.SPANISH -> "Scripts GreasyFork"
+        AppLanguage.FRENCH -> "Scripts GreasyFork"
+        AppLanguage.GERMAN -> "GreasyFork-Skripte"
+        AppLanguage.RUSSIAN -> "Скрипты GreasyFork"
+        AppLanguage.JAPANESE -> "GreasyFork スクリプト"
+        AppLanguage.KOREAN -> "GreasyFork 스크립트"
+    }
+    val gfSearchHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "搜索 GreasyFork 脚本"
+        AppLanguage.ENGLISH -> "Search GreasyFork scripts"
+        AppLanguage.ARABIC -> "ابحث في سكربتات GreasyFork"
+        AppLanguage.PORTUGUESE -> "Pesquisar scripts GreasyFork"
+        AppLanguage.SPANISH -> "Buscar scripts GreasyFork"
+        AppLanguage.FRENCH -> "Rechercher des scripts GreasyFork"
+        AppLanguage.GERMAN -> "GreasyFork-Skripte suchen"
+        AppLanguage.RUSSIAN -> "Искать скрипты GreasyFork"
+        AppLanguage.JAPANESE -> "GreasyFork スクリプトを検索"
+        AppLanguage.KOREAN -> "GreasyFork 스크립트 검색"
+    }
+    val gfSearching: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在搜索 GreasyFork…"
+        AppLanguage.ENGLISH -> "Searching GreasyFork…"
+        AppLanguage.ARABIC -> "جارٍ البحث في GreasyFork…"
+        AppLanguage.PORTUGUESE -> "Pesquisando GreasyFork…"
+        AppLanguage.SPANISH -> "Buscando en GreasyFork…"
+        AppLanguage.FRENCH -> "Recherche sur GreasyFork…"
+        AppLanguage.GERMAN -> "GreasyFork wird durchsucht…"
+        AppLanguage.RUSSIAN -> "Поиск по GreasyFork…"
+        AppLanguage.JAPANESE -> "GreasyFork を検索中…"
+        AppLanguage.KOREAN -> "GreasyFork 검색 중…"
+    }
+    val gfNoResults: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有找到匹配的脚本"
+        AppLanguage.ENGLISH -> "No matching scripts found"
+        AppLanguage.ARABIC -> "لم يتم العثور على سكربتات مطابقة"
+        AppLanguage.PORTUGUESE -> "Nenhum script correspondente encontrado"
+        AppLanguage.SPANISH -> "No se encontraron scripts coincidentes"
+        AppLanguage.FRENCH -> "Aucun script correspondant trouvé"
+        AppLanguage.GERMAN -> "Keine passenden Skripte gefunden"
+        AppLanguage.RUSSIAN -> "Подходящие скрипты не найдены"
+        AppLanguage.JAPANESE -> "一致するスクリプトが見つかりません"
+        AppLanguage.KOREAN -> "일치하는 스크립트가 없습니다"
+    }
+    val gfSearchFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "搜索 GreasyFork 失败"
+        AppLanguage.ENGLISH -> "GreasyFork search failed"
+        AppLanguage.ARABIC -> "فشل البحث في GreasyFork"
+        AppLanguage.PORTUGUESE -> "Falha na pesquisa do GreasyFork"
+        AppLanguage.SPANISH -> "Error en la búsqueda de GreasyFork"
+        AppLanguage.FRENCH -> "Échec de la recherche GreasyFork"
+        AppLanguage.GERMAN -> "GreasyFork-Suche fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Ошибка поиска GreasyFork"
+        AppLanguage.JAPANESE -> "GreasyFork の検索に失敗しました"
+        AppLanguage.KOREAN -> "GreasyFork 검색 실패"
+    }
+    val gfSearchIntro: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "从 GreasyFork 社区搜索并安装用户脚本。输入关键词开始搜索。"
+        AppLanguage.ENGLISH -> "Search and install user scripts from the GreasyFork community. Type a keyword to start."
+        AppLanguage.ARABIC -> "ابحث وثبّت سكربتات المستخدم من مجتمع GreasyFork. اكتب كلمة رئيسية للبدء."
+        AppLanguage.PORTUGUESE -> "Pesquise e instale scripts de usuário da comunidade GreasyFork. Digite uma palavra-chave para começar."
+        AppLanguage.SPANISH -> "Busca e instala scripts de usuario de la comunidad GreasyFork. Escribe una palabra clave para empezar."
+        AppLanguage.FRENCH -> "Recherchez et installez des scripts utilisateur depuis la communauté GreasyFork. Saisissez un mot-clé pour commencer."
+        AppLanguage.GERMAN -> "Suchen und installieren Sie User-Scripts aus der GreasyFork-Community. Geben Sie ein Schlüsselwort ein, um zu starten."
+        AppLanguage.RUSSIAN -> "Ищите и устанавливайте пользовательские скрипты из сообщества GreasyFork. Введите ключевое слово для начала."
+        AppLanguage.JAPANESE -> "GreasyFork コミュニティからユーザースクリプトを検索してインストールします。キーワードを入力してください。"
+        AppLanguage.KOREAN -> "GreasyFork 커뮤니티에서 사용자 스크립트를 검색하고 설치하세요. 키워드를 입력하세요."
+    }
+    val gfBrowseIntro: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "浏览热门用户脚本，或搜索 GreasyFork 社区（需可访问 greasyfork.org）"
+        AppLanguage.ENGLISH -> "Browse popular user scripts, or search the GreasyFork community (requires access to greasyfork.org)"
+        AppLanguage.ARABIC -> "تصفّح سكربتات المستخدم الشائعة، أو ابحث في مجتمع GreasyFork (يتطلب الوصول إلى greasyfork.org)"
+        AppLanguage.PORTUGUESE -> "Navegue por scripts populares ou pesquise na comunidade GreasyFork (requer acesso a greasyfork.org)"
+        AppLanguage.SPANISH -> "Explora scripts populares o busca en la comunidad GreasyFork (requiere acceso a greasyfork.org)"
+        AppLanguage.FRENCH -> "Parcourez les scripts populaires ou recherchez dans la communauté GreasyFork (accès à greasyfork.org requis)"
+        AppLanguage.GERMAN -> "Beliebte User-Scripts durchsuchen oder in der GreasyFork-Community suchen (Zugriff auf greasyfork.org erforderlich)"
+        AppLanguage.RUSSIAN -> "Смотрите популярные пользовательские скрипты или ищите в сообществе GreasyFork (нужен доступ к greasyfork.org)"
+        AppLanguage.JAPANESE -> "人気のユーザースクリプトを閲覧するか、GreasyFork コミュニティを検索（greasyfork.org へのアクセスが必要）"
+        AppLanguage.KOREAN -> "인기 사용자 스크립트를 둘러보거나 GreasyFork 커뮤니티를 검색하세요 (greasyfork.org 접속 필요)"
+    }
+    val gfHotTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "热门脚本"
+        AppLanguage.ENGLISH -> "Popular scripts"
+        AppLanguage.ARABIC -> "السكربتات الشائعة"
+        AppLanguage.PORTUGUESE -> "Scripts populares"
+        AppLanguage.SPANISH -> "Scripts populares"
+        AppLanguage.FRENCH -> "Scripts populaires"
+        AppLanguage.GERMAN -> "Beliebte Skripte"
+        AppLanguage.RUSSIAN -> "Популярные скрипты"
+        AppLanguage.JAPANESE -> "人気スクリプト"
+        AppLanguage.KOREAN -> "인기 스크립트"
+    }
+    val gfCategoryHot: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "热门"
+        AppLanguage.ENGLISH -> "Popular"
+        AppLanguage.ARABIC -> "شائع"
+        AppLanguage.PORTUGUESE -> "Populares"
+        AppLanguage.SPANISH -> "Popular"
+        AppLanguage.FRENCH -> "Populaire"
+        AppLanguage.GERMAN -> "Beliebt"
+        AppLanguage.RUSSIAN -> "Популярное"
+        AppLanguage.JAPANESE -> "人気"
+        AppLanguage.KOREAN -> "인기"
+    }
+    val gfSortLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "排序"
+        AppLanguage.ENGLISH -> "Sort"
+        AppLanguage.ARABIC -> "ترتيب"
+        AppLanguage.PORTUGUESE -> "Ordenar"
+        AppLanguage.SPANISH -> "Ordenar"
+        AppLanguage.FRENCH -> "Trier"
+        AppLanguage.GERMAN -> "Sortieren"
+        AppLanguage.RUSSIAN -> "Сортировка"
+        AppLanguage.JAPANESE -> "並び替え"
+        AppLanguage.KOREAN -> "정렬"
+    }
+    val gfSortDaily: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "今日安装"
+        AppLanguage.ENGLISH -> "Daily installs"
+        AppLanguage.ARABIC -> "تثبيتات اليوم"
+        AppLanguage.PORTUGUESE -> "Instalações diárias"
+        AppLanguage.SPANISH -> "Instalaciones diarias"
+        AppLanguage.FRENCH -> "Installations quotidiennes"
+        AppLanguage.GERMAN -> "Tägliche Installationen"
+        AppLanguage.RUSSIAN -> "Установок за день"
+        AppLanguage.JAPANESE -> "今日のインストール"
+        AppLanguage.KOREAN -> "일일 설치"
+    }
+    val gfSortTotal: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "总安装量"
+        AppLanguage.ENGLISH -> "Total installs"
+        AppLanguage.ARABIC -> "إجمالي التثبيتات"
+        AppLanguage.PORTUGUESE -> "Instalações totais"
+        AppLanguage.SPANISH -> "Instalaciones totales"
+        AppLanguage.FRENCH -> "Installations totales"
+        AppLanguage.GERMAN -> "Installationen gesamt"
+        AppLanguage.RUSSIAN -> "Всего установок"
+        AppLanguage.JAPANESE -> "合計インストール"
+        AppLanguage.KOREAN -> "총 설치"
+    }
+    val gfSortScore: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "社区评分"
+        AppLanguage.ENGLISH -> "Fan score"
+        AppLanguage.ARABIC -> "نقاط المعجبين"
+        AppLanguage.PORTUGUESE -> "Pontuação de fãs"
+        AppLanguage.SPANISH -> "Puntuación de fans"
+        AppLanguage.FRENCH -> "Score des fans"
+        AppLanguage.GERMAN -> "Fan-Wertung"
+        AppLanguage.RUSSIAN -> "Оценка фанатов"
+        AppLanguage.JAPANESE -> "ファンスコア"
+        AppLanguage.KOREAN -> "팬 점수"
+    }
+    val gfSortRatings: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "好评数"
+        AppLanguage.ENGLISH -> "Ratings"
+        AppLanguage.ARABIC -> "التقييمات"
+        AppLanguage.PORTUGUESE -> "Avaliações"
+        AppLanguage.SPANISH -> "Valoraciones"
+        AppLanguage.FRENCH -> "Évaluations"
+        AppLanguage.GERMAN -> "Bewertungen"
+        AppLanguage.RUSSIAN -> "Оценки"
+        AppLanguage.JAPANESE -> "評価数"
+        AppLanguage.KOREAN -> "평가 수"
+    }
+    val gfSortUpdated: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "最近更新"
+        AppLanguage.ENGLISH -> "Recently updated"
+        AppLanguage.ARABIC -> "تحديث مؤخرًا"
+        AppLanguage.PORTUGUESE -> "Atualizado recentemente"
+        AppLanguage.SPANISH -> "Actualizado recientemente"
+        AppLanguage.FRENCH -> "Récemment mis à jour"
+        AppLanguage.GERMAN -> "Kürzlich aktualisiert"
+        AppLanguage.RUSSIAN -> "Недавно обновлено"
+        AppLanguage.JAPANESE -> "最近更新"
+        AppLanguage.KOREAN -> "최근 업데이트"
+    }
+    val gfInstallFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装失败"
+        AppLanguage.ENGLISH -> "Install failed"
+        AppLanguage.ARABIC -> "فشل التثبيت"
+        AppLanguage.PORTUGUESE -> "Falha na instalação"
+        AppLanguage.SPANISH -> "Error de instalación"
+        AppLanguage.FRENCH -> "Échec de l'installation"
+        AppLanguage.GERMAN -> "Installation fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Ошибка установки"
+        AppLanguage.JAPANESE -> "インストール失敗"
+        AppLanguage.KOREAN -> "설치 실패"
+    }
+    val gfFavorite: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "收藏"
+        AppLanguage.ENGLISH -> "Favorite"
+        AppLanguage.ARABIC -> "المفضلة"
+        AppLanguage.PORTUGUESE -> "Favoritar"
+        AppLanguage.SPANISH -> "Favorito"
+        AppLanguage.FRENCH -> "Favori"
+        AppLanguage.GERMAN -> "Favorit"
+        AppLanguage.RUSSIAN -> "В избранное"
+        AppLanguage.JAPANESE -> "お気に入り"
+        AppLanguage.KOREAN -> "즐겨찾기"
+    }
+    val gfUnfavorite: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "取消收藏"
+        AppLanguage.ENGLISH -> "Unfavorite"
+        AppLanguage.ARABIC -> "إزالة من المفضلة"
+        AppLanguage.PORTUGUESE -> "Desfavoritar"
+        AppLanguage.SPANISH -> "Quitar de favoritos"
+        AppLanguage.FRENCH -> "Retirer des favoris"
+        AppLanguage.GERMAN -> "Aus Favoriten entfernen"
+        AppLanguage.RUSSIAN -> "Убрать из избранного"
+        AppLanguage.JAPANESE -> "お気に入り解除"
+        AppLanguage.KOREAN -> "즐겨찾기 해제"
+    }
+    val gfFavoritesSection: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "我的收藏"
+        AppLanguage.ENGLISH -> "My favorites"
+        AppLanguage.ARABIC -> "المفضلة لدي"
+        AppLanguage.PORTUGUESE -> "Meus favoritos"
+        AppLanguage.SPANISH -> "Mis favoritos"
+        AppLanguage.FRENCH -> "Mes favoris"
+        AppLanguage.GERMAN -> "Meine Favoriten"
+        AppLanguage.RUSSIAN -> "Мои избранные"
+        AppLanguage.JAPANESE -> "お気に入り"
+        AppLanguage.KOREAN -> "내 즐겨찾기"
+    }
+    val gfEmptyTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "暂无 GreasyFork 脚本"
+        AppLanguage.ENGLISH -> "No GreasyFork scripts"
+        AppLanguage.ARABIC -> "لا توجد سكربتات GreasyFork"
+        AppLanguage.PORTUGUESE -> "Sem scripts GreasyFork"
+        AppLanguage.SPANISH -> "Sin scripts GreasyFork"
+        AppLanguage.FRENCH -> "Aucun script GreasyFork"
+        AppLanguage.GERMAN -> "Keine GreasyFork-Skripte"
+        AppLanguage.RUSSIAN -> "Нет скриптов GreasyFork"
+        AppLanguage.JAPANESE -> "GreasyFork スクリプトなし"
+        AppLanguage.KOREAN -> "GreasyFork 스크립트 없음"
+    }
+    val gfFromUserScriptsTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "从 GreasyFork 搜索"
+        AppLanguage.ENGLISH -> "Search GreasyFork"
+        AppLanguage.ARABIC -> "ابحث في GreasyFork"
+        AppLanguage.PORTUGUESE -> "Pesquisar GreasyFork"
+        AppLanguage.SPANISH -> "Buscar en GreasyFork"
+        AppLanguage.FRENCH -> "Rechercher GreasyFork"
+        AppLanguage.GERMAN -> "GreasyFork durchsuchen"
+        AppLanguage.RUSSIAN -> "Искать в GreasyFork"
+        AppLanguage.JAPANESE -> "GreasyFork を検索"
+        AppLanguage.KOREAN -> "GreasyFork 검색"
+    }
+    val gfFromUserScriptsDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "从社区脚本库搜索并安装用户脚本"
+        AppLanguage.ENGLISH -> "Search and install user scripts from the community"
+        AppLanguage.ARABIC -> "ابحث وثبّت سكربتات المستخدم من المجتمع"
+        AppLanguage.PORTUGUESE -> "Pesquise e instale scripts de usuário da comunidade"
+        AppLanguage.SPANISH -> "Busca e instala scripts de usuario de la comunidad"
+        AppLanguage.FRENCH -> "Recherchez et installez des scripts utilisateur depuis la communauté"
+        AppLanguage.GERMAN -> "Suchen und installieren Sie User-Scripts aus der Community"
+        AppLanguage.RUSSIAN -> "Ищите и устанавливайте пользовательские скрипты из сообщества"
+        AppLanguage.JAPANESE -> "コミュニティからユーザースクリプトを検索してインストール"
+        AppLanguage.KOREAN -> "커뮤니티에서 사용자 스크립트를 검색하고 설치하세요"
     }
 
     val cwsSortDefault: String get() = when (Strings.lang) {
