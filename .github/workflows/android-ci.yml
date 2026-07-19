@@ -1,7 +1,13 @@
 name: Android CI Build
 
+# Delivery gate for shiaho777/web-to-app:
+# - Branch protection requires the job id `check` on PRs into main.
+# - Issues are closed by PR body `Fixes #N` / `Closes #N` on *merge*, not by this workflow.
+# - Do not merge while this workflow is red; do not close the linked Issue early.
+
 on:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
   workflow_dispatch:
   push:
     branches:
@@ -16,6 +22,7 @@ concurrency:
 
 jobs:
   check:
+    name: check
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -57,6 +64,17 @@ jobs:
             :app:compileDebugKotlin \
             :shell:compileDebugKotlin \
             :app:testDebugUnitTest
+
+      - name: Delivery summary
+        if: always()
+        run: |
+          {
+            echo "## Android CI \`check\`"
+            echo ""
+            echo "- Required merge gate for \`main\` (branch protection status name: **check**)."
+            echo "- Linked Issues should use \`Fixes #N\` / \`Closes #N\` in the PR body so they close **only after merge**."
+            echo "- Event: \`${{ github.event_name }}\` · Ref: \`${{ github.ref }}\` · Result: \`${{ job.status }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   package-apks:
     if: github.event_name == 'workflow_dispatch'
