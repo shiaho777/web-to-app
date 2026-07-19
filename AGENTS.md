@@ -93,7 +93,7 @@ Mental model:
 
 ### Delivery (Issue + PR + CI)
 
-Default target: [shiaho777/web-to-app](https://github.com/shiaho777/web-to-app). Prefer a pull request over direct pushes to `main` when delivering code.
+Default target: [shiaho777/web-to-app](https://github.com/shiaho777/web-to-app). Prefer a pull request over direct pushes to `main` when delivering code. Human-facing wording of the same loop lives in [CONTRIBUTING.md](.github/CONTRIBUTING.md) (EN/中文 · Pull requests); keep those docs in sync when this process changes.
 
 GitHub already runs CI on PRs (see `.github/workflows/`, especially `android-ci.yml` and path-filtered jobs like `modules-check.yml`). Treat CI as part of the delivery gate, not an afterthought: **do not treat a change as done, and do not close the Issue, until the PR is green and merged.**
 
