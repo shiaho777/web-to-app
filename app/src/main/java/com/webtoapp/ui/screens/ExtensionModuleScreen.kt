@@ -2,8 +2,6 @@ package com.webtoapp.ui.screens
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.PremiumFilterChip
-import com.webtoapp.ui.components.GreasyForkSearchContent
-import com.webtoapp.ui.components.installGreasyForkScript
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -22,7 +20,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -52,11 +49,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.webtoapp.core.extension.*
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.core.market.GfFavorite
-import com.webtoapp.core.market.GfSearchResult
-import com.webtoapp.core.market.GfSort
-import com.webtoapp.core.market.GreasyForkFavorites
-import com.webtoapp.core.market.GreasyForkSearch
 import com.webtoapp.ui.components.QrCodeShareDialog
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaCard
@@ -99,52 +91,6 @@ fun ExtensionModuleScreen(
     var selectedCategory by remember { mutableStateOf<ModuleCategory?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var showImportDialog by remember { mutableStateOf(false) }
-
-    var gfResults by remember { mutableStateOf<List<GfSearchResult>>(emptyList()) }
-    var gfSearching by remember { mutableStateOf(false) }
-    var gfError by remember { mutableStateOf<String?>(null) }
-    var gfHasSearched by remember { mutableStateOf(false) }
-    var gfQuery by remember { mutableStateOf("") }
-    var gfSort by remember { mutableStateOf(GfSort.DAILY) }
-    var gfFavorites by remember { mutableStateOf<List<GfFavorite>>(emptyList()) }
-    var gfInstallingId by remember { mutableStateOf<String?>(null) }
-    var gfInstallProgress by remember { mutableStateOf<com.webtoapp.core.market.InstallProgress?>(null) }
-    val gfFavoritesRepo = remember(context) { GreasyForkFavorites.getInstance(context) }
-
-    val currentLocale = remember {
-        val tag = java.util.Locale.getDefault().language
-        if (tag.startsWith("zh")) "zh-CN" else if (tag.startsWith("ar")) "ar" else "en"
-    }
-
-    LaunchedEffect(gfFavoritesRepo) {
-        gfFavorites = gfFavoritesRepo.load()
-    }
-
-    LaunchedEffect(searchQuery, gfSort) {
-        val trimmed = searchQuery.trim()
-        gfQuery = trimmed
-        if (trimmed.isEmpty()) {
-            gfResults = emptyList()
-            gfSearching = false
-            gfError = null
-            gfHasSearched = false
-            return@LaunchedEffect
-        }
-        kotlinx.coroutines.delay(450)
-        gfSearching = true
-        gfError = null
-        val result = GreasyForkSearch.search(trimmed, currentLocale, gfSort)
-        if (gfQuery != trimmed) return@LaunchedEffect
-        result.onSuccess { list ->
-            gfResults = list
-            gfSearching = false
-            gfHasSearched = true
-        }.onFailure {
-            gfSearching = false
-            gfHasSearched = true
-            gfError = it.message ?: Strings.gfSearchFailed
-        }
-    }
 
     val extensionFileManager = remember { ExtensionFileManager(context) }
     var showUserScriptPreview by remember { mutableStateOf<UserScriptParser.ParseResult?>(null) }
@@ -410,12 +356,11 @@ fun ExtensionModuleScreen(
                 shape = RoundedCornerShape(WtaRadius.Button)
             )
 
-            val pagerState = rememberPagerState(pageCount = { 3 })
+            val pagerState = rememberPagerState(pageCount = { 2 })
             WtaTabRow(
                 tabs = listOf(
                     WtaTab(Strings.extensionModulesTab, extensionModules.size),
-                    WtaTab(Strings.userScriptsTab, userScriptModules.size),
-                    WtaTab(Strings.greasyForkTab, gfFavorites.size)
+                    WtaTab(Strings.userScriptsTab, userScriptModules.size)
                 ),
                 selectedIndex = pagerState.currentPage,
                 onTabSelected = { scope.launch { pagerState.animateScrollToPage(it) } },
@@ -427,7 +372,6 @@ fun ExtensionModuleScreen(
                 modifier = Modifier.fillMaxSize()
             ) { page ->
                 when (page) {
-
                     0 -> ExtensionModulesTabContent(
                         filteredModules = filteredModules,
                         isLoading = isModulesLoading,
@@ -439,7 +383,6 @@ fun ExtensionModuleScreen(
                         onNavigateToAiDeveloper = onNavigateToAiDeveloper,
                         onClearSearch = { searchQuery = "" }
                     )
-
                     1 -> UserScriptsTabContent(
                         filteredUserScripts = filteredUserScripts,
                         extensionManager = extensionManager,
@@ -449,64 +392,6 @@ fun ExtensionModuleScreen(
                         },
                         onClearSearch = { searchQuery = "" }
                     )
-
-                    2 -> {
-                        val installedUserScriptNames = modules
-                            .filter { it.sourceType == ModuleSourceType.USERSCRIPT }
-                            .map { it.name }
-                            .toSet()
-                        val gfListState = rememberLazyListState()
-                        GreasyForkSearchContent(
-                            query = searchQuery.trim(),
-                            results = gfResults,
-                            isSearching = gfSearching,
-                            hasSearched = gfHasSearched,
-                            errorMessage = gfError,
-                            sortMode = gfSort,
-                            onSortModeChange = { gfSort = it },
-                            installingId = gfInstallingId,
-                            installProgress = gfInstallProgress,
-                            favorites = gfFavorites,
-                            installedUserScriptNames = installedUserScriptNames,
-                            onInstall = { result ->
-                                gfInstallingId = "gf-${result.id}"
-                                gfInstallProgress = null
-                                scope.launch {
-                                    installGreasyForkScript(
-                                        result = result,
-                                        appContext = context.applicationContext,
-                                        snackbar = snackbarHostState,
-                                        onProgress = { progress -> gfInstallProgress = progress }
-                                    )
-                                    gfInstallingId = null
-                                    gfInstallProgress = null
-                                }
-                            },
-                            onToggleFavorite = { result ->
-                                scope.launch {
-                                    gfFavorites = if (gfFavorites.any { it.scriptId == result.id }) {
-                                        gfFavoritesRepo.remove(result.id)
-                                    } else {
-                                        gfFavoritesRepo.add(GfFavorite.fromResult(result))
-                                    }
-                                }
-                            },
-                            onOpenSource = { result ->
-                                if (result.pageUrl.isNotBlank()) {
-                                    runCatching {
-                                        context.startActivity(
-                                            android.content.Intent(
-                                                android.content.Intent.ACTION_VIEW,
-                                                android.net.Uri.parse(result.pageUrl)
-                                            )
-                                        )
-                                    }
-                                }
-                            },
-                            listState = gfListState,
-                            onImportUserScript = { userScriptPickerLauncher.launch("*/*") }
-                        )
-                    }
                 }
             }
         }
