@@ -86,10 +86,65 @@ Mental model:
 ## Workflow
 
 - Do not commit secrets, `local.properties`, keystores, or IDE/cache junk.
-- Do not create commits or push unless the user asks.
+- Do not create commits, push, open PRs, or file Issues unless the user asks to deliver / ship / push / open a PR (or equivalent).
 - When changing export or shell packaging, rebuild the template/packs you touched and sanity-check pure WEB still plans as lite-only when optional flags are off.
 - When changing Planner or feature ids, update/extend `CapabilityPlannerTest` (including the special-settings matrix).
 - When changing soft-load parents, pack class membership, or shell R8 keeps, run `checkFeaturePackParentTypes` and `checkCapabilityChain`.
+
+### Delivery (Issue + PR + CI)
+
+Default target: [shiaho777/web-to-app](https://github.com/shiaho777/web-to-app). Prefer a pull request over direct pushes to `main` when delivering code.
+
+GitHub already runs CI on PRs (see `.github/workflows/`, especially `android-ci.yml` and path-filtered jobs like `modules-check.yml`). Treat CI as part of the delivery gate, not an afterthought: **do not treat a change as done, and do not close the Issue, until the PR is green and merged.**
+
+When the user asks to deliver a change, run this loop end-to-end:
+
+1. **Issue first.**  
+   - If work already tracks a GitHub Issue, use that Issue.  
+   - If not, open a new Issue on `shiaho777/web-to-app` that states the problem / goal, scope, and acceptance notes. Keep the title short and actionable.
+
+2. **Implement on a branch.**  
+   - Branch from current `main` (prefix `codex/` unless the user specifies otherwise).  
+   - Commit only the intended files; no secrets or local junk.
+
+3. **Open a PR against `main`.**  
+   - PR title summarizes the change.  
+   - PR body must:  
+     - Explain what changed and why.  
+     - Name the Issue being solved.  
+     - Link the Issue (full URL and/or `#N`).  
+     - Include a GitHub closing keyword so **merge** closes the Issue, e.g. `Fixes #123` or `Closes #123` (one primary Issue per PR when possible).  
+   - Do **not** close the Issue when the PR is only opened. Closing belongs to **successful merge after CI**, via `Fixes` / `Closes` (or a maintainer after merge if auto-close missed).
+
+4. **Notify the Issue.**  
+   - Comment on the Issue with the PR URL and a one-line summary (e.g. “Implemented in https://github.com/shiaho777/web-to-app/pull/456 — waiting on CI.”).  
+   - **If you cannot merge or close Issues:** still open the PR, comment on the Issue with both links, and ask a maintainer to merge when CI is green (Issue will close via `Fixes #N` on merge).
+
+5. **CI gate (required).**  
+   - After opening or updating the PR, wait for required checks. The merge gate is job id **`check`** from workflow `Android CI Build` (`.github/workflows/android-ci.yml`). Path-filtered jobs (e.g. `modules-check.yml`) also apply when those paths change.  
+   - CI does **not** close Issues. Issue close is merge-time only (`Fixes #N` / `Closes #N` in the PR body, or a maintainer after merge).  
+   - If CI fails: fix on the same branch, push, and re-run until green. Do not merge red CI. Do not close the Issue while CI is red or the PR is still open.  
+   - If CI is flaky or blocked by infra, report the failing job URL and logs to the user; do not silently skip the gate unless the user explicitly overrides.  
+   - Prefer local preflight for the areas you touched (unit tests, planner/pack checks) before relying only on remote CI.
+
+6. **Merge only when green.**  
+   - **Maintainer / sufficient permission:** merge the PR only after required CI is green (and any requested review is done). Let `Fixes #N` auto-close the Issue on merge; if it did not, close the Issue manually with a comment pointing at the merged PR.  
+   - **No merge permission:** leave the PR open, keep Issue open, and hand off: “CI green / CI red + next step.” Do not ask to close the Issue before merge.
+
+7. **Hand off.**  
+   - Report branch name, Issue URL, PR URL, CI status (green / red + job link), and merge state to the user.
+
+**Why CI owns the close timing**
+
+```text
+Issue open  →  PR open (Fixes #N)  →  CI runs  →  CI green  →  merge  →  Issue auto-closes
+                     │
+                     └→ CI red → fix & push → CI again (Issue stays open)
+```
+
+This avoids closing Issues for unmerged or broken work, and matches branch-protection / required-check setups on `main`.
+
+Exceptions (only when the user explicitly overrides): tiny doc-only edits they ask to push straight to `main`, emergency hotfixes they request as direct push, or “skip Issue/PR/CI” instructions for that turn.
 
 ---
 
