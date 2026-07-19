@@ -257,6 +257,8 @@ For release builds, configure signing through `local.properties` and `app/build.
 
 Human PR workflow is in [CONTRIBUTING.md](.github/CONTRIBUTING.md); agent-oriented repo guidance is in [AGENTS.md](AGENTS.md).
 
+Default delivery for code changes: **Issue → branch → PR into `main` → CI (`check` green) → merge** (Issue closes via `Fixes #N` on merge, not on PR open). Details: [CONTRIBUTING.md § Pull requests](.github/CONTRIBUTING.md#pull-requests) and [AGENTS.md § Delivery](AGENTS.md#delivery-issue--pr--ci).
+
 | Lane | What you do | Guide |
 | --- | --- | --- |
 | `modules/` | Publish a community module to the in-app market | [modules/README.md](modules/README.md) |

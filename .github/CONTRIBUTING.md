@@ -176,12 +176,29 @@ an hour as authoritative; the refresh button always bypasses the cache.
 
 ### Pull requests
 
-- Branch from `main`. Keep PRs focused — one logical change per PR.
-- Describe the user-visible effect in the PR body, not just the code change.
+Target branch is always **`main`**. Do not open feature PRs against other long-lived bases unless a maintainer asks.
+
+Default delivery loop for code changes:
+
+1. **Issue first.** File or reuse a [GitHub Issue](https://github.com/shiaho777/web-to-app/issues) that states the problem or goal.
+2. **Branch from `main`.** Keep the PR focused — one logical change per PR.
+3. **Open a PR into `main`.** In the body:
+   - Describe the user-visible effect, not only the code diff.
+   - Link the Issue and use a closing keyword so it closes **on merge** (e.g. `Fixes #123` or `Closes #123`).
+   - Prefer the repo PR template (`.github/pull_request_template.md`).
+4. **CI gate.** Every PR runs Android CI. The required merge check is job **`check`** from workflow `Android CI Build` (`.github/workflows/android-ci.yml`). Merge only when it is green. Do not close the Issue while CI is red or the PR is still open.
+5. **After merge.** `Fixes #N` / `Closes #N` auto-closes the linked Issue. If auto-close misses, a maintainer closes it with a pointer to the merged PR.
+
+Extra notes:
+
 - If your PR touches the build system, native code, or APK packaging, attach
   the output of `./gradlew :app:assembleDebug` (or note the failure if it
   fails on your machine).
-- CI runs on every PR. A green CI is required before merge.
+- Bot / catalog-only PRs (e.g. regenerated `modules/submissions.json`) may omit
+  an Issue when they are fully automated.
+- Coding-agent workflow detail lives in [`AGENTS.md`](../AGENTS.md) under
+  **Delivery (Issue + PR + CI)**; human contributors should still follow the
+  Issue → PR → CI → merge loop above.
 
 ### Reviewer expectations
 
@@ -343,11 +360,24 @@ cd web-to-app
 
 **Pull Request**
 
-- 从 `main` 分出分支，每个 PR 只解决一件事
-- PR 描述写"用户看得到的效果"，不只是代码 diff
-- 改动涉及构建系统、原生代码或 APK 打包时，附上 `./gradlew :app:assembleDebug`
-  的结果
-- CI 必须绿色才会合并
+目标分支一律是 **`main`**。除非维护者另行指定，不要向其他长期分支提功能 PR。
+
+代码改动的默认交付闭环：
+
+1. **先有 Issue。** 新建或复用 [GitHub Issue](https://github.com/shiaho777/web-to-app/issues)，写清问题/目标。
+2. **从 `main` 拉分支。** 每个 PR 只做一件事。
+3. **向 `main` 开 PR。** 正文须：
+   - 写「用户看得到的效果」，不只是 diff
+   - 关联 Issue，并用合并时关闭关键字（如 `Fixes #123` / `Closes #123`）——**合并后**才关 Issue，开 PR 时不要提前关
+   - 优先使用仓库 PR 模板（`.github/pull_request_template.md`）
+4. **过 CI。** 每个 PR 都会跑 Android CI；合并门槛是 workflow `Android CI Build` 的 job **`check`**。CI 红或 PR 未合并时不要关 Issue。
+5. **合并后。** `Fixes #N` 会自动关 Issue；若未自动关，由维护者补关并指向已合并 PR。
+
+补充：
+
+- 改动涉及构建系统、原生代码或 APK 打包时，附上 `./gradlew :app:assembleDebug` 的结果
+- 全自动的机器人/目录类 PR（如生成 `modules/submissions.json`）可不绑 Issue
+- 面向 coding agent 的细节见根目录 [`AGENTS.md`](../AGENTS.md) 的 **Delivery (Issue + PR + CI)**；人类贡献者同样遵循「Issue → PR → CI → 合并」
 
 **Review 标准**
 
