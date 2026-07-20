@@ -144,11 +144,12 @@ class NodeService : Service() {
 
             android.util.Log.i(TAG, "调用 NodeBridge.loadNode...")
             if (!NodeBridge.loadJniBridge()) {
-                android.util.Log.e(TAG, "NodeBridge.loadJniBridge 失败")
+                android.util.Log.e(TAG, "NodeBridge.loadJniBridge 失败: ${NodeBridge.lastLoadError}")
+                val detail = NodeBridge.lastLoadError?.takeIf { it.isNotBlank() } ?: "unknown UnsatisfiedLinkError"
                 replyFailed(
                     replyTo,
                     requestId,
-                    "libnode_bridge.so 加载失败。导出的 NODEJS_APP 需包含该库；请用含原生 node_bridge 的构建器重新导出。"
+                    "libnode_bridge.so 加载失败 ($detail)。导出的 NODEJS_APP 需包含 libnode_bridge.so 与 libc++_shared.so；请用最新构建器重新导出。"
                 )
                 return
             }

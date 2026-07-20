@@ -10,6 +10,10 @@ object NodeBridge {
 
     private var jniLoaded = false
 
+    @Volatile
+    var lastLoadError: String? = null
+        private set
+
     interface OutputCallback {
 
         fun onOutput(line: String, isError: Boolean)
@@ -21,9 +25,11 @@ object NodeBridge {
         return try {
             System.loadLibrary("node_bridge")
             jniLoaded = true
+            lastLoadError = null
             AppLogger.i(TAG, "node_bridge JNI 库加载成功")
             true
         } catch (e: UnsatisfiedLinkError) {
+            lastLoadError = e.message
             AppLogger.e(TAG, "node_bridge JNI 库加载失败", e)
             ShellLogger.e(TAG, "node_bridge JNI 库加载失败: ${e.message}")
             false
