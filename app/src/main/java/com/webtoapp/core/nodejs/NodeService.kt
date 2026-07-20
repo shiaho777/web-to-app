@@ -143,9 +143,23 @@ class NodeService : Service() {
             }
 
             android.util.Log.i(TAG, "调用 NodeBridge.loadNode...")
+            if (!NodeBridge.loadJniBridge()) {
+                android.util.Log.e(TAG, "NodeBridge.loadJniBridge 失败")
+                replyFailed(
+                    replyTo,
+                    requestId,
+                    "libnode_bridge.so 加载失败。导出的 NODEJS_APP 需包含该库；请用含原生 node_bridge 的构建器重新导出。"
+                )
+                return
+            }
             if (!NodeBridge.loadNode(this)) {
                 android.util.Log.e(TAG, "NodeBridge.loadNode 失败")
-                replyFailed(replyTo, requestId, "libnode.so 加载失败")
+                val path = NodeDependencyManager.getNodeLibraryPath(this)
+                replyFailed(
+                    replyTo,
+                    requestId,
+                    "libnode.so 加载失败 ($path)。请确认 APK 含 16KB 对齐的 libnode.so，或在主机下载 Node 运行时后重新导出。"
+                )
                 return
             }
             android.util.Log.i(TAG, "NodeBridge.loadNode 成功, isStarted=${NodeBridge.isStarted()}")

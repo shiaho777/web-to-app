@@ -38,15 +38,6 @@ object NodeBridge {
             return true
         }
 
-        try {
-            System.loadLibrary("node")
-            AppLogger.i(TAG, "libnode.so 通过 System.loadLibrary 加载成功")
-            ShellLogger.i(TAG, "libnode.so 通过 System.loadLibrary 加载成功")
-
-        } catch (e: UnsatisfiedLinkError) {
-            AppLogger.d(TAG, "System.loadLibrary(\"node\") 失败: ${e.message}")
-        }
-
         val nodePath = NodeDependencyManager.getNodeLibraryPath(context)
         if (nodePath == null) {
             AppLogger.e(TAG, "libnode.so 未找到")
@@ -62,8 +53,8 @@ object NodeBridge {
             AppLogger.i(TAG, "libnode.so 加载成功")
             ShellLogger.i(TAG, "libnode.so 加载成功")
         } else {
-            AppLogger.e(TAG, "libnode.so 加载失败")
-            ShellLogger.e(TAG, "libnode.so 加载失败")
+            AppLogger.e(TAG, "libnode.so 加载失败 path=$nodePath")
+            ShellLogger.e(TAG, "libnode.so 加载失败 path=$nodePath")
         }
         return result
     }

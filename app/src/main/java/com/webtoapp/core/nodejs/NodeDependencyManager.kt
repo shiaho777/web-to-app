@@ -126,8 +126,32 @@ object NodeDependencyManager {
 
     fun getNodeLibraryPath(context: Context): String? {
         val nativeNode = File(context.applicationInfo.nativeLibraryDir, NODE_BINARY_NAME)
-        if (nativeNode.exists()) {
-            AppLogger.d(TAG, "libnode.so path (nativeLibraryDir): ${nativeNode.absolutePath}")
+        if (nativeNode.exists() && nativeNode.length() > 0L) {
+            if (isElfPageAlignmentCompatible(nativeNode) || !isElf64Lsb(nativeNode)) {
+                AppLogger.d(TAG, "libnode.so path (nativeLibraryDir): ${nativeNode.absolutePath}")
+                return nativeNode.absolutePath
+            }
+            val staged = File(getNodeDir(context), NODE_BINARY_NAME)
+            try {
+                val needsCopy = !staged.exists() ||
+                    staged.length() != nativeNode.length() ||
+                    staged.lastModified() < nativeNode.lastModified() ||
+                    !isElfPageAlignmentCompatible(staged)
+                if (needsCopy) {
+                    nativeNode.copyTo(staged, overwrite = true)
+                }
+                ensureLibnodePageAligned(staged)
+                if (staged.exists() && staged.length() > 0L && isElfPageAlignmentCompatible(staged)) {
+                    AppLogger.d(TAG, "libnode.so path (staged+aligned from nativeLibraryDir): ${staged.absolutePath}")
+                    return staged.absolutePath
+                }
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Failed to stage/align libnode.so from nativeLibraryDir", e)
+            }
+            AppLogger.w(
+                TAG,
+                "libnode.so in nativeLibraryDir is not page-aligned for ${systemPageSize()}B pages: ${nativeNode.absolutePath}"
+            )
             return nativeNode.absolutePath
         }
         val downloadedNode = File(getNodeDir(context), NODE_BINARY_NAME)
@@ -418,6 +442,23 @@ object NodeDependencyManager {
             v = v or (raf.readUnsignedByte().toLong() shl (8 * i))
         }
         return v
+    }
+
+    private fun isElf64Lsb(lib: File): Boolean {
+        return try {
+            lib.inputStream().use { input ->
+                val hdr = ByteArray(6)
+                if (input.read(hdr) != 6) return false
+                hdr[0] == 0x7f.toByte() &&
+                    hdr[1] == 'E'.code.toByte() &&
+                    hdr[2] == 'L'.code.toByte() &&
+                    hdr[3] == 'F'.code.toByte() &&
+                    hdr[4].toInt() == 2 &&
+                    hdr[5].toInt() == 1
+            }
+        } catch (_: Exception) {
+            false
+        }
     }
 
     private fun isElfPageAlignmentCompatible(lib: File): Boolean {
