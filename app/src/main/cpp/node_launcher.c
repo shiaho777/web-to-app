@@ -6,8 +6,24 @@
 #include <unistd.h>
 
 typedef int (*node_start_func)(int argc, char** argv);
+typedef void (*set_16kb_appcompat_fn)(int enable);
 
 static const char* WTA_NODE_LIB = "WTA_NODE_LIB";
+
+static void enable_16kb_app_compat_if_needed(void) {
+    long page_size = sysconf(_SC_PAGESIZE);
+    if (page_size < 16384L) {
+        return;
+    }
+    set_16kb_appcompat_fn fn =
+        (set_16kb_appcompat_fn)dlsym(RTLD_DEFAULT, "__loader_android_set_16kb_appcompat_mode");
+    if (fn == NULL) {
+        fn = (set_16kb_appcompat_fn)dlsym(RTLD_DEFAULT, "android_set_16kb_appcompat_mode");
+    }
+    if (fn != NULL) {
+        fn(1);
+    }
+}
 
 int main(int argc, char* argv[]) {
     const char* node_lib_path = getenv(WTA_NODE_LIB);
@@ -23,6 +39,7 @@ int main(int argc, char* argv[]) {
     }
 
     signal(SIGPIPE, SIG_IGN);
+    enable_16kb_app_compat_if_needed();
 
     void* handle = dlopen(node_lib_path, RTLD_NOW | RTLD_GLOBAL);
     if (handle == NULL) {
