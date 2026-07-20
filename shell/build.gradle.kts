@@ -172,13 +172,13 @@ android {
 val slimShellStrings by tasks.registering {
     group = "build"
     description = "Split shell i18n into per-language packs (all 10 languages)"
-    val input = rootProject.file("app/src/main/java/com/webtoapp/core/i18n/Strings.kt")
-    val slimRoot = layout.buildDirectory.dir("generated/slim-i18n")
+    val input = rootProject.layout.projectDirectory.file("app/src/main/java/com/webtoapp/core/i18n/Strings.kt").asFile
+    val script = rootProject.layout.projectDirectory.file("scripts/slim_shell_strings.py").asFile
     val output = layout.buildDirectory.file("generated/slim-i18n/com/webtoapp/core/i18n/Strings.kt")
     val tableOut = layout.buildDirectory.file("generated/slim-i18n/com/webtoapp/core/i18n/ShellStringTable.kt")
     val assetsOut = layout.buildDirectory.dir("generated/slim-i18n/assets/i18n")
     inputs.file(input)
-    inputs.file(rootProject.file("scripts/slim_shell_strings.py"))
+    inputs.file(script)
     outputs.file(output)
     outputs.file(tableOut)
     outputs.dir(assetsOut)
@@ -187,7 +187,7 @@ val slimShellStrings by tasks.registering {
         outFile.parentFile.mkdirs()
         val cmd = listOf(
             "python3",
-            rootProject.file("scripts/slim_shell_strings.py").absolutePath,
+            script.absolutePath,
             input.absolutePath,
             outFile.absolutePath
         )
@@ -209,7 +209,7 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
     description = "Sync runtime-only Kotlin sources from app module to shell"
     group = "build"
 
-    from("../app/src/main/java")
+    from(rootProject.layout.projectDirectory.dir("app/src/main/java"))
 
     include(
         "**/ui/shell/**",
@@ -365,18 +365,19 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/ui/components/PermissionRationale.kt"
     )
 
-    into("src/main/java")
+    into(layout.projectDirectory.dir("src/main/java"))
 }
 
 tasks.named("syncShellRuntimeSources").configure {
     dependsOn(slimShellStrings)
+    val slim = layout.buildDirectory.file("generated/slim-i18n/com/webtoapp/core/i18n/Strings.kt")
+    val table = layout.buildDirectory.file("generated/slim-i18n/com/webtoapp/core/i18n/ShellStringTable.kt")
+    val destDir = layout.projectDirectory.dir("src/main/java/com/webtoapp/core/i18n")
     doLast {
-        val slim = layout.buildDirectory.file("generated/slim-i18n/com/webtoapp/core/i18n/Strings.kt").get().asFile
-        val table = layout.buildDirectory.file("generated/slim-i18n/com/webtoapp/core/i18n/ShellStringTable.kt").get().asFile
-        val destDir = file("src/main/java/com/webtoapp/core/i18n")
-        destDir.mkdirs()
-        slim.copyTo(destDir.resolve("Strings.kt"), overwrite = true)
-        table.copyTo(destDir.resolve("ShellStringTable.kt"), overwrite = true)
+        val dest = destDir.asFile
+        dest.mkdirs()
+        slim.get().asFile.copyTo(dest.resolve("Strings.kt"), overwrite = true)
+        table.get().asFile.copyTo(dest.resolve("ShellStringTable.kt"), overwrite = true)
     }
 }
 
@@ -388,14 +389,15 @@ val syncShellRuntimeAssets by tasks.registering {
     description = "Mirror runtime-only asset files from app module to shell template (single source of truth: app/src/main/assets)."
     group = "build"
     dependsOn(slimShellStrings)
-    val phpSrc = rootProject.file("app/src/main/assets/php_router_server.php")
+    val phpSrc = rootProject.layout.projectDirectory.file("app/src/main/assets/php_router_server.php").asFile
+    val hostI18n = rootProject.layout.projectDirectory.dir("app/src/main/assets/shell_i18n").asFile
+    val assetsDir = layout.projectDirectory.dir("src/main/assets").asFile
     val i18nSrc = layout.buildDirectory.dir("generated/slim-i18n/assets/i18n")
     inputs.file(phpSrc)
     inputs.dir(i18nSrc)
-    outputs.file(file("src/main/assets/php_router_server.php"))
-    outputs.dir(file("src/main/assets/i18n"))
+    outputs.file(assetsDir.resolve("php_router_server.php"))
+    outputs.dir(assetsDir.resolve("i18n"))
     doLast {
-        val assetsDir = file("src/main/assets")
         assetsDir.mkdirs()
         val phpOut = assetsDir.resolve("php_router_server.php")
         if (phpOut.exists()) {
@@ -414,7 +416,6 @@ val syncShellRuntimeAssets by tasks.registering {
                 }
             }
         }
-        val hostI18n = rootProject.file("app/src/main/assets/shell_i18n")
         hostI18n.mkdirs()
         hostI18n.listFiles()?.forEach { it.delete() }
         i18nSrc.get().asFile.listFiles()?.forEach { src ->
@@ -542,13 +543,14 @@ tasks.register("stripShellTemplateBloat") {
     description = "Remove non-runtime bloat entries from shell release APK"
     dependsOn("packageRelease")
     val apk = layout.buildDirectory.file("outputs/apk/release/shell-release.apk")
+    val script = rootProject.layout.projectDirectory.file("scripts/strip_shell_apk_bloat.py").asFile
     inputs.file(apk)
+    inputs.file(script)
     outputs.file(apk)
     doLast {
-        val file = apk.get().asFile
-        if (!file.isFile) return@doLast
-        val script = rootProject.file("scripts/strip_shell_apk_bloat.py")
-        val pb = ProcessBuilder("python3", script.absolutePath, file.absolutePath)
+        val apkFile = apk.get().asFile
+        if (!apkFile.isFile) return@doLast
+        val pb = ProcessBuilder("python3", script.absolutePath, apkFile.absolutePath)
         pb.redirectErrorStream(true)
         val proc = pb.start()
         val log = proc.inputStream.bufferedReader().readText()
