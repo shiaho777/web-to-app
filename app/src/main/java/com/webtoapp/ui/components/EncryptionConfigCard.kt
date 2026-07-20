@@ -64,8 +64,7 @@ fun EncryptionConfigCard(
                     Column {
                         Text(
                             text = Strings.resourceEncryption,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
+                            style = MaterialTheme.typography.titleMedium
                         )
                         Text(
                             text = if (config.enabled) Strings.encryptionEnabled else Strings.notEnabled,

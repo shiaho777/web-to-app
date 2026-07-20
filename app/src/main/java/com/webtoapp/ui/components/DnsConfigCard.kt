@@ -205,7 +205,6 @@ private fun DnsHeader(
             Text(
                 text = Strings.dnsConfigTitle,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
