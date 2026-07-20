@@ -126,8 +126,32 @@ object NodeDependencyManager {
 
     fun getNodeLibraryPath(context: Context): String? {
         val nativeNode = File(context.applicationInfo.nativeLibraryDir, NODE_BINARY_NAME)
-        if (nativeNode.exists()) {
-            AppLogger.d(TAG, "libnode.so path (nativeLibraryDir): ${nativeNode.absolutePath}")
+        if (nativeNode.exists() && nativeNode.length() > 0L) {
+            if (isElfPageAlignmentCompatible(nativeNode)) {
+                AppLogger.d(TAG, "libnode.so path (nativeLibraryDir, page-aligned): ${nativeNode.absolutePath}")
+                return nativeNode.absolutePath
+            }
+            val staged = File(getNodeDir(context), NODE_BINARY_NAME)
+            try {
+                val needsCopy = !staged.exists() ||
+                    staged.length() != nativeNode.length() ||
+                    staged.lastModified() < nativeNode.lastModified() ||
+                    !isElfPageAlignmentCompatible(staged)
+                if (needsCopy) {
+                    nativeNode.copyTo(staged, overwrite = true)
+                }
+                ensureLibnodePageAligned(staged)
+                if (staged.exists() && staged.length() > 0L) {
+                    AppLogger.d(TAG, "libnode.so path (staged+aligned from nativeLibraryDir): ${staged.absolutePath}")
+                    return staged.absolutePath
+                }
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Failed to stage/align libnode.so from nativeLibraryDir", e)
+            }
+            AppLogger.w(
+                TAG,
+                "libnode.so in nativeLibraryDir is not page-aligned for ${systemPageSize()}B pages: ${nativeNode.absolutePath}"
+            )
             return nativeNode.absolutePath
         }
         val downloadedNode = File(getNodeDir(context), NODE_BINARY_NAME)
