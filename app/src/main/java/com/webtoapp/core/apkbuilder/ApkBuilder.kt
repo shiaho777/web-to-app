@@ -1350,20 +1350,29 @@ class ApkBuilder(private val context: Context) {
     }
 
     private fun ensureAligned16kNativeLib(sourceFile: File, displayName: String): File {
-        if (displayName == com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME) {
-            logger.log("ELF 16KB internal patch skipped for $displayName; APK zip entry will still be 16KB aligned")
-            return sourceFile
-        }
-
+        val requireAligned =
+            displayName == com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME ||
+                displayName == "libnode_bridge.so" ||
+                displayName == "libgo_exec_loader.so" ||
+                displayName == "libphp.so" ||
+                displayName == "libpython3.so" ||
+                displayName == "libmusl-linker.so"
         return try {
             val result = ElfAligner16k.ensureAligned(sourceFile, File(tempDir, "elf16k"))
             when {
                 result.alreadyAligned -> logger.log("ELF 16KB already aligned: $displayName")
-                result.repacked -> logger.log("ELF 16KB repacked: $displayName (${sourceFile.length() / 1024} KB -> ${result.outputFile.length() / 1024} KB)")
+                result.repacked -> logger.log(
+                    "ELF 16KB repacked: $displayName (${sourceFile.length() / 1024} KB -> ${result.outputFile.length() / 1024} KB)"
+                )
                 result.changed -> logger.log("ELF 16KB metadata patched: $displayName")
             }
             result.outputFile
         } catch (e: Exception) {
+            if (requireAligned) {
+                val msg = "ELF 16KB alignment failed for $displayName: ${e.message}"
+                logger.error(msg, e)
+                throw IllegalStateException(msg, e)
+            }
             logger.warn("ELF 16KB alignment failed for $displayName: ${e.message}; using original binary")
             sourceFile
         }
@@ -1557,23 +1566,73 @@ class ApkBuilder(private val context: Context) {
     ) {
 
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.nodeJsConfig(), logger)
+        injectNodeJsNativeLibs(zipOut)
+    }
 
-        val nodeDir = com.webtoapp.core.nodejs.NodeDependencyManager.getNodeDir(context)
-        val nodeBinary = File(nodeDir, com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME)
-        if (nodeBinary.exists() && nodeBinary.canRead()) {
-            try {
-                val abi = nodeDir.name
+    private fun resolveNodeJsBinary(): File? {
+        val nativeNode = File(
+            context.applicationInfo.nativeLibraryDir,
+            com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME
+        )
+        if (nativeNode.exists() && nativeNode.canRead() && nativeNode.length() > 0L) {
+            AppLogger.d("ApkBuilder", "Using nativeLibraryDir Node: ${nativeNode.absolutePath}")
+            return nativeNode
+        }
+        val downloaded = File(
+            com.webtoapp.core.nodejs.NodeDependencyManager.getNodeDir(context),
+            com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME
+        )
+        if (downloaded.exists() && downloaded.canRead() && downloaded.length() > 0L) {
+            AppLogger.d("ApkBuilder", "Using downloaded Node: ${downloaded.absolutePath}")
+            return downloaded
+        }
+        return null
+    }
 
-                val nodeLibPath = "lib/$abi/${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME}"
-                val alignedNodeBinary = ensureAligned16kNativeLib(nodeBinary, com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME)
+    private fun injectNodeJsNativeLibs(zipOut: ZipOutputStream) {
+        val abi = com.webtoapp.core.nodejs.NodeDependencyManager.getDeviceAbi()
+        val bridge = File(context.applicationInfo.nativeLibraryDir, "libnode_bridge.so")
+        if (!bridge.exists() || !bridge.canRead() || bridge.length() <= 0L) {
+            val msg =
+                "Node bridge missing at ${bridge.absolutePath}. Rebuild the host app with native node_bridge, then re-export the NODEJS_APP."
+            logger.error(msg)
+            throw IllegalStateException(msg)
+        }
+        val nodeBinary = resolveNodeJsBinary()
+        if (nodeBinary == null) {
+            val cachePath = File(
+                com.webtoapp.core.nodejs.NodeDependencyManager.getNodeDir(context),
+                com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME
+            ).absolutePath
+            val msg =
+                "libnode.so missing from host nativeLibraryDir and download cache ($cachePath). Download Node.js runtime in Settings → Runtime Engines, then re-export."
+            logger.error(msg)
+            throw IllegalStateException(msg)
+        }
+        try {
+            val alignedBridge = ensureAligned16kNativeLib(bridge, "libnode_bridge.so")
+            writeEntryStoredStreaming(zipOut, "lib/$abi/libnode_bridge.so", alignedBridge)
+            logger.log(
+                "Node bridge embedded as native lib: lib/$abi/libnode_bridge.so (${alignedBridge.length() / 1024} KB)"
+            )
 
-                writeEntryStoredStreaming(zipOut, nodeLibPath, alignedNodeBinary)
-                logger.log("Node.js binary embedded as native lib: $nodeLibPath (${alignedNodeBinary.length() / 1024} KB)")
-            } catch (e: Exception) {
-                logger.error("Failed to embed Node.js binary", e)
-            }
-        } else {
-            logger.warn("Node.js binary not found in cache: ${nodeBinary.absolutePath}")
+            val alignedNode = ensureAligned16kNativeLib(
+                nodeBinary,
+                com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME
+            )
+            writeEntryStoredStreaming(
+                zipOut,
+                "lib/$abi/${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME}",
+                alignedNode
+            )
+            logger.log(
+                "Node.js binary embedded as native lib: lib/$abi/${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME} (${alignedNode.length() / 1024} KB)"
+            )
+        } catch (e: IllegalStateException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error("Failed to embed Node.js native libs", e)
+            throw IllegalStateException("Failed to embed Node.js native libs: ${e.message}", e)
         }
     }
 
