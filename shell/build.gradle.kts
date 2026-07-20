@@ -292,6 +292,7 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/extension/panel/**",
         "**/core/appearance/BrowserDisguiseJsGenerator.kt",
         "**/ui/shell/TranslateScriptProvider.kt",
+        "**/ui/shell/ShellDocumentActivity.kt",
 
         "**/core/privacy/IsolationManager.kt",
         "**/core/privacy/FingerprintGenerator.kt",
