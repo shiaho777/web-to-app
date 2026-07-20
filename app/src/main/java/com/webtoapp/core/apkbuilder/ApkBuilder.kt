@@ -1371,6 +1371,10 @@ class ApkBuilder(private val context: Context) {
             return appType == "NODEJS_APP"
         }
 
+        if (libName == "libgo_exec_loader.so") {
+            return appType == "GO_APP"
+        }
+
         if (libName == "libpython3.so" || libName == "libmusl-linker.so") {
             return appType == "PYTHON_APP"
         }
@@ -2063,6 +2067,30 @@ builtins.__import__ = _w2a_import
         projectDir: File
     ) {
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.goConfig(), logger)
+        injectGoExecLoaderNativeLib(zipOut)
+    }
+
+    private fun injectGoExecLoaderNativeLib(zipOut: ZipOutputStream) {
+        val loader = File(context.applicationInfo.nativeLibraryDir, "libgo_exec_loader.so")
+        if (!loader.exists() || !loader.canRead()) {
+            val msg =
+                "Go exec loader missing at ${loader.absolutePath}. Rebuild the host app with native go_exec_loader, then re-export the GO_APP."
+            logger.error(msg)
+            throw IllegalStateException(msg)
+        }
+        try {
+            val abi = com.webtoapp.core.golang.GoDependencyManager.getDeviceAbi()
+            val aligned = ensureAligned16kNativeLib(loader, "libgo_exec_loader.so")
+            writeEntryStoredStreaming(zipOut, "lib/$abi/libgo_exec_loader.so", aligned)
+            logger.log(
+                "Go exec loader embedded as native lib: lib/$abi/libgo_exec_loader.so (${aligned.length() / 1024} KB)"
+            )
+        } catch (e: IllegalStateException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error("Failed to embed Go exec loader", e)
+            throw IllegalStateException("Failed to embed Go exec loader: ${e.message}", e)
+        }
     }
 
     private fun ensureGoProjectBinaryForExport(

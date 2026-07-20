@@ -108,7 +108,10 @@ class GoRuntime(private val context: Context) {
             currentPort = serverPort
 
             if (!GoDependencyManager.isGoExecLoaderReady(context)) {
-                _serverState.value = ServerState.Error("Go executable loader 未就绪")
+                val path = GoDependencyManager.getGoExecLoaderPath(context)
+                _serverState.value = ServerState.Error(
+                    "Go executable loader 未就绪 ($path)。导出的 GO_APP 需包含 libgo_exec_loader.so；请用含原生 loader 的构建器重新导出。"
+                )
                 return@withContext -1
             }
 
