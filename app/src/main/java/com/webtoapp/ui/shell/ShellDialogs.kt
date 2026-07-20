@@ -28,13 +28,16 @@ fun ShellActivationDialog(
     onActivated: () -> Unit
 ) {
     val activation = WebToAppApplication.activation
+    val activity = LocalContext.current as? android.app.Activity
+    val activationAppId = (activity as? ShellActivity)?.previewActivationAppId()?.takeIf { it > 0L }
+        ?: ShellPreviewSession.activationAppId()
     var activationStatus by remember {
         mutableStateOf<com.webtoapp.core.activation.ActivationStatus?>(null)
     }
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
         activationStatus = try {
-            activation.getActivationStatus(ShellPreviewSession.activationAppId())
+            activation.getActivationStatus(activationAppId)
         } catch (_: Exception) {
             null
         }
@@ -45,7 +48,7 @@ fun ShellActivationDialog(
         onActivate = { code ->
             val result = if (config.activationRemoteEnabled) {
                 activation.verifyRemoteActivation(
-                    ShellPreviewSession.activationAppId(),
+                    activationAppId,
                     code,
                     activation.buildRemoteRequest(
                         verifyUrl = config.activationRemoteVerifyUrl,
@@ -55,7 +58,7 @@ fun ShellActivationDialog(
                 )
             } else {
                 activation.verifyActivationCode(
-                    ShellPreviewSession.activationAppId(),
+                    activationAppId,
                     code,
                     config.activationCodes
                 )

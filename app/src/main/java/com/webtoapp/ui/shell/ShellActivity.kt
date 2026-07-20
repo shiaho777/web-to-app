@@ -29,7 +29,7 @@ import com.webtoapp.core.forcedrun.ForcedRunManager
 import com.webtoapp.core.floatingwindow.FloatingWindowService
 import com.webtoapp.ui.shared.WindowHelper
 
-class ShellActivity : AppCompatActivity() {
+open class ShellActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_PREVIEW = "shell_preview"
@@ -38,6 +38,9 @@ class ShellActivity : AppCompatActivity() {
 
     private var isPreviewSession: Boolean = false
     private var previewAppId: Long = -1L
+
+    internal fun previewActivationAppId(): Long =
+        if (isPreviewSession && previewAppId > 0L) previewAppId else -1L
 
     private var webView: WebView? = null
     private var browserSurface: BrowserSurface? = null
@@ -312,7 +315,7 @@ class ShellActivity : AppCompatActivity() {
         }
 
         val config = if (isPreviewSession) {
-            com.webtoapp.core.shell.ShellPreviewSession.config()
+            com.webtoapp.core.shell.ShellPreviewSession.config(previewAppId)
         } else {
             WebToAppApplication.shellMode.getConfig()
         }
@@ -321,7 +324,7 @@ class ShellActivity : AppCompatActivity() {
             com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "配置加载失败，无法启动应用")
             Toast.makeText(this, Strings.appConfigLoadFailed, Toast.LENGTH_LONG).show()
             if (isPreviewSession) {
-                com.webtoapp.core.shell.ShellPreviewSession.end()
+                com.webtoapp.core.shell.ShellPreviewSession.endIfMatches(previewAppId)
             }
             finish()
             return
@@ -777,7 +780,7 @@ class ShellActivity : AppCompatActivity() {
             setIntent(intent)
             isPreviewSession = true
             previewAppId = intent.getLongExtra(EXTRA_PREVIEW_APP_ID, -1L)
-            if (com.webtoapp.core.shell.ShellPreviewSession.config() != null) {
+            if (com.webtoapp.core.shell.ShellPreviewSession.config(previewAppId) != null) {
                 recreate()
                 return
             }

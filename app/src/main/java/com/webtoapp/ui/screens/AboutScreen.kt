@@ -59,6 +59,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.R
 import com.webtoapp.core.host.HostRuntimePrefs
+import com.webtoapp.ui.shell.ShellDocumentActivity
 import com.webtoapp.ui.webview.WebViewDocumentActivity
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.Strings
@@ -124,6 +125,7 @@ fun AboutScreen(onBack: () -> Unit) {
                                 hostPrefs.setSeparateTasksEnabled(enabled)
                                 if (!enabled) {
                                     WebViewDocumentActivity.finishAllDocumentTasks()
+                                    ShellDocumentActivity.finishAllDocumentTasks()
                                 }
                             }
                         },

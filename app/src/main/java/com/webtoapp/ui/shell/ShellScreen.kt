@@ -55,6 +55,8 @@ fun ShellScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val activity = context as android.app.Activity
+    val activationAppId = (activity as? ShellActivity)?.previewActivationAppId()?.takeIf { it > 0L }
+        ?: ShellPreviewSession.activationAppId()
     val activation = WebToAppApplication.activation
     val announcement = WebToAppApplication.announcement
     val adBlocker = WebToAppApplication.adBlock
@@ -147,16 +149,16 @@ fun ShellScreen(
         if (config.activationEnabled) {
 
             if (config.activationRequireEveryTime) {
-                activation.resetActivation(ShellPreviewSession.activationAppId())
+                activation.resetActivation(activationAppId)
                 isActivated = false
                 isActivationChecked = true
                 showActivationDialog = true
             } else {
 
                 val activated = if (config.activationRemoteEnabled) {
-                    activation.isActivated(ShellPreviewSession.activationAppId()).first() &&
+                    activation.isActivated(activationAppId).first() &&
                         activation.isRemoteStartupAllowed(
-                            ShellPreviewSession.activationAppId(),
+                            activationAppId,
                             activation.buildRemoteRequest(
                                 verifyUrl = config.activationRemoteVerifyUrl,
                                 publicKeyBase64 = config.activationRemotePublicKey,
@@ -164,7 +166,7 @@ fun ShellScreen(
                             )
                         )
                 } else {
-                    activation.resolveStartupActivation(ShellPreviewSession.activationAppId())
+                    activation.resolveStartupActivation(activationAppId)
                 }
                 isActivated = activated
                 isActivationChecked = true

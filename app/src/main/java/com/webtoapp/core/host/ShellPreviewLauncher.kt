@@ -12,6 +12,7 @@ import com.webtoapp.core.shell.ShellPreviewSession
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.ui.shell.ShellActivity
+import com.webtoapp.ui.shell.ShellDocumentActivity
 import java.io.File
 
 object ShellPreviewLauncher {
@@ -27,7 +28,7 @@ object ShellPreviewLauncher {
             true
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to start shell preview for appId=${webApp.id} type=${webApp.appType}", e)
-            ShellPreviewSession.end()
+            ShellPreviewSession.end(webApp.id)
             false
         }
     }
@@ -81,7 +82,12 @@ object ShellPreviewLauncher {
         } catch (_: Exception) {
             false
         }
-        return Intent(context, ShellActivity::class.java).apply {
+        val target = if (separateTasks) {
+            ShellDocumentActivity::class.java
+        } else {
+            ShellActivity::class.java
+        }
+        return Intent(context, target).apply {
             putExtra(ShellActivity.EXTRA_PREVIEW, true)
             putExtra(ShellActivity.EXTRA_PREVIEW_APP_ID, appId)
             action = Intent.ACTION_VIEW
