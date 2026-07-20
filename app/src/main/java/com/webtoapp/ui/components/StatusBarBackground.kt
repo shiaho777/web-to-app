@@ -64,7 +64,6 @@ fun StatusBarBackground(
         modifier = modifier
             .fillMaxWidth()
             .height(actualHeight)
-            .statusBarsPadding()
     ) {
         when {
             backgroundType == "IMAGE" && imageBitmap != null -> {

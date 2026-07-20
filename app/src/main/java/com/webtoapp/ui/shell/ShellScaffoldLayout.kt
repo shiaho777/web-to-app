@@ -101,7 +101,11 @@ fun BoxScope.ShellScaffoldLayout(
 
     Scaffold(
 
-        contentWindowInsets = ScaffoldDefaults.contentWindowInsets,
+        contentWindowInsets = if (hideToolbar && !showToolbar) {
+            WindowInsets(0, 0, 0, 0)
+        } else {
+            ScaffoldDefaults.contentWindowInsets
+        },
         modifier = Modifier,
         topBar = {
             if (showToolbar) {
@@ -238,6 +242,7 @@ private fun ShellTopAppBar(
     val context = LocalContext.current
 
     TopAppBar(
+        windowInsets = TopAppBarDefaults.windowInsets,
         title = {
             Column {
                 if (showTitle) {
