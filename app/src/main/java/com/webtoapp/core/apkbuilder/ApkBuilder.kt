@@ -1628,6 +1628,7 @@ class ApkBuilder(private val context: Context) {
         val requireAligned =
             displayName == com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME ||
                 displayName == "libnode_bridge.so" ||
+                displayName == "libc++_shared.so" ||
                 displayName == "libgo_exec_loader.so" ||
                 displayName == "libphp.so" ||
                 displayName == "libpython3.so" ||
@@ -1866,10 +1867,18 @@ class ApkBuilder(private val context: Context) {
 
     private fun injectNodeJsNativeLibs(zipOut: ZipOutputStream) {
         val abi = com.webtoapp.core.nodejs.NodeDependencyManager.getDeviceAbi()
-        val bridge = File(context.applicationInfo.nativeLibraryDir, "libnode_bridge.so")
+        val nativeDir = File(context.applicationInfo.nativeLibraryDir)
+        val bridge = File(nativeDir, "libnode_bridge.so")
         if (!bridge.exists() || !bridge.canRead() || bridge.length() <= 0L) {
             val msg =
                 "Node bridge missing at ${bridge.absolutePath}. Rebuild the host app with native node_bridge, then re-export the NODEJS_APP."
+            logger.error(msg)
+            throw IllegalStateException(msg)
+        }
+        val cxxShared = File(nativeDir, "libc++_shared.so")
+        if (!cxxShared.exists() || !cxxShared.canRead() || cxxShared.length() <= 0L) {
+            val msg =
+                "libc++_shared.so missing at ${cxxShared.absolutePath}. libnode_bridge.so and libnode.so require it; rebuild the host app, then re-export the NODEJS_APP."
             logger.error(msg)
             throw IllegalStateException(msg)
         }
@@ -1885,6 +1894,12 @@ class ApkBuilder(private val context: Context) {
             throw IllegalStateException(msg)
         }
         try {
+            val alignedCxx = ensureAligned16kNativeLib(cxxShared, "libc++_shared.so")
+            writeEntryStoredStreaming(zipOut, "lib/$abi/libc++_shared.so", alignedCxx)
+            logger.log(
+                "C++ shared runtime embedded as native lib: lib/$abi/libc++_shared.so (${alignedCxx.length() / 1024} KB)"
+            )
+
             val alignedBridge = ensureAligned16kNativeLib(bridge, "libnode_bridge.so")
             writeEntryStoredStreaming(zipOut, "lib/$abi/libnode_bridge.so", alignedBridge)
             logger.log(
