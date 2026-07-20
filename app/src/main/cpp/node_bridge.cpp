@@ -18,6 +18,23 @@
 
 typedef int (*node_start_func)(int argc, char *argv[]);
 
+typedef void (*set_16kb_appcompat_fn)(int enable);
+
+static void enable_16kb_app_compat_if_needed() {
+    long page_size = sysconf(_SC_PAGESIZE);
+    if (page_size < 16384L) {
+        return;
+    }
+    set_16kb_appcompat_fn fn =
+        (set_16kb_appcompat_fn)dlsym(RTLD_DEFAULT, "__loader_android_set_16kb_appcompat_mode");
+    if (fn == nullptr) {
+        fn = (set_16kb_appcompat_fn)dlsym(RTLD_DEFAULT, "android_set_16kb_appcompat_mode");
+    }
+    if (fn != nullptr) {
+        fn(1);
+    }
+}
+
 static void *g_node_handle = nullptr;
 static node_start_func g_node_start = nullptr;
 static bool g_node_started = false;
@@ -190,6 +207,7 @@ Java_com_webtoapp_core_nodejs_NodeBridge_nativeLoadNode(
     }
     LOGI("libnode.so size: %lld bytes", (long long)st.st_size);
 
+    enable_16kb_app_compat_if_needed();
     g_node_handle = dlopen(path, RTLD_LAZY);
     env->ReleaseStringUTFChars(nodePath, path);
 
