@@ -76,8 +76,7 @@ fun IsolationConfigCard(
                     Column {
                         Text(
                             text = Strings.isolatedEnvironment,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
+                            style = MaterialTheme.typography.titleMedium
                         )
                         Text(
                             text = if (config.enabled) Strings.antiDetectionEnabled else Strings.notEnabled,
