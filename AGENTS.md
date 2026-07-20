@@ -95,21 +95,24 @@ Mental model:
 
 Default target: [shiaho777/web-to-app](https://github.com/shiaho777/web-to-app). Prefer a pull request over direct pushes to `main` when delivering code. Human-facing wording of the same loop lives in [CONTRIBUTING.md](.github/CONTRIBUTING.md) (EN/中文 · Pull requests); keep those docs in sync when this process changes.
 
+**Language (required):** GitHub **Issues and PRs must be written in English** — titles, bodies, labels text you author, and delivery comments on the Issue/PR. Local chat with the user may be Chinese or any language; do not copy that language into Issue/PR text. Commit messages for delivery branches should also be English unless the user explicitly asks otherwise.
+
 GitHub already runs CI on PRs (see `.github/workflows/`, especially `android-ci.yml` and path-filtered jobs like `modules-check.yml`). Treat CI as part of the delivery gate, not an afterthought: **do not treat a change as done, and do not close the Issue, until the PR is green and merged.**
 
 When the user asks to deliver a change, run this loop end-to-end:
 
 1. **Issue first.**  
    - If work already tracks a GitHub Issue, use that Issue.  
-   - If not, open a new Issue on `shiaho777/web-to-app` that states the problem / goal, scope, and acceptance notes. Keep the title short and actionable.
+   - If not, open a new Issue on `shiaho777/web-to-app` that states the problem / goal, scope, and acceptance notes. Keep the title short and actionable.  
+   - Write the Issue **in English** (title + body).
 
 2. **Implement on a branch.**  
    - Branch from current `main` (prefix `codex/` unless the user specifies otherwise).  
    - Commit only the intended files; no secrets or local junk.
 
 3. **Open a PR against `main`.**  
-   - PR title summarizes the change.  
-   - PR body must:  
+   - PR title summarizes the change (**English**).  
+   - PR body must be **English** and:  
      - Explain what changed and why.  
      - Name the Issue being solved.  
      - Link the Issue (full URL and/or `#N`).  
@@ -117,7 +120,7 @@ When the user asks to deliver a change, run this loop end-to-end:
    - Do **not** close the Issue when the PR is only opened. Closing belongs to **successful merge after CI**, via `Fixes` / `Closes` (or a maintainer after merge if auto-close missed).
 
 4. **Notify the Issue.**  
-   - Comment on the Issue with the PR URL and a one-line summary (e.g. “Implemented in https://github.com/shiaho777/web-to-app/pull/456 — waiting on CI.”).  
+   - Comment on the Issue **in English** with the PR URL and a one-line summary (e.g. “Implemented in https://github.com/shiaho777/web-to-app/pull/456 — waiting on CI.”).  
    - **If you cannot merge or close Issues:** still open the PR, comment on the Issue with both links, and ask a maintainer to merge when CI is green (Issue will close via `Fixes #N` on merge).
 
 5. **CI gate (required).**  
@@ -368,7 +371,8 @@ Missing any step usually yields: editor shows the switch, export ignores it, or 
 1. Keep implementation under host-only packages (`core/apkbuilder`, host screens, sample/market, `core/host`, …).  
 2. Exclude from shell sync if anything might accidentally be included.  
 3. Do not pull host-only deps into `shell/build.gradle.kts`.  
-4. Example: optional separate recents tasks for WebApp preview (`HostRuntimePrefs` + About toggle + manifest/document activities). This must not flow into generated APK config.
+4. Example: optional separate recents tasks for WebApp preview (`HostRuntimePrefs` + About toggle + document activities). This must not flow into generated APK config.
+5. Host-only multi-entry features still need **every host launch path** wired (see “Primary-path migration half-wire” below). Separate tasks are not export config, but they still fail if only one preview entry is complete.
 
 ### 6. Touch APK export or incremental rebuild
 
@@ -412,6 +416,63 @@ Checklist in order:
 
 ---
 
+## Primary-path migration half-wire (host)
+
+This is a **host** failure mode, distinct from “works in preview, broken after export.”
+
+### What it looks like
+
+- UI toggle / pref exists and appears to save.
+- One code path behaves correctly.
+- The **path users actually take after a migration** does not.
+- Symptom: “this feature is dead / does nothing,” with no export crash.
+
+### Concrete case: WebApp separate recents tasks
+
+| Piece | Role |
+|-------|------|
+| About toggle + `HostRuntimePrefs` | Host-only pref (not ApkConfig) |
+| `WebViewDocumentActivity` + `documentLaunchMode="always"` | Correct document-task Activity for the **WebView** entry |
+| `ShellPreviewLauncher` → `ShellActivity` (`singleTask`) | **Current primary** host preview entry for most app types |
+| Intent flags alone (`NEW_DOCUMENT` / `MULTIPLE_TASK`) on `singleTask` | **Not sufficient** to create stable multi-document recents tasks |
+| Global single-slot preview session | Concurrent multi-app preview overwrites config |
+
+What went wrong historically:
+
+1. Separate tasks were implemented on the WebView launch path (`WebViewDocumentActivity`).
+2. Host preview later standardized on **Shell** (`ShellPreviewLauncher` → `ShellActivity`).
+3. Flags were copied onto Shell intents, but a Shell **document** Activity and multi-session preview state were not.
+4. Users hit the Shell path → toggle looked real, behavior did not.
+
+Landed repair pattern (do not regress):
+
+- `ShellDocumentActivity` (host-only; excluded from shell sync) with `documentLaunchMode="always"`, parallel to `WebViewDocumentActivity`.
+- `ShellPreviewLauncher` targets `ShellDocumentActivity` when the pref is on; otherwise `ShellActivity`.
+- `ShellPreviewSession` keys concurrent preview configs by app id (not a single global slot).
+- About toggle off finishes both WebView and Shell document tasks.
+
+### Rule when migrating a host entry point
+
+If a host capability depends on **how** an app is launched (Activity class, `launchMode`, `documentLaunchMode`, intent flags, task description, per-app session state):
+
+1. List **all** current host launch entries (today at least: Shell preview, WebView fallback, shortcuts/export helpers, media/gallery preview if in scope).
+2. Implement the full behavior on the **primary** entry first (whatever Home / open-app actually calls).
+3. Port or consciously skip secondary entries; do not leave “flags only” stubs that look complete.
+4. If multi-instance is implied (separate tasks, multi-window, concurrent previews), ban global single-slot session state for that capability.
+5. Turning the pref **off** must clean up (finish document tasks, clear sessions) as carefully as turning it **on**.
+6. Do not treat “old path works” as done after the primary path moved.
+
+### Not the same as export dual-runtime
+
+| Failure | Primary check |
+|---------|----------------|
+| Preview OK, export broken | LITE membership, Access/SPI, Planner, pack assets, shell config JSON, R8 parents |
+| Host toggle OK on one entry, dead on primary entry | Launch Activity matrix, document vs singleTask, host session multi-instance |
+
+Both are “half-wire.” Do not fix one class of bug with the other checklist alone.
+
+---
+
 ## Easy-to-miss points
 
 - **Shared sources are authored in `app/`.** Editing only a file under `shell/src` is usually wrong; it will be overwritten on sync or diverge from host.
@@ -428,6 +489,9 @@ Checklist in order:
 - **Shell R8 is part of the pack ABI.** Obfuscating or over-shrinking LITE breaks PathClassLoader soft-load even when DEX packs are correct.
 - **Pack zip paths** must stay under `assets/features/…`; path regressions break `FeatureLoader` root resolution.
 - **Host-only prefs ≠ export flags.** Separate tasks / About host toggles do not replace ApkConfig wiring.
+- **Primary-path migration half-wire.** After host preview moved to Shell, capabilities implemented only on WebView (or only via intent flags on `singleTask`) look enabled but do nothing. Wire the **current** primary launcher, not the historical one.
+- **Document tasks need a document Activity.** `FLAG_ACTIVITY_NEW_DOCUMENT` on `ShellActivity`/`singleTask` is not a substitute for `documentLaunchMode="always"` (see `ShellDocumentActivity` / `WebViewDocumentActivity`).
+- **Host multi-preview needs multi-session state.** A single global `ShellPreviewSession` slot breaks concurrent separate-task previews; key by app id.
 - **Measuring the wrong APK.** Host builder size is not the generated WebView app size.
 - **Half-migrating servers/adblock/extensions** without Access + Planner is worse than leaving them in LITE temporarily.
 - **Adblock is wired again for preview + export**, but still largely LITE-resident; do not claim it is pack-split until exclude + Access + Planner are complete.
@@ -444,6 +508,9 @@ Checklist in order:
 - Staging feature packs outside `assets/features/<id>/`  
 - Re-enabling shell R8 obfuscation / aggressive shrink without a full pack-parent keep strategy and gate green  
 - Putting host-only tools or host prefs back into LITE for convenience  
+- Leaving host capabilities only on a legacy launch path after the primary entry moved (e.g. WebView document tasks while Home opens Shell)  
+- Relying on `NEW_DOCUMENT` flags alone for separate recents tasks without a `documentLaunchMode="always"` Activity  
+- Global single-slot host preview session state when multi-app / separate-task preview is supported  
 - OEM push SDKs or unjustified heavy dependencies in LITE  
 - Feeding signed/renamed APKs into template/modify paths  
 - Crashing FGS when notification channel creation fails  
@@ -489,16 +556,7 @@ Landed:
 - Adblock preview + export wiring restored (still LITE-resident)
 - HTML/FRONTEND file-access for packaged local shells
 - SafeNotificationChannels fail-soft path for shell FGS
-- Host-only optional separate recents tasks for WebApp preview
+- Host-only optional separate recents tasks for WebApp preview (`HostRuntimePrefs` + `ShellDocumentActivity` / `WebViewDocumentActivity` + multi-id `ShellPreviewSession`; not ApkConfig)
 - LocalDnsBridgeProxy wiring for local server runtimes (including Node.js)
 - Runtime downloads via `NetworkModule.downloadClient`
 
-Still open:
-
-- Server runtimes out of LITE via SPI
-- AdBlocker pack-if-enabled (keep working while still in LITE until full soft-load split)
-- Deeper extension-host split
-- Manifest-delta merge for pack components
-- CI size gates
-- Real `FeatureModule` installers on more fine packs
-- Safe re-enable of shell obfuscation only if parent-type ABI is fully solved
