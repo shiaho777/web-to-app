@@ -19,7 +19,6 @@ class EdgeSwipeRefreshLayout @JvmOverloads constructor(
 
     private var touchStartedInEdge = false
 
-    private var cachedStableTopInset = 0
 
     private val edgeStartOffsetPx: Float
         get() = edgeStartOffsetDp * resources.displayMetrics.density
@@ -33,11 +32,13 @@ class EdgeSwipeRefreshLayout @JvmOverloads constructor(
     private fun edgeStartPx(): Float {
         val rootInsets = ViewCompat.getRootWindowInsets(this)
         val visibleTop = rootInsets?.getInsets(WindowInsetsCompat.Type.systemBars())?.top ?: 0
-        val stableTop = rootInsets?.getInsetsIgnoringVisibility(WindowInsetsCompat.Type.systemBars())?.top ?: 0
-        if (visibleTop > 0) cachedStableTopInset = visibleTop
-        val systemTopInset = if (visibleTop > 0) visibleTop else maxOf(stableTop, cachedStableTopInset)
         val location = IntArray(2)
         getLocationOnScreen(location)
+        val systemTopInset = if (visibleTop > 0) {
+            visibleTop
+        } else {
+            0
+        }
         val overlapTopInset = (systemTopInset - location[1]).coerceAtLeast(0)
         return overlapTopInset + edgeStartOffsetPx
     }

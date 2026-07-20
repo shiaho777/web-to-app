@@ -164,51 +164,50 @@ object WindowHelper {
                             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                     }
                 } else {
+                    decorFitsSystemWindows = false
+                    WindowCompat.setDecorFitsSystemWindows(activity.window, false)
+                    controller.show(WindowInsetsCompat.Type.systemBars())
+                    controller.systemBarsBehavior =
+                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
-                    val needsCustomBackground = statusBarBgType == "IMAGE" ||
-                        statusBarColorMode == "CUSTOM" ||
-                        statusBarColorMode == "TRANSPARENT"
-
-                    if (needsCustomBackground) {
-
-                        decorFitsSystemWindows = false
-                        WindowCompat.setDecorFitsSystemWindows(activity.window, false)
-                        controller.show(WindowInsetsCompat.Type.systemBars())
-                        activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
-
-                        if (statusBarBgType == "IMAGE") {
-
-                            activity.window.statusBarColor = android.graphics.Color.TRANSPARENT
-
-                            val useDarkIcons = statusBarDarkIcons ?: !isDarkTheme
-                            controller.isAppearanceLightStatusBars = useDarkIcons
-                        } else {
-                            when (statusBarColorMode) {
-                                "CUSTOM" -> {
-                                    val color = try {
-                                        android.graphics.Color.parseColor(statusBarCustomColor ?: "#000000")
-                                    } catch (e: Exception) {
-                                        android.graphics.Color.BLACK
-                                    }
-                                    activity.window.statusBarColor = color
-                                    val useDarkIcons = statusBarDarkIcons ?: isColorLight(color)
-                                    controller.isAppearanceLightStatusBars = useDarkIcons
+                    if (statusBarBgType == "IMAGE") {
+                        activity.window.statusBarColor = android.graphics.Color.TRANSPARENT
+                        val useDarkIcons = statusBarDarkIcons ?: !isDarkTheme
+                        controller.isAppearanceLightStatusBars = useDarkIcons
+                        controller.isAppearanceLightNavigationBars = useDarkIcons
+                    } else {
+                        when (statusBarColorMode) {
+                            "CUSTOM" -> {
+                                val color = try {
+                                    android.graphics.Color.parseColor(statusBarCustomColor ?: "#000000")
+                                } catch (e: Exception) {
+                                    android.graphics.Color.BLACK
                                 }
-                                "TRANSPARENT" -> {
-                                    activity.window.statusBarColor = android.graphics.Color.TRANSPARENT
-                                    val useDarkIcons = statusBarDarkIcons ?: !isDarkTheme
-                                    controller.isAppearanceLightStatusBars = useDarkIcons
-                                }
+                                activity.window.statusBarColor = color
+                                val useDarkIcons = statusBarDarkIcons ?: isColorLight(color)
+                                controller.isAppearanceLightStatusBars = useDarkIcons
+                                controller.isAppearanceLightNavigationBars = useDarkIcons
+                            }
+                            "TRANSPARENT" -> {
+                                activity.window.statusBarColor = android.graphics.Color.TRANSPARENT
+                                val useDarkIcons = statusBarDarkIcons ?: !isDarkTheme
+                                controller.isAppearanceLightStatusBars = useDarkIcons
+                                controller.isAppearanceLightNavigationBars = useDarkIcons
+                            }
+                            else -> {
+                                applyStatusBarColor(
+                                    activity,
+                                    statusBarColorMode,
+                                    statusBarCustomColor,
+                                    statusBarDarkIcons,
+                                    isDarkTheme
+                                )
                             }
                         }
-                        controller.isAppearanceLightNavigationBars = controller.isAppearanceLightStatusBars
-                    } else {
-
-                        decorFitsSystemWindows = true
-                        WindowCompat.setDecorFitsSystemWindows(activity.window, true)
-                        controller.show(WindowInsetsCompat.Type.systemBars())
-                        activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
-                        applyStatusBarColor(activity, statusBarColorMode, statusBarCustomColor, statusBarDarkIcons, isDarkTheme)
+                    }
+                    activity.window.decorView.post {
+                        ViewCompat.requestApplyInsets(activity.window.decorView)
                     }
                 }
                 applyKeyboardMode(activity, keyboardAdjustMode, tag, decorFitsSystemWindows)
