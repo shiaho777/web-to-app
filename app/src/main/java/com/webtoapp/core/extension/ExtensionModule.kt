@@ -427,7 +427,8 @@ data class UrlMatchRule(
 enum class ModuleSourceType {
     CUSTOM,
     USERSCRIPT,
-    CHROME_EXTENSION
+    CHROME_EXTENSION,
+    GREASYFORK
 }
 
 enum class ModuleRunMode {
@@ -672,7 +673,7 @@ data class ExtensionModule(
 
     fun shouldRegisterInPanel(): Boolean {
         return !(
-            sourceType == ModuleSourceType.USERSCRIPT &&
+            (sourceType == ModuleSourceType.USERSCRIPT || sourceType == ModuleSourceType.GREASYFORK) &&
                 runMode == ModuleRunMode.AUTO &&
                 configItems.isEmpty()
         )

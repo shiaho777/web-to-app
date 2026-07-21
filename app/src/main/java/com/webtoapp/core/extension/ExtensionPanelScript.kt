@@ -2122,7 +2122,7 @@ object ExtensionPanelScript {
         getTypeBadge(m) {
             var isChromeExt = m.sourceType === 'CHROME_EXTENSION';
             if (isChromeExt) return '<span class="wta-type-badge chrome">Chrome</span>';
-            if (m.sourceType === 'USERSCRIPT') return '<span class="wta-type-badge userscript">' + T.typeUserScript + '</span>';
+            if (m.sourceType === 'USERSCRIPT' || m.sourceType === 'GREASYFORK') return '<span class="wta-type-badge userscript">' + T.typeUserScript + '</span>';
             return '<span class="wta-type-badge module">' + T.tabModules + '</span>';
         },
 
@@ -2169,8 +2169,8 @@ object ExtensionPanelScript {
 
             var filtered = this.getFilteredModules();
             var chromeExts = filtered.filter(function(m) { return m.sourceType === 'CHROME_EXTENSION'; });
-            var userScripts = filtered.filter(function(m) { return m.sourceType === 'USERSCRIPT'; });
-            var customModules = filtered.filter(function(m) { return m.sourceType !== 'CHROME_EXTENSION' && m.sourceType !== 'USERSCRIPT'; });
+            var userScripts = filtered.filter(function(m) { return m.sourceType === 'USERSCRIPT' || m.sourceType === 'GREASYFORK'; });
+            var customModules = filtered.filter(function(m) { return m.sourceType !== 'CHROME_EXTENSION' && m.sourceType !== 'USERSCRIPT' && m.sourceType !== 'GREASYFORK'; });
 
             // 更新标签页计数
             this.updateTabCounts(customModules.length, chromeExts.length, userScripts.length);

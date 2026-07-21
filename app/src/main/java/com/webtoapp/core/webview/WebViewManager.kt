@@ -4773,11 +4773,13 @@ class WebViewManager(
             it.chromeExtId.isNotEmpty()
         }
         val userscriptModules = matching.filter {
-            it.sourceType == com.webtoapp.core.extension.ModuleSourceType.USERSCRIPT
+            it.sourceType == com.webtoapp.core.extension.ModuleSourceType.USERSCRIPT ||
+            it.sourceType == com.webtoapp.core.extension.ModuleSourceType.GREASYFORK
         }
         val customModules = matching.filter {
             it.sourceType != com.webtoapp.core.extension.ModuleSourceType.CHROME_EXTENSION &&
-            it.sourceType != com.webtoapp.core.extension.ModuleSourceType.USERSCRIPT
+            it.sourceType != com.webtoapp.core.extension.ModuleSourceType.USERSCRIPT &&
+            it.sourceType != com.webtoapp.core.extension.ModuleSourceType.GREASYFORK
         }
 
         if (chromeModules.isNotEmpty()) {

@@ -770,7 +770,8 @@ class ExtensionManager private constructor(private val context: Context) {
         val matchingModules = getModulesForUrl(url).filter {
             it.runAt == runAt &&
             it.sourceType != ModuleSourceType.CHROME_EXTENSION &&
-            it.sourceType != ModuleSourceType.USERSCRIPT
+            it.sourceType != ModuleSourceType.USERSCRIPT &&
+            it.sourceType != ModuleSourceType.GREASYFORK
         }
         if (matchingModules.isEmpty()) return ""
 
@@ -799,7 +800,8 @@ class ExtensionManager private constructor(private val context: Context) {
             module.runAt == runAt &&
             module.matchesUrl(url) &&
             module.sourceType != ModuleSourceType.CHROME_EXTENSION &&
-            module.sourceType != ModuleSourceType.USERSCRIPT
+            module.sourceType != ModuleSourceType.USERSCRIPT &&
+            module.sourceType != ModuleSourceType.GREASYFORK
         }
 
         if (targetModules.isEmpty()) return ""

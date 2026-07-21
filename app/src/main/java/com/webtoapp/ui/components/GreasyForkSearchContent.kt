@@ -554,7 +554,8 @@ suspend fun installGreasyForkScript(
         }
 
         val extensionManager = ExtensionManager.getInstance(appContext)
-        val addResult = extensionManager.addModule(parsed.module)
+        val greasyForkModule = parsed.module.copy(sourceType = com.webtoapp.core.extension.ModuleSourceType.GREASYFORK)
+        val addResult = extensionManager.addModule(greasyForkModule)
         addResult.onSuccess {
             Toast.makeText(
                 appContext,
