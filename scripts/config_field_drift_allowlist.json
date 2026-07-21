@@ -1,0 +1,64 @@
+{
+  "_doc": "Drift allowlist for scripts/check_config_field_drift.py. Every entry MUST have a non-empty 'reason'. Two valid exemption categories: (1) nested-object serialization — payload assigns a data class instance as a value, Gson recursively serializes its property names as JSON keys, so the field name only appears in the source class definition, not in ApkConfigJsonFactory.kt; (2) legitimately dead payload — written by payload but runtime path uses a different channel (e.g. networkSecurityConfig.xml) so ShellConfig intentionally does not declare it; (3) preview-only fields injected by ShellPreviewLauncher that exported APKs never populate. If a key here becomes stale (neither side references it) the script warns.",
+  "allowlist": [
+    {"key": "schemaVersion", "reason": "Payload metadata written by toShellPayload header; ShellConfig does not version-track, runtime ignores it."},
+    {"key": "networkTrustConfig", "reason": "Dead payload subtree — network trust config is embedded as networkSecurityConfig.xml by NetworkSecurityConfigBuilder at export, ShellConfig never reads it."},
+    {"key": "trustSystemCa", "reason": "Dead payload subtree — see networkTrustConfig; real runtime path is networkSecurityConfig.xml."},
+    {"key": "trustUserCa", "reason": "Dead payload subtree — see networkTrustConfig; real runtime path is networkSecurityConfig.xml."},
+    {"key": "customCaCertificates", "reason": "Dead payload subtree — see networkTrustConfig; real runtime path is networkSecurityConfig.xml."},
+    {"key": "cleartextTrafficPermitted", "reason": "Dead payload subtree — see networkTrustConfig; real runtime path is networkSecurityConfig.xml."},
+    {"key": "displayName", "reason": "Nested object field of CustomCaCertificate, serialized via customCaCertificates.map{...} in networkTrustConfigPayload. Dead payload subtree (see networkTrustConfig)."},
+    {"key": "sha256", "reason": "Nested object field of CustomCaCertificate, serialized via customCaCertificates.map{...} in networkTrustConfigPayload. Dead payload subtree (see networkTrustConfig)."},
+
+    {"key": "previewContentDir", "reason": "Preview-only field injected by ShellPreviewLauncher.buildPreviewConfig; exported APKs derive content dir from app type at runtime."},
+    {"key": "siteDirName", "reason": "Preview-only field injected by ShellPreviewLauncher.buildPreviewConfig for preview session isolation."},
+    {"key": "siteId", "reason": "Preview-only field injected by ShellPreviewLauncher.buildPreviewConfig for preview session isolation."},
+
+    {"key": "textColor", "reason": "Nested object field of LrcTheme; serialized via bgm.lrcTheme in BgmBlock → ShellConfig.bgmLrcTheme: LrcShellTheme."},
+    {"key": "highlightColor", "reason": "Nested object field of LrcTheme; see textColor."},
+    {"key": "fontSize", "reason": "Nested object field of LrcTheme; see textColor."},
+    {"key": "animationType", "reason": "Nested object field of LrcTheme; see textColor."},
+    {"key": "position", "reason": "Nested object field of LrcTheme; see textColor."},
+    {"key": "backgroundColor", "reason": "Nested object field of LrcTheme; see textColor. (Note: also collides with GalleryBlock.backgroundColor which IS in payload — collision is harmless.)"},
+
+    {"key": "coverAssetPath", "reason": "Nested object field of BgmItem; serialized via bgm.playlist: List<BgmItem> → ShellConfig.bgmPlaylist: List<BgmShellItem>."},
+    {"key": "lrcAssetPath", "reason": "Nested object field of BgmItem; see coverAssetPath."},
+
+    {"key": "assetPath", "reason": "Nested object field of GalleryItem; serialized via gallery.items: List<GalleryItem> → ShellConfig.galleryConfig.items: List<GalleryShellItem>."},
+    {"key": "duration", "reason": "Nested object field of GalleryItem; see assetPath."},
+    {"key": "thumbnailPath", "reason": "Nested object field of GalleryItem; see assetPath."},
+
+    {"key": "autoHide", "reason": "Nested object field of EmbeddedExtensionModuleUiConfig; serialized via embeddedExtensionModules[].uiConfig in EmbeddedExtensionModule.toPayload."},
+    {"key": "autoHideDelay", "reason": "Nested object field of EmbeddedExtensionModuleUiConfig; see autoHide."},
+    {"key": "initiallyHidden", "reason": "Nested object field of EmbeddedExtensionModuleUiConfig; see autoHide."},
+    {"key": "showOnlyOnMatch", "reason": "Nested object field of EmbeddedExtensionModuleUiConfig; see autoHide."},
+
+    {"key": "pattern", "reason": "Nested object field of EmbeddedUrlMatchRule; serialized via embeddedExtensionModules[].urlMatches in EmbeddedExtensionModule.toPayload."},
+    {"key": "isRegex", "reason": "Nested object field of EmbeddedUrlMatchRule; see pattern."},
+    {"key": "exclude", "reason": "Nested object field of EmbeddedUrlMatchRule; see pattern."},
+
+    {"key": "keepCpuAwake", "reason": "Nested object field of BackgroundRunConfig; payload returns the whole object via backgroundRunConfigPayload(): BackgroundRunConfig? → ShellConfig.backgroundRunConfig: BackgroundRunShellConfig?."},
+
+    {"key": "provider", "reason": "Nested object field of DnsApkConfig; payload assigns the whole object via \"dnsConfig\" to dns.config, Gson serializes DnsApkConfig.provider as JSON key → ShellConfig.dnsConfig: DnsShellConfig.provider."},
+    {"key": "customDohUrl", "reason": "Nested object field of DnsApkConfig; see provider."},
+    {"key": "dohMode", "reason": "Nested object field of DnsApkConfig; see provider."},
+    {"key": "bypassSystemDns", "reason": "Nested object field of DnsApkConfig; see provider."},
+    {"key": "echEnabled", "reason": "Nested object field of DnsApkConfig; see provider."},
+
+    {"key": "announcementAnimationEnabled", "reason": "Shell-internal default (true) for announcement dialog animation; no editor surface in WebApp/AnnouncementBlock, intentionally never flows from export."},
+    {"key": "announcementShowEmoji", "reason": "Shell-internal default (true) for announcement dialog emoji display; no editor surface in WebApp/AnnouncementBlock, intentionally never flows from export."},
+
+    {"key": "url", "reason": "Nested object field of MultiWebSiteShellConfig; serialized via multiWeb.sites: List<MultiWebSiteShellConfig> → ShellConfig.multiWebConfig.sites. Collides with top-level targetUrl but lives at different JSON path."},
+    {"key": "faviconUrl", "reason": "Nested object field of MultiWebSiteShellConfig; see url."},
+    {"key": "iconEmoji", "reason": "Nested object field of MultiWebSiteShellConfig; see url."},
+    {"key": "themeColor", "reason": "Nested object field of MultiWebSiteShellConfig; see url."},
+    {"key": "cssSelector", "reason": "Nested object field of MultiWebSiteShellConfig; see url."},
+    {"key": "linkSelector", "reason": "Nested object field of MultiWebSiteShellConfig; see url."},
+    {"key": "localFilePath", "reason": "Nested object field of MultiWebSiteShellConfig; see url."},
+    {"key": "siteProjectId", "reason": "Nested object field of MultiWebSiteShellConfig; see url."},
+    {"key": "siteShellConfig", "reason": "Nested object field of MultiWebSiteShellConfig (recursive ShellConfig?); see url."},
+    {"key": "sortIndex", "reason": "Nested object field of MultiWebSiteShellConfig; see url."},
+    {"key": "sourceAppId", "reason": "Nested object field of MultiWebSiteShellConfig; see url."},
+    {"key": "sourceProjectId", "reason": "Nested object field of MultiWebSiteShellConfig; see url."}
+  ]
+}

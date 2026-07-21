@@ -3468,7 +3468,8 @@ private fun WebApp.computeEffectiveTargetUrl(packageName: String): String = when
         com.webtoapp.data.model.NodeJsBuildMode.STATIC ->
             "nodejs://localhost"
         com.webtoapp.data.model.NodeJsBuildMode.API_BACKEND,
-        com.webtoapp.data.model.NodeJsBuildMode.FULLSTACK ->
+        com.webtoapp.data.model.NodeJsBuildMode.FULLSTACK,
+        com.webtoapp.data.model.NodeJsBuildMode.SSR ->
             "nodejs://localhost"
         else -> "file:///android_asset/nodejs_app/index.html"
     }
@@ -3703,6 +3704,7 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     enableShareBridge = webViewConfig.enableShareBridge,
     enableZoomPolyfill = webViewConfig.enableZoomPolyfill,
     enableCrossOriginIsolation = webViewConfig.enableCrossOriginIsolation,
+    hideUrlPreview = webViewConfig.hideUrlPreview,
     decodeBase64DeepLinks = webViewConfig.decodeBase64DeepLinks,
     decodeBase64Mode = webViewConfig.decodeBase64Mode.name,
     mediaAutoplayEnabled = webViewConfig.mediaAutoplayEnabled,
