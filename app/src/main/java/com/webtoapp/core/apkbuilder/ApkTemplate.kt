@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.webtoapp.core.forcedrun.ForcedRunConfig
+import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.BgmShellItem
 import com.webtoapp.core.shell.LrcShellTheme
 import java.io.*
@@ -87,16 +88,35 @@ class ApkTemplate(private val context: Context) {
 
     fun loadBitmap(iconPath: String): Bitmap? {
         return try {
-            if (iconPath.startsWith("/")) {
-                BitmapFactory.decodeFile(iconPath)
+            // Use BitmapFactory.Options to control sampling and get optimal resolution
+            val options = BitmapFactory.Options().apply {
+                inSampleSize = 1
+                inMutable = false
+                inDither = false
+            }
+            
+            val decodedBitmap = if (iconPath.startsWith("/")) {
+                BitmapFactory.decodeFile(iconPath, options)
             } else if (iconPath.startsWith("content://")) {
-                context.contentResolver.openInputStream(android.net.Uri.parse(iconPath))?.use {
-                    BitmapFactory.decodeStream(it)
+                context.contentResolver.openInputStream(android.net.Uri.parse(iconPath))?.use { inputStream ->
+                    BitmapFactory.decodeStream(inputStream, null, options)
                 }
             } else {
-                BitmapFactory.decodeFile(iconPath)
+                BitmapFactory.decodeFile(iconPath, options)
+            }
+            
+            decodedBitmap ?: return null
+            
+            // Ensure high quality ARGB_8888 format and recycle if needed
+            if (decodedBitmap.config != Bitmap.Config.ARGB_8888) {
+                val argbBitmap = decodedBitmap.copy(Bitmap.Config.ARGB_8888, false)
+                decodedBitmap.recycle()
+                argbBitmap
+            } else {
+                decodedBitmap
             }
         } catch (e: Exception) {
+            AppLogger.e("ApkTemplate", "Failed to load icon from $iconPath", e)
             null
         }
     }
@@ -106,9 +126,12 @@ class ApkTemplate(private val context: Context) {
         val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = android.graphics.Canvas(output)
 
-        val safeZoneSize = (size * 72f / 108f).toInt()
+        // Calculate the exact center padding for proper icon display
+        // Android adaptive icons use a 72% safe zone with 14% margin on each side
+        val safeZoneSize = (size * 0.72f).toInt()
         val padding = (size - safeZoneSize) / 2
 
+        // Use high-quality scaling with filtering enabled
         val scaled = Bitmap.createScaledBitmap(bitmap, safeZoneSize, safeZoneSize, true)
 
         val paint = android.graphics.Paint().apply {
@@ -127,6 +150,7 @@ class ApkTemplate(private val context: Context) {
     }
 
     fun createRoundIcon(bitmap: Bitmap, size: Int): ByteArray {
+        // Scale with high quality
         val scaled = Bitmap.createScaledBitmap(bitmap, size, size, true)
         val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
 
