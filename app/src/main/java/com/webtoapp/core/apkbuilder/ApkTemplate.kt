@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.webtoapp.core.forcedrun.ForcedRunConfig
+import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.BgmShellItem
 import com.webtoapp.core.shell.LrcShellTheme
 import java.io.*
@@ -97,6 +98,7 @@ class ApkTemplate(private val context: Context) {
                 BitmapFactory.decodeFile(iconPath)
             }
         } catch (e: Exception) {
+            AppLogger.e("ApkTemplate", "Failed to load icon from $iconPath", e)
             null
         }
     }
@@ -106,9 +108,12 @@ class ApkTemplate(private val context: Context) {
         val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = android.graphics.Canvas(output)
 
+        // Calculate the exact center padding for proper icon display
+        // Android adaptive icons use a 108-unit canvas with a 72-unit safe zone.
         val safeZoneSize = (size * 72f / 108f).toInt()
         val padding = (size - safeZoneSize) / 2
 
+        // Use high-quality scaling with filtering enabled
         val scaled = Bitmap.createScaledBitmap(bitmap, safeZoneSize, safeZoneSize, true)
 
         val paint = android.graphics.Paint().apply {
@@ -127,6 +132,7 @@ class ApkTemplate(private val context: Context) {
     }
 
     fun createRoundIcon(bitmap: Bitmap, size: Int): ByteArray {
+        // Scale with high quality
         val scaled = Bitmap.createScaledBitmap(bitmap, size, size, true)
         val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
 

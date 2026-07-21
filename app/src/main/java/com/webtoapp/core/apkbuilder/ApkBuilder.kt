@@ -1134,7 +1134,12 @@ class ApkBuilder(private val context: Context) {
 
                         iconBitmap != null && (isIconEntry(entry.name) || discoveredOldIconPaths.contains(entry.name)) -> {
 
-                            replaceIconEntry(zipOut, entry.name, iconBitmap)
+                            if (discoveredOldIconPaths.contains(entry.name)) {
+                                val iconBytes = template.createAdaptiveForegroundIcon(iconBitmap, 432)
+                                writeEntryDeflated(zipOut, entry.name, iconBytes)
+                            } else {
+                                replaceIconEntry(zipOut, entry.name, iconBitmap)
+                            }
                             replacedIconPaths.add(entry.name)
                         }
 
