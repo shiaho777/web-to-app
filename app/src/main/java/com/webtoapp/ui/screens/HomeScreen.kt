@@ -46,6 +46,7 @@ import coil.decode.VideoFrameDecoder
 import coil.request.ImageRequest
 import com.webtoapp.core.apkbuilder.ApkBuilder
 import com.webtoapp.core.apkbuilder.ApkExportPreflight
+import com.webtoapp.core.apkbuilder.ExportRuntimeEnsure
 import com.webtoapp.core.apkbuilder.ApkExportPreflightReport
 import com.webtoapp.core.apkbuilder.BuildResult
 import com.webtoapp.core.i18n.Strings
@@ -1716,6 +1717,8 @@ fun BuildApkDialog(
     var analysisReport by remember(webApp.id) { mutableStateOf<com.webtoapp.core.apkbuilder.ApkAnalyzer.AnalysisReport?>(null) }
     var buildFailureReport by remember(webApp.id) { mutableStateOf<BuildFailureReport?>(null) }
     var preflightReport by remember(webApp.id) { mutableStateOf<ApkExportPreflightReport?>(null) }
+    var isEnsuringRuntime by remember(webApp.id) { mutableStateOf(false) }
+    var ensureRuntimeText by remember(webApp.id) { mutableStateOf<String?>(null) }
 
     var encryptionConfig by remember(webApp.id) {
         mutableStateOf(webApp.apkExportConfig?.encryptionConfig ?: com.webtoapp.data.model.ApkEncryptionConfig())
@@ -1793,7 +1796,7 @@ fun BuildApkDialog(
                 com.webtoapp.data.model.AppType.WORDPRESS -> Strings.preparing
                 else -> Strings.preparing
             }
-            val ensureOk = com.webtoapp.core.apkbuilder.ExportRuntimeEnsure.ensure(
+            val ensureOk = ExportRuntimeEnsure.ensure(
                 context,
                 webAppWithConfig.appType
             )
@@ -1841,7 +1844,34 @@ fun BuildApkDialog(
         notificationConfig,
         selectedEngineType
     ) {
-        preflightReport = ApkExportPreflight.check(context, currentBuildConfig())
+        val config = currentBuildConfig()
+        if (ExportRuntimeEnsure.needsEnsure(context, config.appType)) {
+            isEnsuringRuntime = true
+            ensureRuntimeText = when (config.appType) {
+                com.webtoapp.data.model.AppType.PYTHON_APP -> Strings.preparingPythonEnv
+                com.webtoapp.data.model.AppType.NODEJS_APP -> Strings.preparingNodeEnv
+                com.webtoapp.data.model.AppType.PHP_APP,
+                com.webtoapp.data.model.AppType.WORDPRESS -> Strings.preparing
+                else -> Strings.preparing
+            }
+            val ensureOk = ExportRuntimeEnsure.ensure(context, config.appType)
+            if (!ensureOk) {
+                ensureRuntimeText = when (config.appType) {
+                    com.webtoapp.data.model.AppType.PYTHON_APP -> Strings.pythonRuntimeDownloadFailed
+                    com.webtoapp.data.model.AppType.NODEJS_APP -> Strings.njsDownloadFailed
+                    com.webtoapp.data.model.AppType.PHP_APP,
+                    com.webtoapp.data.model.AppType.WORDPRESS -> Strings.wpDownloadFailed
+                    else -> Strings.preparing
+                }
+            } else {
+                ensureRuntimeText = null
+            }
+            isEnsuringRuntime = false
+        } else {
+            ensureRuntimeText = null
+            isEnsuringRuntime = false
+        }
+        preflightReport = ApkExportPreflight.check(context, config)
     }
 
     val dialogScrollState = rememberScrollState()
@@ -1981,8 +2011,41 @@ fun BuildApkDialog(
                     }
                 }
 
-                preflightReport?.let { report ->
-                    ApkExportPreflightPanel(report = report)
+                if (isEnsuringRuntime || ensureRuntimeText != null) {
+                    Surface(
+                        shape = RoundedCornerShape(WtaRadius.Control),
+                        color = if (isEnsuringRuntime) {
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+                        } else {
+                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f)
+                        }
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = ensureRuntimeText ?: Strings.preparing,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (isEnsuringRuntime) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onErrorContainer
+                                }
+                            )
+                            if (isEnsuringRuntime) {
+                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            }
+                        }
+                    }
+                }
+
+                if (!isEnsuringRuntime) {
+                    preflightReport?.let { report ->
+                        ApkExportPreflightPanel(report = report)
+                    }
                 }
 
                 if (isBuilding) {
@@ -2154,7 +2217,8 @@ fun BuildApkDialog(
                             } else {
                                 launchBuild()
                             }
-                        }
+                        },
+                        enabled = !isEnsuringRuntime
                     ) {
                         val icon = if (builtApk != null) Icons.Outlined.GetApp else Icons.Outlined.Build
                         Icon(icon, null, Modifier.size(18.dp))
