@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.ApkRuntimePermissions
+import com.webtoapp.data.model.PermissionFeatureReason
 import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.components.IconSwitchCard
 import com.webtoapp.ui.components.PremiumButton
@@ -248,13 +249,17 @@ fun PermissionConfigPanel(
     permissions: ApkRuntimePermissions,
     onPermissionsChange: (ApkRuntimePermissions) -> Unit,
     modifier: Modifier = Modifier,
-    showDescription: Boolean = true
+    showDescription: Boolean = true,
+    featureReasons: Map<String, List<PermissionFeatureReason>> = emptyMap()
 ) {
     val context = LocalContext.current
     var schemeName by remember { mutableStateOf("") }
     var savedPresets by remember { mutableStateOf(PermissionPresetStorage.load(context)) }
     val enabledCount = countEnabledPermissions(permissions)
     val conflicts = detectConflicts(permissions)
+    val autoHintCount = featureReasons.count { (key, reasons) ->
+        reasons.isNotEmpty() && isPermissionKeyEnabled(permissions, key)
+    }
 
     Column(
         modifier = modifier,
@@ -277,6 +282,32 @@ fun PermissionConfigPanel(
                         text = Strings.permissionConfigDesc,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        if (autoHintCount > 0) {
+            EnhancedElevatedCard(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f)
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Icon(
+                        Icons.Outlined.AutoAwesome,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = Strings.permissionAutoEnabledSummary.format(autoHintCount),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
             }
@@ -396,7 +427,8 @@ fun PermissionConfigPanel(
                 PermissionGroupCard(
                     group = group,
                     permissions = permissions,
-                    onPermissionsChange = onPermissionsChange
+                    onPermissionsChange = onPermissionsChange,
+                    featureReasons = featureReasons
                 )
             }
         }
@@ -569,7 +601,8 @@ private fun PermissionSchemeCard(
 private fun PermissionGroupCard(
     group: PermissionGroup,
     permissions: ApkRuntimePermissions,
-    onPermissionsChange: (ApkRuntimePermissions) -> Unit
+    onPermissionsChange: (ApkRuntimePermissions) -> Unit,
+    featureReasons: Map<String, List<PermissionFeatureReason>> = emptyMap()
 ) {
     val enabledInGroup = group.items.count { it.checked(permissions) }
     var expanded by rememberSaveable { mutableStateOf(enabledInGroup > 0) }
@@ -650,12 +683,14 @@ private fun PermissionGroupCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     group.items.forEach { item ->
+                        val reasons = featureReasons[item.key].orEmpty()
                         PermissionSwitch(
                             key = item.key,
                             icon = item.icon,
                             title = item.title(),
                             subtitle = item.subtitle(),
                             checked = item.checked(permissions),
+                            featureReasonLabels = reasons.map { it.displayLabel() },
                             onCheckedChange = { checked ->
                                 onPermissionsChange(item.update(permissions, checked))
                             }
@@ -674,9 +709,26 @@ private fun PermissionSwitch(
     title: String,
     subtitle: String,
     checked: Boolean,
+    featureReasonLabels: List<String> = emptyList(),
     onCheckedChange: (Boolean) -> Unit
 ) {
     val isDangerous = key in DANGEROUS_PERMISSION_KEYS
+    val autoHint = if (featureReasonLabels.isNotEmpty()) {
+        Strings.permissionAutoEnabledBy.format(featureReasonLabels.joinToString(" · "))
+    } else {
+        null
+    }
+    val combinedSubtitle = buildString {
+        append(subtitle)
+        if (isDangerous) {
+            append('\n')
+            append(Strings.permissionDangerTag)
+        }
+        if (autoHint != null) {
+            append('\n')
+            append(autoHint)
+        }
+    }
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         IconSwitchCard(
@@ -684,7 +736,7 @@ private fun PermissionSwitch(
                 append(title)
                 if (isDangerous) append(" ⚠")
             },
-            subtitle = if (isDangerous) "$subtitle\n${Strings.permissionDangerTag}" else subtitle,
+            subtitle = combinedSubtitle,
             icon = icon,
             checked = checked,
             onCheckedChange = onCheckedChange
@@ -698,6 +750,61 @@ private fun PermissionSwitch(
             )
         }
     }
+}
+
+private fun PermissionFeatureReason.displayLabel(): String = when (this) {
+    PermissionFeatureReason.BACKGROUND_RUN -> Strings.backgroundRunTitle
+    PermissionFeatureReason.NOTIFICATION -> Strings.notificationConfigTitle
+    PermissionFeatureReason.NATIVE_BRIDGE_NOTIFICATION -> Strings.nativeBridgeTitle
+    PermissionFeatureReason.NOTIFICATION_POLYFILL -> Strings.notificationPolyfillTitle
+    PermissionFeatureReason.GEOLOCATION -> Strings.geolocationTitle
+    PermissionFeatureReason.FLOATING_WINDOW -> Strings.floatingWindowTitle
+    PermissionFeatureReason.FORCED_RUN -> Strings.forcedRunSettings
+    PermissionFeatureReason.BGM -> Strings.bgmTitle
+    PermissionFeatureReason.BOOT_START -> Strings.autoStartSettings
+    PermissionFeatureReason.SCREEN_AWAKE -> Strings.screenAwakeModeLabel
+    PermissionFeatureReason.CUSTOM_DOWNLOAD -> Strings.downloadLocationCustom
+    PermissionFeatureReason.DEVICE_FLASHLIGHT -> Strings.enableDeviceActions
+    PermissionFeatureReason.DEVICE_VIBRATION -> Strings.enableDeviceActions
+    PermissionFeatureReason.DEVICE_WIFI -> Strings.enableDeviceActions
+}
+
+private fun isPermissionKeyEnabled(permissions: ApkRuntimePermissions, key: String): Boolean = when (key) {
+    "camera" -> permissions.camera
+    "microphone" -> permissions.microphone
+    "location" -> permissions.location
+    "notifications" -> permissions.notifications
+    "readExternalStorage" -> permissions.readExternalStorage
+    "writeExternalStorage" -> permissions.writeExternalStorage
+    "readMediaImages" -> permissions.readMediaImages
+    "readMediaVideo" -> permissions.readMediaVideo
+    "readMediaAudio" -> permissions.readMediaAudio
+    "bluetooth" -> permissions.bluetooth
+    "nfc" -> permissions.nfc
+    "wifiState" -> permissions.wifiState
+    "bodySensors" -> permissions.bodySensors
+    "activityRecognition" -> permissions.activityRecognition
+    "readPhoneState" -> permissions.readPhoneState
+    "callPhone" -> permissions.callPhone
+    "readContacts" -> permissions.readContacts
+    "writeContacts" -> permissions.writeContacts
+    "readCalendar" -> permissions.readCalendar
+    "writeCalendar" -> permissions.writeCalendar
+    "readSms" -> permissions.readSms
+    "sendSms" -> permissions.sendSms
+    "receiveSms" -> permissions.receiveSms
+    "readCallLog" -> permissions.readCallLog
+    "writeCallLog" -> permissions.writeCallLog
+    "processOutgoingCalls" -> permissions.processOutgoingCalls
+    "foregroundService" -> permissions.foregroundService
+    "wakeLock" -> permissions.wakeLock
+    "requestIgnoreBatteryOptimizations" -> permissions.requestIgnoreBatteryOptimizations
+    "bootCompleted" -> permissions.bootCompleted
+    "vibration" -> permissions.vibration
+    "installPackages" -> permissions.installPackages
+    "requestDeletePackages" -> permissions.requestDeletePackages
+    "systemAlertWindow" -> permissions.systemAlertWindow
+    else -> false
 }
 
 private fun countEnabledPermissions(permissions: ApkRuntimePermissions): Int {

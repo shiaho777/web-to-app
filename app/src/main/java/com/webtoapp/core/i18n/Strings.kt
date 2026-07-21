@@ -4326,6 +4326,8 @@ object Strings {
     val permissionConfigDesc: String get() = StringsE.permissionConfigDesc
     val permissionEnabledCount: String get() = StringsE.permissionEnabledCount
     val permissionClearAll: String get() = StringsE.permissionClearAll
+    val permissionAutoEnabledBy: String get() = StringsE.permissionAutoEnabledBy
+    val permissionAutoEnabledSummary: String get() = StringsE.permissionAutoEnabledSummary
     val permissionConfigButton: String get() = StringsE.permissionConfigButton
     val permissionReadExternalStorage: String get() = StringsE.permissionReadExternalStorage
     val permissionReadExternalStorageDesc: String get() = StringsE.permissionReadExternalStorageDesc
@@ -58693,6 +58695,30 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Очистить все"
         AppLanguage.JAPANESE -> "すべてクリア"
         AppLanguage.KOREAN -> "모두 지우기"
+    }
+    val permissionAutoEnabledBy: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "因以下功能自动启用：%s"
+        AppLanguage.ENGLISH -> "Auto-enabled by: %s"
+        AppLanguage.ARABIC -> "مُفعَّل تلقائياً بواسطة: %s"
+        AppLanguage.PORTUGUESE -> "Ativado automaticamente por: %s"
+        AppLanguage.SPANISH -> "Activado automáticamente por: %s"
+        AppLanguage.FRENCH -> "Activé automatiquement par : %s"
+        AppLanguage.GERMAN -> "Automatisch aktiviert durch: %s"
+        AppLanguage.RUSSIAN -> "Автоматически включено: %s"
+        AppLanguage.JAPANESE -> "次の機能により自動有効：%s"
+        AppLanguage.KOREAN -> "다음 기능으로 자동 활성화: %s"
+    }
+    val permissionAutoEnabledSummary: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "有 %d 项权限因已开启的功能自动勾选，可在下方查看来源。关闭对应功能后可手动取消。"
+        AppLanguage.ENGLISH -> "%d permission(s) were auto-checked by enabled features. See sources below. Turn off the related feature to clear them."
+        AppLanguage.ARABIC -> "تم تحديد %d إذن تلقائياً بواسطة الميزات المفعّلة. انظر المصادر أدناه. أوقف الميزة ذات الصلة لإلغاء التحديد."
+        AppLanguage.PORTUGUESE -> "%d permissão(ões) foram marcadas automaticamente por recursos ativos. Veja as origens abaixo. Desative o recurso relacionado para limpar."
+        AppLanguage.SPANISH -> "%d permiso(s) se marcaron automáticamente por funciones activas. Vea los orígenes abajo. Desactive la función relacionada para quitarlos."
+        AppLanguage.FRENCH -> "%d permission(s) ont été cochées automatiquement par des fonctions activées. Voir les sources ci-dessous. Désactivez la fonction liée pour les retirer."
+        AppLanguage.GERMAN -> "%d Berechtigung(en) wurden durch aktivierte Funktionen automatisch markiert. Quellen siehe unten. Schalten Sie die zugehörige Funktion aus, um sie zu entfernen."
+        AppLanguage.RUSSIAN -> "%d разрешение(й) отмечено автоматически включёнными функциями. Источники ниже. Отключите связанную функцию, чтобы снять отметку."
+        AppLanguage.JAPANESE -> "%d 件の権限が有効な機能により自動チェックされました。下に出典を表示。対応機能をオフにすると解除できます。"
+        AppLanguage.KOREAN -> "활성화된 기능으로 %d개 권한이 자동 선택되었습니다. 아래 출처를 확인하세요. 관련 기능을 끄면 해제할 수 있습니다."
     }
     val permissionConfigButton: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "配置权限"
