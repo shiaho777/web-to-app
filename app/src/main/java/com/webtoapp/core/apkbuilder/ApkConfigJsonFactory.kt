@@ -75,6 +75,7 @@ internal object ApkConfigJsonFactory {
         "splashLandscape" to splash.landscape,
         "splashFillScreen" to splash.fillScreen,
         "splashEnableAudio" to splash.enableAudio,
+        "splashMediaPath" to splash.mediaPath,
         "webViewConfig" to webViewConfigPayload(),
         "appType" to meta.appType,
         "siteAssetBase" to when (meta.appType) {

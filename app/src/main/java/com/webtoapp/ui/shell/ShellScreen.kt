@@ -3,6 +3,7 @@ package com.webtoapp.ui.shell
 import android.annotation.SuppressLint
 import android.content.pm.ActivityInfo
 import android.net.Uri
+import java.io.File
 import android.view.View
 import android.webkit.*
 import androidx.compose.animation.AnimatedVisibility
@@ -101,8 +102,10 @@ fun ShellScreen(
                 true
             } catch (e: Exception) { false }
 
-            val exists = hasEncrypted || hasNormal
-            AppLogger.d("ShellActivity", "同步检查: 启动画面媒体 encrypted=$hasEncrypted, normal=$hasNormal, exists=$exists")
+            val hasPreviewPath = config.splashMediaPath?.let { File(it).exists() } ?: false
+
+            val exists = hasEncrypted || hasNormal || hasPreviewPath
+            AppLogger.d("ShellActivity", "同步检查: 启动画面媒体 encrypted=$hasEncrypted, normal=$hasNormal, previewPath=${config.splashMediaPath}, exists=$exists")
             exists
         } else false
     }
@@ -459,6 +462,7 @@ fun ShellScreen(
             videoEndMs = config.splashVideoEndMs,
             fillScreen = config.splashFillScreen,
             enableAudio = config.splashEnableAudio,
+            mediaPath = config.splashMediaPath,
 
             onSkip = if (config.splashClickToSkip) { closeSplash } else null,
 

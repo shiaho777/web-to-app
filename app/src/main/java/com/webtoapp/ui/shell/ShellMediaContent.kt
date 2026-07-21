@@ -28,6 +28,7 @@ fun ShellSplashOverlay(
     videoEndMs: Long = 5000,
     fillScreen: Boolean = true,
     enableAudio: Boolean = false,
+    mediaPath: String? = null,
     onSkip: (() -> Unit)?,
     onComplete: (() -> Unit)? = null
 ) {
@@ -60,12 +61,17 @@ fun ShellSplashOverlay(
 
                 var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
-                LaunchedEffect(assetPath) {
+                LaunchedEffect(assetPath, mediaPath) {
                     bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                         try {
-                            val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
-                            val imageBytes = decryptor.loadAsset(assetPath)
-                            android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                            val previewFile = mediaPath?.let { java.io.File(it) }
+                            if (previewFile != null && previewFile.exists()) {
+                                android.graphics.BitmapFactory.decodeFile(previewFile.absolutePath)
+                            } else {
+                                val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
+                                val imageBytes = decryptor.loadAsset(assetPath)
+                                android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                            }
                         } catch (e: Exception) {
                             AppLogger.e("ShellSplash", "Failed to load splash image", e)
                             null
@@ -118,6 +124,25 @@ fun ShellSplashOverlay(
                             holder.addCallback(object : android.view.SurfaceHolder.Callback {
                                 override fun surfaceCreated(holder: android.view.SurfaceHolder) {
                                     try {
+
+                                        val previewFile = mediaPath?.let { java.io.File(it) }
+                                        if (previewFile != null && previewFile.exists()) {
+                                            mediaPlayer = android.media.MediaPlayer().apply {
+                                                setDataSource(previewFile.absolutePath)
+                                                setSurface(holder.surface)
+                                                val volume = if (enableAudio) 1f else 0f
+                                                setVolume(volume, volume)
+                                                isLooping = false
+                                                setOnPreparedListener {
+                                                    seekTo(videoStartMs.toInt())
+                                                    start()
+                                                    isPlayerReady = true
+                                                }
+                                                setOnCompletionListener { onComplete?.invoke() }
+                                                prepareAsync()
+                                            }
+                                            return
+                                        }
 
                                         val encryptedPath = "$assetPath.enc"
                                         val hasEncrypted = try {

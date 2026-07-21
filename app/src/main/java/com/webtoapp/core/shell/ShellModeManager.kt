@@ -292,6 +292,9 @@ data class ShellConfig(
     @SerializedName("splashEnableAudio")
     val splashEnableAudio: Boolean = false,
 
+    @SerializedName("splashMediaPath")
+    val splashMediaPath: String? = null,
+
     @SerializedName("appType")
     val appType: String = "WEB",
 
