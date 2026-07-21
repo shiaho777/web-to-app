@@ -474,7 +474,7 @@ fun ModuleMarketScreen(
                         installProgress = installProgress,
                         favorites = gfFavorites,
                         installedUserScriptNames = installedModules
-                            .filter { it.sourceType == ModuleSourceType.USERSCRIPT }
+                            .filter { it.sourceType == ModuleSourceType.USERSCRIPT || it.sourceType == ModuleSourceType.GREASYFORK }
                             .map { it.name }
                             .toSet(),
                         onInstall = { result ->
