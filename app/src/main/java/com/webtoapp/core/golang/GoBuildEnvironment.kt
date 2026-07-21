@@ -118,7 +118,9 @@ object GoBuildEnvironment {
         processEnv["GOCACHE"] = buildCache.absolutePath
         processEnv["GOMODCACHE"] = GoToolchainManager.getModCacheDir(context).absolutePath
         processEnv["HOME"] = context.filesDir.absolutePath
-        processEnv["TMPDIR"] = context.cacheDir.absolutePath
+        val tempDir = GoToolchainManager.selectTempDir(context)
+        processEnv["TMPDIR"] = tempDir.absolutePath
+        processEnv["GOTMPDIR"] = tempDir.absolutePath
 
         processEnv["GOOS"] = processEnv["GOOS"] ?: "android"
         processEnv["GOARCH"] = processEnv["GOARCH"] ?: "arm64"
@@ -143,6 +145,14 @@ object GoBuildEnvironment {
         ).filter { it.isNotBlank() }.joinToString(File.pathSeparator)
     }
 
+    fun looksLikeNoSpace(stderr: String, stdout: String = ""): Boolean {
+        val blob = (stderr + "\n" + stdout).lowercase()
+        return "no space left on device" in blob ||
+            "enospc" in blob ||
+            "not enough space" in blob ||
+            "disk quota exceeded" in blob
+    }
+
     suspend fun buildProject(
         context: Context,
         projectDir: File,
@@ -152,6 +162,46 @@ object GoBuildEnvironment {
     ): File? = withContext(Dispatchers.IO) {
         val name = binaryName.ifBlank { projectDir.name }
 
+        val tempDir = GoToolchainManager.prepareForBuild(context)
+        onOutput("[env] TMPDIR=${tempDir.absolutePath} free≈${GoToolchainManager.usableBytes(tempDir) / 1024 / 1024}MB")
+        if (GoToolchainManager.usableBytes(tempDir) < 64L * 1024 * 1024) {
+            onOutput("[go] ${Strings.goBuildNoSpace}")
+            AppLogger.e(TAG, "insufficient free space for Go build under ${tempDir.absolutePath}")
+            return@withContext null
+        }
+
+        val lastStderr = StringBuilder()
+        val wrapOutput: (String) -> Unit = { line ->
+            lastStderr.appendLine(line)
+            onOutput(line)
+        }
+
+        val first = buildProjectOnce(context, projectDir, name, env, wrapOutput)
+        if (first != null) return@withContext first
+
+        if (!looksLikeNoSpace(lastStderr.toString())) {
+            return@withContext null
+        }
+
+        onOutput("[go] ${Strings.goBuildNoSpace}")
+        val freed = GoToolchainManager.clearBuildArtifactCaches(context)
+        onOutput("[go] ${Strings.goBuildStreamCleaningCache.format((freed / 1024 / 1024).coerceAtLeast(0).toInt())}")
+        onOutput("[go] ${Strings.goBuildStreamRetryAfterClean}")
+        lastStderr.clear()
+        val second = buildProjectOnce(context, projectDir, name, env, wrapOutput)
+        if (second == null && looksLikeNoSpace(lastStderr.toString())) {
+            onOutput("[go] ${Strings.goBuildNoSpace}")
+        }
+        second
+    }
+
+    private suspend fun buildProjectOnce(
+        context: Context,
+        projectDir: File,
+        name: String,
+        env: Map<String, String>,
+        onOutput: (String) -> Unit,
+    ): File? {
         val envProbe = executeGo(
             context = context,
             arguments = listOf("env", "GOPROXY", "GOSUMDB", "GO111MODULE", "GOFLAGS"),
@@ -191,7 +241,7 @@ object GoBuildEnvironment {
                     .forEach { onOutput("[stderr] $it") }
 
                 onOutput("[hint] 网络受限时可在电脑上跑 `go mod vendor`，把生成的 vendor/ 一并导入项目即可离线构建")
-                return@withContext null
+                return null
             }
             onOutput("[go] 2/3 预下载依赖 (go mod download)")
             val downloadResult = executeGo(
@@ -231,14 +281,17 @@ object GoBuildEnvironment {
         if (buildResult.exitCode != 0 || !output.exists()) {
             AppLogger.e(TAG, "go build failed: exit=${buildResult.exitCode}\n${buildResult.stderr}")
 
+            if (looksLikeNoSpace(buildResult.stderr, buildResult.stdout)) {
+                onOutput("[go] ${Strings.goBuildNoSpace}")
+            }
             onOutput("[go] ${Strings.goBuildStreamFailedExit.format(buildResult.exitCode)}")
             buildResult.stderr.lineSequence()
                 .filter { it.isNotBlank() }
                 .forEach { onOutput("[stderr] $it") }
-            return@withContext null
+            return null
         }
         output.setExecutable(true, false)
         AppLogger.i(TAG, "Go 项目构建成功: ${output.absolutePath} (${output.length() / 1024} KB)")
-        output
+        return output
     }
 }
