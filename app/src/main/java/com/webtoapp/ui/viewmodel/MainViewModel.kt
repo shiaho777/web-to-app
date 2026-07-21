@@ -188,7 +188,7 @@ class MainViewModel(
     }
 
     fun updateEditState(update: EditState.() -> EditState) {
-        _editState.value = _editState.value.update()
+        _editState.value = _editState.value.update().withRuntimePermissionsSyncedFromFeatures()
         _hasUnsavedChanges.value = true
     }
 

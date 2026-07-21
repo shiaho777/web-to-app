@@ -103,7 +103,60 @@ class ExportSecurityRegressionTest {
     }
 
     @Test
-    fun `plain web export only injects network permissions by default`() {
+    fun `default download does not inject write storage or notifications`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val builder = ApkBuilder(context)
+        val method = ApkBuilder::class.java.getDeclaredMethod(
+            "buildRequiredPermissions",
+            ApkConfig::class.java
+        ).apply { isAccessible = true }
+
+        val config = WebApp(
+            name = "Downloader",
+            url = "https://example.com",
+            appType = AppType.WEB,
+            apkExportConfig = ApkExportConfig()
+        ).toApkConfig("com.example.downloader", context)
+
+        @Suppress("UNCHECKED_CAST")
+        val permissions = method.invoke(builder, config) as List<String>
+
+        assertThat(permissions).doesNotContain("android.permission.POST_NOTIFICATIONS")
+        assertThat(permissions).doesNotContain("android.permission.WRITE_EXTERNAL_STORAGE")
+        assertThat(permissions).doesNotContain("android.permission.CAMERA")
+        assertThat(permissions).contains("android.permission.DOWNLOAD_WITHOUT_NOTIFICATION")
+    }
+
+    @Test
+    fun `background run syncs permissions into visible runtime config before export`() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val builder = ApkBuilder(context)
+        val method = ApkBuilder::class.java.getDeclaredMethod(
+            "buildRequiredPermissions",
+            ApkConfig::class.java
+        ).apply { isAccessible = true }
+
+        val config = WebApp(
+            name = "BgApp",
+            url = "https://example.com",
+            appType = AppType.WEB,
+            webViewConfig = WebViewConfig(downloadEnabled = false),
+            apkExportConfig = ApkExportConfig(backgroundRunEnabled = true)
+        ).toApkConfig("com.example.bgapp", context)
+
+        assertThat(config.runtimePermissions.notifications).isTrue()
+        assertThat(config.runtimePermissions.foregroundService).isTrue()
+
+        @Suppress("UNCHECKED_CAST")
+        val permissions = method.invoke(builder, config) as List<String>
+        assertThat(permissions).contains("android.permission.POST_NOTIFICATIONS")
+        assertThat(permissions).contains("android.permission.FOREGROUND_SERVICE")
+        assertThat(permissions).contains("android.permission.WAKE_LOCK")
+        assertThat(permissions).contains("android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS")
+    }
+
+    @Test
+        fun `plain web export only injects network permissions by default`() {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val builder = ApkBuilder(context)
         val method = ApkBuilder::class.java.getDeclaredMethod(

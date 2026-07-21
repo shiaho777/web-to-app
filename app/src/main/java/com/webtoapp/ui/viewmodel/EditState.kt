@@ -12,6 +12,7 @@ import com.webtoapp.data.model.ActivationDialogConfig
 import com.webtoapp.data.model.AdConfig
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.data.model.ApkExportConfig
+import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.data.model.AppType
 import com.webtoapp.data.model.AutoStartConfig
 import com.webtoapp.data.model.BgmConfig
@@ -65,46 +66,64 @@ data class EditState(
     val deviceDisguiseConfig: DeviceDisguiseConfig = DeviceDisguiseConfig(),
 )
 
-fun WebApp.toEditState(): EditState = EditState(
-    name = name,
-    url = url,
-    iconUri = iconPath?.let(Uri::parse),
-    savedIconPath = iconPath,
-    appType = appType,
-    mediaConfig = mediaConfig,
-    htmlConfig = htmlConfig,
-    activationEnabled = activationEnabled,
-    activationCodeList = activationCodeList,
-    activationRequireEveryTime = activationRequireEveryTime,
-    activationDialogConfig = activationDialogConfig ?: ActivationDialogConfig(),
-    activationRemoteConfig = activationRemoteConfig,
-    adsEnabled = adsEnabled,
-    adConfig = adConfig ?: AdConfig(),
-    announcementEnabled = announcementEnabled,
-    announcement = announcement ?: Announcement(),
-    adBlockEnabled = adBlockEnabled,
-    adBlockRules = adBlockRules,
-    adBlockSubscriptions = adBlockSubscriptions,
-    webViewConfig = webViewConfig,
-    splashEnabled = splashEnabled,
-    splashConfig = splashConfig ?: SplashConfig(),
-    splashMediaUri = splashConfig?.mediaPath?.let(Uri::parse),
-    savedSplashPath = splashConfig?.mediaPath,
-    bgmEnabled = bgmEnabled,
-    bgmConfig = bgmConfig ?: BgmConfig(),
-    apkExportConfig = apkExportConfig ?: ApkExportConfig(),
-    themeType = themeType,
-    translateEnabled = translateEnabled,
-    translateConfig = translateConfig ?: TranslateConfig(),
-    extensionModuleEnabled = extensionEnabled,
-    extensionModuleIds = extensionModuleIds.toSet(),
-    extensionFabIcon = extensionFabIcon ?: "",
-    autoStartConfig = autoStartConfig,
-    forcedRunConfig = forcedRunConfig,
-    blackTechConfig = blackTechConfig,
-    disguiseConfig = disguiseConfig,
-    deviceDisguiseConfig = deviceDisguiseConfig ?: DeviceDisguiseConfig(),
-)
+fun WebApp.toEditState(): EditState {
+    val synced = withRuntimePermissionsSyncedFromFeatures()
+    return EditState(
+        name = synced.name,
+        url = synced.url,
+        iconUri = synced.iconPath?.let(Uri::parse),
+        savedIconPath = synced.iconPath,
+        appType = synced.appType,
+        mediaConfig = synced.mediaConfig,
+        htmlConfig = synced.htmlConfig,
+        activationEnabled = synced.activationEnabled,
+        activationCodeList = synced.activationCodeList,
+        activationRequireEveryTime = synced.activationRequireEveryTime,
+        activationDialogConfig = synced.activationDialogConfig ?: ActivationDialogConfig(),
+        activationRemoteConfig = synced.activationRemoteConfig,
+        adsEnabled = synced.adsEnabled,
+        adConfig = synced.adConfig ?: AdConfig(),
+        announcementEnabled = synced.announcementEnabled,
+        announcement = synced.announcement ?: Announcement(),
+        adBlockEnabled = synced.adBlockEnabled,
+        adBlockRules = synced.adBlockRules,
+        adBlockSubscriptions = synced.adBlockSubscriptions,
+        webViewConfig = synced.webViewConfig,
+        splashEnabled = synced.splashEnabled,
+        splashConfig = synced.splashConfig ?: SplashConfig(),
+        splashMediaUri = synced.splashConfig?.mediaPath?.let(Uri::parse),
+        savedSplashPath = synced.splashConfig?.mediaPath,
+        bgmEnabled = synced.bgmEnabled,
+        bgmConfig = synced.bgmConfig ?: BgmConfig(),
+        apkExportConfig = synced.apkExportConfig ?: ApkExportConfig(),
+        themeType = synced.themeType,
+        translateEnabled = synced.translateEnabled,
+        translateConfig = synced.translateConfig ?: TranslateConfig(),
+        extensionModuleEnabled = synced.extensionEnabled,
+        extensionModuleIds = synced.extensionModuleIds.toSet(),
+        extensionFabIcon = synced.extensionFabIcon ?: "",
+        autoStartConfig = synced.autoStartConfig,
+        forcedRunConfig = synced.forcedRunConfig,
+        blackTechConfig = synced.blackTechConfig,
+        disguiseConfig = synced.disguiseConfig,
+        deviceDisguiseConfig = synced.deviceDisguiseConfig ?: DeviceDisguiseConfig(),
+    )
+}
+
+fun EditState.withRuntimePermissionsSyncedFromFeatures(): EditState {
+    val syncedExport = apkExportConfig.withRuntimePermissionsSyncedFromFeatures(
+        webViewConfig = webViewConfig,
+        autoStartConfig = autoStartConfig,
+        forcedRunConfig = forcedRunConfig,
+        blackTechConfig = blackTechConfig,
+        bgmEnabled = bgmEnabled
+    )
+    return if (syncedExport === apkExportConfig || syncedExport == apkExportConfig) {
+        this
+    } else {
+        copy(apkExportConfig = syncedExport)
+    }
+}
 
 
 fun EditState.hasPreviewableContent(): Boolean = when (appType) {

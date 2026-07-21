@@ -24,6 +24,7 @@ import com.webtoapp.data.model.LrcData
 import com.webtoapp.data.model.AnnouncementTemplateType
 import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.data.model.WebApp
+import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.data.model.getActivationCodeStrings
 import com.webtoapp.ui.components.announcement.toUiTemplate
 import com.webtoapp.ui.shell.buildPackagedHtmlShellEntryUrl
@@ -3086,7 +3087,7 @@ builtins.__import__ = _w2a_import
         if (rp.readExternalStorage) {
             permissions += "android.permission.READ_EXTERNAL_STORAGE"
         }
-        if (rp.writeExternalStorage || (config.downloadEnabled && config.downloadLocationMode != "APP_PRIVATE")) {
+        if (rp.writeExternalStorage) {
             permissions += "android.permission.WRITE_EXTERNAL_STORAGE"
         }
         if (rp.readMediaImages) {
@@ -3161,8 +3162,11 @@ builtins.__import__ = _w2a_import
 
         if (rp.foregroundService) {
             permissions += "android.permission.FOREGROUND_SERVICE"
-            permissions += "android.permission.FOREGROUND_SERVICE_DATA_SYNC"
             permissions += "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
+            permissions += "android.permission.FOREGROUND_SERVICE_DATA_SYNC"
+            if (config.bgmEnabled) {
+                permissions += "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+            }
         }
         if (rp.wakeLock) {
             permissions += "android.permission.WAKE_LOCK"
@@ -3185,20 +3189,6 @@ builtins.__import__ = _w2a_import
         if (rp.systemAlertWindow) {
             permissions += "android.permission.SYSTEM_ALERT_WINDOW"
         }
-
-        val needsForegroundService = config.backgroundRunEnabled ||
-            config.notificationEnabled ||
-            config.floatingWindowEnabled ||
-            config.forcedRunConfig?.enabled == true ||
-            config.bgmEnabled
-        if (needsForegroundService || rp.foregroundService) {
-            permissions += "android.permission.FOREGROUND_SERVICE"
-            permissions += "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
-        }
-        if (config.forcedRunConfig?.enabled == true) {
-
-            permissions += "android.permission.FOREGROUND_SERVICE_DATA_SYNC"
-        }
         if (rp.location) {
             permissions += "android.permission.FOREGROUND_SERVICE_LOCATION"
         }
@@ -3207,24 +3197,6 @@ builtins.__import__ = _w2a_import
         }
         if (rp.microphone) {
             permissions += "android.permission.FOREGROUND_SERVICE_MICROPHONE"
-        }
-        if (config.bgmEnabled) {
-            permissions += "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
-        }
-
-        if (config.backgroundRunEnabled ||
-            config.screenAwakeMode.uppercase() != "OFF" ||
-            config.keepScreenOn ||
-            config.forcedRunConfig?.enabled == true ||
-            rp.wakeLock) {
-            permissions += "android.permission.WAKE_LOCK"
-        }
-        if (config.backgroundRunEnabled || rp.requestIgnoreBatteryOptimizations) {
-            permissions += "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
-        }
-
-        if (config.bootStartEnabled || config.autoStartEnabled || rp.bootCompleted) {
-            permissions += "android.permission.RECEIVE_BOOT_COMPLETED"
         }
         if (config.scheduledStartEnabled) {
             permissions += "android.permission.SCHEDULE_EXACT_ALARM"
@@ -3239,11 +3211,6 @@ builtins.__import__ = _w2a_import
         val bt = config.blackTechConfig
         if (bt?.forceFlashlight == true) {
             permissions += "android.permission.FLASHLIGHT"
-
-            permissions += "android.permission.CAMERA"
-        }
-        if (bt?.forceMaxVibration == true || rp.vibration) {
-            permissions += "android.permission.VIBRATE"
         }
         val forcedRun = config.forcedRunConfig
         val needsWriteSettings = bt?.forceScreenAwake == true ||
@@ -3253,16 +3220,10 @@ builtins.__import__ = _w2a_import
         if (needsWriteSettings) {
             permissions += "android.permission.WRITE_SETTINGS"
         }
-        if (bt?.forceWifiHotspot == true ||
-            bt?.forceDisableWifi == true ||
-            rp.wifiState) {
+        if (rp.wifiState) {
             permissions += "android.permission.ACCESS_WIFI_STATE"
             permissions += "android.permission.CHANGE_WIFI_STATE"
             permissions += "android.permission.CHANGE_NETWORK_STATE"
-        }
-
-        if (config.floatingWindowEnabled) {
-            permissions += "android.permission.SYSTEM_ALERT_WINDOW"
         }
 
         if (config.downloadEnabled) {
@@ -3504,37 +3465,8 @@ private fun WebApp.computeHtmlUsesFileScheme(context: android.content.Context?):
     htmlConfig.computeHtmlUsesFileScheme(context)
 
 private fun WebApp.buildEffectiveRuntimePermissions(): ApkRuntimePermissions {
-    var result = apkExportConfig?.runtimePermissions ?: ApkRuntimePermissions()
-    if (apkExportConfig?.backgroundRunEnabled == true) {
-        result = result.copy(
-            foregroundService = true,
-            wakeLock = true,
-            notifications = true,
-            requestIgnoreBatteryOptimizations = true
-        )
-    }
-    if (apkExportConfig?.notificationEnabled == true) {
-        result = result.copy(notifications = true, foregroundService = true)
-    }
-    if (autoStartConfig?.bootStartEnabled == true) {
-        result = result.copy(bootCompleted = true)
-    }
-    if (webViewConfig.floatingWindowConfig.enabled) {
-        result = result.copy(systemAlertWindow = true)
-    }
-    if (forcedRunConfig?.enabled == true) {
-        result = result.copy(foregroundService = true, wakeLock = true)
-    }
-    if (webViewConfig.enableNativeBridge && webViewConfig.nativeBridgeCapabilities.notification) {
-        result = result.copy(notifications = true)
-    }
-    if (webViewConfig.enableNotificationPolyfill) {
-        result = result.copy(notifications = true)
-    }
-    if (webViewConfig.geolocationEnabled) {
-        result = result.copy(location = true)
-    }
-    return result
+    val synced = withRuntimePermissionsSyncedFromFeatures()
+    return synced.apkExportConfig?.runtimePermissions ?: ApkRuntimePermissions()
 }
 
 private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: String, htmlUsesFileScheme: Boolean, darkMode: String): MetaBlock = MetaBlock(
