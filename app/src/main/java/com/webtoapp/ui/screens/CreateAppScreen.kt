@@ -442,9 +442,6 @@ fun CreateAppScreen(
                 if (hasConfiguredLegacyAds(editState)) {
                     LegacyAdCapabilityWarningCard()
                 }
-            }
-
-            item {
                 AdBlockCard(
                     editState = editState,
                     onEnabledChange = { viewModel.updateEditState { copy(adBlockEnabled = it) } },
