@@ -53,6 +53,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.dao.WebAppSummary
 import com.webtoapp.data.model.AppCategory
+import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.ui.components.CategoryEditorDialog
 import com.webtoapp.ui.components.CategoryTabRow
@@ -1778,7 +1779,7 @@ fun BuildApkDialog(
                     exportConfig
                 }
             }
-        )
+        ).withRuntimePermissionsSyncedFromFeatures()
     }
 
     fun launchBuild() {

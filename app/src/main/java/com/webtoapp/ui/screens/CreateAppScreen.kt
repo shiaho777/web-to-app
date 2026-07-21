@@ -1,4 +1,14 @@
 package com.webtoapp.ui.screens
+
+import com.webtoapp.data.model.featurePermissionReasons
+
+import com.webtoapp.data.model.WebViewConfig
+
+import com.webtoapp.data.model.AutoStartConfig
+
+import com.webtoapp.core.forcedrun.ForcedRunConfig
+
+import com.webtoapp.core.actions.DeviceActionsConfig
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.ui.design.WtaSwitch
 
@@ -529,7 +539,12 @@ fun CreateAppScreen(
             item {
                 ExportAndPermissionDrawer(
                     exportConfig = editState.apkExportConfig,
-                    onExportConfigChange = { viewModel.updateEditState { copy(apkExportConfig = it) } }
+                    onExportConfigChange = { viewModel.updateEditState { copy(apkExportConfig = it) } },
+                    webViewConfig = editState.webViewConfig,
+                    autoStartConfig = editState.autoStartConfig,
+                    forcedRunConfig = editState.forcedRunConfig,
+                    blackTechConfig = editState.blackTechConfig,
+                    bgmEnabled = editState.bgmEnabled
                 )
             }
 
@@ -571,9 +586,31 @@ fun CreateAppScreen(
 @Composable
 private fun ExportAndPermissionDrawer(
     exportConfig: ApkExportConfig,
-    onExportConfigChange: (ApkExportConfig) -> Unit
+    onExportConfigChange: (ApkExportConfig) -> Unit,
+    webViewConfig: WebViewConfig,
+    autoStartConfig: AutoStartConfig?,
+    forcedRunConfig: ForcedRunConfig?,
+    blackTechConfig: DeviceActionsConfig?,
+    bgmEnabled: Boolean
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
+    val featureReasons = remember(
+        exportConfig,
+        webViewConfig,
+        autoStartConfig,
+        forcedRunConfig,
+        blackTechConfig,
+        bgmEnabled
+    ) {
+        featurePermissionReasons(
+            apkExportConfig = exportConfig,
+            webViewConfig = webViewConfig,
+            autoStartConfig = autoStartConfig,
+            forcedRunConfig = forcedRunConfig,
+            blackTechConfig = blackTechConfig,
+            bgmEnabled = bgmEnabled
+        )
+    }
 
     WtaSettingCard {
         Column {
@@ -609,7 +646,8 @@ private fun ExportAndPermissionDrawer(
                         onPermissionsChange = { permissions ->
                             onExportConfigChange(exportConfig.copy(runtimePermissions = permissions))
                         },
-                        showDescription = false
+                        showDescription = false,
+                        featureReasons = featureReasons
                     )
                 }
             }
