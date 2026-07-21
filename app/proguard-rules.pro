@@ -304,3 +304,8 @@
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
 
+-keep class com.webtoapp.core.nodejs.NodeBridge { *; }
+-keep class com.webtoapp.core.nodejs.NodeJniOutputBridge {
+    <init>(...);
+    public void onOutput(java.lang.String, boolean);
+}
