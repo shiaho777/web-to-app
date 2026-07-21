@@ -63,7 +63,8 @@ jobs:
             -PallowDebugSignedRelease=true \
             :app:compileDebugKotlin \
             :shell:compileDebugKotlin \
-            :app:testDebugUnitTest
+            :app:testDebugUnitTest \
+            :app:checkConfigFieldDrift
 
       - name: Delivery summary
         if: always()

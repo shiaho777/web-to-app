@@ -571,3 +571,27 @@ tasks.register("checkCapabilityChain") {
     }
 }
 
+tasks.register("checkConfigFieldDrift") {
+    group = "verification"
+    description = "Detect field-name drift between ApkConfig payload keys and ShellConfig @SerializedName (static guard for preview/export config consistency)"
+    val script = rootProject.file("scripts/check_config_field_drift.py")
+    val payloadFile = file("src/main/java/com/webtoapp/core/apkbuilder/ApkConfigJsonFactory.kt")
+    val apkConfigFile = file("src/main/java/com/webtoapp/core/apkbuilder/ApkConfig.kt")
+    val shellConfigFile = file("src/main/java/com/webtoapp/core/shell/ShellModeManager.kt")
+    val allowlist = rootProject.file("scripts/config_field_drift_allowlist.json")
+    inputs.files(script, payloadFile, apkConfigFile, shellConfigFile, allowlist)
+    outputs.upToDateWhen { false }
+    doLast {
+        val pb = ProcessBuilder("python3", script.absolutePath)
+        pb.directory(rootProject.projectDir)
+        pb.redirectErrorStream(true)
+        val proc = pb.start()
+        val log = proc.inputStream.bufferedReader().readText()
+        val code = proc.waitFor()
+        logger.lifecycle(log.trim())
+        if (code != 0) {
+            throw GradleException("checkConfigFieldDrift failed ($code)")
+        }
+    }
+}
+
