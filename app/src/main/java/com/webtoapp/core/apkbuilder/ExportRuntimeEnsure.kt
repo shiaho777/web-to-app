@@ -8,6 +8,19 @@ import com.webtoapp.data.model.AppType
 
 object ExportRuntimeEnsure {
 
+    fun needsEnsure(context: Context, appType: AppType): Boolean {
+        return when (appType) {
+            AppType.PYTHON_APP -> !PythonDependencyManager.isPythonReady(context)
+            AppType.NODEJS_APP -> !NodeDependencyManager.isNodeReady(context)
+            AppType.PHP_APP -> !WordPressDependencyManager.isPhpReady(context)
+            AppType.WORDPRESS -> {
+                !WordPressDependencyManager.isPhpReady(context) ||
+                    !WordPressDependencyManager.isWordPressReady(context)
+            }
+            else -> false
+        }
+    }
+
     suspend fun ensure(context: Context, appType: AppType): Boolean {
         return when (appType) {
             AppType.PYTHON_APP -> {
