@@ -3537,6 +3537,9 @@ object Strings {
     val goBuildInProgress: String get() = StringsD.goBuildInProgress
     val goBuildSuccess: String get() = StringsD.goBuildSuccess
     val goBuildFailed: String get() = StringsD.goBuildFailed
+    val goBuildNoSpace: String get() = StringsD.goBuildNoSpace
+    val goBuildStreamCleaningCache: String get() = StringsD.goBuildStreamCleaningCache
+    val goBuildStreamRetryAfterClean: String get() = StringsD.goBuildStreamRetryAfterClean
     val goBuildStreamNoGoMod: String get() = StringsD.goBuildStreamNoGoMod
     val goBuildStreamFailedExit: String get() = StringsD.goBuildStreamFailedExit
     val goBuildStreamToolchainNotReady: String get() = StringsD.goBuildStreamToolchainNotReady
@@ -48946,6 +48949,45 @@ object StringsD {
         AppLanguage.RUSSIAN -> "Сборка не удалась"
         AppLanguage.JAPANESE -> "ビルド失敗"
         AppLanguage.KOREAN -> "빌드 실패"
+    }
+
+    val goBuildNoSpace: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "设备存储空间不足，无法完成 Go 应用内构建。已尝试清理构建缓存；请释放存储空间后重试。"
+        AppLanguage.ENGLISH -> "Not enough storage for in-app Go build. Build caches were cleaned; free up space and try again."
+        AppLanguage.ARABIC -> "لا توجد مساحة تخزين كافية لبناء Go داخل التطبيق. تم تنظيف ذاكرة البناء؛ حرّر مساحة ثم أعد المحاولة."
+        AppLanguage.PORTUGUESE -> "Armazenamento insuficiente para o build Go no app. Caches de build foram limpos; libere espaço e tente de novo."
+        AppLanguage.SPANISH -> "Almacenamiento insuficiente para el build de Go en la app. Se limpiaron caches; libera espacio e inténtalo de nuevo."
+        AppLanguage.FRENCH -> "Espace de stockage insuffisant pour le build Go intégré. Caches nettoyés ; libérez de l'espace puis réessayez."
+        AppLanguage.GERMAN -> "Nicht genug Speicher für den In-App-Go-Build. Build-Caches wurden geleert; Speicher freigeben und erneut versuchen."
+        AppLanguage.RUSSIAN -> "Недостаточно места для in-app сборки Go. Кэш сборки очищен; освободите место и повторите."
+        AppLanguage.JAPANESE -> "アプリ内 Go ビルドに十分な空き容量がありません。ビルドキャッシュを削除しました。容量を確保して再試行してください。"
+        AppLanguage.KOREAN -> "인앱 Go 빌드에 저장 공간이 부족합니다. 빌드 캐시를 정리했습니다. 공간을 확보한 뒤 다시 시도하세요."
+    }
+
+    val goBuildStreamCleaningCache: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已清理约 %d MB 的 Go 构建缓存"
+        AppLanguage.ENGLISH -> "Cleared about %d MB of Go build cache"
+        AppLanguage.ARABIC -> "تم مسح حوالي %d ميغابايت من ذاكرة بناء Go"
+        AppLanguage.PORTUGUESE -> "Limpou cerca de %d MB do cache de build Go"
+        AppLanguage.SPANISH -> "Se limpiaron unos %d MB de caché de build de Go"
+        AppLanguage.FRENCH -> "Environ %d Mo de cache de build Go nettoyés"
+        AppLanguage.GERMAN -> "Etwa %d MB Go-Build-Cache freigegeben"
+        AppLanguage.RUSSIAN -> "Очищено около %d МБ кэша сборки Go"
+        AppLanguage.JAPANESE -> "Go ビルドキャッシュを約 %d MB 削除しました"
+        AppLanguage.KOREAN -> "Go 빌드 캐시 약 %d MB를 정리했습니다"
+    }
+
+    val goBuildStreamRetryAfterClean: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "清理后自动重试构建…"
+        AppLanguage.ENGLISH -> "Retrying build after cache cleanup…"
+        AppLanguage.ARABIC -> "إعادة محاولة البناء بعد تنظيف الذاكرة…"
+        AppLanguage.PORTUGUESE -> "Tentando o build novamente após limpar o cache…"
+        AppLanguage.SPANISH -> "Reintentando el build tras limpiar la caché…"
+        AppLanguage.FRENCH -> "Nouvelle tentative de build après nettoyage du cache…"
+        AppLanguage.GERMAN -> "Build wird nach Cache-Bereinigung erneut versucht…"
+        AppLanguage.RUSSIAN -> "Повторная сборка после очистки кэша…"
+        AppLanguage.JAPANESE -> "キャッシュ削除後にビルドを再試行します…"
+        AppLanguage.KOREAN -> "캐시 정리 후 빌드를 다시 시도합니다…"
     }
 
     val goBuildStreamNoGoMod: String get() = when (Strings.lang) {
