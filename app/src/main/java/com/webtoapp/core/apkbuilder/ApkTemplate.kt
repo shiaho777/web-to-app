@@ -88,32 +88,14 @@ class ApkTemplate(private val context: Context) {
 
     fun loadBitmap(iconPath: String): Bitmap? {
         return try {
-            // Use BitmapFactory.Options to control sampling and get optimal resolution
-            val options = BitmapFactory.Options().apply {
-                inSampleSize = 1
-                inPreferredColor = Bitmap.Config.ARGB_8888
-                inDither = false
-            }
-            
-            val decodedBitmap = if (iconPath.startsWith("/")) {
-                BitmapFactory.decodeFile(iconPath, options)
+            if (iconPath.startsWith("/")) {
+                BitmapFactory.decodeFile(iconPath)
             } else if (iconPath.startsWith("content://")) {
-                context.contentResolver.openInputStream(android.net.Uri.parse(iconPath))?.use { inputStream ->
-                    BitmapFactory.decodeStream(inputStream, null, options)
+                context.contentResolver.openInputStream(android.net.Uri.parse(iconPath))?.use {
+                    BitmapFactory.decodeStream(it)
                 }
             } else {
-                BitmapFactory.decodeFile(iconPath, options)
-            }
-            
-            decodedBitmap ?: return null
-            
-            // Ensure high quality ARGB_8888 format and recycle if needed
-            if (decodedBitmap.config != Bitmap.Config.ARGB_8888) {
-                val argbBitmap = decodedBitmap.copy(Bitmap.Config.ARGB_8888, false)
-                decodedBitmap.recycle()
-                argbBitmap
-            } else {
-                decodedBitmap
+                BitmapFactory.decodeFile(iconPath)
             }
         } catch (e: Exception) {
             AppLogger.e("ApkTemplate", "Failed to load icon from $iconPath", e)
@@ -127,8 +109,8 @@ class ApkTemplate(private val context: Context) {
         val canvas = android.graphics.Canvas(output)
 
         // Calculate the exact center padding for proper icon display
-        // Android adaptive icons use a 72% safe zone with 14% margin on each side
-        val safeZoneSize = (size * 0.72f).toInt()
+        // Android adaptive icons use a 108-unit canvas with a 72-unit safe zone.
+        val safeZoneSize = (size * 72f / 108f).toInt()
         val padding = (size - safeZoneSize) / 2
 
         // Use high-quality scaling with filtering enabled
@@ -137,7 +119,6 @@ class ApkTemplate(private val context: Context) {
         val paint = android.graphics.Paint().apply {
             isAntiAlias = true
             isFilterBitmap = true
-            filterBitmap = true
         }
         canvas.drawBitmap(scaled, padding.toFloat(), padding.toFloat(), paint)
 
@@ -159,7 +140,6 @@ class ApkTemplate(private val context: Context) {
         val paint = android.graphics.Paint().apply {
             isAntiAlias = true
             isFilterBitmap = true
-            filterBitmap = true
         }
 
         val rect = android.graphics.RectF(0f, 0f, size.toFloat(), size.toFloat())
