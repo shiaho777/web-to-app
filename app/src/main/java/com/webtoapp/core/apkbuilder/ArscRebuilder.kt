@@ -293,7 +293,12 @@ class ArscRebuilder {
                             if (entryKeyIndex == icLauncherKeyIdx || entryKeyIndex == icLauncherRoundKeyIdx) {
                                 val oldPath = globalStrings[globalStrIdx]
                                 val keyName = if (entryKeyIndex >= 0 && entryKeyIndex < keyStrings.size) keyStrings[entryKeyIndex] else "?"
-                                AppLogger.d(TAG, "Found mipmap/$keyName → '$oldPath' (adaptive icon XML, KEEPING)")
+                                if (oldPath.endsWith(".png")) {
+                                    result.add(globalStrIdx to oldPath)
+                                    AppLogger.d(TAG, "Found mipmap/$keyName → '$oldPath' (raster PNG, REPLACING)")
+                                } else {
+                                    AppLogger.d(TAG, "Found mipmap/$keyName → '$oldPath' (adaptive icon XML, KEEPING)")
+                                }
                             }
                         }
 
