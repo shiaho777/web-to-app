@@ -140,6 +140,8 @@ class BuildInputPreflightTest {
         assertThat(result.issues.map { it.key })
             .containsExactly("pythonBinary", "muslLinker")
             .inOrder()
+        assertThat(result.issues[0].message).contains("sample only provides app code")
+        assertThat(result.issues[1].message).contains("musl linker")
     }
 
     @Test

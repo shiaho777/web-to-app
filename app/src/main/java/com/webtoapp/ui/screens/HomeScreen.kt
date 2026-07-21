@@ -1781,16 +1781,38 @@ fun BuildApkDialog(
     fun launchBuild() {
         if (isBuilding) return
         val webAppWithConfig = currentBuildConfig()
-        val nextPreflight = ApkExportPreflight.check(context, webAppWithConfig)
-        preflightReport = nextPreflight
-        if (nextPreflight.hasErrors) {
-            return
-        }
 
         isBuilding = true
         buildFailureReport = null
         analysisReport = null
         scope.launch {
+            progressText = when (webAppWithConfig.appType) {
+                com.webtoapp.data.model.AppType.PYTHON_APP -> Strings.preparingPythonEnv
+                com.webtoapp.data.model.AppType.NODEJS_APP -> Strings.preparingNodeEnv
+                com.webtoapp.data.model.AppType.PHP_APP,
+                com.webtoapp.data.model.AppType.WORDPRESS -> Strings.preparing
+                else -> Strings.preparing
+            }
+            val ensureOk = com.webtoapp.core.apkbuilder.ExportRuntimeEnsure.ensure(
+                context,
+                webAppWithConfig.appType
+            )
+            if (!ensureOk) {
+                progressText = when (webAppWithConfig.appType) {
+                    com.webtoapp.data.model.AppType.PYTHON_APP -> Strings.pythonRuntimeDownloadFailed
+                    com.webtoapp.data.model.AppType.NODEJS_APP -> Strings.njsDownloadFailed
+                    com.webtoapp.data.model.AppType.PHP_APP,
+                    com.webtoapp.data.model.AppType.WORDPRESS -> Strings.wpDownloadFailed
+                    else -> Strings.preparing
+                }
+            }
+            val nextPreflight = ApkExportPreflight.check(context, webAppWithConfig)
+            preflightReport = nextPreflight
+            if (nextPreflight.hasErrors) {
+                isBuilding = false
+                return@launch
+            }
+
             val result = apkBuilder.buildApk(webAppWithConfig) { p, t ->
                 progress = p
                 progressText = t

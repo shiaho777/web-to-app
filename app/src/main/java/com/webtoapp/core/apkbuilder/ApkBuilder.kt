@@ -430,6 +430,16 @@ class ApkBuilder(private val context: Context) {
             logger.section("Build Input Preflight")
             currentStage = BuildStage.INPUT_PRECHECK
 
+            val appTypeEnum = runCatching { com.webtoapp.data.model.AppType.valueOf(config.appType) }.getOrNull()
+            if (appTypeEnum != null) {
+                onProgress(18, "Ensuring runtime dependencies...")
+                val ensured = ExportRuntimeEnsure.ensure(context, appTypeEnum)
+                logger.logKeyValue("exportRuntimeEnsure", ensured)
+                if (!ensured) {
+                    logger.warn("Export runtime ensure failed for ${config.appType}")
+                }
+            }
+
             val phpBinaryPath = if (config.appType in setOf("PHP_APP", "WORDPRESS")) {
                 com.webtoapp.core.wordpress.WordPressDependencyManager.getPhpExecutablePath(context)
             } else null

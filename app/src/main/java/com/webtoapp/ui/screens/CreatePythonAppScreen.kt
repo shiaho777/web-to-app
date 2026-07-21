@@ -8,12 +8,15 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.python.PythonDependencyManager
 import com.webtoapp.core.python.PythonRuntime
 import com.webtoapp.core.python.PythonSampleManager
 import com.webtoapp.data.model.PythonAppConfig
@@ -90,6 +94,8 @@ fun CreatePythonAppScreen(
     var creationPhase by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
+    val downloadState by PythonDependencyManager.downloadState.collectAsStateWithLifecycle()
+    var showDownloadDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(existingAppId) {
         if (existingAppId > 0L) {
@@ -299,6 +305,18 @@ fun CreatePythonAppScreen(
                             }
                         }
 
+                        if (!PythonDependencyManager.isPythonReady(context)) {
+                            showDownloadDialog = true
+                            creationPhase = Strings.preparingPythonEnv
+                            val success = PythonDependencyManager.downloadPythonRuntime(context)
+                            showDownloadDialog = false
+                            if (!success) {
+                                errorMessage = Strings.pythonRuntimeDownloadFailed
+                                isCreating = false
+                                return@withContext
+                            }
+                        }
+
                         creationPhase = Strings.pyProjectReady
                     }
                 } catch (e: Exception) {
@@ -392,6 +410,16 @@ fun CreatePythonAppScreen(
                                         val importedDir = runtime.createProject(newProjectId, projectDir)
                                         projectId = newProjectId
                                         localProjectDir = importedDir.absolutePath
+                                        if (!PythonDependencyManager.isPythonReady(context)) {
+                                            showDownloadDialog = true
+                                            creationPhase = Strings.preparingPythonEnv
+                                            val success = PythonDependencyManager.downloadPythonRuntime(context)
+                                            showDownloadDialog = false
+                                            if (!success) {
+                                                errorMessage = Strings.pythonRuntimeDownloadFailed
+                                                return@withContext
+                                            }
+                                        }
                                         creationPhase = Strings.pyProjectReady
                                     }
                                 } catch (e: Exception) {
@@ -596,6 +624,57 @@ fun CreatePythonAppScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+
+    if (showDownloadDialog) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(Strings.preparingPythonEnv) },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    when (val state = downloadState) {
+                        is PythonDependencyManager.DownloadState.Downloading -> {
+                            Text(Strings.preparingPythonEnv)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            LinearProgressIndicator(
+                                progress = { state.progress },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "${(state.bytesDownloaded / 1024 / 1024)}MB / ${(state.totalBytes / 1024 / 1024)}MB",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                        is PythonDependencyManager.DownloadState.Extracting -> {
+                            Text(Strings.extracting.format(state.fileName))
+                            Spacer(modifier = Modifier.height(12.dp))
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        }
+                        is PythonDependencyManager.DownloadState.Complete -> {
+                            Text(Strings.pyProjectReady)
+                        }
+                        is PythonDependencyManager.DownloadState.Paused -> {
+                            Text(Strings.preparingPythonEnv)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            LinearProgressIndicator(
+                                progress = { state.progress },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        is PythonDependencyManager.DownloadState.Error -> {
+                            Text(text = state.message, color = MaterialTheme.colorScheme.error)
+                        }
+                        else -> {
+                            Text(Strings.preparingPythonEnv)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        }
+                    }
+                }
+            },
+            confirmButton = {}
+        )
     }
 }
 
