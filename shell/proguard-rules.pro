@@ -292,3 +292,10 @@
 # ============================================================
 -keep class dev.chrisbanes.haze.** { *; }
 -dontwarn dev.chrisbanes.haze.**
+
+# Node.js JNI output bridge (R8 may rename onOutput otherwise)
+-keep class com.webtoapp.core.nodejs.NodeBridge { *; }
+-keep class com.webtoapp.core.nodejs.NodeJniOutputBridge {
+    <init>(...);
+    public void onOutput(java.lang.String, boolean);
+}
