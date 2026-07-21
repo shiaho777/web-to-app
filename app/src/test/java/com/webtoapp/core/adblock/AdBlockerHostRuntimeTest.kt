@@ -94,4 +94,46 @@ class AdBlockerHostRuntimeTest {
         assertThat(adBlocker.isEnabled()).isFalse()
         assertThat(adBlocker.shouldBlock("https://ads.example.test/a.js", resourceType = "script")).isFalse()
     }
+
+    @Test
+    fun importHostsFromUrlPersistsSourceRegistryBeforeHeavyParseSurvivesProcessDeath() = runBlocking {
+        val source = "https://example.test/loop.txt"
+        val content = """
+            [Adblock Plus 2.0]
+            ||ads.example.test^
+            ||tracker.example.test^
+        """.trimIndent()
+        AdBlockFilterCache.cacheUrlContent(context, source, content)
+
+        val first = adBlocker
+        val result = first.importHostsFromUrl(source, context, onProgress = null)
+        assertThat(result.isSuccess).isTrue()
+        assertThat(first.isHostsSourceEnabled(source)).isTrue()
+
+        val deadProcessAdBlocker = AdBlocker()
+
+        deadProcessAdBlocker.loadHostsRules(context)
+
+        assertThat(deadProcessAdBlocker.isHostsSourceEnabled(source)).isTrue()
+        assertThat(deadProcessAdBlocker.getEnabledHostsSources()).contains(source)
+
+        deadProcessAdBlocker.prepareRuntimeFilters(
+            context = context,
+            enabled = true,
+            customRules = emptyList(),
+            subscriptionUrls = listOf(source)
+        )
+        assertThat(deadProcessAdBlocker.shouldBlock("https://ads.example.test/banner.js", resourceType = "script")).isTrue()
+    }
+
+    @Test
+    fun pathologicalAbpPatternDoesNotCrashParserAndSafeRuleStillApplies() {
+        val pathological = "||evil" + "*".repeat(5) + ".test^"
+        adBlocker.setEnabled(true)
+        adBlocker.addRule(pathological)
+
+        adBlocker.addRule("||safe.example.test^")
+
+        assertThat(adBlocker.shouldBlock("https://safe.example.test/ad.js", resourceType = "script")).isTrue()
+    }
 }
