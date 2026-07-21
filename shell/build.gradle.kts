@@ -544,7 +544,8 @@ tasks.register("stripShellTemplateBloat") {
     dependsOn("packageRelease")
     val apk = layout.buildDirectory.file("outputs/apk/release/shell-release.apk")
     val script = rootProject.layout.projectDirectory.file("scripts/strip_shell_apk_bloat.py").asFile
-    inputs.file(apk)
+    val packageRelease = tasks.named("packageRelease")
+    inputs.files(packageRelease.map { it.outputs.files })
     inputs.file(script)
     outputs.file(apk)
     doLast {
