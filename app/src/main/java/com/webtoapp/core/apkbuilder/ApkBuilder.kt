@@ -1135,7 +1135,10 @@ class ApkBuilder(private val context: Context) {
                         iconBitmap != null && (isIconEntry(entry.name) || discoveredOldIconPaths.contains(entry.name)) -> {
 
                             if (discoveredOldIconPaths.contains(entry.name)) {
-                                val iconBytes = template.createAdaptiveForegroundIcon(iconBitmap, 432)
+                                val iconBytes = when {
+                                    entry.name.contains("round") -> template.createRoundIcon(iconBitmap, 432)
+                                    else -> template.scaleBitmapToPng(iconBitmap, 432)
+                                }
                                 writeEntryDeflated(zipOut, entry.name, iconBytes)
                             } else {
                                 replaceIconEntry(zipOut, entry.name, iconBitmap)
