@@ -661,6 +661,9 @@ class AdBlocker {
         val BLOCKED_JS_BYTES = "/* blocked */".toByteArray()
         val BLOCKED_CSS_BYTES = "/* blocked */".toByteArray()
         val BLOCKED_JSON_BYTES = "{}".toByteArray()
+
+        private const val MAX_ABP_PATTERN_LEN = 1024
+        private val MAX_CONSECUTIVE_STARS_REGEX = Regex("\\*{2,}(?:\\^\\*{2,})?")
     }
 
     private val exactHosts = mutableSetOf<String>()
@@ -1233,6 +1236,8 @@ class AdBlocker {
 
     private fun compileAbpPattern(pattern: String, matchCase: Boolean): Regex? {
         if (pattern.isEmpty()) return null
+        if (pattern.length > MAX_ABP_PATTERN_LEN) return null
+        if (MAX_CONSECUTIVE_STARS_REGEX.containsMatchIn(pattern)) return null
         return try {
             var p = pattern
 
@@ -1264,7 +1269,7 @@ class AdBlocker {
 
             val options = if (matchCase) emptySet() else setOf(RegexOption.IGNORE_CASE)
             Regex(p, options)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             null
         }
     }
@@ -1659,15 +1664,24 @@ class AdBlocker {
                     elapsedMillis = 0
                 )
             )
-            val count = parseFilterContent(content)
-            enabledHostsSources.add(url)
-            disabledHostsSources.remove(url)
-            sourceRuleCounts[url] = count
+
             if (context != null) {
                 AdBlockFilterCache.saveSourceContent(context, url, content)
             }
+            enabledHostsSources.add(url)
+            disabledHostsSources.remove(url)
+            sourceRuleCounts[url] = 0
+            if (context != null) {
+                saveSourcesRegistry(context)
+            }
+
+            val count = parseFilterContent(content)
+            sourceRuleCounts[url] = count
+            if (context != null) {
+                saveSourcesRegistry(context)
+            }
             Result.success(count)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Result.failure(e)
         }
     }
@@ -1680,24 +1694,34 @@ class AdBlocker {
                 t.startsWith("@@") || t.contains("##") || t.contains("#@#")
         }
 
-        content.lineSequence().forEach { line ->
-            val trimmed = line.trim()
+        val lines = content.lineSequence().iterator()
+        while (lines.hasNext()) {
+            val trimmed = lines.next().trim()
             if (trimmed.isEmpty() || trimmed.startsWith("!") || trimmed.startsWith("[") || trimmed.startsWith("#")) {
 
                 if (!trimmed.startsWith("##") && !trimmed.startsWith("#@#") && !trimmed.startsWith("#%#") && !trimmed.startsWith("##+")) {
-                    return@forEach
+                    continue
                 }
             }
 
-            if (isAbpFormat) {
-                parseAndAddRule(trimmed)
-                count++
-            } else {
-                val host = parseHostLine(trimmed)
-                if (host != null && isValidHost(host)) {
-                    hostsFileHosts.add(host.lowercase())
+            try {
+                if (isAbpFormat) {
+                    parseAndAddRule(trimmed)
                     count++
+                } else {
+                    val host = parseHostLine(trimmed)
+                    if (host != null && isValidHost(host)) {
+                        hostsFileHosts.add(host.lowercase())
+                        count++
+                    }
                 }
+            } catch (oom: OutOfMemoryError) {
+                runCatching { System.gc() }
+                com.webtoapp.core.logging.AppLogger.w(
+                    "AdBlocker",
+                    "Stopped ingesting rules at #$count due to memory pressure; keeping partial rule set"
+                )
+                break
             }
         }
         return count
@@ -1740,19 +1764,7 @@ class AdBlocker {
             val file = File(context.filesDir, "adblock_hosts.txt")
             file.writeText(hostsFileHosts.joinToString("\n"))
 
-            val sourcesFile = File(context.filesDir, "adblock_hosts_sources.txt")
-            sourcesFile.writeText(
-                buildString {
-                    enabledHostsSources.forEach { url ->
-                        val count = sourceRuleCounts[url] ?: 0
-                        appendLine("$url\t$count\t1")
-                    }
-                    disabledHostsSources.forEach { url ->
-                        val count = sourceRuleCounts[url] ?: 0
-                        appendLine("$url\t$count\t0")
-                    }
-                }.trimEnd()
-            )
+            saveSourcesRegistry(context)
 
             saveCompiledStateToCache(context)
 
@@ -1760,6 +1772,22 @@ class AdBlocker {
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    private fun saveSourcesRegistry(context: Context) {
+        val sourcesFile = File(context.filesDir, "adblock_hosts_sources.txt")
+        sourcesFile.writeText(
+            buildString {
+                enabledHostsSources.forEach { url ->
+                    val count = sourceRuleCounts[url] ?: 0
+                    appendLine("$url\t$count\t1")
+                }
+                disabledHostsSources.forEach { url ->
+                    val count = sourceRuleCounts[url] ?: 0
+                    appendLine("$url\t$count\t0")
+                }
+            }.trimEnd()
+        )
     }
 
     suspend fun loadHostsRules(context: Context): Result<Int> = withContext(Dispatchers.IO) {

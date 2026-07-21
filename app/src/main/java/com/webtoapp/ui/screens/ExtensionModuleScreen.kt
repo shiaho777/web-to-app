@@ -220,7 +220,7 @@ fun ExtensionModuleScreen(
         }
     }
 
-    val allModules = builtInModules + modules
+    val allModules = (builtInModules + modules).distinctBy { it.id }
     val extensionModules = allModules.filter { it.sourceType == ModuleSourceType.CUSTOM }
     val userScriptModules = allModules.filter { it.sourceType != ModuleSourceType.CUSTOM }
 
@@ -231,7 +231,7 @@ fun ExtensionModuleScreen(
             module.description.contains(searchQuery, ignoreCase = true) ||
             module.tags.any { it.contains(searchQuery, ignoreCase = true) }
         matchesCategory && matchesSearch
-    }
+    }.distinctBy { it.id }
 
     val filteredUserScripts = userScriptModules.filter { module ->
         searchQuery.isBlank() ||
@@ -247,7 +247,7 @@ fun ExtensionModuleScreen(
                 true
             }
         }
-    }
+    }.distinctBy { it.id }
 
     LaunchedEffect(loadError) {
         val error = loadError ?: return@LaunchedEffect
