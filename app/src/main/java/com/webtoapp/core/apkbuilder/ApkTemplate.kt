@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.webtoapp.core.forcedrun.ForcedRunConfig
-import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.BgmShellItem
 import com.webtoapp.core.shell.LrcShellTheme
 import java.io.*
@@ -98,28 +97,25 @@ class ApkTemplate(private val context: Context) {
                 BitmapFactory.decodeFile(iconPath)
             }
         } catch (e: Exception) {
-            AppLogger.e("ApkTemplate", "Failed to load icon from $iconPath", e)
             null
         }
     }
 
     fun createAdaptiveForegroundIcon(bitmap: Bitmap, size: Int): ByteArray {
+
         val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = android.graphics.Canvas(output)
 
-        val safeZone = (size * 66f / 108f).toInt()
-        val scale = minOf(safeZone.toFloat() / bitmap.width, safeZone.toFloat() / bitmap.height)
-        val scaledW = (bitmap.width * scale).toInt()
-        val scaledH = (bitmap.height * scale).toInt()
-        val left = ((size - scaledW) / 2f)
-        val top = ((size - scaledH) / 2f)
+        val safeZoneSize = (size * 72f / 108f).toInt()
+        val padding = (size - safeZoneSize) / 2
 
-        val scaled = Bitmap.createScaledBitmap(bitmap, scaledW, scaledH, true)
+        val scaled = Bitmap.createScaledBitmap(bitmap, safeZoneSize, safeZoneSize, true)
+
         val paint = android.graphics.Paint().apply {
             isAntiAlias = true
             isFilterBitmap = true
         }
-        canvas.drawBitmap(scaled, left, top, paint)
+        canvas.drawBitmap(scaled, padding.toFloat(), padding.toFloat(), paint)
 
         val baos = ByteArrayOutputStream()
         output.compress(Bitmap.CompressFormat.PNG, 100, baos)
@@ -131,7 +127,6 @@ class ApkTemplate(private val context: Context) {
     }
 
     fun createRoundIcon(bitmap: Bitmap, size: Int): ByteArray {
-        // Scale with high quality
         val scaled = Bitmap.createScaledBitmap(bitmap, size, size, true)
         val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
 

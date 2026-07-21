@@ -82,8 +82,7 @@ class ArscRebuilder {
 
             if (replaceIcons) {
                 val iconPaths = findIconPathIndices(remainingData, strings)
-                _lastDiscoveredIconPaths = iconPaths.map { (idx, _, _) -> strings[idx] }.toSet()
-                _lastDiscoveredIconKinds = iconPaths.associate { (idx, _, kind) -> strings[idx] to kind }
+                _lastDiscoveredIconPaths = iconPaths.map { (idx, _) -> strings[idx] }.toSet()
                 AppLogger.d(TAG, "Discovered old icon paths (for ZIP replacement): $_lastDiscoveredIconPaths")
             }
 
@@ -157,16 +156,11 @@ class ArscRebuilder {
     private var _lastDiscoveredIconPaths = emptySet<String>()
     fun getLastDiscoveredIconPaths(): Set<String> = _lastDiscoveredIconPaths
 
-    enum class IconKind { ROUND, SQUARE, FOREGROUND }
-
-    private var _lastDiscoveredIconKinds = emptyMap<String, IconKind>()
-    fun getLastDiscoveredIconKinds(): Map<String, IconKind> = _lastDiscoveredIconKinds
-
     private fun findIconPathIndices(
         packageData: ByteArray,
         globalStrings: List<String>
-    ): List<Triple<Int, String, IconKind>> {
-        val result = mutableListOf<Triple<Int, String, IconKind>>()
+    ): List<Pair<Int, String>> {
+        val result = mutableListOf<Pair<Int, String>>()
 
         try {
             val buf = ByteBuffer.wrap(packageData).order(ByteOrder.LITTLE_ENDIAN)
@@ -299,13 +293,7 @@ class ArscRebuilder {
                             if (entryKeyIndex == icLauncherKeyIdx || entryKeyIndex == icLauncherRoundKeyIdx) {
                                 val oldPath = globalStrings[globalStrIdx]
                                 val keyName = if (entryKeyIndex >= 0 && entryKeyIndex < keyStrings.size) keyStrings[entryKeyIndex] else "?"
-                                if (oldPath.endsWith(".png")) {
-                                    val kind = if (entryKeyIndex == icLauncherRoundKeyIdx) IconKind.ROUND else IconKind.SQUARE
-                                    result.add(Triple(globalStrIdx, oldPath, kind))
-                                    AppLogger.d(TAG, "Found mipmap/$keyName → '$oldPath' ($kind raster PNG, REPLACING)")
-                                } else {
-                                    AppLogger.d(TAG, "Found mipmap/$keyName → '$oldPath' (adaptive icon XML, KEEPING)")
-                                }
+                                AppLogger.d(TAG, "Found mipmap/$keyName → '$oldPath' (adaptive icon XML, KEEPING)")
                             }
                         }
 
@@ -313,7 +301,7 @@ class ArscRebuilder {
                             if (entryKeyIndex == icLauncherFgKeyIdx) {
                                 val oldPath = globalStrings[globalStrIdx]
                                 AppLogger.d(TAG, "Found drawable/ic_launcher_foreground → '$oldPath' (foreground image, REPLACING)")
-                                result.add(Triple(globalStrIdx, oldPath, IconKind.FOREGROUND))
+                                result.add(globalStrIdx to oldPath)
                             }
                         }
                     }
