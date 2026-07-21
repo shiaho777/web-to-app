@@ -222,7 +222,10 @@ fun ExtensionModuleScreen(
 
     val allModules = (builtInModules + modules).distinctBy { it.id }
     val extensionModules = allModules.filter { it.sourceType == ModuleSourceType.CUSTOM }
-    val userScriptModules = allModules.filter { it.sourceType != ModuleSourceType.CUSTOM }
+    val userScriptModules = allModules.filter {
+        it.sourceType != ModuleSourceType.CUSTOM && it.sourceType != ModuleSourceType.GREASYFORK
+    }
+    val greasyForkModules = allModules.filter { it.sourceType == ModuleSourceType.GREASYFORK }
 
     val filteredModules = extensionModules.filter { module ->
         val matchesCategory = selectedCategory == null || module.category == selectedCategory
@@ -247,6 +250,12 @@ fun ExtensionModuleScreen(
                 true
             }
         }
+    }.distinctBy { it.id }
+
+    val filteredGreasyFork = greasyForkModules.filter { module ->
+        searchQuery.isBlank() ||
+            module.name.contains(searchQuery, ignoreCase = true) ||
+            module.description.contains(searchQuery, ignoreCase = true)
     }.distinctBy { it.id }
 
     LaunchedEffect(loadError) {
@@ -356,11 +365,12 @@ fun ExtensionModuleScreen(
                 shape = RoundedCornerShape(WtaRadius.Button)
             )
 
-            val pagerState = rememberPagerState(pageCount = { 2 })
+            val pagerState = rememberPagerState(pageCount = { 3 })
             WtaTabRow(
                 tabs = listOf(
                     WtaTab(Strings.extensionModulesTab, extensionModules.size),
-                    WtaTab(Strings.userScriptsTab, userScriptModules.size)
+                    WtaTab(Strings.userScriptsTab, userScriptModules.size),
+                    WtaTab(Strings.greasyForkTab, greasyForkModules.size)
                 ),
                 selectedIndex = pagerState.currentPage,
                 onTabSelected = { scope.launch { pagerState.animateScrollToPage(it) } },
@@ -385,6 +395,15 @@ fun ExtensionModuleScreen(
                     )
                     1 -> UserScriptsTabContent(
                         filteredUserScripts = filteredUserScripts,
+                        extensionManager = extensionManager,
+                        searchQuery = searchQuery,
+                        onImportUserScript = {
+                            userScriptPickerLauncher.launch("*/*")
+                        },
+                        onClearSearch = { searchQuery = "" }
+                    )
+                    2 -> UserScriptsTabContent(
+                        filteredUserScripts = filteredGreasyFork,
                         extensionManager = extensionManager,
                         searchQuery = searchQuery,
                         onImportUserScript = {
@@ -1878,8 +1897,17 @@ private fun UserScriptCard(
     var showSourceDialog by remember { mutableStateOf(false) }
 
     val isChromeExt = module.sourceType == ModuleSourceType.CHROME_EXTENSION
-    val typeIcon = if (isChromeExt) "🧩" else "🐵"
-    val typeLabel = if (isChromeExt) "Chrome" else "UserScript"
+    val isGreasyFork = module.sourceType == ModuleSourceType.GREASYFORK
+    val typeIcon = when {
+        isChromeExt -> "🧩"
+        isGreasyFork -> " 🍴"
+        else -> "🐵"
+    }
+    val typeLabel = when {
+        isChromeExt -> "Chrome"
+        isGreasyFork -> "GreasyFork"
+        else -> "UserScript"
+    }
 
     Box(
         modifier = Modifier

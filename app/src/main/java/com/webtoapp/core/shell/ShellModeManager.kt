@@ -561,7 +561,7 @@ data class EmbeddedShellModule(
     @Volatile
     private var _cachedCode: String? = null
 
-    fun isUserscript(): Boolean = sourceType == "USERSCRIPT"
+    fun isUserscript(): Boolean = sourceType == "USERSCRIPT" || sourceType == "GREASYFORK"
 
     fun shouldRegisterInPanel(): Boolean {
         return !(isUserscript() && configItemCount == 0)
