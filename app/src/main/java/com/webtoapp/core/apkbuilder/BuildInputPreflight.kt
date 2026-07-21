@@ -128,14 +128,14 @@ object BuildInputPreflight {
                     label = "Python runtime (libpython3.so)",
                     path = request.pythonBinaryPath,
                     minSize = 1024L * 1024L,
-                    hint = "Python runtime not downloaded; open Settings → Runtime Engines and download Python"
+                    hint = "Python runtime not downloaded — go to Settings → Runtime Engines and tap Download for Python. This is required even for built-in sample projects; the sample only provides app code, the Python interpreter is a separate component."
                 )
                 issues.requireNativeBinary(
                     key = "muslLinker",
                     label = "musl linker (libmusl-linker.so)",
                     path = request.muslLinkerPath,
                     minSize = 1024L,
-                    hint = "Python musl linker missing; re-download Python runtime in Settings → Runtime Engines"
+                    hint = "Python musl linker missing — re-download Python in Settings → Runtime Engines (the musl linker is packaged with the Python runtime). Required even for built-in sample projects."
                 )
                 if (request.pythonAppProjectDir.requiresPythonDependencyPrebundle()) {
                     issues.requireNativeBinary(
