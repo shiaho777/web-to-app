@@ -104,7 +104,30 @@ class ApkTemplate(private val context: Context) {
     }
 
     fun createAdaptiveForegroundIcon(bitmap: Bitmap, size: Int): ByteArray {
-        return scaleBitmapToPng(bitmap, size)
+        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(output)
+
+        val safeZone = (size * 66f / 108f).toInt()
+        val scale = minOf(safeZone.toFloat() / bitmap.width, safeZone.toFloat() / bitmap.height)
+        val scaledW = (bitmap.width * scale).toInt()
+        val scaledH = (bitmap.height * scale).toInt()
+        val left = ((size - scaledW) / 2f)
+        val top = ((size - scaledH) / 2f)
+
+        val scaled = Bitmap.createScaledBitmap(bitmap, scaledW, scaledH, true)
+        val paint = android.graphics.Paint().apply {
+            isAntiAlias = true
+            isFilterBitmap = true
+        }
+        canvas.drawBitmap(scaled, left, top, paint)
+
+        val baos = ByteArrayOutputStream()
+        output.compress(Bitmap.CompressFormat.PNG, 100, baos)
+
+        if (scaled != bitmap) scaled.recycle()
+        output.recycle()
+
+        return baos.toByteArray()
     }
 
     fun createRoundIcon(bitmap: Bitmap, size: Int): ByteArray {

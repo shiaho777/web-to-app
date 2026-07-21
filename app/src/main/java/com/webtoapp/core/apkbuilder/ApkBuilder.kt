@@ -1026,6 +1026,7 @@ class ApkBuilder(private val context: Context) {
         var strippedNativeLibSize = 0L
         val replacedIconPaths = mutableSetOf<String>()
         var discoveredOldIconPaths = emptySet<String>()
+        var discoveredIconKinds = emptyMap<String, ArscRebuilder.IconKind>()
 
         val assetEncryptor = if (encryptionConfig.enabled && encryptionKey != null) {
             AssetEncryptor(encryptionKey)
@@ -1123,6 +1124,7 @@ class ApkBuilder(private val context: Context) {
                             )
 
                             discoveredOldIconPaths = arscRebuilder.getLastDiscoveredIconPaths()
+                            discoveredIconKinds = arscRebuilder.getLastDiscoveredIconKinds()
                             logger.log("Discovered old icon paths from ARSC: $discoveredOldIconPaths")
                             writeEntryStored(zipOut, entry.name, modifiedData)
                         }
@@ -1135,9 +1137,11 @@ class ApkBuilder(private val context: Context) {
                         iconBitmap != null && (isIconEntry(entry.name) || discoveredOldIconPaths.contains(entry.name)) -> {
 
                             if (discoveredOldIconPaths.contains(entry.name)) {
-                                val iconBytes = when {
-                                    entry.name.contains("round") -> template.createRoundIcon(iconBitmap, 432)
-                                    else -> template.scaleBitmapToPng(iconBitmap, 432)
+                                val kind = discoveredIconKinds[entry.name]
+                                val iconBytes = when (kind) {
+                                    ArscRebuilder.IconKind.FOREGROUND -> template.createAdaptiveForegroundIcon(iconBitmap, 432)
+                                    ArscRebuilder.IconKind.ROUND -> template.createRoundIcon(iconBitmap, 192)
+                                    else -> template.scaleBitmapToPng(iconBitmap, 192)
                                 }
                                 writeEntryDeflated(zipOut, entry.name, iconBytes)
                             } else {
