@@ -112,11 +112,22 @@ static void *log_reader_thread(void *arg) {
                     if (env) {
                         jclass cls = env->GetObjectClass(g_callback_ref);
                         jmethodID mid = env->GetMethodID(cls, "onOutput", "(Ljava/lang/String;Z)V");
+                        if (env->ExceptionCheck()) {
+                            env->ExceptionDescribe();
+                            env->ExceptionClear();
+                            mid = nullptr;
+                        }
                         if (mid) {
                             jstring jline = env->NewStringUTF(line);
                             jboolean isErr = (fd == g_stderr_pipe[0]) ? JNI_TRUE : JNI_FALSE;
                             env->CallVoidMethod(g_callback_ref, mid, jline, isErr);
+                            if (env->ExceptionCheck()) {
+                                env->ExceptionDescribe();
+                                env->ExceptionClear();
+                            }
                             env->DeleteLocalRef(jline);
+                        } else {
+                            LOGE("callback onOutput method not found");
                         }
                         env->DeleteLocalRef(cls);
                         if (attached) {

@@ -307,3 +307,8 @@
 -keep class com.webtoapp.core.webview.LocalHttpToSocksBridge$* { *; }
 -keep class com.webtoapp.core.webview.LocalHttpToSocksBridge$Socks5Connector { *; }
 
+-keep class com.webtoapp.core.nodejs.NodeBridge { *; }
+-keep class com.webtoapp.core.nodejs.NodeJniOutputBridge {
+    <init>(...);
+    public void onOutput(java.lang.String, boolean);
+}

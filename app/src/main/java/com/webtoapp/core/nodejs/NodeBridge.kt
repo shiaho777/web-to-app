@@ -4,6 +4,14 @@ import android.content.Context
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellLogger
 
+class NodeJniOutputBridge(
+    private val callback: NodeBridge.OutputCallback
+) {
+    fun onOutput(line: String, isError: Boolean) {
+        callback.onOutput(line, isError)
+    }
+}
+
 object NodeBridge {
 
     private const val TAG = "NodeBridge"
@@ -78,15 +86,7 @@ object NodeBridge {
         AppLogger.i(TAG, "启动 Node.js: ${args.joinToString(" ")}")
         ShellLogger.i(TAG, "启动 Node.js: ${args.joinToString(" ")}")
 
-        val jniCallback = callback?.let { cb ->
-            object : Any() {
-                @Suppress("unused")
-                fun onOutput(line: String, isError: Boolean) {
-                    cb.onOutput(line, isError)
-                }
-            }
-        }
-
+        val jniCallback = callback?.let { NodeJniOutputBridge(it) }
         return nativeStartNode(args, jniCallback)
     }
 
