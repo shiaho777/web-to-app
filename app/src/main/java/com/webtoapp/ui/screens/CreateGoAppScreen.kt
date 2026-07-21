@@ -975,11 +975,14 @@ private fun GoBuildInAppCard(
                                 lastResult = true to null
                                 onBuildComplete(produced.name, produced.length())
                             } else {
-
-                                val errLine = buildLog.lastOrNull { it.startsWith("[stderr]") }
-                                    ?: buildLog.lastOrNull { !it.startsWith("[go]") }
+                                val errLine = buildLog.asReversed().firstOrNull {
+                                    it.contains("no space left on device", ignoreCase = true) ||
+                                        it.contains(Strings.goBuildNoSpace.take(12))
+                                } ?: buildLog.asReversed().firstOrNull {
+                                    it.startsWith("[go]") && !it.contains("exit=")
+                                } ?: buildLog.lastOrNull { it.startsWith("[stderr]") }
                                     ?: buildLog.lastOrNull()
-                                lastResult = false to (errLine ?: "go build failed")
+                                lastResult = false to (errLine?.removePrefix("[go] ")?.removePrefix("[stderr] ") ?: "go build failed")
                             }
                         }
                     },

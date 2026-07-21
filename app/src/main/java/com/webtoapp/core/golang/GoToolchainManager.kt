@@ -84,6 +84,86 @@ object GoToolchainManager {
     fun getBuildCacheDir(context: Context): File =
         File(getToolchainRoot(context), "build-cache").also { it.mkdirs() }
 
+    fun getTempWorkDir(context: Context): File =
+        File(getToolchainRoot(context), "tmp").also { it.mkdirs() }
+
+    fun usableBytes(dir: File): Long {
+        return runCatching {
+            if (!dir.exists()) dir.mkdirs()
+            dir.usableSpace
+        }.getOrDefault(0L)
+    }
+
+    fun clearBuildArtifactCaches(context: Context): Long {
+        var freed = 0L
+        fun wipe(file: File) {
+            if (!file.exists()) return
+            val size = if (file.isFile) file.length() else directorySize(file)
+            if (file.deleteRecursively()) freed += size
+        }
+
+        wipe(getBuildCacheDir(context))
+        wipe(getTempWorkDir(context))
+        context.cacheDir.listFiles()?.forEach { child ->
+            if (child.name.startsWith("go-build") ||
+                child.name.startsWith("go-link-") ||
+                child.name == "go_tmp"
+            ) {
+                wipe(child)
+            }
+        }
+        context.externalCacheDir?.listFiles()?.forEach { child ->
+            if (child.name.startsWith("go-build") ||
+                child.name.startsWith("go-link-") ||
+                child.name == "go_tmp"
+            ) {
+                wipe(child)
+            }
+        }
+
+        getBuildCacheDir(context).mkdirs()
+        getTempWorkDir(context).mkdirs()
+        AppLogger.i(TAG, "cleared Go build caches, freed≈${freed / 1024}KB")
+        return freed
+    }
+
+    fun selectTempDir(context: Context): File {
+        val candidates = buildList {
+            add(getTempWorkDir(context))
+            context.externalCacheDir?.let { add(File(it, "go_tmp").also { d -> d.mkdirs() }) }
+            add(File(context.cacheDir, "go_tmp").also { it.mkdirs() })
+        }
+        return candidates.maxByOrNull { usableBytes(it) } ?: getTempWorkDir(context)
+    }
+
+    fun prepareForBuild(context: Context): File {
+        context.cacheDir.listFiles()?.forEach { child ->
+            if (child.name.startsWith("go-build") || child.name.startsWith("go-link-")) {
+                child.deleteRecursively()
+            }
+        }
+        val tmp = selectTempDir(context)
+        val free = usableBytes(tmp)
+        val buildCache = getBuildCacheDir(context)
+        if (free < 200L * 1024 * 1024) {
+            clearBuildArtifactCaches(context)
+        } else if (directorySize(buildCache) > 800L * 1024 * 1024) {
+            val size = directorySize(buildCache)
+            if (buildCache.deleteRecursively()) {
+                AppLogger.i(TAG, "pruned large GOCACHE ≈${size / 1024 / 1024}MB")
+            }
+            buildCache.mkdirs()
+        }
+        return selectTempDir(context)
+    }
+
+    private fun directorySize(dir: File): Long {
+        if (!dir.exists()) return 0L
+        return runCatching {
+            dir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
+        }.getOrDefault(0L)
+    }
+
     fun isGoReady(context: Context): Boolean {
         val goBin = getGoBinary(context)
         if (!goBin.exists() || !goBin.canExecute()) return false
