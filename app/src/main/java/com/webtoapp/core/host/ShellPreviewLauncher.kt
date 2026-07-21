@@ -73,6 +73,10 @@ object ShellPreviewLauncher {
                 )
             )
         }
+        val splashMediaPath = webApp.splashConfig?.mediaPath?.takeIf { it.isNotBlank() }
+        if (config.splashEnabled && splashMediaPath != null && config.splashMediaPath == null) {
+            config = config.copy(splashMediaPath = splashMediaPath)
+        }
         return config
     }
 

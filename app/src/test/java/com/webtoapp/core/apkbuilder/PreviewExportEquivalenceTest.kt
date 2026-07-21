@@ -150,6 +150,90 @@ class PreviewExportEquivalenceTest {
     }
 
     @Test
+    fun `splash preview injects mediaPath so the preview can resolve the splash asset, export leaves it null`() {
+        val app = WebApp(
+            name = "EquivSplash",
+            url = "https://equiv.example.com",
+            appType = AppType.WEB,
+            splashEnabled = true,
+            splashConfig = com.webtoapp.data.model.SplashConfig(
+                type = com.webtoapp.data.model.SplashType.IMAGE,
+                mediaPath = "/preview/splash.png",
+                duration = 5
+            )
+        )
+        val export = exportEquivalentBase(app)
+        val preview = previewShell(app)
+
+        assertThat(export.splashMediaPath).isNull()
+        assertThat(preview.splashMediaPath).isEqualTo("/preview/splash.png")
+        assertThat(preview.splashEnabled).isTrue()
+        assertThat(preview.splashType).isEqualTo("IMAGE")
+        assertThat(preview.splashDuration).isEqualTo(5)
+    }
+
+    @Test
+    fun `splash preview without mediaPath stays null and does not break equivalence`() {
+        val app = WebApp(
+            name = "EquivSplashNoMedia",
+            url = "https://equiv.example.com",
+            appType = AppType.WEB,
+            splashEnabled = true,
+            splashConfig = com.webtoapp.data.model.SplashConfig(
+                type = com.webtoapp.data.model.SplashType.IMAGE,
+                mediaPath = null
+            )
+        )
+        val export = exportEquivalentBase(app)
+        val preview = previewShell(app)
+
+        assertThat(export.splashMediaPath).isNull()
+        assertThat(preview.splashMediaPath).isNull()
+        assertEquivalentExceptPreviewOnlyFields(export, preview)
+    }
+
+    @Test
+    fun `splash disabled leaves mediaPath null on both paths`() {
+        val app = WebApp(
+            name = "EquivSplashDisabled",
+            url = "https://equiv.example.com",
+            appType = AppType.WEB,
+            splashEnabled = false,
+            splashConfig = com.webtoapp.data.model.SplashConfig(
+                mediaPath = "/should/not/be/injected.png"
+            )
+        )
+        val export = exportEquivalentBase(app)
+        val preview = previewShell(app)
+
+        assertThat(export.splashMediaPath).isNull()
+        assertThat(preview.splashMediaPath).isNull()
+        assertThat(preview.splashEnabled).isFalse()
+    }
+
+    @Test
+    fun `splash preview mediaPath resolves to a real file so the runtime can display it`() {
+        val tmpSplash = java.io.File.createTempFile("equiv_splash", ".png").apply {
+            writeBytes(byteArrayOf(0x89.toByte(), 0x50.toByte(), 0x4E.toByte(), 0x47.toByte()))
+            deleteOnExit()
+        }
+        val app = WebApp(
+            name = "EquivSplashResolvable",
+            url = "https://equiv.example.com",
+            appType = AppType.WEB,
+            splashEnabled = true,
+            splashConfig = com.webtoapp.data.model.SplashConfig(
+                type = com.webtoapp.data.model.SplashType.IMAGE,
+                mediaPath = tmpSplash.absolutePath
+            )
+        )
+        val preview = previewShell(app)
+
+        assertThat(preview.splashMediaPath).isEqualTo(tmpSplash.absolutePath)
+        assertThat(java.io.File(preview.splashMediaPath!!).exists()).isTrue()
+    }
+
+    @Test
     fun `multi-web preview and export produce equivalent site shape`() {
         val app = WebApp(
             name = "EquivMultiWeb",
@@ -186,7 +270,8 @@ class PreviewExportEquivalenceTest {
         val normalizedExport = export.copy(
             previewContentDir = preview.previewContentDir,
             siteDirName = preview.siteDirName,
-            siteId = preview.siteId
+            siteId = preview.siteId,
+            splashMediaPath = preview.splashMediaPath
         )
         assertThat(preview).isEqualTo(normalizedExport)
     }
