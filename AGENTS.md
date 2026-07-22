@@ -4,11 +4,9 @@ Instructions for coding agents working in this repository.
 
 ## Code style
 
-- Do not write code comments
-- Prefer minimal, surgical diffs that match existing patterns
-- Do not add copyright or license headers unless asked
-- Prefer fixing root causes over surface patches
-- Do not refactor unrelated code while fixing a bug or adding a feature
+- Do what you believe is right. Make the change complete and correct, not the smallest possible diff. If a fix calls for refactoring, renaming, or touching multiple files, do it.
+- Match the patterns and conventions already in the surrounding code.
+- Do not add copyright or license headers unless asked.
 
 ## Project layout
 
