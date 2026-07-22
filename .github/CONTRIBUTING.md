@@ -49,6 +49,13 @@ python3 .github/scripts/ci/validate_modules.py
 
 ## Code contributions
 
+> The canonical working guide for AI coding agents and deep code
+> contributors is [`AGENTS.md`](../AGENTS.md) — it documents how the editor,
+> export pipeline, shell template, and runtime connect, the dual preview/export
+> paths, config-field drift rules, packaging constraints, and common change
+> recipes. Read it before any non-trivial change to the build, shell sync,
+> export packaging, or config fields.
+
 ### Before you write code
 
 - Search [issues](https://github.com/shiaho777/web-to-app/issues) for prior
@@ -245,6 +252,11 @@ python3 .github/scripts/ci/validate_modules.py
 ```
 
 ### 代码贡献
+
+> 面向 AI 编码助手与深度代码贡献者的权威工作指南是
+> [`AGENTS.md`](../AGENTS.md) —— 它讲清了编辑器、导出流水线、shell 模板与运行时
+> 之间如何连接,以及双路径预览 / 导出、配置字段漂移规则、打包约束和常见改动
+> 配方。对构建、shell 同步、导出打包或配置字段的任何非平凡改动,动手前请先读。
 
 **动手前**
 

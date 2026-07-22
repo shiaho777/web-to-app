@@ -262,6 +262,7 @@ For release builds, configure signing through `local.properties` and `app/build.
 | `modules/` | Publish a community module to the in-app market | [modules/README.md](modules/README.md) |
 | Issues | Report a bug or request a feature | [GitHub Issues](https://github.com/shiaho777/web-to-app/issues) |
 | Code | Fix a bug or build a feature in the Android client | [CONTRIBUTING.md](.github/CONTRIBUTING.md) |
+| `AGENTS.md` | Authoritative guide for AI coding agents and deep contributors (architecture, shell sync, export pipeline, config drift, packaging constraints) | [AGENTS.md](AGENTS.md) |
 
 ## Contact
 
