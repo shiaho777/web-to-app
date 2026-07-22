@@ -56,7 +56,8 @@ jobs:
             -PallowDebugSignedRelease=true \
             :app:compileDebugKotlin \
             :shell:compileDebugKotlin \
-            :app:testDebugUnitTest
+            :app:testDebugUnitTest \
+            :app:checkConfigFieldDrift
 
   package-apks:
     if: github.event_name == 'workflow_dispatch'
