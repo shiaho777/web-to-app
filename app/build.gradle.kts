@@ -199,7 +199,8 @@ tasks.matching { it.name == "preBuild" }.configureEach {
     }
 }
 
-val cloneHostAar = project(":clone-host").layout.buildDirectory.file("outputs/aar/clone-host-release.aar")
+val cloneHostAar = rootProject.layout.projectDirectory.file("clone-host/build/outputs/aar/clone-host-release.aar")
+val androidSdkDir = android.sdkDirectory
 
 tasks.register<Copy>("syncCloneHostDex") {
     description = "Extracts classes.jar from clone-host AAR and converts it to a DEX asset for APK cloning."
@@ -208,8 +209,9 @@ tasks.register<Copy>("syncCloneHostDex") {
 
     enabled = false
 
-    val dexOutputDir = file("src/main/assets/clone_host")
+    val dexOutputDir = layout.projectDirectory.dir("src/main/assets/clone_host").asFile
     val intermediateDir = layout.buildDirectory.dir("intermediates/clone-host-extract")
+    val sdkDir = androidSdkDir
 
     doFirst {
         intermediateDir.get().asFile.mkdirs()
@@ -235,18 +237,17 @@ tasks.register<Copy>("syncCloneHostDex") {
             }
         }
 
-        val androidJar = android.sdkDirectory.resolve("platforms/android-36/android.jar")
+        val androidJar = sdkDir.resolve("platforms/android-36/android.jar")
         if (!androidJar.exists()) {
             throw GradleException("android.jar not found at ${androidJar.absolutePath}")
         }
 
-        val d8 = android.sdkDirectory.resolve("build-tools")
+        val d8 = sdkDir.resolve("build-tools")
             .listFiles()?.maxByOrNull { it.name }
             ?.resolve("d8")
             ?: throw GradleException("d8 not found in build-tools")
 
-        val dexFile = file("src/main/assets/clone_host/clone_host.dex")
-        dexFile.parentFile.mkdirs()
+        dexOutputDir.mkdirs()
 
         val process = ProcessBuilder(
             d8.absolutePath,
