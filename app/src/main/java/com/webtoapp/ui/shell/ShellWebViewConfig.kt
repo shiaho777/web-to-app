@@ -8,12 +8,13 @@ import com.webtoapp.data.model.WebViewConfig
 fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
 
     val isLocalFileApp = config.appType.trim().uppercase() in setOf("HTML", "FRONTEND")
+    val needsFileAccess = isLocalFileApp || config.htmlUsesFileScheme || config.webViewConfig.allowFileAccess
 
     val webViewConfig = WebViewConfig(
         javaScriptEnabled = config.webViewConfig.javaScriptEnabled,
         domStorageEnabled = config.webViewConfig.domStorageEnabled,
-        allowFileAccess = config.webViewConfig.allowFileAccess,
-        allowContentAccess = config.webViewConfig.allowContentAccess,
+        allowFileAccess = needsFileAccess,
+        allowContentAccess = config.webViewConfig.allowContentAccess || needsFileAccess,
         cacheEnabled = config.webViewConfig.cacheEnabled && !config.webViewConfig.clearBrowsingDataOnLaunch,
         clearBrowsingDataOnLaunch = config.webViewConfig.clearBrowsingDataOnLaunch,
         zoomEnabled = config.webViewConfig.zoomEnabled,

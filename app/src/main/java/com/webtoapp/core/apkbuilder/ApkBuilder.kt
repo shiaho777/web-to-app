@@ -3194,8 +3194,17 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
     )
 }
 
-private fun WebApp.buildWebViewBlock(context: android.content.Context?): WebViewBlock =
-    webViewConfig.toWebViewBlock(context)
+private fun WebApp.buildWebViewBlock(context: android.content.Context?): WebViewBlock {
+    val block = webViewConfig.toWebViewBlock(context)
+    val needsFileAccess = appType == com.webtoapp.data.model.AppType.HTML ||
+        appType == com.webtoapp.data.model.AppType.FRONTEND ||
+        computeHtmlUsesFileScheme(context)
+    return if (needsFileAccess && !block.allowFileAccess) {
+        block.copy(allowFileAccess = true)
+    } else {
+        block
+    }
+}
 
 private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBehaviorBlock(
     initialScale = webViewConfig.initialScale,
