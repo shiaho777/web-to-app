@@ -149,7 +149,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **Download location mode** — system Downloads, app-private directory, or a custom SAF folder picked by the user.
 - **Announcement templates** for launch, interval, and no-network moments.
 - **Host app language** — switch the entire builder UI among 10 languages (中文 / English / العربية / Português / Español / Français / Deutsch / Русский / 日本語 / 한국어); Arabic is full RTL.
-- **Translation overlay** — 20 target languages via Google, MyMemory, LibreTranslate, Lingva, or Auto engines (in-page translate for the *content* of generated apps, separate from host UI language).
+- **Translation overlay** — 20 target languages via Google, MyMemory, LibreTranslate, or Lingva engines, with automatic failover across them (in-page translate for the *content* of generated apps, separate from host UI language).
 - **Print bridge** — intercept `window.print()` and blob/data-URL PDFs to the Android print framework / PDF export (with an onPageStarted re-inject fallback so late navigations stay hooked).
 - **Notifications** — Web Notification polyfill, scheduled and persistent notifications with progress, URL-polling foreground service, deep links, boot auto-start, scheduled launch, and background-run service.
 - **Per-app usage stats** with Vico charts and URL health monitoring.
@@ -161,7 +161,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 
 - **Custom package name**, `versionName`, `versionCode`, icon, label, architecture target, and export format.
 - **Build-time permission injection** with unused permissions pruned from the template manifest.
-- **One-tap AAB export** — auto-builds the APK on demand, converts it to a Play-ready signed AAB with `targetSdk` rewritten to the Play-required level (currently 35) and protobuf metadata generated locally; cancellable mid-build.
+- **One-tap AAB export** — auto-builds the APK on demand, converts it to a Play-ready signed AAB with `targetSdk` rewritten to the Play-required level (currently 36) and protobuf metadata generated locally; cancellable mid-build.
 - **Keystore management** — create, import, export, delete, and certificate-fingerprint viewing; PKCS12/PFX/JKS/BKS import including Android Studio upload-key cases where store and key passwords differ.
 - **Signature schemes** — V1, V2, V3 independently controlled, with auto-fallback for legacy certificates; custom V1 signer filename for `META-INF/<name>.SF` / `.RSA`.
 - **Performance options** — image compression, WebP conversion, code minification, lazy loading, DNS prefetch, and preload hints.
@@ -217,7 +217,7 @@ The community market carries only JS/CSS extension modules. **Browser extensions
 - Runtime code is authored in `app` and synchronized into `shell`, so shared WebView/runtime behavior has one source of truth (`core/shell`, `core/webview`, `core/engine`, `core/extension`, `ui/shell`, etc.).
 - The APK builder patches template APKs at the binary AXML/ARSC level, injects config/resources, prunes permissions, and signs with `apksig`. A separate encrypted build path (`EncryptedApkBuilder`) offers resource encryption, shelling, and integrity checks.
 - The host pins `targetSdk = 28` deliberately — it is what lets generated apps fork+exec native runtimes (Node.js, PHP, Python, Go, WordPress) from app storage, a capability URL-wrapper tools lack. The AAB exporter separately rewrites `targetSdk` for Play Store distribution.
-- Server runtimes and the optional GeckoView native runtime are downloaded on first use rather than bundled into the base APK.
+- Server runtimes and the optional GeckoView native libraries (`.so` + `omni.ja`) are downloaded on first use rather than bundled into the base APK; the GeckoView API classes come from a gradle dependency, while the heavy native artifacts are fetched on demand.
 - The configuration center is `WebApp` (`data/model/WebApp.kt`) and its `*Config` classes — the single source of truth for all feature settings, carried through a full packaging passthrough chain into the generated APK.
 
 ## Tech stack
@@ -227,9 +227,13 @@ The community market carries only JS/CSS extension modules. **Browser extensions
 - Room 2.7.2 + KSP for persistence
 - OkHttp 4.12.0 + `okhttp-dnsoverhttps`
 - `com.android.tools.build:apksig` 8.3.0 for APK signing
+- BouncyCastle 1.78.1 for crypto and signing
 - `protobuf-javalite` 3.25.5 for AAB metadata
-- GeckoView as an optional browser engine
+- Firebase Cloud Messaging (BYO Firebase config) for push notifications
+- GeckoView as an optional browser engine (native libs downloaded on first use)
 - Coil for image/video/GIF loading
+- Haze for blur/glassmorphism UI
+- Gson for JSON serialization (shell config pipeline)
 - AndroidX Security Crypto + DataStore for stored secrets
 - Vico Compose-M3 for charts
 - ZXing for QR sharing
