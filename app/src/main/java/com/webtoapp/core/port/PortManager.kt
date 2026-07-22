@@ -1,8 +1,8 @@
 package com.webtoapp.core.port
 
 import com.webtoapp.core.logging.AppLogger
-import com.webtoapp.util.destroyGracefullyCompat
 import com.webtoapp.util.destroyForciblyCompat
+import com.webtoapp.util.destroyGracefullyCompat
 import com.webtoapp.util.isAliveCompat
 import java.net.ServerSocket
 import java.util.concurrent.ConcurrentHashMap
@@ -16,11 +16,13 @@ object PortManager {
 
     private const val STALE_THRESHOLD_MS = 30_000L
 
-    // 无关联进程的分配(如 LocalHttpServer 这种纯 socket server)用更长的阈值:
-    // 它们正常随 stop() 释放,但若宿主异常退出 / onDispose 未触发就会泄漏。purge
-    // 仅在「超过该阈值 且 探活确认端口已空闲(没人在监听)」时才回收,避免误杀仍在
-    // 服务的 server,也避开刚分配尚未 bind 的窗口期。
     private const val STALE_NO_PROCESS_THRESHOLD_MS = 120_000L
+
+    private const val AUTO_KILL_WAIT_MS = 120L
+
+    const val PORT_UNAVAILABLE = -1
+
+    const val PORT_CONFLICT = -2
 
     enum class PortRange(val start: Int, val end: Int) {
         LOCAL_HTTP(18000, 18499),
@@ -33,20 +35,42 @@ object PortManager {
         val size: Int get() = end - start + 1
     }
 
+    enum class ConflictPolicy {
+        REASSIGN,
+        AUTO_KILL,
+        ALERT;
+
+        companion object {
+            fun fromName(name: String?): ConflictPolicy {
+                return when (name?.trim()?.uppercase()) {
+                    "AUTO_KILL" -> AUTO_KILL
+                    "ALERT" -> ALERT
+                    else -> REASSIGN
+                }
+            }
+        }
+    }
+
+    fun interface StopHandler {
+        fun onStop(port: Int)
+    }
+
     private val lock = ReentrantReadWriteLock()
 
     private val allocatedPorts = ConcurrentHashMap<Int, PortAllocation>()
 
     private val portProcesses = ConcurrentHashMap<Int, Process>()
 
+    private val portStopHandlers = ConcurrentHashMap<Int, StopHandler>()
+
     data class PortAllocation(
         val port: Int,
         val owner: String,
         val range: PortRange,
         val allocatedAt: Long = System.currentTimeMillis(),
-        val pid: Long = -1
+        val pid: Long = -1,
+        val external: Boolean = false
     ) {
-
         val uptimeMs: Long get() = System.currentTimeMillis() - allocatedAt
     }
 
@@ -57,56 +81,139 @@ object PortManager {
         val usagePercent: Float
     )
 
-    fun allocate(range: PortRange, owner: String, preferredPort: Int = 0): Int = lock.write {
-
-        purgeStaleAllocationsLocked()
+    fun allocate(
+        range: PortRange,
+        owner: String,
+        preferredPort: Int = 0,
+        conflictPolicy: ConflictPolicy = ConflictPolicy.REASSIGN
+    ): Int {
+        purgeStaleAllocations()
 
         if (preferredPort > 0) {
-            if (!allocatedPorts.containsKey(preferredPort) && isPortAvailable(preferredPort)) {
-                val allocation = PortAllocation(preferredPort, owner, range)
-                allocatedPorts[preferredPort] = allocation
-                AppLogger.i(TAG, "分配端口 $preferredPort 给 $owner (首选)")
-                return@write preferredPort
-            }
-            AppLogger.w(TAG, "首选端口 $preferredPort 不可用，自动分配")
-        }
+            val preferred = tryClaimPort(range, owner, preferredPort, allowPreferredOnly = true)
+            if (preferred > 0) return preferred
 
-        for (port in range.start..range.end) {
-            if (!allocatedPorts.containsKey(port) && isPortAvailable(port)) {
-                val allocation = PortAllocation(port, owner, range)
-                allocatedPorts[port] = allocation
-                AppLogger.i(TAG, "分配端口 $port 给 $owner (范围: ${range.name})")
-                return@write port
-            }
-        }
-
-        if (range != PortRange.GENERAL) {
-            AppLogger.w(TAG, "${range.name} 范围端口已满，尝试通用范围")
-            for (port in PortRange.GENERAL.start..PortRange.GENERAL.end) {
-                if (!allocatedPorts.containsKey(port) && isPortAvailable(port)) {
-                    val allocation = PortAllocation(port, owner, PortRange.GENERAL)
-                    allocatedPorts[port] = allocation
-                    AppLogger.i(TAG, "分配端口 $port 给 $owner (范围: GENERAL/回退)")
-                    return@write port
+            when (conflictPolicy) {
+                ConflictPolicy.ALERT -> {
+                    AppLogger.w(TAG, "首选端口 $preferredPort 冲突 (ALERT), owner=$owner")
+                    return PORT_CONFLICT
+                }
+                ConflictPolicy.AUTO_KILL -> {
+                    AppLogger.w(TAG, "首选端口 $preferredPort 被占用，AUTO_KILL 尝试释放, owner=$owner")
+                    release(preferredPort)
+                    waitUntilAvailable(preferredPort, AUTO_KILL_WAIT_MS)
+                    val afterKill = tryClaimPort(range, owner, preferredPort, allowPreferredOnly = true)
+                    if (afterKill > 0) return afterKill
+                    AppLogger.w(TAG, "AUTO_KILL 后仍无法占用 $preferredPort，回退自动分配, owner=$owner")
+                }
+                ConflictPolicy.REASSIGN -> {
+                    AppLogger.w(TAG, "首选端口 $preferredPort 不可用，自动分配, owner=$owner")
                 }
             }
         }
 
+        val fallback = tryClaimPort(range, owner, preferredPort = 0, allowPreferredOnly = false)
+        if (fallback > 0) return fallback
+
         AppLogger.e(TAG, "无法为 $owner 分配端口，所有范围已满")
-        -1
+        return PORT_UNAVAILABLE
+    }
+
+    private fun tryClaimPort(
+        range: PortRange,
+        owner: String,
+        preferredPort: Int,
+        allowPreferredOnly: Boolean
+    ): Int = lock.write {
+        purgeStaleAllocationsLocked()
+
+        if (preferredPort > 0) {
+            if (canClaimLocked(preferredPort)) {
+                return@write claimLocked(preferredPort, owner, resolveRange(preferredPort, range))
+            }
+            if (allowPreferredOnly) return@write PORT_UNAVAILABLE
+        } else if (allowPreferredOnly) {
+            return@write PORT_UNAVAILABLE
+        }
+
+        for (port in range.start..range.end) {
+            if (canClaimLocked(port)) {
+                return@write claimLocked(port, owner, range)
+            }
+        }
+
+        if (range != PortRange.GENERAL) {
+            for (port in PortRange.GENERAL.start..PortRange.GENERAL.end) {
+                if (canClaimLocked(port)) {
+                    return@write claimLocked(port, owner, PortRange.GENERAL)
+                }
+            }
+        }
+
+        PORT_UNAVAILABLE
+    }
+
+    private fun resolveRange(port: Int, fallback: PortRange): PortRange {
+        return PortRange.entries.firstOrNull { port in it.start..it.end } ?: fallback
+    }
+
+    private fun canClaim(port: Int): Boolean = lock.read { canClaimLocked(port) }
+
+    private fun canClaimLocked(port: Int): Boolean {
+        if (port !in 1..65535) return false
+        if (allocatedPorts.containsKey(port)) return false
+        return isPortAvailable(port)
+    }
+
+    private fun claimLocked(port: Int, owner: String, range: PortRange): Int {
+        allocatedPorts[port] = PortAllocation(port, owner, range)
+        AppLogger.i(TAG, "分配端口 $port 给 $owner (范围: ${range.name})")
+        return port
+    }
+
+    fun trackExternal(
+        port: Int,
+        owner: String,
+        range: PortRange,
+        pid: Long = -1
+    ): Boolean = lock.write {
+        if (port !in 1..65535) return@write false
+        purgeStaleAllocationsLocked()
+        allocatedPorts[port] = PortAllocation(
+            port = port,
+            owner = owner,
+            range = range,
+            pid = pid,
+            external = true
+        )
+        AppLogger.i(TAG, "登记外部端口 $port 给 $owner (external)")
+        true
     }
 
     fun release(port: Int) {
+        if (port <= 0) return
 
-        val process = portProcesses.remove(port)
-        if (process != null) {
-            terminateProcess(port, process)
+        val handler: StopHandler?
+        val process: Process?
+        val owner: String?
+        lock.write {
+            handler = portStopHandlers.remove(port)
+            process = portProcesses.remove(port)
+            owner = allocatedPorts.remove(port)?.owner
         }
 
-        lock.write {
-            allocatedPorts.remove(port)?.let { allocation ->
-                AppLogger.i(TAG, "释放端口 $port (原使用者: ${allocation.owner})")
-            }
+        if (owner != null) {
+            AppLogger.i(TAG, "释放端口 $port (原使用者: $owner)")
+        }
+
+        try {
+            handler?.onStop(port)
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "端口 $port stop handler 失败: ${e.message}")
+        }
+
+        if (process != null) {
+            terminateProcess(port, process)
         }
     }
 
@@ -119,18 +226,16 @@ object PortManager {
     }
 
     fun releaseAll() {
-
-        val processes = portProcesses.toMap()
-        portProcesses.clear()
-
-        processes.forEach { (port, process) ->
-            terminateProcess(port, process)
+        val ports: List<Int>
+        lock.read {
+            ports = allocatedPorts.keys.toList()
         }
+        ports.forEach { port -> release(port) }
 
         lock.write {
-            val count = allocatedPorts.size
+            portStopHandlers.clear()
+            portProcesses.clear()
             allocatedPorts.clear()
-            AppLogger.i(TAG, "释放所有端口 (共 $count 个)")
         }
     }
 
@@ -140,22 +245,32 @@ object PortManager {
 
     fun registerProcess(port: Int, process: Process, pid: Long = -1) = lock.write {
         portProcesses[port] = process
-
         allocatedPorts[port]?.let { allocation ->
-            allocatedPorts[port] = allocation.copy(pid = pid)
+            allocatedPorts[port] = allocation.copy(pid = if (pid > 0) pid else allocation.pid)
         }
-        AppLogger.d(TAG, "注册端口 $port 的进程 (PID: $pid)")
+    }
+
+    fun registerStopHandler(port: Int, handler: StopHandler) {
+        if (port <= 0) return
+        portStopHandlers[port] = handler
+    }
+
+    fun unregisterStopHandler(port: Int) {
+        if (port <= 0) return
+        portStopHandlers.remove(port)
     }
 
     fun getProcess(port: Int): Process? = portProcesses[port]
 
     fun isProcessAlive(port: Int): Boolean {
-        return portProcesses[port]?.isAliveCompat() == true
+        val process = portProcesses[port] ?: return false
+        return process.isAliveCompat()
     }
 
+    fun hasStopHandler(port: Int): Boolean = portStopHandlers.containsKey(port)
+
     fun getAllAllocations(): Map<Int, PortAllocation> {
-        purgeStaleAllocations()
-        return lock.read { allocatedPorts.toMap() }
+        return allocatedPorts.toMap()
     }
 
     fun getAllocatedCount(range: PortRange): Int = lock.read {
@@ -189,8 +304,7 @@ object PortManager {
                     if (!process.isAliveCompat() && (now - alloc.allocatedAt) > STALE_THRESHOLD_MS) {
                         stale.add(port)
                     }
-                } else {
-
+                } else if (!alloc.external) {
                     if ((now - alloc.allocatedAt) > STALE_NO_PROCESS_THRESHOLD_MS && isPortAvailable(port)) {
                         stale.add(port)
                     }
@@ -200,17 +314,18 @@ object PortManager {
         if (stale.isNotEmpty()) {
             lock.write {
                 stale.forEach { port ->
-
                     val process = portProcesses[port]
                     val alloc = allocatedPorts[port] ?: return@forEach
                     val recyclable = if (process != null) {
                         !process.isAliveCompat()
+                    } else if (alloc.external) {
+                        false
                     } else {
-
                         isPortAvailable(port)
                     }
                     if (recyclable) {
                         portProcesses.remove(port)
+                        portStopHandlers.remove(port)
                         allocatedPorts.remove(port)
                         AppLogger.w(TAG, "清理僵尸端口 $port (原使用者: ${alloc.owner}, 存活: ${alloc.uptimeMs}ms)")
                     }
@@ -229,8 +344,7 @@ object PortManager {
                 if (!process.isAliveCompat() && (now - alloc.allocatedAt) > STALE_THRESHOLD_MS) {
                     stale.add(port)
                 }
-            } else {
-
+            } else if (!alloc.external) {
                 if ((now - alloc.allocatedAt) > STALE_NO_PROCESS_THRESHOLD_MS && isPortAvailable(port)) {
                     stale.add(port)
                 }
@@ -238,6 +352,7 @@ object PortManager {
         }
         stale.forEach { port ->
             portProcesses.remove(port)
+            portStopHandlers.remove(port)
             allocatedPorts.remove(port)?.let { alloc ->
                 AppLogger.w(TAG, "清理僵尸端口 $port (原使用者: ${alloc.owner}, 存活: ${alloc.uptimeMs}ms)")
             }
@@ -272,20 +387,48 @@ object PortManager {
         }
     }
 
-    fun allocateForLocalHttp(owner: String, preferred: Int = 0) =
-        allocate(PortRange.LOCAL_HTTP, "localhttp:$owner", preferred)
+    private fun waitUntilAvailable(port: Int, timeoutMs: Long) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            if (canClaim(port)) return
+            try {
+                Thread.sleep(20L)
+            } catch (_: InterruptedException) {
+                Thread.currentThread().interrupt()
+                return
+            }
+        }
+    }
 
-    fun allocateForPhp(projectId: String, preferred: Int = 0) =
-        allocate(PortRange.PHP, "php:$projectId", preferred)
+    fun allocateForLocalHttp(
+        owner: String,
+        preferred: Int = 0,
+        conflictPolicy: ConflictPolicy = ConflictPolicy.REASSIGN
+    ) = allocate(PortRange.LOCAL_HTTP, "localhttp:$owner", preferred, conflictPolicy)
 
-    fun allocateForNodeJs(projectId: String, preferred: Int = 0) =
-        allocate(PortRange.NODEJS, "nodejs:$projectId", preferred)
+    fun allocateForPhp(
+        projectId: String,
+        preferred: Int = 0,
+        conflictPolicy: ConflictPolicy = ConflictPolicy.REASSIGN
+    ) = allocate(PortRange.PHP, "php:$projectId", preferred, conflictPolicy)
 
-    fun allocateForPython(projectId: String, preferred: Int = 0) =
-        allocate(PortRange.PYTHON, "python:$projectId", preferred)
+    fun allocateForNodeJs(
+        projectId: String,
+        preferred: Int = 0,
+        conflictPolicy: ConflictPolicy = ConflictPolicy.REASSIGN
+    ) = allocate(PortRange.NODEJS, "nodejs:$projectId", preferred, conflictPolicy)
 
-    fun allocateForGo(projectId: String, preferred: Int = 0) =
-        allocate(PortRange.GO, "go:$projectId", preferred)
+    fun allocateForPython(
+        projectId: String,
+        preferred: Int = 0,
+        conflictPolicy: ConflictPolicy = ConflictPolicy.REASSIGN
+    ) = allocate(PortRange.PYTHON, "python:$projectId", preferred, conflictPolicy)
+
+    fun allocateForGo(
+        projectId: String,
+        preferred: Int = 0,
+        conflictPolicy: ConflictPolicy = ConflictPolicy.REASSIGN
+    ) = allocate(PortRange.GO, "go:$projectId", preferred, conflictPolicy)
 
     fun releasePhp(projectId: String) = releaseByOwner("php:$projectId")
 
@@ -324,3 +467,8 @@ object PortManager {
         }
     }
 }
+
+class PortConflictException(
+    val port: Int,
+    message: String = "Port $port is already in use"
+) : Exception(message)

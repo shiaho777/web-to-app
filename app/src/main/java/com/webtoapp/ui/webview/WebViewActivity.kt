@@ -51,6 +51,8 @@ import com.webtoapp.ui.components.EdgeSwipeRefreshLayout
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.bgm.BgmPlayer
 import com.webtoapp.core.webview.HtmlRuntimeLoadInspector
+import com.webtoapp.core.port.PortConflictException
+import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.webview.LocalHttpServer
 import com.webtoapp.core.webview.LongPressHandler
 import com.webtoapp.core.webview.WebViewCallbacks
@@ -2582,9 +2584,19 @@ fun WebViewScreen(
                         } else {
                             val enableLocalIsolation = app.webViewConfig.enableCrossOriginIsolation ||
                                 LocalHttpServer.shouldEnableCrossOriginIsolation(htmlDir)
+                            val preferredPort = app.htmlConfig?.port?.takeIf { it > 0 }
+                                ?: LocalHttpServer.stablePortForPackageName(
+                                    if (projectId.isNotBlank()) "html:$projectId" else "html:preview"
+                                )
+                            val conflictPolicy = PortManager.ConflictPolicy.fromName(
+                                app.htmlConfig?.portConflictMode?.name
+                            )
                             val baseUrl = localHttpServer.start(
-                                htmlDir,
-                                enableCrossOriginIsolation = enableLocalIsolation
+                                rootDir = htmlDir,
+                                enableCrossOriginIsolation = enableLocalIsolation,
+                                owner = if (projectId.isNotBlank()) projectId else "html-preview",
+                                conflictPolicy = conflictPolicy,
+                                preferredPort = preferredPort
                             )
                             val cacheBust = "_wta_v=" + projectId.takeIf { it.isNotBlank() }?.hashCode()
                             val targetUrl = "$baseUrl/${Uri.encode(entryFile.removePrefix("/").ifBlank { "index.html" }, "/")}?$cacheBust"
@@ -2593,7 +2605,11 @@ fun WebViewScreen(
                         }
                     } catch (e: Exception) {
                         AppLogger.e("WebViewActivity", "Failed to start local server", e)
-                        "" to (e.message ?: Strings.serverStartFailed)
+                        val msg = when (e) {
+                            is PortConflictException -> "${Strings.portConflictTitle}: ${e.port}"
+                            else -> e.message ?: Strings.serverStartFailed
+                        }
+                        "" to msg
                     }
                 } else {
                     AppLogger.w("WebViewActivity", "HTML project directory does not exist: ${htmlDir.absolutePath}")

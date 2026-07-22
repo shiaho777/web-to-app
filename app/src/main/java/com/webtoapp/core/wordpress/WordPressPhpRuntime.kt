@@ -75,7 +75,7 @@ class WordPressPhpRuntime(private val context: Context) {
             _serverState.value = ServerState.Starting
 
             val projectId = File(documentRoot).name
-            val serverPort = PortManager.allocateForPhp("wp:$projectId", port)
+            val serverPort = PortManager.allocateForPhp("wp:$projectId", port, conflictPolicy = if (port > 0) PortManager.ConflictPolicy.AUTO_KILL else PortManager.ConflictPolicy.REASSIGN)
             if (serverPort < 0) {
                 _serverState.value = ServerState.Error("无法分配端口")
                 return@withContext -1

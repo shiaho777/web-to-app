@@ -109,7 +109,7 @@ class PhpAppRuntime(private val context: Context) {
             }
 
             val projectId = File(projectDir).name
-            val serverPort = PortManager.allocateForPhp(projectId, port)
+            val serverPort = PortManager.allocateForPhp(projectId, port, conflictPolicy = if (port > 0) PortManager.ConflictPolicy.AUTO_KILL else PortManager.ConflictPolicy.REASSIGN)
             if (serverPort < 0) {
                 _serverState.value = ServerState.Error("无法分配端口")
                 return@withContext -1

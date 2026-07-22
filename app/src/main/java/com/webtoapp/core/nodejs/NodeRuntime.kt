@@ -5,6 +5,7 @@ import androidx.documentfile.provider.DocumentFile
 import com.webtoapp.core.i18n.PreviewHtmlSupport.escapeText
 import com.webtoapp.core.i18n.PreviewHtmlSupport.htmlLang
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.shell.ShellLogger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
@@ -91,6 +92,33 @@ class NodeRuntime(private val context: Context) {
                     currentPort = result.port
                     isRunning = true
                     _serverState.value = ServerState.Running(result.port)
+                    val projectId = File(projectDir).name
+                    PortManager.trackExternal(
+                        port = result.port,
+                        owner = "nodejs:$projectId",
+                        range = PortManager.PortRange.NODEJS
+                    )
+                    PortManager.registerStopHandler(result.port) {
+                        isRunning = false
+                        currentPort = 0
+                        _serverState.value = ServerState.Stopped
+                        val stopper = Thread({
+                            try {
+                                kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+                                    NodeServiceClient.stopServer(context)
+                                }
+                            } catch (e: Exception) {
+                                AppLogger.w(TAG, "stop handler 停止 Node 失败: ${e.message}")
+                            }
+                        }, "NodePortStop")
+                        stopper.isDaemon = true
+                        stopper.start()
+                        try {
+                            stopper.join(5_000L)
+                        } catch (_: InterruptedException) {
+                            Thread.currentThread().interrupt()
+                        }
+                    }
                     AppLogger.i(TAG, "Node.js 服务器已启动 (子进程): ${result.url}")
                     ShellLogger.i(TAG, "Node.js 服务器已启动 (子进程): ${result.url}")
                     result.port
@@ -115,10 +143,15 @@ class NodeRuntime(private val context: Context) {
     }
 
     fun stopServer() {
+        val port = currentPort
         try {
-            @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
-            GlobalScope.launch(Dispatchers.IO) {
-                NodeServiceClient.stopServer(context)
+            if (port > 0) {
+                PortManager.release(port)
+            } else {
+                @OptIn(kotlinx.coroutines.DelicateCoroutinesApi::class)
+                GlobalScope.launch(Dispatchers.IO) {
+                    NodeServiceClient.stopServer(context)
+                }
             }
         } catch (e: Exception) {
             AppLogger.w(TAG, "停止 Node.js 服务器异常: ${e.message}")
