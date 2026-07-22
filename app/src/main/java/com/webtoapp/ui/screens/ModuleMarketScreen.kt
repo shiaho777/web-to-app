@@ -82,7 +82,15 @@ import androidx.compose.ui.unit.dp
 import com.webtoapp.core.extension.ExtensionManager
 import com.webtoapp.core.extension.ModuleCategory
 import com.webtoapp.core.extension.ModuleSourceType
+import com.webtoapp.core.extension.UserScriptParser
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.market.GfBrowseCategory
+import com.webtoapp.core.market.GfFavorite
+import com.webtoapp.core.market.GfSearchResult
+import com.webtoapp.core.market.GfSort
+import com.webtoapp.core.market.GreasyForkFavorites
+import com.webtoapp.core.market.GreasyForkSearch
 import com.webtoapp.core.market.InstallProgress
 import com.webtoapp.core.market.MarketInstallState
 import com.webtoapp.core.market.MarketModuleView
@@ -97,6 +105,8 @@ import com.webtoapp.core.market.CwsTags
 import com.webtoapp.core.extension.BrowserExtensionStore
 import com.webtoapp.ui.components.PremiumFilterChip
 import com.webtoapp.ui.components.PremiumTextField
+import com.webtoapp.ui.components.GreasyForkSearchContent
+import com.webtoapp.ui.components.installGreasyForkScript
 import com.webtoapp.ui.design.WtaBackground
 import com.webtoapp.ui.design.WtaButton
 import com.webtoapp.ui.design.WtaButtonSize
@@ -129,7 +139,8 @@ import java.time.format.DateTimeParseException
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModuleMarketScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    initialTab: Int = 0
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -168,7 +179,7 @@ fun ModuleMarketScreen(
         }
     }
 
-    var selectedTab by remember { mutableStateOf(0) }
+    var selectedTab by remember { mutableStateOf(initialTab.coerceIn(0, 2)) }
     val filteredCustom = filtered.filter { it.entry.sourceType != "CHROME_EXTENSION" }
     val filteredChromeExt = filtered.filter { it.entry.sourceType == "CHROME_EXTENSION" }
     val currentList = if (selectedTab == 0) filteredCustom else filteredChromeExt
@@ -178,6 +189,26 @@ fun ModuleMarketScreen(
     var cwsError by remember { mutableStateOf<String?>(null) }
     var cwsHasSearched by remember { mutableStateOf(false) }
     var cwsQuery by remember { mutableStateOf("") }
+
+    var gfResults by remember { mutableStateOf<List<GfSearchResult>>(emptyList()) }
+    var gfSearching by remember { mutableStateOf(false) }
+    var gfError by remember { mutableStateOf<String?>(null) }
+    var gfHasSearched by remember { mutableStateOf(false) }
+    var gfQuery by remember { mutableStateOf("") }
+    var gfSort by remember { mutableStateOf(GfSort.DAILY) }
+    var gfBrowseCategory by remember { mutableStateOf(GfBrowseCategory.HOT) }
+    var gfFavorites by remember { mutableStateOf<List<GfFavorite>>(emptyList()) }
+    val gfFavoritesRepo = remember(context) { GreasyForkFavorites.getInstance(context) }
+
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == 2) {
+            gfFavorites = gfFavoritesRepo.load()
+        }
+    }
+
+    LaunchedEffect(gfFavoritesRepo) {
+        gfFavorites = gfFavoritesRepo.load()
+    }
 
     val currentLocale = remember {
         val tag = java.util.Locale.getDefault().language
@@ -212,6 +243,45 @@ fun ModuleMarketScreen(
             cwsSearching = false
             cwsHasSearched = true
             cwsError = it.message ?: Strings.cwsSearchFailed
+        }
+    }
+
+    LaunchedEffect(searchQuery, selectedTab, gfSort, gfBrowseCategory) {
+        if (selectedTab != 2) return@LaunchedEffect
+        val trimmed = searchQuery.trim()
+        gfQuery = trimmed
+        if (trimmed.isEmpty()) {
+            gfSearching = true
+            gfError = null
+            val category = gfBrowseCategory
+            val sort = gfSort
+            val result = GreasyForkSearch.browse(currentLocale, sort, category)
+            if (gfQuery != trimmed || gfBrowseCategory != category || gfSort != sort) return@LaunchedEffect
+            result.onSuccess { list ->
+                gfResults = list
+                gfSearching = false
+                gfHasSearched = true
+            }.onFailure {
+                gfResults = emptyList()
+                gfSearching = false
+                gfHasSearched = true
+                gfError = it.message ?: Strings.gfSearchFailed
+            }
+            return@LaunchedEffect
+        }
+        kotlinx.coroutines.delay(450)
+        gfSearching = true
+        gfError = null
+        val result = GreasyForkSearch.search(trimmed, currentLocale, gfSort)
+        if (gfQuery != trimmed) return@LaunchedEffect
+        result.onSuccess { list ->
+            gfResults = list
+            gfSearching = false
+            gfHasSearched = true
+        }.onFailure {
+            gfSearching = false
+            gfHasSearched = true
+            gfError = it.message ?: Strings.gfSearchFailed
         }
     }
 
@@ -332,7 +402,13 @@ fun ModuleMarketScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                     placeholder = {
-                        Text(if (selectedTab == 1) Strings.cwsSearchHint else Strings.moduleMarketSearchHint)
+                        Text(
+                            when (selectedTab) {
+                                1 -> Strings.cwsSearchHint
+                                2 -> Strings.gfSearchHint
+                                else -> Strings.moduleMarketSearchHint
+                            }
+                        )
                     },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                     trailingIcon = {
@@ -375,14 +451,69 @@ fun ModuleMarketScreen(
                 WtaTabRow(
                     tabs = listOf(
                         WtaTab(Strings.extensionModulesTab, filteredCustom.size),
-                        WtaTab(Strings.browserExtTab, filteredChromeExt.size)
+                        WtaTab(Strings.browserExtTab, filteredChromeExt.size),
+                        WtaTab(Strings.greasyForkTab, gfFavorites.size)
                     ),
                     selectedIndex = selectedTab,
                     onTabSelected = { selectedTab = it },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                 )
 
-                if (selectedTab == 1) {
+                if (selectedTab == 2) {
+                    GreasyForkSearchContent(
+                        query = searchQuery.trim(),
+                        results = gfResults,
+                        isSearching = gfSearching,
+                        hasSearched = gfHasSearched,
+                        errorMessage = gfError,
+                        sortMode = gfSort,
+                        onSortModeChange = { gfSort = it },
+                        browseCategory = gfBrowseCategory,
+                        onBrowseCategoryChange = { gfBrowseCategory = it },
+                        installingId = installingId,
+                        installProgress = installProgress,
+                        favorites = gfFavorites,
+                        installedUserScriptNames = installedModules
+                            .filter { it.sourceType == ModuleSourceType.USERSCRIPT }
+                            .map { it.name }
+                            .toSet(),
+                        onInstall = { result ->
+                            val id = "gf-${result.id}"
+                            installingId = id
+                            installProgress = null
+                            scope.launch {
+                                installGreasyForkScript(
+                                    result = result,
+                                    appContext = context.applicationContext,
+                                    snackbar = snackbarHostState,
+                                    onProgress = { progress -> installProgress = progress }
+                                )
+                                installingId = null
+                                installProgress = null
+                            }
+                        },
+                        onToggleFavorite = { result ->
+                            scope.launch {
+                                val fav = GfFavorite.fromResult(result)
+                                gfFavorites = if (gfFavorites.any { it.scriptId == result.id }) {
+                                    gfFavoritesRepo.remove(result.id)
+                                } else {
+                                    gfFavoritesRepo.add(fav)
+                                }
+                            }
+                        },
+                        onOpenSource = { result ->
+                            if (result.pageUrl.isNotBlank()) {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_VIEW, Uri.parse(result.pageUrl))
+                                    )
+                                }
+                            }
+                        },
+                        listState = listState
+                    )
+                } else if (selectedTab == 1) {
                     CwsSearchContent(
                         query = searchQuery.trim(),
                         results = cwsViews,
@@ -861,6 +992,7 @@ private fun CwsSearchContent(
         }
     }
 }
+
 
 @Composable
 private fun CwsSortRow(
