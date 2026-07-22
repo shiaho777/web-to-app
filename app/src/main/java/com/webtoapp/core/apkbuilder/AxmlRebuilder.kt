@@ -44,6 +44,8 @@ class AxmlRebuilder {
             "com.webtoapp.ui.shell.ShellActivity",
             "com.webtoapp.core.background.BackgroundRunService",
             "com.webtoapp.core.notification.NotificationPollingService",
+            "com.webtoapp.core.notification.NotificationWebSocketService",
+            "com.webtoapp.core.notification.NotificationFcmService",
             "com.webtoapp.core.floatingwindow.FloatingWindowService",
             "com.webtoapp.core.forcedrun.ForcedRunGuardService",
             "com.webtoapp.core.forcedrun.ForcedRunAccessibilityService",

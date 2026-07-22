@@ -2718,7 +2718,31 @@ object Strings {
     val notificationTypeLabel: String get() = StringsC.notificationTypeLabel
     val notificationTypeWebApi: String get() = StringsC.notificationTypeWebApi
     val notificationTypePolling: String get() = StringsC.notificationTypePolling
+    val notificationTypeWebsocket: String get() = StringsC.notificationTypeWebsocket
+    val notificationTypeFcm: String get() = StringsC.notificationTypeFcm
     val notificationWebApiDesc: String get() = StringsC.notificationWebApiDesc
+    val notificationFcmDesc: String get() = StringsC.notificationFcmDesc
+    val notificationFcmGoogleServicesJson: String get() = StringsC.notificationFcmGoogleServicesJson
+    val notificationFcmGoogleServicesJsonPlaceholder: String get() = StringsC.notificationFcmGoogleServicesJsonPlaceholder
+    val notificationFcmProjectId: String get() = StringsC.notificationFcmProjectId
+    val notificationFcmProjectIdPlaceholder: String get() = StringsC.notificationFcmProjectIdPlaceholder
+    val notificationFcmApplicationId: String get() = StringsC.notificationFcmApplicationId
+    val notificationFcmApplicationIdPlaceholder: String get() = StringsC.notificationFcmApplicationIdPlaceholder
+    val notificationFcmApiKey: String get() = StringsC.notificationFcmApiKey
+    val notificationFcmApiKeyPlaceholder: String get() = StringsC.notificationFcmApiKeyPlaceholder
+    val notificationFcmSenderId: String get() = StringsC.notificationFcmSenderId
+    val notificationFcmSenderIdPlaceholder: String get() = StringsC.notificationFcmSenderIdPlaceholder
+    val notificationWebsocketDesc: String get() = StringsC.notificationWebsocketDesc
+    val notificationWsUrl: String get() = StringsC.notificationWsUrl
+    val notificationWsUrlPlaceholder: String get() = StringsC.notificationWsUrlPlaceholder
+    val notificationAuthToken: String get() = StringsC.notificationAuthToken
+    val notificationAuthTokenPlaceholder: String get() = StringsC.notificationAuthTokenPlaceholder
+    val notificationRegisterUrl: String get() = StringsC.notificationRegisterUrl
+    val notificationRegisterUrlPlaceholder: String get() = StringsC.notificationRegisterUrlPlaceholder
+    val notificationWsHeaders: String get() = StringsC.notificationWsHeaders
+    val notificationWsHeadersPlaceholder: String get() = StringsC.notificationWsHeadersPlaceholder
+    val notificationRegisterHeaders: String get() = StringsC.notificationRegisterHeaders
+    val notificationRegisterHeadersPlaceholder: String get() = StringsC.notificationRegisterHeadersPlaceholder
     val notificationPollUrl: String get() = StringsC.notificationPollUrl
     val notificationPollUrlPlaceholder: String get() = StringsC.notificationPollUrlPlaceholder
     val notificationPollInterval: String get() = StringsC.notificationPollInterval
@@ -2734,6 +2758,13 @@ object Strings {
     val pollingNotificationChannelDescription: String get() = StringsC.pollingNotificationChannelDescription
     val pollingNotificationServiceTitle: String get() = StringsC.pollingNotificationServiceTitle
     val pollingNotificationForegroundText: String get() = StringsC.pollingNotificationForegroundText
+    val websocketNotificationChannelName: String get() = StringsC.websocketNotificationChannelName
+    val websocketNotificationChannelDescription: String get() = StringsC.websocketNotificationChannelDescription
+    val websocketNotificationServiceTitle: String get() = StringsC.websocketNotificationServiceTitle
+    val websocketNotificationForegroundText: String get() = StringsC.websocketNotificationForegroundText
+    val websocketNotificationForegroundConnected: String get() = StringsC.websocketNotificationForegroundConnected
+    val fcmNotificationChannelName: String get() = StringsC.fcmNotificationChannelName
+    val fcmNotificationChannelDescription: String get() = StringsC.fcmNotificationChannelDescription
     val webAppNotificationChannelName: String get() = StringsC.webAppNotificationChannelName
     val showAdvanced: String get() = StringsC.showAdvanced
     val hideAdvanced: String get() = StringsC.hideAdvanced
@@ -38859,6 +38890,18 @@ object StringsC {
         AppLanguage.KOREAN -> "폴링 알림"
     }
 
+    val notificationTypeWebsocket: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WebSocket 推送"
+        AppLanguage.ENGLISH -> "WebSocket Push"
+        AppLanguage.ARABIC -> "دفع WebSocket"
+        AppLanguage.PORTUGUESE -> "Push WebSocket"
+        AppLanguage.SPANISH -> "Push WebSocket"
+        AppLanguage.FRENCH -> "Push WebSocket"
+        AppLanguage.GERMAN -> "WebSocket-Push"
+        AppLanguage.RUSSIAN -> "WebSocket Push"
+        AppLanguage.JAPANESE -> "WebSocket プッシュ"
+        AppLanguage.KOREAN -> "WebSocket 푸시"
+    }
     val notificationWebApiDesc: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "启用标准 Web Notification API，网页中的 new Notification() 将直接映射为 Android 系统通知。适用于自行开发的网站或 HTML 项目。"
         AppLanguage.ENGLISH -> "Enable standard Web Notification API. new Notification() in web pages will map directly to Android system notifications. Suitable for self-developed websites or HTML projects."
@@ -38872,6 +38915,18 @@ object StringsC {
         AppLanguage.KOREAN -> "표준 Web Notification API 활성화. 웹 페이지의 new Notification()은 Android 시스템 알림에 직접 매핑됩니다. 자체 개발한 웹사이트나 HTML 프로젝트에 적합합니다."
     }
 
+    val notificationTypeFcm: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "FCM 推送"
+        AppLanguage.ENGLISH -> "FCM Push"
+        AppLanguage.ARABIC -> "دفع FCM"
+        AppLanguage.PORTUGUESE -> "Push FCM"
+        AppLanguage.SPANISH -> "Push FCM"
+        AppLanguage.FRENCH -> "Push FCM"
+        AppLanguage.GERMAN -> "FCM-Push"
+        AppLanguage.RUSSIAN -> "FCM Push"
+        AppLanguage.JAPANESE -> "FCM プッシュ"
+        AppLanguage.KOREAN -> "FCM 푸시"
+    }
     val notificationPollUrl: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "轮询 URL"
         AppLanguage.ENGLISH -> "Poll URL"
@@ -38898,6 +38953,138 @@ object StringsC {
         AppLanguage.KOREAN -> "https://example.com/api/notifications"
     }
 
+    val notificationWebsocketDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "通过可配置的 WebSocket 服务端实时接收推送，原生系统通知展示，点击可跳转到指定页面。可选 Token 注册接口，不绑定特定推送厂商。"
+        AppLanguage.ENGLISH -> "Receive real-time push via a configurable WebSocket server. Shows native system notifications and can open a target page on tap. Optional token registration endpoint; not tied to a specific vendor."
+        AppLanguage.ARABIC -> "استقبل الإشعارات الفورية عبر خادم WebSocket قابل للتهيئة. يعرض إشعارات النظام الأصلية ويمكن فتح صفحة عند النقر. نقطة تسجيل رمز اختيارية دون الارتباط بمورد محدد."
+        AppLanguage.PORTUGUESE -> "Receba push em tempo real via um servidor WebSocket configurável. Exibe notificações nativas e pode abrir uma página ao tocar. Endpoint opcional de registro de token, sem vínculo a um fornecedor."
+        AppLanguage.SPANISH -> "Recibe push en tiempo real mediante un servidor WebSocket configurable. Muestra notificaciones nativas y puede abrir una página al tocar. Endpoint opcional de registro de token, sin atarse a un proveedor."
+        AppLanguage.FRENCH -> "Recevez des push en temps réel via un serveur WebSocket configurable. Affiche des notifications natives et peut ouvrir une page au clic. Endpoint d’enregistrement de jeton optionnel, sans fournisseur imposé."
+        AppLanguage.GERMAN -> "Empfangen Sie Echtzeit-Push über einen konfigurierbaren WebSocket-Server. Zeigt native Systembenachrichtigungen und kann beim Tippen eine Seite öffnen. Optionaler Token-Registrierungsendpunkt, anbieterunabhängig."
+        AppLanguage.RUSSIAN -> "Получайте push в реальном времени через настраиваемый WebSocket-сервер. Показывает системные уведомления и может открыть страницу по нажатию. Опциональная регистрация токена, без привязки к вендору."
+        AppLanguage.JAPANESE -> "設定可能な WebSocket サーバーからリアルタイムでプッシュを受信します。ネイティブ通知を表示し、タップで指定ページを開けます。任意のトークン登録エンドポイントがあり、特定ベンダーに依存しません。"
+        AppLanguage.KOREAN -> "구성 가능한 WebSocket 서버로 실시간 푸시를 수신합니다. 네이티브 시스템 알림을 표시하며 탭 시 지정 페이지를 열 수 있습니다. 선택적 토큰 등록 엔드포인트, 특정 업체에 종속되지 않습니다."
+    }
+    val notificationWsUrl: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WebSocket URL"
+        AppLanguage.ENGLISH -> "WebSocket URL"
+        AppLanguage.ARABIC -> "رابط WebSocket"
+        AppLanguage.PORTUGUESE -> "URL do WebSocket"
+        AppLanguage.SPANISH -> "URL de WebSocket"
+        AppLanguage.FRENCH -> "URL WebSocket"
+        AppLanguage.GERMAN -> "WebSocket-URL"
+        AppLanguage.RUSSIAN -> "URL WebSocket"
+        AppLanguage.JAPANESE -> "WebSocket URL"
+        AppLanguage.KOREAN -> "WebSocket URL"
+    }
+    val notificationWsUrlPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "wss://example.com/ws/notifications"
+        AppLanguage.ENGLISH -> "wss://example.com/ws/notifications"
+        AppLanguage.ARABIC -> "wss://example.com/ws/notifications"
+        AppLanguage.PORTUGUESE -> "wss://example.com/ws/notifications"
+        AppLanguage.SPANISH -> "wss://example.com/ws/notifications"
+        AppLanguage.FRENCH -> "wss://example.com/ws/notifications"
+        AppLanguage.GERMAN -> "wss://example.com/ws/notifications"
+        AppLanguage.RUSSIAN -> "wss://example.com/ws/notifications"
+        AppLanguage.JAPANESE -> "wss://example.com/ws/notifications"
+        AppLanguage.KOREAN -> "wss://example.com/ws/notifications"
+    }
+    val notificationAuthToken: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "认证 Token（可选）"
+        AppLanguage.ENGLISH -> "Auth Token (optional)"
+        AppLanguage.ARABIC -> "رمز المصادقة (اختياري)"
+        AppLanguage.PORTUGUESE -> "Token de autenticação (opcional)"
+        AppLanguage.SPANISH -> "Token de autenticación (opcional)"
+        AppLanguage.FRENCH -> "Jeton d’auth (optionnel)"
+        AppLanguage.GERMAN -> "Auth-Token (optional)"
+        AppLanguage.RUSSIAN -> "Токен (необязательно)"
+        AppLanguage.JAPANESE -> "認証トークン（任意）"
+        AppLanguage.KOREAN -> "인증 토큰(선택)"
+    }
+    val notificationAuthTokenPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Bearer Token 或自定义密钥"
+        AppLanguage.ENGLISH -> "Bearer token or custom secret"
+        AppLanguage.ARABIC -> "رمز Bearer أو مفتاح مخصص"
+        AppLanguage.PORTUGUESE -> "Token Bearer ou segredo personalizado"
+        AppLanguage.SPANISH -> "Token Bearer o secreto personalizado"
+        AppLanguage.FRENCH -> "Jeton Bearer ou secret personnalisé"
+        AppLanguage.GERMAN -> "Bearer-Token oder eigenes Geheimnis"
+        AppLanguage.RUSSIAN -> "Bearer-токен или свой секрет"
+        AppLanguage.JAPANESE -> "Bearer トークンまたはカスタムシークレット"
+        AppLanguage.KOREAN -> "Bearer 토큰 또는 사용자 지정 비밀"
+    }
+    val notificationRegisterUrl: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Token 注册接口（可选）"
+        AppLanguage.ENGLISH -> "Token Register URL (optional)"
+        AppLanguage.ARABIC -> "رابط تسجيل الرمز (اختياري)"
+        AppLanguage.PORTUGUESE -> "URL de registro do token (opcional)"
+        AppLanguage.SPANISH -> "URL de registro de token (opcional)"
+        AppLanguage.FRENCH -> "URL d’enregistrement du jeton (optionnel)"
+        AppLanguage.GERMAN -> "Token-Registrierungs-URL (optional)"
+        AppLanguage.RUSSIAN -> "URL регистрации токена (необязательно)"
+        AppLanguage.JAPANESE -> "トークン登録 URL（任意）"
+        AppLanguage.KOREAN -> "토큰 등록 URL(선택)"
+    }
+    val notificationRegisterUrlPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "https://example.com/api/devices/register"
+        AppLanguage.ENGLISH -> "https://example.com/api/devices/register"
+        AppLanguage.ARABIC -> "https://example.com/api/devices/register"
+        AppLanguage.PORTUGUESE -> "https://example.com/api/devices/register"
+        AppLanguage.SPANISH -> "https://example.com/api/devices/register"
+        AppLanguage.FRENCH -> "https://example.com/api/devices/register"
+        AppLanguage.GERMAN -> "https://example.com/api/devices/register"
+        AppLanguage.RUSSIAN -> "https://example.com/api/devices/register"
+        AppLanguage.JAPANESE -> "https://example.com/api/devices/register"
+        AppLanguage.KOREAN -> "https://example.com/api/devices/register"
+    }
+    val notificationWsHeaders: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WebSocket 请求头"
+        AppLanguage.ENGLISH -> "WebSocket Headers"
+        AppLanguage.ARABIC -> "رؤوس WebSocket"
+        AppLanguage.PORTUGUESE -> "Cabeçalhos WebSocket"
+        AppLanguage.SPANISH -> "Encabezados WebSocket"
+        AppLanguage.FRENCH -> "En-têtes WebSocket"
+        AppLanguage.GERMAN -> "WebSocket-Header"
+        AppLanguage.RUSSIAN -> "Заголовки WebSocket"
+        AppLanguage.JAPANESE -> "WebSocket ヘッダー"
+        AppLanguage.KOREAN -> "WebSocket 헤더"
+    }
+    val notificationWsHeadersPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Authorization: Bearer xxx\\nX-Custom: value"
+        AppLanguage.ENGLISH -> "Authorization: Bearer xxx\\nX-Custom: value"
+        AppLanguage.ARABIC -> "Authorization: Bearer xxx\\nX-Custom: value"
+        AppLanguage.PORTUGUESE -> "Authorization: Bearer xxx\\nX-Custom: value"
+        AppLanguage.SPANISH -> "Authorization: Bearer xxx\\nX-Custom: value"
+        AppLanguage.FRENCH -> "Authorization: Bearer xxx\\nX-Custom: value"
+        AppLanguage.GERMAN -> "Authorization: Bearer xxx\\nX-Custom: value"
+        AppLanguage.RUSSIAN -> "Authorization: Bearer xxx\\nX-Custom: value"
+        AppLanguage.JAPANESE -> "Authorization: Bearer xxx\\nX-Custom: value"
+        AppLanguage.KOREAN -> "Authorization: Bearer xxx\\nX-Custom: value"
+    }
+    val notificationRegisterHeaders: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "注册接口请求头"
+        AppLanguage.ENGLISH -> "Register Headers"
+        AppLanguage.ARABIC -> "رؤوس التسجيل"
+        AppLanguage.PORTUGUESE -> "Cabeçalhos de registro"
+        AppLanguage.SPANISH -> "Encabezados de registro"
+        AppLanguage.FRENCH -> "En-têtes d’enregistrement"
+        AppLanguage.GERMAN -> "Registrierungs-Header"
+        AppLanguage.RUSSIAN -> "Заголовки регистрации"
+        AppLanguage.JAPANESE -> "登録ヘッダー"
+        AppLanguage.KOREAN -> "등록 헤더"
+    }
+    val notificationRegisterHeadersPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Content-Type: application/json\\nAuthorization: Bearer xxx"
+        AppLanguage.ENGLISH -> "Content-Type: application/json\\nAuthorization: Bearer xxx"
+        AppLanguage.ARABIC -> "Content-Type: application/json\\nAuthorization: Bearer xxx"
+        AppLanguage.PORTUGUESE -> "Content-Type: application/json\\nAuthorization: Bearer xxx"
+        AppLanguage.SPANISH -> "Content-Type: application/json\\nAuthorization: Bearer xxx"
+        AppLanguage.FRENCH -> "Content-Type: application/json\\nAuthorization: Bearer xxx"
+        AppLanguage.GERMAN -> "Content-Type: application/json\\nAuthorization: Bearer xxx"
+        AppLanguage.RUSSIAN -> "Content-Type: application/json\\nAuthorization: Bearer xxx"
+        AppLanguage.JAPANESE -> "Content-Type: application/json\\nAuthorization: Bearer xxx"
+        AppLanguage.KOREAN -> "Content-Type: application/json\\nAuthorization: Bearer xxx"
+    }
     val notificationPollInterval: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "轮询间隔（分钟）"
         AppLanguage.ENGLISH -> "Poll Interval (min)"
@@ -38911,6 +39098,138 @@ object StringsC {
         AppLanguage.KOREAN -> "폴링 간격 (min)"
     }
 
+    val notificationFcmDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "使用你自己的 Firebase 项目接收 FCM 推送。可粘贴 google-services.json 自动填充，或手动填写 Project ID / App ID / API Key / Sender ID。Token 可通过注册接口回传到你的服务器。需要 Google 服务支持。"
+        AppLanguage.ENGLISH -> "Receive FCM push with your own Firebase project. Paste google-services.json to auto-fill, or enter Project ID / App ID / API Key / Sender ID manually. Tokens can be posted to your register URL. Requires Google services."
+        AppLanguage.ARABIC -> "استقبل دفع FCM بمشروع Firebase الخاص بك. الصق google-services.json للتعبئة التلقائية أو أدخل المعرفات يدويًا. يمكن إرسال الرمز إلى خادمك. يتطلب خدمات Google."
+        AppLanguage.PORTUGUESE -> "Receba push FCM com seu próprio projeto Firebase. Cole o google-services.json para preencher automaticamente ou informe os IDs manualmente. Tokens podem ser enviados à sua URL de registro. Requer serviços Google."
+        AppLanguage.SPANISH -> "Recibe push FCM con tu propio proyecto Firebase. Pega google-services.json para autocompletar o introduce los IDs manualmente. Los tokens se pueden enviar a tu URL de registro. Requiere servicios de Google."
+        AppLanguage.FRENCH -> "Recevez des push FCM avec votre projet Firebase. Collez google-services.json pour remplir automatiquement, ou saisissez les IDs manuellement. Les jetons peuvent être envoyés à votre URL d’enregistrement. Nécessite les services Google."
+        AppLanguage.GERMAN -> "Empfangen Sie FCM-Push mit Ihrem eigenen Firebase-Projekt. google-services.json einfügen zum Autofill oder IDs manuell eingeben. Tokens können an Ihre Register-URL gesendet werden. Benötigt Google-Dienste."
+        AppLanguage.RUSSIAN -> "Получайте FCM push через свой Firebase-проект. Вставьте google-services.json для автозаполнения или укажите ID вручную. Токен можно отправить на ваш register URL. Требуются сервисы Google."
+        AppLanguage.JAPANESE -> "独自の Firebase プロジェクトで FCM プッシュを受信します。google-services.json を貼り付けて自動入力するか、ID を手動入力できます。トークンは登録 URL に送信可能。Google サービスが必要です。"
+        AppLanguage.KOREAN -> "자체 Firebase 프로젝트로 FCM 푸시를 수신합니다. google-services.json을 붙여 자동 채우거나 ID를 직접 입력하세요. 토큰은 등록 URL로 전송할 수 있습니다. Google 서비스가 필요합니다."
+    }
+    val notificationFcmGoogleServicesJson: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "google-services.json（可选粘贴）"
+        AppLanguage.ENGLISH -> "google-services.json (optional paste)"
+        AppLanguage.ARABIC -> "google-services.json (لصق اختياري)"
+        AppLanguage.PORTUGUESE -> "google-services.json (colar opcional)"
+        AppLanguage.SPANISH -> "google-services.json (pegar opcional)"
+        AppLanguage.FRENCH -> "google-services.json (collage optionnel)"
+        AppLanguage.GERMAN -> "google-services.json (optional einfügen)"
+        AppLanguage.RUSSIAN -> "google-services.json (опционально)"
+        AppLanguage.JAPANESE -> "google-services.json（任意貼り付け）"
+        AppLanguage.KOREAN -> "google-services.json(선택 붙여넣기)"
+    }
+    val notificationFcmGoogleServicesJsonPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "粘贴 Firebase google-services.json 内容"
+        AppLanguage.ENGLISH -> "Paste Firebase google-services.json content"
+        AppLanguage.ARABIC -> "الصق محتوى google-services.json"
+        AppLanguage.PORTUGUESE -> "Cole o conteúdo do google-services.json"
+        AppLanguage.SPANISH -> "Pega el contenido de google-services.json"
+        AppLanguage.FRENCH -> "Collez le contenu de google-services.json"
+        AppLanguage.GERMAN -> "Inhalt von google-services.json einfügen"
+        AppLanguage.RUSSIAN -> "Вставьте содержимое google-services.json"
+        AppLanguage.JAPANESE -> "google-services.json の内容を貼り付け"
+        AppLanguage.KOREAN -> "google-services.json 내용을 붙여넣기"
+    }
+    val notificationFcmProjectId: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Firebase Project ID"
+        AppLanguage.ENGLISH -> "Firebase Project ID"
+        AppLanguage.ARABIC -> "معرف مشروع Firebase"
+        AppLanguage.PORTUGUESE -> "ID do projeto Firebase"
+        AppLanguage.SPANISH -> "ID del proyecto Firebase"
+        AppLanguage.FRENCH -> "ID du projet Firebase"
+        AppLanguage.GERMAN -> "Firebase Project ID"
+        AppLanguage.RUSSIAN -> "Firebase Project ID"
+        AppLanguage.JAPANESE -> "Firebase Project ID"
+        AppLanguage.KOREAN -> "Firebase Project ID"
+    }
+    val notificationFcmProjectIdPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "my-firebase-project"
+        AppLanguage.ENGLISH -> "my-firebase-project"
+        AppLanguage.ARABIC -> "my-firebase-project"
+        AppLanguage.PORTUGUESE -> "my-firebase-project"
+        AppLanguage.SPANISH -> "my-firebase-project"
+        AppLanguage.FRENCH -> "my-firebase-project"
+        AppLanguage.GERMAN -> "my-firebase-project"
+        AppLanguage.RUSSIAN -> "my-firebase-project"
+        AppLanguage.JAPANESE -> "my-firebase-project"
+        AppLanguage.KOREAN -> "my-firebase-project"
+    }
+    val notificationFcmApplicationId: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Mobile SDK App ID"
+        AppLanguage.ENGLISH -> "Mobile SDK App ID"
+        AppLanguage.ARABIC -> "معرف تطبيق Mobile SDK"
+        AppLanguage.PORTUGUESE -> "ID do app Mobile SDK"
+        AppLanguage.SPANISH -> "ID de app Mobile SDK"
+        AppLanguage.FRENCH -> "ID d’app Mobile SDK"
+        AppLanguage.GERMAN -> "Mobile SDK App-ID"
+        AppLanguage.RUSSIAN -> "Mobile SDK App ID"
+        AppLanguage.JAPANESE -> "Mobile SDK App ID"
+        AppLanguage.KOREAN -> "Mobile SDK App ID"
+    }
+    val notificationFcmApplicationIdPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "1:1234567890:android:abcdef"
+        AppLanguage.ENGLISH -> "1:1234567890:android:abcdef"
+        AppLanguage.ARABIC -> "1:1234567890:android:abcdef"
+        AppLanguage.PORTUGUESE -> "1:1234567890:android:abcdef"
+        AppLanguage.SPANISH -> "1:1234567890:android:abcdef"
+        AppLanguage.FRENCH -> "1:1234567890:android:abcdef"
+        AppLanguage.GERMAN -> "1:1234567890:android:abcdef"
+        AppLanguage.RUSSIAN -> "1:1234567890:android:abcdef"
+        AppLanguage.JAPANESE -> "1:1234567890:android:abcdef"
+        AppLanguage.KOREAN -> "1:1234567890:android:abcdef"
+    }
+    val notificationFcmApiKey: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Firebase API Key"
+        AppLanguage.ENGLISH -> "Firebase API Key"
+        AppLanguage.ARABIC -> "مفتاح API لـ Firebase"
+        AppLanguage.PORTUGUESE -> "Chave de API do Firebase"
+        AppLanguage.SPANISH -> "Clave API de Firebase"
+        AppLanguage.FRENCH -> "Clé API Firebase"
+        AppLanguage.GERMAN -> "Firebase API-Schlüssel"
+        AppLanguage.RUSSIAN -> "Firebase API Key"
+        AppLanguage.JAPANESE -> "Firebase API Key"
+        AppLanguage.KOREAN -> "Firebase API Key"
+    }
+    val notificationFcmApiKeyPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "AIza..."
+        AppLanguage.ENGLISH -> "AIza..."
+        AppLanguage.ARABIC -> "AIza..."
+        AppLanguage.PORTUGUESE -> "AIza..."
+        AppLanguage.SPANISH -> "AIza..."
+        AppLanguage.FRENCH -> "AIza..."
+        AppLanguage.GERMAN -> "AIza..."
+        AppLanguage.RUSSIAN -> "AIza..."
+        AppLanguage.JAPANESE -> "AIza..."
+        AppLanguage.KOREAN -> "AIza..."
+    }
+    val notificationFcmSenderId: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Sender ID (project_number)"
+        AppLanguage.ENGLISH -> "Sender ID (project_number)"
+        AppLanguage.ARABIC -> "معرف المرسل (project_number)"
+        AppLanguage.PORTUGUESE -> "Sender ID (project_number)"
+        AppLanguage.SPANISH -> "Sender ID (project_number)"
+        AppLanguage.FRENCH -> "Sender ID (project_number)"
+        AppLanguage.GERMAN -> "Sender-ID (project_number)"
+        AppLanguage.RUSSIAN -> "Sender ID (project_number)"
+        AppLanguage.JAPANESE -> "Sender ID (project_number)"
+        AppLanguage.KOREAN -> "Sender ID (project_number)"
+    }
+    val notificationFcmSenderIdPlaceholder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "1234567890"
+        AppLanguage.ENGLISH -> "1234567890"
+        AppLanguage.ARABIC -> "1234567890"
+        AppLanguage.PORTUGUESE -> "1234567890"
+        AppLanguage.SPANISH -> "1234567890"
+        AppLanguage.FRENCH -> "1234567890"
+        AppLanguage.GERMAN -> "1234567890"
+        AppLanguage.RUSSIAN -> "1234567890"
+        AppLanguage.JAPANESE -> "1234567890"
+        AppLanguage.KOREAN -> "1234567890"
+    }
     val notificationPollIntervalHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "最小 5 分钟，建议 15 分钟以上以减少耗电"
         AppLanguage.ENGLISH -> "Minimum 5 minutes. 15+ minutes recommended to reduce battery usage."
@@ -39067,6 +39386,66 @@ object StringsC {
         AppLanguage.KOREAN -> "폴링: %s, %d분마다"
     }
 
+    val websocketNotificationChannelName: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WebSocket 推送通知"
+        AppLanguage.ENGLISH -> "WebSocket Push Notifications"
+        AppLanguage.ARABIC -> "إشعارات دفع WebSocket"
+        AppLanguage.PORTUGUESE -> "Notificações Push WebSocket"
+        AppLanguage.SPANISH -> "Notificaciones Push WebSocket"
+        AppLanguage.FRENCH -> "Notifications Push WebSocket"
+        AppLanguage.GERMAN -> "WebSocket-Push-Benachrichtigungen"
+        AppLanguage.RUSSIAN -> "WebSocket push-уведомления"
+        AppLanguage.JAPANESE -> "WebSocket プッシュ通知"
+        AppLanguage.KOREAN -> "WebSocket 푸시 알림"
+    }
+    val websocketNotificationChannelDescription: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "来自 WebSocket 推送通道的通知"
+        AppLanguage.ENGLISH -> "Notifications from the WebSocket push channel"
+        AppLanguage.ARABIC -> "إشعارات من قناة دفع WebSocket"
+        AppLanguage.PORTUGUESE -> "Notificações do canal push WebSocket"
+        AppLanguage.SPANISH -> "Notificaciones del canal push WebSocket"
+        AppLanguage.FRENCH -> "Notifications du canal push WebSocket"
+        AppLanguage.GERMAN -> "Benachrichtigungen vom WebSocket-Push-Kanal"
+        AppLanguage.RUSSIAN -> "Уведомления из WebSocket push-канала"
+        AppLanguage.JAPANESE -> "WebSocket プッシュチャネルからの通知"
+        AppLanguage.KOREAN -> "WebSocket 푸시 채널의 알림"
+    }
+    val websocketNotificationServiceTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "推送服务"
+        AppLanguage.ENGLISH -> "Push Service"
+        AppLanguage.ARABIC -> "خدمة الدفع"
+        AppLanguage.PORTUGUESE -> "Serviço de push"
+        AppLanguage.SPANISH -> "Servicio de push"
+        AppLanguage.FRENCH -> "Service de push"
+        AppLanguage.GERMAN -> "Push-Dienst"
+        AppLanguage.RUSSIAN -> "Служба push"
+        AppLanguage.JAPANESE -> "プッシュサービス"
+        AppLanguage.KOREAN -> "푸시 서비스"
+    }
+    val websocketNotificationForegroundText: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WebSocket 连接中：%s"
+        AppLanguage.ENGLISH -> "Connecting WebSocket: %s"
+        AppLanguage.ARABIC -> "جارٍ الاتصال بـ WebSocket: %s"
+        AppLanguage.PORTUGUESE -> "Conectando WebSocket: %s"
+        AppLanguage.SPANISH -> "Conectando WebSocket: %s"
+        AppLanguage.FRENCH -> "Connexion WebSocket : %s"
+        AppLanguage.GERMAN -> "WebSocket wird verbunden: %s"
+        AppLanguage.RUSSIAN -> "Подключение WebSocket: %s"
+        AppLanguage.JAPANESE -> "WebSocket 接続中: %s"
+        AppLanguage.KOREAN -> "WebSocket 연결 중: %s"
+    }
+    val websocketNotificationForegroundConnected: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "WebSocket 已连接：%s"
+        AppLanguage.ENGLISH -> "WebSocket connected: %s"
+        AppLanguage.ARABIC -> "تم الاتصال بـ WebSocket: %s"
+        AppLanguage.PORTUGUESE -> "WebSocket conectado: %s"
+        AppLanguage.SPANISH -> "WebSocket conectado: %s"
+        AppLanguage.FRENCH -> "WebSocket connecté : %s"
+        AppLanguage.GERMAN -> "WebSocket verbunden: %s"
+        AppLanguage.RUSSIAN -> "WebSocket подключен: %s"
+        AppLanguage.JAPANESE -> "WebSocket 接続済み: %s"
+        AppLanguage.KOREAN -> "WebSocket 연결됨: %s"
+    }
     val webAppNotificationChannelName: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "网页通知"
         AppLanguage.ENGLISH -> "WebApp Notifications"
@@ -39080,6 +39459,30 @@ object StringsC {
         AppLanguage.KOREAN -> "WebApp 알림"
     }
 
+    val fcmNotificationChannelName: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "FCM 推送通知"
+        AppLanguage.ENGLISH -> "FCM Push Notifications"
+        AppLanguage.ARABIC -> "إشعارات دفع FCM"
+        AppLanguage.PORTUGUESE -> "Notificações Push FCM"
+        AppLanguage.SPANISH -> "Notificaciones Push FCM"
+        AppLanguage.FRENCH -> "Notifications Push FCM"
+        AppLanguage.GERMAN -> "FCM-Push-Benachrichtigungen"
+        AppLanguage.RUSSIAN -> "FCM push-уведомления"
+        AppLanguage.JAPANESE -> "FCM プッシュ通知"
+        AppLanguage.KOREAN -> "FCM 푸시 알림"
+    }
+    val fcmNotificationChannelDescription: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "来自 Firebase Cloud Messaging 的通知"
+        AppLanguage.ENGLISH -> "Notifications from Firebase Cloud Messaging"
+        AppLanguage.ARABIC -> "إشعارات من Firebase Cloud Messaging"
+        AppLanguage.PORTUGUESE -> "Notificações do Firebase Cloud Messaging"
+        AppLanguage.SPANISH -> "Notificaciones de Firebase Cloud Messaging"
+        AppLanguage.FRENCH -> "Notifications de Firebase Cloud Messaging"
+        AppLanguage.GERMAN -> "Benachrichtigungen von Firebase Cloud Messaging"
+        AppLanguage.RUSSIAN -> "Уведомления из Firebase Cloud Messaging"
+        AppLanguage.JAPANESE -> "Firebase Cloud Messaging からの通知"
+        AppLanguage.KOREAN -> "Firebase Cloud Messaging 알림"
+    }
     val showAdvanced: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "显示高级设置"
         AppLanguage.ENGLISH -> "Show Advanced"

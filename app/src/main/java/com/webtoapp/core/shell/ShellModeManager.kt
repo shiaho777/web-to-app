@@ -1866,5 +1866,35 @@ data class NotificationShellConfig(
     val pollHeaders: String = "",
 
     @SerializedName("clickUrl")
-    val clickUrl: String = ""
+    val clickUrl: String = "",
+
+    @SerializedName("wsUrl")
+    val wsUrl: String = "",
+
+    @SerializedName("wsHeaders")
+    val wsHeaders: String = "",
+
+    @SerializedName("registerUrl")
+    val registerUrl: String = "",
+
+    @SerializedName("registerHeaders")
+    val registerHeaders: String = "",
+
+    @SerializedName("authToken")
+    val authToken: String = "",
+
+    @SerializedName("fcmProjectId")
+    val fcmProjectId: String = "",
+
+    @SerializedName("fcmApplicationId")
+    val fcmApplicationId: String = "",
+
+    @SerializedName("fcmApiKey")
+    val fcmApiKey: String = "",
+
+    @SerializedName("fcmSenderId")
+    val fcmSenderId: String = "",
+
+    @SerializedName("fcmGoogleServicesJson")
+    val fcmGoogleServicesJson: String = ""
 )

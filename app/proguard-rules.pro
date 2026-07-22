@@ -304,3 +304,9 @@
     <init>(...);
     public void onOutput(java.lang.String, boolean);
 }
+
+# Firebase / FCM
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**

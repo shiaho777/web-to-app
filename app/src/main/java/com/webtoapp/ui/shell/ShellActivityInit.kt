@@ -135,17 +135,50 @@ object ShellActivityInit {
         if (config.notificationEnabled && config.notificationConfig != null) {
             try {
                 val nc = config.notificationConfig
-                if (nc.type == "polling" && nc.pollUrl.isNotBlank()) {
-                    com.webtoapp.core.notification.NotificationPollingService.start(
-                        context = activity,
-                        appName = config.appName,
-                        pollUrl = nc.pollUrl,
-                        pollIntervalMinutes = nc.pollIntervalMinutes,
-                        pollMethod = nc.pollMethod,
-                        pollHeaders = nc.pollHeaders,
-                        clickUrl = nc.clickUrl
-                    )
-                    com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "轮询通知服务已启动: url=${nc.pollUrl}")
+                when {
+                    nc.type == "polling" && nc.pollUrl.isNotBlank() -> {
+                        com.webtoapp.core.notification.NotificationPollingService.start(
+                            context = activity,
+                            appName = config.appName,
+                            pollUrl = nc.pollUrl,
+                            pollIntervalMinutes = nc.pollIntervalMinutes,
+                            pollMethod = nc.pollMethod,
+                            pollHeaders = nc.pollHeaders,
+                            clickUrl = nc.clickUrl
+                        )
+                        com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "轮询通知服务已启动: url=${nc.pollUrl}")
+                    }
+                    nc.type == "websocket" && nc.wsUrl.isNotBlank() -> {
+                        com.webtoapp.core.notification.NotificationWebSocketService.start(
+                            context = activity,
+                            appName = config.appName,
+                            wsUrl = nc.wsUrl,
+                            wsHeaders = nc.wsHeaders,
+                            registerUrl = nc.registerUrl,
+                            registerHeaders = nc.registerHeaders,
+                            authToken = nc.authToken,
+                            clickUrl = nc.clickUrl
+                        )
+                        com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebSocket 通知服务已启动: url=${nc.wsUrl}")
+                    }
+                    nc.type == "fcm" -> {
+                        com.webtoapp.core.notification.NotificationFcmManager.start(
+                            context = activity,
+                            config = com.webtoapp.core.notification.NotificationFcmManager.FcmConfig(
+                                projectId = nc.fcmProjectId,
+                                applicationId = nc.fcmApplicationId,
+                                apiKey = nc.fcmApiKey,
+                                senderId = nc.fcmSenderId,
+                                registerUrl = nc.registerUrl,
+                                registerHeaders = nc.registerHeaders,
+                                authToken = nc.authToken,
+                                clickUrl = nc.clickUrl,
+                                appName = config.appName,
+                                googleServicesJson = nc.fcmGoogleServicesJson
+                            )
+                        )
+                        com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "FCM 通知通道已启动: project=${nc.fcmProjectId}")
+                    }
                 }
 
             } catch (e: Exception) {

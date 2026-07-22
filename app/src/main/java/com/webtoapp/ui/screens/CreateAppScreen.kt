@@ -121,7 +121,7 @@ fun CreateAppScreen(
     var isPreviewSaving by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val canPreview = editState.url.isNotBlank() &&
+    val canPreview = editState.hasPreviewableContent() &&
         !isPreviewSaving &&
         uiState !is UiState.Loading
 
