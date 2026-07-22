@@ -144,5 +144,5 @@ object ProtoManifestRewriter {
         return null
     }
 
-    const val DEFAULT_PLAY_TARGET_SDK = 35
+    const val DEFAULT_PLAY_TARGET_SDK = 36
 }

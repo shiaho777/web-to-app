@@ -103,7 +103,11 @@ class ApkToAabAssemblerTest {
         ).isEqualTo(28)
 
         val rewrittenAab = temp.newFile("rewritten.aab")
-        ApkToAabAssembler().assemble(template, rewrittenAab, targetSdkOverride = 35)
+        ApkToAabAssembler().assemble(
+            template,
+            rewrittenAab,
+            targetSdkOverride = com.webtoapp.core.playstore.aab.axml.ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK
+        )
         val rewrittenManifest = ZipFile(rewrittenAab).use { zip ->
             Resources.XmlNode.parseFrom(
                 zip.getInputStream(zip.getEntry("base/manifest/AndroidManifest.xml"))
@@ -112,6 +116,6 @@ class ApkToAabAssemblerTest {
         assertThat(
             com.webtoapp.core.playstore.aab.axml.ProtoManifestRewriter
                 .extractTargetSdkVersion(rewrittenManifest)
-        ).isEqualTo(35)
+        ).isEqualTo(com.webtoapp.core.playstore.aab.axml.ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
     }
 }

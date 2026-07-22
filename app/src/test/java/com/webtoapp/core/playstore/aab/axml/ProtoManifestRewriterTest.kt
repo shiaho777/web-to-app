@@ -15,10 +15,10 @@ class ProtoManifestRewriterTest {
             application()
         }
 
-        val rewritten = ProtoManifestRewriter.rewriteTargetSdk(manifest, 35)
+        val rewritten = ProtoManifestRewriter.rewriteTargetSdk(manifest, ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
 
         val targetSdk = ProtoManifestRewriter.extractTargetSdkVersion(rewritten)
-        assertThat(targetSdk).isEqualTo(35)
+        assertThat(targetSdk).isEqualTo(ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
     }
 
     @Test
@@ -27,7 +27,7 @@ class ProtoManifestRewriterTest {
             usesSdk(minSdk = 23, targetSdk = 28)
         }
 
-        val rewritten = ProtoManifestRewriter.rewriteTargetSdk(manifest, 35)
+        val rewritten = ProtoManifestRewriter.rewriteTargetSdk(manifest, ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
 
         val usesSdkEl = rewritten.element.childList
             .first { it.hasElement() && it.element.name == "uses-sdk" }
@@ -48,7 +48,7 @@ class ProtoManifestRewriterTest {
         }.build()
         val node = Resources.XmlNode.newBuilder().setElement(manifest).build()
 
-        val rewritten = ProtoManifestRewriter.rewriteTargetSdk(node, 35)
+        val rewritten = ProtoManifestRewriter.rewriteTargetSdk(node, ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
 
         val usesSdkEl = rewritten.element.childList
             .first { it.hasElement() && it.element.name == "uses-sdk" }
@@ -71,12 +71,12 @@ class ProtoManifestRewriterTest {
             application()
         }
 
-        val rewritten = ProtoManifestRewriter.rewriteTargetSdk(manifest, 35)
+        val rewritten = ProtoManifestRewriter.rewriteTargetSdk(manifest, ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
 
         val children = rewritten.element.childList
 
         assertThat(children.first().element.name).isEqualTo("uses-sdk")
-        assertThat(ProtoManifestRewriter.extractTargetSdkVersion(rewritten)).isEqualTo(35)
+        assertThat(ProtoManifestRewriter.extractTargetSdkVersion(rewritten)).isEqualTo(ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
 
         val appCount = children.count {
             it.hasElement() && it.element.name == "application"
@@ -95,16 +95,16 @@ class ProtoManifestRewriterTest {
         }.build()
         val node = Resources.XmlNode.newBuilder().setElement(manifest).build()
 
-        val rewritten = ProtoManifestRewriter.rewriteTargetSdk(node, 35)
+        val rewritten = ProtoManifestRewriter.rewriteTargetSdk(node, ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
 
-        assertThat(ProtoManifestRewriter.extractTargetSdkVersion(rewritten)).isEqualTo(35)
+        assertThat(ProtoManifestRewriter.extractTargetSdkVersion(rewritten)).isEqualTo(ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
     }
 
     @Test
     fun `rewrite stamps android namespace on the target attribute`() {
         val manifest = manifest { application() }
 
-        val rewritten = ProtoManifestRewriter.rewriteTargetSdk(manifest, 35)
+        val rewritten = ProtoManifestRewriter.rewriteTargetSdk(manifest, ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
 
         val usesSdkEl = rewritten.element.childList
             .first { it.hasElement() && it.element.name == "uses-sdk" }
@@ -115,8 +115,8 @@ class ProtoManifestRewriterTest {
 
         assertThat(targetAttr.resourceId).isEqualTo(0x01010270)
 
-        assertThat(targetAttr.value).isEqualTo("35")
-        assertThat(targetAttr.compiledItem.prim.intDecimalValue).isEqualTo(35)
+        assertThat(targetAttr.value).isEqualTo(ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK.toString())
+        assertThat(targetAttr.compiledItem.prim.intDecimalValue).isEqualTo(ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
     }
 
     @Test
@@ -124,7 +124,7 @@ class ProtoManifestRewriterTest {
         val manifest = manifest { usesSdk(minSdk = 23, targetSdk = 28) }
         val original = manifest.toByteArray()
 
-        ProtoManifestRewriter.rewriteTargetSdk(manifest, 35)
+        ProtoManifestRewriter.rewriteTargetSdk(manifest, ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
 
         assertThat(manifest.toByteArray()).isEqualTo(original)
         assertThat(ProtoManifestRewriter.extractTargetSdkVersion(manifest)).isEqualTo(28)
@@ -136,7 +136,7 @@ class ProtoManifestRewriterTest {
             .setElement(Resources.XmlElement.newBuilder().setName("layout"))
             .build()
 
-        ProtoManifestRewriter.rewriteTargetSdk(notManifest, 35)
+        ProtoManifestRewriter.rewriteTargetSdk(notManifest, ProtoManifestRewriter.DEFAULT_PLAY_TARGET_SDK)
     }
 
     private fun manifest(block: ManifestBuilderScope.() -> Unit): Resources.XmlNode {
