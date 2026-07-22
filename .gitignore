@@ -16,7 +16,6 @@ build/
 .claude/
 local.properties
 gradle/config.properties
-AGENTS.md
 rule.md
 CLAUDE.md
 *.iml
