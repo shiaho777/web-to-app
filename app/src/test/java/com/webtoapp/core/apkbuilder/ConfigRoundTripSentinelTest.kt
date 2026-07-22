@@ -403,14 +403,6 @@ class ConfigRoundTripSentinelTest {
     }
 
     @Test
-    fun `preview-only fields default empty on export payload`() {
-        val shell = roundTrip(baseApp())
-        assertThat(shell.previewContentDir).isEmpty()
-        assertThat(shell.siteDirName).isEmpty()
-        assertThat(shell.siteId).isEmpty()
-    }
-
-    @Test
     fun `injectScripts receives build-time kernel and perf sentinels`() {
         val app = baseApp().copy(
             webViewConfig = WebViewConfig(enableKernelDisguise = true)

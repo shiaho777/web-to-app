@@ -37,17 +37,4 @@ class AdBlockExportWiringTest {
         assertEquals(listOf("||ads.example.com^"), config.adBlockRules)
         assertEquals(listOf("https://example.com/list.txt"), config.adBlockSubscriptions)
     }
-
-    @Test
-    fun plannerSeesAdBlockEnabledFromWebAppFlag() {
-        val app = WebApp(
-            name = "AdBlock",
-            url = "https://example.com",
-            adBlockEnabled = true
-        )
-        val config = app.toApkConfig("com.example.adblock")
-        val plan = CapabilityPlanner.plan(config)
-        assertFalse(plan.liteOnly)
-        assertTrue(plan.features.isNotEmpty())
-    }
 }

@@ -1,6 +1,7 @@
 package com.webtoapp.core.stats
 
 import com.google.common.truth.Truth.assertThat
+import com.webtoapp.core.i18n.Strings
 import org.junit.Test
 
 class AppUsageStatsTest {
@@ -8,7 +9,7 @@ class AppUsageStatsTest {
     @Test
     fun `formattedTotalUsage shows less than 1m for under 60 seconds`() {
         val stats = AppUsageStats(appId = 1, totalUsageMs = 30_000)
-        assertThat(stats.formattedTotalUsage).isEqualTo("<1m")
+        assertThat(stats.formattedTotalUsage).isEqualTo(Strings.statsDurationUnderOneMinute)
     }
 
     @Test
@@ -26,7 +27,7 @@ class AppUsageStatsTest {
     @Test
     fun `formattedTotalUsage shows 0m for exactly 0 ms`() {
         val stats = AppUsageStats(appId = 1, totalUsageMs = 0)
-        assertThat(stats.formattedTotalUsage).isEqualTo("<1m")
+        assertThat(stats.formattedTotalUsage).isEqualTo(Strings.statsDurationUnderOneMinute)
     }
 
     @Test

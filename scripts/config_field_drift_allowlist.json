@@ -10,9 +10,8 @@
     {"key": "displayName", "reason": "Nested object field of CustomCaCertificate, serialized via customCaCertificates.map{...} in networkTrustConfigPayload. Dead payload subtree (see networkTrustConfig)."},
     {"key": "sha256", "reason": "Nested object field of CustomCaCertificate, serialized via customCaCertificates.map{...} in networkTrustConfigPayload. Dead payload subtree (see networkTrustConfig)."},
 
-    {"key": "previewContentDir", "reason": "Preview-only field injected by ShellPreviewLauncher.buildPreviewConfig; exported APKs derive content dir from app type at runtime."},
-    {"key": "siteDirName", "reason": "Preview-only field injected by ShellPreviewLauncher.buildPreviewConfig for preview session isolation."},
-    {"key": "siteId", "reason": "Preview-only field injected by ShellPreviewLauncher.buildPreviewConfig for preview session isolation."},
+    {"key": "siteDirName", "reason": "ShellConfig field present for runtime session isolation; export payload never emits it (preview-only)."},
+    {"key": "siteId", "reason": "ShellConfig field present for runtime session isolation; export payload never emits it (preview-only)."},
 
     {"key": "textColor", "reason": "Nested object field of LrcTheme; serialized via bgm.lrcTheme in BgmBlock → ShellConfig.bgmLrcTheme: LrcShellTheme."},
     {"key": "highlightColor", "reason": "Nested object field of LrcTheme; see textColor."},
