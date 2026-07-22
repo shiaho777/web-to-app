@@ -15,6 +15,7 @@ import android.os.SystemClock
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.logging.AppLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -57,15 +58,21 @@ class DependencyDownloadNotification private constructor(private val context: Co
 
     private fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = Strings.runtimeDownloadChannelDesc
-                setShowBadge(false)
+            try {
+                val name = CHANNEL_NAME.ifBlank { "Downloads" }
+                val channel = NotificationChannel(
+                    CHANNEL_ID,
+                    name,
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    val desc = Strings.runtimeDownloadChannelDesc
+                    if (desc.isNotBlank()) description = desc
+                    setShowBadge(false)
+                }
+                notificationManager.createNotificationChannel(channel)
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "createNotificationChannel failed", e)
             }
-            notificationManager.createNotificationChannel(channel)
         }
     }
 

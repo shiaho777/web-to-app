@@ -18,6 +18,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.util.SafeNotificationChannels
 import android.provider.Settings
 import com.webtoapp.core.logging.AppLogger
 import androidx.core.app.NotificationCompat
@@ -259,18 +260,14 @@ class ForcedRunGuardService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                Strings.notifFocusModeChannelName,
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = Strings.notifFocusModeChannelDesc
-                setShowBadge(false)
-            }
-
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager?.createNotificationChannel(channel)
+        SafeNotificationChannels.ensure(
+            context = this,
+            id = CHANNEL_ID,
+            name = Strings.notifFocusModeChannelName.ifBlank { "Focus Mode" },
+            importance = NotificationManager.IMPORTANCE_LOW,
+            description = Strings.notifFocusModeChannelDesc
+        ) {
+            setShowBadge(false)
         }
     }
 

@@ -17,6 +17,7 @@ import android.os.PowerManager
 import android.os.SystemClock
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.util.SafeNotificationChannels
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -453,17 +454,14 @@ class NotificationPollingService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                Strings.pollingNotificationChannelName,
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = Strings.pollingNotificationChannelDescription
-                setShowBadge(true)
-            }
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
+        SafeNotificationChannels.ensure(
+            context = this,
+            id = CHANNEL_ID,
+            name = Strings.pollingNotificationChannelName.ifBlank { "Notifications" },
+            importance = NotificationManager.IMPORTANCE_DEFAULT,
+            description = Strings.pollingNotificationChannelDescription
+        ) {
+            setShowBadge(true)
         }
     }
 

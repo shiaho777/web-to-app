@@ -18,6 +18,7 @@ import com.webtoapp.core.logging.AppLogger
 import androidx.core.app.NotificationCompat
 import com.webtoapp.R
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.util.SafeNotificationChannels
 
 class BackgroundRunService : Service() {
 
@@ -311,20 +312,16 @@ class BackgroundRunService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                Strings.backgroundRunChannelName,
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = Strings.backgroundRunChannelDescription
-                setShowBadge(false)
-                enableLights(false)
-                enableVibration(false)
-            }
-
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.createNotificationChannel(channel)
+        SafeNotificationChannels.ensure(
+            context = this,
+            id = CHANNEL_ID,
+            name = Strings.backgroundRunChannelName.ifBlank { "Background" },
+            importance = NotificationManager.IMPORTANCE_LOW,
+            description = Strings.backgroundRunChannelDescription
+        ) {
+            setShowBadge(false)
+            enableLights(false)
+            enableVibration(false)
         }
     }
 
