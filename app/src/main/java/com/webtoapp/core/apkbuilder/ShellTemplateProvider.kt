@@ -69,12 +69,23 @@ class AssetTemplateProvider(
 
     override fun getTemplate(): File? {
         val cached = File(cacheDir, "shell.apk")
+        val versionMarker = File(cacheDir, "shell.apk.host_version")
         return try {
+            val hostUpdateTime = try {
+                context.packageManager.getPackageInfo(context.packageName, 0).lastUpdateTime
+            } catch (_: Exception) {
+                0L
+            }
+            val markerOk = versionMarker.isFile && versionMarker.readText().trim() == hostUpdateTime.toString()
+            if (cached.isFile && cached.length() > 0L && markerOk) {
+                return cached
+            }
             context.assets.open(assetPath).use { input ->
                 FileOutputStream(cached).use { output ->
                     input.copyTo(output)
                 }
             }
+            versionMarker.writeText(hostUpdateTime.toString())
             cached
         } catch (e: Exception) {
             AppLogger.d("AssetTemplateProvider", "No asset template at $assetPath")
