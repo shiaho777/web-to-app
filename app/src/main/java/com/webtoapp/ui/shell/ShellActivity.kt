@@ -70,6 +70,7 @@ class ShellActivity : AppCompatActivity() {
     private val forcedRunManager by lazy { ForcedRunManager.getInstance(this) }
 
     private var pendingFloatingWindowLaunch = false
+    private var notificationPolyfillEnabled = false
 
     private var webViewStateBundle: Bundle? = null
     private var shellConfig: com.webtoapp.core.shell.ShellConfig? = null
@@ -311,6 +312,7 @@ class ShellActivity : AppCompatActivity() {
 
         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "配置加载成功: ${config.appName}")
         shellConfig = config
+        notificationPolyfillEnabled = config.webViewConfig.enableNotificationPolyfill
         AppLogger.d("ShellActivity", "WebView UA config from shell: userAgentMode=${config.webViewConfig.userAgentMode}, customUserAgent=${config.webViewConfig.customUserAgent}, userAgent=${config.webViewConfig.userAgent}")
         clearBrowsingDataOnLaunch = config.webViewConfig.clearBrowsingDataOnLaunch
         if (clearBrowsingDataOnLaunch) {
@@ -806,16 +808,44 @@ class ShellActivity : AppCompatActivity() {
         browserSurface?.onResume() ?: webView?.onResume()
 
         browserSurface?.resumeTimers() ?: webView?.resumeTimers()
+        dispatchVisibilityEvent(visible = true)
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onResume - WebView resumed, timers resumed")
     }
 
     override fun onPause() {
         super.onPause()
 
-        browserSurface?.onPause() ?: webView?.onPause()
+        dispatchVisibilityEvent(visible = false)
+
+        if (notificationPolyfillEnabled && browserSurface == null) {
+            // Keep JavaScript timers running so background web notifications can fire.
+            // Only applies to system WebView (NativeBridge is unavailable in GeckoView).
+            // The foreground service keeps the process alive.
+            com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onPause - notification polyfill active, keeping JS timers alive")
+        } else {
+            browserSurface?.onPause() ?: webView?.onPause()
+        }
 
         android.webkit.CookieManager.getInstance().flush()
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onPause - WebView paused, cookies flushed")
+    }
+
+    /**
+     * Explicitly dispatch a visibilitychange event to the WebView page so that
+     * document.hidden / document.visibilityState reflect the real Activity state.
+     * Android WebView does not reliably do this across all OEM ROMs and versions.
+     */
+    private fun dispatchVisibilityEvent(visible: Boolean) {
+        val js = if (visible) {
+            """(function(){try{Object.defineProperty(document,'visibilityState',{get:function(){return 'visible';},configurable:true});Object.defineProperty(document,'hidden',{get:function(){return false;},configurable:true});document.dispatchEvent(new Event('visibilitychange'));}catch(e){}})();"""
+        } else {
+            """(function(){try{Object.defineProperty(document,'visibilityState',{get:function(){return 'hidden';},configurable:true});Object.defineProperty(document,'hidden',{get:function(){return true;},configurable:true});document.dispatchEvent(new Event('visibilitychange'));}catch(e){}})();"""
+        }
+        try {
+            webView?.evaluateJavascript(js, null)
+        } catch (e: Exception) {
+            AppLogger.w("ShellActivity", "Failed to dispatch visibility event", e)
+        }
     }
 
     override fun onTrimMemory(level: Int) {
