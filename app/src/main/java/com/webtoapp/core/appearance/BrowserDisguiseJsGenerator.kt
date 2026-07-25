@@ -275,24 +275,13 @@ if(navigator.storage&&navigator.storage.estimate){
 }
 }catch(e){}
 
-// ── window.speechSynthesis (语音合成 stub) ──
-try{
-if(!window.speechSynthesis){
-    window.speechSynthesis={
-        pending:false,speaking:false,paused:false,
-        onvoiceschanged:null,
-        getVoices:_mn(function(){return[
-            {default:true,lang:'en-US',localService:true,name:'Google US English',voiceURI:'Google US English'},
-            {default:false,lang:'en-GB',localService:true,name:'Google UK English Female',voiceURI:'Google UK English Female'},
-            {default:false,lang:'de-DE',localService:true,name:'Google Deutsch',voiceURI:'Google Deutsch'},
-            {default:false,lang:'fr-FR',localService:true,name:'Google français',voiceURI:'Google français'},
-            {default:false,lang:'ja-JP',localService:true,name:'Google 日本語',voiceURI:'Google 日本語'}
-        ]}),
-        speak:_mn(function(){}),cancel:_mn(function(){}),pause:_mn(function(){}),resume:_mn(function(){}),
-        addEventListener:_mn(function(){}),removeEventListener:_mn(function(){})
-    };
-}
-}catch(e){}
+// window.speechSynthesis is intentionally NOT stubbed. A previous no-op stub installed a
+// fake API (getVoices returned a hard-coded list, speak/cancel/pause/resume were empty) on
+// WebViews that lack native TTS. But every consumer in this codebase guards with
+// `typeof speechSynthesis !== 'undefined'` (ChromeExtensionPolyfill chrome.tts, the
+// 'Text to speech' code snippet), so the stub turned the safe "not available" path into a
+// silent failure: the guard passed, speak() did nothing, and the user heard nothing.
+// Removing it restores correct graceful-degradation behavior. See issue #268 investigation.
 
 // ── window.isSecureContext ──
 try{Object.defineProperty(window,'isSecureContext',{get:_mn(function(){return true}),enumerable:true,configurable:true});}catch(e){}
