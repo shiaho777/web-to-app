@@ -31,12 +31,20 @@ class ApkToAabAssemblerTest {
         assertThat(stats.resourceXmlSkipped).isEqualTo(0)
         assertThat(stats.resourceXmlConverted).isGreaterThan(50)
         assertThat(stats.dexCount).isAtLeast(1)
+
+        // Regression for issue #272: the template ships a plain-text res/*.xml (the AGP
+        // resource-shrinker's tools:keep marker, emitted alongside Firebase). It must be
+        // skipped, not fed to the binary AXML parser.
+        assertThat(stats.resourceXmlPlainTextSkipped).isAtLeast(1)
         assertThat(stats.nativeLibCount).isGreaterThan(0)
         assertThat(stats.abis).isNotEmpty()
 
         val entryNames = ZipFile(output).use { zip ->
             zip.entries().toList().map { it.name }.toSet()
         }
+        // The plain-text tools:keep file (res/qF.xml in the template) must NOT appear as a
+        // base/res/ proto entry in the AAB.
+        assertThat(entryNames).doesNotContain("base/res/qF.xml")
         assertThat(entryNames).contains("BundleConfig.pb")
         assertThat(entryNames).contains("base/manifest/AndroidManifest.xml")
         assertThat(entryNames).contains("base/resources.pb")

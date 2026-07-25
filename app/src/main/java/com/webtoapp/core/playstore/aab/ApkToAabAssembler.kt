@@ -17,6 +17,19 @@ class ApkToAabAssembler {
 
     companion object {
         private const val TAG = "ApkToAabAssembler"
+
+        /**
+         * Binary AXML starts with the chunk header magic `03 00` (type RES_XML_TYPE = 0x0003,
+         * little-endian). Plain-text XML — notably the AGP resource-shrinker's `tools:keep` /
+         * `tools:discard` marker, which is left uncompiled under `res/` — starts with `<?xml`
+         * (`3c 3f 78 6d`). Returns true for the latter so the caller can skip it instead of
+         * handing it to the binary AXML parser. See issue #272.
+         */
+        internal fun isPlaintextXml(data: ByteArray): Boolean {
+            if (data.size < 2) return false
+            // 0x3c = '<'. Binary AXML's first byte is 0x03, so this cleanly separates the two.
+            return data[0] == 0x3c.toByte()
+        }
     }
 
     fun assemble(
@@ -30,6 +43,7 @@ class ApkToAabAssembler {
         var manifestEntries = 0
         var resourceXmlConverted = 0
         var resourceXmlSkipped = 0
+        var resourceXmlPlainTextSkipped = 0
         var resourceVerbatim = 0
         var dexCount = 0
         var assetCount = 0
@@ -104,8 +118,23 @@ class ApkToAabAssembler {
                                 continue
                             }
 
+                            val xmlBytes = zip.getInputStream(entry).readBytes()
+
+                            // Some res/*.xml entries are plain-text source XML, not compiled
+                            // binary AXML. The canonical case is the resource-shrinker's
+                            // tools:keep / tools:discard marker document emitted by AGP (often
+                            // alongside Firebase), which AGP deliberately leaves uncompiled in
+                            // release APKs. Such files are build-time metadata with no runtime
+                            // semantics and are not needed by Google Play, so we drop them
+                            // instead of feeding them to the binary AXML parser (which would
+                            // throw "Not an AXML file"). See issue #272.
+                            if (isPlaintextXml(xmlBytes)) {
+                                AppLogger.d(TAG, "Skipping plaintext res XML: $name")
+                                resourceXmlPlainTextSkipped++
+                                continue
+                            }
+
                             try {
-                                val xmlBytes = zip.getInputStream(entry).readBytes()
                                 val proto = AxmlToProtoXml.convert(xmlBytes)
                                 writeEntry(out, "base/$name", proto.toByteArray())
                                 resourceXmlConverted++
@@ -182,6 +211,7 @@ class ApkToAabAssembler {
             manifestConverted = manifestEntries,
             resourceXmlConverted = resourceXmlConverted,
             resourceXmlSkipped = resourceXmlSkipped,
+            resourceXmlPlainTextSkipped = resourceXmlPlainTextSkipped,
             resourceVerbatimCopied = resourceVerbatim,
             assetCount = assetCount,
             nativeLibCount = nativeLibCount,
@@ -222,6 +252,7 @@ class ApkToAabAssembler {
         val manifestConverted: Int,
         val resourceXmlConverted: Int,
         val resourceXmlSkipped: Int,
+        val resourceXmlPlainTextSkipped: Int = 0,
         val resourceVerbatimCopied: Int,
         val assetCount: Int,
         val nativeLibCount: Int,
@@ -236,6 +267,7 @@ class ApkToAabAssembler {
             append(", manifest=$manifestConverted")
             append(", resXml=$resourceXmlConverted")
             if (resourceXmlSkipped > 0) append(", resXmlFail=$resourceXmlSkipped")
+            if (resourceXmlPlainTextSkipped > 0) append(", resXmlText=$resourceXmlPlainTextSkipped")
             append(", resBin=$resourceVerbatimCopied")
             append(", assets=$assetCount")
             append(", nativeLibs=$nativeLibCount(${abis.joinToString(",")})")
