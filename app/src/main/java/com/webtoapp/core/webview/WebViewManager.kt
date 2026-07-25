@@ -1930,6 +1930,11 @@ class WebViewManager(
                     view?.evaluateJavascript(CLIPBOARD_POLYFILL_JS, null)
                 }
 
+                // Warm up the audio session on the first user gesture so async audio (e.g. AI
+                // voice-chat responses that arrive after the gesture window) can play even when
+                // mediaPlaybackRequiresUserGesture is true. See AudioUnlockInjector / issue #268.
+                view?.let { AudioUnlockInjector.inject(it) }
+
                 if (config.enableNotificationPolyfill) {
                     view?.let { injectNotificationPolyfill(it) }
                 }
