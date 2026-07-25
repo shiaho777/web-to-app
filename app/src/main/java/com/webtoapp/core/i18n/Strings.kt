@@ -4662,10 +4662,6 @@ object Strings {
     val jsOpenPolicyAllow: String get() = StringsE.jsOpenPolicyAllow
     val jsOpenPolicyBlock: String get() = StringsE.jsOpenPolicyBlock
     val jsOpenPolicyPrompt: String get() = StringsE.jsOpenPolicyPrompt
-    val mediaAutoplayScopeLabel: String get() = StringsE.mediaAutoplayScopeLabel
-    val mediaAutoplayScopeVideoOnly: String get() = StringsE.mediaAutoplayScopeVideoOnly
-    val mediaAutoplayScopeAudioOnly: String get() = StringsE.mediaAutoplayScopeAudioOnly
-    val mediaAutoplayScopeBoth: String get() = StringsE.mediaAutoplayScopeBoth
     val kernelDisguiseLevelLabel: String get() = StringsE.kernelDisguiseLevelLabel
     val kernelDisguiseLevelBasic: String get() = StringsE.kernelDisguiseLevelBasic
     val kernelDisguiseLevelStandard: String get() = StringsE.kernelDisguiseLevelStandard
@@ -61777,16 +61773,16 @@ object StringsE {
         AppLanguage.KOREAN -> "미디어 자동 재생"
     }
     val mediaAutoplayDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "允许网页中的视频和音频自动播放。关闭后需要用户手动点击才能播放。"
-        AppLanguage.ENGLISH -> "Allow videos and audio on web pages to play automatically. When off, user interaction is required to start playback."
-        AppLanguage.ARABIC -> "السماح بالتشغيل التلقائي للفيديو والصوت في صفحات الويب. عند الإيقاف، يلزم تفاعل المستخدم لبدء التشغيل."
-        AppLanguage.PORTUGUESE -> "Permitir que vídeos e áudio nas páginas web sejam reproduzidos automaticamente. Quando desativado, é necessária interação do usuário para iniciar a reprodução."
-        AppLanguage.SPANISH -> "Permitir que los videos y el audio de las páginas web se reproduzcan automáticamente. Cuando está desactivado, se requiere interacción del usuario para iniciar la reproducción."
-        AppLanguage.FRENCH -> "Autoriser les vidéos et l'audio des pages web à se lire automatiquement. Lorsque désactivé, une interaction utilisateur est requise pour démarrer la lecture."
-        AppLanguage.GERMAN -> "Videos und Audio auf Webseiten automatisch abspielen. Wenn deaktiviert, ist eine Nutzerinteraktion nötig, um die Wiedergabe zu starten."
-        AppLanguage.RUSSIAN -> "Разрешить видео и аудио на веб-страницам воспроизводиться автоматически. Если выключено, для запуска воспроизведения требуется действие пользователя."
-        AppLanguage.JAPANESE -> "ウェブページの動画と音声を自動再生させます。オフの場合、再生の開始にはユーザー操作が必要です。"
-        AppLanguage.KOREAN -> "웹페이지의 동영상과 오디오가 자동 재생되도록 허용합니다. 끄면 재생을 시작하려면 사용자 조작이 필요합니다."
+        AppLanguage.CHINESE -> "允许网页中的视频和音频在无需点击的情况下自动播放。语音对话类网页（如 AI 助手）需要开启此项才能听到回复语音。"
+        AppLanguage.ENGLISH -> "Allow videos and audio on web pages to play without a tap. Voice-chat pages (e.g. AI assistants) need this on to hear spoken replies."
+        AppLanguage.ARABIC -> "السماح للفيديو والصوت في صفحات الويب بالتشغيل دون نقر. تحتاج صفحات الدردشة الصوتية (مثل مساعدي الذكاء الاصطناعي) إلى تفعيل هذا الخيار لسماع الردود الصوتية."
+        AppLanguage.PORTUGUESE -> "Permitir que vídeos e áudio nas páginas web sejam reproduzidos sem um toque. Páginas de chat por voz (ex. assistentes de IA) precisam disso ativado para ouvir as respostas faladas."
+        AppLanguage.SPANISH -> "Permitir que los videos y el audio de las páginas web se reproduzcan sin un toque. Las páginas de chat por voz (p. ej., asistentes de IA) necesitan esto activado para escuchar las respuestas habladas."
+        AppLanguage.FRENCH -> "Autoriser les vidéos et l'audio des pages web à se lire sans appui. Les pages de chat vocal (ex. assistants IA) nécessitent cette option pour entendre les réponses parlées."
+        AppLanguage.GERMAN -> "Videos und Audio auf Webseiten ohne Tippen automatisch abspielen. Sprachchat-Seiten (z. B. KI-Assistenten) benötigen dies, um gesprochene Antworten zu hören."
+        AppLanguage.RUSSIAN -> "Разрешить видео и аудио на веб-страницах воспроизводиться без нажатия. Страницы голосового чата (например, ИИ-ассистенты) требуют этого для воспроизведения голосовых ответов."
+        AppLanguage.JAPANESE -> "ウェブページの動画と音声をタップなしで自動再生します。音声チャットページ（AIアシスタントなど）は、音声返信を聞くためにこれをオンにする必要があります。"
+        AppLanguage.KOREAN -> "웹페이지의 동영상과 오디오를 탭 없이 자동 재생합니다. 음성 채팅 페이지(예: AI 어시스턴트)는 음성 답변을 듣기 위해 이 옵션이 필요합니다."
     }
 
     val thirdPartyCookiesTitle: String get() = when (Strings.lang) {
@@ -62659,10 +62655,7 @@ object StringsE {
     val jsOpenPolicyBlock: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "拦截"; AppLanguage.ENGLISH -> "Block"; AppLanguage.ARABIC -> "حظر"; AppLanguage.PORTUGUESE -> "Bloquear"; AppLanguage.SPANISH -> "Bloquear"; AppLanguage.FRENCH -> "Bloquer"; AppLanguage.GERMAN -> "Blockieren"; AppLanguage.RUSSIAN -> "Блокировать"; AppLanguage.JAPANESE -> "ブロック"; AppLanguage.KOREAN -> "차단"; }
     val jsOpenPolicyPrompt: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "弹窗询问"; AppLanguage.ENGLISH -> "Prompt"; AppLanguage.ARABIC -> "اسألني"; AppLanguage.PORTUGUESE -> "Perguntar"; AppLanguage.SPANISH -> "Preguntar"; AppLanguage.FRENCH -> "Demander"; AppLanguage.GERMAN -> "Fragen"; AppLanguage.RUSSIAN -> "Спрашивать"; AppLanguage.JAPANESE -> "確認"; AppLanguage.KOREAN -> "묻기"; }
 
-    val mediaAutoplayScopeLabel: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "自动播放范围"; AppLanguage.ENGLISH -> "Autoplay Scope"; AppLanguage.ARABIC -> "نطاق التشغيل التلقائي"; AppLanguage.PORTUGUESE -> "Escopo de Autoplay"; AppLanguage.SPANISH -> "Alcance de Autoplay"; AppLanguage.FRENCH -> "Portée d'autoplay"; AppLanguage.GERMAN -> "Autoplay-Bereich"; AppLanguage.RUSSIAN -> "Область автовоспроизведения"; AppLanguage.JAPANESE -> "自動再生スコープ"; AppLanguage.KOREAN -> "자동 재생 범위"; }
-    val mediaAutoplayScopeVideoOnly: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "仅视频"; AppLanguage.ENGLISH -> "Video Only"; AppLanguage.ARABIC -> "فيديو فقط"; AppLanguage.PORTUGUESE -> "Apenas Vídeo"; AppLanguage.SPANISH -> "Solo Video"; AppLanguage.FRENCH -> "Vidéo uniquement"; AppLanguage.GERMAN -> "Nur Video"; AppLanguage.RUSSIAN -> "Только видео"; AppLanguage.JAPANESE -> "動画のみ"; AppLanguage.KOREAN -> "동영상만"; }
-    val mediaAutoplayScopeAudioOnly: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "仅音频"; AppLanguage.ENGLISH -> "Audio Only"; AppLanguage.ARABIC -> "صوت فقط"; AppLanguage.PORTUGUESE -> "Apenas Áudio"; AppLanguage.SPANISH -> "Solo Audio"; AppLanguage.FRENCH -> "Audio uniquement"; AppLanguage.GERMAN -> "Nur Audio"; AppLanguage.RUSSIAN -> "Только аудио"; AppLanguage.JAPANESE -> "音声のみ"; AppLanguage.KOREAN -> "오디오만"; }
-    val mediaAutoplayScopeBoth: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "视频和音频"; AppLanguage.ENGLISH -> "Video & Audio"; AppLanguage.ARABIC -> "فيديو وصوت"; AppLanguage.PORTUGUESE -> "Vídeo e Áudio"; AppLanguage.SPANISH -> "Video y Audio"; AppLanguage.FRENCH -> "Vidéo et audio"; AppLanguage.GERMAN -> "Video & Audio"; AppLanguage.RUSSIAN -> "Видео и аудио"; AppLanguage.JAPANESE -> "動画と音声"; AppLanguage.KOREAN -> "동영상 및 오디오"; }
+
 
     val kernelDisguiseLevelLabel: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "伪装强度"; AppLanguage.ENGLISH -> "Disguise Level"; AppLanguage.ARABIC -> "مستوى التمويه"; AppLanguage.PORTUGUESE -> "Nível de Disfarce"; AppLanguage.SPANISH -> "Nivel de Disfraz"; AppLanguage.FRENCH -> "Niveau de déguisement"; AppLanguage.GERMAN -> "Tarnstufe"; AppLanguage.RUSSIAN -> "Уровень маскировки"; AppLanguage.JAPANESE -> "偽装レベル"; AppLanguage.KOREAN -> "위장 수준"; }
     val kernelDisguiseLevelBasic: String get() = when (Strings.lang) { AppLanguage.CHINESE -> "基础"; AppLanguage.ENGLISH -> "Basic"; AppLanguage.ARABIC -> "أساسي"; AppLanguage.PORTUGUESE -> "Básico"; AppLanguage.SPANISH -> "Básico"; AppLanguage.FRENCH -> "Basique"; AppLanguage.GERMAN -> "Basis"; AppLanguage.RUSSIAN -> "Базовый"; AppLanguage.JAPANESE -> "基本"; AppLanguage.KOREAN -> "기본"; }

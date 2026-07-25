@@ -1369,10 +1369,14 @@ class WebViewManager(
 
                 mediaPlaybackRequiresUserGesture = if (!config.mediaAutoplayEnabled) {
                     true
-                } else when (config.mediaAutoplayScope) {
-                    com.webtoapp.data.model.MediaAutoplayScope.VIDEO_ONLY -> true
-                    com.webtoapp.data.model.MediaAutoplayScope.AUDIO_ONLY,
-                    com.webtoapp.data.model.MediaAutoplayScope.BOTH -> false
+                } else {
+                    // Android WebSettings.mediaPlaybackRequiresUserGesture is a single binary
+                    // flag that applies to ALL media (audio and video alike); the platform cannot
+                    // gate one media kind independently of the other. So "autoplay enabled"
+                    // simply means media may play without a prior user gesture. The
+                    // mediaAutoplayScope field is retained for data/JSON compatibility but no
+                    // longer changes runtime behavior — see issue #268 investigation.
+                    false
                 }
 
                 @Suppress("DEPRECATION")

@@ -3228,22 +3228,13 @@ fun SpecialSettingsCard(
                             )
                         }
 
-                        SpecialAdvancedRow(
-                            title = Strings.mediaAutoplayTitle,
-                            subtitle = Strings.mediaAutoplayDesc,
-                            icon = Icons.Outlined.PlayCircle,
-                            checked = config.mediaAutoplayEnabled,
-                            onCheckedChange = { onConfigChange(config.copy(mediaAutoplayEnabled = it)) }
-                        ) {
-                            ChoiceChipRow(
-                                label = Strings.mediaAutoplayScopeLabel,
-                                options = listOf(
-                                    com.webtoapp.data.model.MediaAutoplayScope.VIDEO_ONLY to Strings.mediaAutoplayScopeVideoOnly,
-                                    com.webtoapp.data.model.MediaAutoplayScope.AUDIO_ONLY to Strings.mediaAutoplayScopeAudioOnly,
-                                    com.webtoapp.data.model.MediaAutoplayScope.BOTH to Strings.mediaAutoplayScopeBoth
-                                ),
-                                selected = config.mediaAutoplayScope,
-                                onSelect = { onConfigChange(config.copy(mediaAutoplayScope = it)) }
+                        WtaSettingCard {
+                            WtaToggleRow(
+                                title = Strings.mediaAutoplayTitle,
+                                subtitle = Strings.mediaAutoplayDesc,
+                                icon = Icons.Outlined.PlayCircle,
+                                checked = config.mediaAutoplayEnabled,
+                                onCheckedChange = { onConfigChange(config.copy(mediaAutoplayEnabled = it)) }
                             )
                         }
 
