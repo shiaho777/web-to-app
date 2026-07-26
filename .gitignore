@@ -14,8 +14,10 @@ release/
 build/
 .vscode/
 .claude/
+.zcode/
 local.properties
 gradle/config.properties
+gradle/gradle-daemon-jvm.properties
 rule.md
 CLAUDE.md
 *.iml
