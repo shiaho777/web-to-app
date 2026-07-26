@@ -6,6 +6,13 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.google.gson.TypeAdapter
+import com.google.gson.TypeAdapterFactory
+import com.google.gson.annotations.SerializedName
+import com.google.gson.reflect.TypeToken
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonToken
+import com.google.gson.stream.JsonWriter
 import com.webtoapp.data.model.ActivationDialogConfig
 import com.webtoapp.data.model.AdConfig
 import com.webtoapp.data.model.Announcement
@@ -31,22 +38,68 @@ class Converters {
 
     companion object {
 
+        /**
+         * Enum handling for persisted JSON.
+         *
+         * Writing delegates to Gson, which emits the [SerializedName] value when a constant
+         * declares one. Reading must therefore accept that same value: resolving by constant
+         * name alone mapped `"web_api"` to no constant at all, so every load of a stored
+         * [com.webtoapp.data.model.NotificationType.WEB_API] silently degraded to `NONE`.
+         * Because [ApkExportConfig] round-trips through this Gson on every Room read/write,
+         * the setting was lost as soon as it was saved.
+         *
+         * Values that match no constant still fall back to the first one, so JSON written by
+         * a newer build stays loadable instead of nulling a non-null Kotlin field.
+         */
+        private val lenientEnumAdapterFactory = object : TypeAdapterFactory {
+            override fun <T : Any?> create(gson: Gson, type: TypeToken<T>): TypeAdapter<T>? {
+                val rawType = type.rawType
+                val enumClass = when {
+                    rawType.isEnum -> rawType
+                    // Constants with a body compile to an anonymous subclass of the enum.
+                    rawType.superclass?.isEnum == true -> rawType.superclass
+                    else -> return null
+                }
+
+                val byExact = HashMap<String, Any>()
+                val byLowercase = HashMap<String, Any>()
+                enumClass.declaredFields.forEach { field ->
+                    if (!field.isEnumConstant) return@forEach
+                    val constant = runCatching { field.get(null) }.getOrNull() ?: return@forEach
+                    val keys = mutableListOf((constant as Enum<*>).name)
+                    field.getAnnotation(SerializedName::class.java)?.let { annotation ->
+                        keys += annotation.value
+                        keys += annotation.alternate
+                    }
+                    keys.forEach { key ->
+                        byExact.putIfAbsent(key, constant)
+                        byLowercase.putIfAbsent(key.lowercase(), constant)
+                    }
+                }
+                val fallback = enumClass.enumConstants?.firstOrNull()
+                val delegate = gson.getDelegateAdapter(this, type)
+
+                return object : TypeAdapter<T>() {
+                    override fun write(out: JsonWriter, value: T) = delegate.write(out, value)
+
+                    override fun read(reader: JsonReader): T? {
+                        if (reader.peek() == JsonToken.NULL) {
+                            reader.nextNull()
+                            return null
+                        }
+                        val raw = reader.nextString()
+                        val resolved = byExact[raw] ?: byLowercase[raw.lowercase()] ?: fallback
+                        @Suppress("UNCHECKED_CAST")
+                        return resolved as T?
+                    }
+                }
+            }
+        }
+
         @PublishedApi
         internal val gson: Gson by lazy {
             GsonBuilder()
-                .registerTypeHierarchyAdapter(Enum::class.java,
-                    com.google.gson.JsonDeserializer<Enum<*>> { json, typeOfT, _ ->
-                        try {
-                            @Suppress("UNCHECKED_CAST")
-                            val enumClass = typeOfT as Class<out Enum<*>>
-                            java.lang.Enum.valueOf(enumClass, json.asString)
-                        } catch (e: Exception) {
-
-                            @Suppress("UNCHECKED_CAST")
-                            val enumClass = typeOfT as Class<out Enum<*>>
-                            enumClass.enumConstants?.firstOrNull()
-                        }
-                    })
+                .registerTypeAdapterFactory(lenientEnumAdapterFactory)
                 .create()
         }
 
