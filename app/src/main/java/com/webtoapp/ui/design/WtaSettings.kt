@@ -388,7 +388,7 @@ fun WtaSettingRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                     color = contentColor,
                     maxLines = titleMaxLines,
                     overflow = TextOverflow.Ellipsis
@@ -511,7 +511,7 @@ fun WtaTextFieldRow(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
             color = MaterialTheme.colorScheme.onSurface
         )
         if (!subtitle.isNullOrBlank()) {
@@ -551,7 +551,7 @@ fun WtaSliderRow(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge)
+                Text(title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium))
                 if (!subtitle.isNullOrBlank()) {
                     Text(
                         subtitle,
