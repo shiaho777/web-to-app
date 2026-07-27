@@ -14,6 +14,8 @@ class ArscRebuilder {
         private const val RES_TABLE_PACKAGE_TYPE: Short = 0x0200
 
         private const val UTF8_FLAG = 0x00000100
+
+        const val LAUNCHER_BACKGROUND_DRAWABLE_PATH = "res/ic_launcher_bg.png"
     }
 
     fun rebuildWithNewAppName(arscData: ByteArray, targetAppName: String): ByteArray {
@@ -84,6 +86,8 @@ class ArscRebuilder {
                 val iconPaths = findIconPathIndices(remainingData, strings)
                 _lastDiscoveredIconPaths = iconPaths.map { (idx, _) -> strings[idx] }.toSet()
                 AppLogger.d(TAG, "Discovered old icon paths (for ZIP replacement): $_lastDiscoveredIconPaths")
+
+                convertLauncherBackgroundToDrawable(remainingData, strings)
             }
 
             var modified = false
@@ -155,6 +159,109 @@ class ArscRebuilder {
 
     private var _lastDiscoveredIconPaths = emptySet<String>()
     fun getLastDiscoveredIconPaths(): Set<String> = _lastDiscoveredIconPaths
+
+    private fun convertLauncherBackgroundToDrawable(
+        packageData: ByteArray,
+        globalStrings: MutableList<String>
+    ) {
+        try {
+            val bgStringIdx = globalStrings.indexOfFirst { it == LAUNCHER_BACKGROUND_DRAWABLE_PATH }
+            val newStringIndex = if (bgStringIdx >= 0) {
+                bgStringIdx
+            } else {
+                globalStrings.add(LAUNCHER_BACKGROUND_DRAWABLE_PATH)
+                globalStrings.size - 1
+            }
+
+            val buf = ByteBuffer.wrap(packageData).order(ByteOrder.LITTLE_ENDIAN)
+
+            val pkgType = buf.short
+            val pkgHeaderSize = buf.short.toInt() and 0xFFFF
+            buf.int
+            buf.int
+
+            if (pkgType != RES_TABLE_PACKAGE_TYPE) {
+                AppLogger.w(TAG, "convertLauncherBackground: not a package chunk")
+                return
+            }
+
+            buf.position(buf.position() + 256)
+            val typeStringsOffset = buf.int
+            buf.int
+            val keyStringsOffset = buf.int
+
+            buf.position(typeStringsOffset)
+            val typeStrings = readStringPool(buf, packageData)
+
+            buf.position(keyStringsOffset)
+            val keyStrings = readStringPool(buf, packageData)
+
+            val colorTypeId = typeStrings.indexOfFirst { it == "color" } + 1
+            val launcherBgKeyIdx = keyStrings.indexOf("ic_launcher_background")
+
+            if (colorTypeId <= 0 || launcherBgKeyIdx < 0) {
+                AppLogger.d(TAG, "convertLauncherBackground: color/ic_launcher_background not found (colorTypeId=$colorTypeId, keyIdx=$launcherBgKeyIdx)")
+                return
+            }
+
+            var pos = pkgHeaderSize
+            var patched = false
+            while (pos + 8 <= packageData.size) {
+                buf.position(pos)
+                val chunkType = buf.short.toInt() and 0xFFFF
+                val chunkHeaderSize = buf.short.toInt() and 0xFFFF
+                val chunkSize = buf.int
+
+                if (chunkSize <= 0 || pos + chunkSize > packageData.size) break
+
+                if (chunkType == 0x0201) {
+                    val typeId = packageData[pos + 8].toInt() and 0xFF
+                    val typeFlags = packageData[pos + 9].toInt() and 0xFF
+                    val entryCount = readI32(packageData, pos + 12)
+                    val entriesStart = readI32(packageData, pos + 16)
+
+                    if (typeId == colorTypeId && typeFlags == 0) {
+                        val offsetsBase = pos + chunkHeaderSize
+
+                        for (entryIdx in 0 until entryCount) {
+                            val entryOff = readI32(packageData, offsetsBase + entryIdx * 4)
+                            if (entryOff == -1 || entryOff < 0) continue
+
+                            val entryPos = pos + entriesStart + entryOff
+                            if (entryPos + 12 > packageData.size) continue
+
+                            val entryKeyIndex = readI32(packageData, entryPos + 4)
+                            if (entryKeyIndex != launcherBgKeyIdx) continue
+
+                            val entryFlags = readU16(packageData, entryPos + 2)
+                            val isComplex = (entryFlags and 0x0001) != 0
+                            if (isComplex) continue
+
+                            val valuePos = entryPos + 8
+
+                            packageData[valuePos + 2] = 0
+                            packageData[valuePos + 3] = 0x03
+                            packageData[valuePos + 4] = (newStringIndex and 0xFF).toByte()
+                            packageData[valuePos + 5] = ((newStringIndex shr 8) and 0xFF).toByte()
+                            packageData[valuePos + 6] = ((newStringIndex shr 16) and 0xFF).toByte()
+                            packageData[valuePos + 7] = ((newStringIndex shr 24) and 0xFF).toByte()
+
+                            patched = true
+                            AppLogger.d(TAG, "convertLauncherBackground: patched color/ic_launcher_background -> drawable '$LAUNCHER_BACKGROUND_DRAWABLE_PATH' (strIdx=$newStringIndex) at entryPos=$entryPos")
+                            break
+                        }
+                    }
+                }
+                pos += chunkSize
+            }
+
+            if (!patched) {
+                AppLogger.w(TAG, "convertLauncherBackground: entry not patched")
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "convertLauncherBackground failed", e)
+        }
+    }
 
     private fun findIconPathIndices(
         packageData: ByteArray,
@@ -354,6 +461,13 @@ class ArscRebuilder {
             readUtf16String(data, offset)
         }
     }
+
+    private fun readU16(d: ByteArray, o: Int): Int =
+        (d[o].toInt() and 0xFF) or ((d[o + 1].toInt() and 0xFF) shl 8)
+
+    private fun readI32(d: ByteArray, o: Int): Int =
+        (d[o].toInt() and 0xFF) or ((d[o + 1].toInt() and 0xFF) shl 8) or
+            ((d[o + 2].toInt() and 0xFF) shl 16) or ((d[o + 3].toInt() and 0xFF) shl 24)
 
     private fun readUtf8String(data: ByteArray, offset: Int): String {
         var pos = offset

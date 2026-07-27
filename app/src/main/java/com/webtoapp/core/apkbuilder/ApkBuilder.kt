@@ -1209,6 +1209,10 @@ class ApkBuilder(private val context: Context) {
 
                     if (iconBitmap != null) {
                         addAdaptiveIconPngs(zipOut, iconBitmap, entryNames)
+
+                        val bgBytes = template.createFullBleedBackgroundIcon(iconBitmap, 432)
+                        writeEntryDeflated(zipOut, ArscRebuilder.LAUNCHER_BACKGROUND_DRAWABLE_PATH, bgBytes)
+                        logger.log("Added full-bleed launcher background drawable (${bgBytes.size} bytes)")
                     }
                 }
 

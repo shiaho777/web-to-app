@@ -85,6 +85,33 @@ class ApkTemplate(private val context: Context) {
         return baos.toByteArray()
     }
 
+    fun createFullBleedBackgroundIcon(bitmap: Bitmap, size: Int): ByteArray {
+        val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(output)
+
+        val scale = size.toFloat() / maxOf(bitmap.width, bitmap.height)
+        val scaledW = (bitmap.width * scale).toInt().coerceAtLeast(1)
+        val scaledH = (bitmap.height * scale).toInt().coerceAtLeast(1)
+        val scaled = Bitmap.createScaledBitmap(bitmap, scaledW, scaledH, true)
+
+        val left = (size - scaledW) / 2f
+        val top = (size - scaledH) / 2f
+
+        val paint = android.graphics.Paint().apply {
+            isAntiAlias = true
+            isFilterBitmap = true
+        }
+        canvas.drawBitmap(scaled, left, top, paint)
+
+        val baos = ByteArrayOutputStream()
+        output.compress(Bitmap.CompressFormat.PNG, 100, baos)
+
+        if (scaled != bitmap) scaled.recycle()
+        output.recycle()
+
+        return baos.toByteArray()
+    }
+
     fun loadBitmap(iconPath: String): Bitmap? {
         return try {
             if (iconPath.startsWith("/")) {
