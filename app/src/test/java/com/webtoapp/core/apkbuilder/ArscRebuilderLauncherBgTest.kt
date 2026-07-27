@@ -5,19 +5,27 @@ import java.io.File
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.util.zip.ZipFile
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 class ArscRebuilderLauncherBgTest {
 
     private val templateApk: File by lazy {
         resolveFile(
-            "app/src/main/assets/template/webview_shell.apk",
-            "src/main/assets/template/webview_shell.apk"
+            "src/main/assets/template/webview_shell.apk",
+            "app/src/main/assets/template/webview_shell.apk"
+        )
+    }
+
+    private fun assumeTemplateBuilt() {
+        assumeTrue(
+            "shell template not built — run ':app:syncShellTemplateApk' first",
+            templateApk.exists()
         )
     }
 
     private fun readTemplateArsc(): ByteArray {
-        assertThat(templateApk.exists()).isTrue()
+        assumeTemplateBuilt()
         return ZipFile(templateApk).use { it.getInputStream(it.getEntry("resources.arsc")).readBytes() }
     }
 
