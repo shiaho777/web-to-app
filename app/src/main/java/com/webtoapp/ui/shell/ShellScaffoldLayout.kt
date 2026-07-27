@@ -138,6 +138,10 @@ fun BoxScope.ShellScaffoldLayout(
 
         val actualStatusBarPadding = if (statusBarHeightDp >= 0) statusBarHeightDp.dp else systemStatusBarHeightDp
 
+        // 全屏模式下可选的内容内边距：把网页交互区从屏幕边缘内移，让角落按钮易于点按，
+        // 同时缓解与系统返回手势边缘带的冲突。默认 0 → 向后兼容旧行为。
+        val contentPad = config.webViewConfig.fullscreenContentPaddingDp.dp
+
         val contentModifier = when {
             hideToolbar && showToolbar -> {
 
@@ -145,11 +149,16 @@ fun BoxScope.ShellScaffoldLayout(
             }
             hideToolbar && config.webViewConfig.showStatusBarInFullscreen -> {
 
-                Modifier.fillMaxSize().padding(top = actualStatusBarPadding)
+                Modifier.fillMaxSize().padding(
+                    top = actualStatusBarPadding,
+                    start = contentPad,
+                    end = contentPad,
+                    bottom = contentPad
+                )
             }
             hideToolbar -> {
 
-                Modifier.fillMaxSize()
+                Modifier.fillMaxSize().padding(contentPad)
             }
             else -> {
 

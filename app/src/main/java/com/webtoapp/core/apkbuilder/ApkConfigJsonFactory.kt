@@ -175,6 +175,7 @@ internal object ApkConfigJsonFactory {
         "showStatusBarInFullscreen" to webView.showStatusBarInFullscreen,
         "showNavigationBarInFullscreen" to webView.showNavigationBarInFullscreen,
         "showToolbarInFullscreen" to webView.showToolbarInFullscreen,
+        "fullscreenContentPaddingDp" to webView.fullscreenContentPaddingDp,
         "landscapeMode" to webView.landscapeMode,
         "injectScripts" to webView.injectScripts.map { script ->
             linkedMapOf(

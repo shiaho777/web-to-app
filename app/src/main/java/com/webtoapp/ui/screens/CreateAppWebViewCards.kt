@@ -2236,6 +2236,20 @@ fun FullscreenModeCard(
                     onCheckedChange = onShowNavigationBarChange
                 )
 
+                WtaSectionDivider()
+                WtaSliderRow(
+                    title = Strings.fullscreenContentPadding,
+                    subtitle = Strings.fullscreenContentPaddingHint,
+                    value = webViewConfig.fullscreenContentPaddingDp.toFloat(),
+                    onValueChange = {
+                        onWebViewConfigChange(
+                            webViewConfig.copy(fullscreenContentPaddingDp = it.toInt())
+                        )
+                    },
+                    valueLabel = "${webViewConfig.fullscreenContentPaddingDp}dp",
+                    valueRange = 0f..48f
+                )
+
                 if (showStatusBar) {
                     WtaSectionDivider()
 

@@ -2285,6 +2285,8 @@ object Strings {
     val showStatusBarHint: String get() = StringsC.showStatusBarHint
     val showNavigationBar: String get() = StringsC.showNavigationBar
     val showNavigationBarHint: String get() = StringsC.showNavigationBarHint
+    val fullscreenContentPadding: String get() = StringsC.fullscreenContentPadding
+    val fullscreenContentPaddingHint: String get() = StringsC.fullscreenContentPaddingHint
     val statusBarStyleConfigLabel: String get() = StringsC.statusBarStyleConfigLabel
     val statusBarLightModeLabel: String get() = StringsC.statusBarLightModeLabel
     val statusBarDarkModeLabel: String get() = StringsC.statusBarDarkModeLabel
@@ -33269,6 +33271,32 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Держать нижнюю панель навигации видимой в полноэкранном режиме (Назад, Главная, Недавние)"
         AppLanguage.JAPANESE -> "全画面モードで下部ナビゲーションバーを表示し続ける（戻る、ホーム、最近）"
         AppLanguage.KOREAN -> "전체 화면 모드에서 하단 내비게이션 바를 계속 표시（뒤로, 홈, 최근）"
+    }
+
+    val fullscreenContentPadding: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "内容内边距"
+        AppLanguage.ENGLISH -> "Content Padding"
+        AppLanguage.ARABIC -> "هامش المحتوى"
+        AppLanguage.PORTUGUESE -> "Preenchimento de Conteúdo"
+        AppLanguage.SPANISH -> "Relleno de Contenido"
+        AppLanguage.FRENCH -> "Marge de Contenu"
+        AppLanguage.GERMAN -> "Innenabstand des Inhalts"
+        AppLanguage.RUSSIAN -> "Внутренний отступ контента"
+        AppLanguage.JAPANESE -> "コンテンツの余白"
+        AppLanguage.KOREAN -> "콘텐츠 안쪽 여백"
+    }
+
+    val fullscreenContentPaddingHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "全屏模式下给内容四周留白，让屏幕角落的按钮更容易点按，并缓解与返回手势边缘的冲突。若返回手势区仍偏小，可开启上方的“显示导航栏”恢复标准手势区。"
+        AppLanguage.ENGLISH -> "Add padding around content in fullscreen so corner buttons are easier to tap and it conflicts less with the back-gesture edge. If the back-gesture area still feels small, turn on “Show Navigation Bar” above to restore the standard gesture zone."
+        AppLanguage.ARABIC -> "أضف هامشًا حول المحتوى في وضع ملء الشاشة لتسهيل النقر على أزرار الزوايا وتقليل التعارض مع حافة إيماءة الرجوع. إذا ظل منطقة إيماءة الرجوع صغيرة، فعّل «إظهار شريط التنقل» بالأعلى لاستعادة منطقة الإيماءات القياسية."
+        AppLanguage.PORTUGUESE -> "Adicione preenchimento ao redor do conteúdo em tela cheia para facilitar tocar nos botões dos cantos e reduzir conflitos com a borda do gesto de voltar. Se a área do gesto de voltar ainda parecer pequena, ative “Mostrar Barra de Navegação” acima para restaurar a zona padrão de gestos."
+        AppLanguage.SPANISH -> "Añade relleno alrededor del contenido en pantalla completa para que los botones de las esquinas sean más fáciles de tocar y haya menos conflicto con el borde del gesto de retroceso. Si el área del gesto sigue pareciendo pequeña, activa “Mostrar Barra de Navegación” arriba para restaurar la zona estándar de gestos."
+        AppLanguage.FRENCH -> "Ajoutez une marge autour du contenu en plein écran pour faciliter l'appui sur les boutons d'angle et réduire les conflits avec la zone du geste de retour. Si la zone du geste de retour reste petite, activez « Afficher la Barre de Navigation » ci-dessus pour restaurer la zone de gestes standard."
+        AppLanguage.GERMAN -> "Fügt im Vollbildmodus einen Abstand um den Inhalt hinzu, damit Eckbuttons leichter antippbar sind und weniger Konflikte mit der Zurück-Geste-Kante entstehen. Wenn die Zone für die Zurück-Geste noch klein wirkt, aktivieren Sie oben „Navigationsleiste anzeigen“, um die Standard-Gestenzone wiederherzustellen."
+        AppLanguage.RUSSIAN -> "Добавляет отступ вокруг контента в полноэкранном режиме, чтобы кнопки в углах было легче нажимать, и уменьшает конфликт с краем жеста «назад». Если зона жеста «назад» всё ещё мала, включите выше «Показывать панель навигации», чтобы восстановить стандартную зону жестов."
+        AppLanguage.JAPANESE -> "全画面モードでコンテンツの周囲に余白を設け、画面の隅のボタンをタップしやすくし、戻るジェスチャーの縁との競合を和らげます。戻るジェスチャー領域がまだ狭い場合は、上の「ナビゲーションバーを表示」をオンにして標準のジェスチャー領域を復元してください。"
+        AppLanguage.KOREAN -> "전체 화면 모드에서 콘텐츠 주위에 여백을 추가해 화면 모서리의 버튼을 누르기 쉽게 하고, 뒤로 가기 제스처 경계와의 충돌을 줄입니다. 뒤로 가기 제스처 영역이 여전히 좁게 느껴지면 위의 “내비게이션 바 표시”를 켜서 표준 제스처 영역을 복원하세요."
     }
 
     val statusBarStyleConfigLabel: String get() = when (Strings.lang) {

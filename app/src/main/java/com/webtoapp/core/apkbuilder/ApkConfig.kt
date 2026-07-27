@@ -113,6 +113,7 @@ data class ApkConfig(
     val showStatusBarInFullscreen: Boolean get() = webView.showStatusBarInFullscreen
     val showNavigationBarInFullscreen: Boolean get() = webView.showNavigationBarInFullscreen
     val showToolbarInFullscreen: Boolean get() = webView.showToolbarInFullscreen
+    val fullscreenContentPaddingDp: Int get() = webView.fullscreenContentPaddingDp
     val landscapeMode: Boolean get() = webView.landscapeMode
     val orientationMode: String get() = webView.orientationMode
     val injectScripts: List<com.webtoapp.data.model.UserScript> get() = webView.injectScripts
@@ -471,6 +472,7 @@ data class WebViewBlock(
     val showStatusBarInFullscreen: Boolean = false,
     val showNavigationBarInFullscreen: Boolean = false,
     val showToolbarInFullscreen: Boolean = false,
+    val fullscreenContentPaddingDp: Int = 0,
     val landscapeMode: Boolean = false,
     val orientationMode: String = "PORTRAIT",
     val injectScripts: List<com.webtoapp.data.model.UserScript> = emptyList(),

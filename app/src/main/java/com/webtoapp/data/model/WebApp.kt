@@ -265,6 +265,7 @@ data class WebViewConfig(
     val showStatusBarInFullscreen: Boolean = false,
     val showNavigationBarInFullscreen: Boolean = false,
     val showToolbarInFullscreen: Boolean = false,
+    val fullscreenContentPaddingDp: Int = 0,
     val landscapeMode: Boolean = false,
     val orientationMode: OrientationMode = OrientationMode.PORTRAIT,
     val injectScripts: List<UserScript> = emptyList(),

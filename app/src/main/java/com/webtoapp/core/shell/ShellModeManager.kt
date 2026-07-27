@@ -1082,6 +1082,9 @@ data class WebViewShellConfig(
     @SerializedName("showToolbarInFullscreen")
     val showToolbarInFullscreen: Boolean = false,
 
+    @SerializedName("fullscreenContentPaddingDp")
+    val fullscreenContentPaddingDp: Int = 0,
+
     @SerializedName("landscapeMode")
     val landscapeMode: Boolean = false,
 

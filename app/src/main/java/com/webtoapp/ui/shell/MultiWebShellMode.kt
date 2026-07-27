@@ -6,7 +6,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -137,6 +140,7 @@ private fun TabsMode(
     onRefresh: () -> Unit
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
+    val tabsListState = rememberLazyListState()
 
     LaunchedEffect(selectedTab, sites.size) {
         val site = sites.getOrNull(selectedTab)
@@ -145,6 +149,13 @@ private fun TabsMode(
             if (site.url.isNotBlank()) {
                 webViewCallbacks.onPageStarted(site.url)
             }
+        }
+    }
+
+    // 选中项变化时把它滚动到可见区域，避免被挤出屏幕（站点多时可横向滚动）。
+    LaunchedEffect(selectedTab) {
+        if (sites.size > 1) {
+            tabsListState.animateScrollToItem(selectedTab)
         }
     }
 
@@ -158,18 +169,20 @@ private fun TabsMode(
                     color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
+                    LazyRow(
+                        state = tabsListState,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(48.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        contentPadding = PaddingValues(horizontal = 8.dp)
                     ) {
-                        sites.forEachIndexed { index, site ->
+                        itemsIndexed(sites) { index, site ->
                             val isSelected = selectedTab == index
                             Column(
                                 modifier = Modifier
-                                    .weight(1f)
+                                    .widthIn(min = 72.dp)
                                     .fillMaxHeight()
                                     .clickable { selectedTab = index },
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -205,10 +218,24 @@ private fun TabsMode(
             }
         }
     ) { padding ->
+        // 全屏模式下可选的内容内边距，与单站点 ShellScaffoldLayout 行为一致：
+        // 把网页交互区从屏幕边缘内移，让角落按钮易于点按，并缓解与系统返回手势边缘带的冲突。
+        val contentPad = webViewConfig.fullscreenContentPaddingDp.dp
+        val topPad = if (webViewConfig.hideToolbar && webViewConfig.showStatusBarInFullscreen) {
+            WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+        } else {
+            contentPad
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .padding(
+                    start = contentPad,
+                    end = contentPad,
+                    bottom = contentPad,
+                    top = if (webViewConfig.hideToolbar) topPad else contentPad
+                )
         ) {
             val visitedTabs = remember { mutableStateMapOf<Int, Boolean>() }
             visitedTabs[selectedTab] = true
