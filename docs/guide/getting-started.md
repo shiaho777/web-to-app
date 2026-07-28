@@ -4,7 +4,7 @@ This walkthrough takes you from a fresh install to your first signed APK, follow
 
 ## 1. Install WebToApp
 
-Install the WebToApp builder on an Android device running **Android 6.0 (API 23) or newer**. On first launch you land on **My Apps** — the home screen that lists every app you create. See [Main Screen](/guide/main-screen) for a tour of it.
+Install the WebToApp builder on an Android device running **Android 6.0 (API 23) or newer**. On first launch you land on **My Apps** — the home screen that lists every app you create. See [Main Screen](/guide/main-screen/my-apps) for a tour of it.
 
 ## 2. Open the create menu
 
@@ -28,7 +28,7 @@ Tap **Save**. Your app now appears in the list on **My Apps**.
 
 ## 4. Preview
 
-On **My Apps**, tap your app's card. WebToApp launches it in preview, exactly as it will behave once exported. (Tap the ⋮ button on the card instead to open the action menu — see [App Actions](/guide/app-actions).)
+On **My Apps**, tap your app's card. WebToApp launches it in preview, exactly as it will behave once exported. (Tap the ⋮ button on the card instead to open the action menu — see [App Actions](/guide/app-actions/edit-core-config).)
 
 ::: warning Preview ≠ export
 Preview and export share the same runtime code, but export additionally serializes your configuration into the generated APK. If a feature works in preview but not after export, a config field likely did not flow through the export chain. See [Config Field Drift](/developer/config-drift).
@@ -50,10 +50,10 @@ Open **⋮ → File Manager** from the top-right of **My Apps**. Your build outp
 
 ## Next steps
 
-- Tour the [Main Screen](/guide/main-screen).
-- Learn what each [app type](/guide/create-app) can do.
-- Explore the per-app [App Actions](/guide/app-actions) (shortcut, share, export, AAB).
-- Open the top-right **⋮** menu — see [More Features](/guide/more-features/ai-tools).
+- Tour the [Main Screen](/guide/main-screen/my-apps).
+- Learn what each [app type](/guide/app-types/) can do.
+- Explore the per-app [App Actions](/guide/app-actions/edit-core-config) (shortcut, share, export, AAB).
+- Open the top-right **⋮** menu — see [More Features](/guide/more-features/ai-coding).
 
 ## Build from source
 

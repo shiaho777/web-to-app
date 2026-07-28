@@ -3,7 +3,7 @@
 When you edit an app's **common config** (or create a Web app), the editor is a scroll of capability cards. This page indexes them; the grouped reference pages go deeper.
 
 ::: info Core vs common
-Non-web apps split editing into **Edit Core Config** (type-specific source/runtime) and **Edit Common Config** (the cards below). Web apps show these in a single editor. See [App Actions](/guide/app-actions).
+Non-web apps split editing into **Edit Core Config** (type-specific source/runtime) and **Edit Common Config** (the cards below). Web apps show these in a single editor. See [App Actions](/guide/app-actions/edit-core-config).
 :::
 
 ## The config cards
@@ -33,7 +33,7 @@ Non-web apps split editing into **Edit Core Config** (type-specific source/runti
 | **Device actions** | Device action hooks. |
 | **Browser advanced** | Advanced WebView/browser toggles. See [Network](/guide/config/network). |
 | **Special settings** | Miscellaneous advanced toggles. |
-| **Export & permissions** *(drawer)* | Package name, version, signing, runtime permissions. See [App Actions](/guide/app-actions#build-apk). |
+| **Export & permissions** *(drawer)* | Package name, version, signing, runtime permissions. See [Build APK](/guide/app-actions/build-apk). |
 
 ## Grouped reference
 

@@ -4,7 +4,7 @@
 
 ## 1. 安装 WebToApp
 
-在 **Android 6.0(API 23)或更高版本** 的设备上安装 WebToApp 构建器。首次启动会进入 **我的应用** —— 即列出你所创建的全部应用的主页。主界面导览见[主界面](/zh/guide/main-screen)。
+在 **Android 6.0(API 23)或更高版本** 的设备上安装 WebToApp 构建器。首次启动会进入 **我的应用** —— 即列出你所创建的全部应用的主页。主界面导览见[主界面](/zh/guide/main-screen/my-apps)。
 
 ## 2. 打开创建菜单
 
@@ -28,7 +28,7 @@
 
 ## 4. 预览
 
-在 **我的应用** 中,点击你的应用卡片。WebToApp 会以预览方式启动它,行为与导出后完全一致。(改为点击卡片上的 ⋮ 按钮可打开操作菜单 —— 见[应用功能](/zh/guide/app-actions)。)
+在 **我的应用** 中,点击你的应用卡片。WebToApp 会以预览方式启动它,行为与导出后完全一致。(改为点击卡片上的 ⋮ 按钮可打开操作菜单 —— 见[应用功能](/zh/guide/app-actions/edit-core-config)。)
 
 ::: warning 预览 ≠ 导出
 预览和导出共享同一套运行时代码,但导出还会把你的配置序列化进生成的 APK。如果某功能预览正常、导出后失效,通常是某个配置字段没有贯通导出链路。见[配置字段漂移](/zh/developer/config-drift)。
@@ -50,10 +50,10 @@
 
 ## 下一步
 
-- 导览[主界面](/zh/guide/main-screen)。
-- 了解每种[应用类型](/zh/guide/create-app)能做什么。
-- 探索各应用[应用功能](/zh/guide/app-actions)(快捷方式、分享、导出、AAB)。
-- 打开右上角 **⋮** 菜单 —— 见[更多功能](/zh/guide/more-features/ai-tools)。
+- 导览[主界面](/zh/guide/main-screen/my-apps)。
+- 了解每种[应用类型](/zh/guide/app-types/)能做什么。
+- 探索各应用[应用功能](/zh/guide/app-actions/edit-core-config)(快捷方式、分享、导出、AAB)。
+- 打开右上角 **⋮** 菜单 —— 见[更多功能](/zh/guide/more-features/ai-coding)。
 
 ## 从源码构建
 

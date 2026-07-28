@@ -25,7 +25,7 @@ Most "website to app" tools stop at wrapping a URL in a WebView. WebToApp diverg
 
 ## How to read these docs
 
-- **[User Guide](/guide/getting-started)** — tour the [main screen](/guide/main-screen), build your first APK, learn the [app types](/guide/create-app) and [per-app actions](/guide/app-actions), explore the [more-features menu](/guide/more-features/ai-tools), and configure apps under [App Configuration](/guide/config/).
+- **[User Guide](/guide/getting-started)** — tour the [main screen](/guide/main-screen/my-apps), build your first APK, learn the [app types](/guide/app-types/) and [per-app actions](/guide/app-actions/edit-core-config), explore the [more-features menu](/guide/more-features/ai-coding), and configure apps under [App Configuration](/guide/config/).
 - **[Developer Docs](/developer/)** — how the codebase is organized, how the export pipeline and shell sync work, and the recipes for common changes.
 - **[Extension Authoring](/extensions/)** — write JS/CSS modules, userscripts, and MV3 Chrome extensions, and publish them to the in-app market.
 
