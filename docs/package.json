@@ -1,0 +1,16 @@
+{
+  "name": "webtoapp-docs",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Official documentation site for WebToApp",
+  "scripts": {
+    "dev": "vitepress dev",
+    "build": "vitepress build",
+    "preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.3",
+    "vue": "^3.5.13"
+  }
+}
