@@ -224,6 +224,7 @@ fun ShellSplashOverlay(
         Surface(
             modifier = Modifier
                 .align(Alignment.TopEnd)
+                .statusBarsPadding()
                 .padding(16.dp),
             shape = MaterialTheme.shapes.small,
             color = Color.Black.copy(alpha = 0.6f)
