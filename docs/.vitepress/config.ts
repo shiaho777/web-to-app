@@ -10,15 +10,27 @@ const t = {
   en: {
     nav: { guide: 'Guide', developer: 'Developer', extensions: 'Extensions' },
     guide: {
-      title: 'User Guide',
+      start: 'Getting Started',
       intro: 'Introduction',
       gettingStarted: 'Getting Started',
-      createApp: 'Creating an App',
-      buildExport: 'Build & Export',
-      network: 'Network & Anti-Censorship',
-      runtimes: 'Local Server Runtimes',
-      privacy: 'Privacy & Hardening',
-      customization: 'Customization',
+      mainScreen: 'Main Screen',
+      create: 'Create App',
+      createOverview: 'Overview & Types',
+      webContent: 'Web Content',
+      serverRuntimes: 'Server Runtimes',
+      media: 'Media',
+      appActions: 'App Actions',
+      more: 'More Features',
+      aiTools: 'AI Tools',
+      devTools: 'Developer Tools',
+      browser: 'Browser',
+      system: 'System',
+      config: 'App Configuration',
+      configOverview: 'Overview',
+      network: 'Network',
+      privacy: 'Privacy',
+      appearance: 'Appearance',
+      runtimes: 'Runtimes',
       faq: 'FAQ'
     },
     dev: {
@@ -46,15 +58,27 @@ const t = {
   zh: {
     nav: { guide: '使用手册', developer: '开发者', extensions: '扩展开发' },
     guide: {
-      title: '使用手册',
+      start: '入门',
       intro: '简介',
       gettingStarted: '快速开始',
-      createApp: '创建应用',
-      buildExport: '构建与导出',
-      network: '网络与反审查',
-      runtimes: '本地服务运行时',
-      privacy: '隐私与加固',
-      customization: '个性化定制',
+      mainScreen: '主界面',
+      create: '创建应用',
+      createOverview: '总览与类型',
+      webContent: '网页内容',
+      serverRuntimes: '服务运行时',
+      media: '媒体',
+      appActions: '应用功能',
+      more: '更多功能',
+      aiTools: 'AI 工具',
+      devTools: '开发工具',
+      browser: '浏览器',
+      system: '系统',
+      config: '应用配置',
+      configOverview: '总览',
+      network: '网络',
+      privacy: '隐私',
+      appearance: '外观',
+      runtimes: '运行时',
       faq: '常见问题'
     },
     dev: {
@@ -95,18 +119,51 @@ function sidebar(lang: Lang, prefix: string) {
   return {
     [`${prefix}/guide/`]: [
       {
-        text: s.guide.title,
+        text: s.guide.start,
         items: [
           { text: s.guide.intro, link: `${prefix}/guide/introduction` },
-          { text: s.guide.gettingStarted, link: `${prefix}/guide/getting-started` },
-          { text: s.guide.createApp, link: `${prefix}/guide/create-app` },
-          { text: s.guide.buildExport, link: `${prefix}/guide/build-export` },
-          { text: s.guide.network, link: `${prefix}/guide/network` },
-          { text: s.guide.runtimes, link: `${prefix}/guide/runtimes` },
-          { text: s.guide.privacy, link: `${prefix}/guide/privacy` },
-          { text: s.guide.customization, link: `${prefix}/guide/customization` },
-          { text: s.guide.faq, link: `${prefix}/guide/faq` }
+          { text: s.guide.gettingStarted, link: `${prefix}/guide/getting-started` }
         ]
+      },
+      {
+        text: s.guide.mainScreen,
+        items: [{ text: s.guide.mainScreen, link: `${prefix}/guide/main-screen` }]
+      },
+      {
+        text: s.guide.create,
+        items: [
+          { text: s.guide.createOverview, link: `${prefix}/guide/create-app` },
+          { text: s.guide.webContent, link: `${prefix}/guide/app-types/web-content` },
+          { text: s.guide.serverRuntimes, link: `${prefix}/guide/app-types/server-runtimes` },
+          { text: s.guide.media, link: `${prefix}/guide/app-types/media` }
+        ]
+      },
+      {
+        text: s.guide.appActions,
+        items: [{ text: s.guide.appActions, link: `${prefix}/guide/app-actions` }]
+      },
+      {
+        text: s.guide.more,
+        items: [
+          { text: s.guide.aiTools, link: `${prefix}/guide/more-features/ai-tools` },
+          { text: s.guide.devTools, link: `${prefix}/guide/more-features/dev-tools` },
+          { text: s.guide.browser, link: `${prefix}/guide/more-features/browser` },
+          { text: s.guide.system, link: `${prefix}/guide/more-features/system` }
+        ]
+      },
+      {
+        text: s.guide.config,
+        items: [
+          { text: s.guide.configOverview, link: `${prefix}/guide/config/` },
+          { text: s.guide.network, link: `${prefix}/guide/config/network` },
+          { text: s.guide.privacy, link: `${prefix}/guide/config/privacy` },
+          { text: s.guide.appearance, link: `${prefix}/guide/config/appearance` },
+          { text: s.guide.runtimes, link: `${prefix}/guide/config/runtimes` }
+        ]
+      },
+      {
+        text: s.guide.faq,
+        items: [{ text: s.guide.faq, link: `${prefix}/guide/faq` }]
       }
     ],
     [`${prefix}/developer/`]: [

@@ -25,10 +25,10 @@
 
 ## 如何阅读这些文档
 
-- **[使用手册](/zh/guide/getting-started)** —— 安装应用并构建第一个 APK,然后配置网络、运行时、隐私与外观。
+- **[使用手册](/zh/guide/getting-started)** —— 导览[主界面](/zh/guide/main-screen)、构建第一个 APK、了解[应用类型](/zh/guide/create-app)与[各应用操作](/zh/guide/app-actions)、探索[更多功能菜单](/zh/guide/more-features/ai-tools),并在[应用配置](/zh/guide/config/)下配置应用。
 - **[开发者文档](/zh/developer/)** —— 代码如何组织、导出管线与 shell 同步如何工作,以及常见改动的配方。
 - **[扩展开发](/zh/extensions/)** —— 编写 JS/CSS 模块、油猴脚本和 MV3 Chrome 扩展,并发布到应用内市场。
 
 ::: tip
-宿主应用界面提供 10 种语言,可在 **设置 → 语言** 中随时切换。你*生成*的应用的语言则按应用单独配置。
+宿主应用界面提供 10 种语言,可在 **我的应用顶栏的语言按钮** 中随时切换。你*生成*的应用的语言则按应用单独配置。
 :::

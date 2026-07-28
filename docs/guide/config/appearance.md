@@ -1,4 +1,4 @@
-# Customization
+# Appearance
 
 Shape the look and feel of the generated app.
 

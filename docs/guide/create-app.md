@@ -1,48 +1,43 @@
 # Creating an App
 
-WebToApp supports many app types. Each type changes what gets packaged and how the generated app behaves at runtime. Pick the one that matches your input.
+Tap **Create** on [My Apps](/guide/main-screen) to open a 3-column grid of app types. The types, in order:
 
-## App types
+| | | |
+| --- | --- | --- |
+| **Web** | **Multi-Web** | **HTML** |
+| **Offline Pack** | **Frontend** | **PHP** |
+| **WordPress** | **Node.js** | **Python** |
+| **Go** | **Media** | **Gallery** |
 
-### Web
-Wraps a remote URL in a WebView (system WebView by default, optional GeckoView). Best for landing pages, dashboards, docs, and internal systems. Configure the target URL, user agent, desktop mode, JS/CSS injection, and popup handling.
+Pick the one that matches your input. Each opens its own creation flow with type-specific fields, then shares the same set of [app configuration](/guide/config/) options.
 
-### HTML / Frontend
-Packages a static front-end (React, Vue, Vite, plain HTML) into the APK and serves it from local files. The generated app gets `allowFileAccess` so pure file-based loads work offline. Ideal for offline web apps and static builds.
+## Choosing a type
 
-### Node.js
-Embeds a Node.js 18.20 runtime that runs in a dedicated `:nodejs` OS process via a native `node_launcher` wrapper loading `libnode.so`. Your server code runs on a local port; the WebView points at `localhost`. Supports custom native `.node` extensions.
+| Type | Input | Output | Good for |
+| --- | --- | --- | --- |
+| [Web](/guide/app-types/web-content#web) | A URL | WebView-based APK | Landing pages, tools, dashboards, docs, internal systems |
+| [Multi-Web](/guide/app-types/web-content#multi-web) | Several URLs | Tab/card/feed/drawer APK | Link hubs, portals, app collections |
+| [HTML](/guide/app-types/web-content#html) | Local HTML files / zip | Localhost-backed APK | Static builds, offline web apps |
+| [Offline Pack](/guide/app-types/web-content#offline-pack) | A URL (scraped) | Self-contained offline APK | Archiving a site for offline use |
+| [Frontend](/guide/app-types/web-content#frontend) | A built front-end project | Localhost-backed APK | React, Vue, Vite production builds |
+| [PHP](/guide/app-types/server-runtimes#php) | A PHP project | APK + on-device PHP server | Small PHP apps, admin tools |
+| [WordPress](/guide/app-types/server-runtimes#wordpress) | A WordPress site | APK + PHP + SQLite | Portable sites, theme/plugin demos |
+| [Node.js](/guide/app-types/server-runtimes#node-js) | A Node project | APK + on-device Node server | Express/Fastify/Koa apps, APIs |
+| [Python](/guide/app-types/server-runtimes#python) | A Python project | APK + on-device Python server | Flask, Django, FastAPI, Tornado |
+| [Go](/guide/app-types/server-runtimes#go) | A Go project | APK + on-device Go | Gin/Echo/Fiber, static serving |
+| [Media](/guide/app-types/media#media) | An image or video | Media-player APK | Single-image/video viewers, course media |
+| [Gallery](/guide/app-types/media#gallery) | A media collection | Gallery APK | Albums, portfolios, offline viewers |
 
-### PHP
-Runs PHP 8.4 (from `pmmp/PHP-Binaries`) with Composer 2.10. Downloaded once on first use. Supports custom native extensions (`zend_extension`, `.so`).
+## The creation flow
 
-### Python
-Runs Python 3.14 — Flask, Django, FastAPI (uvicorn), Tornado, or the built-in HTTP server. pip dependencies resolve into `.pypackages`. Custom native extensions supported. Binary names are versioned so future bumps don't hard-code paths.
+Every type follows the same shape:
 
-### Go
-Uses the official Go 1.26 Linux arm64 toolchain (USTC mirror for CN). Supports on-device `go build` / `go mod` / `go run`, `vendor/` offline builds, and static serving via the native `go_exec_loader` wrapper.
+1. **Type-specific form** — e.g. Web asks for a URL; Node.js asks for the project and start command; Gallery asks for media and layout. Runtime types (PHP/WordPress/Node.js/Python/Frontend) link to the [Linux Environment](/guide/more-features/dev-tools#linux-environment) for toolchain setup.
+2. **Basic info** — name, icon.
+3. **Save** — the app is created and appears on [My Apps](/guide/main-screen).
 
-### WordPress
-Runs WordPress 7.x over local PHP + SQLite (`sqlite-database-integration`), with theme and plugin import. A portable CMS in an APK.
+After creation, open the app's ⋮ menu and choose **Edit Core Config** to return to the type-specific form, or **Edit Common Config** for the shared options (appearance, networking, privacy, export). See [App Actions](/guide/app-actions) and [App Configuration](/guide/config/).
 
-### Image / Video / Gallery
-Media-focused apps. Gallery apps support categorized media, grid/list/timeline views, shuffle/loop, sorting, thumbnail bars, overlays, auto-next, and playback memory.
-
-### Multi-Web
-Combines multiple sites into one app with tab, card, feed, or drawer layouts. Each site can have its own icon, theme color, extraction selector, and refresh interval, plus shared JS/CSS.
-
-## Common settings (all types)
-
-Regardless of type, every app shares a large set of switches, grouped in the editor:
-
-- **Browser engine & networking** — engine choice, kernel disguise, proxies, DoH, ECH, TLS fingerprint, CORS bypass, failover mirrors.
-- **Privacy & hardening** — fingerprint disguise, ad blocking, resource encryption, anti-debug, activation gating.
-- **Appearance** — splash screen, background music, toolbar, status bar, navigation, themes.
-- **Extensions** — built-in modules, userscripts, MV3 extensions.
-- **Export** — package name, version, icon, architecture target, signing, AAB.
-
-Each of these is covered in its own guide page. The single source of truth for all settings is the `WebApp` model and its nested `*Config` classes; everything you set in the editor flows through a packaging passthrough chain into the generated APK.
-
-::: tip
-Use the **sample projects** bundled with the app (React, Vue, Vite, Node/Express, PHP/Laravel, Python/Flask, Go/Gin, WordPress, and more) to see a working configuration for each stack before building your own.
+::: tip Try a sample first
+The app bundles sample projects (React, Vue, Vite, Node/Express, PHP/Laravel, Python/Flask, Go/Gin, WordPress, and more). Use one to see a working configuration for your stack before building your own.
 :::

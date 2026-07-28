@@ -25,10 +25,10 @@ Most "website to app" tools stop at wrapping a URL in a WebView. WebToApp diverg
 
 ## How to read these docs
 
-- **[User Guide](/guide/getting-started)** — install the app and build your first APK, then configure networking, runtimes, privacy, and appearance.
+- **[User Guide](/guide/getting-started)** — tour the [main screen](/guide/main-screen), build your first APK, learn the [app types](/guide/create-app) and [per-app actions](/guide/app-actions), explore the [more-features menu](/guide/more-features/ai-tools), and configure apps under [App Configuration](/guide/config/).
 - **[Developer Docs](/developer/)** — how the codebase is organized, how the export pipeline and shell sync work, and the recipes for common changes.
 - **[Extension Authoring](/extensions/)** — write JS/CSS modules, userscripts, and MV3 Chrome extensions, and publish them to the in-app market.
 
 ::: tip
-The host app UI is available in 10 languages. Switch it anytime under **Settings → Language**. The language of the apps you *generate* is configured separately per app.
+The host app UI is available in 10 languages. Switch it anytime from the **language button in the top bar** of My Apps. The language of the apps you *generate* is configured separately per app.
 :::

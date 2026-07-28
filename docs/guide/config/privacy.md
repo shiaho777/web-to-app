@@ -14,7 +14,7 @@ Ad blocking is wired for both preview and export: the host ad blocker serves pre
 
 ## Resource encryption
 
-PBKDF2 + AES-256-GCM for packaged config, HTML, media, and BGM. An optional custom encryption password is stronger than package/certificate-derived keys. See [Build & Export](/guide/build-export#resource-encryption).
+PBKDF2 + AES-256-GCM for packaged config, HTML, media, and BGM. An optional custom encryption password is stronger than package/certificate-derived keys. See [Build APK](/guide/app-actions#build-apk).
 
 ## Runtime hardening
 

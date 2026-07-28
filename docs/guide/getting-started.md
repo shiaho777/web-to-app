@@ -1,53 +1,59 @@
 # Getting Started
 
-This walkthrough takes you from a fresh install to your first signed APK in a few minutes.
+This walkthrough takes you from a fresh install to your first signed APK, following the actual flow in the app.
 
 ## 1. Install WebToApp
 
-Install the WebToApp builder app on an Android device running **Android 6.0 (API 23) or newer**. You can build it from source (see [Build from source](#build-from-source)) or install a provided APK.
+Install the WebToApp builder on an Android device running **Android 6.0 (API 23) or newer**. On first launch you land on **My Apps** — the home screen that lists every app you create. See [Main Screen](/guide/main-screen) for a tour of it.
 
-On first launch you land on **My Apps**, the home screen that lists every app you create.
+## 2. Open the create menu
 
-## 2. Create your first app
+At the bottom of **My Apps**, tap the **Create** button. A panel expands with a 3-column grid of app types:
 
-Tap the **create** action and pick an app type. For your first app, choose **Web** and enter a URL:
+**Web · Multi-Web · HTML · Offline Pack · Frontend · PHP · WordPress · Node.js · Python · Go · Media · Gallery**
 
-1. **App type** → `Web`
-2. **Target URL** → e.g. `https://example.com`
-3. **App name** → anything you like
-4. **Icon** → pick an image (optional; a default is used otherwise)
+For your first app, tap **Web**.
 
-The editor opens with sensible defaults. Everything here can be changed later.
+## 3. Fill in the basics
 
-## 3. Preview
+The Web editor opens. Fill in the top **Basic info** card:
 
-Tap **Preview** to run the app inside the builder, exactly as it will behave once exported. Preview runs the full runtime on the host classpath, so it is a faithful check of WebView behavior, injected scripts, and runtime servers.
+- **App name** — anything you like
+- **Target URL** — e.g. `https://example.com`
+- **Icon** — pick an image (optional; a type-specific default is used otherwise)
+
+The rest of the editor is a long list of optional capability cards (fullscreen, splash screen, ad blocking, DNS, fingerprint disguise, and more). You can ignore all of them for now — sensible defaults are used. Each is explained under [App Configuration](/guide/config/).
+
+Tap **Save**. Your app now appears in the list on **My Apps**.
+
+## 4. Preview
+
+On **My Apps**, tap your app's card. WebToApp launches it in preview, exactly as it will behave once exported. (Tap the ⋮ button on the card instead to open the action menu — see [App Actions](/guide/app-actions).)
 
 ::: warning Preview ≠ export
 Preview and export share the same runtime code, but export additionally serializes your configuration into the generated APK. If a feature works in preview but not after export, a config field likely did not flow through the export chain. See [Config Field Drift](/developer/config-drift).
 :::
 
-## 4. Build the APK
+## 5. Build the APK
 
-Tap **Build APK**. WebToApp will:
+Back on **My Apps**, tap the ⋮ button on your app's card, then **Build APK**. In the dialog you can:
 
-1. Take the shell template (`webview_shell.apk`).
-2. Patch its binary manifest and resources (package name, icon, label, permissions).
-3. Embed your configuration and app content into assets.
-4. Sign the result (V1/V2/V3 — configurable).
+- pick the **browser engine** (System WebView or GeckoView),
+- optionally enable **resource encryption**, **isolation**, **background run**, and **notifications**,
+- force a **full rebuild** (otherwise an incremental mode is chosen automatically).
 
-When it finishes, the APK appears in the **File Manager**, ready to install or share.
+Tap build. WebToApp patches the shell template, embeds your config and content, and signs the result. When it finishes, the APK is ready.
 
-## 5. Install and test
+## 6. Find and install it
 
-Install the generated APK on your device (or share it to another device). Launch it — it runs the shell runtime reading *your* embedded configuration, independent of the builder.
+Open **⋮ → File Manager** from the top-right of **My Apps**. Your build output is there — install it on your device or share it to another device. Launch it: it runs the shell runtime reading *your* embedded configuration, independent of the builder.
 
 ## Next steps
 
+- Tour the [Main Screen](/guide/main-screen).
 - Learn what each [app type](/guide/create-app) can do.
-- Configure [signing and Play Store export](/guide/build-export).
-- Harden networking with [DoH, proxies, and TLS fingerprinting](/guide/network).
-- Run [Node.js / PHP / Python / Go / WordPress](/guide/runtimes) on-device.
+- Explore the per-app [App Actions](/guide/app-actions) (shortcut, share, export, AAB).
+- Open the top-right **⋮** menu — see [More Features](/guide/more-features/ai-tools).
 
 ## Build from source
 

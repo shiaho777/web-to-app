@@ -8,7 +8,7 @@ WebToApp 搭载了一套远超普通 WebView 的加固网络栈。所有设置�
 - **GeckoView(Firefox)** —— 可选运行时,首次使用时下载。ECH 必需。GeckoView API 类来自 Gradle 依赖;沉重的原生产物(`.so` + `omni.ja`)按需获取。
 - **内核风味伪装** —— 在保留真实引擎的同时,伪装成 Chrome、Edge、Samsung Internet、Firefox 或 Safari 风格。
 
-## DNS-over-HTTPS(DoH)
+## DNS-over-HTTPS(DoH) {#dns-over-https-doh}
 
 可选 Cloudflare、Google、AdGuard、NextDNS、CleanBrowsing、Quad9、Mullvad,或自定义端点。模式:严格或自动。
 
