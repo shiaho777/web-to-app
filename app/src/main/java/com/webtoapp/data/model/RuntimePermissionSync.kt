@@ -133,10 +133,19 @@ fun WebApp.withRuntimePermissionsSyncedFromFeatures(): WebApp {
     val required = featureRequiredRuntimePermissions()
     val currentExport = apkExportConfig ?: ApkExportConfig()
     val merged = currentExport.runtimePermissions.enableFrom(required)
-    if (merged == currentExport.runtimePermissions && apkExportConfig != null) {
+    // Location coherence (issue #292): granting the location permission implies the
+    // WebView geolocation API should be enabled. The reverse direction (geolocationEnabled
+    // -> location permission) is already handled by featureRequiredRuntimePermissions above.
+    val effectiveGeolocation = webViewConfig.geolocationEnabled || merged.location
+    val permissionsChanged = merged != currentExport.runtimePermissions || apkExportConfig == null
+    val geolocationChanged = effectiveGeolocation != webViewConfig.geolocationEnabled
+    if (!permissionsChanged && !geolocationChanged) {
         return this
     }
-    return copy(apkExportConfig = currentExport.copy(runtimePermissions = merged))
+    return copy(
+        apkExportConfig = currentExport.copy(runtimePermissions = merged),
+        webViewConfig = webViewConfig.copy(geolocationEnabled = effectiveGeolocation)
+    )
 }
 
 fun ApkExportConfig.withRuntimePermissionsSyncedFromFeatures(

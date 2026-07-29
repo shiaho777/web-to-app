@@ -109,4 +109,29 @@ class RuntimePermissionSyncTest {
         assertThat(reasons["foregroundService"]).contains(PermissionFeatureReason.BACKGROUND_RUN)
         assertThat(reasons["wakeLock"]).contains(PermissionFeatureReason.BACKGROUND_RUN)
     }
+
+    @Test
+    fun `location permission implies geolocation enabled`() {
+        val app = WebApp(
+            name = "Loc",
+            url = "https://example.com",
+            apkExportConfig = ApkExportConfig(
+                runtimePermissions = ApkRuntimePermissions(location = true)
+            )
+        )
+        val synced = app.withRuntimePermissionsSyncedFromFeatures()
+        assertThat(synced.webViewConfig.geolocationEnabled).isTrue()
+    }
+
+    @Test
+    fun `geolocation enabled implies location permission`() {
+        val app = WebApp(
+            name = "Geo",
+            url = "https://example.com",
+            webViewConfig = WebViewConfig(geolocationEnabled = true)
+        )
+        val synced = app.withRuntimePermissionsSyncedFromFeatures()
+        assertThat(synced.apkExportConfig?.runtimePermissions?.location).isTrue()
+        assertThat(synced.webViewConfig.geolocationEnabled).isTrue()
+    }
 }

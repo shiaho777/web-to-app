@@ -533,7 +533,17 @@ fun CreateAppScreen(
             item {
                 SpecialSettingsCard(
                     config = editState.webViewConfig,
-                    onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } }
+                    onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } },
+                    runtimePermissions = editState.apkExportConfig?.runtimePermissions
+                        ?: com.webtoapp.data.model.ApkRuntimePermissions(),
+                    onRuntimePermissionsChange = { rp ->
+                        viewModel.updateEditState {
+                            copy(
+                                apkExportConfig = (apkExportConfig ?: com.webtoapp.data.model.ApkExportConfig())
+                                    .copy(runtimePermissions = rp)
+                            )
+                        }
+                    }
                 )
             }
 

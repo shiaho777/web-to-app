@@ -3550,7 +3550,8 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
         (apkExportConfig?.let {
             it.notificationEnabled && it.notificationConfig?.type?.key == "web_api"
         } == true),
-    geolocationEnabled = webViewConfig.geolocationEnabled,
+    geolocationEnabled = webViewConfig.geolocationEnabled ||
+        (apkExportConfig?.runtimePermissions?.location == true),
     geolocationAccuracy = webViewConfig.geolocationAccuracy.name,
     geolocationPolicy = webViewConfig.geolocationPolicy.name,
     enableOrientationPolyfill = webViewConfig.enableOrientationPolyfill,

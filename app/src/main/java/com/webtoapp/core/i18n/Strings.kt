@@ -4605,6 +4605,10 @@ object Strings {
     val notificationPolyfillDesc: String get() = StringsE.notificationPolyfillDesc
     val geolocationTitle: String get() = StringsE.geolocationTitle
     val geolocationDesc: String get() = StringsE.geolocationDesc
+    val cameraAccessTitle: String get() = StringsE.cameraAccessTitle
+    val cameraAccessDesc: String get() = StringsE.cameraAccessDesc
+    val microphoneAccessTitle: String get() = StringsE.microphoneAccessTitle
+    val microphoneAccessDesc: String get() = StringsE.microphoneAccessDesc
     val geolocationLocationOffTitle: String get() = StringsE.geolocationLocationOffTitle
     val geolocationLocationOffMessage: String get() = StringsE.geolocationLocationOffMessage
     val geolocationLocationOffOpenSettings: String get() = StringsE.geolocationLocationOffOpenSettings
@@ -62036,6 +62040,54 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Разрешить веб-страницам запрашивать местоположение устройства. Если выключено, запросы местоположения отклоняются автоматически."
         AppLanguage.JAPANESE -> "ウェブページがデバイスの位置情報を要求することを許可します。オフの場合、位置情報リクエストは自動的に拒否されます。"
         AppLanguage.KOREAN -> "웹페이지가 기기 위치를 요청하도록 허용합니다. 끄면 위치 요청이 자동으로 거부됩니다."
+    }
+    val cameraAccessTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "摄像头访问"
+        AppLanguage.ENGLISH -> "Camera access"
+        AppLanguage.ARABIC -> "الوصول إلى الكاميرا"
+        AppLanguage.PORTUGUESE -> "Acesso à câmera"
+        AppLanguage.SPANISH -> "Acceso a la cámara"
+        AppLanguage.FRENCH -> "Accès à la caméra"
+        AppLanguage.GERMAN -> "Kamerazugriff"
+        AppLanguage.RUSSIAN -> "Доступ к камере"
+        AppLanguage.JAPANESE -> "カメラアクセス"
+        AppLanguage.KOREAN -> "카메라 액세스"
+    }
+    val cameraAccessDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "允许网页访问摄像头（如视频验证、扫码、拍照）。仍会弹出系统权限请求。"
+        AppLanguage.ENGLISH -> "Allow web pages to access the camera (e.g. video verification, QR scanning, photo capture). The system permission prompt still applies."
+        AppLanguage.ARABIC -> "السماح لصفحات الويب بالوصول إلى الكاميرا (مثل التحقق بالفيديو، مسح رمز QR، التقاط الصور). يظل طلب إذن النظام ساريًا."
+        AppLanguage.PORTUGUESE -> "Permitir que páginas web acessem a câmera (ex.: verificação por vídeo, leitura de QR, captura de fotos). O prompt de permissão do sistema ainda se aplica."
+        AppLanguage.SPANISH -> "Permitir que las páginas web accedan a la cámara (p. ej., verificación por vídeo, escaneo QR, captura de fotos). El aviso de permiso del sistema sigue aplicándose."
+        AppLanguage.FRENCH -> "Autoriser les pages web à accéder à la caméra (ex. : vérification vidéo, scan QR, capture de photos). L'invite d'autorisation système s'applique toujours."
+        AppLanguage.GERMAN -> "Webseiten erlauben, auf die Kamera zuzugreifen (z. B. Video-Verifizierung, QR-Scan, Fotoaufnahme). Die System-Berechtigungsabfrage gilt weiterhin."
+        AppLanguage.RUSSIAN -> "Разрешить веб-страницам доступ к камере (например, видеопроверка, сканирование QR, съёмка фото). Системный запрос разрешения по-прежнему применяется."
+        AppLanguage.JAPANESE -> "ウェブページがカメラにアクセスすることを許可します（動画認証、QRスキャン、写真撮影など）。システムの権限確認は引き続き表示されます。"
+        AppLanguage.KOREAN -> "웹페이지가 카메라에 액세스하도록 허용합니다(예: 영상 인증, QR 스캔, 사진 촬영). 시스템 권한 안내는 계속 표시됩니다."
+    }
+    val microphoneAccessTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "麦克风访问"
+        AppLanguage.ENGLISH -> "Microphone access"
+        AppLanguage.ARABIC -> "الوصول إلى الميكروفون"
+        AppLanguage.PORTUGUESE -> "Acesso ao microfone"
+        AppLanguage.SPANISH -> "Acceso al micrófono"
+        AppLanguage.FRENCH -> "Accès au microphone"
+        AppLanguage.GERMAN -> "Mikrofonzugriff"
+        AppLanguage.RUSSIAN -> "Доступ к микрофону"
+        AppLanguage.JAPANESE -> "マイクアクセス"
+        AppLanguage.KOREAN -> "마이크 액세스"
+    }
+    val microphoneAccessDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "允许网页访问麦克风（如语音/视频通话、实时验证）。仍会弹出系统权限请求。"
+        AppLanguage.ENGLISH -> "Allow web pages to access the microphone (e.g. voice/video calls, live verification). The system permission prompt still applies."
+        AppLanguage.ARABIC -> "السماح لصفحات الويب بالوصول إلى الميكروفون (مثل المكالمات الصوتية/المرئية، التحقق المباشر). يظل طلب إذن النظام ساريًا."
+        AppLanguage.PORTUGUESE -> "Permitir que páginas web acessem o microfone (ex.: chamadas de voz/vídeo, verificação ao vivo). O prompt de permissão do sistema ainda se aplica."
+        AppLanguage.SPANISH -> "Permitir que las páginas web accedan al micrófono (p. ej., llamadas de voz/vídeo, verificación en vivo). El aviso de permiso del sistema sigue aplicándose."
+        AppLanguage.FRENCH -> "Autoriser les pages web à accéder au microphone (ex. : appels vocaux/vidéo, vérification en direct). L'invite d'autorisation système s'applique toujours."
+        AppLanguage.GERMAN -> "Webseiten erlauben, auf das Mikrofon zuzugreifen (z. B. Sprach-/Videoanrufe, Live-Verifizierung). Die System-Berechtigungsabfrage gilt weiterhin."
+        AppLanguage.RUSSIAN -> "Разрешить веб-страницам доступ к микрофону (например, голосовые/видеозвонки, живая проверка). Системный запрос разрешения по-прежнему применяется."
+        AppLanguage.JAPANESE -> "ウェブページがマイクにアクセスすることを許可します（音声/ビデオ通話、ライブ認証など）。システムの権限確認は引き続き表示されます。"
+        AppLanguage.KOREAN -> "웹페이지가 마이크에 액세스하도록 허용합니다(예: 음성/영상 통화, 실시간 인증). 시스템 권한 안내는 계속 표시됩니다."
     }
     val geolocationLocationOffTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "位置服务未开启"
