@@ -6,14 +6,22 @@ Scrapes a live website into a self-contained offline package, then wraps it like
 
 Archiving a site for offline use — reading material, documentation, or any site you want available without a network.
 
-## Key configuration (scraper)
+## Core config (scraper)
 
-- **Max depth** — how many link hops to follow.
-- **Follow links** — toggle crawling within the site.
-- **Max files** and **max total size** — caps on the scrape.
-- **Skip patterns** — URL patterns to exclude.
-- **Timeout** — per-request timeout.
-- **Download CDN resources** — whether to pull CDN-hosted assets locally.
+### Crawl scope
+
+- **Max depth** (`maxDepth`) — how many link hops to follow.
+- **Follow links** (`followLinks`) — toggle crawling within the site.
+- **Max files** (`maxFiles`) and **max total size** (`maxTotalSizeMb`) — caps on the scrape.
+
+### Filtering
+
+- **Skip patterns** (`skipPatterns`) — URL patterns to exclude.
+
+### Network
+
+- **Timeout** (`timeoutSeconds`) — per-request timeout.
+- **Download CDN resources** (`downloadCdnResources`) — whether to pull CDN-hosted assets locally.
 
 ## What it rewrites
 

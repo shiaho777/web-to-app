@@ -12,11 +12,34 @@ Portable sites, theme/plugin demos, and content packages you want to ship as an 
 - **Import** — theme and plugin import supported.
 - Managed in the [Linux Environment](/guide/more-features/linux-environment) and [Runtime Management](/guide/more-features/runtime-management) screens.
 
-## Key configuration
+## Core config
 
-- **WordPress source** — the site/theme to package.
-- **Themes & plugins** — import the ones you need.
-- **Port** — allocated through the [Port Manager](/guide/more-features/port-manager).
+Backed by `WordPressConfig`.
+
+### Site
+
+- **Site title** (`siteTitle`).
+- **Site language** (`siteLanguage`) — e.g. `zh_CN`.
+- **Permalink structure** (`permalinkStructure`) — e.g. `/%postname%/`.
+
+### Admin account
+
+- **Admin user / email / password** (`adminUser`, `adminEmail`, `adminPassword`).
+
+### Theme & plugins
+
+- **Theme** (`themeName`) — the active theme.
+- **Plugins** (`plugins`, `activePlugins`) — installed and activated plugins.
+
+### Source & install
+
+- **Source type** (`sourceType`) — `BLANK` or an imported project (`sourceProjectId`).
+- **Auto install** (`autoInstall`) — set up WordPress automatically on first run.
+
+### Server
+
+- **Port** (`phpPort`) — allocated through the [Port Manager](/guide/more-features/port-manager).
+- **Custom PHP extensions** (`customPhpExtensions`) — add `.so` / zend extensions.
 
 ## Notes
 

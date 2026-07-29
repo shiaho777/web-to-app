@@ -12,11 +12,34 @@
 - **导入** —— 支持主题和插件导入。
 - 在 [Linux 环境](/zh/guide/more-features/linux-environment)和[运行时管理](/zh/guide/more-features/runtime-management)界面管理。
 
-## 关键配置
+## 核心配置
 
-- **WordPress 来源** —— 要打包的站点/主题。
-- **主题与插件** —— 导入你需要的。
-- **端口** —— 通过[端口管理](/zh/guide/more-features/port-manager)分配。
+由 `WordPressConfig` 支撑。
+
+### 站点
+
+- **站点标题**(`siteTitle`)。
+- **站点语言**(`siteLanguage`)—— 例如 `zh_CN`。
+- **固定链接结构**(`permalinkStructure`)—— 例如 `/%postname%/`。
+
+### 管理员账户
+
+- **管理员用户 / 邮箱 / 密码**(`adminUser`、`adminEmail`、`adminPassword`)。
+
+### 主题与插件
+
+- **主题**(`themeName`)—— 当前主题。
+- **插件**(`plugins`、`activePlugins`)—— 已安装和已启用的插件。
+
+### 来源与安装
+
+- **来源类型**(`sourceType`)—— `BLANK` 或导入的项目(`sourceProjectId`)。
+- **自动安装**(`autoInstall`)—— 首次运行时自动安装 WordPress。
+
+### 服务器
+
+- **端口**(`phpPort`)—— 通过[端口管理](/zh/guide/more-features/port-manager)分配。
+- **自定义 PHP 扩展**(`customPhpExtensions`)—— 添加 `.so` / zend 扩展。
 
 ## 说明
 

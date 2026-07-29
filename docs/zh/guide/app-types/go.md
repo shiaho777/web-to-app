@@ -16,11 +16,26 @@ Gin/Echo/Fiber 服务、静态文件服务和编译工具。
 
 导出的 APK 嵌入 `libgo_exec_loader.so`。
 
-## 关键配置
+## 核心配置
 
-- **项目** —— Go 模块。
-- **构建 / 运行** —— 设备端构建或直接运行;`vendor/` 启用离线构建。
-- **端口** —— 通过[端口管理](/zh/guide/more-features/port-manager)分配。
+由 `GoAppConfig` 支撑。
+
+### 项目
+
+- **项目**(`projectId`/`projectName`)—— Go 模块。
+- **框架**(`framework`)—— 识别出的框架(若有)。
+
+### 构建
+
+- **二进制名**(`binaryName`)—— 输出二进制。
+- **目标架构**(`targetArch`)—— 例如 `arm64`。
+- `vendor/` 启用离线构建。
+
+### 服务器
+
+- **端口**(`serverPort`)—— 通过[端口管理](/zh/guide/more-features/port-manager)分配。
+- **静态目录**(`staticDir`)—— 静态提供服务的目录。
+- **环境变量**(`envVars`)—— 传给进程的键值对。
 
 ## 说明
 

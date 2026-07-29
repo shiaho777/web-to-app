@@ -6,11 +6,16 @@
 
 你有一个框架项目,想把它的构建输出作为应用发布。
 
-## 关键配置
+## 核心配置
 
-- **输入** —— 构建输出目录。
+### 来源
+
+- **构建输出**(`outputPath`)—— 要打包的生产构建目录。
 - **框架** —— 被识别或选择(React、Vue、Vite 等)。
-- **工具链** —— 当需要设备端构建步骤时,界面会链接到 [Linux 环境](/zh/guide/more-features/linux-environment)安装 Node 和构建工具。
+
+### 工具链
+
+- 当需要设备端构建步骤时,界面会链接到 [Linux 环境](/zh/guide/more-features/linux-environment)安装 Node 和构建工具。
 
 ## 说明
 

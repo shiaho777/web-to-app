@@ -23,8 +23,31 @@ The exported APK embeds:
 
 Missing any of these causes `loadNode` / `loadJniBridge` failure at runtime.
 
-## Key configuration
+## Core config
 
-- **Project** — the Node source.
-- **Start command** — e.g. `node server.js`.
-- **Port** — allocated through the [Port Manager](/guide/more-features/port-manager).
+Backed by `NodeJsConfig`.
+
+### Project
+
+- **Project** (`projectId`/`projectName`, `sourceProjectPath`) — the Node source.
+- **Framework** (`framework`) — detected framework, if any.
+- **Node version** (`nodeVersion`).
+- **Has node_modules** (`hasNodeModules`) — whether dependencies are bundled.
+
+### Build mode
+
+- **Build mode** (`buildMode`):
+  - `STATIC` — static site
+  - `SSR` — server-side rendering
+  - `API_BACKEND` — API backend (default)
+  - `FULLSTACK` — full-stack
+
+### Server
+
+- **Entry file** (`entryFile`) — defaults to `index.js`.
+- **Port** (`serverPort`) — allocated through the [Port Manager](/guide/more-features/port-manager).
+- **Environment variables** (`envVars`) — key/value pairs passed to the process.
+
+### Native addons
+
+- **Custom Node extensions** (`customNodeExtensions`) — add `.node` addons, each with load order.

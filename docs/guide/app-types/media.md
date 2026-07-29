@@ -11,13 +11,26 @@ Single-image viewers, course media, or looping signage-style video.
 - **Image** — displays a picture full-screen.
 - **Video** — plays a video with configurable playback.
 
-## Key configuration
+## Core config
 
-- **Source** — a local media file packaged into the app (optionally encrypted).
-- **Auto-play** — start playback on launch (video).
-- **Loop** — repeat playback.
-- **Audio** — enable or mute sound.
-- **Fill screen** — crop to fill vs fit within the screen.
+Backed by `MediaConfig`.
+
+### Source
+
+- **Media path** (`mediaPath`) — a local media file packaged into the app (optionally encrypted).
+
+### Playback
+
+- **Auto-play** (`autoPlay`) — start playback on launch.
+- **Loop** (`loop`) — repeat playback.
+- **Enable audio** (`enableAudio`) — sound on/off.
+
+### Display
+
+- **Fill screen** (`fillScreen`) — crop to fill vs fit.
+- **Orientation** (`orientation`) — portrait/landscape.
+- **Background color** (`backgroundColor`).
+- **Keep screen on** (`keepScreenOn`).
 
 ## Notes
 

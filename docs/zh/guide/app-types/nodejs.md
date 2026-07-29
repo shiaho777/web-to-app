@@ -23,8 +23,31 @@ Express/Fastify/Koa 应用、API 和服务端演示。
 
 缺少任何一个都会在运行时导致 `loadNode` / `loadJniBridge` 失败。
 
-## 关键配置
+## 核心配置
 
-- **项目** —— Node 源码。
-- **启动命令** —— 例如 `node server.js`。
-- **端口** —— 通过[端口管理](/zh/guide/more-features/port-manager)分配。
+由 `NodeJsConfig` 支撑。
+
+### 项目
+
+- **项目**(`projectId`/`projectName`、`sourceProjectPath`)—— Node 源码。
+- **框架**(`framework`)—— 识别出的框架(若有)。
+- **Node 版本**(`nodeVersion`)。
+- **含 node_modules**(`hasNodeModules`)—— 依赖是否被打包。
+
+### 构建模式
+
+- **构建模式**(`buildMode`):
+  - `STATIC` —— 静态站点
+  - `SSR` —— 服务端渲染
+  - `API_BACKEND` —— API 后端(默认)
+  - `FULLSTACK` —— 全栈
+
+### 服务器
+
+- **入口文件**(`entryFile`)—— 默认 `index.js`。
+- **端口**(`serverPort`)—— 通过[端口管理](/zh/guide/more-features/port-manager)分配。
+- **环境变量**(`envVars`)—— 传给进程的键值对。
+
+### 原生插件
+
+- **自定义 Node 扩展**(`customNodeExtensions`)—— 添加 `.node` 插件,各带加载顺序。

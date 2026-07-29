@@ -6,13 +6,30 @@
 
 已经有一个 URL 的落地页、工具、仪表盘、文档和内部系统。
 
-## 关键配置
+## 核心配置
+
+网页类型的核心配置是 WebView 行为(由 `WebViewConfig` 支撑)。
+
+### 目标与引擎
 
 - **目标 URL** —— 要加载的站点。
 - **浏览器引擎** —— 默认系统 WebView;可选 GeckoView(首次使用下载,ECH 必需)。见[浏览器内核](/zh/guide/more-features/browser-kernel)。
-- **User-Agent 与桌面模式** —— 呈现自定义 UA 和/或请求桌面版站点。
-- **JS/CSS 注入** —— 在 document-start、document-end 或 idle 注入脚本/样式。
-- **弹窗处理** —— 同窗口、外部浏览器、弹窗或拦截。
+
+### User-Agent 与显示
+
+- **User-Agent 模式** —— 系统默认或自定义 UA 字符串(`userAgentMode`、`customUserAgent`)。
+- **桌面模式** —— 请求桌面版站点(`desktopMode`)。
+- **缩放与视口** —— 启用缩放、初始缩放和视口模式。
+
+### 注入
+
+- **JS/CSS 注入** —— 在 document-start、document-end 或 idle 注入脚本/样式(`injectScripts`)。
+
+### 弹窗与窗口
+
+- **新窗口行为** —— 弹窗/新窗口如何打开(`newWindowBehavior`:同窗口、外部浏览器、弹窗)。
+- **弹窗拦截** —— 拦截弹窗(`popupBlockerEnabled`)。
+- **JS 可打开窗口** —— 带策略(`javaScriptCanOpenWindows`、`jsOpenWindowsPolicy`)。
 
 ## 说明
 

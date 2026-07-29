@@ -13,11 +13,27 @@ Small PHP apps, admin tools, and demos — including custom PHP frameworks.
 - **Extensions** — custom native extensions (`zend_extension`, `.so`) supported.
 - Managed in the [Linux Environment](/guide/more-features/linux-environment) and [Runtime Management](/guide/more-features/runtime-management) screens.
 
-## Key configuration
+## Core config
 
-- **Project** — the PHP source to serve.
-- **Start command / entry** — how the server is launched.
-- **Port** — allocated through the [Port Manager](/guide/more-features/port-manager).
+Backed by `PhpAppConfig`.
+
+### Project
+
+- **Project** (`projectId`/`projectName`) — the PHP source to serve.
+- **Framework** (`framework`) — detected framework, if any.
+- **Document root** (`documentRoot`) — the web root directory.
+- **Entry file** (`entryFile`) — defaults to `index.php`.
+
+### Server
+
+- **Port** (`phpPort`) — allocated through the [Port Manager](/guide/more-features/port-manager).
+- **Environment variables** (`envVars`) — key/value pairs passed to the process.
+
+### Dependencies & extensions
+
+- **Composer** (`hasComposerJson`) — whether a `composer.json` is present (install via Composer 2.10.x).
+- **PHP extensions** (`phpExtensions`) — toggle built-in extensions.
+- **Custom native extensions** (`customPhpExtensions`) — add `.so` extensions, each `EXTENSION` or `ZEND_EXTENSION`, with load order.
 
 ## Notes
 

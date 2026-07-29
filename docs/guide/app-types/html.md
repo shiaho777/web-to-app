@@ -6,13 +6,34 @@ Packages local HTML into the APK and serves it from local files — no remote UR
 
 Static builds and offline web apps where you already have the HTML/CSS/JS files.
 
-## Key configuration
+## Core config
 
-- **Input** — a folder of HTML/CSS/JS, or a `.zip` that is extracted on import.
-- **Entry file** — defaults to `index.html`.
-- **Load mode** — how the content is served.
-- **Port & port-conflict mode** — for the local server that serves the files.
-- **JavaScript & local storage** — toggles for the WebView.
+Backed by `HtmlConfig`.
+
+### Source
+
+- **Project directory** (`projectDir`) — the folder of HTML/CSS/JS, or a `.zip` extracted on import.
+- **Files** (`files`) — the packaged files, typed as HTML/CSS/JS/image/font/other.
+
+### Entry
+
+- **Entry file** (`entryFile`) — defaults to `index.html`.
+
+### Loading
+
+- **Load mode** (`loadMode`) — `AUTO`, `FILE` (file scheme), or `LOCAL_HTTP` (local server).
+- **Port** (`port`) — the local server port (for `LOCAL_HTTP`).
+- **Port-conflict mode** (`portConflictMode`) — `AUTO_KILL` or `ALERT`.
+
+### Capabilities
+
+- **Enable JavaScript** (`enableJavaScript`).
+- **Enable local storage** (`enableLocalStorage`).
+- **Allow file access** (`allowFileAccess`) — required for pure file-based loads.
+
+### Appearance
+
+- **Background color** (`backgroundColor`).
 
 ## Notes
 
