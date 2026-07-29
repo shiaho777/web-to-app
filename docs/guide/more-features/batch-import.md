@@ -14,4 +14,4 @@ Migrating a collection of sites into WebToApp without creating each app by hand.
 
 ## Notes
 
-- Imported apps are created with default configuration; refine each one afterward via [Edit Common Config](/guide/app-actions/edit-common-config).
+- Imported apps are created with default configuration; refine each one afterward via [Edit Common Config](/guide/app-actions/edit-common-config/).

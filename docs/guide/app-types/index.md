@@ -27,7 +27,7 @@ Every type follows the same shape:
 2. **Basic info** — name and icon.
 3. **Save** — the app is created and appears on [My Apps](/guide/main-screen/my-apps).
 
-After creation, use the app's ⋮ menu: [Edit Core Config](/guide/app-actions/edit-core-config) returns to the type-specific form; [Edit Common Config](/guide/app-actions/edit-common-config) opens the shared options.
+After creation, use the app's ⋮ menu: [Edit Core Config](/guide/app-actions/edit-core-config) returns to the type-specific form; [Edit Common Config](/guide/app-actions/edit-common-config/) opens the shared options.
 
 ::: tip Try a sample first
 The app bundles sample projects (React, Vue, Vite, Node/Express, PHP/Laravel, Python/Flask, Go/Gin, WordPress, and more). Use one to see a working configuration for your stack.

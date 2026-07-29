@@ -1,42 +1,20 @@
 # Appearance
 
-Shape the look and feel of the generated app.
+A thematic index of the appearance and UI capabilities. Each is configured by a card in [Edit Common Config](/guide/app-actions/edit-common-config/) — follow the links for full detail.
 
-## Splash screen
+## Layout & chrome
 
-Image or video splash with skip behavior, trim ranges, and fixed orientation. Optionally allow tap-to-skip with a countdown.
+- [Hide Browser Toolbar](/guide/app-actions/edit-common-config/hide-toolbar) — in-app toolbar visibility and items.
+- [Fullscreen Mode](/guide/app-actions/edit-common-config/fullscreen) — immersive mode, status/navigation bars.
+- [Screen Orientation](/guide/app-actions/edit-common-config/orientation) — portrait/landscape/sensor modes.
+- [Keep Screen On](/guide/app-actions/edit-common-config/keep-screen-on) — awake mode, timeout, brightness.
+- [Floating Window](/guide/app-actions/edit-common-config/floating-window) — resizable floating window.
+- [Long-press Menu](/guide/app-actions/edit-common-config/long-press-menu) — context menu style.
+- **Status bar color/background** — under [Advanced Settings](/guide/app-actions/edit-common-config/advanced-settings).
 
-::: info Splash countdown placement
-When the status bar is visible, the countdown/skip chip automatically sits below it so it is never covered. In pure fullscreen (status bar hidden) it stays at the top corner.
-:::
+## Media & content
 
-## Background music
-
-Playlists with synced LRC lyrics, lyric animations, custom font/color/stroke/shadow, and online music search.
-
-## Chrome & layout
-
-- **Toolbar, status bar (light & dark), navigation, floating-window mode, and long-press menu styles.**
-- **Status bar color** can follow the theme, use a custom color, go fully transparent, or use **PAGE_TOP** (sample the page's top pixels so the chrome matches the content).
-
-## Download location
-
-System Downloads, app-private storage, or a user-picked SAF folder — wired through the full packaging passthrough chain.
-
-## Announcements
-
-Templates for launch, interval, and no-network moments.
-
-## Translation overlay
-
-20 target languages via Google, MyMemory, LibreTranslate, or Lingva engines, with automatic failover. This translates the *content* of generated apps (separate from the host UI language).
-
-## Notifications
-
-Web Notification polyfill, scheduled and persistent notifications with progress, URL-polling foreground service, deep links, boot auto-start, scheduled launch, and background-run service.
-
----
-
-::: tip Detailed customization guides coming soon
-Per-feature configuration details are being written.
-:::
+- [Splash Animation](/guide/app-actions/edit-common-config/splash) — image/video splash, skip, trim.
+- [Background Music](/guide/app-actions/edit-common-config/bgm) — playlists, lyrics, styling.
+- [Popup Announcement](/guide/app-actions/edit-common-config/announcement) — announcement templates and timing.
+- [Webpage Auto Translation](/guide/app-actions/edit-common-config/translate) — in-page translation overlay.

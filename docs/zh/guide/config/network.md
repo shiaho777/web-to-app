@@ -1,39 +1,29 @@
 # 网络与反审查
 
-WebToApp 搭载了一套远超普通 WebView 的加固网络栈。所有设置均按应用配置。
+网络能力的主题索引。每一项都在[编辑通用配置](/zh/guide/app-actions/edit-common-config/)的某张卡片中配置 —— 点链接看详解。
 
-## 浏览器引擎
+## DNS
 
-- **系统 WebView** —— 默认引擎。
-- **GeckoView(Firefox)** —— 可选运行时,首次使用时下载。ECH 必需。GeckoView API 类来自 Gradle 依赖;沉重的原生产物(`.so` + `omni.ja`)按需获取。
-- **内核风味伪装** —— 在保留真实引擎的同时,伪装成 Chrome、Edge、Samsung Internet、Firefox 或 Safari 风格。
+- [自定义DNS](/zh/guide/app-actions/edit-common-config/custom-dns) —— DNS 模式、DoH 提供商、自定义端点。
 
-## DNS-over-HTTPS(DoH) {#dns-over-https-doh}
+## 代理、TLS 与 CORS
 
-可选 Cloudflare、Google、AdGuard、NextDNS、CleanBrowsing、Quad9、Mullvad,或自定义端点。模式:严格或自动。
+这些在[高级设置](/zh/guide/app-actions/edit-common-config/advanced-settings)中:
 
-## 代理
-
-静态 HTTP/HTTPS/SOCKS5、PAC、认证、绕过规则,以及本地 HTTP-to-SOCKS 桥。代理按应用配置。
-
-## TLS 指纹伪造
-
-模拟 Chrome 131 / Firefox 133 / Safari 18 的 JA3 配置(或自定义密码套件),通过本地 TLS-MITM 桥提供服务,使发出的 ClientHello 与真实浏览器一致。
-
-## 加密客户端 Hello(ECH)
-
-加密 TLS 握手中的 SNI。**仅 GeckoView。** 开启 ECH 会自动联动 DoH + GeckoView。
-
-## CORS 绕过
-
-默认开启,针对那些调用被 CORS 拦截的外部 API 的静态 SPA。同源流量不受影响。仅涉及 CORS 的应用可使用轻量级 `PrivateNetworkNativeBridgeAdapter`,无需完整的 Native Bridge 接口。
+- **代理** —— 静态 HTTP/HTTPS/SOCKS5 或 PAC,带认证和绕过规则。
+- **TLS 指纹** —— 模拟浏览器 JA3 配置(如 `CHROME_131`)。
+- **CORS 绕过** —— 用于跨源 SPA。
+- **混合内容** 与 **私有网络桥**。
+- **Hosts 映射** —— host → IP 覆盖。
 
 ## 故障转移
 
-当主目标不可达时,自动回退到镜像 URL。
+- **故障转移镜像** —— 自动回退 URL,在[高级设置](/zh/guide/app-actions/edit-common-config/advanced-settings)中。
 
----
+## 浏览器引擎
 
-::: tip 详细教程即将推出
-上述各项功能的逐步配置配方正在编写中。这里列出的能力如今都已在编辑器的网络分区中可用。
-:::
+- 引擎(系统 WebView / GeckoView)在[自定义DNS](/zh/guide/app-actions/edit-common-config/custom-dns)或 [APK导出配置](/zh/guide/app-actions/edit-common-config/apk-export)中选择;在[浏览器内核](/zh/guide/more-features/browser-kernel)中管理引擎。
+
+## 运行时
+
+- 服务端运行时的 DNS/代理桥接见[本地服务运行时](/zh/guide/config/runtimes)。

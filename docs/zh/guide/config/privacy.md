@@ -1,35 +1,22 @@
 # 隐私与加固
 
-WebToApp 包含一整套隐私、指纹防护与加固功能。全部按应用配置、按需启用。
+隐私、伪装和加固能力的主题索引。每一项都在[编辑通用配置](/zh/guide/app-actions/edit-common-config/)的某张卡片中配置 —— 点链接看详解。
 
-## 浏览器指纹伪装 {#browser-fingerprint-disguise}
+## 访问门控
 
-跨 **50+ 维度** 伪装:User-Agent、WebGL、Canvas、AudioContext、ClientRects、时区、语言、内存、媒体设备、WebRTC、字体、电池、权限、性能、存储、通知、CSS 媒体、iframe 传播,以及错误栈清理。
+- [激活码验证](/zh/guide/app-actions/edit-common-config/activation) —— 本地或远程激活码。
 
-## 去广告 {#ad-blocking}
+## 去广告
 
-基于 hosts 规则的去广告,带 cosmetic MutationObserver 过滤,**内置 20 个社区过滤列表**(EasyList、uBlock Origin、AdGuard、AdAway,外加 8 个语言专属列表),按来源启用/禁用/删除,以及打包进 APK 的自定义订阅规则。
+- [广告拦截](/zh/guide/app-actions/edit-common-config/ad-blocking) —— hosts 规则和订阅(在 [Hosts 拦截](/zh/guide/more-features/hosts-adblock)中管理列表)。
 
-去广告同时贯通预览与导出:宿主去广告器服务预览,编译后的规则集随生成的 APK 一起发布。
+## 伪装
 
-## 资源加密
+- [图标与应用](/zh/guide/app-actions/edit-common-config/icon-disguise) —— 多启动器图标、图标风暴、随机名称。
+- [设备伪装](/zh/guide/app-actions/edit-common-config/device-disguise) —— 设备级属性伪造。
+- **浏览器指纹伪装**(50+ 维)和 **内核伪装** —— 在[高级设置](/zh/guide/app-actions/edit-common-config/advanced-settings)中。
 
-对打包的配置、HTML、媒体和 BGM 使用 PBKDF2 + AES-256-GCM。可选的自定义加密密码比包名/证书派生密钥更强。见[构建 APK](/zh/guide/app-actions/build-apk)。
+## 加密与加固
 
-## 运行时加固
-
-开启加密后:反调试、反 Frida、DEX 篡改检查。威胁响应可配置 —— 仅记录日志、静默退出或随机崩溃。
-
-## 内容隔离
-
-按应用隔离存储、WebRTC、Canvas、Audio、WebGL、字体、头部和 IP 表面。
-
-## 激活门控 {#activation-gating}
-
-用激活码为应用设门 —— 本地校验,或用你自己经 EC P-256 签名的 HTTPS 端点。见[远程激活参考](https://github.com/shiaho777/web-to-app/blob/main/.github/docs/remote-activation.md)。
-
----
-
-::: tip 配置教程即将推出
-各项隐私功能的逐步指南正在编写中。
-:::
+- **资源加密** 与 **运行时加固**(反调试、反 Frida、DEX 篡改)—— 构建时选择;见 [APK导出配置](/zh/guide/app-actions/edit-common-config/apk-export)和[构建 APK](/zh/guide/app-actions/build-apk)。
+- **防截屏** —— 在[特殊设置](/zh/guide/app-actions/edit-common-config/special-settings)中。

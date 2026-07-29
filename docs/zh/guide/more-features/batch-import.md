@@ -14,4 +14,4 @@
 
 ## 说明
 
-- 导入的应用以默认配置创建;之后通过[编辑通用配置](/zh/guide/app-actions/edit-common-config)逐个完善。
+- 导入的应用以默认配置创建;之后通过[编辑通用配置](/zh/guide/app-actions/edit-common-config/)逐个完善。

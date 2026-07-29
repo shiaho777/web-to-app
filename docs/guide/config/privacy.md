@@ -1,35 +1,22 @@
 # Privacy & Hardening
 
-WebToApp includes a broad set of privacy, fingerprint-defense, and hardening features. All are per-app and opt-in.
+A thematic index of the privacy, disguise, and hardening capabilities. Each is configured by a card in [Edit Common Config](/guide/app-actions/edit-common-config/) — follow the links for full detail.
 
-## Browser fingerprint disguise
+## Access gating
 
-Disguise across **50+ vectors**: User-Agent, WebGL, Canvas, AudioContext, ClientRects, timezone, language, memory, media devices, WebRTC, fonts, battery, permissions, performance, storage, notifications, CSS media, iframe propagation, and error-stack cleanup.
+- [Activation Code Verification](/guide/app-actions/edit-common-config/activation) — local or remote activation codes.
 
 ## Ad blocking
 
-A hosts-rule ad blocker with cosmetic MutationObserver filtering, **20 built-in community filter lists** (EasyList, uBlock Origin, AdGuard, AdAway, plus 8 language-specific lists), per-source enable/disable/delete, and custom subscription rules bundled into the APK.
+- [Ad Blocking](/guide/app-actions/edit-common-config/ad-blocking) — hosts rules and subscriptions (manage lists in [Hosts Ad Blocking](/guide/more-features/hosts-adblock)).
 
-Ad blocking is wired for both preview and export: the host ad blocker serves preview, and the compiled rule set ships in the generated APK.
+## Disguise
 
-## Resource encryption
+- [Icon & App](/guide/app-actions/edit-common-config/icon-disguise) — multiple launcher icons, icon storm, randomized names.
+- [Device Disguise](/guide/app-actions/edit-common-config/device-disguise) — device-level property spoofing.
+- **Browser fingerprint disguise** (50+ vectors) and **kernel disguise** — under [Advanced Settings](/guide/app-actions/edit-common-config/advanced-settings).
 
-PBKDF2 + AES-256-GCM for packaged config, HTML, media, and BGM. An optional custom encryption password is stronger than package/certificate-derived keys. See [Build APK](/guide/app-actions/build-apk).
+## Encryption & hardening
 
-## Runtime hardening
-
-When encryption is on: anti-debug, anti-Frida, and DEX-tamper checks. Threat response is configurable — log-only, silent exit, or randomized crash.
-
-## Content isolation
-
-Isolate storage, WebRTC, Canvas, Audio, WebGL, fonts, headers, and IP surfaces per app.
-
-## Activation gating
-
-Gate the app behind activation codes — local verification, or your own HTTPS endpoint signed with EC P-256. See the [remote activation reference](https://github.com/shiaho777/web-to-app/blob/main/.github/docs/remote-activation.md).
-
----
-
-::: tip Configuration walkthroughs coming soon
-Step-by-step guides for each privacy feature are being written.
-:::
+- **Resource encryption** and **runtime hardening** (anti-debug, anti-Frida, DEX-tamper) — chosen at build time; see [APK Export Config](/guide/app-actions/edit-common-config/apk-export) and [Build APK](/guide/app-actions/build-apk).
+- **Anti-capture** — under [Special Settings](/guide/app-actions/edit-common-config/special-settings).

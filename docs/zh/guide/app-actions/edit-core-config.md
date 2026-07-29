@@ -23,4 +23,4 @@
 ## 说明
 
 - **网页应用不显示此入口** —— 它们有单一的 **编辑**,涵盖一切,因为网页配置不拆分。
-- 共享选项(外观、网络、隐私、导出)用[编辑通用配置](/zh/guide/app-actions/edit-common-config)。
+- 共享选项(外观、网络、隐私、导出)用[编辑通用配置](/zh/guide/app-actions/edit-common-config/)。

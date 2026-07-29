@@ -27,7 +27,7 @@
 2. **基本信息** —— 名称和图标。
 3. **保存** —— 应用被创建并出现在[我的应用](/zh/guide/main-screen/my-apps)上。
 
-创建后,使用应用的 ⋮ 菜单:[编辑核心配置](/zh/guide/app-actions/edit-core-config)回到类型专属表单;[编辑通用配置](/zh/guide/app-actions/edit-common-config)打开共享选项。
+创建后,使用应用的 ⋮ 菜单:[编辑核心配置](/zh/guide/app-actions/edit-core-config)回到类型专属表单;[编辑通用配置](/zh/guide/app-actions/edit-common-config/)打开共享选项。
 
 ::: tip 先试一个示例
 应用内置了示例项目(React、Vue、Vite、Node/Express、PHP/Laravel、Python/Flask、Go/Gin、WordPress 等)。先用一个看看你的技术栈的可工作配置。

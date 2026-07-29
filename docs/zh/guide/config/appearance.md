@@ -1,42 +1,20 @@
 # 外观
 
-塑造生成应用的外观与体验。
+外观和界面能力的主题索引。每一项都在[编辑通用配置](/zh/guide/app-actions/edit-common-config/)的某张卡片中配置 —— 点链接看详解。
 
-## 启动画面 {#splash-screen}
+## 布局与边框
 
-图片或视频启动画面,带跳过行为、裁剪区间和固定方向。可选允许点击跳过并显示倒计时。
+- [隐藏浏览器工具栏](/zh/guide/app-actions/edit-common-config/hide-toolbar) —— 应用内工具栏可见性与各项。
+- [全屏模式](/zh/guide/app-actions/edit-common-config/fullscreen) —— 沉浸式、状态/导航栏。
+- [屏幕方向](/zh/guide/app-actions/edit-common-config/orientation) —— 竖屏/横屏/传感器模式。
+- [保持屏幕常亮](/zh/guide/app-actions/edit-common-config/keep-screen-on) —— 常亮模式、超时、亮度。
+- [悬浮小窗](/zh/guide/app-actions/edit-common-config/floating-window) —— 可调整大小的浮窗。
+- [长按菜单](/zh/guide/app-actions/edit-common-config/long-press-menu) —— 上下文菜单样式。
+- **状态栏颜色/背景** —— 在[高级设置](/zh/guide/app-actions/edit-common-config/advanced-settings)中。
 
-::: info 启动倒计时位置
-当状态栏可见时,倒计时/跳过胶囊会自动落在状态栏下方,绝不会被遮挡。在纯全屏(状态栏隐藏)时,它保持在顶部角落。
-:::
+## 媒体与内容
 
-## 背景音乐 {#background-music}
-
-带同步 LRC 歌词的播放列表、歌词动画、自定义字体/颜色/描边/阴影,以及在线音乐搜索。
-
-## 边框与布局
-
-- **工具栏、状态栏(明暗)、导航、浮窗模式和长按菜单样式。**
-- **状态栏颜色** 可跟随主题、使用自定义颜色、完全透明,或使用 **PAGE_TOP**(采样页面顶部像素,使边框与内容相配)。
-
-## 下载位置
-
-系统 Downloads、应用私有存储,或用户挑选的 SAF 文件夹 —— 贯通完整的打包透传链。
-
-## 公告
-
-针对启动、间隔和无网络时机的模板。
-
-## 翻译叠加层
-
-通过 Google、MyMemory、LibreTranslate 或 Lingva 引擎翻译为 20 种目标语言,并自动故障转移。这翻译的是生成应用的*内容*(与宿主界面语言相互独立)。
-
-## 通知
-
-Web Notification polyfill、带进度的定时与持久通知、URL 轮询前台服务、深度链接、开机自启、定时启动,以及后台运行服务。
-
----
-
-::: tip 详细定制指南即将推出
-各功能的配置细节正在编写中。
-:::
+- [启动动画](/zh/guide/app-actions/edit-common-config/splash) —— 图片/视频启动、跳过、裁剪。
+- [背景音乐](/zh/guide/app-actions/edit-common-config/bgm) —— 播放列表、歌词、样式。
+- [弹窗公告](/zh/guide/app-actions/edit-common-config/announcement) —— 公告模板与时机。
+- [网页自动翻译](/zh/guide/app-actions/edit-common-config/translate) —— 页内翻译叠加层。

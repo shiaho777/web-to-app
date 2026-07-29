@@ -23,4 +23,4 @@ The type-specific creation form, reused as an editor:
 ## Notes
 
 - **Web apps don't show this entry** — they have a single **Edit** that covers everything, since web config isn't split.
-- For the shared options (appearance, networking, privacy, export), use [Edit Common Config](/guide/app-actions/edit-common-config).
+- For the shared options (appearance, networking, privacy, export), use [Edit Common Config](/guide/app-actions/edit-common-config/).

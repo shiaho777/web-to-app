@@ -9,6 +9,41 @@ type Lang = 'en' | 'zh'
 const t = {
   en: {
     nav: { guide: 'Guide', developer: 'Developer', extensions: 'Extensions' },
+    cc: {
+      title: 'Common Config',
+      basicInfo: 'Basic Info',
+      browserUi: 'Browser & Interface',
+      mediaInteraction: 'Media & Interaction',
+      extensionsNetwork: 'Extensions & Network',
+      disguise: 'Disguise',
+      launchRuntime: 'Launch & Runtime',
+      advancedExport: 'Advanced & Export',
+      appIcon: 'App Icon',
+      appName: 'App Name',
+      urlWebpage: 'URL / Webpage',
+      activation: 'Activation Code',
+      hideToolbar: 'Hide Browser Toolbar',
+      fullscreen: 'Fullscreen Mode',
+      orientation: 'Screen Orientation',
+      keepScreenOn: 'Keep Screen On',
+      floatingWindow: 'Floating Window',
+      longPressMenu: 'Long-press Menu',
+      splash: 'Splash Animation',
+      bgm: 'Background Music',
+      announcement: 'Popup Announcement',
+      translate: 'Auto Translation',
+      extensionModules: 'Extension Modules',
+      adBlocking: 'Ad Blocking',
+      customDns: 'Custom DNS',
+      iconDisguise: 'Icon & App',
+      deviceDisguise: 'Device Disguise',
+      autoStart: 'Auto-start',
+      forcedRun: 'Forced Run',
+      blacktech: 'BlackTech',
+      advancedSettings: 'Advanced Settings',
+      specialSettings: 'Special Settings',
+      apkExport: 'APK Export Config'
+    },
     guide: {
       start: 'Start',
       intro: 'Introduction',
@@ -92,6 +127,41 @@ const t = {
   },
   zh: {
     nav: { guide: '使用手册', developer: '开发者', extensions: '扩展开发' },
+    cc: {
+      title: '通用配置',
+      basicInfo: '基本信息',
+      browserUi: '浏览器与界面',
+      mediaInteraction: '媒体与互动',
+      extensionsNetwork: '扩展与网络',
+      disguise: '伪装',
+      launchRuntime: '启动与运行',
+      advancedExport: '高级与导出',
+      appIcon: '应用图标',
+      appName: '应用名称',
+      urlWebpage: '网址/网页',
+      activation: '激活码验证',
+      hideToolbar: '隐藏浏览器工具栏',
+      fullscreen: '全屏模式',
+      orientation: '屏幕方向',
+      keepScreenOn: '保持屏幕常亮',
+      floatingWindow: '悬浮小窗',
+      longPressMenu: '长按菜单',
+      splash: '启动动画',
+      bgm: '背景音乐',
+      announcement: '弹窗公告',
+      translate: '网页自动翻译',
+      extensionModules: '拓展模块',
+      adBlocking: '广告拦截',
+      customDns: '自定义DNS',
+      iconDisguise: '图标与应用',
+      deviceDisguise: '设备伪装',
+      autoStart: '自启动设置',
+      forcedRun: '强制运行设置',
+      blacktech: '黑科技功能',
+      advancedSettings: '高级设置',
+      specialSettings: '特殊设置',
+      apkExport: 'APK导出配置'
+    },
     guide: {
       start: '开始',
       intro: '简介',
@@ -237,6 +307,77 @@ function sidebar(lang: Lang, prefix: string) {
           { text: s.guide.exportApk, link: `${prefix}/guide/app-actions/export-apk` },
           { text: s.guide.moveToCategory, link: `${prefix}/guide/app-actions/move-to-category` },
           { text: s.guide.delete, link: `${prefix}/guide/app-actions/delete` }
+        ]
+      },
+      {
+        text: s.cc.title,
+        items: [
+          {
+            text: s.cc.basicInfo,
+            collapsed: false,
+            items: [
+              { text: s.cc.appIcon, link: `${prefix}/guide/app-actions/edit-common-config/app-icon` },
+              { text: s.cc.appName, link: `${prefix}/guide/app-actions/edit-common-config/app-name` },
+              { text: s.cc.urlWebpage, link: `${prefix}/guide/app-actions/edit-common-config/url-webpage` }
+            ]
+          },
+          {
+            text: s.cc.browserUi,
+            collapsed: false,
+            items: [
+              { text: s.cc.hideToolbar, link: `${prefix}/guide/app-actions/edit-common-config/hide-toolbar` },
+              { text: s.cc.fullscreen, link: `${prefix}/guide/app-actions/edit-common-config/fullscreen` },
+              { text: s.cc.orientation, link: `${prefix}/guide/app-actions/edit-common-config/orientation` },
+              { text: s.cc.keepScreenOn, link: `${prefix}/guide/app-actions/edit-common-config/keep-screen-on` },
+              { text: s.cc.floatingWindow, link: `${prefix}/guide/app-actions/edit-common-config/floating-window` },
+              { text: s.cc.longPressMenu, link: `${prefix}/guide/app-actions/edit-common-config/long-press-menu` }
+            ]
+          },
+          {
+            text: s.cc.mediaInteraction,
+            collapsed: false,
+            items: [
+              { text: s.cc.splash, link: `${prefix}/guide/app-actions/edit-common-config/splash` },
+              { text: s.cc.bgm, link: `${prefix}/guide/app-actions/edit-common-config/bgm` },
+              { text: s.cc.announcement, link: `${prefix}/guide/app-actions/edit-common-config/announcement` },
+              { text: s.cc.translate, link: `${prefix}/guide/app-actions/edit-common-config/translate` }
+            ]
+          },
+          {
+            text: s.cc.extensionsNetwork,
+            collapsed: false,
+            items: [
+              { text: s.cc.extensionModules, link: `${prefix}/guide/app-actions/edit-common-config/extension-modules` },
+              { text: s.cc.adBlocking, link: `${prefix}/guide/app-actions/edit-common-config/ad-blocking` },
+              { text: s.cc.customDns, link: `${prefix}/guide/app-actions/edit-common-config/custom-dns` }
+            ]
+          },
+          {
+            text: s.cc.disguise,
+            collapsed: false,
+            items: [
+              { text: s.cc.iconDisguise, link: `${prefix}/guide/app-actions/edit-common-config/icon-disguise` },
+              { text: s.cc.deviceDisguise, link: `${prefix}/guide/app-actions/edit-common-config/device-disguise` }
+            ]
+          },
+          {
+            text: s.cc.launchRuntime,
+            collapsed: false,
+            items: [
+              { text: s.cc.autoStart, link: `${prefix}/guide/app-actions/edit-common-config/auto-start` },
+              { text: s.cc.forcedRun, link: `${prefix}/guide/app-actions/edit-common-config/forced-run` },
+              { text: s.cc.blacktech, link: `${prefix}/guide/app-actions/edit-common-config/blacktech` }
+            ]
+          },
+          {
+            text: s.cc.advancedExport,
+            collapsed: false,
+            items: [
+              { text: s.cc.advancedSettings, link: `${prefix}/guide/app-actions/edit-common-config/advanced-settings` },
+              { text: s.cc.specialSettings, link: `${prefix}/guide/app-actions/edit-common-config/special-settings` },
+              { text: s.cc.apkExport, link: `${prefix}/guide/app-actions/edit-common-config/apk-export` }
+            ]
+          }
         ]
       },
       {
