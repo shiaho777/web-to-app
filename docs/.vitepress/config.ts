@@ -81,6 +81,10 @@ const t = {
       moveToCategory: 'Move to Category',
       delete: 'Delete',
       moreFeatures: 'More Features',
+      moreAiTools: 'AI Tools',
+      moreDevTools: 'Developer Tools',
+      moreBrowser: 'Browser',
+      moreSystem: 'System',
       aiCoding: 'AI Coding',
       aiSettings: 'AI Settings',
       extensionModules: 'Extension Modules',
@@ -199,6 +203,10 @@ const t = {
       moveToCategory: '移动到分类',
       delete: '删除',
       moreFeatures: '更多功能',
+      moreAiTools: 'AI 工具',
+      moreDevTools: '开发工具',
+      moreBrowser: '浏览器',
+      moreSystem: '系统',
       aiCoding: 'AI 编程',
       aiSettings: 'AI 设置',
       extensionModules: '扩展模块',
@@ -383,20 +391,44 @@ function sidebar(lang: Lang, prefix: string) {
       {
         text: s.guide.moreFeatures,
         items: [
-          { text: s.guide.aiCoding, link: `${prefix}/guide/more-features/ai-coding` },
-          { text: s.guide.aiSettings, link: `${prefix}/guide/more-features/ai-settings` },
-          { text: s.guide.extensionModules, link: `${prefix}/guide/more-features/extension-modules` },
-          { text: s.guide.appModifier, link: `${prefix}/guide/more-features/app-modifier` },
-          { text: s.guide.linuxEnvironment, link: `${prefix}/guide/more-features/linux-environment` },
-          { text: s.guide.runtimeManagement, link: `${prefix}/guide/more-features/runtime-management` },
-          { text: s.guide.portManager, link: `${prefix}/guide/more-features/port-manager` },
-          { text: s.guide.browserKernel, link: `${prefix}/guide/more-features/browser-kernel` },
-          { text: s.guide.hostsAdblock, link: `${prefix}/guide/more-features/hosts-adblock` },
-          { text: s.guide.usageStats, link: `${prefix}/guide/more-features/usage-stats` },
-          { text: s.guide.googlePlay, link: `${prefix}/guide/more-features/google-play` },
-          { text: s.guide.fileManager, link: `${prefix}/guide/more-features/file-manager` },
-          { text: s.guide.batchImport, link: `${prefix}/guide/more-features/batch-import` },
-          { text: s.guide.about, link: `${prefix}/guide/more-features/about` }
+          {
+            text: s.guide.moreAiTools,
+            collapsed: false,
+            items: [
+              { text: s.guide.aiCoding, link: `${prefix}/guide/more-features/ai-coding` },
+              { text: s.guide.aiSettings, link: `${prefix}/guide/more-features/ai-settings` }
+            ]
+          },
+          {
+            text: s.guide.moreDevTools,
+            collapsed: false,
+            items: [
+              { text: s.guide.extensionModules, link: `${prefix}/guide/more-features/extension-modules` },
+              { text: s.guide.appModifier, link: `${prefix}/guide/more-features/app-modifier` },
+              { text: s.guide.linuxEnvironment, link: `${prefix}/guide/more-features/linux-environment` },
+              { text: s.guide.runtimeManagement, link: `${prefix}/guide/more-features/runtime-management` },
+              { text: s.guide.portManager, link: `${prefix}/guide/more-features/port-manager` }
+            ]
+          },
+          {
+            text: s.guide.moreBrowser,
+            collapsed: false,
+            items: [
+              { text: s.guide.browserKernel, link: `${prefix}/guide/more-features/browser-kernel` },
+              { text: s.guide.hostsAdblock, link: `${prefix}/guide/more-features/hosts-adblock` }
+            ]
+          },
+          {
+            text: s.guide.moreSystem,
+            collapsed: false,
+            items: [
+              { text: s.guide.usageStats, link: `${prefix}/guide/more-features/usage-stats` },
+              { text: s.guide.googlePlay, link: `${prefix}/guide/more-features/google-play` },
+              { text: s.guide.fileManager, link: `${prefix}/guide/more-features/file-manager` },
+              { text: s.guide.batchImport, link: `${prefix}/guide/more-features/batch-import` },
+              { text: s.guide.about, link: `${prefix}/guide/more-features/about` }
+            ]
+          }
         ]
       },
       {
