@@ -1,58 +1,66 @@
 # Getting Started
 
-This walkthrough takes you from a fresh install to your first signed APK, following the actual flow in the app.
+This walkthrough takes you from a fresh install to your first signed APK. At each step it notes what the app is actually doing under the hood, so the flow makes sense in terms of the code.
 
-## 1. Install WebToApp
+## 1. Install and launch
 
-Install the WebToApp builder on an Android device running **Android 6.0 (API 23) or newer**. On first launch you land on **My Apps** — the home screen that lists every app you create. See [Main Screen](/guide/main-screen/my-apps) for a tour of it.
+Install the WebToApp builder on a device running **Android 6.0 (API 23) or newer**.
 
-## 2. Open the create menu
+On launch, `WebToAppApplication` starts in **builder mode** (`SHELL_RUNTIME_ONLY = false`): it initializes the i18n strings, the Room database, and the dependency graph, then shows **My Apps** — the home screen that lists every app you create. See [Main Screen](/guide/main-screen/my-apps).
 
-At the bottom of **My Apps**, tap the **Create** button. A panel expands with a 3-column grid of app types:
+## 2. Create an app definition
+
+At the bottom of **My Apps**, tap **Create**. A panel expands with a 3-column grid of the 12 [app types](/guide/app-types/):
 
 **Web · Multi-Web · HTML · Offline Pack · Frontend · PHP · WordPress · Node.js · Python · Go · Media · Gallery**
 
-For your first app, tap **Web**.
+Tap **Web** for your first app. The Web editor opens.
 
 ## 3. Fill in the basics
 
-The Web editor opens. Fill in the top **Basic info** card:
+Fill in the top **Basic info** card:
 
-- **App name** — anything you like
+- **App name**
 - **Target URL** — e.g. `https://example.com`
-- **Icon** — pick an image (optional; a type-specific default is used otherwise)
+- **Icon** — optional; a type-specific default is used otherwise
 
-The rest of the editor is a long list of optional capability cards (fullscreen, splash screen, ad blocking, DNS, fingerprint disguise, and more). You can ignore all of them for now — sensible defaults are used. Each is explained under [App Configuration](/guide/config/).
+The rest of the editor is a long list of optional capability cards (fullscreen, splash, ad blocking, DNS, disguise, …). Ignore them for now — defaults are used. Each is covered under [App Configuration](/guide/config/).
 
-Tap **Save**. Your app now appears in the list on **My Apps**.
+Tap **Save**. Under the hood, the editor assembles a `WebApp` object (with `appType = WEB` and a `webViewConfig`) and writes it to the `web_apps` Room table. Your app now appears in the list.
 
 ## 4. Preview
 
-On **My Apps**, tap your app's card. WebToApp launches it in preview, exactly as it will behave once exported. (Tap the ⋮ button on the card instead to open the action menu — see [App Actions](/guide/app-actions/edit-core-config).)
+On **My Apps**, tap your app's card. The preview router checks the app's `appType` and launches the matching runtime:
+
+- `IMAGE` / `VIDEO` → the media player activity
+- `GALLERY` → the gallery player activity
+- everything else (including `WEB`) → the WebView activity
+
+For a Web app, the WebView activity loads your URL with your configured settings — the same code the exported app will run. (Tap the card's ⋮ button instead to open the [action menu](/guide/app-actions/edit-core-config).)
 
 ::: warning Preview ≠ export
-Preview and export share the same runtime code, but export additionally serializes your configuration into the generated APK. If a feature works in preview but not after export, a config field likely did not flow through the export chain. See [Config Field Drift](/developer/config-drift).
+Preview runs the **host** path (everything on the builder's classpath). Export runs the **shell** path, reading your config from an embedded JSON. A feature can work in preview yet vanish after export if a config field doesn't survive that trip. See [Config Field Drift](/developer/config-drift).
 :::
 
 ## 5. Build the APK
 
-Back on **My Apps**, tap the ⋮ button on your app's card, then **Build APK**. In the dialog you can:
+Tap ⋮ on your app's card, then **Build APK**. In the dialog you can:
 
 - pick the **browser engine** (System WebView or GeckoView),
 - optionally enable **resource encryption**, **isolation**, **background run**, and **notifications**,
 - force a **full rebuild** (otherwise an incremental mode is chosen automatically).
 
-Tap build. WebToApp patches the shell template, embeds your config and content, and signs the result. When it finishes, the APK is ready.
+Tap build. The `ApkBuilder` takes the shell template APK, patches its package name / icon / permissions, embeds your `WebApp` config as `app_config.json`, and signs the result (V1/V2/V3). See [Build APK](/guide/app-actions/build-apk).
 
-## 6. Find and install it
+## 6. Install it
 
-Open **⋮ → File Manager** from the top-right of **My Apps**. Your build output is there — install it on your device or share it to another device. Launch it: it runs the shell runtime reading *your* embedded configuration, independent of the builder.
+Open **⋮ → [File Manager](/guide/more-features/file-manager)** from the top-right of My Apps. Your APK is there — install it or share it. When you launch it, that APK runs in **shell mode** (`SHELL_RUNTIME_ONLY = true`): `ShellModeManager` reads *your* embedded `app_config.json` and drives the runtime, fully independent of the builder.
 
 ## Next steps
 
 - Tour the [Main Screen](/guide/main-screen/my-apps).
-- Learn what each [app type](/guide/app-types/) can do.
-- Explore the per-app [App Actions](/guide/app-actions/edit-core-config) (shortcut, share, export, AAB).
+- Learn what each [app type](/guide/app-types/) does.
+- Explore the per-app [App Actions](/guide/app-actions/edit-core-config).
 - Open the top-right **⋮** menu — see [More Features](/guide/more-features/ai-coding).
 
 ## Build from source

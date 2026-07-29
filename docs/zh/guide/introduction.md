@@ -1,34 +1,48 @@
 # 简介
 
-**WebToApp** 把网页项目变成独立、已签名的 Android APK —— 完全在手机上完成。它不是网址套壳,而是一个掌上 APK 工坊:能运行真实的服务端运行时、搭载加固的反审查网络栈、为 Google Play 签名打包、运行 MV3 浏览器扩展,全程无需电脑或远程构建服务器。
+WebToApp 是一个 Android 应用,它**在设备上**把网页项目变成可安装的 APK。本页从代码的角度说明它到底是什么,让你在上手前心里有数。
 
-## 它有何不同
+## 具体而言,这个应用是什么
 
-大多数"网址转 App"工具止步于把 URL 套进 WebView。WebToApp 恰恰在最难的地方另辟蹊径:
+WebToApp 的核心是管理一份**应用定义**列表。每个定义是一条 `WebApp` 记录,存储在本地 Room 数据库(`web_apps` 表)中。一个 `WebApp` 包含:
 
-- **在设备上运行真实的服务运行时。** Node.js、PHP、Python、Go、WordPress 作为原生二进制直接从应用存储 fork+exec —— 如同 Termux,但打包成可安装的 APK。网址套壳工具根本做不到。
-- **搭载加固网络栈。** DNS-over-HTTPS、带本地 MITM 桥的 TLS 指纹伪造(Chrome / Firefox / Safari JA3 模板)、GeckoView 引擎上的加密客户端 Hello(ECH)、按应用代理,以及针对受限 SPA 的 CORS 绕过。
-- **构建全程自包含。** 二进制 AXML/ARSC 打补丁、权限裁剪、V1/V2/V3 签名、Google Play 级 AAB 导出,全部通过 `apksig` 在应用内完成。
-- **发布后仍可扩展。** 添加 JS/CSS 模块、Tampermonkey 风格油猴脚本或 MV3 Chrome 扩展,无需重建宿主。
+- **身份** —— `name`、`url`、`iconPath`、`packageName`,以及一个 `appType`。
+- **类型专属配置** —— `mediaConfig`、`galleryConfig`、`htmlConfig`、`wordpressConfig`、`nodejsConfig`、`phpAppConfig`、`pythonAppConfig`、`goAppConfig` 或 `multiWebConfig` 之一,取决于类型。
+- **功能开关 + 配置** —— 激活、广告、公告、去广告、WebView 设置、启动画面、背景音乐、翻译、扩展、自启动、伪装,以及用于打包的 `apkExportConfig`。
 
-## 你能构建什么
+当你"构建"一个应用时,构建器取得 shell 模板 APK,修改其身份与资源,把你的 `WebApp` 配置作为 assets JSON 嵌入,并签名。产物是一个可安装或可分享的独立 APK。
 
-| 输入 | 输出 | 适用场景 |
-| --- | --- | --- |
-| 网站 URL | 基于 WebView 的 APK | 落地页、工具、仪表盘、文档、内部系统 |
-| HTML / 静态前端 | 本地托管的 APK | React、Vue、Vite、静态构建、离线 Web 应用 |
-| Node.js / PHP / Python / Go | 带设备端本地服务器的 APK | 小型服务端应用、管理工具、演示、原型 |
-| WordPress | 在本地 PHP + SQLite 上运行 WordPress 的 APK | 便携站点、主题/插件演示、内容打包 |
-| 图片 / 视频 / 图集 | 以媒体为核心的 APK | 相册、课程资料、作品集、离线查看器 |
-| 多个站点 | 标签/卡片/信息流/抽屉式多网站 APK | 链接枢纽、门户、应用合集 |
-| 已安装的 APK | 换壳克隆或快捷方式伪装 | 图标/名称/包名实验、重打包研究 |
+## 12 种应用类型
+
+`AppType` 枚举定义了一个应用可以是什么:
+
+`WEB` · `IMAGE` · `VIDEO` · `HTML` · `GALLERY` · `FRONTEND` · `WORDPRESS` · `NODEJS_APP` · `PHP_APP` · `PYTHON_APP` · `GO_APP` · `MULTI_WEB`
+
+网页类类型在 WebView 中加载 URL 或本地文件;运行时类型(`NODEJS_APP`、`PHP_APP`、`PYTHON_APP`、`GO_APP`、`WORDPRESS`)在设备上 fork 一个原生服务二进制,并把 WebView 指向本地端口;媒体类型(`IMAGE`、`VIDEO`、`GALLERY`)直接播放内容。每种见[创建应用](/zh/guide/app-types/)。
+
+## 一套代码,两种运行方式
+
+同一个 `WebToAppApplication` 以两种模式运行,由一个构建标志选择:
+
+- **构建器(宿主)** —— `SHELL_RUNTIME_ONLY = false`。这是你从商店安装的应用:编辑器、应用列表和导出管线,所有东西都在主 classpath 上。
+- **生成的应用(shell 运行时)** —— `SHELL_RUNTIME_ONLY = true`。导出的 APK 运行同步来的 shell 运行时,并通过 `ShellModeManager` 从 `app_config.json` 读取*你*嵌入的配置。Node.js 甚至运行在独立的 `:nodejs` 操作系统进程中。
+
+这正是"预览正常、导出失效"会成为真实故障模式的原因:预览走宿主路径,导出走 shell 路径,而配置字段必须在这两者之间存活下来。见[配置字段漂移](/zh/developer/config-drift)。
+
+## 各界面在哪里
+
+- [我的应用](/zh/guide/main-screen/my-apps) —— 主页:你的应用列表、分类和创建按钮。
+- [创建应用](/zh/guide/app-types/) —— 12 种应用类型及其创建流程。
+- [应用功能](/zh/guide/app-actions/edit-core-config) —— 每个应用能做什么(编辑、构建、分享、导出……)。
+- [更多功能](/zh/guide/more-features/ai-coding) —— 右上角 ⋮ 菜单后的全局工具。
+- [应用配置](/zh/guide/config/) —— 共享的按应用选项(网络、隐私、外观、运行时)。
 
 ## 如何阅读这些文档
 
-- **[使用手册](/zh/guide/getting-started)** —— 导览[主界面](/zh/guide/main-screen/my-apps)、构建第一个 APK、了解[应用类型](/zh/guide/app-types/)与[各应用操作](/zh/guide/app-actions/edit-core-config)、探索[更多功能菜单](/zh/guide/more-features/ai-coding),并在[应用配置](/zh/guide/config/)下配置应用。
-- **[开发者文档](/zh/developer/)** —— 代码如何组织、导出管线与 shell 同步如何工作,以及常见改动的配方。
-- **[扩展开发](/zh/extensions/)** —— 编写 JS/CSS 模块、油猴脚本和 MV3 Chrome 扩展,并发布到应用内市场。
+- **[开始](/zh/guide/getting-started)** —— 构建第一个 APK 并导览主界面。
+- **[开发者文档](/zh/developer/)** —— 代码库布局、导出管线、shell 同步和改动配方。
+- **[扩展开发](/zh/extensions/)** —— 编写 JS/CSS 模块、油猴脚本和 MV3 Chrome 扩展。
 
 ::: tip
-宿主应用界面提供 10 种语言,可在 **我的应用顶栏的语言按钮** 中随时切换。你*生成*的应用的语言则按应用单独配置。
+构建器界面提供 10 种语言 —— 从顶栏的[语言按钮](/zh/guide/main-screen/language)切换。你*生成*的应用的语言按应用配置。
 :::

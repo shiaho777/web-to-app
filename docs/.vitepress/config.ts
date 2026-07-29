@@ -10,7 +10,7 @@ const t = {
   en: {
     nav: { guide: 'Guide', developer: 'Developer', extensions: 'Extensions' },
     guide: {
-      start: 'Getting Started',
+      start: 'Start',
       intro: 'Introduction',
       gettingStarted: 'Getting Started',
       mainScreen: 'Main Screen',
@@ -93,7 +93,7 @@ const t = {
   zh: {
     nav: { guide: '使用手册', developer: '开发者', extensions: '扩展开发' },
     guide: {
-      start: '入门',
+      start: '开始',
       intro: '简介',
       gettingStarted: '快速开始',
       mainScreen: '主界面',

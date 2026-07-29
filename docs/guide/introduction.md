@@ -1,34 +1,48 @@
 # Introduction
 
-**WebToApp** turns web projects into standalone, signed Android APKs — entirely on your phone. It is not a URL wrapper. It is a pocket-sized APK workshop that can run real server runtimes, ship a hardened anti-censorship network stack, sign bundles for Google Play, and run MV3 browser extensions, all without a PC or a remote build server.
+WebToApp is an Android application that turns web projects into installable APKs **on the device**. This page describes what it actually is, in terms of the code, so you know what to expect before you start.
 
-## What makes it different
+## What the app is, concretely
 
-Most "website to app" tools stop at wrapping a URL in a WebView. WebToApp diverges exactly where the hard parts are:
+At its core, WebToApp manages a list of **app definitions**. Each definition is a `WebApp` record stored in a local Room database (the `web_apps` table). A `WebApp` holds:
 
-- **It runs real server runtimes on-device.** Node.js, PHP, Python, Go, and WordPress are fork+exec'd as native binaries straight from app storage — like Termux, packaged into an installable APK. URL-wrapper tools cannot do this at all.
-- **It ships a hardened network stack.** DNS-over-HTTPS, TLS fingerprint spoofing (Chrome / Firefox / Safari JA3 templates) with a local MITM bridge, Encrypted Client Hello (ECH) on the GeckoView engine, per-app proxies, and CORS bypass for locked-down SPAs.
-- **The whole build is self-contained.** Binary AXML/ARSC patching, permission pruning, V1/V2/V3 signing, and Google Play-ready AAB export all happen inside the app via `apksig`.
-- **It stays extensible after shipping.** Add JS/CSS modules, Tampermonkey-style userscripts, or MV3 Chrome extensions without rebuilding the host.
+- **Identity** — `name`, `url`, `iconPath`, `packageName`, and an `appType`.
+- **A type-specific config** — one of `mediaConfig`, `galleryConfig`, `htmlConfig`, `wordpressConfig`, `nodejsConfig`, `phpAppConfig`, `pythonAppConfig`, `goAppConfig`, or `multiWebConfig`, depending on the type.
+- **Feature flags + configs** — activation, ads, announcement, ad blocking, WebView settings, splash, background music, translation, extensions, auto-start, disguise, and an `apkExportConfig` for packaging.
 
-## What you can build
+When you "build" an app, the builder takes the shell template APK, patches its identity and resources, embeds your `WebApp` configuration as an assets JSON, and signs the result. The output is a standalone APK you can install or share.
 
-| Input | Output | Good for |
-| --- | --- | --- |
-| Website URL | WebView-based APK | Landing pages, tools, dashboards, docs, internal systems |
-| HTML / static front-end | Localhost-backed APK | React, Vue, Vite, static builds, offline web apps |
-| Node.js / PHP / Python / Go | APK with an on-device local server | Small server apps, admin tools, demos, prototypes |
-| WordPress | APK running WordPress over local PHP + SQLite | Portable sites, theme/plugin demos, content packages |
-| Images / video / galleries | Media-focused APK | Albums, course materials, portfolios, offline viewers |
-| Multiple sites | Tab/card/feed/drawer multi-web APK | Link hubs, portals, app collections |
-| Installed APK | Rebranded clone or shortcut disguise | Icon/name/package experiments, repackaging research |
+## The 12 app types
+
+The `AppType` enum defines what an app can be:
+
+`WEB` · `IMAGE` · `VIDEO` · `HTML` · `GALLERY` · `FRONTEND` · `WORDPRESS` · `NODEJS_APP` · `PHP_APP` · `PYTHON_APP` · `GO_APP` · `MULTI_WEB`
+
+The web-oriented types load a URL or local files in a WebView; the runtime types (`NODEJS_APP`, `PHP_APP`, `PYTHON_APP`, `GO_APP`, `WORDPRESS`) fork a native server binary on-device and point the WebView at a local port; the media types (`IMAGE`, `VIDEO`, `GALLERY`) play content directly. See [Create App](/guide/app-types/) for each.
+
+## One codebase, two ways to run
+
+The same `WebToAppApplication` runs in two modes, selected by a build flag:
+
+- **Builder (host)** — `SHELL_RUNTIME_ONLY = false`. This is the app you install from the store: the editor, the app list, and the export pipeline, with everything on the main classpath.
+- **Generated app (shell runtime)** — `SHELL_RUNTIME_ONLY = true`. The exported APK runs the synced shell runtime and reads *your* embedded config from `app_config.json` via `ShellModeManager`. Node.js even runs in a separate `:nodejs` OS process.
+
+This is why "works in preview but not after export" is a real failure mode: preview runs the host path, export runs the shell path, and a config field has to survive the trip between them. See [Config Field Drift](/developer/config-drift).
+
+## Where things live in the UI
+
+- [My Apps](/guide/main-screen/my-apps) — the home screen: your app list, categories, and the create button.
+- [Create App](/guide/app-types/) — the 12 app types and their creation flows.
+- [App Actions](/guide/app-actions/edit-core-config) — what you can do per app (edit, build, share, export, …).
+- [More Features](/guide/more-features/ai-coding) — the global tools behind the top-right ⋮ menu.
+- [App Configuration](/guide/config/) — the shared per-app options (network, privacy, appearance, runtimes).
 
 ## How to read these docs
 
-- **[User Guide](/guide/getting-started)** — tour the [main screen](/guide/main-screen/my-apps), build your first APK, learn the [app types](/guide/app-types/) and [per-app actions](/guide/app-actions/edit-core-config), explore the [more-features menu](/guide/more-features/ai-coding), and configure apps under [App Configuration](/guide/config/).
-- **[Developer Docs](/developer/)** — how the codebase is organized, how the export pipeline and shell sync work, and the recipes for common changes.
-- **[Extension Authoring](/extensions/)** — write JS/CSS modules, userscripts, and MV3 Chrome extensions, and publish them to the in-app market.
+- **[Start](/guide/getting-started)** — build your first APK and tour the main screen.
+- **[Developer Docs](/developer/)** — the codebase layout, the export pipeline, shell sync, and change recipes.
+- **[Extension Authoring](/extensions/)** — write JS/CSS modules, userscripts, and MV3 Chrome extensions.
 
 ::: tip
-The host app UI is available in 10 languages. Switch it anytime from the **language button in the top bar** of My Apps. The language of the apps you *generate* is configured separately per app.
+The builder UI is available in 10 languages — switch from the [language button](/guide/main-screen/language) in the top bar. The language of the apps you *generate* is configured per app.
 :::
