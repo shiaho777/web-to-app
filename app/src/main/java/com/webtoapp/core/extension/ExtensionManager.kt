@@ -256,7 +256,7 @@ class ExtensionManager private constructor(private val context: Context) {
             val jsonArray = parsed.asJsonArray
             val result = jsonArray.mapNotNull { element ->
                 try {
-                    gson.fromJson(element, ExtensionModule::class.java)
+                    gson.fromJson(element, ExtensionModule::class.java)?.sanitized()
                 } catch (_: Exception) {
                     null
                 }
@@ -463,6 +463,7 @@ class ExtensionManager private constructor(private val context: Context) {
 
     suspend fun addModule(module: ExtensionModule): Result<ExtensionModule> {
         return try {
+            val module = module.sanitized()
 
             val errors = module.validate()
             if (errors.isNotEmpty()) {
@@ -614,7 +615,7 @@ class ExtensionManager private constructor(private val context: Context) {
             val module = try {
                 val reader = JsonReader(InputStreamReader(inputStream.buffered()))
                 reader.isLenient = true
-                gson.fromJson<ExtensionModule>(reader, ExtensionModule::class.java)
+                gson.fromJson<ExtensionModule>(reader, ExtensionModule::class.java)?.sanitized()
             } catch (e: Exception) {
                 AppLogger.e(TAG, "Stream-based parsing failed", e)
                 null
@@ -661,7 +662,7 @@ class ExtensionManager private constructor(private val context: Context) {
 
             val importedModules = mutableListOf<ExtensionModule>()
             for (module in pkg.modules) {
-                val importedModule = module.copy(
+                val importedModule = module.sanitized().copy(
                     id = java.util.UUID.randomUUID().toString(),
                     builtIn = false,
                     createdAt = System.currentTimeMillis(),

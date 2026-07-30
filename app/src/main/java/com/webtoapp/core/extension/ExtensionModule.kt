@@ -551,7 +551,7 @@ data class ExtensionModule(
 
         fun fromJson(json: String): ExtensionModule? {
             return try {
-                gson.fromJson(json, ExtensionModule::class.java)
+                gson.fromJson(json, ExtensionModule::class.java)?.sanitized()
             } catch (e: Exception) {
                 null
             }
@@ -593,6 +593,47 @@ data class ExtensionModule(
             return bos.toByteArray()
         }
     }
+
+    /**
+     * Gson allocates instances via Unsafe and leaves Kotlin non-null fields null when the
+     * JSON omits them (Kotlin default values are bypassed). Coerce every object-typed field
+     * back to its declared default so consumers never observe null in a non-null field
+     * (fixes the ModuleCard NullPointerException when rendering such a module). Primitive
+     * fields (enabled/builtIn/noframes/createdAt/updatedAt) cannot be null and are left as-is.
+     */
+    fun sanitized(): ExtensionModule = copy(
+        id = (id as String?)?.takeIf { it.isNotBlank() } ?: UUID.randomUUID().toString(),
+        name = (name as String?) ?: "",
+        description = (description as String?) ?: "",
+        icon = (icon as String?) ?: "package",
+        category = (category as ModuleCategory?) ?: ModuleCategory.OTHER,
+        tags = (tags as List<String>?) ?: emptyList(),
+        version = (version as ModuleVersion?) ?: ModuleVersion(),
+        code = (code as String?) ?: "",
+        cssCode = (cssCode as String?) ?: "",
+        panelHtml = (panelHtml as String?) ?: "",
+        codeFiles = (codeFiles as Map<String, String>?) ?: emptyMap(),
+        runAt = (runAt as ModuleRunTime?) ?: ModuleRunTime.DOCUMENT_END,
+        urlMatches = (urlMatches as List<UrlMatchRule>?) ?: emptyList(),
+        permissions = (permissions as List<ModulePermission>?) ?: emptyList(),
+        configItems = (configItems as List<ModuleConfigItem>?) ?: emptyList(),
+        configValues = (configValues as Map<String, String>?) ?: emptyMap(),
+        dependencies = (dependencies as List<String>?) ?: emptyList(),
+        uiConfig = (uiConfig as ModuleUiConfig?) ?: ModuleUiConfig.DEFAULT,
+        runMode = (runMode as ModuleRunMode?) ?: ModuleRunMode.INTERACTIVE,
+        sourceType = (sourceType as ModuleSourceType?) ?: ModuleSourceType.CUSTOM,
+        chromeExtId = (chromeExtId as String?) ?: "",
+        storeIconPath = (storeIconPath as String?) ?: "",
+        storeTags = (storeTags as List<String>?) ?: emptyList(),
+        world = (world as String?) ?: "ISOLATED",
+        backgroundScript = (backgroundScript as String?) ?: "",
+        popupPath = (popupPath as String?) ?: "",
+        optionsPagePath = (optionsPagePath as String?) ?: "",
+        manifestJson = (manifestJson as String?) ?: "",
+        gmGrants = (gmGrants as List<String>?) ?: emptyList(),
+        requireUrls = (requireUrls as List<String>?) ?: emptyList(),
+        resources = (resources as Map<String, String>?) ?: emptyMap(),
+    )
 
     fun toJson(): String = gson.toJson(this)
 

@@ -88,4 +88,31 @@ class ExtensionModuleTest {
         assertThat(executable).contains("ext-module-module-1")
         assertThat(executable).contains("window.__flag = getConfig('flag', 'off')")
     }
+
+    @Test
+    fun `sanitized coerces Gson-null fields back to defaults`() {
+        // Gson allocates via Unsafe and leaves Kotlin non-null fields null when the JSON
+        // omits them (Kotlin defaults are bypassed). sanitized() must restore the declared
+        // defaults so consumers never observe null in a non-null field (regression: the
+        // ModuleCard NullPointerException when rendering such a module).
+        val module = com.google.gson.Gson().fromJson("{}", ExtensionModule::class.java)
+
+        // Precondition: plain Gson left the non-null object fields as null (the bug condition).
+        assertThat(module.name as String?).isNull()
+        assertThat(module.description as String?).isNull()
+        assertThat(module.storeIconPath as String?).isNull()
+
+        val sanitized = module.sanitized()
+
+        assertThat(sanitized.id).isNotEmpty()
+        assertThat(sanitized.name).isEqualTo("")
+        assertThat(sanitized.description).isEqualTo("")
+        assertThat(sanitized.icon).isEqualTo("package")
+        assertThat(sanitized.storeIconPath).isEqualTo("")
+        assertThat(sanitized.world).isEqualTo("ISOLATED")
+        assertThat(sanitized.category).isEqualTo(ModuleCategory.OTHER)
+        assertThat(sanitized.tags).isEmpty()
+        assertThat(sanitized.storeTags).isEmpty()
+        assertThat(sanitized.version).isNotNull()
+    }
 }
