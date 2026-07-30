@@ -66,6 +66,23 @@ class ApkBuilder(private val context: Context) {
             "org.mozilla.gecko.process.GeckoChildProcessServices\$utility",
             "org.mozilla.gecko.process.GeckoChildProcessServices\$ipdlunittest"
         )
+
+        /**
+         * Zip entry names (lib/<deviceAbi>/<lib>.so) that the per-app-type native-lib injection
+         * step writes for the device ABI. The template-copy phase skips these so the injection
+         * (16KB-aligned) is the single source and no duplicate entry is emitted — fixes the
+         * GO_APP / NODEJS_APP "duplicate entry: lib/<abi>/<lib>.so" build failure.
+         */
+        internal fun injectedDeviceLibEntries(appType: String, deviceAbi: String): Set<String> =
+            injectedNativeLibNames(appType).mapTo(mutableSetOf()) { "lib/$deviceAbi/$it" }
+
+        private fun injectedNativeLibNames(appType: String): Set<String> = when (appType) {
+            "GO_APP" -> setOf("libgo_exec_loader.so")
+            "NODEJS_APP" -> setOf("libc++_shared.so", "libnode_bridge.so", "libnode.so")
+            "PHP_APP", "WORDPRESS" -> setOf("libphp.so")
+            "PYTHON_APP" -> setOf("libpython3.so", "libmusl-linker.so")
+            else -> emptySet()
+        }
     }
 
     private val template = ApkTemplate(context)
@@ -992,6 +1009,13 @@ class ApkBuilder(private val context: Context) {
         val replacedIconPaths = mutableSetOf<String>()
         var discoveredOldIconPaths = emptySet<String>()
 
+        // Native libs the per-app-type injection step writes for the device ABI (16KB-aligned).
+        // The template also ships them; skip the template's device-ABI copy in the loop below so
+        // the injection is the single source and we don't emit a duplicate zip entry
+        // ("duplicate entry: lib/<abi>/<lib>.so").
+        val deviceAbi = android.os.Build.SUPPORTED_ABIS?.firstOrNull() ?: "arm64-v8a"
+        val injectedDeviceLibs = injectedDeviceLibEntries(config.appType, deviceAbi)
+
         val assetEncryptor = if (encryptionConfig.enabled && encryptionKey != null) {
             AssetEncryptor(encryptionKey)
         } else null
@@ -1101,6 +1125,10 @@ class ApkBuilder(private val context: Context) {
                             val libName = entry.name.substringAfterLast("/")
 
                             when {
+
+                                injectedDeviceLibs.contains(entry.name) -> {
+                                    AppLogger.d("ApkBuilder", "Skipping template native lib (injected for device ABI): ${entry.name}")
+                                }
 
                                 abiFilters.isNotEmpty() && !abiFilters.contains(abi) -> {
                                     AppLogger.d("ApkBuilder", "Skipping architecture: ${entry.name}")
