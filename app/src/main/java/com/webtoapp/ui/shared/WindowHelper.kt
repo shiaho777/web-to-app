@@ -407,14 +407,21 @@ object WindowHelper {
     ): Int {
         val originalOrientation = activity.requestedOrientation
 
-        val decorView = activity.window.decorView as FrameLayout
-        decorView.addView(
-            view,
-            FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
+        // Only re-parent the view if it isn't already attached. System WebView hands us a
+        // detached video surface (add it to the decorView); GeckoView fullscreen passes the
+        // already-attached GeckoView itself, which must stay in its current container while we
+        // change orientation and hide the system bars — re-parenting it throws
+        // "The specified child already has a parent" (issue #298).
+        if (view.parent == null) {
+            val decorView = activity.window.decorView as FrameLayout
+            decorView.addView(
+                view,
+                FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
             )
-        )
+        }
         return originalOrientation
     }
 
@@ -481,8 +488,13 @@ object WindowHelper {
         callback: WebChromeClient.CustomViewCallback?,
         originalOrientation: Int
     ) {
+        // Only remove the view if we were the ones who added it (to the decorView). A GeckoView
+        // fullscreen view stays attached to its original container (see showCustomView), so there
+        // is nothing to remove here.
         val decorView = activity.window.decorView as FrameLayout
-        decorView.removeView(view)
+        if (view.parent === decorView) {
+            decorView.removeView(view)
+        }
         callback?.onCustomViewHidden()
         activity.requestedOrientation = originalOrientation
     }
