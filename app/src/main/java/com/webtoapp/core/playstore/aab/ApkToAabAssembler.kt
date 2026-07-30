@@ -85,7 +85,27 @@ class ApkToAabAssembler {
                     ?: throw IllegalArgumentException("APK missing resources.arsc")
                 val arscBytes = zip.getInputStream(arscEntry).readBytes()
                 val table = ArscReader(arscBytes).read()
-                val protoTable = ArscToProtoTable.convert(table)
+
+                // Pre-scan res/*.xml for plaintext (uncompiled) XML that we skip below (issue
+                // #272), so we can also drop their references from the resource table. Otherwise
+                // the AAB's resource table references non-existing files and Google Play rejects
+                // it (bundletool build-apks). See issue #293.
+                val plaintextResFiles = mutableSetOf<String>()
+                for (scanEntry in zip.entries()) {
+                    val scanName = scanEntry.name
+                    if (!scanEntry.isDirectory && scanName.startsWith("res/") && scanName.endsWith(".xml")) {
+                        val head = ByteArray(2)
+                        val read = zip.getInputStream(scanEntry).use { it.read(head) }
+                        if (read > 0 && isPlaintextXml(head)) {
+                            plaintextResFiles.add(scanName)
+                        }
+                    }
+                }
+                if (plaintextResFiles.isNotEmpty()) {
+                    AppLogger.d(TAG, "Excluding plaintext res XML from resource table: $plaintextResFiles")
+                }
+
+                val protoTable = ArscToProtoTable.convert(table, plaintextResFiles)
                 writeEntry(out, "base/resources.pb", protoTable.toByteArray())
 
                 val referencedResources = table.collectReferencedResourceFiles()

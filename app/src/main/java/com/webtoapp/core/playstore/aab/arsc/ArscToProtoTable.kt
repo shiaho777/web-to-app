@@ -6,17 +6,21 @@ import com.webtoapp.core.playstore.aab.axml.AxmlConstants
 
 object ArscToProtoTable {
 
-    internal fun convert(table: ArscResourceTable): Resources.ResourceTable {
+    internal fun convert(
+        table: ArscResourceTable,
+        excludedResFiles: Set<String> = emptySet()
+    ): Resources.ResourceTable {
         val builder = Resources.ResourceTable.newBuilder()
         for (pkg in table.packages) {
-            builder.addPackage(convertPackage(pkg, table.valueStringPool))
+            builder.addPackage(convertPackage(pkg, table.valueStringPool, excludedResFiles))
         }
         return builder.build()
     }
 
     private fun convertPackage(
         pkg: ArscPackage,
-        valuePool: List<String>
+        valuePool: List<String>,
+        excludedResFiles: Set<String>
     ): Resources.Package {
         val packageBuilder = Resources.Package.newBuilder()
             .setPackageId(
@@ -35,7 +39,7 @@ object ArscToProtoTable {
             val typeSpec = typeSpecsByTypeId[typeId]
 
             packageBuilder.addType(
-                convertType(typeId, typeName, typeChunks, typeSpec, pkg.keyNames, valuePool)
+                convertType(typeId, typeName, typeChunks, typeSpec, pkg.keyNames, valuePool, excludedResFiles)
             )
         }
         return packageBuilder.build()
@@ -47,7 +51,8 @@ object ArscToProtoTable {
         typeChunks: List<ArscType>,
         typeSpec: ArscTypeSpec?,
         keyNames: List<String>,
-        valuePool: List<String>
+        valuePool: List<String>,
+        excludedResFiles: Set<String>
     ): Resources.Type {
         val typeBuilder = Resources.Type.newBuilder()
             .setTypeId(Resources.TypeId.newBuilder().setId(typeId).build())
@@ -76,11 +81,25 @@ object ArscToProtoTable {
             if (configValues.isEmpty()) continue
 
             val entryName = canonicalName[entryIndex] ?: continue
+
+            // Drop config values whose resource file was excluded (plaintext res XML skipped
+            // from the bundle; see ApkToAabAssembler, issue #293). If nothing remains, drop the
+            // whole entry so the resource table doesn't reference a non-existing file
+            // (bundletool rejects the AAB otherwise).
+            val keptConfigValues = if (excludedResFiles.isEmpty()) {
+                configValues
+            } else {
+                configValues.filterNot { (_, entry) ->
+                    entryReferencesExcludedFile(entry, valuePool, excludedResFiles)
+                }
+            }
+            if (keptConfigValues.isEmpty()) continue
+
             val entryBuilder = Resources.Entry.newBuilder()
                 .setEntryId(Resources.EntryId.newBuilder().setId(entryIndex).build())
                 .setName(entryName)
 
-            val anyPublic = configValues.any { it.second.flags and ENTRY_FLAG_PUBLIC != 0 }
+            val anyPublic = keptConfigValues.any { it.second.flags and ENTRY_FLAG_PUBLIC != 0 }
             if (anyPublic) {
                 entryBuilder.setVisibility(
                     Resources.Visibility.newBuilder()
@@ -90,7 +109,7 @@ object ArscToProtoTable {
             }
 
             val seenConfigBytes = mutableSetOf<List<Byte>>()
-            for ((cfg, entry) in configValues) {
+            for ((cfg, entry) in keptConfigValues) {
                 val protoConfig = convertConfig(cfg)
                 val key = protoConfig.toByteArray().toList()
                 if (!seenConfigBytes.add(key)) continue
@@ -105,6 +124,26 @@ object ArscToProtoTable {
         }
 
         return typeBuilder.build()
+    }
+
+    /** True if any value of this entry references a res file in [excludedResFiles]. */
+    private fun entryReferencesExcludedFile(
+        entry: ArscEntry,
+        valuePool: List<String>,
+        excludedResFiles: Set<String>
+    ): Boolean = when (val body = entry.body) {
+        is ArscEntryBody.Simple -> isExcludedFileValue(body.value, valuePool, excludedResFiles)
+        is ArscEntryBody.Bag -> body.entries.any { isExcludedFileValue(it.value, valuePool, excludedResFiles) }
+    }
+
+    private fun isExcludedFileValue(
+        value: ArscValue,
+        valuePool: List<String>,
+        excludedResFiles: Set<String>
+    ): Boolean {
+        if (value.dataType != AxmlConstants.TYPE_STRING) return false
+        val s = valuePool.getOrElse(value.data) { "" }
+        return s.startsWith("res/") && s in excludedResFiles
     }
 
     private fun convertEntryValue(
