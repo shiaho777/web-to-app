@@ -190,6 +190,40 @@ class WebViewManager(
             return WEBVIEW_WV_MARKER_REGEX.replace(userAgent, ")")
         }
 
+        /**
+         * Classifies whether a navigation target is an external link relative to the current
+         * page. Navigations between the app's own local origins (file:// or the loopback dev
+         * server) are internal content, never external; a local page with no host (file://)
+         * opening a remote URL is external.
+         */
+        @JvmStatic
+        fun isExternalUrl(targetUrl: String, currentUrl: String?): Boolean {
+            if (currentUrl == null) return false
+            if (isLocalAppUrl(targetUrl) && isLocalAppUrl(currentUrl)) return false
+            val targetHost = runCatching { Uri.parse(targetUrl).host?.lowercase() }.getOrNull() ?: return false
+            val currentHost = runCatching { Uri.parse(currentUrl).host?.lowercase() }.getOrNull()
+            if (currentHost.isNullOrEmpty()) return true
+            if (targetHost == currentHost) return false
+            return !targetHost.endsWith(".$currentHost") && !currentHost.endsWith(".$targetHost")
+        }
+
+        /** True for URLs that belong to the app's own local content (file:// or loopback server). */
+        @JvmStatic
+        fun isLocalAppUrl(url: String?): Boolean {
+            if (url == null) return false
+            val uri = runCatching { Uri.parse(url) }.getOrNull() ?: return false
+            if (uri.scheme?.lowercase() == "file") return true
+            val host = uri.host?.lowercase() ?: return false
+            return isLoopbackHost(host)
+        }
+
+        /** True for loopback hosts (127.0.0.1 / localhost / ::1). */
+        @JvmStatic
+        fun isLoopbackHost(host: String): Boolean {
+            val h = host.lowercase()
+            return h == "127.0.0.1" || h == "localhost" || h == "[::1]" || h == "::1"
+        }
+
         fun beginFreshBrowsingSession() {
             browsingDataClearGeneration++
         }
@@ -1833,6 +1867,12 @@ class WebViewManager(
                 }
 
                 if (config.openExternalLinks && isExternalUrl(url, view?.url)) {
+                    // For local-file apps, only open externally on a genuine user gesture.
+                    // Otherwise an automatic entry/redirect navigation gets hijacked and the
+                    // WebView is left on net::ERR_ACCESS_DENIED with no content to fall back to.
+                    if (isLocalAppUrl(view?.url) && !isUserGesture) {
+                        return false
+                    }
                     callbacks.onExternalLink(url)
                     return true
                 }
@@ -3157,8 +3197,8 @@ class WebViewManager(
 
         if (scheme == "file") {
             val currentUrl = currentMainFrameUrl
-            if (currentUrl != null && currentUrl.startsWith("file://")) {
-                AppLogger.d("WebViewManager", "Allowing file:// same-origin navigation: $url")
+            if (currentUrl != null && isLocalAppUrl(currentUrl)) {
+                AppLogger.d("WebViewManager", "Allowing file:// navigation from local app content: $url")
                 return false
             }
         }
@@ -3278,14 +3318,6 @@ class WebViewManager(
             return null
         }
         return normalizeHttpUrlForSecurity(trimmed)
-    }
-
-    private fun isExternalUrl(targetUrl: String, currentUrl: String?): Boolean {
-        if (currentUrl == null) return false
-        val targetHost = runCatching { Uri.parse(targetUrl).host?.lowercase() }.getOrNull() ?: return false
-        val currentHost = runCatching { Uri.parse(currentUrl).host?.lowercase() }.getOrNull() ?: return false
-        if (targetHost == currentHost) return false
-        return !targetHost.endsWith(".$currentHost") && !currentHost.endsWith(".$targetHost")
     }
 
     fun destroyWebView(webView: WebView) {

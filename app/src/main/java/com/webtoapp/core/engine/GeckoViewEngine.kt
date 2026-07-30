@@ -526,7 +526,12 @@ class GeckoViewEngine(
                     if (scheme == "http" || scheme == "https") {
                         val targetHost = runCatching { android.net.Uri.parse(uri).host?.lowercase() }.getOrNull()
                         val currentHost = runCatching { currentUrl?.let { android.net.Uri.parse(it).host?.lowercase() } }.getOrNull()
-                        if (targetHost != null && currentHost != null &&
+                        // Loopback-to-loopback navigations are the app's own local content,
+                        // not external links (e.g. 127.0.0.1 <-> localhost in a local HTML app).
+                        val bothLoopback = targetHost != null && currentHost != null &&
+                            isLoopbackHost(targetHost) && isLoopbackHost(currentHost)
+                        if (!bothLoopback &&
+                            targetHost != null && currentHost != null &&
                             targetHost != currentHost &&
                             !targetHost.endsWith(".$currentHost") &&
                             !currentHost.endsWith(".$targetHost")) {
@@ -547,6 +552,11 @@ class GeckoViewEngine(
                 return null
             }
         }
+    }
+
+    private fun isLoopbackHost(host: String): Boolean {
+        val h = host.lowercase()
+        return h == "127.0.0.1" || h == "localhost" || h == "[::1]" || h == "::1"
     }
 
     private fun setupProgressDelegate(session: GeckoSession, callback: BrowserEngineCallback) {
