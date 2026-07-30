@@ -478,6 +478,33 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
 
+/**
+ * Resolves a Python 3 interpreter command for the current platform. Windows usually exposes
+ * Python as `python` (or the `py -3` launcher) rather than `python3`, so a hardcoded
+ * `python3` fails there. Each candidate is verified to actually be Python 3 before use.
+ * NOTE: intentionally duplicated in the root build.gradle.kts (this project has no buildSrc).
+ */
+fun resolvePython3Command(): List<String> {
+    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+    val candidates: List<List<String>> = if (isWindows) {
+        listOf(listOf("python3"), listOf("python"), listOf("py", "-3"))
+    } else {
+        listOf(listOf("python3"), listOf("python"))
+    }
+    for (candidate in candidates) {
+        try {
+            val probe = ProcessBuilder(candidate + "--version").redirectErrorStream(true).start()
+            val output = probe.inputStream.bufferedReader().readText()
+            if (probe.waitFor() == 0 && output.contains("Python 3")) {
+                return candidate
+            }
+        } catch (_: Exception) {
+            // Candidate unavailable; try the next one.
+        }
+    }
+    return listOf("python3")
+}
+
 tasks.register("checkConfigFieldDrift") {
     group = "verification"
     description = "Detect field-name drift between ApkConfig payload keys and ShellConfig @SerializedName (static guard for preview/export config consistency)"
@@ -489,7 +516,7 @@ tasks.register("checkConfigFieldDrift") {
     inputs.files(script, payloadFile, apkConfigFile, shellConfigFile, allowlist)
     outputs.upToDateWhen { false }
     doLast {
-        val pb = ProcessBuilder("python3", script.absolutePath)
+        val pb = ProcessBuilder(resolvePython3Command() + script.absolutePath)
         pb.directory(rootProject.projectDir)
         pb.redirectErrorStream(true)
         val proc = pb.start()
