@@ -1423,10 +1423,19 @@ class WebViewManager(
                 allowUniversalAccessFromFileURLs = config.allowUniversalAccessFromFileURLs
 
                 if (config.followSystemDarkMode) {
-                    val systemInDarkMode = (context.resources.configuration.uiMode and
-                        android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-                        android.content.res.Configuration.UI_MODE_NIGHT_YES
-                    if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                    if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
+                        // Modern WebView (API 33+): algorithmic darkening follows the system dark
+                        // mode automatically and respects the page's own prefers-color-scheme theme,
+                        // so it keeps responding to system theme changes at runtime.
+                        WebSettingsCompat.setAlgorithmicDarkeningAllowed(this, true)
+                        AppLogger.d("WebViewManager", "Follow system dark mode: algorithmic darkening allowed")
+                    } else if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                        // Legacy WebView: FORCE_DARK is a fixed setting, so derive it from the
+                        // current system state (on these older devices the activity is recreated on
+                        // a uiMode change, which re-applies it).
+                        val systemInDarkMode = (context.resources.configuration.uiMode and
+                            android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                            android.content.res.Configuration.UI_MODE_NIGHT_YES
                         @Suppress("DEPRECATION")
                         WebSettingsCompat.setForceDark(
                             this,
@@ -1440,9 +1449,6 @@ class WebViewManager(
                             )
                         }
                         AppLogger.d("WebViewManager", "Follow system dark mode: FORCE_DARK ${if (systemInDarkMode) "ON" else "OFF"}")
-                    } else if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
-                        WebSettingsCompat.setAlgorithmicDarkeningAllowed(this, true)
-                        AppLogger.d("WebViewManager", "Follow system dark mode: algorithmic darkening allowed")
                     }
                 }
 
