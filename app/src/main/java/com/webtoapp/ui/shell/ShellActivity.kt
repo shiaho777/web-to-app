@@ -72,6 +72,11 @@ class ShellActivity : AppCompatActivity() {
     private var pendingFloatingWindowLaunch = false
     private var notificationPolyfillEnabled = false
 
+    // Screen-awake (ALWAYS/TIMED) timer management. The timed clear is tracked so it can be
+    // cancelled/re-scheduled whenever the mode is re-applied (e.g. after a forced-run change).
+    private val screenAwakeHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var screenAwakeClearRunnable: Runnable? = null
+
     private var webViewStateBundle: Bundle? = null
     private var shellConfig: com.webtoapp.core.shell.ShellConfig? = null
     private fun applyStatusBarColor(
@@ -145,7 +150,10 @@ class ShellActivity : AppCompatActivity() {
         AppLogger.d("ShellActivity", "强制运行状态变化: active=$active, protection=${config?.protectionLevel}")
 
         if (active) {
-
+            // Forced run keeps the screen on; suspend the screen-awake timer so it doesn't clear
+            // the flag while forced run is active.
+            screenAwakeClearRunnable?.let { screenAwakeHandler.removeCallbacks(it) }
+            screenAwakeClearRunnable = null
             window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
             try {
@@ -155,7 +163,12 @@ class ShellActivity : AppCompatActivity() {
             }
 
         } else {
-            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            // Restore the screen-awake feature's state (ALWAYS/TIMED/keepScreenOn) instead of
+            // unconditionally clearing the flag. The unconditional clear used to clobber the
+            // screen-awake mode whenever this ran with active=false — notably the initial
+            // forced-run state emission right after composition — so TIMED/ALWAYS never kept the
+            // screen on and it followed the system timeout.
+            applyScreenAwakeMode()
 
             try {
                 stopLockTask()
@@ -165,6 +178,43 @@ class ShellActivity : AppCompatActivity() {
         }
 
         applyImmersiveFullscreen(customView != null || immersiveFullscreenEnabled || forceHideSystemUi)
+    }
+
+    /**
+     * Applies the screen-awake mode (ALWAYS / TIMED / legacy keepScreenOn) to the window's
+     * FLAG_KEEP_SCREEN_ON. For TIMED, schedules a delayed clear; any previously scheduled clear is
+     * cancelled first so re-applying (e.g. after a forced-run state change) doesn't stack timers.
+     */
+    private fun applyScreenAwakeMode() {
+        val webViewConfig = WebToAppApplication.shellMode.getConfig()?.webViewConfig ?: return
+        screenAwakeClearRunnable?.let { screenAwakeHandler.removeCallbacks(it) }
+        screenAwakeClearRunnable = null
+        when (webViewConfig.screenAwakeMode.uppercase()) {
+            "ALWAYS" -> {
+                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "屏幕常亮: 始终常亮模式")
+            }
+            "TIMED" -> {
+                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                val timeoutMinutes = webViewConfig.screenAwakeTimeoutMinutes
+                val timeoutMs = (if (timeoutMinutes > 0) timeoutMinutes else 30) * 60 * 1000L
+                val runnable = Runnable {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "屏幕常亮: 定时 ${timeoutMinutes} 分钟已到，恢复系统息屏")
+                }
+                screenAwakeClearRunnable = runnable
+                screenAwakeHandler.postDelayed(runnable, timeoutMs)
+                com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "屏幕常亮: 定时模式 ${timeoutMinutes} 分钟")
+            }
+            else -> {
+                if (webViewConfig.keepScreenOn) {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "屏幕常亮: 已启用（向后兼容模式）")
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+            }
+        }
     }
 
     private fun shouldForwardKeyToWebView(event: KeyEvent): Boolean {
@@ -390,30 +440,7 @@ class ShellActivity : AppCompatActivity() {
             com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "应用沉浸式全屏失败", e)
         }
 
-        val shellAwakeMode = config.webViewConfig.screenAwakeMode.uppercase()
-        when (shellAwakeMode) {
-            "ALWAYS" -> {
-                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "屏幕常亮: 始终常亮模式")
-            }
-            "TIMED" -> {
-                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                val timeoutMinutes = config.webViewConfig.screenAwakeTimeoutMinutes
-                val timeoutMs = (if (timeoutMinutes > 0) timeoutMinutes else 30) * 60 * 1000L
-                android.os.Handler(mainLooper).postDelayed({
-                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "屏幕常亮: 定时 ${timeoutMinutes} 分钟已到，恢复系统息屏")
-                }, timeoutMs)
-                com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "屏幕常亮: 定时模式 ${timeoutMinutes} 分钟")
-            }
-            else -> {
-
-                if (config.webViewConfig.keepScreenOn) {
-                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-                    com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "屏幕常亮: 已启用（向后兼容模式）")
-                }
-            }
-        }
+        applyScreenAwakeMode()
 
         val shellBrightness = config.webViewConfig.screenBrightness
         if (shellBrightness in 0..100) {
