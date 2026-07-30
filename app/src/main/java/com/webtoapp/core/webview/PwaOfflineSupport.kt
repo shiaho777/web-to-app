@@ -32,7 +32,17 @@ object PwaOfflineSupport {
         "mp3", "mp4", "webm"
     )
 
-    fun generateServiceWorkerScript(config: OfflineConfig): String {
+    /** Same-origin path the generated service worker script is served from. */
+    private const val SW_SCRIPT_PATH = "/__wta_offline_sw__.js"
+
+    /** Service worker script body currently served at [SW_SCRIPT_PATH]. */
+    @Volatile
+    private var currentSwScript: String? = null
+
+    @Volatile
+    private var serviceWorkerControllerInstalled = false
+
+    fun generateSwScriptBody(config: OfflineConfig): String {
         val strategyName = when (config.strategy) {
             CacheStrategy.CACHE_FIRST -> "cache-first"
             CacheStrategy.NETWORK_FIRST -> "network-first"
@@ -45,14 +55,6 @@ object PwaOfflineSupport {
         val maxCacheBytes = config.maxCacheSizeMb.toLong() * 1024 * 1024
 
         return """
-            (function() {
-            // 重复注入守卫：SPA 导航 / 多次 evaluateJavascript 会重复注入本脚本。
-            // 此前 WTA_SW_SCRIPT 用顶层 const 声明，第二次注入即抛
-            // "Identifier 'WTA_SW_SCRIPT' has already been declared"。
-            // 包进 IIFE + 标志位后，const 进入函数作用域，重复注入安全跳过。
-            if (window.__WTA_SW_INJECTED__) return;
-            window.__WTA_SW_INJECTED__ = true;
-            const WTA_SW_SCRIPT = `
 const CACHE_NAME = 'wta-offline-v1';
 const STRATEGY = '${strategyName}';
 const MAX_AGE_MS = ${maxAgeMs};
@@ -195,44 +197,67 @@ self.addEventListener('fetch', event => {
     }
     event.respondWith(handler(request));
 });
-`;
-
-            // Register Service Worker via Blob URL
-            (function() {
-                if (!('serviceWorker' in navigator)) {
-                    return;
-                }
-
-                // Check if already registered
-                navigator.serviceWorker.getRegistrations().then(function(regs) {
-                    const existing = regs.find(r => r.active && r.active.scriptURL.includes('blob:'));
-                    if (existing) {
-                        return;
-                    }
-
-                    const blob = new Blob([WTA_SW_SCRIPT], { type: 'application/javascript' });
-                    const swUrl = URL.createObjectURL(blob);
-
-                    navigator.serviceWorker.register(swUrl, { scope: '/' })
-                        .then(function(reg) {
-                            URL.revokeObjectURL(swUrl);
-                        })
-                        .catch(function(err) {
-                            console.warn('[WTA] Service Worker registration failed:', err.message);
-                            URL.revokeObjectURL(swUrl);
-                        });
-                });
-            })();
-            })();
         """.trimIndent()
+    }
+
+    /** Page-side script that registers the service worker from the same-origin path. */
+    private fun generateRegistrationScript(): String = """
+        (function() {
+            if (window.__WTA_SW_INJECTED__) return;
+            window.__WTA_SW_INJECTED__ = true;
+            if (!('serviceWorker' in navigator)) return;
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+                var existing = regs.find(function(r) {
+                    return r.active && r.active.scriptURL.indexOf('$SW_SCRIPT_PATH') !== -1;
+                });
+                if (existing) return;
+                navigator.serviceWorker.register('$SW_SCRIPT_PATH', { scope: '/' })
+                    .then(function() { console.log('[WTA] Service Worker registered'); })
+                    .catch(function(err) {
+                        console.warn('[WTA] Service Worker registration failed:', err.message);
+                    });
+            });
+        })();
+    """.trimIndent()
+
+    /**
+     * Serves the generated service worker script at [SW_SCRIPT_PATH]. WebView refuses
+     * blob: service-worker script URLs, so the script must be served from a same-origin
+     * URL; the ServiceWorkerController intercepts that request and returns the script.
+     */
+    private fun installServiceWorkerController() {
+        if (serviceWorkerControllerInstalled) return
+        serviceWorkerControllerInstalled = true
+        try {
+            androidx.webkit.ServiceWorkerControllerCompat.getInstance().setServiceWorkerClient(
+                object : androidx.webkit.ServiceWorkerClientCompat() {
+                    override fun shouldInterceptRequest(
+                        request: android.webkit.WebResourceRequest
+                    ): android.webkit.WebResourceResponse? {
+                        if (request.url?.path == SW_SCRIPT_PATH) {
+                            val script = currentSwScript ?: return null
+                            return android.webkit.WebResourceResponse(
+                                "application/javascript",
+                                "UTF-8",
+                                java.io.ByteArrayInputStream(script.toByteArray(Charsets.UTF_8))
+                            )
+                        }
+                        return null
+                    }
+                }
+            )
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Failed to install ServiceWorkerController", e)
+        }
     }
 
     fun injectServiceWorker(webView: WebView, config: OfflineConfig) {
         if (!config.enabled) return
 
-        val script = generateServiceWorkerScript(config)
-        webView.evaluateJavascript(script) { result ->
-            AppLogger.d(TAG, "Service Worker injection result: $result")
+        installServiceWorkerController()
+        currentSwScript = generateSwScriptBody(config)
+        webView.evaluateJavascript(generateRegistrationScript()) { result ->
+            AppLogger.d(TAG, "Service Worker registration script result: $result")
         }
         AppLogger.i(TAG, "PWA offline support injected (strategy: ${config.strategy})")
     }
