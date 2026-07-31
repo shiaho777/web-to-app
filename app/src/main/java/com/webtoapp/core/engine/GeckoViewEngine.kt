@@ -675,7 +675,19 @@ class GeckoViewEngine(
                 permissions: Array<out String>?,
                 callback: GeckoSession.PermissionDelegate.Callback
             ) {
-                callback.grant()
+                // Actually request the Android runtime permissions through the host Activity
+                // instead of auto-granting (#344). Auto-granting told GeckoView the permission was
+                // available while the OS-level permission was never obtained, so geolocation and
+                // camera/mic silently failed.
+                val perms = permissions?.filter { it.isNotBlank() }?.toTypedArray() ?: emptyArray()
+                val host = this@GeckoViewEngine.callback
+                if (perms.isEmpty() || host == null) {
+                    callback.grant()
+                    return
+                }
+                host.onAndroidPermissionsRequest(perms) { granted ->
+                    if (granted) callback.grant() else callback.reject()
+                }
             }
         }
     }

@@ -419,6 +419,34 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         }
     }
 
+    private var pendingAndroidPermissionsCallback: ((Boolean) -> Unit)? = null
+
+    private val androidPermissionLauncher = activity.registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        AppLogger.d("ShellActivity", "Android permissions (engine) result: $permissions allGranted=$allGranted")
+        pendingAndroidPermissionsCallback?.invoke(allGranted)
+        pendingAndroidPermissionsCallback = null
+    }
+
+    /**
+     * Request Android runtime permissions on behalf of an engine that cannot request them itself
+     * (GeckoView's onAndroidPermissionsRequest, #344). Reports whether every permission ended up
+     * granted; permissions already granted skip the system dialog.
+     */
+    fun requestAndroidPermissions(permissions: Array<String>, onResult: (Boolean) -> Unit) {
+        val notGranted = permissions.filter {
+            ContextCompat.checkSelfPermission(activity, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (notGranted.isEmpty()) {
+            onResult(true)
+            return
+        }
+        pendingAndroidPermissionsCallback = onResult
+        androidPermissionLauncher.launch(notGranted.toTypedArray())
+    }
+
     private val locationPermissionLauncher = activity.registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->

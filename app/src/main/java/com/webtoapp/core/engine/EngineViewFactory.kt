@@ -201,5 +201,9 @@ fun WebViewCallbacks.toBrowserEngineCallback(): BrowserEngineCallback {
         override fun onNewWindow(resultMsg: android.os.Message?) {
             source.onNewWindow(resultMsg)
         }
+
+        override fun onAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
+            source.onAndroidPermissionsRequest(permissions, onResult)
+        }
     }
 }

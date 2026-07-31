@@ -285,6 +285,8 @@ class ShellActivity : AppCompatActivity() {
     }
 
     fun handlePermissionRequest(request: PermissionRequest) = permissionDelegate.handlePermissionRequest(request)
+    fun handleAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) =
+        permissionDelegate.requestAndroidPermissions(permissions, onResult)
     fun handleGeolocationPermission(origin: String?, callback: GeolocationPermissions.Callback?) {
         val cfg = shellConfig
         permissionDelegate.handleGeolocationPermission(

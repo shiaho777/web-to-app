@@ -40,4 +40,13 @@ interface WebViewCallbacks {
     fun onNewWindow(resultMsg: android.os.Message?) {}
 
     fun onRenderProcessGone(didCrash: Boolean) {}
+
+    /**
+     * Request Android runtime permissions on behalf of an engine that cannot request them itself
+     * (GeckoView). The host shows the system dialog and reports the result via [onResult]. Default
+     * grants so hosts without an Activity (e.g. headless preview) do not deadlock the engine.
+     */
+    fun onAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
+        onResult(true)
+    }
 }

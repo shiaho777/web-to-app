@@ -47,4 +47,15 @@ interface BrowserEngineCallback {
     fun onConsoleMessage(level: Int, message: String, sourceId: String, lineNumber: Int) {}
 
     fun onNewWindow(resultMsg: android.os.Message?) {}
+
+    /**
+     * Request Android runtime permissions on behalf of the engine. GeckoView surfaces these via
+     * `PermissionDelegate.onAndroidPermissionsRequest` (e.g. ACCESS_*_LOCATION for geolocation,
+     * CAMERA/RECORD_AUDIO for media). The engine must NOT auto-grant: the host shows the system
+     * permission dialog and reports whether every permission was granted through [onResult].
+     * Default grants so non-shell hosts do not deadlock the engine.
+     */
+    fun onAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
+        onResult(true)
+    }
 }

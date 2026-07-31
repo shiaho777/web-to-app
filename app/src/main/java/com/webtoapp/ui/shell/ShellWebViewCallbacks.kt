@@ -156,6 +156,11 @@ fun createShellWebViewCallbacks(
                 ?: callback?.invoke(origin, true, false)
         }
 
+        override fun onAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
+            (context as? ShellActivity)?.handleAndroidPermissionsRequest(permissions, onResult)
+                ?: onResult(true)
+        }
+
         override fun onPermissionRequest(request: PermissionRequest?) {
 
             AppLogger.d("ShellActivity", "WebViewCallbacks.onPermissionRequest called, request: ${request?.resources?.joinToString()}")
