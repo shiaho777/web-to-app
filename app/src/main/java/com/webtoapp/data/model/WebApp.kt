@@ -381,6 +381,9 @@ data class WebViewConfig(
     val staticAssetPackMaxTotalSizeMb: Int = 50,
 
     val showFloatingBackButton: Boolean = false,
+    // System back button behavior: "GO_BACK" (default, walk web history then exit)
+    // or "EXIT" (leave the app immediately). See issue #151.
+    val backButtonBehavior: String = "GO_BACK",
     val floatingWindowConfig: FloatingWindowConfig = FloatingWindowConfig(),
     val proxyMode: String = "NONE",
     val proxyHost: String = "",

@@ -1412,6 +1412,9 @@ data class WebViewShellConfig(
     @SerializedName("showFloatingBackButton")
     val showFloatingBackButton: Boolean = false,
 
+    @SerializedName("backButtonBehavior")
+    val backButtonBehavior: String = "GO_BACK",
+
     @SerializedName("downloadEnabled")
     val downloadEnabled: Boolean = true,
 

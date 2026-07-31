@@ -215,6 +215,14 @@ object ShellActivityInit {
                     else -> {
 
                         val wv = getWebView()
+                        // "Exit app" back behavior (#151): leave immediately instead of walking
+                        // web history. Forced-run blocking and fullscreen-close above still take
+                        // precedence; this only replaces the history-navigation path.
+                        val backBehavior = getShellConfig()?.webViewConfig?.backButtonBehavior ?: "GO_BACK"
+                        if (backBehavior == "EXIT") {
+                            activity.finish()
+                            return
+                        }
                         if (wv != null) {
                             wv.evaluateJavascript("""
                                 (function() {

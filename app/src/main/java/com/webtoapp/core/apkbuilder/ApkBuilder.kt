@@ -3615,6 +3615,7 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
         popupBlockerToggleEnabled = popupBlockerToggleEnabled,
         openExternalLinks = openExternalLinks,
         showFloatingBackButton = showFloatingBackButton,
+        backButtonBehavior = backButtonBehavior,
         swipeRefreshEnabled = swipeRefreshEnabled,
         fullscreenEnabled = fullscreenEnabled,
         performanceOptimization = performanceOptimization,

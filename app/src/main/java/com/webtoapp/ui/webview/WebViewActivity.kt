@@ -795,6 +795,12 @@ class WebViewActivity : AppCompatActivity() {
                     else -> {
 
                         val wv = webView
+                        // "Exit app" back behavior (#151): leave immediately instead of walking
+                        // web history (preview parity with the generated shell).
+                        if (previewApp?.webViewConfig?.backButtonBehavior == "EXIT") {
+                            finish()
+                            return
+                        }
                         if (wv != null) {
                             wv.evaluateJavascript("""
                                 (function() {

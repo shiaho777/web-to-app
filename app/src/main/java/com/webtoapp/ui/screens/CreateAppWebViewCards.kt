@@ -1037,6 +1037,42 @@ fun BrowserAdvancedConfigCard(
                                 checked = config.showFloatingBackButton,
                                 onCheckedChange = { onConfigChange(config.copy(showFloatingBackButton = it)) }
                             )
+                            WtaSectionDivider()
+                            Text(
+                                text = Strings.backButtonBehaviorLabel,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(
+                                    horizontal = WtaSpacing.RowHorizontal,
+                                    vertical = WtaSpacing.ContentGap
+                                )
+                            )
+                            Text(
+                                text = Strings.backButtonBehaviorHint,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal)
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(
+                                        horizontal = WtaSpacing.RowHorizontal,
+                                        vertical = WtaSpacing.ContentGap
+                                    ),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                FilterChip(
+                                    selected = config.backButtonBehavior == "GO_BACK",
+                                    onClick = { onConfigChange(config.copy(backButtonBehavior = "GO_BACK")) },
+                                    label = { Text(Strings.backButtonGoBack) }
+                                )
+                                FilterChip(
+                                    selected = config.backButtonBehavior == "EXIT",
+                                    onClick = { onConfigChange(config.copy(backButtonBehavior = "EXIT")) },
+                                    label = { Text(Strings.backButtonExitApp) }
+                                )
+                            }
                         }
                     }
 

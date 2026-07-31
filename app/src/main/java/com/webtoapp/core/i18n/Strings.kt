@@ -4060,6 +4060,10 @@ object Strings {
     val staticAssetPackMaxAgeLabel: String get() = StringsE.staticAssetPackMaxAgeLabel
     val staticAssetPackIncludeImagesTitle: String get() = StringsE.staticAssetPackIncludeImagesTitle
     val staticAssetPackIncludeCdnTitle: String get() = StringsE.staticAssetPackIncludeCdnTitle
+    val backButtonBehaviorLabel: String get() = StringsE.backButtonBehaviorLabel
+    val backButtonBehaviorHint: String get() = StringsE.backButtonBehaviorHint
+    val backButtonGoBack: String get() = StringsE.backButtonGoBack
+    val backButtonExitApp: String get() = StringsE.backButtonExitApp
     val pwaStrategyNetworkFirst: String get() = StringsE.pwaStrategyNetworkFirst
     val pwaStrategyCacheFirst: String get() = StringsE.pwaStrategyCacheFirst
     val pwaStrategyStaleWhileRevalidate: String get() = StringsE.pwaStrategyStaleWhileRevalidate
@@ -55469,6 +55473,54 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Включать ресурсы CDN"
         AppLanguage.JAPANESE -> "CDN リソースを含める"
         AppLanguage.KOREAN -> "CDN 리소스 포함"
+    }
+    val backButtonBehaviorLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "返回键行为"
+        AppLanguage.ENGLISH -> "Back Button Behavior"
+        AppLanguage.ARABIC -> "سلوك زر الرجوع"
+        AppLanguage.PORTUGUESE -> "Comportamento do Botão Voltar"
+        AppLanguage.SPANISH -> "Comportamiento del Botón Atrás"
+        AppLanguage.FRENCH -> "Comportement du Bouton Retour"
+        AppLanguage.GERMAN -> "Zurück-Button-Verhalten"
+        AppLanguage.RUSSIAN -> "Поведение кнопки назад"
+        AppLanguage.JAPANESE -> "戻るボタンの動作"
+        AppLanguage.KOREAN -> "뒤로 가기 버튼 동작"
+    }
+    val backButtonBehaviorHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "设置系统返回键的行为。"
+        AppLanguage.ENGLISH -> "Choose what the system Back button does."
+        AppLanguage.ARABIC -> "اختر ما يفعله زر الرجوع في النظام."
+        AppLanguage.PORTUGUESE -> "Escolha o que o botão Voltar do sistema faz."
+        AppLanguage.SPANISH -> "Elige lo que hace el botón Atrás del sistema."
+        AppLanguage.FRENCH -> "Choisissez ce que fait le bouton Retour du système."
+        AppLanguage.GERMAN -> "Wählen Sie, was die System-Zurück-Taste tut."
+        AppLanguage.RUSSIAN -> "Выберите, что делает системная кнопка назад."
+        AppLanguage.JAPANESE -> "システムの戻るボタンの動作を選択します。"
+        AppLanguage.KOREAN -> "시스템 뒤로 가기 버튼의 동작을 선택합니다."
+    }
+    val backButtonGoBack: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "返回上一页"
+        AppLanguage.ENGLISH -> "Go back in history"
+        AppLanguage.ARABIC -> "الرجوع في السجل"
+        AppLanguage.PORTUGUESE -> "Voltar no histórico"
+        AppLanguage.SPANISH -> "Retroceder en el historial"
+        AppLanguage.FRENCH -> "Reculer dans l'historique"
+        AppLanguage.GERMAN -> "Im Verlauf zurück"
+        AppLanguage.RUSSIAN -> "Назад по истории"
+        AppLanguage.JAPANESE -> "履歴を戻る"
+        AppLanguage.KOREAN -> "기록에서 뒤로"
+    }
+    val backButtonExitApp: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "直接退出应用"
+        AppLanguage.ENGLISH -> "Exit app"
+        AppLanguage.ARABIC -> "الخروج من التطبيق"
+        AppLanguage.PORTUGUESE -> "Sair do app"
+        AppLanguage.SPANISH -> "Salir de la app"
+        AppLanguage.FRENCH -> "Quitter l'application"
+        AppLanguage.GERMAN -> "App beenden"
+        AppLanguage.RUSSIAN -> "Выйти из приложения"
+        AppLanguage.JAPANESE -> "アプリを終了"
+        AppLanguage.KOREAN -> "앱 종료"
     }
     val pwaStrategyNetworkFirst: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "网络优先（推荐）— 优先使用最新内容，离线时用缓存"

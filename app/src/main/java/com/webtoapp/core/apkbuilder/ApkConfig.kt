@@ -489,6 +489,7 @@ data class WebViewBlock(
     val popupBlockerToggleEnabled: Boolean = false,
     val openExternalLinks: Boolean = false,
     val showFloatingBackButton: Boolean = false,
+    val backButtonBehavior: String = "GO_BACK",
     val swipeRefreshEnabled: Boolean = true,
     val fullscreenEnabled: Boolean = true,
     val performanceOptimization: Boolean = false,

@@ -192,6 +192,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         screenAwakeTimeoutMinutes = config.webViewConfig.screenAwakeTimeoutMinutes,
         screenBrightness = config.webViewConfig.screenBrightness,
         showFloatingBackButton = config.webViewConfig.showFloatingBackButton,
+        backButtonBehavior = config.webViewConfig.backButtonBehavior,
 
         keyboardAdjustMode = try {
             com.webtoapp.data.model.KeyboardAdjustMode.valueOf(config.webViewConfig.keyboardAdjustMode)
