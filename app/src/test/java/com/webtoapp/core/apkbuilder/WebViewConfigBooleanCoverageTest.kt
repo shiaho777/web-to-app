@@ -32,7 +32,11 @@ class WebViewConfigBooleanCoverageTest {
             "allowFileAccessFromFileURLs",
             "allowUniversalAccessFromFileURLs",
             "cacheEnabled",
-            "pwaOfflineEnabled"
+            "pwaOfflineEnabled",
+            // Build-time Static Asset Pack tuning: consumed by the exporter only, intentionally
+            // not surfaced as a WebViewShellConfig field (only enabled/maxAgeDays reach the shell).
+            "staticAssetPackIncludeImages",
+            "staticAssetPackIncludeCdn"
         )
 
         val knownBroken: Set<String> = emptySet()
@@ -133,6 +137,7 @@ class WebViewConfigBooleanCoverageTest {
             fullscreenEnabled = bool("fullscreenEnabled"),
             performanceOptimization = bool("performanceOptimization"),
             pwaOfflineEnabled = bool("pwaOfflineEnabled"),
+            staticAssetPackEnabled = bool("staticAssetPackEnabled"),
             downloadEnabled = bool("downloadEnabled"),
             antiCapture = bool("antiCapture"),
             enableKernelDisguise = bool("enableKernelDisguise"),

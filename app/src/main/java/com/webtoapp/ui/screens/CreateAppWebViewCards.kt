@@ -1171,6 +1171,56 @@ fun BrowserAdvancedConfigCard(
                                     }
                                 }
                             }
+
+                            WtaSectionDivider()
+                            WtaToggleRow(
+                                title = Strings.staticAssetPackTitle,
+                                subtitle = Strings.staticAssetPackSubtitle,
+                                checked = config.staticAssetPackEnabled,
+                                onCheckedChange = { onConfigChange(config.copy(staticAssetPackEnabled = it)) }
+                            )
+
+                            AnimatedVisibility(
+                                visible = config.staticAssetPackEnabled,
+                                enter = CardExpandTransition,
+                                exit = CardCollapseTransition
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(
+                                        horizontal = WtaSpacing.RowHorizontal,
+                                        vertical = WtaSpacing.ContentGap
+                                    )
+                                ) {
+                                    Text(
+                                        text = "${Strings.staticAssetPackMaxAgeLabel}: ${config.staticAssetPackMaxAgeDays}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(bottom = 4.dp)
+                                    )
+                                    Slider(
+                                        value = config.staticAssetPackMaxAgeDays.toFloat(),
+                                        onValueChange = {
+                                            onConfigChange(config.copy(staticAssetPackMaxAgeDays = it.toInt()))
+                                        },
+                                        valueRange = 0f..90f,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    WtaToggleRow(
+                                        title = Strings.staticAssetPackIncludeImagesTitle,
+                                        checked = config.staticAssetPackIncludeImages,
+                                        onCheckedChange = {
+                                            onConfigChange(config.copy(staticAssetPackIncludeImages = it))
+                                        }
+                                    )
+                                    WtaToggleRow(
+                                        title = Strings.staticAssetPackIncludeCdnTitle,
+                                        checked = config.staticAssetPackIncludeCdn,
+                                        onCheckedChange = {
+                                            onConfigChange(config.copy(staticAssetPackIncludeCdn = it))
+                                        }
+                                    )
+                                }
+                            }
                         }
 
                         ErrorPageConfigCard(

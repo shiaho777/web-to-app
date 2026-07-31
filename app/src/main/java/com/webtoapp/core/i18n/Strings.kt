@@ -4055,6 +4055,11 @@ object Strings {
     val freshSessionModeDesc: String get() = StringsE.freshSessionModeDesc
     val pwaOfflineSubtitle: String get() = StringsE.pwaOfflineSubtitle
     val pwaOfflineStrategyLabel: String get() = StringsE.pwaOfflineStrategyLabel
+    val staticAssetPackTitle: String get() = StringsE.staticAssetPackTitle
+    val staticAssetPackSubtitle: String get() = StringsE.staticAssetPackSubtitle
+    val staticAssetPackMaxAgeLabel: String get() = StringsE.staticAssetPackMaxAgeLabel
+    val staticAssetPackIncludeImagesTitle: String get() = StringsE.staticAssetPackIncludeImagesTitle
+    val staticAssetPackIncludeCdnTitle: String get() = StringsE.staticAssetPackIncludeCdnTitle
     val pwaStrategyNetworkFirst: String get() = StringsE.pwaStrategyNetworkFirst
     val pwaStrategyCacheFirst: String get() = StringsE.pwaStrategyCacheFirst
     val pwaStrategyStaleWhileRevalidate: String get() = StringsE.pwaStrategyStaleWhileRevalidate
@@ -55404,6 +55409,66 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Стратегия кэширования"
         AppLanguage.JAPANESE -> "キャッシュ戦略"
         AppLanguage.KOREAN -> "캐시 전략"
+    }
+    val staticAssetPackTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "静态资源打包"
+        AppLanguage.ENGLISH -> "Static Asset Pack"
+        AppLanguage.ARABIC -> "حزمة الأصول الثابتة"
+        AppLanguage.PORTUGUESE -> "Pacote de Recursos Estáticos"
+        AppLanguage.SPANISH -> "Paquete de Recursos Estáticos"
+        AppLanguage.FRENCH -> "Pack de Ressources Statiques"
+        AppLanguage.GERMAN -> "Statische-Ressourcen-Paket"
+        AppLanguage.RUSSIAN -> "Пакет статических ресурсов"
+        AppLanguage.JAPANESE -> "静的アセットパック"
+        AppLanguage.KOREAN -> "정적 리소스 팩"
+    }
+    val staticAssetPackSubtitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建时将网站的静态资源（CSS/JS/字体/图标）打包进 APK，启动时本地加载，动态内容仍走网络。首启更快、更省流量。"
+        AppLanguage.ENGLISH -> "Package the site's static assets (CSS/JS/fonts/icons) into the APK at build time; load them locally on launch while dynamic content stays online. Faster first launch, lower traffic."
+        AppLanguage.ARABIC -> "قم بتعبئة أصول الموقع الثابتة (CSS/JS/الخطوط/الأيقونات) في APK وقت البناء؛ يتم تحميلها محليًا عند التشغيل بينما يبقى المحتوى الديناميكي عبر الإنترنت. تشغيل أول أسرع واستهلاك أقل للبيانات."
+        AppLanguage.PORTUGUESE -> "Empacota os recursos estáticos do site (CSS/JS/fontes/ícones) no APK durante a build; carrega-os localmente ao iniciar enquanto o conteúdo dinâmico permanece online. Início mais rápido, menos tráfego."
+        AppLanguage.SPANISH -> "Empaqueta los recursos estáticos del sitio (CSS/JS/fuentes/iconos) en el APK durante la compilación; cárgalos localmente al iniciar mientras el contenido dinámico permanece en línea. Inicio más rápido, menos tráfico."
+        AppLanguage.FRENCH -> "Empaquette les ressources statiques du site (CSS/JS/polices/icônes) dans l'APK à la compilation ; chargées localement au démarrage tandis que le contenu dynamique reste en ligne. Démarrage plus rapide, moins de trafic."
+        AppLanguage.GERMAN -> "Verpackt die statischen Ressourcen der Website (CSS/JS/Schriften/Symbole) beim Build in die APK; lokal beim Start geladen, während dynamische Inhalte online bleiben. Schnellerer Start, weniger Datenverkehr."
+        AppLanguage.RUSSIAN -> "Упаковывает статические ресурсы сайта (CSS/JS/шрифты/иконки) в APK при сборке; загружаются локально при запуске, пока динамический контент остаётся онлайн. Быстрее первый запуск, меньше трафик."
+        AppLanguage.JAPANESE -> "ビルド時にサイトの静的アセット（CSS/JS/フォント/アイコン）を APK に同梱。起動時はローカルから読み込み、動的コンテンツはオンラインのまま。初回起動が高速化し、通信量を削減。"
+        AppLanguage.KOREAN -> "빌드 시 사이트의 정적 리소스(CSS/JS/글꼴/아이콘)를 APK에 패키징합니다. 실행 시 로컬에서 로드하고 동적 콘텐츠는 온라인으로 유지됩니다. 첫 실행이 빨라지고 트래픽이 줄어듭니다."
+    }
+    val staticAssetPackMaxAgeLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "缓存有效期（天）"
+        AppLanguage.ENGLISH -> "Cache validity (days)"
+        AppLanguage.ARABIC -> "صلاحية التخزين المؤقت (أيام)"
+        AppLanguage.PORTUGUESE -> "Validade do cache (dias)"
+        AppLanguage.SPANISH -> "Validez de la caché (días)"
+        AppLanguage.FRENCH -> "Validité du cache (jours)"
+        AppLanguage.GERMAN -> "Cache-Gültigkeit (Tage)"
+        AppLanguage.RUSSIAN -> "Срок кэша (дни)"
+        AppLanguage.JAPANESE -> "キャッシュ有効期間（日）"
+        AppLanguage.KOREAN -> "캐시 유효 기간(일)"
+    }
+    val staticAssetPackIncludeImagesTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "包含图片"
+        AppLanguage.ENGLISH -> "Include images"
+        AppLanguage.ARABIC -> "تضمين الصور"
+        AppLanguage.PORTUGUESE -> "Incluir imagens"
+        AppLanguage.SPANISH -> "Incluir imágenes"
+        AppLanguage.FRENCH -> "Inclure les images"
+        AppLanguage.GERMAN -> "Bilder einschließen"
+        AppLanguage.RUSSIAN -> "Включать изображения"
+        AppLanguage.JAPANESE -> "画像を含める"
+        AppLanguage.KOREAN -> "이미지 포함"
+    }
+    val staticAssetPackIncludeCdnTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "包含 CDN 资源"
+        AppLanguage.ENGLISH -> "Include CDN resources"
+        AppLanguage.ARABIC -> "تضمين موارد CDN"
+        AppLanguage.PORTUGUESE -> "Incluir recursos de CDN"
+        AppLanguage.SPANISH -> "Incluir recursos de CDN"
+        AppLanguage.FRENCH -> "Inclure les ressources CDN"
+        AppLanguage.GERMAN -> "CDN-Ressourcen einschließen"
+        AppLanguage.RUSSIAN -> "Включать ресурсы CDN"
+        AppLanguage.JAPANESE -> "CDN リソースを含める"
+        AppLanguage.KOREAN -> "CDN 리소스 포함"
     }
     val pwaStrategyNetworkFirst: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "网络优先（推荐）— 优先使用最新内容，离线时用缓存"

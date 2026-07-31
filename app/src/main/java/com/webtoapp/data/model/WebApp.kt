@@ -370,6 +370,16 @@ data class WebViewConfig(
     val performanceOptimization: Boolean = false,
     val pwaOfflineEnabled: Boolean = false,
     val pwaOfflineStrategy: String = "NETWORK_FIRST",
+
+    // Build-time Static Asset Pack: scrape static frontend assets (CSS/JS/fonts/icons)
+    // from the target URL at export and serve them locally at runtime, while the live
+    // site still provides the main document and all dynamic content.
+    val staticAssetPackEnabled: Boolean = false,
+    val staticAssetPackMaxAgeDays: Int = 30,
+    val staticAssetPackIncludeImages: Boolean = false,
+    val staticAssetPackIncludeCdn: Boolean = true,
+    val staticAssetPackMaxTotalSizeMb: Int = 50,
+
     val showFloatingBackButton: Boolean = false,
     val floatingWindowConfig: FloatingWindowConfig = FloatingWindowConfig(),
     val proxyMode: String = "NONE",

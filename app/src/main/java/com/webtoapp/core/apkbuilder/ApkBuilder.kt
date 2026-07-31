@@ -298,6 +298,7 @@ class ApkBuilder(private val context: Context) {
                 val goAppProjectDir: File?,
                 val frontendProjectDir: File?,
                 val htmlProjectDir: File?,
+                val staticPackDir: File?,
                 val encryptionKey: SecretKey?
             )
 
@@ -364,6 +365,56 @@ class ApkBuilder(private val context: Context) {
                     } else null
                 }
 
+                // Build-time Static Asset Pack: for a WEB app with the feature enabled, scrape
+                // static frontend assets (CSS/JS/fonts/icons) from the live target URL and stage
+                // them (plus a URL->path manifest) for embedding. Fail-soft: any error yields null
+                // and the build proceeds as a normal online WEB app.
+                val staticPackDeferred = async {
+                    if (webApp.appType == com.webtoapp.data.model.AppType.WEB &&
+                        config.webView.staticAssetPackEnabled
+                    ) {
+                        try {
+                            val targetUrl = webApp.url
+                            val outDir = File(
+                                context.cacheDir,
+                                "static_pack_build/${targetUrl.hashCode().toUInt()}"
+                            )
+                            val scraper = com.webtoapp.core.scraper.StaticAssetScraper()
+                            when (val result = scraper.scrape(
+                                com.webtoapp.core.scraper.StaticAssetScraper.Config(
+                                    url = targetUrl,
+                                    outputDir = outDir,
+                                    includeImages = config.webView.staticAssetPackIncludeImages,
+                                    includeCdn = config.webView.staticAssetPackIncludeCdn,
+                                    maxTotalSize = config.webView.staticAssetPackMaxTotalSizeMb.toLong() * 1024L * 1024L
+                                )
+                            )) {
+                                is com.webtoapp.core.scraper.StaticAssetScraper.Result.Success -> {
+                                    com.webtoapp.core.logging.AppLogger.d(
+                                        "ApkBuilder",
+                                        "Static asset pack scraped: ${result.fileCount} files, ${result.totalBytes / 1024} KB"
+                                    )
+                                    result.outputDir
+                                }
+                                is com.webtoapp.core.scraper.StaticAssetScraper.Result.Error -> {
+                                    com.webtoapp.core.logging.AppLogger.w(
+                                        "ApkBuilder",
+                                        "Static asset pack skipped: ${result.message}"
+                                    )
+                                    null
+                                }
+                            }
+                        } catch (e: Exception) {
+                            com.webtoapp.core.logging.AppLogger.w(
+                                "ApkBuilder",
+                                "Static asset pack scrape failed; continuing without it",
+                                e
+                            )
+                            null
+                        }
+                    } else null
+                }
+
                 val mediaContentPath = if (webApp.appType == com.webtoapp.data.model.AppType.IMAGE ||
                                            webApp.appType == com.webtoapp.data.model.AppType.VIDEO) webApp.url else null
                 val htmlFiles = if (webApp.appType == com.webtoapp.data.model.AppType.HTML ||
@@ -396,6 +447,7 @@ class ApkBuilder(private val context: Context) {
                     goAppProjectDir = goDirDeferred.await(),
                     frontendProjectDir = frontendProjectDir,
                     htmlProjectDir = htmlProjectDir,
+                    staticPackDir = staticPackDeferred.await(),
                     encryptionKey = encKeyDeferred.await()
                 )
             }
@@ -433,6 +485,7 @@ class ApkBuilder(private val context: Context) {
             val goAppProjectDir = prepared.goAppProjectDir
             val frontendProjectDir = prepared.frontendProjectDir
             val htmlProjectDir = prepared.htmlProjectDir
+            val staticPackDir = prepared.staticPackDir
             val encryptionKey = prepared.encryptionKey
 
             logger.section("Prepared Resources")
@@ -561,7 +614,8 @@ class ApkBuilder(private val context: Context) {
                     pythonAppProjectDir,
                     goAppProjectDir,
                     htmlProjectDir,
-                    multiWebProjectDir
+                    multiWebProjectDir,
+                    staticPackDir
                 ),
                 mediaContentPath = mediaContentPath,
                 splashMediaPath = webApp.getSplashMediaPath(),
@@ -624,6 +678,7 @@ class ApkBuilder(private val context: Context) {
                             pythonAppProjectDir = pythonAppProjectDir,
                             goAppProjectDir = goAppProjectDir,
                             htmlProjectDir = htmlProjectDir,
+                            staticPackDir = staticPackDir,
                             errorPageMediaPath = errorPageMediaPath,
                             perfConfig = perfConfig,
                             mode = ModifyApkMode.CONTENT_OVERLAY
@@ -661,6 +716,7 @@ class ApkBuilder(private val context: Context) {
                             pythonAppProjectDir = pythonAppProjectDir,
                             goAppProjectDir = goAppProjectDir,
                             htmlProjectDir = htmlProjectDir,
+                            staticPackDir = staticPackDir,
                             errorPageMediaPath = errorPageMediaPath,
                             perfConfig = perfConfig,
                             mode = ModifyApkMode.FULL
@@ -701,6 +757,7 @@ class ApkBuilder(private val context: Context) {
                         pythonAppProjectDir = pythonAppProjectDir,
                         goAppProjectDir = goAppProjectDir,
                         htmlProjectDir = htmlProjectDir,
+                        staticPackDir = staticPackDir,
                         errorPageMediaPath = errorPageMediaPath,
                         perfConfig = perfConfig,
                         mode = ModifyApkMode.FULL
@@ -993,6 +1050,7 @@ class ApkBuilder(private val context: Context) {
         pythonAppProjectDir: File? = null,
         goAppProjectDir: File? = null,
         htmlProjectDir: File? = null,
+        staticPackDir: File? = null,
         errorPageMediaPath: String? = null,
         perfConfig: com.webtoapp.core.linux.PerformanceOptimizer.OptimizeConfig? = null,
         mode: ModifyApkMode = ModifyApkMode.FULL,
@@ -1322,6 +1380,35 @@ class ApkBuilder(private val context: Context) {
                     )
                     val result = embedder.embed(zipOut, embedCtx)
                     logger.log("Content embedding [${config.appType}]: ${result.message}")
+                }
+
+                // Build-time Static Asset Pack: embed the scraped static assets + manifest
+                // under assets/static_pack/. Independent of the per-appType embedder, which
+                // returns null for WEB apps. Encrypted builds encrypt each entry (manifest
+                // included) exactly like HtmlContentEmbedder so the runtime AssetDecryptor
+                // transparently reads them back.
+                if (staticPackDir != null && staticPackDir.exists() && staticPackDir.isDirectory) {
+                    onProgress(95, "Embedding static asset pack...")
+                    logger.section("Embed Static Asset Pack")
+                    val (packCount, packSize) = RuntimeAssetEmbedder.embedProjectFiles(
+                        zipOut = zipOut,
+                        projectDir = staticPackDir,
+                        config = RuntimeAssetEmbedder.EmbedConfig(
+                            runtimeName = "staticAssetPack",
+                            assetPrefix = "assets/${com.webtoapp.core.webview.StaticAssetPack.ASSET_BASE}",
+                            excludeDirs = emptySet(),
+                            fileHook = if (encryptionConfig.enabled && assetEncryptor != null) {
+                                { zo, assetPath, file ->
+                                    val assetName = assetPath.removePrefix("assets/")
+                                    val encryptedData = assetEncryptor.encrypt(file.readBytes(), assetName)
+                                    ZipUtils.writeEntryDeflated(zo, "${assetPath}.enc", encryptedData)
+                                    true
+                                }
+                            } else null
+                        ),
+                        logger = logger
+                    )
+                    logger.log("Static asset pack embedded: $packCount files, ${packSize / 1024} KB")
                 }
 
                 if (mode == ModifyApkMode.FULL && config.engineType == "GECKOVIEW") {
@@ -3533,6 +3620,11 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
         performanceOptimization = performanceOptimization,
         pwaOfflineEnabled = pwaOfflineEnabled && !clearBrowsingDataOnLaunch,
         pwaOfflineStrategy = pwaOfflineStrategy,
+        staticAssetPackEnabled = staticAssetPackEnabled,
+        staticAssetPackMaxAgeDays = staticAssetPackMaxAgeDays,
+        staticAssetPackIncludeImages = staticAssetPackIncludeImages,
+        staticAssetPackIncludeCdn = staticAssetPackIncludeCdn,
+        staticAssetPackMaxTotalSizeMb = staticAssetPackMaxTotalSizeMb,
         keyboardAdjustMode = keyboardAdjustMode.name,
         downloadEnabled = downloadEnabled,
         downloadLocationMode = downloadLocationMode.name,

@@ -243,6 +243,9 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         pwaOfflineEnabled = config.webViewConfig.pwaOfflineEnabled && !config.webViewConfig.clearBrowsingDataOnLaunch,
         pwaOfflineStrategy = config.webViewConfig.pwaOfflineStrategy,
 
+        staticAssetPackEnabled = config.webViewConfig.staticAssetPackEnabled,
+        staticAssetPackMaxAgeDays = config.webViewConfig.staticAssetPackMaxAgeDays,
+
         errorPageConfig = com.webtoapp.core.errorpage.ErrorPageConfig(
             mode = try { com.webtoapp.core.errorpage.ErrorPageMode.valueOf(config.webViewConfig.errorPageConfig.mode) } catch (e: Exception) { com.webtoapp.core.errorpage.ErrorPageMode.BUILTIN_STYLE },
             builtInStyle = try { com.webtoapp.core.errorpage.ErrorPageStyle.valueOf(config.webViewConfig.errorPageConfig.builtInStyle) } catch (e: Exception) { com.webtoapp.core.errorpage.ErrorPageStyle.MATERIAL },

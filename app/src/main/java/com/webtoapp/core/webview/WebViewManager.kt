@@ -1805,6 +1805,15 @@ class WebViewManager(
                         return loadEncryptedAsset(assetPath)
                     }
 
+                    // Build-time Static Asset Pack: serve packaged static assets (CSS/JS/fonts/
+                    // icons) locally for the live site. Only http/https sub-resource requests are
+                    // eligible — the main document always comes from the network so the site's
+                    // dynamic content stays live. A miss falls through to normal network loading.
+                    if (!it.isForMainFrame &&
+                        (url.startsWith("http://") || url.startsWith("https://"))) {
+                        resolveStaticPackAsset(url, config)?.let { response -> return response }
+                    }
+
                     val bypassAggressiveNetworkHooks = false
                     if (bypassAggressiveNetworkHooks && it.isForMainFrame) {
                         AppLogger.d("WebViewManager", "Strict compatibility mode: bypass request interception for $url")
@@ -2934,6 +2943,55 @@ class WebViewManager(
             null
         }
     }
+
+    // region Static Asset Pack (build-time packaged static assets served locally)
+
+    @Volatile
+    private var staticPackManifest: StaticAssetPack.Manifest? = null
+
+    @Volatile
+    private var staticPackLoadAttempted = false
+
+    /**
+     * Lazily load + cache the packaged static-asset manifest from assets. Returns null when
+     * the feature has no manifest (not packaged) or it cannot be read; the probe runs at most
+     * once per WebViewManager instance so a missing manifest is not re-checked per request.
+     */
+    private fun loadStaticPackManifest(): StaticAssetPack.Manifest? {
+        if (staticPackLoadAttempted) return staticPackManifest
+        staticPackLoadAttempted = true
+        return try {
+            val loader = SecureAssetLoader.getInstance(context)
+            if (!loader.assetExists(StaticAssetPack.MANIFEST_PATH)) {
+                null
+            } else {
+                val json = String(loader.loadAsset(StaticAssetPack.MANIFEST_PATH), Charsets.UTF_8)
+                com.webtoapp.util.GsonProvider.gson
+                    .fromJson(json, StaticAssetPack.Manifest::class.java)
+                    ?.also { staticPackManifest = it }
+            }
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "Failed to load static asset pack manifest", e)
+            null
+        }
+    }
+
+    /**
+     * Resolve a live-site sub-resource request to a packaged static asset, or null to let it
+     * fall through to the network. Serves only exact URLs scraped at build time and honors the
+     * maxAgeDays staleness safety valve (expired packs defer to the network).
+     */
+    private fun resolveStaticPackAsset(url: String, config: WebViewConfig): WebResourceResponse? {
+        if (!config.staticAssetPackEnabled) return null
+        val manifest = loadStaticPackManifest() ?: return null
+        if (manifest.isExpired(config.staticAssetPackMaxAgeDays)) return null
+        val relativePath = manifest.lookup(url) ?: return null
+        val assetPath = "${StaticAssetPack.ASSET_BASE}/$relativePath"
+        AppLogger.d("WebViewManager", "Static asset pack hit: $url -> $assetPath")
+        return loadEncryptedAsset(assetPath)
+    }
+
+    // endregion
 
     private fun loadEncryptedAsset(assetPath: String): WebResourceResponse? {
         return try {

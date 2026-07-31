@@ -1439,6 +1439,12 @@ data class WebViewShellConfig(
     @SerializedName("pwaOfflineStrategy")
     val pwaOfflineStrategy: String = "NETWORK_FIRST",
 
+    @SerializedName("staticAssetPackEnabled")
+    val staticAssetPackEnabled: Boolean = false,
+
+    @SerializedName("staticAssetPackMaxAgeDays")
+    val staticAssetPackMaxAgeDays: Int = 30,
+
     @SerializedName("errorPageConfig")
     val errorPageConfig: ErrorPageShellConfig = ErrorPageShellConfig(),
 

@@ -297,6 +297,8 @@ internal object ApkConfigJsonFactory {
         "performanceOptimization" to webView.performanceOptimization,
         "pwaOfflineEnabled" to webView.pwaOfflineEnabled,
         "pwaOfflineStrategy" to webView.pwaOfflineStrategy,
+        "staticAssetPackEnabled" to webView.staticAssetPackEnabled,
+        "staticAssetPackMaxAgeDays" to webView.staticAssetPackMaxAgeDays,
         "proxyMode" to proxy.mode,
         "proxyHost" to proxy.host,
         "proxyPort" to proxy.port,

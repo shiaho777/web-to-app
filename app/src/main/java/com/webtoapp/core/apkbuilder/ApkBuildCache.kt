@@ -285,6 +285,7 @@ class ApkBuildCache(private val context: Context) {
         if (entryName.startsWith("assets/python_app/")) return true
         if (entryName.startsWith("assets/go_app/")) return true
         if (entryName.startsWith("assets/frontend_app/")) return true
+        if (entryName.startsWith("assets/static_pack/")) return true
         if (entryName.startsWith("assets/wordpress/")) return true
         if (entryName.startsWith("assets/multiweb_sites/")) return true
         if (entryName.startsWith("assets/multi_web/")) return true
