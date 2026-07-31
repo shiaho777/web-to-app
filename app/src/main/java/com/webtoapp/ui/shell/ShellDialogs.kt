@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 fun ShellActivationDialog(
     config: ShellConfig,
     onDismiss: () -> Unit,
-    onActivated: () -> Unit
+    onActivated: (String?) -> Unit
 ) {
     val context = LocalContext.current
     val activation = WebToAppApplication.activation
@@ -50,7 +50,8 @@ fun ShellActivationDialog(
                         activation.buildRemoteRequest(
                             verifyUrl = config.activationRemoteVerifyUrl,
                             publicKeyBase64 = config.activationRemotePublicKey,
-                            offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy)
+                            offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy),
+                            deliverUrl = config.activationRemoteDeliverUrl
                         )
                     )
                 } else {
@@ -62,7 +63,7 @@ fun ShellActivationDialog(
                 }
                 when (result) {
                     is ActivationResult.Success -> {
-                        onActivated()
+                        onActivated(result.url)
                     }
                     is ActivationResult.Invalid -> {
                         activationError = result.message.ifBlank {

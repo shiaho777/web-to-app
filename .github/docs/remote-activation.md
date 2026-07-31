@@ -56,7 +56,8 @@ Accept: application/json
   "remainingUses": 5,
   "message": "",
   "nonce": "Base64-random-24-bytes",
-  "sig": "Base64-ECDSA-signature"
+  "sig": "Base64-ECDSA-signature",
+  "url": "https://example.com/app"
 }
 ```
 
@@ -68,6 +69,7 @@ Accept: application/json
 | `message` | string | Shown to the user on rejection. |
 | `nonce` | string | Must equal the request nonce. |
 | `sig` | string | Base64 ECDSA (`SHA256withECDSA`, DER-encoded) over the canonical payload below. |
+| `url` | string \| null | Optional. The target URL to load. Only used (and signature-bound) when the app has **Deliver target URL from server** enabled — see [Dynamic URL delivery](#dynamic-url-delivery). Omit otherwise. |
 
 ### Canonical payload that gets signed
 
@@ -83,11 +85,36 @@ this order:
 - `remainingUses` falls back to `-1` when you omit it.
 - No spaces, booleans unquoted, numbers unquoted.
 
+When **Deliver target URL from server** is enabled, a fifth key `url` is
+appended (after `nonce`), and the signature must cover it too:
+
+```
+{"ok":<true|false>,"expiresAt":<number>,"remainingUses":<number>,"nonce":"<nonce>","url":"<url>"}
+```
+
+`url` falls back to `""` when you omit it. Apps that do not enable URL delivery
+verify the legacy four-key payload, so existing servers keep working unchanged.
+
 Example of the precise bytes to sign:
 
 ```
 {"ok":true,"expiresAt":1735862400000,"remainingUses":5,"nonce":"k7Q…"}
 ```
+
+## Dynamic URL delivery
+
+When **Deliver target URL from server** is enabled in the app, the target URL
+is not packaged into the APK. Instead the app loads the URL you return in the
+`url` field after a successful activation (and caches it for offline launches
+under `ALLOW_CACHED`). This lets you change the URL without repackaging, and
+keeps the URL out of the APK so it cannot be extracted statically.
+
+- Return the URL in `url` and include it in the signed payload (fifth key).
+- The URL is cached on the device after a successful online activation; offline
+  launches reuse the cached URL per the offline policy.
+- The URL is delivered in the clear inside the signed response (over HTTPS).
+  This raises the bar against casual extraction but is not DRM-grade — a
+  determined attacker can still recover it from the response or memory.
 
 ## Generating a key pair
 
@@ -108,18 +135,25 @@ const fs = require("fs");
 const privateKey = crypto.createPrivateKey(fs.readFileSync("ec_private.pem"));
 
 // Your own source of truth. Revoke by removing/flipping entries here.
+// `url` is optional: set it (and enable "Deliver target URL from server" in the
+// app) to deliver the target URL dynamically instead of packaging it.
 const CODES = {
-  "ABC123": { expiresAt: 1735862400000, remainingUses: 5 },
+  "ABC123": { expiresAt: 1735862400000, remainingUses: 5, url: "https://example.com/app" },
 };
 
-function signedPayload({ ok, expiresAt, remainingUses, nonce }) {
+function signedPayload({ ok, expiresAt, remainingUses, nonce, url }) {
   // Must match the app's canonical order exactly.
-  return JSON.stringify({
+  const payload = {
     ok,
     expiresAt: expiresAt ?? 0,
     remainingUses: remainingUses ?? -1,
     nonce,
-  });
+  };
+  // Include url only when delivering it; it becomes the fifth signed key.
+  if (url !== undefined) {
+    payload.url = url ?? "";
+  }
+  return JSON.stringify(payload);
 }
 
 function sign(payloadString) {
@@ -146,7 +180,7 @@ http
       const entry = CODES[code];
 
       const result = entry
-        ? { ok: true, expiresAt: entry.expiresAt, remainingUses: entry.remainingUses, message: "" }
+        ? { ok: true, expiresAt: entry.expiresAt, remainingUses: entry.remainingUses, message: "", url: entry.url }
         : { ok: false, expiresAt: 0, remainingUses: -1, message: "Code not recognised" };
 
       const sig = sign(signedPayload({ ...result, nonce }));

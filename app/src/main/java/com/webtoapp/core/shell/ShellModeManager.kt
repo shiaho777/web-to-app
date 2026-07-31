@@ -86,7 +86,8 @@ class ShellModeManager(private val context: Context) {
                     entryFile.isNotBlank() && entryFile.substringBeforeLast(".").isNotBlank()
                 }
                 normalizedAppType in listOf("IMAGE", "VIDEO", "GALLERY", "WORDPRESS", "NODEJS_APP", "PHP_APP", "PYTHON_APP", "GO_APP", "MULTI_WEB") -> true
-                else -> !config?.targetUrl.isNullOrBlank()
+                else -> !config?.targetUrl.isNullOrBlank() ||
+                    (config?.activationRemoteEnabled == true && config.activationRemoteDeliverUrl)
             }
             if (!isValid) {
                 AppLogger.w(TAG, "配置无效: appType=${config?.appType}, targetUrl=${config?.targetUrl}")
@@ -180,6 +181,9 @@ data class ShellConfig(
 
     @SerializedName("activationRemoteOfflinePolicy")
     val activationRemoteOfflinePolicy: String = "ALLOW_CACHED",
+
+    @SerializedName("activationRemoteDeliverUrl")
+    val activationRemoteDeliverUrl: Boolean = false,
 
     @SerializedName("adBlockEnabled")
     val adBlockEnabled: Boolean = false,

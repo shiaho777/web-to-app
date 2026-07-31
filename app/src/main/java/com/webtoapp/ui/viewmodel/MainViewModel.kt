@@ -507,11 +507,14 @@ class MainViewModel(
                 false
             }
 
-            state.appType == AppType.WEB && state.url.isBlank() -> {
+            state.appType == AppType.WEB && state.url.isBlank() &&
+                !(state.activationEnabled &&
+                    state.activationRemoteConfig?.enabled == true &&
+                    state.activationRemoteConfig?.deliverUrl == true) -> {
                 _uiState.value = UiState.Error(Strings.pleaseEnterWebsiteUrl)
                 false
             }
-            state.appType == AppType.WEB && !isValidUrl(state.url) -> {
+            state.appType == AppType.WEB && state.url.isNotBlank() && !isValidUrl(state.url) -> {
                 _uiState.value = UiState.Error(Strings.pleaseEnterValidUrl)
                 false
             }

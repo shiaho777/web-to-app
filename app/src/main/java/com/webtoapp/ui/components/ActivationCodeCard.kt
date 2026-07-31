@@ -661,6 +661,28 @@ private fun RemoteActivationSection(
                     }
                 }
 
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                        Text(
+                            text = Strings.remoteActivationDeliverUrlTitle,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Text(
+                            text = Strings.remoteActivationDeliverUrlHint,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    WtaSwitch(
+                        checked = remoteConfig.deliverUrl,
+                        onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(deliverUrl = it)) }
+                    )
+                }
+
                 Text(
                     text = Strings.remoteActivationPrivacyNote,
                     style = MaterialTheme.typography.bodySmall,

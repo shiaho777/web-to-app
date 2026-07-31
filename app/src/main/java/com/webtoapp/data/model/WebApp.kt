@@ -1261,7 +1261,8 @@ data class RemoteActivationConfig(
     val enabled: Boolean = false,
     val verifyUrl: String = "",
     val publicKeyBase64: String = "",
-    val offlinePolicy: RemoteActivationOfflinePolicy = RemoteActivationOfflinePolicy.ALLOW_CACHED
+    val offlinePolicy: RemoteActivationOfflinePolicy = RemoteActivationOfflinePolicy.ALLOW_CACHED,
+    val deliverUrl: Boolean = false
 )
 
 data class AutoStartConfig(

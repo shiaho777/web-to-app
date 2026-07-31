@@ -81,6 +81,10 @@ fun ShellScreen(
 
     var isActivationChecked by remember { mutableStateOf(!config.activationEnabled) }
 
+    // Target URL delivered by the remote activation server (dynamic URL mode). Takes precedence
+    // over the packaged targetUrl so the URL need not be hardcoded in the APK.
+    var dynamicUrl by remember { mutableStateOf<String?>(null) }
+
     var webViewRecreationKey by remember { mutableIntStateOf(0) }
     var canGoBack by remember { mutableStateOf(false) }
     var canGoForward by remember { mutableStateOf(false) }
@@ -162,7 +166,8 @@ fun ShellScreen(
                             activation.buildRemoteRequest(
                                 verifyUrl = config.activationRemoteVerifyUrl,
                                 publicKeyBase64 = config.activationRemotePublicKey,
-                                offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy)
+                                offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy),
+                                deliverUrl = config.activationRemoteDeliverUrl
                             )
                         )
                 } else {
@@ -170,6 +175,9 @@ fun ShellScreen(
                 }
                 isActivated = activated
                 isActivationChecked = true
+                if (activated && config.activationRemoteEnabled && config.activationRemoteDeliverUrl) {
+                    dynamicUrl = activation.getCachedRemoteUrl(-1L)
+                }
                 if (!activated) {
                     showActivationDialog = true
                 }
@@ -400,7 +408,7 @@ fun ShellScreen(
         webViewConfig = webViewConfig,
         webViewCallbacks = webViewCallbacks,
         webViewManager = webViewManager,
-        deepLinkUrl = deepLinkUrl,
+        deepLinkUrl = deepLinkUrl ?: dynamicUrl,
         bgmState = bgmState,
         swipeRefreshEnabled = swipeRefreshEnabled,
         isRefreshing = isRefreshing,
@@ -418,9 +426,12 @@ fun ShellScreen(
         ShellActivationDialog(
             config = config,
             onDismiss = { showActivationDialog = false },
-            onActivated = {
+            onActivated = { url ->
                 isActivated = true
                 showActivationDialog = false
+                if (config.activationRemoteEnabled && config.activationRemoteDeliverUrl) {
+                    dynamicUrl = url
+                }
 
                 if (config.announcementEnabled && config.announcementTitle.isNotEmpty()) {
                     val ann = Announcement(

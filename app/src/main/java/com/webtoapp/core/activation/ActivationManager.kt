@@ -92,7 +92,8 @@ class ActivationManager(private val context: Context) {
     fun buildRemoteRequest(
         verifyUrl: String,
         publicKeyBase64: String,
-        offlinePolicy: com.webtoapp.data.model.RemoteActivationOfflinePolicy
+        offlinePolicy: com.webtoapp.data.model.RemoteActivationOfflinePolicy,
+        deliverUrl: Boolean = false
     ): RemoteActivationVerifier.RemoteRequest {
         return RemoteActivationVerifier.RemoteRequest(
             verifyUrl = verifyUrl,
@@ -100,8 +101,13 @@ class ActivationManager(private val context: Context) {
             offlinePolicy = offlinePolicy,
             code = "",
             deviceId = DeviceIdGenerator.getDeviceId(context),
-            packageName = context.packageName
+            packageName = context.packageName,
+            deliverUrl = deliverUrl
         )
+    }
+
+    suspend fun getCachedRemoteUrl(appId: Long): String? {
+        return remoteVerifier.getCachedRemoteUrl(appId)
     }
 
     suspend fun verifyActivationCode(
@@ -239,7 +245,7 @@ class ActivationManager(private val context: Context) {
             }
         }
 
-        return ActivationResult.Success
+        return ActivationResult.Success()
     }
 
     fun isActivated(appId: Long): Flow<Boolean> {
@@ -485,7 +491,7 @@ class ActivationManager(private val context: Context) {
 }
 
 sealed class ActivationResult {
-    data object Success : ActivationResult()
+    data class Success(val url: String? = null) : ActivationResult()
     data class Invalid(val message: String = "") : ActivationResult()
     data object Empty : ActivationResult()
     data object AlreadyActivated : ActivationResult()

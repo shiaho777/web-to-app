@@ -35,7 +35,8 @@ class RemoteActivationVerifier(private val context: Context) {
         val offlinePolicy: RemoteActivationOfflinePolicy,
         val code: String,
         val deviceId: String,
-        val packageName: String
+        val packageName: String,
+        val deliverUrl: Boolean = false
     )
 
     private val secureRandom = SecureRandom()
@@ -75,7 +76,7 @@ class RemoteActivationVerifier(private val context: Context) {
         val parsed = parseResponse(response)
             ?: return ActivationResult.Invalid(remoteRejectedMessage())
 
-        if (!verifySignature(publicKey, parsed, nonce)) {
+        if (!verifySignature(publicKey, parsed, nonce, request.deliverUrl)) {
             AppLogger.w(TAG, "Remote verification signature mismatch: app=$appId")
             return ActivationResult.Invalid(remoteSignatureFailedMessage())
         }
@@ -92,7 +93,7 @@ class RemoteActivationVerifier(private val context: Context) {
 
         saveCache(appId, request, parsed)
         AppLogger.i(TAG, "Remote verification success: app=$appId")
-        return ActivationResult.Success
+        return ActivationResult.Success(if (request.deliverUrl) parsed.url else null)
     }
 
     suspend fun resolveCachedStartup(appId: Long, request: RemoteRequest): Boolean {
@@ -103,11 +104,11 @@ class RemoteActivationVerifier(private val context: Context) {
 
     private suspend fun handleOffline(appId: Long, request: RemoteRequest): ActivationResult {
         return when (request.offlinePolicy) {
-            RemoteActivationOfflinePolicy.ALLOW -> ActivationResult.Success
+            RemoteActivationOfflinePolicy.ALLOW -> ActivationResult.Success(getCachedRemoteUrl(appId))
             RemoteActivationOfflinePolicy.DENY -> ActivationResult.Invalid(remoteOfflineDeniedMessage())
             RemoteActivationOfflinePolicy.ALLOW_CACHED -> {
                 if (readValidCache(appId, request) != null) {
-                    ActivationResult.Success
+                    ActivationResult.Success(getCachedRemoteUrl(appId))
                 } else {
                     ActivationResult.Invalid(remoteOfflineNoCacheMessage())
                 }
@@ -158,13 +159,14 @@ class RemoteActivationVerifier(private val context: Context) {
         }
     }
 
-    private data class RemoteResponse(
+    internal data class RemoteResponse(
         val ok: Boolean,
         val expiresAt: Long?,
         val remainingUses: Int?,
         val message: String,
         val nonce: String,
-        val signature: String
+        val signature: String,
+        val url: String?
     )
 
     private fun parseResponse(raw: String): RemoteResponse? {
@@ -178,7 +180,8 @@ class RemoteActivationVerifier(private val context: Context) {
                 remainingUses = obj.get("remainingUses")?.takeIf { !it.isJsonNull }?.asInt,
                 message = obj.get("message")?.takeIf { !it.isJsonNull }?.asString ?: "",
                 nonce = obj.get("nonce")?.takeIf { !it.isJsonNull }?.asString ?: "",
-                signature = obj.get("sig")?.takeIf { !it.isJsonNull }?.asString ?: ""
+                signature = obj.get("sig")?.takeIf { !it.isJsonNull }?.asString ?: "",
+                url = obj.get("url")?.takeIf { !it.isJsonNull }?.asString
             )
         } catch (e: Exception) {
             AppLogger.w(TAG, "Remote response parse failure: ${e.message}")
@@ -203,15 +206,16 @@ class RemoteActivationVerifier(private val context: Context) {
         }
     }
 
-    private fun verifySignature(
+    internal fun verifySignature(
         publicKey: java.security.PublicKey,
         response: RemoteResponse,
-        expectedNonce: String
+        expectedNonce: String,
+        includeUrl: Boolean
     ): Boolean {
         if (response.signature.isBlank()) return false
         if (response.nonce != expectedNonce) return false
         return try {
-            val signed = canonicalSignedPayload(response)
+            val signed = canonicalSignedPayload(response, includeUrl)
             val sigBytes = android.util.Base64.decode(response.signature, android.util.Base64.DEFAULT)
             val verifier = Signature.getInstance("SHA256withECDSA")
             verifier.initVerify(publicKey)
@@ -223,12 +227,18 @@ class RemoteActivationVerifier(private val context: Context) {
         }
     }
 
-    private fun canonicalSignedPayload(response: RemoteResponse): String {
+    internal fun canonicalSignedPayload(response: RemoteResponse, includeUrl: Boolean): String {
         val obj = JsonObject()
         obj.addProperty("ok", response.ok)
         obj.addProperty("expiresAt", response.expiresAt ?: 0L)
         obj.addProperty("remainingUses", response.remainingUses ?: -1)
         obj.addProperty("nonce", response.nonce)
+        // When deliverUrl is enabled the delivered URL is part of the signed payload, so a MITM
+        // cannot swap it while keeping a valid signature. Servers that don't deliver a URL sign
+        // the legacy payload (without url), which stays backward compatible.
+        if (includeUrl) {
+            obj.addProperty("url", response.url ?: "")
+        }
         return obj.toString()
     }
 
@@ -246,7 +256,15 @@ class RemoteActivationVerifier(private val context: Context) {
             prefs[stringPreferencesKey("remote_code_$appId")] = request.code
             prefs[longPreferencesKey("remote_expires_$appId")] = response.expiresAt ?: 0L
             prefs[longPreferencesKey("remote_verified_at_$appId")] = System.currentTimeMillis()
+            if (request.deliverUrl) {
+                prefs[stringPreferencesKey("remote_url_$appId")] = response.url ?: ""
+            }
         }
+    }
+
+    suspend fun getCachedRemoteUrl(appId: Long): String? {
+        val url = context.activationDataStore.data.first()[stringPreferencesKey("remote_url_$appId")]
+        return url?.takeIf { it.isNotBlank() }
     }
 
     private suspend fun clearCache(appId: Long) {
@@ -254,6 +272,7 @@ class RemoteActivationVerifier(private val context: Context) {
             prefs.remove(stringPreferencesKey("remote_code_$appId"))
             prefs.remove(longPreferencesKey("remote_expires_$appId"))
             prefs.remove(longPreferencesKey("remote_verified_at_$appId"))
+            prefs.remove(stringPreferencesKey("remote_url_$appId"))
         }
     }
 

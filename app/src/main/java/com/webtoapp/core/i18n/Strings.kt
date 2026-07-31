@@ -879,6 +879,8 @@ object Strings {
     val remoteActivationOfflineDeny: String get() = StringsA.remoteActivationOfflineDeny
     val remoteActivationOfflineAllow: String get() = StringsA.remoteActivationOfflineAllow
     val remoteActivationPrivacyNote: String get() = StringsA.remoteActivationPrivacyNote
+    val remoteActivationDeliverUrlTitle: String get() = StringsA.remoteActivationDeliverUrlTitle
+    val remoteActivationDeliverUrlHint: String get() = StringsA.remoteActivationDeliverUrlHint
     val remoteActivationMisconfigured: String get() = StringsA.remoteActivationMisconfigured
     val remoteActivationInsecureUrl: String get() = StringsA.remoteActivationInsecureUrl
     val remoteActivationRejected: String get() = StringsA.remoteActivationRejected
@@ -15847,6 +15849,31 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Если включено, приложение отправляет код активации и идентификатор устройства на настроенный вами сервер. Сообщите об этом пользователям."
         AppLanguage.JAPANESE -> "有効にすると、アプリはアクティベーションコードとデバイス識別子を設定したサーバーに送信します。ユーザーにこれを明示してください。"
         AppLanguage.KOREAN -> "활성화 시, 앱이 활성화 코드와 기기 식별자를 구성한 서버로 전송합니다. 사용자에게 이를 알리세요."
+    }
+
+    val remoteActivationDeliverUrlTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "由服务器下发目标网址"
+        AppLanguage.ENGLISH -> "Deliver target URL from server"
+        AppLanguage.ARABIC -> "تسليم عنوان URL المستهدف من الخادم"
+        AppLanguage.PORTUGUESE -> "Entregar URL de destino do servidor"
+        AppLanguage.SPANISH -> "Entregar URL de destino desde el servidor"
+        AppLanguage.FRENCH -> "Fournir l'URL cible depuis le serveur"
+        AppLanguage.GERMAN -> "Ziel-URL vom Server bereitstellen"
+        AppLanguage.RUSSIAN -> "Доставлять целевой URL с сервера"
+        AppLanguage.JAPANESE -> "サーバーからターゲットURLを配信"
+        AppLanguage.KOREAN -> "서버에서 대상 URL 전달"
+    }
+    val remoteActivationDeliverUrlHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "开启后，目标网址在激活成功后由验证服务器下发，无需打包进应用（网址可留空，即空壳）。服务器需在签名响应中加入 url 字段。"
+        AppLanguage.ENGLISH -> "When enabled, the target URL is delivered by the verification server after successful activation instead of being packaged (the URL can be left empty). The server must include a signed url field in its response."
+        AppLanguage.ARABIC -> "عند التمكين، يتم تسليم عنوان URL المستهدف من خادم التحقق بعد نجاح التفعيل بدلاً من تعبئته (يمكن ترك عنوان URL فارغاً). يجب أن يتضمن الخادم حقل url موقّعاً في استجابته."
+        AppLanguage.PORTUGUESE -> "Quando ativado, o URL de destino é entregue pelo servidor de verificação após ativação bem-sucedida, em vez de ser empacotado (o URL pode ser deixado vazio). O servidor deve incluir um campo url assinado na resposta."
+        AppLanguage.SPANISH -> "Cuando está activado, el servidor de verificación entrega la URL de destino tras una activación correcta, en lugar de empaquetarla (la URL puede dejarse vacía). El servidor debe incluir un campo url firmado en su respuesta."
+        AppLanguage.FRENCH -> "Lorsqu'activé, l'URL cible est fournie par le serveur de vérification après une activation réussie, au lieu d'être empaquetée (l'URL peut être laissée vide). Le serveur doit inclure un champ url signé dans sa réponse."
+        AppLanguage.GERMAN -> "Wenn aktiviert, wird die Ziel-URL nach erfolgreicher Aktivierung vom Verifizierungsserver bereitgestellt, statt verpackt zu werden (die URL kann leer bleiben). Der Server muss ein signiertes url-Feld in seiner Antwort enthalten."
+        AppLanguage.RUSSIAN -> "Если включено, целевой URL доставляется сервером проверки после успешной активации вместо упаковки (URL можно оставить пустым). Сервер должен включать подписанное поле url в ответ."
+        AppLanguage.JAPANESE -> "有効にすると、ターゲットURLはパッケージ化される代わりに、アクティベーション成功後に検証サーバーから配信されます（URLは空欄可）。サーバーは応答に署名付きのurlフィールドを含める必要があります。"
+        AppLanguage.KOREAN -> "활성화 시, 대상 URL이 패키징되는 대신 활성화 성공 후 검증 서버에서 전달됩니다(URL은 비워둘 수 있음). 서버는 응답에 서명된 url 필드를 포함해야 합니다."
     }
 
     val remoteActivationMisconfigured: String get() = when (Strings.lang) {

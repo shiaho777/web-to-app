@@ -3422,7 +3422,8 @@ private fun WebApp.buildActivationBlock(): ActivationBlock = ActivationBlock(
     remoteEnabled = activationRemoteConfig?.enabled ?: false,
     remoteVerifyUrl = activationRemoteConfig?.verifyUrl ?: "",
     remotePublicKey = activationRemoteConfig?.publicKeyBase64 ?: "",
-    remoteOfflinePolicy = activationRemoteConfig?.offlinePolicy?.name ?: "ALLOW_CACHED"
+    remoteOfflinePolicy = activationRemoteConfig?.offlinePolicy?.name ?: "ALLOW_CACHED",
+    remoteDeliverUrl = activationRemoteConfig?.deliverUrl ?: false
 )
 
 private fun WebApp.buildAdBlockBlock(): AdBlockBlock = AdBlockBlock(
