@@ -423,6 +423,11 @@ class GeckoViewEngine(
         session = newSession
 
         val view = GeckoView(context)
+        // GeckoView renders on an opaque surface that defaults to white until the first
+        // frame is composited, which shows as a white flash on startup (#322). Make it
+        // transparent so the window/splash background shows through until content paints,
+        // matching the System WebView path (which has no opaque backing surface).
+        view.setBackgroundColor(android.graphics.Color.TRANSPARENT)
         view.setSession(newSession)
         geckoView = view
 
