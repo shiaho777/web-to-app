@@ -20,6 +20,9 @@ import java.security.SecureRandom
 import java.security.Signature
 import java.security.spec.X509EncodedKeySpec
 import java.util.concurrent.TimeUnit
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 class RemoteActivationVerifier(private val context: Context) {
 
@@ -27,6 +30,11 @@ class RemoteActivationVerifier(private val context: Context) {
         private const val TAG = "RemoteActivation"
         private const val NONCE_BYTES = 24
         private const val CACHE_GRACE_MS = 0L
+
+        // AES-256-GCM wire format: Base64(IV[12] || ciphertext || tag[16])
+        private const val AES_GCM_IV_BYTES = 12
+        private const val AES_GCM_TAG_BYTES = 16
+        private const val AES_KEY_BYTES = 32
     }
 
     data class RemoteRequest(
@@ -36,7 +44,9 @@ class RemoteActivationVerifier(private val context: Context) {
         val code: String,
         val deviceId: String,
         val packageName: String,
-        val deliverUrl: Boolean = false
+        val deliverUrl: Boolean = false,
+        val encryptUrl: Boolean = false,
+        val aesKeyBase64: String = ""
     )
 
     private val secureRandom = SecureRandom()
@@ -52,6 +62,10 @@ class RemoteActivationVerifier(private val context: Context) {
     suspend fun verify(appId: Long, request: RemoteRequest): ActivationResult {
         val urlValidation = validateUrl(request.verifyUrl)
         if (urlValidation != null) return urlValidation
+
+        if (request.encryptUrl && decodeAesKey(request.aesKeyBase64) == null) {
+            return ActivationResult.Invalid(remoteMisconfiguredMessage())
+        }
 
         val publicKey = parsePublicKey(request.publicKeyBase64)
             ?: return ActivationResult.Invalid(remoteMisconfiguredMessage())
@@ -76,6 +90,8 @@ class RemoteActivationVerifier(private val context: Context) {
         val parsed = parseResponse(response)
             ?: return ActivationResult.Invalid(remoteRejectedMessage())
 
+        // When deliverUrl is enabled, the url field is part of the signed payload
+        // (whether it is plaintext or AES-encrypted). verifySignature checks it accordingly.
         if (!verifySignature(publicKey, parsed, nonce, request.deliverUrl)) {
             AppLogger.w(TAG, "Remote verification signature mismatch: app=$appId")
             return ActivationResult.Invalid(remoteSignatureFailedMessage())
@@ -91,9 +107,25 @@ class RemoteActivationVerifier(private val context: Context) {
             return ActivationResult.Expired
         }
 
-        saveCache(appId, request, parsed)
+        // Decrypt the URL if encryption is enabled. The decrypted plaintext is cached and
+        // returned, so the cache layer never stores ciphertext.
+        val plaintextUrl = if (request.deliverUrl && request.encryptUrl) {
+            val decrypted = decryptUrl(parsed.url ?: "", request.aesKeyBase64)
+            if (decrypted == null) {
+                AppLogger.w(TAG, "URL decryption failed: app=$appId")
+                return ActivationResult.Invalid(remoteDecryptFailedMessage())
+            }
+            decrypted
+        } else if (request.deliverUrl) {
+            parsed.url
+        } else {
+            null
+        }
+
+        // saveCache stores the plaintext URL regardless of whether it arrived encrypted.
+        saveCache(appId, request, parsed, plaintextUrl)
         AppLogger.i(TAG, "Remote verification success: app=$appId")
-        return ActivationResult.Success(if (request.deliverUrl) parsed.url else null)
+        return ActivationResult.Success(plaintextUrl)
     }
 
     suspend fun resolveCachedStartup(appId: Long, request: RemoteRequest): Boolean {
@@ -242,6 +274,55 @@ class RemoteActivationVerifier(private val context: Context) {
         return obj.toString()
     }
 
+    /**
+     * Decrypts an AES-256-GCM encrypted URL.
+     *
+     * Wire format: Base64(IV[12 bytes] || ciphertext || GCM tag[16 bytes]).
+     * Returns the plaintext URL or null on any decryption failure.
+     */
+    internal fun decryptUrl(encryptedBase64: String, aesKeyBase64: String): String? {
+        if (encryptedBase64.isBlank() || aesKeyBase64.isBlank()) return null
+        return try {
+            val keyBytes = decodeAesKey(aesKeyBase64) ?: return null
+            val combined = android.util.Base64.decode(encryptedBase64, android.util.Base64.DEFAULT)
+
+            if (combined.size < AES_GCM_IV_BYTES + AES_GCM_TAG_BYTES) return null
+
+            val iv = combined.copyOfRange(0, AES_GCM_IV_BYTES)
+            val tag = combined.copyOfRange(combined.size - AES_GCM_TAG_BYTES, combined.size)
+            val ciphertext = combined.copyOfRange(AES_GCM_IV_BYTES, combined.size - AES_GCM_TAG_BYTES)
+
+            // Concatenate ciphertext + tag for javax.crypto GCM decryption
+            val ciphertextWithTag = ciphertext + tag
+
+            val keySpec = SecretKeySpec(keyBytes, "AES")
+            val gcmSpec = GCMParameterSpec(AES_GCM_TAG_BYTES * 8, iv)
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec)
+            val plaintext = cipher.doFinal(ciphertextWithTag)
+            String(plaintext, Charsets.UTF_8)
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "URL decryption failed: ${e.message}")
+            null
+        }
+    }
+
+    internal fun decodeAesKey(aesKeyBase64: String): ByteArray? {
+        if (aesKeyBase64.isBlank()) return null
+        return try {
+            val keyBytes = android.util.Base64.decode(aesKeyBase64.trim(), android.util.Base64.DEFAULT)
+            if (keyBytes.size != AES_KEY_BYTES) {
+                AppLogger.w(TAG, "AES key has incorrect length: ${keyBytes.size} (expected $AES_KEY_BYTES)")
+                null
+            } else {
+                keyBytes
+            }
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "AES key decode failed: ${e.message}")
+            null
+        }
+    }
+
     private suspend fun readValidCache(appId: Long, request: RemoteRequest): Long? {
         val prefs = context.activationDataStore.data.first()
         val cachedCode = prefs[stringPreferencesKey("remote_code_$appId")] ?: return null
@@ -251,13 +332,13 @@ class RemoteActivationVerifier(private val context: Context) {
         return expiresAt
     }
 
-    private suspend fun saveCache(appId: Long, request: RemoteRequest, response: RemoteResponse) {
+    private suspend fun saveCache(appId: Long, request: RemoteRequest, response: RemoteResponse, plaintextUrl: String?) {
         context.activationDataStore.edit { prefs ->
             prefs[stringPreferencesKey("remote_code_$appId")] = request.code
             prefs[longPreferencesKey("remote_expires_$appId")] = response.expiresAt ?: 0L
             prefs[longPreferencesKey("remote_verified_at_$appId")] = System.currentTimeMillis()
-            if (request.deliverUrl) {
-                prefs[stringPreferencesKey("remote_url_$appId")] = response.url ?: ""
+            if (request.deliverUrl && !plaintextUrl.isNullOrBlank()) {
+                prefs[stringPreferencesKey("remote_url_$appId")] = plaintextUrl
             }
         }
     }
@@ -295,4 +376,7 @@ class RemoteActivationVerifier(private val context: Context) {
 
     private fun remoteOfflineNoCacheMessage(): String =
         com.webtoapp.core.i18n.Strings.remoteActivationOfflineNoCache
+
+    private fun remoteDecryptFailedMessage(): String =
+        com.webtoapp.core.i18n.Strings.remoteActivationDecryptFailed
 }

@@ -1262,7 +1262,9 @@ data class RemoteActivationConfig(
     val verifyUrl: String = "",
     val publicKeyBase64: String = "",
     val offlinePolicy: RemoteActivationOfflinePolicy = RemoteActivationOfflinePolicy.ALLOW_CACHED,
-    val deliverUrl: Boolean = false
+    val deliverUrl: Boolean = false,
+    val encryptUrl: Boolean = false,
+    val aesKeyBase64: String = ""
 )
 
 data class AutoStartConfig(

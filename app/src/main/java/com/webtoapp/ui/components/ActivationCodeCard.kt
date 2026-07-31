@@ -683,6 +683,47 @@ private fun RemoteActivationSection(
                     )
                 }
 
+                // AES encryption controls – only relevant when URL delivery is enabled
+                if (remoteConfig.deliverUrl) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                            Text(
+                                text = Strings.remoteActivationEncryptUrlTitle,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = Strings.remoteActivationEncryptUrlHint,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        WtaSwitch(
+                            checked = remoteConfig.encryptUrl,
+                            onCheckedChange = {
+                                onRemoteConfigChange(remoteConfig.copy(encryptUrl = it))
+                            }
+                        )
+                    }
+
+                    if (remoteConfig.encryptUrl) {
+                        PremiumTextField(
+                            value = remoteConfig.aesKeyBase64,
+                            onValueChange = {
+                                onRemoteConfigChange(remoteConfig.copy(aesKeyBase64 = it.trim()))
+                            },
+                            label = { Text(Strings.remoteActivationAesKeyLabel) },
+                            placeholder = { Text("openssl rand -base64 32") },
+                            supportingText = { Text(Strings.remoteActivationAesKeyHint) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
                 Text(
                     text = Strings.remoteActivationPrivacyNote,
                     style = MaterialTheme.typography.bodySmall,

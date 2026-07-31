@@ -881,6 +881,12 @@ object Strings {
     val remoteActivationPrivacyNote: String get() = StringsA.remoteActivationPrivacyNote
     val remoteActivationDeliverUrlTitle: String get() = StringsA.remoteActivationDeliverUrlTitle
     val remoteActivationDeliverUrlHint: String get() = StringsA.remoteActivationDeliverUrlHint
+    val remoteActivationEncryptUrlTitle: String get() = StringsA.remoteActivationEncryptUrlTitle
+    val remoteActivationEncryptUrlHint: String get() = StringsA.remoteActivationEncryptUrlHint
+    val remoteActivationAesKeyLabel: String get() = StringsA.remoteActivationAesKeyLabel
+    val remoteActivationAesKeyHint: String get() = StringsA.remoteActivationAesKeyHint
+    val remoteActivationEncryptUrlNeedsKey: String get() = StringsA.remoteActivationEncryptUrlNeedsKey
+    val remoteActivationDecryptFailed: String get() = StringsA.remoteActivationDecryptFailed
     val remoteActivationMisconfigured: String get() = StringsA.remoteActivationMisconfigured
     val remoteActivationInsecureUrl: String get() = StringsA.remoteActivationInsecureUrl
     val remoteActivationRejected: String get() = StringsA.remoteActivationRejected
@@ -15874,6 +15880,79 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Если включено, целевой URL доставляется сервером проверки после успешной активации вместо упаковки (URL можно оставить пустым). Сервер должен включать подписанное поле url в ответ."
         AppLanguage.JAPANESE -> "有効にすると、ターゲットURLはパッケージ化される代わりに、アクティベーション成功後に検証サーバーから配信されます（URLは空欄可）。サーバーは応答に署名付きのurlフィールドを含める必要があります。"
         AppLanguage.KOREAN -> "활성화 시, 대상 URL이 패키징되는 대신 활성화 성공 후 검증 서버에서 전달됩니다(URL은 비워둘 수 있음). 서버는 응답에 서명된 url 필드를 포함해야 합니다."
+    }
+
+    val remoteActivationEncryptUrlTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "加密目标网址 (AES-256-GCM)"
+        AppLanguage.ENGLISH -> "Encrypt target URL (AES-256-GCM)"
+        AppLanguage.ARABIC -> "تشفير عنوان URL المستهدف (AES-256-GCM)"
+        AppLanguage.PORTUGUESE -> "Criptografar URL de destino (AES-256-GCM)"
+        AppLanguage.SPANISH -> "Cifrar URL de destino (AES-256-GCM)"
+        AppLanguage.FRENCH -> "Chiffrer l'URL cible (AES-256-GCM)"
+        AppLanguage.GERMAN -> "Ziel-URL verschlüsseln (AES-256-GCM)"
+        AppLanguage.RUSSIAN -> "Шифровать целевой URL (AES-256-GCM)"
+        AppLanguage.JAPANESE -> "ターゲットURLを暗号化 (AES-256-GCM)"
+        AppLanguage.KOREAN -> "대상 URL 암호화 (AES-256-GCM)"
+    }
+    val remoteActivationEncryptUrlHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "开启后，服务器须用下方 AES-256 密钥加密网址。响应中的 url 字段为 Base64(IV[12B] || 密文 || GCM_Tag[16B])。"
+        AppLanguage.ENGLISH -> "When enabled, the server must encrypt the URL with the AES-256 key below. The url field in the response is Base64(IV[12B] || ciphertext || GCM tag[16B])."
+        AppLanguage.ARABIC -> "عند التمكين، يجب على الخادم تشفير عنوان URL باستخدام مفتاح AES-256 أدناه. حقل url في الاستجابة هو Base64(IV[12B] || النص المشفر || علامة GCM[16B])."
+        AppLanguage.PORTUGUESE -> "Quando ativado, o servidor deve criptografar a URL com a chave AES-256 abaixo. O campo url na resposta é Base64(IV[12B] || texto cifrado || tag GCM[16B])."
+        AppLanguage.SPANISH -> "Cuando está activado, el servidor debe cifrar la URL con la clave AES-256 a continuación. El campo url en la respuesta es Base64(IV[12B] || texto cifrado || etiqueta GCM[16B])."
+        AppLanguage.FRENCH -> "Lorsqu'activé, le serveur doit chiffrer l'URL avec la clé AES-256 ci-dessous. Le champ url dans la réponse est Base64(IV[12B] || texte chiffré || étiquette GCM[16B])."
+        AppLanguage.GERMAN -> "Wenn aktiviert, muss der Server die URL mit dem AES-256-Schlüssel unten verschlüsseln. Das url-Feld in der Antwort ist Base64(IV[12B] || Chiffrat || GCM-Tag[16B])."
+        AppLanguage.RUSSIAN -> "Если включено, сервер должен шифровать URL с помощью ключа AES-256 ниже. Поле url в ответе — Base64(IV[12B] || шифротекст || тег GCM[16B])."
+        AppLanguage.JAPANESE -> "有効にすると、サーバーは以下のAES-256キーでURLを暗号化する必要があります。応答のurlフィールドはBase64(IV[12B] || 暗号文 || GCMタグ[16B])です。"
+        AppLanguage.KOREAN -> "활성화 시, 서버는 아래 AES-256 키로 URL을 암호화해야 합니다. 응답의 url 필드는 Base64(IV[12B] || 암호문 || GCM 태그[16B])입니다."
+    }
+    val remoteActivationAesKeyLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "AES-256 密钥 (Base64)"
+        AppLanguage.ENGLISH -> "AES-256 key (Base64)"
+        AppLanguage.ARABIC -> "مفتاح AES-256 (Base64)"
+        AppLanguage.PORTUGUESE -> "Chave AES-256 (Base64)"
+        AppLanguage.SPANISH -> "Clave AES-256 (Base64)"
+        AppLanguage.FRENCH -> "Clé AES-256 (Base64)"
+        AppLanguage.GERMAN -> "AES-256-Schlüssel (Base64)"
+        AppLanguage.RUSSIAN -> "Ключ AES-256 (Base64)"
+        AppLanguage.JAPANESE -> "AES-256キー (Base64)"
+        AppLanguage.KOREAN -> "AES-256 키 (Base64)"
+    }
+    val remoteActivationAesKeyHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "32 字节随机密钥的 Base64 编码。生成：openssl rand -base64 32"
+        AppLanguage.ENGLISH -> "Base64 encoding of a 32-byte random key. Generate: openssl rand -base64 32"
+        AppLanguage.ARABIC -> "ترميز Base64 لمفتاح عشوائي 32 بايت. للتوليد: openssl rand -base64 32"
+        AppLanguage.PORTUGUESE -> "Codificação Base64 de uma chave aleatória de 32 bytes. Gerar: openssl rand -base64 32"
+        AppLanguage.SPANISH -> "Codificación Base64 de una clave aleatoria de 32 bytes. Generar: openssl rand -base64 32"
+        AppLanguage.FRENCH -> "Encodage Base64 d'une clé aléatoire de 32 octets. Générer : openssl rand -base64 32"
+        AppLanguage.GERMAN -> "Base64-Kodierung eines 32-Byte-Zufallsschlüssels. Erzeugen: openssl rand -base64 32"
+        AppLanguage.RUSSIAN -> "Base64-кодировка 32-байтового случайного ключа. Генерация: openssl rand -base64 32"
+        AppLanguage.JAPANESE -> "32バイトのランダムキーのBase64エンコード。生成：openssl rand -base64 32"
+        AppLanguage.KOREAN -> "32바이트 랜덤 키의 Base64 인코딩. 생성: openssl rand -base64 32"
+    }
+    val remoteActivationEncryptUrlNeedsKey: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "开启网址加密后必须提供 AES-256 密钥"
+        AppLanguage.ENGLISH -> "AES-256 key is required when URL encryption is enabled"
+        AppLanguage.ARABIC -> "مفتاح AES-256 مطلوب عند تمكين تشفير عنوان URL"
+        AppLanguage.PORTUGUESE -> "A chave AES-256 é obrigatória quando a criptografia de URL está ativada"
+        AppLanguage.SPANISH -> "Se requiere clave AES-256 cuando el cifrado de URL está activado"
+        AppLanguage.FRENCH -> "La clé AES-256 est requise lorsque le chiffrement de l'URL est activé"
+        AppLanguage.GERMAN -> "AES-256-Schlüssel ist erforderlich, wenn URL-Verschlüsselung aktiviert ist"
+        AppLanguage.RUSSIAN -> "Требуется ключ AES-256 при включенном шифровании URL"
+        AppLanguage.JAPANESE -> "URL暗号化が有効な場合、AES-256キーが必要です"
+        AppLanguage.KOREAN -> "URL 암호화가 활성화된 경우 AES-256 키가 필요합니다"
+    }
+    val remoteActivationDecryptFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "服务器返回的网址解密失败，请检查 AES 密钥配置"
+        AppLanguage.ENGLISH -> "Failed to decrypt the URL from the server, please check the AES key configuration"
+        AppLanguage.ARABIC -> "فشل فك تشفير عنوان URL من الخادم، يرجى التحقق من تكوين مفتاح AES"
+        AppLanguage.PORTUGUESE -> "Falha ao descriptografar a URL do servidor, verifique a configuração da chave AES"
+        AppLanguage.SPANISH -> "Error al descifrar la URL del servidor, verifique la configuración de la clave AES"
+        AppLanguage.FRENCH -> "Échec du déchiffrement de l'URL du serveur, vérifiez la configuration de la clé AES"
+        AppLanguage.GERMAN -> "Fehler beim Entschlüsseln der URL vom Server, bitte die AES-Schlüsselkonfiguration prüfen"
+        AppLanguage.RUSSIAN -> "Не удалось расшифровать URL с сервера, проверьте конфигурацию ключа AES"
+        AppLanguage.JAPANESE -> "サーバーからのURLの復号に失敗しました。AESキー設定を確認してください"
+        AppLanguage.KOREAN -> "서버에서 URL을 복호화하지 못했습니다. AES 키 구성을 확인하세요"
     }
 
     val remoteActivationMisconfigured: String get() = when (Strings.lang) {

@@ -185,6 +185,12 @@ data class ShellConfig(
     @SerializedName("activationRemoteDeliverUrl")
     val activationRemoteDeliverUrl: Boolean = false,
 
+    @SerializedName("activationRemoteEncryptUrl")
+    val activationRemoteEncryptUrl: Boolean = false,
+
+    @SerializedName("activationRemoteAesKey")
+    val activationRemoteAesKey: String = "",
+
     @SerializedName("adBlockEnabled")
     val adBlockEnabled: Boolean = false,
 

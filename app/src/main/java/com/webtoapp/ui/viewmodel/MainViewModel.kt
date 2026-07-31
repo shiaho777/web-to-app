@@ -519,6 +519,13 @@ class MainViewModel(
                 false
             }
 
+            state.activationEnabled &&
+                state.activationRemoteConfig?.encryptUrl == true &&
+                state.activationRemoteConfig?.aesKeyBase64.isNullOrBlank() -> {
+                _uiState.value = UiState.Error(Strings.remoteActivationEncryptUrlNeedsKey)
+                false
+            }
+
             state.appType == AppType.HTML && (state.htmlConfig?.files?.isEmpty() != false) -> {
                 _uiState.value = UiState.Error(Strings.pleaseSelectHtmlFile)
                 false

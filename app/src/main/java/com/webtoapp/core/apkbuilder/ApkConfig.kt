@@ -65,6 +65,8 @@ data class ApkConfig(
     val activationRemotePublicKey: String get() = activation.remotePublicKey
     val activationRemoteOfflinePolicy: String get() = activation.remoteOfflinePolicy
     val activationRemoteDeliverUrl: Boolean get() = activation.remoteDeliverUrl
+    val activationRemoteEncryptUrl: Boolean get() = activation.remoteEncryptUrl
+    val activationRemoteAesKey: String get() = activation.remoteAesKey
 
     val adBlockEnabled: Boolean get() = adBlock.enabled
     val adBlockRules: List<String> get() = adBlock.rules
@@ -414,7 +416,9 @@ data class ActivationBlock(
     val remoteVerifyUrl: String = "",
     val remotePublicKey: String = "",
     val remoteOfflinePolicy: String = "ALLOW_CACHED",
-    val remoteDeliverUrl: Boolean = false
+    val remoteDeliverUrl: Boolean = false,
+    val remoteEncryptUrl: Boolean = false,
+    val remoteAesKey: String = ""
 )
 
 data class AdBlockBlock(

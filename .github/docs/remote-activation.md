@@ -22,6 +22,9 @@ the activation-code section and fill in:
 | Verification endpoint | Your `https://…` URL. Plain `http://` is rejected. |
 | Signature public key | An **EC P-256** public key in Base64 (SPKI / `BEGIN PUBLIC KEY`). The app verifies every response with it. |
 | Offline policy | `ALLOW_CACHED` (default): allow the last successful result until it expires. `DENY`: block when offline. `ALLOW`: always allow when offline (insecure). |
+| Deliver target URL | When on, the target URL is delivered by the server at activation time (not packaged in the APK). See [Dynamic URL delivery](#dynamic-url-delivery). |
+| Encrypt target URL | When on (requires Deliver URL), the server must encrypt the URL with AES-256-GCM before signing. See [URL Encryption](#url-encryption-aes-256-gcm). |
+| AES-256 key | 32-byte Base64 key shared with the server. Required when encryption is enabled. |
 
 ## Request (app → your server)
 
@@ -69,7 +72,7 @@ Accept: application/json
 | `message` | string | Shown to the user on rejection. |
 | `nonce` | string | Must equal the request nonce. |
 | `sig` | string | Base64 ECDSA (`SHA256withECDSA`, DER-encoded) over the canonical payload below. |
-| `url` | string \| null | Optional. The target URL to load. Only used (and signature-bound) when the app has **Deliver target URL from server** enabled — see [Dynamic URL delivery](#dynamic-url-delivery). Omit otherwise. |
+| `url` | string \| null | Optional. The target URL to load. Only used (and signature-bound) when the app has **Deliver target URL from server** enabled — see [Dynamic URL delivery](#dynamic-url-delivery). When **Encrypt target URL** is also enabled, this field contains the AES-256-GCM ciphertext (see [URL Encryption](#url-encryption-aes-256-gcm)). Omit otherwise. |
 
 ### Canonical payload that gets signed
 
@@ -116,6 +119,64 @@ keeps the URL out of the APK so it cannot be extracted statically.
   This raises the bar against casual extraction but is not DRM-grade — a
   determined attacker can still recover it from the response or memory.
 
+## URL Encryption (AES-256-GCM)
+
+When both **Deliver target URL from server** and **Encrypt target URL** are
+enabled, the server must encrypt the URL with AES-256-GCM **before** signing.
+The ciphertext goes into the `url` field and the signed payload.
+
+| Parameter | Value |
+| --- | --- |
+| Algorithm | AES-256-GCM (authenticated encryption) |
+| Key | 32 bytes, shared between app config and server |
+| IV | 12 random bytes per encryption |
+| Wire format | `Base64(IV[12B] \|\| ciphertext \|\| GCM tag[16B])` |
+
+**Why encrypt the URL when the response is already over HTTPS and ECDSA-signed?**
+Defense in depth. If an attacker compromises the TLS layer (corporate MITM
+proxy with a user-installed CA, misconfigured certificate pinning bypass) or
+dumps the response from memory, the URL stays unreadable without the AES key.
+The signature still prevents tampering, and the encryption prevents reading.
+
+### Generating an AES-256 key
+
+```bash
+# Generate a 32-byte random key and Base64-encode it
+openssl rand -base64 32
+```
+
+Paste the same Base64 string into both the app's **AES-256 key** field and
+your server configuration.
+
+### Server-side encryption (Node.js)
+
+```js
+const crypto = require("crypto");
+
+function encryptUrl(plaintext, aesKeyBase64) {
+  const key = Buffer.from(aesKeyBase64, "base64"); // 32 bytes
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  let encrypted = cipher.update(plaintext, "utf8");
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  const tag = cipher.getAuthTag(); // 16 bytes
+  // Wire format: IV || ciphertext || tag
+  return Buffer.concat([iv, encrypted, tag]).toString("base64");
+}
+```
+
+### Signing flow with encryption
+
+1. Encrypt the URL → Base64 ciphertext blob.
+2. Build the canonical payload with the ciphertext blob as the `url` value.
+3. Sign the canonical payload with ECDSA.
+4. Return the ciphertext blob in the response `url` field and the signature in `sig`.
+
+The client verifies the signature first (which covers the ciphertext), then
+decrypts `url` with the shared AES key to recover the plaintext URL. An
+attacker who tampers with the ciphertext breaks the signature; an attacker who
+reads the response sees only encrypted bytes.
+
 ## Generating a key pair
 
 ```bash
@@ -137,9 +198,26 @@ const privateKey = crypto.createPrivateKey(fs.readFileSync("ec_private.pem"));
 // Your own source of truth. Revoke by removing/flipping entries here.
 // `url` is optional: set it (and enable "Deliver target URL from server" in the
 // app) to deliver the target URL dynamically instead of packaging it.
+// When URL encryption is enabled, encrypt `url` with the shared AES key before
+// returning it (see the `encryptUrl` helper below).
 const CODES = {
   "ABC123": { expiresAt: 1735862400000, remainingUses: 5, url: "https://example.com/app" },
 };
+
+// ---- AES-256-GCM encryption (only needed when "Encrypt target URL" is on) ----
+const AES_KEY_BASE64 = process.env.AES_KEY_BASE64 || ""; // same as in the app config
+const AES_KEY = AES_KEY_BASE64 ? Buffer.from(AES_KEY_BASE64, "base64") : null;
+
+function encryptUrl(plaintext) {
+  if (!AES_KEY || AES_KEY.length !== 32) return plaintext; // passthrough if not configured
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", AES_KEY, iv);
+  let encrypted = cipher.update(plaintext, "utf8");
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, encrypted, tag]).toString("base64");
+}
+// -------------------------------------------------------------------------
 
 function signedPayload({ ok, expiresAt, remainingUses, nonce, url }) {
   // Must match the app's canonical order exactly.
@@ -150,6 +228,7 @@ function signedPayload({ ok, expiresAt, remainingUses, nonce, url }) {
     nonce,
   };
   // Include url only when delivering it; it becomes the fifth signed key.
+  // When encryption is on, `url` is already the ciphertext blob here.
   if (url !== undefined) {
     payload.url = url ?? "";
   }
@@ -180,13 +259,18 @@ http
       const entry = CODES[code];
 
       const result = entry
-        ? { ok: true, expiresAt: entry.expiresAt, remainingUses: entry.remainingUses, message: "", url: entry.url }
+        ? { ok: true, expiresAt: entry.expiresAt, remainingUses: entry.remainingUses, message: "" }
         : { ok: false, expiresAt: 0, remainingUses: -1, message: "Code not recognised" };
 
-      const sig = sign(signedPayload({ ...result, nonce }));
+      // Encrypt the URL if AES key is configured; the ciphertext goes into
+      // both the signed payload and the response.
+      const urlPlain = entry && entry.url ? entry.url : undefined;
+      const urlEnc = urlPlain ? encryptUrl(urlPlain) : undefined;
+
+      const sig = sign(signedPayload({ ...result, nonce, url: urlEnc }));
 
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ...result, nonce, sig }));
+      res.end(JSON.stringify({ ...result, nonce, sig, url: urlEnc }));
     });
   })
   .listen(8443);

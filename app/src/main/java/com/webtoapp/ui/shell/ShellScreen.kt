@@ -167,7 +167,9 @@ fun ShellScreen(
                                 verifyUrl = config.activationRemoteVerifyUrl,
                                 publicKeyBase64 = config.activationRemotePublicKey,
                                 offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy),
-                                deliverUrl = config.activationRemoteDeliverUrl
+                                deliverUrl = config.activationRemoteDeliverUrl,
+                                encryptUrl = config.activationRemoteEncryptUrl,
+                                aesKeyBase64 = config.activationRemoteAesKey
                             )
                         )
                 } else {
