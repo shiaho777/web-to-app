@@ -867,6 +867,20 @@ class WebViewActivity : AppCompatActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        // WebViewActivity is singleTask, so opening another shortcut/deep link reuses this
+        // instance and delivers the new intent here instead of creating a fresh activity.
+        // Recreate so the new target loads rather than keeping the previous app (issue #309 —
+        // users had to close one shortcut before the next would work). Re-opening the same app's
+        // shortcut (same app_id) just brings it to the foreground without restarting.
+        val newAppId = intent.getLongExtra(EXTRA_APP_ID, -1)
+        if (newAppId <= 0 || newAppId != trackedAppId) {
+            recreate()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         webView?.onResume()
