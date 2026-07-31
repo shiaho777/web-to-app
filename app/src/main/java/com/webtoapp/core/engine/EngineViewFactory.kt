@@ -189,6 +189,11 @@ fun WebViewCallbacks.toBrowserEngineCallback(): BrowserEngineCallback {
             contentLength: Long
         ) = source.onDownloadStart(url, userAgent, contentDisposition, mimeType, contentLength)
 
+        override fun onShowFileChooser(
+            filePathCallback: android.webkit.ValueCallback<Array<android.net.Uri>>?,
+            fileChooserParams: android.webkit.WebChromeClient.FileChooserParams?
+        ): Boolean = source.onShowFileChooser(filePathCallback, fileChooserParams)
+
         override fun onConsoleMessage(level: Int, message: String, sourceId: String, lineNumber: Int) {
             source.onConsoleMessage(level, message, sourceId, lineNumber)
         }

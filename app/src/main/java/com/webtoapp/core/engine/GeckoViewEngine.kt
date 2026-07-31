@@ -445,6 +445,7 @@ class GeckoViewEngine(
         setupNavigationDelegate(session, callback)
         setupProgressDelegate(session, callback)
         setupPermissionDelegate(session)
+        setupPromptDelegate(session, callback)
     }
 
     private fun setupContentDelegate(session: GeckoSession, callback: BrowserEngineCallback) {
@@ -486,6 +487,48 @@ class GeckoViewEngine(
                 AppLogger.e(TAG, "GeckoView session crashed, attempting recovery...")
                 callback.onError(-1, "Engine crash — recovering...")
                 attemptCrashRecovery()
+            }
+        }
+    }
+
+    private fun setupPromptDelegate(session: GeckoSession, callback: BrowserEngineCallback) {
+        session.promptDelegate = object : GeckoSession.PromptDelegate {
+            override fun onFilePrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.FilePrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                var completed = false
+                fun finish(response: GeckoSession.PromptDelegate.PromptResponse) {
+                    if (!completed) {
+                        completed = true
+                        result.complete(response)
+                    }
+                }
+
+                // Bridge GeckoView's FilePrompt onto the same ValueCallback/FileChooserParams
+                // contract the System WebView path uses, so the shell's existing SAF + camera
+                // chooser (ShellPermissionDelegate.handleFileChooser) handles the actual pick.
+                val valueCallback = android.webkit.ValueCallback<Array<android.net.Uri>> { uris ->
+                    when {
+                        uris.isNullOrEmpty() -> finish(prompt.dismiss())
+                        prompt.type == GeckoSession.PromptDelegate.FilePrompt.Type.MULTIPLE ->
+                            finish(prompt.confirm(context, uris))
+                        else -> finish(prompt.confirm(context, uris[0]))
+                    }
+                }
+
+                val params = GeckoFileChooserParams(
+                    acceptTypes = prompt.mimeTypes,
+                    multiple = prompt.type == GeckoSession.PromptDelegate.FilePrompt.Type.MULTIPLE,
+                    captureEnabled = prompt.capture != GeckoSession.PromptDelegate.FilePrompt.Capture.NONE
+                )
+
+                val handled = callback.onShowFileChooser(valueCallback, params)
+                if (!handled) {
+                    finish(prompt.dismiss())
+                }
+                return result
             }
         }
     }
@@ -748,4 +791,35 @@ class GeckoViewEngine(
         }
     }
 
+}
+
+/**
+ * Adapts a GeckoView `FilePrompt` onto the `WebChromeClient.FileChooserParams` contract so the
+ * shell's existing System-WebView file chooser logic (SAF picker + camera capture) can serve
+ * GeckoView uploads unchanged. Only the accessors the chooser reads are meaningful; the rest
+ * return inert defaults.
+ */
+private class GeckoFileChooserParams(
+    private val acceptTypes: Array<String>?,
+    private val multiple: Boolean,
+    private val captureEnabled: Boolean
+) : android.webkit.WebChromeClient.FileChooserParams() {
+
+    override fun getMode(): Int =
+        if (multiple) MODE_OPEN_MULTIPLE else MODE_OPEN
+
+    override fun getAcceptTypes(): Array<String> =
+        acceptTypes?.takeIf { it.isNotEmpty() } ?: arrayOf("*/*")
+
+    override fun isCaptureEnabled(): Boolean = captureEnabled
+
+    override fun getTitle(): CharSequence = ""
+
+    override fun getFilenameHint(): String? = null
+
+    override fun createIntent(): android.content.Intent =
+        android.content.Intent(android.content.Intent.ACTION_GET_CONTENT).apply {
+            addCategory(android.content.Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+        }
 }

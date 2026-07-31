@@ -33,6 +33,17 @@ interface BrowserEngineCallback {
         contentLength: Long
     )
 
+    /**
+     * File upload request (`<input type="file">`). Engines that surface uploads through a
+     * different mechanism (System WebView uses its WebChromeClient directly) can ignore this;
+     * GeckoView routes its PromptDelegate file prompts here. Returns true if the chooser was
+     * launched, false if the prompt should be dismissed.
+     */
+    fun onShowFileChooser(
+        filePathCallback: android.webkit.ValueCallback<Array<android.net.Uri>>?,
+        fileChooserParams: android.webkit.WebChromeClient.FileChooserParams?
+    ): Boolean = false
+
     fun onConsoleMessage(level: Int, message: String, sourceId: String, lineNumber: Int) {}
 
     fun onNewWindow(resultMsg: android.os.Message?) {}
