@@ -1,6 +1,5 @@
 package com.webtoapp.data.model
 
-import com.webtoapp.core.actions.DeviceActionsConfig
 import com.webtoapp.core.forcedrun.ForcedRunConfig
 
 fun ApkRuntimePermissions.enableFrom(required: ApkRuntimePermissions): ApkRuntimePermissions {
@@ -48,7 +47,6 @@ fun featureRequiredRuntimePermissions(
     webViewConfig: WebViewConfig = WebViewConfig(),
     autoStartConfig: AutoStartConfig? = null,
     forcedRunConfig: ForcedRunConfig? = null,
-    blackTechConfig: DeviceActionsConfig? = null,
     bgmEnabled: Boolean = false
 ): ApkRuntimePermissions {
     var required = ApkRuntimePermissions()
@@ -105,17 +103,6 @@ fun featureRequiredRuntimePermissions(
         required = required.copy(wakeLock = true)
     }
 
-    val blackTech = blackTechConfig
-    if (blackTech?.forceFlashlight == true) {
-        required = required.copy(camera = true)
-    }
-    if (blackTech?.forceMaxVibration == true) {
-        required = required.copy(vibration = true)
-    }
-    if (blackTech?.forceWifiHotspot == true || blackTech?.forceDisableWifi == true) {
-        required = required.copy(wifiState = true)
-    }
-
     return required
 }
 
@@ -125,7 +112,6 @@ fun WebApp.featureRequiredRuntimePermissions(): ApkRuntimePermissions =
         webViewConfig = webViewConfig,
         autoStartConfig = autoStartConfig,
         forcedRunConfig = forcedRunConfig,
-        blackTechConfig = blackTechConfig,
         bgmEnabled = bgmEnabled
     )
 
@@ -152,7 +138,6 @@ fun ApkExportConfig.withRuntimePermissionsSyncedFromFeatures(
     webViewConfig: WebViewConfig = WebViewConfig(),
     autoStartConfig: AutoStartConfig? = null,
     forcedRunConfig: ForcedRunConfig? = null,
-    blackTechConfig: DeviceActionsConfig? = null,
     bgmEnabled: Boolean = false
 ): ApkExportConfig {
     val required = featureRequiredRuntimePermissions(
@@ -160,7 +145,6 @@ fun ApkExportConfig.withRuntimePermissionsSyncedFromFeatures(
         webViewConfig = webViewConfig,
         autoStartConfig = autoStartConfig,
         forcedRunConfig = forcedRunConfig,
-        blackTechConfig = blackTechConfig,
         bgmEnabled = bgmEnabled
     )
     val merged = runtimePermissions.enableFrom(required)
@@ -178,10 +162,7 @@ enum class PermissionFeatureReason {
     BGM,
     BOOT_START,
     SCREEN_AWAKE,
-    CUSTOM_DOWNLOAD,
-    DEVICE_FLASHLIGHT,
-    DEVICE_VIBRATION,
-    DEVICE_WIFI
+    CUSTOM_DOWNLOAD
 }
 
 fun featurePermissionReasons(
@@ -189,7 +170,6 @@ fun featurePermissionReasons(
     webViewConfig: WebViewConfig = WebViewConfig(),
     autoStartConfig: AutoStartConfig? = null,
     forcedRunConfig: ForcedRunConfig? = null,
-    blackTechConfig: DeviceActionsConfig? = null,
     bgmEnabled: Boolean = false
 ): Map<String, List<PermissionFeatureReason>> {
     val map = linkedMapOf<String, MutableList<PermissionFeatureReason>>()
@@ -243,17 +223,6 @@ fun featurePermissionReasons(
         add("wakeLock", PermissionFeatureReason.SCREEN_AWAKE)
     }
 
-    val blackTech = blackTechConfig
-    if (blackTech?.forceFlashlight == true) {
-        add("camera", PermissionFeatureReason.DEVICE_FLASHLIGHT)
-    }
-    if (blackTech?.forceMaxVibration == true) {
-        add("vibration", PermissionFeatureReason.DEVICE_VIBRATION)
-    }
-    if (blackTech?.forceWifiHotspot == true || blackTech?.forceDisableWifi == true) {
-        add("wifiState", PermissionFeatureReason.DEVICE_WIFI)
-    }
-
     return map.mapValues { (_, v) -> v.toList() }
 }
 
@@ -263,7 +232,6 @@ fun WebApp.featurePermissionReasons(): Map<String, List<PermissionFeatureReason>
         webViewConfig = webViewConfig,
         autoStartConfig = autoStartConfig,
         forcedRunConfig = forcedRunConfig,
-        blackTechConfig = blackTechConfig,
         bgmEnabled = bgmEnabled
     )
 

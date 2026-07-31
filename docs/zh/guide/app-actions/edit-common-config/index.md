@@ -41,7 +41,6 @@
 
 - [自启动设置](/zh/guide/app-actions/edit-common-config/auto-start)
 - [强制运行设置](/zh/guide/app-actions/edit-common-config/forced-run)
-- [黑科技功能](/zh/guide/app-actions/edit-common-config/blacktech)
 
 ## 高级与导出
 

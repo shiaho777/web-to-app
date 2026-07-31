@@ -160,39 +160,6 @@ set_target_properties(go_exec_loader PROPERTIES
     LINK_FLAGS "-Wl,--gc-sections -Wl,-z,max-page-size=16384"
 )
 
-# ==================== Hardware Control (黑科技底层控制) ====================
-# JNI 原生硬件控制层：通过 sysfs / ioctl / input 子系统绕过 Android API
-add_library(
-    hardware_control
-    SHARED
-    hardware_control.c
-)
-
-# 使用 C11 标准
-set_property(TARGET hardware_control PROPERTY C_STANDARD 11)
-
-# 编译选项：保留 JNI 导出符号，不隐藏
-target_compile_options(hardware_control PRIVATE
-    -ffunction-sections
-    -fdata-sections
-    -O2
-    -DNDEBUG
-    -Wall
-    -Wextra
-)
-
-# 链接 log (Android 日志) + m (数学库: sin/cos/sqrt)
-target_link_libraries(
-    hardware_control
-    ${log-lib}
-    m
-)
-
-# 只 gc-sections，保留 JNI 导出符号
-set_target_properties(hardware_control PROPERTIES
-    LINK_FLAGS "-Wl,--gc-sections -Wl,-z,max-page-size=16384"
-)
-
 # ==================== APK Optimizer (APK 体积优化引擎) ====================
 # C 级 ZIP 重压缩 + 条目裁剪，用于极致压缩生成的 APK
 add_library(

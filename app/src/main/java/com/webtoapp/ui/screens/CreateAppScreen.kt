@@ -8,7 +8,6 @@ import com.webtoapp.data.model.AutoStartConfig
 
 import com.webtoapp.core.forcedrun.ForcedRunConfig
 
-import com.webtoapp.core.actions.DeviceActionsConfig
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.ui.design.WtaSwitch
 
@@ -517,13 +516,6 @@ fun CreateAppScreen(
             }
 
             item {
-                com.webtoapp.ui.components.DeviceActionsConfigCard(
-                    config = editState.blackTechConfig,
-                    onConfigChange = { viewModel.updateEditState { copy(blackTechConfig = it) } }
-                )
-            }
-
-            item {
                 BrowserAdvancedConfigCard(
                     config = editState.webViewConfig,
                     onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } }
@@ -554,7 +546,6 @@ fun CreateAppScreen(
                     webViewConfig = editState.webViewConfig,
                     autoStartConfig = editState.autoStartConfig,
                     forcedRunConfig = editState.forcedRunConfig,
-                    blackTechConfig = editState.blackTechConfig,
                     bgmEnabled = editState.bgmEnabled
                 )
             }
@@ -601,7 +592,6 @@ private fun ExportAndPermissionDrawer(
     webViewConfig: WebViewConfig,
     autoStartConfig: AutoStartConfig?,
     forcedRunConfig: ForcedRunConfig?,
-    blackTechConfig: DeviceActionsConfig?,
     bgmEnabled: Boolean
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -610,7 +600,6 @@ private fun ExportAndPermissionDrawer(
         webViewConfig,
         autoStartConfig,
         forcedRunConfig,
-        blackTechConfig,
         bgmEnabled
     ) {
         featurePermissionReasons(
@@ -618,7 +607,6 @@ private fun ExportAndPermissionDrawer(
             webViewConfig = webViewConfig,
             autoStartConfig = autoStartConfig,
             forcedRunConfig = forcedRunConfig,
-            blackTechConfig = blackTechConfig,
             bgmEnabled = bgmEnabled
         )
     }

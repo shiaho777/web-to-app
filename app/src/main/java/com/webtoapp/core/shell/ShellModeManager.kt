@@ -392,9 +392,6 @@ data class ShellConfig(
     @SerializedName("hardeningThreatResponse")
     val hardeningThreatResponse: String = "LOG_ONLY",
 
-    @SerializedName("blackTechConfig")
-    val blackTechConfig: com.webtoapp.core.actions.DeviceActionsConfig? = null,
-
     @SerializedName("disguiseConfig")
     val disguiseConfig: com.webtoapp.core.appearance.DisguiseConfig? = null,
 

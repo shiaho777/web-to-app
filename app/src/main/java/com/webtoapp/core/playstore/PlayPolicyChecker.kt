@@ -45,18 +45,6 @@ object PlayPolicyChecker {
             )
         }
 
-        if (webApp.blackTechConfig?.enabled == true) {
-            violations.add(
-                Violation(
-                    ruleId = "DEVICE_ACTIONS_ENABLED",
-                    severity = Severity.BLOCKER,
-                    featurePath = "rule.deviceActions.path",
-                    policyArea = "rule.deviceActions.area",
-                    fixHint = "rule.deviceActions.fix"
-                )
-            )
-        }
-
         val iconStormCount = webApp.disguiseConfig?.multiLauncherIcons ?: 0
         if (webApp.disguiseConfig?.enabled == true && iconStormCount > 1) {
             violations.add(
@@ -241,9 +229,6 @@ object PlayPolicyChecker {
         return when (v.ruleId) {
             "FORCED_RUN_ENABLED" -> ResolvedViolation(
                 v.severity, s.rulePathForcedRun, s.ruleAreaForcedRun, s.ruleFixForcedRun
-            )
-            "DEVICE_ACTIONS_ENABLED" -> ResolvedViolation(
-                v.severity, s.rulePathDeviceActions, s.ruleAreaDeviceActions, s.ruleFixDeviceActions
             )
             "ICON_STORM_ENABLED" -> ResolvedViolation(
                 v.severity, s.rulePathIconStorm, s.ruleAreaIconStorm, s.ruleFixIconStorm

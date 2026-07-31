@@ -2,33 +2,20 @@ package com.webtoapp.core.forcedrun
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
-import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.graphics.Color
-import android.graphics.PixelFormat
-import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.os.PowerManager
 import com.webtoapp.core.logging.AppLogger
 import android.provider.Settings
-import android.view.Gravity
 import android.view.KeyEvent
-import android.view.MotionEvent
-import android.view.View
-import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 
 class ForcedRunAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val TAG = "ForcedRunA11yService"
-
-        @Volatile
-        private var instance: ForcedRunAccessibilityService? = null
 
         @Volatile
         var isServiceRunning = false
@@ -50,34 +37,7 @@ class ForcedRunAccessibilityService : AccessibilityService() {
         var allowedPackages: Set<String> = emptySet()
 
         @Volatile
-        var blockVolumeKeys: Boolean = false
-
-        @Volatile
         var blockBackKey: Boolean = false
-
-        @Volatile
-        var blockTouchOverlay: Boolean = false
-            set(value) {
-                field = value
-                instance?.updateTouchBlockOverlay(value)
-            }
-
-        @Volatile
-        var blockPowerKey: Boolean = false
-
-        @Volatile
-        var blackScreenMode: Boolean = false
-            set(value) {
-                field = value
-                if (value) {
-                    blockTouchOverlay = true
-                    instance?.updateBlackScreenOverlay(true)
-                    instance?.setSystemBrightness(0)
-                } else {
-                    instance?.updateBlackScreenOverlay(false)
-                    instance?.restoreSystemBrightness()
-                }
-            }
 
         fun startForcedRun(
             packageName: String,
@@ -121,51 +81,6 @@ class ForcedRunAccessibilityService : AccessibilityService() {
             }
             context.startActivity(intent)
         }
-
-        fun setSystemBrightnessGlobal(context: Context, brightness: Int): Boolean {
-            return try {
-                if (!Settings.System.canWrite(context)) {
-                    AppLogger.w(TAG, "No WRITE_SETTINGS permission; can't control system brightness")
-                    return false
-                }
-
-                Settings.System.putInt(
-                    context.contentResolver,
-                    Settings.System.SCREEN_BRIGHTNESS_MODE,
-                    Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL
-                )
-
-                val clamped = brightness.coerceIn(0, 255)
-                Settings.System.putInt(
-                    context.contentResolver,
-                    Settings.System.SCREEN_BRIGHTNESS,
-                    clamped
-                )
-                AppLogger.d(TAG, "System brightness set: $clamped")
-                true
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "Failed to set system brightness", e)
-                false
-            }
-        }
-
-        fun requestWriteSettingsPermission(context: Context) {
-            if (!Settings.System.canWrite(context)) {
-                val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS).apply {
-                    data = android.net.Uri.parse("package:${context.packageName}")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
-                context.startActivity(intent)
-            }
-        }
-
-        fun stopAllDeviceActions() {
-            blockVolumeKeys = false
-            blockBackKey = false
-            blockTouchOverlay = false
-            blockPowerKey = false
-            blackScreenMode = false
-        }
     }
 
     private val handler = Handler(Looper.getMainLooper())
@@ -173,24 +88,11 @@ class ForcedRunAccessibilityService : AccessibilityService() {
     private var consecutiveBringBacks = 0
     private val bringBackRunnable = Runnable { bringAppToFront() }
 
-    private var touchBlockView: View? = null
-    private var windowManager: WindowManager? = null
-
-    private var screenOffReceiver: BroadcastReceiver? = null
-    private var powerManager: PowerManager? = null
-    private var wakeLock: PowerManager.WakeLock? = null
-
-    private var originalBrightness: Int = -1
-    private var originalBrightnessMode: Int = -1
-
     override fun onServiceConnected() {
         super.onServiceConnected()
         AppLogger.d(TAG, "Accessibility service connected")
 
-        instance = this
         isServiceRunning = true
-        windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
 
         serviceInfo = serviceInfo?.apply {
             eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
@@ -209,23 +111,12 @@ class ForcedRunAccessibilityService : AccessibilityService() {
             flags = AccessibilityServiceInfo.FLAG_REQUEST_FILTER_KEY_EVENTS
             notificationTimeout = 50
         }
-
-        registerScreenOffReceiver()
     }
 
     override fun onKeyEvent(event: KeyEvent?): Boolean {
         if (event == null) return false
 
         val keyCode = event.keyCode
-
-        if (blockVolumeKeys) {
-            if (keyCode == KeyEvent.KEYCODE_VOLUME_UP ||
-                keyCode == KeyEvent.KEYCODE_VOLUME_DOWN ||
-                keyCode == KeyEvent.KEYCODE_VOLUME_MUTE) {
-                AppLogger.d(TAG, "Intercepting volume key: keyCode=$keyCode action=${event.action}")
-                return true
-            }
-        }
 
         if (blockBackKey) {
             if (keyCode == KeyEvent.KEYCODE_BACK) {
@@ -235,202 +126,6 @@ class ForcedRunAccessibilityService : AccessibilityService() {
         }
 
         return false
-    }
-
-    @Suppress("DEPRECATION")
-    private fun updateTouchBlockOverlay(enable: Boolean) {
-        handler.post {
-            if (enable && touchBlockView == null) {
-                try {
-                    val view = View(this).apply {
-                        setBackgroundColor(Color.TRANSPARENT)
-                        setOnTouchListener { _, _ -> true }
-                    }
-
-                    val params = WindowManager.LayoutParams(
-                        WindowManager.LayoutParams.MATCH_PARENT,
-                        WindowManager.LayoutParams.MATCH_PARENT,
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
-                        else
-                            WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                        PixelFormat.TRANSLUCENT
-                    ).apply {
-                        gravity = Gravity.TOP or Gravity.START
-                    }
-
-                    windowManager?.addView(view, params)
-                    touchBlockView = view
-                    AppLogger.d(TAG, "Touch-block overlay added")
-                } catch (e: Exception) {
-                    AppLogger.e(TAG, "Failed to add touch-block overlay", e)
-                }
-            } else if (!enable && touchBlockView != null) {
-                removeTouchBlockOverlay()
-            }
-        }
-    }
-
-    @Suppress("DEPRECATION")
-    private fun updateBlackScreenOverlay(enable: Boolean) {
-        handler.post {
-            if (enable) {
-
-                removeTouchBlockOverlay()
-
-                try {
-                    val view = View(this).apply {
-                        setBackgroundColor(Color.BLACK)
-                        setOnTouchListener { _, _ -> true }
-                    }
-
-                    val params = WindowManager.LayoutParams(
-                        WindowManager.LayoutParams.MATCH_PARENT,
-                        WindowManager.LayoutParams.MATCH_PARENT,
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-                            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
-                        else
-                            WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                            WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-                        PixelFormat.OPAQUE
-                    ).apply {
-                        gravity = Gravity.TOP or Gravity.START
-                    }
-
-                    windowManager?.addView(view, params)
-                    touchBlockView = view
-                    AppLogger.d(TAG, "Full-blackout overlay added")
-                } catch (e: Exception) {
-                    AppLogger.e(TAG, "Failed to add full-blackout overlay", e)
-                }
-            } else {
-                removeTouchBlockOverlay()
-            }
-        }
-    }
-
-    private fun removeTouchBlockOverlay() {
-        touchBlockView?.let { view ->
-            try {
-                windowManager?.removeView(view)
-                AppLogger.d(TAG, "Overlay removed")
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "Failed to remove overlay", e)
-            }
-        }
-        touchBlockView = null
-    }
-
-    private fun registerScreenOffReceiver() {
-        if (screenOffReceiver != null) return
-
-        screenOffReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                if (!blockPowerKey) return
-                if (intent?.action != Intent.ACTION_SCREEN_OFF) return
-
-                AppLogger.d(TAG, "Screen-off detected (power key); waking immediately")
-
-                wakeUpScreen()
-            }
-        }
-
-        val filter = IntentFilter(Intent.ACTION_SCREEN_OFF)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(screenOffReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            registerReceiver(screenOffReceiver, filter)
-        }
-
-        AppLogger.d(TAG, "Screen-off broadcast receiver registered")
-    }
-
-    @Suppress("DEPRECATION")
-    private fun wakeUpScreen() {
-        try {
-            wakeLock?.let { if (it.isHeld) it.release() }
-
-            wakeLock = powerManager?.newWakeLock(
-                PowerManager.FULL_WAKE_LOCK or
-                    PowerManager.ACQUIRE_CAUSES_WAKEUP or
-                    PowerManager.ON_AFTER_RELEASE,
-                "WebToApp:PowerKeyBlock"
-            )
-            wakeLock?.acquire(5000L)
-
-            AppLogger.d(TAG, "Screen force-woken")
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to force-wake screen", e)
-        }
-    }
-
-    private fun setSystemBrightness(brightness: Int) {
-        try {
-            if (!Settings.System.canWrite(this)) {
-                AppLogger.w(TAG, "No WRITE_SETTINGS permission")
-                return
-            }
-
-            if (originalBrightness == -1) {
-                originalBrightness = Settings.System.getInt(
-                    contentResolver,
-                    Settings.System.SCREEN_BRIGHTNESS,
-                    128
-                )
-                originalBrightnessMode = Settings.System.getInt(
-                    contentResolver,
-                    Settings.System.SCREEN_BRIGHTNESS_MODE,
-                    Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC
-                )
-            }
-
-            Settings.System.putInt(
-                contentResolver,
-                Settings.System.SCREEN_BRIGHTNESS_MODE,
-                Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL
-            )
-
-            Settings.System.putInt(
-                contentResolver,
-                Settings.System.SCREEN_BRIGHTNESS,
-                brightness.coerceIn(0, 255)
-            )
-
-            AppLogger.d(TAG, "System brightness set: $brightness (original: $originalBrightness)")
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to set system brightness", e)
-        }
-    }
-
-    private fun restoreSystemBrightness() {
-        try {
-            if (originalBrightness == -1) return
-            if (!Settings.System.canWrite(this)) return
-
-            Settings.System.putInt(
-                contentResolver,
-                Settings.System.SCREEN_BRIGHTNESS_MODE,
-                originalBrightnessMode
-            )
-            Settings.System.putInt(
-                contentResolver,
-                Settings.System.SCREEN_BRIGHTNESS,
-                originalBrightness
-            )
-
-            AppLogger.d(TAG, "System brightness restored: $originalBrightness")
-            originalBrightness = -1
-            originalBrightnessMode = -1
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to restore system brightness", e)
-        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -551,19 +246,6 @@ class ForcedRunAccessibilityService : AccessibilityService() {
         super.onDestroy()
         AppLogger.d(TAG, "Accessibility service destroyed")
 
-        removeTouchBlockOverlay()
-
-        screenOffReceiver?.let {
-            try { unregisterReceiver(it) } catch (_: Exception) {}
-        }
-        screenOffReceiver = null
-
-        wakeLock?.let { if (it.isHeld) it.release() }
-        wakeLock = null
-
-        restoreSystemBrightness()
-
-        instance = null
         isServiceRunning = false
         handler.removeCallbacksAndMessages(null)
     }

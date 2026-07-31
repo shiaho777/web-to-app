@@ -329,7 +329,6 @@ data class ApkConfig(
     val hardeningEnabled: Boolean get() = optionalServices.hardeningEnabled
     val hardeningThreatResponse: String get() = optionalServices.hardeningThreatResponse
 
-    val blackTechConfig: com.webtoapp.core.actions.DeviceActionsConfig? get() = disguise.blackTechConfig
     val disguiseConfig: com.webtoapp.core.appearance.DisguiseConfig? get() = disguise.disguiseConfig
     val browserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? get() = disguise.browserDisguiseConfig
     val deviceDisguiseConfig: com.webtoapp.core.appearance.DeviceDisguiseConfig? get() = disguise.deviceDisguiseConfig
@@ -777,7 +776,6 @@ data class OptionalServicesBlock(
 )
 
 data class DisguiseBlock(
-    val blackTechConfig: com.webtoapp.core.actions.DeviceActionsConfig? = null,
     val disguiseConfig: com.webtoapp.core.appearance.DisguiseConfig? = null,
     val browserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? = null,
     val deviceDisguiseConfig: com.webtoapp.core.appearance.DeviceDisguiseConfig? = null

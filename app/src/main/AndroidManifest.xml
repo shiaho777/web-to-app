@@ -87,9 +87,7 @@
 
     <!--
         ====== 已删除（仅子 APK 使用，宿主自己不会调用）======
-        FLASHLIGHT       - 仅强制运行/特殊场景使用，由 ApkBuilder 注入到子 APK
-        WRITE_SETTINGS   - 仅强制运行模式控制亮度使用，由 ApkBuilder 注入到子 APK
-        VIBRATE          - 仅子 APK 强制运行/警报模式使用
+        WRITE_SETTINGS   - 仅强制运行模式使用，由 ApkBuilder 注入到子 APK
     -->
 
     <!-- ====== 系统运行（宿主必需：打包 / 启动等长任务保持唤醒）====== -->

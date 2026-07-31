@@ -39,7 +39,6 @@ const t = {
       deviceDisguise: 'Device Disguise',
       autoStart: 'Auto-start',
       forcedRun: 'Forced Run',
-      blacktech: 'BlackTech',
       advancedSettings: 'Advanced Settings',
       specialSettings: 'Special Settings',
       apkExport: 'APK Export Config'
@@ -161,7 +160,6 @@ const t = {
       deviceDisguise: '设备伪装',
       autoStart: '自启动设置',
       forcedRun: '强制运行设置',
-      blacktech: '黑科技功能',
       advancedSettings: '高级设置',
       specialSettings: '特殊设置',
       apkExport: 'APK导出配置'
@@ -373,8 +371,7 @@ function sidebar(lang: Lang, prefix: string) {
             collapsed: false,
             items: [
               { text: s.cc.autoStart, link: `${prefix}/guide/app-actions/edit-common-config/auto-start` },
-              { text: s.cc.forcedRun, link: `${prefix}/guide/app-actions/edit-common-config/forced-run` },
-              { text: s.cc.blacktech, link: `${prefix}/guide/app-actions/edit-common-config/blacktech` }
+              { text: s.cc.forcedRun, link: `${prefix}/guide/app-actions/edit-common-config/forced-run` }
             ]
           },
           {

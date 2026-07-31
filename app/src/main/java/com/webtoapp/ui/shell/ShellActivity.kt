@@ -233,20 +233,6 @@ class ShellActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareController.getInstance(this)
-
-        if (hardwareController.isBlockVolumeKeys) {
-            when (event.keyCode) {
-                KeyEvent.KEYCODE_VOLUME_UP,
-                KeyEvent.KEYCODE_VOLUME_DOWN,
-                KeyEvent.KEYCODE_VOLUME_MUTE -> return true
-            }
-        }
-
-        if (hardwareController.isBlockPowerKey && event.keyCode == KeyEvent.KEYCODE_POWER) {
-            return true
-        }
-
         if (event.action == KeyEvent.ACTION_DOWN) {
             if (forcedRunManager.handleKeyEvent(event.keyCode)) {
                 return true
@@ -261,26 +247,10 @@ class ShellActivity : AppCompatActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareController.getInstance(this)
-
-        if (hardwareController.isBlockVolumeKeys) {
-            when (keyCode) {
-                KeyEvent.KEYCODE_VOLUME_UP,
-                KeyEvent.KEYCODE_VOLUME_DOWN,
-                KeyEvent.KEYCODE_VOLUME_MUTE -> return true
-            }
-        }
-
         return super.onKeyDown(keyCode, event)
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
-
-        val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareController.getInstance(this)
-        if (hardwareController.isBlockTouch) {
-
-            return true
-        }
         return super.dispatchTouchEvent(ev)
     }
 

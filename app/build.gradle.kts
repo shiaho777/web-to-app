@@ -171,7 +171,6 @@ android {
             excludes += "**/libmozavcodec.so"
 
             excludes += "**/libcrypto_engine.so"
-            excludes += "**/libhardware_control.so"
         }
     }
     androidResources {

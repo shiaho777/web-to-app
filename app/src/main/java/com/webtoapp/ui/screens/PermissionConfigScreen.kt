@@ -764,9 +764,6 @@ private fun PermissionFeatureReason.displayLabel(): String = when (this) {
     PermissionFeatureReason.BOOT_START -> Strings.autoStartSettings
     PermissionFeatureReason.SCREEN_AWAKE -> Strings.screenAwakeModeLabel
     PermissionFeatureReason.CUSTOM_DOWNLOAD -> Strings.downloadLocationCustom
-    PermissionFeatureReason.DEVICE_FLASHLIGHT -> Strings.enableDeviceActions
-    PermissionFeatureReason.DEVICE_VIBRATION -> Strings.enableDeviceActions
-    PermissionFeatureReason.DEVICE_WIFI -> Strings.enableDeviceActions
 }
 
 private fun isPermissionKeyEnabled(permissions: ApkRuntimePermissions, key: String): Boolean = when (key) {

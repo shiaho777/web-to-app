@@ -41,7 +41,6 @@ This section documents **every card**, one page each, in the order they appear i
 
 - [Auto-start](/guide/app-actions/edit-common-config/auto-start)
 - [Forced Run](/guide/app-actions/edit-common-config/forced-run)
-- [BlackTech](/guide/app-actions/edit-common-config/blacktech)
 
 ## Advanced & export
 

@@ -3218,15 +3218,8 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.USE_FINGERPRINT"
         }
 
-        val bt = config.blackTechConfig
-        if (bt?.forceFlashlight == true) {
-            permissions += "android.permission.FLASHLIGHT"
-        }
         val forcedRun = config.forcedRunConfig
-        val needsWriteSettings = bt?.forceScreenAwake == true ||
-            bt?.forceMaxVolume == true ||
-            bt?.forceMuteMode == true ||
-            forcedRun?.enabled == true
+        val needsWriteSettings = forcedRun?.enabled == true
         if (needsWriteSettings) {
             permissions += "android.permission.WRITE_SETTINGS"
         }
@@ -4030,7 +4023,6 @@ private fun WebApp.buildOptionalServicesBlock(): OptionalServicesBlock = Optiona
 )
 
 private fun WebApp.buildDisguiseBlock(): DisguiseBlock = DisguiseBlock(
-    blackTechConfig = blackTechConfig,
     disguiseConfig = disguiseConfig,
     browserDisguiseConfig = browserDisguiseConfig,
     deviceDisguiseConfig = deviceDisguiseConfig

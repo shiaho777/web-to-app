@@ -120,7 +120,6 @@ internal object ApkConfigJsonFactory {
         "notificationConfig" to notificationConfigPayload(),
         "hardeningEnabled" to optionalServices.hardeningEnabled,
         "hardeningThreatResponse" to optionalServices.hardeningThreatResponse,
-        "blackTechConfig" to disguise.blackTechConfig,
         "disguiseConfig" to disguise.disguiseConfig,
         "browserDisguiseConfig" to disguise.browserDisguiseConfig,
         "deviceDisguiseConfig" to disguise.deviceDisguiseConfig,

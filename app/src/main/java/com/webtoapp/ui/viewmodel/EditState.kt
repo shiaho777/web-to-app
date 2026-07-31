@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.runtime.Stable
 import com.webtoapp.core.activation.ActivationCode
-import com.webtoapp.core.actions.DeviceActionsConfig
 import com.webtoapp.core.appearance.DeviceDisguiseConfig
 import com.webtoapp.core.appearance.DisguiseConfig
 import com.webtoapp.core.forcedrun.ForcedRunConfig
@@ -61,7 +60,6 @@ data class EditState(
     val extensionFabIcon: String = "",
     val autoStartConfig: AutoStartConfig? = null,
     val forcedRunConfig: ForcedRunConfig? = null,
-    val blackTechConfig: DeviceActionsConfig? = null,
     val disguiseConfig: DisguiseConfig? = null,
     val deviceDisguiseConfig: DeviceDisguiseConfig = DeviceDisguiseConfig(),
 )
@@ -104,7 +102,6 @@ fun WebApp.toEditState(): EditState {
         extensionFabIcon = synced.extensionFabIcon ?: "",
         autoStartConfig = synced.autoStartConfig,
         forcedRunConfig = synced.forcedRunConfig,
-        blackTechConfig = synced.blackTechConfig,
         disguiseConfig = synced.disguiseConfig,
         deviceDisguiseConfig = synced.deviceDisguiseConfig ?: DeviceDisguiseConfig(),
     )
@@ -115,7 +112,6 @@ fun EditState.withRuntimePermissionsSyncedFromFeatures(): EditState {
         webViewConfig = webViewConfig,
         autoStartConfig = autoStartConfig,
         forcedRunConfig = forcedRunConfig,
-        blackTechConfig = blackTechConfig,
         bgmEnabled = bgmEnabled
     )
     return if (syncedExport === apkExportConfig || syncedExport == apkExportConfig) {

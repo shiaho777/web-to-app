@@ -90,7 +90,6 @@ data class WebApp(
 
     val autoStartConfig: AutoStartConfig? = null,
     val forcedRunConfig: com.webtoapp.core.forcedrun.ForcedRunConfig? = null,
-    val blackTechConfig: com.webtoapp.core.actions.DeviceActionsConfig? = null,
     val disguiseConfig: com.webtoapp.core.appearance.DisguiseConfig? = null,
     val browserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? = null,
     val deviceDisguiseConfig: com.webtoapp.core.appearance.DeviceDisguiseConfig? = null,

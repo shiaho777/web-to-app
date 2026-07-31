@@ -129,7 +129,6 @@ fun WebApp?.applyDraft(
         extensionFabIcon = editState.extensionFabIcon.ifBlank { null },
         autoStartConfig = editState.autoStartConfig,
         forcedRunConfig = editState.forcedRunConfig,
-        blackTechConfig = editState.blackTechConfig,
         disguiseConfig = editState.disguiseConfig,
         deviceDisguiseConfig = editState.deviceDisguiseConfig,
     ) ?: WebApp(
@@ -165,7 +164,6 @@ fun WebApp?.applyDraft(
         extensionFabIcon = editState.extensionFabIcon.ifBlank { null },
         autoStartConfig = editState.autoStartConfig,
         forcedRunConfig = editState.forcedRunConfig,
-        blackTechConfig = editState.blackTechConfig,
         disguiseConfig = editState.disguiseConfig,
         deviceDisguiseConfig = editState.deviceDisguiseConfig,
         categoryId = overrides.categoryId,

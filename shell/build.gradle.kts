@@ -170,7 +170,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/floatingwindow/**",
         "**/core/privacy/**",
         "**/core/appearance/**",
-        "**/core/actions/**",
         "**/core/perf/**",
         "**/core/port/**",
         "**/core/extension/**",

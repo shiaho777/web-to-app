@@ -41,14 +41,6 @@ object ShellActivityInit {
         onStateChanged: (Boolean, com.webtoapp.core.forcedrun.ForcedRunConfig?) -> Unit
     ) {
 
-        try {
-            val hardwareController = com.webtoapp.core.forcedrun.ForcedRunHardwareController.getInstance(activity)
-            hardwareController.setTargetActivity(activity)
-            com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "硬件控制器初始化成功")
-        } catch (e: Exception) {
-            com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "硬件控制器初始化失败", e)
-        }
-
         if (config.forcedRunConfig?.enabled == true) {
             try {
                 forcedRunManager.setTargetActivity(

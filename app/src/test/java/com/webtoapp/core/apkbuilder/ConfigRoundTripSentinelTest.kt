@@ -6,7 +6,6 @@ import com.webtoapp.core.activation.ActivationCodeType
 import com.webtoapp.core.appearance.BrowserDisguiseConfig
 import com.webtoapp.core.appearance.DeviceDisguiseConfig
 import com.webtoapp.core.appearance.DisguiseConfig
-import com.webtoapp.core.actions.DeviceActionsConfig
 import com.webtoapp.core.forcedrun.ForcedRunConfig
 import com.webtoapp.core.privacy.IsolationConfig
 import com.webtoapp.core.shell.ShellConfig
@@ -343,14 +342,12 @@ class ConfigRoundTripSentinelTest {
             disguiseConfig = DisguiseConfig(enabled = true),
             browserDisguiseConfig = BrowserDisguiseConfig(),
             deviceDisguiseConfig = DeviceDisguiseConfig(),
-            blackTechConfig = DeviceActionsConfig(),
             forcedRunConfig = ForcedRunConfig()
         )
         val shell = roundTrip(app)
         assertThat(shell.disguiseConfig).isNotNull()
         assertThat(shell.browserDisguiseConfig).isNotNull()
         assertThat(shell.deviceDisguiseConfig).isNotNull()
-        assertThat(shell.blackTechConfig).isNotNull()
         assertThat(shell.forcedRunConfig).isNotNull()
     }
 
