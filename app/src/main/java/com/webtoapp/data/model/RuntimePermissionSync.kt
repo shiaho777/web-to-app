@@ -108,18 +108,24 @@ fun WebApp.featureRequiredRuntimePermissions(): ApkRuntimePermissions =
 fun WebApp.withRuntimePermissionsSyncedFromFeatures(): WebApp {
     val required = featureRequiredRuntimePermissions()
     val currentExport = apkExportConfig ?: ApkExportConfig()
-    val merged = currentExport.runtimePermissions.enableFrom(required)
+    // Preserve permissions the user added manually (beyond what features auto-enabled last
+    // time) while recomputing feature-required permissions. This lets turning a feature OFF
+    // clear the permission it had auto-enabled, instead of the old one-way OR latch that kept
+    // it forever (issue #356).
+    val manual = currentExport.runtimePermissions.manualBeyond(currentExport.autoEnabledPermissions)
+    val merged = manual.enableFrom(required)
     // Location coherence (issue #292): granting the location permission implies the
     // WebView geolocation API should be enabled. The reverse direction (geolocationEnabled
     // -> location permission) is already handled by featureRequiredRuntimePermissions above.
     val effectiveGeolocation = webViewConfig.geolocationEnabled || merged.location
-    val permissionsChanged = merged != currentExport.runtimePermissions || apkExportConfig == null
+    val permissionsChanged = merged != currentExport.runtimePermissions ||
+        required != currentExport.autoEnabledPermissions || apkExportConfig == null
     val geolocationChanged = effectiveGeolocation != webViewConfig.geolocationEnabled
     if (!permissionsChanged && !geolocationChanged) {
         return this
     }
     return copy(
-        apkExportConfig = currentExport.copy(runtimePermissions = merged),
+        apkExportConfig = currentExport.copy(runtimePermissions = merged, autoEnabledPermissions = required),
         webViewConfig = webViewConfig.copy(geolocationEnabled = effectiveGeolocation)
     )
 }
@@ -135,8 +141,10 @@ fun ApkExportConfig.withRuntimePermissionsSyncedFromFeatures(
         autoStartConfig = autoStartConfig,
         bgmEnabled = bgmEnabled
     )
-    val merged = runtimePermissions.enableFrom(required)
-    return if (merged == runtimePermissions) this else copy(runtimePermissions = merged)
+    val manual = runtimePermissions.manualBeyond(autoEnabledPermissions)
+    val merged = manual.enableFrom(required)
+    return if (merged == runtimePermissions && required == autoEnabledPermissions) this
+    else copy(runtimePermissions = merged, autoEnabledPermissions = required)
 }
 
 enum class PermissionFeatureReason {

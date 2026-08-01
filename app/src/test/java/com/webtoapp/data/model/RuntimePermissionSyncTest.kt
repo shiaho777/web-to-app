@@ -134,4 +134,44 @@ class RuntimePermissionSyncTest {
         assertThat(synced.apkExportConfig?.runtimePermissions?.location).isTrue()
         assertThat(synced.webViewConfig.geolocationEnabled).isTrue()
     }
+
+    @Test
+    fun `disabling a feature clears the permission it had auto-enabled`() {
+        // Sync with the feature ON first, establishing autoEnabledPermissions.
+        val withFeature = WebApp(
+            name = "Notify",
+            url = "https://example.com",
+            apkExportConfig = ApkExportConfig(notificationEnabled = true)
+        ).withRuntimePermissionsSyncedFromFeatures()
+        assertThat(withFeature.apkExportConfig?.runtimePermissions?.notifications).isTrue()
+
+        // Turn the feature OFF and sync again: the auto-enabled permission is cleared
+        // (the old one-way OR latch kept it forever — issue #356).
+        val featureOff = withFeature.copy(
+            apkExportConfig = withFeature.apkExportConfig!!.copy(notificationEnabled = false)
+        ).withRuntimePermissionsSyncedFromFeatures()
+        assertThat(featureOff.apkExportConfig?.runtimePermissions?.notifications).isFalse()
+    }
+
+    @Test
+    fun `manually added permission survives the enabling feature being turned off`() {
+        // User manually enabled camera while a notification feature was on.
+        val withFeature = WebApp(
+            name = "Mix",
+            url = "https://example.com",
+            apkExportConfig = ApkExportConfig(
+                notificationEnabled = true,
+                runtimePermissions = ApkRuntimePermissions(camera = true)
+            )
+        ).withRuntimePermissionsSyncedFromFeatures()
+        assertThat(withFeature.apkExportConfig?.runtimePermissions?.camera).isTrue()
+        assertThat(withFeature.apkExportConfig?.runtimePermissions?.notifications).isTrue()
+
+        // Turn the feature off: auto-enabled notifications cleared, manual camera preserved.
+        val featureOff = withFeature.copy(
+            apkExportConfig = withFeature.apkExportConfig!!.copy(notificationEnabled = false)
+        ).withRuntimePermissionsSyncedFromFeatures()
+        assertThat(featureOff.apkExportConfig?.runtimePermissions?.notifications).isFalse()
+        assertThat(featureOff.apkExportConfig?.runtimePermissions?.camera).isTrue()
+    }
 }

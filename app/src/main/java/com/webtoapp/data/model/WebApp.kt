@@ -1056,6 +1056,7 @@ data class ApkExportConfig(
     val customVersionCode: Int? = null,
     val architecture: ApkArchitecture = ApkArchitecture.UNIVERSAL,
     val runtimePermissions: ApkRuntimePermissions = ApkRuntimePermissions(),
+    val autoEnabledPermissions: ApkRuntimePermissions = ApkRuntimePermissions(),
     val networkTrustConfig: NetworkTrustConfig = NetworkTrustConfig(),
     val encryptionConfig: ApkEncryptionConfig = ApkEncryptionConfig(),
     val isolationConfig: com.webtoapp.core.privacy.IsolationConfig = com.webtoapp.core.privacy.IsolationConfig(),
@@ -1127,7 +1128,50 @@ data class ApkRuntimePermissions(
     val installPackages: Boolean = false,
     val requestDeletePackages: Boolean = false,
     val systemAlertWindow: Boolean = false
-)
+) {
+    /**
+     * Permissions enabled in this set but NOT in [auto] — i.e. permissions the user added
+     * manually beyond what features auto-enabled. The permission sync uses this to preserve
+     * manual choices while clearing permissions whose enabling feature was turned off
+     * (fixes the "can't turn off an auto-enabled permission" latch, issue #356).
+     */
+    fun manualBeyond(auto: ApkRuntimePermissions): ApkRuntimePermissions = copy(
+        camera = camera && !auto.camera,
+        microphone = microphone && !auto.microphone,
+        location = location && !auto.location,
+        notifications = notifications && !auto.notifications,
+        readExternalStorage = readExternalStorage && !auto.readExternalStorage,
+        writeExternalStorage = writeExternalStorage && !auto.writeExternalStorage,
+        readMediaImages = readMediaImages && !auto.readMediaImages,
+        readMediaVideo = readMediaVideo && !auto.readMediaVideo,
+        readMediaAudio = readMediaAudio && !auto.readMediaAudio,
+        bluetooth = bluetooth && !auto.bluetooth,
+        nfc = nfc && !auto.nfc,
+        wifiState = wifiState && !auto.wifiState,
+        bodySensors = bodySensors && !auto.bodySensors,
+        activityRecognition = activityRecognition && !auto.activityRecognition,
+        readPhoneState = readPhoneState && !auto.readPhoneState,
+        callPhone = callPhone && !auto.callPhone,
+        readContacts = readContacts && !auto.readContacts,
+        writeContacts = writeContacts && !auto.writeContacts,
+        readCalendar = readCalendar && !auto.readCalendar,
+        writeCalendar = writeCalendar && !auto.writeCalendar,
+        readSms = readSms && !auto.readSms,
+        sendSms = sendSms && !auto.sendSms,
+        receiveSms = receiveSms && !auto.receiveSms,
+        readCallLog = readCallLog && !auto.readCallLog,
+        writeCallLog = writeCallLog && !auto.writeCallLog,
+        processOutgoingCalls = processOutgoingCalls && !auto.processOutgoingCalls,
+        foregroundService = foregroundService && !auto.foregroundService,
+        wakeLock = wakeLock && !auto.wakeLock,
+        requestIgnoreBatteryOptimizations = requestIgnoreBatteryOptimizations && !auto.requestIgnoreBatteryOptimizations,
+        bootCompleted = bootCompleted && !auto.bootCompleted,
+        vibration = vibration && !auto.vibration,
+        installPackages = installPackages && !auto.installPackages,
+        requestDeletePackages = requestDeletePackages && !auto.requestDeletePackages,
+        systemAlertWindow = systemAlertWindow && !auto.systemAlertWindow
+    )
+}
 
 fun ApkExportConfig?.isMeaningful(): Boolean {
     if (this == null) return false
@@ -1430,7 +1474,7 @@ data class NativeBridgeCapabilities(
     val vibration: Boolean = true,
     val geolocation: Boolean = true,
     val brightness: Boolean = true,
-    val notification: Boolean = true,
+    val notification: Boolean = false,
     val notificationScheduled: Boolean = true,
     val notificationPersistent: Boolean = true,
     val download: Boolean = true,
