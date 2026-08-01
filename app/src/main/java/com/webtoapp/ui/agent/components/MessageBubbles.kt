@@ -26,11 +26,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.HourglassTop
@@ -64,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import com.google.gson.JsonParser
 import com.webtoapp.core.agent.session.AgentMessage
 import com.webtoapp.core.agent.session.RecordedToolCall
+import com.webtoapp.core.agent.session.UserAttachment
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaCard
@@ -124,12 +127,18 @@ fun MessageBubble(
             modifier = Modifier.widthIn(max = 560.dp)
         ) {
             if (isUser) {
-                SelectionContainer {
-                    Text(
-                        text = message.content.ifBlank { Strings.agentNoOutput },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = onContainer
-                    )
+                if (message.userAttachments.isNotEmpty()) {
+                    UserAttachmentList(message.userAttachments)
+                    if (message.content.isNotBlank()) Spacer(Modifier.height(WtaSpacing.Small))
+                }
+                if (message.content.isNotBlank() || message.userAttachments.isEmpty()) {
+                    SelectionContainer {
+                        Text(
+                            text = message.content.ifBlank { Strings.agentNoOutput },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = onContainer
+                        )
+                    }
                 }
                 if (message.mentionedFiles.isNotEmpty()) {
                     Spacer(Modifier.height(WtaSpacing.Small))
@@ -980,6 +989,40 @@ private fun AttachmentList(paths: List<String>) {
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer
             )
+        }
+    }
+}
+
+@Composable
+private fun UserAttachmentList(attachments: List<UserAttachment>) {
+    Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+        attachments.take(8).forEach { att ->
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Row(
+                    modifier = Modifier.padding(
+                        horizontal = WtaSpacing.Small,
+                        vertical = WtaSpacing.Tiny
+                    ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (att.isImage) Icons.Outlined.Image else Icons.Outlined.AttachFile,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.size(WtaSize.IconSmall)
+                    )
+                    Spacer(Modifier.width(WtaSpacing.Tiny))
+                    Text(
+                        text = att.displayName,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        maxLines = 1
+                    )
+                }
+            }
         }
     }
 }

@@ -2,6 +2,8 @@ package com.webtoapp.ui.agent
 
 import android.app.Application
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -117,6 +119,16 @@ fun AgentScreen(
     val snackbar = remember { SnackbarHostState() }
 
     var drawerMounted by remember { mutableStateOf(false) }
+
+    val imagePicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetMultipleContents()
+    ) { uris -> vm.attachUris(uris) }
+    val filePicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetMultipleContents()
+    ) { uris -> vm.attachUris(uris) }
+    val folderPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri -> uri?.let { vm.attachFolder(it) } }
 
     val leaveScreen: () -> Unit = {
         scope.launch {
@@ -315,6 +327,11 @@ fun AgentScreen(
                     onToggleAutoApprove = { vm.setAutoApprove(!state.autoApprove) },
 
                     onTriggerSlash = { vm.setComposerText("/") },
+
+                    onAttachImage = { imagePicker.launch("image/*") },
+                    onAttachFile = { filePicker.launch("*/*") },
+                    onAttachFolder = { folderPicker.launch(null) },
+                    onRemoveAttachment = vm::removePendingAttachment,
 
                     onOpenModelPicker = vm::openModelPicker,
                     onCompactContext = vm::compactNow

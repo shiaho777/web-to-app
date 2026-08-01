@@ -40,12 +40,27 @@ data class AgentMessage(
 
     val attachments: List<String> = emptyList(),
 
+    val userAttachments: List<UserAttachment> = emptyList(),
+
     val mentionedFiles: List<String> = emptyList(),
     val isError: Boolean = false,
     val timestamp: Long = System.currentTimeMillis()
 ) {
     enum class Role { USER, ASSISTANT, SYSTEM }
 }
+
+/**
+ * A file the user attached to a message from the composer. The bytes live in the
+ * session sandbox at [path] (session-relative); only metadata is persisted here so
+ * the sessions blob stays small. [isImage] attachments are also sent to the model
+ * as vision input when it is multimodal.
+ */
+data class UserAttachment(
+    val path: String,
+    val displayName: String,
+    val mimeType: String,
+    val isImage: Boolean
+)
 
 data class RecordedToolCall(
     val toolCallId: String,

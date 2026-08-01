@@ -1434,6 +1434,10 @@ object Strings {
     val agentDrawerSearchHint: String get() = StringsB.agentDrawerSearchHint
     val agentComposerHintIdle: String get() = StringsB.agentComposerHintIdle
     val agentComposerHintWorking: String get() = StringsB.agentComposerHintWorking
+    val agentAttachTooltip: String get() = StringsB.agentAttachTooltip
+    val agentAttachImage: String get() = StringsB.agentAttachImage
+    val agentAttachFile: String get() = StringsB.agentAttachFile
+    val agentAttachFolder: String get() = StringsB.agentAttachFolder
     val agentSaveAsApp: String get() = StringsB.agentSaveAsApp
     val agentSaveAsAppTitle: String get() = StringsB.agentSaveAsAppTitle
     val agentSaveAsAppDescription: String get() = StringsB.agentSaveAsAppDescription
@@ -22838,6 +22842,54 @@ object StringsB {
         AppLanguage.RUSSIAN -> "ИИ работает…"
         AppLanguage.JAPANESE -> "AI処理中…"
         AppLanguage.KOREAN -> "AI 작동 중…"
+    }
+    val agentAttachTooltip: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "添加附件"
+        AppLanguage.ENGLISH -> "Attach"
+        AppLanguage.ARABIC -> "إرفاق"
+        AppLanguage.PORTUGUESE -> "Anexar"
+        AppLanguage.SPANISH -> "Adjuntar"
+        AppLanguage.FRENCH -> "Joindre"
+        AppLanguage.GERMAN -> "Anhängen"
+        AppLanguage.RUSSIAN -> "Прикрепить"
+        AppLanguage.JAPANESE -> "添付"
+        AppLanguage.KOREAN -> "첨부"
+    }
+    val agentAttachImage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "图片"
+        AppLanguage.ENGLISH -> "Image"
+        AppLanguage.ARABIC -> "صورة"
+        AppLanguage.PORTUGUESE -> "Imagem"
+        AppLanguage.SPANISH -> "Imagen"
+        AppLanguage.FRENCH -> "Image"
+        AppLanguage.GERMAN -> "Bild"
+        AppLanguage.RUSSIAN -> "Изображение"
+        AppLanguage.JAPANESE -> "画像"
+        AppLanguage.KOREAN -> "이미지"
+    }
+    val agentAttachFile: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件"
+        AppLanguage.ENGLISH -> "File"
+        AppLanguage.ARABIC -> "ملف"
+        AppLanguage.PORTUGUESE -> "Arquivo"
+        AppLanguage.SPANISH -> "Archivo"
+        AppLanguage.FRENCH -> "Fichier"
+        AppLanguage.GERMAN -> "Datei"
+        AppLanguage.RUSSIAN -> "Файл"
+        AppLanguage.JAPANESE -> "ファイル"
+        AppLanguage.KOREAN -> "파일"
+    }
+    val agentAttachFolder: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件夹"
+        AppLanguage.ENGLISH -> "Folder"
+        AppLanguage.ARABIC -> "مجلد"
+        AppLanguage.PORTUGUESE -> "Pasta"
+        AppLanguage.SPANISH -> "Carpeta"
+        AppLanguage.FRENCH -> "Dossier"
+        AppLanguage.GERMAN -> "Ordner"
+        AppLanguage.RUSSIAN -> "Папка"
+        AppLanguage.JAPANESE -> "フォルダー"
+        AppLanguage.KOREAN -> "폴더"
     }
     val agentSaveAsApp: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保存为应用"

@@ -5,6 +5,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.net.Uri
+import androidx.documentfile.provider.DocumentFile
 import android.os.IBinder
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
@@ -25,12 +27,14 @@ import com.webtoapp.core.agent.session.AgentMessage
 import com.webtoapp.core.agent.session.AgentSession
 import com.webtoapp.core.agent.session.RecordedToolCall
 import com.webtoapp.core.agent.session.SessionStore
+import com.webtoapp.core.agent.session.UserAttachment
 import com.webtoapp.core.agent.todo.TodoManager
 import com.webtoapp.core.agent.tool.ToolContext
 import com.webtoapp.core.agent.tool.ToolRegistryFactory
 import com.webtoapp.core.agent.prompt.SystemPromptBuilder
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AiFeature
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,6 +45,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -716,7 +721,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     fun send() {
         val current = _ui.value
         if (current.phase != AgentUiState.Phase.Idle) return
-        val rawMessage = current.composerText.trim().ifEmpty { return }
+        val rawMessage = current.composerText.trim()
+        if (rawMessage.isEmpty() && current.pendingAttachments.isEmpty()) return
 
         if (rawMessage == "/model" || rawMessage.startsWith("/model ")) {
             val arg = rawMessage.removePrefix("/model").trim()
@@ -727,6 +733,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
         viewModelScope.launch {
             val session = ensureActiveSession() ?: return@launch
+            val pending = current.pendingAttachments
             val mentionedPaths = extractMentionPaths(rawMessage, session.id)
 
             val editingId = _ui.value.editingMessageId
@@ -737,7 +744,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             val userMsg = AgentMessage(
                 role = AgentMessage.Role.USER,
                 content = rawMessage,
-                mentionedFiles = mentionedPaths
+                mentionedFiles = mentionedPaths,
+                userAttachments = pending
             )
             val updated = sessionStore.appendMessage(baseSession.id, userMsg) ?: return@launch
 
@@ -747,7 +755,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     editingMessageId = null,
                     mentionPickerOpen = false,
                     mentionQuery = "",
-                    mentionMatches = emptyList()
+                    mentionMatches = emptyList(),
+                    pendingAttachments = emptyList()
                 )
             }
 
@@ -767,6 +776,122 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
         return seen.toList()
     }
+
+    fun attachUris(uris: List<Uri>) {
+        if (uris.isEmpty()) return
+        viewModelScope.launch {
+            val session = ensureActiveSession() ?: return@launch
+            val added = withContext(Dispatchers.IO) {
+                uris.mapNotNull { uri -> importUriToUploads(session.id, uri) }
+            }
+            if (added.isNotEmpty()) {
+                _ui.update { it.copy(pendingAttachments = it.pendingAttachments + added) }
+                refreshFiles(session.id)
+            }
+        }
+    }
+
+    fun attachFolder(treeUri: Uri) {
+        viewModelScope.launch {
+            val session = ensureActiveSession() ?: return@launch
+            val added = withContext(Dispatchers.IO) { importFolderToUploads(session.id, treeUri) }
+            if (added.isNotEmpty()) {
+                _ui.update { it.copy(pendingAttachments = it.pendingAttachments + added) }
+                refreshFiles(session.id)
+            }
+        }
+    }
+
+    fun removePendingAttachment(path: String) {
+        val sid = _ui.value.currentSession?.id
+        if (sid != null) runCatching { files.delete(sid, path) }
+        _ui.update { it.copy(pendingAttachments = it.pendingAttachments.filter { it.path != path }) }
+        if (sid != null) refreshFiles(sid)
+    }
+
+    private fun importUriToUploads(sessionId: String, uri: Uri): UserAttachment? {
+        val name = queryDisplayName(uri) ?: "upload_${System.currentTimeMillis()}"
+        val mime = ctx.contentResolver.getType(uri) ?: mimeFromName(name)
+        val bytes = ctx.contentResolver.openInputStream(uri)?.use { it.readBytes() } ?: return null
+        return writeUpload(sessionId, "uploads", name, bytes, mime)
+    }
+
+    private fun importFolderToUploads(sessionId: String, treeUri: Uri): List<UserAttachment> {
+        val tree = DocumentFile.fromTreeUri(ctx, treeUri) ?: return emptyList()
+        val folderName = tree.name ?: "folder"
+        val result = mutableListOf<UserAttachment>()
+        fun walk(dir: DocumentFile, relBase: String) {
+            dir.listFiles().forEach { child ->
+                val childName = child.name ?: return@forEach
+                if (child.isDirectory) {
+                    walk(child, "$relBase$childName/")
+                } else {
+                    val mime = child.type ?: mimeFromName(childName)
+                    val bytes = ctx.contentResolver.openInputStream(child.uri)
+                        ?.use { it.readBytes() } ?: return@forEach
+                    writeUpload(sessionId, "uploads/$relBase", childName, bytes, mime)?.let {
+                        result += it
+                    }
+                }
+            }
+        }
+        walk(tree, "$folderName/")
+        return result
+    }
+
+    private fun writeUpload(
+        sessionId: String,
+        dir: String,
+        name: String,
+        bytes: ByteArray,
+        mime: String
+    ): UserAttachment? {
+        val safeName = name.replace('/', '_')
+        val base = safeName.substringBeforeLast('.', safeName)
+        val ext = safeName.substringAfterLast('.', "").let { if (it.isEmpty() || it == safeName) "" else ".$it" }
+        var candidate = "$dir/$safeName"
+        var i = 1
+        while (files.exists(sessionId, candidate)) {
+            candidate = "$dir/$base-$i$ext"
+            i++
+        }
+        files.writeBytes(sessionId, candidate, bytes) ?: return null
+        return UserAttachment(
+            path = candidate,
+            displayName = candidate.removePrefix("uploads/"),
+            mimeType = mime,
+            isImage = mime.startsWith("image/")
+        )
+    }
+
+    private fun queryDisplayName(uri: Uri): String? {
+        var name: String? = null
+        runCatching {
+            ctx.contentResolver.query(uri, null, null, null, null)?.use { c ->
+                val idx = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (idx >= 0 && c.moveToFirst()) name = c.getString(idx)
+            }
+        }
+        return name ?: uri.lastPathSegment?.substringAfterLast('/')
+    }
+
+    private fun mimeFromName(name: String): String =
+        when (name.substringAfterLast('.', "").lowercase()) {
+            "png" -> "image/png"
+            "jpg", "jpeg" -> "image/jpeg"
+            "webp" -> "image/webp"
+            "gif" -> "image/gif"
+            "json" -> "application/json"
+            "js" -> "text/javascript"
+            "css" -> "text/css"
+            "html", "htm" -> "text/html"
+            "txt", "md", "log" -> "text/plain"
+            "xml" -> "text/xml"
+            else -> "application/octet-stream"
+        }
+
+    private fun isTextUpload(mime: String): Boolean =
+        mime.startsWith("text/") || mime == "application/json" || mime == "application/xml"
 
     fun deleteFromMessage(messageId: String) {
         val sid = _ui.value.currentSession?.id ?: return
@@ -913,7 +1038,11 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             when (m.role) {
                 AgentMessage.Role.USER -> {
                     val out = mutableListOf<LlmMessage>()
-                    out += LlmMessage(LlmMessage.Role.USER, m.content)
+                    val images = m.userAttachments.filter { it.isImage }.mapNotNull { att ->
+                        val bytes = files.readBytes(workingSession.id, att.path) ?: return@mapNotNull null
+                        com.webtoapp.core.agent.tool.ImageAttachment(bytes, att.mimeType, att.path)
+                    }
+                    out += LlmMessage(LlmMessage.Role.USER, m.content, images = images)
                     out += synthesiseReadCallsFor(m, workingSession.id)
                     out
                 }
@@ -1465,14 +1594,18 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun synthesiseReadCallsFor(m: AgentMessage, sessionId: String): List<LlmMessage> {
-        if (m.mentionedFiles.isEmpty()) return emptyList()
+        val textUploads = m.userAttachments
+            .filter { !it.isImage && isTextUpload(it.mimeType) }
+            .map { it.path }
+        val pathsToRead = (m.mentionedFiles + textUploads).distinct()
+        if (pathsToRead.isEmpty()) return emptyList()
 
         val out = mutableListOf<LlmMessage>()
         val toolCalls = mutableListOf<com.webtoapp.core.agent.llm.LlmToolCall>()
         val toolResults = mutableListOf<LlmMessage>()
         var budget = MENTION_TOTAL_CHAR_BUDGET
 
-        m.mentionedFiles.forEachIndexed { idx, path ->
+        pathsToRead.forEachIndexed { idx, path ->
             val callId = "mention-${m.id}-$idx"
             val argsJson = """{"path":"${path.replace("\"", "\\\"")}"}"""
             toolCalls += com.webtoapp.core.agent.llm.LlmToolCall(callId, "Read", argsJson)

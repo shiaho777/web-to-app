@@ -1,5 +1,7 @@
 package com.webtoapp.ui.agent.components
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,18 +15,26 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Send
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DataUsage
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.InsertDriveFile
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material.icons.outlined.SmartToy
 import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,11 +42,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.webtoapp.core.agent.session.UserAttachment
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.AgentUiState
 import com.webtoapp.ui.agent.SlashCommand
@@ -66,6 +79,11 @@ fun Composer(
 
     onTriggerSlash: () -> Unit,
 
+    onAttachImage: () -> Unit,
+    onAttachFile: () -> Unit,
+    onAttachFolder: () -> Unit,
+    onRemoveAttachment: (String) -> Unit,
+
     onOpenModelPicker: () -> Unit = {},
     onCompactContext: () -> Unit = {}
 ) {
@@ -88,6 +106,12 @@ fun Composer(
                 onDismiss = onDismissMention
             )
         }
+        if (state.pendingAttachments.isNotEmpty()) {
+            PendingAttachmentsRow(
+                attachments = state.pendingAttachments,
+                onRemove = onRemoveAttachment
+            )
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -97,6 +121,12 @@ fun Composer(
                 ),
             verticalAlignment = Alignment.Bottom
         ) {
+            AttachButton(
+                onAttachImage = onAttachImage,
+                onAttachFile = onAttachFile,
+                onAttachFolder = onAttachFolder
+            )
+            Spacer(Modifier.width(WtaSpacing.Small))
             WtaTextField(
                 value = state.composerText,
                 onValueChange = onTextChange,
@@ -110,7 +140,8 @@ fun Composer(
             Spacer(Modifier.width(WtaSpacing.Small))
             SendButton(
                 working = state.isWorking,
-                enabled = state.canSend && state.composerText.isNotBlank(),
+                enabled = state.canSend &&
+                    (state.composerText.isNotBlank() || state.pendingAttachments.isNotEmpty()),
                 onSend = onSend,
                 onCancel = onCancel
             )
@@ -127,6 +158,91 @@ fun Composer(
             compacting = state.compacting,
             onCompactContext = onCompactContext
         )
+    }
+}
+
+@Composable
+private fun AttachButton(
+    onAttachImage: () -> Unit,
+    onAttachFile: () -> Unit,
+    onAttachFolder: () -> Unit
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Box {
+        WtaIconButton(
+            onClick = { menuOpen = true },
+            icon = Icons.Outlined.Add,
+            contentDescription = Strings.agentAttachTooltip
+        )
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            DropdownMenuItem(
+                text = { Text(Strings.agentAttachImage) },
+                leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null) },
+                onClick = { menuOpen = false; onAttachImage() }
+            )
+            DropdownMenuItem(
+                text = { Text(Strings.agentAttachFile) },
+                leadingIcon = { Icon(Icons.Outlined.InsertDriveFile, contentDescription = null) },
+                onClick = { menuOpen = false; onAttachFile() }
+            )
+            DropdownMenuItem(
+                text = { Text(Strings.agentAttachFolder) },
+                leadingIcon = { Icon(Icons.Outlined.Folder, contentDescription = null) },
+                onClick = { menuOpen = false; onAttachFolder() }
+            )
+        }
+    }
+}
+
+@Composable
+private fun PendingAttachmentsRow(
+    attachments: List<UserAttachment>,
+    onRemove: (String) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = WtaSpacing.ScreenHorizontal, vertical = WtaSpacing.Tiny),
+        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+    ) {
+        attachments.forEach { att ->
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Row(
+                    modifier = Modifier.padding(
+                        horizontal = WtaSpacing.Small,
+                        vertical = WtaSpacing.Tiny
+                    ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (att.isImage) Icons.Outlined.Image else Icons.Outlined.AttachFile,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.size(WtaSize.IconSmall)
+                    )
+                    Spacer(Modifier.width(WtaSpacing.Tiny))
+                    Text(
+                        text = att.displayName,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        maxLines = 1
+                    )
+                    Spacer(Modifier.width(WtaSpacing.Tiny))
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = Strings.btnDelete,
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier
+                            .size(WtaSize.IconSmall)
+                            .clickable { onRemove(att.path) }
+                    )
+                }
+            }
+        }
     }
 }
 

@@ -5,6 +5,7 @@ import com.webtoapp.core.agent.permission.ChoiceRequest
 import com.webtoapp.core.agent.permission.PermissionRequest
 import com.webtoapp.core.agent.session.AgentSession
 import com.webtoapp.core.agent.session.RecordedToolCall
+import com.webtoapp.core.agent.session.UserAttachment
 import com.webtoapp.core.agent.todo.TodoManager
 
 data class AgentUiState(
@@ -37,6 +38,8 @@ data class AgentUiState(
     val composerText: String = "",
     val slashOpen: Boolean = false,
     val slashCommands: List<SlashCommand> = emptyList(),
+
+    val pendingAttachments: List<UserAttachment> = emptyList(),
 
     val modelPickerOpen: Boolean = false,
     val modelProviderGroups: List<ProviderGroup> = emptyList(),
