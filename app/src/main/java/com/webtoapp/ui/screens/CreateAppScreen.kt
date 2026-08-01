@@ -512,14 +512,7 @@ fun CreateAppScreen(
                     onConfigChange = { viewModel.updateEditState { copy(webViewConfig = it) } },
                     runtimePermissions = editState.apkExportConfig?.runtimePermissions
                         ?: com.webtoapp.data.model.ApkRuntimePermissions(),
-                    onRuntimePermissionsChange = { rp ->
-                        viewModel.updateEditState {
-                            copy(
-                                apkExportConfig = (apkExportConfig ?: com.webtoapp.data.model.ApkExportConfig())
-                                    .copy(runtimePermissions = rp)
-                            )
-                        }
-                    }
+                    onRuntimePermissionsTransform = viewModel::updateRuntimePermissions
                 )
             }
 
@@ -527,6 +520,7 @@ fun CreateAppScreen(
                 ExportAndPermissionDrawer(
                     exportConfig = editState.apkExportConfig,
                     onExportConfigChange = { viewModel.updateEditState { copy(apkExportConfig = it) } },
+                    onRuntimePermissionsTransform = viewModel::updateRuntimePermissions,
                     webViewConfig = editState.webViewConfig,
                     autoStartConfig = editState.autoStartConfig,
                     bgmEnabled = editState.bgmEnabled
@@ -572,6 +566,7 @@ fun CreateAppScreen(
 private fun ExportAndPermissionDrawer(
     exportConfig: ApkExportConfig,
     onExportConfigChange: (ApkExportConfig) -> Unit,
+    onRuntimePermissionsTransform: ((ApkRuntimePermissions) -> ApkRuntimePermissions) -> Unit,
     webViewConfig: WebViewConfig,
     autoStartConfig: AutoStartConfig?,
     bgmEnabled: Boolean
@@ -622,9 +617,7 @@ private fun ExportAndPermissionDrawer(
 
                     PermissionConfigPanel(
                         permissions = exportConfig.runtimePermissions,
-                        onPermissionsChange = { permissions ->
-                            onExportConfigChange(exportConfig.copy(runtimePermissions = permissions))
-                        },
+                        onPermissionsTransform = onRuntimePermissionsTransform,
                         showDescription = false,
                         featureReasons = featureReasons
                     )

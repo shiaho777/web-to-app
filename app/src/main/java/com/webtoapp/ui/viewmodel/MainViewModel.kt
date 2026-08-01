@@ -192,6 +192,22 @@ class MainViewModel(
         _hasUnsavedChanges.value = true
     }
 
+    /**
+     * Applies a transform to the runtime permissions based on the *current* edit state,
+     * so rapid consecutive permission toggles accumulate instead of overwriting each
+     * other (a Compose callback may still hold a pre-recomposition snapshot otherwise).
+     */
+    fun updateRuntimePermissions(transform: (ApkRuntimePermissions) -> ApkRuntimePermissions) {
+        updateEditState {
+            val currentExport = apkExportConfig
+            copy(
+                apkExportConfig = currentExport.copy(
+                    runtimePermissions = transform(currentExport.runtimePermissions)
+                )
+            )
+        }
+    }
+
     fun analyzePwa(url: String) {
         if (url.isBlank()) return
         viewModelScope.launch {

@@ -3148,7 +3148,7 @@ fun SpecialSettingsCard(
     config: com.webtoapp.data.model.WebViewConfig,
     onConfigChange: (com.webtoapp.data.model.WebViewConfig) -> Unit,
     runtimePermissions: com.webtoapp.data.model.ApkRuntimePermissions,
-    onRuntimePermissionsChange: (com.webtoapp.data.model.ApkRuntimePermissions) -> Unit,
+    onRuntimePermissionsTransform: ((com.webtoapp.data.model.ApkRuntimePermissions) -> com.webtoapp.data.model.ApkRuntimePermissions) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -3609,7 +3609,9 @@ fun SpecialSettingsCard(
                                 subtitle = Strings.cameraAccessDesc,
                                 icon = Icons.Outlined.PhotoCamera,
                                 checked = runtimePermissions.camera,
-                                onCheckedChange = { onRuntimePermissionsChange(runtimePermissions.copy(camera = it)) }
+                                onCheckedChange = { checked ->
+                                    onRuntimePermissionsTransform { p -> p.copy(camera = checked) }
+                                }
                             )
                         }
 
@@ -3619,7 +3621,9 @@ fun SpecialSettingsCard(
                                 subtitle = Strings.microphoneAccessDesc,
                                 icon = Icons.Outlined.Mic,
                                 checked = runtimePermissions.microphone,
-                                onCheckedChange = { onRuntimePermissionsChange(runtimePermissions.copy(microphone = it)) }
+                                onCheckedChange = { checked ->
+                                    onRuntimePermissionsTransform { p -> p.copy(microphone = checked) }
+                                }
                             )
                         }
 

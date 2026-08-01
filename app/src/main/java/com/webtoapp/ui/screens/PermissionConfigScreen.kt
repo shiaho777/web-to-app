@@ -237,7 +237,7 @@ fun PermissionConfigScreen(
             ) {
                 PermissionConfigPanel(
                     permissions = permissions,
-                    onPermissionsChange = onPermissionsChange
+                    onPermissionsTransform = { transform -> onPermissionsChange(transform(permissions)) }
                 )
             }
         }
@@ -247,7 +247,7 @@ fun PermissionConfigScreen(
 @Composable
 fun PermissionConfigPanel(
     permissions: ApkRuntimePermissions,
-    onPermissionsChange: (ApkRuntimePermissions) -> Unit,
+    onPermissionsTransform: ((ApkRuntimePermissions) -> ApkRuntimePermissions) -> Unit,
     modifier: Modifier = Modifier,
     showDescription: Boolean = true,
     featureReasons: Map<String, List<PermissionFeatureReason>> = emptyMap()
@@ -323,7 +323,7 @@ fun PermissionConfigPanel(
                 val selected = preset.match(permissions)
                 FilterChip(
                     selected = selected,
-                    onClick = { onPermissionsChange(preset.apply(permissions)) },
+                    onClick = { onPermissionsTransform { preset.apply(it) } },
                     label = { Text(preset.label()) },
                     leadingIcon = {
                         Icon(
@@ -344,7 +344,7 @@ fun PermissionConfigPanel(
                 savedPresets = PermissionPresetStorage.save(context, schemeName, permissions)
                 schemeName = ""
             },
-            onApplyScheme = { onPermissionsChange(it.permissions) },
+            onApplyScheme = { scheme -> onPermissionsTransform { scheme.permissions } },
             onDeleteScheme = {
                 savedPresets = PermissionPresetStorage.delete(context, it.id)
             }
@@ -415,7 +415,7 @@ fun PermissionConfigPanel(
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 if (enabledCount > 0) {
-                    TextButton(onClick = { onPermissionsChange(ApkRuntimePermissions()) }) {
+                    TextButton(onClick = { onPermissionsTransform { ApkRuntimePermissions() } }) {
                         Text(Strings.permissionClearAll, style = MaterialTheme.typography.labelSmall)
                     }
                 }
@@ -427,7 +427,7 @@ fun PermissionConfigPanel(
                 PermissionGroupCard(
                     group = group,
                     permissions = permissions,
-                    onPermissionsChange = onPermissionsChange,
+                    onPermissionsTransform = onPermissionsTransform,
                     featureReasons = featureReasons
                 )
             }
@@ -601,7 +601,7 @@ private fun PermissionSchemeCard(
 private fun PermissionGroupCard(
     group: PermissionGroup,
     permissions: ApkRuntimePermissions,
-    onPermissionsChange: (ApkRuntimePermissions) -> Unit,
+    onPermissionsTransform: ((ApkRuntimePermissions) -> ApkRuntimePermissions) -> Unit,
     featureReasons: Map<String, List<PermissionFeatureReason>> = emptyMap()
 ) {
     val enabledInGroup = group.items.count { it.checked(permissions) }
@@ -692,7 +692,10 @@ private fun PermissionGroupCard(
                             checked = item.checked(permissions),
                             featureReasonLabels = reasons.map { it.displayLabel() },
                             onCheckedChange = { checked ->
-                                onPermissionsChange(item.update(permissions, checked))
+                                // Transform semantics: applied against the *latest* permissions
+                                // in the ViewModel, so rapid consecutive toggles accumulate
+                                // instead of overwriting each other from a stale snapshot.
+                                onPermissionsTransform { current -> item.update(current, checked) }
                             }
                         )
                     }
