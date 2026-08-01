@@ -153,9 +153,8 @@ fun buildAppCapabilities(editState: EditState): List<AppCapability> = listOf(
         section = AppCapabilitySection.Lab,
         level = WtaCapabilityLevel.Lab,
         icon = Icons.Outlined.Bolt,
-        keywords = listOf("lab", "实验", "伪装", "强制运行", "设备", "反检测"),
-        configured = editState.forcedRunConfig?.enabled == true ||
-            editState.disguiseConfig?.enabled == true
+        keywords = listOf("lab", "实验", "伪装", "设备", "反检测"),
+        configured = editState.deviceDisguiseConfig.enabled
     ),
     AppCapability(
         id = "extension",

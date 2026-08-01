@@ -41,10 +41,6 @@ fun BoxScope.ShellScaffoldLayout(
     errorMessage: String?,
     isActivationChecked: Boolean,
     isActivated: Boolean,
-    forcedRunActive: Boolean,
-    forcedRunBlocked: Boolean,
-    forcedRunBlockedMessage: String,
-    forcedRunRemainingMs: Long,
     canGoBack: Boolean,
     canGoForward: Boolean,
     webViewRecreationKey: Int,
@@ -181,8 +177,6 @@ fun BoxScope.ShellScaffoldLayout(
                 appType = appType,
                 isActivationChecked = isActivationChecked,
                 isActivated = isActivated,
-                forcedRunBlocked = forcedRunBlocked,
-                forcedRunBlockedMessage = forcedRunBlockedMessage,
                 webViewRecreationKey = webViewRecreationKey,
                 webViewConfig = webViewConfig,
                 webViewCallbacks = webViewCallbacks,
@@ -200,12 +194,6 @@ fun BoxScope.ShellScaffoldLayout(
 
             ShellLyricsOverlay(config = config, bgmState = bgmState)
 
-            ShellForcedRunOverlay(
-                config = config,
-                forcedRunActive = forcedRunActive,
-                forcedRunRemainingMs = forcedRunRemainingMs
-            )
-
             if (autoRefreshRemaining > 0 && autoRefreshController?.countdownVisible == true) {
                 com.webtoapp.ui.components.AutoRefreshCountdownChip(
                     remainingSeconds = autoRefreshRemaining,
@@ -218,17 +206,7 @@ fun BoxScope.ShellScaffoldLayout(
 
             ShellErrorCard(
                 errorMessage = errorMessage,
-                forcedRunActive = forcedRunActive,
                 onDismiss = onErrorDismiss
-            )
-
-            ShellVirtualNavBar(
-                appType = appType,
-                config = config,
-                forcedRunActive = forcedRunActive,
-                canGoBack = canGoBack,
-                canGoForward = canGoForward,
-                webViewRef = webViewRef
             )
         }
     }
@@ -329,8 +307,6 @@ private fun ShellContentArea(
     appType: String,
     isActivationChecked: Boolean,
     isActivated: Boolean,
-    forcedRunBlocked: Boolean,
-    forcedRunBlockedMessage: String,
     webViewRecreationKey: Int,
     webViewConfig: WebViewConfig,
     webViewCallbacks: WebViewCallbacks,
@@ -374,22 +350,6 @@ private fun ShellContentArea(
                 PremiumButton(onClick = onShowActivationDialog) {
                     Text(Strings.enterActivationCode)
                 }
-            }
-        }
-    } else if (forcedRunBlocked) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    Icons.Default.Lock,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.error
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(forcedRunBlockedMessage)
             }
         }
     } else {

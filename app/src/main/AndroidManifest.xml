@@ -12,8 +12,8 @@
       1. 用户打包的子 APK 如需 SMS / 通话 / 通讯录 / 日历 / 定位 / 传感器 /
          NFC / USB / 后台服务 等高危能力，由 ApkBuilder 在打包时按用户勾选
          动态注入到**子包**的 manifest，不预声明在宿主 manifest 里。
-      2. 仅供子 APK 使用的运行时组件（强制运行 / 无障碍服务 / 强制运行守护
-         前台服务等）只在 shell 模板 manifest 中声明，不混入宿主 manifest。
+      2. 仅供子 APK 使用的运行时组件（如后台运行服务 / Node.js 子进程前台
+         服务等）只在 shell 模板 manifest 中声明，不混入宿主 manifest。
          宿主自身不会实例化这些组件，预声明只会让国产安全引擎做"组件指纹
          聚合"时把宿主误判为驻留型可疑应用。
 
@@ -84,11 +84,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-
-    <!--
-        ====== 已删除（仅子 APK 使用，宿主自己不会调用）======
-        WRITE_SETTINGS   - 仅强制运行模式使用，由 ApkBuilder 注入到子 APK
-    -->
 
     <!-- ====== 系统运行（宿主必需：打包 / 启动等长任务保持唤醒）====== -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -448,24 +443,6 @@
                 <action android:name="com.webtoapp.bridge.SCHEDULED_NOTIFICATION" />
             </intent-filter>
         </receiver>
-
-        <!--
-            ====== 已从宿主 manifest 删除（仅子 APK 使用）======
-            <service .core.forcedrun.ForcedRunAccessibilityService>
-                无障碍服务，仅子 APK 强制运行模式使用。无障碍服务的存在本身就会触发
-                国产安全引擎的 PUA 启发式（金山/腾讯系），且宿主代码路径里不会进入
-                ForcedRun 模式（grep ForcedRunManager 调用方仅出现在 ShellActivity）。
-
-            <service .core.forcedrun.ForcedRunGuardService>
-                specialUse 前台服务，强制运行守护进程。同上，仅子 APK 使用。
-
-            <receiver .core.forcedrun.ForcedRunReceiver>
-                强制运行启停广播接收器。同上，仅子 APK 使用。
-
-            上述三者依然在 shell/src/main/AndroidManifest.xml 中声明，子 APK 打包时随
-            模板带入；ApkBuilder 通过 buildRequiredPermissions/applyUsesPermissions
-            按用户配置裁剪。
-        -->
 
         <service
             android:name=".core.background.BackgroundRunService"

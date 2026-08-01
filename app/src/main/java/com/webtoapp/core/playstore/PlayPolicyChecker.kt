@@ -33,31 +33,6 @@ object PlayPolicyChecker {
     fun check(webApp: WebApp): Report {
         val violations = mutableListOf<Violation>()
 
-        if (webApp.forcedRunConfig?.enabled == true) {
-            violations.add(
-                Violation(
-                    ruleId = "FORCED_RUN_ENABLED",
-                    severity = Severity.BLOCKER,
-                    featurePath = "rule.forcedRun.path",
-                    policyArea = "rule.forcedRun.area",
-                    fixHint = "rule.forcedRun.fix"
-                )
-            )
-        }
-
-        val iconStormCount = webApp.disguiseConfig?.multiLauncherIcons ?: 0
-        if (webApp.disguiseConfig?.enabled == true && iconStormCount > 1) {
-            violations.add(
-                Violation(
-                    ruleId = "ICON_STORM_ENABLED",
-                    severity = Severity.BLOCKER,
-                    featurePath = "rule.iconStorm.path",
-                    policyArea = "rule.iconStorm.area",
-                    fixHint = "rule.iconStorm.fix"
-                )
-            )
-        }
-
         if (webApp.apkExportConfig?.encryptionConfig?.enabled == true) {
             violations.add(
                 Violation(
@@ -227,12 +202,6 @@ object PlayPolicyChecker {
     fun resolveViolation(v: Violation): ResolvedViolation {
         val s = com.webtoapp.core.i18n.Strings
         return when (v.ruleId) {
-            "FORCED_RUN_ENABLED" -> ResolvedViolation(
-                v.severity, s.rulePathForcedRun, s.ruleAreaForcedRun, s.ruleFixForcedRun
-            )
-            "ICON_STORM_ENABLED" -> ResolvedViolation(
-                v.severity, s.rulePathIconStorm, s.ruleAreaIconStorm, s.ruleFixIconStorm
-            )
             "APK_ENCRYPTION_ENABLED" -> ResolvedViolation(
                 v.severity, s.rulePathApkEncryption, s.ruleAreaApkEncryption, s.ruleFixApkEncryption
             )

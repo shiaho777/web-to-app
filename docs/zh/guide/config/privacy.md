@@ -12,7 +12,6 @@
 
 ## 伪装
 
-- [图标与应用](/zh/guide/app-actions/edit-common-config/icon-disguise) —— 多启动器图标、图标风暴、随机名称。
 - [设备伪装](/zh/guide/app-actions/edit-common-config/device-disguise) —— 设备级属性伪造。
 - **浏览器指纹伪装**(50+ 维)和 **内核伪装** —— 在[高级设置](/zh/guide/app-actions/edit-common-config/advanced-settings)中。
 

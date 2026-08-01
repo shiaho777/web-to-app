@@ -312,18 +312,6 @@ class Converters {
     fun toAutoStartConfig(value: String): AutoStartConfig? = fromJson(value)
 
     @TypeConverter
-    fun fromForcedRunConfig(value: com.webtoapp.core.forcedrun.ForcedRunConfig?): String = toJson(value)
-
-    @TypeConverter
-    fun toForcedRunConfig(value: String): com.webtoapp.core.forcedrun.ForcedRunConfig? = fromJson(value)
-
-    @TypeConverter
-    fun fromDisguiseConfig(value: com.webtoapp.core.appearance.DisguiseConfig?): String = toJson(value)
-
-    @TypeConverter
-    fun toDisguiseConfig(value: String): com.webtoapp.core.appearance.DisguiseConfig? = fromJson(value)
-
-    @TypeConverter
     fun fromBrowserDisguiseConfig(value: com.webtoapp.core.appearance.BrowserDisguiseConfig?): String = toJson(value)
 
     @TypeConverter

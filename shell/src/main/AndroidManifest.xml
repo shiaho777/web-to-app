@@ -251,30 +251,6 @@
                 android:value="floating_window" />
         </service>
 
-        
-        <service
-            android:name=".core.forcedrun.ForcedRunGuardService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="forced_run_guard" />
-        </service>
-
-        
-        <service
-            android:name=".core.forcedrun.ForcedRunAccessibilityService"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
-        </service>
-
         <!--
             NodeService - 子 APK 里跑用户 Node.js 项目的独立子进程。
             为什么独立进程详见 app/src/main/AndroidManifest.xml 同名条目的注释。
@@ -310,18 +286,6 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="com.webtoapp.ACTION_SCHEDULED_START" />
-            </intent-filter>
-        </receiver>
-
-        
-        <receiver
-            android:name=".core.forcedrun.ForcedRunReceiver"
-            android:enabled="true"
-            android:exported="false">
-            <intent-filter>
-                <action android:name="com.webtoapp.ACTION_FORCED_RUN_START" />
-                <action android:name="com.webtoapp.ACTION_FORCED_RUN_END" />
-                <action android:name="com.webtoapp.ACTION_FORCED_RUN_CHECK" />
             </intent-filter>
         </receiver>
 

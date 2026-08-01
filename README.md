@@ -183,7 +183,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 <details>
 <summary><b>🔬 Specialized tools & research features</b></summary>
 
-- **Forced-run**, **device disguise**, and **Icon Storm** are included for technical demonstration and must only be used with informed user consent.
+- **Device disguise** is included for technical demonstration and must only be used with informed user consent.
 
 </details>
 
@@ -280,7 +280,7 @@ Developed by **shiaho**.
 
 [The Unlicense](LICENSE).
 
-Advanced features such as forced run, device disguise, and Icon Storm are intended for technical demonstration and must only be used with informed user consent.
+Advanced features such as device disguise are intended for technical demonstration and must only be used with informed user consent.
 
 <div align="center">
 

@@ -5,8 +5,6 @@ import com.webtoapp.core.activation.ActivationCode
 import com.webtoapp.core.activation.ActivationCodeType
 import com.webtoapp.core.appearance.BrowserDisguiseConfig
 import com.webtoapp.core.appearance.DeviceDisguiseConfig
-import com.webtoapp.core.appearance.DisguiseConfig
-import com.webtoapp.core.forcedrun.ForcedRunConfig
 import com.webtoapp.core.privacy.IsolationConfig
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.data.model.AdConfig
@@ -339,16 +337,12 @@ class ConfigRoundTripSentinelTest {
     @Test
     fun `disguise-family whole-object configs round-trip non-null`() {
         val app = baseApp().copy(
-            disguiseConfig = DisguiseConfig(enabled = true),
             browserDisguiseConfig = BrowserDisguiseConfig(),
-            deviceDisguiseConfig = DeviceDisguiseConfig(),
-            forcedRunConfig = ForcedRunConfig()
+            deviceDisguiseConfig = DeviceDisguiseConfig()
         )
         val shell = roundTrip(app)
-        assertThat(shell.disguiseConfig).isNotNull()
         assertThat(shell.browserDisguiseConfig).isNotNull()
         assertThat(shell.deviceDisguiseConfig).isNotNull()
-        assertThat(shell.forcedRunConfig).isNotNull()
     }
 
     @Test

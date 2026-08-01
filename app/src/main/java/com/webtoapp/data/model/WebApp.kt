@@ -89,8 +89,6 @@ data class WebApp(
     val extensionFabIcon: String? = null,
 
     val autoStartConfig: AutoStartConfig? = null,
-    val forcedRunConfig: com.webtoapp.core.forcedrun.ForcedRunConfig? = null,
-    val disguiseConfig: com.webtoapp.core.appearance.DisguiseConfig? = null,
     val browserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? = null,
     val deviceDisguiseConfig: com.webtoapp.core.appearance.DeviceDisguiseConfig? = null,
     val activationDialogConfig: ActivationDialogConfig? = null,

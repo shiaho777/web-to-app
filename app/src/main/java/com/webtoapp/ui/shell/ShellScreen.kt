@@ -21,7 +21,6 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.LongPressHandler
 import com.webtoapp.data.model.Announcement
-import com.webtoapp.core.forcedrun.ForcedRunConfig
 import com.webtoapp.util.TvUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -39,7 +38,6 @@ fun ShellScreen(
     onShowCustomView: (View, WebChromeClient.CustomViewCallback?) -> Unit,
     onHideCustomView: () -> Unit,
     onFullscreenModeChanged: (Boolean) -> Unit,
-    onForcedRunStateChanged: (Boolean, ForcedRunConfig?) -> Unit,
 
     statusBarBackgroundType: String = "COLOR",
     statusBarBackgroundColor: String? = null,
@@ -58,12 +56,6 @@ fun ShellScreen(
     val activation = WebToAppApplication.activation
     val announcement = WebToAppApplication.announcement
     val adBlocker = WebToAppApplication.adBlock
-
-    val forcedRunState = rememberForcedRunState(context)
-    val forcedRunActive = forcedRunState.forcedRunActive
-    val forcedRunRemainingMs = forcedRunState.forcedRunRemainingMs
-    val forcedRunBlocked = forcedRunState.forcedRunBlocked
-    val forcedRunBlockedMessage = forcedRunState.forcedRunBlockedMessage
 
     val appType = config.appType.trim().uppercase()
 
@@ -266,14 +258,6 @@ fun ShellScreen(
         }
     }
 
-    ForcedRunEffects(
-        state = forcedRunState,
-        config = config.forcedRunConfig,
-        isActivated = isActivated,
-        context = context,
-        onForcedRunStateChanged = onForcedRunStateChanged
-    )
-
     LaunchedEffect(showSplash, splashCountdown) {
 
         if (config.splashType == "VIDEO") return@LaunchedEffect
@@ -399,10 +383,6 @@ fun ShellScreen(
         errorMessage = errorMessage,
         isActivationChecked = isActivationChecked,
         isActivated = isActivated,
-        forcedRunActive = forcedRunActive,
-        forcedRunBlocked = forcedRunBlocked,
-        forcedRunBlockedMessage = forcedRunBlockedMessage,
-        forcedRunRemainingMs = forcedRunRemainingMs,
         canGoBack = canGoBack,
         canGoForward = canGoForward,
         webViewRecreationKey = webViewRecreationKey,
@@ -452,14 +432,6 @@ fun ShellScreen(
         ShellAnnouncementDialog(
             config = config,
             onDismiss = { showAnnouncementDialog = false }
-        )
-    }
-
-    if (forcedRunState.showForcedRunPermissionDialog && config.forcedRunConfig != null) {
-        ShellForcedRunPermissionDialog(
-            config = config,
-            forcedRunActive = forcedRunActive,
-            onDismiss = { forcedRunState.showForcedRunPermissionDialog = false }
         )
     }
 

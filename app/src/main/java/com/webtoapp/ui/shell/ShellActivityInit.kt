@@ -6,7 +6,6 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.webtoapp.WebToAppApplication
-import com.webtoapp.core.forcedrun.ForcedRunManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellConfig
@@ -31,31 +30,6 @@ object ShellActivityInit {
             com.webtoapp.core.perf.SystemPerfOptimizer.optimizeActivity(activity)
         } catch (e: Exception) {
             AppLogger.e("ShellActivity", "日志系统初始化失败", e)
-        }
-    }
-
-    fun initForcedRunManager(
-        activity: AppCompatActivity,
-        config: ShellConfig,
-        forcedRunManager: ForcedRunManager,
-        onStateChanged: (Boolean, com.webtoapp.core.forcedrun.ForcedRunConfig?) -> Unit
-    ) {
-
-        if (config.forcedRunConfig?.enabled == true) {
-            try {
-                forcedRunManager.setTargetActivity(
-                    packageName = activity.packageName,
-                    activityClass = activity::class.java.name
-                )
-                forcedRunManager.setOnStateChangedCallback { active, forcedConfig ->
-                    activity.runOnUiThread {
-                        onStateChanged(active, forcedConfig)
-                    }
-                }
-                com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "强制运行管理器初始化成功")
-            } catch (e: Exception) {
-                com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "强制运行管理器初始化失败", e)
-            }
         }
     }
 
@@ -190,7 +164,6 @@ object ShellActivityInit {
 
     fun createBackPressedCallback(
         activity: AppCompatActivity,
-        forcedRunManager: ForcedRunManager,
         getCustomView: () -> android.view.View?,
         getWebView: () -> WebView?,
         hideCustomView: () -> Unit,
@@ -198,18 +171,14 @@ object ShellActivityInit {
     ): OnBackPressedCallback {
         return object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (forcedRunManager.handleKeyEvent(KeyEvent.KEYCODE_BACK)) {
-                    Toast.makeText(activity, Strings.cannotExitDuringForcedRun, Toast.LENGTH_SHORT).show()
-                    return
-                }
                 when {
                     getCustomView() != null -> hideCustomView()
                     else -> {
 
                         val wv = getWebView()
                         // "Exit app" back behavior (#151): leave immediately instead of walking
-                        // web history. Forced-run blocking and fullscreen-close above still take
-                        // precedence; this only replaces the history-navigation path.
+                        // web history. Fullscreen-close above still takes precedence; this only
+                        // replaces the history-navigation path.
                         val backBehavior = getShellConfig()?.webViewConfig?.backButtonBehavior ?: "GO_BACK"
                         if (backBehavior == "EXIT") {
                             activity.finish()

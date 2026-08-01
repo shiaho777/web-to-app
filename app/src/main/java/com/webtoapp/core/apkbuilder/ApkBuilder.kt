@@ -1126,30 +1126,18 @@ class ApkBuilder(private val context: Context) {
                         entry.name == "AndroidManifest.xml" -> {
                             val originalData = zipIn.getInputStream(entry).readBytes()
 
-                            val aliasCount = config.disguiseConfig?.getAliasCount() ?: 0
-
                             val modifiedData = axmlRebuilder.expandAndModifyFull(
                                 originalData,
                                 originalPackageName,
                                 config.packageName,
                                 config.versionCode,
                                 config.versionName,
-                                aliasCount,
-                                config.appName,
                                 config.deepLinkHosts,
                                 config.deepLinkSchemes,
                                 buildRequiredPermissions(config),
                                 buildRequiredComponents(config)
                             )
                             writeEntryDeflated(zipOut, entry.name, modifiedData)
-                            if (aliasCount > 0) {
-                                logger.log("Added $aliasCount activity-alias (multi desktop icons)")
-                                if (aliasCount >= 100) {
-                                    val overheadKb = (aliasCount * 520L) / 1024
-                                    val impactLevel = com.webtoapp.core.appearance.DisguiseConfig.assessImpactLevel(aliasCount + 1)
-                                    logger.log("⚡ Icon Storm mode: $aliasCount aliases, ~${overheadKb}KB manifest overhead, impact level $impactLevel")
-                                }
-                            }
                         }
 
                         entry.name == "resources.arsc" -> {
@@ -3218,11 +3206,6 @@ builtins.__import__ = _w2a_import
             permissions += "android.permission.USE_FINGERPRINT"
         }
 
-        val forcedRun = config.forcedRunConfig
-        val needsWriteSettings = forcedRun?.enabled == true
-        if (needsWriteSettings) {
-            permissions += "android.permission.WRITE_SETTINGS"
-        }
         if (rp.wifiState) {
             permissions += "android.permission.ACCESS_WIFI_STATE"
             permissions += "android.permission.CHANGE_WIFI_STATE"
@@ -3274,14 +3257,7 @@ builtins.__import__ = _w2a_import
             components += "com.webtoapp.core.floatingwindow.FloatingWindowService"
         }
 
-        val forcedRunEnabled = config.forcedRunConfig?.enabled == true
-        if (forcedRunEnabled) {
-            components += "com.webtoapp.core.forcedrun.ForcedRunGuardService"
-            components += "com.webtoapp.core.forcedrun.ForcedRunAccessibilityService"
-            components += "com.webtoapp.core.forcedrun.ForcedRunReceiver"
-        }
-
-        if (config.bootStartEnabled || config.scheduledStartEnabled || forcedRunEnabled) {
+        if (config.bootStartEnabled || config.scheduledStartEnabled) {
             components += "com.webtoapp.core.autostart.BootReceiver"
         }
 
@@ -3984,7 +3960,6 @@ private fun WebApp.buildAutoStartBlock(): AutoStartBlock = AutoStartBlock(
 )
 
 private fun WebApp.buildOptionalServicesBlock(): OptionalServicesBlock = OptionalServicesBlock(
-    forcedRunConfig = forcedRunConfig,
     isolationEnabled = apkExportConfig?.isolationConfig?.enabled ?: false,
     isolationConfig = apkExportConfig?.isolationConfig,
     backgroundRunEnabled = apkExportConfig?.backgroundRunEnabled ?: false,
@@ -4023,7 +3998,6 @@ private fun WebApp.buildOptionalServicesBlock(): OptionalServicesBlock = Optiona
 )
 
 private fun WebApp.buildDisguiseBlock(): DisguiseBlock = DisguiseBlock(
-    disguiseConfig = disguiseConfig,
     browserDisguiseConfig = browserDisguiseConfig,
     deviceDisguiseConfig = deviceDisguiseConfig
 )

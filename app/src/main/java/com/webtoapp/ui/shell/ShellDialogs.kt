@@ -14,8 +14,6 @@ import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.activation.ActivationResult
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellConfig
-import com.webtoapp.core.forcedrun.ForcedRunManager
-import com.webtoapp.core.forcedrun.ForcedRunPermissionDialog
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.ui.components.announcement.toUiTemplate
 import com.webtoapp.ui.splash.ActivationDialog
@@ -135,38 +133,6 @@ fun ShellAnnouncementDialog(
                 val scope = (context as? AppCompatActivity)?.lifecycleScope
                 scope?.launch {
                     announcement.markNeverShow(-1L)
-                }
-            }
-        }
-    )
-}
-
-@Composable
-fun ShellForcedRunPermissionDialog(
-    config: ShellConfig,
-    forcedRunActive: Boolean,
-    onDismiss: () -> Unit
-) {
-    val context = LocalContext.current
-    val forcedRunManager = ForcedRunManager.getInstance(context)
-
-    ForcedRunPermissionDialog(
-        protectionLevel = config.forcedRunConfig!!.protectionLevel,
-        onDismiss = onDismiss,
-        onContinueAnyway = {
-
-            onDismiss()
-            AppLogger.w("ShellActivity", "User skipped permission, forced run protection degraded")
-        },
-        onAllPermissionsGranted = {
-
-            onDismiss()
-            AppLogger.d("ShellActivity", "Forced run permissions all granted")
-
-            if (forcedRunActive) {
-                forcedRunManager.stopForcedRunMode()
-                config.forcedRunConfig?.let { cfg ->
-                    forcedRunManager.startForcedRunMode(cfg, -1L)
                 }
             }
         }

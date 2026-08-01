@@ -34,13 +34,11 @@ This section documents **every card**, one page each, in the order they appear i
 
 ## Disguise
 
-- [Icon & App](/guide/app-actions/edit-common-config/icon-disguise)
 - [Device Disguise](/guide/app-actions/edit-common-config/device-disguise)
 
 ## Launch & runtime
 
 - [Auto-start](/guide/app-actions/edit-common-config/auto-start)
-- [Forced Run](/guide/app-actions/edit-common-config/forced-run)
 
 ## Advanced & export
 

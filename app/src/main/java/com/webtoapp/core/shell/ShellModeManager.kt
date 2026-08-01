@@ -3,7 +3,6 @@ package com.webtoapp.core.shell
 import android.content.Context
 import com.google.gson.annotations.SerializedName
 import com.webtoapp.core.crypto.AssetDecryptor
-import com.webtoapp.core.forcedrun.ForcedRunConfig
 import com.webtoapp.core.logging.AppLogger
 
 private fun String.escapeForJsSingleQuote(): String =
@@ -365,9 +364,6 @@ data class ShellConfig(
     @SerializedName("autoStartConfig")
     val autoStartConfig: AutoStartShellConfig? = null,
 
-    @SerializedName("forcedRunConfig")
-    val forcedRunConfig: ForcedRunConfig? = null,
-
     @SerializedName("isolationEnabled")
     val isolationEnabled: Boolean = false,
 
@@ -391,9 +387,6 @@ data class ShellConfig(
 
     @SerializedName("hardeningThreatResponse")
     val hardeningThreatResponse: String = "LOG_ONLY",
-
-    @SerializedName("disguiseConfig")
-    val disguiseConfig: com.webtoapp.core.appearance.DisguiseConfig? = null,
 
     @SerializedName("browserDisguiseConfig")
     val browserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? = null,

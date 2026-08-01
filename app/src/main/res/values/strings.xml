@@ -595,21 +595,10 @@
     <string name="encryption_hint">加密应用资源以保护</string>
 
     
-    <string name="accessibility_service_description">强制运行防护服务。启用后会阻止切换到其他应用。</string>
-    <string name="forced_run_service_name">专注模式守护</string>
-    <string name="forced_run_active">专注模式运行中</string>
-    <string name="forced_run_remaining">剩余时间: %s</string>
-    <string name="cannot_exit_forced_run">专注模式下无法退出</string>
-    <string name="emergency_exit">紧急退出</string>
-    <string name="enter_emergency_password">请输入紧急退出密码</string>
     <string name="password_incorrect">密码错误</string>
     <string name="accessibility_not_enabled">请先启用辅助功能服务</string>
     <string name="usage_access_not_enabled">请先授权使用情况访问权限</string>
     <string name="open_settings">打开设置</string>
-    <string name="forced_run_protection_level">防护级别</string>
-    <string name="protection_level_basic">基础（仅拦截返回键）</string>
-    <string name="protection_level_standard">标准（需要辅助功能）</string>
-    <string name="protection_level_maximum">最强（需要辅助功能+使用情况访问）</string>
     <string name="encryption_level">加密级别</string>
     <string name="basic_encryption">基础</string>
     <string name="standard_encryption">标准</string>
@@ -626,18 +615,6 @@
     <string name="regenerate_on_launch">启动时重新生成</string>
 
     
-    <string name="disguise_multi_icon_title">多桌面图标</string>
-    <string name="disguise_icon_count_format">%d 个图标</string>
-    <string name="disguise_not_enabled">未启用</string>
-    <string name="disguise_enable_multi_icon">启用多图标</string>
-    <string name="disguise_enable_multi_icon_desc">安装后在桌面显示多个应用图标</string>
-    <string name="disguise_icon_count_title">桌面图标数量</string>
-    <string name="disguise_icon_count_desc">设置安装后在桌面显示的图标数量（每个图标都可启动应用）</string>
-    <string name="disguise_count_label">数量</string>
-    <string name="disguise_count_hint">建议 2–10 个</string>
-    <string name="disguise_hide_main_icon">隐藏主图标</string>
-    <string name="disguise_hide_main_icon_desc">仅保留别名图标，隐藏主 Activity 的图标</string>
-    <string name="disguise_multi_icon_tip">通过 activity-alias 生成多个桌面图标，无需额外权限。</string>
 
     
     <string name="delete_account_title">注销账号</string>

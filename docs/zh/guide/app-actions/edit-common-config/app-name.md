@@ -11,4 +11,3 @@
 ## 说明
 
 - 导出时,标签被写入 APK manifest。见 [APK导出配置](/zh/guide/app-actions/edit-common-config/apk-export)。
-- [图标与应用](/zh/guide/app-actions/edit-common-config/icon-disguise)卡片可随机化或为生成应用的名称加前缀。

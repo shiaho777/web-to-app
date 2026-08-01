@@ -47,12 +47,9 @@ class AxmlRebuilder {
             "com.webtoapp.core.notification.NotificationWebSocketService",
             "com.webtoapp.core.notification.NotificationFcmService",
             "com.webtoapp.core.floatingwindow.FloatingWindowService",
-            "com.webtoapp.core.forcedrun.ForcedRunGuardService",
-            "com.webtoapp.core.forcedrun.ForcedRunAccessibilityService",
             "com.webtoapp.core.nodejs.NodeService",
             "com.webtoapp.core.autostart.BootReceiver",
             "com.webtoapp.core.autostart.ScheduledStartReceiver",
-            "com.webtoapp.core.forcedrun.ForcedRunReceiver",
             "com.webtoapp.core.port.PortQueryReceiver",
             "com.webtoapp.core.port.PortReleaseReceiver",
             "com.webtoapp.core.notification.BridgeAlarmReceiver",
@@ -71,48 +68,6 @@ class AxmlRebuilder {
         )
 
         private val DEFAULT_RUNTIME_COMPONENTS = WEBTOAPP_RUNTIME_COMPONENTS + GECKOVIEW_RUNTIME_COMPONENTS
-    }
-
-    fun expandAndModifyWithAliases(
-        axmlData: ByteArray,
-        originalPackage: String,
-        newPackage: String,
-        aliasCount: Int = 0,
-        appName: String = "",
-        permissions: List<String> = BASELINE_RUNTIME_PERMISSIONS
-    ): ByteArray {
-        return try {
-            val parsed = parseAxml(axmlData)
-            if (parsed == null) {
-                AppLogger.e(TAG, "Failed to parse AXML for aliases")
-                return axmlData
-            }
-
-            val expansions = findRelativeClassNames(parsed, originalPackage)
-            AppLogger.d(TAG, "Found ${expansions.size} relative class names to expand")
-
-            if (expansions.isNotEmpty()) {
-                expandClassNames(parsed, expansions)
-            }
-
-            replacePackageString(parsed, originalPackage, newPackage)
-
-            ensureUsesPermissions(parsed, permissions)
-
-            if (aliasCount > 0) {
-                addActivityAliases(parsed, newPackage, aliasCount, appName)
-                AppLogger.d(TAG, "Added $aliasCount activity-alias entries")
-            }
-
-            val result = rebuildAxml(parsed)
-
-            AppLogger.d(TAG, "AXML rebuild with aliases complete: original=${axmlData.size}, new=${result.size}")
-            result
-
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "AXML rebuild with aliases failed", e)
-            axmlData
-        }
     }
 
     private fun ensureUsesPermissions(parsed: ParsedAxml, permissions: List<String>) {
@@ -284,150 +239,6 @@ class AxmlRebuilder {
             val name = buffer.int
             if (name == applicationStrIndex) {
                 return i
-            }
-        }
-        return -1
-    }
-
-    private fun addActivityAliases(
-        parsed: ParsedAxml,
-        packageName: String,
-        aliasCount: Int,
-        appName: String
-    ) {
-
-        val applicationEndIndex = findApplicationEndIndex(parsed)
-        if (applicationEndIndex < 0) {
-            AppLogger.e(TAG, "Cannot find </application> element")
-            return
-        }
-
-        val resourceMap = parsed.resourceMap
-        if (resourceMap == null) {
-            AppLogger.e(TAG, "No resource map found, cannot add activity-alias")
-            return
-        }
-
-        val nameAttrIndex = resourceMap.indexOf(ATTR_NAME)
-        val labelAttrIndex = resourceMap.indexOf(ATTR_LABEL)
-        val iconAttrIndex = resourceMap.indexOf(ATTR_ICON)
-        val exportedAttrIndex = resourceMap.indexOf(ATTR_EXPORTED)
-
-        var targetActivityAttrIndex = resourceMap.indexOf(ATTR_TARGET_ACTIVITY)
-        if (targetActivityAttrIndex < 0) {
-
-            targetActivityAttrIndex = resourceMap.size
-
-            parsed.stringPool.strings.add(targetActivityAttrIndex, "targetActivity")
-
-            updateStringIndicesAfterInsert(parsed, targetActivityAttrIndex)
-
-            val newResourceMap = resourceMap.copyOf(resourceMap.size + 1)
-            newResourceMap[targetActivityAttrIndex] = ATTR_TARGET_ACTIVITY
-            parsed.resourceMap = newResourceMap
-            AppLogger.d(TAG, "Added targetActivity to string pool and resource map at index $targetActivityAttrIndex")
-        }
-
-        if (nameAttrIndex < 0 || labelAttrIndex < 0 || iconAttrIndex < 0 || exportedAttrIndex < 0) {
-            AppLogger.e(TAG, "Missing required attribute indices: name=$nameAttrIndex, label=$labelAttrIndex, icon=$iconAttrIndex, exported=$exportedAttrIndex")
-            return
-        }
-
-        AppLogger.d(TAG, "Attribute indices: name=$nameAttrIndex, targetActivity=$targetActivityAttrIndex, label=$labelAttrIndex, icon=$iconAttrIndex, exported=$exportedAttrIndex")
-
-        val androidNsIndex = getOrAddString(parsed.stringPool, "http://schemas.android.com/apk/res/android")
-
-        val activityAliasNameIndex = getOrAddString(parsed.stringPool, "activity-alias")
-        val intentFilterNameIndex = getOrAddString(parsed.stringPool, "intent-filter")
-        val actionNameIndex = getOrAddString(parsed.stringPool, "action")
-        val categoryNameIndex = getOrAddString(parsed.stringPool, "category")
-
-        val mainActionIndex = getOrAddString(parsed.stringPool, "android.intent.action.MAIN")
-        val launcherCategoryIndex = getOrAddString(parsed.stringPool, "android.intent.category.LAUNCHER")
-
-        val targetActivityValue = "com.webtoapp.ui.shell.ShellActivity"
-        val targetActivityValueIndex = getOrAddString(parsed.stringPool, targetActivityValue)
-        AppLogger.d(TAG, "targetActivity value: $targetActivityValue (using original class name)")
-
-        val newChunks = mutableListOf<Chunk>()
-
-        val intentFilterStartTemplate = buildSimpleStartElement(androidNsIndex, intentFilterNameIndex, 0)
-        val actionStartTemplate = buildActionOrCategoryElement(
-            androidNsIndex = androidNsIndex,
-            elementNameIndex = actionNameIndex,
-            nameAttrIndex = nameAttrIndex,
-            nameValueIndex = mainActionIndex
-        )
-        val actionEndTemplate = buildEndElement(androidNsIndex, actionNameIndex)
-        val categoryStartTemplate = buildActionOrCategoryElement(
-            androidNsIndex = androidNsIndex,
-            elementNameIndex = categoryNameIndex,
-            nameAttrIndex = nameAttrIndex,
-            nameValueIndex = launcherCategoryIndex
-        )
-        val categoryEndTemplate = buildEndElement(androidNsIndex, categoryNameIndex)
-        val intentFilterEndTemplate = buildEndElement(androidNsIndex, intentFilterNameIndex)
-        val aliasEndTemplate = buildEndElement(androidNsIndex, activityAliasNameIndex)
-
-        if (aliasCount > 100) {
-            AppLogger.d(TAG, "Icon Storm: generating $aliasCount aliases (pre-allocated buffer for ${aliasCount * 8} chunks)")
-        }
-
-        for (i in 1..aliasCount) {
-
-            val aliasName = ".LauncherAlias$i"
-            val aliasNameValueIndex = getOrAddString(parsed.stringPool, aliasName)
-
-            val aliasLabel = appName
-            val aliasLabelIndex = getOrAddString(parsed.stringPool, aliasLabel)
-
-            val aliasStartChunk = buildActivityAliasStartElement(
-                androidNsIndex = androidNsIndex,
-                elementNameIndex = activityAliasNameIndex,
-                nameAttrIndex = nameAttrIndex,
-                nameValueIndex = aliasNameValueIndex,
-                targetActivityAttrIndex = targetActivityAttrIndex,
-                targetActivityValueIndex = targetActivityValueIndex,
-                labelAttrIndex = labelAttrIndex,
-                labelValueIndex = aliasLabelIndex,
-                iconAttrIndex = iconAttrIndex,
-                exportedAttrIndex = exportedAttrIndex
-            )
-
-            newChunks.add(aliasStartChunk)
-            newChunks.add(intentFilterStartTemplate)
-            newChunks.add(actionStartTemplate)
-            newChunks.add(actionEndTemplate)
-            newChunks.add(categoryStartTemplate)
-            newChunks.add(categoryEndTemplate)
-            newChunks.add(intentFilterEndTemplate)
-            newChunks.add(aliasEndTemplate)
-
-            if (aliasCount >= 500 && i % 500 == 0) {
-                AppLogger.d(TAG, "Icon Storm progress: $i / $aliasCount aliases generated")
-            }
-        }
-
-        parsed.chunks.addAll(applicationEndIndex, newChunks)
-        AppLogger.d(TAG, "Inserted ${newChunks.size} chunks for $aliasCount activity-alias entries" +
-            if (aliasCount >= 100) " (Icon Storm mode)" else ""
-        )
-    }
-
-    private fun findApplicationEndIndex(parsed: ParsedAxml): Int {
-        val applicationStrIndex = parsed.stringPool.strings.indexOf("application")
-        if (applicationStrIndex < 0) return -1
-
-        for (i in parsed.chunks.indices) {
-            val chunk = parsed.chunks[i]
-            if (chunk.type == CHUNK_END_ELEMENT) {
-                val buffer = ByteBuffer.wrap(chunk.data).order(ByteOrder.LITTLE_ENDIAN)
-                buffer.position(16)
-                val namespaceUri = buffer.int
-                val name = buffer.int
-                if (name == applicationStrIndex) {
-                    return i
-                }
             }
         }
         return -1
@@ -956,86 +767,6 @@ class AxmlRebuilder {
         return pool.strings.size - 1
     }
 
-    private fun buildActivityAliasStartElement(
-        androidNsIndex: Int,
-        elementNameIndex: Int,
-        nameAttrIndex: Int,
-        nameValueIndex: Int,
-        targetActivityAttrIndex: Int,
-        targetActivityValueIndex: Int,
-        labelAttrIndex: Int,
-        labelValueIndex: Int,
-        iconAttrIndex: Int,
-        exportedAttrIndex: Int
-    ): Chunk {
-
-        val attrCount = 5
-        val attrSize = 20
-        val headerSize = 16
-        val attrStart = 20
-        val chunkSize = 36 + attrCount * attrSize
-
-        val buffer = ByteBuffer.allocate(chunkSize).order(ByteOrder.LITTLE_ENDIAN)
-
-        buffer.putShort(CHUNK_START_ELEMENT.toShort())
-        buffer.putShort(headerSize.toShort())
-        buffer.putInt(chunkSize)
-
-        buffer.putInt(0)
-        buffer.putInt(-1)
-
-        buffer.putInt(-1)
-        buffer.putInt(elementNameIndex)
-        buffer.putShort(attrStart.toShort())
-        buffer.putShort(attrSize.toShort())
-        buffer.putShort(attrCount.toShort())
-        buffer.putShort(0)
-        buffer.putShort(0)
-        buffer.putShort(0)
-
-        buffer.putInt(androidNsIndex)
-        buffer.putInt(labelAttrIndex)
-        buffer.putInt(labelValueIndex)
-        buffer.putShort(8)
-        buffer.put(0)
-        buffer.put(0x03)
-        buffer.putInt(labelValueIndex)
-
-        buffer.putInt(androidNsIndex)
-        buffer.putInt(iconAttrIndex)
-        buffer.putInt(-1)
-        buffer.putShort(8)
-        buffer.put(0)
-        buffer.put(0x01)
-        buffer.putInt(0x7f0d0000)
-
-        buffer.putInt(androidNsIndex)
-        buffer.putInt(nameAttrIndex)
-        buffer.putInt(nameValueIndex)
-        buffer.putShort(8)
-        buffer.put(0)
-        buffer.put(0x03)
-        buffer.putInt(nameValueIndex)
-
-        buffer.putInt(androidNsIndex)
-        buffer.putInt(exportedAttrIndex)
-        buffer.putInt(-1)
-        buffer.putShort(8)
-        buffer.put(0)
-        buffer.put(0x12)
-        buffer.putInt(-1)
-
-        buffer.putInt(androidNsIndex)
-        buffer.putInt(targetActivityAttrIndex)
-        buffer.putInt(targetActivityValueIndex)
-        buffer.putShort(8)
-        buffer.put(0)
-        buffer.put(0x03)
-        buffer.putInt(targetActivityValueIndex)
-
-        return Chunk(CHUNK_START_ELEMENT, 0, chunkSize, buffer.array())
-    }
-
     private fun buildSimpleStartElement(androidNsIndex: Int, elementNameIndex: Int, attrCount: Int): Chunk {
         val attrSize = 20
         val headerSize = 16
@@ -1235,8 +966,6 @@ class AxmlRebuilder {
         newPackage: String,
         versionCode: Int,
         versionName: String,
-        aliasCount: Int = 0,
-        appName: String = "",
         deepLinkHosts: List<String> = emptyList(),
         deepLinkSchemes: List<String> = emptyList(),
         permissions: List<String> = BASELINE_RUNTIME_PERMISSIONS,
@@ -1266,12 +995,7 @@ class AxmlRebuilder {
 
             pruneRuntimeComponents(parsed, requiredComponents)
 
-            if (aliasCount > 0 && appName.isNotEmpty()) {
-                addActivityAliases(parsed, newPackage, aliasCount, appName)
-                AppLogger.d(TAG, "Added $aliasCount activity-alias entries for multi-launcher-icons")
-            }
-
-            rewireLauncherToShellActivity(parsed, addDirectLauncherToShell = aliasCount == 0)
+            rewireLauncherToShellActivity(parsed, addDirectLauncherToShell = true)
 
             if (deepLinkHosts.isNotEmpty() || deepLinkSchemes.isNotEmpty()) {
                 addDeepLinkIntentFilter(parsed, deepLinkHosts, deepLinkSchemes)
@@ -1280,7 +1004,7 @@ class AxmlRebuilder {
 
             val result = rebuildAxml(parsed)
 
-            AppLogger.d(TAG, "AXML full rebuild complete: original=${axmlData.size}, new=${result.size}, aliases=$aliasCount, deepLinkHosts=${deepLinkHosts.size}, deepLinkSchemes=${deepLinkSchemes.size}")
+            AppLogger.d(TAG, "AXML full rebuild complete: original=${axmlData.size}, new=${result.size}, deepLinkHosts=${deepLinkHosts.size}, deepLinkSchemes=${deepLinkSchemes.size}")
             result
 
         } catch (e: Exception) {

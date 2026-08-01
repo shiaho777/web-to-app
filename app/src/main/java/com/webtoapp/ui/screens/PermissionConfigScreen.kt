@@ -759,7 +759,6 @@ private fun PermissionFeatureReason.displayLabel(): String = when (this) {
     PermissionFeatureReason.NOTIFICATION_POLYFILL -> Strings.notificationPolyfillTitle
     PermissionFeatureReason.GEOLOCATION -> Strings.geolocationTitle
     PermissionFeatureReason.FLOATING_WINDOW -> Strings.floatingWindowTitle
-    PermissionFeatureReason.FORCED_RUN -> Strings.forcedRunSettings
     PermissionFeatureReason.BGM -> Strings.bgmTitle
     PermissionFeatureReason.BOOT_START -> Strings.autoStartSettings
     PermissionFeatureReason.SCREEN_AWAKE -> Strings.screenAwakeModeLabel

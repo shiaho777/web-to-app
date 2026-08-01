@@ -17,17 +17,12 @@ app/src/main/java/com/webtoapp/ui/components/BrowserDisguiseConfigCard.kt|raw_su
 app/src/main/java/com/webtoapp/ui/components/CodeSnippetSelector.kt|raw_corner_shape|10
 app/src/main/java/com/webtoapp/ui/components/CodeSnippetSelector.kt|raw_surface|8
 app/src/main/java/com/webtoapp/ui/components/ColorPickerDialog.kt|raw_corner_shape|2
-app/src/main/java/com/webtoapp/ui/components/DisguiseConfigCard.kt|raw_corner_shape|8
-app/src/main/java/com/webtoapp/ui/components/DisguiseConfigCard.kt|raw_surface|5
 app/src/main/java/com/webtoapp/ui/components/DnsConfigCard.kt|raw_corner_shape|2
 app/src/main/java/com/webtoapp/ui/components/DnsConfigCard.kt|raw_card|1
 app/src/main/java/com/webtoapp/ui/components/EncryptionConfigCard.kt|raw_corner_shape|1
 app/src/main/java/com/webtoapp/ui/components/EncryptionConfigCard.kt|raw_card|1
 app/src/main/java/com/webtoapp/ui/components/EnhancedActivationDialog.kt|raw_corner_shape|6
 app/src/main/java/com/webtoapp/ui/components/EnhancedActivationDialog.kt|raw_surface|3
-app/src/main/java/com/webtoapp/ui/components/ForcedRunConfigCard.kt|raw_card|4
-app/src/main/java/com/webtoapp/ui/components/ForcedRunCountdownOverlay.kt|raw_corner_shape|1
-app/src/main/java/com/webtoapp/ui/components/ForcedRunCountdownOverlay.kt|raw_surface|1
 app/src/main/java/com/webtoapp/ui/components/IconGeneratorDialog.kt|raw_corner_shape|7
 app/src/main/java/com/webtoapp/ui/components/IconGeneratorDialog.kt|raw_surface|1
 app/src/main/java/com/webtoapp/ui/components/IconLibraryDialog.kt|raw_corner_shape|4

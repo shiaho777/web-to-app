@@ -11,4 +11,3 @@ The display name of your app, shown in the app list and on the device launcher a
 ## Notes
 
 - At export, the label is written into the APK manifest. See [APK Export Config](/guide/app-actions/edit-common-config/apk-export).
-- The [Icon & App](/guide/app-actions/edit-common-config/icon-disguise) card can randomize or prefix the generated app's name.

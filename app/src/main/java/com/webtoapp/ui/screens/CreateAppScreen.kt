@@ -6,8 +6,6 @@ import com.webtoapp.data.model.WebViewConfig
 
 import com.webtoapp.data.model.AutoStartConfig
 
-import com.webtoapp.core.forcedrun.ForcedRunConfig
-
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.ui.design.WtaSwitch
 
@@ -484,13 +482,6 @@ fun CreateAppScreen(
             }
 
             item {
-                com.webtoapp.ui.components.DisguiseConfigCard(
-                    config = editState.disguiseConfig,
-                    onConfigChange = { viewModel.updateEditState { copy(disguiseConfig = it) } }
-                )
-            }
-
-            item {
                 DeviceDisguiseCard(
                     config = editState.deviceDisguiseConfig,
                     onConfigChange = { newConfig ->
@@ -505,13 +496,6 @@ fun CreateAppScreen(
                 AutoStartCard(
                     config = editState.autoStartConfig,
                     onConfigChange = { viewModel.updateEditState { copy(autoStartConfig = it) } }
-                )
-            }
-
-            item {
-                com.webtoapp.ui.components.ForcedRunConfigCard(
-                    config = editState.forcedRunConfig,
-                    onConfigChange = { viewModel.updateEditState { copy(forcedRunConfig = it) } }
                 )
             }
 
@@ -545,7 +529,6 @@ fun CreateAppScreen(
                     onExportConfigChange = { viewModel.updateEditState { copy(apkExportConfig = it) } },
                     webViewConfig = editState.webViewConfig,
                     autoStartConfig = editState.autoStartConfig,
-                    forcedRunConfig = editState.forcedRunConfig,
                     bgmEnabled = editState.bgmEnabled
                 )
             }
@@ -591,7 +574,6 @@ private fun ExportAndPermissionDrawer(
     onExportConfigChange: (ApkExportConfig) -> Unit,
     webViewConfig: WebViewConfig,
     autoStartConfig: AutoStartConfig?,
-    forcedRunConfig: ForcedRunConfig?,
     bgmEnabled: Boolean
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
@@ -599,14 +581,12 @@ private fun ExportAndPermissionDrawer(
         exportConfig,
         webViewConfig,
         autoStartConfig,
-        forcedRunConfig,
         bgmEnabled
     ) {
         featurePermissionReasons(
             apkExportConfig = exportConfig,
             webViewConfig = webViewConfig,
             autoStartConfig = autoStartConfig,
-            forcedRunConfig = forcedRunConfig,
             bgmEnabled = bgmEnabled
         )
     }

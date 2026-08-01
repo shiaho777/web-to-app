@@ -85,13 +85,6 @@ class PlayPolicyCheckerTest {
                 featurePath = "rule.serverRuntime.path",
                 policyArea = "rule.serverRuntime.area",
                 fixHint = "rule.serverRuntime.fix"
-            ),
-            PlayPolicyChecker.Violation(
-                ruleId = "FORCED_RUN_ENABLED",
-                severity = PlayPolicyChecker.Severity.BLOCKER,
-                featurePath = "rule.forcedRun.path",
-                policyArea = "rule.forcedRun.area",
-                fixHint = "rule.forcedRun.fix"
             )
         )
 

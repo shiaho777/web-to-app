@@ -34,13 +34,11 @@
 
 ## 伪装
 
-- [图标与应用](/zh/guide/app-actions/edit-common-config/icon-disguise)
 - [设备伪装](/zh/guide/app-actions/edit-common-config/device-disguise)
 
 ## 启动与运行
 
 - [自启动设置](/zh/guide/app-actions/edit-common-config/auto-start)
-- [强制运行设置](/zh/guide/app-actions/edit-common-config/forced-run)
 
 ## 高级与导出
 

@@ -12,7 +12,6 @@ A thematic index of the privacy, disguise, and hardening capabilities. Each is c
 
 ## Disguise
 
-- [Icon & App](/guide/app-actions/edit-common-config/icon-disguise) — multiple launcher icons, icon storm, randomized names.
 - [Device Disguise](/guide/app-actions/edit-common-config/device-disguise) — device-level property spoofing.
 - **Browser fingerprint disguise** (50+ vectors) and **kernel disguise** — under [Advanced Settings](/guide/app-actions/edit-common-config/advanced-settings).
 

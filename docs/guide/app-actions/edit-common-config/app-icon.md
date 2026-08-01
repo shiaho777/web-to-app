@@ -13,4 +13,3 @@ The icon shown for your app in the app list and, after export, on the device lau
 ## Notes
 
 - At export, the icon is written into the APK's resources (the binary resource table is patched). See [APK Export Config](/guide/app-actions/edit-common-config/apk-export).
-- The [Icon & App](/guide/app-actions/edit-common-config/icon-disguise) card can further disguise the icon (multiple launcher icons, icon storm) for the generated app.

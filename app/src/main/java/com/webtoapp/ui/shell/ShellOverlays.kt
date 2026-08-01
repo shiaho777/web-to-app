@@ -1,7 +1,5 @@
 package com.webtoapp.ui.shell
 
-import android.webkit.WebView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -11,14 +9,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.i18n.Strings
-import com.webtoapp.ui.components.ForcedRunCountdownOverlay
-import com.webtoapp.ui.components.VirtualNavigationBar
-import com.webtoapp.core.forcedrun.ForcedRunManager
 
 @Composable
 fun BoxScope.ShellLyricsOverlay(
@@ -62,40 +56,15 @@ fun BoxScope.ShellLyricsOverlay(
 }
 
 @Composable
-fun BoxScope.ShellForcedRunOverlay(
-    config: ShellConfig,
-    forcedRunActive: Boolean,
-    forcedRunRemainingMs: Long
-) {
-    val context = LocalContext.current
-    val activity = context as android.app.Activity
-    val forcedRunManager = remember { ForcedRunManager.getInstance(context) }
-
-    if (forcedRunActive && config.forcedRunConfig?.showCountdown == true) {
-        ForcedRunCountdownOverlay(
-            remainingMs = forcedRunRemainingMs,
-            allowEmergencyExit = config.forcedRunConfig?.allowEmergencyExit == true,
-            emergencyPassword = config.forcedRunConfig?.emergencyPassword,
-            onEmergencyExit = {
-                forcedRunManager.stopForcedRunMode()
-                activity.finish()
-            }
-        )
-    }
-}
-
-@Composable
 fun BoxScope.ShellErrorCard(
     errorMessage: String?,
-    forcedRunActive: Boolean,
     onDismiss: () -> Unit
 ) {
     errorMessage?.let { error ->
         Card(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp)
-                .padding(bottom = if (forcedRunActive) 56.dp else 0.dp),
+                .padding(16.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.errorContainer
             )
@@ -118,42 +87,3 @@ fun BoxScope.ShellErrorCard(
         }
     }
 }
-
-@Composable
-fun BoxScope.ShellVirtualNavBar(
-    appType: String,
-    config: ShellConfig,
-    forcedRunActive: Boolean,
-    canGoBack: Boolean,
-    canGoForward: Boolean,
-    webViewRef: WebView?
-) {
-    val context = LocalContext.current
-
-    VirtualNavigationBar(
-        visible = forcedRunActive,
-        canGoBack = canGoBack,
-        canGoForward = canGoForward,
-        onBack = {
-            (context as? AppCompatActivity)?.let { activity ->
-                ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
-            }
-        },
-        onForward = { webViewRef?.goForward() },
-        onRefresh = { webViewRef?.reload() },
-        onHome = {
-
-            val homeUrl = when {
-                appType == "HTML" || appType == "FRONTEND" -> {
-                    val entryFile = config.htmlConfig.getValidEntryFile()
-                    if (config.htmlUsesFileScheme) buildPackagedHtmlFileSchemeEntryUrl(entryFile)
-                    else buildPackagedHtmlShellEntryUrl(config.packageName, entryFile)
-                }
-                else -> config.targetUrl
-            }
-            webViewRef?.loadUrl(homeUrl)
-        },
-        modifier = Modifier.align(Alignment.BottomCenter)
-    )
-}
-

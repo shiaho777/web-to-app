@@ -24,8 +24,6 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.theme.ShellTheme
 import com.webtoapp.core.webview.TranslateBridge
 import com.webtoapp.data.model.KeyboardAdjustMode
-import com.webtoapp.core.forcedrun.ForcedRunConfig
-import com.webtoapp.core.forcedrun.ForcedRunManager
 import com.webtoapp.core.floatingwindow.FloatingWindowService
 import com.webtoapp.ui.shared.WindowHelper
 
@@ -66,8 +64,6 @@ class ShellActivity : AppCompatActivity() {
     private var statusBarAutoColor: String? = null
     private var forceHideSystemUi: Boolean = false
     private var keyboardAdjustMode: KeyboardAdjustMode = KeyboardAdjustMode.RESIZE
-    private var forcedRunConfig: ForcedRunConfig? = null
-    private val forcedRunManager by lazy { ForcedRunManager.getInstance(this) }
 
     private var pendingFloatingWindowLaunch = false
     private var notificationPolyfillEnabled = false
@@ -143,43 +139,6 @@ class ShellActivity : AppCompatActivity() {
         )
     }
 
-    fun onForcedRunStateChanged(active: Boolean, config: ForcedRunConfig?) {
-        forcedRunConfig = config
-        forceHideSystemUi = active && config?.blockSystemUI == true
-
-        AppLogger.d("ShellActivity", "强制运行状态变化: active=$active, protection=${config?.protectionLevel}")
-
-        if (active) {
-            // Forced run keeps the screen on; suspend the screen-awake timer so it doesn't clear
-            // the flag while forced run is active.
-            screenAwakeClearRunnable?.let { screenAwakeHandler.removeCallbacks(it) }
-            screenAwakeClearRunnable = null
-            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-            try {
-                startLockTask()
-            } catch (e: Exception) {
-                AppLogger.w("ShellActivity", "startLockTask failed (expected without device admin)", e)
-            }
-
-        } else {
-            // Restore the screen-awake feature's state (ALWAYS/TIMED/keepScreenOn) instead of
-            // unconditionally clearing the flag. The unconditional clear used to clobber the
-            // screen-awake mode whenever this ran with active=false — notably the initial
-            // forced-run state emission right after composition — so TIMED/ALWAYS never kept the
-            // screen on and it followed the system timeout.
-            applyScreenAwakeMode()
-
-            try {
-                stopLockTask()
-            } catch (e: Exception) {
-                AppLogger.w("ShellActivity", "stopLockTask failed", e)
-            }
-        }
-
-        applyImmersiveFullscreen(customView != null || immersiveFullscreenEnabled || forceHideSystemUi)
-    }
-
     /**
      * Applies the screen-awake mode (ALWAYS / TIMED / legacy keepScreenOn) to the window's
      * FLAG_KEEP_SCREEN_ON. For TIMED, schedules a delayed clear; any previously scheduled clear is
@@ -233,12 +192,6 @@ class ShellActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (event.action == KeyEvent.ACTION_DOWN) {
-            if (forcedRunManager.handleKeyEvent(event.keyCode)) {
-                return true
-            }
-        }
-
         if (shouldForwardKeyToWebView(event) && (browserSurface?.dispatchKeyEvent(event) == true || webView?.dispatchKeyEvent(event) == true)) {
             return true
         }
@@ -355,15 +308,11 @@ class ShellActivity : AppCompatActivity() {
 
         ShellHardeningGuard.start(this, config.hardeningEnabled, config.hardeningThreatResponse)
 
-        forcedRunConfig = config.forcedRunConfig
-
         com.webtoapp.core.shell.ShellLogger.logFeature("Config", "加载配置", buildString {
-            append("强制运行=${config.forcedRunConfig?.enabled ?: false}, ")
             append("后台运行=${config.backgroundRunEnabled}, ")
             append("独立环境=${config.isolationEnabled}")
         })
 
-        ShellActivityInit.initForcedRunManager(this, config, forcedRunManager, ::onForcedRunStateChanged)
         ShellActivityInit.initAutoStart(this, config)
         ShellActivityInit.initIsolation(this, config)
         ShellActivityInit.initBackgroundService(this, config)
@@ -614,9 +563,6 @@ class ShellActivity : AppCompatActivity() {
                             applyImmersiveFullscreen(enabled)
                         }
                     },
-                    onForcedRunStateChanged = { active, forcedConfig ->
-                        onForcedRunStateChanged(active, forcedConfig)
-                    },
 
                     statusBarBackgroundType = statusBarBackgroundType,
                     statusBarBackgroundColor = statusBarCustomColor,
@@ -634,7 +580,6 @@ class ShellActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, ShellActivityInit.createBackPressedCallback(
             activity = this,
-            forcedRunManager = forcedRunManager,
             getCustomView = { customView },
             getWebView = { webView },
             hideCustomView = ::hideCustomView,

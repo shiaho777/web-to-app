@@ -3,7 +3,6 @@ package com.webtoapp.core.apkbuilder
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import com.webtoapp.core.forcedrun.ForcedRunConfig
 import com.webtoapp.core.shell.BgmShellItem
 import com.webtoapp.core.shell.LrcShellTheme
 import java.io.*

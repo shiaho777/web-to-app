@@ -1,7 +1,5 @@
 package com.webtoapp.data.model
 
-import com.webtoapp.core.forcedrun.ForcedRunConfig
-
 fun ApkRuntimePermissions.enableFrom(required: ApkRuntimePermissions): ApkRuntimePermissions {
     if (required == ApkRuntimePermissions()) return this
     return copy(
@@ -46,7 +44,6 @@ fun featureRequiredRuntimePermissions(
     apkExportConfig: ApkExportConfig? = null,
     webViewConfig: WebViewConfig = WebViewConfig(),
     autoStartConfig: AutoStartConfig? = null,
-    forcedRunConfig: ForcedRunConfig? = null,
     bgmEnabled: Boolean = false
 ): ApkRuntimePermissions {
     var required = ApkRuntimePermissions()
@@ -72,12 +69,6 @@ fun featureRequiredRuntimePermissions(
     }
     if (webView.floatingWindowConfig.enabled) {
         required = required.copy(systemAlertWindow = true)
-    }
-    if (forcedRunConfig?.enabled == true) {
-        required = required.copy(
-            foregroundService = true,
-            wakeLock = true
-        )
     }
     if (webView.enableNativeBridge && webView.nativeBridgeCapabilities.notification) {
         required = required.copy(notifications = true)
@@ -111,7 +102,6 @@ fun WebApp.featureRequiredRuntimePermissions(): ApkRuntimePermissions =
         apkExportConfig = apkExportConfig,
         webViewConfig = webViewConfig,
         autoStartConfig = autoStartConfig,
-        forcedRunConfig = forcedRunConfig,
         bgmEnabled = bgmEnabled
     )
 
@@ -137,14 +127,12 @@ fun WebApp.withRuntimePermissionsSyncedFromFeatures(): WebApp {
 fun ApkExportConfig.withRuntimePermissionsSyncedFromFeatures(
     webViewConfig: WebViewConfig = WebViewConfig(),
     autoStartConfig: AutoStartConfig? = null,
-    forcedRunConfig: ForcedRunConfig? = null,
     bgmEnabled: Boolean = false
 ): ApkExportConfig {
     val required = featureRequiredRuntimePermissions(
         apkExportConfig = this,
         webViewConfig = webViewConfig,
         autoStartConfig = autoStartConfig,
-        forcedRunConfig = forcedRunConfig,
         bgmEnabled = bgmEnabled
     )
     val merged = runtimePermissions.enableFrom(required)
@@ -158,7 +146,6 @@ enum class PermissionFeatureReason {
     NOTIFICATION_POLYFILL,
     GEOLOCATION,
     FLOATING_WINDOW,
-    FORCED_RUN,
     BGM,
     BOOT_START,
     SCREEN_AWAKE,
@@ -169,7 +156,6 @@ fun featurePermissionReasons(
     apkExportConfig: ApkExportConfig? = null,
     webViewConfig: WebViewConfig = WebViewConfig(),
     autoStartConfig: AutoStartConfig? = null,
-    forcedRunConfig: ForcedRunConfig? = null,
     bgmEnabled: Boolean = false
 ): Map<String, List<PermissionFeatureReason>> {
     val map = linkedMapOf<String, MutableList<PermissionFeatureReason>>()
@@ -199,10 +185,6 @@ fun featurePermissionReasons(
     if (webView.floatingWindowConfig.enabled) {
         add("systemAlertWindow", PermissionFeatureReason.FLOATING_WINDOW)
     }
-    if (forcedRunConfig?.enabled == true) {
-        add("foregroundService", PermissionFeatureReason.FORCED_RUN)
-        add("wakeLock", PermissionFeatureReason.FORCED_RUN)
-    }
     if (webView.enableNativeBridge && webView.nativeBridgeCapabilities.notification) {
         add("notifications", PermissionFeatureReason.NATIVE_BRIDGE_NOTIFICATION)
     }
@@ -231,7 +213,6 @@ fun WebApp.featurePermissionReasons(): Map<String, List<PermissionFeatureReason>
         apkExportConfig = apkExportConfig,
         webViewConfig = webViewConfig,
         autoStartConfig = autoStartConfig,
-        forcedRunConfig = forcedRunConfig,
         bgmEnabled = bgmEnabled
     )
 

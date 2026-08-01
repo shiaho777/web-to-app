@@ -14,7 +14,6 @@ import com.webtoapp.data.model.NativeBridgeCapabilities
 import com.webtoapp.data.model.NodeJsConfig
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.WebViewConfig
-import com.webtoapp.core.forcedrun.ForcedRunConfig
 import com.webtoapp.core.playstore.aab.axml.AxmlToProtoXml
 import java.io.File
 import java.util.zip.ZipFile
@@ -296,8 +295,7 @@ class ExportSecurityRegressionTest {
             autoStartConfig = AutoStartConfig(
                 bootStartEnabled = true,
                 scheduledStartEnabled = true
-            ),
-            forcedRunConfig = ForcedRunConfig(enabled = true)
+            )
         ).toApkConfig("com.example.runtime", context)
 
         @Suppress("UNCHECKED_CAST")
@@ -309,9 +307,6 @@ class ExportSecurityRegressionTest {
             "com.webtoapp.core.notification.NotificationPollingService",
             "com.webtoapp.core.notification.BridgeAlarmReceiver",
             "com.webtoapp.core.floatingwindow.FloatingWindowService",
-            "com.webtoapp.core.forcedrun.ForcedRunGuardService",
-            "com.webtoapp.core.forcedrun.ForcedRunAccessibilityService",
-            "com.webtoapp.core.forcedrun.ForcedRunReceiver",
             "com.webtoapp.core.autostart.BootReceiver",
             "com.webtoapp.core.autostart.ScheduledStartReceiver",
             "com.webtoapp.core.port.PortQueryReceiver",
@@ -363,7 +358,6 @@ class ExportSecurityRegressionTest {
             newPackage = "com.example.zenbox",
             versionCode = 1,
             versionName = "1.0",
-            appName = "Zenbox",
             permissions = listOf(
                 "android.permission.INTERNET",
                 "android.permission.ACCESS_NETWORK_STATE"
@@ -395,9 +389,6 @@ class ExportSecurityRegressionTest {
         assertThat(componentNames).doesNotContain("com.webtoapp.core.notification.NotificationPollingService")
         assertThat(componentNames).doesNotContain("com.webtoapp.core.notification.BridgeAlarmReceiver")
         assertThat(componentNames).doesNotContain("com.webtoapp.core.floatingwindow.FloatingWindowService")
-        assertThat(componentNames).doesNotContain("com.webtoapp.core.forcedrun.ForcedRunGuardService")
-        assertThat(componentNames).doesNotContain("com.webtoapp.core.forcedrun.ForcedRunAccessibilityService")
-        assertThat(componentNames).doesNotContain("com.webtoapp.core.forcedrun.ForcedRunReceiver")
         assertThat(componentNames).doesNotContain("com.webtoapp.core.nodejs.NodeService")
         assertThat(componentNames).doesNotContain("com.webtoapp.core.autostart.BootReceiver")
         assertThat(componentNames).doesNotContain("com.webtoapp.core.autostart.ScheduledStartReceiver")

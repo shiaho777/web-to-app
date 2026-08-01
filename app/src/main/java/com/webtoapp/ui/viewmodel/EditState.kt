@@ -5,8 +5,6 @@ import android.net.Uri
 import androidx.compose.runtime.Stable
 import com.webtoapp.core.activation.ActivationCode
 import com.webtoapp.core.appearance.DeviceDisguiseConfig
-import com.webtoapp.core.appearance.DisguiseConfig
-import com.webtoapp.core.forcedrun.ForcedRunConfig
 import com.webtoapp.data.model.ActivationDialogConfig
 import com.webtoapp.data.model.AdConfig
 import com.webtoapp.data.model.Announcement
@@ -59,8 +57,6 @@ data class EditState(
     val extensionModuleIds: Set<String> = emptySet(),
     val extensionFabIcon: String = "",
     val autoStartConfig: AutoStartConfig? = null,
-    val forcedRunConfig: ForcedRunConfig? = null,
-    val disguiseConfig: DisguiseConfig? = null,
     val deviceDisguiseConfig: DeviceDisguiseConfig = DeviceDisguiseConfig(),
 )
 
@@ -101,8 +97,6 @@ fun WebApp.toEditState(): EditState {
         extensionModuleIds = synced.extensionModuleIds.toSet(),
         extensionFabIcon = synced.extensionFabIcon ?: "",
         autoStartConfig = synced.autoStartConfig,
-        forcedRunConfig = synced.forcedRunConfig,
-        disguiseConfig = synced.disguiseConfig,
         deviceDisguiseConfig = synced.deviceDisguiseConfig ?: DeviceDisguiseConfig(),
     )
 }
@@ -111,7 +105,6 @@ fun EditState.withRuntimePermissionsSyncedFromFeatures(): EditState {
     val syncedExport = apkExportConfig.withRuntimePermissionsSyncedFromFeatures(
         webViewConfig = webViewConfig,
         autoStartConfig = autoStartConfig,
-        forcedRunConfig = forcedRunConfig,
         bgmEnabled = bgmEnabled
     )
     return if (syncedExport === apkExportConfig || syncedExport == apkExportConfig) {

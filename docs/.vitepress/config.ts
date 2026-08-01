@@ -35,10 +35,8 @@ const t = {
       extensionModules: 'Extension Modules',
       adBlocking: 'Ad Blocking',
       customDns: 'Custom DNS',
-      iconDisguise: 'Icon & App',
       deviceDisguise: 'Device Disguise',
       autoStart: 'Auto-start',
-      forcedRun: 'Forced Run',
       advancedSettings: 'Advanced Settings',
       specialSettings: 'Special Settings',
       apkExport: 'APK Export Config'
@@ -156,10 +154,8 @@ const t = {
       extensionModules: '拓展模块',
       adBlocking: '广告拦截',
       customDns: '自定义DNS',
-      iconDisguise: '图标与应用',
       deviceDisguise: '设备伪装',
       autoStart: '自启动设置',
-      forcedRun: '强制运行设置',
       advancedSettings: '高级设置',
       specialSettings: '特殊设置',
       apkExport: 'APK导出配置'
@@ -362,7 +358,6 @@ function sidebar(lang: Lang, prefix: string) {
             text: s.cc.disguise,
             collapsed: false,
             items: [
-              { text: s.cc.iconDisguise, link: `${prefix}/guide/app-actions/edit-common-config/icon-disguise` },
               { text: s.cc.deviceDisguise, link: `${prefix}/guide/app-actions/edit-common-config/device-disguise` }
             ]
           },
@@ -370,8 +365,7 @@ function sidebar(lang: Lang, prefix: string) {
             text: s.cc.launchRuntime,
             collapsed: false,
             items: [
-              { text: s.cc.autoStart, link: `${prefix}/guide/app-actions/edit-common-config/auto-start` },
-              { text: s.cc.forcedRun, link: `${prefix}/guide/app-actions/edit-common-config/forced-run` }
+              { text: s.cc.autoStart, link: `${prefix}/guide/app-actions/edit-common-config/auto-start` }
             ]
           },
           {

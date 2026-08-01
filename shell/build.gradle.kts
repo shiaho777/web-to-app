@@ -166,7 +166,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/i18n/**",
         "**/core/logging/**",
         "**/core/dns/**",
-        "**/core/forcedrun/**",
         "**/core/floatingwindow/**",
         "**/core/privacy/**",
         "**/core/appearance/**",
@@ -209,7 +208,6 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/ui/components/VirtualNavigationBar.kt",
         "**/ui/components/StatusBarBackground.kt",
         "**/ui/components/LongPressMenu.kt",
-        "**/ui/components/ForcedRunCountdownOverlay.kt",
         "**/ui/components/AutoRefreshCountdownOverlay.kt",
 
         "**/util/**"

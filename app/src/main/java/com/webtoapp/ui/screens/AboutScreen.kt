@@ -485,7 +485,6 @@ private fun LegalTabContent() {
                 LegalSection(Strings.legalDisclaimerTitle3, Strings.legalDisclaimerContent3)
                 LegalSection(Strings.legalDisclaimerTitle4, Strings.legalDisclaimerContent4)
                 LegalSection(Strings.legalDisclaimerTitle5, Strings.legalDisclaimerContent5)
-                LegalSection(Strings.legalDisclaimerTitle6, Strings.legalDisclaimerContent6)
             }
         }
     }

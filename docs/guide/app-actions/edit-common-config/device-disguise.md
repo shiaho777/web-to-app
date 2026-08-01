@@ -11,4 +11,3 @@ Configure the device properties the generated app presents to web content (for e
 ## Notes
 
 - Device disguise complements the browser-level fingerprint disguise (50+ vectors) configured under [Advanced Settings](/guide/app-actions/edit-common-config/advanced-settings).
-- [Icon & App](/guide/app-actions/edit-common-config/icon-disguise) disguises the launcher icon/name rather than device properties.

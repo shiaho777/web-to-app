@@ -607,35 +607,12 @@
     <string name="activation_code_announcement_ad_block">Activation code, announcement, ad blocking</string>
 
     
-    <string name="disguise_multi_icon_title">Multi Desktop Icons</string>
-    <string name="disguise_icon_count_format">%d icons</string>
-    <string name="disguise_not_enabled">Not enabled</string>
-    <string name="disguise_enable_multi_icon">Enable Multi Icons</string>
-    <string name="disguise_enable_multi_icon_desc">Show multiple app icons on desktop after installation</string>
-    <string name="disguise_icon_count_title">Desktop Icon Count</string>
-    <string name="disguise_icon_count_desc">Set the number of icons to display on desktop (each icon can launch the app)</string>
-    <string name="disguise_count_label">Count</string>
-    <string name="disguise_count_hint">Recommended 2–10</string>
-    <string name="disguise_hide_main_icon">Hide Main Icon</string>
-    <string name="disguise_hide_main_icon_desc">Keep only alias icons, hide main Activity icon</string>
-    <string name="disguise_multi_icon_tip">Multi-icon feature uses Android native activity-alias mechanism, automatically showing multiple desktop icons after installation, no extra permissions required.</string>
 
     
-    <string name="accessibility_service_description">Forced-run protection service. When enabled, if the app is in forced-run mode it blocks switching to other apps to keep focus. This service only works when you explicitly enable forced-run mode.</string>
-    <string name="forced_run_service_name">Focus Mode Guard</string>
-    <string name="forced_run_active">Focus mode is running</string>
-    <string name="forced_run_remaining">Remaining time: %s</string>
-    <string name="cannot_exit_forced_run">Cannot exit during focus mode</string>
-    <string name="emergency_exit">Emergency Exit</string>
-    <string name="enter_emergency_password">Please enter the emergency password</string>
     <string name="password_incorrect">Incorrect password</string>
     <string name="accessibility_not_enabled">Please enable accessibility service first</string>
     <string name="usage_access_not_enabled">Please grant usage access permission first</string>
     <string name="open_settings">Open Settings</string>
-    <string name="forced_run_protection_level">Protection Level</string>
-    <string name="protection_level_basic">Basic (blocks Back key only)</string>
-    <string name="protection_level_standard">Standard (requires accessibility)</string>
-    <string name="protection_level_maximum">Maximum (requires accessibility + usage access)</string>
 
     
     <string name="delete_account_title">Delete Account</string>

@@ -1,6 +1,5 @@
 package com.webtoapp.core.apkbuilder
 
-import com.webtoapp.core.forcedrun.ForcedRunConfig
 import com.webtoapp.core.shell.BgmShellItem
 import com.webtoapp.core.shell.LrcShellTheme
 
@@ -318,7 +317,6 @@ data class ApkConfig(
     val scheduledTime: String get() = autoStart.scheduledTime
     val scheduledDays: List<Int> get() = autoStart.scheduledDays
 
-    val forcedRunConfig: ForcedRunConfig? get() = optionalServices.forcedRunConfig
     val isolationEnabled: Boolean get() = optionalServices.isolationEnabled
     val isolationConfig: com.webtoapp.core.privacy.IsolationConfig? get() = optionalServices.isolationConfig
     val backgroundRunEnabled: Boolean get() = optionalServices.backgroundRunEnabled
@@ -329,7 +327,6 @@ data class ApkConfig(
     val hardeningEnabled: Boolean get() = optionalServices.hardeningEnabled
     val hardeningThreatResponse: String get() = optionalServices.hardeningThreatResponse
 
-    val disguiseConfig: com.webtoapp.core.appearance.DisguiseConfig? get() = disguise.disguiseConfig
     val browserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? get() = disguise.browserDisguiseConfig
     val deviceDisguiseConfig: com.webtoapp.core.appearance.DeviceDisguiseConfig? get() = disguise.deviceDisguiseConfig
 
@@ -764,7 +761,6 @@ data class AutoStartBlock(
 )
 
 data class OptionalServicesBlock(
-    val forcedRunConfig: ForcedRunConfig? = null,
     val isolationEnabled: Boolean = false,
     val isolationConfig: com.webtoapp.core.privacy.IsolationConfig? = null,
     val backgroundRunEnabled: Boolean = false,
@@ -776,7 +772,6 @@ data class OptionalServicesBlock(
 )
 
 data class DisguiseBlock(
-    val disguiseConfig: com.webtoapp.core.appearance.DisguiseConfig? = null,
     val browserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? = null,
     val deviceDisguiseConfig: com.webtoapp.core.appearance.DeviceDisguiseConfig? = null
 )

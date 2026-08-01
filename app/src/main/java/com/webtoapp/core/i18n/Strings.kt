@@ -2572,35 +2572,7 @@ object Strings {
     val shareApkBuilding: String get() = StringsC.shareApkBuilding
     val shareApkFailed: String get() = StringsC.shareApkFailed
     val shareApkTitle: String get() = StringsC.shareApkTitle
-    val forcedRunSettings: String get() = StringsC.forcedRunSettings
-    val enableForcedRun: String get() = StringsC.enableForcedRun
-    val forcedRunHint: String get() = StringsC.forcedRunHint
-    val forcedRunMode: String get() = StringsC.forcedRunMode
-    val fixedTimeMode: String get() = StringsC.fixedTimeMode
-    val countdownMode: String get() = StringsC.countdownMode
-    val durationMode: String get() = StringsC.durationMode
-    val fixedTimeModeHint: String get() = StringsC.fixedTimeModeHint
-    val countdownModeHint: String get() = StringsC.countdownModeHint
-    val durationModeHint: String get() = StringsC.durationModeHint
-    val forcedRunStartTime: String get() = StringsC.forcedRunStartTime
-    val forcedRunEndTime: String get() = StringsC.forcedRunEndTime
-    val activeDays: String get() = StringsC.activeDays
-    val countdownDuration: String get() = StringsC.countdownDuration
-    val minutes: String get() = StringsC.minutes
     val minutesShort: String get() = StringsC.minutesShort
-    val accessStartTime: String get() = StringsC.accessStartTime
-    val accessEndTime: String get() = StringsC.accessEndTime
-    val accessDays: String get() = StringsC.accessDays
-    val blockSystemUI: String get() = StringsC.blockSystemUI
-    val blockBackButton: String get() = StringsC.blockBackButton
-    val blockHomeButton: String get() = StringsC.blockHomeButton
-    val showCountdownTimer: String get() = StringsC.showCountdownTimer
-    val allowEmergencyExit: String get() = StringsC.allowEmergencyExit
-    val emergencyExitHint: String get() = StringsC.emergencyExitHint
-    val emergencyPassword: String get() = StringsC.emergencyPassword
-    val emergencyPasswordHint: String get() = StringsC.emergencyPasswordHint
-    val forcedRunActive: String get() = StringsC.forcedRunActive
-    val cannotExitDuringForcedRun: String get() = StringsC.cannotExitDuringForcedRun
     val floatingWindowTitle: String get() = StringsC.floatingWindowTitle
     val floatingWindowOpacity: String get() = StringsC.floatingWindowOpacity
     val floatingWindowShowTitleBar: String get() = StringsC.floatingWindowShowTitleBar
@@ -2740,29 +2712,6 @@ object Strings {
     val dnsEchDesc: String get() = StringsC.dnsEchDesc
     val dnsEchGeckoBadge: String get() = StringsC.dnsEchGeckoBadge
     val dnsEchEngineWarn: String get() = StringsC.dnsEchEngineWarn
-    val disguiseMultiIconTitle: String get() = StringsC.disguiseMultiIconTitle
-    val disguiseEnableMultiIcon: String get() = StringsC.disguiseEnableMultiIcon
-    val disguiseEnableMultiIconDesc: String get() = StringsC.disguiseEnableMultiIconDesc
-    val disguiseIconCountTitle: String get() = StringsC.disguiseIconCountTitle
-    val disguiseCountLabel: String get() = StringsC.disguiseCountLabel
-    val iconStormMode: String get() = StringsC.iconStormMode
-    val iconStormNoLimit: String get() = StringsC.iconStormNoLimit
-    val iconStormUnlimited: String get() = StringsC.iconStormUnlimited
-    val iconStormImpactAssessment: String get() = StringsC.iconStormImpactAssessment
-    val iconStormAliasCount: String get() = StringsC.iconStormAliasCount
-    val iconStormManifestOverhead: String get() = StringsC.iconStormManifestOverhead
-    val iconStormEffectNone: String get() = StringsC.iconStormEffectNone
-    val iconStormEffectLight: String get() = StringsC.iconStormEffectLight
-    val iconStormEffectMedium: String get() = StringsC.iconStormEffectMedium
-    val iconStormEffectHeavy: String get() = StringsC.iconStormEffectHeavy
-    val iconStormEffectExtreme: String get() = StringsC.iconStormEffectExtreme
-    val iconStormEffectDangerous: String get() = StringsC.iconStormEffectDangerous
-    val iconStormRandomNames: String get() = StringsC.iconStormRandomNames
-    val iconStormRandomNamesDesc: String get() = StringsC.iconStormRandomNamesDesc
-    val iconStormNamePrefix: String get() = StringsC.iconStormNamePrefix
-    val iconStormNamePrefixHint: String get() = StringsC.iconStormNamePrefixHint
-    val iconStormTip: String get() = StringsC.iconStormTip
-    val iconStormWarning: String get() = StringsC.iconStormWarning
     val browserDisguiseTitle: String get() = StringsC.browserDisguiseTitle
     val browserDisguiseEnable: String get() = StringsC.browserDisguiseEnable
     val browserDisguiseEnableDesc: String get() = StringsC.browserDisguiseEnableDesc
@@ -3893,21 +3842,6 @@ object Strings {
     val depDownloadResume: String get() = StringsE.depDownloadResume
     val depDownloadPaused: String get() = StringsE.depDownloadPaused
     val depDownloadExtracting: String get() = StringsE.depDownloadExtracting
-    val tapToEnterPasswordToExit: String get() = StringsE.tapToEnterPasswordToExit
-    val enterExitPassword: String get() = StringsE.enterExitPassword
-    val enterAdminPasswordToExit: String get() = StringsE.enterAdminPasswordToExit
-    val passwordLabel: String get() = StringsE.passwordLabel
-    val enterPasswordPlaceholder: String get() = StringsE.enterPasswordPlaceholder
-    val wrongPasswordAttemptsRemaining: String get() = StringsE.wrongPasswordAttemptsRemaining
-    val tooManyAttemptsTryLater: String get() = StringsE.tooManyAttemptsTryLater
-    val confirmExit: String get() = StringsE.confirmExit
-    val forcedRunPermissionTitle: String get() = StringsE.forcedRunPermissionTitle
-    val forcedRunPermissionDesc: String get() = StringsE.forcedRunPermissionDesc
-    val accessibilityService: String get() = StringsE.accessibilityService
-    val accessibilityServiceDesc: String get() = StringsE.accessibilityServiceDesc
-    val usageAccess: String get() = StringsE.usageAccess
-    val usageAccessDesc: String get() = StringsE.usageAccessDesc
-    val refreshPermissionStatus: String get() = StringsE.refreshPermissionStatus
     val grant: String get() = StringsE.grant
     val granted: String get() = StringsE.granted
     val protectionBasic: String get() = StringsE.protectionBasic
@@ -4058,8 +3992,6 @@ object Strings {
     val legalDisclaimerContent4: String get() = StringsE.legalDisclaimerContent4
     val legalDisclaimerTitle5: String get() = StringsE.legalDisclaimerTitle5
     val legalDisclaimerContent5: String get() = StringsE.legalDisclaimerContent5
-    val legalDisclaimerTitle6: String get() = StringsE.legalDisclaimerTitle6
-    val legalDisclaimerContent6: String get() = StringsE.legalDisclaimerContent6
     val madeWithLove: String get() = StringsE.madeWithLove
     val shortcutPermissionTitle: String get() = StringsE.shortcutPermissionTitle
     val shortcutPermissionGoToSettings: String get() = StringsE.shortcutPermissionGoToSettings
@@ -4794,11 +4726,6 @@ object Strings {
     val pwaAnalyzeEmptyPage: String get() = StringsE.pwaAnalyzeEmptyPage
     val pwaAnalyzeFailed: String get() = StringsE.pwaAnalyzeFailed
     val pwaAnalyzeUnknownError: String get() = StringsE.pwaAnalyzeUnknownError
-    val forcedRunProtectionBasicNoExtra: String get() = StringsE.forcedRunProtectionBasicNoExtra
-    val forcedRunAccessibilityEnabled: String get() = StringsE.forcedRunAccessibilityEnabled
-    val forcedRunNeedAccessibility: String get() = StringsE.forcedRunNeedAccessibility
-    val forcedRunNeedUsageStats: String get() = StringsE.forcedRunNeedUsageStats
-    val forcedRunAllPermissionsGranted: String get() = StringsE.forcedRunAllPermissionsGranted
     val integrityInstallerSource: String get() = StringsE.integrityInstallerSource
     val integrityInstallerUnknown: String get() = StringsE.integrityInstallerUnknown
     val integrityInstallerCannotDetect: String get() = StringsE.integrityInstallerCannotDetect
@@ -4830,12 +4757,6 @@ object Strings {
     val previewRuntimeReadyBadge: String get() = StringsE.previewRuntimeReadyBadge
     val previewServerStartFailedTitle: String get() = StringsE.previewServerStartFailedTitle
     val previewStartupFailedBadge: String get() = StringsE.previewStartupFailedBadge
-    val rulePathForcedRun: String get() = StringsE.rulePathForcedRun
-    val ruleAreaForcedRun: String get() = StringsE.ruleAreaForcedRun
-    val ruleFixForcedRun: String get() = StringsE.ruleFixForcedRun
-    val rulePathIconStorm: String get() = StringsE.rulePathIconStorm
-    val ruleAreaIconStorm: String get() = StringsE.ruleAreaIconStorm
-    val ruleFixIconStorm: String get() = StringsE.ruleFixIconStorm
     val rulePathApkEncryption: String get() = StringsE.rulePathApkEncryption
     val ruleAreaApkEncryption: String get() = StringsE.ruleAreaApkEncryption
     val ruleFixApkEncryption: String get() = StringsE.ruleFixApkEncryption
@@ -33968,16 +33889,16 @@ object StringsC {
     }
 
     val capabilityLabHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "强制运行、伪装和设备特征"
-        AppLanguage.ENGLISH -> "Forced run, disguise, advanced controls, and device traits"
-        AppLanguage.ARABIC -> "التشغيل الإجباري والتخفي والميزات المتقدمة وخصائص الجهاز"
-        AppLanguage.PORTUGUESE -> "Execução forçada, disfarce, controles avançados e características do dispositivo"
-        AppLanguage.SPANISH -> "Ejecución forzada, disfraz, controles avanzados y rasgos del dispositivo"
-        AppLanguage.FRENCH -> "Exécution forcée, déguisement, contrôles avancés et caractéristiques de l'appareil"
-        AppLanguage.GERMAN -> "Erzwungene Ausführung, Tarnung, erweiterte Steuerelemente und Gerätemerkmale"
-        AppLanguage.RUSSIAN -> "Принудительный запуск, маскировка, расширенные элементы управления и характеристики устройства"
-        AppLanguage.JAPANESE -> "強制実行、偽装、高度なコントロール、デバイス特性"
-        AppLanguage.KOREAN -> "강제 실행, 위장, 고급 컨트롤, 장치 특성"
+        AppLanguage.CHINESE -> "伪装和设备特征"
+        AppLanguage.ENGLISH -> "Disguise, advanced controls, and device traits"
+        AppLanguage.ARABIC -> "التخفي والميزات المتقدمة وخصائص الجهاز"
+        AppLanguage.PORTUGUESE -> "Disfarce, controles avançados e características do dispositivo"
+        AppLanguage.SPANISH -> "Disfraz, controles avanzados y rasgos del dispositivo"
+        AppLanguage.FRENCH -> "Déguisement, contrôles avancés et caractéristiques de l'appareil"
+        AppLanguage.GERMAN -> "Tarnung, erweiterte Steuerelemente und Gerätemerkmale"
+        AppLanguage.RUSSIAN -> "Маскировка, расширенные элементы управления и характеристики устройства"
+        AppLanguage.JAPANESE -> "偽装、高度なコントロール、デバイス特性"
+        AppLanguage.KOREAN -> "위장, 고급 컨트롤, 장치 특성"
     }
 
     val capabilityExtension: String get() = when (Strings.lang) {
@@ -36942,201 +36863,6 @@ object StringsC {
         AppLanguage.KOREAN -> "%s 앱 공유"
     }
 
-    val forcedRunSettings: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "强制运行设置"
-        AppLanguage.ENGLISH -> "Forced Run Settings"
-        AppLanguage.ARABIC -> "إعدادات التشغيل الإجباري"
-        AppLanguage.PORTUGUESE -> "Configurações de Execução Forçada"
-        AppLanguage.SPANISH -> "Configuración de Ejecución Forzada"
-        AppLanguage.FRENCH -> "Paramètres d'Exécution Forcée"
-        AppLanguage.GERMAN -> "Einstellungen für erzwungene Ausführung"
-        AppLanguage.RUSSIAN -> "Настройки принудительного запуска"
-        AppLanguage.JAPANESE -> "強制実行設定"
-        AppLanguage.KOREAN -> "강제 실행 설정"
-    }
-
-    val enableForcedRun: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "启用强制运行"
-        AppLanguage.ENGLISH -> "Enable Forced Run"
-        AppLanguage.ARABIC -> "تمكين التشغيل الإجباري"
-        AppLanguage.PORTUGUESE -> "Ativar Execução Forçada"
-        AppLanguage.SPANISH -> "Activar Ejecución Forzada"
-        AppLanguage.FRENCH -> "Activer l'Exécution Forcée"
-        AppLanguage.GERMAN -> "Erzwungene Ausführung aktivieren"
-        AppLanguage.RUSSIAN -> "Включить принудительный запуск"
-        AppLanguage.JAPANESE -> "強制実行を有効化"
-        AppLanguage.KOREAN -> "강제 실행 활성화"
-    }
-
-    val forcedRunHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "在指定时间段内强制运行应用，无法退出"
-        AppLanguage.ENGLISH -> "Force app to run during specified time, cannot exit"
-        AppLanguage.ARABIC -> "إجبار التطبيق على العمل خلال الوقت المحدد، لا يمكن الخروج"
-        AppLanguage.PORTUGUESE -> "Forçar app a rodar no horário especificado, não pode sair"
-        AppLanguage.SPANISH -> "Forzar la app a ejecutarse en el horario especificado, no se puede salir"
-        AppLanguage.FRENCH -> "Forcer l'app à fonctionner pendant la période spécifiée, sortie impossible"
-        AppLanguage.GERMAN -> "App im angegebenen Zeitraum erzwingen, Beenden nicht möglich"
-        AppLanguage.RUSSIAN -> "Принудительный запуск приложения в указанное время, выход невозможен"
-        AppLanguage.JAPANESE -> "指定時間内にアプリを強制実行し、退出できません"
-        AppLanguage.KOREAN -> "지정된 시간 동안 앱 강제 실행, 종료 불가"
-    }
-
-    val forcedRunMode: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "运行模式"
-        AppLanguage.ENGLISH -> "Run Mode"
-        AppLanguage.ARABIC -> "وضع التشغيل"
-        AppLanguage.PORTUGUESE -> "Modo de Execução"
-        AppLanguage.SPANISH -> "Modo de Ejecución"
-        AppLanguage.FRENCH -> "Mode d'Exécution"
-        AppLanguage.GERMAN -> "Ausführungsmodus"
-        AppLanguage.RUSSIAN -> "Режим запуска"
-        AppLanguage.JAPANESE -> "実行モード"
-        AppLanguage.KOREAN -> "실행 모드"
-    }
-
-    val fixedTimeMode: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "固定时段"
-        AppLanguage.ENGLISH -> "Fixed Time"
-        AppLanguage.ARABIC -> "وقت ثابت"
-        AppLanguage.PORTUGUESE -> "Horário Fixo"
-        AppLanguage.SPANISH -> "Horario Fijo"
-        AppLanguage.FRENCH -> "Heure Fixe"
-        AppLanguage.GERMAN -> "Feste Zeit"
-        AppLanguage.RUSSIAN -> "Фиксированное время"
-        AppLanguage.JAPANESE -> "固定時間"
-        AppLanguage.KOREAN -> "고정 시간"
-    }
-
-    val countdownMode: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "倒计时"
-        AppLanguage.ENGLISH -> "Countdown"
-        AppLanguage.ARABIC -> "العد التنازلي"
-        AppLanguage.PORTUGUESE -> "Contagem Regressiva"
-        AppLanguage.SPANISH -> "Cuenta Regresiva"
-        AppLanguage.FRENCH -> "Compte à Rebours"
-        AppLanguage.GERMAN -> "Countdown"
-        AppLanguage.RUSSIAN -> "Обратный отсчёт"
-        AppLanguage.JAPANESE -> "カウントダウン"
-        AppLanguage.KOREAN -> "카운트다운"
-    }
-
-    val durationMode: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "限时进入"
-        AppLanguage.ENGLISH -> "Limited Access"
-        AppLanguage.ARABIC -> "وصول محدود"
-        AppLanguage.PORTUGUESE -> "Acesso Limitado"
-        AppLanguage.SPANISH -> "Acceso Limitado"
-        AppLanguage.FRENCH -> "Accès Limité"
-        AppLanguage.GERMAN -> "Eingeschränkter Zugriff"
-        AppLanguage.RUSSIAN -> "Ограниченный доступ"
-        AppLanguage.JAPANESE -> "時間制限アクセス"
-        AppLanguage.KOREAN -> "제한된 접근"
-    }
-
-    val fixedTimeModeHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "在固定时间段内强制运行，时间到自动退出"
-        AppLanguage.ENGLISH -> "Force run during fixed time period, auto exit when time ends"
-        AppLanguage.ARABIC -> "التشغيل الإجباري خلال فترة زمنية محددة، الخروج التلقائي عند انتهاء الوقت"
-        AppLanguage.PORTUGUESE -> "Execução forçada no período fixo, saída automática ao terminar"
-        AppLanguage.SPANISH -> "Ejecución forzada en período fijo, salida automática al terminar"
-        AppLanguage.FRENCH -> "Exécution forcée pendant la période fixe, sortie automatique à la fin"
-        AppLanguage.GERMAN -> "Erzwungene Ausführung im festen Zeitraum, automatisches Beenden bei Zeitende"
-        AppLanguage.RUSSIAN -> "Принудительный запуск в фиксированный период, автоматический выход по окончании"
-        AppLanguage.JAPANESE -> "固定期間内に強制実行、時間終了で自動退出"
-        AppLanguage.KOREAN -> "고정 시간 동안 강제 실행, 시간 종료 시 자동 종료"
-    }
-
-    val countdownModeHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "启动后开始倒计时，时间到自动退出"
-        AppLanguage.ENGLISH -> "Start countdown after launch, auto exit when time ends"
-        AppLanguage.ARABIC -> "بدء العد التنازلي بعد التشغيل، الخروج التلقائي عند انتهاء الوقت"
-        AppLanguage.PORTUGUESE -> "Iniciar contagem regressiva após lançamento, saída automática ao terminar"
-        AppLanguage.SPANISH -> "Iniciar cuenta regresiva tras el lanzamiento, salida automática al terminar"
-        AppLanguage.FRENCH -> "Démarrer le compte à rebours après le lancement, sortie automatique à la fin"
-        AppLanguage.GERMAN -> "Countdown nach Start beginnen, automatisches Beenden bei Zeitende"
-        AppLanguage.RUSSIAN -> "Обратный отсчёт после запуска, автоматический выход по окончании"
-        AppLanguage.JAPANESE -> "起動後にカウントダウン開始、時間終了で自動退出"
-        AppLanguage.KOREAN -> "실행 후 카운트다운 시작, 시간 종료 시 자동 종료"
-    }
-
-    val durationModeHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "只能在指定时间段内进入应用，其他时间无法打开"
-        AppLanguage.ENGLISH -> "Can only enter app during specified time, cannot open at other times"
-        AppLanguage.ARABIC -> "يمكن الدخول للتطبيق فقط خلال الوقت المحدد، لا يمكن الفتح في أوقات أخرى"
-        AppLanguage.PORTUGUESE -> "Só é possível entrar no app no horário especificado, não pode abrir em outros horários"
-        AppLanguage.SPANISH -> "Solo se puede entrar a la app en el horario especificado, no se puede abrir en otros momentos"
-        AppLanguage.FRENCH -> "Entrée dans l'app uniquement pendant la période spécifiée, ouverture impossible à d'autres moments"
-        AppLanguage.GERMAN -> "Zugriff auf die App nur im angegebenen Zeitraum, Öffnen zu anderen Zeiten nicht möglich"
-        AppLanguage.RUSSIAN -> "Вход в приложение только в указанное время, в остальное время открыть нельзя"
-        AppLanguage.JAPANESE -> "指定された時間内のみアプリに入ることができ、他の時間は開けません"
-        AppLanguage.KOREAN -> "지정된 시간에만 앱에 진입 가능, 다른 시간에는 열 수 없음"
-    }
-
-    val forcedRunStartTime: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "开始时间"
-        AppLanguage.ENGLISH -> "Start Time"
-        AppLanguage.ARABIC -> "وقت البدء"
-        AppLanguage.PORTUGUESE -> "Hora de Início"
-        AppLanguage.SPANISH -> "Hora de Inicio"
-        AppLanguage.FRENCH -> "Heure de Début"
-        AppLanguage.GERMAN -> "Startzeit"
-        AppLanguage.RUSSIAN -> "Время начала"
-        AppLanguage.JAPANESE -> "開始時間"
-        AppLanguage.KOREAN -> "시작 시간"
-    }
-
-    val forcedRunEndTime: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "结束时间"
-        AppLanguage.ENGLISH -> "End Time"
-        AppLanguage.ARABIC -> "وقت الانتهاء"
-        AppLanguage.PORTUGUESE -> "Hora de Término"
-        AppLanguage.SPANISH -> "Hora de Fin"
-        AppLanguage.FRENCH -> "Heure de Fin"
-        AppLanguage.GERMAN -> "Endzeit"
-        AppLanguage.RUSSIAN -> "Время окончания"
-        AppLanguage.JAPANESE -> "終了時間"
-        AppLanguage.KOREAN -> "종료 시간"
-    }
-
-    val activeDays: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "生效日期"
-        AppLanguage.ENGLISH -> "Active Days"
-        AppLanguage.ARABIC -> "أيام التفعيل"
-        AppLanguage.PORTUGUESE -> "Dias Ativos"
-        AppLanguage.SPANISH -> "Días Activos"
-        AppLanguage.FRENCH -> "Jours Actifs"
-        AppLanguage.GERMAN -> "Aktive Tage"
-        AppLanguage.RUSSIAN -> "Активные дни"
-        AppLanguage.JAPANESE -> "有効日"
-        AppLanguage.KOREAN -> "활성 요일"
-    }
-
-    val countdownDuration: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "倒计时时长"
-        AppLanguage.ENGLISH -> "Countdown Duration"
-        AppLanguage.ARABIC -> "مدة العد التنازلي"
-        AppLanguage.PORTUGUESE -> "Duração da Contagem Regressiva"
-        AppLanguage.SPANISH -> "Duración de la Cuenta Regresiva"
-        AppLanguage.FRENCH -> "Durée du Compte à Rebours"
-        AppLanguage.GERMAN -> "Countdown-Dauer"
-        AppLanguage.RUSSIAN -> "Длительность обратного отсчёта"
-        AppLanguage.JAPANESE -> "カウントダウン時間"
-        AppLanguage.KOREAN -> "카운트다운 기간"
-    }
-
-    val minutes: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "分钟"
-        AppLanguage.ENGLISH -> "minutes"
-        AppLanguage.ARABIC -> "دقائق"
-        AppLanguage.PORTUGUESE -> "minutos"
-        AppLanguage.SPANISH -> "minutos"
-        AppLanguage.FRENCH -> "minutes"
-        AppLanguage.GERMAN -> "Minuten"
-        AppLanguage.RUSSIAN -> "минут"
-        AppLanguage.JAPANESE -> "分"
-        AppLanguage.KOREAN -> "분"
-    }
-
     val minutesShort: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "分"
         AppLanguage.ENGLISH -> "min"
@@ -37148,175 +36874,6 @@ object StringsC {
         AppLanguage.RUSSIAN -> "мин"
         AppLanguage.JAPANESE -> "分"
         AppLanguage.KOREAN -> "분"
-    }
-
-    val accessStartTime: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "可进入开始时间"
-        AppLanguage.ENGLISH -> "Access Start Time"
-        AppLanguage.ARABIC -> "وقت بدء الوصول"
-        AppLanguage.PORTUGUESE -> "Hora de Início de Acesso"
-        AppLanguage.SPANISH -> "Hora de Inicio de Acceso"
-        AppLanguage.FRENCH -> "Heure de Début d'Accès"
-        AppLanguage.GERMAN -> "Zugriffs-Startzeit"
-        AppLanguage.RUSSIAN -> "Время начала доступа"
-        AppLanguage.JAPANESE -> "アクセス開始時間"
-        AppLanguage.KOREAN -> "접근 시작 시간"
-    }
-
-    val accessEndTime: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "可进入结束时间"
-        AppLanguage.ENGLISH -> "Access End Time"
-        AppLanguage.ARABIC -> "وقت انتهاء الوصول"
-        AppLanguage.PORTUGUESE -> "Hora de Término de Acesso"
-        AppLanguage.SPANISH -> "Hora de Fin de Acceso"
-        AppLanguage.FRENCH -> "Heure de Fin d'Accès"
-        AppLanguage.GERMAN -> "Zugriffs-Endzeit"
-        AppLanguage.RUSSIAN -> "Время окончания доступа"
-        AppLanguage.JAPANESE -> "アクセス終了時間"
-        AppLanguage.KOREAN -> "접근 종료 시간"
-    }
-
-    val accessDays: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "可进入日期"
-        AppLanguage.ENGLISH -> "Access Days"
-        AppLanguage.ARABIC -> "أيام الوصول"
-        AppLanguage.PORTUGUESE -> "Dias de Acesso"
-        AppLanguage.SPANISH -> "Días de Acceso"
-        AppLanguage.FRENCH -> "Jours d'Accès"
-        AppLanguage.GERMAN -> "Zugriffstage"
-        AppLanguage.RUSSIAN -> "Дни доступа"
-        AppLanguage.JAPANESE -> "アクセス日"
-        AppLanguage.KOREAN -> "접근 요일"
-    }
-
-    val blockSystemUI: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "屏蔽系统UI"
-        AppLanguage.ENGLISH -> "Block System UI"
-        AppLanguage.ARABIC -> "حظر واجهة النظام"
-        AppLanguage.PORTUGUESE -> "Bloquear UI do Sistema"
-        AppLanguage.SPANISH -> "Bloquear UI del Sistema"
-        AppLanguage.FRENCH -> "Bloquer l'UI Système"
-        AppLanguage.GERMAN -> "System-UI blockieren"
-        AppLanguage.RUSSIAN -> "Блокировать системный UI"
-        AppLanguage.JAPANESE -> "システムUIをブロック"
-        AppLanguage.KOREAN -> "시스템 UI 차단"
-    }
-
-    val blockBackButton: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "屏蔽返回键"
-        AppLanguage.ENGLISH -> "Block Back Button"
-        AppLanguage.ARABIC -> "حظر زر الرجوع"
-        AppLanguage.PORTUGUESE -> "Bloquear Botão Voltar"
-        AppLanguage.SPANISH -> "Bloquear Botón Atrás"
-        AppLanguage.FRENCH -> "Bloquer Bouton Retour"
-        AppLanguage.GERMAN -> "Zurück-Button blockieren"
-        AppLanguage.RUSSIAN -> "Блокировать кнопку «Назад»"
-        AppLanguage.JAPANESE -> "戻るボタンをブロック"
-        AppLanguage.KOREAN -> "뒤로 가기 버튼 차단"
-    }
-
-    val blockHomeButton: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "屏蔽Home键"
-        AppLanguage.ENGLISH -> "Block Home Button"
-        AppLanguage.ARABIC -> "حظر زر الرئيسية"
-        AppLanguage.PORTUGUESE -> "Bloquear Botão Home"
-        AppLanguage.SPANISH -> "Bloquear Botón Home"
-        AppLanguage.FRENCH -> "Bloquer Bouton Home"
-        AppLanguage.GERMAN -> "Home-Button blockieren"
-        AppLanguage.RUSSIAN -> "Блокировать кнопку Home"
-        AppLanguage.JAPANESE -> "ホームボタンをブロック"
-        AppLanguage.KOREAN -> "홈 버튼 차단"
-    }
-
-    val showCountdownTimer: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "显示倒计时"
-        AppLanguage.ENGLISH -> "Show Countdown"
-        AppLanguage.ARABIC -> "عرض العد التنازلي"
-        AppLanguage.PORTUGUESE -> "Mostrar Contagem Regressiva"
-        AppLanguage.SPANISH -> "Mostrar Cuenta Regresiva"
-        AppLanguage.FRENCH -> "Afficher le Compte à Rebours"
-        AppLanguage.GERMAN -> "Countdown anzeigen"
-        AppLanguage.RUSSIAN -> "Показать обратный отсчёт"
-        AppLanguage.JAPANESE -> "カウントダウンを表示"
-        AppLanguage.KOREAN -> "카운트다운 표시"
-    }
-
-    val allowEmergencyExit: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "允许紧急退出"
-        AppLanguage.ENGLISH -> "Allow Emergency Exit"
-        AppLanguage.ARABIC -> "السماح بالخروج الطارئ"
-        AppLanguage.PORTUGUESE -> "Permitir Saída de Emergência"
-        AppLanguage.SPANISH -> "Permitir Salida de Emergencia"
-        AppLanguage.FRENCH -> "Autoriser la Sortie d'Urgence"
-        AppLanguage.GERMAN -> "Notausgang erlauben"
-        AppLanguage.RUSSIAN -> "Разрешить экстренный выход"
-        AppLanguage.JAPANESE -> "緊急退出を許可"
-        AppLanguage.KOREAN -> "긴급 종료 허용"
-    }
-
-    val emergencyExitHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "设置密码后可通过密码紧急退出"
-        AppLanguage.ENGLISH -> "Set password to allow emergency exit"
-        AppLanguage.ARABIC -> "تعيين كلمة مرور للسماح بالخروج الطارئ"
-        AppLanguage.PORTUGUESE -> "Defina senha para permitir saída de emergência"
-        AppLanguage.SPANISH -> "Establece contraseña para permitir salida de emergencia"
-        AppLanguage.FRENCH -> "Définir un mot de passe pour autoriser la sortie d'urgence"
-        AppLanguage.GERMAN -> "Passwort festlegen, um Notausgang zu erlauben"
-        AppLanguage.RUSSIAN -> "Установите пароль для экстренного выхода"
-        AppLanguage.JAPANESE -> "パスワードを設定して緊急退出を許可"
-        AppLanguage.KOREAN -> "비밀번호를 설정하여 긴급 종료 허용"
-    }
-
-    val emergencyPassword: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "紧急退出密码"
-        AppLanguage.ENGLISH -> "Emergency Password"
-        AppLanguage.ARABIC -> "كلمة مرور الطوارئ"
-        AppLanguage.PORTUGUESE -> "Senha de Emergência"
-        AppLanguage.SPANISH -> "Contraseña de Emergencia"
-        AppLanguage.FRENCH -> "Mot de Passe d'Urgence"
-        AppLanguage.GERMAN -> "Notfall-Passwort"
-        AppLanguage.RUSSIAN -> "Пароль экстренного выхода"
-        AppLanguage.JAPANESE -> "緊急退出パスワード"
-        AppLanguage.KOREAN -> "긴급 종료 비밀번호"
-    }
-
-    val emergencyPasswordHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "输入4-8位数字密码"
-        AppLanguage.ENGLISH -> "Enter 4-8 digit password"
-        AppLanguage.ARABIC -> "أدخل كلمة مرور من 4-8 أرقام"
-        AppLanguage.PORTUGUESE -> "Digite senha de 4-8 dígitos"
-        AppLanguage.SPANISH -> "Introduce contraseña de 4-8 dígitos"
-        AppLanguage.FRENCH -> "Saisir un mot de passe de 4-8 chiffres"
-        AppLanguage.GERMAN -> "4-8-stelliges Passwort eingeben"
-        AppLanguage.RUSSIAN -> "Введите пароль из 4-8 цифр"
-        AppLanguage.JAPANESE -> "4-8桁の数字パスワードを入力"
-        AppLanguage.KOREAN -> "4-8자리 숫자 비밀번호 입력"
-    }
-
-    val forcedRunActive: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "强制运行中"
-        AppLanguage.ENGLISH -> "Forced Run Active"
-        AppLanguage.ARABIC -> "التشغيل الإجباري نشط"
-        AppLanguage.PORTUGUESE -> "Execução Forçada Ativa"
-        AppLanguage.SPANISH -> "Ejecución Forzada Activa"
-        AppLanguage.FRENCH -> "Exécution Forcée Active"
-        AppLanguage.GERMAN -> "Erzwungene Ausführung aktiv"
-        AppLanguage.RUSSIAN -> "Принудительный запуск активен"
-        AppLanguage.JAPANESE -> "強制実行中"
-        AppLanguage.KOREAN -> "강제 실행 중"
-    }
-
-    val cannotExitDuringForcedRun: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "强制运行期间无法退出"
-        AppLanguage.ENGLISH -> "Cannot exit during forced run"
-        AppLanguage.ARABIC -> "لا يمكن الخروج أثناء التشغيل الإجباري"
-        AppLanguage.PORTUGUESE -> "Não é possível sair durante execução forçada"
-        AppLanguage.SPANISH -> "No se puede salir durante la ejecución forzada"
-        AppLanguage.FRENCH -> "Sortie impossible pendant l'exécution forcée"
-        AppLanguage.GERMAN -> "Beenden während erzwungener Ausführung nicht möglich"
-        AppLanguage.RUSSIAN -> "Выход невозможен во время принудительного запуска"
-        AppLanguage.JAPANESE -> "強制実行中は退出できません"
-        AppLanguage.KOREAN -> "강제 실행 중에는 종료할 수 없음"
     }
 
     val floatingWindowTitle: String get() = when (Strings.lang) {
@@ -39092,305 +38649,6 @@ object StringsC {
         AppLanguage.RUSSIAN -> "ECH требует движок GeckoView для шифрования SNI. Автоматически переключено на GeckoView — убедитесь, что среда выполнения GeckoView загружена перед сборкой."
         AppLanguage.JAPANESE -> "ECH は SNI を暗号化するために GeckoView エンジンが必要です。自動的に GeckoView に切り替わりました — ビルド前に GeckoView ランタイムがダウンロード済みであることを確認してください。"
         AppLanguage.KOREAN -> "ECH는 SNI 암호화를 위해 GeckoView 엔진이 필요합니다. 자동으로 GeckoView로 전환되었습니다 — 빌드 전에 GeckoView 런타임이 다운로드되어 있는지 확인하세요."
-    }
-
-    val disguiseMultiIconTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "图标与应用"
-        AppLanguage.ENGLISH -> "Icons & App"
-        AppLanguage.ARABIC -> "الأيقونات والتطبيق"
-        AppLanguage.PORTUGUESE -> "Ícones e Aplicativo"
-        AppLanguage.SPANISH -> "Iconos y Aplicación"
-        AppLanguage.FRENCH -> "Icônes et Application"
-        AppLanguage.GERMAN -> "Symbole & App"
-        AppLanguage.RUSSIAN -> "Иконки и приложение"
-        AppLanguage.JAPANESE -> "アイコンとアプリ"
-        AppLanguage.KOREAN -> "아이콘 및 앱"
-    }
-
-    val disguiseEnableMultiIcon: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "启用多图标"
-        AppLanguage.ENGLISH -> "Enable Multi Icons"
-        AppLanguage.ARABIC -> "تفعيل الأيقونات المتعددة"
-        AppLanguage.PORTUGUESE -> "Ativar múltiplos ícones"
-        AppLanguage.SPANISH -> "Habilitar múltiples iconos"
-        AppLanguage.FRENCH -> "Activer plusieurs icônes"
-        AppLanguage.GERMAN -> "Mehrere Symbole aktivieren"
-        AppLanguage.RUSSIAN -> "Включить несколько иконок"
-        AppLanguage.JAPANESE -> "マルチアイコンを有効化"
-        AppLanguage.KOREAN -> "다중 아이콘 활성화"
-    }
-
-    val disguiseEnableMultiIconDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "安装后在桌面显示多个应用图标"
-        AppLanguage.ENGLISH -> "Show multiple app icons on desktop after installation"
-        AppLanguage.ARABIC -> "عرض أيقونات تطبيق متعددة على سطح المكتب بعد التثبيت"
-        AppLanguage.PORTUGUESE -> "Mostrar múltiplos ícones do app na área de trabalho após a instalação"
-        AppLanguage.SPANISH -> "Mostrar múltiples iconos de la app en el escritorio tras la instalación"
-        AppLanguage.FRENCH -> "Afficher plusieurs icônes d'application sur le bureau après l'installation"
-        AppLanguage.GERMAN -> "Mehrere App-Symbole auf dem Desktop nach der Installation anzeigen"
-        AppLanguage.RUSSIAN -> "Показывать несколько иконок приложения на рабочем столе после установки"
-        AppLanguage.JAPANESE -> "インストール後にデスクトップに複数のアプリアイコンを表示"
-        AppLanguage.KOREAN -> "설치 후 바탕화면에 여러 앱 아이콘 표시"
-    }
-
-    val disguiseIconCountTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "桌面图标数量"
-        AppLanguage.ENGLISH -> "Desktop Icon Count"
-        AppLanguage.ARABIC -> "عدد أيقونات سطح المكتب"
-        AppLanguage.PORTUGUESE -> "Contagem de ícones na área de trabalho"
-        AppLanguage.SPANISH -> "Recuento de iconos de escritorio"
-        AppLanguage.FRENCH -> "Nombre d'icônes sur le bureau"
-        AppLanguage.GERMAN -> "Anzahl der Desktop-Symbole"
-        AppLanguage.RUSSIAN -> "Количество иконок на рабочем столе"
-        AppLanguage.JAPANESE -> "デスクトップアイコン数"
-        AppLanguage.KOREAN -> "바탕화면 아이콘 수"
-    }
-
-    val disguiseCountLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "数量"
-        AppLanguage.ENGLISH -> "Count"
-        AppLanguage.ARABIC -> "العدد"
-        AppLanguage.PORTUGUESE -> "Contagem"
-        AppLanguage.SPANISH -> "Recuento"
-        AppLanguage.FRENCH -> "Nombre"
-        AppLanguage.GERMAN -> "Anzahl"
-        AppLanguage.RUSSIAN -> "Количество"
-        AppLanguage.JAPANESE -> "数"
-        AppLanguage.KOREAN -> "수"
-    }
-
-    val iconStormMode: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "⚡ Icon Storm 模式"
-        AppLanguage.ENGLISH -> "⚡ Icon Storm Mode"
-        AppLanguage.ARABIC -> "⚡ وضع عاصفة الأيقونات"
-        AppLanguage.PORTUGUESE -> "⚡ Modo Icon Storm"
-        AppLanguage.SPANISH -> "⚡ Modo Icon Storm"
-        AppLanguage.FRENCH -> "⚡ Mode Icon Storm"
-        AppLanguage.GERMAN -> "⚡ Icon Storm-Modus"
-        AppLanguage.RUSSIAN -> "⚡ Режим Icon Storm"
-        AppLanguage.JAPANESE -> "⚡ Icon Storm モード"
-        AppLanguage.KOREAN -> "⚡ Icon Storm 모드"
-    }
-
-    val iconStormNoLimit: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "🔓 无上限 — 利用 activity-alias 原生机制注入无限桌面图标"
-        AppLanguage.ENGLISH -> "🔓 No limit — inject unlimited desktop icons via native activity-alias"
-        AppLanguage.ARABIC -> "🔓 بدون حد — حقن أيقونات غير محدودة عبر activity-alias الأصلية"
-        AppLanguage.PORTUGUESE -> "🔓 Sem limite — injeta ícones ilimitados na área de trabalho via activity-alias nativo"
-        AppLanguage.SPANISH -> "🔓 Sin límite — inyecta iconos ilimitados en el escritorio vía activity-alias nativo"
-        AppLanguage.FRENCH -> "🔓 Sans limite — injecte des icônes illimités sur le bureau via activity-alias natif"
-        AppLanguage.GERMAN -> "🔓 Kein Limit — injiziert unbegrenzte Desktop-Symbole über natives activity-alias"
-        AppLanguage.RUSSIAN -> "🔓 Без ограничений — внедряет неограниченные иконки на рабочий стол через нативный activity-alias"
-        AppLanguage.JAPANESE -> "🔓 無制限 — ネイティブの activity-alias を介して無制限のデスクトップアイコンを注入"
-        AppLanguage.KOREAN -> "🔓 제한 없음 — 네이티브 activity-alias를 통해 무제한 바탕화면 아이콘 주입"
-    }
-
-    val iconStormUnlimited: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "最小 2，无上限 ∞"
-        AppLanguage.ENGLISH -> "Min 2, no upper limit ∞"
-        AppLanguage.ARABIC -> "الحد الأدنى 2، بدون حد أعلى ∞"
-        AppLanguage.PORTUGUESE -> "Mín 2, sem limite superior ∞"
-        AppLanguage.SPANISH -> "Mín 2, sin límite superior ∞"
-        AppLanguage.FRENCH -> "Min 2, sans limite supérieure ∞"
-        AppLanguage.GERMAN -> "Min 2, keine Obergrenze ∞"
-        AppLanguage.RUSSIAN -> "Мин 2, без верхнего предела ∞"
-        AppLanguage.JAPANESE -> "最小2、上限なし ∞"
-        AppLanguage.KOREAN -> "최소 2, 상한 없음 ∞"
-    }
-
-    val iconStormImpactAssessment: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "影响评估"
-        AppLanguage.ENGLISH -> "Impact Assessment"
-        AppLanguage.ARABIC -> "تقييم التأثير"
-        AppLanguage.PORTUGUESE -> "Avaliação de impacto"
-        AppLanguage.SPANISH -> "Evaluación de impacto"
-        AppLanguage.FRENCH -> "Évaluation d'impact"
-        AppLanguage.GERMAN -> "Auswirkungsbewertung"
-        AppLanguage.RUSSIAN -> "Оценка воздействия"
-        AppLanguage.JAPANESE -> "影響評価"
-        AppLanguage.KOREAN -> "영향 평가"
-    }
-
-    val iconStormAliasCount: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Alias 注入数"
-        AppLanguage.ENGLISH -> "Alias Injected"
-        AppLanguage.ARABIC -> "عدد الأسماء المستعارة"
-        AppLanguage.PORTUGUESE -> "Alias injetados"
-        AppLanguage.SPANISH -> "Alias inyectados"
-        AppLanguage.FRENCH -> "Alias injectés"
-        AppLanguage.GERMAN -> "Alias injiziert"
-        AppLanguage.RUSSIAN -> "Alias внедрено"
-        AppLanguage.JAPANESE -> "注入された Alias"
-        AppLanguage.KOREAN -> "주입된 Alias"
-    }
-
-    val iconStormManifestOverhead: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Manifest 增量"
-        AppLanguage.ENGLISH -> "Manifest Overhead"
-        AppLanguage.ARABIC -> "حجم إضافي للمانيفست"
-        AppLanguage.PORTUGUESE -> "Sobrecarga de Manifest"
-        AppLanguage.SPANISH -> "Sobrecarga de Manifest"
-        AppLanguage.FRENCH -> "Surcharge de Manifest"
-        AppLanguage.GERMAN -> "Manifest-Overhead"
-        AppLanguage.RUSSIAN -> "Накладные расходы Manifest"
-        AppLanguage.JAPANESE -> "Manifest オーバーヘッド"
-        AppLanguage.KOREAN -> "Manifest 오버헤드"
-    }
-
-    val iconStormEffectNone: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "✅ 设备不受影响，正常使用"
-        AppLanguage.ENGLISH -> "✅ No impact on device, normal usage"
-        AppLanguage.ARABIC -> "✅ لا تأثير على الجهاز، استخدام عادي"
-        AppLanguage.PORTUGUESE -> "✅ Sem impacto no dispositivo, uso normal"
-        AppLanguage.SPANISH -> "✅ Sin impacto en el dispositivo, uso normal"
-        AppLanguage.FRENCH -> "✅ Aucun impact sur l'appareil, utilisation normale"
-        AppLanguage.GERMAN -> "✅ Keine Auswirkungen auf das Gerät, normale Nutzung"
-        AppLanguage.RUSSIAN -> "✅ Без влияния на устройство, обычное использование"
-        AppLanguage.JAPANESE -> "✅ デバイスへの影響なし、通常使用"
-        AppLanguage.KOREAN -> "✅ 기기에 영향 없음, 일반 사용"
-    }
-
-    val iconStormEffectLight: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "💚 桌面可见多个图标，轻微影响"
-        AppLanguage.ENGLISH -> "💚 Multiple icons visible on home screen, slight impact"
-        AppLanguage.ARABIC -> "💚 أيقونات متعددة مرئية على الشاشة الرئيسية، تأثير طفيف"
-        AppLanguage.PORTUGUESE -> "💚 Múltiplos ícones visíveis na tela inicial, impacto leve"
-        AppLanguage.SPANISH -> "💚 Múltiples iconos visibles en la pantalla de inicio, impacto ligero"
-        AppLanguage.FRENCH -> "💚 Plusieurs icônes visibles sur l'écran d'accueil, impact léger"
-        AppLanguage.GERMAN -> "💚 Mehrere Symbole auf dem Startbildschirm sichtbar, geringe Auswirkung"
-        AppLanguage.RUSSIAN -> "💚 Несколько иконок видно на главном экране, незначительное влияние"
-        AppLanguage.JAPANESE -> "💚 ホーム画面に複数のアイコンが表示、軽微な影響"
-        AppLanguage.KOREAN -> "💚 홈 화면에 여러 아이콘 표시, 약간의 영향"
-    }
-
-    val iconStormEffectMedium: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "🟡 桌面图标明显增多，Launcher 可能短暂卡顿"
-        AppLanguage.ENGLISH -> "🟡 Noticeable icon flood on home screen, Launcher may briefly lag"
-        AppLanguage.ARABIC -> "🟡 فيضان أيقونات ملحوظ، قد يتباطأ المشغل لفترة وجيزة"
-        AppLanguage.PORTUGUESE -> "🟡 Inundação notável de ícones na tela inicial, Launcher pode lagar brevemente"
-        AppLanguage.SPANISH -> "🟡 Inundación notable de iconos en la pantalla de inicio, el Launcher puede lag brevemente"
-        AppLanguage.FRENCH -> "🟡 Afflux notable d'icônes sur l'écran d'accueil, le Launcher peut ralentir brièvement"
-        AppLanguage.GERMAN -> "🟡 Deutliche Symbol-Flut auf dem Startbildschirm, Launcher kann kurzzeitig ruckeln"
-        AppLanguage.RUSSIAN -> "🟡 Заметный поток иконок на главном экране, Launcher может кратковременно тормозить"
-        AppLanguage.JAPANESE -> "🟡 ホーム画面に顕著なアイコンの氾濫、Launcherが短時間ラグする可能性"
-        AppLanguage.KOREAN -> "🟡 홈 화면에 눈에 띄는 아이콘 유입, Launcher가 일시적으로 지연될 수 있음"
-    }
-
-    val iconStormEffectHeavy: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "🟠 桌面几乎被图标覆盖，Launcher 出现明显延迟"
-        AppLanguage.ENGLISH -> "🟠 Home screen nearly covered with icons, Launcher shows noticeable delay"
-        AppLanguage.ARABIC -> "🟠 الشاشة الرئيسية مغطاة تقريباً بالأيقونات، تأخر ملحوظ في المشغل"
-        AppLanguage.PORTUGUESE -> "🟠 Tela inicial quase coberta de ícones, Launcher mostra atraso notável"
-        AppLanguage.SPANISH -> "🟠 Pantalla de inicio casi cubierta de iconos, el Launcher muestra un retraso notable"
-        AppLanguage.FRENCH -> "🟠 Écran d'accueil presque couvert d'icônes, le Launcher montre un délai notable"
-        AppLanguage.GERMAN -> "🟠 Startbildschirm fast mit Symbolen bedeckt, Launcher zeigt merkliche Verzögerung"
-        AppLanguage.RUSSIAN -> "🟠 Главный экран почти покрыт иконками, Launcher показывает заметную задержку"
-        AppLanguage.JAPANESE -> "🟠 ホーム画面がほぼアイコンで覆われる、Launcherに顕著な遅延が発生"
-        AppLanguage.KOREAN -> "🟠 홈 화면이 아이콘으로 거의 덮임, Launcher에 눈에 띄는 지연 발생"
-    }
-
-    val iconStormEffectExtreme: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "🔴 Launcher 严重卡顿，设备响应缓慢，可能触发 ANR"
-        AppLanguage.ENGLISH -> "🔴 Launcher severely lagging, device unresponsive, may trigger ANR"
-        AppLanguage.ARABIC -> "🔴 تباطؤ شديد في المشغل، الجهاز غير مستجيب، قد يسبب ANR"
-        AppLanguage.PORTUGUESE -> "🔴 Launcher gravemente lagando, dispositivo sem resposta, pode disparar ANR"
-        AppLanguage.SPANISH -> "🔴 Launcher con retraso grave, dispositivo sin respuesta, puede activar ANR"
-        AppLanguage.FRENCH -> "🔴 Launcher fortement ralenti, appareil sans réponse, peut déclencher ANR"
-        AppLanguage.GERMAN -> "🔴 Launcher stark verzögert, Gerät reagiert nicht, kann ANR auslösen"
-        AppLanguage.RUSSIAN -> "🔴 Launcher сильно тормозит, устройство не реагирует, может вызвать ANR"
-        AppLanguage.JAPANESE -> "🔴 Launcherが深刻にラグ、デバイスが応答しない、ANRを引き起こす可能性"
-        AppLanguage.KOREAN -> "🔴 Launcher가 심하게 지연, 기기 응답 없음, ANR 유발 가능"
-    }
-
-    val iconStormEffectDangerous: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "☢️ 设备可能完全卡死需重启，PackageManager 可能崩溃。仅供安全研究。"
-        AppLanguage.ENGLISH -> "☢️ Device may freeze completely requiring reboot. PackageManager may crash. For security research only."
-        AppLanguage.ARABIC -> "☢️ قد يتجمد الجهاز بالكامل ويحتاج إعادة تشغيل. للبحث الأمني فقط."
-        AppLanguage.PORTUGUESE -> "☢️ Dispositivo pode congelar completamente exigindo reinicialização. PackageManager pode falhar. Apenas para pesquisa de segurança."
-        AppLanguage.SPANISH -> "☢️ El dispositivo puede congelarse completamente requiriendo reinicio. PackageManager puede fallar. Solo para investigación de seguridad."
-        AppLanguage.FRENCH -> "☢️ L'appareil peut geler complètement nécessitant un redémarrage. PackageManager peut planter. Pour la recherche de sécurité uniquement."
-        AppLanguage.GERMAN -> "☢️ Gerät kann komplett einfrieren und Neustart erfordern. PackageManager kann abstürzen. Nur für Sicherheitsforschung."
-        AppLanguage.RUSSIAN -> "☢️ Устройство может полностью зависнуть, требуя перезагрузки. PackageManager может упасть. Только для исследований безопасности."
-        AppLanguage.JAPANESE -> "☢️ デバイスが完全にフリーズし再起動が必要になる可能性。PackageManagerがクラッシュする可能性。セキュリティ研究目的のみ。"
-        AppLanguage.KOREAN -> "☢️ 기기가 완전히 멈춰 재부팅이 필요할 수 있습니다. PackageManager가 충돌할 수 있습니다. 보안 연구 전용."
-    }
-
-    val iconStormRandomNames: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "随机化图标名称"
-        AppLanguage.ENGLISH -> "Randomize Icon Names"
-        AppLanguage.ARABIC -> "تعشير أسماء الأيقونات"
-        AppLanguage.PORTUGUESE -> "Aleatorizar nomes de ícones"
-        AppLanguage.SPANISH -> "Aleatorizar nombres de iconos"
-        AppLanguage.FRENCH -> "Aléatoriser les noms d'icônes"
-        AppLanguage.GERMAN -> "Symbolnamen randomisieren"
-        AppLanguage.RUSSIAN -> "Рандомизировать названия иконок"
-        AppLanguage.JAPANESE -> "アイコン名をランダム化"
-        AppLanguage.KOREAN -> "아이콘 이름 무작위화"
-    }
-
-    val iconStormRandomNamesDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "每个图标使用不同的随机名称，增加混淆性"
-        AppLanguage.ENGLISH -> "Each icon uses a different random name for obfuscation"
-        AppLanguage.ARABIC -> "كل أيقونة تستخدم اسماً عشوائياً مختلفاً للتمويه"
-        AppLanguage.PORTUGUESE -> "Cada ícone usa um nome aleatório diferente para ofuscação"
-        AppLanguage.SPANISH -> "Cada icono usa un nombre aleatorio diferente para ofuscación"
-        AppLanguage.FRENCH -> "Chaque icône utilise un nom aléatoire différent pour l'obscurcissement"
-        AppLanguage.GERMAN -> "Jedes Symbol verwendet einen anderen zufälligen Namen zur Verschleierung"
-        AppLanguage.RUSSIAN -> "Каждая иконка использует разное случайное название для обфускации"
-        AppLanguage.JAPANESE -> "各アイコンは難読化のために異なるランダム名を使用"
-        AppLanguage.KOREAN -> "각 아이콘은 난독화를 위해 서로 다른 무작위 이름을 사용"
-    }
-
-    val iconStormNamePrefix: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "名称前缀"
-        AppLanguage.ENGLISH -> "Name Prefix"
-        AppLanguage.ARABIC -> "بادئة الاسم"
-        AppLanguage.PORTUGUESE -> "Prefixo do nome"
-        AppLanguage.SPANISH -> "Prefijo del nombre"
-        AppLanguage.FRENCH -> "Préfixe du nom"
-        AppLanguage.GERMAN -> "Namenspräfix"
-        AppLanguage.RUSSIAN -> "Префикс имени"
-        AppLanguage.JAPANESE -> "名前のプレフィックス"
-        AppLanguage.KOREAN -> "이름 접두사"
-    }
-
-    val iconStormNamePrefixHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "留空则使用应用名，填写则每个图标显示: 前缀 1, 前缀 2..."
-        AppLanguage.ENGLISH -> "Leave empty to use app name, or enter prefix for: Prefix 1, Prefix 2..."
-        AppLanguage.ARABIC -> "اتركه فارغاً لاستخدام اسم التطبيق، أو أدخل بادئة"
-        AppLanguage.PORTUGUESE -> "Deixe vazio para usar o nome do app, ou insira prefixo para: Prefix 1, Prefix 2..."
-        AppLanguage.SPANISH -> "Dejar vacío para usar el nombre de la app, o introducir prefijo para: Prefix 1, Prefix 2..."
-        AppLanguage.FRENCH -> "Laisser vide pour utiliser le nom de l'app, ou saisir un préfixe pour: Prefix 1, Prefix 2..."
-        AppLanguage.GERMAN -> "Leer lassen, um App-Namen zu verwenden, oder Präfix eingeben für: Prefix 1, Prefix 2..."
-        AppLanguage.RUSSIAN -> "Оставьте пустым для использования имени приложения, или введите префикс для: Prefix 1, Prefix 2..."
-        AppLanguage.JAPANESE -> "空欄でアプリ名を使用、または接頭辞を入力: Prefix 1, Prefix 2..."
-        AppLanguage.KOREAN -> "앱 이름을 사용하려면 비워두거나, 접두사를 입력하세요: Prefix 1, Prefix 2..."
-    }
-
-    val iconStormTip: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "Icon Storm 基于 Android activity-alias 原生机制，每个 alias 都拥有独立的 MAIN/LAUNCHER intent-filter，因此 Launcher 必须为每个 alias 创建独立图标。这是 Android 框架的设计行为，非漏洞利用。极端数量下 Launcher 的处理能力成为瓶颈。"
-        AppLanguage.ENGLISH -> "Icon Storm leverages Android's native activity-alias mechanism. Each alias has its own MAIN/LAUNCHER intent-filter, forcing the Launcher to create an independent icon. This is by-design Android framework behavior, not an exploit. At extreme counts, the Launcher's processing capacity becomes the bottleneck."
-        AppLanguage.ARABIC -> "تستفيد عاصفة الأيقونات من آلية activity-alias الأصلية في Android. كل alias له intent-filter خاص به."
-        AppLanguage.PORTUGUESE -> "Icon Storm aproveita o mecanismo nativo activity-alias do Android. Cada alias tem seu próprio MAIN/LAUNCHER intent-filter, forçando o Launcher a criar um ícone independente. Esse é o comportamento do framework Android por design, não uma exploração. Em números extremos, a capacidade de processamento do Launcher se torna o gargalo."
-        AppLanguage.SPANISH -> "Icon Storm aprovecha el mecanismo nativo activity-alias de Android. Cada alias tiene su propio MAIN/LAUNCHER intent-filter, forzando al Launcher a crear un icono independiente. Este es el comportamiento del framework Android por diseño, no un exploit. En cantidades extremas, la capacidad de procesamiento del Launcher se convierte en el cuello de botella."
-        AppLanguage.FRENCH -> "Icon Storm tire parti du mécanisme natif activity-alias d'Android. Chaque alias a son propre MAIN/LAUNCHER intent-filter, forçant le Launcher à créer une icône indépendante. C'est le comportement du framework Android par conception, pas une exploitation. À des quantités extrêmes, la capacité de traitement du Launcher devient le goulot d'étranglement."
-        AppLanguage.GERMAN -> "Icon Storm nutzt den nativen activity-alias-Mechanismus von Android. Jeder Alias hat seinen eigenen MAIN/LAUNCHER intent-filter, wodurch der Launcher ein unabhängiges Symbol erstellen muss. Dies ist das vorgesehene Verhalten des Android-Frameworks, kein Exploit. Bei extremen Mengen wird die Verarbeitungskapazität des Launchers zum Engpass."
-        AppLanguage.RUSSIAN -> "Icon Storm использует нативный механизм activity-alias в Android. Каждый alias имеет собственный MAIN/LAUNCHER intent-filter, заставляя Launcher создавать независимую иконку. Это предусмотренное поведение фреймворка Android, а не эксплойт. При экстремальных количествах пропускная способность Launcher становится узким местом."
-        AppLanguage.JAPANESE -> "Icon Storm は Android のネイティブ activity-alias メカニズムを活用します。各 alias は独自の MAIN/LAUNCHER intent-filter を持ち、Launcher に独立したアイコンを作成させます。これは設計上の Android フレームワークの動作であり、エクスプロイトではありません。極端な数では、Launcher の処理能力がボトルネックになります。"
-        AppLanguage.KOREAN -> "Icon Storm은 Android의 네이티브 activity-alias 메커니즘을 활용합니다. 각 alias는 자체 MAIN/LAUNCHER intent-filter를 가지며, Launcher가 독립적인 아이콘을 생성하도록 강제합니다. 이는 설계된 Android 프레임워크 동작이며, 익스플로잇이 아닙니다. 극단적인 수에서는 Launcher의 처리 용량이 병목이 됩니다."
-    }
-
-    val iconStormWarning: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "⚠️ 高数量图标可能导致目标设备的 Launcher 严重卡顿甚至冻结。本功能仅供安全研究和 Launcher 压力测试使用。请确保了解风险后再构建 APK。"
-        AppLanguage.ENGLISH -> "⚠️ High icon counts may cause severe Launcher lag or device freeze on the target device. This feature is for security research and Launcher stress testing only. Please understand the risks before building the APK."
-        AppLanguage.ARABIC -> "⚠️ قد تسبب الأعداد الكبيرة من الأيقونات تباطؤاً شديداً أو تجميداً للجهاز. هذه الميزة للبحث الأمني واختبار الإجهاد فقط."
-        AppLanguage.PORTUGUESE -> "⚠️ Altas quantidades de ícones podem causar lag severo ou congelamento do dispositivo alvo. Este recurso é apenas para pesquisa de segurança e testes de estresse do Launcher. Por favor, entenda os riscos antes de construir o APK."
-        AppLanguage.SPANISH -> "⚠️ Altas cantidades de iconos pueden causar lag severo o congelamiento del dispositivo objetivo. Esta función es solo para investigación de seguridad y pruebas de estrés del Launcher. Por favor, comprenda los riesgos antes de construir el APK."
-        AppLanguage.FRENCH -> "⚠️ Un nombre élevé d'icônes peut causer un ralentissement grave ou un gel de l'appareil cible. Cette fonctionnalité est uniquement pour la recherche de sécurité et les tests de stress du Launcher. Veuillez comprendre les risques avant de construire l'APK."
-        AppLanguage.GERMAN -> "⚠️ Hohe Symbolanzahlen können schweres Launcher-Lag oder Gerät einfrieren auf dem Zielgerät verursachen. Diese Funktion ist nur für Sicherheitsforschung und Launcher-Stresstests. Bitte verstehen Sie die Risiken, bevor Sie das APK erstellen."
-        AppLanguage.RUSSIAN -> "⚠️ Большое количество иконок может вызвать серьёзное торможение Launcher или зависание целевого устройства. Эта функция предназначена только для исследований безопасности и нагрузочного тестирования Launcher. Пожалуйста, поймите риски перед сборкой APK."
-        AppLanguage.JAPANESE -> "⚠️ 多数のアイコンは対象デバイスで深刻なLauncherのラグやフリーズを引き起こす可能性があります。この機能はセキュリティ研究とLauncherのストレステスト専用です。APKをビルドする前にリスクを理解してください。"
-        AppLanguage.KOREAN -> "⚠️ 많은 수의 아이콘은 대상 기기에서 심각한 Launcher 지연 또는 기기 정지를 유발할 수 있습니다. 이 기능은 보안 연구 및 Launcher 스트레스 테스트 전용입니다. APK를 빌드하기 전에 위험을 이해하세요."
     }
 
     val browserDisguiseTitle: String get() = when (Strings.lang) {
@@ -53237,201 +52495,6 @@ object StringsE {
         AppLanguage.KOREAN -> "압축 해제 중"
     }
 
-    val tapToEnterPasswordToExit: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "点击输入密码退出"
-        AppLanguage.ENGLISH -> "Tap to enter password to exit"
-        AppLanguage.ARABIC -> "اضغط لإدخال كلمة المرور للخروج"
-        AppLanguage.PORTUGUESE -> "Toque para inserir a senha para sair"
-        AppLanguage.SPANISH -> "Toca para ingresar la contraseña para salir"
-        AppLanguage.FRENCH -> "Touchez pour saisir le mot de passe pour quitter"
-        AppLanguage.GERMAN -> "Tippen, um Passwort zum Beenden einzugeben"
-        AppLanguage.RUSSIAN -> "Нажмите, чтобы ввести пароль для выхода"
-        AppLanguage.JAPANESE -> "タップしてパスワードを入力し終了"
-        AppLanguage.KOREAN -> "탭하여 비밀번호 입력 후 종료"
-    }
-
-    val enterExitPassword: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "输入退出密码"
-        AppLanguage.ENGLISH -> "Enter Exit Password"
-        AppLanguage.ARABIC -> "أدخل كلمة مرور الخروج"
-        AppLanguage.PORTUGUESE -> "Inserir Senha de Saída"
-        AppLanguage.SPANISH -> "Ingresar Contraseña de Salida"
-        AppLanguage.FRENCH -> "Saisir le Mot de Passe de Sortie"
-        AppLanguage.GERMAN -> "Exit-Passwort eingeben"
-        AppLanguage.RUSSIAN -> "Введите пароль для выхода"
-        AppLanguage.JAPANESE -> "終了パスワードを入力"
-        AppLanguage.KOREAN -> "종료 비밀번호 입력"
-    }
-
-    val enterAdminPasswordToExit: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "请输入管理员密码以退出强制运行模式"
-        AppLanguage.ENGLISH -> "Enter admin password to exit forced run mode"
-        AppLanguage.ARABIC -> "أدخل كلمة مرور المسؤول للخروج من وضع التشغيل الإجباري"
-        AppLanguage.PORTUGUESE -> "Insira a senha de admin para sair do modo de execução forçada"
-        AppLanguage.SPANISH -> "Ingresa la contraseña de admin para salir del modo de ejecución forzada"
-        AppLanguage.FRENCH -> "Saisissez le mot de passe admin pour quitter le mode d'exécution forcée"
-        AppLanguage.GERMAN -> "Admin-Passwort eingeben, um den erzwungenen Ausführungsmodus zu verlassen"
-        AppLanguage.RUSSIAN -> "Введите пароль администратора для выхода из режима принудительного запуска"
-        AppLanguage.JAPANESE -> "強制実行モードを終了するには管理者パスワードを入力"
-        AppLanguage.KOREAN -> "강제 실행 모드를 종료하려면 관리자 비밀번호 입력"
-    }
-
-    val passwordLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "密码"
-        AppLanguage.ENGLISH -> "Password"
-        AppLanguage.ARABIC -> "كلمة المرور"
-        AppLanguage.PORTUGUESE -> "Senha"
-        AppLanguage.SPANISH -> "Contraseña"
-        AppLanguage.FRENCH -> "Mot de passe"
-        AppLanguage.GERMAN -> "Passwort"
-        AppLanguage.RUSSIAN -> "Пароль"
-        AppLanguage.JAPANESE -> "パスワード"
-        AppLanguage.KOREAN -> "비밀번호"
-    }
-
-    val enterPasswordPlaceholder: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "请输入密码"
-        AppLanguage.ENGLISH -> "Enter password"
-        AppLanguage.ARABIC -> "أدخل كلمة المرور"
-        AppLanguage.PORTUGUESE -> "Inserir senha"
-        AppLanguage.SPANISH -> "Ingresar contraseña"
-        AppLanguage.FRENCH -> "Saisir le mot de passe"
-        AppLanguage.GERMAN -> "Passwort eingeben"
-        AppLanguage.RUSSIAN -> "Введите пароль"
-        AppLanguage.JAPANESE -> "パスワードを入力"
-        AppLanguage.KOREAN -> "비밀번호 입력"
-    }
-
-    val wrongPasswordAttemptsRemaining: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "密码错误，剩余 %d 次尝试"
-        AppLanguage.ENGLISH -> "Wrong password, %d attempts remaining"
-        AppLanguage.ARABIC -> "كلمة مرور خاطئة، %d محاولات متبقية"
-        AppLanguage.PORTUGUESE -> "Senha incorreta, %d tentativas restantes"
-        AppLanguage.SPANISH -> "Contraseña incorrecta, %d intentos restantes"
-        AppLanguage.FRENCH -> "Mot de passe incorrect, %d tentatives restantes"
-        AppLanguage.GERMAN -> "Falsches Passwort, %d Versuche verbleibend"
-        AppLanguage.RUSSIAN -> "Неверный пароль, осталось %d попыток"
-        AppLanguage.JAPANESE -> "パスワードが間違っています、残り %d 回"
-        AppLanguage.KOREAN -> "비밀번호 틀림, %d회 남음"
-    }
-
-    val tooManyAttemptsTryLater: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "尝试次数过多，请稍后再试"
-        AppLanguage.ENGLISH -> "Too many attempts, please try again later"
-        AppLanguage.ARABIC -> "محاولات كثيرة جدًا، يرجى المحاولة لاحقًا"
-        AppLanguage.PORTUGUESE -> "Muitas tentativas, tente novamente mais tarde"
-        AppLanguage.SPANISH -> "Demasiados intentos, inténtalo de nuevo más tarde"
-        AppLanguage.FRENCH -> "Trop de tentatives, veuillez réessayer plus tard"
-        AppLanguage.GERMAN -> "Zu viele Versuche, bitte später erneut versuchen"
-        AppLanguage.RUSSIAN -> "Слишком много попыток, попробуйте позже"
-        AppLanguage.JAPANESE -> "試行回数が多すぎます、後でもう一度お試しください"
-        AppLanguage.KOREAN -> "시도 횟수가 너무 많습니다. 나중에 다시 시도하세요"
-    }
-
-    val confirmExit: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "确认退出"
-        AppLanguage.ENGLISH -> "Confirm Exit"
-        AppLanguage.ARABIC -> "تأكيد الخروج"
-        AppLanguage.PORTUGUESE -> "Confirmar Saída"
-        AppLanguage.SPANISH -> "Confirmar Salida"
-        AppLanguage.FRENCH -> "Confirmer la Sortie"
-        AppLanguage.GERMAN -> "Beenden bestätigen"
-        AppLanguage.RUSSIAN -> "Подтвердить выход"
-        AppLanguage.JAPANESE -> "終了を確認"
-        AppLanguage.KOREAN -> "종료 확인"
-    }
-
-    val forcedRunPermissionTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "强制运行权限设置"
-        AppLanguage.ENGLISH -> "Forced Run Permission Settings"
-        AppLanguage.ARABIC -> "إعدادات أذونات التشغيل الإجباري"
-        AppLanguage.PORTUGUESE -> "Configurações de Permissão de Execução Forçada"
-        AppLanguage.SPANISH -> "Ajustes de Permisos de Ejecución Forzada"
-        AppLanguage.FRENCH -> "Paramètres d'Autorisation d'Exécution Forcée"
-        AppLanguage.GERMAN -> "Einstellungen für erzwungene Ausführungsberechtigung"
-        AppLanguage.RUSSIAN -> "Настройки разрешений принудительного запуска"
-        AppLanguage.JAPANESE -> "強制実行権限設定"
-        AppLanguage.KOREAN -> "강제 실행 권한 설정"
-    }
-
-    val forcedRunPermissionDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "为了确保强制运行功能有效，请授权以下权限："
-        AppLanguage.ENGLISH -> "To ensure forced run works properly, please grant the following permissions:"
-        AppLanguage.ARABIC -> "لضمان عمل التشغيل الإجباري بشكل صحيح، يرجى منح الأذونات التالية:"
-        AppLanguage.PORTUGUESE -> "Para garantir que a execução forçada funcione corretamente, conceda as seguintes permissões:"
-        AppLanguage.SPANISH -> "Para asegurar que la ejecución forzada funcione correctamente, concede los siguientes permisos:"
-        AppLanguage.FRENCH -> "Pour garantir le bon fonctionnement de l'exécution forcée, accordez les autorisations suivantes :"
-        AppLanguage.GERMAN -> "Um die ordnungsgemäße Funktion der erzwungenen Ausführung zu gewährleisten, gewähre die folgenden Berechtigungen:"
-        AppLanguage.RUSSIAN -> "Для правильной работы принудительного запуска предоставьте следующие разрешения:"
-        AppLanguage.JAPANESE -> "強制実行が正しく機能するよう、以下の権限を付与してください:"
-        AppLanguage.KOREAN -> "강제 실행이 올바르게 작동하도록 다음 권한을 부여하세요:"
-    }
-
-    val accessibilityService: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "辅助功能服务"
-        AppLanguage.ENGLISH -> "Accessibility Service"
-        AppLanguage.ARABIC -> "خدمة إمكانية الوصول"
-        AppLanguage.PORTUGUESE -> "Serviço de Acessibilidade"
-        AppLanguage.SPANISH -> "Servicio de Accesibilidad"
-        AppLanguage.FRENCH -> "Service d'Accessibilité"
-        AppLanguage.GERMAN -> "Bedienungshilfen-Dienst"
-        AppLanguage.RUSSIAN -> "Служба специальных возможностей"
-        AppLanguage.JAPANESE -> "アクセシビリティサービス"
-        AppLanguage.KOREAN -> "접근성 서비스"
-    }
-
-    val accessibilityServiceDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "监控窗口变化，防止用户切换应用"
-        AppLanguage.ENGLISH -> "Monitor window changes to prevent app switching"
-        AppLanguage.ARABIC -> "مراقبة تغييرات النافذة لمنع التبديل بين التطبيقات"
-        AppLanguage.PORTUGUESE -> "Monitora mudanças de janela para evitar a troca de apps"
-        AppLanguage.SPANISH -> "Monitoriza los cambios de ventana para evitar el cambio de apps"
-        AppLanguage.FRENCH -> "Surveiller les changements de fenêtre pour empêcher le changement d'app"
-        AppLanguage.GERMAN -> "Fensterwechsel überwachen, um App-Wechsel zu verhindern"
-        AppLanguage.RUSSIAN -> "Отслеживать изменения окон, чтобы предотвратить переключение приложений"
-        AppLanguage.JAPANESE -> "ウィンドウの変化を監視してアプリ切り替えを防止"
-        AppLanguage.KOREAN -> "창 변경을 모니터링하여 앱 전환 방지"
-    }
-
-    val usageAccess: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "使用情况访问"
-        AppLanguage.ENGLISH -> "Usage Access"
-        AppLanguage.ARABIC -> "الوصول إلى الاستخدام"
-        AppLanguage.PORTUGUESE -> "Acesso de Uso"
-        AppLanguage.SPANISH -> "Acceso de Uso"
-        AppLanguage.FRENCH -> "Accès aux Usages"
-        AppLanguage.GERMAN -> "Nutzungszugriff"
-        AppLanguage.RUSSIAN -> "Доступ к использованию"
-        AppLanguage.JAPANESE -> "使用状況アクセス"
-        AppLanguage.KOREAN -> "사용 정보 접근"
-    }
-
-    val usageAccessDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "检测当前前台应用，提供双重防护"
-        AppLanguage.ENGLISH -> "Detect foreground app for dual protection"
-        AppLanguage.ARABIC -> "اكتشاف التطبيق الأمامي للحماية المزدوجة"
-        AppLanguage.PORTUGUESE -> "Detectar app em primeiro plano para proteção dupla"
-        AppLanguage.SPANISH -> "Detectar app en primer plano para protección dual"
-        AppLanguage.FRENCH -> "Détecter l'app au premier plan pour une protection double"
-        AppLanguage.GERMAN -> "Vordergrund-App erkennen für doppelten Schutz"
-        AppLanguage.RUSSIAN -> "Обнаруживать приложение на переднем плане для двойной защиты"
-        AppLanguage.JAPANESE -> "フォアグラウンドアプリを検出して二重保護"
-        AppLanguage.KOREAN -> "전경 앱을 감지하여 이중 보호"
-    }
-
-    val refreshPermissionStatus: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "刷新权限状态"
-        AppLanguage.ENGLISH -> "Refresh Permission Status"
-        AppLanguage.ARABIC -> "تحديث حالة الأذونات"
-        AppLanguage.PORTUGUESE -> "Atualizar Status de Permissões"
-        AppLanguage.SPANISH -> "Actualizar Estado de Permisos"
-        AppLanguage.FRENCH -> "Actualiser le Statut des Autorisations"
-        AppLanguage.GERMAN -> "Berechtigungsstatus aktualisieren"
-        AppLanguage.RUSSIAN -> "Обновить статус разрешений"
-        AppLanguage.JAPANESE -> "権限ステータスを更新"
-        AppLanguage.KOREAN -> "권한 상태 새로고침"
-    }
-
     val grant: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "授权"
         AppLanguage.ENGLISH -> "Grant"
@@ -55258,45 +54321,19 @@ object StringsE {
     }
 
     val legalDisclaimerTitle3: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "三、高级功能特别声明"
-        AppLanguage.ENGLISH -> "3. Special Declaration for Advanced Features"
-        AppLanguage.ARABIC -> "ثالثاً: إعلان خاص للميزات المتقدمة"
-        AppLanguage.PORTUGUESE -> "3. Declaração Especial para Recursos Avançados"
-        AppLanguage.SPANISH -> "3. Declaración Especial para Funciones Avanzadas"
-        AppLanguage.FRENCH -> "3. Déclaration Spéciale pour les Fonctionnalités Avancées"
-        AppLanguage.GERMAN -> "3. Sondererklärung für erweiterte Funktionen"
-        AppLanguage.RUSSIAN -> "3. Особая декларация для расширенных функций"
-        AppLanguage.JAPANESE -> "3. 高度な機能に関する特別声明"
-        AppLanguage.KOREAN -> "3. 고급 기능에 대한 특별 선언"
+        AppLanguage.CHINESE -> "三、免责条款"
+        AppLanguage.ENGLISH -> "3. Disclaimer Clauses"
+        AppLanguage.ARABIC -> "ثالثاً: بنود إخلاء المسؤولية"
+        AppLanguage.PORTUGUESE -> "3. Cláusulas de Isenção de Responsabilidade"
+        AppLanguage.SPANISH -> "3. Cláusulas de Exención de Responsabilidad"
+        AppLanguage.FRENCH -> "3. Clauses de Non-responsabilité"
+        AppLanguage.GERMAN -> "3. Haftungsausschlussklauseln"
+        AppLanguage.RUSSIAN -> "3. Ограничение ответственности"
+        AppLanguage.JAPANESE -> "3. 免責条項"
+        AppLanguage.KOREAN -> "3. 면책 조항"
     }
 
     val legalDisclaimerContent3: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "强制运行等高级功能需经设备使用者明确同意，可随时用密码退出，风险自担。"
-        AppLanguage.ENGLISH -> "Advanced features like Forced Run require explicit user consent, can be exited by password, and are used at your own risk."
-        AppLanguage.ARABIC -> "وظائف 'التشغيل القسري' والتحكم بالأجهزة ذات الصلة المدرجة في هذا البرنامج (ويشار إليها فيما يلي باسم 'الميزات المتقدمة') هي لأغراض العرض التقني: 1. [مبدأ الموافقة المستنيرة] يجب تمكين الميزات المتقدمة فقط بمعرفة وموافقة صريحة من مالك الجهاز أو المستخدم؛ 2. [مبدأ التحكم الذاتي] جميع الوظائف توفر آليات خروج طارئة، يمكن للمستخدمين الإنهاء في أي وقت من خلال كلمة المرور؛ 3. [مبدأ الحياد التقني] الوظائف نفسها ليست غير قانونية، قانونيتها تعتمد على الاستخدام والغرض المحدد للمستخدم؛ 4. [مبدأ افتراض المخاطر] تمكين الميزات المتقدمة قد يسبب سخونة الجهاز، استهلاك البطارية أسرع، إلخ، يحتاج المستخدمون لتحمل المخاطر ذات الصلة."
-        AppLanguage.PORTUGUESE -> "Recursos avançados como Execução Forçada exigem consentimento explícito do usuário, podem ser encerrados por senha e são usados por sua conta e risco."
-        AppLanguage.SPANISH -> "Funciones avanzadas como Ejecución Forzada requieren consentimiento explícito del usuario, se pueden salir con contraseña y se usan bajo tu propia responsabilidad."
-        AppLanguage.FRENCH -> "Les fonctionnalités avancées comme l'Exécution Forcée nécessitent le consentement explicite de l'utilisateur, peuvent être quittées par mot de passe et sont utilisées à vos propres risques."
-        AppLanguage.GERMAN -> "Erweiterte Funktionen wie erzwungene Ausführung erfordern ausdrückliche Zustimmung, können per Passwort verlassen werden und werden auf eigenes Risiko verwendet."
-        AppLanguage.RUSSIAN -> "Расширенные функции, такие как принудительный запуск, требуют явного согласия пользователя, можно выйти по паролю, используются на ваш риск."
-        AppLanguage.JAPANESE -> "強制実行などの高度な機能はユーザーの明示的な同意が必要で、パスワードでいつでも終了でき、自己責任で使用します。"
-        AppLanguage.KOREAN -> "강제 실행 등 고급 기능은 사용자의 명시적 동의가 필요하며, 비밀번호로 언제든 종료할 수 있고, 본인 책임하에 사용합니다."
-    }
-
-    val legalDisclaimerTitle4: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "四、免责条款"
-        AppLanguage.ENGLISH -> "4. Disclaimer Clauses"
-        AppLanguage.ARABIC -> "رابعاً: بنود إخلاء المسؤولية"
-        AppLanguage.PORTUGUESE -> "4. Cláusulas de Isenção de Responsabilidade"
-        AppLanguage.SPANISH -> "4. Cláusulas de Exención de Responsabilidad"
-        AppLanguage.FRENCH -> "4. Clauses de Non-responsabilité"
-        AppLanguage.GERMAN -> "4. Haftungsausschlussklauseln"
-        AppLanguage.RUSSIAN -> "4. Ограничение ответственности"
-        AppLanguage.JAPANESE -> "4. 免責条項"
-        AppLanguage.KOREAN -> "4. 면책 조항"
-    }
-
-    val legalDisclaimerContent4: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "软件按现状提供。因违规或不当使用产生的责任由使用者承担。"
         AppLanguage.ENGLISH -> "The software is provided as is. Liability from misuse or illegal use belongs to the user."
         AppLanguage.ARABIC -> "1. يتم توفير هذا البرنامج 'كما هو'، لا يقدم المطورون أي ضمانات صريحة أو ضمنية فيما يتعلق بملاءمة أو موثوقية أو أمان البرنامج؛ 2. جميع المسؤوليات القانونية الناشئة عن استخدام المستخدمين لهذا البرنامج انتهاكاً للقوانين واللوائح أو هذا الإعلان يتحملها المستخدمون أنفسهم وليس لها علاقة بالمطورين؛ 3. المطورون ليسوا مسؤولين عن أي أضرار مباشرة أو غير مباشرة أو عرضية أو خاصة أو عقابية ناجمة عن استخدام هذا البرنامج؛ 4. أي تعديل أو توزيع من قبل أطراف ثالثة باستخدام الكود المصدري لهذا البرنامج يتحمل الطرف الثالث نفسه."
@@ -55309,20 +54346,20 @@ object StringsE {
         AppLanguage.KOREAN -> "소프트웨어는 \"있는 그대로\" 제공됩니다. 오용 또는 불법 사용으로 인한 책임은 사용자에게 있습니다."
     }
 
-    val legalDisclaimerTitle5: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "五、合规使用指引"
-        AppLanguage.ENGLISH -> "5. Compliance Usage Guidelines"
-        AppLanguage.ARABIC -> "خامساً: إرشادات الاستخدام المتوافق"
-        AppLanguage.PORTUGUESE -> "5. Diretrizes de Uso em Conformidade"
-        AppLanguage.SPANISH -> "5. Directrices de Uso Cumplimiento"
-        AppLanguage.FRENCH -> "5. Directives d'Utilisation Conforme"
-        AppLanguage.GERMAN -> "5. Richtlinien für regelkonforme Nutzung"
-        AppLanguage.RUSSIAN -> "5. Руководство по добросовестному использованию"
-        AppLanguage.JAPANESE -> "5. コンプライアンス利用ガイドライン"
-        AppLanguage.KOREAN -> "5. 컴플라이언스 사용 가이드라인"
+    val legalDisclaimerTitle4: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "四、合规使用指引"
+        AppLanguage.ENGLISH -> "4. Compliance Usage Guidelines"
+        AppLanguage.ARABIC -> "رابعاً: إرشادات الاستخدام المتوافق"
+        AppLanguage.PORTUGUESE -> "4. Diretrizes de Uso em Conformidade"
+        AppLanguage.SPANISH -> "4. Directrices de Uso Cumplimiento"
+        AppLanguage.FRENCH -> "4. Directives d'Utilisation Conforme"
+        AppLanguage.GERMAN -> "4. Richtlinien für regelkonforme Nutzung"
+        AppLanguage.RUSSIAN -> "4. Руководство по добросовестному использованию"
+        AppLanguage.JAPANESE -> "4. コンプライアンス利用ガイドライン"
+        AppLanguage.KOREAN -> "4. 컴플라이언스 사용 가이드라인"
     }
 
-    val legalDisclaimerContent5: String get() = when (Strings.lang) {
+    val legalDisclaimerContent4: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "为确保合法合规使用，建议用户：\n• 使用前取得实际设备使用者的书面或电子同意\n• 在企业场景中建立适当的使用规范和管理流程\n• 在教育场景中确保符合相关教育法律法规\n• 定期查阅并遵守最新适用的当地法律法规"
         AppLanguage.ENGLISH -> "To ensure lawful and compliant use, it is recommended that users:\n• Obtain written or electronic consent from the actual device user before use\n• Establish appropriate usage policies and management procedures in enterprise scenarios\n• Ensure compliance with relevant education laws and regulations in educational scenarios\n• Regularly review and comply with the latest applicable local laws and regulations"
         AppLanguage.ARABIC -> "لضمان الاستخدام القانوني والمتوافق، يُنصح المستخدمون بما يلي:\n• الحصول على موافقة خطية أو إلكترونية من مستخدم الجهاز الفعلي قبل الاستخدام\n• وضع سياسات استخدام وإجراءات إدارة مناسبة في سيناريوهات المؤسسات\n• ضمان الامتثال للقوانين واللوائح التعليمية ذات الصلة في السيناريوهات التعليمية\n• مراجعة أحدث القوانين واللوائح المحلية المعمول بها والامتثال لها بانتظام"
@@ -55335,20 +54372,20 @@ object StringsE {
         AppLanguage.KOREAN -> "합법적이고 규정을 준수하는 사용을 위해 사용자에게 권장합니다:\n• 사용 전 실제 기기 사용자의 서면 또는 전자 동의를 얻기\n• 기업 시나리오에서 적절한 사용 정책과 관리 절차 수립\n• 교육 시나리오에서 관련 교육 법규 준수 보장\n• 최신 적용 가능한 현지 법률 및 규제를 정기적으로 검토하고 준수"
     }
 
-    val legalDisclaimerTitle6: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "六、知识产权声明"
-        AppLanguage.ENGLISH -> "6. Intellectual Property Declaration"
-        AppLanguage.ARABIC -> "سادساً: إعلان الملكية الفكرية"
-        AppLanguage.PORTUGUESE -> "6. Declaração de Propriedade Intelectual"
-        AppLanguage.SPANISH -> "6. Declaración de Propiedad Intelectual"
-        AppLanguage.FRENCH -> "6. Déclaration de Propriété Intellectuelle"
-        AppLanguage.GERMAN -> "6. Erklärung zum geistigen Eigentum"
-        AppLanguage.RUSSIAN -> "6. Заявление об интеллектуальной собственности"
-        AppLanguage.JAPANESE -> "6. 知的財産宣言"
-        AppLanguage.KOREAN -> "6. 지적재산권 선언"
+    val legalDisclaimerTitle5: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "五、知识产权声明"
+        AppLanguage.ENGLISH -> "5. Intellectual Property Declaration"
+        AppLanguage.ARABIC -> "خامساً: إعلان الملكية الفكرية"
+        AppLanguage.PORTUGUESE -> "5. Declaração de Propriedade Intelectual"
+        AppLanguage.SPANISH -> "5. Declaración de Propiedad Intelectual"
+        AppLanguage.FRENCH -> "5. Déclaration de Propriété Intellectuelle"
+        AppLanguage.GERMAN -> "5. Erklärung zum geistigen Eigentum"
+        AppLanguage.RUSSIAN -> "5. Заявление об интеллектуальной собственности"
+        AppLanguage.JAPANESE -> "5. 知的財産宣言"
+        AppLanguage.KOREAN -> "5. 지적재산권 선언"
     }
 
-    val legalDisclaimerContent6: String get() = when (Strings.lang) {
+    val legalDisclaimerContent5: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "本软件基于 MIT 许可证发布。用户可以自由使用、修改和分发，但必须保留原始版权声明。基于本软件进行二次开发所产生的任何法律责任，由相关衍生作品的开发者自行承担。"
         AppLanguage.ENGLISH -> "This software is released under the MIT License. Users may freely use, modify, and distribute it, provided the original copyright notice is retained. Any legal responsibilities arising from derivative works based on this software are borne solely by the developer of such derivative works."
         AppLanguage.ARABIC -> "تم إصدار هذا البرنامج بموجب ترخيص MIT. يجوز للمستخدمين استخدامه وتعديله وتوزيعه بحرية بشرط الاحتفاظ بإشعار حقوق النشر الأصلي. يتحمل مطور الأعمال المشتقة وحده أي مسؤوليات قانونية تنشأ عن الأعمال المبنية على هذا البرنامج."
@@ -63380,67 +62417,6 @@ object StringsE {
         AppLanguage.KOREAN -> "알 수 없는 오류"
     }
 
-    val forcedRunProtectionBasicNoExtra: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "基础防护无需额外权限"
-        AppLanguage.ENGLISH -> "Basic protection requires no additional permissions"
-        AppLanguage.ARABIC -> "الحماية الأساسية لا تتطلب أذونات إضافية"
-        AppLanguage.PORTUGUESE -> "A proteção básica não requer permissões adicionais"
-        AppLanguage.SPANISH -> "La protección básica no requiere permisos adicionales"
-        AppLanguage.FRENCH -> "La protection de base ne nécessite aucune autorisation supplémentaire"
-        AppLanguage.GERMAN -> "Grundschutz benötigt keine zusätzlichen Berechtigungen"
-        AppLanguage.RUSSIAN -> "Базовая защита не требует дополнительных разрешений"
-        AppLanguage.JAPANESE -> "基本保護に追加の権限は不要です"
-        AppLanguage.KOREAN -> "기본 보호에는 추가 권한이 필요 없습니다"
-    }
-    val forcedRunAccessibilityEnabled: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "辅助功能已启用"
-        AppLanguage.ENGLISH -> "Accessibility service enabled"
-        AppLanguage.ARABIC -> "تم تفعيل خدمة إمكانية الوصول"
-        AppLanguage.PORTUGUESE -> "Serviço de acessibilidade ativado"
-        AppLanguage.SPANISH -> "Servicio de accesibilidad activado"
-        AppLanguage.FRENCH -> "Service d'accessibilité activé"
-        AppLanguage.GERMAN -> "Bedienungshilfen-Dienst aktiviert"
-        AppLanguage.RUSSIAN -> "Служба специальных возможностей включена"
-        AppLanguage.JAPANESE -> "アクセシビリティサービスが有効です"
-        AppLanguage.KOREAN -> "접근성 서비스가 활성화됨"
-    }
-    val forcedRunNeedAccessibility: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "需要启用辅助功能服务"
-        AppLanguage.ENGLISH -> "Accessibility service is required"
-        AppLanguage.ARABIC -> "خدمة إمكانية الوصول مطلوبة"
-        AppLanguage.PORTUGUESE -> "É necessário ativar o serviço de acessibilidade"
-        AppLanguage.SPANISH -> "Se requiere el servicio de accesibilidad"
-        AppLanguage.FRENCH -> "Le service d'accessibilité est requis"
-        AppLanguage.GERMAN -> "Bedienungshilfen-Dienst ist erforderlich"
-        AppLanguage.RUSSIAN -> "Требуется служба специальных возможностей"
-        AppLanguage.JAPANESE -> "アクセシビリティサービスが必要です"
-        AppLanguage.KOREAN -> "접근성 서비스가 필요합니다"
-    }
-    val forcedRunNeedUsageStats: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "需要授权使用情况访问权限"
-        AppLanguage.ENGLISH -> "Usage-access permission is required"
-        AppLanguage.ARABIC -> "إذن الوصول إلى استخدام التطبيقات مطلوب"
-        AppLanguage.PORTUGUESE -> "É necessária a permissão de acesso ao uso"
-        AppLanguage.SPANISH -> "Se requiere el permiso de acceso al uso"
-        AppLanguage.FRENCH -> "L'autorisation d'accès aux données d'utilisation est requise"
-        AppLanguage.GERMAN -> "Nutzungszugriffs-Berechtigung ist erforderlich"
-        AppLanguage.RUSSIAN -> "Требуется разрешение на доступ к истории использования"
-        AppLanguage.JAPANESE -> "使用状況アクセス権限が必要です"
-        AppLanguage.KOREAN -> "사용 기록 액세스 권한이 필요합니다"
-    }
-    val forcedRunAllPermissionsGranted: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "所有权限已授权"
-        AppLanguage.ENGLISH -> "All permissions are granted"
-        AppLanguage.ARABIC -> "تم منح جميع الأذونات"
-        AppLanguage.PORTUGUESE -> "Todas as permissões foram concedidas"
-        AppLanguage.SPANISH -> "Todos los permisos han sido concedidos"
-        AppLanguage.FRENCH -> "Toutes les autorisations sont accordées"
-        AppLanguage.GERMAN -> "Alle Berechtigungen wurden erteilt"
-        AppLanguage.RUSSIAN -> "Все разрешения предоставлены"
-        AppLanguage.JAPANESE -> "すべての権限が付与されています"
-        AppLanguage.KOREAN -> "모든 권한이 부여되었습니다"
-    }
-
     val integrityInstallerSource: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "安装来源: %s"
         AppLanguage.ENGLISH -> "Installer source: %s"
@@ -63700,85 +62676,7 @@ object StringsE {
     }
 
 
-    val rulePathForcedRun: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "应用编辑 → 强制运行"
-        AppLanguage.ENGLISH -> "App Editor → Forced Run"
-        AppLanguage.ARABIC -> "محرر التطبيق ← التشغيل الإجباري"
-        AppLanguage.PORTUGUESE -> "Editor do App → Execução Forçada"
-        AppLanguage.SPANISH -> "Editor de App → Ejecución Forzada"
-        AppLanguage.FRENCH -> "Éditeur d'app → Exécution forcée"
-        AppLanguage.GERMAN -> "App-Editor → Erzwungene Ausführung"
-        AppLanguage.RUSSIAN -> "Редактор приложения → Принудительный запуск"
-        AppLanguage.JAPANESE -> "アプリエディタ → 強制実行"
-        AppLanguage.KOREAN -> "앱 에디터 → 강제 실행"
-    }
 
-    val ruleAreaForcedRun: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "破坏性广告 / 用户体验"
-        AppLanguage.ENGLISH -> "Disruptive Ads / User Experience"
-        AppLanguage.ARABIC -> "الإعلانات المُعطّلة / تجربة المستخدم"
-        AppLanguage.PORTUGUESE -> "Anúncios Intrusivos / Experiência do Usuário"
-        AppLanguage.SPANISH -> "Anuncios Intrusivos / Experiencia del Usuario"
-        AppLanguage.FRENCH -> "Annonces intrusives / Expérience utilisateur"
-        AppLanguage.GERMAN -> "Störende Werbung / Nutzererlebnis"
-        AppLanguage.RUSSIAN -> "Навязчивая реклама / Пользовательский опыт"
-        AppLanguage.JAPANESE -> "不快感を与える広告 / ユーザー体験"
-        AppLanguage.KOREAN -> "혼란스러운 광고 / 사용자 경험"
-    }
-
-    val ruleFixForcedRun: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "进入应用编辑页面，关闭「强制运行」开关。该功能屏蔽 Home/Back/Recents/通知，违反 Play 政策。"
-        AppLanguage.ENGLISH -> "Open app editor and disable the Forced Run toggle. This feature blocks Home/Back/Recents/notifications, violating Play policy."
-        AppLanguage.ARABIC -> "افتح محرر التطبيق وعطّل خيار التشغيل الإجباري. تحظر هذه الميزة Home/Back/Recents/الإشعارات وتنتهك سياسة Play."
-        AppLanguage.PORTUGUESE -> "Abra o editor do app e desative o interruptor de Execução Forçada. Este recurso bloqueia Home/Back/Recents/notificações, violando a política do Play."
-        AppLanguage.SPANISH -> "Abre el editor de la app y desactiva el interruptor de Ejecución Forzada. Esta función bloquea Inicio/Atrás/Recientes/notificaciones, violando la política de Play."
-        AppLanguage.FRENCH -> "Ouvrez l'éditeur d'app et désactivez l'option Exécution forcée. Cette fonctionnalité bloque Accueil/Retour/Récents/notifications, ce qui enfreint la politique Play."
-        AppLanguage.GERMAN -> "App-Editor öffnen und den Schalter „Erzwungene Ausführung“ deaktivieren. Diese Funktion blockiert Home/Zurück/Recents/Benachrichtigungen und verstößt gegen die Play-Richtlinie."
-        AppLanguage.RUSSIAN -> "Откройте редактор приложения и отключите переключатель «Принудительный запуск». Эта функция блокирует Home/Back/Recents/уведомления, нарушая политику Play."
-        AppLanguage.JAPANESE -> "アプリエディタを開き、「強制実行」スイッチをオフにしてください。この機能は Home/Back/Recents/通知をブロックし、Play ポリシーに違反します。"
-        AppLanguage.KOREAN -> "앱 에디터를 열어 '강제 실행' 토글을 끄세요. 이 기능은 홈/뒤로/최근/알림을 차단하여 Play 정책에 위배됩니다."
-    }
-
-
-
-    val rulePathIconStorm: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "应用编辑 → 图标风暴"
-        AppLanguage.ENGLISH -> "App Editor → Icon Storm"
-        AppLanguage.ARABIC -> "محرر التطبيق ← Icon Storm"
-        AppLanguage.PORTUGUESE -> "Editor do App → Tempestade de Ícones"
-        AppLanguage.SPANISH -> "Editor de App → Tormenta de Iconos"
-        AppLanguage.FRENCH -> "Éditeur d'app → Tempête d'icônes"
-        AppLanguage.GERMAN -> "App-Editor → Icon Storm"
-        AppLanguage.RUSSIAN -> "Редактор приложения → Шторм иконок"
-        AppLanguage.JAPANESE -> "アプリエディタ → アイコンストーム"
-        AppLanguage.KOREAN -> "앱 에디터 → 아이콘 스톰"
-    }
-
-    val ruleAreaIconStorm: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "垃圾应用 / 欺骗行为"
-        AppLanguage.ENGLISH -> "Spam / Deceptive Behavior"
-        AppLanguage.ARABIC -> "البريد العشوائي / السلوك المخادع"
-        AppLanguage.PORTUGUESE -> "Spam / Comportamento Enganoso"
-        AppLanguage.SPANISH -> "Spam / Comportamiento Engañoso"
-        AppLanguage.FRENCH -> "Spam / Comportement trompeur"
-        AppLanguage.GERMAN -> "Spam / Irreführendes Verhalten"
-        AppLanguage.RUSSIAN -> "Спам / Обманчивое поведение"
-        AppLanguage.JAPANESE -> "スパム / 不誠実な振る舞い"
-        AppLanguage.KOREAN -> "스팸 / 기만적 행동"
-    }
-
-    val ruleFixIconStorm: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "在应用编辑页面把「图标风暴」改为「关闭」或「单图标」模式。多 launcher 别名违反 Play 政策。"
-        AppLanguage.ENGLISH -> "Set Icon Storm to Off or Single Icon mode in the app editor. Multiple launcher aliases violate Play policy."
-        AppLanguage.ARABIC -> "اضبط Icon Storm على إيقاف أو وضع أيقونة واحدة في محرر التطبيق. الأسماء المستعارة المتعددة لـ launcher تنتهك سياسة Play."
-        AppLanguage.PORTUGUESE -> "Defina a Tempestade de Ícones como Desligado ou modo Ícone Único no editor do app. Múltiplos aliases de launcher violam a política do Play."
-        AppLanguage.SPANISH -> "Establece Tormenta de Iconos en Desactivado o modo Icono Único en el editor de la app. Múltiples alias de launcher violan la política de Play."
-        AppLanguage.FRENCH -> "Réglez Tempête d'icônes sur Désactivé ou mode Icône unique dans l'éditeur d'app. Les multiples alias de launcher enfreignent la politique Play."
-        AppLanguage.GERMAN -> "Icon Storm im App-Editor auf Aus oder Einzel-Icon-Modus setzen. Mehrere Launcher-Aliase verstoßen gegen die Play-Richtlinie."
-        AppLanguage.RUSSIAN -> "Установите «Шторм иконок» в Выкл или режим «Одна иконка» в редакторе приложения. Множественные алиасы launcher нарушают политику Play."
-        AppLanguage.JAPANESE -> "アプリエディタで「アイコンストーム」をオフまたは「シングルアイコン」モードにしてください。複数の launcher エイリアスは Play ポリシーに違反します。"
-        AppLanguage.KOREAN -> "앱 에디터에서 아이콘 스톰을 끄기 또는 단일 아이콘 모드로 설정하세요. 여러 launcher 별칭은 Play 정책에 위배됩니다."
-    }
 
 
     val rulePathApkEncryption: String get() = when (Strings.lang) {

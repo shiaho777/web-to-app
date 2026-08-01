@@ -13,4 +13,3 @@
 ## 说明
 
 - 导出时,图标被写入 APK 的资源(二进制资源表被打补丁)。见 [APK导出配置](/zh/guide/app-actions/edit-common-config/apk-export)。
-- [图标与应用](/zh/guide/app-actions/edit-common-config/icon-disguise)卡片可为生成的应用进一步伪装图标(多启动器图标、图标风暴)。

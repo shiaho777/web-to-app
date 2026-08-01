@@ -344,7 +344,6 @@ class ApkBuildCache(private val context: Context) {
         parts += "abi=${abiFilters.sorted().joinToString(",")}"
         parts += "enc=$encryptionEnabled"
         parts += "icon=${fileFingerprint(iconPath)}"
-        parts += "disguise=${config.disguiseConfig?.let { "${it.getAliasCount()}|${it}" } ?: "none"}"
         parts += "deeplinkHosts=${config.deepLinkHosts.sorted().joinToString(",")}"
         parts += "deeplinkSchemes=${config.deepLinkSchemes.sorted().joinToString(",")}"
         parts += "runtimePerms=${config.runtimePermissions}"

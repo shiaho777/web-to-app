@@ -11,4 +11,3 @@
 ## 说明
 
 - 设备伪装补充了浏览器级指纹伪装(50+ 维),后者在[高级设置](/zh/guide/app-actions/edit-common-config/advanced-settings)中配置。
-- [图标与应用](/zh/guide/app-actions/edit-common-config/icon-disguise)伪装的是启动器图标/名称,而非设备属性。
