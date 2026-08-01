@@ -37,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.webtoapp.core.agent.skill.Skill
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.AgentUiState
 import com.webtoapp.ui.agent.SlashCommand
@@ -59,7 +58,6 @@ fun Composer(
     onTextChange: (String) -> Unit,
     onSend: () -> Unit,
     onCancel: () -> Unit,
-    onPickSkill: (Skill) -> Unit,
     onRunSlashCommand: (SlashCommand) -> Unit,
     onDismissSlash: () -> Unit,
     onPickMention: (String) -> Unit,
@@ -76,12 +74,10 @@ fun Composer(
     ) {
         if (state.slashOpen) {
             SlashSuggestions(
-                skillMatches = state.slashSuggestions,
                 commandMatches = state.slashCommands.filter {
                     val q = state.composerText.removePrefix("/").lowercase()
                     q.isEmpty() || it.command.lowercase().contains(q)
                 }.take(6),
-                onPickSkill = onPickSkill,
                 onPickCommand = onRunSlashCommand,
                 onDismiss = onDismissSlash
             )
@@ -176,31 +172,17 @@ private fun SendButton(
 
 @Composable
 private fun SlashSuggestions(
-    skillMatches: List<Skill>,
     commandMatches: List<SlashCommand>,
-    onPickSkill: (Skill) -> Unit,
     onPickCommand: (SlashCommand) -> Unit,
     onDismiss: () -> Unit
 ) {
-    if (skillMatches.isEmpty() && commandMatches.isEmpty()) return
+    if (commandMatches.isEmpty()) return
     SuggestionsCard(
         leading = "/",
         header = Strings.agentSlashHeader,
         onDismiss = onDismiss
     ) {
         LazyColumn(modifier = Modifier.heightIn(max = 320.dp)) {
-            items(skillMatches, key = { "skill-${it.name}" }) { skill ->
-                SuggestionRow(
-                    title = "/${skill.name}",
-                    subtitle = skill.description.take(80),
-                    hint = if (skill.argumentHint.isNotBlank())
-                        Strings.agentSlashArgsLabel.format(skill.argumentHint)
-                    else null,
-                    iconName = skill.icon,
-                    iconColor = skill.iconColor,
-                    onClick = { onPickSkill(skill) }
-                )
-            }
             items(commandMatches, key = { "cmd-${it.id}" }) { cmd ->
                 SuggestionRow(
                     title = cmd.command,

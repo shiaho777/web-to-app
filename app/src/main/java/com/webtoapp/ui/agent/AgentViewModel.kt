@@ -25,9 +25,6 @@ import com.webtoapp.core.agent.session.AgentMessage
 import com.webtoapp.core.agent.session.AgentSession
 import com.webtoapp.core.agent.session.RecordedToolCall
 import com.webtoapp.core.agent.session.SessionStore
-import com.webtoapp.core.agent.skill.Skill
-import com.webtoapp.core.agent.skill.SkillLoader
-import com.webtoapp.core.agent.skill.SkillRegistry
 import com.webtoapp.core.agent.todo.TodoManager
 import com.webtoapp.core.agent.tool.ToolContext
 import com.webtoapp.core.agent.tool.ToolRegistryFactory
@@ -50,8 +47,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private val ctx: Context = application
     private val files = ProjectFileManager(ctx)
     private val sessionStore = SessionStore(ctx, files)
-    private val skillRegistry = SkillRegistry()
-    private val skillLoader = SkillLoader(ctx)
     private val configManager = AiConfigManager(ctx)
     private val todoManager = TodoManager()
 
@@ -129,7 +124,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     init {
-        loadSkills()
         observeStreams()
         observeTodos()
         bindService()
@@ -362,8 +356,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     fun setComposerText(text: String) {
 
         val slashOpen = text.startsWith("/") && !text.contains(" ")
-        val slashQuery = if (slashOpen) text.removePrefix("/") else ""
-        val slashMatches = if (slashOpen) skillRegistry.search(slashQuery, limit = 50) else emptyList()
 
         val mention = parseTrailingMention(text)
         val sid = _ui.value.currentSession?.id
@@ -375,7 +367,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             it.copy(
                 composerText = text,
                 slashOpen = slashOpen,
-                slashSuggestions = slashMatches,
                 mentionPickerOpen = mention != null && !slashOpen,
                 mentionQuery = mention.orEmpty(),
                 mentionMatches = mentionMatches
@@ -443,19 +434,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun dismissSlash() {
-        _ui.update { it.copy(slashOpen = false, slashSuggestions = emptyList()) }
-    }
-
-    fun pickSkill(skill: Skill) {
-        val prefix = "/${skill.name} "
-        _ui.update {
-            it.copy(
-                composerText = prefix,
-                slashOpen = false,
-                slashSuggestions = emptyList(),
-                drawerOpen = false
-            )
-        }
+        _ui.update { it.copy(slashOpen = false) }
     }
 
     fun runSlashCommand(command: SlashCommand) {
@@ -467,7 +446,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             "model" -> openModelPicker()
             else -> Unit
         }
-        _ui.update { it.copy(composerText = "", slashOpen = false, slashSuggestions = emptyList()) }
+        _ui.update { it.copy(composerText = "", slashOpen = false) }
     }
 
     fun openModelPicker() {
@@ -513,8 +492,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     modelProviderGroups = groups,
                     selectedProviderKeyId = currentKeyId ?: groups.firstOrNull()?.apiKeyId,
                     composerText = "",
-                    slashOpen = false,
-                    slashSuggestions = emptyList()
+                    slashOpen = false
                 )
             }
         }
@@ -583,7 +561,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     fun newSession() {
         viewModelScope.launch {
 
-            val s = sessionStore.create(activeSkillName = null)
+            val s = sessionStore.create()
             attachSession(s.id)
         }
     }
@@ -747,13 +725,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        val expandedBase = expandSlashSkill(rawMessage) ?: rawMessage
-
         viewModelScope.launch {
             val session = ensureActiveSession() ?: return@launch
-            val starterNote = seedSlashSkillStarter(rawMessage, session.id)
-            val expandedMessage = expandedBase + starterNote
-            val mentionedPaths = extractMentionPaths(expandedMessage, session.id)
+            val mentionedPaths = extractMentionPaths(rawMessage, session.id)
 
             val editingId = _ui.value.editingMessageId
             val baseSession = if (editingId != null) {
@@ -762,7 +736,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
             val userMsg = AgentMessage(
                 role = AgentMessage.Role.USER,
-                content = expandedMessage,
+                content = rawMessage,
                 mentionedFiles = mentionedPaths
             )
             val updated = sessionStore.appendMessage(baseSession.id, userMsg) ?: return@launch
@@ -777,48 +751,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 )
             }
 
-            dispatchTurn(updated, expandedMessage)
+            dispatchTurn(updated, rawMessage)
         }
-    }
-
-    private fun expandSlashSkill(message: String): String? {
-        if (!message.startsWith("/")) return null
-        val firstWhite = message.indexOfFirst { it.isWhitespace() }
-        val nameEnd = if (firstWhite < 0) message.length else firstWhite
-        val skillName = message.substring(1, nameEnd).trim()
-        if (skillName.isEmpty()) return null
-        val skill = skillRegistry.get(skillName) ?: return null
-        val args = if (firstWhite < 0) "" else message.substring(firstWhite + 1).trim()
-        val body = skill.resolvePromptText(args).trim()
-        if (body.isEmpty()) return null
-        return buildString {
-            if (args.isNotBlank()) {
-                append(args)
-                append("\n\n---\n\n")
-            }
-            append("# Skill: /")
-            append(skill.name)
-            append('\n')
-            append(skill.description)
-            append("\n\n")
-            append(body)
-        }
-    }
-
-    private suspend fun seedSlashSkillStarter(message: String, sessionId: String): String {
-        if (!message.startsWith("/")) return ""
-        val firstWhite = message.indexOfFirst { it.isWhitespace() }
-        val nameEnd = if (firstWhite < 0) message.length else firstWhite
-        val skillName = message.substring(1, nameEnd).trim().ifEmpty { return "" }
-        val skill = skillRegistry.get(skillName) ?: return ""
-        if (skill.starterAssetDir == null && skill.starterDir == null) return ""
-        val written = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            files.materializeStarter(sessionId, skill.starterAssetDir, skill.starterDir)
-        }
-        return if (written.isNotEmpty()) {
-            "\n\nStarter files added to the workspace (do not recreate these): " +
-                written.joinToString(", ")
-        } else ""
     }
 
     private fun extractMentionPaths(text: String, sessionId: String): List<String> {
@@ -925,7 +859,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val plan = planManager ?: PlanManager(workingSession.id, files, service!!.permissionChecker).also {
             planManager = it
         }
-        val factory = registryFactory ?: ToolRegistryFactory(plan, skillRegistry, imageRegistry).also {
+        val factory = registryFactory ?: ToolRegistryFactory(plan, imageRegistry).also {
             registryFactory = it
         }
         val registry = factory.build(hasImageModel = imageModel != null)
@@ -956,7 +890,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 tools = registry.all,
                 projectFiles = projectSummary,
 
-                skills = skillRegistry.all(),
                 planMode = planMode
             )
         )
@@ -1030,8 +963,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             prompter = service!!.permissionPrompter,
             todos = todoManager,
             readFiles = readFilesThisTurn,
-            activePlanFile = planState.activePlanPath,
-            skillRegistry = skillRegistry
+            activePlanFile = planState.activePlanPath
         )
 
         service?.start(
@@ -1100,28 +1032,6 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         _ui.update { it.copy(pendingPlanReview = null, composerText = "") }
     }
 
-    private fun loadSkills() {
-        viewModelScope.launch {
-
-            skillRegistry.replaceLayer(Skill.Source.Bundled, skillLoader.loadBundled())
-            skillRegistry.replaceLayer(Skill.Source.Market, skillLoader.loadMarket())
-            skillRegistry.replaceLayer(Skill.Source.User, skillLoader.loadUser())
-            _ui.update { it.copy(skills = skillRegistry.all()) }
-        }
-        viewModelScope.launch {
-            skillRegistry.skills.collect { list ->
-                _ui.update { it.copy(skills = list) }
-            }
-        }
-    }
-
-    fun reloadUserSkills() {
-        viewModelScope.launch {
-            skillRegistry.replaceLayer(Skill.Source.User, skillLoader.loadUser())
-            _ui.update { it.copy(skills = skillRegistry.all()) }
-        }
-    }
-
     private fun maybePushToolUi(force: Boolean = false) {
         val now = System.currentTimeMillis()
         if (!force && now - lastToolUiPushAt < 48L) return
@@ -1176,7 +1086,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             }
             return@withLock sessionStore.get(existing.id) ?: existing
         }
-        val created = sessionStore.create(activeSkillName = null)
+        val created = sessionStore.create()
         attachSession(created.id)
         sessionStore.get(created.id) ?: created
     }
@@ -1610,7 +1520,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val checker = service?.permissionChecker
         if (checker != null) {
             planManager = PlanManager(session.id, files, checker)
-            registryFactory = ToolRegistryFactory(planManager!!, skillRegistry, imageRegistry)
+            registryFactory = ToolRegistryFactory(planManager!!, imageRegistry)
         } else {
             planManager = null
             registryFactory = null

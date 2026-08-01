@@ -26,8 +26,6 @@ data class ToolContext(
 
     val activePlanFile: String? = null,
 
-    val skillRegistry: com.webtoapp.core.agent.skill.SkillRegistry? = null,
-
     val progress: suspend (String) -> Unit = NO_OP_PROGRESS
 ) {
 

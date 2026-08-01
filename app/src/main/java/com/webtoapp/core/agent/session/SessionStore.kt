@@ -25,8 +25,8 @@ class SessionStore(
     val sessionsFlow: Flow<List<AgentSession>> = context.aicodingStore.data.map { decode(it[KEY_SESSIONS]) }
     val currentSessionIdFlow: Flow<String?> = context.aicodingStore.data.map { it[KEY_CURRENT] }
 
-    suspend fun create(activeSkillName: String?, title: String = ""): AgentSession {
-        val session = AgentSession(activeSkillName = activeSkillName, title = title)
+    suspend fun create(title: String = ""): AgentSession {
+        val session = AgentSession(title = title)
         context.aicodingStore.edit { p ->
             val list = decode(p[KEY_SESSIONS]).toMutableList()
             list.add(0, session)
@@ -63,10 +63,6 @@ class SessionStore(
     }
 
     suspend fun pin(id: String, pinned: Boolean) = mutate(id) { it.copy(pinned = pinned) }
-
-    suspend fun setActiveSkill(id: String, skillName: String?) = mutate(id) {
-        it.copy(activeSkillName = skillName)
-    }
 
     suspend fun updateConfig(id: String, config: SessionConfig) = mutate(id) {
         it.copy(config = config)

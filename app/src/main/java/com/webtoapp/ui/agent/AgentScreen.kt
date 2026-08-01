@@ -71,11 +71,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.compose.runtime.DisposableEffect
-import com.webtoapp.core.agent.skill.Skill
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.components.ChoiceBottomSheet
 import com.webtoapp.ui.agent.components.Composer
@@ -84,7 +79,7 @@ import com.webtoapp.ui.agent.components.MessageActions
 import com.webtoapp.ui.agent.components.MessageBubble
 import com.webtoapp.ui.agent.components.PermissionDialog
 import com.webtoapp.ui.agent.components.PreviewSheet
-import com.webtoapp.ui.agent.components.SkillDrawer
+import com.webtoapp.ui.agent.components.AgentDrawer
 import com.webtoapp.ui.agent.components.StreamingBubble
 import com.webtoapp.ui.agent.components.TodoChecklist
 import com.webtoapp.ui.design.WtaAlpha
@@ -109,9 +104,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AgentScreen(
     onBack: () -> Unit,
-    onOpenAiSettings: () -> Unit,
-
-    onOpenSkillEditor: (skillName: String?) -> Unit = {}
+    onOpenAiSettings: () -> Unit
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as Application
@@ -163,17 +156,6 @@ fun AgentScreen(
         if (drawerState.currentValue == DrawerValue.Closed && state.drawerOpen) vm.closeDrawer()
     }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                vm.reloadUserSkills()
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
     val fileManager = remember { com.webtoapp.core.agent.files.ProjectFileManager(context) }
     val previewable = remember(state.projectFiles, state.previewFilePath) {
         state.previewFilePath != null || state.projectFiles.any {
@@ -209,7 +191,7 @@ fun AgentScreen(
                         .width(320.dp),
                     drawerContainerColor = MaterialTheme.colorScheme.surface
                 ) {
-                    SkillDrawer(
+                    AgentDrawer(
                         state = state,
                         onTabChange = vm::setDrawerTab,
                         onSearchChange = vm::setDrawerSearch,
@@ -226,18 +208,6 @@ fun AgentScreen(
                         onPickFile = { path ->
                             scope.launch { drawerState.close() }
                             vm.selectFile(path)
-                        },
-                        onPickSkill = { skill ->
-                            scope.launch { drawerState.close() }
-                            vm.pickSkill(skill)
-                        },
-                        onCreateSkill = {
-                            scope.launch { drawerState.close() }
-                            onOpenSkillEditor(null)
-                        },
-                        onEditSkill = { skill ->
-                            scope.launch { drawerState.close() }
-                            onOpenSkillEditor(skill.name)
                         }
                     )
                 }
@@ -305,9 +275,7 @@ fun AgentScreen(
                 Conversation(
                     state = state,
                     actions = messageActions,
-                    onPickSkill = vm::pickSkill,
                     onPickSession = vm::selectSession,
-                    onOpenSkills = { vm.openDrawer(AgentUiState.DrawerTab.Skills) },
                     onOpenSessions = { vm.openDrawer(AgentUiState.DrawerTab.Sessions) },
                     onFillComposer = vm::setComposerText,
                     modifier = Modifier.weight(1f)
@@ -340,7 +308,6 @@ fun AgentScreen(
                     onTextChange = vm::setComposerText,
                     onSend = vm::send,
                     onCancel = vm::cancelTurn,
-                    onPickSkill = vm::pickSkill,
                     onRunSlashCommand = vm::runSlashCommand,
                     onDismissSlash = vm::dismissSlash,
                     onPickMention = vm::pickFileMention,
@@ -493,9 +460,7 @@ private fun PlanReviewCard(
 private fun Conversation(
     state: AgentUiState,
     actions: MessageActions,
-    onPickSkill: (Skill) -> Unit,
     onPickSession: (String) -> Unit,
-    onOpenSkills: () -> Unit,
     onOpenSessions: () -> Unit,
     onFillComposer: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -567,9 +532,7 @@ private fun Conversation(
 
         EmptyConversationHint(
             state = state,
-            onPickSkill = onPickSkill,
             onPickSession = onPickSession,
-            onOpenSkills = onOpenSkills,
             onOpenSessions = onOpenSessions,
             onFillComposer = onFillComposer,
             modifier = modifier
@@ -673,14 +636,11 @@ private fun JumpToLatestPill(onClick: () -> Unit) {
 @Composable
 private fun EmptyConversationHint(
     state: AgentUiState,
-    onPickSkill: (Skill) -> Unit,
     onPickSession: (String) -> Unit,
-    onOpenSkills: () -> Unit,
     onOpenSessions: () -> Unit,
     onFillComposer: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val featuredSkills = remember(state.skills) { featuredSkills(state.skills) }
     val recentSessions = remember(state.sessions) {
         state.sessions
             .filter { it.messages.isNotEmpty() }
@@ -739,19 +699,6 @@ private fun EmptyConversationHint(
             StarterPromptsRow(prompts = starterPrompts, onPick = onFillComposer)
         }
 
-        if (featuredSkills.isNotEmpty()) {
-            item("skills-header") {
-                SectionHeader(
-                    title = Strings.agentHomeSkillsTitle,
-                    actionLabel = Strings.agentHomeSkillsBrowseAll,
-                    onAction = onOpenSkills
-                )
-            }
-            item("skills-grid") {
-                SkillChipsRow(skills = featuredSkills, onPick = onPickSkill)
-            }
-        }
-
         if (recentSessions.isNotEmpty()) {
             item("sessions-header") {
                 SectionHeader(
@@ -766,18 +713,6 @@ private fun EmptyConversationHint(
         }
     }
 }
-
-private fun featuredSkills(skills: List<Skill>) =
-    skills
-        .filter { it.source == Skill.Source.Bundled }
-        .let { bundled ->
-            val byCategory = bundled.groupBy { it.category }
-            val ordered = mutableListOf<Skill>()
-            for (cat in Skill.Category.entries) {
-                ordered += byCategory[cat].orEmpty().take(2)
-            }
-            (ordered + bundled).distinctBy { it.name }.take(6)
-        }
 
 @Composable
 private fun SectionHeader(title: String, actionLabel: String?, onAction: (() -> Unit)?) {
@@ -798,41 +733,6 @@ private fun SectionHeader(title: String, actionLabel: String?, onAction: (() -> 
                     .clickable(onClick = onAction)
                     .padding(WtaSpacing.Tiny)
             )
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun SkillChipsRow(skills: List<Skill>, onPick: (Skill) -> Unit) {
-    androidx.compose.foundation.layout.FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
-        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
-    ) {
-        skills.forEach { skill ->
-            WtaCard(
-                onClick = { onPick(skill) },
-                tone = WtaCardTone.Elevated,
-                contentPadding = PaddingValues(
-                    horizontal = WtaSpacing.Small + 2.dp,
-                    vertical = WtaSpacing.Small
-                )
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    MaterialIconBadgeRound(
-                        name = skill.icon,
-                        tintHex = skill.iconColor,
-                        size = WtaSize.IconSmall + 4.dp
-                    )
-                    Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
-                    Text(
-                        text = "/${skill.name}",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
         }
     }
 }
@@ -888,7 +788,6 @@ private fun RecentSessionRow(
                     maxLines = 1
                 )
                 val parts = buildList {
-                    if (!session.activeSkillName.isNullOrBlank()) add("/${session.activeSkillName}")
                     add(Strings.agentSessionMessagesShort.format(session.messages.size))
                 }
                 Text(

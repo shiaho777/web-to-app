@@ -2,7 +2,6 @@ package com.webtoapp.core.agent.tool
 
 import com.webtoapp.core.agent.imagery.ImageGeneratorRegistry
 import com.webtoapp.core.agent.plan.PlanManager
-import com.webtoapp.core.agent.skill.SkillRegistry
 import com.webtoapp.core.agent.tool.builtin.AskUserTool
 import com.webtoapp.core.agent.tool.builtin.DeleteFileTool
 import com.webtoapp.core.agent.tool.builtin.EditFileTool
@@ -12,7 +11,6 @@ import com.webtoapp.core.agent.tool.builtin.GlobTool
 import com.webtoapp.core.agent.tool.builtin.GrepTool
 import com.webtoapp.core.agent.tool.builtin.ListFilesTool
 import com.webtoapp.core.agent.tool.builtin.ReadFileTool
-import com.webtoapp.core.agent.tool.builtin.SkillTool
 import com.webtoapp.core.agent.tool.builtin.TodoUpdateTool
 import com.webtoapp.core.agent.tool.builtin.TodoWriteTool
 import com.webtoapp.core.agent.tool.builtin.WriteFileTool
@@ -22,9 +20,6 @@ import com.webtoapp.core.agent.tool.builtin.imagery.ViewImageTool
 
 class ToolRegistryFactory(
     private val planManager: PlanManager,
-    @Suppress("unused")
-
-    private val skillRegistry: SkillRegistry,
     private val imageRegistry: ImageGeneratorRegistry?
 ) {
 
@@ -47,7 +42,6 @@ class ToolRegistryFactory(
         AskUserTool(),
         TodoWriteTool(),
         TodoUpdateTool(),
-        SkillTool(),
     )
 
     private fun planTools(): List<Tool> = listOf(

@@ -1431,7 +1431,6 @@ object Strings {
     val agentNewSession: String get() = StringsB.agentNewSession
     val agentTabSessions: String get() = StringsB.agentTabSessions
     val agentTabFiles: String get() = StringsB.agentTabFiles
-    val agentTabSkills: String get() = StringsB.agentTabSkills
     val agentDrawerSearchHint: String get() = StringsB.agentDrawerSearchHint
     val agentComposerHintIdle: String get() = StringsB.agentComposerHintIdle
     val agentComposerHintWorking: String get() = StringsB.agentComposerHintWorking
@@ -1466,21 +1465,6 @@ object Strings {
     val agentKindStyleModule: String get() = StringsB.agentKindStyleModule
     val agentKindUserScript: String get() = StringsB.agentKindUserScript
     val agentKindChromeExtension: String get() = StringsB.agentKindChromeExtension
-    val agentNewSkill: String get() = StringsB.agentNewSkill
-    val agentEditSkill: String get() = StringsB.agentEditSkill
-    val agentDeleteSkill: String get() = StringsB.agentDeleteSkill
-    val agentSkillNameLabel: String get() = StringsB.agentSkillNameLabel
-    val agentSkillNameHint: String get() = StringsB.agentSkillNameHint
-    val agentSkillDescriptionLabel: String get() = StringsB.agentSkillDescriptionLabel
-    val agentSkillWhenToUseLabel: String get() = StringsB.agentSkillWhenToUseLabel
-    val agentSkillWhenToUseHint: String get() = StringsB.agentSkillWhenToUseHint
-    val agentSkillBodyLabel: String get() = StringsB.agentSkillBodyLabel
-    val agentSkillBodyHint: String get() = StringsB.agentSkillBodyHint
-    val agentSkillSaved: String get() = StringsB.agentSkillSaved
-    val agentSkillSaveFailed: String get() = StringsB.agentSkillSaveFailed
-    val agentSkillDeleted: String get() = StringsB.agentSkillDeleted
-    val agentSkillNameInvalid: String get() = StringsB.agentSkillNameInvalid
-    val agentSkillDeleteConfirm: String get() = StringsB.agentSkillDeleteConfirm
     val agentAutoModeLabel: String get() = StringsB.agentAutoModeLabel
     val agentManualModeLabel: String get() = StringsB.agentManualModeLabel
     val agentSlashChipLabel: String get() = StringsB.agentSlashChipLabel
@@ -1497,8 +1481,6 @@ object Strings {
     val agentOpenDrawer: String get() = StringsB.agentOpenDrawer
     val agentHomeTitle: String get() = StringsB.agentHomeTitle
     val agentHomeSubtitle: String get() = StringsB.agentHomeSubtitle
-    val agentHomeSkillsTitle: String get() = StringsB.agentHomeSkillsTitle
-    val agentHomeSkillsBrowseAll: String get() = StringsB.agentHomeSkillsBrowseAll
     val agentHomeRecentTitle: String get() = StringsB.agentHomeRecentTitle
     val agentHomeRecentSeeAll: String get() = StringsB.agentHomeRecentSeeAll
     val agentHomeUntitledSession: String get() = StringsB.agentHomeUntitledSession
@@ -1584,17 +1566,10 @@ object Strings {
     val agentSendTooltip: String get() = StringsB.agentSendTooltip
     val agentStopTooltip: String get() = StringsB.agentStopTooltip
     val agentSlashClose: String get() = StringsB.agentSlashClose
-    val agentSlashArgsLabel: String get() = StringsB.agentSlashArgsLabel
-    val agentCategoryApp: String get() = StringsB.agentCategoryApp
-    val agentCategoryModule: String get() = StringsB.agentCategoryModule
-    val agentCategoryTool: String get() = StringsB.agentCategoryTool
-    val agentCategoryCustom: String get() = StringsB.agentCategoryCustom
     val agentEmptySessions: String get() = StringsB.agentEmptySessions
     val agentEmptySessionsHint: String get() = StringsB.agentEmptySessionsHint
     val agentEmptyFiles: String get() = StringsB.agentEmptyFiles
     val agentEmptyFilesHint: String get() = StringsB.agentEmptyFilesHint
-    val agentEmptySkills: String get() = StringsB.agentEmptySkills
-    val agentEmptySkillsHint: String get() = StringsB.agentEmptySkillsHint
     val agentNotifIdle: String get() = StringsB.agentNotifIdle
     val agentNotifRunning: String get() = StringsB.agentNotifRunning
     val agentOutputTruncated: String get() = StringsB.agentOutputTruncated
@@ -22828,18 +22803,6 @@ object StringsB {
         AppLanguage.JAPANESE -> "ファイル"
         AppLanguage.KOREAN -> "파일"
     }
-    val agentTabSkills: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "技能"
-        AppLanguage.ENGLISH -> "Skills"
-        AppLanguage.ARABIC -> "المهارات"
-        AppLanguage.PORTUGUESE -> "Habilidades"
-        AppLanguage.SPANISH -> "Habilidades"
-        AppLanguage.FRENCH -> "Compétences"
-        AppLanguage.GERMAN -> "Fähigkeiten"
-        AppLanguage.RUSSIAN -> "Навыки"
-        AppLanguage.JAPANESE -> "スキル"
-        AppLanguage.KOREAN -> "스킬"
-    }
     val agentDrawerSearchHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "搜索…"
         AppLanguage.ENGLISH -> "Search…"
@@ -22853,16 +22816,16 @@ object StringsB {
         AppLanguage.KOREAN -> "검색…"
     }
     val agentComposerHintIdle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "描述你想做的，输入 / 触发技能"
-        AppLanguage.ENGLISH -> "Describe what to build. Type / for skills."
-        AppLanguage.ARABIC -> "صف ما تريد بناءه، أدخل / للمهارات"
-        AppLanguage.PORTUGUESE -> "Descreva o que construir. Digite / para habilidades."
-        AppLanguage.SPANISH -> "Describe qué construir. Escribe / para habilidades."
-        AppLanguage.FRENCH -> "Décrivez ce que vous voulez créer. Tapez / pour les compétences."
-        AppLanguage.GERMAN -> "Beschreibe, was du bauen willst. Tippe / für Fähigkeiten."
-        AppLanguage.RUSSIAN -> "Опишите, что создать. Введите / для навыков."
-        AppLanguage.JAPANESE -> "作成したい内容を説明。/ でスキル呼び出し。"
-        AppLanguage.KOREAN -> "제작할 내용을 설명하세요. / 입력 시 스킬 호출."
+        AppLanguage.CHINESE -> "描述你想做的，输入 / 触发命令"
+        AppLanguage.ENGLISH -> "Describe what to build. Type / for commands."
+        AppLanguage.ARABIC -> "صف ما تريد بناءه، أدخل / للأوامر"
+        AppLanguage.PORTUGUESE -> "Descreva o que construir. Digite / para comandos."
+        AppLanguage.SPANISH -> "Describe qué construir. Escribe / para comandos."
+        AppLanguage.FRENCH -> "Décrivez ce que vous voulez créer. Tapez / pour les commandes."
+        AppLanguage.GERMAN -> "Beschreibe, was du bauen willst. Tippe / für Befehle."
+        AppLanguage.RUSSIAN -> "Опишите, что создать. Введите / для команд."
+        AppLanguage.JAPANESE -> "作成したい内容を説明。/ でコマンド呼び出し。"
+        AppLanguage.KOREAN -> "제작할 내용을 설명하세요. / 입력 시 명령어 호출."
     }
     val agentComposerHintWorking: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "AI 工作中…"
@@ -23249,186 +23212,6 @@ object StringsB {
         AppLanguage.KOREAN -> "Chrome 확장 프로그램"
     }
 
-    val agentNewSkill: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "新建技能"
-        AppLanguage.ENGLISH -> "New skill"
-        AppLanguage.ARABIC -> "مهارة جديدة"
-        AppLanguage.PORTUGUESE -> "Nova habilidade"
-        AppLanguage.SPANISH -> "Nueva habilidad"
-        AppLanguage.FRENCH -> "Nouvelle compétence"
-        AppLanguage.GERMAN -> "Neue Fähigkeit"
-        AppLanguage.RUSSIAN -> "Новый навык"
-        AppLanguage.JAPANESE -> "新規スキル"
-        AppLanguage.KOREAN -> "새 스킬"
-    }
-    val agentEditSkill: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "编辑技能"
-        AppLanguage.ENGLISH -> "Edit skill"
-        AppLanguage.ARABIC -> "تعديل المهارة"
-        AppLanguage.PORTUGUESE -> "Editar habilidade"
-        AppLanguage.SPANISH -> "Editar habilidad"
-        AppLanguage.FRENCH -> "Modifier la compétence"
-        AppLanguage.GERMAN -> "Fähigkeit bearbeiten"
-        AppLanguage.RUSSIAN -> "Изменить навык"
-        AppLanguage.JAPANESE -> "スキルを編集"
-        AppLanguage.KOREAN -> "스킬 편집"
-    }
-    val agentDeleteSkill: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "删除技能"
-        AppLanguage.ENGLISH -> "Delete skill"
-        AppLanguage.ARABIC -> "حذف المهارة"
-        AppLanguage.PORTUGUESE -> "Excluir habilidade"
-        AppLanguage.SPANISH -> "Eliminar habilidad"
-        AppLanguage.FRENCH -> "Supprimer la compétence"
-        AppLanguage.GERMAN -> "Fähigkeit löschen"
-        AppLanguage.RUSSIAN -> "Удалить навык"
-        AppLanguage.JAPANESE -> "スキルを削除"
-        AppLanguage.KOREAN -> "스킬 삭제"
-    }
-    val agentSkillNameLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "技能名称"
-        AppLanguage.ENGLISH -> "Skill name"
-        AppLanguage.ARABIC -> "اسم المهارة"
-        AppLanguage.PORTUGUESE -> "Nome da habilidade"
-        AppLanguage.SPANISH -> "Nombre de la habilidad"
-        AppLanguage.FRENCH -> "Nom de la compétence"
-        AppLanguage.GERMAN -> "Fähigkeitsname"
-        AppLanguage.RUSSIAN -> "Имя навыка"
-        AppLanguage.JAPANESE -> "スキル名"
-        AppLanguage.KOREAN -> "스킬 이름"
-    }
-    val agentSkillNameHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "用 kebab-case，例如 my-helper"
-        AppLanguage.ENGLISH -> "kebab-case only, e.g. my-helper"
-        AppLanguage.ARABIC -> "حالة kebab فقط، مثل my-helper"
-        AppLanguage.PORTUGUESE -> "Apenas kebab-case, ex. my-helper"
-        AppLanguage.SPANISH -> "Solo kebab-case, p. ej. my-helper"
-        AppLanguage.FRENCH -> "Kebab-case uniquement, ex. my-helper"
-        AppLanguage.GERMAN -> "Nur kebab-case, z. B. my-helper"
-        AppLanguage.RUSSIAN -> "Только kebab-case, напр. my-helper"
-        AppLanguage.JAPANESE -> "kebab-caseのみ、例: my-helper"
-        AppLanguage.KOREAN -> "kebab-case만, 예: my-helper"
-    }
-    val agentSkillDescriptionLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "简短描述"
-        AppLanguage.ENGLISH -> "Short description"
-        AppLanguage.ARABIC -> "وصف موجز"
-        AppLanguage.PORTUGUESE -> "Descrição curta"
-        AppLanguage.SPANISH -> "Descripción breve"
-        AppLanguage.FRENCH -> "Description courte"
-        AppLanguage.GERMAN -> "Kurze Beschreibung"
-        AppLanguage.RUSSIAN -> "Краткое описание"
-        AppLanguage.JAPANESE -> "簡単な説明"
-        AppLanguage.KOREAN -> "간단한 설명"
-    }
-    val agentSkillWhenToUseLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "适用场景"
-        AppLanguage.ENGLISH -> "When to use"
-        AppLanguage.ARABIC -> "متى تستخدم"
-        AppLanguage.PORTUGUESE -> "Quando usar"
-        AppLanguage.SPANISH -> "Cuándo usar"
-        AppLanguage.FRENCH -> "Quand utiliser"
-        AppLanguage.GERMAN -> "Wann verwenden"
-        AppLanguage.RUSSIAN -> "Когда использовать"
-        AppLanguage.JAPANESE -> "使用タイミング"
-        AppLanguage.KOREAN -> "사용 시기"
-    }
-    val agentSkillWhenToUseHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "模型靠这一行决定要不要调用"
-        AppLanguage.ENGLISH -> "The model picks the skill based on this line"
-        AppLanguage.ARABIC -> "النموذج يختار المهارة بناءً على هذا السطر"
-        AppLanguage.PORTUGUESE -> "O modelo escolhe a habilidade com base nesta linha"
-        AppLanguage.SPANISH -> "El modelo elige la habilidad según esta línea"
-        AppLanguage.FRENCH -> "Le modèle choisit la compétence en fonction de cette ligne"
-        AppLanguage.GERMAN -> "Das Modell wählt die Fähigkeit anhand dieser Zeile"
-        AppLanguage.RUSSIAN -> "Модель выбирает навык на основе этой строки"
-        AppLanguage.JAPANESE -> "モデルはこの行に基づいてスキルを選択します"
-        AppLanguage.KOREAN -> "모델이 이 줄을 기준으로 스킬을 선택합니다"
-    }
-    val agentSkillBodyLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "技能内容（Markdown）"
-        AppLanguage.ENGLISH -> "Skill body (Markdown)"
-        AppLanguage.ARABIC -> "محتوى المهارة (Markdown)"
-        AppLanguage.PORTUGUESE -> "Conteúdo da habilidade (Markdown)"
-        AppLanguage.SPANISH -> "Contenido de la habilidad (Markdown)"
-        AppLanguage.FRENCH -> "Contenu de la compétence (Markdown)"
-        AppLanguage.GERMAN -> "Fähigkeitsinhalt (Markdown)"
-        AppLanguage.RUSSIAN -> "Содержание навыка (Markdown)"
-        AppLanguage.JAPANESE -> "スキル本文 (Markdown)"
-        AppLanguage.KOREAN -> "스킬 본문 (Markdown)"
-    }
-    val agentSkillBodyHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "调用时这段会作为系统指令注入下一轮"
-        AppLanguage.ENGLISH -> "Injected as system instructions when invoked"
-        AppLanguage.ARABIC -> "يتم إدراجه كتعليمات النظام عند الاستدعاء"
-        AppLanguage.PORTUGUESE -> "Injetado como instruções do sistema quando invocado"
-        AppLanguage.SPANISH -> "Se inyecta como instrucciones del sistema al invocarse"
-        AppLanguage.FRENCH -> "Injecté en tant qu'instructions système lors de l'appel"
-        AppLanguage.GERMAN -> "Wird beim Aufruf als Systemanweisung injiziert"
-        AppLanguage.RUSSIAN -> "Внедряется как системная инструкция при вызове"
-        AppLanguage.JAPANESE -> "呼び出し時にシステム命令として注入されます"
-        AppLanguage.KOREAN -> "호출 시 시스템 명령으로 주입됩니다"
-    }
-    val agentSkillSaved: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已保存技能：%s"
-        AppLanguage.ENGLISH -> "Saved skill: %s"
-        AppLanguage.ARABIC -> "تم حفظ المهارة: %s"
-        AppLanguage.PORTUGUESE -> "Habilidade salva: %s"
-        AppLanguage.SPANISH -> "Habilidad guardada: %s"
-        AppLanguage.FRENCH -> "Compétence enregistrée : %s"
-        AppLanguage.GERMAN -> "Fähigkeit gespeichert: %s"
-        AppLanguage.RUSSIAN -> "Навык сохранён: %s"
-        AppLanguage.JAPANESE -> "スキルを保存しました: %s"
-        AppLanguage.KOREAN -> "스킬 저장됨: %s"
-    }
-    val agentSkillSaveFailed: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "保存失败：%s"
-        AppLanguage.ENGLISH -> "Save failed: %s"
-        AppLanguage.ARABIC -> "فشل الحفظ: %s"
-        AppLanguage.PORTUGUESE -> "Falha ao salvar: %s"
-        AppLanguage.SPANISH -> "Error al guardar: %s"
-        AppLanguage.FRENCH -> "Échec de l'enregistrement : %s"
-        AppLanguage.GERMAN -> "Speichern fehlgeschlagen: %s"
-        AppLanguage.RUSSIAN -> "Ошибка сохранения: %s"
-        AppLanguage.JAPANESE -> "保存に失敗: %s"
-        AppLanguage.KOREAN -> "저장 실패: %s"
-    }
-    val agentSkillDeleted: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "已删除技能：%s"
-        AppLanguage.ENGLISH -> "Deleted skill: %s"
-        AppLanguage.ARABIC -> "تم حذف المهارة: %s"
-        AppLanguage.PORTUGUESE -> "Habilidade excluída: %s"
-        AppLanguage.SPANISH -> "Habilidad eliminada: %s"
-        AppLanguage.FRENCH -> "Compétence supprimée : %s"
-        AppLanguage.GERMAN -> "Fähigkeit gelöscht: %s"
-        AppLanguage.RUSSIAN -> "Навык удалён: %s"
-        AppLanguage.JAPANESE -> "スキルを削除しました: %s"
-        AppLanguage.KOREAN -> "스킬 삭제됨: %s"
-    }
-    val agentSkillNameInvalid: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "只允许字母、数字、连字符"
-        AppLanguage.ENGLISH -> "Only letters, digits, and hyphens are allowed"
-        AppLanguage.ARABIC -> "يُسمح فقط بالأحرف والأرقام والشرطات"
-        AppLanguage.PORTUGUESE -> "Apenas letras, dígitos e hífens são permitidos"
-        AppLanguage.SPANISH -> "Solo se permiten letras, dígitos y guiones"
-        AppLanguage.FRENCH -> "Seules les lettres, chiffres et tirets sont autorisés"
-        AppLanguage.GERMAN -> "Nur Buchstaben, Ziffern und Bindestriche erlaubt"
-        AppLanguage.RUSSIAN -> "Допускаются только буквы, цифры и дефисы"
-        AppLanguage.JAPANESE -> "文字、数字、ハイフンのみ使用できます"
-        AppLanguage.KOREAN -> "문자, 숫자, 하이픈만 허용됩니다"
-    }
-    val agentSkillDeleteConfirm: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "确定删除这个技能？此操作不可撤销。"
-        AppLanguage.ENGLISH -> "Delete this skill? This cannot be undone."
-        AppLanguage.ARABIC -> "حذف هذه المهارة؟ لا يمكن التراجع."
-        AppLanguage.PORTUGUESE -> "Excluir esta habilidade? Isso não pode ser desfeito."
-        AppLanguage.SPANISH -> "¿Eliminar esta habilidad? No se puede deshacer."
-        AppLanguage.FRENCH -> "Supprimer cette compétence ? Action irréversible."
-        AppLanguage.GERMAN -> "Diese Fähigkeit löschen? Das kann nicht rückgängig gemacht werden."
-        AppLanguage.RUSSIAN -> "Удалить этот навык? Действие необратимо."
-        AppLanguage.JAPANESE -> "このスキルを削除しますか？元に戻せません。"
-        AppLanguage.KOREAN -> "이 스킬을 삭제하시겠습니까? 되돌릴 수 없습니다."
-    }
     val agentAutoModeLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "自动"
         AppLanguage.ENGLISH -> "Auto"
@@ -23455,16 +23238,16 @@ object StringsB {
     }
 
     val agentSlashChipLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "技能"
-        AppLanguage.ENGLISH -> "Skills"
-        AppLanguage.ARABIC -> "المهارات"
-        AppLanguage.PORTUGUESE -> "Habilidades"
-        AppLanguage.SPANISH -> "Habilidades"
-        AppLanguage.FRENCH -> "Compétences"
-        AppLanguage.GERMAN -> "Fähigkeiten"
-        AppLanguage.RUSSIAN -> "Навыки"
-        AppLanguage.JAPANESE -> "スキル"
-        AppLanguage.KOREAN -> "스킬"
+        AppLanguage.CHINESE -> "命令"
+        AppLanguage.ENGLISH -> "Commands"
+        AppLanguage.ARABIC -> "الأوامر"
+        AppLanguage.PORTUGUESE -> "Comandos"
+        AppLanguage.SPANISH -> "Comandos"
+        AppLanguage.FRENCH -> "Commandes"
+        AppLanguage.GERMAN -> "Befehle"
+        AppLanguage.RUSSIAN -> "Команды"
+        AppLanguage.JAPANESE -> "コマンド"
+        AppLanguage.KOREAN -> "명령어"
     }
     val agentChangesReviewHeader: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "%d 个改动"
@@ -23621,30 +23404,6 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Пишите ниже, чтобы начать сразу — создавать сессию заранее не нужно"
         AppLanguage.JAPANESE -> "下に入力するだけで開始。先にセッションを作る必要はありません"
         AppLanguage.KOREAN -> "아래에서 바로 입력하세요. 먼저 세션을 만들 필요 없습니다"
-    }
-    val agentHomeSkillsTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "推荐技能"
-        AppLanguage.ENGLISH -> "Featured skills"
-        AppLanguage.ARABIC -> "المهارات المميزة"
-        AppLanguage.PORTUGUESE -> "Habilidades em destaque"
-        AppLanguage.SPANISH -> "Habilidades destacadas"
-        AppLanguage.FRENCH -> "Compétences en vedette"
-        AppLanguage.GERMAN -> "Hervorgehobene Fähigkeiten"
-        AppLanguage.RUSSIAN -> "Избранные навыки"
-        AppLanguage.JAPANESE -> "おすすめスキル"
-        AppLanguage.KOREAN -> "추천 스킬"
-    }
-    val agentHomeSkillsBrowseAll: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "全部"
-        AppLanguage.ENGLISH -> "Browse all"
-        AppLanguage.ARABIC -> "تصفح الكل"
-        AppLanguage.PORTUGUESE -> "Ver tudo"
-        AppLanguage.SPANISH -> "Ver todo"
-        AppLanguage.FRENCH -> "Tout parcourir"
-        AppLanguage.GERMAN -> "Alle ansehen"
-        AppLanguage.RUSSIAN -> "Смотреть все"
-        AppLanguage.JAPANESE -> "すべて見る"
-        AppLanguage.KOREAN -> "모두 보기"
     }
     val agentHomeRecentTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "最近的会话"
@@ -23915,16 +23674,16 @@ object StringsB {
         AppLanguage.KOREAN -> "모델이 빈 응답을 반환했습니다. 보통 네트워크 문제나 속도 제한입니다 — 다시 전송해 보세요."
     }
     val agentSlashHeader: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "技能 + 命令"
-        AppLanguage.ENGLISH -> "Skills + commands"
-        AppLanguage.ARABIC -> "المهارات والأوامر"
-        AppLanguage.PORTUGUESE -> "Habilidades + comandos"
-        AppLanguage.SPANISH -> "Habilidades + comandos"
-        AppLanguage.FRENCH -> "Compétences + commandes"
-        AppLanguage.GERMAN -> "Fähigkeiten + Befehle"
-        AppLanguage.RUSSIAN -> "Навыки + команды"
-        AppLanguage.JAPANESE -> "スキル + コマンド"
-        AppLanguage.KOREAN -> "스킬 + 명령"
+        AppLanguage.CHINESE -> "命令"
+        AppLanguage.ENGLISH -> "Commands"
+        AppLanguage.ARABIC -> "الأوامر"
+        AppLanguage.PORTUGUESE -> "Comandos"
+        AppLanguage.SPANISH -> "Comandos"
+        AppLanguage.FRENCH -> "Commandes"
+        AppLanguage.GERMAN -> "Befehle"
+        AppLanguage.RUSSIAN -> "Команды"
+        AppLanguage.JAPANESE -> "コマンド"
+        AppLanguage.KOREAN -> "명령어"
     }
     val agentMentionHeader: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "项目文件"
@@ -24674,66 +24433,6 @@ object StringsB {
         AppLanguage.JAPANESE -> "閉じる"
         AppLanguage.KOREAN -> "닫기"
     }
-    val agentSlashArgsLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "参数: %s"
-        AppLanguage.ENGLISH -> "args: %s"
-        AppLanguage.ARABIC -> "وسائط: %s"
-        AppLanguage.PORTUGUESE -> "argumentos: %s"
-        AppLanguage.SPANISH -> "argumentos: %s"
-        AppLanguage.FRENCH -> "arguments : %s"
-        AppLanguage.GERMAN -> "Argumente: %s"
-        AppLanguage.RUSSIAN -> "аргументы: %s"
-        AppLanguage.JAPANESE -> "引数: %s"
-        AppLanguage.KOREAN -> "인수: %s"
-    }
-    val agentCategoryApp: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "应用类型"
-        AppLanguage.ENGLISH -> "Apps"
-        AppLanguage.ARABIC -> "التطبيقات"
-        AppLanguage.PORTUGUESE -> "Aplicativos"
-        AppLanguage.SPANISH -> "Aplicaciones"
-        AppLanguage.FRENCH -> "Applications"
-        AppLanguage.GERMAN -> "Apps"
-        AppLanguage.RUSSIAN -> "Приложения"
-        AppLanguage.JAPANESE -> "アプリ"
-        AppLanguage.KOREAN -> "앱"
-    }
-    val agentCategoryModule: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "模块类型"
-        AppLanguage.ENGLISH -> "Modules"
-        AppLanguage.ARABIC -> "الوحدات"
-        AppLanguage.PORTUGUESE -> "Módulos"
-        AppLanguage.SPANISH -> "Módulos"
-        AppLanguage.FRENCH -> "Modules"
-        AppLanguage.GERMAN -> "Module"
-        AppLanguage.RUSSIAN -> "Модули"
-        AppLanguage.JAPANESE -> "モジュール"
-        AppLanguage.KOREAN -> "모듈"
-    }
-    val agentCategoryTool: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "工具"
-        AppLanguage.ENGLISH -> "Tools"
-        AppLanguage.ARABIC -> "الأدوات"
-        AppLanguage.PORTUGUESE -> "Ferramentas"
-        AppLanguage.SPANISH -> "Herramientas"
-        AppLanguage.FRENCH -> "Outils"
-        AppLanguage.GERMAN -> "Werkzeuge"
-        AppLanguage.RUSSIAN -> "Инструменты"
-        AppLanguage.JAPANESE -> "ツール"
-        AppLanguage.KOREAN -> "도구"
-    }
-    val agentCategoryCustom: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "自定义"
-        AppLanguage.ENGLISH -> "Custom"
-        AppLanguage.ARABIC -> "مخصصة"
-        AppLanguage.PORTUGUESE -> "Personalizado"
-        AppLanguage.SPANISH -> "Personalizado"
-        AppLanguage.FRENCH -> "Personnalisé"
-        AppLanguage.GERMAN -> "Benutzerdefiniert"
-        AppLanguage.RUSSIAN -> "Пользовательский"
-        AppLanguage.JAPANESE -> "カスタム"
-        AppLanguage.KOREAN -> "사용자 정의"
-    }
     val agentEmptySessions: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "暂无会话"
         AppLanguage.ENGLISH -> "No sessions yet"
@@ -24781,30 +24480,6 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Файлы появятся после общения с ИИ"
         AppLanguage.JAPANESE -> "AIと会話するとファイルが表示されます"
         AppLanguage.KOREAN -> "AI와 대화하면 파일이 나타납니다"
-    }
-    val agentEmptySkills: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "没有匹配的技能"
-        AppLanguage.ENGLISH -> "No matching skills"
-        AppLanguage.ARABIC -> "لا توجد مهارات مطابقة"
-        AppLanguage.PORTUGUESE -> "Nenhuma habilidade correspondente"
-        AppLanguage.SPANISH -> "Sin habilidades coincidentes"
-        AppLanguage.FRENCH -> "Aucune compétence correspondante"
-        AppLanguage.GERMAN -> "Keine passenden Fähigkeiten"
-        AppLanguage.RUSSIAN -> "Нет совпадающих навыков"
-        AppLanguage.JAPANESE -> "一致するスキルがありません"
-        AppLanguage.KOREAN -> "일치하는 스킬 없음"
-    }
-    val agentEmptySkillsHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "调整搜索词或清空"
-        AppLanguage.ENGLISH -> "Adjust the search or clear it"
-        AppLanguage.ARABIC -> "عدّل البحث أو امسحه"
-        AppLanguage.PORTUGUESE -> "Ajuste a busca ou limpe-a"
-        AppLanguage.SPANISH -> "Ajusta la búsqueda o bórrala"
-        AppLanguage.FRENCH -> "Ajustez la recherche ou effacez-la"
-        AppLanguage.GERMAN -> "Suche anpassen oder leeren"
-        AppLanguage.RUSSIAN -> "Скорректируйте поиск или очистите"
-        AppLanguage.JAPANESE -> "検索を調整するかクリアしてください"
-        AppLanguage.KOREAN -> "검색을 조정하거나 지우세요"
     }
     val agentNotifIdle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Agent 已就绪"

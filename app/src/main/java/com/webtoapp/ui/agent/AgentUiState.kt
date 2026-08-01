@@ -5,7 +5,6 @@ import com.webtoapp.core.agent.permission.ChoiceRequest
 import com.webtoapp.core.agent.permission.PermissionRequest
 import com.webtoapp.core.agent.session.AgentSession
 import com.webtoapp.core.agent.session.RecordedToolCall
-import com.webtoapp.core.agent.skill.Skill
 import com.webtoapp.core.agent.todo.TodoManager
 
 data class AgentUiState(
@@ -13,8 +12,6 @@ data class AgentUiState(
 
     val sessions: List<AgentSession> = emptyList(),
     val currentSession: AgentSession? = null,
-
-    val skills: List<Skill> = emptyList(),
 
     val streamingText: String = "",
     val streamingThinking: String = "",
@@ -39,7 +36,6 @@ data class AgentUiState(
 
     val composerText: String = "",
     val slashOpen: Boolean = false,
-    val slashSuggestions: List<Skill> = emptyList(),
     val slashCommands: List<SlashCommand> = emptyList(),
 
     val modelPickerOpen: Boolean = false,
@@ -88,7 +84,7 @@ data class AgentUiState(
     val compacting: Boolean = false
 ) {
     enum class Phase { Idle, Connecting, Streaming, AwaitingTool, AwaitingUser, Error }
-    enum class DrawerTab { Sessions, Files, Skills }
+    enum class DrawerTab { Sessions, Files }
 
     val canSend: Boolean get() = phase == Phase.Idle
     val isWorking: Boolean get() = phase != Phase.Idle && phase != Phase.Error

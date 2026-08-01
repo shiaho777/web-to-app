@@ -20,7 +20,6 @@ import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.i18n.InitializeLanguage
 import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.ui.agent.AgentScreen
-import com.webtoapp.ui.agent.SkillEditorScreen
 import com.webtoapp.ui.screens.AboutScreen
 import com.webtoapp.ui.screens.AiSettingsScreen
 import com.webtoapp.ui.screens.AppModifierScreen
@@ -89,8 +88,6 @@ object Routes {
     const val APP_MODIFIER_MODIFY = "app_modifier/modify/{packageName}"
     const val AI_SETTINGS = "ai_settings"
     const val AGENT = "agent"
-    const val SKILL_EDITOR_NEW = "skill_editor"
-    const val SKILL_EDITOR_EDIT = "skill_editor/{skillName}"
     const val BROWSER_KERNEL = "browser_kernel"
     const val HOSTS_ADBLOCK = "hosts_adblock"
     const val EXTENSION_MODULES = "extension_modules"
@@ -124,7 +121,6 @@ object Routes {
     fun preview(appId: Long) = "preview/$appId"
     fun editModule(moduleId: String) = "module_editor/$moduleId"
     fun appModifierModify(packageName: String) = "app_modifier/modify/$packageName"
-    fun editSkill(name: String) = "skill_editor/$name"
 }
 
 @Composable
@@ -660,32 +656,7 @@ fun AppNavigation() {
             composable(Routes.AGENT) {
                 AgentScreen(
                     onBack = { navController.popBackStack() },
-                    onOpenAiSettings = { navController.navigate(Routes.AI_SETTINGS) },
-                    onOpenSkillEditor = { name ->
-                        if (name == null) {
-                            navController.navigate(Routes.SKILL_EDITOR_NEW)
-                        } else {
-                            navController.navigate(Routes.editSkill(name))
-                        }
-                    }
-                )
-            }
-
-            composable(Routes.SKILL_EDITOR_NEW) {
-                SkillEditorScreen(
-                    skillName = null,
-                    onBack = { navController.popBackStack() }
-                )
-            }
-
-            composable(
-                route = Routes.SKILL_EDITOR_EDIT,
-                arguments = listOf(navArgument("skillName") { type = NavType.StringType })
-            ) { backStackEntry ->
-                val skillName = backStackEntry.arguments?.getString("skillName")
-                SkillEditorScreen(
-                    skillName = skillName,
-                    onBack = { navController.popBackStack() }
+                    onOpenAiSettings = { navController.navigate(Routes.AI_SETTINGS) }
                 )
             }
 

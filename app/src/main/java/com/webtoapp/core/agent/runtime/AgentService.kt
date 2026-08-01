@@ -104,8 +104,7 @@ class AgentService : Service() {
                     prompter = permissionPrompter,
                     todos = request.toolContext.todos,
                     readFiles = request.toolContext.readFiles,
-                    activePlanFile = request.toolContext.activePlanFile,
-                    skillRegistry = request.toolContext.skillRegistry
+                    activePlanFile = request.toolContext.activePlanFile
                 )
                 engine.run(
                     AgentEngine.Input(
