@@ -103,6 +103,7 @@ class AgentService : Service() {
                     imageApiKey = request.toolContext.imageApiKey,
                     prompter = permissionPrompter,
                     todos = request.toolContext.todos,
+                    appRepository = request.toolContext.appRepository,
                     readFiles = request.toolContext.readFiles,
                     activePlanFile = request.toolContext.activePlanFile
                 )

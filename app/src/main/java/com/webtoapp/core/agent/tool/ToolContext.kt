@@ -6,6 +6,7 @@ import com.webtoapp.core.agent.permission.PermissionPrompter
 import com.webtoapp.core.agent.todo.TodoManager
 import com.webtoapp.data.model.ApiKeyConfig
 import com.webtoapp.data.model.SavedModel
+import com.webtoapp.data.repository.WebAppRepository
 
 data class ToolContext(
     val androidContext: Context,
@@ -21,6 +22,8 @@ data class ToolContext(
     val prompter: PermissionPrompter,
 
     val todos: TodoManager,
+
+    val appRepository: WebAppRepository,
 
     val readFiles: MutableSet<String> = mutableSetOf(),
 

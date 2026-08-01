@@ -1091,6 +1091,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             imageApiKey = imageKey,
             prompter = service!!.permissionPrompter,
             todos = todoManager,
+            appRepository = webAppRepository,
             readFiles = readFilesThisTurn,
             activePlanFile = planState.activePlanPath
         )
