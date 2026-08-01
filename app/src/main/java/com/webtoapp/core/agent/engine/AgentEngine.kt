@@ -51,6 +51,11 @@ class AgentEngine(
             messages += LlmMessage(LlmMessage.Role.USER, input.userMessage)
         }
 
+        // Only multimodal (vision) models can accept image parts; strip them for
+        // text-only models so attachments never break a non-vision chat request.
+        val supportsVision = input.toolContext.textModel.model.capabilities
+            .contains(com.webtoapp.data.model.ModelCapability.MULTIMODAL)
+
         var totalToolCalls = 0
         val accText = StringBuilder()
         val maxContinuations = 3
@@ -79,7 +84,7 @@ class AgentEngine(
                     if (abortController.aborted) { send(AgentEvent.Aborted); return@channelFlow }
 
                     val isContinuation = continuationCount > 0
-                    val requestMessages = if (isContinuation && turnText.isNotEmpty()) {
+                    val baseMessages = if (isContinuation && turnText.isNotEmpty()) {
                         messages + LlmMessage(
                             role = LlmMessage.Role.ASSISTANT,
                             content = turnText.toString(),
@@ -88,6 +93,8 @@ class AgentEngine(
                     } else {
                         messages.toList()
                     }
+                    val requestMessages = if (supportsVision) baseMessages
+                        else baseMessages.map { if (it.images.isEmpty()) it else it.copy(images = emptyList()) }
 
                     gateway.chatStream(
                         ChatRequest(
@@ -196,7 +203,8 @@ class AgentEngine(
                                 role = LlmMessage.Role.TOOL,
                                 content = trimToolText(result.text),
                                 toolCallId = call.id,
-                                name = call.name
+                                name = call.name,
+                                images = result.images
                             )
                             if (result.planReviewPath != null) {
                                 send(AgentEvent.PlanReviewRequired(result.planReviewPath))
@@ -217,7 +225,8 @@ class AgentEngine(
                                 role = LlmMessage.Role.TOOL,
                                 content = trimToolText(result.text),
                                 toolCallId = call.id,
-                                name = call.name
+                                name = call.name,
+                                images = result.images
                             )
                             if (result.planReviewPath != null) {
                                 send(AgentEvent.PlanReviewRequired(result.planReviewPath))

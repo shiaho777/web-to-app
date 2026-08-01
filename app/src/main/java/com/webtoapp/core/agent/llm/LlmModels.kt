@@ -1,6 +1,7 @@
 package com.webtoapp.core.agent.llm
 
 import com.google.gson.JsonElement
+import com.webtoapp.core.agent.tool.ImageAttachment
 import com.webtoapp.data.model.AiModel
 import com.webtoapp.data.model.ApiKeyConfig
 
@@ -21,7 +22,9 @@ data class LlmMessage(
     val toolCallId: String? = null,
     val name: String? = null,
 
-    val reasoningContent: String? = null
+    val reasoningContent: String? = null,
+
+    val images: List<ImageAttachment> = emptyList()
 ) {
     enum class Role { SYSTEM, USER, ASSISTANT, TOOL }
 }

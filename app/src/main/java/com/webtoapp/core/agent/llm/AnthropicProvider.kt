@@ -4,6 +4,7 @@ import android.content.Context
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.webtoapp.core.agent.tool.ImageAttachment
 import com.webtoapp.core.network.NetworkModule
 import com.webtoapp.data.model.AiProvider
 import com.webtoapp.util.GsonProvider
@@ -61,9 +62,17 @@ internal class AnthropicProvider(@Suppress("UNUSED_PARAMETER") context: Context)
         }
     }
     private fun buildMsg(m: LlmMessage): JsonObject = when(m.role) {
-        LlmMessage.Role.USER -> JsonObject().apply{addProperty("role","user");addProperty("content",m.content)}
+        LlmMessage.Role.USER -> JsonObject().apply{addProperty("role","user"); if (m.images.isNotEmpty()) add("content", JsonArray().apply { if (m.content.isNotEmpty()) add(JsonObject().apply{addProperty("type","text");addProperty("text",m.content)}); m.images.forEach { add(imageBlock(it)) } }) else addProperty("content",m.content)}
         LlmMessage.Role.ASSISTANT -> JsonObject().apply{addProperty("role","assistant");val c=JsonArray();if(m.content.isNotEmpty())c.add(JsonObject().apply{addProperty("type","text");addProperty("text",m.content)});m.toolCalls.forEach{tc->c.add(JsonObject().apply{addProperty("type","tool_use");addProperty("id",tc.id);addProperty("name",tc.name);add("input",runCatching{JsonParser.parseString(tc.argumentsJson)}.getOrElse{JsonObject()})})};add("content",c)}
-        LlmMessage.Role.TOOL -> JsonObject().apply{addProperty("role","user");add("content",JsonArray().apply{add(JsonObject().apply{addProperty("type","tool_result");addProperty("tool_use_id",m.toolCallId.orEmpty());addProperty("content",m.content)})})}
+        LlmMessage.Role.TOOL -> JsonObject().apply{addProperty("role","user");add("content",JsonArray().apply{add(JsonObject().apply{addProperty("type","tool_result");addProperty("tool_use_id",m.toolCallId.orEmpty()); if (m.images.isNotEmpty()) add("content", JsonArray().apply { if (m.content.isNotEmpty()) add(JsonObject().apply{addProperty("type","text");addProperty("text",m.content)}); m.images.forEach { add(imageBlock(it)) } }) else addProperty("content",m.content)})})}
         else -> JsonObject()
+    }
+    private fun imageBlock(img: ImageAttachment) = JsonObject().apply {
+        addProperty("type", "image")
+        add("source", JsonObject().apply {
+            addProperty("type", "base64")
+            addProperty("media_type", img.mimeType)
+            addProperty("data", android.util.Base64.encodeToString(img.bytes, android.util.Base64.NO_WRAP))
+        })
     }
 }

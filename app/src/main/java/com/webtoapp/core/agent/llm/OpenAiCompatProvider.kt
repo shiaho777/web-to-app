@@ -123,6 +123,19 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
     private fun buildMsg(msg: LlmMessage) = JsonObject().apply {
         addProperty("role", when(msg.role){LlmMessage.Role.SYSTEM->"system";LlmMessage.Role.USER->"user";LlmMessage.Role.ASSISTANT->"assistant";LlmMessage.Role.TOOL->"tool"})
         if (msg.toolCalls.isNotEmpty()) { add("tool_calls", JsonArray().apply { msg.toolCalls.forEach { tc -> add(JsonObject().apply { addProperty("id",tc.id);addProperty("type","function");add("function",JsonObject().apply{addProperty("name",tc.name);addProperty("arguments",tc.argumentsJson)}) }) } }); if(msg.content.isNotEmpty()) addProperty("content",msg.content) }
+        else if (msg.images.isNotEmpty()) {
+            add("content", JsonArray().apply {
+                if (msg.content.isNotEmpty()) add(JsonObject().apply { addProperty("type", "text"); addProperty("text", msg.content) })
+                msg.images.forEach { img ->
+                    add(JsonObject().apply {
+                        addProperty("type", "image_url")
+                        add("image_url", JsonObject().apply {
+                            addProperty("url", "data:${img.mimeType};base64,${base64(img.bytes)}")
+                        })
+                    })
+                }
+            })
+        }
         else addProperty("content", msg.content)
 
         if (msg.role == LlmMessage.Role.ASSISTANT && !msg.reasoningContent.isNullOrEmpty()) {
@@ -130,5 +143,6 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
         }
         msg.toolCallId?.let { addProperty("tool_call_id", it) }; msg.name?.let { addProperty("name", it) }
     }
+    private fun base64(bytes: ByteArray) = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
     private fun buildTool(t: ToolDeclaration) = JsonObject().apply { addProperty("type","function"); add("function", JsonObject().apply { addProperty("name",t.name);addProperty("description",t.description);add("parameters",t.parametersSchema) }) }
 }

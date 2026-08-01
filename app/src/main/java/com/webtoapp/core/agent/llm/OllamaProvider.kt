@@ -23,7 +23,7 @@ internal class OllamaProvider(@Suppress("UNUSED_PARAMETER") context: Context) : 
         val url = HttpHelpers.joinUrl(HttpHelpers.baseUrl(req.apiKey), "/api/chat")
         val body = JsonObject().apply {
             addProperty("model",req.model.id); addProperty("stream",true)
-            add("messages",JsonArray().apply{req.messages.forEach{m->add(JsonObject().apply{addProperty("role",when(m.role){LlmMessage.Role.SYSTEM->"system";LlmMessage.Role.USER->"user";LlmMessage.Role.ASSISTANT->"assistant";LlmMessage.Role.TOOL->"tool"});addProperty("content",m.content)})}})
+            add("messages",JsonArray().apply{req.messages.forEach{m->add(JsonObject().apply{addProperty("role",when(m.role){LlmMessage.Role.SYSTEM->"system";LlmMessage.Role.USER->"user";LlmMessage.Role.ASSISTANT->"assistant";LlmMessage.Role.TOOL->"tool"});addProperty("content",m.content); if (m.images.isNotEmpty()) add("images", JsonArray().apply { m.images.forEach { add(com.google.gson.JsonPrimitive(android.util.Base64.encodeToString(it.bytes, android.util.Base64.NO_WRAP))) } })})}})
             add("options",JsonObject().apply{addProperty("temperature",req.temperature)})
             if(req.useTools&&req.tools.isNotEmpty()) add("tools",JsonArray().apply{req.tools.forEach{t->add(JsonObject().apply{addProperty("type","function");add("function",JsonObject().apply{addProperty("name",t.name);addProperty("description",t.description);add("parameters",t.parametersSchema)})})}})
         }

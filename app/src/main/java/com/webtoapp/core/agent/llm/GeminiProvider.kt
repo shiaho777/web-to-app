@@ -68,6 +68,9 @@ internal class GeminiProvider(@Suppress("UNUSED_PARAMETER") context: Context) : 
         when(m.role){LlmMessage.Role.USER->{if(m.content.isNotEmpty())parts.add(JsonObject().apply{addProperty("text",m.content)})}
         LlmMessage.Role.ASSISTANT->{if(m.content.isNotEmpty())parts.add(JsonObject().apply{addProperty("text",m.content)});m.toolCalls.forEach{tc->parts.add(JsonObject().apply{add("functionCall",JsonObject().apply{addProperty("name",tc.name);add("args",runCatching{JsonParser.parseString(tc.argumentsJson)}.getOrElse{JsonObject()})})})}}
         LlmMessage.Role.TOOL->{parts.add(JsonObject().apply{add("functionResponse",JsonObject().apply{addProperty("name",m.name?:"tool");add("response",JsonObject().apply{addProperty("result",m.content)})})})}
-        else->{}}; return parts
+        else->{}}
+        m.images.forEach { img -> parts.add(JsonObject().apply { add("inlineData", JsonObject().apply { addProperty("mimeType", img.mimeType); addProperty("data", base64(img.bytes)) }) }) }
+        return parts
     }
+    private fun base64(bytes: ByteArray) = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
 }
