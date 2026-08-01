@@ -24,7 +24,10 @@ data class SessionConfig(
     val temperature: Float = 0.7f,
     val maxTurns: Int = 24,
 
-    val customRules: List<String> = emptyList()
+    val customRules: List<String> = emptyList(),
+
+    val contextAppIds: List<Long> = emptyList(),
+    val contextModuleIds: List<String> = emptyList()
 )
 
 data class AgentMessage(

@@ -84,7 +84,13 @@ data class AgentUiState(
     val outputTokens: Int = 0,
     val estimatedContextTokens: Int = 0,
     val contextCapacity: Int = 0,
-    val compacting: Boolean = false
+    val compacting: Boolean = false,
+
+    val contextPickerOpen: Boolean = false,
+    val contextAppIds: List<Long> = emptyList(),
+    val contextModuleIds: List<String> = emptyList(),
+    val availableContextApps: List<ContextAppItem> = emptyList(),
+    val availableContextModules: List<ContextModuleItem> = emptyList()
 ) {
     enum class Phase { Idle, Connecting, Streaming, AwaitingTool, AwaitingUser, Error }
     enum class DrawerTab { Sessions, Files }
@@ -92,6 +98,18 @@ data class AgentUiState(
     val canSend: Boolean get() = phase == Phase.Idle
     val isWorking: Boolean get() = phase != Phase.Idle && phase != Phase.Error
 }
+
+data class ContextAppItem(
+    val id: Long,
+    val name: String,
+    val appType: String
+)
+
+data class ContextModuleItem(
+    val id: String,
+    val name: String,
+    val sourceType: String
+)
 
 data class PlanReview(
     val planPath: String,

@@ -26,6 +26,7 @@ import com.webtoapp.core.agent.runtime.AgentService
 import com.webtoapp.core.agent.session.AgentMessage
 import com.webtoapp.core.agent.session.AgentSession
 import com.webtoapp.core.agent.session.RecordedToolCall
+import com.webtoapp.core.agent.session.SessionConfig
 import com.webtoapp.core.agent.session.SessionStore
 import com.webtoapp.core.agent.session.UserAttachment
 import com.webtoapp.core.agent.todo.TodoManager
@@ -34,6 +35,7 @@ import com.webtoapp.core.agent.tool.ToolRegistryFactory
 import com.webtoapp.core.agent.prompt.SystemPromptBuilder
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AiFeature
+import com.webtoapp.data.model.toManifestJson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -893,6 +895,81 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private fun isTextUpload(mime: String): Boolean =
         mime.startsWith("text/") || mime == "application/json" || mime == "application/xml"
 
+    fun openContextPicker() {
+        viewModelScope.launch {
+            val session = ensureActiveSession() ?: return@launch
+            val apps = webAppRepository.allWebApps.first()
+                .map { ContextAppItem(it.id, it.name, it.appType.name) }
+            val mgr = com.webtoapp.core.extension.ExtensionManager.getInstance(ctx)
+            mgr.awaitLoaded()
+            val modules = mgr.getAllModules()
+                .map { ContextModuleItem(it.id, it.name, it.sourceType.name) }
+            _ui.update {
+                it.copy(
+                    contextPickerOpen = true,
+                    availableContextApps = apps,
+                    availableContextModules = modules,
+                    contextAppIds = session.config.contextAppIds,
+                    contextModuleIds = session.config.contextModuleIds
+                )
+            }
+        }
+    }
+
+    fun closeContextPicker() {
+        _ui.update { it.copy(contextPickerOpen = false) }
+    }
+
+    fun toggleContextApp(id: Long) {
+        val sid = _ui.value.currentSession?.id ?: return
+        viewModelScope.launch {
+            val newIds = _ui.value.contextAppIds.let { if (id in it) it - id else it + id }
+            _ui.update { it.copy(contextAppIds = newIds) }
+            val session = sessionStore.get(sid) ?: return@launch
+            sessionStore.updateConfig(sid, session.config.copy(contextAppIds = newIds))
+        }
+    }
+
+    fun toggleContextModule(id: String) {
+        val sid = _ui.value.currentSession?.id ?: return
+        viewModelScope.launch {
+            val newIds = _ui.value.contextModuleIds.let { if (id in it) it - id else it + id }
+            _ui.update { it.copy(contextModuleIds = newIds) }
+            val session = sessionStore.get(sid) ?: return@launch
+            sessionStore.updateConfig(sid, session.config.copy(contextModuleIds = newIds))
+        }
+    }
+
+    private suspend fun buildSelectedContext(config: SessionConfig): String {
+        if (config.contextAppIds.isEmpty() && config.contextModuleIds.isEmpty()) return ""
+        val sb = StringBuilder()
+        sb.appendLine("# Selected apps & modules (current context)")
+        sb.appendLine("The user selected these as the working context. Use GetApp/UpdateApp and GetModule/UpdateModule with these ids to inspect or edit them.")
+        if (config.contextAppIds.isNotEmpty()) {
+            sb.appendLine()
+            sb.appendLine("## Apps")
+            config.contextAppIds.forEach { id ->
+                val app = webAppRepository.getWebApp(id) ?: return@forEach
+                sb.appendLine()
+                sb.appendLine("### App id=${app.id} name=\"${app.name}\" type=${app.appType}")
+                sb.appendLine(app.toManifestJson())
+            }
+        }
+        if (config.contextModuleIds.isNotEmpty()) {
+            val mgr = com.webtoapp.core.extension.ExtensionManager.getInstance(ctx)
+            mgr.awaitLoaded()
+            sb.appendLine()
+            sb.appendLine("## Modules")
+            config.contextModuleIds.forEach { id ->
+                val module = mgr.getModuleById(id)?.let { mgr.ensureCodeLoaded(it) } ?: return@forEach
+                sb.appendLine()
+                sb.appendLine("### Module id=${module.id} name=\"${module.name}\" type=${module.sourceType}")
+                sb.appendLine(com.webtoapp.util.GsonProvider.gson.toJson(module))
+            }
+        }
+        return sb.toString().trimEnd()
+    }
+
     fun deleteFromMessage(messageId: String) {
         val sid = _ui.value.currentSession?.id ?: return
         viewModelScope.launch {
@@ -1007,6 +1084,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         } else null
 
         val sessionRoot = files.getSessionRoot(workingSession.id).absolutePath
+        val selectedContext = buildSelectedContext(workingSession.config)
         val systemPrompt = SystemPromptBuilder.build(
             SystemPromptBuilder.Input(
                 language = Strings.currentLanguage.value,
@@ -1015,7 +1093,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 tools = registry.all,
                 projectFiles = projectSummary,
 
-                planMode = planMode
+                planMode = planMode,
+                selectedContext = selectedContext
             )
         )
 

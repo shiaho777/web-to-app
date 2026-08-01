@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.AttachFile
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.DataUsage
@@ -83,6 +84,8 @@ fun Composer(
     onAttachFile: () -> Unit,
     onAttachFolder: () -> Unit,
     onRemoveAttachment: (String) -> Unit,
+
+    onOpenContextPicker: () -> Unit,
 
     onOpenModelPicker: () -> Unit = {},
     onCompactContext: () -> Unit = {}
@@ -156,7 +159,9 @@ fun Composer(
             estimatedTokens = state.estimatedContextTokens,
             contextCapacity = state.contextCapacity,
             compacting = state.compacting,
-            onCompactContext = onCompactContext
+            onCompactContext = onCompactContext,
+            selectedContextCount = state.contextAppIds.size + state.contextModuleIds.size,
+            onOpenContextPicker = onOpenContextPicker
         )
     }
 }
@@ -438,7 +443,9 @@ private fun ModeChipRow(
     estimatedTokens: Int,
     contextCapacity: Int,
     compacting: Boolean,
-    onCompactContext: () -> Unit
+    onCompactContext: () -> Unit,
+    selectedContextCount: Int,
+    onOpenContextPicker: () -> Unit
 ) {
     var showCompactMenu by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
@@ -465,6 +472,15 @@ private fun ModeChipRow(
             icon = Icons.Outlined.AutoAwesome,
             primary = false,
             onClick = onTriggerSlash
+        )
+
+        ModeChip(
+            label = if (selectedContextCount > 0)
+                "${Strings.agentContextChipLabel} · $selectedContextCount"
+            else Strings.agentContextChipLabel,
+            icon = Icons.Outlined.BookmarkBorder,
+            primary = selectedContextCount > 0,
+            onClick = onOpenContextPicker
         )
 
         if (contextCapacity > 0) {

@@ -1438,6 +1438,12 @@ object Strings {
     val agentAttachImage: String get() = StringsB.agentAttachImage
     val agentAttachFile: String get() = StringsB.agentAttachFile
     val agentAttachFolder: String get() = StringsB.agentAttachFolder
+    val agentContextChipLabel: String get() = StringsB.agentContextChipLabel
+    val agentContextPickerTitle: String get() = StringsB.agentContextPickerTitle
+    val agentContextAppsHeader: String get() = StringsB.agentContextAppsHeader
+    val agentContextModulesHeader: String get() = StringsB.agentContextModulesHeader
+    val agentContextEmpty: String get() = StringsB.agentContextEmpty
+    val agentContextPickerDone: String get() = StringsB.agentContextPickerDone
     val agentSaveAsApp: String get() = StringsB.agentSaveAsApp
     val agentSaveAsAppTitle: String get() = StringsB.agentSaveAsAppTitle
     val agentSaveAsAppDescription: String get() = StringsB.agentSaveAsAppDescription
@@ -22890,6 +22896,78 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Папка"
         AppLanguage.JAPANESE -> "フォルダー"
         AppLanguage.KOREAN -> "폴더"
+    }
+    val agentContextChipLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "上下文"
+        AppLanguage.ENGLISH -> "Context"
+        AppLanguage.ARABIC -> "السياق"
+        AppLanguage.PORTUGUESE -> "Contexto"
+        AppLanguage.SPANISH -> "Contexto"
+        AppLanguage.FRENCH -> "Contexte"
+        AppLanguage.GERMAN -> "Kontext"
+        AppLanguage.RUSSIAN -> "Контекст"
+        AppLanguage.JAPANESE -> "コンテキスト"
+        AppLanguage.KOREAN -> "컨텍스트"
+    }
+    val agentContextPickerTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择上下文"
+        AppLanguage.ENGLISH -> "Select context"
+        AppLanguage.ARABIC -> "اختيار السياق"
+        AppLanguage.PORTUGUESE -> "Selecionar contexto"
+        AppLanguage.SPANISH -> "Seleccionar contexto"
+        AppLanguage.FRENCH -> "Sélectionner le contexte"
+        AppLanguage.GERMAN -> "Kontext auswählen"
+        AppLanguage.RUSSIAN -> "Выбрать контекст"
+        AppLanguage.JAPANESE -> "コンテキストを選択"
+        AppLanguage.KOREAN -> "컨텍스트 선택"
+    }
+    val agentContextAppsHeader: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "应用"
+        AppLanguage.ENGLISH -> "Apps"
+        AppLanguage.ARABIC -> "التطبيقات"
+        AppLanguage.PORTUGUESE -> "Apps"
+        AppLanguage.SPANISH -> "Apps"
+        AppLanguage.FRENCH -> "Apps"
+        AppLanguage.GERMAN -> "Apps"
+        AppLanguage.RUSSIAN -> "Приложения"
+        AppLanguage.JAPANESE -> "アプリ"
+        AppLanguage.KOREAN -> "앱"
+    }
+    val agentContextModulesHeader: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "扩展模块"
+        AppLanguage.ENGLISH -> "Modules"
+        AppLanguage.ARABIC -> "الوحدات"
+        AppLanguage.PORTUGUESE -> "Módulos"
+        AppLanguage.SPANISH -> "Módulos"
+        AppLanguage.FRENCH -> "Modules"
+        AppLanguage.GERMAN -> "Module"
+        AppLanguage.RUSSIAN -> "Модули"
+        AppLanguage.JAPANESE -> "モジュール"
+        AppLanguage.KOREAN -> "모듈"
+    }
+    val agentContextEmpty: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "还没有应用或模块。"
+        AppLanguage.ENGLISH -> "No apps or modules yet."
+        AppLanguage.ARABIC -> "لا توجد تطبيقات أو وحدات بعد."
+        AppLanguage.PORTUGUESE -> "Nenhum app ou módulo ainda."
+        AppLanguage.SPANISH -> "Aún no hay apps ni módulos."
+        AppLanguage.FRENCH -> "Pas encore d'apps ni de modules."
+        AppLanguage.GERMAN -> "Noch keine Apps oder Module."
+        AppLanguage.RUSSIAN -> "Пока нет приложений или модулей."
+        AppLanguage.JAPANESE -> "アプリやモジュールはまだありません。"
+        AppLanguage.KOREAN -> "아직 앱이나 모듈이 없습니다."
+    }
+    val agentContextPickerDone: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "完成"
+        AppLanguage.ENGLISH -> "Done"
+        AppLanguage.ARABIC -> "تم"
+        AppLanguage.PORTUGUESE -> "Concluído"
+        AppLanguage.SPANISH -> "Listo"
+        AppLanguage.FRENCH -> "Terminé"
+        AppLanguage.GERMAN -> "Fertig"
+        AppLanguage.RUSSIAN -> "Готово"
+        AppLanguage.JAPANESE -> "完了"
+        AppLanguage.KOREAN -> "완료"
     }
     val agentSaveAsApp: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保存为应用"

@@ -76,6 +76,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.components.ChoiceBottomSheet
 import com.webtoapp.ui.agent.components.Composer
+import com.webtoapp.ui.agent.components.ContextPickerDialog
 import com.webtoapp.ui.agent.components.MaterialIconBadgeRound
 import com.webtoapp.ui.agent.components.MessageActions
 import com.webtoapp.ui.agent.components.MessageBubble
@@ -333,11 +334,25 @@ fun AgentScreen(
                     onAttachFolder = { folderPicker.launch(null) },
                     onRemoveAttachment = vm::removePendingAttachment,
 
+                    onOpenContextPicker = vm::openContextPicker,
+
                     onOpenModelPicker = vm::openModelPicker,
                     onCompactContext = vm::compactNow
                 )
             }
         }
+    }
+
+    if (state.contextPickerOpen) {
+        ContextPickerDialog(
+            apps = state.availableContextApps,
+            modules = state.availableContextModules,
+            selectedAppIds = state.contextAppIds,
+            selectedModuleIds = state.contextModuleIds,
+            onToggleApp = vm::toggleContextApp,
+            onToggleModule = vm::toggleContextModule,
+            onDismiss = vm::closeContextPicker
+        )
     }
 
     PreviewSheet(

@@ -18,7 +18,9 @@ object SystemPromptBuilder {
         val tools: List<Tool>,
         val projectFiles: List<ProjectFilesSection.FileSummary>,
 
-        val planMode: PlanMode? = null
+        val planMode: PlanMode? = null,
+
+        val selectedContext: String = ""
     )
 
     data class PlanMode(
@@ -33,6 +35,7 @@ object SystemPromptBuilder {
             add(BehaviorSection.build(lang))
             add(ToolUsageSection.build(lang, input.tools))
             add(EnvironmentSection.build(lang, input.modelName, input.sessionDir))
+            if (input.selectedContext.isNotBlank()) add(input.selectedContext)
             add(ProjectFilesSection.build(lang, input.projectFiles))
             input.planMode?.let { add(PlanModeSection.build(lang, it.planFilePath, it.planExists)) }
         }
