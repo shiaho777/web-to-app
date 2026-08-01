@@ -1257,11 +1257,11 @@ private fun EditModelDialog(
                         onValueChange = { input ->
                             contextLengthText = input.filter { it.isDigit() }.take(7)
                         },
-                        label = { Text(Strings.aiCodingContextCapacity) },
+                        label = { Text(Strings.agentContextCapacity) },
                         placeholder = { Text(model.model.contextLength.toString()) },
                         supportingText = {
                             Text(
-                                Strings.aiCodingContextCapacityHint.format(model.model.contextLength),
+                                Strings.agentContextCapacityHint.format(model.model.contextLength),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

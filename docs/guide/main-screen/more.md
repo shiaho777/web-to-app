@@ -8,7 +8,7 @@ Grouped with dividers, top to bottom:
 
 | Item | Opens |
 | --- | --- |
-| **AI Coding** | [AI Coding](/guide/more-features/ai-coding) |
+| **Agent** | [Agent](/guide/more-features/agent) |
 | **AI Settings** | [AI Settings](/guide/more-features/ai-settings) |
 | ── | ── |
 | **Extension Modules** | [Extension Modules](/guide/more-features/extension-modules) |
@@ -26,4 +26,4 @@ Grouped with dividers, top to bottom:
 | **Batch Import** | [Batch Import](/guide/more-features/batch-import) |
 | **About** | [About](/guide/more-features/about) |
 
-Each is covered in detail under [More Features](/guide/more-features/ai-coding).
+Each is covered in detail under [More Features](/guide/more-features/agent).

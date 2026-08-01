@@ -12,7 +12,7 @@ Built-in modules, custom JS/CSS modules, userscripts, and MV3 Chrome extensions 
 - **Editor** — create or edit a module: manifest, JS, CSS, config items, and an interactive panel. See [JS Modules](/extensions/js-module).
 - **Market** — browse the community module market. See [Publish to the Market](/extensions/publish).
 - **Browser extensions** — search the Chrome Web Store live and install MV3 extensions. See [Chrome MV3](/extensions/chrome-mv3).
-- **AI developer** — jump to [AI Coding](/guide/more-features/ai-coding) to generate an extension.
+- **AI developer** — jump to [Agent](/guide/more-features/agent) to generate an extension.
 
 ## Related
 

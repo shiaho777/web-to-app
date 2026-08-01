@@ -12,7 +12,7 @@
 - **编辑器** —— 创建或编辑模块:清单、JS、CSS、配置项和交互面板。见 [JS 模块](/zh/extensions/js-module)。
 - **市场** —— 浏览社区模块市场。见[发布到市场](/zh/extensions/publish)。
 - **浏览器扩展** —— 实时搜索 Chrome 网上应用店并安装 MV3 扩展。见 [Chrome MV3](/zh/extensions/chrome-mv3)。
-- **AI 开发者** —— 跳转到 [AI 编程](/zh/guide/more-features/ai-coding)生成扩展。
+- **AI 开发者** —— 跳转到 [Agent](/zh/guide/more-features/agent)生成扩展。
 
 ## 相关
 

@@ -8,7 +8,7 @@
 
 | 项目 | 打开 |
 | --- | --- |
-| **AI 编程** | [AI 编程](/zh/guide/more-features/ai-coding) |
+| **Agent** | [Agent](/zh/guide/more-features/agent) |
 | **AI 设置** | [AI 设置](/zh/guide/more-features/ai-settings) |
 | ── | ── |
 | **扩展模块** | [扩展模块](/zh/guide/more-features/extension-modules) |
@@ -26,4 +26,4 @@
 | **批量导入** | [批量导入](/zh/guide/more-features/batch-import) |
 | **关于** | [关于](/zh/guide/more-features/about) |
 
-每一项都在[更多功能](/zh/guide/more-features/ai-coding)中有详细说明。
+每一项都在[更多功能](/zh/guide/more-features/agent)中有详细说明。

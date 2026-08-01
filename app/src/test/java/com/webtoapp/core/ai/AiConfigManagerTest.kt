@@ -50,8 +50,8 @@ class AiConfigManagerTest {
             apiKeyId = "key-1",
             capabilities = listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL),
             featureMappings = mapOf(
-                ModelCapability.TEXT to setOf(AiFeature.AI_CODING, AiFeature.GENERAL),
-                ModelCapability.MULTIMODAL to setOf(AiFeature.AI_CODING)
+                ModelCapability.TEXT to setOf(AiFeature.AGENT, AiFeature.GENERAL),
+                ModelCapability.MULTIMODAL to setOf(AiFeature.AGENT)
             )
         )
         val json = gson.toJson(listOf(model))
@@ -63,7 +63,7 @@ class AiConfigManagerTest {
         val fm = result[0].featureMappings
         assertEquals(2, fm.size)
         assertNotNull(fm[ModelCapability.TEXT])
-        assertTrue(fm[ModelCapability.TEXT]!!.contains(AiFeature.AI_CODING))
+        assertTrue(fm[ModelCapability.TEXT]!!.contains(AiFeature.AGENT))
         println("✅ SavedModel parser roundtrip OK")
         println("  Key types: ${fm.keys.map { it::class.java.name }}")
     }
@@ -191,7 +191,7 @@ class AiConfigManagerTest {
             capabilities = listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL),
             featureMappings = mapOf(
                 ModelCapability.TEXT to setOf(AiFeature.GENERAL, AiFeature.TRANSLATION),
-                ModelCapability.MULTIMODAL to setOf(AiFeature.AI_CODING)
+                ModelCapability.MULTIMODAL to setOf(AiFeature.AGENT)
             ),
             isDefault = true
         )

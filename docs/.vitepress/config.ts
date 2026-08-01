@@ -82,7 +82,7 @@ const t = {
       moreDevTools: 'Developer Tools',
       moreBrowser: 'Browser',
       moreSystem: 'System',
-      aiCoding: 'AI Coding',
+      agent: 'Agent',
       aiSettings: 'AI Settings',
       extensionModules: 'Extension Modules',
       appModifier: 'App Modifier',
@@ -201,7 +201,7 @@ const t = {
       moreDevTools: '开发工具',
       moreBrowser: '浏览器',
       moreSystem: '系统',
-      aiCoding: 'AI 编程',
+      agent: 'Agent',
       aiSettings: 'AI 设置',
       extensionModules: '扩展模块',
       appModifier: '应用修改器',
@@ -386,7 +386,7 @@ function sidebar(lang: Lang, prefix: string) {
             text: s.guide.moreAiTools,
             collapsed: false,
             items: [
-              { text: s.guide.aiCoding, link: `${prefix}/guide/more-features/ai-coding` },
+              { text: s.guide.agent, link: `${prefix}/guide/more-features/agent` },
               { text: s.guide.aiSettings, link: `${prefix}/guide/more-features/ai-settings` }
             ]
           },

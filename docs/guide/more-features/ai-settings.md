@@ -1,6 +1,6 @@
 # AI Settings
 
-Configures the AI backend used by [AI Coding](/guide/more-features/ai-coding). Open it from [⋮ → AI Settings](/guide/main-screen/more).
+Configures the AI backend used by [Agent](/guide/more-features/agent). Open it from [⋮ → AI Settings](/guide/main-screen/more).
 
 ## API keys
 
@@ -17,8 +17,8 @@ Configures the AI backend used by [AI Coding](/guide/more-features/ai-coding). O
 
 ## Advanced
 
-- **Context capacity** — the context window size used for AI Coding sessions.
+- **Context capacity** — the context window size used for Agent sessions.
 
 ## Notes
 
-AI Coding won't work until at least one valid API key and model are configured here.
+Agent won't work until at least one valid API key and model are configured here.

@@ -61,7 +61,7 @@ Open **⋮ → [File Manager](/guide/more-features/file-manager)** from the top-
 - Tour the [Main Screen](/guide/main-screen/my-apps).
 - Learn what each [app type](/guide/app-types/) does.
 - Explore the per-app [App Actions](/guide/app-actions/edit-core-config).
-- Open the top-right **⋮** menu — see [More Features](/guide/more-features/ai-coding).
+- Open the top-right **⋮** menu — see [More Features](/guide/more-features/agent).
 
 ## Build from source
 

@@ -1,6 +1,6 @@
 # AI 设置
 
-配置 [AI 编程](/zh/guide/more-features/ai-coding)所用的 AI 后端。从 [⋮ → AI 设置](/zh/guide/main-screen/more) 打开。
+配置 [Agent](/zh/guide/more-features/agent)所用的 AI 后端。从 [⋮ → AI 设置](/zh/guide/main-screen/more) 打开。
 
 ## API 密钥
 
@@ -17,8 +17,8 @@
 
 ## 高级
 
-- **上下文容量** —— AI 编程会话使用的上下文窗口大小。
+- **上下文容量** —— Agent会话使用的上下文窗口大小。
 
 ## 说明
 
-在配置好至少一个有效的 API 密钥和模型之前,AI 编程无法工作。
+在配置好至少一个有效的 API 密钥和模型之前,Agent无法工作。

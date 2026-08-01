@@ -27,7 +27,7 @@ Runtime Kotlin is authored under `app/` and synced into `shell/` by `syncShellRu
 
 ## Package structure (`app/src/main/java/com/webtoapp`)
 
-- **`core/*`** — ~53 sub-packages of business/runtime logic: `apkbuilder`, `shell`, `webview`, `engine`, `extension`, `crypto`, `nodejs`, `php`, `python`, `golang`, `wordpress`, `linux`, `port`, `dns`, `network`, `adblock`, `aicoding`, and more.
+- **`core/*`** — ~53 sub-packages of business/runtime logic: `apkbuilder`, `shell`, `webview`, `engine`, `extension`, `crypto`, `nodejs`, `php`, `python`, `golang`, `wordpress`, `linux`, `port`, `dns`, `network`, `adblock`, `agent`, and more.
 - **`data/*`** — persistence: Room DAOs, database, type converters, and the `WebApp` model + nested `*Config` classes.
 - **`ui/*`** — Jetpack Compose screens, components, design system, and the shell UI.
 - **`di/`** — Koin dependency injection.

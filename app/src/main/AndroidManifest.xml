@@ -353,7 +353,7 @@
         
         
         <service
-            android:name=".core.aicoding.runtime.AgentService"
+            android:name=".core.agent.runtime.AgentService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />

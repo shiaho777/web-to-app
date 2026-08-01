@@ -61,7 +61,7 @@
 - 导览[主界面](/zh/guide/main-screen/my-apps)。
 - 了解每种[应用类型](/zh/guide/app-types/)能做什么。
 - 探索各应用[应用功能](/zh/guide/app-actions/edit-core-config)。
-- 打开右上角 **⋮** 菜单 —— 见[更多功能](/zh/guide/more-features/ai-coding)。
+- 打开右上角 **⋮** 菜单 —— 见[更多功能](/zh/guide/more-features/agent)。
 
 ## 从源码构建
 

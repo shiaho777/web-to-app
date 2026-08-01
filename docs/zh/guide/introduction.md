@@ -34,7 +34,7 @@ WebToApp 的核心是管理一份**应用定义**列表。每个定义是一条 
 - [我的应用](/zh/guide/main-screen/my-apps) —— 主页:你的应用列表、分类和创建按钮。
 - [创建应用](/zh/guide/app-types/) —— 12 种应用类型及其创建流程。
 - [应用功能](/zh/guide/app-actions/edit-core-config) —— 每个应用能做什么(编辑、构建、分享、导出……)。
-- [更多功能](/zh/guide/more-features/ai-coding) —— 右上角 ⋮ 菜单后的全局工具。
+- [更多功能](/zh/guide/more-features/agent) —— 右上角 ⋮ 菜单后的全局工具。
 - [应用配置](/zh/guide/config/) —— 共享的按应用选项(网络、隐私、外观、运行时)。
 
 ## 如何阅读这些文档

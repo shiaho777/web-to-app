@@ -27,7 +27,7 @@
 
 ## 包结构(`app/src/main/java/com/webtoapp`)
 
-- **`core/*`** —— 约 53 个业务/运行时逻辑子包:`apkbuilder`、`shell`、`webview`、`engine`、`extension`、`crypto`、`nodejs`、`php`、`python`、`golang`、`wordpress`、`linux`、`port`、`dns`、`network`、`adblock`、`aicoding` 等。
+- **`core/*`** —— 约 53 个业务/运行时逻辑子包:`apkbuilder`、`shell`、`webview`、`engine`、`extension`、`crypto`、`nodejs`、`php`、`python`、`golang`、`wordpress`、`linux`、`port`、`dns`、`network`、`adblock`、`agent` 等。
 - **`data/*`** —— 持久化:Room DAO、数据库、类型转换器,以及 `WebApp` 模型 + 嵌套的 `*Config` 类。
 - **`ui/*`** —— Jetpack Compose 界面、组件、设计系统和 shell UI。
 - **`di/`** —— Koin 依赖注入。

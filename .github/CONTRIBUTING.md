@@ -107,7 +107,7 @@ Run the checks before submitting:
 | On-device APK builder / signer | `app/src/main/java/com/webtoapp/core/apkbuilder/` |
 | Server runtimes (Node / PHP / Python / Go / WordPress) | `app/src/main/java/com/webtoapp/core/{nodejs,php,python,golang,wordpress}/` |
 | WebView engine, native bridge, fingerprint disguise | `app/src/main/java/com/webtoapp/core/{webview,engine,appearance}/` |
-| Extension modules, Module Market, AI Coding | `app/src/main/java/com/webtoapp/core/{extension,market,aicoding}/` |
+| Extension modules, Module Market, Agent | `app/src/main/java/com/webtoapp/core/{extension,market,agent}/` |
 | Compose UI screens & design system | `app/src/main/java/com/webtoapp/ui/` |
 | DI graph (source of truth) | `app/src/main/java/com/webtoapp/di/AppModule.kt` |
 
@@ -304,7 +304,7 @@ cd web-to-app
 | 设备端 APK 打包 / 签名 | `app/src/main/java/com/webtoapp/core/apkbuilder/` |
 | 服务端运行时（Node / PHP / Python / Go / WordPress） | `app/src/main/java/com/webtoapp/core/{nodejs,php,python,golang,wordpress}/` |
 | WebView 引擎、原生桥、指纹伪装 | `app/src/main/java/com/webtoapp/core/{webview,engine,appearance}/` |
-| 扩展模块、模块市场、AI 编程 | `app/src/main/java/com/webtoapp/core/{extension,market,aicoding}/` |
+| 扩展模块、模块市场、Agent | `app/src/main/java/com/webtoapp/core/{extension,market,agent}/` |
 | Compose UI 与设计系统 | `app/src/main/java/com/webtoapp/ui/` |
 | DI 依赖图（单一事实来源） | `app/src/main/java/com/webtoapp/di/AppModule.kt` |
 

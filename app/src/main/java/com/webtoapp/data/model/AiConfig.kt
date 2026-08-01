@@ -1,5 +1,6 @@
 package com.webtoapp.data.model
 
+import com.google.gson.annotations.SerializedName
 import com.webtoapp.core.i18n.Strings
 
 enum class ProviderCategory {
@@ -346,8 +347,10 @@ enum class AiFeature(
     val icon: String,
     val defaultCapabilities: List<ModelCapability> = emptyList()
 ) {
-    AI_CODING("Code", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL)),
-    AI_CODING_IMAGE("Image", listOf(ModelCapability.IMAGE_GENERATION)),
+    @SerializedName("AI_CODING")
+    AGENT("Code", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL)),
+    @SerializedName("AI_CODING_IMAGE")
+    AGENT_IMAGE("Image", listOf(ModelCapability.IMAGE_GENERATION)),
     ICON_GENERATION("AutoAwesome", listOf(ModelCapability.IMAGE_GENERATION)),
     MODULE_DEVELOPMENT("Extension", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL)),
     LRC_GENERATION("MusicNote", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL)),
@@ -355,8 +358,8 @@ enum class AiFeature(
     GENERAL("Chat", listOf(ModelCapability.TEXT, ModelCapability.MULTIMODAL));
 
     val displayName: String get() = when (this) {
-        AI_CODING -> Strings.featureAiCoding
-        AI_CODING_IMAGE -> Strings.featureAiCodingImage
+        AGENT -> Strings.featureAgent
+        AGENT_IMAGE -> Strings.featureAgentImage
         ICON_GENERATION -> Strings.featureIconGen
         MODULE_DEVELOPMENT -> Strings.featureModuleDev
         LRC_GENERATION -> Strings.featureLrcGen
@@ -365,8 +368,8 @@ enum class AiFeature(
     }
 
     val description: String get() = when (this) {
-        AI_CODING -> Strings.featureAiCodingDesc
-        AI_CODING_IMAGE -> Strings.featureAiCodingImageDesc
+        AGENT -> Strings.featureAgentDesc
+        AGENT_IMAGE -> Strings.featureAgentImageDesc
         ICON_GENERATION -> Strings.featureIconGenDesc
         MODULE_DEVELOPMENT -> Strings.featureModuleDevDesc
         LRC_GENERATION -> Strings.featureLrcGenDesc
@@ -626,8 +629,8 @@ fun AiProvider.getLocalizedDisplayName(): String = displayName
 
 fun AiFeature.getLocalizedDisplayName(): String {
     return when (this) {
-        AiFeature.AI_CODING -> "HTML ${com.webtoapp.core.i18n.Strings.coding}"
-        AiFeature.AI_CODING_IMAGE -> "HTML ${com.webtoapp.core.i18n.Strings.coding} (${com.webtoapp.core.i18n.Strings.image})"
+        AiFeature.AGENT -> "HTML ${com.webtoapp.core.i18n.Strings.coding}"
+        AiFeature.AGENT_IMAGE -> "HTML ${com.webtoapp.core.i18n.Strings.coding} (${com.webtoapp.core.i18n.Strings.image})"
         AiFeature.ICON_GENERATION -> com.webtoapp.core.i18n.Strings.featureIconGeneration
         AiFeature.MODULE_DEVELOPMENT -> com.webtoapp.core.i18n.Strings.featureModuleDevelopment
         AiFeature.LRC_GENERATION -> com.webtoapp.core.i18n.Strings.featureLrcGeneration
@@ -638,8 +641,8 @@ fun AiFeature.getLocalizedDisplayName(): String {
 
 fun AiFeature.getLocalizedDescription(): String {
     return when (this) {
-        AiFeature.AI_CODING -> Strings.aiCodingDesc
-        AiFeature.AI_CODING_IMAGE -> Strings.aiCodingImageDesc
+        AiFeature.AGENT -> Strings.agentDesc
+        AiFeature.AGENT_IMAGE -> Strings.agentImageDesc
         AiFeature.ICON_GENERATION -> Strings.iconGenerationDesc
         AiFeature.MODULE_DEVELOPMENT -> Strings.moduleDevelopmentDesc
         AiFeature.LRC_GENERATION -> Strings.lrcGenerationDesc

@@ -89,7 +89,7 @@
     <string name="language_changed">Language changed, restart app</string>
 
     
-    <string name="menu_ai_coding">AI Coding</string>
+    <string name="menu_agent">Agent</string>
     <string name="menu_theme_settings">Theme Settings</string>
     <string name="menu_ai_settings">AI Settings</string>
     <string name="menu_app_modifier">App Modifier</string>

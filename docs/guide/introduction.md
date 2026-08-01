@@ -34,7 +34,7 @@ This is why "works in preview but not after export" is a real failure mode: prev
 - [My Apps](/guide/main-screen/my-apps) — the home screen: your app list, categories, and the create button.
 - [Create App](/guide/app-types/) — the 12 app types and their creation flows.
 - [App Actions](/guide/app-actions/edit-core-config) — what you can do per app (edit, build, share, export, …).
-- [More Features](/guide/more-features/ai-coding) — the global tools behind the top-right ⋮ menu.
+- [More Features](/guide/more-features/agent) — the global tools behind the top-right ⋮ menu.
 - [App Configuration](/guide/config/) — the shared per-app options (network, privacy, appearance, runtimes).
 
 ## How to read these docs

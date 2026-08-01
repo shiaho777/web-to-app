@@ -89,7 +89,7 @@
     <string name="language_changed">تم تغيير اللغة، يرجى إعادة تشغيل التطبيق</string>
 
     
-    <string name="menu_ai_coding">برمجة AI</string>
+    <string name="menu_agent">Agent</string>
     <string name="menu_theme_settings">إعدادات السمة</string>
     <string name="menu_ai_settings">إعدادات AI</string>
     <string name="menu_app_modifier">معدل التطبيق</string>

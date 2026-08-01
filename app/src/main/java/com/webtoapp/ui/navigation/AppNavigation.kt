@@ -19,8 +19,8 @@ import androidx.navigation.navArgument
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.i18n.InitializeLanguage
 import com.webtoapp.data.model.HtmlLoadMode
-import com.webtoapp.ui.aicoding.AiCodingScreen
-import com.webtoapp.ui.aicoding.SkillEditorScreen
+import com.webtoapp.ui.agent.AgentScreen
+import com.webtoapp.ui.agent.SkillEditorScreen
 import com.webtoapp.ui.screens.AboutScreen
 import com.webtoapp.ui.screens.AiSettingsScreen
 import com.webtoapp.ui.screens.AppModifierScreen
@@ -88,7 +88,7 @@ object Routes {
     const val APP_MODIFIER = "app_modifier"
     const val APP_MODIFIER_MODIFY = "app_modifier/modify/{packageName}"
     const val AI_SETTINGS = "ai_settings"
-    const val AI_CODING = "ai_coding"
+    const val AGENT = "agent"
     const val SKILL_EDITOR_NEW = "skill_editor"
     const val SKILL_EDITOR_EDIT = "skill_editor/{skillName}"
     const val BROWSER_KERNEL = "browser_kernel"
@@ -191,7 +191,7 @@ fun AppNavigation() {
                         onPreviewApp = { webApp -> navController.navigate(Routes.preview(webApp.id)) },
                         onOpenAppModifier = { navController.navigate(Routes.APP_MODIFIER) },
                         onOpenAiSettings = { navController.navigate(Routes.AI_SETTINGS) },
-                        onOpenAiCoding = { navController.navigate(Routes.AI_CODING) },
+                        onOpenAgent = { navController.navigate(Routes.AGENT) },
                         onOpenExtensionModules = { navController.navigate(Routes.EXTENSION_MODULES) },
                         onOpenLinuxEnvironment = { navController.navigate(Routes.LINUX_ENVIRONMENT) },
                         onOpenBrowserKernel = { navController.navigate(Routes.BROWSER_KERNEL) },
@@ -657,8 +657,8 @@ fun AppNavigation() {
                 AiSettingsScreen(onBack = { navController.popBackStack() })
             }
 
-            composable(Routes.AI_CODING) {
-                AiCodingScreen(
+            composable(Routes.AGENT) {
+                AgentScreen(
                     onBack = { navController.popBackStack() },
                     onOpenAiSettings = { navController.navigate(Routes.AI_SETTINGS) },
                     onOpenSkillEditor = { name ->
@@ -749,7 +749,7 @@ fun AppNavigation() {
                             navController.navigate(Routes.editModule(moduleId))
                         }
                     },
-                    onNavigateToAiDeveloper = { navController.navigate(Routes.AI_CODING) },
+                    onNavigateToAiDeveloper = { navController.navigate(Routes.AGENT) },
                     onNavigateToMarket = { navController.navigate(Routes.MODULE_MARKET) }
                 )
             }

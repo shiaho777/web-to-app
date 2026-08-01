@@ -30,7 +30,7 @@
 ---
 
 <div align="center">
-<img src="../assets/social-preview.png" width="90%" alt="WebToApp:我的应用首页、应用列表与主工具箱(AI Coding、扩展模块、端口管理器)、单个应用的 APK 操作(编辑、创建快捷方式、构建/分享/导出 APK),以及关于页面——全部运行在 Android 手机上" />
+<img src="../assets/social-preview.png" width="90%" alt="WebToApp:我的应用首页、应用列表与主工具箱(Agent、扩展模块、端口管理器)、单个应用的 APK 操作(编辑、创建快捷方式、构建/分享/导出 APK),以及关于页面——全部运行在 Android 手机上" />
 </div>
 
 ---
@@ -60,7 +60,7 @@
 | **本地运行时** | 原生 Node.js 18.20、PHP 8.4 + Composer 2.10、Python 3.14、官方 Go 1.26、WordPress 7.x over SQLite |
 | **扩展能力** | 内置模块、`GM_*` 油猴脚本、MV3 Chrome 扩展、Chrome 网上应用店实时搜索 |
 | **APK/AAB 产物** | 设备端 V1/V2/V3 签名、Google Play AAB 导出(自动改写 targetSdk)、密钥库管理 |
-| **AI 编程** | 通过 prompt 生成网页、扩展模块、油猴脚本和本地运行时项目;429/5xx 自动重试 |
+| **Agent** | 通过 prompt 生成网页、扩展模块、油猴脚本和本地运行时项目;429/5xx 自动重试 |
 | **宿主语言** | **10 种界面语言** —— 中文 · English · العربية · Português · Español · Français · Deutsch · Русский · 日本語 · 한국어(阿语 RTL) |
 
 ---
@@ -136,7 +136,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 - **MV3 Chrome 扩展运行时**,支持 manifest 内容脚本在 isolated 或 main world 注入,并提供覆盖 runtime、storage、tabs、scripting 和 declarative network request 解析的 `chrome.*` polyfill。
 - **应用内 Chrome 网上应用店搜索** —— 按关键词浏览并安装浏览器扩展(也可粘贴商店链接 / 扩展 ID),离线时回退到手动导入。
 - **分享码**(`WTA1:` gzip + Base64)和 ZXing 二维码传播。
-- **AI Coding** skill 可生成扩展模块、油猴脚本、MV3 扩展、前端应用和本地运行时项目;对 429/5xx 自动退避重试,计划模式退出会真正停住等待用户确认。
+- **Agent** skill 可生成扩展模块、油猴脚本、MV3 扩展、前端应用和本地运行时项目;对 429/5xx 自动退避重试,计划模式退出会真正停住等待用户确认。
 
 </details>
 

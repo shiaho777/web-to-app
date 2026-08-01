@@ -23,7 +23,7 @@ import com.webtoapp.ui.design.WtaSpacing
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MoreScreen(
-    onOpenAiCoding: () -> Unit = {},
+    onOpenAgent: () -> Unit = {},
     onOpenAiSettings: () -> Unit = {},
 
     onOpenBrowserKernel: () -> Unit = {},
@@ -51,9 +51,9 @@ fun MoreScreen(
                 WtaSection(title = Strings.moreSectionAiTools) {
                     WtaSettingCard {
                         MoreMenuItem(
-                            title = Strings.menuAiCoding,
-                            icon = painterResource(R.drawable.ic_sidebar_ai_coding),
-                            onClick = onOpenAiCoding
+                            title = Strings.menuAgent,
+                            icon = painterResource(R.drawable.ic_sidebar_agent),
+                            onClick = onOpenAgent
                         )
                         WtaSectionDivider()
                         MoreMenuItem(

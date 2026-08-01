@@ -124,7 +124,7 @@ fun HomeScreen(
     onPreviewApp: (WebApp) -> Unit,
     onOpenAppModifier: () -> Unit = {},
     onOpenAiSettings: () -> Unit = {},
-    onOpenAiCoding: () -> Unit = {},
+    onOpenAgent: () -> Unit = {},
     onOpenExtensionModules: () -> Unit = {},
     onOpenLinuxEnvironment: () -> Unit = {},
     onOpenBrowserKernel: () -> Unit = {},
@@ -328,8 +328,8 @@ fun HomeScreen(
                             onDismissRequest = { showMoreMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text(Strings.menuAiCoding) },
-                                onClick = { showMoreMenu = false; onOpenAiCoding() },
+                                text = { Text(Strings.menuAgent) },
+                                onClick = { showMoreMenu = false; onOpenAgent() },
                                 leadingIcon = { Icon(Icons.Outlined.Code, null, Modifier.size(20.dp)) }
                             )
                             DropdownMenuItem(

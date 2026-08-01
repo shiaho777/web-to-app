@@ -65,7 +65,7 @@ object Strings {
     val search: String get() = StringsA.search
     val more: String get() = StringsA.more
     val back: String get() = StringsA.back
-    val menuAiCoding: String get() = StringsA.menuAiCoding
+    val menuAgent: String get() = StringsA.menuAgent
     val menuAiSettings: String get() = StringsA.menuAiSettings
     val menuAppModifier: String get() = StringsA.menuAppModifier
     val menuExtensionModules: String get() = StringsA.menuExtensionModules
@@ -1423,184 +1423,184 @@ object Strings {
     val featureTranslation: String get() = StringsB.featureTranslation
     val featureGeneralChat: String get() = StringsB.featureGeneralChat
     val coding: String get() = StringsB.coding
-    val aiCodingDesc: String get() = StringsB.aiCodingDesc
-    val aiCodingImageDesc: String get() = StringsB.aiCodingImageDesc
+    val agentDesc: String get() = StringsB.agentDesc
+    val agentImageDesc: String get() = StringsB.agentImageDesc
     val iconGenerationDesc: String get() = StringsB.iconGenerationDesc
     val moduleDevelopmentDesc: String get() = StringsB.moduleDevelopmentDesc
-    val aiCodingTitle: String get() = StringsB.aiCodingTitle
-    val aiCodingNewSession: String get() = StringsB.aiCodingNewSession
-    val aiCodingTabSessions: String get() = StringsB.aiCodingTabSessions
-    val aiCodingTabFiles: String get() = StringsB.aiCodingTabFiles
-    val aiCodingTabSkills: String get() = StringsB.aiCodingTabSkills
-    val aiCodingDrawerSearchHint: String get() = StringsB.aiCodingDrawerSearchHint
-    val aiCodingComposerHintIdle: String get() = StringsB.aiCodingComposerHintIdle
-    val aiCodingComposerHintWorking: String get() = StringsB.aiCodingComposerHintWorking
-    val aiCodingSaveAsApp: String get() = StringsB.aiCodingSaveAsApp
-    val aiCodingSaveAsAppTitle: String get() = StringsB.aiCodingSaveAsAppTitle
-    val aiCodingSaveAsAppDescription: String get() = StringsB.aiCodingSaveAsAppDescription
-    val aiCodingSaveAsAppNameLabel: String get() = StringsB.aiCodingSaveAsAppNameLabel
-    val aiCodingSaveAsAppPickIcon: String get() = StringsB.aiCodingSaveAsAppPickIcon
-    val aiCodingSaveAsAppChangeIcon: String get() = StringsB.aiCodingSaveAsAppChangeIcon
-    val aiCodingSaveAsAppConfirm: String get() = StringsB.aiCodingSaveAsAppConfirm
-    val aiCodingSaveAsAppSuccess: String get() = StringsB.aiCodingSaveAsAppSuccess
-    val aiCodingSaveAsAppFailure: String get() = StringsB.aiCodingSaveAsAppFailure
-    val aiCodingSaveAsModule: String get() = StringsB.aiCodingSaveAsModule
-    val aiCodingSaveAsModuleSuccess: String get() = StringsB.aiCodingSaveAsModuleSuccess
-    val aiCodingSaveAsModuleSuccessMany: String get() = StringsB.aiCodingSaveAsModuleSuccessMany
-    val aiCodingSaveAsModuleFailure: String get() = StringsB.aiCodingSaveAsModuleFailure
-    val aiCodingSaveNoArtifacts: String get() = StringsB.aiCodingSaveNoArtifacts
-    val aiCodingSaveDialogChooseLabel: String get() = StringsB.aiCodingSaveDialogChooseLabel
-    val aiCodingSaveDialogTargetApp: String get() = StringsB.aiCodingSaveDialogTargetApp
-    val aiCodingSaveDialogTargetModule: String get() = StringsB.aiCodingSaveDialogTargetModule
-    val aiCodingSaveArtifactSuffix: String get() = StringsB.aiCodingSaveArtifactSuffix
-    val aiCodingKindHtml: String get() = StringsB.aiCodingKindHtml
-    val aiCodingKindReact: String get() = StringsB.aiCodingKindReact
-    val aiCodingKindVue: String get() = StringsB.aiCodingKindVue
-    val aiCodingKindNodeJs: String get() = StringsB.aiCodingKindNodeJs
-    val aiCodingKindPhp: String get() = StringsB.aiCodingKindPhp
-    val aiCodingKindPython: String get() = StringsB.aiCodingKindPython
-    val aiCodingKindGo: String get() = StringsB.aiCodingKindGo
-    val aiCodingKindMultiWeb: String get() = StringsB.aiCodingKindMultiWeb
-    val aiCodingKindGallery: String get() = StringsB.aiCodingKindGallery
-    val aiCodingKindJsModule: String get() = StringsB.aiCodingKindJsModule
-    val aiCodingKindStyleModule: String get() = StringsB.aiCodingKindStyleModule
-    val aiCodingKindUserScript: String get() = StringsB.aiCodingKindUserScript
-    val aiCodingKindChromeExtension: String get() = StringsB.aiCodingKindChromeExtension
-    val aiCodingNewSkill: String get() = StringsB.aiCodingNewSkill
-    val aiCodingEditSkill: String get() = StringsB.aiCodingEditSkill
-    val aiCodingDeleteSkill: String get() = StringsB.aiCodingDeleteSkill
-    val aiCodingSkillNameLabel: String get() = StringsB.aiCodingSkillNameLabel
-    val aiCodingSkillNameHint: String get() = StringsB.aiCodingSkillNameHint
-    val aiCodingSkillDescriptionLabel: String get() = StringsB.aiCodingSkillDescriptionLabel
-    val aiCodingSkillWhenToUseLabel: String get() = StringsB.aiCodingSkillWhenToUseLabel
-    val aiCodingSkillWhenToUseHint: String get() = StringsB.aiCodingSkillWhenToUseHint
-    val aiCodingSkillBodyLabel: String get() = StringsB.aiCodingSkillBodyLabel
-    val aiCodingSkillBodyHint: String get() = StringsB.aiCodingSkillBodyHint
-    val aiCodingSkillSaved: String get() = StringsB.aiCodingSkillSaved
-    val aiCodingSkillSaveFailed: String get() = StringsB.aiCodingSkillSaveFailed
-    val aiCodingSkillDeleted: String get() = StringsB.aiCodingSkillDeleted
-    val aiCodingSkillNameInvalid: String get() = StringsB.aiCodingSkillNameInvalid
-    val aiCodingSkillDeleteConfirm: String get() = StringsB.aiCodingSkillDeleteConfirm
-    val aiCodingAutoModeLabel: String get() = StringsB.aiCodingAutoModeLabel
-    val aiCodingManualModeLabel: String get() = StringsB.aiCodingManualModeLabel
-    val aiCodingSlashChipLabel: String get() = StringsB.aiCodingSlashChipLabel
-    val aiCodingChangesReviewHeader: String get() = StringsB.aiCodingChangesReviewHeader
-    val aiCodingChangesReviewUndoAll: String get() = StringsB.aiCodingChangesReviewUndoAll
-    val aiCodingChangesReviewClear: String get() = StringsB.aiCodingChangesReviewClear
-    val aiCodingChangesReviewUndoOne: String get() = StringsB.aiCodingChangesReviewUndoOne
-    val aiCodingChangesReviewExpand: String get() = StringsB.aiCodingChangesReviewExpand
-    val aiCodingChangesReviewCollapse: String get() = StringsB.aiCodingChangesReviewCollapse
-    val aiCodingChangesUndoneToast: String get() = StringsB.aiCodingChangesUndoneToast
-    val aiCodingPlanModeBadge: String get() = StringsB.aiCodingPlanModeBadge
-    val aiCodingPlanModeNoPath: String get() = StringsB.aiCodingPlanModeNoPath
-    val aiCodingPlanModeExitTooltip: String get() = StringsB.aiCodingPlanModeExitTooltip
-    val aiCodingOpenDrawer: String get() = StringsB.aiCodingOpenDrawer
-    val aiCodingHomeTitle: String get() = StringsB.aiCodingHomeTitle
-    val aiCodingHomeSubtitle: String get() = StringsB.aiCodingHomeSubtitle
-    val aiCodingHomeSkillsTitle: String get() = StringsB.aiCodingHomeSkillsTitle
-    val aiCodingHomeSkillsBrowseAll: String get() = StringsB.aiCodingHomeSkillsBrowseAll
-    val aiCodingHomeRecentTitle: String get() = StringsB.aiCodingHomeRecentTitle
-    val aiCodingHomeRecentSeeAll: String get() = StringsB.aiCodingHomeRecentSeeAll
-    val aiCodingHomeUntitledSession: String get() = StringsB.aiCodingHomeUntitledSession
-    val aiCodingHomeStartersTitle: String get() = StringsB.aiCodingHomeStartersTitle
-    val aiCodingStarterPrompt1: String get() = StringsB.aiCodingStarterPrompt1
-    val aiCodingStarterPrompt2: String get() = StringsB.aiCodingStarterPrompt2
-    val aiCodingStarterPrompt3: String get() = StringsB.aiCodingStarterPrompt3
-    val aiCodingStarterPrompt4: String get() = StringsB.aiCodingStarterPrompt4
-    val aiCodingPreviewToolbarPrefix: String get() = StringsB.aiCodingPreviewToolbarPrefix
-    val aiCodingPreviewNoFile: String get() = StringsB.aiCodingPreviewNoFile
-    val aiCodingPreviewSwitchHeader: String get() = StringsB.aiCodingPreviewSwitchHeader
-    val aiCodingPreviewSwitchEmpty: String get() = StringsB.aiCodingPreviewSwitchEmpty
-    val aiCodingPreviewSwitchTooltip: String get() = StringsB.aiCodingPreviewSwitchTooltip
-    val aiCodingPreviewErrorsCount: String get() = StringsB.aiCodingPreviewErrorsCount
-    val aiCodingPreviewWarningsCount: String get() = StringsB.aiCodingPreviewWarningsCount
-    val aiCodingPreviewRefresh: String get() = StringsB.aiCodingPreviewRefresh
-    val aiCodingSessionPin: String get() = StringsB.aiCodingSessionPin
-    val aiCodingSessionDelete: String get() = StringsB.aiCodingSessionDelete
-    val aiCodingSessionMessagesShort: String get() = StringsB.aiCodingSessionMessagesShort
-    val aiCodingToolDenied: String get() = StringsB.aiCodingToolDenied
-    val aiCodingErrorPrefix: String get() = StringsB.aiCodingErrorPrefix
-    val aiCodingEmptyResponseHint: String get() = StringsB.aiCodingEmptyResponseHint
-    val aiCodingSlashHeader: String get() = StringsB.aiCodingSlashHeader
-    val aiCodingMentionHeader: String get() = StringsB.aiCodingMentionHeader
-    val aiCodingMentionEmpty: String get() = StringsB.aiCodingMentionEmpty
-    val aiCodingPreviewEmpty: String get() = StringsB.aiCodingPreviewEmpty
-    val aiCodingPreviewTabIdle: String get() = StringsB.aiCodingPreviewTabIdle
-    val aiCodingPhaseToolRunning: String get() = StringsB.aiCodingPhaseToolRunning
-    val aiCodingPhaseThinking: String get() = StringsB.aiCodingPhaseThinking
-    val aiCodingThinkingHeaderLive: String get() = StringsB.aiCodingThinkingHeaderLive
-    val aiCodingThinkingDoneSeconds: String get() = StringsB.aiCodingThinkingDoneSeconds
-    val aiCodingThinkingTapToExpand: String get() = StringsB.aiCodingThinkingTapToExpand
-    val aiCodingThinkingTapToCollapse: String get() = StringsB.aiCodingThinkingTapToCollapse
-    val aiCodingMessageActionCopy: String get() = StringsB.aiCodingMessageActionCopy
-    val aiCodingMessageActionEdit: String get() = StringsB.aiCodingMessageActionEdit
-    val aiCodingMessageActionRegenerate: String get() = StringsB.aiCodingMessageActionRegenerate
-    val aiCodingMessageActionDelete: String get() = StringsB.aiCodingMessageActionDelete
-    val aiCodingMessageCopied: String get() = StringsB.aiCodingMessageCopied
-    val aiCodingJumpToLatest: String get() = StringsB.aiCodingJumpToLatest
-    val aiCodingEditingHeader: String get() = StringsB.aiCodingEditingHeader
-    val aiCodingEditingCancel: String get() = StringsB.aiCodingEditingCancel
-    val aiCodingNewSessionAlreadyEmpty: String get() = StringsB.aiCodingNewSessionAlreadyEmpty
-    val aiCodingPreviewOpen: String get() = StringsB.aiCodingPreviewOpen
-    val aiCodingPreviewClose: String get() = StringsB.aiCodingPreviewClose
-    val aiCodingToolArgsLabel: String get() = StringsB.aiCodingToolArgsLabel
-    val aiCodingToolResultLabel: String get() = StringsB.aiCodingToolResultLabel
-    val aiCodingToolStreaming: String get() = StringsB.aiCodingToolStreaming
-    val aiCodingCodeCopy: String get() = StringsB.aiCodingCodeCopy
-    val aiCodingTodoListHeader: String get() = StringsB.aiCodingTodoListHeader
-    val aiCodingNoOutput: String get() = StringsB.aiCodingNoOutput
-    val aiCodingAbortedHint: String get() = StringsB.aiCodingAbortedHint
-    val aiCodingMissingTextModel: String get() = StringsB.aiCodingMissingTextModel
-    val aiCodingMissingApiKey: String get() = StringsB.aiCodingMissingApiKey
-    val aiCodingModelSwitched: String get() = StringsB.aiCodingModelSwitched
-    val aiCodingModelPickerTitle: String get() = StringsB.aiCodingModelPickerTitle
-    val aiCodingModelChipLabel: String get() = StringsB.aiCodingModelChipLabel
-    val aiCodingModelPickerProviders: String get() = StringsB.aiCodingModelPickerProviders
-    val aiCodingModelPickerModels: String get() = StringsB.aiCodingModelPickerModels
-    val aiCodingServiceNotConnected: String get() = StringsB.aiCodingServiceNotConnected
-    val aiCodingTurnDoneToolCount: String get() = StringsB.aiCodingTurnDoneToolCount
-    val aiCodingPlanEntered: String get() = StringsB.aiCodingPlanEntered
-    val aiCodingPlanAlreadyActive: String get() = StringsB.aiCodingPlanAlreadyActive
-    val aiCodingPlanSubmitted: String get() = StringsB.aiCodingPlanSubmitted
-    val aiCodingPlanEmpty: String get() = StringsB.aiCodingPlanEmpty
-    val aiCodingPlanAwaitingReview: String get() = StringsB.aiCodingPlanAwaitingReview
-    val aiCodingPlanApprove: String get() = StringsB.aiCodingPlanApprove
-    val aiCodingPlanRequestRevisions: String get() = StringsB.aiCodingPlanRequestRevisions
-    val aiCodingCompacting: String get() = StringsB.aiCodingCompacting
-    val aiCodingCompactedManual: String get() = StringsB.aiCodingCompactedManual
-    val aiCodingCompactedAuto: String get() = StringsB.aiCodingCompactedAuto
-    val aiCodingCompactSkipped: String get() = StringsB.aiCodingCompactSkipped
-    val aiCodingContextCapacity: String get() = StringsB.aiCodingContextCapacity
-    val aiCodingContextCapacityHint: String get() = StringsB.aiCodingContextCapacityHint
-    val aiCodingCompactNow: String get() = StringsB.aiCodingCompactNow
-    val aiCodingPermissionRequired: String get() = StringsB.aiCodingPermissionRequired
-    val aiCodingPermissionAlways: String get() = StringsB.aiCodingPermissionAlways
-    val aiCodingPermissionAllow: String get() = StringsB.aiCodingPermissionAllow
-    val aiCodingPermissionDeny: String get() = StringsB.aiCodingPermissionDeny
-    val aiCodingChoiceTitle: String get() = StringsB.aiCodingChoiceTitle
-    val aiCodingChoiceOtherHint: String get() = StringsB.aiCodingChoiceOtherHint
-    val aiCodingActionSubmit: String get() = StringsB.aiCodingActionSubmit
-    val aiCodingActionCancel: String get() = StringsB.aiCodingActionCancel
-    val aiCodingSendTooltip: String get() = StringsB.aiCodingSendTooltip
-    val aiCodingStopTooltip: String get() = StringsB.aiCodingStopTooltip
-    val aiCodingSlashClose: String get() = StringsB.aiCodingSlashClose
-    val aiCodingSlashArgsLabel: String get() = StringsB.aiCodingSlashArgsLabel
-    val aiCodingCategoryApp: String get() = StringsB.aiCodingCategoryApp
-    val aiCodingCategoryModule: String get() = StringsB.aiCodingCategoryModule
-    val aiCodingCategoryTool: String get() = StringsB.aiCodingCategoryTool
-    val aiCodingCategoryCustom: String get() = StringsB.aiCodingCategoryCustom
-    val aiCodingEmptySessions: String get() = StringsB.aiCodingEmptySessions
-    val aiCodingEmptySessionsHint: String get() = StringsB.aiCodingEmptySessionsHint
-    val aiCodingEmptyFiles: String get() = StringsB.aiCodingEmptyFiles
-    val aiCodingEmptyFilesHint: String get() = StringsB.aiCodingEmptyFilesHint
-    val aiCodingEmptySkills: String get() = StringsB.aiCodingEmptySkills
-    val aiCodingEmptySkillsHint: String get() = StringsB.aiCodingEmptySkillsHint
-    val aiCodingNotifIdle: String get() = StringsB.aiCodingNotifIdle
-    val aiCodingNotifRunning: String get() = StringsB.aiCodingNotifRunning
-    val aiCodingOutputTruncated: String get() = StringsB.aiCodingOutputTruncated
-    val aiCodingContinuing: String get() = StringsB.aiCodingContinuing
-    val aiCodingRateLimitRetry: (Int, Int, Long) -> String get() = StringsB.aiCodingRateLimitRetry
-    val aiCodingFileSaved: String get() = StringsB.aiCodingFileSaved
+    val agentTitle: String get() = StringsB.agentTitle
+    val agentNewSession: String get() = StringsB.agentNewSession
+    val agentTabSessions: String get() = StringsB.agentTabSessions
+    val agentTabFiles: String get() = StringsB.agentTabFiles
+    val agentTabSkills: String get() = StringsB.agentTabSkills
+    val agentDrawerSearchHint: String get() = StringsB.agentDrawerSearchHint
+    val agentComposerHintIdle: String get() = StringsB.agentComposerHintIdle
+    val agentComposerHintWorking: String get() = StringsB.agentComposerHintWorking
+    val agentSaveAsApp: String get() = StringsB.agentSaveAsApp
+    val agentSaveAsAppTitle: String get() = StringsB.agentSaveAsAppTitle
+    val agentSaveAsAppDescription: String get() = StringsB.agentSaveAsAppDescription
+    val agentSaveAsAppNameLabel: String get() = StringsB.agentSaveAsAppNameLabel
+    val agentSaveAsAppPickIcon: String get() = StringsB.agentSaveAsAppPickIcon
+    val agentSaveAsAppChangeIcon: String get() = StringsB.agentSaveAsAppChangeIcon
+    val agentSaveAsAppConfirm: String get() = StringsB.agentSaveAsAppConfirm
+    val agentSaveAsAppSuccess: String get() = StringsB.agentSaveAsAppSuccess
+    val agentSaveAsAppFailure: String get() = StringsB.agentSaveAsAppFailure
+    val agentSaveAsModule: String get() = StringsB.agentSaveAsModule
+    val agentSaveAsModuleSuccess: String get() = StringsB.agentSaveAsModuleSuccess
+    val agentSaveAsModuleSuccessMany: String get() = StringsB.agentSaveAsModuleSuccessMany
+    val agentSaveAsModuleFailure: String get() = StringsB.agentSaveAsModuleFailure
+    val agentSaveNoArtifacts: String get() = StringsB.agentSaveNoArtifacts
+    val agentSaveDialogChooseLabel: String get() = StringsB.agentSaveDialogChooseLabel
+    val agentSaveDialogTargetApp: String get() = StringsB.agentSaveDialogTargetApp
+    val agentSaveDialogTargetModule: String get() = StringsB.agentSaveDialogTargetModule
+    val agentSaveArtifactSuffix: String get() = StringsB.agentSaveArtifactSuffix
+    val agentKindHtml: String get() = StringsB.agentKindHtml
+    val agentKindReact: String get() = StringsB.agentKindReact
+    val agentKindVue: String get() = StringsB.agentKindVue
+    val agentKindNodeJs: String get() = StringsB.agentKindNodeJs
+    val agentKindPhp: String get() = StringsB.agentKindPhp
+    val agentKindPython: String get() = StringsB.agentKindPython
+    val agentKindGo: String get() = StringsB.agentKindGo
+    val agentKindMultiWeb: String get() = StringsB.agentKindMultiWeb
+    val agentKindGallery: String get() = StringsB.agentKindGallery
+    val agentKindJsModule: String get() = StringsB.agentKindJsModule
+    val agentKindStyleModule: String get() = StringsB.agentKindStyleModule
+    val agentKindUserScript: String get() = StringsB.agentKindUserScript
+    val agentKindChromeExtension: String get() = StringsB.agentKindChromeExtension
+    val agentNewSkill: String get() = StringsB.agentNewSkill
+    val agentEditSkill: String get() = StringsB.agentEditSkill
+    val agentDeleteSkill: String get() = StringsB.agentDeleteSkill
+    val agentSkillNameLabel: String get() = StringsB.agentSkillNameLabel
+    val agentSkillNameHint: String get() = StringsB.agentSkillNameHint
+    val agentSkillDescriptionLabel: String get() = StringsB.agentSkillDescriptionLabel
+    val agentSkillWhenToUseLabel: String get() = StringsB.agentSkillWhenToUseLabel
+    val agentSkillWhenToUseHint: String get() = StringsB.agentSkillWhenToUseHint
+    val agentSkillBodyLabel: String get() = StringsB.agentSkillBodyLabel
+    val agentSkillBodyHint: String get() = StringsB.agentSkillBodyHint
+    val agentSkillSaved: String get() = StringsB.agentSkillSaved
+    val agentSkillSaveFailed: String get() = StringsB.agentSkillSaveFailed
+    val agentSkillDeleted: String get() = StringsB.agentSkillDeleted
+    val agentSkillNameInvalid: String get() = StringsB.agentSkillNameInvalid
+    val agentSkillDeleteConfirm: String get() = StringsB.agentSkillDeleteConfirm
+    val agentAutoModeLabel: String get() = StringsB.agentAutoModeLabel
+    val agentManualModeLabel: String get() = StringsB.agentManualModeLabel
+    val agentSlashChipLabel: String get() = StringsB.agentSlashChipLabel
+    val agentChangesReviewHeader: String get() = StringsB.agentChangesReviewHeader
+    val agentChangesReviewUndoAll: String get() = StringsB.agentChangesReviewUndoAll
+    val agentChangesReviewClear: String get() = StringsB.agentChangesReviewClear
+    val agentChangesReviewUndoOne: String get() = StringsB.agentChangesReviewUndoOne
+    val agentChangesReviewExpand: String get() = StringsB.agentChangesReviewExpand
+    val agentChangesReviewCollapse: String get() = StringsB.agentChangesReviewCollapse
+    val agentChangesUndoneToast: String get() = StringsB.agentChangesUndoneToast
+    val agentPlanModeBadge: String get() = StringsB.agentPlanModeBadge
+    val agentPlanModeNoPath: String get() = StringsB.agentPlanModeNoPath
+    val agentPlanModeExitTooltip: String get() = StringsB.agentPlanModeExitTooltip
+    val agentOpenDrawer: String get() = StringsB.agentOpenDrawer
+    val agentHomeTitle: String get() = StringsB.agentHomeTitle
+    val agentHomeSubtitle: String get() = StringsB.agentHomeSubtitle
+    val agentHomeSkillsTitle: String get() = StringsB.agentHomeSkillsTitle
+    val agentHomeSkillsBrowseAll: String get() = StringsB.agentHomeSkillsBrowseAll
+    val agentHomeRecentTitle: String get() = StringsB.agentHomeRecentTitle
+    val agentHomeRecentSeeAll: String get() = StringsB.agentHomeRecentSeeAll
+    val agentHomeUntitledSession: String get() = StringsB.agentHomeUntitledSession
+    val agentHomeStartersTitle: String get() = StringsB.agentHomeStartersTitle
+    val agentStarterPrompt1: String get() = StringsB.agentStarterPrompt1
+    val agentStarterPrompt2: String get() = StringsB.agentStarterPrompt2
+    val agentStarterPrompt3: String get() = StringsB.agentStarterPrompt3
+    val agentStarterPrompt4: String get() = StringsB.agentStarterPrompt4
+    val agentPreviewToolbarPrefix: String get() = StringsB.agentPreviewToolbarPrefix
+    val agentPreviewNoFile: String get() = StringsB.agentPreviewNoFile
+    val agentPreviewSwitchHeader: String get() = StringsB.agentPreviewSwitchHeader
+    val agentPreviewSwitchEmpty: String get() = StringsB.agentPreviewSwitchEmpty
+    val agentPreviewSwitchTooltip: String get() = StringsB.agentPreviewSwitchTooltip
+    val agentPreviewErrorsCount: String get() = StringsB.agentPreviewErrorsCount
+    val agentPreviewWarningsCount: String get() = StringsB.agentPreviewWarningsCount
+    val agentPreviewRefresh: String get() = StringsB.agentPreviewRefresh
+    val agentSessionPin: String get() = StringsB.agentSessionPin
+    val agentSessionDelete: String get() = StringsB.agentSessionDelete
+    val agentSessionMessagesShort: String get() = StringsB.agentSessionMessagesShort
+    val agentToolDenied: String get() = StringsB.agentToolDenied
+    val agentErrorPrefix: String get() = StringsB.agentErrorPrefix
+    val agentEmptyResponseHint: String get() = StringsB.agentEmptyResponseHint
+    val agentSlashHeader: String get() = StringsB.agentSlashHeader
+    val agentMentionHeader: String get() = StringsB.agentMentionHeader
+    val agentMentionEmpty: String get() = StringsB.agentMentionEmpty
+    val agentPreviewEmpty: String get() = StringsB.agentPreviewEmpty
+    val agentPreviewTabIdle: String get() = StringsB.agentPreviewTabIdle
+    val agentPhaseToolRunning: String get() = StringsB.agentPhaseToolRunning
+    val agentPhaseThinking: String get() = StringsB.agentPhaseThinking
+    val agentThinkingHeaderLive: String get() = StringsB.agentThinkingHeaderLive
+    val agentThinkingDoneSeconds: String get() = StringsB.agentThinkingDoneSeconds
+    val agentThinkingTapToExpand: String get() = StringsB.agentThinkingTapToExpand
+    val agentThinkingTapToCollapse: String get() = StringsB.agentThinkingTapToCollapse
+    val agentMessageActionCopy: String get() = StringsB.agentMessageActionCopy
+    val agentMessageActionEdit: String get() = StringsB.agentMessageActionEdit
+    val agentMessageActionRegenerate: String get() = StringsB.agentMessageActionRegenerate
+    val agentMessageActionDelete: String get() = StringsB.agentMessageActionDelete
+    val agentMessageCopied: String get() = StringsB.agentMessageCopied
+    val agentJumpToLatest: String get() = StringsB.agentJumpToLatest
+    val agentEditingHeader: String get() = StringsB.agentEditingHeader
+    val agentEditingCancel: String get() = StringsB.agentEditingCancel
+    val agentNewSessionAlreadyEmpty: String get() = StringsB.agentNewSessionAlreadyEmpty
+    val agentPreviewOpen: String get() = StringsB.agentPreviewOpen
+    val agentPreviewClose: String get() = StringsB.agentPreviewClose
+    val agentToolArgsLabel: String get() = StringsB.agentToolArgsLabel
+    val agentToolResultLabel: String get() = StringsB.agentToolResultLabel
+    val agentToolStreaming: String get() = StringsB.agentToolStreaming
+    val agentCodeCopy: String get() = StringsB.agentCodeCopy
+    val agentTodoListHeader: String get() = StringsB.agentTodoListHeader
+    val agentNoOutput: String get() = StringsB.agentNoOutput
+    val agentAbortedHint: String get() = StringsB.agentAbortedHint
+    val agentMissingTextModel: String get() = StringsB.agentMissingTextModel
+    val agentMissingApiKey: String get() = StringsB.agentMissingApiKey
+    val agentModelSwitched: String get() = StringsB.agentModelSwitched
+    val agentModelPickerTitle: String get() = StringsB.agentModelPickerTitle
+    val agentModelChipLabel: String get() = StringsB.agentModelChipLabel
+    val agentModelPickerProviders: String get() = StringsB.agentModelPickerProviders
+    val agentModelPickerModels: String get() = StringsB.agentModelPickerModels
+    val agentServiceNotConnected: String get() = StringsB.agentServiceNotConnected
+    val agentTurnDoneToolCount: String get() = StringsB.agentTurnDoneToolCount
+    val agentPlanEntered: String get() = StringsB.agentPlanEntered
+    val agentPlanAlreadyActive: String get() = StringsB.agentPlanAlreadyActive
+    val agentPlanSubmitted: String get() = StringsB.agentPlanSubmitted
+    val agentPlanEmpty: String get() = StringsB.agentPlanEmpty
+    val agentPlanAwaitingReview: String get() = StringsB.agentPlanAwaitingReview
+    val agentPlanApprove: String get() = StringsB.agentPlanApprove
+    val agentPlanRequestRevisions: String get() = StringsB.agentPlanRequestRevisions
+    val agentCompacting: String get() = StringsB.agentCompacting
+    val agentCompactedManual: String get() = StringsB.agentCompactedManual
+    val agentCompactedAuto: String get() = StringsB.agentCompactedAuto
+    val agentCompactSkipped: String get() = StringsB.agentCompactSkipped
+    val agentContextCapacity: String get() = StringsB.agentContextCapacity
+    val agentContextCapacityHint: String get() = StringsB.agentContextCapacityHint
+    val agentCompactNow: String get() = StringsB.agentCompactNow
+    val agentPermissionRequired: String get() = StringsB.agentPermissionRequired
+    val agentPermissionAlways: String get() = StringsB.agentPermissionAlways
+    val agentPermissionAllow: String get() = StringsB.agentPermissionAllow
+    val agentPermissionDeny: String get() = StringsB.agentPermissionDeny
+    val agentChoiceTitle: String get() = StringsB.agentChoiceTitle
+    val agentChoiceOtherHint: String get() = StringsB.agentChoiceOtherHint
+    val agentActionSubmit: String get() = StringsB.agentActionSubmit
+    val agentActionCancel: String get() = StringsB.agentActionCancel
+    val agentSendTooltip: String get() = StringsB.agentSendTooltip
+    val agentStopTooltip: String get() = StringsB.agentStopTooltip
+    val agentSlashClose: String get() = StringsB.agentSlashClose
+    val agentSlashArgsLabel: String get() = StringsB.agentSlashArgsLabel
+    val agentCategoryApp: String get() = StringsB.agentCategoryApp
+    val agentCategoryModule: String get() = StringsB.agentCategoryModule
+    val agentCategoryTool: String get() = StringsB.agentCategoryTool
+    val agentCategoryCustom: String get() = StringsB.agentCategoryCustom
+    val agentEmptySessions: String get() = StringsB.agentEmptySessions
+    val agentEmptySessionsHint: String get() = StringsB.agentEmptySessionsHint
+    val agentEmptyFiles: String get() = StringsB.agentEmptyFiles
+    val agentEmptyFilesHint: String get() = StringsB.agentEmptyFilesHint
+    val agentEmptySkills: String get() = StringsB.agentEmptySkills
+    val agentEmptySkillsHint: String get() = StringsB.agentEmptySkillsHint
+    val agentNotifIdle: String get() = StringsB.agentNotifIdle
+    val agentNotifRunning: String get() = StringsB.agentNotifRunning
+    val agentOutputTruncated: String get() = StringsB.agentOutputTruncated
+    val agentContinuing: String get() = StringsB.agentContinuing
+    val agentRateLimitRetry: (Int, Int, Long) -> String get() = StringsB.agentRateLimitRetry
+    val agentFileSaved: String get() = StringsB.agentFileSaved
     val lrcGenerationDesc: String get() = StringsB.lrcGenerationDesc
     val translationDesc: String get() = StringsB.translationDesc
     val generalChatDesc: String get() = StringsB.generalChatDesc
@@ -2247,10 +2247,10 @@ object Strings {
     val permGroupMediaPerm: String get() = StringsC.permGroupMediaPerm
     val permGroupFile: String get() = StringsC.permGroupFile
     val permGroupAdvanced: String get() = StringsC.permGroupAdvanced
-    val featureAiCoding: String get() = StringsC.featureAiCoding
-    val featureAiCodingDesc: String get() = StringsC.featureAiCodingDesc
-    val featureAiCodingImage: String get() = StringsC.featureAiCodingImage
-    val featureAiCodingImageDesc: String get() = StringsC.featureAiCodingImageDesc
+    val featureAgent: String get() = StringsC.featureAgent
+    val featureAgentDesc: String get() = StringsC.featureAgentDesc
+    val featureAgentImage: String get() = StringsC.featureAgentImage
+    val featureAgentImageDesc: String get() = StringsC.featureAgentImageDesc
     val featureIconGen: String get() = StringsC.featureIconGen
     val featureIconGenDesc: String get() = StringsC.featureIconGenDesc
     val featureModuleDev: String get() = StringsC.featureModuleDev
@@ -4932,8 +4932,8 @@ object StringsA {
         else -> Strings.getString(R.string.webview_back)
     }
 
-    val menuAiCoding: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.menu_ai_coding)
+    val menuAgent: String get() = when (Strings.lang) {
+        else -> Strings.getString(R.string.menu_agent)
     }
 
     val menuAiSettings: String get() = when (Strings.lang) {
@@ -22728,7 +22728,7 @@ object StringsB {
         AppLanguage.KOREAN -> "프로그래밍"
     }
 
-    val aiCodingDesc: String get() = when (Strings.lang) {
+    val agentDesc: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "用 AI 直接构建网页、模块、应用 — 在手机上"
         AppLanguage.ENGLISH -> "Build pages, modules, and apps with AI — directly on your phone"
         AppLanguage.ARABIC -> "بناء الصفحات والوحدات والتطبيقات باستخدام الذكاء الاصطناعي — مباشرة على هاتفك"
@@ -22741,17 +22741,17 @@ object StringsB {
         AppLanguage.KOREAN -> "AI로 페이지, 모듈, 앱을 제작 — 휴대폰에서 직접"
     }
 
-    val aiCodingImageDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "在 AI 编程会话中生成、查看、迭代图像"
-        AppLanguage.ENGLISH -> "Generate, view, and iterate on images during AI coding sessions"
-        AppLanguage.ARABIC -> "إنشاء الصور في برمجة HTML"
-        AppLanguage.PORTUGUESE -> "Gere, visualize e itere imagens durante sessões de programação com IA"
-        AppLanguage.SPANISH -> "Genera, visualiza e itera imágenes durante sesiones de programación con IA"
-        AppLanguage.FRENCH -> "Générez, visualisez et itérez des images pendant les sessions de codage IA"
-        AppLanguage.GERMAN -> "Bilder in KI-Coding-Sitzungen erstellen, ansehen und iterieren"
-        AppLanguage.RUSSIAN -> "Создавайте, просматривайте и итерируйте изображения во время ИИ-сессий"
-        AppLanguage.JAPANESE -> "AIコーディングセッション中に画像を生成、表示、反復"
-        AppLanguage.KOREAN -> "AI 코딩 세션 중 이미지 생성, 보기, 반복"
+    val agentImageDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "在 Agent 会话中生成、查看、迭代图像"
+        AppLanguage.ENGLISH -> "Generate, view, and iterate on images during Agent sessions"
+        AppLanguage.ARABIC -> "إنشاء الصور وعرضها وتحسينها في جلسات Agent"
+        AppLanguage.PORTUGUESE -> "Gere, visualize e itere imagens durante sessões do Agent"
+        AppLanguage.SPANISH -> "Genera, visualiza e itera imágenes durante sesiones de Agent"
+        AppLanguage.FRENCH -> "Générez, visualisez et itérez des images pendant les sessions Agent"
+        AppLanguage.GERMAN -> "Bilder in Agent-Sitzungen erstellen, ansehen und iterieren"
+        AppLanguage.RUSSIAN -> "Создавайте, просматривайте и итерируйте изображения во время сессий Agent"
+        AppLanguage.JAPANESE -> "Agentセッション中に画像を生成、表示、反復"
+        AppLanguage.KOREAN -> "Agent 세션 중 이미지 생성, 보기, 반복"
     }
 
     val iconGenerationDesc: String get() = when (Strings.lang) {
@@ -22780,19 +22780,19 @@ object StringsB {
         AppLanguage.KOREAN -> "AI Agent 지원 확장 모듈 개발"
     }
 
-    val aiCodingTitle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "AI 编程"
-        AppLanguage.ENGLISH -> "AI Coding"
-        AppLanguage.ARABIC -> "البرمجة بالذكاء الاصطناعي"
-        AppLanguage.PORTUGUESE -> "Programação com IA"
-        AppLanguage.SPANISH -> "Programación con IA"
-        AppLanguage.FRENCH -> "Programmation IA"
-        AppLanguage.GERMAN -> "KI-Codierung"
-        AppLanguage.RUSSIAN -> "ИИ-программирование"
-        AppLanguage.JAPANESE -> "AIコーディング"
-        AppLanguage.KOREAN -> "AI 코딩"
+    val agentTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Agent"
+        AppLanguage.ENGLISH -> "Agent"
+        AppLanguage.ARABIC -> "Agent"
+        AppLanguage.PORTUGUESE -> "Agent"
+        AppLanguage.SPANISH -> "Agent"
+        AppLanguage.FRENCH -> "Agent"
+        AppLanguage.GERMAN -> "Agent"
+        AppLanguage.RUSSIAN -> "Agent"
+        AppLanguage.JAPANESE -> "Agent"
+        AppLanguage.KOREAN -> "Agent"
     }
-    val aiCodingNewSession: String get() = when (Strings.lang) {
+    val agentNewSession: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "新建会话"
         AppLanguage.ENGLISH -> "New session"
         AppLanguage.ARABIC -> "جلسة جديدة"
@@ -22804,7 +22804,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "新規セッション"
         AppLanguage.KOREAN -> "새 세션"
     }
-    val aiCodingTabSessions: String get() = when (Strings.lang) {
+    val agentTabSessions: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "会话"
         AppLanguage.ENGLISH -> "Sessions"
         AppLanguage.ARABIC -> "الجلسات"
@@ -22816,7 +22816,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "セッション"
         AppLanguage.KOREAN -> "세션"
     }
-    val aiCodingTabFiles: String get() = when (Strings.lang) {
+    val agentTabFiles: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "文件"
         AppLanguage.ENGLISH -> "Files"
         AppLanguage.ARABIC -> "الملفات"
@@ -22828,7 +22828,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ファイル"
         AppLanguage.KOREAN -> "파일"
     }
-    val aiCodingTabSkills: String get() = when (Strings.lang) {
+    val agentTabSkills: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "技能"
         AppLanguage.ENGLISH -> "Skills"
         AppLanguage.ARABIC -> "المهارات"
@@ -22840,7 +22840,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "スキル"
         AppLanguage.KOREAN -> "스킬"
     }
-    val aiCodingDrawerSearchHint: String get() = when (Strings.lang) {
+    val agentDrawerSearchHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "搜索…"
         AppLanguage.ENGLISH -> "Search…"
         AppLanguage.ARABIC -> "بحث…"
@@ -22852,7 +22852,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "検索…"
         AppLanguage.KOREAN -> "검색…"
     }
-    val aiCodingComposerHintIdle: String get() = when (Strings.lang) {
+    val agentComposerHintIdle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "描述你想做的，输入 / 触发技能"
         AppLanguage.ENGLISH -> "Describe what to build. Type / for skills."
         AppLanguage.ARABIC -> "صف ما تريد بناءه، أدخل / للمهارات"
@@ -22864,7 +22864,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "作成したい内容を説明。/ でスキル呼び出し。"
         AppLanguage.KOREAN -> "제작할 내용을 설명하세요. / 입력 시 스킬 호출."
     }
-    val aiCodingComposerHintWorking: String get() = when (Strings.lang) {
+    val agentComposerHintWorking: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "AI 工作中…"
         AppLanguage.ENGLISH -> "AI is working…"
         AppLanguage.ARABIC -> "الذكاء الاصطناعي يعمل…"
@@ -22876,7 +22876,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "AI処理中…"
         AppLanguage.KOREAN -> "AI 작동 중…"
     }
-    val aiCodingSaveAsApp: String get() = when (Strings.lang) {
+    val agentSaveAsApp: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保存为应用"
         AppLanguage.ENGLISH -> "Save as app"
         AppLanguage.ARABIC -> "حفظ كتطبيق"
@@ -22888,7 +22888,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "アプリとして保存"
         AppLanguage.KOREAN -> "앱으로 저장"
     }
-    val aiCodingSaveAsAppTitle: String get() = when (Strings.lang) {
+    val agentSaveAsAppTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保存到我的应用"
         AppLanguage.ENGLISH -> "Save to My Apps"
         AppLanguage.ARABIC -> "حفظ في تطبيقاتي"
@@ -22900,7 +22900,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "マイアプリに保存"
         AppLanguage.KOREAN -> "내 앱에 저장"
     }
-    val aiCodingSaveAsAppDescription: String get() = when (Strings.lang) {
+    val agentSaveAsAppDescription: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "把当前会话生成的项目添加到主屏的应用列表"
         AppLanguage.ENGLISH -> "Add this session's project to your home apps list"
         AppLanguage.ARABIC -> "أضف مشروع هذه الجلسة إلى قائمة التطبيقات في الشاشة الرئيسية"
@@ -22912,7 +22912,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "このセッションのプロジェクトをホームアプリリストに追加"
         AppLanguage.KOREAN -> "이 세션의 프로젝트를 홈 앱 목록에 추가"
     }
-    val aiCodingSaveAsAppNameLabel: String get() = when (Strings.lang) {
+    val agentSaveAsAppNameLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "应用名称"
         AppLanguage.ENGLISH -> "App name"
         AppLanguage.ARABIC -> "اسم التطبيق"
@@ -22924,7 +22924,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "アプリ名"
         AppLanguage.KOREAN -> "앱 이름"
     }
-    val aiCodingSaveAsAppPickIcon: String get() = when (Strings.lang) {
+    val agentSaveAsAppPickIcon: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "选择图标（可选）"
         AppLanguage.ENGLISH -> "Choose icon (optional)"
         AppLanguage.ARABIC -> "اختر أيقونة (اختياري)"
@@ -22936,7 +22936,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "アイコンを選択（任意）"
         AppLanguage.KOREAN -> "아이콘 선택 (선택 사항)"
     }
-    val aiCodingSaveAsAppChangeIcon: String get() = when (Strings.lang) {
+    val agentSaveAsAppChangeIcon: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "更换"
         AppLanguage.ENGLISH -> "Change"
         AppLanguage.ARABIC -> "تغيير"
@@ -22948,7 +22948,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "変更"
         AppLanguage.KOREAN -> "변경"
     }
-    val aiCodingSaveAsAppConfirm: String get() = when (Strings.lang) {
+    val agentSaveAsAppConfirm: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保存"
         AppLanguage.ENGLISH -> "Save"
         AppLanguage.ARABIC -> "حفظ"
@@ -22960,7 +22960,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "保存"
         AppLanguage.KOREAN -> "저장"
     }
-    val aiCodingSaveAsAppSuccess: String get() = when (Strings.lang) {
+    val agentSaveAsAppSuccess: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已保存到我的应用：%s"
         AppLanguage.ENGLISH -> "Saved to My Apps: %s"
         AppLanguage.ARABIC -> "تم الحفظ في تطبيقاتي: %s"
@@ -22972,7 +22972,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "マイアプリに保存しました: %s"
         AppLanguage.KOREAN -> "내 앱에 저장됨: %s"
     }
-    val aiCodingSaveAsAppFailure: String get() = when (Strings.lang) {
+    val agentSaveAsAppFailure: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保存失败：%s"
         AppLanguage.ENGLISH -> "Save failed: %s"
         AppLanguage.ARABIC -> "فشل الحفظ: %s"
@@ -22984,7 +22984,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "保存に失敗: %s"
         AppLanguage.KOREAN -> "저장 실패: %s"
     }
-    val aiCodingSaveAsModule: String get() = when (Strings.lang) {
+    val agentSaveAsModule: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保存为模块"
         AppLanguage.ENGLISH -> "Save as module"
         AppLanguage.ARABIC -> "حفظ كوحدة"
@@ -22996,7 +22996,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "モジュールとして保存"
         AppLanguage.KOREAN -> "모듈로 저장"
     }
-    val aiCodingSaveAsModuleSuccess: String get() = when (Strings.lang) {
+    val agentSaveAsModuleSuccess: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已保存到扩展模块：%s"
         AppLanguage.ENGLISH -> "Saved to Extension Modules: %s"
         AppLanguage.ARABIC -> "تم الحفظ في وحدات الإضافة: %s"
@@ -23008,7 +23008,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "拡張モジュールに保存しました: %s"
         AppLanguage.KOREAN -> "확장 모듈에 저장됨: %s"
     }
-    val aiCodingSaveAsModuleSuccessMany: String get() = when (Strings.lang) {
+    val agentSaveAsModuleSuccessMany: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已保存到扩展模块：%s 等 %d+1 个"
         AppLanguage.ENGLISH -> "Saved to Extension Modules: %s + %d more"
         AppLanguage.ARABIC -> "تم الحفظ في وحدات الإضافة: %s + %d أخرى"
@@ -23020,7 +23020,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "拡張モジュールに保存: %s + %d 件"
         AppLanguage.KOREAN -> "확장 모듈에 저장됨: %s + %d개 더"
     }
-    val aiCodingSaveAsModuleFailure: String get() = when (Strings.lang) {
+    val agentSaveAsModuleFailure: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保存模块失败：%s"
         AppLanguage.ENGLISH -> "Save module failed: %s"
         AppLanguage.ARABIC -> "فشل حفظ الوحدة: %s"
@@ -23032,7 +23032,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "モジュール保存に失敗: %s"
         AppLanguage.KOREAN -> "모듈 저장 실패: %s"
     }
-    val aiCodingSaveNoArtifacts: String get() = when (Strings.lang) {
+    val agentSaveNoArtifacts: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "会话里没找到可以保存的内容"
         AppLanguage.ENGLISH -> "Nothing in this session is ready to save"
         AppLanguage.ARABIC -> "لا يوجد شيء في هذه الجلسة جاهز للحفظ"
@@ -23044,7 +23044,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "このセッションに保存できるものはありません"
         AppLanguage.KOREAN -> "이 세션에 저장할 내용이 없습니다"
     }
-    val aiCodingSaveDialogChooseLabel: String get() = when (Strings.lang) {
+    val agentSaveDialogChooseLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "选择要保存的项目"
         AppLanguage.ENGLISH -> "Choose what to save"
         AppLanguage.ARABIC -> "اختر ما تريد حفظه"
@@ -23056,7 +23056,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "保存する項目を選択"
         AppLanguage.KOREAN -> "저장할 항목 선택"
     }
-    val aiCodingSaveDialogTargetApp: String get() = when (Strings.lang) {
+    val agentSaveDialogTargetApp: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "我的应用"
         AppLanguage.ENGLISH -> "My Apps"
         AppLanguage.ARABIC -> "تطبيقاتي"
@@ -23068,7 +23068,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "マイアプリ"
         AppLanguage.KOREAN -> "내 앱"
     }
-    val aiCodingSaveDialogTargetModule: String get() = when (Strings.lang) {
+    val agentSaveDialogTargetModule: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "扩展模块"
         AppLanguage.ENGLISH -> "Extension Modules"
         AppLanguage.ARABIC -> "وحدات الإضافة"
@@ -23080,7 +23080,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "拡張モジュール"
         AppLanguage.KOREAN -> "확장 모듈"
     }
-    val aiCodingSaveArtifactSuffix: String get() = when (Strings.lang) {
+    val agentSaveArtifactSuffix: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "%d 个文件 · %s"
         AppLanguage.ENGLISH -> "%d files · %s"
         AppLanguage.ARABIC -> "%d ملفات · %s"
@@ -23092,7 +23092,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "%d ファイル · %s"
         AppLanguage.KOREAN -> "%d개 파일 · %s"
     }
-    val aiCodingKindHtml: String get() = when (Strings.lang) {
+    val agentKindHtml: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "HTML"
         AppLanguage.ENGLISH -> "HTML"
         AppLanguage.ARABIC -> "HTML"
@@ -23104,7 +23104,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "HTML"
         AppLanguage.KOREAN -> "HTML"
     }
-    val aiCodingKindReact: String get() = when (Strings.lang) {
+    val agentKindReact: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "React"
         AppLanguage.ENGLISH -> "React"
         AppLanguage.ARABIC -> "React"
@@ -23116,7 +23116,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "React"
         AppLanguage.KOREAN -> "React"
     }
-    val aiCodingKindVue: String get() = when (Strings.lang) {
+    val agentKindVue: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Vue"
         AppLanguage.ENGLISH -> "Vue"
         AppLanguage.ARABIC -> "Vue"
@@ -23128,7 +23128,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "Vue"
         AppLanguage.KOREAN -> "Vue"
     }
-    val aiCodingKindNodeJs: String get() = when (Strings.lang) {
+    val agentKindNodeJs: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Node.js"
         AppLanguage.ENGLISH -> "Node.js"
         AppLanguage.ARABIC -> "Node.js"
@@ -23140,7 +23140,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "Node.js"
         AppLanguage.KOREAN -> "Node.js"
     }
-    val aiCodingKindPhp: String get() = when (Strings.lang) {
+    val agentKindPhp: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "PHP"
         AppLanguage.ENGLISH -> "PHP"
         AppLanguage.ARABIC -> "PHP"
@@ -23152,7 +23152,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "PHP"
         AppLanguage.KOREAN -> "PHP"
     }
-    val aiCodingKindPython: String get() = when (Strings.lang) {
+    val agentKindPython: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Python"
         AppLanguage.ENGLISH -> "Python"
         AppLanguage.ARABIC -> "Python"
@@ -23164,7 +23164,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "Python"
         AppLanguage.KOREAN -> "Python"
     }
-    val aiCodingKindGo: String get() = when (Strings.lang) {
+    val agentKindGo: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Go"
         AppLanguage.ENGLISH -> "Go"
         AppLanguage.ARABIC -> "Go"
@@ -23176,7 +23176,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "Go"
         AppLanguage.KOREAN -> "Go"
     }
-    val aiCodingKindMultiWeb: String get() = when (Strings.lang) {
+    val agentKindMultiWeb: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "多站点"
         AppLanguage.ENGLISH -> "Multi-Web"
         AppLanguage.ARABIC -> "متعدد المواقع"
@@ -23188,7 +23188,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "マルチウェブ"
         AppLanguage.KOREAN -> "멀티 웹"
     }
-    val aiCodingKindGallery: String get() = when (Strings.lang) {
+    val agentKindGallery: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "图库"
         AppLanguage.ENGLISH -> "Gallery"
         AppLanguage.ARABIC -> "معرض"
@@ -23200,7 +23200,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ギャラリー"
         AppLanguage.KOREAN -> "갤러리"
     }
-    val aiCodingKindJsModule: String get() = when (Strings.lang) {
+    val agentKindJsModule: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "JS 模块"
         AppLanguage.ENGLISH -> "JS Module"
         AppLanguage.ARABIC -> "وحدة JS"
@@ -23212,7 +23212,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "JSモジュール"
         AppLanguage.KOREAN -> "JS 모듈"
     }
-    val aiCodingKindStyleModule: String get() = when (Strings.lang) {
+    val agentKindStyleModule: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "样式模块"
         AppLanguage.ENGLISH -> "Style Module"
         AppLanguage.ARABIC -> "وحدة نمط"
@@ -23224,7 +23224,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "スタイルモジュール"
         AppLanguage.KOREAN -> "스타일 모듈"
     }
-    val aiCodingKindUserScript: String get() = when (Strings.lang) {
+    val agentKindUserScript: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "用户脚本"
         AppLanguage.ENGLISH -> "Userscript"
         AppLanguage.ARABIC -> "نص مستخدم"
@@ -23236,7 +23236,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ユーザースクリプト"
         AppLanguage.KOREAN -> "유저스크립트"
     }
-    val aiCodingKindChromeExtension: String get() = when (Strings.lang) {
+    val agentKindChromeExtension: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Chrome 扩展"
         AppLanguage.ENGLISH -> "Chrome Extension"
         AppLanguage.ARABIC -> "إضافة Chrome"
@@ -23249,7 +23249,7 @@ object StringsB {
         AppLanguage.KOREAN -> "Chrome 확장 프로그램"
     }
 
-    val aiCodingNewSkill: String get() = when (Strings.lang) {
+    val agentNewSkill: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "新建技能"
         AppLanguage.ENGLISH -> "New skill"
         AppLanguage.ARABIC -> "مهارة جديدة"
@@ -23261,7 +23261,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "新規スキル"
         AppLanguage.KOREAN -> "새 스킬"
     }
-    val aiCodingEditSkill: String get() = when (Strings.lang) {
+    val agentEditSkill: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "编辑技能"
         AppLanguage.ENGLISH -> "Edit skill"
         AppLanguage.ARABIC -> "تعديل المهارة"
@@ -23273,7 +23273,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "スキルを編集"
         AppLanguage.KOREAN -> "스킬 편집"
     }
-    val aiCodingDeleteSkill: String get() = when (Strings.lang) {
+    val agentDeleteSkill: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "删除技能"
         AppLanguage.ENGLISH -> "Delete skill"
         AppLanguage.ARABIC -> "حذف المهارة"
@@ -23285,7 +23285,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "スキルを削除"
         AppLanguage.KOREAN -> "스킬 삭제"
     }
-    val aiCodingSkillNameLabel: String get() = when (Strings.lang) {
+    val agentSkillNameLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "技能名称"
         AppLanguage.ENGLISH -> "Skill name"
         AppLanguage.ARABIC -> "اسم المهارة"
@@ -23297,7 +23297,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "スキル名"
         AppLanguage.KOREAN -> "스킬 이름"
     }
-    val aiCodingSkillNameHint: String get() = when (Strings.lang) {
+    val agentSkillNameHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "用 kebab-case，例如 my-helper"
         AppLanguage.ENGLISH -> "kebab-case only, e.g. my-helper"
         AppLanguage.ARABIC -> "حالة kebab فقط، مثل my-helper"
@@ -23309,7 +23309,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "kebab-caseのみ、例: my-helper"
         AppLanguage.KOREAN -> "kebab-case만, 예: my-helper"
     }
-    val aiCodingSkillDescriptionLabel: String get() = when (Strings.lang) {
+    val agentSkillDescriptionLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "简短描述"
         AppLanguage.ENGLISH -> "Short description"
         AppLanguage.ARABIC -> "وصف موجز"
@@ -23321,7 +23321,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "簡単な説明"
         AppLanguage.KOREAN -> "간단한 설명"
     }
-    val aiCodingSkillWhenToUseLabel: String get() = when (Strings.lang) {
+    val agentSkillWhenToUseLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "适用场景"
         AppLanguage.ENGLISH -> "When to use"
         AppLanguage.ARABIC -> "متى تستخدم"
@@ -23333,7 +23333,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "使用タイミング"
         AppLanguage.KOREAN -> "사용 시기"
     }
-    val aiCodingSkillWhenToUseHint: String get() = when (Strings.lang) {
+    val agentSkillWhenToUseHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "模型靠这一行决定要不要调用"
         AppLanguage.ENGLISH -> "The model picks the skill based on this line"
         AppLanguage.ARABIC -> "النموذج يختار المهارة بناءً على هذا السطر"
@@ -23345,7 +23345,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "モデルはこの行に基づいてスキルを選択します"
         AppLanguage.KOREAN -> "모델이 이 줄을 기준으로 스킬을 선택합니다"
     }
-    val aiCodingSkillBodyLabel: String get() = when (Strings.lang) {
+    val agentSkillBodyLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "技能内容（Markdown）"
         AppLanguage.ENGLISH -> "Skill body (Markdown)"
         AppLanguage.ARABIC -> "محتوى المهارة (Markdown)"
@@ -23357,7 +23357,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "スキル本文 (Markdown)"
         AppLanguage.KOREAN -> "스킬 본문 (Markdown)"
     }
-    val aiCodingSkillBodyHint: String get() = when (Strings.lang) {
+    val agentSkillBodyHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "调用时这段会作为系统指令注入下一轮"
         AppLanguage.ENGLISH -> "Injected as system instructions when invoked"
         AppLanguage.ARABIC -> "يتم إدراجه كتعليمات النظام عند الاستدعاء"
@@ -23369,7 +23369,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "呼び出し時にシステム命令として注入されます"
         AppLanguage.KOREAN -> "호출 시 시스템 명령으로 주입됩니다"
     }
-    val aiCodingSkillSaved: String get() = when (Strings.lang) {
+    val agentSkillSaved: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已保存技能：%s"
         AppLanguage.ENGLISH -> "Saved skill: %s"
         AppLanguage.ARABIC -> "تم حفظ المهارة: %s"
@@ -23381,7 +23381,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "スキルを保存しました: %s"
         AppLanguage.KOREAN -> "스킬 저장됨: %s"
     }
-    val aiCodingSkillSaveFailed: String get() = when (Strings.lang) {
+    val agentSkillSaveFailed: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保存失败：%s"
         AppLanguage.ENGLISH -> "Save failed: %s"
         AppLanguage.ARABIC -> "فشل الحفظ: %s"
@@ -23393,7 +23393,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "保存に失敗: %s"
         AppLanguage.KOREAN -> "저장 실패: %s"
     }
-    val aiCodingSkillDeleted: String get() = when (Strings.lang) {
+    val agentSkillDeleted: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已删除技能：%s"
         AppLanguage.ENGLISH -> "Deleted skill: %s"
         AppLanguage.ARABIC -> "تم حذف المهارة: %s"
@@ -23405,7 +23405,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "スキルを削除しました: %s"
         AppLanguage.KOREAN -> "스킬 삭제됨: %s"
     }
-    val aiCodingSkillNameInvalid: String get() = when (Strings.lang) {
+    val agentSkillNameInvalid: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "只允许字母、数字、连字符"
         AppLanguage.ENGLISH -> "Only letters, digits, and hyphens are allowed"
         AppLanguage.ARABIC -> "يُسمح فقط بالأحرف والأرقام والشرطات"
@@ -23417,7 +23417,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "文字、数字、ハイフンのみ使用できます"
         AppLanguage.KOREAN -> "문자, 숫자, 하이픈만 허용됩니다"
     }
-    val aiCodingSkillDeleteConfirm: String get() = when (Strings.lang) {
+    val agentSkillDeleteConfirm: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "确定删除这个技能？此操作不可撤销。"
         AppLanguage.ENGLISH -> "Delete this skill? This cannot be undone."
         AppLanguage.ARABIC -> "حذف هذه المهارة؟ لا يمكن التراجع."
@@ -23429,7 +23429,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "このスキルを削除しますか？元に戻せません。"
         AppLanguage.KOREAN -> "이 스킬을 삭제하시겠습니까? 되돌릴 수 없습니다."
     }
-    val aiCodingAutoModeLabel: String get() = when (Strings.lang) {
+    val agentAutoModeLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "自动"
         AppLanguage.ENGLISH -> "Auto"
         AppLanguage.ARABIC -> "تلقائي"
@@ -23441,7 +23441,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "自動"
         AppLanguage.KOREAN -> "자동"
     }
-    val aiCodingManualModeLabel: String get() = when (Strings.lang) {
+    val agentManualModeLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "手动"
         AppLanguage.ENGLISH -> "Manual"
         AppLanguage.ARABIC -> "يدوي"
@@ -23454,7 +23454,7 @@ object StringsB {
         AppLanguage.KOREAN -> "수동"
     }
 
-    val aiCodingSlashChipLabel: String get() = when (Strings.lang) {
+    val agentSlashChipLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "技能"
         AppLanguage.ENGLISH -> "Skills"
         AppLanguage.ARABIC -> "المهارات"
@@ -23466,7 +23466,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "スキル"
         AppLanguage.KOREAN -> "스킬"
     }
-    val aiCodingChangesReviewHeader: String get() = when (Strings.lang) {
+    val agentChangesReviewHeader: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "%d 个改动"
         AppLanguage.ENGLISH -> "%d changes"
         AppLanguage.ARABIC -> "%d تغييرات"
@@ -23478,7 +23478,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "%d件の変更"
         AppLanguage.KOREAN -> "%d개 변경"
     }
-    val aiCodingChangesReviewUndoAll: String get() = when (Strings.lang) {
+    val agentChangesReviewUndoAll: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "全部撤销"
         AppLanguage.ENGLISH -> "Undo all"
         AppLanguage.ARABIC -> "تراجع عن الكل"
@@ -23490,7 +23490,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "すべて元に戻す"
         AppLanguage.KOREAN -> "모두 실행 취소"
     }
-    val aiCodingChangesReviewClear: String get() = when (Strings.lang) {
+    val agentChangesReviewClear: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "清空"
         AppLanguage.ENGLISH -> "Clear"
         AppLanguage.ARABIC -> "مسح"
@@ -23502,7 +23502,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "クリア"
         AppLanguage.KOREAN -> "지우기"
     }
-    val aiCodingChangesReviewUndoOne: String get() = when (Strings.lang) {
+    val agentChangesReviewUndoOne: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "撤销"
         AppLanguage.ENGLISH -> "Undo"
         AppLanguage.ARABIC -> "تراجع"
@@ -23514,7 +23514,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "元に戻す"
         AppLanguage.KOREAN -> "실행 취소"
     }
-    val aiCodingChangesReviewExpand: String get() = when (Strings.lang) {
+    val agentChangesReviewExpand: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "展开"
         AppLanguage.ENGLISH -> "Expand"
         AppLanguage.ARABIC -> "توسيع"
@@ -23526,7 +23526,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "展開"
         AppLanguage.KOREAN -> "펼치기"
     }
-    val aiCodingChangesReviewCollapse: String get() = when (Strings.lang) {
+    val agentChangesReviewCollapse: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "折叠"
         AppLanguage.ENGLISH -> "Collapse"
         AppLanguage.ARABIC -> "طي"
@@ -23538,7 +23538,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "折りたたむ"
         AppLanguage.KOREAN -> "접기"
     }
-    val aiCodingChangesUndoneToast: String get() = when (Strings.lang) {
+    val agentChangesUndoneToast: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已撤销 %d 个改动"
         AppLanguage.ENGLISH -> "Undid %d changes"
         AppLanguage.ARABIC -> "تم التراجع عن %d تغييرات"
@@ -23550,7 +23550,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "%d件の変更を元に戻しました"
         AppLanguage.KOREAN -> "%d개 변경 실행 취소됨"
     }
-    val aiCodingPlanModeBadge: String get() = when (Strings.lang) {
+    val agentPlanModeBadge: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Plan 模式"
         AppLanguage.ENGLISH -> "Plan Mode"
         AppLanguage.ARABIC -> "وضع التخطيط"
@@ -23562,7 +23562,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "Planモード"
         AppLanguage.KOREAN -> "Plan 모드"
     }
-    val aiCodingPlanModeNoPath: String get() = when (Strings.lang) {
+    val agentPlanModeNoPath: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "未指定"
         AppLanguage.ENGLISH -> "(no path)"
         AppLanguage.ARABIC -> "(لا يوجد مسار)"
@@ -23574,7 +23574,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "(パスなし)"
         AppLanguage.KOREAN -> "(경로 없음)"
     }
-    val aiCodingPlanModeExitTooltip: String get() = when (Strings.lang) {
+    val agentPlanModeExitTooltip: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "退出 Plan 模式"
         AppLanguage.ENGLISH -> "Exit plan mode"
         AppLanguage.ARABIC -> "الخروج من وضع التخطيط"
@@ -23586,7 +23586,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "Planモードを終了"
         AppLanguage.KOREAN -> "Plan 모드 종료"
     }
-    val aiCodingOpenDrawer: String get() = when (Strings.lang) {
+    val agentOpenDrawer: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "打开侧边栏"
         AppLanguage.ENGLISH -> "Open drawer"
         AppLanguage.ARABIC -> "فتح اللوحة الجانبية"
@@ -23598,7 +23598,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ドロワーを開く"
         AppLanguage.KOREAN -> "서랍 열기"
     }
-    val aiCodingHomeTitle: String get() = when (Strings.lang) {
+    val agentHomeTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "构建点什么"
         AppLanguage.ENGLISH -> "Build something"
         AppLanguage.ARABIC -> "ابنِ شيئًا"
@@ -23610,7 +23610,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "何かを作る"
         AppLanguage.KOREAN -> "무언가 만들기"
     }
-    val aiCodingHomeSubtitle: String get() = when (Strings.lang) {
+    val agentHomeSubtitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "直接在下方输入即可开始，不必先新建会话"
         AppLanguage.ENGLISH -> "Type below to start right away — no need to create a session first"
         AppLanguage.ARABIC -> "اكتب أدناه للبدء مباشرة — لا حاجة لإنشاء جلسة أولاً"
@@ -23622,7 +23622,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "下に入力するだけで開始。先にセッションを作る必要はありません"
         AppLanguage.KOREAN -> "아래에서 바로 입력하세요. 먼저 세션을 만들 필요 없습니다"
     }
-    val aiCodingHomeSkillsTitle: String get() = when (Strings.lang) {
+    val agentHomeSkillsTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "推荐技能"
         AppLanguage.ENGLISH -> "Featured skills"
         AppLanguage.ARABIC -> "المهارات المميزة"
@@ -23634,7 +23634,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "おすすめスキル"
         AppLanguage.KOREAN -> "추천 스킬"
     }
-    val aiCodingHomeSkillsBrowseAll: String get() = when (Strings.lang) {
+    val agentHomeSkillsBrowseAll: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "全部"
         AppLanguage.ENGLISH -> "Browse all"
         AppLanguage.ARABIC -> "تصفح الكل"
@@ -23646,7 +23646,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "すべて見る"
         AppLanguage.KOREAN -> "모두 보기"
     }
-    val aiCodingHomeRecentTitle: String get() = when (Strings.lang) {
+    val agentHomeRecentTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "最近的会话"
         AppLanguage.ENGLISH -> "Recent sessions"
         AppLanguage.ARABIC -> "الجلسات الأخيرة"
@@ -23658,7 +23658,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "最近のセッション"
         AppLanguage.KOREAN -> "최근 세션"
     }
-    val aiCodingHomeRecentSeeAll: String get() = when (Strings.lang) {
+    val agentHomeRecentSeeAll: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "查看全部"
         AppLanguage.ENGLISH -> "See all"
         AppLanguage.ARABIC -> "عرض الكل"
@@ -23670,7 +23670,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "すべて表示"
         AppLanguage.KOREAN -> "모두 보기"
     }
-    val aiCodingHomeUntitledSession: String get() = when (Strings.lang) {
+    val agentHomeUntitledSession: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "未命名会话"
         AppLanguage.ENGLISH -> "Untitled session"
         AppLanguage.ARABIC -> "جلسة بدون عنوان"
@@ -23682,7 +23682,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "無題のセッション"
         AppLanguage.KOREAN -> "제목 없는 세션"
     }
-    val aiCodingHomeStartersTitle: String get() = when (Strings.lang) {
+    val agentHomeStartersTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "试试这些"
         AppLanguage.ENGLISH -> "Try these"
         AppLanguage.ARABIC -> "جرّب هذه"
@@ -23694,7 +23694,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "これを試す"
         AppLanguage.KOREAN -> "이런 걸 해보세요"
     }
-    val aiCodingStarterPrompt1: String get() = when (Strings.lang) {
+    val agentStarterPrompt1: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "做一个简洁的待办清单网页应用"
         AppLanguage.ENGLISH -> "Build a clean todo list web app"
         AppLanguage.ARABIC -> "أنشئ تطبيق قائمة مهام ويب أنيق"
@@ -23706,7 +23706,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "シンプルなToDoリストWebアプリを作る"
         AppLanguage.KOREAN -> "깔끔한 할 일 목록 웹 앱 만들기"
     }
-    val aiCodingStarterPrompt2: String get() = when (Strings.lang) {
+    val agentStarterPrompt2: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "做一个带暗色模式的个人作品集主页"
         AppLanguage.ENGLISH -> "Make a personal portfolio homepage with dark mode"
         AppLanguage.ARABIC -> "اصنع صفحة محفظة شخصية مع الوضع الداكن"
@@ -23718,7 +23718,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ダークモード付きの個人ポートフォリオホームを作る"
         AppLanguage.KOREAN -> "다크 모드 개인 포트폴리오 홈페이지 만들기"
     }
-    val aiCodingStarterPrompt3: String get() = when (Strings.lang) {
+    val agentStarterPrompt3: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "把这段需求变成可预览的 HTML 页面"
         AppLanguage.ENGLISH -> "Turn this idea into a previewable HTML page"
         AppLanguage.ARABIC -> "حوّل هذه الفكرة إلى صفحة HTML قابلة للمعاينة"
@@ -23730,7 +23730,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "このアイデアをプレビュー可能なHTMLページにする"
         AppLanguage.KOREAN -> "이 아이디어를 미리보기 가능한 HTML 페이지로 만들기"
     }
-    val aiCodingStarterPrompt4: String get() = when (Strings.lang) {
+    val agentStarterPrompt4: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "帮我搭建一个移动端优先的落地页"
         AppLanguage.ENGLISH -> "Help me scaffold a mobile-first landing page"
         AppLanguage.ARABIC -> "ساعدني في بناء صفحة هبوط مخصصة للجوال"
@@ -23742,7 +23742,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "モバイルファーストのランディングページを組み立てて"
         AppLanguage.KOREAN -> "모바일 우선 랜딩 페이지 뼈대 만들기"
     }
-    val aiCodingPreviewToolbarPrefix: String get() = when (Strings.lang) {
+    val agentPreviewToolbarPrefix: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "预览 · %s"
         AppLanguage.ENGLISH -> "Preview · %s"
         AppLanguage.ARABIC -> "معاينة · %s"
@@ -23754,7 +23754,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "プレビュー · %s"
         AppLanguage.KOREAN -> "미리보기 · %s"
     }
-    val aiCodingPreviewNoFile: String get() = when (Strings.lang) {
+    val agentPreviewNoFile: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "（未选择文件）"
         AppLanguage.ENGLISH -> "(no file)"
         AppLanguage.ARABIC -> "(لا يوجد ملف)"
@@ -23767,7 +23767,7 @@ object StringsB {
         AppLanguage.KOREAN -> "(파일 없음)"
     }
 
-    val aiCodingPreviewSwitchHeader: String get() = when (Strings.lang) {
+    val agentPreviewSwitchHeader: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "切换预览文件"
         AppLanguage.ENGLISH -> "Switch preview file"
         AppLanguage.ARABIC -> "تبديل ملف المعاينة"
@@ -23780,7 +23780,7 @@ object StringsB {
         AppLanguage.KOREAN -> "미리보기 파일 전환"
     }
 
-    val aiCodingPreviewSwitchEmpty: String get() = when (Strings.lang) {
+    val agentPreviewSwitchEmpty: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "本次会话还没有 HTML / 图片可以预览"
         AppLanguage.ENGLISH -> "No HTML / image files in this session yet"
         AppLanguage.ARABIC -> "لا توجد ملفات HTML / صور في هذه الجلسة بعد"
@@ -23793,7 +23793,7 @@ object StringsB {
         AppLanguage.KOREAN -> "이 세션에 아직 HTML / 이미지 파일이 없습니다"
     }
 
-    val aiCodingPreviewSwitchTooltip: String get() = when (Strings.lang) {
+    val agentPreviewSwitchTooltip: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "切换文件"
         AppLanguage.ENGLISH -> "Switch file"
         AppLanguage.ARABIC -> "تبديل الملف"
@@ -23805,7 +23805,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ファイルを切り替え"
         AppLanguage.KOREAN -> "파일 전환"
     }
-    val aiCodingPreviewErrorsCount: String get() = when (Strings.lang) {
+    val agentPreviewErrorsCount: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "%d 错误"
         AppLanguage.ENGLISH -> "%d err"
         AppLanguage.ARABIC -> "%d خطأ"
@@ -23817,7 +23817,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "%d件エラー"
         AppLanguage.KOREAN -> "%d 에러"
     }
-    val aiCodingPreviewWarningsCount: String get() = when (Strings.lang) {
+    val agentPreviewWarningsCount: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "%d 警告"
         AppLanguage.ENGLISH -> "%d warn"
         AppLanguage.ARABIC -> "%d تحذير"
@@ -23829,7 +23829,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "%d件警告"
         AppLanguage.KOREAN -> "%d 경고"
     }
-    val aiCodingPreviewRefresh: String get() = when (Strings.lang) {
+    val agentPreviewRefresh: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "刷新"
         AppLanguage.ENGLISH -> "Refresh"
         AppLanguage.ARABIC -> "تحديث"
@@ -23841,7 +23841,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "更新"
         AppLanguage.KOREAN -> "새로고침"
     }
-    val aiCodingSessionPin: String get() = when (Strings.lang) {
+    val agentSessionPin: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "置顶"
         AppLanguage.ENGLISH -> "Pin"
         AppLanguage.ARABIC -> "تثبيت"
@@ -23853,7 +23853,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ピン留め"
         AppLanguage.KOREAN -> "고정"
     }
-    val aiCodingSessionDelete: String get() = when (Strings.lang) {
+    val agentSessionDelete: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "删除"
         AppLanguage.ENGLISH -> "Delete"
         AppLanguage.ARABIC -> "حذف"
@@ -23865,7 +23865,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "削除"
         AppLanguage.KOREAN -> "삭제"
     }
-    val aiCodingSessionMessagesShort: String get() = when (Strings.lang) {
+    val agentSessionMessagesShort: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "%d 条"
         AppLanguage.ENGLISH -> "%d msgs"
         AppLanguage.ARABIC -> "%d رسالة"
@@ -23877,7 +23877,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "%d件"
         AppLanguage.KOREAN -> "%d개"
     }
-    val aiCodingToolDenied: String get() = when (Strings.lang) {
+    val agentToolDenied: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "工具被拒绝：%s"
         AppLanguage.ENGLISH -> "Tool denied: %s"
         AppLanguage.ARABIC -> "تم رفض الأداة: %s"
@@ -23889,7 +23889,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ツールが拒否されました: %s"
         AppLanguage.KOREAN -> "도구 거부됨: %s"
     }
-    val aiCodingErrorPrefix: String get() = when (Strings.lang) {
+    val agentErrorPrefix: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "[错误] %s"
         AppLanguage.ENGLISH -> "[Error] %s"
         AppLanguage.ARABIC -> "[خطأ] %s"
@@ -23902,7 +23902,7 @@ object StringsB {
         AppLanguage.KOREAN -> "[오류] %s"
     }
 
-    val aiCodingEmptyResponseHint: String get() = when (Strings.lang) {
+    val agentEmptyResponseHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "模型这一轮没有返回内容。可能是网络抖动或限流，重试一次试试。"
         AppLanguage.ENGLISH -> "The model returned an empty turn. This usually means a network hiccup or rate-limit — try resending."
         AppLanguage.ARABIC -> "أعاد النموذج جولة فارغة. يحدث هذا عادةً بسبب الشبكة أو حد المعدل — حاول إعادة الإرسال."
@@ -23914,7 +23914,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "モデルが空のターンを返しました。ネットワークの問題またはレート制限の可能性があります — 再送信してみてください。"
         AppLanguage.KOREAN -> "모델이 빈 응답을 반환했습니다. 보통 네트워크 문제나 속도 제한입니다 — 다시 전송해 보세요."
     }
-    val aiCodingSlashHeader: String get() = when (Strings.lang) {
+    val agentSlashHeader: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "技能 + 命令"
         AppLanguage.ENGLISH -> "Skills + commands"
         AppLanguage.ARABIC -> "المهارات والأوامر"
@@ -23926,7 +23926,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "スキル + コマンド"
         AppLanguage.KOREAN -> "스킬 + 명령"
     }
-    val aiCodingMentionHeader: String get() = when (Strings.lang) {
+    val agentMentionHeader: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "项目文件"
         AppLanguage.ENGLISH -> "Project files"
         AppLanguage.ARABIC -> "ملفات المشروع"
@@ -23938,7 +23938,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "プロジェクトファイル"
         AppLanguage.KOREAN -> "프로젝트 파일"
     }
-    val aiCodingMentionEmpty: String get() = when (Strings.lang) {
+    val agentMentionEmpty: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "没有匹配的文件"
         AppLanguage.ENGLISH -> "No matching files"
         AppLanguage.ARABIC -> "لا توجد ملفات مطابقة"
@@ -23950,7 +23950,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "一致するファイルがありません"
         AppLanguage.KOREAN -> "일치하는 파일 없음"
     }
-    val aiCodingPreviewEmpty: String get() = when (Strings.lang) {
+    val agentPreviewEmpty: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "项目里还没有可预览的页面"
         AppLanguage.ENGLISH -> "Nothing to preview yet"
         AppLanguage.ARABIC -> "لا يوجد شيء للمعاينة بعد"
@@ -23962,7 +23962,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "まだプレビューするものがありません"
         AppLanguage.KOREAN -> "미리볼 항목이 아직 없습니다"
     }
-    val aiCodingPreviewTabIdle: String get() = when (Strings.lang) {
+    val agentPreviewTabIdle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "暂无预览"
         AppLanguage.ENGLISH -> "Preview"
         AppLanguage.ARABIC -> "معاينة"
@@ -23974,7 +23974,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "プレビュー"
         AppLanguage.KOREAN -> "미리보기"
     }
-    val aiCodingPhaseToolRunning: String get() = when (Strings.lang) {
+    val agentPhaseToolRunning: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "执行工具…"
         AppLanguage.ENGLISH -> "Running tool…"
         AppLanguage.ARABIC -> "تشغيل الأداة…"
@@ -23986,7 +23986,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ツール実行中…"
         AppLanguage.KOREAN -> "도구 실행 중…"
     }
-    val aiCodingPhaseThinking: String get() = when (Strings.lang) {
+    val agentPhaseThinking: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "思考中…"
         AppLanguage.ENGLISH -> "Thinking…"
         AppLanguage.ARABIC -> "تفكير…"
@@ -23998,7 +23998,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "思考中…"
         AppLanguage.KOREAN -> "생각 중…"
     }
-    val aiCodingThinkingHeaderLive: String get() = when (Strings.lang) {
+    val agentThinkingHeaderLive: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "思考中"
         AppLanguage.ENGLISH -> "Thinking"
         AppLanguage.ARABIC -> "يفكر"
@@ -24010,7 +24010,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "思考中"
         AppLanguage.KOREAN -> "생각 중"
     }
-    val aiCodingThinkingDoneSeconds: String get() = when (Strings.lang) {
+    val agentThinkingDoneSeconds: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已思考 %.1fs"
         AppLanguage.ENGLISH -> "Thought for %.1fs"
         AppLanguage.ARABIC -> "فكر لمدة %.1f ث"
@@ -24022,7 +24022,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "%.1f秒思考しました"
         AppLanguage.KOREAN -> "%.1f초 생각함"
     }
-    val aiCodingThinkingTapToExpand: String get() = when (Strings.lang) {
+    val agentThinkingTapToExpand: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "点击展开"
         AppLanguage.ENGLISH -> "Tap to expand"
         AppLanguage.ARABIC -> "اضغط للتوسيع"
@@ -24034,7 +24034,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "タップして展開"
         AppLanguage.KOREAN -> "탭하여 펼치기"
     }
-    val aiCodingThinkingTapToCollapse: String get() = when (Strings.lang) {
+    val agentThinkingTapToCollapse: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "点击收起"
         AppLanguage.ENGLISH -> "Tap to collapse"
         AppLanguage.ARABIC -> "اضغط للطي"
@@ -24046,7 +24046,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "タップして折りたたむ"
         AppLanguage.KOREAN -> "탭하여 접기"
     }
-    val aiCodingMessageActionCopy: String get() = when (Strings.lang) {
+    val agentMessageActionCopy: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "复制"
         AppLanguage.ENGLISH -> "Copy"
         AppLanguage.ARABIC -> "نسخ"
@@ -24058,7 +24058,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "コピー"
         AppLanguage.KOREAN -> "복사"
     }
-    val aiCodingMessageActionEdit: String get() = when (Strings.lang) {
+    val agentMessageActionEdit: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "编辑并重发"
         AppLanguage.ENGLISH -> "Edit & resend"
         AppLanguage.ARABIC -> "تعديل وإعادة الإرسال"
@@ -24070,7 +24070,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "編集して再送信"
         AppLanguage.KOREAN -> "편집 후 재전송"
     }
-    val aiCodingMessageActionRegenerate: String get() = when (Strings.lang) {
+    val agentMessageActionRegenerate: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "重新生成"
         AppLanguage.ENGLISH -> "Regenerate"
         AppLanguage.ARABIC -> "إعادة إنشاء"
@@ -24082,7 +24082,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "再生成"
         AppLanguage.KOREAN -> "재생성"
     }
-    val aiCodingMessageActionDelete: String get() = when (Strings.lang) {
+    val agentMessageActionDelete: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "删除以下对话"
         AppLanguage.ENGLISH -> "Delete from here"
         AppLanguage.ARABIC -> "حذف من هنا"
@@ -24094,7 +24094,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ここから削除"
         AppLanguage.KOREAN -> "이후부터 삭제"
     }
-    val aiCodingMessageCopied: String get() = when (Strings.lang) {
+    val agentMessageCopied: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已复制"
         AppLanguage.ENGLISH -> "Copied"
         AppLanguage.ARABIC -> "تم النسخ"
@@ -24106,7 +24106,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "コピーしました"
         AppLanguage.KOREAN -> "복사됨"
     }
-    val aiCodingJumpToLatest: String get() = when (Strings.lang) {
+    val agentJumpToLatest: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "跳到最新"
         AppLanguage.ENGLISH -> "Jump to latest"
         AppLanguage.ARABIC -> "اقفز إلى الأحدث"
@@ -24118,7 +24118,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "最新へジャンプ"
         AppLanguage.KOREAN -> "최신으로 이동"
     }
-    val aiCodingEditingHeader: String get() = when (Strings.lang) {
+    val agentEditingHeader: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "编辑后将替换之后的对话"
         AppLanguage.ENGLISH -> "Editing — later messages will be replaced"
         AppLanguage.ARABIC -> "التعديل — سيتم استبدال الرسائل اللاحقة"
@@ -24130,7 +24130,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "編集中 — 以降のメッセージは置き換えられます"
         AppLanguage.KOREAN -> "편집 중 — 이후 메시지가 대체됩니다"
     }
-    val aiCodingEditingCancel: String get() = when (Strings.lang) {
+    val agentEditingCancel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "取消编辑"
         AppLanguage.ENGLISH -> "Cancel edit"
         AppLanguage.ARABIC -> "إلغاء التعديل"
@@ -24142,7 +24142,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "編集をキャンセル"
         AppLanguage.KOREAN -> "편집 취소"
     }
-    val aiCodingNewSessionAlreadyEmpty: String get() = when (Strings.lang) {
+    val agentNewSessionAlreadyEmpty: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "当前已是空会话"
         AppLanguage.ENGLISH -> "Already in an empty session"
         AppLanguage.ARABIC -> "أنت بالفعل في جلسة فارغة"
@@ -24154,7 +24154,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "すでに空のセッションです"
         AppLanguage.KOREAN -> "이미 빈 세션입니다"
     }
-    val aiCodingPreviewOpen: String get() = when (Strings.lang) {
+    val agentPreviewOpen: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "实时预览"
         AppLanguage.ENGLISH -> "Live preview"
         AppLanguage.ARABIC -> "معاينة مباشرة"
@@ -24166,7 +24166,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ライブプレビュー"
         AppLanguage.KOREAN -> "실시간 미리보기"
     }
-    val aiCodingPreviewClose: String get() = when (Strings.lang) {
+    val agentPreviewClose: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "关闭预览"
         AppLanguage.ENGLISH -> "Close preview"
         AppLanguage.ARABIC -> "إغلاق المعاينة"
@@ -24178,7 +24178,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "プレビューを閉じる"
         AppLanguage.KOREAN -> "미리보기 닫기"
     }
-    val aiCodingToolArgsLabel: String get() = when (Strings.lang) {
+    val agentToolArgsLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "参数"
         AppLanguage.ENGLISH -> "Arguments"
         AppLanguage.ARABIC -> "المعطيات"
@@ -24190,7 +24190,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "引数"
         AppLanguage.KOREAN -> "인수"
     }
-    val aiCodingToolResultLabel: String get() = when (Strings.lang) {
+    val agentToolResultLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "结果"
         AppLanguage.ENGLISH -> "Result"
         AppLanguage.ARABIC -> "النتيجة"
@@ -24202,7 +24202,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "結果"
         AppLanguage.KOREAN -> "결과"
     }
-    val aiCodingToolStreaming: String get() = when (Strings.lang) {
+    val agentToolStreaming: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "实时输出"
         AppLanguage.ENGLISH -> "Streaming"
         AppLanguage.ARABIC -> "بث مباشر"
@@ -24214,7 +24214,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ストリーミング中"
         AppLanguage.KOREAN -> "스트리밍 중"
     }
-    val aiCodingCodeCopy: String get() = when (Strings.lang) {
+    val agentCodeCopy: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "复制代码"
         AppLanguage.ENGLISH -> "Copy code"
         AppLanguage.ARABIC -> "نسخ الكود"
@@ -24226,7 +24226,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "コードをコピー"
         AppLanguage.KOREAN -> "코드 복사"
     }
-    val aiCodingTodoListHeader: String get() = when (Strings.lang) {
+    val agentTodoListHeader: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "任务清单"
         AppLanguage.ENGLISH -> "Checklist"
         AppLanguage.ARABIC -> "قائمة المهام"
@@ -24238,7 +24238,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "チェックリスト"
         AppLanguage.KOREAN -> "체크리스트"
     }
-    val aiCodingNoOutput: String get() = when (Strings.lang) {
+    val agentNoOutput: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "(无输出)"
         AppLanguage.ENGLISH -> "(no output)"
         AppLanguage.ARABIC -> "(لا يوجد ناتج)"
@@ -24250,7 +24250,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "(出力なし)"
         AppLanguage.KOREAN -> "(출력 없음)"
     }
-    val aiCodingAbortedHint: String get() = when (Strings.lang) {
+    val agentAbortedHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "[已中断]"
         AppLanguage.ENGLISH -> "[Interrupted]"
         AppLanguage.ARABIC -> "[تمت المقاطعة]"
@@ -24262,7 +24262,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "[中断されました]"
         AppLanguage.KOREAN -> "[중단됨]"
     }
-    val aiCodingMissingTextModel: String get() = when (Strings.lang) {
+    val agentMissingTextModel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "请先在 AI 设置中配置一个可编程模型"
         AppLanguage.ENGLISH -> "Configure a coding model in AI settings first"
         AppLanguage.ARABIC -> "قم بإعداد نموذج برمجة في إعدادات الذكاء الاصطناعي أولاً"
@@ -24274,7 +24274,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "まずAI設定でコーディングモデルを設定してください"
         AppLanguage.KOREAN -> "먼저 AI 설정에서 코딩 모델을 구성하세요"
     }
-    val aiCodingMissingApiKey: String get() = when (Strings.lang) {
+    val agentMissingApiKey: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "找不到所选模型的 API Key"
         AppLanguage.ENGLISH -> "API key for the selected model is missing"
         AppLanguage.ARABIC -> "مفتاح API للنموذج المحدد مفقود"
@@ -24286,7 +24286,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "選択したモデルのAPIキーが見つかりません"
         AppLanguage.KOREAN -> "선택한 모델의 API 키가 없습니다"
     }
-    val aiCodingModelSwitched: String get() = when (Strings.lang) {
+    val agentModelSwitched: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已切换到模型：%s"
         AppLanguage.ENGLISH -> "Switched to model: %s"
         AppLanguage.ARABIC -> "تم التبديل إلى النموذج: %s"
@@ -24298,7 +24298,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "モデルを切り替えました: %s"
         AppLanguage.KOREAN -> "모델 전환됨: %s"
     }
-    val aiCodingModelPickerTitle: String get() = when (Strings.lang) {
+    val agentModelPickerTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "选择模型"
         AppLanguage.ENGLISH -> "Select model"
         AppLanguage.ARABIC -> "اختر النموذج"
@@ -24310,7 +24310,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "モデルを選択"
         AppLanguage.KOREAN -> "모델 선택"
     }
-    val aiCodingModelChipLabel: String get() = when (Strings.lang) {
+    val agentModelChipLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "模型"
         AppLanguage.ENGLISH -> "Model"
         AppLanguage.ARABIC -> "النموذج"
@@ -24322,7 +24322,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "モデル"
         AppLanguage.KOREAN -> "모델"
     }
-    val aiCodingModelPickerProviders: String get() = when (Strings.lang) {
+    val agentModelPickerProviders: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "供应商"
         AppLanguage.ENGLISH -> "Providers"
         AppLanguage.ARABIC -> "المزوّدون"
@@ -24334,7 +24334,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "プロバイダー"
         AppLanguage.KOREAN -> "제공자"
     }
-    val aiCodingModelPickerModels: String get() = when (Strings.lang) {
+    val agentModelPickerModels: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "模型"
         AppLanguage.ENGLISH -> "Models"
         AppLanguage.ARABIC -> "النماذج"
@@ -24346,7 +24346,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "モデル"
         AppLanguage.KOREAN -> "모델"
     }
-    val aiCodingServiceNotConnected: String get() = when (Strings.lang) {
+    val agentServiceNotConnected: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "AI 服务未连接"
         AppLanguage.ENGLISH -> "AI service is not connected"
         AppLanguage.ARABIC -> "خدمة الذكاء الاصطناعي غير متصلة"
@@ -24358,7 +24358,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "AIサービスが接続されていません"
         AppLanguage.KOREAN -> "AI 서비스가 연결되지 않았습니다"
     }
-    val aiCodingTurnDoneToolCount: String get() = when (Strings.lang) {
+    val agentTurnDoneToolCount: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "完成（%d 次工具调用）"
         AppLanguage.ENGLISH -> "Done (%d tool call(s))"
         AppLanguage.ARABIC -> "تم (%d استدعاء أداة)"
@@ -24370,7 +24370,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "完了 (%d回のツール呼び出し)"
         AppLanguage.KOREAN -> "완료 (%d회 도구 호출)"
     }
-    val aiCodingPlanEntered: String get() = when (Strings.lang) {
+    val agentPlanEntered: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已进入 Plan 模式"
         AppLanguage.ENGLISH -> "Entered plan mode"
         AppLanguage.ARABIC -> "تم الدخول إلى وضع التخطيط"
@@ -24382,7 +24382,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "Planモードに入りました"
         AppLanguage.KOREAN -> "Plan 모드에 진입했습니다"
     }
-    val aiCodingPlanAlreadyActive: String get() = when (Strings.lang) {
+    val agentPlanAlreadyActive: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已经在 Plan 模式"
         AppLanguage.ENGLISH -> "Already in plan mode"
         AppLanguage.ARABIC -> "أنت بالفعل في وضع التخطيط"
@@ -24394,7 +24394,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "すでにPlanモードです"
         AppLanguage.KOREAN -> "이미 Plan 모드입니다"
     }
-    val aiCodingPlanSubmitted: String get() = when (Strings.lang) {
+    val agentPlanSubmitted: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Plan 已提交（%s）"
         AppLanguage.ENGLISH -> "Plan submitted (%s)"
         AppLanguage.ARABIC -> "تم تقديم الخطة (%s)"
@@ -24406,7 +24406,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "Planを送信しました (%s)"
         AppLanguage.KOREAN -> "Plan 제출됨 (%s)"
     }
-    val aiCodingPlanEmpty: String get() = when (Strings.lang) {
+    val agentPlanEmpty: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Plan 文件还是空的，先写完再退出"
         AppLanguage.ENGLISH -> "Plan file is empty — write the plan before exiting"
         AppLanguage.ARABIC -> "ملف الخطة فارغ — اكتب الخطة قبل الخروج"
@@ -24418,7 +24418,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "Planファイルが空です — 終了前にプランを書いてください"
         AppLanguage.KOREAN -> "Plan 파일이 비어 있습니다 — 종료 전에 계획을 작성하세요"
     }
-    val aiCodingPlanAwaitingReview: String get() = when (Strings.lang) {
+    val agentPlanAwaitingReview: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Plan 已提交，等待审批"
         AppLanguage.ENGLISH -> "Plan submitted for review"
         AppLanguage.ARABIC -> "تم تقديم الخطة للمراجعة"
@@ -24430,7 +24430,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "Plan がレビュー待ちで提出されました"
         AppLanguage.KOREAN -> "검토를 위해 Plan이 제출되었습니다"
     }
-    val aiCodingPlanApprove: String get() = when (Strings.lang) {
+    val agentPlanApprove: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "批准并开始实现"
         AppLanguage.ENGLISH -> "Approve"
         AppLanguage.ARABIC -> "موافقة"
@@ -24442,7 +24442,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "承認"
         AppLanguage.KOREAN -> "승인"
     }
-    val aiCodingPlanRequestRevisions: String get() = when (Strings.lang) {
+    val agentPlanRequestRevisions: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "需要修改"
         AppLanguage.ENGLISH -> "Request revisions"
         AppLanguage.ARABIC -> "طلب تعديلات"
@@ -24454,7 +24454,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "修正を依頼"
         AppLanguage.KOREAN -> "수정 요청"
     }
-    val aiCodingCompacting: String get() = when (Strings.lang) {
+    val agentCompacting: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "压缩中…"
         AppLanguage.ENGLISH -> "Compacting…"
         AppLanguage.ARABIC -> "جارٍ الضغط…"
@@ -24466,7 +24466,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "圧縮中…"
         AppLanguage.KOREAN -> "압축 중…"
     }
-    val aiCodingCompactedManual: String get() = when (Strings.lang) {
+    val agentCompactedManual: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "对话已压缩（%d -> %d 条）"
         AppLanguage.ENGLISH -> "Compacted conversation (%d -> %d messages)"
         AppLanguage.ARABIC -> "تم ضغط المحادثة (%d -> %d رسالة)"
@@ -24478,7 +24478,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "会話を圧縮しました (%d -> %dメッセージ)"
         AppLanguage.KOREAN -> "대화 압축됨 (%d -> %d개 메시지)"
     }
-    val aiCodingCompactedAuto: String get() = when (Strings.lang) {
+    val agentCompactedAuto: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已自动压缩历史对话"
         AppLanguage.ENGLISH -> "Auto-compacted older messages"
         AppLanguage.ARABIC -> "تم ضغط الرسائل القديمة تلقائيًا"
@@ -24490,7 +24490,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "古いメッセージを自動圧縮しました"
         AppLanguage.KOREAN -> "이전 메시지 자동 압축됨"
     }
-    val aiCodingCompactSkipped: String get() = when (Strings.lang) {
+    val agentCompactSkipped: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "未压缩：%s"
         AppLanguage.ENGLISH -> "Compact skipped: %s"
         AppLanguage.ARABIC -> "تم تخطي الضغط: %s"
@@ -24503,7 +24503,7 @@ object StringsB {
         AppLanguage.KOREAN -> "압축 건너뜀: %s"
     }
 
-    val aiCodingContextCapacity: String get() = when (Strings.lang) {
+    val agentContextCapacity: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "上下文容量"
         AppLanguage.ENGLISH -> "Context Capacity"
         AppLanguage.ARABIC -> "سعة السياق"
@@ -24516,7 +24516,7 @@ object StringsB {
         AppLanguage.KOREAN -> "컨텍스트 용량"
     }
 
-    val aiCodingContextCapacityHint: String get() = when (Strings.lang) {
+    val agentContextCapacityHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "模型支持的最大上下文 token 数（留空使用默认值 %d）"
         AppLanguage.ENGLISH -> "Max context tokens the model supports (leave empty for default %d)"
         AppLanguage.ARABIC -> "الحد الأقصى لرموز السياق التي يدعمها النموذج (اتركه فارغًا للافتراضي %d)"
@@ -24529,7 +24529,7 @@ object StringsB {
         AppLanguage.KOREAN -> "모델이 지원하는 최대 컨텍스트 토큰 수 (빈 값은 기본값 %d)"
     }
 
-    val aiCodingCompactNow: String get() = when (Strings.lang) {
+    val agentCompactNow: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "压缩上下文"
         AppLanguage.ENGLISH -> "Compact Context"
         AppLanguage.ARABIC -> "ضغط السياق"
@@ -24542,7 +24542,7 @@ object StringsB {
         AppLanguage.KOREAN -> "컨텍스트 압축"
     }
 
-    val aiCodingPermissionRequired: String get() = when (Strings.lang) {
+    val agentPermissionRequired: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "AI 想运行工具"
         AppLanguage.ENGLISH -> "AI wants to run a tool"
         AppLanguage.ARABIC -> "يريد الذكاء الاصطناعي تشغيل أداة"
@@ -24554,7 +24554,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "AIがツールを実行しようとしています"
         AppLanguage.KOREAN -> "AI가 도구를 실행하려고 합니다"
     }
-    val aiCodingPermissionAlways: String get() = when (Strings.lang) {
+    val agentPermissionAlways: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "总是允许"
         AppLanguage.ENGLISH -> "Always allow"
         AppLanguage.ARABIC -> "السماح دائمًا"
@@ -24566,7 +24566,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "常に許可"
         AppLanguage.KOREAN -> "항상 허용"
     }
-    val aiCodingPermissionAllow: String get() = when (Strings.lang) {
+    val agentPermissionAllow: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "允许"
         AppLanguage.ENGLISH -> "Allow"
         AppLanguage.ARABIC -> "السماح"
@@ -24578,7 +24578,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "許可"
         AppLanguage.KOREAN -> "허용"
     }
-    val aiCodingPermissionDeny: String get() = when (Strings.lang) {
+    val agentPermissionDeny: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "拒绝"
         AppLanguage.ENGLISH -> "Deny"
         AppLanguage.ARABIC -> "رفض"
@@ -24590,7 +24590,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "拒否"
         AppLanguage.KOREAN -> "거부"
     }
-    val aiCodingChoiceTitle: String get() = when (Strings.lang) {
+    val agentChoiceTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "AI 需要你来选择"
         AppLanguage.ENGLISH -> "AI needs your input"
         AppLanguage.ARABIC -> "يحتاج الذكاء الاصطناعي إلى مدخلاتك"
@@ -24602,7 +24602,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "AIがあなたの入力を必要としています"
         AppLanguage.KOREAN -> "AI가 사용자의 입력을 필요로 합니다"
     }
-    val aiCodingChoiceOtherHint: String get() = when (Strings.lang) {
+    val agentChoiceOtherHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "其他…（自由输入）"
         AppLanguage.ENGLISH -> "Other (free text)…"
         AppLanguage.ARABIC -> "أخرى (نص حر)…"
@@ -24614,7 +24614,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "その他 (自由入力)…"
         AppLanguage.KOREAN -> "기타 (자유 텍스트)…"
     }
-    val aiCodingActionSubmit: String get() = when (Strings.lang) {
+    val agentActionSubmit: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "提交"
         AppLanguage.ENGLISH -> "Submit"
         AppLanguage.ARABIC -> "إرسال"
@@ -24626,7 +24626,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "送信"
         AppLanguage.KOREAN -> "제출"
     }
-    val aiCodingActionCancel: String get() = when (Strings.lang) {
+    val agentActionCancel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "取消"
         AppLanguage.ENGLISH -> "Cancel"
         AppLanguage.ARABIC -> "إلغاء"
@@ -24638,7 +24638,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "キャンセル"
         AppLanguage.KOREAN -> "취소"
     }
-    val aiCodingSendTooltip: String get() = when (Strings.lang) {
+    val agentSendTooltip: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "发送"
         AppLanguage.ENGLISH -> "Send"
         AppLanguage.ARABIC -> "إرسال"
@@ -24650,7 +24650,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "送信"
         AppLanguage.KOREAN -> "전송"
     }
-    val aiCodingStopTooltip: String get() = when (Strings.lang) {
+    val agentStopTooltip: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "停止"
         AppLanguage.ENGLISH -> "Stop"
         AppLanguage.ARABIC -> "إيقاف"
@@ -24662,7 +24662,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "停止"
         AppLanguage.KOREAN -> "중지"
     }
-    val aiCodingSlashClose: String get() = when (Strings.lang) {
+    val agentSlashClose: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "关闭"
         AppLanguage.ENGLISH -> "Close"
         AppLanguage.ARABIC -> "إغلاق"
@@ -24674,7 +24674,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "閉じる"
         AppLanguage.KOREAN -> "닫기"
     }
-    val aiCodingSlashArgsLabel: String get() = when (Strings.lang) {
+    val agentSlashArgsLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "参数: %s"
         AppLanguage.ENGLISH -> "args: %s"
         AppLanguage.ARABIC -> "وسائط: %s"
@@ -24686,7 +24686,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "引数: %s"
         AppLanguage.KOREAN -> "인수: %s"
     }
-    val aiCodingCategoryApp: String get() = when (Strings.lang) {
+    val agentCategoryApp: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "应用类型"
         AppLanguage.ENGLISH -> "Apps"
         AppLanguage.ARABIC -> "التطبيقات"
@@ -24698,7 +24698,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "アプリ"
         AppLanguage.KOREAN -> "앱"
     }
-    val aiCodingCategoryModule: String get() = when (Strings.lang) {
+    val agentCategoryModule: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "模块类型"
         AppLanguage.ENGLISH -> "Modules"
         AppLanguage.ARABIC -> "الوحدات"
@@ -24710,7 +24710,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "モジュール"
         AppLanguage.KOREAN -> "모듈"
     }
-    val aiCodingCategoryTool: String get() = when (Strings.lang) {
+    val agentCategoryTool: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "工具"
         AppLanguage.ENGLISH -> "Tools"
         AppLanguage.ARABIC -> "الأدوات"
@@ -24722,7 +24722,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ツール"
         AppLanguage.KOREAN -> "도구"
     }
-    val aiCodingCategoryCustom: String get() = when (Strings.lang) {
+    val agentCategoryCustom: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "自定义"
         AppLanguage.ENGLISH -> "Custom"
         AppLanguage.ARABIC -> "مخصصة"
@@ -24734,7 +24734,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "カスタム"
         AppLanguage.KOREAN -> "사용자 정의"
     }
-    val aiCodingEmptySessions: String get() = when (Strings.lang) {
+    val agentEmptySessions: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "暂无会话"
         AppLanguage.ENGLISH -> "No sessions yet"
         AppLanguage.ARABIC -> "لا توجد جلسات بعد"
@@ -24746,7 +24746,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "セッションがまだありません"
         AppLanguage.KOREAN -> "세션이 아직 없습니다"
     }
-    val aiCodingEmptySessionsHint: String get() = when (Strings.lang) {
+    val agentEmptySessionsHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "新建一个会话开始"
         AppLanguage.ENGLISH -> "Create a new session to begin"
         AppLanguage.ARABIC -> "أنشئ جلسة جديدة للبدء"
@@ -24758,7 +24758,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "新しいセッションを作成して開始"
         AppLanguage.KOREAN -> "새 세션을 만들어 시작하세요"
     }
-    val aiCodingEmptyFiles: String get() = when (Strings.lang) {
+    val agentEmptyFiles: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "项目还没有文件"
         AppLanguage.ENGLISH -> "No files yet"
         AppLanguage.ARABIC -> "لا توجد ملفات بعد"
@@ -24770,7 +24770,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "ファイルがまだありません"
         AppLanguage.KOREAN -> "파일이 아직 없습니다"
     }
-    val aiCodingEmptyFilesHint: String get() = when (Strings.lang) {
+    val agentEmptyFilesHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "和 AI 聊天后会自动出现"
         AppLanguage.ENGLISH -> "Files appear after talking with the AI"
         AppLanguage.ARABIC -> "تظهر الملفات بعد التحدث مع الذكاء الاصطناعي"
@@ -24782,7 +24782,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "AIと会話するとファイルが表示されます"
         AppLanguage.KOREAN -> "AI와 대화하면 파일이 나타납니다"
     }
-    val aiCodingEmptySkills: String get() = when (Strings.lang) {
+    val agentEmptySkills: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "没有匹配的技能"
         AppLanguage.ENGLISH -> "No matching skills"
         AppLanguage.ARABIC -> "لا توجد مهارات مطابقة"
@@ -24794,7 +24794,7 @@ object StringsB {
         AppLanguage.JAPANESE -> "一致するスキルがありません"
         AppLanguage.KOREAN -> "일치하는 스킬 없음"
     }
-    val aiCodingEmptySkillsHint: String get() = when (Strings.lang) {
+    val agentEmptySkillsHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "调整搜索词或清空"
         AppLanguage.ENGLISH -> "Adjust the search or clear it"
         AppLanguage.ARABIC -> "عدّل البحث أو امسحه"
@@ -24806,31 +24806,31 @@ object StringsB {
         AppLanguage.JAPANESE -> "検索を調整するかクリアしてください"
         AppLanguage.KOREAN -> "검색을 조정하거나 지우세요"
     }
-    val aiCodingNotifIdle: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "AI 编程已就绪"
-        AppLanguage.ENGLISH -> "AI Coding ready"
-        AppLanguage.ARABIC -> "البرمجة بالذكاء الاصطناعي جاهزة"
-        AppLanguage.PORTUGUESE -> "Codificação por IA pronta"
-        AppLanguage.SPANISH -> "Codificación por IA lista"
-        AppLanguage.FRENCH -> "Codage par IA prêt"
-        AppLanguage.GERMAN -> "KI-Codierung bereit"
-        AppLanguage.RUSSIAN -> "ИИ-кодирование готово"
-        AppLanguage.JAPANESE -> "AIコーディングの準備ができました"
-        AppLanguage.KOREAN -> "AI 코딩 준비 완료"
+    val agentNotifIdle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Agent 已就绪"
+        AppLanguage.ENGLISH -> "Agent ready"
+        AppLanguage.ARABIC -> "Agent جاهز"
+        AppLanguage.PORTUGUESE -> "Agent pronto"
+        AppLanguage.SPANISH -> "Agent listo"
+        AppLanguage.FRENCH -> "Agent prêt"
+        AppLanguage.GERMAN -> "Agent bereit"
+        AppLanguage.RUSSIAN -> "Agent готов"
+        AppLanguage.JAPANESE -> "Agentの準備ができました"
+        AppLanguage.KOREAN -> "Agent 준비 완료"
     }
-    val aiCodingNotifRunning: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "AI 编程进行中…"
-        AppLanguage.ENGLISH -> "AI Coding in progress…"
-        AppLanguage.ARABIC -> "البرمجة بالذكاء الاصطناعي قيد التنفيذ…"
-        AppLanguage.PORTUGUESE -> "Codificação por IA em andamento…"
-        AppLanguage.SPANISH -> "Codificación por IA en progreso…"
-        AppLanguage.FRENCH -> "Codage par IA en cours…"
-        AppLanguage.GERMAN -> "KI-Codierung läuft…"
-        AppLanguage.RUSSIAN -> "ИИ-кодирование выполняется…"
-        AppLanguage.JAPANESE -> "AIコーディング進行中…"
-        AppLanguage.KOREAN -> "AI 코딩 진행 중…"
+    val agentNotifRunning: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Agent 进行中…"
+        AppLanguage.ENGLISH -> "Agent in progress…"
+        AppLanguage.ARABIC -> "Agent قيد التنفيذ…"
+        AppLanguage.PORTUGUESE -> "Agent em andamento…"
+        AppLanguage.SPANISH -> "Agent en progreso…"
+        AppLanguage.FRENCH -> "Agent en cours…"
+        AppLanguage.GERMAN -> "Agent läuft…"
+        AppLanguage.RUSSIAN -> "Agent выполняется…"
+        AppLanguage.JAPANESE -> "Agent進行中…"
+        AppLanguage.KOREAN -> "Agent 진행 중…"
     }
-    val aiCodingOutputTruncated: String get() = when (Strings.lang) {
+    val agentOutputTruncated: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "本轮输出达到模型单次最大长度,内容可能被截断。让 AI 继续以补全剩余部分。"
         AppLanguage.ENGLISH -> "This turn hit the model's max output length, so the content may be truncated. Ask the AI to continue to finish the rest."
         AppLanguage.ARABIC -> "بلغ هذا الرد الحد الأقصى لطول مخرجات النموذج، لذا قد يكون المحتوى مقتطعًا. اطلب من الذكاء الاصطناعي المتابعة لإكمال الباقي."
@@ -24843,7 +24843,7 @@ object StringsB {
         AppLanguage.KOREAN -> "이번 응답이 모델의 최대 출력 길이에 도달하여 내용이 잘렸을 수 있습니다. AI에게 계속하라고 요청하여 나머지를 완성하세요."
     }
 
-    val aiCodingContinuing: String get() = when (Strings.lang) {
+    val agentContinuing: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "输出达到长度限制，正在自动续写…"
         AppLanguage.ENGLISH -> "Output hit length limit, auto-continuing…"
         AppLanguage.ARABIC -> "بلغ الإخراج حد الطول، يتابع تلقائيًا…"
@@ -24856,7 +24856,7 @@ object StringsB {
         AppLanguage.KOREAN -> "출력이 길이 제한에 도달했습니다, 자동 계속 중…"
     }
 
-    val aiCodingRateLimitRetry: (Int, Int, Long) -> String get() = when (Strings.lang) {
+    val agentRateLimitRetry: (Int, Int, Long) -> String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> { attempt, max, ms -> "请求被限流，${ms / 1000}秒后重试（第${attempt}/${max}次）…" }
         AppLanguage.ENGLISH -> { attempt, max, ms -> "Rate limited, retrying in ${ms / 1000}s (attempt ${attempt}/${max})…" }
         AppLanguage.ARABIC -> { attempt, max, ms -> "تم تحديد الطلبات، إعادة المحاولة خلال ${ms / 1000}ث (المحاولة ${attempt}/${max})…" }
@@ -24869,7 +24869,7 @@ object StringsB {
         AppLanguage.KOREAN -> { attempt, max, ms -> "속도 제한, ${ms / 1000}초 후 재시도 (${attempt}/${max}번째)…" }
     }
 
-    val aiCodingFileSaved: String get() = when (Strings.lang) {
+    val agentFileSaved: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已保存 %s"
         AppLanguage.ENGLISH -> "Saved %s"
         AppLanguage.ARABIC -> "تم حفظ %s"
@@ -32673,19 +32673,19 @@ object StringsC {
         AppLanguage.KOREAN -> "고급 권한"
     }
 
-    val featureAiCoding: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "AI 编程"
-        AppLanguage.ENGLISH -> "AI Coding"
-        AppLanguage.ARABIC -> "البرمجة بالذكاء الاصطناعي"
-        AppLanguage.PORTUGUESE -> "Programação com IA"
-        AppLanguage.SPANISH -> "Programación con IA"
-        AppLanguage.FRENCH -> "Programmation IA"
-        AppLanguage.GERMAN -> "KI-Programmierung"
-        AppLanguage.RUSSIAN -> "ИИ-программирование"
-        AppLanguage.JAPANESE -> "AIプログラミング"
-        AppLanguage.KOREAN -> "AI 코딩"
+    val featureAgent: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Agent"
+        AppLanguage.ENGLISH -> "Agent"
+        AppLanguage.ARABIC -> "Agent"
+        AppLanguage.PORTUGUESE -> "Agent"
+        AppLanguage.SPANISH -> "Agent"
+        AppLanguage.FRENCH -> "Agent"
+        AppLanguage.GERMAN -> "Agent"
+        AppLanguage.RUSSIAN -> "Agent"
+        AppLanguage.JAPANESE -> "Agent"
+        AppLanguage.KOREAN -> "Agent"
     }
-    val featureAiCodingDesc: String get() = when (Strings.lang) {
+    val featureAgentDesc: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "用 AI 直接构建网页、模块、应用 — 在手机上"
         AppLanguage.ENGLISH -> "Build pages, modules, and apps with AI — directly on your phone"
         AppLanguage.ARABIC -> "بناء الصفحات والوحدات والتطبيقات باستخدام الذكاء الاصطناعي — مباشرة على هاتفك"
@@ -32697,29 +32697,29 @@ object StringsC {
         AppLanguage.JAPANESE -> "AIでページ、モジュール、アプリを構築 — スマホで直接"
         AppLanguage.KOREAN -> "AI로 페이지, 모듈, 앱 빌드 — 휴대폰에서 직접"
     }
-    val featureAiCodingImage: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "AI 编程（图像）"
-        AppLanguage.ENGLISH -> "AI Coding (Image)"
-        AppLanguage.ARABIC -> "البرمجة بالذكاء الاصطناعي (صورة)"
-        AppLanguage.PORTUGUESE -> "Programação com IA (Imagem)"
-        AppLanguage.SPANISH -> "Programación con IA (Imagen)"
-        AppLanguage.FRENCH -> "Programmation IA (Image)"
-        AppLanguage.GERMAN -> "KI-Programmierung (Bild)"
-        AppLanguage.RUSSIAN -> "ИИ-программирование (Изображение)"
-        AppLanguage.JAPANESE -> "AIプログラミング（画像）"
-        AppLanguage.KOREAN -> "AI 코딩 (이미지)"
+    val featureAgentImage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Agent（图像）"
+        AppLanguage.ENGLISH -> "Agent (Image)"
+        AppLanguage.ARABIC -> "Agent (صورة)"
+        AppLanguage.PORTUGUESE -> "Agent (Imagem)"
+        AppLanguage.SPANISH -> "Agent (Imagen)"
+        AppLanguage.FRENCH -> "Agent (Image)"
+        AppLanguage.GERMAN -> "Agent (Bild)"
+        AppLanguage.RUSSIAN -> "Agent (Изображение)"
+        AppLanguage.JAPANESE -> "Agent（画像）"
+        AppLanguage.KOREAN -> "Agent (이미지)"
     }
-    val featureAiCodingImageDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "在 AI 编程会话中生成、查看、迭代图像"
-        AppLanguage.ENGLISH -> "Generate, view, and iterate on images during AI coding sessions"
-        AppLanguage.ARABIC -> "إنشاء الصور وعرضها وتحسينها أثناء جلسات البرمجة"
-        AppLanguage.PORTUGUESE -> "Gerar, visualizar e iterar imagens durante sessões de programação com IA"
-        AppLanguage.SPANISH -> "Generar, ver e iterar imágenes durante sesiones de programación con IA"
-        AppLanguage.FRENCH -> "Générer, visualiser et itérer des images pendant les sessions de programmation IA"
-        AppLanguage.GERMAN -> "Bilder während KI-Programmiersitzungen generieren, ansehen und iterieren"
-        AppLanguage.RUSSIAN -> "Создание, просмотр и итерация изображений во время сессий ИИ-программирования"
-        AppLanguage.JAPANESE -> "AIプログラミングセッション中に画像を生成、表示、反復"
-        AppLanguage.KOREAN -> "AI 코딩 세션 중 이미지 생성, 보기 및 반복"
+    val featureAgentImageDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "在 Agent 会话中生成、查看、迭代图像"
+        AppLanguage.ENGLISH -> "Generate, view, and iterate on images during Agent sessions"
+        AppLanguage.ARABIC -> "إنشاء الصور وعرضها وتحسينها أثناء جلسات Agent"
+        AppLanguage.PORTUGUESE -> "Gerar, visualizar e iterar imagens durante sessões do Agent"
+        AppLanguage.SPANISH -> "Generar, ver e iterar imágenes durante sesiones de Agent"
+        AppLanguage.FRENCH -> "Générer, visualiser et itérer des images pendant les sessions Agent"
+        AppLanguage.GERMAN -> "Bilder während Agent-Sitzungen generieren, ansehen und iterieren"
+        AppLanguage.RUSSIAN -> "Создание, просмотр и итерация изображений во время сессий Agent"
+        AppLanguage.JAPANESE -> "Agentセッション中に画像を生成、表示、反復"
+        AppLanguage.KOREAN -> "Agent 세션 중 이미지 생성, 보기 및 반복"
     }
     val featureIconGen: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "图标生成"

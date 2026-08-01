@@ -555,7 +555,7 @@ $existingCodeHint
 5. استخدم NativeBridge API عند الحاجة إلى ميزات أصلية مثل حفظ الصور/الفيديو، المشاركة، النسخ، الاهتزاز
     """.trimIndent()
 
-    fun getAiCodingSystemPrompt(
+    fun getAgentSystemPrompt(
         language: AppLanguage,
         rules: List<String> = emptyList(),
         hasImageModel: Boolean = false,
@@ -569,20 +569,20 @@ $existingCodeHint
         styleColors: String? = null
     ): String {
         return when (language) {
-            AppLanguage.CHINESE -> buildAiCodingPromptChinese(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
-            AppLanguage.ENGLISH -> buildAiCodingPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
-            AppLanguage.ARABIC -> buildAiCodingPromptArabic(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
-            AppLanguage.PORTUGUESE -> buildAiCodingPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
-            AppLanguage.SPANISH -> buildAiCodingPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
-            AppLanguage.FRENCH -> buildAiCodingPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
-            AppLanguage.GERMAN -> buildAiCodingPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
-            AppLanguage.RUSSIAN -> buildAiCodingPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
-            AppLanguage.JAPANESE -> buildAiCodingPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
-            AppLanguage.KOREAN -> buildAiCodingPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
+            AppLanguage.CHINESE -> buildAgentPromptChinese(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
+            AppLanguage.ENGLISH -> buildAgentPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
+            AppLanguage.ARABIC -> buildAgentPromptArabic(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
+            AppLanguage.PORTUGUESE -> buildAgentPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
+            AppLanguage.SPANISH -> buildAgentPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
+            AppLanguage.FRENCH -> buildAgentPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
+            AppLanguage.GERMAN -> buildAgentPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
+            AppLanguage.RUSSIAN -> buildAgentPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
+            AppLanguage.JAPANESE -> buildAgentPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
+            AppLanguage.KOREAN -> buildAgentPromptEnglish(rules, hasImageModel, templateName, templateDesc, templatePromptHint, colorScheme, styleName, styleDesc, styleKeywords, styleColors)
         }
     }
 
-    private fun buildAiCodingPromptChinese(
+    private fun buildAgentPromptChinese(
         rules: List<String>,
         hasImageModel: Boolean,
         templateName: String?,
@@ -630,7 +630,7 @@ $existingCodeHint
         }
     }.trimEnd()
 
-    private fun buildAiCodingPromptEnglish(
+    private fun buildAgentPromptEnglish(
         rules: List<String>,
         hasImageModel: Boolean,
         templateName: String?,
@@ -678,7 +678,7 @@ $existingCodeHint
         }
     }.trimEnd()
 
-    private fun buildAiCodingPromptArabic(
+    private fun buildAgentPromptArabic(
         rules: List<String>,
         hasImageModel: Boolean,
         templateName: String?,
@@ -726,26 +726,26 @@ $existingCodeHint
         }
     }.trimEnd()
 
-    fun getAiCodingSystemPrompt(
+    fun getAgentSystemPrompt(
         language: AppLanguage,
         codingType: String,
         rules: List<String> = emptyList()
     ): String {
         return when (language) {
-            AppLanguage.CHINESE -> buildAiCodingPromptChinese(codingType, rules)
-            AppLanguage.ENGLISH -> buildAiCodingPromptEnglish(codingType, rules)
-            AppLanguage.ARABIC -> buildAiCodingPromptArabic(codingType, rules)
-            AppLanguage.PORTUGUESE -> buildAiCodingPromptEnglish(codingType, rules)
-            AppLanguage.SPANISH -> buildAiCodingPromptEnglish(codingType, rules)
-            AppLanguage.FRENCH -> buildAiCodingPromptEnglish(codingType, rules)
-            AppLanguage.GERMAN -> buildAiCodingPromptEnglish(codingType, rules)
-            AppLanguage.RUSSIAN -> buildAiCodingPromptEnglish(codingType, rules)
-            AppLanguage.JAPANESE -> buildAiCodingPromptEnglish(codingType, rules)
-            AppLanguage.KOREAN -> buildAiCodingPromptEnglish(codingType, rules)
+            AppLanguage.CHINESE -> buildAgentPromptChinese(codingType, rules)
+            AppLanguage.ENGLISH -> buildAgentPromptEnglish(codingType, rules)
+            AppLanguage.ARABIC -> buildAgentPromptArabic(codingType, rules)
+            AppLanguage.PORTUGUESE -> buildAgentPromptEnglish(codingType, rules)
+            AppLanguage.SPANISH -> buildAgentPromptEnglish(codingType, rules)
+            AppLanguage.FRENCH -> buildAgentPromptEnglish(codingType, rules)
+            AppLanguage.GERMAN -> buildAgentPromptEnglish(codingType, rules)
+            AppLanguage.RUSSIAN -> buildAgentPromptEnglish(codingType, rules)
+            AppLanguage.JAPANESE -> buildAgentPromptEnglish(codingType, rules)
+            AppLanguage.KOREAN -> buildAgentPromptEnglish(codingType, rules)
         }
     }
 
-    private fun buildAiCodingPromptChinese(codingType: String, rules: List<String>): String = buildString {
+    private fun buildAgentPromptChinese(codingType: String, rules: List<String>): String = buildString {
         when (codingType) {
             "HTML" -> {
                 appendLine("你是移动端前端开发专家，为手机APP WebView创建HTML页面。")
@@ -841,7 +841,7 @@ $existingCodeHint
         }
     }.trimEnd()
 
-    private fun buildAiCodingPromptEnglish(codingType: String, rules: List<String>): String = buildString {
+    private fun buildAgentPromptEnglish(codingType: String, rules: List<String>): String = buildString {
         when (codingType) {
             "HTML" -> {
                 appendLine("You are a mobile frontend expert creating HTML pages for mobile APP WebView.")
@@ -937,7 +937,7 @@ $existingCodeHint
         }
     }.trimEnd()
 
-    private fun buildAiCodingPromptArabic(codingType: String, rules: List<String>): String = buildString {
+    private fun buildAgentPromptArabic(codingType: String, rules: List<String>): String = buildString {
         when (codingType) {
             "HTML" -> {
                 appendLine("أنت خبير تطوير واجهات أمامية للجوال، تقوم بإنشاء صفحات HTML لـ WebView.")
