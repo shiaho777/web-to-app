@@ -445,7 +445,9 @@ fun AdBlockCard(
     val allSources = remember { com.webtoapp.core.adblock.AdBlocker.getPopularHostsSources() }
     var hostsEpoch by remember { mutableStateOf(0) }
     LaunchedEffect(Unit) {
-        adBlocker.loadHostsRules(context)
+        // Lightweight metadata-only hydration — just enough to know which sources are downloaded.
+        // A full loadHostsRules() here loaded the entire filter DB on scroll and could OOM (#356).
+        adBlocker.hydrateSourcesMetadata(context)
         hostsEpoch += 1
     }
     val downloadedSources = remember(allSources, hostsEpoch) {

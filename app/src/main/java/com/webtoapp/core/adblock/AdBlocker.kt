@@ -1891,9 +1891,20 @@ class AdBlocker {
             }
             hydrateSourceRuleCountsFromDisk(context)
             Result.success(hostsFileHosts.size)
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Result.failure(e)
         }
+    }
+
+    /**
+     * Lightweight metadata-only hydration: populates [enabledHostsSources]/[disabledHostsSources]/
+     * [sourceRuleCounts] from the small on-disk sources registry WITHOUT loading the full compiled
+     * filter database into memory. Intended for config UI (e.g. AdBlockCard) that only needs to
+     * know which hosts sources are downloaded, avoiding the heavy [loadHostsRules] path that can
+     * exhaust the heap on devices with many large filter lists.
+     */
+    suspend fun hydrateSourcesMetadata(context: Context) = withContext(Dispatchers.IO) {
+        hydrateSourceRuleCountsFromDisk(context)
     }
 
     private fun hydrateSourceRuleCountsFromDisk(context: Context) {

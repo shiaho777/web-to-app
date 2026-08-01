@@ -240,6 +240,15 @@ object AdBlockFilterCache {
                     scriptletRules = scriptletRules
                 )
             }
+        } catch (oom: OutOfMemoryError) {
+            // The compiled rule set can exceed the heap on devices with many large filter
+            // lists. OutOfMemoryError is an Error (not Exception), so without this branch it
+            // would escape and the on-disk cache would survive — re-triggering the same OOM on
+            // every cold start until app data is wiped. Invalidate the cache to break the loop.
+            runCatching { System.gc() }
+            AppLogger.e(TAG, "OutOfMemoryError loading compiled state; invalidating cache to break crash loop", oom)
+            File(context.filesDir, "$CACHE_DIR/$COMPILED_STATE_FILE").delete()
+            null
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to load compiled state (will re-parse)", e)
 
