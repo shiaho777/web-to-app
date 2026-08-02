@@ -84,13 +84,17 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                             }
 
                             delta.getAsJsonArray("tool_calls")?.forEach { tcEl ->
-                                val tc = tcEl.asJsonObject; val idx = tc.get("index")?.asInt ?: 0
-                                val id = tc.get("id")?.asString ?: toolIndexToId[idx] ?: "call_$idx"
+                                val tc = tcEl.asJsonObject; val idx = tc.get("index")?.takeUnless { it.isJsonNull }?.asInt ?: 0
+                                val id = tc.get("id")?.takeUnless { it.isJsonNull }?.asString ?: toolIndexToId[idx] ?: "call_$idx"
                                 toolIndexToId[idx] = id
                                 val func = tc.getAsJsonObject("function")
-                                val name = func?.get("name")?.asString
-                                val args = func?.get("arguments")?.asString.orEmpty()
-                                if (name != null && toolNames[id] == null) { toolNames[id] = name; trySend(LlmEvent.ToolCallBegin(id, name)) }
+                                val name = func?.get("name")?.takeUnless { it.isJsonNull }?.asString?.takeIf { it.isNotEmpty() }
+                                val args = func?.get("arguments")?.takeUnless { it.isJsonNull }?.asString.orEmpty()
+                                if (name != null) {
+                                    if (toolNames[id] == null) { toolNames[id] = name; trySend(LlmEvent.ToolCallBegin(id, name)) }
+                                } else if (id !in toolNames) {
+                                    // Defer Begin until we learn the name from a later chunk.
+                                }
                                 if (args.isNotEmpty()) { toolArgsAccum.getOrPut(id) { StringBuilder() }.append(args); trySend(LlmEvent.ToolCallArgsDelta(id, args)) }
                             }
                             choice.get("finish_reason")?.takeUnless { it.isJsonNull }?.asString?.let { r ->
