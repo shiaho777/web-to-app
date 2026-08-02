@@ -175,9 +175,12 @@ fun ChoiceBottomSheet(
                             multi = q.multiSelect,
                             onToggle = {
                                 if (q.multiSelect) {
-                                    val set = multiSelections.getOrPut(qIdx) { mutableSetOf() }
-                                    if (!set.add(opt.label)) set.remove(opt.label)
-                                    multiSelections[qIdx] = set
+                                    val current = multiSelections[qIdx] ?: emptySet()
+                                    multiSelections[qIdx] = if (opt.label in current) {
+                                        current - opt.label
+                                    } else {
+                                        current + opt.label
+                                    }.toMutableSet()
                                 } else {
                                     singleSelections[qIdx] = opt.label
                                 }
