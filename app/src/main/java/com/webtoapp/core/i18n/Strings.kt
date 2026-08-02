@@ -2407,6 +2407,25 @@ object Strings {
     val chineseSeparator: String get() = StringsC.chineseSeparator
     val test: String get() = StringsC.test
     val savedModels: String get() = StringsC.savedModels
+    val aiModelCatalog: String get() = StringsC.aiModelCatalog
+    val aiCatalogSource: String get() = StringsC.aiCatalogSource
+    val aiCatalogCount: String get() = StringsC.aiCatalogCount
+    val aiCatalogRefresh: String get() = StringsC.aiCatalogRefresh
+    val aiCatalogSearchHint: String get() = StringsC.aiCatalogSearchHint
+    val aiCatalogAllProviders: String get() = StringsC.aiCatalogAllProviders
+    val aiCatalogLoading: String get() = StringsC.aiCatalogLoading
+    val aiCatalogEmpty: String get() = StringsC.aiCatalogEmpty
+    val aiCatalogAdd: String get() = StringsC.aiCatalogAdd
+    val aiCatalogAdded: String get() = StringsC.aiCatalogAdded
+    val aiCatalogBadgeVision: String get() = StringsC.aiCatalogBadgeVision
+    val aiCatalogBadgeReasoning: String get() = StringsC.aiCatalogBadgeReasoning
+    val aiCatalogBadgeToolCall: String get() = StringsC.aiCatalogBadgeToolCall
+    val aiCatalogBadgeImageGen: String get() = StringsC.aiCatalogBadgeImageGen
+    val aiCatalogContext: String get() = StringsC.aiCatalogContext
+    val aiCatalogPrice: String get() = StringsC.aiCatalogPrice
+    val aiCatalogAddTitle: String get() = StringsC.aiCatalogAddTitle
+    val aiCatalogPickKey: String get() = StringsC.aiCatalogPickKey
+    val aiCatalogAliasHint: String get() = StringsC.aiCatalogAliasHint
     val configModelCapabilities: String get() = StringsC.configModelCapabilities
     val pleaseAddApiKeyFirst: String get() = StringsC.pleaseAddApiKeyFirst
     val noSavedModelsHint: String get() = StringsC.noSavedModelsHint
@@ -34716,6 +34735,235 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Сохранённые модели"
         AppLanguage.JAPANESE -> "保存済みモデル"
         AppLanguage.KOREAN -> "저장된 모델"
+    }
+
+    val aiModelCatalog: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "模型目录"
+        AppLanguage.ENGLISH -> "Model Catalog"
+        AppLanguage.ARABIC -> "كتالوج النماذج"
+        AppLanguage.PORTUGUESE -> "Catálogo de Modelos"
+        AppLanguage.SPANISH -> "Catálogo de Modelos"
+        AppLanguage.FRENCH -> "Catalogue de Modèles"
+        AppLanguage.GERMAN -> "Modellkatalog"
+        AppLanguage.RUSSIAN -> "Каталог моделей"
+        AppLanguage.JAPANESE -> "モデルカタログ"
+        AppLanguage.KOREAN -> "모델 카탈로그"
+    }
+    val aiCatalogSource: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "数据来源：models.dev"
+        AppLanguage.ENGLISH -> "Source: models.dev"
+        AppLanguage.ARABIC -> "المصدر: models.dev"
+        AppLanguage.PORTUGUESE -> "Fonte: models.dev"
+        AppLanguage.SPANISH -> "Fuente: models.dev"
+        AppLanguage.FRENCH -> "Source : models.dev"
+        AppLanguage.GERMAN -> "Quelle: models.dev"
+        AppLanguage.RUSSIAN -> "Источник: models.dev"
+        AppLanguage.JAPANESE -> "出典：models.dev"
+        AppLanguage.KOREAN -> "출처: models.dev"
+    }
+    val aiCatalogCount: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 个模型"
+        AppLanguage.ENGLISH -> "%d models"
+        AppLanguage.ARABIC -> "%d نموذج"
+        AppLanguage.PORTUGUESE -> "%d modelos"
+        AppLanguage.SPANISH -> "%d modelos"
+        AppLanguage.FRENCH -> "%d modèles"
+        AppLanguage.GERMAN -> "%d Modelle"
+        AppLanguage.RUSSIAN -> "%d моделей"
+        AppLanguage.JAPANESE -> "%d モデル"
+        AppLanguage.KOREAN -> "%d개 모델"
+    }
+    val aiCatalogRefresh: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "刷新"
+        AppLanguage.ENGLISH -> "Refresh"
+        AppLanguage.ARABIC -> "تحديث"
+        AppLanguage.PORTUGUESE -> "Atualizar"
+        AppLanguage.SPANISH -> "Actualizar"
+        AppLanguage.FRENCH -> "Actualiser"
+        AppLanguage.GERMAN -> "Aktualisieren"
+        AppLanguage.RUSSIAN -> "Обновить"
+        AppLanguage.JAPANESE -> "更新"
+        AppLanguage.KOREAN -> "새로고침"
+    }
+    val aiCatalogSearchHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "搜索模型…"
+        AppLanguage.ENGLISH -> "Search models…"
+        AppLanguage.ARABIC -> "البحث عن نماذج…"
+        AppLanguage.PORTUGUESE -> "Buscar modelos…"
+        AppLanguage.SPANISH -> "Buscar modelos…"
+        AppLanguage.FRENCH -> "Rechercher des modèles…"
+        AppLanguage.GERMAN -> "Modelle suchen…"
+        AppLanguage.RUSSIAN -> "Поиск моделей…"
+        AppLanguage.JAPANESE -> "モデルを検索…"
+        AppLanguage.KOREAN -> "모델 검색…"
+    }
+    val aiCatalogAllProviders: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "全部"
+        AppLanguage.ENGLISH -> "All"
+        AppLanguage.ARABIC -> "الكل"
+        AppLanguage.PORTUGUESE -> "Todos"
+        AppLanguage.SPANISH -> "Todos"
+        AppLanguage.FRENCH -> "Tous"
+        AppLanguage.GERMAN -> "Alle"
+        AppLanguage.RUSSIAN -> "Все"
+        AppLanguage.JAPANESE -> "すべて"
+        AppLanguage.KOREAN -> "전체"
+    }
+    val aiCatalogLoading: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "加载目录…"
+        AppLanguage.ENGLISH -> "Loading catalog…"
+        AppLanguage.ARABIC -> "جارٍ تحميل الكتالوج…"
+        AppLanguage.PORTUGUESE -> "Carregando catálogo…"
+        AppLanguage.SPANISH -> "Cargando catálogo…"
+        AppLanguage.FRENCH -> "Chargement du catalogue…"
+        AppLanguage.GERMAN -> "Katalog wird geladen…"
+        AppLanguage.RUSSIAN -> "Загрузка каталога…"
+        AppLanguage.JAPANESE -> "カタログを読み込み中…"
+        AppLanguage.KOREAN -> "카탈로그 로드 중…"
+    }
+    val aiCatalogEmpty: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "没有匹配的模型。"
+        AppLanguage.ENGLISH -> "No models match."
+        AppLanguage.ARABIC -> "لا توجد نماذج مطابقة."
+        AppLanguage.PORTUGUESE -> "Nenhum modelo corresponde."
+        AppLanguage.SPANISH -> "No hay modelos que coincidan."
+        AppLanguage.FRENCH -> "Aucun modèle correspondant."
+        AppLanguage.GERMAN -> "Keine passenden Modelle."
+        AppLanguage.RUSSIAN -> "Нет подходящих моделей."
+        AppLanguage.JAPANESE -> "一致するモデルがありません。"
+        AppLanguage.KOREAN -> "일치하는 모델이 없습니다."
+    }
+    val aiCatalogAdd: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "添加"
+        AppLanguage.ENGLISH -> "Add"
+        AppLanguage.ARABIC -> "إضافة"
+        AppLanguage.PORTUGUESE -> "Adicionar"
+        AppLanguage.SPANISH -> "Añadir"
+        AppLanguage.FRENCH -> "Ajouter"
+        AppLanguage.GERMAN -> "Hinzufügen"
+        AppLanguage.RUSSIAN -> "Добавить"
+        AppLanguage.JAPANESE -> "追加"
+        AppLanguage.KOREAN -> "추가"
+    }
+    val aiCatalogAdded: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已添加 %s"
+        AppLanguage.ENGLISH -> "Added %s"
+        AppLanguage.ARABIC -> "تمت إضافة %s"
+        AppLanguage.PORTUGUESE -> "Adicionado %s"
+        AppLanguage.SPANISH -> "Añadido %s"
+        AppLanguage.FRENCH -> "Ajouté %s"
+        AppLanguage.GERMAN -> "Hinzugefügt %s"
+        AppLanguage.RUSSIAN -> "Добавлено %s"
+        AppLanguage.JAPANESE -> "追加しました %s"
+        AppLanguage.KOREAN -> "추가됨 %s"
+    }
+    val aiCatalogBadgeVision: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "视觉"
+        AppLanguage.ENGLISH -> "Vision"
+        AppLanguage.ARABIC -> "رؤية"
+        AppLanguage.PORTUGUESE -> "Visão"
+        AppLanguage.SPANISH -> "Visión"
+        AppLanguage.FRENCH -> "Vision"
+        AppLanguage.GERMAN -> "Vision"
+        AppLanguage.RUSSIAN -> "Зрение"
+        AppLanguage.JAPANESE -> "画像認識"
+        AppLanguage.KOREAN -> "비전"
+    }
+    val aiCatalogBadgeReasoning: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "推理"
+        AppLanguage.ENGLISH -> "Reasoning"
+        AppLanguage.ARABIC -> "استدلال"
+        AppLanguage.PORTUGUESE -> "Raciocínio"
+        AppLanguage.SPANISH -> "Razonamiento"
+        AppLanguage.FRENCH -> "Raisonnement"
+        AppLanguage.GERMAN -> "Reasoning"
+        AppLanguage.RUSSIAN -> "Рассуждение"
+        AppLanguage.JAPANESE -> "推論"
+        AppLanguage.KOREAN -> "추론"
+    }
+    val aiCatalogBadgeToolCall: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "工具"
+        AppLanguage.ENGLISH -> "Tools"
+        AppLanguage.ARABIC -> "أدوات"
+        AppLanguage.PORTUGUESE -> "Ferramentas"
+        AppLanguage.SPANISH -> "Herramientas"
+        AppLanguage.FRENCH -> "Outils"
+        AppLanguage.GERMAN -> "Tools"
+        AppLanguage.RUSSIAN -> "Инструменты"
+        AppLanguage.JAPANESE -> "ツール"
+        AppLanguage.KOREAN -> "도구"
+    }
+    val aiCatalogBadgeImageGen: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "图像"
+        AppLanguage.ENGLISH -> "Image"
+        AppLanguage.ARABIC -> "صورة"
+        AppLanguage.PORTUGUESE -> "Imagem"
+        AppLanguage.SPANISH -> "Imagen"
+        AppLanguage.FRENCH -> "Image"
+        AppLanguage.GERMAN -> "Bild"
+        AppLanguage.RUSSIAN -> "Изображение"
+        AppLanguage.JAPANESE -> "画像"
+        AppLanguage.KOREAN -> "이미지"
+    }
+    val aiCatalogContext: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 上下文"
+        AppLanguage.ENGLISH -> "%d ctx"
+        AppLanguage.ARABIC -> "%d سياق"
+        AppLanguage.PORTUGUESE -> "%d ctx"
+        AppLanguage.SPANISH -> "%d ctx"
+        AppLanguage.FRENCH -> "%d ctx"
+        AppLanguage.GERMAN -> "%d ctx"
+        AppLanguage.RUSSIAN -> "%d ctx"
+        AppLanguage.JAPANESE -> "%d ctx"
+        AppLanguage.KOREAN -> "%d ctx"
+    }
+    val aiCatalogPrice: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "$%.2f/$%.2f 每百万"
+        AppLanguage.ENGLISH -> "$%.2f/$%.2f per M"
+        AppLanguage.ARABIC -> "$%.2f/$%.2f لكل مليون"
+        AppLanguage.PORTUGUESE -> "$%.2f/$%.2f por M"
+        AppLanguage.SPANISH -> "$%.2f/$%.2f por M"
+        AppLanguage.FRENCH -> "$%.2f/$%.2f par M"
+        AppLanguage.GERMAN -> "$%.2f/$%.2f pro M"
+        AppLanguage.RUSSIAN -> "$%.2f/$%.2f за M"
+        AppLanguage.JAPANESE -> "$%.2f/$%.2f /M"
+        AppLanguage.KOREAN -> "$%.2f/$%.2f /M"
+    }
+    val aiCatalogAddTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "添加模型"
+        AppLanguage.ENGLISH -> "Add model"
+        AppLanguage.ARABIC -> "إضافة نموذج"
+        AppLanguage.PORTUGUESE -> "Adicionar modelo"
+        AppLanguage.SPANISH -> "Añadir modelo"
+        AppLanguage.FRENCH -> "Ajouter un modèle"
+        AppLanguage.GERMAN -> "Modell hinzufügen"
+        AppLanguage.RUSSIAN -> "Добавить модель"
+        AppLanguage.JAPANESE -> "モデルを追加"
+        AppLanguage.KOREAN -> "모델 추가"
+    }
+    val aiCatalogPickKey: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "选择 API 密钥"
+        AppLanguage.ENGLISH -> "Choose an API key"
+        AppLanguage.ARABIC -> "اختر مفتاح API"
+        AppLanguage.PORTUGUESE -> "Escolha uma chave de API"
+        AppLanguage.SPANISH -> "Elige una clave de API"
+        AppLanguage.FRENCH -> "Choisissez une clé API"
+        AppLanguage.GERMAN -> "API-Schlüssel wählen"
+        AppLanguage.RUSSIAN -> "Выберите API-ключ"
+        AppLanguage.JAPANESE -> "APIキーを選択"
+        AppLanguage.KOREAN -> "API 키 선택"
+    }
+    val aiCatalogAliasHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "别名（可选）"
+        AppLanguage.ENGLISH -> "Alias (optional)"
+        AppLanguage.ARABIC -> "الاسم المستعار (اختياري)"
+        AppLanguage.PORTUGUESE -> "Apelido (opcional)"
+        AppLanguage.SPANISH -> "Alias (opcional)"
+        AppLanguage.FRENCH -> "Alias (facultatif)"
+        AppLanguage.GERMAN -> "Alias (optional)"
+        AppLanguage.RUSSIAN -> "Псевдоним (необязательно)"
+        AppLanguage.JAPANESE -> "別名（任意）"
+        AppLanguage.KOREAN -> "별칭 (선택)"
     }
 
     val configModelCapabilities: String get() = when (Strings.lang) {

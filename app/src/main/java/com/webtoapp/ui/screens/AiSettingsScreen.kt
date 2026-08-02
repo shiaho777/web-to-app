@@ -59,67 +59,92 @@ fun AiSettingsScreen(
     var editingModel by remember { mutableStateOf<SavedModel?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var selectedTab by remember { mutableStateOf(0) }
+    val catalogRepo = remember { com.webtoapp.core.ai.ModelsDevRepository.getInstance(context) }
+    val catalogState by catalogRepo.state.collectAsStateWithLifecycle()
+
     WtaScreen(
         title = Strings.aiSettings,
         snackbarHostState = snackbarHostState,
         onBack = onBack
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = WtaSpacing.ScreenHorizontal),
-            contentPadding = PaddingValues(vertical = WtaSpacing.ScreenVertical),
-            verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
-        ) {
-
-            item {
-                ApiKeysSection(
-                    apiKeys = apiKeys,
-                    onAddClick = { showAddApiKeyDialog = true },
-                    onEditClick = { editingApiKey = it },
-                    onDeleteClick = { key ->
-                        scope.launch { configManager.deleteApiKey(key.id) }
-                    },
-                    onTestClick = { key ->
-                        scope.launch {
-                            val result = apiClient.testConnection(key)
-                            result.onSuccess {
-                                snackbarHostState.showSnackbar(
-                                    message = Strings.aiConnectionOk.format(key.provider.name),
-                                    duration = SnackbarDuration.Short
-                                )
-                            }.onFailure { error ->
-                                snackbarHostState.showSnackbar(
-                                    message = Strings.aiConnectionFail.format(error.message),
-                                    duration = SnackbarDuration.Long
-                                )
+        Column(modifier = Modifier.fillMaxSize()) {
+            TabRow(selectedTabIndex = selectedTab) {
+                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text(Strings.apiKeys) })
+                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text(Strings.savedModels) })
+                Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text(Strings.aiModelCatalog) })
+            }
+            when (selectedTab) {
+                0 -> LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = WtaSpacing.ScreenHorizontal),
+                    contentPadding = PaddingValues(vertical = WtaSpacing.ScreenVertical),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
+                ) {
+                    item {
+                        ApiKeysSection(
+                            apiKeys = apiKeys,
+                            onAddClick = { showAddApiKeyDialog = true },
+                            onEditClick = { editingApiKey = it },
+                            onDeleteClick = { key ->
+                                scope.launch { configManager.deleteApiKey(key.id) }
+                            },
+                            onTestClick = { key ->
+                                scope.launch {
+                                    val result = apiClient.testConnection(key)
+                                    result.onSuccess {
+                                        snackbarHostState.showSnackbar(
+                                            message = Strings.aiConnectionOk.format(key.provider.name),
+                                            duration = SnackbarDuration.Short
+                                        )
+                                    }.onFailure { error ->
+                                        snackbarHostState.showSnackbar(
+                                            message = Strings.aiConnectionFail.format(error.message),
+                                            duration = SnackbarDuration.Long
+                                        )
+                                    }
+                                }
                             }
-                        }
+                        )
                     }
-                )
-            }
-
-            item {
-                SavedModelsSection(
-                    models = savedModels,
+                }
+                1 -> LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = WtaSpacing.ScreenHorizontal),
+                    contentPadding = PaddingValues(vertical = WtaSpacing.ScreenVertical),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
+                ) {
+                    item {
+                        SavedModelsSection(
+                            models = savedModels,
+                            apiKeys = apiKeys,
+                            onAddClick = {
+                                if (apiKeys.isNotEmpty()) {
+                                    selectedApiKey = null
+                                    showAddModelDialog = true
+                                }
+                            },
+                            onEditClick = { editingModel = it },
+                            onDeleteClick = { model ->
+                                scope.launch { configManager.deleteSavedModel(model.id) }
+                            },
+                            onSetDefaultClick = { model ->
+                                scope.launch { configManager.setDefaultModel(model.id) }
+                            }
+                        )
+                    }
+                }
+                2 -> ModelCatalogSection(
+                    repo = catalogRepo,
+                    state = catalogState,
                     apiKeys = apiKeys,
-                    onAddClick = {
-                        if (apiKeys.isNotEmpty()) {
-                            selectedApiKey = null
-                            showAddModelDialog = true
-                        }
-                    },
-                    onEditClick = { editingModel = it },
-                    onDeleteClick = { model ->
-                        scope.launch { configManager.deleteSavedModel(model.id) }
-                    },
-                    onSetDefaultClick = { model ->
-                        scope.launch { configManager.setDefaultModel(model.id) }
-                    }
+                    configManager = configManager,
+                    scope = scope,
+                    snackbarHostState = snackbarHostState
                 )
             }
-
-            item { Spacer(modifier = Modifier.height(32.dp)) }
         }
 
     if (showAddApiKeyDialog) {
