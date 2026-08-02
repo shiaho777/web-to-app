@@ -16,11 +16,12 @@ Instructions for coding agents working in this repository.
 | `shell/` | Runtime template. Built to `app/src/main/assets/template/webview_shell.apk` via `:shell:assembleRelease` + `:app:syncShellTemplateApk`. |
 | `clone-host/` | Host-side APK clone / identity reshape support library (compiled to a DEX asset). |
 | `modules/` | Module Market catalog (`registry.json` + per-module folders). |
+| `docs/` | VitePress documentation site (guide / developer / extensions, EN + ZH), published to https://shiaho777.github.io/web-to-app/ by `.github/workflows/docs-deploy.yml`. Site URL paths map 1:1 to files under `docs/` (`/zh/...` → `docs/zh/...`). |
 | `scripts/` | Build helpers and gates (`check_config_field_drift.py`). |
 
 Runtime Kotlin is authored under `app/` and synced into `shell` by `syncShellRuntimeSources`. Edit the `app/` source once; do not permanently fork copies under shell.
 
-User-facing product docs: `README.md`, `.github/docs/README_CN.md`, `.github/CONTRIBUTING.md`, `modules/README.md`.
+User-facing product docs: `README.md`, `.github/docs/README_CN.md`, `.github/CONTRIBUTING.md`, `modules/README.md`. The published documentation site is https://shiaho777.github.io/web-to-app/ (source: `docs/`, deployed by `.github/workflows/docs-deploy.yml`).
 
 ## How the main pieces connect
 

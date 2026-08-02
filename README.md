@@ -23,6 +23,7 @@
   <a href="#capability-overview">Capability overview</a> ·
   <a href="#full-feature-map">Feature map</a> ·
   <a href="#module-market">Module market</a> ·
+  <a href="#documentation">Documentation</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="#build-from-source">Build</a>
 </p>
@@ -210,6 +211,26 @@ The app fetches both `registry.json` and `submissions.json` and only shows modul
 The high-level architecture lives here; the canonical submission rules, field schemas, reviewer checklist, and CI validation details live in [`modules/README.md`](modules/README.md).
 
 The community market carries only JS/CSS extension modules. **Browser extensions (MV3)** are no longer a community catalog — instead the **Browser Extensions** tab searches the Chrome Web Store live: type a keyword, browse results, and install on demand through the existing CRX pipeline. Live search requires a network that can reach Google.
+
+## Documentation
+
+The official documentation site is published at **[shiaho777.github.io/web-to-app](https://shiaho777.github.io/web-to-app/)**, in English and 简体中文:
+
+| Section | URL | Covers |
+| --- | --- | --- |
+| Guide | [/guide/introduction](https://shiaho777.github.io/web-to-app/guide/introduction) | Getting started, main screen, app types, per-app actions and common config, FAQ |
+| Developer | [/developer/](https://shiaho777.github.io/web-to-app/developer/) | Architecture, export pipeline, shell sync, config drift, i18n, change recipes |
+| Extensions | [/extensions/](https://shiaho777.github.io/web-to-app/extensions/) | JS/CSS modules, userscripts, Chrome MV3, API reference, publishing |
+| 简体中文 | [/zh/](https://shiaho777.github.io/web-to-app/zh/) | Full Chinese mirror of every page above |
+
+The site is a VitePress app authored under [`docs/`](docs/) in this repository. [`.github/workflows/docs-deploy.yml`](.github/workflows/docs-deploy.yml) builds and deploys it to GitHub Pages on every push to `main` that touches `docs/` (pull requests only build, to catch breakage early). URL paths map 1:1 to source files — `/guide/introduction` is `docs/guide/introduction.md`, and its Chinese twin `/zh/guide/introduction` is `docs/zh/guide/introduction.md`. To preview locally:
+
+```bash
+cd docs
+npm ci
+npm run dev        # dev server with hot reload
+npm run build      # production build into docs/.vitepress/dist
+```
 
 ## Architecture
 

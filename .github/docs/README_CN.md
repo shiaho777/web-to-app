@@ -23,6 +23,7 @@
   <a href="#能打包什么">能打包什么</a> ·
   <a href="#完整能力地图">完整能力地图</a> ·
   <a href="#模块市场">模块市场</a> ·
+  <a href="#文档站点">文档站点</a> ·
   <a href="#架构说明">架构说明</a> ·
   <a href="#从源码构建">构建</a>
 </p>
@@ -210,6 +211,26 @@ App 会同时拉取 `registry.json` 和 `submissions.json`,只展示两边都存
 这里保留的是模块市场的高层说明;真正的投稿规则、字段 schema、审核 Checklist 和 CI 校验细节统一写在 [`modules/README.md`](../../modules/README.md)。
 
 社区市场只承载 JS/CSS 扩展模块。**浏览器扩展(MV3)**不再是社区目录 —— **浏览器扩展** Tab 直接实时搜索 Chrome 网上应用店:输入关键词、浏览结果、通过现有的 CRX 下载链路按需安装。如果实时搜索不可达,也可以粘贴商店链接或 32 位扩展 ID 直接安装。实时搜索需要能访问 Google 的网络。
+
+## 文档站点
+
+官方文档站点发布在 **[shiaho777.github.io/web-to-app](https://shiaho777.github.io/web-to-app/)**,中英双语:
+
+| 板块 | 地址 | 内容 |
+| --- | --- | --- |
+| 使用指南 | [/zh/guide/introduction](https://shiaho777.github.io/web-to-app/zh/guide/introduction) | 快速上手、主界面、应用类型、单应用操作与通用配置、FAQ |
+| 开发者文档 | [/zh/developer/](https://shiaho777.github.io/web-to-app/zh/developer/) | 架构、导出管线、shell 同步、配置漂移、i18n、常见改动配方 |
+| 扩展开发 | [/zh/extensions/](https://shiaho777.github.io/web-to-app/zh/extensions/) | JS/CSS 模块、油猴脚本、Chrome MV3、API 参考、发布流程 |
+| English | [/](https://shiaho777.github.io/web-to-app/) | 上述全部页面的英文原版 |
+
+站点是基于 VitePress 的文档工程,源码在本仓库的 [`docs/`](../../docs/) 目录下。[`.github/workflows/docs-deploy.yml`](../workflows/docs-deploy.yml) 会在每次触及 `docs/` 的 push 到 `main` 时构建并发布到 GitHub Pages(Pull Request 只构建不部署,提前拦截坏链)。URL 路径与源文件一一对应——`/zh/guide/introduction` 对应 `docs/zh/guide/introduction.md`,英文原版是 `docs/guide/introduction.md`。本地预览:
+
+```bash
+cd docs
+npm ci
+npm run dev        # 本地开发服务器(热更新)
+npm run build      # 生产构建,输出到 docs/.vitepress/dist
+```
 
 ## 架构说明
 
