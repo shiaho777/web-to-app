@@ -1444,6 +1444,7 @@ object Strings {
     val agentContextModulesHeader: String get() = StringsB.agentContextModulesHeader
     val agentContextEmpty: String get() = StringsB.agentContextEmpty
     val agentContextPickerDone: String get() = StringsB.agentContextPickerDone
+    val agentContextAllCategories: String get() = StringsB.agentContextAllCategories
     val agentSaveAsApp: String get() = StringsB.agentSaveAsApp
     val agentSaveAsAppTitle: String get() = StringsB.agentSaveAsAppTitle
     val agentSaveAsAppDescription: String get() = StringsB.agentSaveAsAppDescription
@@ -22968,6 +22969,18 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Готово"
         AppLanguage.JAPANESE -> "完了"
         AppLanguage.KOREAN -> "완료"
+    }
+    val agentContextAllCategories: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "全部"
+        AppLanguage.ENGLISH -> "All"
+        AppLanguage.ARABIC -> "الكل"
+        AppLanguage.PORTUGUESE -> "Todos"
+        AppLanguage.SPANISH -> "Todos"
+        AppLanguage.FRENCH -> "Tous"
+        AppLanguage.GERMAN -> "Alle"
+        AppLanguage.RUSSIAN -> "Все"
+        AppLanguage.JAPANESE -> "すべて"
+        AppLanguage.KOREAN -> "전체"
     }
     val agentSaveAsApp: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "保存为应用"

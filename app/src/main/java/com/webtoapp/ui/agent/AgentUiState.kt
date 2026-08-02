@@ -90,7 +90,8 @@ data class AgentUiState(
     val contextAppIds: List<Long> = emptyList(),
     val contextModuleIds: List<String> = emptyList(),
     val availableContextApps: List<ContextAppItem> = emptyList(),
-    val availableContextModules: List<ContextModuleItem> = emptyList()
+    val availableContextModules: List<ContextModuleItem> = emptyList(),
+    val availableCategories: List<ContextCategoryItem> = emptyList()
 ) {
     enum class Phase { Idle, Connecting, Streaming, AwaitingTool, AwaitingUser, Error }
     enum class DrawerTab { Sessions, Files }
@@ -102,13 +103,20 @@ data class AgentUiState(
 data class ContextAppItem(
     val id: Long,
     val name: String,
-    val appType: String
+    val appType: String,
+    val categoryId: Long? = null
 )
 
 data class ContextModuleItem(
     val id: String,
     val name: String,
     val sourceType: String
+)
+
+data class ContextCategoryItem(
+    val id: Long,
+    val name: String,
+    val icon: String
 )
 
 data class PlanReview(

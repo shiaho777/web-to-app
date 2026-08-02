@@ -347,6 +347,7 @@ fun AgentScreen(
         ContextPickerDialog(
             apps = state.availableContextApps,
             modules = state.availableContextModules,
+            categories = state.availableCategories,
             selectedAppIds = state.contextAppIds,
             selectedModuleIds = state.contextModuleIds,
             onToggleApp = vm::toggleContextApp,

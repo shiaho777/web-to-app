@@ -66,6 +66,11 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             com.webtoapp.data.repository.WebAppRepository::class.java
         )
     }
+    private val categoryRepository: com.webtoapp.data.repository.AppCategoryRepository by lazy {
+        org.koin.java.KoinJavaComponent.get(
+            com.webtoapp.data.repository.AppCategoryRepository::class.java
+        )
+    }
     private val saveSessionAsAppUseCase by lazy {
         com.webtoapp.core.agent.export.SaveSessionAsAppUseCase(
             context = ctx,
@@ -899,7 +904,10 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val session = ensureActiveSession() ?: return@launch
             val apps = webAppRepository.allWebApps.first()
-                .map { ContextAppItem(it.id, it.name, it.appType.name) }
+                .map { ContextAppItem(it.id, it.name, it.appType.name, it.categoryId) }
+            val categories = categoryRepository.allCategories.first()
+                .sortedBy { it.sortOrder }
+                .map { ContextCategoryItem(it.id, it.name, it.icon) }
             val mgr = com.webtoapp.core.extension.ExtensionManager.getInstance(ctx)
             mgr.awaitLoaded()
             val modules = mgr.getAllModules()
@@ -909,6 +917,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     contextPickerOpen = true,
                     availableContextApps = apps,
                     availableContextModules = modules,
+                    availableCategories = categories,
                     contextAppIds = session.config.contextAppIds,
                     contextModuleIds = session.config.contextModuleIds
                 )
