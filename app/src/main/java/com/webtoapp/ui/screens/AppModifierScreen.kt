@@ -254,14 +254,6 @@ fun AppModifierScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     item {
-                        LibrarySummaryCard(
-                            total = totalCount,
-                            userCount = userCount,
-                            systemCount = systemCount
-                        )
-                    }
-
-                    item {
                         WtaTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -379,93 +371,6 @@ private fun SortChip(
         leadingIcon = icon,
         showSelectedCheck = false
     )
-}
-
-@Composable
-private fun LibrarySummaryCard(
-    total: Int,
-    userCount: Int,
-    systemCount: Int
-) {
-    WtaCard(tone = WtaCardTone.Highlighted, contentPadding = PaddingValues(16.dp)) {
-        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Outlined.Apps,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Spacer(Modifier.width(14.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = Strings.appModifierLibraryTitle,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = Strings.appModifierLibraryHint,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                SummaryMetric(
-                    value = total.toString(),
-                    label = Strings.appModifierMetricTotal,
-                    modifier = Modifier.weight(1f)
-                )
-                SummaryMetric(
-                    value = userCount.toString(),
-                    label = Strings.userApps,
-                    modifier = Modifier.weight(1f)
-                )
-                SummaryMetric(
-                    value = systemCount.toString(),
-                    label = Strings.systemApps,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SummaryMetric(
-    value: String,
-    label: String,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
 }
 
 @Composable
