@@ -190,6 +190,44 @@ WebToApp has a large number of switches. The sections below group them by use ca
 
 ---
 
+## Agent
+
+WebToApp ships a built-in AI agent (open from **⋮ → Agent**) that can operate the entire app through natural-language conversation. Instead of tapping through menus, you describe what you want and the Agent executes it via a tool-calling loop backed by any OpenAI-compatible LLM you configure in [AI Settings](#tech-stack).
+
+**How it works:**
+
+1. You send a message (or attach an image for visual context).
+2. The LLM reasons and emits `tool_calls`.
+3. The Agent executes each tool on-device — read-only tools run immediately; write tools pop a permission dialog first.
+4. Results flow back to the LLM, which continues until the task is done or it asks you a clarifying question.
+
+**40+ built-in tools, grouped by domain:**
+
+| Domain | Examples |
+| --- | --- |
+| Files | Read, Write, Edit, Delete, List, Glob, Grep project files |
+| Apps | List, Get, Create, Update app configurations |
+| App lifecycle | Build APK/AAB, Export, Share, Create shortcut, Duplicate, Delete, Move to category |
+| Ports & engines | Scan/kill ports, check/select/delete browser engines (WebView, GeckoView) |
+| Runtimes | Status, install, and cache-clear for Node.js, PHP, Python, Go, WordPress, Linux env |
+| Ad-block | Rule counts, import/remove/enable/disable hosts subscriptions |
+| Stats & health | Usage statistics, URL health checks |
+| App modifier | List installed apps, clone/rebrand, batch import, export templates |
+| Build env & compliance | Initialize Linux build env, install components, Google Play policy checks |
+| Modules | List, create, update extension modules |
+| Interaction | Ask user questions (multi-select), plan mode (propose → approve → execute), todo tracking |
+
+**Key behaviors:**
+
+- **Plan mode** — for multi-step tasks the Agent proposes a plan and waits for your approval before touching anything.
+- **Permission gating** — destructive or state-changing tools always ask first; you can approve, deny, or allow-all per tool.
+- **Resilience** — automatic retry with exponential backoff on 429/5xx; streaming SSE parser isolates per-section failures so a single malformed chunk never kills a turn.
+- **Sessions** — each conversation persists with its own title and history; switch or delete anytime.
+
+The Agent is model-agnostic: point it at OpenAI, Anthropic (via proxy), DeepSeek, Qwen, Ollama, or any endpoint that speaks the OpenAI chat-completions format with function calling.
+
+---
+
 ## Module market
 
 WebToApp has a GitHub-backed module market for community JS/CSS extension modules. The catalog is just files in this repository, so contributions use a normal pull-request flow.
