@@ -907,34 +907,20 @@ fun ModuleCard(
         }
     }
 
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(WtaRadius.Card))
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-
-            Row(
+    WtaCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
 
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(WtaRadius.IconPlate))
-                        .background(
-                            Brush.linearGradient(
-                                listOf(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.04f)
-                                )
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    val storeIconFile = remember(module.storeIconPath) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(WtaRadius.IconPlate))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                val storeIconFile = remember(module.storeIconPath) {
                         module.storeIconPath.takeIf { it.isNotBlank() }?.let { java.io.File(it) }
                     }
                     if (storeIconFile != null && storeIconFile.exists()) {
@@ -1008,29 +994,29 @@ fun ModuleCard(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         )
-                    }
-
-                    if (module.storeTags.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(6.dp))
-                        androidx.compose.foundation.layout.FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            module.storeTags.take(3).forEach { tag ->
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = MaterialTheme.colorScheme.secondaryContainer
-                                ) {
-                                    Text(
-                                        tag,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
+                        if (module.urlMatches.isNotEmpty()) {
+                            Icon(
+                                Icons.Outlined.Language,
+                                null,
+                                modifier = Modifier.size(13.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                module.urlMatches.size.toString(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        if (module.permissions.any { it.dangerous }) {
+                            Icon(
+                                Icons.Outlined.Shield,
+                                null,
+                                modifier = Modifier.size(13.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
                         }
                     }
+
                 }
 
                 Box {
@@ -1071,103 +1057,15 @@ fun ModuleCard(
             }
 
             if (module.description.isNotBlank()) {
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     module.description,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    lineHeight = 18.sp
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
-
-            if (module.tags.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    items(module.tags.take(5)) { tag ->
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(WtaRadius.Button))
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f)
-                                )
-                                .padding(horizontal = 10.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                "#$tag",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-            }
-
-            val hasUrlMatches = module.urlMatches.isNotEmpty()
-            val dangerousPermissions = module.permissions.filter { it.dangerous }
-
-            if (hasUrlMatches || dangerousPermissions.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(14.dp))
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(0.5.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    if (hasUrlMatches) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                Icons.Outlined.Language,
-                                null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                Strings.onlyEffectiveOnMatchingSites.format(module.urlMatches.size),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-
-                    if (dangerousPermissions.isNotEmpty()) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Icon(
-                                Icons.Outlined.Shield,
-                                null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                            Text(
-                                Strings.requiresSensitivePermissions.format(
-                                    dangerousPermissions.joinToString { it.displayName }
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.error,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-            }
-        }
     }
 
     if (showQrCodeDialog) {
@@ -1304,53 +1202,6 @@ fun ModuleCard(
     }
 }
 
-@Composable
-private fun StatItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    value: String,
-    label: String
-) {
-    val primary = MaterialTheme.colorScheme.primary
-    Column(
-        modifier = Modifier
-            .clip(RoundedCornerShape(WtaRadius.Card))
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        primary.copy(alpha = 0.08f),
-                        primary.copy(alpha = 0.03f)
-                    )
-                )
-            )
-            .padding(horizontal = 18.dp, vertical = 14.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            value,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = primary
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                modifier = Modifier.size(13.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-            )
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExtensionModulesTabContent(
@@ -1375,57 +1226,17 @@ private fun ExtensionModulesTabContent(
                 PremiumFilterChip(
                     selected = selectedCategory == null,
                     onClick = { onCategoryChange(null) },
-                    label = { Text(Strings.all) },
-                    leadingIcon = if (selectedCategory == null) {
-                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                    } else null
+                    label = { Text(Strings.all) }
                 )
             }
             items(ModuleCategory.values().toList()) { category ->
                 PremiumFilterChip(
                     selected = selectedCategory == category,
                     onClick = { onCategoryChange(if (selectedCategory == category) null else category) },
-                    label = { Text(category.getDisplayName()) },
-                    leadingIcon = if (selectedCategory == category) {
-                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                    } else null
+                    label = { Text(category.getDisplayName()) }
                 )
             }
         }
-
-        val stats = extensionManager.getStatistics()
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatItem(
-                icon = Icons.Outlined.Extension,
-                value = stats.totalCount.toString(),
-                label = Strings.totalModulesLabel
-            )
-            StatItem(
-                icon = Icons.Outlined.Verified,
-                value = stats.builtInCount.toString(),
-                label = Strings.builtInLabel
-            )
-            StatItem(
-                icon = Icons.Outlined.Build,
-                value = stats.userCount.toString(),
-                label = Strings.customLabel
-            )
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp)
-                .height(0.5.dp)
-                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
