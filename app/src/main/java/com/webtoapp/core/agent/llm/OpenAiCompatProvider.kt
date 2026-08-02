@@ -71,36 +71,47 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                         if (payload == "[DONE]") { done = true; emitFinish(toolNames, toolArgsAccum, finishReason); return@consume false }
                         try {
                             val json = JsonParser.parseString(payload).asJsonObject
-                            json.getAsJsonObject("error")?.let { trySend(LlmEvent.Error(it.get("message")?.asString ?: "API error")); return@consume false }
+                            json.getAsJsonObject("error")?.let { err ->
+                                val msg = err.get("message")?.takeUnless { it.isJsonNull }?.asString ?: "API error"
+                                trySend(LlmEvent.Error(msg)); return@consume false
+                            }
                             val choice = json.getAsJsonArray("choices")?.takeIf { it.size() > 0 }?.get(0)?.asJsonObject ?: return@consume true
                             val delta = choice.getAsJsonObject("delta") ?: choice.getAsJsonObject("message") ?: return@consume true
 
-                            sequenceOf("reasoning_content","thinking","reasoning").mapNotNull { delta.get(it) }.firstOrNull()?.let { el ->
-                                if (!el.isJsonNull && el.isJsonPrimitive) el.asString.takeIf { it.isNotEmpty() }?.let { trySend(LlmEvent.ThinkingDelta(it)) }
-                            }
-
-                            delta.get("content")?.takeUnless { it.isJsonNull }?.let { el ->
-                                if (el.isJsonPrimitive) el.asString.takeIf { it.isNotEmpty() }?.let { trySend(LlmEvent.TextDelta(it)) }
-                            }
-
-                            delta.getAsJsonArray("tool_calls")?.forEach { tcEl ->
-                                val tc = tcEl.asJsonObject; val idx = tc.get("index")?.takeUnless { it.isJsonNull }?.asInt ?: 0
-                                val id = tc.get("id")?.takeUnless { it.isJsonNull }?.asString ?: toolIndexToId[idx] ?: "call_$idx"
-                                toolIndexToId[idx] = id
-                                val func = tc.getAsJsonObject("function")
-                                val name = func?.get("name")?.takeUnless { it.isJsonNull }?.asString?.takeIf { it.isNotEmpty() }
-                                val args = func?.get("arguments")?.takeUnless { it.isJsonNull }?.asString.orEmpty()
-                                if (name != null) {
-                                    if (toolNames[id] == null) { toolNames[id] = name; trySend(LlmEvent.ToolCallBegin(id, name)) }
-                                } else if (id !in toolNames) {
-                                    // Defer Begin until we learn the name from a later chunk.
+                            // Parse each section independently so a malformed field never drops
+                            // the entire chunk (which previously caused silent tool-call loss).
+                            runCatching {
+                                sequenceOf("reasoning_content","thinking","reasoning").mapNotNull { delta.get(it) }.firstOrNull()?.let { el ->
+                                    if (!el.isJsonNull && el.isJsonPrimitive) el.asString.takeIf { it.isNotEmpty() }?.let { trySend(LlmEvent.ThinkingDelta(it)) }
                                 }
-                                if (args.isNotEmpty()) { toolArgsAccum.getOrPut(id) { StringBuilder() }.append(args); trySend(LlmEvent.ToolCallArgsDelta(id, args)) }
                             }
-                            choice.get("finish_reason")?.takeUnless { it.isJsonNull }?.asString?.let { r ->
-                                finishReason = when (r) { "tool_calls","function_call" -> FinishReason.TOOL_CALLS; "length" -> FinishReason.LENGTH; else -> FinishReason.STOP }
+                            runCatching {
+                                delta.get("content")?.takeUnless { it.isJsonNull }?.let { el ->
+                                    if (el.isJsonPrimitive) el.asString.takeIf { it.isNotEmpty() }?.let { trySend(LlmEvent.TextDelta(it)) }
+                                }
                             }
-                        } catch (_: Exception) {}
+                            runCatching {
+                                delta.getAsJsonArray("tool_calls")?.forEach { tcEl ->
+                                    val tc = tcEl.asJsonObject; val idx = tc.get("index")?.takeUnless { it.isJsonNull }?.asInt ?: 0
+                                    val id = tc.get("id")?.takeUnless { it.isJsonNull }?.asString ?: toolIndexToId[idx] ?: "call_$idx"
+                                    toolIndexToId[idx] = id
+                                    val func = tc.getAsJsonObject("function")
+                                    val name = func?.get("name")?.takeUnless { it.isJsonNull }?.asString?.takeIf { it.isNotEmpty() }
+                                    val args = func?.get("arguments")?.takeUnless { it.isJsonNull }?.asString.orEmpty()
+                                    if (name != null) {
+                                        if (toolNames[id] == null) { toolNames[id] = name; trySend(LlmEvent.ToolCallBegin(id, name)) }
+                                    }
+                                    if (args.isNotEmpty()) { toolArgsAccum.getOrPut(id) { StringBuilder() }.append(args); trySend(LlmEvent.ToolCallArgsDelta(id, args)) }
+                                }
+                            }
+                            runCatching {
+                                choice.get("finish_reason")?.takeUnless { it.isJsonNull }?.asString?.let { r ->
+                                    finishReason = when (r) { "tool_calls","function_call" -> FinishReason.TOOL_CALLS; "length" -> FinishReason.LENGTH; else -> FinishReason.STOP }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            com.webtoapp.core.logging.AppLogger.w("OpenAiCompatProvider", "SSE chunk parse failed (non-fatal): ${e.message} | payload: $payload")
+                        }
                         true
                     }
                     if (!done) emitFinish(toolNames, toolArgsAccum, finishReason)
