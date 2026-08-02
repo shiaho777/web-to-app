@@ -3,12 +3,18 @@ package com.webtoapp.core.agent.tool
 import com.webtoapp.core.agent.imagery.ImageGeneratorRegistry
 import com.webtoapp.core.agent.plan.PlanManager
 import com.webtoapp.core.agent.tool.builtin.AskUserTool
+import com.webtoapp.core.agent.tool.builtin.BuildApkTool
 import com.webtoapp.core.agent.tool.builtin.CreateAppTool
 import com.webtoapp.core.agent.tool.builtin.CreateModuleTool
+import com.webtoapp.core.agent.tool.builtin.CreateShortcutTool
+import com.webtoapp.core.agent.tool.builtin.DeleteAppTool
 import com.webtoapp.core.agent.tool.builtin.DeleteFileTool
+import com.webtoapp.core.agent.tool.builtin.DuplicateAppTool
 import com.webtoapp.core.agent.tool.builtin.EditFileTool
 import com.webtoapp.core.agent.tool.builtin.EnterPlanModeTool
 import com.webtoapp.core.agent.tool.builtin.ExitPlanModeTool
+import com.webtoapp.core.agent.tool.builtin.ExportAabTool
+import com.webtoapp.core.agent.tool.builtin.ExportAppTool
 import com.webtoapp.core.agent.tool.builtin.GetAppTool
 import com.webtoapp.core.agent.tool.builtin.GetModuleTool
 import com.webtoapp.core.agent.tool.builtin.GlobTool
@@ -16,8 +22,10 @@ import com.webtoapp.core.agent.tool.builtin.GrepTool
 import com.webtoapp.core.agent.tool.builtin.ListAppsTool
 import com.webtoapp.core.agent.tool.builtin.ListFilesTool
 import com.webtoapp.core.agent.tool.builtin.ListModulesTool
+import com.webtoapp.core.agent.tool.builtin.MoveToCategoryTool
 import com.webtoapp.core.agent.tool.builtin.ReadFileTool
 import com.webtoapp.core.agent.tool.builtin.ReadAppFileTool
+import com.webtoapp.core.agent.tool.builtin.ShareApkTool
 import com.webtoapp.core.agent.tool.builtin.TodoUpdateTool
 import com.webtoapp.core.agent.tool.builtin.TodoWriteTool
 import com.webtoapp.core.agent.tool.builtin.UpdateAppTool
@@ -56,6 +64,17 @@ class ToolRegistryFactory(
         GetAppTool(),
         CreateAppTool(),
         UpdateAppTool(),
+        ReadAppFileTool(),
+        // App lifecycle
+        BuildApkTool(),
+        ShareApkTool(),
+        ExportAppTool(),
+        CreateShortcutTool(),
+        MoveToCategoryTool(),
+        DeleteAppTool(),
+        DuplicateAppTool(),
+        ExportAabTool(),
+        // Modules
         ListModulesTool(),
         GetModuleTool(),
         CreateModuleTool(),
