@@ -3,7 +3,9 @@ package com.webtoapp.core.agent.tool
 import com.webtoapp.core.agent.imagery.ImageGeneratorRegistry
 import com.webtoapp.core.agent.plan.PlanManager
 import com.webtoapp.core.agent.tool.builtin.AskUserTool
+import com.webtoapp.core.agent.tool.builtin.BatchImportAppsTool
 import com.webtoapp.core.agent.tool.builtin.BuildApkTool
+import com.webtoapp.core.agent.tool.builtin.CheckAppHealthTool
 import com.webtoapp.core.agent.tool.builtin.ClearRuntimeCacheTool
 import com.webtoapp.core.agent.tool.builtin.CreateAppTool
 import com.webtoapp.core.agent.tool.builtin.CreateModuleTool
@@ -11,12 +13,15 @@ import com.webtoapp.core.agent.tool.builtin.CreateShortcutTool
 import com.webtoapp.core.agent.tool.builtin.DeleteAppTool
 import com.webtoapp.core.agent.tool.builtin.DeleteEngineTool
 import com.webtoapp.core.agent.tool.builtin.DeleteFileTool
+import com.webtoapp.core.agent.tool.builtin.CloneAppTool
 import com.webtoapp.core.agent.tool.builtin.DuplicateAppTool
 import com.webtoapp.core.agent.tool.builtin.EditFileTool
 import com.webtoapp.core.agent.tool.builtin.EnterPlanModeTool
 import com.webtoapp.core.agent.tool.builtin.ExitPlanModeTool
 import com.webtoapp.core.agent.tool.builtin.ExportAabTool
+import com.webtoapp.core.agent.tool.builtin.ExportAppTemplateTool
 import com.webtoapp.core.agent.tool.builtin.ExportAppTool
+import com.webtoapp.core.agent.tool.builtin.GetUsageStatsTool
 import com.webtoapp.core.agent.tool.builtin.GetAdBlockStatusTool
 import com.webtoapp.core.agent.tool.builtin.GetAppTool
 import com.webtoapp.core.agent.tool.builtin.GetEngineStatusTool
@@ -27,6 +32,7 @@ import com.webtoapp.core.agent.tool.builtin.GrepTool
 import com.webtoapp.core.agent.tool.builtin.InstallRuntimeTool
 import com.webtoapp.core.agent.tool.builtin.KillAllPortsTool
 import com.webtoapp.core.agent.tool.builtin.KillPortTool
+import com.webtoapp.core.agent.tool.builtin.ListInstalledAppsTool
 import com.webtoapp.core.agent.tool.builtin.ListAppsTool
 import com.webtoapp.core.agent.tool.builtin.ListFilesTool
 import com.webtoapp.core.agent.tool.builtin.ListModulesTool
@@ -98,6 +104,13 @@ class ToolRegistryFactory(
         GetRuntimeStatusTool(),
         InstallRuntimeTool(),
         ClearRuntimeCacheTool(),
+        // Stats, modifier & import
+        GetUsageStatsTool(),
+        CheckAppHealthTool(),
+        ListInstalledAppsTool(),
+        CloneAppTool(),
+        BatchImportAppsTool(),
+        ExportAppTemplateTool(),
         // Modules
         ListModulesTool(),
         GetModuleTool(),
