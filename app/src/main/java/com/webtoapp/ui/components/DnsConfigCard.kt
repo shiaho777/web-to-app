@@ -123,6 +123,7 @@ fun DnsConfigCard(
                     WtaSettingRow(
                         title = Strings.dnsBypassSystemDns,
                         subtitle = Strings.dnsBypassSystemDnsDesc,
+                        titleStyle = MaterialTheme.typography.bodyMedium,
                         onClick = {
                             onDnsConfigChange(dnsConfig.copy(bypassSystemDns = !dnsConfig.bypassSystemDns))
                         },
@@ -140,6 +141,7 @@ fun DnsConfigCard(
                         title = Strings.dnsEchLabel,
                         subtitle = Strings.dnsEchDesc,
                         icon = Icons.Outlined.Shield,
+                        titleStyle = MaterialTheme.typography.bodyMedium,
                         onClick = { toggleEch(!dnsConfig.echEnabled) },
                         trailingMaxWidth = 200.dp
                     ) {
@@ -204,8 +206,8 @@ private fun DnsHeader(
             Spacer(Modifier.width(WtaSpacing.IconTextGap))
             Text(
                 text = Strings.dnsConfigTitle,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
             )
         }

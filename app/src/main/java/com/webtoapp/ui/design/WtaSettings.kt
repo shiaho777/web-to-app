@@ -54,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -317,6 +318,7 @@ fun WtaSettingRow(
     tone: WtaRowTone = WtaRowTone.Normal,
     titleMaxLines: Int = 2,
     subtitleMaxLines: Int = 3,
+    titleStyle: TextStyle? = null,
     trailingMaxWidth: Dp = WtaSize.RowTrailingMaxWidth,
     contentPadding: PaddingValues = PaddingValues(
         horizontal = WtaSpacing.RowHorizontal,
@@ -388,7 +390,7 @@ fun WtaSettingRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                    style = titleStyle ?: MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                     color = contentColor,
                     maxLines = titleMaxLines,
                     overflow = TextOverflow.Ellipsis

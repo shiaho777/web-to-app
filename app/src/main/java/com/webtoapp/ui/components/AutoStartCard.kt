@@ -139,7 +139,7 @@ fun AutoStartCard(
                         Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                             Text(
                                 Strings.bootAutoStart,
-                                style = MaterialTheme.typography.bodyLarge
+                                style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
                                 Strings.bootAutoStartHint,
@@ -197,7 +197,7 @@ fun AutoStartCard(
                         Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                             Text(
                                 Strings.scheduledAutoStart,
-                                style = MaterialTheme.typography.bodyLarge
+                                style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
                                 Strings.scheduledAutoStartHint,
