@@ -4,6 +4,7 @@ import com.webtoapp.core.agent.imagery.ImageGeneratorRegistry
 import com.webtoapp.core.agent.plan.PlanManager
 import com.webtoapp.core.agent.tool.builtin.AskUserTool
 import com.webtoapp.core.agent.tool.builtin.BuildApkTool
+import com.webtoapp.core.agent.tool.builtin.ClearRuntimeCacheTool
 import com.webtoapp.core.agent.tool.builtin.CreateAppTool
 import com.webtoapp.core.agent.tool.builtin.CreateModuleTool
 import com.webtoapp.core.agent.tool.builtin.CreateShortcutTool
@@ -16,16 +17,20 @@ import com.webtoapp.core.agent.tool.builtin.EnterPlanModeTool
 import com.webtoapp.core.agent.tool.builtin.ExitPlanModeTool
 import com.webtoapp.core.agent.tool.builtin.ExportAabTool
 import com.webtoapp.core.agent.tool.builtin.ExportAppTool
+import com.webtoapp.core.agent.tool.builtin.GetAdBlockStatusTool
 import com.webtoapp.core.agent.tool.builtin.GetAppTool
 import com.webtoapp.core.agent.tool.builtin.GetEngineStatusTool
 import com.webtoapp.core.agent.tool.builtin.GetModuleTool
+import com.webtoapp.core.agent.tool.builtin.GetRuntimeStatusTool
 import com.webtoapp.core.agent.tool.builtin.GlobTool
 import com.webtoapp.core.agent.tool.builtin.GrepTool
+import com.webtoapp.core.agent.tool.builtin.InstallRuntimeTool
 import com.webtoapp.core.agent.tool.builtin.KillAllPortsTool
 import com.webtoapp.core.agent.tool.builtin.KillPortTool
 import com.webtoapp.core.agent.tool.builtin.ListAppsTool
 import com.webtoapp.core.agent.tool.builtin.ListFilesTool
 import com.webtoapp.core.agent.tool.builtin.ListModulesTool
+import com.webtoapp.core.agent.tool.builtin.ManageHostsRulesTool
 import com.webtoapp.core.agent.tool.builtin.MoveToCategoryTool
 import com.webtoapp.core.agent.tool.builtin.ReadFileTool
 import com.webtoapp.core.agent.tool.builtin.ReadAppFileTool
@@ -87,6 +92,12 @@ class ToolRegistryFactory(
         GetEngineStatusTool(),
         SelectEngineTool(),
         DeleteEngineTool(),
+        // Hosts ad-block & runtime management
+        GetAdBlockStatusTool(),
+        ManageHostsRulesTool(),
+        GetRuntimeStatusTool(),
+        InstallRuntimeTool(),
+        ClearRuntimeCacheTool(),
         // Modules
         ListModulesTool(),
         GetModuleTool(),
