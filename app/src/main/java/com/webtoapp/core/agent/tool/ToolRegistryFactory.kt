@@ -5,6 +5,7 @@ import com.webtoapp.core.agent.plan.PlanManager
 import com.webtoapp.core.agent.tool.builtin.AskUserTool
 import com.webtoapp.core.agent.tool.builtin.BatchImportAppsTool
 import com.webtoapp.core.agent.tool.builtin.BuildApkTool
+import com.webtoapp.core.agent.tool.builtin.CheckPlayPolicyTool
 import com.webtoapp.core.agent.tool.builtin.CheckAppHealthTool
 import com.webtoapp.core.agent.tool.builtin.ClearRuntimeCacheTool
 import com.webtoapp.core.agent.tool.builtin.CreateAppTool
@@ -23,7 +24,9 @@ import com.webtoapp.core.agent.tool.builtin.ExportAppTemplateTool
 import com.webtoapp.core.agent.tool.builtin.ExportAppTool
 import com.webtoapp.core.agent.tool.builtin.GetUsageStatsTool
 import com.webtoapp.core.agent.tool.builtin.GetAdBlockStatusTool
+import com.webtoapp.core.agent.tool.builtin.GetBuildEnvStatusTool
 import com.webtoapp.core.agent.tool.builtin.GetAppTool
+import com.webtoapp.core.agent.tool.builtin.InitializeBuildEnvTool
 import com.webtoapp.core.agent.tool.builtin.GetEngineStatusTool
 import com.webtoapp.core.agent.tool.builtin.GetModuleTool
 import com.webtoapp.core.agent.tool.builtin.GetRuntimeStatusTool
@@ -111,6 +114,10 @@ class ToolRegistryFactory(
         CloneAppTool(),
         BatchImportAppsTool(),
         ExportAppTemplateTool(),
+        // Build env & Play policy
+        GetBuildEnvStatusTool(),
+        InitializeBuildEnvTool(),
+        CheckPlayPolicyTool(),
         // Modules
         ListModulesTool(),
         GetModuleTool(),
