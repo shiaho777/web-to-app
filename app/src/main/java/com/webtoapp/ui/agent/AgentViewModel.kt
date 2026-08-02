@@ -115,6 +115,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private var service: AgentService? = null
     private var bound = false
     private var eventCollectionJob: Job? = null
+    private var permissionCollectionJob: Job? = null
+    private var choiceCollectionJob: Job? = null
     private var streamingSessionId: String? = null
     private val streamText = StringBuilder()
     private val streamThinking = StringBuilder()
@@ -1328,12 +1330,16 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         eventCollectionJob = viewModelScope.launch {
             service?.events?.collect { handleAgentEvent(it) }
         }
-        viewModelScope.launch {
+        // The prompter delivers requests/choices via Channels (single consumer), so cancel
+        // any previous collectors before starting new ones to avoid competing consumers.
+        permissionCollectionJob?.cancel()
+        permissionCollectionJob = viewModelScope.launch {
             service?.permissionPrompter?.requests?.collect { req ->
                 _ui.update { it.copy(pendingPermission = req) }
             }
         }
-        viewModelScope.launch {
+        choiceCollectionJob?.cancel()
+        choiceCollectionJob = viewModelScope.launch {
             service?.permissionPrompter?.choices?.collect { req ->
                 _ui.update { it.copy(pendingChoice = req) }
             }
@@ -1770,6 +1776,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         eventCollectionJob?.cancel()
+        permissionCollectionJob?.cancel()
+        choiceCollectionJob?.cancel()
         if (bound) runCatching { ctx.unbindService(connection) }
     }
 

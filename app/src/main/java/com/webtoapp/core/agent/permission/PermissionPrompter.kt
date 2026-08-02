@@ -1,19 +1,23 @@
 package com.webtoapp.core.agent.permission
 
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class PermissionPrompter {
 
-    private val _requests = MutableSharedFlow<PermissionRequest>(replay = 0, extraBufferCapacity = 4)
-    val requests: SharedFlow<PermissionRequest> = _requests.asSharedFlow()
+    // Requests/choices are delivered to the UI through Channels (exposed as flows via
+    // receiveAsFlow) rather than replay-0 SharedFlows. A Channel guarantees each emitted
+    // request is received by the UI collector (buffered until consumed), so a request can
+    // never be lost to a subscribe/emit race — which previously left request()/askChoice()
+    // suspended forever on the response channel, freezing the agent loop after a prompt.
+    private val requestChannel = Channel<PermissionRequest>(Channel.UNLIMITED)
+    val requests: Flow<PermissionRequest> = requestChannel.receiveAsFlow()
 
-    private val _choices = MutableSharedFlow<ChoiceRequest>(replay = 0, extraBufferCapacity = 4)
-    val choices: SharedFlow<ChoiceRequest> = _choices.asSharedFlow()
+    private val choiceChannel = Channel<ChoiceRequest>(Channel.UNLIMITED)
+    val choices: Flow<ChoiceRequest> = choiceChannel.receiveAsFlow()
 
     private val responseChannel = Channel<Pair<String, PermissionResponse>>(Channel.UNLIMITED)
     private val choiceResponseChannel = Channel<Pair<String, ChoiceResponse>>(Channel.UNLIMITED)
@@ -21,7 +25,7 @@ class PermissionPrompter {
     private val singleFlight = Mutex()
 
     suspend fun request(req: PermissionRequest): PermissionResponse = singleFlight.withLock {
-        _requests.emit(req)
+        requestChannel.send(req)
 
         while (true) {
             val (id, resp) = responseChannel.receive()
@@ -35,7 +39,7 @@ class PermissionPrompter {
     }
 
     suspend fun askChoice(req: ChoiceRequest): ChoiceResponse = singleFlight.withLock {
-        _choices.emit(req)
+        choiceChannel.send(req)
         while (true) {
             val (id, resp) = choiceResponseChannel.receive()
             if (id == req.id) return resp
