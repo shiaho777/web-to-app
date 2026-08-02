@@ -223,14 +223,7 @@ The official documentation site is published at **[shiaho777.github.io/web-to-ap
 | Extensions | [/extensions/](https://shiaho777.github.io/web-to-app/extensions/) | JS/CSS modules, userscripts, Chrome MV3, API reference, publishing |
 | 简体中文 | [/zh/](https://shiaho777.github.io/web-to-app/zh/) | Full Chinese mirror of every page above |
 
-The site is a VitePress app authored under [`docs/`](docs/) in this repository. [`.github/workflows/docs-deploy.yml`](.github/workflows/docs-deploy.yml) builds and deploys it to GitHub Pages on every push to `main` that touches `docs/` (pull requests only build, to catch breakage early). URL paths map 1:1 to source files — `/guide/introduction` is `docs/guide/introduction.md`, and its Chinese twin `/zh/guide/introduction` is `docs/zh/guide/introduction.md`. To preview locally:
-
-```bash
-cd docs
-npm ci
-npm run dev        # dev server with hot reload
-npm run build      # production build into docs/.vitepress/dist
-```
+The site is a VitePress app authored under [`docs/`](docs/) in this repository. [`.github/workflows/docs-deploy.yml`](.github/workflows/docs-deploy.yml) builds and deploys it to GitHub Pages on every push to `main` that touches `docs/` (pull requests only build, to catch breakage early).
 
 ## Architecture
 

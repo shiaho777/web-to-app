@@ -223,14 +223,7 @@ App 会同时拉取 `registry.json` 和 `submissions.json`,只展示两边都存
 | 扩展开发 | [/zh/extensions/](https://shiaho777.github.io/web-to-app/zh/extensions/) | JS/CSS 模块、油猴脚本、Chrome MV3、API 参考、发布流程 |
 | English | [/](https://shiaho777.github.io/web-to-app/) | 上述全部页面的英文原版 |
 
-站点是基于 VitePress 的文档工程,源码在本仓库的 [`docs/`](../../docs/) 目录下。[`.github/workflows/docs-deploy.yml`](../workflows/docs-deploy.yml) 会在每次触及 `docs/` 的 push 到 `main` 时构建并发布到 GitHub Pages(Pull Request 只构建不部署,提前拦截坏链)。URL 路径与源文件一一对应——`/zh/guide/introduction` 对应 `docs/zh/guide/introduction.md`,英文原版是 `docs/guide/introduction.md`。本地预览:
-
-```bash
-cd docs
-npm ci
-npm run dev        # 本地开发服务器(热更新)
-npm run build      # 生产构建,输出到 docs/.vitepress/dist
-```
+站点是基于 VitePress 的文档工程,源码在本仓库的 [`docs/`](../../docs/) 目录下。[`.github/workflows/docs-deploy.yml`](../workflows/docs-deploy.yml) 会在每次触及 `docs/` 的 push 到 `main` 时构建并发布到 GitHub Pages(Pull Request 只构建不部署,提前拦截坏链)。
 
 ## 架构说明
 

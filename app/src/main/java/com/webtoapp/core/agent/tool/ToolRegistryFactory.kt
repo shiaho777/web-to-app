@@ -8,6 +8,7 @@ import com.webtoapp.core.agent.tool.builtin.CreateAppTool
 import com.webtoapp.core.agent.tool.builtin.CreateModuleTool
 import com.webtoapp.core.agent.tool.builtin.CreateShortcutTool
 import com.webtoapp.core.agent.tool.builtin.DeleteAppTool
+import com.webtoapp.core.agent.tool.builtin.DeleteEngineTool
 import com.webtoapp.core.agent.tool.builtin.DeleteFileTool
 import com.webtoapp.core.agent.tool.builtin.DuplicateAppTool
 import com.webtoapp.core.agent.tool.builtin.EditFileTool
@@ -16,15 +17,20 @@ import com.webtoapp.core.agent.tool.builtin.ExitPlanModeTool
 import com.webtoapp.core.agent.tool.builtin.ExportAabTool
 import com.webtoapp.core.agent.tool.builtin.ExportAppTool
 import com.webtoapp.core.agent.tool.builtin.GetAppTool
+import com.webtoapp.core.agent.tool.builtin.GetEngineStatusTool
 import com.webtoapp.core.agent.tool.builtin.GetModuleTool
 import com.webtoapp.core.agent.tool.builtin.GlobTool
 import com.webtoapp.core.agent.tool.builtin.GrepTool
+import com.webtoapp.core.agent.tool.builtin.KillAllPortsTool
+import com.webtoapp.core.agent.tool.builtin.KillPortTool
 import com.webtoapp.core.agent.tool.builtin.ListAppsTool
 import com.webtoapp.core.agent.tool.builtin.ListFilesTool
 import com.webtoapp.core.agent.tool.builtin.ListModulesTool
 import com.webtoapp.core.agent.tool.builtin.MoveToCategoryTool
 import com.webtoapp.core.agent.tool.builtin.ReadFileTool
 import com.webtoapp.core.agent.tool.builtin.ReadAppFileTool
+import com.webtoapp.core.agent.tool.builtin.ScanPortsTool
+import com.webtoapp.core.agent.tool.builtin.SelectEngineTool
 import com.webtoapp.core.agent.tool.builtin.ShareApkTool
 import com.webtoapp.core.agent.tool.builtin.TodoUpdateTool
 import com.webtoapp.core.agent.tool.builtin.TodoWriteTool
@@ -74,6 +80,13 @@ class ToolRegistryFactory(
         DeleteAppTool(),
         DuplicateAppTool(),
         ExportAabTool(),
+        // Ports & engine
+        ScanPortsTool(),
+        KillPortTool(),
+        KillAllPortsTool(),
+        GetEngineStatusTool(),
+        SelectEngineTool(),
+        DeleteEngineTool(),
         // Modules
         ListModulesTool(),
         GetModuleTool(),
