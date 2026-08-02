@@ -11077,16 +11077,16 @@ object StringsA {
     }
 
     val keepScreenOnLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "保持屏幕常亮"
-        AppLanguage.ENGLISH -> "Keep Screen On"
-        AppLanguage.ARABIC -> "إبقاء الشاشة مضاءة"
-        AppLanguage.PORTUGUESE -> "Manter tela acesa"
-        AppLanguage.SPANISH -> "Mantener pantalla encendida"
-        AppLanguage.FRENCH -> "Maintenir l'écran allumé"
-        AppLanguage.GERMAN -> "Bildschirm an lassen"
-        AppLanguage.RUSSIAN -> "Держать экран включённым"
-        AppLanguage.JAPANESE -> "画面を常時点灯"
-        AppLanguage.KOREAN -> "화면 켜짐 유지"
+        AppLanguage.CHINESE -> "屏幕常亮"
+        AppLanguage.ENGLISH -> "Screen Always On"
+        AppLanguage.ARABIC -> "الشاشة مضاءة دائمًا"
+        AppLanguage.PORTUGUESE -> "Tela sempre acesa"
+        AppLanguage.SPANISH -> "Pantalla siempre encendida"
+        AppLanguage.FRENCH -> "Écran toujours allumé"
+        AppLanguage.GERMAN -> "Bildschirm immer an"
+        AppLanguage.RUSSIAN -> "Экран всегда включён"
+        AppLanguage.JAPANESE -> "画面常時点灯"
+        AppLanguage.KOREAN -> "화면 상시 켜짐"
     }
 
     val screenAwakeModeLabel: String get() = when (Strings.lang) {
@@ -11910,16 +11910,16 @@ object StringsA {
     }
 
     val activationCodeVerify: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "激活码验证"
-        AppLanguage.ENGLISH -> "Activation Code Verification"
-        AppLanguage.ARABIC -> "التحقق من رمز التفعيل"
-        AppLanguage.PORTUGUESE -> "Verificação de código de ativação"
-        AppLanguage.SPANISH -> "Verificación de código de activación"
-        AppLanguage.FRENCH -> "Vérification du code d'activation"
-        AppLanguage.GERMAN -> "Aktivierungscode-Verifizierung"
-        AppLanguage.RUSSIAN -> "Проверка кода активации"
-        AppLanguage.JAPANESE -> "アクティベーションコード認証"
-        AppLanguage.KOREAN -> "활성화 코드 인증"
+        AppLanguage.CHINESE -> "激活码"
+        AppLanguage.ENGLISH -> "Activation Code"
+        AppLanguage.ARABIC -> "رمز التفعيل"
+        AppLanguage.PORTUGUESE -> "Código de ativação"
+        AppLanguage.SPANISH -> "Código de activación"
+        AppLanguage.FRENCH -> "Code d'activation"
+        AppLanguage.GERMAN -> "Aktivierungscode"
+        AppLanguage.RUSSIAN -> "Код активации"
+        AppLanguage.JAPANESE -> "アクティベーションコード"
+        AppLanguage.KOREAN -> "활성화 코드"
     }
 
     val activationCodeHint: String get() = when (Strings.lang) {
@@ -12313,7 +12313,7 @@ object StringsA {
     }
 
     val autoTranslate: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "网页自动翻译"
+        AppLanguage.CHINESE -> "自动翻译"
         AppLanguage.ENGLISH -> "Auto Translate"
         AppLanguage.ARABIC -> "الترجمة التلقائية"
         AppLanguage.PORTUGUESE -> "Tradução Automática"
@@ -33141,16 +33141,16 @@ object StringsC {
     }
 
     val hideBrowserToolbarLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "隐藏浏览器工具栏"
-        AppLanguage.ENGLISH -> "Hide Browser Toolbar"
-        AppLanguage.ARABIC -> "إخفاء شريط أدوات المتصفح"
-        AppLanguage.PORTUGUESE -> "Ocultar Barra de Ferramentas do Navegador"
-        AppLanguage.SPANISH -> "Ocultar Barra de Herramientas del Navegador"
-        AppLanguage.FRENCH -> "Masquer la Barre d'Outils du Navigateur"
-        AppLanguage.GERMAN -> "Browser-Symbolleiste ausblenden"
-        AppLanguage.RUSSIAN -> "Скрыть панель инструментов браузера"
-        AppLanguage.JAPANESE -> "ブラウザツールバーを非表示"
-        AppLanguage.KOREAN -> "브라우저 도구 모음 숨기기"
+        AppLanguage.CHINESE -> "隐藏工具栏"
+        AppLanguage.ENGLISH -> "Hide Toolbar"
+        AppLanguage.ARABIC -> "إخفاء شريط الأدوات"
+        AppLanguage.PORTUGUESE -> "Ocultar Barra de Ferramentas"
+        AppLanguage.SPANISH -> "Ocultar Barra de Herramientas"
+        AppLanguage.FRENCH -> "Masquer la Barre d'Outils"
+        AppLanguage.GERMAN -> "Symbolleiste ausblenden"
+        AppLanguage.RUSSIAN -> "Скрыть панель инструментов"
+        AppLanguage.JAPANESE -> "ツールバーを非表示"
+        AppLanguage.KOREAN -> "도구 모음 숨기기"
     }
 
     val toolbarContentOptionsLabel: String get() = when (Strings.lang) {
