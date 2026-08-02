@@ -62,6 +62,8 @@ internal object ApkConfigJsonFactory {
         "announcementTriggerIntervalMinutes" to announcement.triggerIntervalMinutes,
         "announcementVersion" to announcement.version,
         "announcementTriggerIntervalIncludeLaunch" to announcement.triggerIntervalIncludeLaunch,
+        "announcementShowIcon" to announcement.showIcon,
+        "announcementHasCustomIcon" to announcement.hasCustomIcon,
         "adsEnabled" to ads.enabled,
         "adBannerEnabled" to ads.bannerEnabled,
         "adBannerId" to ads.bannerId,

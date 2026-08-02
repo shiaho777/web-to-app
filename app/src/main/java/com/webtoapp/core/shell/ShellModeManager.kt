@@ -250,6 +250,12 @@ data class ShellConfig(
     @SerializedName("announcementTriggerIntervalIncludeLaunch")
     val announcementTriggerIntervalIncludeLaunch: Boolean = false,
 
+    @SerializedName("announcementShowIcon")
+    val announcementShowIcon: Boolean = true,
+
+    @SerializedName("announcementHasCustomIcon")
+    val announcementHasCustomIcon: Boolean = false,
+
     @SerializedName("adsEnabled")
     val adsEnabled: Boolean = false,
 

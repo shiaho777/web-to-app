@@ -594,6 +594,7 @@ class ApkBuilder(private val context: Context) {
             }
 
             val errorPageMediaPath = webApp.webViewConfig.errorPageConfig.customMediaPath
+            val announcementIconPath = webApp.announcement?.customIconPath
                 ?.takeIf { it.isNotBlank() && !it.startsWith("data:") && !it.startsWith("http") && !it.startsWith("file://") }
             val multiWebProjectDir = config.multiWebProjectId.takeIf { it.isNotBlank() }
                 ?.let { File(context.filesDir, "html_projects/$it") }
@@ -680,6 +681,7 @@ class ApkBuilder(private val context: Context) {
                             htmlProjectDir = htmlProjectDir,
                             staticPackDir = staticPackDir,
                             errorPageMediaPath = errorPageMediaPath,
+                            announcementIconPath = announcementIconPath,
                             perfConfig = perfConfig,
                             mode = ModifyApkMode.CONTENT_OVERLAY
                         ) { progress, stageMessage ->
@@ -718,6 +720,7 @@ class ApkBuilder(private val context: Context) {
                             htmlProjectDir = htmlProjectDir,
                             staticPackDir = staticPackDir,
                             errorPageMediaPath = errorPageMediaPath,
+                            announcementIconPath = announcementIconPath,
                             perfConfig = perfConfig,
                             mode = ModifyApkMode.FULL
                         ) { progress, stageMessage ->
@@ -759,6 +762,7 @@ class ApkBuilder(private val context: Context) {
                         htmlProjectDir = htmlProjectDir,
                         staticPackDir = staticPackDir,
                         errorPageMediaPath = errorPageMediaPath,
+                        announcementIconPath = announcementIconPath,
                         perfConfig = perfConfig,
                         mode = ModifyApkMode.FULL
                     ) { progress, stageMessage ->
@@ -1052,6 +1056,7 @@ class ApkBuilder(private val context: Context) {
         htmlProjectDir: File? = null,
         staticPackDir: File? = null,
         errorPageMediaPath: String? = null,
+        announcementIconPath: String? = null,
         perfConfig: com.webtoapp.core.linux.PerformanceOptimizer.OptimizeConfig? = null,
         mode: ModifyApkMode = ModifyApkMode.FULL,
         onProgress: (Int, String) -> Unit
@@ -1300,6 +1305,10 @@ class ApkBuilder(private val context: Context) {
 
                 if (errorPageMediaPath != null) {
                     addErrorPageMediaToAssets(zipOut, errorPageMediaPath, assetEncryptor, encryptionConfig)
+                }
+
+                if (config.announcement.hasCustomIcon && announcementIconPath != null) {
+                    addAnnouncementIconToAssets(zipOut, announcementIconPath, assetEncryptor, encryptionConfig)
                 }
 
                 if (config.statusBarBackgroundType == "IMAGE" && !config.statusBarBackgroundImage.isNullOrEmpty()) {
@@ -1571,6 +1580,32 @@ class ApkBuilder(private val context: Context) {
             }
         } catch (e: Exception) {
             AppLogger.e("ApkBuilder", "Failed to embed splash media: ${e.message}", e)
+        }
+    }
+
+    private fun addAnnouncementIconToAssets(
+        zipOut: ZipOutputStream,
+        iconPath: String,
+        encryptor: AssetEncryptor? = null,
+        encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED
+    ) {
+        val iconFile = File(iconPath)
+        if (!iconFile.exists() || !iconFile.canRead() || iconFile.length() == 0L) {
+            AppLogger.w("ApkBuilder", "Announcement icon skipped: invalid file $iconPath")
+            return
+        }
+        val assetPath = "announcement_icon.png"
+        try {
+            val bytes = iconFile.readBytes()
+            if (encryptionConfig.enabled && encryptor != null) {
+                val encrypted = encryptor.encrypt(bytes, assetPath)
+                writeEntryDeflated(zipOut, "assets/$assetPath.enc", encrypted)
+            } else {
+                writeEntryStoredSimple(zipOut, "assets/$assetPath", bytes)
+            }
+            AppLogger.d("ApkBuilder", "Announcement icon embedded: assets/$assetPath (${bytes.size} bytes)")
+        } catch (e: Exception) {
+            AppLogger.e("ApkBuilder", "Failed to embed announcement icon: ${e.message}", e)
         }
     }
 
@@ -3502,7 +3537,9 @@ private fun WebApp.buildAnnouncementBlock(): AnnouncementBlock = AnnouncementBlo
     triggerOnNoNetwork = announcement?.triggerOnNoNetwork ?: false,
     triggerIntervalMinutes = announcement?.triggerIntervalMinutes ?: 0,
     version = announcement?.version ?: 1,
-    triggerIntervalIncludeLaunch = announcement?.triggerIntervalIncludeLaunch ?: false
+    triggerIntervalIncludeLaunch = announcement?.triggerIntervalIncludeLaunch ?: false,
+    showIcon = announcement?.showIcon ?: true,
+    hasCustomIcon = !announcement?.customIconPath.isNullOrBlank()
 )
 
 private fun WebApp.buildAdsBlock(): AdsBlock = AdsBlock(

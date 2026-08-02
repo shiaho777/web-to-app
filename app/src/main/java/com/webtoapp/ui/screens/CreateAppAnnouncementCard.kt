@@ -3,7 +3,10 @@ package com.webtoapp.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -12,15 +15,15 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import com.webtoapp.R
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.components.announcement.AnnouncementDialog
 import com.webtoapp.ui.components.announcement.AnnouncementConfig
-import com.webtoapp.ui.components.announcement.AnnouncementTemplate
 import com.webtoapp.ui.components.announcement.AnnouncementTemplateSelector
 import com.webtoapp.ui.components.announcement.toStoredTemplate
 import com.webtoapp.ui.components.announcement.toUiTemplate
@@ -51,12 +54,33 @@ fun AnnouncementCard(
     onAnnouncementChange: (Announcement) -> Unit
 ) {
     var showPreview by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val iconPickerLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        uri?.let {
+            try {
+                val savedPath = com.webtoapp.util.IconStorage.saveIconFromUri(context, it)
+                if (savedPath != null) {
+                    onAnnouncementChange(announcement.copy(customIconPath = savedPath))
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
+    val previewBitmap = remember(announcement.customIconPath) {
+        announcement.customIconPath?.let { p ->
+            try { android.graphics.BitmapFactory.decodeFile(p) } catch (e: Exception) { null }
+        }
+    }
 
     if (showPreview && (announcement.title.isNotBlank() || announcement.content.isNotBlank())) {
         AnnouncementDialog(
             config = AnnouncementConfig(
                 announcement = announcement,
-                template = announcement.template.toUiTemplate()
+                template = announcement.template.toUiTemplate(),
+                customIconBitmap = previewBitmap
             ),
             onDismiss = { showPreview = false },
             onLinkClick = {  }
@@ -64,28 +88,26 @@ fun AnnouncementCard(
     }
 
     WtaSettingCard {
-        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)) {
+        WtaToggleRow(
+            icon = Icons.Outlined.Campaign,
+            title = Strings.popupAnnouncement,
+            checked = enabled,
+            onCheckedChange = onEnabledChange
+        )
 
-            WtaToggleRow(
-                icon = Icons.Outlined.Campaign,
-                title = Strings.popupAnnouncement,
-                subtitle = null,
-                checked = enabled,
-                onCheckedChange = onEnabledChange
-            )
+        AnimatedVisibility(
+            visible = enabled,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            Column {
+                WtaSectionDivider()
 
-            AnimatedVisibility(
-                visible = enabled,
-                enter = CardExpandTransition,
-                exit = CardCollapseTransition
-            ) {
                 Column(
-                    modifier = Modifier.padding(
-                        horizontal = WtaSpacing.RowHorizontal,
-                        vertical = WtaSpacing.ContentGap
-                    ),
+                    modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
 
                     AnnouncementTemplateSelector(
                         selectedTemplate = announcement.template.toUiTemplate(),
@@ -97,6 +119,87 @@ fun AnnouncementCard(
                             )
                         }
                     )
+                }
+
+                WtaToggleRow(
+                    icon = Icons.Outlined.Image,
+                    title = Strings.announcementShowIcon,
+                    subtitle = Strings.announcementShowIconHint,
+                    checked = announcement.showIcon,
+                    onCheckedChange = {
+                        onAnnouncementChange(announcement.copy(showIcon = it))
+                    }
+                )
+
+                AnimatedVisibility(visible = announcement.showIcon) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = WtaSpacing.RowHorizontal),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val bitmap = previewBitmap
+                            if (bitmap != null) {
+                                androidx.compose.foundation.Image(
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(RoundedCornerShape(12.dp)),
+                                    contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Outlined.Campaign,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        if (announcement.customIconPath != null) {
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = { iconPickerLauncher.launch("image/*") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(Strings.announcementCustomIcon)
+                            }
+                            androidx.compose.material3.TextButton(
+                                onClick = {
+                                    onAnnouncementChange(announcement.copy(customIconPath = null))
+                                }
+                            ) {
+                                Text(
+                                    Strings.announcementRemoveCustomIcon,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        } else {
+                            androidx.compose.material3.OutlinedButton(
+                                onClick = { iconPickerLauncher.launch("image/*") },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(Icons.Outlined.AddPhotoAlternate, null, Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(Strings.announcementCustomIcon)
+                            }
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
 
                     PremiumTextField(
                         value = announcement.title,
@@ -129,17 +232,22 @@ fun AnnouncementCard(
                         maxLines = if (announcement.contentIsHtml) 10 else 5,
                         modifier = Modifier.fillMaxWidth()
                     )
+                }
 
-                    WtaToggleRow(
-                        icon = Icons.Outlined.Code,
-                        title = Strings.announcementContentHtml,
-                        subtitle = Strings.announcementContentHtmlDesc,
-                        checked = announcement.contentIsHtml,
-                        onCheckedChange = {
-                            onAnnouncementChange(announcement.copy(contentIsHtml = it))
-                        }
-                    )
+                WtaToggleRow(
+                    icon = Icons.Outlined.Code,
+                    title = Strings.announcementContentHtml,
+                    subtitle = Strings.announcementContentHtmlDesc,
+                    checked = announcement.contentIsHtml,
+                    onCheckedChange = {
+                        onAnnouncementChange(announcement.copy(contentIsHtml = it))
+                    }
+                )
 
+                Column(
+                    modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     PremiumTextField(
                         value = announcement.linkUrl ?: "",
                         onValueChange = {
@@ -176,20 +284,24 @@ fun AnnouncementCard(
                         Text(Strings.previewAnnouncementEffect)
                     }
 
-                    WtaSectionDivider(modifier = Modifier.padding(horizontal = 0.dp))
-
-                    AnnouncementTriggerSection(
-                        announcement = announcement,
-                        onAnnouncementChange = onAnnouncementChange
-                    )
-
-                    WtaSectionDivider(modifier = Modifier.padding(horizontal = 0.dp))
-
-                    AnnouncementAdvancedSection(
-                        announcement = announcement,
-                        onAnnouncementChange = onAnnouncementChange
-                    )
+                    Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
                 }
+
+                WtaSectionDivider()
+
+                AnnouncementTriggerSection(
+                    announcement = announcement,
+                    onAnnouncementChange = onAnnouncementChange
+                )
+
+                WtaSectionDivider()
+
+                AnnouncementAdvancedSection(
+                    announcement = announcement,
+                    onAnnouncementChange = onAnnouncementChange
+                )
+
+                Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
             }
         }
     }
@@ -201,15 +313,20 @@ private fun AnnouncementTriggerSection(
     announcement: Announcement,
     onAnnouncementChange: (Announcement) -> Unit
 ) {
-    var expanded by rememberSaveable { mutableStateOf(true) }
+    var expanded by rememberSaveable { mutableStateOf(false) }
 
-    WtaSection(
+    WtaChoiceRow(
         title = Strings.announcementTriggerSettings,
-        headerStyle = WtaSectionHeaderStyle.Quiet,
-        collapsible = true,
-        initiallyExpanded = true,
-        expanded = expanded,
-        onExpandedChange = { expanded = it }
+        icon = Icons.Outlined.AccessTime,
+        value = "",
+        isExpanded = expanded,
+        onClick = { expanded = !expanded }
+    )
+
+    AnimatedVisibility(
+        visible = expanded,
+        enter = CardExpandTransition,
+        exit = CardCollapseTransition
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             WtaToggleRow(
@@ -299,7 +416,6 @@ private fun AnnouncementTriggerSection(
             ) {
                 WtaToggleRow(
                     title = Strings.announcementTriggerIntervalIncludeLaunch,
-                    subtitle = Strings.announcementTriggerOnLaunchHint,
                     icon = Icons.Outlined.PlayCircle,
                     checked = announcement.triggerIntervalIncludeLaunch,
                     onCheckedChange = {
@@ -312,28 +428,30 @@ private fun AnnouncementTriggerSection(
 
             Text(
                 Strings.displayFrequency,
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(
+                    start = WtaSpacing.RowHorizontal,
+                    top = WtaSpacing.ContentGap,
+                    bottom = WtaSpacing.ContentGap
+                )
             )
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = WtaSpacing.RowHorizontal),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 PremiumFilterChip(
                     selected = announcement.showOnce,
                     onClick = { onAnnouncementChange(announcement.copy(showOnce = true)) },
-                    label = { Text(Strings.showOnce) },
-                    leadingIcon = if (announcement.showOnce) {
-                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                    } else null
+                    label = { Text(Strings.showOnce) }
                 )
                 PremiumFilterChip(
                     selected = !announcement.showOnce,
                     onClick = { onAnnouncementChange(announcement.copy(showOnce = false)) },
-                    label = { Text(Strings.everyLaunch) },
-                    leadingIcon = if (!announcement.showOnce) {
-                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                    } else null
+                    label = { Text(Strings.everyLaunch) }
                 )
             }
         }
@@ -347,13 +465,18 @@ private fun AnnouncementAdvancedSection(
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
 
-    WtaSection(
+    WtaChoiceRow(
         title = Strings.announcementAdvancedOptions,
-        headerStyle = WtaSectionHeaderStyle.Quiet,
-        collapsible = true,
-        initiallyExpanded = false,
-        expanded = expanded,
-        onExpandedChange = { expanded = it }
+        icon = Icons.Outlined.Tune,
+        value = "",
+        isExpanded = expanded,
+        onClick = { expanded = !expanded }
+    )
+
+    AnimatedVisibility(
+        visible = expanded,
+        enter = CardExpandTransition,
+        exit = CardCollapseTransition
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             WtaToggleRow(

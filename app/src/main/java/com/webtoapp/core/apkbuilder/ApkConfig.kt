@@ -438,7 +438,9 @@ data class AnnouncementBlock(
     val triggerOnNoNetwork: Boolean = false,
     val triggerIntervalMinutes: Int = 0,
     val version: Int = 1,
-    val triggerIntervalIncludeLaunch: Boolean = false
+    val triggerIntervalIncludeLaunch: Boolean = false,
+    val showIcon: Boolean = true,
+    val hasCustomIcon: Boolean = false
 )
 
 data class AdsBlock(

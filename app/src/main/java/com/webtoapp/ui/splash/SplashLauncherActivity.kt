@@ -407,7 +407,10 @@ fun AnnouncementDialog(
     com.webtoapp.ui.components.announcement.AnnouncementDialog(
         config = com.webtoapp.ui.components.announcement.AnnouncementConfig(
             announcement = announcement,
-            template = announcement.template.toUiTemplate()
+            template = announcement.template.toUiTemplate(),
+            customIconBitmap = announcement.customIconPath?.let { p ->
+                try { android.graphics.BitmapFactory.decodeFile(p) } catch (e: Exception) { null }
+            }
         ),
         onDismiss = onDismiss,
         onLinkClick = { url -> onLinkClick(url) }

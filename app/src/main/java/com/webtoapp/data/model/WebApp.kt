@@ -142,7 +142,9 @@ data class Announcement(
     val triggerOnLaunch: Boolean = true,
     val triggerOnNoNetwork: Boolean = false,
     val triggerIntervalMinutes: Int = 0,
-    val triggerIntervalIncludeLaunch: Boolean = false
+    val triggerIntervalIncludeLaunch: Boolean = false,
+    val showIcon: Boolean = true,
+    val customIconPath: String? = null
 )
 
 enum class StatusBarColorMode {

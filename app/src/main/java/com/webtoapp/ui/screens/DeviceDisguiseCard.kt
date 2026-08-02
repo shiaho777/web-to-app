@@ -1,35 +1,25 @@
 package com.webtoapp.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.webtoapp.core.appearance.DeviceDisguiseConfig
 import com.webtoapp.core.appearance.DeviceType
-import com.webtoapp.core.appearance.DeviceOS
-import com.webtoapp.core.appearance.DeviceBrand
 import com.webtoapp.core.appearance.DevicePresets
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
-import com.webtoapp.ui.components.EnhancedElevatedCard
-import com.webtoapp.ui.design.WtaSwitch
+import com.webtoapp.ui.design.WtaSettingCard
+import com.webtoapp.ui.design.WtaToggleRow
+import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.components.PremiumFilterChip
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.SettingsSwitch
 
@@ -39,7 +29,6 @@ fun DeviceDisguiseCard(
     config: DeviceDisguiseConfig,
     onConfigChange: (DeviceDisguiseConfig) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
     var showCustomUA by remember { mutableStateOf(false) }
     var showCustomDevice by remember { mutableStateOf(false) }
 
@@ -50,536 +39,255 @@ fun DeviceDisguiseCard(
     var customDensity by remember { mutableStateOf("") }
 
     val isEnabled = config.enabled
-    val accentColor = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
 
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+    WtaSettingCard {
+        WtaToggleRow(
+            icon = Icons.Outlined.DevicesOther,
+            title = Strings.deviceDisguiseTitle,
+            checked = isEnabled,
+            onCheckedChange = { onConfigChange(config.copy(enabled = it)) }
+        )
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (isEnabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Outlined.DevicesOther,
-                            contentDescription = null,
-                            tint = accentColor,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = Strings.deviceDisguiseTitle,
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = if (isEnabled) Strings.enabled else Strings.notEnabled,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                    contentDescription = null
+        AnimatedVisibility(
+            visible = isEnabled,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            Column {
+                WtaSectionDivider()
+
+                Text(
+                    text = Strings.deviceQuickSelect,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(
+                        start = WtaSpacing.RowHorizontal,
+                        top = WtaSpacing.ContentGap,
+                        bottom = WtaSpacing.ContentGap
+                    )
                 )
-            }
 
-            AnimatedVisibility(
-                visible = expanded,
-                enter = CardExpandTransition,
-                exit = CardCollapseTransition
-            ) {
-                Column(modifier = Modifier.padding(top = 16.dp)) {
+                val deviceTypes = listOf(
+                    DeviceType.PHONE to Strings.deviceTypePhone,
+                    DeviceType.TABLET to Strings.deviceTypeTablet,
+                    DeviceType.DESKTOP to Strings.deviceTypeDesktop,
+                    DeviceType.LAPTOP to Strings.deviceTypeLaptop,
+                    DeviceType.WATCH to Strings.deviceTypeWatch
+                )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = Strings.deviceDisguiseTitle,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                            Text(
-                                text = if (isEnabled) Strings.deviceDisguiseActive else Strings.deviceDisguiseOff,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        WtaSwitch(
-                            checked = isEnabled,
-                            onCheckedChange = { onConfigChange(config.copy(enabled = it)) }
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = WtaSpacing.RowHorizontal),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    deviceTypes.forEach { (type, label) ->
+                        PremiumFilterChip(
+                            selected = config.deviceType == type,
+                            onClick = {
+                                val presets = DevicePresets.getPresetsForType(type)
+                                if (presets.isNotEmpty()) {
+                                    onConfigChange(presets.first().toConfig())
+                                } else {
+                                    onConfigChange(config.copy(deviceType = type))
+                                }
+                            },
+                            label = { Text(label) }
                         )
                     }
+                }
 
-                    AnimatedVisibility(
-                        visible = isEnabled,
-                        enter = CardExpandTransition,
-                        exit = CardCollapseTransition
-                    ) {
-                        Column {
-                            Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
+                WtaSectionDivider()
 
-                            Surface(
-                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
-                                shape = RoundedCornerShape(10.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Icon(
-                                        Icons.Outlined.Info,
-                                        null,
-                                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        modifier = Modifier.size(16.dp).padding(top = 2.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = Strings.deviceDisguiseHint,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        lineHeight = 18.sp
-                                    )
-                                }
-                            }
+                Text(
+                    text = Strings.devicePopularPresets,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    modifier = Modifier.padding(
+                        start = WtaSpacing.RowHorizontal,
+                        top = WtaSpacing.ContentGap,
+                        bottom = WtaSpacing.ContentGap
+                    )
+                )
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                val presets = DevicePresets.getPresetsForType(config.deviceType)
 
-                            Text(
-                                text = Strings.deviceQuickSelect,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            val deviceTypes = listOf(
-                                DeviceType.PHONE to Strings.deviceTypePhone,
-                                DeviceType.TABLET to Strings.deviceTypeTablet,
-                                DeviceType.DESKTOP to Strings.deviceTypeDesktop,
-                                DeviceType.LAPTOP to Strings.deviceTypeLaptop,
-                                DeviceType.WATCH to Strings.deviceTypeWatch
-                            )
-
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                deviceTypes.forEach { (type, label) ->
-                                    val isSelected = config.deviceType == type
-                                    val bgColor by animateColorAsState(
-                                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                        label = "typeBg"
-                                    )
-                                    val contentColor by animateColorAsState(
-                                        if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
-                                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        label = "typeContent"
-                                    )
-
-                                    Surface(
-                                        onClick = {
-
-                                            val presets = DevicePresets.getPresetsForType(type)
-                                            if (presets.isNotEmpty()) {
-                                                onConfigChange(presets.first().toConfig())
-                                            } else {
-                                                onConfigChange(config.copy(deviceType = type))
-                                            }
-                                        },
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = bgColor,
-                                        border = if (isSelected) androidx.compose.foundation.BorderStroke(
-                                            1.5.dp, MaterialTheme.colorScheme.primary
-                                        ) else null
-                                    ) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
-                                        ) {
-
-                                            Text(
-                                                text = type.emoji,
-                                                fontSize = 20.sp
-                                            )
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                            Text(
-                                                text = label,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = contentColor,
-                                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                                maxLines = 1
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            Text(
-                                text = Strings.devicePopularPresets,
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.tertiary
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            val presets = DevicePresets.getPresetsForType(config.deviceType)
-
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                presets.forEach { preset ->
-
-                                    val isSelected = config.deviceModel == preset.model &&
-                                            config.deviceBrand == preset.brand
-                                    val chipBg by animateColorAsState(
-                                        if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                        else MaterialTheme.colorScheme.surface,
-                                        label = "presetBg"
-                                    )
-
-                                    Surface(
-                                        onClick = {
-
-                                            onConfigChange(preset.toConfig().copy(
-                                                deviceType = config.deviceType
-                                            ))
-                                        },
-                                        shape = RoundedCornerShape(12.dp),
-                                        color = chipBg,
-                                        tonalElevation = if (isSelected) 0.dp else 2.dp,
-                                        border = if (isSelected) androidx.compose.foundation.BorderStroke(
-                                            1.5.dp, MaterialTheme.colorScheme.primary
-                                        ) else androidx.compose.foundation.BorderStroke(
-                                            0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                                        )
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-
-                                            Column {
-                                                Text(
-                                                    text = preset.name,
-                                                    style = MaterialTheme.typography.labelMedium,
-                                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
-                                                )
-                                                Text(
-                                                    text = "${preset.os.displayName} · ${preset.screenWidth}×${preset.screenHeight}",
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                                    maxLines = 1,
-                                                    fontSize = 10.sp
-                                                )
-                                            }
-                                            if (isSelected) {
-                                                Spacer(modifier = Modifier.width(6.dp))
-                                                Icon(
-                                                    Icons.Outlined.CheckCircle,
-                                                    null,
-                                                    tint = MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(16.dp))
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            if (config.deviceModelName.isNotBlank()) {
-                                Text(
-                                    text = Strings.deviceCurrentDisguise,
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                    shape = RoundedCornerShape(12.dp),
-                                    border = androidx.compose.foundation.BorderStroke(
-                                        1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
-                                    )
-                                ) {
-                                    Column(modifier = Modifier.padding(14.dp)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-
-                                            Text(
-                                                text = config.deviceType.emoji,
-                                                fontSize = 24.sp
-                                            )
-                                            Spacer(modifier = Modifier.width(10.dp))
-                                            Column {
-                                                Text(
-                                                    text = config.deviceModelName,
-                                                    style = MaterialTheme.typography.titleSmall,
-                                                    fontWeight = FontWeight.SemiBold
-                                                )
-                                                Text(
-                                                    text = "${config.deviceBrand.displayName} · ${config.deviceOS.displayName}",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                )
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.height(10.dp))
-
-                                        val ua = config.generateUserAgent()
-                                        if (ua.isNotBlank()) {
-                                            Surface(
-                                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                                shape = RoundedCornerShape(8.dp)
-                                            ) {
-                                                Column(modifier = Modifier.padding(10.dp)) {
-                                                    Text(
-                                                        text = Strings.deviceGeneratedUA,
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                                    )
-                                                    Spacer(modifier = Modifier.height(4.dp))
-                                                    Text(
-                                                        text = ua,
-                                                        style = MaterialTheme.typography.bodySmall,
-                                                        fontSize = 11.sp,
-                                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
-                                                        lineHeight = 15.sp,
-                                                        maxLines = 4,
-                                                        overflow = TextOverflow.Ellipsis
-                                                    )
-                                                }
-                                            }
-                                        }
-
-                                        if (config.screenWidth > 0 && config.screenHeight > 0) {
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                            ) {
-                                                InfoChip("${config.screenWidth}×${config.screenHeight}")
-                                                if (config.pixelDensity > 0) {
-                                                    InfoChip("${config.pixelDensity}x DPI")
-                                                }
-                                                if (config.requiresDesktopViewport()) {
-                                                    InfoChip("Desktop VP")
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.height(12.dp))
-                            }
-
-                            if (config.deviceType !in listOf(DeviceType.DESKTOP, DeviceType.LAPTOP)) {
-                                SettingsSwitch(
-                                    title = Strings.deviceDesktopViewport,
-                                    subtitle = Strings.deviceDesktopViewportHint,
-                                    checked = config.isDesktopViewport,
-                                    onCheckedChange = {
-                                        onConfigChange(config.copy(isDesktopViewport = it))
-                                    }
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                            }
-
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            SettingsSwitch(
-                                title = Strings.deviceCustomDevice,
-                                subtitle = Strings.deviceCustomDeviceHint,
-                                checked = showCustomDevice || config.isCustomDevice,
-                                onCheckedChange = {
-                                    showCustomDevice = it
-                                    if (it && config.deviceModelName.isNotBlank()) {
-
-                                        customModelName = config.deviceModelName
-                                        customModelId = config.deviceModel
-                                        customScreenW = if (config.screenWidth > 0) config.screenWidth.toString() else ""
-                                        customScreenH = if (config.screenHeight > 0) config.screenHeight.toString() else ""
-                                        customDensity = if (config.pixelDensity > 0) config.pixelDensity.toString() else ""
-                                    }
-                                }
-                            )
-
-                            AnimatedVisibility(
-                                visible = showCustomDevice || config.isCustomDevice,
-                                enter = CardExpandTransition,
-                                exit = CardCollapseTransition
-                            ) {
-                                Column(modifier = Modifier.padding(top = 8.dp)) {
-
-                                    PremiumTextField(
-                                        value = customModelName,
-                                        onValueChange = { customModelName = it },
-                                        label = { Text(Strings.deviceCustomName) },
-                                        placeholder = { Text("Galaxy S26 Ultra") },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    PremiumTextField(
-                                        value = customModelId,
-                                        onValueChange = { customModelId = it },
-                                        label = { Text(Strings.deviceCustomModelId) },
-                                        placeholder = { Text("SM-S938B") },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        PremiumTextField(
-                                            value = customScreenW,
-                                            onValueChange = { customScreenW = it.filter { c -> c.isDigit() } },
-                                            label = { Text(Strings.deviceCustomWidth) },
-                                            placeholder = { Text("1920") },
-                                            modifier = Modifier.weight(1f),
-                                            singleLine = true
-                                        )
-                                        PremiumTextField(
-                                            value = customScreenH,
-                                            onValueChange = { customScreenH = it.filter { c -> c.isDigit() } },
-                                            label = { Text(Strings.deviceCustomHeight) },
-                                            placeholder = { Text("1080") },
-                                            modifier = Modifier.weight(1f),
-                                            singleLine = true
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    PremiumTextField(
-                                        value = customDensity,
-                                        onValueChange = { customDensity = it },
-                                        label = { Text(Strings.deviceCustomDensity) },
-                                        placeholder = { Text("2.0") },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        singleLine = true
-                                    )
-                                    Spacer(modifier = Modifier.height(12.dp))
-
-                                    FilledTonalButton(
-                                        onClick = {
-                                            onConfigChange(config.copy(
-                                                deviceModelName = customModelName.ifBlank { "Custom Device" },
-                                                deviceModel = customModelId.ifBlank { "CUSTOM-${System.currentTimeMillis()}" },
-                                                screenWidth = customScreenW.toIntOrNull() ?: 0,
-                                                screenHeight = customScreenH.toIntOrNull() ?: 0,
-                                                pixelDensity = customDensity.toFloatOrNull() ?: 0f,
-                                                isCustomDevice = true
-                                            ))
-                                        },
-                                        modifier = Modifier.fillMaxWidth(),
-                                        shape = RoundedCornerShape(12.dp),
-                                        enabled = customModelName.isNotBlank()
-                                    ) {
-                                        Icon(
-                                            Icons.Outlined.Save,
-                                            null,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(Strings.deviceCustomApply)
-                                    }
-                                }
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            SettingsSwitch(
-                                title = Strings.deviceCustomUA,
-                                subtitle = Strings.deviceCustomUAHint,
-                                checked = showCustomUA || !config.customUserAgent.isNullOrBlank(),
-                                onCheckedChange = {
-                                    showCustomUA = it
-                                    if (!it) onConfigChange(config.copy(customUserAgent = null))
-                                }
-                            )
-
-                            AnimatedVisibility(
-                                visible = showCustomUA || !config.customUserAgent.isNullOrBlank(),
-                                enter = CardExpandTransition,
-                                exit = CardCollapseTransition
-                            ) {
-                                PremiumTextField(
-                                    value = config.customUserAgent ?: "",
-                                    onValueChange = {
-                                        onConfigChange(config.copy(customUserAgent = it.ifBlank { null }))
-                                    },
-                                    label = { Text("User-Agent") },
-                                    placeholder = { Text("Mozilla/5.0 ...") },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 8.dp),
-                                    singleLine = false,
-                                    minLines = 2,
-                                    maxLines = 4
-                                )
-                            }
-                        }
+                FlowRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = WtaSpacing.RowHorizontal),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    presets.forEach { preset ->
+                        PremiumFilterChip(
+                            selected = config.deviceModel == preset.model &&
+                                    config.deviceBrand == preset.brand,
+                            onClick = {
+                                onConfigChange(preset.toConfig().copy(
+                                    deviceType = config.deviceType
+                                ))
+                            },
+                            label = { Text(preset.name) }
+                        )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
+                WtaSectionDivider()
+
+                if (config.deviceType !in listOf(DeviceType.DESKTOP, DeviceType.LAPTOP)) {
+                    SettingsSwitch(
+                        title = Strings.deviceDesktopViewport,
+                        subtitle = Strings.deviceDesktopViewportHint,
+                        checked = config.isDesktopViewport,
+                        onCheckedChange = {
+                            onConfigChange(config.copy(isDesktopViewport = it))
+                        }
+                    )
+                }
+
+                SettingsSwitch(
+                    title = Strings.deviceCustomDevice,
+                    subtitle = Strings.deviceCustomDeviceHint,
+                    checked = showCustomDevice || config.isCustomDevice,
+                    onCheckedChange = {
+                        showCustomDevice = it
+                        if (it && config.deviceModelName.isNotBlank()) {
+                            customModelName = config.deviceModelName
+                            customModelId = config.deviceModel
+                            customScreenW = if (config.screenWidth > 0) config.screenWidth.toString() else ""
+                            customScreenH = if (config.screenHeight > 0) config.screenHeight.toString() else ""
+                            customDensity = if (config.pixelDensity > 0) config.pixelDensity.toString() else ""
+                        }
+                    }
+                )
+
+                AnimatedVisibility(
+                    visible = showCustomDevice || config.isCustomDevice,
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
+                    Column(modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal)) {
+                        Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
+
+                        PremiumTextField(
+                            value = customModelName,
+                            onValueChange = { customModelName = it },
+                            label = { Text(Strings.deviceCustomName) },
+                            placeholder = { Text("Galaxy S26 Ultra") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        PremiumTextField(
+                            value = customModelId,
+                            onValueChange = { customModelId = it },
+                            label = { Text(Strings.deviceCustomModelId) },
+                            placeholder = { Text("SM-S938B") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            PremiumTextField(
+                                value = customScreenW,
+                                onValueChange = { customScreenW = it.filter { c -> c.isDigit() } },
+                                label = { Text(Strings.deviceCustomWidth) },
+                                placeholder = { Text("1920") },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                            PremiumTextField(
+                                value = customScreenH,
+                                onValueChange = { customScreenH = it.filter { c -> c.isDigit() } },
+                                label = { Text(Strings.deviceCustomHeight) },
+                                placeholder = { Text("1080") },
+                                modifier = Modifier.weight(1f),
+                                singleLine = true
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        PremiumTextField(
+                            value = customDensity,
+                            onValueChange = { customDensity = it },
+                            label = { Text(Strings.deviceCustomDensity) },
+                            placeholder = { Text("2.0") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        FilledTonalButton(
+                            onClick = {
+                                onConfigChange(config.copy(
+                                    deviceModelName = customModelName.ifBlank { "Custom Device" },
+                                    deviceModel = customModelId.ifBlank { "CUSTOM-${System.currentTimeMillis()}" },
+                                    screenWidth = customScreenW.toIntOrNull() ?: 0,
+                                    screenHeight = customScreenH.toIntOrNull() ?: 0,
+                                    pixelDensity = customDensity.toFloatOrNull() ?: 0f,
+                                    isCustomDevice = true
+                                ))
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            enabled = customModelName.isNotBlank()
+                        ) {
+                            Icon(
+                                Icons.Outlined.Save,
+                                null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(Strings.deviceCustomApply)
+                        }
+
+                        Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
+                    }
+                }
+
+                SettingsSwitch(
+                    title = Strings.deviceCustomUA,
+                    subtitle = Strings.deviceCustomUAHint,
+                    checked = showCustomUA || !config.customUserAgent.isNullOrBlank(),
+                    onCheckedChange = {
+                        showCustomUA = it
+                        if (!it) onConfigChange(config.copy(customUserAgent = null))
+                    }
+                )
+
+                AnimatedVisibility(
+                    visible = showCustomUA || !config.customUserAgent.isNullOrBlank(),
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
+                    PremiumTextField(
+                        value = config.customUserAgent ?: "",
+                        onValueChange = {
+                            onConfigChange(config.copy(customUserAgent = it.ifBlank { null }))
+                        },
+                        label = { Text("User-Agent") },
+                        placeholder = { Text("Mozilla/5.0 ...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = WtaSpacing.RowHorizontal)
+                            .padding(top = WtaSpacing.ContentGap),
+                        singleLine = false,
+                        minLines = 2,
+                        maxLines = 4
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
             }
         }
-    }
-}
-
-@Composable
-private fun InfoChip(text: String) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-        shape = RoundedCornerShape(6.dp)
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }

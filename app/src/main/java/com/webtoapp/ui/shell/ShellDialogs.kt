@@ -109,13 +109,22 @@ fun ShellAnnouncementDialog(
             com.webtoapp.data.model.AnnouncementTemplateType.MINIMAL
         },
         requireConfirmation = config.announcementRequireConfirmation,
-        allowNeverShow = config.announcementAllowNeverShow
+        allowNeverShow = config.announcementAllowNeverShow,
+        showIcon = config.announcementShowIcon
     )
+
+    val customIconBitmap = if (config.announcementHasCustomIcon) {
+        try {
+            val bytes = com.webtoapp.core.crypto.AssetDecryptor(context).loadAsset("announcement_icon.png")
+            android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        } catch (e: Exception) { null }
+    } else null
 
     com.webtoapp.ui.components.announcement.AnnouncementDialog(
         config = com.webtoapp.ui.components.announcement.AnnouncementConfig(
             announcement = shellAnnouncement,
-            template = shellAnnouncement.template.toUiTemplate()
+            template = shellAnnouncement.template.toUiTemplate(),
+            customIconBitmap = customIconBitmap
         ),
         onDismiss = {
             onDismiss()

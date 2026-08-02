@@ -2393,6 +2393,10 @@ object Strings {
     val announcementStyleAccentDesc: String get() = StringsC.announcementStyleAccentDesc
     val announcementStyleDark: String get() = StringsC.announcementStyleDark
     val announcementStyleDarkDesc: String get() = StringsC.announcementStyleDarkDesc
+    val announcementShowIcon: String get() = StringsC.announcementShowIcon
+    val announcementShowIconHint: String get() = StringsC.announcementShowIconHint
+    val announcementCustomIcon: String get() = StringsC.announcementCustomIcon
+    val announcementRemoveCustomIcon: String get() = StringsC.announcementRemoveCustomIcon
     val langEnglish: String get() = StringsC.langEnglish
     val langJapanese: String get() = StringsC.langJapanese
     val langArabic: String get() = StringsC.langArabic
@@ -34480,29 +34484,29 @@ object StringsC {
     }
 
     val announcementStyleClean: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "简洁"
-        AppLanguage.ENGLISH -> "Clean"
-        AppLanguage.ARABIC -> "نظيف"
-        AppLanguage.PORTUGUESE -> "Limpo"
-        AppLanguage.SPANISH -> "Limpio"
-        AppLanguage.FRENCH -> "Épuré"
-        AppLanguage.GERMAN -> "Klar"
-        AppLanguage.RUSSIAN -> "Чистый"
-        AppLanguage.JAPANESE -> "クリーン"
-        AppLanguage.KOREAN -> "깔끔함"
+        AppLanguage.CHINESE -> "浅色"
+        AppLanguage.ENGLISH -> "Light"
+        AppLanguage.ARABIC -> "فاتح"
+        AppLanguage.PORTUGUESE -> "Claro"
+        AppLanguage.SPANISH -> "Claro"
+        AppLanguage.FRENCH -> "Clair"
+        AppLanguage.GERMAN -> "Hell"
+        AppLanguage.RUSSIAN -> "Светлый"
+        AppLanguage.JAPANESE -> "ライト"
+        AppLanguage.KOREAN -> "라이트"
     }
 
     val announcementStyleCleanDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "清晰、克制、适合常规提示"
-        AppLanguage.ENGLISH -> "Clear and restrained for routine notices"
-        AppLanguage.ARABIC -> "واضح ومقتصد للإشعارات العادية"
-        AppLanguage.PORTUGUESE -> "Claro e contido para avisos rotineiros"
-        AppLanguage.SPANISH -> "Claro y contenido para avisos rutinarios"
-        AppLanguage.FRENCH -> "Clair et retenu pour les avis de routine"
-        AppLanguage.GERMAN -> "Klar und zurückhaltend für routinemäßige Hinweise"
-        AppLanguage.RUSSIAN -> "Чёткий и сдержанный для обычных уведомлений"
-        AppLanguage.JAPANESE -> "定例通知に適した明確で控えめなスタイル"
-        AppLanguage.KOREAN -> "일반 공지에 적합한 명확하고 절제된 스타일"
+        AppLanguage.CHINESE -> "清爽明亮，适合常规提示"
+        AppLanguage.ENGLISH -> "Bright and clean for routine notices"
+        AppLanguage.ARABIC -> "مشرق وواضح للإشعارات العادية"
+        AppLanguage.PORTUGUESE -> "Brilhante e limpo para avisos rotineiros"
+        AppLanguage.SPANISH -> "Brillante y limpio para avisos rutinarios"
+        AppLanguage.FRENCH -> "Lumineux et net pour les avis de routine"
+        AppLanguage.GERMAN -> "Hell und klar für routinemäßige Hinweise"
+        AppLanguage.RUSSIAN -> "Яркий и чистый для обычных уведомлений"
+        AppLanguage.JAPANESE -> "明るくクリーン、定例通知に最適"
+        AppLanguage.KOREAN -> "밝고 깔끔한 일반 공지 스타일"
     }
 
     val announcementStyleAccent: String get() = when (Strings.lang) {
@@ -34555,6 +34559,58 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Высокий контраст для важных оповещений"
         AppLanguage.JAPANESE -> "重要な通知に適した高コントラスト"
         AppLanguage.KOREAN -> "중요한 알림에 적합한 고대비"
+    }
+
+    val announcementShowIcon: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "显示图标"
+        AppLanguage.ENGLISH -> "Show Icon"
+        AppLanguage.ARABIC -> "إظهار الأيقونة"
+        AppLanguage.PORTUGUESE -> "Mostrar Ícone"
+        AppLanguage.SPANISH -> "Mostrar Icono"
+        AppLanguage.FRENCH -> "Afficher l'icône"
+        AppLanguage.GERMAN -> "Symbol anzeigen"
+        AppLanguage.RUSSIAN -> "Показать значок"
+        AppLanguage.JAPANESE -> "アイコンを表示"
+        AppLanguage.KOREAN -> "아이콘 표시"
+    }
+
+    val announcementShowIconHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "在弹窗左上角显示图标"
+        AppLanguage.ENGLISH -> "Show icon in the top-left of the popup"
+        AppLanguage.ARABIC -> "إظهار الأيقونة في أعلى يسار النافذة"
+        AppLanguage.PORTUGUESE -> "Mostrar ícone no canto superior esquerdo"
+        AppLanguage.SPANISH -> "Mostrar icono en la esquina superior izquierda"
+        AppLanguage.FRENCH -> "Afficher l'icône en haut à gauche"
+        AppLanguage.GERMAN -> "Symbol oben links im Popup anzeigen"
+        AppLanguage.RUSSIAN -> "Показать значок в левом верхнем углу"
+        AppLanguage.JAPANESE -> "ポップアップの左上にアイコンを表示"
+        AppLanguage.KOREAN -> "팝업 왼쪽 상단에 아이콘 표시"
+    }
+
+    val announcementCustomIcon: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自定义图标"
+        AppLanguage.ENGLISH -> "Custom Icon"
+        AppLanguage.ARABIC -> "أيقونة مخصصة"
+        AppLanguage.PORTUGUESE -> "Ícone Personalizado"
+        AppLanguage.SPANISH -> "Icono Personalizado"
+        AppLanguage.FRENCH -> "Icône personnalisée"
+        AppLanguage.GERMAN -> "Eigenes Symbol"
+        AppLanguage.RUSSIAN -> "Свой значок"
+        AppLanguage.JAPANESE -> "カスタムアイコン"
+        AppLanguage.KOREAN -> "커스텀 아이콘"
+    }
+
+    val announcementRemoveCustomIcon: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "移除自定义图标"
+        AppLanguage.ENGLISH -> "Remove Custom Icon"
+        AppLanguage.ARABIC -> "إزالة الأيقونة المخصصة"
+        AppLanguage.PORTUGUESE -> "Remover Ícone Personalizado"
+        AppLanguage.SPANISH -> "Eliminar Icono Personalizado"
+        AppLanguage.FRENCH -> "Supprimer l'icône personnalisée"
+        AppLanguage.GERMAN -> "Eigenes Symbol entfernen"
+        AppLanguage.RUSSIAN -> "Удалить свой значок"
+        AppLanguage.JAPANESE -> "カスタムアイコンを削除"
+        AppLanguage.KOREAN -> "커스텀 아이콘 제거"
     }
 
     val langEnglish: String get() = when (Strings.lang) {

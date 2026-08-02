@@ -24,9 +24,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import com.webtoapp.core.autostart.AutoStartManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AutoStartConfig
-import com.webtoapp.ui.design.WtaDivider
-import com.webtoapp.ui.design.WtaFeatureCard
-import com.webtoapp.ui.design.WtaFeatureCardHeader
+import com.webtoapp.ui.design.WtaSettingCard
+import com.webtoapp.ui.design.WtaToggleRow
+import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaSpacing
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,7 +37,6 @@ fun AutoStartCard(
 ) {
     val context = LocalContext.current
 
-    var expanded by remember { mutableStateOf(config != null && (config.bootStartEnabled || config.scheduledStartEnabled)) }
     var bootStartEnabled by remember(config) { mutableStateOf(config?.bootStartEnabled ?: false) }
     var scheduledStartEnabled by remember(config) { mutableStateOf(config?.scheduledStartEnabled ?: false) }
     var scheduledTime by remember(config) { mutableStateOf(config?.scheduledTime ?: "08:00") }
@@ -111,42 +110,40 @@ fun AutoStartCard(
     }
 
     val isEnabled = bootStartEnabled || scheduledStartEnabled
-    WtaFeatureCard(modifier = Modifier) {
-        WtaFeatureCardHeader(
+
+    WtaSettingCard {
+        WtaToggleRow(
             icon = Icons.Outlined.RocketLaunch,
             title = Strings.autoStartSettings,
-            subtitle = if (!isEnabled) Strings.notEnabled else null,
-            enabled = isEnabled,
-            onClick = { expanded = !expanded },
-            trailing = {
-                Icon(
-                    imageVector = if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
-                    contentDescription = null
-                )
+            checked = isEnabled,
+            onCheckedChange = { checked ->
+                if (checked) {
+                    bootStartEnabled = true
+                } else {
+                    bootStartEnabled = false
+                    scheduledStartEnabled = false
+                }
+                updateConfig()
             }
         )
 
-        AnimatedVisibility(visible = expanded) {
-            Column(modifier = Modifier.padding(top = WtaSpacing.Large)) {
-                WtaDivider()
-                Spacer(modifier = Modifier.height(WtaSpacing.Large))
+        AnimatedVisibility(visible = isEnabled) {
+            Column {
+                WtaSectionDivider()
 
-                Row(
+                Column(modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal)) {
+                    Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
+
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                            Text(
-                                Strings.bootAutoStart,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                Strings.bootAutoStartHint,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            Strings.bootAutoStart,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(weight = 1f, fill = true)
+                        )
                         WtaSwitch(
                             checked = bootStartEnabled,
                             onCheckedChange = {
@@ -185,26 +182,20 @@ fun AutoStartCard(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
                     HorizontalDivider()
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                            Text(
-                                Strings.scheduledAutoStart,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                Strings.scheduledAutoStartHint,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            Strings.scheduledAutoStart,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(weight = 1f, fill = true)
+                        )
                         WtaSwitch(
                             checked = scheduledStartEnabled,
                             onCheckedChange = {
@@ -282,28 +273,22 @@ fun AutoStartCard(
                             }
 
                             nextTriggerDisplay?.let { display ->
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                                    shape = RoundedCornerShape(8.dp)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Row(
-                                        modifier = Modifier.padding(12.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            Icons.Outlined.Alarm,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp),
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            "${Strings.nextLaunchTime}: $display",
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                    }
+                                    Icon(
+                                        Icons.Outlined.Alarm,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        "${Strings.nextLaunchTime}: $display",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
                                 }
                             }
                         }
@@ -322,7 +307,6 @@ fun AutoStartCard(
                                         try {
                                             context.startActivity(oemAutoStartIntent)
                                         } catch (e: Exception) {
-
                                             try {
                                                 val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                                                     data = Uri.parse("package:${context.packageName}")
@@ -333,7 +317,7 @@ fun AutoStartCard(
                                     }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(12.dp),
+                                    modifier = Modifier.padding(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -343,13 +327,12 @@ fun AutoStartCard(
                                         tint = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            Strings.oemAutoStartHint.replace("%s", oemBrandName),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
-                                    }
+                                    Text(
+                                        Strings.oemAutoStartHint.replace("%s", oemBrandName),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.weight(1f)
+                                    )
                                     Icon(
                                         Icons.Outlined.NavigateNext,
                                         contentDescription = null,
@@ -358,7 +341,7 @@ fun AutoStartCard(
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
                         }
 
                         if (!canScheduleExact && scheduledStartEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -377,7 +360,7 @@ fun AutoStartCard(
                                     }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(12.dp),
+                                    modifier = Modifier.padding(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -390,9 +373,9 @@ fun AutoStartCard(
                                     Text(
                                         Strings.exactAlarmPermissionHint,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        modifier = Modifier.weight(1f)
                                     )
-                                    Spacer(modifier = Modifier.weight(1f))
                                     Icon(
                                         Icons.Outlined.NavigateNext,
                                         contentDescription = null,
@@ -401,7 +384,7 @@ fun AutoStartCard(
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
                         }
 
                         if (!ignoringBatteryOpt) {
@@ -417,7 +400,6 @@ fun AutoStartCard(
                                             }
                                             context.startActivity(intent)
                                         } catch (e: Exception) {
-
                                             try {
                                                 context.startActivity(Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS))
                                             } catch (_: Exception) { }
@@ -425,7 +407,7 @@ fun AutoStartCard(
                                     }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(12.dp),
+                                    modifier = Modifier.padding(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Icon(
@@ -438,9 +420,9 @@ fun AutoStartCard(
                                     Text(
                                         Strings.batteryOptimizationHint,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        modifier = Modifier.weight(1f)
                                     )
-                                    Spacer(modifier = Modifier.weight(1f))
                                     Icon(
                                         Icons.Outlined.NavigateNext,
                                         contentDescription = null,
@@ -449,61 +431,14 @@ fun AutoStartCard(
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-
-                        if (canScheduleExact && ignoringBatteryOpt) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Outlined.CheckCircle,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = MaterialTheme.colorScheme.primary
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        Strings.autoStartPermissionReady,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(6.dp))
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Icon(
-                                Icons.Outlined.Info,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                Strings.autoStartNote,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
                 }
             }
+        }
     }
 
     if (showTimePicker) {

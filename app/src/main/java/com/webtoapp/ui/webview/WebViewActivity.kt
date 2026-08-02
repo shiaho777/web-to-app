@@ -3367,7 +3367,10 @@ fun WebViewScreen(
 com.webtoapp.ui.components.announcement.AnnouncementDialog(
             config = com.webtoapp.ui.components.announcement.AnnouncementConfig(
                 announcement = ann,
-                template = ann.template.toUiTemplate()
+                template = ann.template.toUiTemplate(),
+                customIconBitmap = ann.customIconPath?.let { p ->
+                    try { android.graphics.BitmapFactory.decodeFile(p) } catch (e: Exception) { null }
+                }
             ),
             onDismiss = {
                 showAnnouncementDialog = false
