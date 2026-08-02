@@ -61,7 +61,7 @@ A quick scan of what's in the box. Each links to the detailed feature map below.
 | **Local runtimes** | Native Node.js 18.20, PHP 8.4 + Composer 2.10, Python 3.14, official Go 1.26, WordPress 7.x over SQLite |
 | **Extensions** | Built-in modules, userscripts with `GM_*`, MV3 Chrome extensions, live Chrome Web Store search |
 | **APK/AAB output** | On-device V1/V2/V3 signing, Google Play AAB export with targetSdk rewrite, keystore management |
-| **Agent** | Prompt-driven generation of web apps, modules, userscripts, and runtime projects; auto-retry on 429/5xx |
+| **Agent** | Full-app automation via 40+ tools: generate, build, export, manage ports/engines/runtimes, clone apps, ad-block rules, and more; auto-retry on 429/5xx |
 | **Host languages** | **10 UI languages** — 中文 · English · العربية · Português · Español · Français · Deutsch · Русский · 日本語 · 한국어 (Arabic RTL) |
 
 ---
@@ -137,7 +137,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **MV3 Chrome extension runtime** for manifest content scripts in isolated or main worlds, with `chrome.*` polyfills for runtime, storage, tabs, scripting, and declarative network-request parsing.
 - **In-app Chrome Web Store search** — browse and install browser extensions by keyword (or paste a store URL / extension ID), with offline fallback to manual import.
 - **Export codes** (`WTA1:` gzip + Base64) and QR sharing via ZXing.
-- **Agent** skills to generate modules, userscripts, MV3 extensions, front-end apps, and local runtime projects, with automatic retry/backoff on 429/5xx and plan-mode exit that waits for user approval.
+- **Agent** — a tool-calling assistant with 40+ built-in tools covering the entire app surface: create/edit/build/export apps, manage ports and browser engines, install/clear runtimes, ad-block hosts rules, usage stats, app cloning, batch import, Play policy checks, and module development. Plan mode waits for user approval; automatic retry/backoff on 429/5xx.
 
 </details>
 

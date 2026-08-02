@@ -1,15 +1,25 @@
 # Agent
 
-A prompt-driven coding assistant inside the app. Open it from [⋮ → Agent](/guide/main-screen/more).
+A tool-calling assistant inside the app that can operate the entire WebToApp surface. Open it from [⋮ → Agent](/guide/main-screen/more).
 
-## What it generates
+## What it can do
 
-Web apps, extension modules, userscripts, MV3 Chrome extensions, and local runtime projects.
+Beyond generating web apps, extension modules, userscripts, MV3 Chrome extensions, and local runtime projects, the Agent can directly perform actions across the app:
+
+- **App lifecycle** — create, edit, duplicate, delete, build APK/AAB, export, share, create shortcuts, move to categories.
+- **Ports & engines** — scan/kill ports, check/select/delete browser engines (WebView, GeckoView).
+- **Runtimes** — check status, install, and clear caches for Node.js, PHP, Python, Go, WordPress, and the Linux environment.
+- **Ad-block** — view rule counts and sources, import/remove/enable/disable hosts subscriptions.
+- **Stats & health** — usage statistics, URL health checks.
+- **App modifier** — list installed apps, clone/rebrand apps, batch import from text, export templates.
+- **Build environment & compliance** — initialize the Linux build environment, install components, run Google Play policy checks.
+- **Modules** — list, create, and update extension modules.
+- **Files** — read, write, edit, delete, list, glob, and grep project files.
 
 ## Features
 
 - **Sessions** — each conversation has its own title and history.
-- **Skills** — built-in skills guide generation: `debug`, `explain`, `optimize`, `refactor`, `i18n`, `imagery`, plus stack-specific skills (`react-app`, `nodejs-app`, `php-app`, `python-app`, `go-app`, `vue-app`, `wordpress-app`, `html-app`, `multi-web-app`) and module skills (`module-js`, `module-style`, `module-userscript`, `module-chrome-mv3`). You can edit or add skills in the skill editor.
+- **40+ built-in tools** — grouped by domain (files, apps, lifecycle, ports/engine, hosts/runtime, stats/modifier/import, build env/Play, modules). Read-only tools run without confirmation; write tools ask for permission first.
 - **Plan mode** — proposes a plan and waits for your approval before applying changes (shown with a plan-mode badge).
 - **Resilience** — automatic retry with backoff on 429/5xx responses.
 
@@ -19,4 +29,4 @@ Agent uses the model and keys configured in [AI Settings](/guide/more-features/a
 
 ## Notes
 
-Agent produces *source*. To install a generated extension, save it through the [Extension Modules](/guide/more-features/extension-modules) flow.
+Agent produces *source* and performs *actions*. To install a generated extension, save it through the [Extension Modules](/guide/more-features/extension-modules) flow.

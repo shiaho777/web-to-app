@@ -1,22 +1,32 @@
 # Agent
 
-应用内的提示词驱动编码助手。从 [⋮ → Agent](/zh/guide/main-screen/more) 打开。
+应用内的工具调用型助手,可操控 WebToApp 的全部功能。从 [⋮ → Agent](/zh/guide/main-screen/more) 打开。
 
-## 能生成什么
+## 能做什么
 
-网页应用、扩展模块、油猴脚本、MV3 Chrome 扩展和本地运行时项目。
+除了生成网页应用、扩展模块、油猴脚本、MV3 Chrome 扩展和本地运行时项目之外,Agent 还能直接执行应用内的各种操作:
+
+- **应用生命周期** —— 创建、编辑、复制、删除、构建 APK/AAB、导出、分享、创建快捷方式、移动分类。
+- **端口与引擎** —— 扫描/终止端口,查看/切换/删除浏览器引擎(WebView、GeckoView)。
+- **运行时** —— 查看状态、安装、清理 Node.js、PHP、Python、Go、WordPress 和 Linux 环境的缓存。
+- **广告拦截** —— 查看规则数量和订阅源,导入/删除/启用/停用 hosts 订阅。
+- **统计与健康** —— 使用统计、URL 健康检查。
+- **应用修改器** —— 列出已安装应用、克隆/换壳应用、批量文本导入、导出模板。
+- **构建环境与合规** —— 初始化 Linux 构建环境、安装组件、运行 Google Play 合规检查。
+- **模块** —— 列出、创建、更新扩展模块。
+- **文件** —— 读取、写入、编辑、删除、列出、glob 和 grep 项目文件。
 
 ## 功能
 
 - **会话** —— 每段对话有自己的标题和历史。
-- **技能** —— 内置技能引导生成:`debug`、`explain`、`optimize`、`refactor`、`i18n`、`imagery`,加上各技术栈技能(`react-app`、`nodejs-app`、`php-app`、`python-app`、`go-app`、`vue-app`、`wordpress-app`、`html-app`、`multi-web-app`)和模块技能(`module-js`、`module-style`、`module-userscript`、`module-chrome-mv3`)。你可以在技能编辑器中编辑或添加技能。
+- **40+ 内置工具** —— 按功能域分组(文件、应用、生命周期、端口/引擎、hosts/运行时、统计/修改器/导入、构建环境/Play、模块)。只读工具无需确认直接执行;写入工具会先请求权限。
 - **计划模式** —— 先提出计划,等你批准后再应用改动(以计划模式徽标显示)。
 - **韧性** —— 遇到 429/5xx 响应自动退避重试。
 
 ## 配置
 
-Agent使用 [AI 设置](/zh/guide/more-features/ai-settings) 中配置的模型和密钥。
+Agent 使用 [AI 设置](/zh/guide/more-features/ai-settings) 中配置的模型和密钥。
 
 ## 说明
 
-Agent生成的是*源码*。要安装生成的扩展,请通过[扩展模块](/zh/guide/more-features/extension-modules)流程保存。
+Agent 既生成*源码*也执行*操作*。要安装生成的扩展,请通过[扩展模块](/zh/guide/more-features/extension-modules)流程保存。
