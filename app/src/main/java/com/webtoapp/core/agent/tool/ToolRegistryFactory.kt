@@ -17,6 +17,7 @@ import com.webtoapp.core.agent.tool.builtin.ListAppsTool
 import com.webtoapp.core.agent.tool.builtin.ListFilesTool
 import com.webtoapp.core.agent.tool.builtin.ListModulesTool
 import com.webtoapp.core.agent.tool.builtin.ReadFileTool
+import com.webtoapp.core.agent.tool.builtin.ReadAppFileTool
 import com.webtoapp.core.agent.tool.builtin.TodoUpdateTool
 import com.webtoapp.core.agent.tool.builtin.TodoWriteTool
 import com.webtoapp.core.agent.tool.builtin.UpdateAppTool
@@ -41,6 +42,7 @@ class ToolRegistryFactory(
 
     private fun baseTools(): List<Tool> = listOf(
         ReadFileTool(),
+        ReadAppFileTool(),
         WriteFileTool(),
         EditFileTool(),
         DeleteFileTool(),
