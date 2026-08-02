@@ -2926,9 +2926,6 @@ builtins.__import__ = _w2a_import
 
         if (entryName.startsWith("assets/sample_projects/")) return true
 
-        if (entryName.startsWith("assets/ai/")) return true
-        if (entryName == "assets/litellm_model_prices.json") return true
-
         if (entryName.startsWith("assets/extensions/")) return true
 
         if (entryName == "assets/omni.ja") return true

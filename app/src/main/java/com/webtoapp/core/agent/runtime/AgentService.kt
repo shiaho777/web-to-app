@@ -23,7 +23,6 @@ import com.webtoapp.core.agent.permission.PermissionMode
 import com.webtoapp.core.agent.permission.PermissionPrompter
 import com.webtoapp.core.agent.tool.ToolContext
 import com.webtoapp.core.agent.tool.ToolRegistry
-import com.webtoapp.core.ai.LiteLLMModelRegistry
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.MainActivity
 import kotlinx.coroutines.CoroutineScope
@@ -131,7 +130,7 @@ class AgentService : Service() {
 
     private fun resolveMaxOutputTokens(model: com.webtoapp.data.model.AiModel): Int {
         val fromRegistry = runCatching {
-            LiteLLMModelRegistry.getInstance(this).getMaxOutputTokens(model.id, model.provider)
+            com.webtoapp.core.ai.ModelsDevRepository.getInstance(this).getMaxOutputTokens(model.id, model.provider)
         }.getOrNull()
         return fromRegistry?.takeIf { it > 0 }?.coerceAtMost(MAX_OUTPUT_TOKENS_CEILING)
             ?: DEFAULT_MAX_OUTPUT_TOKENS

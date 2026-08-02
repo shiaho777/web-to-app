@@ -22,7 +22,7 @@ import java.io.IOException
 class AiApiClient(private val context: Context) {
 
     private val gson = com.webtoapp.util.GsonProvider.gson
-    private val registry by lazy { LiteLLMModelRegistry.getInstance(context) }
+    private val registry by lazy { ModelsDevRepository.getInstance(context) }
 
     private fun String.sanitize(): String = this.replace("\n", "").replace("\r", "").trim()
 
@@ -235,12 +235,12 @@ class AiApiClient(private val context: Context) {
             val info = registry.findModel(modelId, provider) ?: return@mapNotNull null
             AiModel(
                 id = modelId,
-                name = modelId,
+                name = info.name.ifBlank { modelId },
                 provider = provider,
-                capabilities = registry.getCapabilities(modelId, provider) ?: inferCapabilities(modelId, provider),
-                contextLength = info.maxInputTokens.takeIf { it > 0 } ?: inferContextLength(modelId, provider),
-                inputPrice = info.inputCostPerMillion.takeIf { it > 0.0 } ?: inferInputPrice(modelId, provider),
-                outputPrice = info.outputCostPerMillion
+                capabilities = info.capabilities.ifEmpty { inferCapabilities(modelId, provider) },
+                contextLength = info.contextLength.takeIf { it > 0 } ?: inferContextLength(modelId, provider),
+                inputPrice = info.inputPrice.takeIf { it > 0.0 } ?: inferInputPrice(modelId, provider),
+                outputPrice = info.outputPrice
             )
         }
     }
@@ -249,16 +249,16 @@ class AiApiClient(private val context: Context) {
         val info = registry.findModel(model.id, provider) ?: return model
         return model.copy(
             contextLength = if (model.contextLength <= 0 || model.contextLength == 8192)
-                info.maxInputTokens.takeIf { it > 0 } ?: model.contextLength
+                info.contextLength.takeIf { it > 0 } ?: model.contextLength
             else model.contextLength,
             inputPrice = if (model.inputPrice <= 0.0)
-                info.inputCostPerMillion.takeIf { it > 0.0 } ?: model.inputPrice
+                info.inputPrice.takeIf { it > 0.0 } ?: model.inputPrice
             else model.inputPrice,
             outputPrice = if (model.outputPrice <= 0.0)
-                info.outputCostPerMillion.takeIf { it > 0.0 } ?: model.outputPrice
+                info.outputPrice.takeIf { it > 0.0 } ?: model.outputPrice
             else model.outputPrice,
             capabilities = if (model.capabilities.size <= 1)
-                registry.getCapabilities(model.id, provider) ?: model.capabilities
+                info.capabilities.ifEmpty { model.capabilities }
             else model.capabilities
         )
     }
