@@ -22,6 +22,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicLong
 
 class AgentEngine(
     private val gateway: LlmGateway,
@@ -106,7 +109,10 @@ class AgentEngine(
                             maxTokens = input.maxTokens,
                             useTools = !isContinuation
                         )
-                    ).collect { ev ->
+                    ).collectWithIdleTimeout(
+                        idleTimeoutMs = STREAM_IDLE_TIMEOUT_MS,
+                        onTimeout = { retryableError = "LLM stream went idle for ${STREAM_IDLE_TIMEOUT_MS / 1000}s"; retryAfterMs = null }
+                    ) { ev ->
                         when (ev) {
                             is LlmEvent.Started -> Unit
                             is LlmEvent.TextDelta -> {
@@ -393,5 +399,54 @@ class AgentEngine(
         private const val TAG = "AgentEngine"
         private const val MAX_TOOL_RESULT_CHARS = 32_000
         private const val MAX_RATE_LIMIT_RETRIES = 5
+        // If the LLM stream emits nothing for this long, treat it as a stalled
+        // connection and retry (some OpenAI-compat endpoints open the SSE channel,
+        // send a partial response, then go silent without ever closing it).
+        private const val STREAM_IDLE_TIMEOUT_MS = 120_000L
     }
+}
+
+/**
+ * Collect [flow] but abort if it goes [idleTimeoutMs] without emitting any event.
+ * Some OpenAI-compatible SSE endpoints open the channel, send a partial response
+ * (e.g. the first reasoning chunk), then go silent without ever closing the
+ * connection — which would otherwise hang the agent loop for the full OkHttp
+ * read timeout (10 minutes). On idle timeout, [onTimeout] is invoked (typically
+ * to set a retryable error) and the flow collection is cancelled.
+ */
+private suspend fun <T> Flow<T>.collectWithIdleTimeout(
+    idleTimeoutMs: Long,
+    onTimeout: () -> Unit,
+    action: suspend (T) -> Unit
+) {
+    val lastEventAt = AtomicLong(System.currentTimeMillis())
+    coroutineScope {
+        // Watchdog: poll every second; if no event for idleTimeoutMs, cancel this scope
+        // (which cancels the collector below).
+        val watchdog = launch {
+            while (true) {
+                delay(1000)
+                val idle = System.currentTimeMillis() - lastEventAt.get()
+                if (idle >= idleTimeoutMs) {
+                    onTimeout()
+                    throw IdleStreamTimeout
+                }
+            }
+        }
+        try {
+            collect {
+                lastEventAt.set(System.currentTimeMillis())
+                action(it)
+            }
+        } catch (e: IdleStreamTimeout) {
+            // Expected — onTimeout already set the retryable error.
+        } finally {
+            watchdog.cancel()
+        }
+    }
+}
+
+/** Marker exception used to break out of a stalled stream collector. */
+private object IdleStreamTimeout : RuntimeException() {
+    override fun fillInStackTrace(): Throwable = this
 }

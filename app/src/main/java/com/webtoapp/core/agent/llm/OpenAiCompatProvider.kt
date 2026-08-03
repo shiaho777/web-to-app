@@ -115,6 +115,14 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                         true
                     }
                     if (!done) emitFinish(toolNames, toolArgsAccum, finishReason)
+                } catch (e: Exception) {
+                    // A SocketTimeoutException (OkHttp read timeout) or a premature connection
+                    // close lands here. Previously this was silently swallowed (only finally {
+                    // close() } ran), so the engine's collector saw the flow complete with no
+                    // Done/Error event and the turn hung. Surface it as a recoverable error so
+                    // the engine's retry path can kick in.
+                    AppLogger.w("OpenAiCompatProvider", "stream interrupted: ${e.message}")
+                    trySend(LlmEvent.Error("Stream interrupted: ${e.message}", recoverable = true))
                 } finally { runCatching { response.body?.close() }; close() }
             }
         })
