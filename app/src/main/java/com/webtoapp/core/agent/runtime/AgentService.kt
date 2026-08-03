@@ -175,37 +175,50 @@ class AgentService : Service() {
         acc: TurnAccumulator,
         ev: AgentEvent
     ) {
+        // Flush helper: writes the draft AND syncs _activeTurn so the UI can hide the
+        // draft from the history list (otherwise it renders twice: once as a saved
+        // bubble, once in the live StreamingBubble).
+        suspend fun flush(force: Boolean = false) {
+            val draft = acc.maybeFlushDraft(store, force)
+            if (draft != null) {
+                _activeTurn.value = TurnSnapshot(
+                    sessionId = sessionId,
+                    isRunning = true,
+                    draftMessage = draft
+                )
+            }
+        }
         when (ev) {
             is AgentEvent.TextDelta -> {
                 acc.applyTextDelta(ev.accumulated)
-                acc.maybeFlushDraft(store)
+                flush()
             }
             is AgentEvent.ThinkingDelta -> {
                 acc.applyThinkingDelta(ev.segmentId, ev.delta)
-                acc.maybeFlushDraft(store)
+                flush()
             }
             AgentEvent.ThinkingTurnEnded -> {
                 acc.freezeCurrentThinkingSegment()
-                acc.maybeFlushDraft(store)
+                flush()
             }
             is AgentEvent.ToolCallStarted -> {
                 acc.startTool(ev.toolCallId, ev.name)
-                acc.maybeFlushDraft(store)
+                flush()
             }
             is AgentEvent.ToolCallArgsDelta -> {
                 acc.appendToolArgs(ev.toolCallId, ev.delta)
             }
             is AgentEvent.ToolProgress -> {
                 acc.updateToolProgress(ev.toolCallId, ev.accumulated)
-                acc.maybeFlushDraft(store)
+                flush()
             }
             is AgentEvent.ToolExecuting -> {
                 acc.updateToolActivity(ev.toolCallId, ev.activity ?: ev.name)
-                acc.maybeFlushDraft(store)
+                flush()
             }
             is AgentEvent.ToolFinished -> {
                 acc.finishTool(ev.toolCallId, ev.name, ev.argumentsJson, ev.result)
-                acc.maybeFlushDraft(store, force = true)
+                flush(force = true)
             }
             is AgentEvent.FileChanged -> {
                 acc.recordProducedFile(ev.change.path)
@@ -466,12 +479,13 @@ private class TurnAccumulator(private val sessionId: String) {
      * Throttled draft upsert. Writes at most once per [FLUSH_INTERVAL_MS], unless
      * [force] is set (used for tool-finish boundaries and other durable events).
      */
-    suspend fun maybeFlushDraft(store: SessionStore, force: Boolean = false) {
+    suspend fun maybeFlushDraft(store: SessionStore, force: Boolean = false): AgentMessage? {
         val now = System.currentTimeMillis()
-        if (!force && now - lastFlushAt < FLUSH_INTERVAL_MS) return
+        if (!force && now - lastFlushAt < FLUSH_INTERVAL_MS) return null
         lastFlushAt = now
-        val draft = buildDraftMessage() ?: return
+        val draft = buildDraftMessage() ?: return null
         store.upsertAssistantDraft(sessionId, draft)
+        return draft
     }
 
     private fun buildDraftMessage(): AgentMessage? {
