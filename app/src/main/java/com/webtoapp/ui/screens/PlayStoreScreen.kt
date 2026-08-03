@@ -738,29 +738,6 @@ private fun ReportSummaryCard(report: PlayPolicyChecker.Report) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            if (!report.isClean) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    if (report.blockerCount > 0) {
-                        StatusChip(
-                            label = "${Strings.playStoreSeverityBlocker} ${report.blockerCount}",
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                    if (report.warningCount > 0) {
-                        StatusChip(
-                            label = "${Strings.playStoreSeverityWarning} ${report.warningCount}",
-                            color = Color(0xFFED6C02)
-                        )
-                    }
-                    if (report.infoCount > 0) {
-                        StatusChip(
-                            label = "${Strings.playStoreSeverityInfo} ${report.infoCount}",
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
         }
     }
 }
@@ -832,7 +809,7 @@ private fun ViolationCard(violation: PlayPolicyChecker.Violation) {
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
             Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = Strings.playStoreFixHintLabel,
