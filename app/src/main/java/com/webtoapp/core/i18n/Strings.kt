@@ -1596,6 +1596,9 @@ object Strings {
     val agentContinuing: String get() = StringsB.agentContinuing
     val agentRateLimitRetry: (Int, Int, Long) -> String get() = StringsB.agentRateLimitRetry
     val agentFileSaved: String get() = StringsB.agentFileSaved
+    val agentFileOpen: String get() = StringsB.agentFileOpen
+    val agentFileCopyPath: String get() = StringsB.agentFileCopyPath
+    val agentPathCopied: String get() = StringsB.agentPathCopied
     val lrcGenerationDesc: String get() = StringsB.lrcGenerationDesc
     val translationDesc: String get() = StringsB.translationDesc
     val generalChatDesc: String get() = StringsB.generalChatDesc
@@ -24838,6 +24841,42 @@ object StringsB {
         AppLanguage.RUSSIAN -> "%s сохранён"
         AppLanguage.JAPANESE -> "%sを保存しました"
         AppLanguage.KOREAN -> "%s 저장됨"
+    }
+    val agentFileOpen: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "打开"
+        AppLanguage.ENGLISH -> "Open"
+        AppLanguage.ARABIC -> "فتح"
+        AppLanguage.PORTUGUESE -> "Abrir"
+        AppLanguage.SPANISH -> "Abrir"
+        AppLanguage.FRENCH -> "Ouvrir"
+        AppLanguage.GERMAN -> "Öffnen"
+        AppLanguage.RUSSIAN -> "Открыть"
+        AppLanguage.JAPANESE -> "開く"
+        AppLanguage.KOREAN -> "열기"
+    }
+    val agentFileCopyPath: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "复制路径"
+        AppLanguage.ENGLISH -> "Copy path"
+        AppLanguage.ARABIC -> "نسخ المسار"
+        AppLanguage.PORTUGUESE -> "Copiar caminho"
+        AppLanguage.SPANISH -> "Copiar ruta"
+        AppLanguage.FRENCH -> "Copier le chemin"
+        AppLanguage.GERMAN -> "Pfad kopieren"
+        AppLanguage.RUSSIAN -> "Копировать путь"
+        AppLanguage.JAPANESE -> "パスをコピー"
+        AppLanguage.KOREAN -> "경로 복사"
+    }
+    val agentPathCopied: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "路径已复制"
+        AppLanguage.ENGLISH -> "Path copied"
+        AppLanguage.ARABIC -> "تم نسخ المسار"
+        AppLanguage.PORTUGUESE -> "Caminho copiado"
+        AppLanguage.SPANISH -> "Ruta copiada"
+        AppLanguage.FRENCH -> "Chemin copié"
+        AppLanguage.GERMAN -> "Pfad kopiert"
+        AppLanguage.RUSSIAN -> "Путь скопирован"
+        AppLanguage.JAPANESE -> "パスをコピーしました"
+        AppLanguage.KOREAN -> "경로가 복사됨"
     }
 
     val lrcGenerationDesc: String get() = when (Strings.lang) {

@@ -24,22 +24,33 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.Code
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.StarOutline
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import com.webtoapp.core.agent.session.AgentSession
 import com.webtoapp.core.i18n.Strings
@@ -68,7 +79,8 @@ fun AgentDrawer(
     onNewSession: () -> Unit,
     onDeleteSession: (String) -> Unit,
     onPinSession: (String, Boolean) -> Unit,
-    onPickFile: (String) -> Unit
+    onPickFile: (String) -> Unit,
+    onCopyFilePath: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -119,7 +131,8 @@ fun AgentDrawer(
                 files = state.projectFiles,
                 builtApks = state.builtApks,
                 onPick = onPickFile,
-                onPickApk = { apkName -> onPickFile("apk:$apkName") }
+                onPickApk = { apkName -> onPickFile("apk:$apkName") },
+                onCopyPath = onCopyFilePath
             )
         }
     }
@@ -272,7 +285,8 @@ private fun FilesTab(
     files: List<com.webtoapp.core.agent.files.ProjectFileManager.FileInfo>,
     builtApks: List<com.webtoapp.core.agent.tool.BuiltApkInfo>,
     onPick: (String) -> Unit,
-    onPickApk: (String) -> Unit
+    onPickApk: (String) -> Unit,
+    onCopyPath: (String) -> Unit
 ) {
     if (files.isEmpty() && builtApks.isEmpty()) {
         WtaFullEmptyState(
@@ -294,26 +308,68 @@ private fun FilesTab(
                 )
             }
             items(builtApks, key = { "apk_${it.appId}_${it.apkName}" }) { apk ->
-                WtaSettingRow(
+                FileEntryRow(
                     title = apk.apkName,
                     subtitle = "${apk.formatSize()} · ${apk.buildMode}",
                     icon = Icons.Outlined.Android,
-                    onClick = { onPickApk(apk.apkName) }
+                    onOpen = { onPickApk(apk.apkName) },
+                    onCopyPath = { onCopyPath(apk.apkPath) }
                 )
                 WtaSectionDivider()
             }
             item(key = "__apk_spacer__") { Spacer(Modifier.height(WtaSpacing.Small)) }
         }
         items(files, key = { it.relativePath }) { f ->
-            WtaSettingRow(
+            FileEntryRow(
                 title = f.relativePath,
                 subtitle = "${f.formatSize()} · ${f.formatTime()}",
                 icon = Icons.Outlined.Code,
-                onClick = { onPick(f.relativePath) }
+                onOpen = { onPick(f.relativePath) },
+                onCopyPath = { onCopyPath(f.relativePath) }
             )
             WtaSectionDivider()
         }
     }
+}
+
+@Composable
+private fun FileEntryRow(
+    title: String,
+    subtitle: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onOpen: () -> Unit,
+    onCopyPath: () -> Unit
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+    WtaSettingRow(
+        title = title,
+        subtitle = subtitle,
+        icon = icon,
+        onClick = onOpen,
+        trailing = {
+            Box {
+                IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(WtaSize.TouchTarget)) {
+                    Icon(
+                        imageVector = Icons.Outlined.MoreVert,
+                        contentDescription = Strings.more,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text(Strings.agentFileOpen) },
+                        leadingIcon = { Icon(Icons.Outlined.OpenInNew, contentDescription = null) },
+                        onClick = { menuOpen = false; onOpen() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(Strings.agentFileCopyPath) },
+                        leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
+                        onClick = { menuOpen = false; onCopyPath() }
+                    )
+                }
+            }
+        }
+    )
 }
 
 private fun filterSessions(all: List<AgentSession>, query: String): List<AgentSession> {

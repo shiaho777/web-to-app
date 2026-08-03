@@ -223,6 +223,11 @@ fun AgentScreen(
                         onPickFile = { path ->
                             scope.launch { drawerState.close() }
                             vm.selectFile(path)
+                            vm.openPreview()
+                        },
+                        onCopyFilePath = { path ->
+                            clipboard.setText(AnnotatedString(path))
+                            scope.launch { snackbar.showSnackbar(Strings.agentPathCopied) }
                         }
                     )
                 }
