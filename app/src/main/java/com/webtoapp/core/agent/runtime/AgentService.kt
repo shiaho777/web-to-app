@@ -276,11 +276,15 @@ class AgentService : Service() {
     }
 
     private fun resolveMaxOutputTokens(model: com.webtoapp.data.model.AiModel): Int {
+        // Use the model's context length as the effective ceiling — this is the closest
+        // thing to "unlimited" output: the model can produce tokens until it fills its
+        // context window. For models without a registry entry the context length acts as
+        // a generous fallback, and for very large contexts (1M+) the API will clip it.
         val fromRegistry = runCatching {
             com.webtoapp.core.ai.ModelsDevRepository.getInstance(this).getMaxOutputTokens(model.id, model.provider)
         }.getOrNull()
-        return fromRegistry?.takeIf { it > 0 }?.coerceAtMost(MAX_OUTPUT_TOKENS_CEILING)
-            ?: DEFAULT_MAX_OUTPUT_TOKENS
+        val ceiling = model.contextLength.coerceIn(8192, 2_000_000)
+        return fromRegistry?.takeIf { it > 0 }?.coerceAtMost(ceiling) ?: ceiling
     }
 
     fun cancel() {
@@ -371,8 +375,6 @@ class AgentService : Service() {
         private const val CHANNEL_ID = "aicoding_agent_v3"
         private const val NOTIFICATION_ID = 1201
         private const val WAKE_LOCK_TIMEOUT_MS = 20L * 60 * 1000
-        private const val DEFAULT_MAX_OUTPUT_TOKENS = 8192
-        private const val MAX_OUTPUT_TOKENS_CEILING = 32768
     }
 }
 
