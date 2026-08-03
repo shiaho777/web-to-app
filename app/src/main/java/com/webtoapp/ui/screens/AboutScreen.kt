@@ -28,12 +28,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.Sync
@@ -312,8 +314,10 @@ private fun ContactGrid() {
     val qqCopied = qqCopiedToast()
     val authorLabel = authorLabel()
     val contactTitle = contactSectionTitle()
+    val docsLabel = docsLabel()
+    val discordCommunityLabel = discordCommunityLabel()
 
-    val entries = remember(groupWord, qqCopied, authorLabel) {
+    val entries = remember(groupWord, qqCopied, authorLabel, docsLabel, discordCommunityLabel) {
         listOf(
             ContactEntry(
                 icon = Icons.Outlined.Code,
@@ -322,10 +326,22 @@ private fun ContactGrid() {
                 action = ContactAction.OpenUrl("https://github.com/shiaho777/web-to-app")
             ),
             ContactEntry(
+                icon = Icons.Outlined.MenuBook,
+                label = docsLabel,
+                value = "shiaho777.github.io",
+                action = ContactAction.OpenUrl("https://shiaho777.github.io/web-to-app/")
+            ),
+            ContactEntry(
                 icon = Icons.Outlined.Send,
                 label = "Telegram",
                 value = "@webtoapp777",
                 action = ContactAction.OpenUrl("https://t.me/webtoapp777")
+            ),
+            ContactEntry(
+                icon = Icons.Outlined.Chat,
+                label = "Discord",
+                value = discordCommunityLabel,
+                action = ContactAction.OpenUrl("https://8efik.no-mad-sub.one/link/7bb7XI5t4ZVdzyy5?clash=3")
             ),
             ContactEntry(
                 icon = Icons.Outlined.Tag,
@@ -723,6 +739,34 @@ private fun contactSectionTitle(): String = when (Strings.currentLanguage.value)
     AppLanguage.RUSSIAN -> "Get in touch"
     AppLanguage.JAPANESE -> "Get in touch"
     AppLanguage.KOREAN -> "Get in touch"
+}
+
+@Composable
+private fun docsLabel(): String = when (Strings.currentLanguage.value) {
+    AppLanguage.CHINESE -> "官方文档"
+    AppLanguage.ENGLISH -> "Docs"
+    AppLanguage.ARABIC -> "الوثائق"
+    AppLanguage.PORTUGUESE -> "Docs"
+    AppLanguage.SPANISH -> "Docs"
+    AppLanguage.FRENCH -> "Docs"
+    AppLanguage.GERMAN -> "Doku"
+    AppLanguage.RUSSIAN -> "Документация"
+    AppLanguage.JAPANESE -> "ドキュメント"
+    AppLanguage.KOREAN -> "문서"
+}
+
+@Composable
+private fun discordCommunityLabel(): String = when (Strings.currentLanguage.value) {
+    AppLanguage.CHINESE -> "交流群"
+    AppLanguage.ENGLISH -> "Community"
+    AppLanguage.ARABIC -> "المجتمع"
+    AppLanguage.PORTUGUESE -> "Community"
+    AppLanguage.SPANISH -> "Community"
+    AppLanguage.FRENCH -> "Community"
+    AppLanguage.GERMAN -> "Community"
+    AppLanguage.RUSSIAN -> "Сообщество"
+    AppLanguage.JAPANESE -> "コミュニティ"
+    AppLanguage.KOREAN -> "커뮤니티"
 }
 
 @Composable
