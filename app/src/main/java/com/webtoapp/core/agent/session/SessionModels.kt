@@ -27,7 +27,28 @@ data class SessionConfig(
     val customRules: List<String> = emptyList(),
 
     val contextAppIds: List<Long> = emptyList(),
-    val contextModuleIds: List<String> = emptyList()
+    val contextModuleIds: List<String> = emptyList(),
+
+    val builtApks: List<PersistedApk> = emptyList()
+) {
+    /** Null-safe: Gson bypasses the constructor so [builtApks] can be null for old sessions. */
+    val builtApksSafe: List<PersistedApk>
+        get() = @Suppress("USELESS_CAST") (builtApks as? List<PersistedApk>) ?: emptyList()
+}
+
+/**
+ * A build artifact (APK) produced during a session, persisted so it survives
+ * app restarts. Mirrors [com.webtoapp.core.agent.tool.BuiltApkInfo] but lives
+ * in the session layer to avoid a dependency on the tool package.
+ */
+data class PersistedApk(
+    val appId: Long,
+    val apkName: String,
+    val apkPath: String,
+    val sizeBytes: Long,
+    val buildMode: String,
+    val packageName: String? = null,
+    val versionName: String? = null
 )
 
 data class AgentMessage(

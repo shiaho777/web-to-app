@@ -28,8 +28,10 @@ import com.webtoapp.core.agent.session.RecordedToolCall
 import com.webtoapp.core.agent.session.SessionConfig
 import com.webtoapp.core.agent.session.SessionStore
 import com.webtoapp.core.agent.session.UserAttachment
+import com.webtoapp.core.agent.session.PersistedApk
 import com.webtoapp.core.agent.todo.TodoManager
 import com.webtoapp.core.agent.tool.ToolContext
+import com.webtoapp.core.agent.tool.BuiltApkInfo
 import com.webtoapp.core.agent.tool.ToolRegistryFactory
 import com.webtoapp.core.agent.prompt.SystemPromptBuilder
 import com.webtoapp.core.i18n.Strings
@@ -1546,6 +1548,22 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     val rest = state.builtApks.filterNot { it.appId == ev.info.appId }
                     state.copy(builtApks = rest + ev.info)
                 }
+                // Persist to the session so it survives app restarts.
+                val sid0 = sid
+                viewModelScope.launch {
+                    val session = sessionStore.get(sid0) ?: return@launch
+                    val existing = session.config.builtApks.filterNot { it.appId == ev.info.appId }
+                    val updated = existing + PersistedApk(
+                        appId = ev.info.appId,
+                        apkName = ev.info.apkName,
+                        apkPath = ev.info.apkPath,
+                        sizeBytes = ev.info.sizeBytes,
+                        buildMode = ev.info.buildMode,
+                        packageName = ev.info.packageName,
+                        versionName = ev.info.versionName
+                    )
+                    sessionStore.updateConfig(sid0, session.config.copy(builtApks = updated))
+                }
             }
             is AgentEvent.PermissionDenied -> {
                 _ui.update { it.copy(info = Strings.agentToolDenied.format(ev.name)) }
@@ -1774,6 +1792,22 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         if (sessionChanged) {
             todoManager.clear()
         }
+        // Restore persisted built APKs when switching into this session.
+        val restoredApks = if (sessionChanged) {
+            session.config.builtApksSafe.map { p ->
+                BuiltApkInfo(
+                    appId = p.appId,
+                    apkName = p.apkName,
+                    apkPath = p.apkPath,
+                    sizeBytes = p.sizeBytes,
+                    buildMode = p.buildMode,
+                    packageName = p.packageName,
+                    versionName = p.versionName
+                )
+            }
+        } else {
+            _ui.value.builtApks
+        }
         _ui.update {
             it.copy(
                 currentSession = session,
@@ -1782,7 +1816,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 projectFiles = files.listAll(session.id),
 
                 pendingChanges = if (sessionChanged) emptyList() else it.pendingChanges,
-                builtApks = if (sessionChanged) emptyList() else it.builtApks,
+                builtApks = restoredApks,
                 changesReviewExpanded = if (sessionChanged) false else it.changesReviewExpanded,
 
                 previewFilePath = if (sessionChanged) null else it.previewFilePath,
