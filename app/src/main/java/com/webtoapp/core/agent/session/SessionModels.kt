@@ -52,6 +52,14 @@ data class AgentMessage(
     val timestamp: Long = System.currentTimeMillis()
 ) {
     enum class Role { USER, ASSISTANT, SYSTEM }
+
+    /**
+     * Null-safe accessor: Gson bypasses the constructor when deserialising, so
+     * [thinkingSegments] can be null for messages loaded from older session JSON that
+     * predates this field. Treat that the same as an empty list.
+     */
+    val thinkingSegmentsSafe: List<ThinkingSegmentData>
+        get() = @Suppress("USELESS_CAST") (thinkingSegments as? List<ThinkingSegmentData>) ?: emptyList()
 }
 
 /**

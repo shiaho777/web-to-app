@@ -66,6 +66,7 @@ import androidx.compose.ui.unit.sp
 import com.google.gson.JsonParser
 import com.webtoapp.core.agent.session.AgentMessage
 import com.webtoapp.core.agent.session.RecordedToolCall
+import com.webtoapp.core.agent.session.ThinkingSegmentData
 import com.webtoapp.core.agent.session.UserAttachment
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.agent.ThinkingSegment
@@ -113,7 +114,11 @@ fun MessageBubble(
         // For assistant messages, thinking blocks are interleaved with prose/tools via
         // the timeline when structured segments exist; otherwise fall back to a single
         // top-of-bubble ThinkingBlock for legacy messages (pre-structured-thinking).
-        val hasStructuredThinking = !isUser && message.thinkingSegments.isNotEmpty()
+        // NOTE: thinkingSegments can be null for messages deserialised from older
+        // session JSON — Gson bypasses the constructor so the emptyList() default is
+        // lost. Treat null as empty.
+        val segments: List<ThinkingSegmentData> = message.thinkingSegmentsSafe
+        val hasStructuredThinking = !isUser && segments.isNotEmpty()
         if (!isUser && !hasStructuredThinking && !message.thinking.isNullOrBlank()) {
             ThinkingBlock(
                 content = message.thinking,
@@ -151,7 +156,7 @@ fun MessageBubble(
                 }
             } else {
                 val uiThinkingSegments = if (hasStructuredThinking) {
-                    message.thinkingSegments.map { seg ->
+                    segments.map { seg ->
                         ThinkingSegment(
                             id = seg.id,
                             content = seg.content,

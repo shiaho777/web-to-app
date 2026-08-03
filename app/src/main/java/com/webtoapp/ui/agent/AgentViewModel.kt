@@ -1357,9 +1357,10 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         streamThinkingSegments.clear()
         // Rebuild per-turn segments from the persisted structured field so the live
         // timeline can keep interleaving them with text/tools after a UI recreation.
-        if (draft.thinkingSegments.isNotEmpty()) {
+        val draftSegments = draft.thinkingSegmentsSafe
+        if (draftSegments.isNotEmpty()) {
             val now = System.currentTimeMillis()
-            draft.thinkingSegments.forEach { seg ->
+            draftSegments.forEach { seg ->
                 streamThinkingSegments += ThinkingSegment(
                     id = seg.id,
                     content = seg.content,
