@@ -1526,6 +1526,8 @@ object Strings {
     val agentThinkingTapToExpand: String get() = StringsB.agentThinkingTapToExpand
     val agentThinkingTapToCollapse: String get() = StringsB.agentThinkingTapToCollapse
     val agentMessageActionCopy: String get() = StringsB.agentMessageActionCopy
+    val agentMessageActionCopyOutput: String get() = StringsB.agentMessageActionCopyOutput
+    val agentMessageActionCopyAll: String get() = StringsB.agentMessageActionCopyAll
     val agentMessageActionEdit: String get() = StringsB.agentMessageActionEdit
     val agentMessageActionRegenerate: String get() = StringsB.agentMessageActionRegenerate
     val agentMessageActionDelete: String get() = StringsB.agentMessageActionDelete
@@ -23982,6 +23984,30 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Копировать"
         AppLanguage.JAPANESE -> "コピー"
         AppLanguage.KOREAN -> "복사"
+    }
+    val agentMessageActionCopyOutput: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "复制输出"
+        AppLanguage.ENGLISH -> "Copy output"
+        AppLanguage.ARABIC -> "نسخ المخرجات"
+        AppLanguage.PORTUGUESE -> "Copiar saída"
+        AppLanguage.SPANISH -> "Copiar salida"
+        AppLanguage.FRENCH -> "Copier la sortie"
+        AppLanguage.GERMAN -> "Ausgabe kopieren"
+        AppLanguage.RUSSIAN -> "Копировать вывод"
+        AppLanguage.JAPANESE -> "出力をコピー"
+        AppLanguage.KOREAN -> "출력 복사"
+    }
+    val agentMessageActionCopyAll: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "复制全部(含思考与工具)"
+        AppLanguage.ENGLISH -> "Copy all (with thinking & tools)"
+        AppLanguage.ARABIC -> "نسخ الكل (مع التفكير والأدوات)"
+        AppLanguage.PORTUGUESE -> "Copiar tudo (com raciocínio e ferramentas)"
+        AppLanguage.SPANISH -> "Copiar todo (con razonamiento y herramientas)"
+        AppLanguage.FRENCH -> "Tout copier (avec réflexion et outils)"
+        AppLanguage.GERMAN -> "Alles kopieren (mit Denken & Werkzeugen)"
+        AppLanguage.RUSSIAN -> "Копировать всё (с размышлениями и инструментами)"
+        AppLanguage.JAPANESE -> "すべてコピー(思考・ツール含む)"
+        AppLanguage.KOREAN -> "전체 복사(사고 및 도구 포함)"
     }
     val agentMessageActionEdit: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "编辑并重发"

@@ -401,8 +401,11 @@ class AgentEngine(
         private const val MAX_RATE_LIMIT_RETRIES = 5
         // If the LLM stream emits nothing for this long, treat it as a stalled
         // connection and retry (some OpenAI-compat endpoints open the SSE channel,
-        // send a partial response, then go silent without ever closing it).
-        private const val STREAM_IDLE_TIMEOUT_MS = 120_000L
+        // send a partial response, then go silent without ever closing it). 90s is
+        // generous enough for slow reasoning models that pause between chunks, but
+        // short enough that a genuinely dead connection recovers in ~1.5 minutes
+        // instead of the 10-minute OkHttp readTimeout.
+        private const val STREAM_IDLE_TIMEOUT_MS = 90_000L
     }
 }
 

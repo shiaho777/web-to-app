@@ -79,6 +79,7 @@ import com.webtoapp.ui.agent.components.Composer
 import com.webtoapp.ui.agent.components.ContextPickerDialog
 import com.webtoapp.ui.agent.components.MaterialIconBadgeRound
 import com.webtoapp.ui.agent.components.MessageActions
+import com.webtoapp.ui.agent.components.formatMessageForCopy
 import com.webtoapp.ui.agent.components.MessageBubble
 import com.webtoapp.ui.agent.components.PermissionDialog
 import com.webtoapp.ui.agent.components.PreviewSheet
@@ -182,8 +183,9 @@ fun AgentScreen(
 
     val messageActions = remember(vm) {
         MessageActions(
-            onCopy = { msg ->
-                clipboard.setText(AnnotatedString(AgentViewModel.stripInlineMarkers(msg.content)))
+            onCopy = { msg, includeDetails ->
+                val text = formatMessageForCopy(msg, includeDetails)
+                clipboard.setText(AnnotatedString(text))
                 scope.launch { snackbar.showSnackbar(Strings.agentMessageCopied) }
             },
             onEdit = vm::startEditing,

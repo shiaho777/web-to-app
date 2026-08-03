@@ -69,6 +69,7 @@ import com.webtoapp.core.agent.session.RecordedToolCall
 import com.webtoapp.core.agent.session.ThinkingSegmentData
 import com.webtoapp.core.agent.session.UserAttachment
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.agent.AgentViewModel
 import com.webtoapp.ui.agent.ThinkingSegment
 import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaCard
@@ -81,11 +82,54 @@ import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.theme.AppColors
 
 data class MessageActions(
-    val onCopy: (AgentMessage) -> Unit,
+    val onCopy: (AgentMessage, includeDetails: Boolean) -> Unit,
     val onEdit: (AgentMessage) -> Unit,
     val onRegenerate: (AgentMessage) -> Unit,
     val onDeleteFromHere: (AgentMessage) -> Unit
 )
+
+/**
+ * Build a copy-paste-friendly plain-text rendering of an assistant message.
+ * When [includeDetails] is true, thinking blocks and tool calls are interleaved
+ * with the prose output (in arrival order where possible); otherwise only the
+ * clean prose output is returned.
+ */
+internal fun formatMessageForCopy(message: AgentMessage, includeDetails: Boolean): String {
+    val cleanContent = AgentViewModel.stripInlineMarkers(message.content).trim()
+    if (!includeDetails) return cleanContent
+    val segments = message.thinkingSegmentsSafe
+    val hasThinking = segments.any { it.content.isNotBlank() }
+    val hasTools = message.toolCalls.isNotEmpty()
+    if (!hasThinking && !hasTools) return cleanContent
+
+    val sb = StringBuilder()
+    // Thinking blocks (in order). If there's only one, label it simply; otherwise
+    // number them so multi-turn reasoning stays readable.
+    segments.forEachIndexed { i, seg ->
+        val c = seg.content.trim()
+        if (c.isBlank()) return@forEachIndexed
+        if (sb.isNotEmpty()) sb.append("\n\n")
+        sb.append(if (segments.size > 1) "💭 思考过程 (${i + 1})" else "💭 思考过程")
+        sb.append("\n").append(c)
+    }
+    // Tool calls with their result previews.
+    message.toolCalls.forEach { tc ->
+        if (sb.isNotEmpty()) sb.append("\n\n")
+        sb.append("🔧 ").append(tc.name)
+        val args = tc.argumentsJson.trim()
+        if (args.isNotEmpty()) sb.append("(").append(args).append(")")
+        val result = tc.resultPreview.trim()
+        if (result.isNotEmpty() && result != RecordedToolCall.RUNNING_SENTINEL) {
+            sb.append("\n→ ").append(result)
+        }
+    }
+    // Final prose output.
+    if (cleanContent.isNotEmpty()) {
+        if (sb.isNotEmpty()) sb.append("\n\n")
+        sb.append(cleanContent)
+    }
+    return sb.toString()
+}
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -187,11 +231,24 @@ fun MessageBubble(
                 modifier = Modifier.size(WtaSize.TouchTarget)
             )
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                DropdownMenuItem(
-                    text = { Text(Strings.agentMessageActionCopy) },
-                    leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
-                    onClick = { menuOpen = false; actions.onCopy(message) }
-                )
+                if (isUser) {
+                    DropdownMenuItem(
+                        text = { Text(Strings.agentMessageActionCopy) },
+                        leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
+                        onClick = { menuOpen = false; actions.onCopy(message, false) }
+                    )
+                } else {
+                    DropdownMenuItem(
+                        text = { Text(Strings.agentMessageActionCopyOutput) },
+                        leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
+                        onClick = { menuOpen = false; actions.onCopy(message, false) }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(Strings.agentMessageActionCopyAll) },
+                        leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
+                        onClick = { menuOpen = false; actions.onCopy(message, true) }
+                    )
+                }
                 if (isUser) {
                     DropdownMenuItem(
                         text = { Text(Strings.agentMessageActionEdit) },
