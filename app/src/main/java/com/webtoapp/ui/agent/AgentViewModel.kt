@@ -1626,7 +1626,9 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val textKey = keys.firstOrNull { it.id == textModel.apiKeyId } ?: return
 
         val firstUser = session.messages.first { it.role == AgentMessage.Role.USER }.content
-        val firstAssistant = session.messages.first { it.role == AgentMessage.Role.ASSISTANT }.content
+        val firstAssistant = stripInlineMarkers(
+            session.messages.first { it.role == AgentMessage.Role.ASSISTANT }.content
+        )
 
         val sysPrompt = """
             Summarise the following conversation as a short title.

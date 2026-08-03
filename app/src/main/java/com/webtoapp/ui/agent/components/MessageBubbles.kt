@@ -377,7 +377,9 @@ fun StreamingBubble(
 
 private val INLINE_TOOL_MARKER = Regex("\u2063TC:([^\u2063]+)\u2063")
 private val INLINE_THINKING_MARKER = Regex("\u2063TH:([^\u2063]+)\u2063")
-private val ANY_INLINE_MARKER = Regex("\u2063(?:TC|TH):[^\u2063]+\u2063")
+// Match ANY \u2063…\u2063 pair (not just TC/TH) so an unrecognized marker type is still
+// consumed rather than leaking into a Prose segment as visible text.
+private val ANY_INLINE_MARKER = Regex("\u2063[^\u2063]*\u2063")
 
 @Composable
 fun RichAssistantTimeline(
@@ -493,7 +495,7 @@ private fun buildSegments(
     var cursor = 0
     ANY_INLINE_MARKER.findAll(text).forEach { match ->
         val before = text.substring(cursor, match.range.first)
-        if (before.isNotBlank()) out += TimelineSegment.Prose(before.trimEnd())
+        if (before.isNotBlank()) out += TimelineSegment.Prose(scrubInline(before).trimEnd())
         val raw = match.value
         when {
             raw.startsWith("\u2063TC:") -> {
@@ -515,14 +517,20 @@ private fun buildSegments(
                 }
             }
         }
+        // Unrecognized marker types fall through here — they are consumed (cursor
+        // advances past them) so they never reach a Prose segment.
         cursor = match.range.last + 1
     }
     if (cursor < text.length) {
         val tail = text.substring(cursor)
-        if (tail.isNotBlank()) out += TimelineSegment.Prose(tail.trimEnd())
+        if (tail.isNotBlank()) out += TimelineSegment.Prose(scrubInline(tail).trimEnd())
     }
     return out
 }
+
+/** Strip any stray \u2063 characters (e.g. an unpaired marker) so they never render. */
+private fun scrubInline(s: String): String =
+    if ('\u2063' !in s) s else s.replace("\u2063", "")
 
 @Composable
 fun ToolCallCard(tc: RecordedToolCall, live: Boolean) {

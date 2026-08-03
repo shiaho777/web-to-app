@@ -183,7 +183,7 @@ fun AgentScreen(
     val messageActions = remember(vm) {
         MessageActions(
             onCopy = { msg ->
-                clipboard.setText(AnnotatedString(msg.content))
+                clipboard.setText(AnnotatedString(AgentViewModel.stripInlineMarkers(msg.content)))
                 scope.launch { snackbar.showSnackbar(Strings.agentMessageCopied) }
             },
             onEdit = vm::startEditing,
