@@ -60,7 +60,7 @@ internal class GeminiProvider(@Suppress("UNUSED_PARAMETER") context: Context) : 
         return JsonObject().apply {
             add("contents",contents)
             if(sys.isNotBlank()) add("systemInstruction",JsonObject().apply{add("parts",JsonArray().apply{add(JsonObject().apply{addProperty("text",sys)})})})
-            add("generationConfig",JsonObject().apply{addProperty("temperature",req.temperature);addProperty("maxOutputTokens",req.maxTokens)})
+            add("generationConfig",JsonObject().apply{addProperty("temperature",req.temperature);req.maxTokens?.let{addProperty("maxOutputTokens",it)}})
             if(req.useTools&&req.tools.isNotEmpty()) add("tools",JsonArray().apply{add(JsonObject().apply{add("functionDeclarations",JsonArray().apply{req.tools.forEach{t->add(JsonObject().apply{addProperty("name",t.name);addProperty("description",t.description);add("parameters",t.parametersSchema)})}})})})
         }
     }

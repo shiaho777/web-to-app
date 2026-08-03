@@ -40,7 +40,7 @@ class AgentEngine(
         val registry: ToolRegistry,
         val temperature: Float = 0.7f,
         val maxTurns: Int = 24,
-        val maxTokens: Int = 65536
+        val maxTokens: Int? = null
     )
 
     fun run(input: Input): Flow<AgentEvent> = channelFlow {

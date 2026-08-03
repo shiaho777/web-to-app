@@ -56,7 +56,7 @@ internal class AnthropicProvider(@Suppress("UNUSED_PARAMETER") context: Context)
         }); awaitClose { call.cancel() }
     }
     private fun buildBody(req: ChatRequest): JsonObject { val sys=req.messages.filter{it.role==LlmMessage.Role.SYSTEM}.joinToString("\n\n"){it.content}; val msgs=req.messages.filter{it.role!=LlmMessage.Role.SYSTEM}
-        return JsonObject().apply { addProperty("model",req.model.id);addProperty("max_tokens",req.maxTokens);addProperty("temperature",req.temperature);addProperty("stream",true)
+        return JsonObject().apply { addProperty("model",req.model.id);addProperty("max_tokens",req.maxTokens ?: 8192);addProperty("temperature",req.temperature);addProperty("stream",true)
             if(sys.isNotBlank()) addProperty("system",sys); add("messages",JsonArray().apply{msgs.forEach{m->add(buildMsg(m))}})
             if(req.useTools&&req.tools.isNotEmpty()) add("tools",JsonArray().apply{req.tools.forEach{t->add(JsonObject().apply{addProperty("name",t.name);addProperty("description",t.description);add("input_schema",t.parametersSchema)})}})
         }

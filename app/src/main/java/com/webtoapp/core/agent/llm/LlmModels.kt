@@ -11,7 +11,7 @@ data class ChatRequest(
     val messages: List<LlmMessage>,
     val tools: List<ToolDeclaration> = emptyList(),
     val temperature: Float = 0.7f,
-    val maxTokens: Int = 16384,
+    val maxTokens: Int? = null,
     val useTools: Boolean = true
 )
 

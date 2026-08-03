@@ -141,7 +141,7 @@ class AgentService : Service() {
                         registry = request.registry,
                         temperature = request.temperature,
                         maxTurns = request.maxTurns,
-                            maxTokens = resolveMaxOutputTokens(ctx.textModel)
+                        maxTokens = null
                     )
                 ).collect { ev ->
                     // Broadcast to UI first so live streaming stays responsive.
@@ -273,24 +273,6 @@ class AgentService : Service() {
                 // No persistence impact.
             }
         }
-    }
-
-    private fun resolveMaxOutputTokens(savedModel: com.webtoapp.data.model.SavedModel): Int {
-        // Use the model's effective context length (which honours the user's
-        // per-model override) as the output ceiling. This is the closest practical
-        // equivalent of "unlimited" output: the model can produce tokens until it
-        // fills its context window. The API clips server-side if it exceeds what the
-        // model actually supports.
-        val model = savedModel.model
-        val fromRegistry = runCatching {
-            com.webtoapp.core.ai.ModelsDevRepository.getInstance(this).getMaxOutputTokens(model.id, model.provider)
-        }.getOrNull()
-        // Many custom models report the default contextLength (4096) because the user
-        // didn't configure it — treat that as "unknown" and fall back to a generous
-        // value rather than capping output at 4k tokens (which truncated reasoning).
-        val rawContext = savedModel.effectiveContextLength
-        val ceiling = if (rawContext in 1..8192) 65536 else rawContext.coerceIn(8192, 2_000_000)
-        return fromRegistry?.takeIf { it > 0 }?.coerceAtMost(ceiling) ?: ceiling
     }
 
     fun cancel() {

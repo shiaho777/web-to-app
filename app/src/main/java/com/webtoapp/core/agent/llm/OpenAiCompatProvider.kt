@@ -139,7 +139,8 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
     }
 
     private fun buildBody(req: ChatRequest) = JsonObject().apply {
-        addProperty("model", req.model.id); addProperty("stream", true); addProperty("temperature", req.temperature); addProperty("max_tokens", req.maxTokens)
+        addProperty("model", req.model.id); addProperty("stream", true); addProperty("temperature", req.temperature)
+        req.maxTokens?.let { addProperty("max_tokens", it) }
         add("messages", JsonArray().apply { req.messages.forEach { msg -> add(buildMsg(msg)) } })
         if (req.useTools && req.tools.isNotEmpty()) add("tools", JsonArray().apply { req.tools.forEach { t -> add(buildTool(t)) } })
     }
