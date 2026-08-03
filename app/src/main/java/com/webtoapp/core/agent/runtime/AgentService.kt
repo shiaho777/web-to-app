@@ -24,6 +24,7 @@ import com.webtoapp.core.agent.permission.PermissionPrompter
 import com.webtoapp.core.agent.session.AgentMessage
 import com.webtoapp.core.agent.session.RecordedToolCall
 import com.webtoapp.core.agent.session.SessionStore
+import com.webtoapp.core.agent.session.ThinkingSegmentData
 import com.webtoapp.core.agent.tool.FileChange
 import com.webtoapp.core.agent.tool.ToolContext
 import com.webtoapp.core.agent.tool.ToolRegistry
@@ -180,7 +181,7 @@ class AgentService : Service() {
                 acc.maybeFlushDraft(store)
             }
             is AgentEvent.ThinkingDelta -> {
-                acc.applyThinkingDelta(ev.delta)
+                acc.applyThinkingDelta(ev.segmentId, ev.delta)
                 acc.maybeFlushDraft(store)
             }
             AgentEvent.ThinkingTurnEnded -> {
@@ -393,9 +394,10 @@ private class TurnAccumulator(private val sessionId: String) {
     private var lastFlushAt = 0L
     private val startedAt: Long = System.currentTimeMillis()
 
-    private val toolMarkerRegex = Regex("\u2063TC:([^\u2063]+)\u2063")
+    private val inlineMarkerRegex = Regex("\u2063(?:TC|TH):[^\u2063]+\u2063")
 
     private data class ThinkingSegment(
+        val id: String,
         var content: String,
         val startedAt: Long,
         var frozenDurationMs: Long? = null
@@ -406,19 +408,23 @@ private class TurnAccumulator(private val sessionId: String) {
         text.append(accumulated)
     }
 
-    fun applyThinkingDelta(delta: String) {
+    fun applyThinkingDelta(segmentId: String, delta: String) {
         val now = System.currentTimeMillis()
-        val tail = thinkingSegments.lastOrNull()?.takeIf { it.frozenDurationMs == null }
-        if (tail == null) {
-            thinkingSegments += ThinkingSegment(delta, now)
+        val idx = thinkingSegments.indexOfFirst { it.id == segmentId }
+        if (idx < 0) {
+            thinkingSegments += ThinkingSegment(segmentId, delta, now)
         } else {
-            tail.content = tail.content + delta
+            thinkingSegments[idx].content = thinkingSegments[idx].content + delta
         }
     }
 
     fun freezeCurrentThinkingSegment() {
-        val tail = thinkingSegments.lastOrNull()?.takeIf { it.frozenDurationMs == null } ?: return
-        tail.frozenDurationMs = System.currentTimeMillis() - tail.startedAt
+        val now = System.currentTimeMillis()
+        thinkingSegments.forEach { seg ->
+            if (seg.frozenDurationMs == null) {
+                seg.frozenDurationMs = now - seg.startedAt
+            }
+        }
     }
 
     fun startTool(id: String, name: String) {
@@ -479,15 +485,21 @@ private class TurnAccumulator(private val sessionId: String) {
     }
 
     private fun buildDraftMessage(): AgentMessage? {
-        val cleanText = stripToolMarkers(text.toString()).trim()
+        // Keep inline markers (both tool and thinking) in content: the timeline renderer
+        // turns them into interleaved Tool/Thinking segments. Strip only to judge whether
+        // there is any substantive content.
+        val raw = text.toString().trim()
         val joined = joinedThinking()
-        if (cleanText.isBlank() && joined.isNullOrBlank() && tools.isEmpty()) return null
+        val segs = buildThinkingSegmentData()
+        val hasSubstance = stripAllMarkers(raw).isNotBlank() || !joined.isNullOrBlank() || tools.isNotEmpty()
+        if (!hasSubstance) return null
         val id = draftId ?: java.util.UUID.randomUUID().toString().also { draftId = it }
         return AgentMessage(
             id = id,
             role = AgentMessage.Role.ASSISTANT,
-            content = cleanText.ifBlank { "" },
+            content = raw,
             thinking = joined,
+            thinkingSegments = segs,
             thinkingDurationMs = totalThinkingDurationMs(),
             toolCalls = tools.values.toList(),
             producedFiles = producedFiles.toList()
@@ -500,16 +512,18 @@ private class TurnAccumulator(private val sessionId: String) {
         errorSuffix: String? = null,
         aborted: Boolean = false
     ): AgentMessage? {
-        val rawText = text.toString()
-        var cleanText = stripToolMarkers(rawText).trim()
-        if (cleanText.isBlank()) cleanText = stripToolMarkers(summaryFallback.orEmpty()).trim()
+        val raw = text.toString().trim()
         val joined = joinedThinking()
-        val anyTools = tools.isNotEmpty()
-        if (cleanText.isBlank() && joined.isNullOrBlank() && tools.isEmpty()) return null
+        val segs = buildThinkingSegmentData()
+        val hasSubstance = stripAllMarkers(raw).isNotBlank() || !joined.isNullOrBlank() || tools.isNotEmpty()
+        if (!hasSubstance) return null
+
+        val baseText = if (stripAllMarkers(raw).isNotBlank()) raw
+                       else stripAllMarkers(summaryFallback.orEmpty()).trim()
 
         val content = buildString {
-            append(cleanText)
-            if (aborted && cleanText.isNotBlank()) {
+            append(baseText)
+            if (aborted && baseText.isNotBlank()) {
                 append("\n\n")
                 append(Strings.agentAbortedHint)
             }
@@ -525,6 +539,7 @@ private class TurnAccumulator(private val sessionId: String) {
             role = AgentMessage.Role.ASSISTANT,
             content = content,
             thinking = joined,
+            thinkingSegments = segs,
             thinkingDurationMs = totalThinkingDurationMs(),
             toolCalls = tools.values.toList(),
             producedFiles = producedFiles.toList(),
@@ -532,8 +547,20 @@ private class TurnAccumulator(private val sessionId: String) {
         )
     }
 
-    private fun stripToolMarkers(s: String): String =
-        if (s.isEmpty() || '\u2063' !in s) s else toolMarkerRegex.replace(s, "")
+    private fun buildThinkingSegmentData(): List<ThinkingSegmentData> {
+        if (thinkingSegments.isEmpty()) return emptyList()
+        val now = System.currentTimeMillis()
+        return thinkingSegments.map { seg ->
+            ThinkingSegmentData(
+                id = seg.id,
+                content = seg.content.trim(),
+                durationMs = seg.frozenDurationMs ?: (now - seg.startedAt).coerceAtLeast(0L)
+            )
+        }
+    }
+
+    private fun stripAllMarkers(s: String): String =
+        if (s.isEmpty() || '\u2063' !in s) s else inlineMarkerRegex.replace(s, "")
 
     private fun joinedThinking(): String? {
         val joined = thinkingSegments.joinToString("\n\n") { it.content.trim() }

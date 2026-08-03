@@ -115,8 +115,18 @@ class AgentEngine(
                                 send(AgentEvent.TextDelta(ev.delta, accText.toString()))
                             }
                             is LlmEvent.ThinkingDelta -> {
+                                // On the first delta of a turn's reasoning stream, anchor a
+                                // thinking marker in the accumulated text (mirrors the tool
+                                // marker) so the timeline can interleave this block with
+                                // prose/tools in the order they actually occurred.
+                                if (turnThinking.isEmpty()) {
+                                    val segmentId = "th-turn-$turn"
+                                    val marker = "\u2063TH:$segmentId\u2063"
+                                    accText.append(marker)
+                                    send(AgentEvent.TextDelta(marker, accText.toString()))
+                                }
                                 turnThinking.append(ev.delta)
-                                send(AgentEvent.ThinkingDelta(ev.delta, turnThinking.toString()))
+                                send(AgentEvent.ThinkingDelta("th-turn-$turn", ev.delta, turnThinking.toString()))
                             }
                             is LlmEvent.ToolCallBegin -> {
                                 pending[ev.id] = ev.name to StringBuilder()

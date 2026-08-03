@@ -110,7 +110,11 @@ fun MessageBubble(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
     ) {
-        if (!message.thinking.isNullOrBlank()) {
+        // For assistant messages, thinking blocks are interleaved with prose/tools via
+        // the timeline when structured segments exist; otherwise fall back to a single
+        // top-of-bubble ThinkingBlock for legacy messages (pre-structured-thinking).
+        val hasStructuredThinking = !isUser && message.thinkingSegments.isNotEmpty()
+        if (!isUser && !hasStructuredThinking && !message.thinking.isNullOrBlank()) {
             ThinkingBlock(
                 content = message.thinking,
                 durationMs = message.thinkingDurationMs,
@@ -146,9 +150,20 @@ fun MessageBubble(
                     MentionList(message.mentionedFiles)
                 }
             } else {
+                val uiThinkingSegments = if (hasStructuredThinking) {
+                    message.thinkingSegments.map { seg ->
+                        ThinkingSegment(
+                            id = seg.id,
+                            content = seg.content,
+                            startedAt = 0L,
+                            frozenDurationMs = seg.durationMs
+                        )
+                    }
+                } else emptyList()
                 RichAssistantTimeline(
                     text = message.content,
                     toolCalls = message.toolCalls,
+                    thinkingSegments = uiThinkingSegments,
                     onSurface = onContainer,
                     liveTrailing = false
                 )
@@ -319,50 +334,36 @@ fun StreamingBubble(
     }
 
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-        thinkingSegments.forEach { seg ->
-            val isLive = seg.frozenDurationMs == null
-            val durationMs = seg.frozenDurationMs ?: (nowMs - seg.startedAt)
-            ThinkingBlock(
-                content = seg.content,
-                durationMs = durationMs,
-                isLive = isLive,
-                initiallyExpanded = isLive,
-                modifier = Modifier.widthIn(max = 560.dp)
-            )
-            Spacer(Modifier.height(WtaSpacing.Tiny))
-        }
-        if (text.isNotBlank() || pendingTools.isNotEmpty() || thinkingSegments.isEmpty()) {
-            WtaCard(
-                tone = WtaCardTone.Surface,
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    horizontal = WtaSpacing.Medium + 2.dp,
-                    vertical = WtaSpacing.Medium - 2.dp
-                ),
-                modifier = Modifier.widthIn(max = 560.dp)
-            ) {
-                if (text.isNotEmpty() || pendingTools.isNotEmpty()) {
-
-                    RichAssistantTimeline(
-                        text = text,
-                        toolCalls = pendingTools,
-                        onSurface = MaterialTheme.colorScheme.onSurface,
-                        liveTrailing = true
+        WtaCard(
+            tone = WtaCardTone.Surface,
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                horizontal = WtaSpacing.Medium + 2.dp,
+                vertical = WtaSpacing.Medium - 2.dp
+            ),
+            modifier = Modifier.widthIn(max = 560.dp)
+        ) {
+            if (text.isNotEmpty() || pendingTools.isNotEmpty() || thinkingSegments.isNotEmpty()) {
+                RichAssistantTimeline(
+                    text = text,
+                    toolCalls = pendingTools,
+                    thinkingSegments = thinkingSegments,
+                    onSurface = MaterialTheme.colorScheme.onSurface,
+                    liveTrailing = true
+                )
+            }
+            if (text.isBlank() && pendingTools.isEmpty() && thinkingSegments.isEmpty()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(12.dp),
+                        strokeWidth = 1.5.dp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-                if (text.isBlank() && pendingTools.isEmpty()) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(12.dp),
-                            strokeWidth = 1.5.dp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.width(WtaSpacing.Small))
-                        Text(
-                            text = activity ?: Strings.agentPhaseThinking,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Spacer(Modifier.width(WtaSpacing.Small))
+                    Text(
+                        text = activity ?: Strings.agentPhaseThinking,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -370,31 +371,39 @@ fun StreamingBubble(
 }
 
 private val INLINE_TOOL_MARKER = Regex("\u2063TC:([^\u2063]+)\u2063")
+private val INLINE_THINKING_MARKER = Regex("\u2063TH:([^\u2063]+)\u2063")
+private val ANY_INLINE_MARKER = Regex("\u2063(?:TC|TH):[^\u2063]+\u2063")
 
 @Composable
 fun RichAssistantTimeline(
     text: String,
     toolCalls: List<RecordedToolCall>,
     onSurface: Color,
+    thinkingSegments: List<ThinkingSegment> = emptyList(),
     liveTrailing: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val emptyHint = Strings.agentNoOutput
     val toolsById = remember(toolCalls) { toolCalls.associateBy { it.toolCallId } }
-    val seenIds = remember(text, toolCalls) { mutableSetOf<String>() }
+    val thinkingById = remember(thinkingSegments) { thinkingSegments.associateBy { it.id } }
+    val seenToolIds = remember(text, toolCalls, thinkingSegments) { mutableSetOf<String>() }
+    val seenThinkingIds = remember(text, toolCalls, thinkingSegments) { mutableSetOf<String>() }
 
-    val segments = remember(text, toolCalls) {
-        buildSegments(text, toolsById, seenIds)
+    val segments = remember(text, toolCalls, thinkingSegments) {
+        buildSegments(text, toolsById, thinkingById, seenToolIds, seenThinkingIds)
     }
 
-    val leftovers = remember(toolCalls, segments) {
-        toolCalls.filter { it.toolCallId !in seenIds }
+    val leftoverTools = remember(toolCalls, segments) {
+        toolCalls.filter { it.toolCallId !in seenToolIds }
+    }
+    val leftoverThinking = remember(thinkingSegments, segments) {
+        thinkingSegments.filter { it.id !in seenThinkingIds }
     }
 
     val proseLastIdx = segments.indexOfLast { it is TimelineSegment.Prose }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        if (segments.isEmpty() && leftovers.isEmpty()) {
+        if (segments.isEmpty() && leftoverTools.isEmpty() && leftoverThinking.isEmpty()) {
 
             SelectionContainer {
                 Text(
@@ -409,15 +418,28 @@ fun RichAssistantTimeline(
             when (seg) {
                 is TimelineSegment.Prose -> {
                     val isLastProse = i == proseLastIdx
-                    val proseText = if (liveTrailing && isLastProse && leftovers.isEmpty())
+                    val proseText = if (liveTrailing && isLastProse && leftoverTools.isEmpty())
                         seg.text
                     else seg.text
                     if (proseText.isNotEmpty()) {
                         RichAssistantText(
                             text = proseText,
                             onSurface = onSurface,
-                            streamingCaret = liveTrailing && isLastProse && leftovers.isEmpty()
+                            streamingCaret = liveTrailing && isLastProse && leftoverTools.isEmpty()
                         )
+                    }
+                }
+                is TimelineSegment.Thinking -> {
+                    val isLive = liveTrailing && seg.seg.frozenDurationMs == null
+                    if (i > 0) Spacer(Modifier.height(WtaSpacing.Tiny))
+                    ThinkingBlock(
+                        content = seg.seg.content,
+                        durationMs = seg.seg.frozenDurationMs,
+                        isLive = isLive,
+                        initiallyExpanded = isLive
+                    )
+                    if (i < segments.lastIndex || leftoverTools.isNotEmpty()) {
+                        Spacer(Modifier.height(WtaSpacing.Tiny))
                     }
                 }
                 is TimelineSegment.Tool -> {
@@ -428,7 +450,19 @@ fun RichAssistantTimeline(
                 }
             }
         }
-        leftovers.forEach { tc ->
+        // Thinking segments whose marker wasn't in the text yet (e.g. a brand-new live
+        // turn whose marker just arrived but text hasn't followed) render as trailing.
+        leftoverThinking.forEach { seg ->
+            val isLive = liveTrailing && seg.frozenDurationMs == null
+            ThinkingBlock(
+                content = seg.content,
+                durationMs = seg.frozenDurationMs,
+                isLive = isLive,
+                initiallyExpanded = isLive
+            )
+            Spacer(Modifier.height(WtaSpacing.Tiny))
+        }
+        leftoverTools.forEach { tc ->
             Spacer(Modifier.height(WtaSpacing.Tiny))
             ToolCallCard(tc, live = liveTrailing &&
                 tc.resultPreview == RecordedToolCall.RUNNING_SENTINEL)
@@ -438,25 +472,43 @@ fun RichAssistantTimeline(
 
 private sealed class TimelineSegment {
     data class Prose(val text: String) : TimelineSegment()
+    data class Thinking(val seg: ThinkingSegment) : TimelineSegment()
     data class Tool(val tc: RecordedToolCall) : TimelineSegment()
 }
 
 private fun buildSegments(
     text: String,
     toolsById: Map<String, RecordedToolCall>,
-    seenIds: MutableSet<String>
+    thinkingById: Map<String, ThinkingSegment>,
+    seenToolIds: MutableSet<String>,
+    seenThinkingIds: MutableSet<String>
 ): List<TimelineSegment> {
     if (text.isEmpty()) return emptyList()
     val out = mutableListOf<TimelineSegment>()
     var cursor = 0
-    INLINE_TOOL_MARKER.findAll(text).forEach { match ->
+    ANY_INLINE_MARKER.findAll(text).forEach { match ->
         val before = text.substring(cursor, match.range.first)
         if (before.isNotBlank()) out += TimelineSegment.Prose(before.trimEnd())
-        val id = match.groupValues[1]
-        val tc = toolsById[id]
-        if (tc != null) {
-            out += TimelineSegment.Tool(tc)
-            seenIds += id
+        val raw = match.value
+        when {
+            raw.startsWith("\u2063TC:") -> {
+                val id = INLINE_TOOL_MARKER.find(raw)?.groupValues?.get(1)
+                if (id != null) {
+                    toolsById[id]?.let {
+                        out += TimelineSegment.Tool(it)
+                        seenToolIds += id
+                    }
+                }
+            }
+            raw.startsWith("\u2063TH:") -> {
+                val id = INLINE_THINKING_MARKER.find(raw)?.groupValues?.get(1)
+                if (id != null) {
+                    thinkingById[id]?.let {
+                        out += TimelineSegment.Thinking(it)
+                        seenThinkingIds += id
+                    }
+                }
+            }
         }
         cursor = match.range.last + 1
     }

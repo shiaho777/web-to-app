@@ -115,9 +115,11 @@ data class ContextAppItem(
  * One turn's worth of streaming reasoning. [frozenDurationMs] is null while the
  * reasoning for this turn is still arriving (live); once the turn's thinking stream
  * ends it is frozen so the UI renders a static, collapsed block and the next turn
- * can open its own live block.
+ * can open its own live block. [id] matches the inline marker in the streamed text
+ * so the timeline can interleave this block with prose/tools.
  */
 data class ThinkingSegment(
+    val id: String,
     val content: String,
     val startedAt: Long,
     val frozenDurationMs: Long? = null

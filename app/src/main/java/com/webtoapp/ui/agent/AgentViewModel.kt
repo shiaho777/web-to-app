@@ -1116,7 +1116,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     out += LlmMessage(
                         role = LlmMessage.Role.ASSISTANT,
 
-                        content = stripToolMarkers(m.content),
+                        content = stripInlineMarkers(m.content),
                         toolCalls = m.toolCalls.map {
                             com.webtoapp.core.agent.llm.LlmToolCall(
                                 it.toolCallId, it.name, it.argumentsJson
@@ -1355,12 +1355,23 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         streamText.setLength(0)
         streamText.append(draft.content)
         streamThinkingSegments.clear()
-        // The draft's thinking is a single joined string (per-turn boundaries are not
-        // preserved across drafts); restore it as one segment. New live deltas will open
-        // a fresh segment after the current one is frozen.
-        draft.thinking?.takeIf { it.isNotBlank() }?.let {
+        // Rebuild per-turn segments from the persisted structured field so the live
+        // timeline can keep interleaving them with text/tools after a UI recreation.
+        if (draft.thinkingSegments.isNotEmpty()) {
+            val now = System.currentTimeMillis()
+            draft.thinkingSegments.forEach { seg ->
+                streamThinkingSegments += ThinkingSegment(
+                    id = seg.id,
+                    content = seg.content,
+                    startedAt = now,
+                    frozenDurationMs = seg.durationMs ?: 0L
+                )
+            }
+        } else if (!draft.thinking.isNullOrBlank()) {
+            // Legacy draft (no structured segments) — restore as a single frozen segment.
             streamThinkingSegments += ThinkingSegment(
-                content = it,
+                id = "th-restored",
+                content = draft.thinking,
                 startedAt = System.currentTimeMillis(),
                 frozenDurationMs = draft.thinkingDurationMs
             )
@@ -1392,25 +1403,35 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             is AgentEvent.ThinkingDelta -> {
-                // Append to the current live segment, or open a new one for a fresh turn.
+                // Associate by segmentId (stable per turn, mirrors the inline marker).
                 val now = System.currentTimeMillis()
-                val tail = streamThinkingSegments.lastOrNull()?.takeIf { it.frozenDurationMs == null }
-                if (tail == null) {
-                    streamThinkingSegments += ThinkingSegment(content = ev.delta, startedAt = now)
+                val idx = streamThinkingSegments.indexOfFirst { it.id == ev.segmentId }
+                if (idx < 0) {
+                    streamThinkingSegments += ThinkingSegment(
+                        id = ev.segmentId,
+                        content = ev.delta,
+                        startedAt = now
+                    )
                 } else {
-                    streamThinkingSegments[streamThinkingSegments.lastIndex] =
-                        tail.copy(content = tail.content + ev.delta)
+                    streamThinkingSegments[idx] =
+                        streamThinkingSegments[idx].copy(content = streamThinkingSegments[idx].content + ev.delta)
                 }
                 _ui.update {
                     it.copy(streamingThinkingSegments = streamThinkingSegments.toList())
                 }
             }
             AgentEvent.ThinkingTurnEnded -> {
-                // Freeze the live segment so the next turn opens its own live block.
-                val tail = streamThinkingSegments.lastOrNull()?.takeIf { it.frozenDurationMs == null }
-                if (tail != null) {
-                    streamThinkingSegments[streamThinkingSegments.lastIndex] =
-                        tail.copy(frozenDurationMs = System.currentTimeMillis() - tail.startedAt)
+                // Freeze any still-live segment so the next turn opens its own live block.
+                var changed = false
+                for (i in streamThinkingSegments.indices) {
+                    val seg = streamThinkingSegments[i]
+                    if (seg.frozenDurationMs == null) {
+                        streamThinkingSegments[i] =
+                            seg.copy(frozenDurationMs = System.currentTimeMillis() - seg.startedAt)
+                        changed = true
+                    }
+                }
+                if (changed) {
                     _ui.update {
                         it.copy(streamingThinkingSegments = streamThinkingSegments.toList())
                     }
@@ -1758,12 +1779,12 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
 
-        private val TOOL_MARKER_REGEX =
-            Regex("\u2063TC:([^\u2063]+)\u2063")
+        private val INLINE_MARKER_REGEX =
+            Regex("\u2063(?:TC|TH):[^\u2063]+\u2063")
 
-        fun stripToolMarkers(text: String): String =
+        fun stripInlineMarkers(text: String): String =
             if (text.isEmpty() || '\u2063' !in text) text
-            else TOOL_MARKER_REGEX.replace(text, "")
+            else INLINE_MARKER_REGEX.replace(text, "")
 
         private const val MENTION_LINE_LIMIT = 1500
 

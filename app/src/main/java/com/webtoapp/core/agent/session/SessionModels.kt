@@ -36,6 +36,8 @@ data class AgentMessage(
     val content: String,
     val thinking: String? = null,
 
+    val thinkingSegments: List<ThinkingSegmentData> = emptyList(),
+
     val thinkingDurationMs: Long? = null,
     val toolCalls: List<RecordedToolCall> = emptyList(),
 
@@ -79,3 +81,15 @@ data class RecordedToolCall(
         const val RUNNING_SENTINEL = "__running__"
     }
 }
+
+/**
+ * One turn's worth of reasoning, persisted so the boundaries survive across drafts
+ * and reloads. [id] matches the inline marker (`\u2063TH:id\u2063`) embedded in
+ * [AgentMessage.content], letting the timeline renderer interleave thinking blocks
+ * with prose and tool calls in the order they actually occurred.
+ */
+data class ThinkingSegmentData(
+    val id: String,
+    val content: String,
+    val durationMs: Long? = null
+)

@@ -8,7 +8,7 @@ sealed class AgentEvent {
 
     data class TextDelta(val delta: String, val accumulated: String) : AgentEvent()
 
-    data class ThinkingDelta(val delta: String, val accumulated: String) : AgentEvent()
+    data class ThinkingDelta(val segmentId: String, val delta: String, val accumulated: String) : AgentEvent()
 
     /**
      * Emitted once the current turn's reasoning stream has finished and the model is
