@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -21,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Folder
@@ -115,7 +117,9 @@ fun AgentDrawer(
             )
             AgentUiState.DrawerTab.Files -> FilesTab(
                 files = state.projectFiles,
-                onPick = onPickFile
+                builtApks = state.builtApks,
+                onPick = onPickFile,
+                onPickApk = { apkName -> onPickFile("apk:$apkName") }
             )
         }
     }
@@ -266,9 +270,11 @@ private val DRAWER_TIME = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
 @Composable
 private fun FilesTab(
     files: List<com.webtoapp.core.agent.files.ProjectFileManager.FileInfo>,
-    onPick: (String) -> Unit
+    builtApks: List<com.webtoapp.core.agent.tool.BuiltApkInfo>,
+    onPick: (String) -> Unit,
+    onPickApk: (String) -> Unit
 ) {
-    if (files.isEmpty()) {
+    if (files.isEmpty() && builtApks.isEmpty()) {
         WtaFullEmptyState(
             title = Strings.agentEmptyFiles,
             message = Strings.agentEmptyFilesHint,
@@ -277,6 +283,27 @@ private fun FilesTab(
         return
     }
     LazyColumn(modifier = Modifier.fillMaxSize()) {
+        if (builtApks.isNotEmpty()) {
+            item(key = "__apk_header__") {
+                Text(
+                    text = Strings.agentBuiltApks,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = WtaSpacing.ScreenHorizontal, vertical = WtaSpacing.Small)
+                )
+            }
+            items(builtApks, key = { "apk_${it.appId}_${it.apkName}" }) { apk ->
+                WtaSettingRow(
+                    title = apk.apkName,
+                    subtitle = "${apk.formatSize()} · ${apk.buildMode}",
+                    icon = Icons.Outlined.Android,
+                    onClick = { onPickApk(apk.apkName) }
+                )
+                WtaSectionDivider()
+            }
+            item(key = "__apk_spacer__") { Spacer(Modifier.height(WtaSpacing.Small)) }
+        }
         items(files, key = { it.relativePath }) { f ->
             WtaSettingRow(
                 title = f.relativePath,

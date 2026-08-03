@@ -5,7 +5,8 @@ data class ToolResult(
     val isError: Boolean = false,
     val images: List<ImageAttachment> = emptyList(),
     val fileChange: FileChange? = null,
-    val planReviewPath: String? = null
+    val planReviewPath: String? = null,
+    val builtApk: BuiltApkInfo? = null
 ) {
     val isMultimodal: Boolean get() = images.isNotEmpty()
 
@@ -29,6 +30,28 @@ data class ToolResult(
             images = images,
             fileChange = fileChange
         )
+    }
+}
+
+/**
+ * Metadata about an APK produced by [com.webtoapp.core.agent.tool.builtin.BuildApkTool].
+ * Surfaced as a virtual entry in the Files sidebar and previewed via an info card
+ * (install / share) rather than a WebView, since the APK lives in the external
+ * `built_apks/` directory and is a binary artifact.
+ */
+data class BuiltApkInfo(
+    val appId: Long,
+    val apkName: String,
+    val apkPath: String,
+    val sizeBytes: Long,
+    val buildMode: String,
+    val packageName: String?,
+    val versionName: String?
+) {
+    fun formatSize(): String = when {
+        sizeBytes < 1024 -> "${sizeBytes}B"
+        sizeBytes < 1024 * 1024 -> "${sizeBytes / 1024}KB"
+        else -> String.format("%.1fMB", sizeBytes / (1024.0 * 1024.0))
     }
 }
 

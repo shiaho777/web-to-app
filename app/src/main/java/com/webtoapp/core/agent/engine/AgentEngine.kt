@@ -283,6 +283,7 @@ class AgentEngine(
     ) {
         out.send(AgentEvent.ToolFinished(call.id, call.name, call.argumentsJson, result))
         result.fileChange?.let { out.send(AgentEvent.FileChanged(it)) }
+        result.builtApk?.let { out.send(AgentEvent.ApkBuilt(it)) }
     }
 
     private suspend fun runSequential(

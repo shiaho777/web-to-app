@@ -606,6 +606,18 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun selectFile(path: String) {
+        // "apk:<name>" is a virtual path for a built APK artifact — no file content
+        // to read, just surface the path so PreviewPane renders an info card.
+        if (path.startsWith("apk:")) {
+            _ui.update {
+                it.copy(
+                    selectedFilePath = path,
+                    selectedFileContent = null,
+                    previewFilePath = path
+                )
+            }
+            return
+        }
         val sid = _ui.value.currentSession?.id ?: return
         val text = files.readText(sid, path)
         _ui.update {
@@ -1528,6 +1540,13 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
             }
+            is AgentEvent.ApkBuilt -> {
+                _ui.update { state ->
+                    // Replace any previous build for the same appId, keep others.
+                    val rest = state.builtApks.filterNot { it.appId == ev.info.appId }
+                    state.copy(builtApks = rest + ev.info)
+                }
+            }
             is AgentEvent.PermissionDenied -> {
                 _ui.update { it.copy(info = Strings.agentToolDenied.format(ev.name)) }
             }
@@ -1763,6 +1782,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 projectFiles = files.listAll(session.id),
 
                 pendingChanges = if (sessionChanged) emptyList() else it.pendingChanges,
+                builtApks = if (sessionChanged) emptyList() else it.builtApks,
                 changesReviewExpanded = if (sessionChanged) false else it.changesReviewExpanded,
 
                 previewFilePath = if (sessionChanged) null else it.previewFilePath,

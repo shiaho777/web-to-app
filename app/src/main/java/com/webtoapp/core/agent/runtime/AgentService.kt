@@ -282,6 +282,7 @@ class AgentService : Service() {
                 _activeTurn.value = null
             }
             is AgentEvent.PermissionDenied, is AgentEvent.Usage, is AgentEvent.Notice,
+            is AgentEvent.ApkBuilt,
             AgentEvent.Started -> {
                 // No persistence impact.
             }

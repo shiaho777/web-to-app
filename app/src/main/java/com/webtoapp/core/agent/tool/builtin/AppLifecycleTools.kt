@@ -2,6 +2,7 @@ package com.webtoapp.core.agent.tool.builtin
 
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import com.webtoapp.core.agent.tool.BuiltApkInfo
 import com.webtoapp.core.agent.tool.Tool
 import com.webtoapp.core.agent.tool.ToolContext
 import com.webtoapp.core.agent.tool.ToolResult
@@ -34,10 +35,33 @@ class BuildApkTool : Tool {
         return when (val result = builder.buildApk(app, force)) {
             is BuildResult.Success -> {
                 val sizeKb = result.apkFile.length() / 1024
-                ToolResult.ok("APK built successfully: ${result.apkFile.absolutePath} (${sizeKb}KB, ${result.buildMode}).")
+                val versionName = extractVersionFromName(result.apkFile.name) ?: "1.0.0"
+                val info = BuiltApkInfo(
+                    appId = appId,
+                    apkName = result.apkFile.name,
+                    apkPath = result.apkFile.absolutePath,
+                    sizeBytes = result.apkFile.length(),
+                    buildMode = result.buildMode,
+                    packageName = app.packageName,
+                    versionName = versionName
+                )
+                ToolResult(
+                    text = "APK built successfully: ${result.apkFile.absolutePath} (${sizeKb}KB, ${result.buildMode}).",
+                    isError = false,
+                    builtApk = info
+                )
             }
             is BuildResult.Error -> ToolResult.error("BuildApk failed: ${result.message}")
         }
+    }
+
+    private fun extractVersionFromName(fileName: String): String? {
+        // APK file name format: "{AppName}_v{version}.APK"
+        val idx = fileName.lastIndexOf("_v")
+        if (idx < 0) return null
+        val afterV = fileName.substring(idx + 2)
+        val dot = afterV.lastIndexOf('.')
+        return if (dot > 0) afterV.substring(0, dot) else afterV.takeIf { it.isNotEmpty() }
     }
 }
 

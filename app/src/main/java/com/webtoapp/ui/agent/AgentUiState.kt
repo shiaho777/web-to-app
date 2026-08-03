@@ -6,6 +6,7 @@ import com.webtoapp.core.agent.permission.PermissionRequest
 import com.webtoapp.core.agent.session.AgentSession
 import com.webtoapp.core.agent.session.RecordedToolCall
 import com.webtoapp.core.agent.session.UserAttachment
+import com.webtoapp.core.agent.tool.BuiltApkInfo
 import com.webtoapp.core.agent.todo.TodoManager
 
 data class AgentUiState(
@@ -28,6 +29,7 @@ data class AgentUiState(
     val currentActivity: String? = null,
 
     val projectFiles: List<ProjectFileManager.FileInfo> = emptyList(),
+    val builtApks: List<BuiltApkInfo> = emptyList(),
     val selectedFilePath: String? = null,
     val selectedFileContent: String? = null,
 

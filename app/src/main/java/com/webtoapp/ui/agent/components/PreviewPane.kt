@@ -19,12 +19,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Android
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.UnfoldMore
 import androidx.compose.material.icons.outlined.Web
 import androidx.compose.material3.DropdownMenu
@@ -102,6 +107,15 @@ fun PreviewPane(
         )
         if (sessionId == null || resolvedPath == null) {
             EmptyPreview()
+        } else if (resolvedPath.startsWith("apk:")) {
+            // Virtual APK artifact — render an info card instead of a WebView.
+            val apkName = resolvedPath.removePrefix("apk:")
+            val apkInfo = state.builtApks.firstOrNull { it.apkName == apkName }
+            if (apkInfo != null) {
+                ApkInfoCard(info = apkInfo, modifier = Modifier.fillMaxSize())
+            } else {
+                EmptyPreview()
+            }
         } else {
             PreviewWebView(
                 fileManager = fileManager,
@@ -403,4 +417,135 @@ private fun isImage(path: String): Boolean {
         lower.endsWith(".gif") ||
         lower.endsWith(".webp") ||
         lower.endsWith(".svg")
+}
+
+@Composable
+private fun ApkInfoCard(
+    info: com.webtoapp.core.agent.tool.BuiltApkInfo,
+    modifier: Modifier = Modifier
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(WtaSpacing.ScreenHorizontal),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(Modifier.height(WtaSpacing.ExtraLarge))
+        // APK icon
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .background(
+                    MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(20.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Android,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(40.dp)
+            )
+        }
+        Spacer(Modifier.height(WtaSpacing.Medium))
+        Text(
+            text = info.apkName,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Spacer(Modifier.height(WtaSpacing.ExtraLarge))
+
+        // Info rows
+        ApkInfoRow(label = Strings.agentApkSize, value = info.formatSize())
+        info.packageName?.let { ApkInfoRow(label = Strings.agentApkPackage, value = it) }
+        ApkInfoRow(label = Strings.agentApkVersion, value = info.versionName ?: "-")
+        ApkInfoRow(label = Strings.agentApkBuildMode, value = info.buildMode)
+
+        Spacer(Modifier.height(WtaSpacing.ExtraLarge))
+
+        // Install button
+        androidx.compose.material3.Button(
+            onClick = {
+                val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                    setDataAndType(
+                        androidx.core.content.FileProvider.getUriForFile(
+                            context,
+                            context.packageName + ".fileprovider",
+                            File(info.apkPath)
+                        ),
+                        "application/vnd.android.package-archive"
+                    )
+                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                runCatching { context.startActivity(intent) }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            content = {
+                Icon(
+                    imageVector = Icons.Outlined.Android,
+                    contentDescription = null,
+                    modifier = Modifier.size(WtaSize.IconSmall)
+                )
+                Spacer(Modifier.width(WtaSpacing.Small))
+                Text(Strings.agentApkInstall)
+            }
+        )
+        Spacer(Modifier.height(WtaSpacing.Small))
+        // Share button
+        androidx.compose.material3.OutlinedButton(
+            onClick = {
+                val uri = androidx.core.content.FileProvider.getUriForFile(
+                    context,
+                    context.packageName + ".fileprovider",
+                    File(info.apkPath)
+                )
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                    type = "application/vnd.android.package-archive"
+                    putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                    addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                runCatching {
+                    context.startActivity(android.content.Intent.createChooser(intent, Strings.agentApkShare))
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            content = {
+                Icon(
+                    imageVector = Icons.Outlined.Share,
+                    contentDescription = null,
+                    modifier = Modifier.size(WtaSize.IconSmall)
+                )
+                Spacer(Modifier.width(WtaSpacing.Small))
+                Text(Strings.agentApkShare)
+            }
+        )
+    }
+}
+
+@Composable
+private fun ApkInfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = WtaSpacing.Tiny),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
 }

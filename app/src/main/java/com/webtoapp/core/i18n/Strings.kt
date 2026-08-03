@@ -1583,6 +1583,13 @@ object Strings {
     val agentEmptySessionsHint: String get() = StringsB.agentEmptySessionsHint
     val agentEmptyFiles: String get() = StringsB.agentEmptyFiles
     val agentEmptyFilesHint: String get() = StringsB.agentEmptyFilesHint
+    val agentBuiltApks: String get() = StringsB.agentBuiltApks
+    val agentApkInstall: String get() = StringsB.agentApkInstall
+    val agentApkShare: String get() = StringsB.agentApkShare
+    val agentApkPackage: String get() = StringsB.agentApkPackage
+    val agentApkVersion: String get() = StringsB.agentApkVersion
+    val agentApkBuildMode: String get() = StringsB.agentApkBuildMode
+    val agentApkSize: String get() = StringsB.agentApkSize
     val agentNotifIdle: String get() = StringsB.agentNotifIdle
     val agentNotifRunning: String get() = StringsB.agentNotifRunning
     val agentOutputTruncated: String get() = StringsB.agentOutputTruncated
@@ -24672,6 +24679,90 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Файлы появятся после общения с ИИ"
         AppLanguage.JAPANESE -> "AIと会話するとファイルが表示されます"
         AppLanguage.KOREAN -> "AI와 대화하면 파일이 나타납니다"
+    }
+    val agentBuiltApks: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建产物"
+        AppLanguage.ENGLISH -> "Build Artifacts"
+        AppLanguage.ARABIC -> "مخرجات البناء"
+        AppLanguage.PORTUGUESE -> "Artefatos de Build"
+        AppLanguage.SPANISH -> "Artefactos de compilación"
+        AppLanguage.FRENCH -> "Artefacts de build"
+        AppLanguage.GERMAN -> "Build-Artefakte"
+        AppLanguage.RUSSIAN -> "Артефакты сборки"
+        AppLanguage.JAPANESE -> "ビルド成果物"
+        AppLanguage.KOREAN -> "빌드 산출물"
+    }
+    val agentApkInstall: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装"
+        AppLanguage.ENGLISH -> "Install"
+        AppLanguage.ARABIC -> "تثبيت"
+        AppLanguage.PORTUGUESE -> "Instalar"
+        AppLanguage.SPANISH -> "Instalar"
+        AppLanguage.FRENCH -> "Installer"
+        AppLanguage.GERMAN -> "Installieren"
+        AppLanguage.RUSSIAN -> "Установить"
+        AppLanguage.JAPANESE -> "インストール"
+        AppLanguage.KOREAN -> "설치"
+    }
+    val agentApkShare: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "分享"
+        AppLanguage.ENGLISH -> "Share"
+        AppLanguage.ARABIC -> "مشاركة"
+        AppLanguage.PORTUGUESE -> "Compartilhar"
+        AppLanguage.SPANISH -> "Compartir"
+        AppLanguage.FRENCH -> "Partager"
+        AppLanguage.GERMAN -> "Teilen"
+        AppLanguage.RUSSIAN -> "Поделиться"
+        AppLanguage.JAPANESE -> "共有"
+        AppLanguage.KOREAN -> "공유"
+    }
+    val agentApkPackage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "包名"
+        AppLanguage.ENGLISH -> "Package"
+        AppLanguage.ARABIC -> "الحزمة"
+        AppLanguage.PORTUGUESE -> "Pacote"
+        AppLanguage.SPANISH -> "Paquete"
+        AppLanguage.FRENCH -> "Package"
+        AppLanguage.GERMAN -> "Paket"
+        AppLanguage.RUSSIAN -> "Пакет"
+        AppLanguage.JAPANESE -> "パッケージ"
+        AppLanguage.KOREAN -> "패키지"
+    }
+    val agentApkVersion: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "版本"
+        AppLanguage.ENGLISH -> "Version"
+        AppLanguage.ARABIC -> "الإصدار"
+        AppLanguage.PORTUGUESE -> "Versão"
+        AppLanguage.SPANISH -> "Versión"
+        AppLanguage.FRENCH -> "Version"
+        AppLanguage.GERMAN -> "Version"
+        AppLanguage.RUSSIAN -> "Версия"
+        AppLanguage.JAPANESE -> "バージョン"
+        AppLanguage.KOREAN -> "버전"
+    }
+    val agentApkBuildMode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "构建模式"
+        AppLanguage.ENGLISH -> "Build mode"
+        AppLanguage.ARABIC -> "وضع البناء"
+        AppLanguage.PORTUGUESE -> "Modo de build"
+        AppLanguage.SPANISH -> "Modo de compilación"
+        AppLanguage.FRENCH -> "Mode de build"
+        AppLanguage.GERMAN -> "Build-Modus"
+        AppLanguage.RUSSIAN -> "Режим сборки"
+        AppLanguage.JAPANESE -> "ビルドモード"
+        AppLanguage.KOREAN -> "빌드 모드"
+    }
+    val agentApkSize: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "大小"
+        AppLanguage.ENGLISH -> "Size"
+        AppLanguage.ARABIC -> "الحجم"
+        AppLanguage.PORTUGUESE -> "Tamanho"
+        AppLanguage.SPANISH -> "Tamaño"
+        AppLanguage.FRENCH -> "Taille"
+        AppLanguage.GERMAN -> "Größe"
+        AppLanguage.RUSSIAN -> "Размер"
+        AppLanguage.JAPANESE -> "サイズ"
+        AppLanguage.KOREAN -> "크기"
     }
     val agentNotifIdle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Agent 已就绪"
