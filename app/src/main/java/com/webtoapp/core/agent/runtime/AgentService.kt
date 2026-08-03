@@ -21,9 +21,15 @@ import com.webtoapp.core.agent.engine.AgentEvent
 import com.webtoapp.core.agent.permission.PermissionChecker
 import com.webtoapp.core.agent.permission.PermissionMode
 import com.webtoapp.core.agent.permission.PermissionPrompter
+import com.webtoapp.core.agent.session.AgentMessage
+import com.webtoapp.core.agent.session.RecordedToolCall
+import com.webtoapp.core.agent.session.SessionStore
+import com.webtoapp.core.agent.tool.FileChange
 import com.webtoapp.core.agent.tool.ToolContext
 import com.webtoapp.core.agent.tool.ToolRegistry
+import com.webtoapp.core.agent.tool.ToolResult
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.ui.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +71,14 @@ class AgentService : Service() {
     private val _isRunning = MutableStateFlow(false)
     val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
 
+    /**
+     * Snapshot of the currently running (or just-finished) turn, so the UI can resume
+     * an in-flight turn after being destroyed and recreated (e.g. user left the Agent
+     * screen, Activity got reclaimed, then came back). Null when no turn is active.
+     */
+    private val _activeTurn = MutableStateFlow<TurnSnapshot?>(null)
+    val activeTurn: StateFlow<TurnSnapshot?> = _activeTurn.asStateFlow()
+
     inner class LocalBinder : Binder() {
         fun service(): AgentService = this@AgentService
     }
@@ -89,12 +103,21 @@ class AgentService : Service() {
 
         val abort = AbortController().also { abortController = it }
         val engine = AgentEngine(gateway, permissionChecker, abort)
+        val store = request.sessionStore
+        val sessionId = request.sessionId
+        val accumulator = TurnAccumulator(sessionId)
+
+        _activeTurn.value = TurnSnapshot(
+            sessionId = sessionId,
+            isRunning = true,
+            draftMessage = null
+        )
 
         turnJob = scope.launch {
             try {
                 val ctx = ToolContext(
                     androidContext = this@AgentService,
-                    sessionId = request.sessionId,
+                    sessionId = sessionId,
                     fileManager = request.toolContext.fileManager,
                     textModel = request.toolContext.textModel,
                     textApiKey = request.toolContext.textApiKey,
@@ -106,6 +129,8 @@ class AgentService : Service() {
                     readFiles = request.toolContext.readFiles,
                     activePlanFile = request.toolContext.activePlanFile
                 )
+                // Single collection source: broadcast to UI AND persist in the same
+                // collector so persistence no longer depends on any UI scope.
                 engine.run(
                     AgentEngine.Input(
                         systemPrompt = request.systemPrompt,
@@ -117,13 +142,134 @@ class AgentService : Service() {
                         maxTurns = request.maxTurns,
                         maxTokens = resolveMaxOutputTokens(ctx.textModel.model)
                     )
-                ).collect { _events.emit(it) }
+                ).collect { ev ->
+                    // Broadcast to UI first so live streaming stays responsive.
+                    _events.emit(ev)
+                    // Then persist (best-effort; never let a storage failure kill the turn).
+                    if (store != null) {
+                        runCatching { persistEvent(store, sessionId, accumulator, ev) }
+                            .onFailure { AppLogger.w(TAG, "persist failed: ${it.message}") }
+                    }
+                }
             } catch (t: Throwable) {
-                _events.emit(AgentEvent.Failed(t.message ?: "service crashed"))
+                val ev = AgentEvent.Failed(t.message ?: "service crashed")
+                _events.emit(ev)
+                if (store != null) {
+                    runCatching { persistEvent(store, sessionId, accumulator, ev) }
+                }
             } finally {
                 _isRunning.value = false
                 releaseWakeLock()
                 abortController = null
+                // Keep the final snapshot briefly so a UI that rebinds right at the
+                // boundary can still observe the finished draft; clear the running flag.
+                _activeTurn.value = _activeTurn.value?.copy(isRunning = false)
+            }
+        }
+    }
+
+    private suspend fun persistEvent(
+        store: SessionStore,
+        sessionId: String,
+        acc: TurnAccumulator,
+        ev: AgentEvent
+    ) {
+        when (ev) {
+            is AgentEvent.TextDelta -> {
+                acc.applyTextDelta(ev.accumulated)
+                acc.maybeFlushDraft(store)
+            }
+            is AgentEvent.ThinkingDelta -> {
+                acc.applyThinkingDelta(ev.delta)
+                acc.maybeFlushDraft(store)
+            }
+            AgentEvent.ThinkingTurnEnded -> {
+                acc.freezeCurrentThinkingSegment()
+                acc.maybeFlushDraft(store)
+            }
+            is AgentEvent.ToolCallStarted -> {
+                acc.startTool(ev.toolCallId, ev.name)
+                acc.maybeFlushDraft(store)
+            }
+            is AgentEvent.ToolCallArgsDelta -> {
+                acc.appendToolArgs(ev.toolCallId, ev.delta)
+            }
+            is AgentEvent.ToolProgress -> {
+                acc.updateToolProgress(ev.toolCallId, ev.accumulated)
+                acc.maybeFlushDraft(store)
+            }
+            is AgentEvent.ToolExecuting -> {
+                acc.updateToolActivity(ev.toolCallId, ev.activity ?: ev.name)
+                acc.maybeFlushDraft(store)
+            }
+            is AgentEvent.ToolFinished -> {
+                acc.finishTool(ev.toolCallId, ev.name, ev.argumentsJson, ev.result)
+                acc.maybeFlushDraft(store, force = true)
+            }
+            is AgentEvent.FileChanged -> {
+                acc.recordProducedFile(ev.change.path)
+            }
+            is AgentEvent.Completed -> {
+                val msg = acc.buildFinalMessage(
+                    summaryFallback = ev.summary,
+                    isError = false
+                )
+                if (msg != null) {
+                    store.finalizeDraft(sessionId, msg)
+                    _activeTurn.value = TurnSnapshot(
+                        sessionId = sessionId,
+                        isRunning = false,
+                        draftMessage = msg
+                    )
+                } else {
+                    // Degenerate turn produced nothing durable; drop the draft so we
+                    // don't leave an empty stub message in the session.
+                    acc.draftId?.let { store.dropDraft(sessionId, it) }
+                    _activeTurn.value = null
+                }
+            }
+            is AgentEvent.Failed -> {
+                val msg = acc.buildFinalMessage(
+                    summaryFallback = null,
+                    isError = true,
+                    errorSuffix = ev.message
+                )
+                if (msg != null) {
+                    store.finalizeDraft(sessionId, msg)
+                }
+                _activeTurn.value = null
+            }
+            is AgentEvent.PlanReviewRequired -> {
+                val msg = acc.buildFinalMessage(
+                    summaryFallback = null,
+                    isError = false
+                )
+                if (msg != null) {
+                    store.finalizeDraft(sessionId, msg)
+                    _activeTurn.value = TurnSnapshot(
+                        sessionId = sessionId,
+                        isRunning = false,
+                        draftMessage = msg
+                    )
+                }
+            }
+            AgentEvent.Aborted -> {
+                val msg = acc.buildFinalMessage(
+                    summaryFallback = null,
+                    isError = true,
+                    errorSuffix = null,
+                    aborted = true
+                )
+                if (msg != null) {
+                    store.finalizeDraft(sessionId, msg)
+                } else {
+                    acc.draftId?.let { store.dropDraft(sessionId, it) }
+                }
+                _activeTurn.value = null
+            }
+            is AgentEvent.PermissionDenied, is AgentEvent.Usage, is AgentEvent.Notice,
+            AgentEvent.Started -> {
+                // No persistence impact.
             }
         }
     }
@@ -147,6 +293,7 @@ class AgentService : Service() {
         turnJob?.cancel()
         scope.cancel()
         releaseWakeLock()
+        _activeTurn.value = null
     }
 
     private fun ensureChannel() {
@@ -184,7 +331,7 @@ class AgentService : Service() {
 
     private fun acquireWakeLock() {
         if (wakeLock?.isHeld == true) return
-        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "WebToApp:AgentTurn").apply {
             setReferenceCounted(false)
             acquire(WAKE_LOCK_TIMEOUT_MS)
@@ -203,15 +350,209 @@ class AgentService : Service() {
         val userMessage: String,
         val toolContext: ToolContext,
         val registry: ToolRegistry,
+        val sessionStore: SessionStore? = null,
         val temperature: Float = 0.7f,
         val maxTurns: Int = 24
     )
 
+    /**
+     * Live snapshot of a turn, exposed to the UI so it can resume display of an
+     * in-flight turn after recreation.
+     */
+    data class TurnSnapshot(
+        val sessionId: String,
+        val isRunning: Boolean,
+        val draftMessage: AgentMessage?
+    )
+
     companion object {
+        private const val TAG = "AgentService"
         private const val CHANNEL_ID = "aicoding_agent_v3"
         private const val NOTIFICATION_ID = 1201
         private const val WAKE_LOCK_TIMEOUT_MS = 20L * 60 * 1000
         private const val DEFAULT_MAX_OUTPUT_TOKENS = 8192
         private const val MAX_OUTPUT_TOKENS_CEILING = 32768
+    }
+}
+
+/**
+ * Accumulates a single turn's streaming output on the service side so it can be
+ * persisted as a draft (and finalized) independently of any UI scope. Mirrors the
+ * ViewModel's in-memory buffers but is purely data-oriented and persistence-driven.
+ */
+private class TurnAccumulator(private val sessionId: String) {
+    private val text = StringBuilder()
+    private val thinkingSegments = mutableListOf<ThinkingSegment>()
+    private val tools = LinkedHashMap<String, RecordedToolCall>()
+    private val toolArgs = LinkedHashMap<String, StringBuilder>()
+    private val producedFiles = mutableListOf<String>()
+
+    internal var draftId: String? = null
+        private set
+
+    private var lastFlushAt = 0L
+    private val startedAt: Long = System.currentTimeMillis()
+
+    private val toolMarkerRegex = Regex("\u2063TC:([^\u2063]+)\u2063")
+
+    private data class ThinkingSegment(
+        var content: String,
+        val startedAt: Long,
+        var frozenDurationMs: Long? = null
+    )
+
+    fun applyTextDelta(accumulated: String) {
+        text.setLength(0)
+        text.append(accumulated)
+    }
+
+    fun applyThinkingDelta(delta: String) {
+        val now = System.currentTimeMillis()
+        val tail = thinkingSegments.lastOrNull()?.takeIf { it.frozenDurationMs == null }
+        if (tail == null) {
+            thinkingSegments += ThinkingSegment(delta, now)
+        } else {
+            tail.content = tail.content + delta
+        }
+    }
+
+    fun freezeCurrentThinkingSegment() {
+        val tail = thinkingSegments.lastOrNull()?.takeIf { it.frozenDurationMs == null } ?: return
+        tail.frozenDurationMs = System.currentTimeMillis() - tail.startedAt
+    }
+
+    fun startTool(id: String, name: String) {
+        tools[id] = RecordedToolCall(
+            toolCallId = id,
+            name = name,
+            argumentsJson = "",
+            resultPreview = RecordedToolCall.RUNNING_SENTINEL,
+            ok = true
+        )
+        toolArgs.remove(id)
+    }
+
+    fun appendToolArgs(id: String, delta: String) {
+        toolArgs.getOrPut(id) { StringBuilder() }.append(delta)
+        tools[id]?.let { tools[id] = it.copy(argumentsJson = toolArgs[id].toString()) }
+    }
+
+    fun updateToolProgress(id: String, accumulated: String) {
+        val prev = tools[id] ?: return
+        val capped = if (accumulated.length <= PREVIEW_CAP) accumulated
+                     else accumulated.takeLast(PREVIEW_CAP)
+        tools[id] = prev.copy(resultPreview = capped)
+    }
+
+    fun updateToolActivity(id: String, activity: String) {
+        val prev = tools[id] ?: return
+        tools[id] = prev.copy(activity = activity)
+    }
+
+    fun finishTool(id: String, name: String, argumentsJson: String, result: ToolResult) {
+        val prev = tools[id]
+        tools[id] = RecordedToolCall(
+            toolCallId = id,
+            name = name,
+            argumentsJson = argumentsJson,
+            resultPreview = result.text.take(2000),
+            ok = !result.isError,
+            activity = prev?.activity
+        )
+        toolArgs.remove(id)
+    }
+
+    fun recordProducedFile(path: String) {
+        if (path !in producedFiles) producedFiles += path
+    }
+
+    /**
+     * Throttled draft upsert. Writes at most once per [FLUSH_INTERVAL_MS], unless
+     * [force] is set (used for tool-finish boundaries and other durable events).
+     */
+    suspend fun maybeFlushDraft(store: SessionStore, force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastFlushAt < FLUSH_INTERVAL_MS) return
+        lastFlushAt = now
+        val draft = buildDraftMessage() ?: return
+        store.upsertAssistantDraft(sessionId, draft)
+    }
+
+    private fun buildDraftMessage(): AgentMessage? {
+        val cleanText = stripToolMarkers(text.toString()).trim()
+        val joined = joinedThinking()
+        if (cleanText.isBlank() && joined.isNullOrBlank() && tools.isEmpty()) return null
+        val id = draftId ?: java.util.UUID.randomUUID().toString().also { draftId = it }
+        return AgentMessage(
+            id = id,
+            role = AgentMessage.Role.ASSISTANT,
+            content = cleanText.ifBlank { "" },
+            thinking = joined,
+            thinkingDurationMs = totalThinkingDurationMs(),
+            toolCalls = tools.values.toList(),
+            producedFiles = producedFiles.toList()
+        )
+    }
+
+    fun buildFinalMessage(
+        summaryFallback: String?,
+        isError: Boolean,
+        errorSuffix: String? = null,
+        aborted: Boolean = false
+    ): AgentMessage? {
+        val rawText = text.toString()
+        var cleanText = stripToolMarkers(rawText).trim()
+        if (cleanText.isBlank()) cleanText = stripToolMarkers(summaryFallback.orEmpty()).trim()
+        val joined = joinedThinking()
+        val anyTools = tools.isNotEmpty()
+        if (cleanText.isBlank() && joined.isNullOrBlank() && tools.isEmpty()) return null
+
+        val content = buildString {
+            append(cleanText)
+            if (aborted && cleanText.isNotBlank()) {
+                append("\n\n")
+                append(Strings.agentAbortedHint)
+            }
+            if (errorSuffix != null) {
+                if (isNotEmpty()) append("\n\n")
+                append(Strings.agentErrorPrefix.format(errorSuffix))
+            }
+        }.ifBlank { Strings.agentNoOutput }
+
+        val id = draftId ?: java.util.UUID.randomUUID().toString().also { draftId = it }
+        return AgentMessage(
+            id = id,
+            role = AgentMessage.Role.ASSISTANT,
+            content = content,
+            thinking = joined,
+            thinkingDurationMs = totalThinkingDurationMs(),
+            toolCalls = tools.values.toList(),
+            producedFiles = producedFiles.toList(),
+            isError = isError || aborted
+        )
+    }
+
+    private fun stripToolMarkers(s: String): String =
+        if (s.isEmpty() || '\u2063' !in s) s else toolMarkerRegex.replace(s, "")
+
+    private fun joinedThinking(): String? {
+        val joined = thinkingSegments.joinToString("\n\n") { it.content.trim() }
+            .replace(Regex("\n{3,}"), "\n\n")
+            .trim()
+        return joined.takeIf { it.isNotBlank() }
+    }
+
+    private fun totalThinkingDurationMs(): Long? {
+        if (thinkingSegments.isEmpty()) return null
+        val now = System.currentTimeMillis()
+        val total = thinkingSegments.sumOf { seg ->
+            seg.frozenDurationMs ?: (now - seg.startedAt).coerceAtLeast(0L)
+        }
+        return total.takeIf { it > 0 }
+    }
+
+    companion object {
+        private const val FLUSH_INTERVAL_MS = 200L
+        private const val PREVIEW_CAP = 2000
     }
 }

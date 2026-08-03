@@ -68,6 +68,7 @@ import com.webtoapp.core.agent.session.AgentMessage
 import com.webtoapp.core.agent.session.RecordedToolCall
 import com.webtoapp.core.agent.session.UserAttachment
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.agent.ThinkingSegment
 import com.webtoapp.ui.design.WtaAlpha
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
@@ -304,34 +305,33 @@ fun ThinkingBlock(
 @Composable
 fun StreamingBubble(
     text: String,
-    thinking: String,
-    thinkingStartedAt: Long?,
-    thinkingFrozenDurationMs: Long?,
+    thinkingSegments: List<ThinkingSegment>,
     pendingTools: List<RecordedToolCall>,
     activity: String?
 ) {
-    val isThinkingLive = thinkingFrozenDurationMs == null && text.isBlank() && thinking.isNotBlank()
+    val hasLiveSegment = thinkingSegments.any { it.frozenDurationMs == null }
     var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(isThinkingLive) {
-        while (isThinkingLive) {
+    LaunchedEffect(hasLiveSegment) {
+        while (hasLiveSegment) {
             nowMs = System.currentTimeMillis()
             kotlinx.coroutines.delay(100)
         }
     }
 
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
-        if (thinking.isNotBlank()) {
-            val liveDurationMs = thinkingStartedAt?.let { nowMs - it }
+        thinkingSegments.forEach { seg ->
+            val isLive = seg.frozenDurationMs == null
+            val durationMs = seg.frozenDurationMs ?: (nowMs - seg.startedAt)
             ThinkingBlock(
-                content = thinking,
-                durationMs = thinkingFrozenDurationMs ?: liveDurationMs,
-                isLive = isThinkingLive,
-                initiallyExpanded = isThinkingLive,
+                content = seg.content,
+                durationMs = durationMs,
+                isLive = isLive,
+                initiallyExpanded = isLive,
                 modifier = Modifier.widthIn(max = 560.dp)
             )
             Spacer(Modifier.height(WtaSpacing.Tiny))
         }
-        if (text.isNotBlank() || pendingTools.isNotEmpty() || thinking.isBlank()) {
+        if (text.isNotBlank() || pendingTools.isNotEmpty() || thinkingSegments.isEmpty()) {
             WtaCard(
                 tone = WtaCardTone.Surface,
                 contentPadding = androidx.compose.foundation.layout.PaddingValues(

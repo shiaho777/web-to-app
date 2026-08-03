@@ -499,7 +499,11 @@ private fun Conversation(
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
-    val messages = state.currentSession?.messages.orEmpty()
+    // Hide the in-flight assistant draft from history while streaming: it is shown
+    // live via StreamingBubble, so including it here would render the same output twice.
+    val messages = state.currentSession?.messages.orEmpty().filterNot {
+        it.id == state.streamingDraftMessageId
+    }
 
     var followBottom by remember { mutableStateOf(true) }
     val atBottom by remember {
@@ -532,7 +536,7 @@ private fun Conversation(
     }
 
     val streamingTextLen = state.streamingText.length
-    val streamingThinkingLen = state.streamingThinking.length
+    val streamingThinkingLen = state.streamingThinkingSegments.sumOf { it.content.length }
     LaunchedEffect(
         followBottom,
         messages.size,
@@ -595,9 +599,7 @@ private fun Conversation(
                 item(key = "streaming") {
                     StreamingBubble(
                         text = state.streamingText,
-                        thinking = state.streamingThinking,
-                        thinkingStartedAt = state.streamingThinkingStartedAt,
-                        thinkingFrozenDurationMs = state.streamingThinkingDurationMs,
+                        thinkingSegments = state.streamingThinkingSegments,
                         pendingTools = state.pendingToolCalls,
                         activity = state.currentActivity
                     )

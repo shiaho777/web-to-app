@@ -15,11 +15,15 @@ data class AgentUiState(
     val currentSession: AgentSession? = null,
 
     val streamingText: String = "",
-    val streamingThinking: String = "",
+    val streamingThinkingSegments: List<ThinkingSegment> = emptyList(),
 
-    val streamingThinkingStartedAt: Long? = null,
+    /**
+     * Message id of the assistant draft the service is currently writing, if any.
+     * The UI hides this message from the history list while streaming (to avoid it
+     * showing twice: once as a saved bubble and once in the live StreamingBubble).
+     */
+    val streamingDraftMessageId: String? = null,
 
-    val streamingThinkingDurationMs: Long? = null,
     val pendingToolCalls: List<RecordedToolCall> = emptyList(),
     val currentActivity: String? = null,
 
@@ -105,6 +109,18 @@ data class ContextAppItem(
     val name: String,
     val appType: String,
     val categoryId: Long? = null
+)
+
+/**
+ * One turn's worth of streaming reasoning. [frozenDurationMs] is null while the
+ * reasoning for this turn is still arriving (live); once the turn's thinking stream
+ * ends it is frozen so the UI renders a static, collapsed block and the next turn
+ * can open its own live block.
+ */
+data class ThinkingSegment(
+    val content: String,
+    val startedAt: Long,
+    val frozenDurationMs: Long? = null
 )
 
 data class ContextModuleItem(

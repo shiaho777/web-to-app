@@ -10,6 +10,14 @@ sealed class AgentEvent {
 
     data class ThinkingDelta(val delta: String, val accumulated: String) : AgentEvent()
 
+    /**
+     * Emitted once the current turn's reasoning stream has finished and the model is
+     * about to move on to text / tool calls. Lets the UI freeze that turn's thinking
+     * block so the next turn can open a fresh live one, instead of every turn piling
+     * into a single buffer with one shared timestamp.
+     */
+    object ThinkingTurnEnded : AgentEvent()
+
     data class ToolCallStarted(val toolCallId: String, val name: String) : AgentEvent()
 
     data class ToolCallArgsDelta(val toolCallId: String, val delta: String) : AgentEvent()

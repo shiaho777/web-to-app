@@ -91,6 +91,53 @@ class SessionStore(
         it.copy(messages = messages)
     }
 
+    /**
+     * Insert or replace the trailing assistant [message] for a session, keyed by
+     * [message.id]. Used by [com.webtoapp.core.agent.runtime.AgentService] to keep a
+     * live "draft" of the in-flight turn so the output survives even if the UI is
+     * destroyed mid-turn. If the trailing message already has this id it is replaced
+     * in place (so the list does not grow on every throttled snapshot); otherwise the
+     * message is appended.
+     */
+    suspend fun upsertAssistantDraft(id: String, message: AgentMessage): AgentSession? = mutate(id) { s ->
+        val msgs = s.messages.toMutableList()
+        val draftIdx = msgs.indexOfLast { it.id == message.id }
+        if (draftIdx >= 0) {
+            msgs[draftIdx] = message
+        } else {
+            msgs += message
+        }
+        s.copy(messages = msgs)
+    }
+
+    /**
+     * Finalize a draft: replace the trailing message whose id == [final.id] with
+     * [final] (used when the turn ends), or append [final] if no draft with that id
+     * exists. Returns the updated session.
+     */
+    suspend fun finalizeDraft(id: String, final: AgentMessage): AgentSession? = mutate(id) { s ->
+        val msgs = s.messages.toMutableList()
+        val draftIdx = msgs.indexOfLast { it.id == final.id }
+        if (draftIdx >= 0) {
+            msgs[draftIdx] = final
+        } else {
+            msgs += final
+        }
+        s.copy(messages = msgs)
+    }
+
+    /**
+     * Remove the trailing draft message with [draftMessageId] if it is still present
+     * and was never finalized. Used to clean up an aborted draft that produced no
+     * usable output.
+     */
+    suspend fun dropDraft(sessionId: String, draftMessageId: String): AgentSession? = mutate(sessionId) { s ->
+        val msgs = s.messages.toMutableList()
+        val idx = msgs.indexOfLast { it.id == draftMessageId }
+        if (idx >= 0) msgs.removeAt(idx)
+        s.copy(messages = msgs)
+    }
+
     suspend fun truncateAt(id: String, messageId: String, keep: Boolean): AgentSession? = mutate(id) { s ->
         val idx = s.messages.indexOfFirst { it.id == messageId }
         if (idx < 0) return@mutate s

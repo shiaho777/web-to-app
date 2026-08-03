@@ -167,6 +167,11 @@ class AgentEngine(
 
                 if (hardError != null) { send(AgentEvent.Failed(hardError!!)); return@channelFlow }
 
+                // This turn's reasoning stream is done (text/tools come next, or the
+                // turn ends). Freeze it so the UI can start a fresh live block on the
+                // next turn instead of piling into one shared buffer.
+                if (turnThinking.isNotEmpty()) send(AgentEvent.ThinkingTurnEnded)
+
                 if (finishReason == FinishReason.LENGTH && continuationCount >= maxContinuations) {
                     send(AgentEvent.Notice(Strings.agentOutputTruncated))
                 }

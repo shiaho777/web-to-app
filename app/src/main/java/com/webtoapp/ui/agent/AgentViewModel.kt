@@ -13,7 +13,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.google.gson.JsonParser
 import com.webtoapp.core.ai.AiConfigManager
 import com.webtoapp.core.agent.llm.LlmMessage
 import com.webtoapp.core.agent.engine.AgentEvent
@@ -117,9 +116,10 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     private var eventCollectionJob: Job? = null
     private var permissionCollectionJob: Job? = null
     private var choiceCollectionJob: Job? = null
+    private var activeTurnJob: Job? = null
     private var streamingSessionId: String? = null
     private val streamText = StringBuilder()
-    private val streamThinking = StringBuilder()
+    private val streamThinkingSegments = mutableListOf<ThinkingSegment>()
     private val streamTools = LinkedHashMap<String, RecordedToolCall>()
     private val streamToolArgs = HashMap<String, StringBuilder>()
     private val readFilesThisTurn = mutableSetOf<String>()
@@ -635,43 +635,20 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun cancelTurn() {
-        val sid = streamingSessionId
-        if (sid != null) {
-            viewModelScope.launch { savePartialMessage(sid) }
-        }
+        // Aborted-turn persistence is handled by AgentService. Here we just cancel the
+        // engine job and reset UI buffers immediately for responsiveness.
         service?.cancel()
         _ui.update {
             it.copy(
                 phase = AgentUiState.Phase.Idle,
                 currentActivity = null,
                 streamingText = "",
-                streamingThinking = "",
-                streamingThinkingStartedAt = null,
-                streamingThinkingDurationMs = null,
+                streamingThinkingSegments = emptyList(),
                 pendingToolCalls = emptyList()
             )
         }
         streamingSessionId = null
-        streamText.clear(); streamThinking.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
-    }
-
-    private suspend fun savePartialMessage(sid: String) {
-        val text = streamText.toString().trim()
-        val thinking = streamThinking.toString().takeIf { it.isNotBlank() }
-        val tools = streamTools.values.toList()
-        if (text.isBlank() && thinking.isNullOrBlank() && tools.isEmpty()) return
-        sessionStore.appendMessage(
-            sid,
-            AgentMessage(
-                role = AgentMessage.Role.ASSISTANT,
-                content = text.ifBlank { Strings.agentNoOutput } + "\n\n" + Strings.agentAbortedHint,
-                isError = true,
-                thinking = thinking,
-                thinkingDurationMs = _ui.value.streamingThinkingDurationMs
-                    ?: _ui.value.streamingThinkingStartedAt?.let { start -> System.currentTimeMillis() - start },
-                toolCalls = tools
-            )
-        )
+        streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
     }
 
     fun dismissBanner() {
@@ -1050,16 +1027,14 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         } else session
 
         streamingSessionId = workingSession.id
-        streamText.clear(); streamThinking.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
+        streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
         val compactSvc2 = compactService ?: CompactService(service!!.gateway).also { compactService = it }
         val estTokens = compactSvc2.estimateTokens(workingSession.messages)
         _ui.update {
             it.copy(
                 phase = AgentUiState.Phase.Connecting,
                 streamingText = "",
-                streamingThinking = "",
-                streamingThinkingStartedAt = null,
-                streamingThinkingDurationMs = null,
+                streamingThinkingSegments = emptyList(),
                 pendingToolCalls = emptyList(),
                 currentActivity = null,
                 error = null,
@@ -1195,6 +1170,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 userMessage = if (tailHasMentions) "" else prompt,
                 toolContext = toolCtx,
                 registry = registry,
+                sessionStore = sessionStore,
                 temperature = session.config.temperature,
                 maxTurns = session.config.maxTurns
             )
@@ -1326,6 +1302,11 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun attachToService() {
+        // If the service is still running a turn (e.g. the UI was destroyed and is now
+        // reconnecting), resume the streaming buffers from its latest draft so the user
+        // sees the in-flight output instead of a blank screen.
+        resumeFromActiveTurn()
+
         eventCollectionJob?.cancel()
         eventCollectionJob = viewModelScope.launch {
             service?.events?.collect { handleAgentEvent(it) }
@@ -1344,8 +1325,60 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 _ui.update { it.copy(pendingChoice = req) }
             }
         }
+        // Track the service's active-turn draft id so the UI can hide the in-flight
+        // draft from the history list (it is shown live via StreamingBubble instead).
+        activeTurnJob?.cancel()
+        activeTurnJob = viewModelScope.launch {
+            service?.activeTurn?.collect { snap ->
+                val draftId = snap?.takeIf { it.isRunning }?.draftMessage?.id
+                _ui.update { it.copy(streamingDraftMessageId = draftId) }
+            }
+        }
 
         applyAutoApproveToService(_ui.value.autoApprove)
+    }
+
+    /**
+     * Pull the service's current [AgentService.activeTurn] snapshot into the streaming
+     * UI buffers. This lets a freshly created ViewModel (after the previous one was
+     * cleared) pick up an in-flight turn and keep showing its progress live.
+     */
+    private fun resumeFromActiveTurn() {
+        val svc = service ?: return
+        val snapshot = svc.activeTurn.value ?: return
+        if (!snapshot.isRunning) return
+        val draft = snapshot.draftMessage ?: return
+        // Only resume if this turn belongs to the session the user is currently viewing.
+        if (_ui.value.currentSession?.id != snapshot.sessionId) return
+
+        streamingSessionId = snapshot.sessionId
+        streamText.setLength(0)
+        streamText.append(draft.content)
+        streamThinkingSegments.clear()
+        // The draft's thinking is a single joined string (per-turn boundaries are not
+        // preserved across drafts); restore it as one segment. New live deltas will open
+        // a fresh segment after the current one is frozen.
+        draft.thinking?.takeIf { it.isNotBlank() }?.let {
+            streamThinkingSegments += ThinkingSegment(
+                content = it,
+                startedAt = System.currentTimeMillis(),
+                frozenDurationMs = draft.thinkingDurationMs
+            )
+        }
+        streamTools.clear()
+        streamToolArgs.clear()
+        draft.toolCalls.forEach { tc ->
+            streamTools[tc.toolCallId] = tc
+        }
+        _ui.update {
+            it.copy(
+                phase = AgentUiState.Phase.Streaming,
+                streamingText = draft.content,
+                streamingThinkingSegments = streamThinkingSegments.toList(),
+                pendingToolCalls = streamTools.values.toList(),
+                currentActivity = streamTools.values.lastOrNull()?.activity
+            )
+        }
     }
 
     private suspend fun handleAgentEvent(ev: AgentEvent) {
@@ -1355,23 +1388,32 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             is AgentEvent.TextDelta -> {
                 streamText.setLength(0); streamText.append(ev.accumulated)
                 _ui.update {
-
-                    val frozen = it.streamingThinkingDurationMs ?: it.streamingThinkingStartedAt
-                        ?.let { start -> System.currentTimeMillis() - start }
-                    it.copy(
-                        streamingText = ev.accumulated,
-                        streamingThinkingDurationMs = frozen
-                    )
+                    it.copy(streamingText = ev.accumulated)
                 }
             }
             is AgentEvent.ThinkingDelta -> {
-                streamThinking.append(ev.delta)
+                // Append to the current live segment, or open a new one for a fresh turn.
+                val now = System.currentTimeMillis()
+                val tail = streamThinkingSegments.lastOrNull()?.takeIf { it.frozenDurationMs == null }
+                if (tail == null) {
+                    streamThinkingSegments += ThinkingSegment(content = ev.delta, startedAt = now)
+                } else {
+                    streamThinkingSegments[streamThinkingSegments.lastIndex] =
+                        tail.copy(content = tail.content + ev.delta)
+                }
                 _ui.update {
-                    val started = it.streamingThinkingStartedAt ?: System.currentTimeMillis()
-                    it.copy(
-                        streamingThinking = streamThinking.toString(),
-                        streamingThinkingStartedAt = started
-                    )
+                    it.copy(streamingThinkingSegments = streamThinkingSegments.toList())
+                }
+            }
+            AgentEvent.ThinkingTurnEnded -> {
+                // Freeze the live segment so the next turn opens its own live block.
+                val tail = streamThinkingSegments.lastOrNull()?.takeIf { it.frozenDurationMs == null }
+                if (tail != null) {
+                    streamThinkingSegments[streamThinkingSegments.lastIndex] =
+                        tail.copy(frozenDurationMs = System.currentTimeMillis() - tail.startedAt)
+                    _ui.update {
+                        it.copy(streamingThinkingSegments = streamThinkingSegments.toList())
+                    }
                 }
             }
             is AgentEvent.ToolCallStarted -> {
@@ -1479,59 +1521,16 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 _ui.update { it.copy(info = ev.message) }
             }
             is AgentEvent.Completed -> {
-                val rawText = streamText.toString()
-                val text = stripToolMarkers(rawText).trim().ifEmpty {
-                    stripToolMarkers(ev.summary).trim()
-                }
-                val contentForTimeline = rawText.ifBlank { text }
-                val producedFiles = streamTools.values
-                    .filter { it.ok && it.name in setOf("Write", "Edit", "Delete", "GenerateImage") }
-                    .mapNotNull { tc ->
-                        runCatching {
-                            JsonParser.parseString(tc.argumentsJson).asJsonObject.get("path")?.asString
-                        }.getOrNull()
-                    }
-                    .distinct()
-                val attachments = streamTools.values
-                    .filter { it.ok && it.name == "GenerateImage" }
-                    .mapNotNull { tc ->
-                        runCatching {
-                            JsonParser.parseString(tc.argumentsJson).asJsonObject.get("path")?.asString
-                        }.getOrNull()
-                    }
-
-                val isDegenerate = text.isBlank() &&
-                    streamThinking.toString().isBlank() &&
-                    streamTools.isEmpty()
-                val finalContent = if (isDegenerate) {
-                    Strings.agentEmptyResponseHint
-                } else {
-                    text
-                }
-                val saved = sessionStore.appendMessage(
-                    sid,
-                    AgentMessage(
-                        role = AgentMessage.Role.ASSISTANT,
-                        content = if (isDegenerate) finalContent else contentForTimeline.ifBlank { finalContent },
-                        thinking = streamThinking.toString().takeIf { it.isNotBlank() },
-                        thinkingDurationMs = _ui.value.streamingThinkingDurationMs
-                            ?: _ui.value.streamingThinkingStartedAt?.let { start -> System.currentTimeMillis() - start },
-                        toolCalls = streamTools.values.toList(),
-                        producedFiles = producedFiles,
-                        attachments = attachments,
-                        isError = isDegenerate
-                    )
-                )
+                // Persistence is handled by AgentService (outlives the UI scope).
+                // Here we only reset the streaming UI buffers and surface a notice.
                 streamingSessionId = null
-                streamText.clear(); streamThinking.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
+                streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
                 lastToolUiPushAt = 0L
                 _ui.update {
                     it.copy(
                         phase = AgentUiState.Phase.Idle,
                         streamingText = "",
-                        streamingThinking = "",
-                        streamingThinkingStartedAt = null,
-                        streamingThinkingDurationMs = null,
+                        streamingThinkingSegments = emptyList(),
                         pendingToolCalls = emptyList(),
                         currentActivity = null,
                         info = if (ev.toolCallCount > 0)
@@ -1539,31 +1538,18 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                         else null
                     )
                 }
-
-                saved?.let { maybeAutoTitle(it) }
+                // The service finalized the message; refresh title from the persisted session.
+                viewModelScope.launch { maybeAutoTitle(sid) }
             }
             is AgentEvent.PlanReviewRequired -> {
                 val planContent = files.readText(sid, ev.planPath) ?: ""
-                val text = streamText.toString().trim().ifEmpty { Strings.agentPlanAwaitingReview }
-                sessionStore.appendMessage(
-                    sid,
-                    AgentMessage(
-                        role = AgentMessage.Role.ASSISTANT,
-                        content = text,
-                        thinking = streamThinking.toString().takeIf { it.isNotBlank() },
-                        thinkingDurationMs = _ui.value.streamingThinkingDurationMs
-                            ?: _ui.value.streamingThinkingStartedAt?.let { start -> System.currentTimeMillis() - start },
-                        toolCalls = streamTools.values.toList()
-                    )
-                )
                 streamingSessionId = null
+                streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
                 _ui.update {
                     it.copy(
                         phase = AgentUiState.Phase.Idle,
                         streamingText = "",
-                        streamingThinking = "",
-                        streamingThinkingStartedAt = null,
-                        streamingThinkingDurationMs = null,
+                        streamingThinkingSegments = emptyList(),
                         pendingToolCalls = emptyList(),
                         currentActivity = null,
                         pendingPlanReview = PlanReview(planPath = ev.planPath, content = planContent)
@@ -1571,41 +1557,28 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             AgentEvent.Aborted -> {
-                savePartialMessage(sid)
+                // Partial output is persisted by AgentService; just reset UI state.
                 streamingSessionId = null
+                streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
                 _ui.update {
                     it.copy(
                         phase = AgentUiState.Phase.Idle,
                         streamingText = "",
-                        streamingThinking = "",
-                        streamingThinkingStartedAt = null,
-                        streamingThinkingDurationMs = null,
+                        streamingThinkingSegments = emptyList(),
                         pendingToolCalls = emptyList(),
                         currentActivity = null
                     )
                 }
             }
             is AgentEvent.Failed -> {
-                sessionStore.appendMessage(
-                    sid,
-                    AgentMessage(
-                        role = AgentMessage.Role.ASSISTANT,
-                        content = streamText.toString().ifBlank { Strings.agentNoOutput } + "\n\n" + Strings.agentErrorPrefix.format(ev.message),
-                        isError = true,
-                        thinking = streamThinking.toString().takeIf { it.isNotBlank() },
-                        thinkingDurationMs = _ui.value.streamingThinkingDurationMs
-                            ?: _ui.value.streamingThinkingStartedAt?.let { start -> System.currentTimeMillis() - start },
-                        toolCalls = streamTools.values.toList()
-                    )
-                )
+                // Error message is persisted by AgentService; just reset UI state.
                 streamingSessionId = null
+                streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
                 _ui.update {
                     it.copy(
                         phase = AgentUiState.Phase.Idle,
                         streamingText = "",
-                        streamingThinking = "",
-                        streamingThinkingStartedAt = null,
-                        streamingThinkingDurationMs = null,
+                        streamingThinkingSegments = emptyList(),
                         pendingToolCalls = emptyList(),
                         currentActivity = null
                     )
@@ -1614,7 +1587,10 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun maybeAutoTitle(session: AgentSession) {
+    private suspend fun maybeAutoTitle(sessionId: String) {
+        // Re-read from the store: the service finalized the assistant message, so the
+        // persisted session is the source of truth here.
+        val session = sessionStore.get(sessionId) ?: return
         if (!session.titleAutoGenerated) return
 
         val userMsgs = session.messages.count { it.role == AgentMessage.Role.USER }
@@ -1622,70 +1598,68 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         if (userMsgs != 1 || assistantMsgs != 1) return
 
         val gateway = service?.gateway ?: return
-        viewModelScope.launch {
-            val models = configManager.savedModelsFlow.first()
-            val keys = configManager.apiKeysFlow.first()
-            val textModel = resolveTextModel(models) ?: return@launch
-            val textKey = keys.firstOrNull { it.id == textModel.apiKeyId } ?: return@launch
+        val models = configManager.savedModelsFlow.first()
+        val keys = configManager.apiKeysFlow.first()
+        val textModel = resolveTextModel(models) ?: return
+        val textKey = keys.firstOrNull { it.id == textModel.apiKeyId } ?: return
 
-            val firstUser = session.messages.first { it.role == AgentMessage.Role.USER }.content
-            val firstAssistant = session.messages.first { it.role == AgentMessage.Role.ASSISTANT }.content
+        val firstUser = session.messages.first { it.role == AgentMessage.Role.USER }.content
+        val firstAssistant = session.messages.first { it.role == AgentMessage.Role.ASSISTANT }.content
 
-            val sysPrompt = """
-                Summarise the following conversation as a short title.
-                Constraints:
-                - 4 to 7 words; no leading verbs like "How to" or "Helping with".
-                - Match the user's language (Chinese stays Chinese, English stays English, etc.).
-                - Plain text only — no quotes, no trailing punctuation, no markdown.
-                - Respond with the title only. Do not preface, do not explain.
-            """.trimIndent()
-            val convo = buildString {
-                append("User: ")
-                append(firstUser.take(800))
-                append("\n\nAssistant: ")
-                append(firstAssistant.take(400))
-            }
-
-            val req = com.webtoapp.core.agent.llm.ChatRequest(
-                apiKey = textKey,
-                model = textModel.model,
-                messages = listOf(
-                    LlmMessage(LlmMessage.Role.SYSTEM, sysPrompt),
-                    LlmMessage(LlmMessage.Role.USER, convo)
-                ),
-                tools = emptyList(),
-                temperature = 0.3f,
-                useTools = false
-            )
-
-            val sb = StringBuilder()
-            try {
-                gateway.chatStream(req).collect { ev ->
-                    when (ev) {
-                        is com.webtoapp.core.agent.llm.LlmEvent.TextDelta -> sb.append(ev.delta)
-                        is com.webtoapp.core.agent.llm.LlmEvent.Error ->
-                            if (!ev.recoverable) return@collect
-                        else -> Unit
-                    }
-                }
-            } catch (_: Throwable) {
-                return@launch
-            }
-
-            val title = sb.toString()
-                .lineSequence()
-                .map { it.trim() }
-                .firstOrNull { it.isNotEmpty() }
-                ?.trim('"', '\'', '“', '”', '「', '」', '《', '》')
-                ?.trimEnd('.', '。', '!', '！', '?', '？', ':', '：', ';', '；', ',', '，')
-                ?.trim()
-                ?.takeIf { it.isNotEmpty() }
-                ?.take(40)
-                ?: return@launch
-
-            if (title == session.title.trim()) return@launch
-            sessionStore.setAutoTitle(session.id, title)
+        val sysPrompt = """
+            Summarise the following conversation as a short title.
+            Constraints:
+            - 4 to 7 words; no leading verbs like "How to" or "Helping with".
+            - Match the user's language (Chinese stays Chinese, English stays English, etc.).
+            - Plain text only — no quotes, no trailing punctuation, no markdown.
+            - Respond with the title only. Do not preface, do not explain.
+        """.trimIndent()
+        val convo = buildString {
+            append("User: ")
+            append(firstUser.take(800))
+            append("\n\nAssistant: ")
+            append(firstAssistant.take(400))
         }
+
+        val req = com.webtoapp.core.agent.llm.ChatRequest(
+            apiKey = textKey,
+            model = textModel.model,
+            messages = listOf(
+                LlmMessage(LlmMessage.Role.SYSTEM, sysPrompt),
+                LlmMessage(LlmMessage.Role.USER, convo)
+            ),
+            tools = emptyList(),
+            temperature = 0.3f,
+            useTools = false
+        )
+
+        val sb = StringBuilder()
+        try {
+            gateway.chatStream(req).collect { ev ->
+                when (ev) {
+                    is com.webtoapp.core.agent.llm.LlmEvent.TextDelta -> sb.append(ev.delta)
+                    is com.webtoapp.core.agent.llm.LlmEvent.Error ->
+                        if (!ev.recoverable) return@collect
+                    else -> Unit
+                }
+            }
+        } catch (_: Throwable) {
+            return
+        }
+
+        val title = sb.toString()
+            .lineSequence()
+            .map { it.trim() }
+            .firstOrNull { it.isNotEmpty() }
+            ?.trim('"', '\'', '“', '”', '「', '」', '《', '》')
+            ?.trimEnd('.', '。', '!', '！', '?', '？', ':', '：', ';', '；', ',', '，')
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.take(40)
+            ?: return
+
+        if (title == session.title.trim()) return
+        sessionStore.setAutoTitle(session.id, title)
     }
 
     private fun synthesiseReadCallsFor(m: AgentMessage, sessionId: String): List<LlmMessage> {
@@ -1778,6 +1752,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         eventCollectionJob?.cancel()
         permissionCollectionJob?.cancel()
         choiceCollectionJob?.cancel()
+        activeTurnJob?.cancel()
         if (bound) runCatching { ctx.unbindService(connection) }
     }
 
