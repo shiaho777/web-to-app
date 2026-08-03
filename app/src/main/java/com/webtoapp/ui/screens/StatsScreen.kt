@@ -524,41 +524,6 @@ private fun UsageRankCard(
                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                MetaChip(
-                    label = Strings.statsLastSession,
-                    value = stats.formattedLastSession
-                )
-                MetaChip(
-                    label = Strings.statsTotalUsage,
-                    value = stats.formattedTotalUsage
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MetaChip(label: String, value: String) {
-    Surface(
-        shape = RoundedCornerShape(10.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                value,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold
-            )
         }
     }
 }
