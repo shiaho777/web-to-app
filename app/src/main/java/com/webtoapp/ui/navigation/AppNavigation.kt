@@ -25,6 +25,7 @@ import com.webtoapp.ui.screens.AiSettingsScreen
 import com.webtoapp.ui.screens.AppModifierScreen
 import com.webtoapp.ui.screens.AppModifyFullScreen
 import com.webtoapp.ui.screens.BrowserKernelScreen
+import com.webtoapp.ui.screens.BuildApkScreen
 import com.webtoapp.ui.screens.CreateAppScreen
 import com.webtoapp.ui.screens.CreateFrontendAppScreen
 import com.webtoapp.ui.screens.CreateGalleryAppScreenV2
@@ -101,11 +102,14 @@ object Routes {
     const val ABOUT = "about"
     const val PLAY_STORE = "play_store?appId={appId}&autoStart={autoStart}"
     const val FILE_MANAGER = "file_manager"
+    const val BUILD_APK = "build_apk/{appId}"
 
     fun playStore(appId: Long? = null, autoStart: Boolean = false): String {
         val id = appId?.toString() ?: ""
         return "play_store?appId=$id&autoStart=$autoStart"
     }
+
+    fun buildApk(appId: Long) = "build_apk/$appId"
 
     fun editApp(appId: Long) = "edit_app/$appId"
     fun editWebApp(appId: Long) = "edit_web_app/$appId"
@@ -200,7 +204,10 @@ fun AppNavigation() {
                         onExportAabForApp = { appId ->
                             navController.navigate(Routes.playStore(appId = appId, autoStart = true))
                         },
-                        onOpenFileManager = { navController.navigate(Routes.FILE_MANAGER) }
+                        onOpenFileManager = { navController.navigate(Routes.FILE_MANAGER) },
+                        onBuildApk = { appId ->
+                            navController.navigate(Routes.buildApk(appId))
+                        }
                     )
             }
 
@@ -704,6 +711,20 @@ fun AppNavigation() {
 
             composable(Routes.FILE_MANAGER) {
                 FileManagerScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(
+                route = Routes.BUILD_APK,
+                arguments = listOf(navArgument("appId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val appId = backStackEntry.arguments?.getLong("appId") ?: 0L
+                BuildApkScreen(
+                    appId = appId,
+                    onBack = { navController.popBackStack() },
+                    onExportAab = { id ->
+                        navController.navigate(Routes.playStore(appId = id, autoStart = true))
+                    }
+                )
             }
 
             composable(Routes.ABOUT) {
