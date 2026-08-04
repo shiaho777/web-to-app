@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Android
+import androidx.compose.material.icons.outlined.Apps
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
@@ -80,7 +81,8 @@ fun AgentDrawer(
     onDeleteSession: (String) -> Unit,
     onPinSession: (String, Boolean) -> Unit,
     onPickFile: (String) -> Unit,
-    onCopyFilePath: (String) -> Unit
+    onCopyFilePath: (String) -> Unit,
+    onOpenWith: (String) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -132,7 +134,8 @@ fun AgentDrawer(
                 builtApks = state.builtApks,
                 onPick = onPickFile,
                 onPickApk = { apkName -> onPickFile("apk:$apkName") },
-                onCopyPath = onCopyFilePath
+                onCopyPath = onCopyFilePath,
+                onOpenWith = onOpenWith
             )
         }
     }
@@ -286,7 +289,8 @@ private fun FilesTab(
     builtApks: List<com.webtoapp.core.agent.tool.BuiltApkInfo>,
     onPick: (String) -> Unit,
     onPickApk: (String) -> Unit,
-    onCopyPath: (String) -> Unit
+    onCopyPath: (String) -> Unit,
+    onOpenWith: (String) -> Unit
 ) {
     if (files.isEmpty() && builtApks.isEmpty()) {
         WtaFullEmptyState(
@@ -308,11 +312,13 @@ private fun FilesTab(
                 )
             }
             items(builtApks, key = { "apk_${it.appId}_${it.apkName}" }) { apk ->
+                val apkVirtualPath = "apk:${apk.apkName}"
                 FileEntryRow(
                     title = apk.apkName,
                     subtitle = "${apk.formatSize()} · ${apk.buildMode}",
                     icon = Icons.Outlined.Android,
                     onOpen = { onPickApk(apk.apkName) },
+                    onOpenWith = { onOpenWith(apkVirtualPath) },
                     onCopyPath = { onCopyPath(apk.apkPath) }
                 )
                 WtaSectionDivider()
@@ -325,6 +331,7 @@ private fun FilesTab(
                 subtitle = "${f.formatSize()} · ${f.formatTime()}",
                 icon = Icons.Outlined.Code,
                 onOpen = { onPick(f.relativePath) },
+                onOpenWith = { onOpenWith(f.relativePath) },
                 onCopyPath = { onCopyPath(f.relativePath) }
             )
             WtaSectionDivider()
@@ -338,6 +345,7 @@ private fun FileEntryRow(
     subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     onOpen: () -> Unit,
+    onOpenWith: () -> Unit,
     onCopyPath: () -> Unit
 ) {
     var menuOpen by remember { mutableStateOf(false) }
@@ -360,6 +368,11 @@ private fun FileEntryRow(
                         text = { Text(Strings.agentFileOpen) },
                         leadingIcon = { Icon(Icons.Outlined.OpenInNew, contentDescription = null) },
                         onClick = { menuOpen = false; onOpen() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(Strings.agentFileOpenWith) },
+                        leadingIcon = { Icon(Icons.Outlined.Apps, contentDescription = null) },
+                        onClick = { menuOpen = false; onOpenWith() }
                     )
                     DropdownMenuItem(
                         text = { Text(Strings.agentFileCopyPath) },

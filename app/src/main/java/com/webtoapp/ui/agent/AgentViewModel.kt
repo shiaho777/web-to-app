@@ -35,6 +35,7 @@ import com.webtoapp.core.agent.tool.BuiltApkInfo
 import com.webtoapp.core.agent.tool.ToolRegistryFactory
 import com.webtoapp.core.agent.prompt.SystemPromptBuilder
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.data.model.AiFeature
 import com.webtoapp.data.model.toManifestJson
 import kotlinx.coroutines.Dispatchers
@@ -633,6 +634,59 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setPreviewFile(path: String?) {
         _ui.update { it.copy(previewFilePath = path) }
+    }
+
+    /**
+     * Open a file with the system chooser ("Open with…") so the user can pick an
+     * external app (file manager, browser, etc.) to view or locate the file.
+     * For APK artifacts it uses the absolute built_apks path; for project files
+     * it resolves the sandbox-relative path to an absolute file first.
+     */
+    fun openWithSystemChooser(path: String) {
+        val file: java.io.File = if (path.startsWith("apk:")) {
+            val apkName = path.removePrefix("apk:")
+            val apk = _ui.value.builtApks.firstOrNull { it.apkName == apkName }
+            if (apk != null) java.io.File(apk.apkPath) else return
+        } else {
+            val sid = _ui.value.currentSession?.id ?: return
+            files.resolveSafe(sid, path) ?: return
+        }
+        if (!file.exists()) {
+            _ui.update { it.copy(info = Strings.agentFileNotFound) }
+            return
+        }
+        runCatching {
+            val uri = androidx.core.content.FileProvider.getUriForFile(
+                ctx, ctx.packageName + ".fileprovider", file
+            )
+            val mime = if (path.startsWith("apk:")) "application/vnd.android.package-archive"
+                       else getMimeType(file.name)
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, mime)
+                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            ctx.startActivity(
+                android.content.Intent.createChooser(intent, Strings.agentFileOpenWith)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }.onFailure { e ->
+            AppLogger.w("AgentViewModel", "openWithSystemChooser failed: ${e.message}")
+            _ui.update { it.copy(info = Strings.agentFileOpenFailed) }
+        }
+    }
+
+    private fun getMimeType(fileName: String): String {
+        val ext = fileName.substringAfterLast('.', "").lowercase()
+        return android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
+            ?: when (ext) {
+                "html", "htm" -> "text/html"
+                "js" -> "application/javascript"
+                "json" -> "application/json"
+                "css" -> "text/css"
+                "md" -> "text/markdown"
+                else -> "*/*"
+            }
     }
 
     fun saveSelectedFile(content: String) {

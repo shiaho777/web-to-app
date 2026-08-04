@@ -1599,6 +1599,9 @@ object Strings {
     val agentFileOpen: String get() = StringsB.agentFileOpen
     val agentFileCopyPath: String get() = StringsB.agentFileCopyPath
     val agentPathCopied: String get() = StringsB.agentPathCopied
+    val agentFileOpenWith: String get() = StringsB.agentFileOpenWith
+    val agentFileNotFound: String get() = StringsB.agentFileNotFound
+    val agentFileOpenFailed: String get() = StringsB.agentFileOpenFailed
     val lrcGenerationDesc: String get() = StringsB.lrcGenerationDesc
     val translationDesc: String get() = StringsB.translationDesc
     val generalChatDesc: String get() = StringsB.generalChatDesc
@@ -24877,6 +24880,42 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Путь скопирован"
         AppLanguage.JAPANESE -> "パスをコピーしました"
         AppLanguage.KOREAN -> "경로가 복사됨"
+    }
+    val agentFileOpenWith: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "打开方式…"
+        AppLanguage.ENGLISH -> "Open with…"
+        AppLanguage.ARABIC -> "فتح باستخدام…"
+        AppLanguage.PORTUGUESE -> "Abrir com…"
+        AppLanguage.SPANISH -> "Abrir con…"
+        AppLanguage.FRENCH -> "Ouvrir avec…"
+        AppLanguage.GERMAN -> "Öffnen mit…"
+        AppLanguage.RUSSIAN -> "Открыть с помощью…"
+        AppLanguage.JAPANESE -> "別のアプリで開く…"
+        AppLanguage.KOREAN -> "다른 앱으로 열기…"
+    }
+    val agentFileNotFound: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件不存在"
+        AppLanguage.ENGLISH -> "File not found"
+        AppLanguage.ARABIC -> "الملف غير موجود"
+        AppLanguage.PORTUGUESE -> "Arquivo não encontrado"
+        AppLanguage.SPANISH -> "Archivo no encontrado"
+        AppLanguage.FRENCH -> "Fichier introuvable"
+        AppLanguage.GERMAN -> "Datei nicht gefunden"
+        AppLanguage.RUSSIAN -> "Файл не найден"
+        AppLanguage.JAPANESE -> "ファイルが見つかりません"
+        AppLanguage.KOREAN -> "파일을 찾을 수 없습니다"
+    }
+    val agentFileOpenFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法打开此文件"
+        AppLanguage.ENGLISH -> "Cannot open this file"
+        AppLanguage.ARABIC -> "تعذر فتح هذا الملف"
+        AppLanguage.PORTUGUESE -> "Não é possível abrir este arquivo"
+        AppLanguage.SPANISH -> "No se puede abrir este archivo"
+        AppLanguage.FRENCH -> "Impossible d'ouvrir ce fichier"
+        AppLanguage.GERMAN -> "Diese Datei kann nicht geöffnet werden"
+        AppLanguage.RUSSIAN -> "Невозможно открыть этот файл"
+        AppLanguage.JAPANESE -> "このファイルを開けません"
+        AppLanguage.KOREAN -> "이 파일을 열 수 없습니다"
     }
 
     val lrcGenerationDesc: String get() = when (Strings.lang) {
