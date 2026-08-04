@@ -153,6 +153,7 @@ class WebViewConfigBooleanCoverageTest {
             allowMixedContent = bool("allowMixedContent"),
             enableBlobDownloadInterception = bool("enableBlobDownloadInterception"),
             enablePrintBridge = bool("enablePrintBridge"),
+            enableMediaSession = bool("enableMediaSession"),
             enableCloudflareCompat = bool("enableCloudflareCompat"),
             enableCookiePersistence = bool("enableCookiePersistence"),
             enablePrivateNetworkBridge = bool("enablePrivateNetworkBridge"),
