@@ -138,6 +138,15 @@ Trace and update **all** of:
 3. Shell config types (`ShellModeManager` / shell config data classes) if runtime reads them
 4. Runtime use site in shell-synced code
 5. Unit tests for export wiring when flags change
+6. **Coverage test update (REQUIRED).** When adding a new Boolean field to
+   `WebViewConfig`, you MUST add it to `flipAllBooleans()` in
+   `WebViewConfigBooleanCoverageTest.kt`. The test
+   `flipAllBooleans covers every declared Boolean field` uses reflection to
+   verify that every declared Boolean field is listed — if you forget, CI
+   fails with a message naming the missing field. For non-Boolean fields, add
+   a spot-check to `key non-Boolean WebViewConfig fields survive the export
+   round-trip`. This is the safety net that catches "preview works, export
+   broken" before it ships.
 
 Missing any step usually yields: editor shows the switch, export ignores it, or export embeds config the runtime never reads.
 

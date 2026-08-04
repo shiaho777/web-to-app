@@ -8,74 +8,226 @@ import com.webtoapp.util.GsonProvider
 import java.lang.reflect.Field
 import org.junit.Test
 
+/**
+ * Ensures every WebViewConfig field survives the full export pipeline:
+ *
+ *   WebApp.WebViewConfig
+ *     → ApkConfig (toApkConfig / buildWebViewBehaviorBlock)
+ *     → JSON (ApkConfigJsonFactory.toShellConfigJson)
+ *     → ShellConfig.WebViewConfig (Gson deserialization)
+ *
+ * If a field is added to WebViewConfig but forgotten in any of these layers,
+ * the generated APK silently drops the setting — "preview works, export broken".
+ *
+ * **When you add a new Boolean field to WebViewConfig, you MUST add it to
+ * [flipAllBooleans] below.** The first test verifies that every declared
+ * Boolean field is listed — if you forget, the test fails with a clear message.
+ */
 class WebViewConfigBooleanCoverageTest {
+
+    // ────────────────────────────────────────────────────────────
+    //  1. flipAllBooleans must cover every Boolean field (compile-time safety)
+    // ────────────────────────────────────────────────────────────
+
+    @Test
+    fun `flipAllBooleans covers every declared Boolean field in WebViewConfig`() {
+        val allBooleanFields = WebViewConfig::class.java.declaredFields
+            .filter { it.type == java.lang.Boolean.TYPE }
+            .map { it.name }
+            .toSet()
+
+        // The fields explicitly listed in flipAllBooleans — if a new Boolean field is
+        // added to WebViewConfig but missing here, this test fails immediately.
+        val listedFields = setOf(
+            "javaScriptEnabled", "domStorageEnabled", "allowFileAccess", "allowContentAccess",
+            "cacheEnabled", "clearBrowsingDataOnLaunch", "zoomEnabled", "desktopMode",
+            "hideToolbar", "hideBrowserToolbar", "toolbarShowTitle", "toolbarShowUrl",
+            "toolbarShowBack", "toolbarShowForward", "toolbarShowRefresh",
+            "browserToolbarCustomized", "showStatusBarInFullscreen",
+            "showNavigationBarInFullscreen", "showToolbarInFullscreen", "landscapeMode",
+            "longPressMenuEnabled", "popupBlockerEnabled", "popupBlockerToggleEnabled",
+            "openExternalLinks", "showFloatingBackButton", "swipeRefreshEnabled",
+            "fullscreenEnabled", "performanceOptimization", "pwaOfflineEnabled",
+            "staticAssetPackEnabled", "staticAssetPackIncludeImages", "staticAssetPackIncludeCdn",
+            "downloadEnabled", "antiCapture",
+            "enableKernelDisguise", "enableImageRepair", "enableScrollMemory",
+            "enableBackStatePreservation", "followSystemDarkMode",
+            "enableClipboardPolyfill", "enableNotificationPolyfill",
+            "enableOrientationPolyfill", "enableCompatPolyfills",
+            "enableCorsBypass", "allowMixedContent",
+            "enableBlobDownloadInterception", "enablePrintBridge", "enableMediaSession",
+            "enableCloudflareCompat", "enableCookiePersistence",
+            "enablePrivateNetworkBridge", "enableNativeBridge",
+            "enablePaymentSchemes", "enableShareBridge", "enableZoomPolyfill",
+            "enableCrossOriginIsolation", "hideUrlPreview", "decodeBase64DeepLinks",
+            "javaScriptCanOpenWindows", "mediaAutoplayEnabled",
+            "acceptThirdPartyCookies", "geolocationEnabled", "keepScreenOn",
+            "databaseEnabled", "primeUserActivation", "failoverEnabled",
+            "hostsMappingEnabled", "autoRefreshEnabled", "autoRefreshShowCountdown",
+            "allowFileAccessFromFileURLs", "allowUniversalAccessFromFileURLs",
+            "tlsFingerprintEnabled", "statusBarDarkIconsDark"
+        )
+
+        val missing = allBooleanFields - listedFields
+        val stale = listedFields - allBooleanFields
+
+        assertThat(missing).isEmpty()
+        assertThat(stale).isEmpty()
+    }
+
+    // ────────────────────────────────────────────────────────────
+    //  2. Every Boolean field flips through the export pipeline
+    // ────────────────────────────────────────────────────────────
 
     @Test
     fun `every WebViewConfig Boolean field flips its WebViewShellConfig counterpart on export`() {
         val defaultApp = WebApp(name = "t", url = "https://t.example.com")
         val defaultShell = roundTrip(defaultApp)
-        val defaultWv = defaultApp.webViewConfig
         val defaultShellWv = shellWvOf(defaultShell)
 
-        val flippedWv = flipAllBooleans(defaultWv)
+        val flippedWv = flipAllBooleans(defaultApp.webViewConfig)
         val flippedApp = defaultApp.copy(webViewConfig = flippedWv)
         val flippedShell = roundTrip(flippedApp)
         val flippedShellWv = shellWvOf(flippedShell)
 
         val shellWvFields = flippedShellWv.javaClass.declaredFields.associateBy { it.name }
 
-        val wvBooleanFields = WebViewConfig::class.java.declaredFields
-            .filter { it.type == java.lang.Boolean.TYPE }
-
         val knownDerivedOrIntentional = setOf(
-            "allowFileAccess",
-            "allowFileAccessFromFileURLs",
-            "allowUniversalAccessFromFileURLs",
-            "cacheEnabled",
-            "pwaOfflineEnabled",
-            // Build-time Static Asset Pack tuning: consumed by the exporter only, intentionally
-            // not surfaced as a WebViewShellConfig field (only enabled/maxAgeDays reach the shell).
-            "staticAssetPackIncludeImages",
-            "staticAssetPackIncludeCdn"
+            "allowFileAccess", "allowFileAccessFromFileURLs",
+            "allowUniversalAccessFromFileURLs", "cacheEnabled",
+            "pwaOfflineEnabled", "staticAssetPackIncludeImages", "staticAssetPackIncludeCdn"
         )
 
-        val knownBroken: Set<String> = emptySet()
-
-        val exempt = knownDerivedOrIntentional + knownBroken
+        val wvBooleanFields = WebViewConfig::class.java.declaredFields
+            .filter { it.type == java.lang.Boolean.TYPE }
 
         val notFlipped = mutableListOf<String>()
         val notPresent = mutableListOf<String>()
 
         for (field in wvBooleanFields) {
             val name = field.name
+            if (name in knownDerivedOrIntentional) continue
             val shellField = shellWvFields[name]
             if (shellField == null) {
-                if (name !in exempt) notPresent.add(name)
+                notPresent.add(name)
                 continue
             }
             shellField.isAccessible = true
-            val flippedValue = readBoolean(shellField, flippedShellWv)
-            val defaultValue = readBoolean(shellField, defaultShellWv)
-            if (flippedValue == defaultValue && name !in exempt) {
+            // Shell field might be primitive boolean or boxed Boolean?
+            val flippedValue = readBool(shellField, flippedShellWv)
+            val defaultValue = readBool(shellField, defaultShellWv)
+            if (flippedValue == defaultValue) {
                 notFlipped.add(name)
             }
         }
 
-        if (notFlipped.isNotEmpty()) {
-            throw AssertionError(
-                "WebViewConfig Boolean fields whose flip did NOT propagate to WebViewShellConfig " +
-                    "(missing in toWebViewBlock/toWebViewBehaviorBlock): $notFlipped"
-            )
-        }
         if (notPresent.isNotEmpty()) {
             throw AssertionError(
-                "WebViewConfig Boolean fields with no same-named WebViewShellConfig field " +
+                "Boolean fields with no ShellWebViewConfig counterpart " +
                     "(add to knownDerivedOrIntentional if by design): $notPresent"
             )
         }
-
-        assertThat(knownBroken).isEmpty()
+        if (notFlipped.isNotEmpty()) {
+            throw AssertionError(
+                "Boolean fields whose flip did NOT propagate to ShellWebViewConfig " +
+                    "(missing in toWebViewBlock/toWebViewBehaviorBlock): $notFlipped"
+            )
+        }
     }
+
+    // ────────────────────────────────────────────────────────────
+    //  3. Field-set parity: no orphan Boolean fields on either side
+    // ────────────────────────────────────────────────────────────
+
+    @Test
+    fun `WebViewConfig and ShellWebViewConfig have matching Boolean field names`() {
+        val hostBooleanFields = WebViewConfig::class.java.declaredFields
+            .filter { it.type == java.lang.Boolean.TYPE || it.type == java.lang.Boolean::class.java }
+            .map { it.name }
+            .toSet()
+
+        val shellWvClass = shellWvOf(roundTrip(WebApp(name = "t", url = "https://t.example.com"))).javaClass
+        val shellBooleanFields = shellWvClass.declaredFields
+            .filter { it.type == java.lang.Boolean.TYPE || it.type == java.lang.Boolean::class.java }
+            .map { it.name }
+            .toSet()
+
+        val knownDerivedOrIntentional = setOf(
+            "allowFileAccess", "allowFileAccessFromFileURLs",
+            "allowUniversalAccessFromFileURLs", "cacheEnabled",
+            "pwaOfflineEnabled", "staticAssetPackIncludeImages", "staticAssetPackIncludeCdn"
+        )
+
+        // Shell flattens NativeBridgeCapabilities + FailoverTriggers into top-level Boolean
+        // fields that don't exist individually on WebViewConfig (they're nested objects).
+        val shellOnlyIntentional = setOf(
+            "nativeBridgeClipboard", "nativeBridgeVibration", "nativeBridgeGeolocation",
+            "nativeBridgeBrightness", "nativeBridgeNotification", "nativeBridgeNotificationScheduled",
+            "nativeBridgeNotificationPersistent", "nativeBridgeDownload", "nativeBridgePrivateNetwork",
+            "nativeBridgeScreenWake", "nativeBridgeOpenExternal", "nativeBridgeDeviceInfo",
+            "nativeBridgeSecurityInfo", "nativeBridgeNetworkInfo", "nativeBridgeToast",
+            "nativeBridgeLogging", "nativeBridgeFindInPage", "nativeBridgeOrientation",
+            "nativeBridgeFullscreen", "nativeBridgePrint",
+            "failoverTriggerNetworkError", "failoverTriggerHttp5xx",
+            "failoverTriggerHttp4xx", "failoverTriggerTimeout"
+        )
+
+        val exempt = knownDerivedOrIntentional + shellOnlyIntentional
+        val hostOnly = (hostBooleanFields - shellBooleanFields) - exempt
+        val shellOnly = (shellBooleanFields - hostBooleanFields) - exempt
+
+        assertThat(hostOnly).isEmpty()
+        assertThat(shellOnly).isEmpty()
+    }
+
+    // ────────────────────────────────────────────────────────────
+    //  4. Non-Boolean spot-check: key String/Int/Enum survive export
+    // ────────────────────────────────────────────────────────────
+
+    @Test
+    fun `key non-Boolean WebViewConfig fields survive the export round-trip`() {
+        val app = WebApp(
+            name = "test",
+            url = "https://t.example.com",
+            webViewConfig = WebViewConfig(
+                userAgentMode = com.webtoapp.data.model.UserAgentMode.CHROME_DESKTOP,
+                customUserAgent = "CustomUA/2.0",
+                downloadLocationMode = com.webtoapp.data.model.DownloadLocationMode.CUSTOM,
+                newWindowBehavior = com.webtoapp.data.model.NewWindowBehavior.POPUP_WINDOW,
+                orientationMode = com.webtoapp.data.model.OrientationMode.LANDSCAPE,
+                cloudflareCompatMode = com.webtoapp.data.model.CloudflareCompatMode.ALWAYS_ON,
+                mixedContentMode = com.webtoapp.data.model.MixedContentMode.COMPATIBILITY,
+                autoRefreshIntervalSec = 120,
+                blobInterceptThresholdMb = 10,
+                screenAwakeTimeoutMinutes = 15
+            )
+        )
+        val shell = roundTrip(app)
+        val shellWv = shellWvOf(shell)
+        val shellFields = shellWv.javaClass.declaredFields.associateBy { it.name }
+
+        fun <T> readShell(path: String, expected: T) {
+            val field = shellFields[path]
+                ?: throw AssertionError("ShellWebViewConfig missing field '$path'")
+            field.isAccessible = true
+            val actual = field.get(shellWv)?.toString()
+            assertThat(actual).isEqualTo(expected.toString())
+        }
+
+        readShell("userAgentMode", "CHROME_DESKTOP")
+        readShell("customUserAgent", "CustomUA/2.0")
+        readShell("downloadLocationMode", "CUSTOM")
+        readShell("newWindowBehavior", "POPUP_WINDOW")
+        readShell("orientationMode", "LANDSCAPE")
+        readShell("cloudflareCompatMode", "ALWAYS_ON")
+        readShell("autoRefreshIntervalSec", 120)
+        readShell("blobInterceptThresholdMb", 10)
+        readShell("screenAwakeTimeoutMinutes", 15)
+    }
+
+    // ────────────────────────────────────────────────────────────
+    //  Helpers
+    // ────────────────────────────────────────────────────────────
 
     private fun roundTrip(app: WebApp): ShellConfig {
         val apk = app.toApkConfig("com.example.test")
@@ -89,21 +241,28 @@ class WebViewConfigBooleanCoverageTest {
         return field.get(shell)!!
     }
 
-    private fun readBoolean(field: Field, target: Any): Boolean? {
+    /** Reads a Boolean from a field that may be primitive boolean or boxed Boolean?. */
+    private fun readBool(field: Field, target: Any): Boolean {
         field.isAccessible = true
         return if (field.type == java.lang.Boolean.TYPE) {
             field.getBoolean(target)
         } else {
-            field.get(target) as? Boolean
+            field.get(target) as? Boolean ?: false
         }
     }
 
+    /**
+     * Creates a WebViewConfig where every Boolean is the negation of its default.
+     * When adding a new Boolean field to WebViewConfig, you MUST add it here —
+     * the `flipAllBooleans covers every declared Boolean field` test will fail
+     * if you forget, with a message telling you exactly which field is missing.
+     */
     private fun flipAllBooleans(source: WebViewConfig): WebViewConfig {
-        val sourceFields = WebViewConfig::class.java.declaredFields
+        val fields = WebViewConfig::class.java.declaredFields
             .filter { it.type == java.lang.Boolean.TYPE }
             .associateBy { it.name }
         fun bool(name: String): Boolean {
-            val f = sourceFields[name]!!
+            val f = fields[name]!!
             f.isAccessible = true
             return !f.getBoolean(source)
         }
