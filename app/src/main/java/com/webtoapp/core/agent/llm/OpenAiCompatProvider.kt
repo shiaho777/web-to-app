@@ -162,8 +162,10 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
         }
         else addProperty("content", msg.content)
 
-        if (msg.role == LlmMessage.Role.ASSISTANT && !msg.reasoningContent.isNullOrEmpty()) {
-            addProperty("reasoning_content", msg.reasoningContent)
+        if (msg.role == LlmMessage.Role.ASSISTANT) {
+            // GLM thinking mode requires reasoning_content on every assistant message
+            // once thinking has been used; passing an empty string is safer than omitting it.
+            addProperty("reasoning_content", msg.reasoningContent ?: "")
         }
         msg.toolCallId?.let { addProperty("tool_call_id", it) }; msg.name?.let { addProperty("name", it) }
     }
