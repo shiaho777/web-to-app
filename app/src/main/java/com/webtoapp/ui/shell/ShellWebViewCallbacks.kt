@@ -41,7 +41,8 @@ fun createShellWebViewCallbacks(
     notifyLongPressMenu: (LongPressHandler.LongPressResult, Float, Float) -> Unit,
     resetStatusBarAutoColor: () -> Unit = {},
     scheduleStatusBarAutoColorSample: () -> Unit = {},
-    onRefreshFinished: () -> Unit = {}
+    onRefreshFinished: () -> Unit = {},
+    onConsoleLog: (ConsoleLogEntry) -> Unit = {}
 ): WebViewCallbacks {
     return object : WebViewCallbacks {
         override fun onPageStarted(url: String?) {
@@ -53,15 +54,16 @@ fun createShellWebViewCallbacks(
         }
 
         override fun onConsoleMessage(level: Int, message: String, sourceId: String, lineNumber: Int) {
-            val levelStr = when (level) {
-                0 -> "DEBUG"
-                1 -> "LOG"
-                2 -> "INFO"
-                3 -> "WARN"
-                4 -> "ERROR"
-                else -> "LOG"
+            val consoleLevel = when (level) {
+                0 -> ConsoleLevel.DEBUG
+                1 -> ConsoleLevel.LOG
+                2 -> ConsoleLevel.INFO
+                3 -> ConsoleLevel.WARNING
+                4 -> ConsoleLevel.ERROR
+                else -> ConsoleLevel.LOG
             }
-            AppLogger.d("ShellConsole", "[$levelStr] $message ($sourceId:$lineNumber)")
+            AppLogger.d("ShellConsole", "[$consoleLevel] $message ($sourceId:$lineNumber)")
+            onConsoleLog(ConsoleLogEntry(consoleLevel, message, sourceId, lineNumber, System.currentTimeMillis()))
         }
 
         override fun onUrlChanged(webView: WebView?, url: String?) {

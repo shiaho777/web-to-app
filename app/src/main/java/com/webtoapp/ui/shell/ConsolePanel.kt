@@ -1,4 +1,4 @@
-package com.webtoapp.ui.webview
+package com.webtoapp.ui.shell
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*

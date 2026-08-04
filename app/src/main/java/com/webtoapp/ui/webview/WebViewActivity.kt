@@ -72,6 +72,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import com.webtoapp.ui.shared.WindowHelper
+import com.webtoapp.ui.shell.ConsoleLevel
+import com.webtoapp.ui.shell.ConsoleLogEntry
+import com.webtoapp.ui.shell.ConsolePanel
 import com.webtoapp.ui.shell.ShellWebViewNavigation
 import com.webtoapp.ui.shell.GeolocationPermissionsSingleton
 import java.io.File

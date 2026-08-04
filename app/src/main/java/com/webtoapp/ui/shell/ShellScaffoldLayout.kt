@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
@@ -62,6 +63,12 @@ fun BoxScope.ShellScaffoldLayout(
     onShowActivationDialog: () -> Unit,
     onErrorDismiss: () -> Unit,
     onActivityFinish: () -> Unit,
+
+    showConsole: Boolean,
+    onToggleConsole: () -> Unit,
+    consoleMessages: List<ConsoleLogEntry>,
+    onClearConsole: () -> Unit,
+    onRunScript: (String) -> Unit,
 
     statusBarHeightDp: Int
 ) {
@@ -117,7 +124,10 @@ fun BoxScope.ShellScaffoldLayout(
                     showRefresh = config.webViewConfig.toolbarShowRefresh,
                     canGoBack = canGoBack,
                     canGoForward = canGoForward,
-                    webViewRef = webViewRef
+                    webViewRef = webViewRef,
+                    showConsole = showConsole,
+                    onToggleConsole = onToggleConsole,
+                    consoleErrorCount = consoleMessages.count { it.level == ConsoleLevel.ERROR }
                 )
             }
         }
@@ -208,6 +218,23 @@ fun BoxScope.ShellScaffoldLayout(
                 errorMessage = errorMessage,
                 onDismiss = onErrorDismiss
             )
+
+            // Console panel (slides up from bottom when toggled)
+            AnimatedVisibility(
+                visible = showConsole,
+                enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }) + fadeIn(),
+                exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+                modifier = Modifier.align(Alignment.BottomCenter)
+            ) {
+                ConsolePanel(
+                    consoleMessages = consoleMessages,
+                    isExpanded = false,
+                    onExpandToggle = onToggleConsole,
+                    onClear = onClearConsole,
+                    onRunScript = onRunScript,
+                    onClose = onToggleConsole
+                )
+            }
         }
     }
 }
@@ -225,7 +252,10 @@ private fun ShellTopAppBar(
     showRefresh: Boolean,
     canGoBack: Boolean,
     canGoForward: Boolean,
-    webViewRef: WebView?
+    webViewRef: WebView?,
+    showConsole: Boolean = false,
+    onToggleConsole: () -> Unit = {},
+    consoleErrorCount: Int = 0
 ) {
     val context = LocalContext.current
 
@@ -280,6 +310,23 @@ private fun ShellTopAppBar(
                     icon = Icons.Default.Refresh,
                     contentDescription = "Refresh"
                 )
+            }
+            // Console / terminal button
+            IconButton(onClick = onToggleConsole) {
+                BadgedBox(
+                    badge = {
+                        if (consoleErrorCount > 0) {
+                            Badge { Text("$consoleErrorCount") }
+                        }
+                    }
+                ) {
+                    Icon(
+                        if (showConsole) Icons.Default.Terminal
+                        else Icons.Outlined.Terminal,
+                        contentDescription = Strings.console,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         },
         colors = TopAppBarDefaults.topAppBarColors(

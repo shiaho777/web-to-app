@@ -69,6 +69,10 @@ fun ShellScreen(
     var showActivationDialog by remember { mutableStateOf(false) }
     var showAnnouncementDialog by remember { mutableStateOf(false) }
 
+    // Console / terminal panel state
+    var showConsole by remember { mutableStateOf(false) }
+    var consoleMessages by remember { mutableStateOf<List<ConsoleLogEntry>>(emptyList()) }
+
     var isActivated by remember { mutableStateOf(!config.activationEnabled) }
 
     var isActivationChecked by remember { mutableStateOf(!config.activationEnabled) }
@@ -312,7 +316,8 @@ fun ShellScreen(
             scheduleStatusBarAutoColorSample = {
                 statusBarColorTracker?.scheduleSample(56L)
             },
-            onRefreshFinished = { isRefreshing = false }
+            onRefreshFinished = { isRefreshing = false },
+            onConsoleLog = { entry -> consoleMessages = consoleMessages + entry }
         )
     }
 
@@ -401,6 +406,21 @@ fun ShellScreen(
         onShowActivationDialog = { showActivationDialog = true },
         onErrorDismiss = { errorMessage = null },
         onActivityFinish = { activity.finish() },
+        showConsole = showConsole,
+        onToggleConsole = { showConsole = !showConsole },
+        consoleMessages = consoleMessages,
+        onClearConsole = { consoleMessages = emptyList() },
+        onRunScript = { script ->
+            webViewRef?.evaluateJavascript(script) { result ->
+                consoleMessages = consoleMessages + ConsoleLogEntry(
+                    level = ConsoleLevel.LOG,
+                    message = "=> $result",
+                    source = "eval",
+                    lineNumber = 0,
+                    timestamp = System.currentTimeMillis()
+                )
+            }
+        },
         statusBarHeightDp = statusBarHeightDp
     )
 
