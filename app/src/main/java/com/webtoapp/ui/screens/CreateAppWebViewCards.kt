@@ -3722,6 +3722,14 @@ fun SpecialSettingsCard(
                         ) {}
 
                         SpecialAdvancedRow(
+                            title = Strings.enableMediaSessionTitle,
+                            subtitle = Strings.enableMediaSessionDesc,
+                            icon = Icons.Outlined.PlayCircle,
+                            checked = config.enableMediaSession,
+                            onCheckedChange = { onConfigChange(config.copy(enableMediaSession = it)) }
+                        ) {}
+
+                        SpecialAdvancedRow(
                             title = Strings.primeUserActivationTitle,
                             subtitle = Strings.primeUserActivationDesc,
                             icon = Icons.Outlined.TouchApp,

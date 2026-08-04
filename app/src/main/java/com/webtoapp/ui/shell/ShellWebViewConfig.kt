@@ -161,6 +161,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         } catch (e: Exception) { com.webtoapp.data.model.BlobInterceptScope.ALL },
         blobInterceptThresholdMb = config.webViewConfig.blobInterceptThresholdMb,
         enablePrintBridge = config.webViewConfig.enablePrintBridge,
+        enableMediaSession = config.webViewConfig.enableMediaSession,
         enableCloudflareCompat = config.webViewConfig.enableCloudflareCompat,
         cloudflareCompatMode = try {
             com.webtoapp.data.model.CloudflareCompatMode.valueOf(config.webViewConfig.cloudflareCompatMode)

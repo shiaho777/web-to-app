@@ -439,4 +439,6 @@ dependencies {
     implementation("org.mozilla.geckoview:geckoview-arm64-v8a:137.0.20250414091429")
 
     implementation("androidx.browser:browser:1.8.0")
+
+    implementation("androidx.media:media:1.7.0")
 }

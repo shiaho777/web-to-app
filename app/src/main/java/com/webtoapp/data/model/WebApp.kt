@@ -344,6 +344,8 @@ data class WebViewConfig(
 
     val enablePrintBridge: Boolean = true,
 
+    val enableMediaSession: Boolean = false,
+
     val primeUserActivation: Boolean = false,
     val primeUserActivationMode: PrimeUserActivationMode = PrimeUserActivationMode.SYNTHETIC_TAP,
     val primeUserActivationTiming: PrimeUserActivationTiming = PrimeUserActivationTiming.ON_PAGE_FINISHED,

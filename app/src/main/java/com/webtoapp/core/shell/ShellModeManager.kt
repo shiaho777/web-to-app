@@ -1345,6 +1345,9 @@ data class WebViewShellConfig(
     @SerializedName("enablePrintBridge")
     val enablePrintBridge: Boolean = true,
 
+    @SerializedName("enableMediaSession")
+    val enableMediaSession: Boolean = false,
+
     @SerializedName("enableCloudflareCompat")
     val enableCloudflareCompat: Boolean = true,
 
