@@ -122,6 +122,105 @@ data class DeviceDisguiseConfig(
         if (isDesktopViewport) return true
         return deviceType in listOf(DeviceType.DESKTOP, DeviceType.LAPTOP)
     }
+
+    /**
+     * Generates a document-start JS polyfill that patches all JS-detectable
+     * signals to match the spoofed device type. Modern PWAs (e.g. Strava) use
+     * multi-signal detection (platform, touchPoints, screen, matchMedia, Client
+     * Hints) — patching UA alone is insufficient.
+     *
+     * Only generates script for DESKTOP/LAPTOP types (phone/tablet are already
+     * mobile, no extra spoofing needed beyond UA which is handled separately).
+     */
+    fun generateSpoofScript(): String {
+        if (!enabled || !requiresDesktopViewport()) return ""
+
+        val platform = when (deviceOS) {
+            DeviceOS.MACOS -> "MacIntel"
+            DeviceOS.LINUX, DeviceOS.CHROMEOS -> "Linux x86_64"
+            else -> "Win32"
+        }
+        val chUaPlatform = when (deviceOS) {
+            DeviceOS.MACOS -> "\"macOS\""
+            DeviceOS.LINUX -> "\"Linux\""
+            DeviceOS.CHROMEOS -> "\"Chrome OS\""
+            else -> "\"Windows\""
+        }
+        val screenWidth = if (screenWidth > 0) screenWidth else 1920
+        val screenHeight = if (screenHeight > 0) screenHeight else 1080
+        val availHeight = screenHeight - 40
+        val dpr = if (pixelDensity > 0) pixelDensity else 1f
+
+        return """
+(function(){
+    'use strict';
+    if(window.__wta_disguise__)return;
+    window.__wta_disguise__=true;
+
+    // navigator.platform
+    try{Object.defineProperty(navigator,'platform',{get:function(){return '$platform';},configurable:true});}catch(e){}
+
+    // navigator.maxTouchPoints → 0 (desktop has no touch)
+    try{Object.defineProperty(navigator,'maxTouchPoints',{get:function(){return 0;},configurable:true});}catch(e){}
+
+    // Screen dimensions → desktop resolution
+    var sw=$screenWidth,sh=$screenHeight,ah=$availHeight;
+    var sProps={width:sw,height:sh,availWidth:sw,availHeight:ah,colorDepth:24,pixelDepth:24};
+    Object.keys(sProps).forEach(function(p){
+        try{Object.defineProperty(screen,p,{get:function(){return sProps[p];},configurable:true});}catch(e){}
+    });
+
+    // Window dimensions
+    try{Object.defineProperty(window,'devicePixelRatio',{get:function(){return $dpr;},configurable:true});}catch(e){}
+    try{Object.defineProperty(window,'outerWidth',{get:function(){return sw;},configurable:true});}catch(e){}
+    try{Object.defineProperty(window,'outerHeight',{get:function(){return sh;},configurable:true});}catch(e){}
+
+    // matchMedia: override (pointer: coarse) and (any-pointer: coarse) to false
+    var origMM=window.matchMedia?window.matchMedia.bind(window):null;
+    if(origMM){
+        window.matchMedia=function(q){
+            var r=origMM(q);
+            if(typeof q==='string'&&(q.indexOf('pointer: coarse')>=0||q.indexOf('any-pointer: coarse')>=0)){
+                try{
+                    Object.defineProperty(r,'matches',{get:function(){return false;},configurable:true});
+                    Object.defineProperty(r,'media',{get:function(){return q;},configurable:true});
+                }catch(e){}
+            }
+            return r;
+        };
+    }
+
+    // Client Hints API: navigator.userAgentData
+    if(navigator.userAgentData){
+        try{
+            var origUAData=navigator.userAgentData;
+            var spoofedUAData={
+                brands:origUAData.brands||[],
+                mobile:false,
+                platform:$chUaPlatform,
+                getHighEntropyValues:function(h){
+                    return origUAData.getHighEntropyValues(h).then(function(v){
+                        v.mobile=false;
+                        v.platform=$chUaPlatform;
+                        return v;
+                    }).catch(function(){return{mobile:false,platform:$chUaPlatform};});
+                },
+                toJSON:function(){return{brands:this.brands,mobile:false,platform:$chUaPlatform};}
+            };
+            Object.defineProperty(navigator,'userAgentData',{get:function(){return spoofedUAData;},configurable:true});
+        }catch(e){}
+    }
+
+    // navigator.connection: hide mobile effectiveType
+    if(navigator.connection){
+        try{
+            var origConn=navigator.connection;
+            Object.defineProperty(origConn,'effectiveType',{get:function(){return '4g';},configurable:true});
+        }catch(e){}
+    }
+})();
+        """.trimIndent()
+    }
 }
 
 enum class DeviceType(val emoji: String, val displayOrder: Int) {

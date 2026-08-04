@@ -1515,6 +1515,16 @@ class WebViewManager(
                 installPrintBridgeDocumentStart(this)
             }
 
+            // Device disguise desktop spoof: patch JS-detectable signals (platform,
+            // touchPoints, screen, matchMedia, Client Hints) that UA alone can't cover.
+            val ddConfig = currentDeviceDisguiseConfig
+            if (ddConfig != null && ddConfig.enabled && ddConfig.requiresDesktopViewport()) {
+                val disguiseScript = ddConfig.generateSpoofScript()
+                if (disguiseScript.isNotBlank()) {
+                    installDeviceDisguiseDocumentStart(this, disguiseScript)
+                }
+            }
+
             gmBridge?.destroy()
             val bridge = com.webtoapp.core.extension.GreasemonkeyBridge(context) { webView }
             gmBridge = bridge
@@ -3688,6 +3698,14 @@ class WebViewManager(
             if (currentConfig?.enablePrintBridge == true) {
                 injectPrintBridgeScript(webView)
             }
+            // Device disguise fallback (when document-start unsupported)
+            val ddCfg = currentDeviceDisguiseConfig
+            if (ddCfg != null && ddCfg.enabled && ddCfg.requiresDesktopViewport()) {
+                val spoofScript = ddCfg.generateSpoofScript()
+                if (spoofScript.isNotBlank()) {
+                    webView.evaluateJavascript(spoofScript, null)
+                }
+            }
             if (!scriptlessMode && !minimizeLocalRuntimeInjection) {
                 injectExtensionPanelScript(webView)
             } else {
@@ -3824,6 +3842,19 @@ class WebViewManager(
             AppLogger.d("WebViewManager", "[PrintBridge] Script injected via evaluateJavascript")
         } catch (e: Exception) {
             AppLogger.e("WebViewManager", "[PrintBridge] Script injection failed", e)
+        }
+    }
+
+    private fun installDeviceDisguiseDocumentStart(webView: WebView, script: String) {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            AppLogger.i("WebViewManager", "[DeviceDisguise] Document-start unsupported; injecting via onPageStarted")
+            return
+        }
+        try {
+            WebViewCompat.addDocumentStartJavaScript(webView, script, setOf("*"))
+            AppLogger.i("WebViewManager", "[DeviceDisguise] Spoof script installed at document start")
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "[DeviceDisguise] Document-start failed, will use onPageStarted fallback", e)
         }
     }
 
