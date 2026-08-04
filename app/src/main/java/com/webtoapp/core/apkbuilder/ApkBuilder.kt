@@ -3717,6 +3717,7 @@ private fun WebApp.buildWebViewBehaviorBlock(): WebViewBehaviorBlock = WebViewBe
     blobInterceptScope = webViewConfig.blobInterceptScope.name,
     blobInterceptThresholdMb = webViewConfig.blobInterceptThresholdMb,
     enablePrintBridge = webViewConfig.enablePrintBridge,
+    enableMediaSession = webViewConfig.enableMediaSession,
     enableCloudflareCompat = webViewConfig.enableCloudflareCompat,
     cloudflareCompatMode = webViewConfig.cloudflareCompatMode.name,
     primeUserActivation = webViewConfig.primeUserActivation,
