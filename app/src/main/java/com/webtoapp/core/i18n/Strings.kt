@@ -4761,6 +4761,8 @@ object Strings {
     val printDocument: String get() = StringsE.printDocument
     val enablePrintBridgeTitle: String get() = StringsE.enablePrintBridgeTitle
     val enablePrintBridgeDesc: String get() = StringsE.enablePrintBridgeDesc
+    val enableMediaSessionTitle: String get() = StringsE.enableMediaSessionTitle
+    val enableMediaSessionDesc: String get() = StringsE.enableMediaSessionDesc
     val previewBackendAppIntro: String get() = StringsE.previewBackendAppIntro
     val previewEntryNotFound: String get() = StringsE.previewEntryNotFound
     val previewFileNotFound: String get() = StringsE.previewFileNotFound
@@ -62873,6 +62875,30 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Перехватывать window.print() для открытия системного диалога печати, поддерживая печать веб-страниц и экспорт в PDF"
         AppLanguage.JAPANESE -> "window.print() を傍受してシステムの印刷ダイアログを開き、ウェブページの印刷と PDF エクスポートをサポートします"
         AppLanguage.KOREAN -> "window.print()를 가로채 시스템 인쇄 대화상자를 열어 웹페이지 인쇄와 PDF 내보내기를 지원합니다"
+    }
+    val enableMediaSessionTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "媒体会话集成"
+        AppLanguage.ENGLISH -> "Media Session Integration"
+        AppLanguage.ARABIC -> "تكامل جلسة الوسائط"
+        AppLanguage.PORTUGUESE -> "Integração de Sessão de Mídia"
+        AppLanguage.SPANISH -> "Integración de Sesión de Medios"
+        AppLanguage.FRENCH -> "Intégration de Session Média"
+        AppLanguage.GERMAN -> "Medien-Sitzungs-Integration"
+        AppLanguage.RUSSIAN -> "Интеграция медиа-сессии"
+        AppLanguage.JAPANESE -> "メディアセッション統合"
+        AppLanguage.KOREAN -> "미디어 세션 통합"
+    }
+    val enableMediaSessionDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "将网页媒体桥接到系统通知栏和锁屏控制，支持蓝牙耳机、Android Auto"
+        AppLanguage.ENGLISH -> "Bridge web media to system notification and lock-screen controls (Bluetooth, Android Auto)"
+        AppLanguage.ARABIC -> "ربط وسائط الويب بإشعارات النظام والتحكم في شاشة القفل (Bluetooth، Android Auto)"
+        AppLanguage.PORTUGUESE -> "Conectar mídia da web aos controles de notificação do sistema e tela de bloqueio (Bluetooth, Android Auto)"
+        AppLanguage.SPANISH -> "Conectar medios web a controles de notificación del sistema y pantalla de bloqueo (Bluetooth, Android Auto)"
+        AppLanguage.FRENCH -> "Connecter les médias web aux notifications système et au contrôle de l'écran de verrouillage (Bluetooth, Android Auto)"
+        AppLanguage.GERMAN -> "Web-Medien mit Systembenachrichtigungen und Sperrbildschirm verbinden (Bluetooth, Android Auto)"
+        AppLanguage.RUSSIAN -> "Связать веб-медиа с системными уведомлениями и экраном блокировки (Bluetooth, Android Auto)"
+        AppLanguage.JAPANESE -> "ウェブメディアをシステム通知とロック画面コントロールに接続（Bluetooth、Android Auto）"
+        AppLanguage.KOREAN -> "웹 미디어를 시스템 알림 및 잠금 화면 컨트롤에 연결 (Bluetooth, Android Auto)"
     }
     val previewBackendAppIntro: String get() = when (Strings.lang) {
         else -> Strings.getString(R.string.appstr_project_preview_backend_app_intro)

@@ -759,6 +759,15 @@ class WebViewActivity : AppCompatActivity() {
                             wv.addJavascriptInterface(printBridge, com.webtoapp.core.webview.PrintBridge.JS_INTERFACE_NAME)
                         }
 
+                        if (previewWvConfig?.enableMediaSession == true) {
+                            val mediaBridge = com.webtoapp.core.webview.MediaSessionBridge(
+                                context = this@WebViewActivity,
+                                scope = lifecycleScope,
+                                webViewProvider = { wv }
+                            )
+                            wv.addJavascriptInterface(mediaBridge, com.webtoapp.core.webview.MediaSessionBridge.JS_INTERFACE_NAME)
+                        }
+
                         if (previewApp?.translateEnabled == true) {
                             val translateBridge = com.webtoapp.core.webview.TranslateBridge(wv, lifecycleScope)
                             wv.addJavascriptInterface(
