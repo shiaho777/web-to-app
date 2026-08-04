@@ -52,6 +52,7 @@ import com.webtoapp.ui.components.BgmCard
 import com.webtoapp.ui.components.*
 import com.webtoapp.ui.viewmodel.EditState
 import com.webtoapp.ui.viewmodel.hasPreviewableContent
+import com.webtoapp.ui.viewmodel.withHideBrowserToolbar
 import com.webtoapp.ui.viewmodel.MainViewModel
 import com.webtoapp.ui.viewmodel.UiState
 import androidx.compose.ui.platform.LocalContext
@@ -218,19 +219,7 @@ fun CreateAppScreen(
                     webViewConfig = editState.webViewConfig,
                     onEnabledChange = { enabled ->
                         viewModel.updateEditState {
-                            if (enabled && !webViewConfig.browserToolbarCustomized) {
-                                copy(webViewConfig = webViewConfig.copy(
-                                    hideBrowserToolbar = true,
-                                    toolbarShowTitle = false,
-                                    toolbarShowUrl = false,
-                                    toolbarShowBack = false,
-                                    toolbarShowForward = false,
-                                    toolbarShowRefresh = false,
-                                    browserToolbarCustomized = true
-                                ))
-                            } else {
-                                copy(webViewConfig = webViewConfig.copy(hideBrowserToolbar = enabled))
-                            }
+                            copy(webViewConfig = webViewConfig.withHideBrowserToolbar(enabled))
                         }
                     },
                     onWebViewConfigChange = { newConfig ->

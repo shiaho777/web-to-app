@@ -26,6 +26,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
+import com.webtoapp.data.model.resolveToolbarButtons
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,6 +104,19 @@ fun BoxScope.ShellScaffoldLayout(
     val showToolbar = (!hideToolbar || config.webViewConfig.showToolbarInFullscreen) &&
         (!hideBrowserToolbar || showSlimToolbar)
 
+    // In normal (non-hide) mode the toolbar always shows the full button set; only the
+    // customized slim mode applies the toolbarShow* filters. This keeps a normal-mode
+    // app from ending up with every button hidden after the hide toggle was turned off.
+    val toolbarVisibility = resolveToolbarButtons(
+        hideBrowserToolbar = toolbarCfg.hideBrowserToolbar,
+        browserToolbarCustomized = toolbarCfg.browserToolbarCustomized,
+        toolbarShowTitle = toolbarCfg.toolbarShowTitle,
+        toolbarShowUrl = toolbarCfg.toolbarShowUrl,
+        toolbarShowBack = toolbarCfg.toolbarShowBack,
+        toolbarShowForward = toolbarCfg.toolbarShowForward,
+        toolbarShowRefresh = toolbarCfg.toolbarShowRefresh
+    )
+
     Scaffold(
 
         contentWindowInsets = if (hideToolbar && !showToolbar) {
@@ -117,14 +131,15 @@ fun BoxScope.ShellScaffoldLayout(
                     pageTitle = pageTitle,
                     appName = config.appName,
                     currentUrl = currentUrl,
-                    showTitle = config.webViewConfig.toolbarShowTitle,
-                    showUrl = config.webViewConfig.toolbarShowUrl,
-                    showBack = config.webViewConfig.toolbarShowBack,
-                    showForward = config.webViewConfig.toolbarShowForward,
-                    showRefresh = config.webViewConfig.toolbarShowRefresh,
+                    showTitle = toolbarVisibility.showTitle,
+                    showUrl = toolbarVisibility.showUrl,
+                    showBack = toolbarVisibility.showBack,
+                    showForward = toolbarVisibility.showForward,
+                    showRefresh = toolbarVisibility.showRefresh,
                     canGoBack = canGoBack,
                     canGoForward = canGoForward,
                     webViewRef = webViewRef,
+                    showConsoleButton = toolbarVisibility.showConsoleButton,
                     showConsole = showConsole,
                     onToggleConsole = onToggleConsole,
                     consoleErrorCount = consoleMessages.count { it.level == ConsoleLevel.ERROR }
@@ -253,6 +268,7 @@ private fun ShellTopAppBar(
     canGoBack: Boolean,
     canGoForward: Boolean,
     webViewRef: WebView?,
+    showConsoleButton: Boolean = true,
     showConsole: Boolean = false,
     onToggleConsole: () -> Unit = {},
     consoleErrorCount: Int = 0
@@ -311,21 +327,24 @@ private fun ShellTopAppBar(
                     contentDescription = "Refresh"
                 )
             }
-            // Console / terminal button
-            IconButton(onClick = onToggleConsole) {
-                BadgedBox(
-                    badge = {
-                        if (consoleErrorCount > 0) {
-                            Badge { Text("$consoleErrorCount") }
+            // Console / terminal button (hidden along with the other toolbar buttons,
+            // so a stripped-down toolbar doesn't leave it as the only visible control)
+            if (showConsoleButton) {
+                IconButton(onClick = onToggleConsole) {
+                    BadgedBox(
+                        badge = {
+                            if (consoleErrorCount > 0) {
+                                Badge { Text("$consoleErrorCount") }
+                            }
                         }
+                    ) {
+                        Icon(
+                            if (showConsole) Icons.Default.Terminal
+                            else Icons.Outlined.Terminal,
+                            contentDescription = Strings.console,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                ) {
-                    Icon(
-                        if (showConsole) Icons.Default.Terminal
-                        else Icons.Outlined.Terminal,
-                        contentDescription = Strings.console,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
         },

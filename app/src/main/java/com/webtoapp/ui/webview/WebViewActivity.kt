@@ -64,6 +64,7 @@ import com.webtoapp.data.model.HtmlLoadMode
 import com.webtoapp.data.model.SplashOrientation
 import com.webtoapp.data.model.SplashType
 import com.webtoapp.data.model.WebApp
+import com.webtoapp.data.model.resolveToolbarButtons
 import android.content.pm.ActivityInfo
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.util.DownloadHelper
@@ -2674,6 +2675,20 @@ fun WebViewScreen(
     val showSlimToolbar = hideBrowserToolbar && toolbarCfg?.browserToolbarCustomized == true && hasAnyToolbarItem
     val shouldShowTopBar = showToolbarInPreview && (!hideBrowserToolbar || showSlimToolbar)
 
+    // Normal (non-hide) mode always shows the full button set; only the customized slim
+    // mode applies the toolbarShow* filters (mirrors the shell/export layout).
+    val browserToolbarVisibility = toolbarCfg?.let {
+        resolveToolbarButtons(
+            hideBrowserToolbar = it.hideBrowserToolbar,
+            browserToolbarCustomized = it.browserToolbarCustomized,
+            toolbarShowTitle = it.toolbarShowTitle,
+            toolbarShowUrl = it.toolbarShowUrl,
+            toolbarShowBack = it.toolbarShowBack,
+            toolbarShowForward = it.toolbarShowForward,
+            toolbarShowRefresh = it.toolbarShowRefresh
+        )
+    }
+
     LaunchedEffect(hideToolbar) {
 
         onFullscreenModeChanged(hideToolbar)
@@ -2689,7 +2704,7 @@ fun WebViewScreen(
                 TopAppBar(
                     title = {
                         Column {
-                            if (isTestMode || webApp?.webViewConfig?.toolbarShowTitle == true) {
+                            if (isTestMode || browserToolbarVisibility?.showTitle == true) {
                                 Text(
                                     text = if (isTestMode) Strings.moduleTestMode else pageTitle.ifEmpty { webApp?.name ?: "WebApp" },
                                     style = MaterialTheme.typography.titleMedium,
@@ -2704,7 +2719,7 @@ fun WebViewScreen(
                                     color = MaterialTheme.colorScheme.primary,
                                     maxLines = 1
                                 )
-                            } else if (currentUrl.isNotEmpty() && webApp?.webViewConfig?.toolbarShowUrl == true) {
+                            } else if (currentUrl.isNotEmpty() && (isTestMode || browserToolbarVisibility?.showUrl == true)) {
                                 Text(
                                     text = currentUrl,
                                     style = MaterialTheme.typography.bodySmall,
@@ -2716,7 +2731,7 @@ fun WebViewScreen(
                         }
                     },
                     actions = {
-                        if (isTestMode || webApp?.webViewConfig?.toolbarShowBack == true) {
+                        if (isTestMode || browserToolbarVisibility?.showBack == true) {
                             IconButton(
                                 onClick = {
                                     (context as? AppCompatActivity)?.let { activity ->
@@ -2728,7 +2743,7 @@ fun WebViewScreen(
                                 Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                             }
                         }
-                        if (isTestMode || webApp?.webViewConfig?.toolbarShowForward == true) {
+                        if (isTestMode || browserToolbarVisibility?.showForward == true) {
                             IconButton(
                                 onClick = { webViewRef?.goForward() },
                                 enabled = canGoForward
@@ -2736,29 +2751,31 @@ fun WebViewScreen(
                                 Icon(Icons.AutoMirrored.Filled.ArrowForward, "Forward")
                             }
                         }
-                        if (isTestMode || webApp?.webViewConfig?.toolbarShowRefresh == true) {
+                        if (isTestMode || browserToolbarVisibility?.showRefresh == true) {
                             IconButton(onClick = { reloadBrowser() }) {
                                 Icon(Icons.Default.Refresh, "Refresh")
                             }
                         }
 
-                        IconButton(
-                            onClick = { showConsole = !showConsole },
-                            modifier = Modifier.size(48.dp).offset(x = (-4).dp)
-                        ) {
-                            Box(modifier = Modifier.padding(start = 4.dp, top = 4.dp)) {
-                                BadgedBox(
-                                    badge = {
-                                        val errorCount = consoleMessages.count { it.level == ConsoleLevel.ERROR }
-                                        if (errorCount > 0) {
-                                            Badge { Text("$errorCount") }
+                        if (isTestMode || browserToolbarVisibility?.showConsoleButton == true) {
+                            IconButton(
+                                onClick = { showConsole = !showConsole },
+                                modifier = Modifier.size(48.dp).offset(x = (-4).dp)
+                            ) {
+                                Box(modifier = Modifier.padding(start = 4.dp, top = 4.dp)) {
+                                    BadgedBox(
+                                        badge = {
+                                            val errorCount = consoleMessages.count { it.level == ConsoleLevel.ERROR }
+                                            if (errorCount > 0) {
+                                                Badge { Text("$errorCount") }
+                                            }
                                         }
+                                    ) {
+                                        Icon(
+                                            if (showConsole) Icons.Filled.Terminal else Icons.Outlined.Terminal,
+                                            Strings.console
+                                        )
                                     }
-                                ) {
-                                    Icon(
-                                        if (showConsole) Icons.Filled.Terminal else Icons.Outlined.Terminal,
-                                        Strings.console
-                                    )
                                 }
                             }
                         }

@@ -115,6 +115,40 @@ fun EditState.withRuntimePermissionsSyncedFromFeatures(): EditState {
 }
 
 
+/**
+ * Applies the "hide browser toolbar" toggle to a [WebViewConfig].
+ *
+ * Enabling the toggle for the first time enters a customized slim-toolbar mode: it
+ * clears every toolbar-content flag and marks the toolbar as customized so the user
+ * picks which items to show. Disabling the toggle returns to the normal full toolbar:
+ * it restores every toolbar-content flag to `true` and clears the customized marker.
+ *
+ * The restore on disable is what keeps the "hide toolbar" toggle from leaving a
+ * normal-mode app with every toolbar button hidden (a state where only the console
+ * button — if it were unconditionally rendered — would survive).
+ */
+fun WebViewConfig.withHideBrowserToolbar(enabled: Boolean): WebViewConfig = when {
+    enabled && !browserToolbarCustomized -> copy(
+        hideBrowserToolbar = true,
+        toolbarShowTitle = false,
+        toolbarShowUrl = false,
+        toolbarShowBack = false,
+        toolbarShowForward = false,
+        toolbarShowRefresh = false,
+        browserToolbarCustomized = true
+    )
+    !enabled -> copy(
+        hideBrowserToolbar = false,
+        toolbarShowTitle = true,
+        toolbarShowUrl = true,
+        toolbarShowBack = true,
+        toolbarShowForward = true,
+        toolbarShowRefresh = true,
+        browserToolbarCustomized = false
+    )
+    else -> copy(hideBrowserToolbar = enabled)
+}
+
 fun EditState.hasPreviewableContent(): Boolean = when (appType) {
     AppType.WEB -> url.isNotBlank()
     AppType.HTML, AppType.FRONTEND -> htmlConfig?.files?.isNotEmpty() == true
