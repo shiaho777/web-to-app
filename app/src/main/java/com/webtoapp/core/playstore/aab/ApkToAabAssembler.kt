@@ -52,6 +52,7 @@ class ApkToAabAssembler {
 
         val abis = mutableSetOf<String>()
         val assetDirs = mutableSetOf<String>()
+        val missingResources = mutableSetOf<String>()
 
         ZipFile(sourceApk).use { zip ->
             ZipOutputStream(FileOutputStream(outputAab)).use { out ->
@@ -111,6 +112,21 @@ class ApkToAabAssembler {
                 val referencedResources = table.collectReferencedResourceFiles()
                 AppLogger.d(TAG, "Resource table references ${referencedResources.size} res/ paths")
 
+                // Validate resource integrity before processing: ensure all referenced resources
+                // (except plaintext XML) exist in the source APK. This prevents bundletool from
+                // rejecting the AAB with "resource table references non-existing files" errors.
+                for (resourcePath in referencedResources) {
+                    if (resourcePath in plaintextResFiles) continue
+                    if (!hasEntry(zip, resourcePath)) {
+                        missingResources.add(resourcePath)
+                        AppLogger.w(
+                            TAG,
+                            "Missing resource referenced in resources.arsc: $resourcePath."
+                                + " This may be a tools:keep marker file that should be excluded."
+                        )
+                    }
+                }
+
                 val entries = zip.entries().toList().sortedBy { it.name }
                 for (entry in entries) {
                     if (entry.isDirectory) continue
@@ -133,11 +149,6 @@ class ApkToAabAssembler {
                     when {
                         name.startsWith("res/") && name.endsWith(".xml") -> {
 
-                            if (name !in referencedResources) {
-                                AppLogger.d(TAG, "Skipping orphan res XML: $name")
-                                continue
-                            }
-
                             val xmlBytes = zip.getInputStream(entry).readBytes()
 
                             // Some res/*.xml entries are plain-text source XML, not compiled
@@ -151,6 +162,11 @@ class ApkToAabAssembler {
                             if (isPlaintextXml(xmlBytes)) {
                                 AppLogger.d(TAG, "Skipping plaintext res XML: $name")
                                 resourceXmlPlainTextSkipped++
+                                continue
+                            }
+
+                            if (name !in referencedResources) {
+                                AppLogger.d(TAG, "Skipping orphan res XML: $name")
                                 continue
                             }
 
@@ -241,6 +257,16 @@ class ApkToAabAssembler {
             assetDirCount = assetDirs.size
         )
         AppLogger.d(TAG, "Assembled AAB: $stats")
+        
+        if (missingResources.isNotEmpty()) {
+            AppLogger.w(
+                TAG,
+                "WARNING: ${missingResources.size} missing resource(s) detected in AAB."
+                    + " This may cause Google Play Console to reject the bundle."
+                    + " Missing files: ${missingResources.joinToString(", ")}"  
+            )
+        }
+        
         return stats
     }
 
@@ -265,6 +291,13 @@ class ApkToAabAssembler {
             input.copyTo(out)
         }
         out.closeEntry()
+    }
+
+    /** Check if the ZIP contains an entry with the given name. */
+    private fun hasEntry(zip: ZipFile, name: String): Boolean {
+        return zip.getEntry(name) != null ||
+            zip.getEntry("res/$name") != null ||
+            zip.getEntry("base/$name") != null
     }
 
     data class AssembleStats(

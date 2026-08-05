@@ -75,6 +75,17 @@ class AabExporter(private val context: Context) {
             }
             onProgress?.invoke(Stage.SIGNED, 100)
 
+            // Validate the signed AAB to ensure all resources are present
+            // This prevents Google Play Console rejection due to missing resource files
+            val validationResult = AabValidationHelper.validateAab(outputAab)
+            if (!validationResult.isValid) {
+                throw AabExportException(
+                    failureStage = FailureStage.ASSEMBLE,
+                    message = "AAB validation failed: ${validationResult.issues.joinToString(", ")}",
+                    cause = null
+                )
+            }
+
             return Result(signedAab = outputAab, assembleStats = stats)
         } finally {
 
