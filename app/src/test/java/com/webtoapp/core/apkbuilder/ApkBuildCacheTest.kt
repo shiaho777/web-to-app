@@ -161,4 +161,132 @@ class ApkBuildCacheTest {
         assertThat(plan2.mode).isEqualTo(IncrementalBuildMode.REUSE_UNSIGNED)
         assertThat(plan2.reason).isEqualTo("identityAndContentMatch")
     }
+
+    @Test
+    fun `native libs fingerprint change forces full rebuild instead of reuse`() {
+        val context = RuntimeEnvironment.getApplication()
+        val cache = ApkBuildCache(context)
+        cache.clearAll()
+
+        val webApp = com.webtoapp.data.model.WebApp(
+            id = 11,
+            name = "NodeApp",
+            url = "nodejs://localhost"
+        )
+        val template = File(context.cacheDir, "shell_template_node.apk").apply {
+            writeBytes(ByteArray(48) { 5 })
+        }
+        val config = ApkConfig(
+            meta = MetaBlock(
+                appName = "NodeApp",
+                packageName = "com.demo.node",
+                targetUrl = "nodejs://localhost",
+                versionCode = 1,
+                versionName = "1.0",
+                appType = "NODEJS_APP"
+            )
+        )
+
+        fun planWith(nativeLibs: String?) = cache.plan(
+            webApp = webApp,
+            packageName = "com.demo.node",
+            config = config,
+            templateApk = template,
+            encryptionEnabled = false,
+            abiFilters = listOf("arm64-v8a"),
+            projectDirs = emptyList(),
+            mediaContentPath = null,
+            splashMediaPath = null,
+            bgmPlaylistPaths = emptyList(),
+            htmlFiles = emptyList(),
+            galleryItems = emptyList(),
+            errorPageMediaPath = null,
+            nativeLibsFingerprint = nativeLibs,
+            forceFullRebuild = false
+        )
+
+        // First build with the "old" libnode.so fingerprint → cache miss → FULL.
+        val plan1 = planWith("sha256=oldlibnode,size=1,aligned16k=false")
+        assertThat(plan1.mode).isEqualTo(IncrementalBuildMode.FULL)
+
+        val unsigned = File(context.cacheDir, "node_unsigned.apk").apply {
+            writeBytes(ByteArray(128) { 9 })
+        }
+        cache.saveUnsigned(
+            webApp = webApp,
+            packageName = "com.demo.node",
+            unsignedApk = unsigned,
+            identityFingerprint = plan1.identityFingerprint,
+            contentFingerprint = plan1.contentFingerprint,
+            shellTemplateId = plan1.shellTemplateId
+        )
+
+        // Same config but host upgraded libnode.so to a 16KB-aligned build → the native
+        // libs fingerprint changed. This must NOT reuse the stale cached unsigned APK;
+        // it must rebuild so the new aligned lib is re-injected.
+        val plan2 = planWith("sha256=newlibnode,size=2,aligned16k=true")
+        assertThat(plan2.mode).isEqualTo(IncrementalBuildMode.FULL)
+        assertThat(plan2.identityFingerprint).isNotEqualTo(plan1.identityFingerprint)
+    }
+
+    @Test
+    fun `native libs fingerprint null and non-null produce different identity fingerprints`() {
+        val context = RuntimeEnvironment.getApplication()
+        val cache = ApkBuildCache(context)
+
+        val webApp = com.webtoapp.data.model.WebApp(
+            id = 12,
+            name = "NodeApp2",
+            url = "nodejs://localhost"
+        )
+        val template = File(context.cacheDir, "shell_t2.apk").apply {
+            writeBytes(ByteArray(16) { 7 })
+        }
+        val config = ApkConfig(
+            meta = MetaBlock(
+                appName = "NodeApp2",
+                packageName = "com.demo.node2",
+                targetUrl = "nodejs://localhost",
+                versionCode = 1,
+                versionName = "1.0",
+                appType = "NODEJS_APP"
+            )
+        )
+
+        val nullPlan = cache.plan(
+            webApp = webApp,
+            packageName = "com.demo.node2",
+            config = config,
+            templateApk = template,
+            encryptionEnabled = false,
+            abiFilters = emptyList(),
+            projectDirs = emptyList(),
+            mediaContentPath = null,
+            splashMediaPath = null,
+            bgmPlaylistPaths = emptyList(),
+            htmlFiles = emptyList(),
+            galleryItems = emptyList(),
+            errorPageMediaPath = null,
+            nativeLibsFingerprint = null,
+            forceFullRebuild = false
+        )
+        val withLibsPlan = cache.plan(
+            webApp = webApp,
+            packageName = "com.demo.node2",
+            config = config,
+            templateApk = template,
+            encryptionEnabled = false,
+            abiFilters = emptyList(),
+            projectDirs = emptyList(),
+            mediaContentPath = null,
+            splashMediaPath = null,
+            bgmPlaylistPaths = emptyList(),
+            htmlFiles = emptyList(),
+            galleryItems = emptyList(),
+            errorPageMediaPath = null,
+            nativeLibsFingerprint = "sha256=abc,size=100,aligned16k=true",
+            forceFullRebuild = false
+        )
+        assertThat(nullPlan.identityFingerprint).isNotEqualTo(withLibsPlan.identityFingerprint)
+    }
 }

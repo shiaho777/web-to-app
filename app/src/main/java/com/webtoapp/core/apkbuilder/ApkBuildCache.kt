@@ -107,6 +107,7 @@ class ApkBuildCache(private val context: Context) {
         htmlFiles: List<com.webtoapp.data.model.HtmlFile>,
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
         errorPageMediaPath: String?,
+        nativeLibsFingerprint: String? = null,
         forceFullRebuild: Boolean
     ): IncrementalPlan {
         val shellId = shellTemplateId(templateApk)
@@ -115,7 +116,8 @@ class ApkBuildCache(private val context: Context) {
             shellTemplateId = shellId,
             encryptionEnabled = encryptionEnabled,
             abiFilters = abiFilters,
-            iconPath = webApp.iconPath
+            iconPath = webApp.iconPath,
+            nativeLibsFingerprint = nativeLibsFingerprint
         )
         val content = contentFingerprint(
             config = config,
@@ -330,7 +332,8 @@ class ApkBuildCache(private val context: Context) {
         shellTemplateId: String,
         encryptionEnabled: Boolean,
         abiFilters: List<String>,
-        iconPath: String?
+        iconPath: String?,
+        nativeLibsFingerprint: String? = null
     ): String {
         val parts = mutableListOf<String>()
         parts += "shell=$shellTemplateId"
@@ -348,6 +351,11 @@ class ApkBuildCache(private val context: Context) {
         parts += "deeplinkSchemes=${config.deepLinkSchemes.sorted().joinToString(",")}"
         parts += "runtimePerms=${config.runtimePermissions}"
         parts += "networkTrust=${config.networkTrustConfig}"
+        // Native libs (libnode.so / libnode_bridge.so / libc++_shared.so) must participate
+        // so a host upgrade that ships a new/realigned libnode.so invalidates the cached
+        // unsigned APK. Otherwise REUSE_UNSIGNED serves a stale unaligned lib that dlopen
+        // rejects on Android 15+ (16KB-page) devices.
+        parts += "nativeLibs=${nativeLibsFingerprint ?: "none"}"
         return sha256(parts.joinToString("\n"))
     }
 
@@ -408,7 +416,7 @@ class ApkBuildCache(private val context: Context) {
         return digest.digest().toHexString()
     }
 
-    private fun fileSha256(file: File): String {
+    internal fun fileSha256(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
         file.inputStream().buffered().use { input ->
             val buffer = ByteArray(DEFAULT_BUFFER_SIZE)

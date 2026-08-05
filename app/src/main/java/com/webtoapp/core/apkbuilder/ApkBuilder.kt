@@ -624,6 +624,11 @@ class ApkBuilder(private val context: Context) {
                 htmlFiles = htmlFiles,
                 galleryItems = galleryItems,
                 errorPageMediaPath = errorPageMediaPath,
+                nativeLibsFingerprint = if (webApp.appType == com.webtoapp.data.model.AppType.NODEJS_APP) {
+                    nativeLibsFingerprint()
+                } else {
+                    null
+                },
                 forceFullRebuild = forceFullRebuild
             )
             logger.logKeyValue("incrementalMode", incrementalPlan.mode.name)
@@ -800,9 +805,18 @@ class ApkBuilder(private val context: Context) {
             val zipAligned = ZipAligner.alignInPlace(unsignedApk)
             logger.logKeyValue("zipAlign16kNativeLibs", zipAligned)
             if (!zipAligned) {
-                logger.warn("ZipAlign failed; APK signing will continue with the generated artifact")
-            } else if (!ZipAligner.verifyNativeLibAlignment(unsignedApk)) {
-                logger.warn("One or more native libraries are not 16KB zip-aligned after ZipAlign")
+                logger.error("16KB zip-alignment of native libraries failed; aborting build")
+                throw IllegalStateException(
+                    "16KB zip-alignment of native libraries failed. The generated APK would crash on " +
+                        "Android 15+ (16KB-page) devices at dlopen time. Clear the app's build cache and retry."
+                )
+            }
+            if (!ZipAligner.verifyNativeLibAlignment(unsignedApk)) {
+                logger.error("Native lib zip-alignment verification failed after ZipAlign; aborting build")
+                throw IllegalStateException(
+                    "One or more native libraries are not 16KB zip-aligned after ZipAlign. The generated APK " +
+                        "would crash on Android 15+ (16KB-page) devices at dlopen time. Clear the app's build cache and retry."
+                )
             }
 
             logger.section("Verify APK Artifact")
@@ -1961,6 +1975,43 @@ class ApkBuilder(private val context: Context) {
             return downloaded
         }
         return null
+    }
+
+    /**
+     * Fingerprint of the native libs that would be injected into a NODEJS_APP export
+     * (libnode.so, libnode_bridge.so, libc++_shared.so). Fed into the incremental build
+     * cache's identity fingerprint so a host upgrade that ships a new/realigned libnode.so
+     * invalidates the cached unsigned APK — otherwise REUSE_UNSIGNED serves a stale lib
+     * that dlopen rejects on Android 15+ (16KB-page) devices.
+     *
+     * Returns null for non-Node.js apps (no native lib injection), which is treated as
+     * "not applicable" by the cache and does not affect other app types' cache keys.
+     */
+    private fun nativeLibsFingerprint(): String? {
+        val nativeDir = File(context.applicationInfo.nativeLibraryDir)
+        val bridge = File(nativeDir, "libnode_bridge.so")
+        val cxxShared = File(nativeDir, "libc++_shared.so")
+        val node = resolveNodeJsBinary() ?: return null
+        val parts = mutableListOf<String>()
+        parts += "bridge=${libFingerprint(bridge)}"
+        parts += "cxx=${libFingerprint(cxxShared)}"
+        parts += "node=${libFingerprint(node)}"
+        return parts.joinToString("|")
+    }
+
+    private fun libFingerprint(file: File): String {
+        if (!file.isFile || !file.canRead() || file.length() <= 0L) return "missing"
+        val sha = try {
+            buildCache.fileSha256(file)
+        } catch (_: Exception) {
+            "err"
+        }
+        val aligned = try {
+            ElfAligner16k.isAligned16k(file)
+        } catch (_: Exception) {
+            false
+        }
+        return "sha256=$sha,size=${file.length()},aligned16k=$aligned"
     }
 
     private fun injectNodeJsNativeLibs(zipOut: ZipOutputStream) {
