@@ -1464,6 +1464,16 @@ class WebViewManager(
 
             com.webtoapp.core.perf.NativePerfEngine.optimizeWebViewSettings(this)
 
+            // Runtime per-app page zoom (textZoom), persisted across cold starts via
+            // PageZoomStore. Applied AFTER the viewport/dark-mode settings above (which may
+            // pin textZoom to 100 in DESKTOP mode) so the user override wins. 0 = no override.
+            val runtimeZoomOverride = com.webtoapp.core.webview.PageZoomStore
+                .getZoomPercent(context, context.packageName)
+            if (runtimeZoomOverride > 0) {
+                settings.textZoom = runtimeZoomOverride
+                AppLogger.d("WebViewManager", "Applied runtime page zoom: textZoom=$runtimeZoomOverride%")
+            }
+
             if (config.initialScale > 0) {
                 setInitialScale(config.initialScale)
                 AppLogger.d("WebViewManager", "Set initial scale: ${config.initialScale}%")

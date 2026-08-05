@@ -26,6 +26,7 @@ class ToolbarVisibilityTest {
         assertThat(visibility.showForward).isTrue()
         assertThat(visibility.showRefresh).isTrue()
         assertThat(visibility.showConsoleButton).isTrue()
+        assertThat(visibility.showOverflowButton).isTrue()
     }
 
     @Test
@@ -46,6 +47,7 @@ class ToolbarVisibilityTest {
         assertThat(visibility.showForward).isTrue()
         assertThat(visibility.showRefresh).isFalse()
         assertThat(visibility.showConsoleButton).isTrue() // at least one item checked
+        assertThat(visibility.showOverflowButton).isTrue()
     }
 
     @Test
@@ -66,6 +68,7 @@ class ToolbarVisibilityTest {
         assertThat(visibility.showForward).isFalse()
         assertThat(visibility.showRefresh).isFalse()
         assertThat(visibility.showConsoleButton).isFalse()
+        assertThat(visibility.showOverflowButton).isFalse()
     }
 
     @Test
@@ -86,5 +89,6 @@ class ToolbarVisibilityTest {
         assertThat(visibility.showBack).isTrue()
         assertThat(visibility.showRefresh).isTrue()
         assertThat(visibility.showConsoleButton).isTrue()
+        assertThat(visibility.showOverflowButton).isTrue()
     }
 }

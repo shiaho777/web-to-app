@@ -36,6 +36,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material.icons.outlined.ZoomIn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -65,6 +66,7 @@ import com.webtoapp.data.model.SplashOrientation
 import com.webtoapp.data.model.SplashType
 import com.webtoapp.data.model.WebApp
 import com.webtoapp.data.model.resolveToolbarButtons
+import com.webtoapp.core.webview.PageZoomStore
 import android.content.pm.ActivityInfo
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.util.DownloadHelper
@@ -2689,6 +2691,12 @@ fun WebViewScreen(
         )
     }
 
+    // Per-app runtime page zoom (persists across cold starts). 0 = no override.
+    val previewAppPackage = webApp?.packageName ?: context.packageName
+    var pageZoomPercent by remember(previewAppPackage) {
+        mutableStateOf(PageZoomStore.getZoomPercent(context, previewAppPackage))
+    }
+
     LaunchedEffect(hideToolbar) {
 
         onFullscreenModeChanged(hideToolbar)
@@ -2777,6 +2785,33 @@ fun WebViewScreen(
                                         )
                                     }
                                 }
+                            }
+                        }
+                        // Page-zoom button: opens the zoom presets dialog directly (mirrors
+                        // the shell/export toolbar so preview and export behave the same).
+                        if (isTestMode || browserToolbarVisibility?.showOverflowButton == true) {
+                            var zoomDialogOpen by remember { mutableStateOf(false) }
+                            IconButton(onClick = { zoomDialogOpen = true }) {
+                                Icon(
+                                    Icons.Outlined.ZoomIn,
+                                    Strings.pageZoomLabel,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (zoomDialogOpen) {
+                                com.webtoapp.ui.shell.ZoomPresetsDialog(
+                                    currentZoom = pageZoomPercent,
+                                    onSelect = { percent ->
+                                        pageZoomPercent = percent
+                                        // textZoom only takes effect on the next page layout,
+                                        // so a live page needs a reload to reflect the change
+                                        // immediately (Chromium does not relayout for setTextZoom).
+                                        webViewRef?.settings?.textZoom = if (percent > 0) percent else 100
+                                        webViewRef?.reload()
+                                        PageZoomStore.setZoomPercent(context, previewAppPackage, percent)
+                                    },
+                                    onDismiss = { zoomDialogOpen = false }
+                                )
                             }
                         }
                     },

@@ -971,6 +971,8 @@ object Strings {
     val noFilePathAvailable: String get() = StringsA.noFilePathAvailable
     val copiedAllLogs: String get() = StringsA.copiedAllLogs
     val console: String get() = StringsA.console
+    val pageZoomLabel: String get() = StringsA.pageZoomLabel
+    val pageZoomReset: String get() = StringsA.pageZoomReset
     val noConsoleMessages: String get() = StringsA.noConsoleMessages
     val inputJavaScript: String get() = StringsA.inputJavaScript
     val preparingDownload: String get() = StringsA.preparingDownload
@@ -16926,6 +16928,32 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Консоль"
         AppLanguage.JAPANESE -> "コンソール"
         AppLanguage.KOREAN -> "콘솔"
+    }
+
+    val pageZoomLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "页面缩放"
+        AppLanguage.ENGLISH -> "Page Zoom"
+        AppLanguage.ARABIC -> "تكبير الصفحة"
+        AppLanguage.PORTUGUESE -> "Zoom da Página"
+        AppLanguage.SPANISH -> "Zoom de Página"
+        AppLanguage.FRENCH -> "Zoom de Page"
+        AppLanguage.GERMAN -> "Seitenzoom"
+        AppLanguage.RUSSIAN -> "Масштаб страницы"
+        AppLanguage.JAPANESE -> "ページズーム"
+        AppLanguage.KOREAN -> "페이지 확대"
+    }
+
+    val pageZoomReset: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重置"
+        AppLanguage.ENGLISH -> "Reset"
+        AppLanguage.ARABIC -> "إعادة تعيين"
+        AppLanguage.PORTUGUESE -> "Redefinir"
+        AppLanguage.SPANISH -> "Restablecer"
+        AppLanguage.FRENCH -> "Réinitialiser"
+        AppLanguage.GERMAN -> "Zurücksetzen"
+        AppLanguage.RUSSIAN -> "Сбросить"
+        AppLanguage.JAPANESE -> "リセット"
+        AppLanguage.KOREAN -> "재설정"
     }
 
     val noConsoleMessages: String get() = when (Strings.lang) {
