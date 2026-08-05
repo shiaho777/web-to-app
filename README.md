@@ -157,12 +157,13 @@ WebToApp has a large number of switches. The sections below group them by use ca
 
 - **Splash screens** — image or video, with skip behavior, trim ranges, and fixed orientation.
 - **Background music** — playlists with synced LRC lyrics, lyric animations, custom font/color/stroke/shadow, and online music search.
-- **Toolbar, status bar (light & dark), navigation, floating-window mode, and long-press menu styles.** Status bar color can follow theme, a custom color, full transparency, or **PAGE_TOP** (sample the page’s top pixels so the chrome matches the content).
+- **Toolbar, status bar (light & dark), navigation, floating-window mode, and long-press menu styles.** Status bar color can follow theme, a custom color, full transparency, or **PAGE_TOP** (sample the page’s top pixels so the chrome matches the content). The runtime toolbar also offers a per-app **page-zoom preset** (saved across cold starts) and a **console** panel for on-device debugging.
 - **Download location mode** — system Downloads, app-private directory, or a custom SAF folder picked by the user.
 - **Announcement templates** for launch, interval, and no-network moments.
 - **Host app language** — switch the entire builder UI among 10 languages (中文 / English / العربية / Português / Español / Français / Deutsch / Русский / 日本語 / 한국어); Arabic is full RTL.
 - **Translation overlay** — 20 target languages via Google, MyMemory, LibreTranslate, or Lingva engines, with automatic failover across them (in-page translate for the *content* of generated apps, separate from host UI language).
 - **Print bridge** — intercept `window.print()` and blob/data-URL PDFs to the Android print framework / PDF export (with an onPageStarted re-inject fallback so late navigations stay hooked).
+- **Media Session bridge** — surface web media on the system media notification and lock-screen controls, with Bluetooth and Android Auto support.
 - **Notifications** — Web Notification polyfill, scheduled and persistent notifications with progress, URL-polling foreground service, deep links, boot auto-start, scheduled launch, and background-run service.
 - **Per-app usage stats** with Vico charts and URL health monitoring.
 

@@ -12,6 +12,7 @@
 - **兼容 polyfill** —— 一组兼容 shim(`enableCompatPolyfills`)。
 - **原生桥** —— 暴露带能力门控的原生桥(`enableNativeBridge`、`nativeBridgeCapabilities`)。
 - **打印桥** —— 拦截 `window.print()` 和 PDF 输出到 Android 打印框架(`enablePrintBridge`)。
+- **媒体会话桥** —— 把网页媒体接入系统媒体通知和锁屏控制,支持蓝牙耳机和 Android Auto(`enableMediaSession`)。
 - **分享桥** —— `enableShareBridge`。
 - **缩放 polyfill** —— `enableZoomPolyfill`。
 

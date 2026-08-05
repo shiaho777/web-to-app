@@ -157,12 +157,13 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 
 - **启动屏** —— 图片或视频,支持跳过、视频裁剪区间和固定方向。
 - **背景音乐** —— 播放列表 + LRC 同步歌词、歌词动画、自定义字体/颜色/描边/阴影和在线音乐搜索。
-- **工具栏、状态栏(亮色/暗色)、导航栏、悬浮窗模式和长按菜单样式。** 状态栏颜色可跟随主题、自定义色、全透明,或 **PAGE_TOP**(采样页面顶部像素,让系统栏跟内容同色)。
+- **工具栏、状态栏(亮色/暗色)、导航栏、悬浮窗模式和长按菜单样式。** 状态栏颜色可跟随主题、自定义色、全透明,或 **PAGE_TOP**(采样页面顶部像素,让系统栏跟内容同色)。运行时工具栏还提供 **页面缩放预设**(按应用保存,冷启动后保留)和 **控制台** 面板,便于在设备上调试。
 - **下载位置模式** —— 系统 Downloads、应用私有目录,或用户用 SAF 自选文件夹。
 - **公告模板**,可在启动、定时或无网络时触发。
 - **宿主应用语言** —— 整个打包器界面可在 10 种语言间切换(中文 / English / العربية / Português / Español / Français / Deutsch / Русский / 日本語 / 한국어);阿拉伯语完整 RTL。
 - **页内翻译覆盖层** —— 20 种目标语言,支持 Google、MyMemory、LibreTranslate、Lingva 引擎,并在引擎间自动故障转移(给*生成应用内容*做页内翻译,与宿主 UI 语言是两套能力)。
 - **打印桥接** —— 拦截 `window.print()` 和 blob/data-URL 的 PDF,交给 Android 打印框架 / 导出 PDF(onPageStarted 会再注入一次,避免晚导航丢 hook)。
+- **媒体会话桥接** —— 把网页媒体接入系统媒体通知和锁屏控制,支持蓝牙耳机和 Android Auto。
 - **通知** —— Web Notification polyfill、定时与持久化通知(含进度更新)、URL 轮询前台服务、深链、开机自启、定时启动和后台运行服务。
 - **每个 APK 的使用统计**、Vico 图表和 URL 健康监测。
 
@@ -281,7 +282,7 @@ App 会同时拉取 `registry.json` 和 `submissions.json`,只展示两边都存
 - `com.android.tools.build:apksig` 8.3.0 用于 APK 签名
 - BouncyCastle 1.78.1 用于加密与签名
 - `protobuf-javalite` 3.25.5 用于 AAB 元数据
-- Firebase Cloud Messaging(自带 Firebase 配置)用于推送通知
+- Firebase Cloud Messaging(需自行配置 Firebase)用于推送通知
 - GeckoView 作为可选浏览器引擎(原生库在首次使用时下载)
 - Coil 负责图片、视频、GIF 加载
 - Haze 用于毛玻璃 / 玻璃拟态 UI
