@@ -13,10 +13,16 @@ class StringsKtTranslationParityTest {
         assertWithMessage(
             buildString {
                 appendLine("Strings.kt has when(lang) blocks that fail i18n parity rules.")
-                appendLine("Each block must either:")
-                appendLine("  - list all ten branches: CHINESE, ENGLISH, ARABIC, PORTUGUESE,")
-                appendLine("    SPANISH, FRENCH, GERMAN, RUSSIAN, JAPANESE, KOREAN")
-                appendLine("  - or defer to Android resources: else -> getString(R.string.x)")
+                appendLine("Each block must list all ten branches explicitly:")
+                appendLine("  CHINESE, ENGLISH, ARABIC, PORTUGUESE, SPANISH,")
+                appendLine("  FRENCH, GERMAN, RUSSIAN, JAPANESE, KOREAN")
+                appendLine()
+                appendLine("'else ->' branches are forbidden. A resource deferral")
+                appendLine("(else -> getString(R.string.*)) silently falls back to the")
+                appendLine("default values/ (Chinese) for locales without a values-*/")
+                appendLine("directory, so it masks missing translations instead of")
+                appendLine("providing them. pt/es/fr/de/ru/ja/ko have no values-*/ folder")
+                appendLine("and must therefore be served by inline branches.")
                 appendLine()
                 appendLine("Offending blocks (line number is the line containing 'when (Strings.lang)'):")
                 problems.forEach { appendLine("  $it") }
@@ -84,7 +90,7 @@ class StringsKtTranslationParityTest {
 
     private data class BlockAnalysis(
         val presentLanguages: Set<String>,
-        val nonDeferralElseAtTopLevel: Boolean,
+        val anyElseAtTopLevel: Boolean,
     )
 
     private val ALL_LANGUAGES = listOf(
@@ -94,7 +100,7 @@ class StringsKtTranslationParityTest {
 
     private fun analyseBlock(source: String, openingBraceIndex: Int): Pair<BlockAnalysis, Int> {
         val present = mutableSetOf<String>()
-        var nonDeferralElseAtTopLevel = false
+        var anyElseAtTopLevel = false
 
         var depth = 1
         var i = openingBraceIndex + 1
@@ -116,7 +122,7 @@ class StringsKtTranslationParityTest {
                 '}' -> {
                     depth--
                     if (depth == 0) {
-                        return BlockAnalysis(present.toSet(), nonDeferralElseAtTopLevel) to i
+                        return BlockAnalysis(present.toSet(), anyElseAtTopLevel) to i
                     }
                     i++
                     continue
@@ -131,19 +137,13 @@ class StringsKtTranslationParityTest {
                 if (matchAt(source, i, "else") && isAtWordStart(source, i) &&
                     looksLikeArrowAfter(source, i + 4)
                 ) {
-                    val arrow = indexOfArrow(source, i)
-                    if (arrow != null) {
-                        val rhsStart = skipSpacesAndTabs(source, arrow + 2)
-                        if (!isPureGetStringDeferral(source, rhsStart)) {
-                            nonDeferralElseAtTopLevel = true
-                        }
-                    }
+                    anyElseAtTopLevel = true
                 }
             }
             i++
         }
 
-        return BlockAnalysis(present.toSet(), nonDeferralElseAtTopLevel) to (source.length - 1)
+        return BlockAnalysis(present.toSet(), anyElseAtTopLevel) to (source.length - 1)
     }
 
     private fun isAtWordStart(source: String, i: Int): Boolean {
@@ -156,60 +156,6 @@ class StringsKtTranslationParityTest {
         var i = from
         while (i < source.length && (source[i] == ' ' || source[i] == '\t')) i++
         return i + 1 < source.length && source[i] == '-' && source[i + 1] == '>'
-    }
-
-    private fun indexOfArrow(source: String, from: Int): Int? {
-        var i = from
-        while (i < source.length - 1) {
-            if (source[i] == '\n') return null
-            if (source[i] == '-' && source[i + 1] == '>') return i
-            i++
-        }
-        return null
-    }
-
-    private fun skipSpacesAndTabs(source: String, from: Int): Int {
-        var i = from
-        while (i < source.length && (source[i] == ' ' || source[i] == '\t')) i++
-        return i
-    }
-
-    private fun isPureGetStringDeferral(source: String, from: Int): Boolean {
-        var start = from
-        if (source.regionMatches(start, "Strings.", 0, "Strings.".length)) {
-            start += "Strings.".length
-        }
-        val needle = "getString(R.string."
-        if (!source.regionMatches(start, needle, 0, needle.length)) return false
-        var i = start + needle.length
-
-        if (i >= source.length || !(source[i].isLetter() || source[i] == '_')) return false
-        while (i < source.length && (source[i].isLetterOrDigit() || source[i] == '_')) i++
-
-        if (i < source.length && source[i] == ',') {
-
-            var parenDepth = 1
-            i++
-            while (i < source.length && parenDepth > 0) {
-                val (next, _) = skipNonCode(source, i)
-                if (next != i) {
-                    i = next
-                    continue
-                }
-                when (source[i]) {
-                    '(' -> parenDepth++
-                    ')' -> parenDepth--
-                    '\n' -> return false
-                }
-                if (parenDepth == 0) break
-                i++
-            }
-        }
-        if (i >= source.length || source[i] != ')') return false
-
-        var j = i + 1
-        while (j < source.length && (source[j] == ' ' || source[j] == '\t')) j++
-        return j < source.length && (source[j] == '\n' || source[j] == '\r' || source[j] == '}')
     }
 
     private fun matchAt(source: String, i: Int, literal: String): Boolean {
@@ -294,13 +240,15 @@ class StringsKtTranslationParityTest {
         val problems = mutableListOf<String>()
 
         val anyBranch = analysis.presentLanguages.isNotEmpty()
-        if (!anyBranch && !analysis.nonDeferralElseAtTopLevel) {
+        if (!anyBranch && !analysis.anyElseAtTopLevel) {
 
             return problems
         }
-        if (analysis.nonDeferralElseAtTopLevel) {
-            problems += "L$openerLine: when(lang) contains 'else ->' that is not a getString(R.string.*) deferral. " +
-                "Hard-coded else branches mask missing translations — list all ten AppLanguage cases instead."
+        if (analysis.anyElseAtTopLevel) {
+            problems += "L$openerLine: when(lang) uses an 'else ->' branch. " +
+                "List all ten AppLanguage cases instead — 'else ->' (including resource " +
+                "deferrals via getString(R.string.*)) silently falls back to Chinese for " +
+                "locales without a values-*/ directory."
             return problems
         }
         val missing = ALL_LANGUAGES.filter { it !in analysis.presentLanguages }

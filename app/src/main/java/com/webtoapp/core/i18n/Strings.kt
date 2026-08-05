@@ -1,10 +1,8 @@
 package com.webtoapp.core.i18n
 
 import android.content.Context
-import androidx.annotation.StringRes
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
-import com.webtoapp.R
 
 object Strings {
 
@@ -41,12 +39,6 @@ object Strings {
             appContext
         }
         contextVersion.intValue++
-    }
-
-    internal fun getString(@StringRes resId: Int, vararg formatArgs: Any): String {
-        contextVersion.intValue
-        val ctx = localizedContext ?: fallbackContext ?: return ""
-        return if (formatArgs.isNotEmpty()) ctx.getString(resId, *formatArgs) else ctx.getString(resId)
     }
 
     internal val lang: AppLanguage
@@ -307,6 +299,10 @@ object Strings {
     val msgNoApps: String get() = StringsA.msgNoApps
     val msgLanguageChanged: String get() = StringsA.msgLanguageChanged
     val msgImportSuccess: String get() = StringsA.msgImportSuccess
+    fun moduleImportSuccess(name: String): String = StringsA.moduleImportSuccess(name)
+    fun moduleImportFailed(message: String): String = StringsA.moduleImportFailed(message)
+    val languageSettings: String get() = StringsA.languageSettings
+    val sslError: String get() = StringsA.sslError
     val msgCopied: String get() = StringsA.msgCopied
     val menuRuntimeDeps: String get() = StringsA.menuRuntimeDeps
     val menuPortManager: String get() = StringsA.menuPortManager
@@ -4941,43 +4937,133 @@ object StringsA {
     }
 
     val myApps: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.title_my_apps)
+        AppLanguage.CHINESE -> "我的应用"
+        AppLanguage.ENGLISH -> "My Apps"
+        AppLanguage.ARABIC -> "تطبيقاتي"
+        AppLanguage.PORTUGUESE -> "Meus Aplicativos"
+        AppLanguage.SPANISH -> "Mis Aplicaciones"
+        AppLanguage.FRENCH -> "Mes Applications"
+        AppLanguage.GERMAN -> "Meine Apps"
+        AppLanguage.RUSSIAN -> "Мои приложения"
+        AppLanguage.JAPANESE -> "マイアプリ"
+        AppLanguage.KOREAN -> "내 앱"
     }
 
     val createApp: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.title_create_app)
+        AppLanguage.CHINESE -> "创建应用"
+        AppLanguage.ENGLISH -> "Create App"
+        AppLanguage.ARABIC -> "إنشاء تطبيق"
+        AppLanguage.PORTUGUESE -> "Criar Aplicativo"
+        AppLanguage.SPANISH -> "Crear Aplicación"
+        AppLanguage.FRENCH -> "Créer une Application"
+        AppLanguage.GERMAN -> "App erstellen"
+        AppLanguage.RUSSIAN -> "Создать приложение"
+        AppLanguage.JAPANESE -> "アプリ作成"
+        AppLanguage.KOREAN -> "앱 만들기"
     }
 
     val search: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.search_placeholder)
+        AppLanguage.CHINESE -> "搜索..."
+        AppLanguage.ENGLISH -> "Search..."
+        AppLanguage.ARABIC -> "بحث..."
+        AppLanguage.PORTUGUESE -> "Pesquisar..."
+        AppLanguage.SPANISH -> "Buscar..."
+        AppLanguage.FRENCH -> "Rechercher..."
+        AppLanguage.GERMAN -> "Suchen..."
+        AppLanguage.RUSSIAN -> "Поиск..."
+        AppLanguage.JAPANESE -> "検索..."
+        AppLanguage.KOREAN -> "검색..."
     }
 
     val more: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.menu_more)
+        AppLanguage.CHINESE -> "更多"
+        AppLanguage.ENGLISH -> "More"
+        AppLanguage.ARABIC -> "المزيد"
+        AppLanguage.PORTUGUESE -> "Mais"
+        AppLanguage.SPANISH -> "Más"
+        AppLanguage.FRENCH -> "Plus"
+        AppLanguage.GERMAN -> "Mehr"
+        AppLanguage.RUSSIAN -> "Ещё"
+        AppLanguage.JAPANESE -> "その他"
+        AppLanguage.KOREAN -> "더보기"
     }
 
     val back: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.webview_back)
+        AppLanguage.CHINESE -> "返回"
+        AppLanguage.ENGLISH -> "Back"
+        AppLanguage.ARABIC -> "رجوع"
+        AppLanguage.PORTUGUESE -> "Voltar"
+        AppLanguage.SPANISH -> "Atrás"
+        AppLanguage.FRENCH -> "Retour"
+        AppLanguage.GERMAN -> "Zurück"
+        AppLanguage.RUSSIAN -> "Назад"
+        AppLanguage.JAPANESE -> "戻る"
+        AppLanguage.KOREAN -> "뒤로"
     }
 
     val menuAgent: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.menu_agent)
+        AppLanguage.CHINESE -> "Agent"
+        AppLanguage.ENGLISH -> "Agent"
+        AppLanguage.ARABIC -> "Agent"
+        AppLanguage.PORTUGUESE -> "Agent"
+        AppLanguage.SPANISH -> "Agent"
+        AppLanguage.FRENCH -> "Agent"
+        AppLanguage.GERMAN -> "Agent"
+        AppLanguage.RUSSIAN -> "Agent"
+        AppLanguage.JAPANESE -> "Agent"
+        AppLanguage.KOREAN -> "Agent"
     }
 
     val menuAiSettings: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.menu_ai_settings)
+        AppLanguage.CHINESE -> "AI 设置"
+        AppLanguage.ENGLISH -> "AI Settings"
+        AppLanguage.ARABIC -> "إعدادات AI"
+        AppLanguage.PORTUGUESE -> "Configurações de IA"
+        AppLanguage.SPANISH -> "Ajustes de IA"
+        AppLanguage.FRENCH -> "Paramètres IA"
+        AppLanguage.GERMAN -> "KI-Einstellungen"
+        AppLanguage.RUSSIAN -> "Настройки ИИ"
+        AppLanguage.JAPANESE -> "AI設定"
+        AppLanguage.KOREAN -> "AI 설정"
     }
 
     val menuAppModifier: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.menu_app_modifier)
+        AppLanguage.CHINESE -> "应用修改器"
+        AppLanguage.ENGLISH -> "App Modifier"
+        AppLanguage.ARABIC -> "معدل التطبيق"
+        AppLanguage.PORTUGUESE -> "Modificador de Aplicativos"
+        AppLanguage.SPANISH -> "Modificador de Aplicaciones"
+        AppLanguage.FRENCH -> "Modificateur d'Applications"
+        AppLanguage.GERMAN -> "App-Modifikator"
+        AppLanguage.RUSSIAN -> "Модификатор приложений"
+        AppLanguage.JAPANESE -> "アプリ変更ツール"
+        AppLanguage.KOREAN -> "앱 수정기"
     }
 
     val menuExtensionModules: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.menu_extension_modules)
+        AppLanguage.CHINESE -> "扩展模块"
+        AppLanguage.ENGLISH -> "Extension Modules"
+        AppLanguage.ARABIC -> "الوحدات الإضافية"
+        AppLanguage.PORTUGUESE -> "Módulos de Extensão"
+        AppLanguage.SPANISH -> "Módulos de Extensión"
+        AppLanguage.FRENCH -> "Modules d'Extension"
+        AppLanguage.GERMAN -> "Erweiterungsmodule"
+        AppLanguage.RUSSIAN -> "Модули расширений"
+        AppLanguage.JAPANESE -> "拡張モジュール"
+        AppLanguage.KOREAN -> "확장 모듈"
     }
 
     val menuAbout: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.menu_about)
+        AppLanguage.CHINESE -> "关于"
+        AppLanguage.ENGLISH -> "About"
+        AppLanguage.ARABIC -> "حول"
+        AppLanguage.PORTUGUESE -> "Sobre"
+        AppLanguage.SPANISH -> "Acerca de"
+        AppLanguage.FRENCH -> "À propos"
+        AppLanguage.GERMAN -> "Über"
+        AppLanguage.RUSSIAN -> "О приложении"
+        AppLanguage.JAPANESE -> "について"
+        AppLanguage.KOREAN -> "정보"
     }
 
     val tabMore: String get() = when (Strings.lang) {
@@ -6749,47 +6835,146 @@ object StringsA {
     }
 
     val previewNotRunningBadge: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_not_running_badge)
+        AppLanguage.CHINESE -> "预览（未运行）"
+        AppLanguage.ENGLISH -> "Preview (not running)"
+        AppLanguage.ARABIC -> "معاينة (غير قيد التشغيل)"
+        AppLanguage.PORTUGUESE -> "Pré-visualização (não executando)"
+        AppLanguage.SPANISH -> "Vista previa (no ejecutándose)"
+        AppLanguage.FRENCH -> "Aperçu (non démarré)"
+        AppLanguage.GERMAN -> "Vorschau (wird nicht ausgeführt)"
+        AppLanguage.RUSSIAN -> "Предпросмотр (не запущен)"
+        AppLanguage.JAPANESE -> "プレビュー（未実行）"
+        AppLanguage.KOREAN -> "미리보기 (실행 중 아님)"
     }
 
     val previewNotRunningNote: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_not_running_note)
+        AppLanguage.CHINESE -> "这是未运行状态的预览，点击进入后会真正启动服务器并加载实际页面。"
+        AppLanguage.ENGLISH -> "This is a non-running preview. Opening the app starts the server and loads the real page."
+        AppLanguage.ARABIC -> "هذه معاينة في حالة عدم التشغيل. عند فتح التطبيق سيبدأ الخادم ويُحمّل الصفحة الفعلية."
+        AppLanguage.PORTUGUESE -> "Esta é uma pré-visualização sem execução. Abrir o app inicia o servidor e carrega a página real."
+        AppLanguage.SPANISH -> "Esta es una vista previa sin ejecución. Abrir la app inicia el servidor y carga la página real."
+        AppLanguage.FRENCH -> "Ceci est un aperçu non démarré. Ouvrir l'app démarre le serveur et charge la page réelle."
+        AppLanguage.GERMAN -> "Dies ist eine Vorschau ohne Ausführung. Beim Öffnen der App wird der Server gestartet und die echte Seite geladen."
+        AppLanguage.RUSSIAN -> "Это предпросмотр без запуска. При открытии приложения запускается сервер и загружается реальная страница."
+        AppLanguage.JAPANESE -> "これは非実行状態のプレビューです。アプリを開くとサーバーが起動し、実際のページが読み込まれます。"
+        AppLanguage.KOREAN -> "실행 중이 아닌 미리보기입니다. 앱을 열면 서버가 시작되고 실제 페이지가 로드됩니다."
     }
 
     val previewLabelTheme: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_label_theme)
+        AppLanguage.CHINESE -> "主题"
+        AppLanguage.ENGLISH -> "Theme"
+        AppLanguage.ARABIC -> "السمة"
+        AppLanguage.PORTUGUESE -> "Tema"
+        AppLanguage.SPANISH -> "Tema"
+        AppLanguage.FRENCH -> "Thème"
+        AppLanguage.GERMAN -> "Theme"
+        AppLanguage.RUSSIAN -> "Тема"
+        AppLanguage.JAPANESE -> "テーマ"
+        AppLanguage.KOREAN -> "테마"
     }
 
     val previewLabelPlugins: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_label_plugins)
+        AppLanguage.CHINESE -> "插件"
+        AppLanguage.ENGLISH -> "Plugins"
+        AppLanguage.ARABIC -> "الإضافات"
+        AppLanguage.PORTUGUESE -> "Plugins"
+        AppLanguage.SPANISH -> "Plugins"
+        AppLanguage.FRENCH -> "Plugins"
+        AppLanguage.GERMAN -> "Plugins"
+        AppLanguage.RUSSIAN -> "Плагины"
+        AppLanguage.JAPANESE -> "プラグイン"
+        AppLanguage.KOREAN -> "플러그인"
     }
 
     val previewLabelAdmin: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_label_admin)
+        AppLanguage.CHINESE -> "管理员"
+        AppLanguage.ENGLISH -> "Admin"
+        AppLanguage.ARABIC -> "المسؤول"
+        AppLanguage.PORTUGUESE -> "Administrador"
+        AppLanguage.SPANISH -> "Administrador"
+        AppLanguage.FRENCH -> "Admin"
+        AppLanguage.GERMAN -> "Admin"
+        AppLanguage.RUSSIAN -> "Админ"
+        AppLanguage.JAPANESE -> "管理者"
+        AppLanguage.KOREAN -> "관리자"
     }
 
     val previewLabelFramework: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_label_framework)
+        AppLanguage.CHINESE -> "框架"
+        AppLanguage.ENGLISH -> "Framework"
+        AppLanguage.ARABIC -> "الإطار"
+        AppLanguage.PORTUGUESE -> "Framework"
+        AppLanguage.SPANISH -> "Framework"
+        AppLanguage.FRENCH -> "Framework"
+        AppLanguage.GERMAN -> "Framework"
+        AppLanguage.RUSSIAN -> "Фреймворк"
+        AppLanguage.JAPANESE -> "フレームワーク"
+        AppLanguage.KOREAN -> "프레임워크"
     }
 
     val previewLabelEntry: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_label_entry)
+        AppLanguage.CHINESE -> "入口文件"
+        AppLanguage.ENGLISH -> "Entry"
+        AppLanguage.ARABIC -> "ملف الدخول"
+        AppLanguage.PORTUGUESE -> "Arquivo de Entrada"
+        AppLanguage.SPANISH -> "Archivo de Entrada"
+        AppLanguage.FRENCH -> "Fichier d'Entrée"
+        AppLanguage.GERMAN -> "Einstiegspunkt"
+        AppLanguage.RUSSIAN -> "Точка входа"
+        AppLanguage.JAPANESE -> "エントリファイル"
+        AppLanguage.KOREAN -> "진입 파일"
     }
 
     val previewLabelDocumentRoot: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_label_document_root)
+        AppLanguage.CHINESE -> "Web 根目录"
+        AppLanguage.ENGLISH -> "Document Root"
+        AppLanguage.ARABIC -> "جذر المستند"
+        AppLanguage.PORTUGUESE -> "Raiz do Documento"
+        AppLanguage.SPANISH -> "Raíz del Documento"
+        AppLanguage.FRENCH -> "Racine du Document"
+        AppLanguage.GERMAN -> "Document Root"
+        AppLanguage.RUSSIAN -> "Корневой каталог"
+        AppLanguage.JAPANESE -> "ドキュメントルート"
+        AppLanguage.KOREAN -> "문서 루트"
     }
 
     val previewLabelBinary: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_label_binary)
+        AppLanguage.CHINESE -> "二进制文件"
+        AppLanguage.ENGLISH -> "Binary"
+        AppLanguage.ARABIC -> "الملف الثنائي"
+        AppLanguage.PORTUGUESE -> "Binário"
+        AppLanguage.SPANISH -> "Binario"
+        AppLanguage.FRENCH -> "Binaire"
+        AppLanguage.GERMAN -> "Binärdatei"
+        AppLanguage.RUSSIAN -> "Бинарный файл"
+        AppLanguage.JAPANESE -> "バイナリファイル"
+        AppLanguage.KOREAN -> "바이너리 파일"
     }
 
     val previewValueDefault: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_value_default)
+        AppLanguage.CHINESE -> "默认"
+        AppLanguage.ENGLISH -> "Default"
+        AppLanguage.ARABIC -> "افتراضي"
+        AppLanguage.PORTUGUESE -> "Padrão"
+        AppLanguage.SPANISH -> "Predeterminado"
+        AppLanguage.FRENCH -> "Par défaut"
+        AppLanguage.GERMAN -> "Standard"
+        AppLanguage.RUSSIAN -> "По умолчанию"
+        AppLanguage.JAPANESE -> "デフォルト"
+        AppLanguage.KOREAN -> "기본값"
     }
 
     val previewValueUnknown: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_value_unknown)
+        AppLanguage.CHINESE -> "未知"
+        AppLanguage.ENGLISH -> "Unknown"
+        AppLanguage.ARABIC -> "غير معروف"
+        AppLanguage.PORTUGUESE -> "Desconhecido"
+        AppLanguage.SPANISH -> "Desconocido"
+        AppLanguage.FRENCH -> "Inconnu"
+        AppLanguage.GERMAN -> "Unbekannt"
+        AppLanguage.RUSSIAN -> "Неизвестно"
+        AppLanguage.JAPANESE -> "不明"
+        AppLanguage.KOREAN -> "알 수 없음"
     }
 
     val wpDownloadDeps: String get() = when (Strings.lang) {
@@ -8314,6 +8499,58 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Импорт выполнен"
         AppLanguage.JAPANESE -> "インポートに成功しました"
         AppLanguage.KOREAN -> "가져오기 성공"
+    }
+
+    fun moduleImportSuccess(name: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "模块 $name 导入成功"
+        AppLanguage.ENGLISH -> "Module $name imported successfully"
+        AppLanguage.ARABIC -> "تم استيراد الوحدة $name بنجاح"
+        AppLanguage.PORTUGUESE -> "Módulo $name importado com sucesso"
+        AppLanguage.SPANISH -> "Módulo $name importado con éxito"
+        AppLanguage.FRENCH -> "Module $name importé avec succès"
+        AppLanguage.GERMAN -> "Modul $name erfolgreich importiert"
+        AppLanguage.RUSSIAN -> "Модуль $name успешно импортирован"
+        AppLanguage.JAPANESE -> "モジュール $name のインポートに成功しました"
+        AppLanguage.KOREAN -> "모듈 $name 가져오기 성공"
+    }
+
+    fun moduleImportFailed(message: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "模块导入失败: $message"
+        AppLanguage.ENGLISH -> "Module import failed: $message"
+        AppLanguage.ARABIC -> "فشل استيراد الوحدة: $message"
+        AppLanguage.PORTUGUESE -> "Falha ao importar o módulo: $message"
+        AppLanguage.SPANISH -> "Error al importar el módulo: $message"
+        AppLanguage.FRENCH -> "Échec de l'importation du module : $message"
+        AppLanguage.GERMAN -> "Modulimport fehlgeschlagen: $message"
+        AppLanguage.RUSSIAN -> "Ошибка импорта модуля: $message"
+        AppLanguage.JAPANESE -> "モジュールのインポートに失敗: $message"
+        AppLanguage.KOREAN -> "모듈 가져오기 실패: $message"
+    }
+
+    val languageSettings: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "语言"
+        AppLanguage.ENGLISH -> "Language"
+        AppLanguage.ARABIC -> "اللغة"
+        AppLanguage.PORTUGUESE -> "Idioma"
+        AppLanguage.SPANISH -> "Idioma"
+        AppLanguage.FRENCH -> "Langue"
+        AppLanguage.GERMAN -> "Sprache"
+        AppLanguage.RUSSIAN -> "Язык"
+        AppLanguage.JAPANESE -> "言語"
+        AppLanguage.KOREAN -> "언어"
+    }
+
+    val sslError: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "SSL 安全错误"
+        AppLanguage.ENGLISH -> "SSL Security Error"
+        AppLanguage.ARABIC -> "خطأ أمان SSL"
+        AppLanguage.PORTUGUESE -> "Erro de segurança SSL"
+        AppLanguage.SPANISH -> "Error de seguridad SSL"
+        AppLanguage.FRENCH -> "Erreur de sécurité SSL"
+        AppLanguage.GERMAN -> "SSL-Sicherheitsfehler"
+        AppLanguage.RUSSIAN -> "Ошибка безопасности SSL"
+        AppLanguage.JAPANESE -> "SSLセキュリティエラー"
+        AppLanguage.KOREAN -> "SSL 보안 오류"
     }
 
     val msgCopied: String get() = when (Strings.lang) {
@@ -62929,121 +63166,263 @@ object StringsE {
         AppLanguage.KOREAN -> "웹 미디어를 시스템 알림 및 잠금 화면 컨트롤에 연결 (Bluetooth, Android Auto)"
     }
     val previewBackendAppIntro: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_backend_app_intro)
+        AppLanguage.CHINESE -> "此项目是 %s 后端应用。"
+        AppLanguage.ENGLISH -> "This project is a %s backend app."
+        AppLanguage.ARABIC -> "هذا المشروع تطبيق خلفي بإطار %s."
+        AppLanguage.PORTUGUESE -> "Este projeto é um app backend %s."
+        AppLanguage.SPANISH -> "Este proyecto es una app backend %s."
+        AppLanguage.FRENCH -> "Ce projet est une app backend %s."
+        AppLanguage.GERMAN -> "Dieses Projekt ist eine %s-Backend-App."
+        AppLanguage.RUSSIAN -> "Этот проект — серверное приложение %s."
+        AppLanguage.JAPANESE -> "このプロジェクトは %s バックエンドアプリです。"
+        AppLanguage.KOREAN -> "이 프로젝트는 %s 백엔드 앱입니다."
     }
-
-
 
     val previewEntryNotFound: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_entry_not_found)
+        AppLanguage.CHINESE -> "未找到入口文件"
+        AppLanguage.ENGLISH -> "Entry file not found"
+        AppLanguage.ARABIC -> "لم يُعثر على ملف الدخول"
+        AppLanguage.PORTUGUESE -> "Arquivo de entrada não encontrado"
+        AppLanguage.SPANISH -> "Archivo de entrada no encontrado"
+        AppLanguage.FRENCH -> "Fichier d'entrée introuvable"
+        AppLanguage.GERMAN -> "Einstiegsdatei nicht gefunden"
+        AppLanguage.RUSSIAN -> "Точка входа не найдена"
+        AppLanguage.JAPANESE -> "エントリファイルが見つかりません"
+        AppLanguage.KOREAN -> "진입 파일을 찾을 수 없습니다"
     }
-
-
 
     val previewFileNotFound: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_file_not_found)
+        AppLanguage.CHINESE -> "文件不存在：%s"
+        AppLanguage.ENGLISH -> "File not found: %s"
+        AppLanguage.ARABIC -> "الملف غير موجود: %s"
+        AppLanguage.PORTUGUESE -> "Arquivo não encontrado: %s"
+        AppLanguage.SPANISH -> "Archivo no encontrado: %s"
+        AppLanguage.FRENCH -> "Fichier introuvable : %s"
+        AppLanguage.GERMAN -> "Datei nicht gefunden: %s"
+        AppLanguage.RUSSIAN -> "Файл не найден: %s"
+        AppLanguage.JAPANESE -> "ファイルが見つかりません: %s"
+        AppLanguage.KOREAN -> "파일을 찾을 수 없습니다: %s"
     }
-
-
 
     val previewFileUnreadable: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_file_unreadable)
+        AppLanguage.CHINESE -> "无法读取文件内容"
+        AppLanguage.ENGLISH -> "Unable to read file contents"
+        AppLanguage.ARABIC -> "تعذّرت قراءة محتوى الملف"
+        AppLanguage.PORTUGUESE -> "Não foi possível ler o conteúdo do arquivo"
+        AppLanguage.SPANISH -> "No se pudo leer el contenido del archivo"
+        AppLanguage.FRENCH -> "Impossible de lire le contenu du fichier"
+        AppLanguage.GERMAN -> "Dateiinhalt konnte nicht gelesen werden"
+        AppLanguage.RUSSIAN -> "Не удалось прочитать содержимое файла"
+        AppLanguage.JAPANESE -> "ファイルの内容を読み取れません"
+        AppLanguage.KOREAN -> "파일 내용을 읽을 수 없습니다"
     }
-
-
 
     val previewGoBinaryMissingBadge: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_go_binary_missing)
+        AppLanguage.CHINESE -> "缺少预编译二进制"
+        AppLanguage.ENGLISH -> "Missing precompiled binary"
+        AppLanguage.ARABIC -> "ملف ثنائي مُترجَم مفقود"
+        AppLanguage.PORTUGUESE -> "Binário pré-compilado ausente"
+        AppLanguage.SPANISH -> "Binario precompilado faltante"
+        AppLanguage.FRENCH -> "Binaire précompilé manquant"
+        AppLanguage.GERMAN -> "Vorkompilierte Binärdatei fehlt"
+        AppLanguage.RUSSIAN -> "Отсутствует предкомпилированный бинарный файл"
+        AppLanguage.JAPANESE -> "プリコンパイル済みバイナリがありません"
+        AppLanguage.KOREAN -> "미리 컴파일된 바이너리 없음"
     }
-
-
 
     val previewGoBinaryReadyBadge: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_go_binary_ready)
+        AppLanguage.CHINESE -> "可运行二进制已就绪：%s"
+        AppLanguage.ENGLISH -> "Runnable binary ready: %s"
+        AppLanguage.ARABIC -> "الملف الثنائي القابل للتشغيل جاهز: %s"
+        AppLanguage.PORTUGUESE -> "Binário executável pronto: %s"
+        AppLanguage.SPANISH -> "Binario ejecutable listo: %s"
+        AppLanguage.FRENCH -> "Binaire exécutable prêt : %s"
+        AppLanguage.GERMAN -> "Ausführbare Binärdatei bereit: %s"
+        AppLanguage.RUSSIAN -> "Исполняемый бинарный файл готов: %s"
+        AppLanguage.JAPANESE -> "実行可能バイナリの準備完了: %s"
+        AppLanguage.KOREAN -> "실행 가능한 바이너리 준비됨: %s"
     }
-
-
 
     val previewGoNoGoMod: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_go_no_gomod)
+        AppLanguage.CHINESE -> "无 go.mod"
+        AppLanguage.ENGLISH -> "No go.mod"
+        AppLanguage.ARABIC -> "لا يوجد go.mod"
+        AppLanguage.PORTUGUESE -> "Sem go.mod"
+        AppLanguage.SPANISH -> "Sin go.mod"
+        AppLanguage.FRENCH -> "Pas de go.mod"
+        AppLanguage.GERMAN -> "Kein go.mod"
+        AppLanguage.RUSSIAN -> "Нет go.mod"
+        AppLanguage.JAPANESE -> "go.mod がありません"
+        AppLanguage.KOREAN -> "go.mod 없음"
     }
-
-
 
     val previewGoTipNotReady: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_go_tip_not_ready)
+        AppLanguage.CHINESE -> "当前 GO_APP 仅支持运行预编译二进制。请先为目标 ABI 构建可执行文件。"
+        AppLanguage.ENGLISH -> "GO_APP currently only runs precompiled binaries. Build an executable for the target ABI first."
+        AppLanguage.ARABIC -> "يشغّل GO_APP حاليًا الملفات الثنائية المُترجَمة مسبقًا فقط. ابنِ ملفًا تنفيذيًا لمعمارية الـ ABI المستهدفة أولاً."
+        AppLanguage.PORTUGUESE -> "O GO_APP atualmente executa apenas binários pré-compilados. Compile um executável para a ABI de destino primeiro."
+        AppLanguage.SPANISH -> "GO_APP actualmente solo ejecuta binarios precompilados. Compila un ejecutable para la ABI de destino primero."
+        AppLanguage.FRENCH -> "GO_APP n'exécute actuellement que les binaires précompilés. Compilez d'abord un exécutable pour l'ABI cible."
+        AppLanguage.GERMAN -> "GO_APP führt derzeit nur vorkompilierte Binärdateien aus. Kompilieren Sie zuerst eine ausführbare Datei für die Ziel-ABI."
+        AppLanguage.RUSSIAN -> "GO_APP сейчас запускает только предкомпилированные бинарные файлы. Сначала соберите исполняемый файл для целевого ABI."
+        AppLanguage.JAPANESE -> "GO_APPは現在プリコンパイル済みバイナリのみ実行できます。対象ABI用の実行ファイルを先にビルドしてください。"
+        AppLanguage.KOREAN -> "GO_APP은 현재 미리 컴파일된 바이너리만 실행할 수 있습니다. 대상 ABI용 실행 파일을 먼저 빌드하세요."
     }
-
-
 
     val previewGoTipReady: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_go_tip_ready)
+        AppLanguage.CHINESE -> "已检测到可运行二进制（%s），可直接启动服务器。"
+        AppLanguage.ENGLISH -> "A runnable binary was detected (%s); the server can start directly."
+        AppLanguage.ARABIC -> "تم اكتشاف ملف ثنائي قابل للتشغيل (%s)؛ يمكن تشغيل الخادم مباشرة."
+        AppLanguage.PORTUGUESE -> "Um binário executável foi detectado (%s); o servidor pode iniciar diretamente."
+        AppLanguage.SPANISH -> "Se detectó un binario ejecutable (%s); el servidor puede iniciar directamente."
+        AppLanguage.FRENCH -> "Un binaire exécutable a été détecté (%s) ; le serveur peut démarrer directement."
+        AppLanguage.GERMAN -> "Eine ausführbare Binärdatei wurde erkannt (%s); der Server kann direkt starten."
+        AppLanguage.RUSSIAN -> "Обнаружен исполняемый бинарный файл (%s); сервер можно запустить напрямую."
+        AppLanguage.JAPANESE -> "実行可能バイナリ（%s）を検出しました。サーバーを直接起動できます。"
+        AppLanguage.KOREAN -> "실행 가능한 바이너리(%s)가 감지되었습니다. 서버를 바로 시작할 수 있습니다."
     }
-
-
 
     val previewNodeNeedRuntime: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_node_need_runtime)
+        AppLanguage.CHINESE -> "需要下载 Node.js 运行时"
+        AppLanguage.ENGLISH -> "Node.js runtime required"
+        AppLanguage.ARABIC -> "مطلوب وقت تشغيل Node.js"
+        AppLanguage.PORTUGUESE -> "Runtime do Node.js necessário"
+        AppLanguage.SPANISH -> "Se requiere el runtime de Node.js"
+        AppLanguage.FRENCH -> "Runtime Node.js requis"
+        AppLanguage.GERMAN -> "Node.js-Runtime erforderlich"
+        AppLanguage.RUSSIAN -> "Требуется среда выполнения Node.js"
+        AppLanguage.JAPANESE -> "Node.jsランタイムが必要です"
+        AppLanguage.KOREAN -> "Node.js 런타임 필요"
     }
-
-
 
     val previewNodeTipNotReady: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_node_tip_not_ready)
+        AppLanguage.CHINESE -> "这是一个 %s 后端应用。当前在预览模式（仅显示源码）。请到「运行时管理」下载 Node.js 运行时后再回来即可正常运行。"
+        AppLanguage.ENGLISH -> "This is a %s backend app, currently in preview mode (source only). Download the Node.js runtime in Runtime Management, then come back to run it."
+        AppLanguage.ARABIC -> "هذا تطبيق خلفي بإطار %s، وهو حاليًا في وضع المعاينة (الكود المصدري فقط). نزّل وقت تشغيل Node.js من إدارة أوقات التشغيل ثم عُد لتشغيله."
+        AppLanguage.PORTUGUESE -> "Este é um app backend %s, atualmente em modo de pré-visualização (somente código-fonte). Baixe o runtime do Node.js em Gerenciamento de Runtime e volte para executá-lo."
+        AppLanguage.SPANISH -> "Esta es una app backend %s, actualmente en modo vista previa (solo código fuente). Descarga el runtime de Node.js en Gestión de Runtimes y vuelve para ejecutarla."
+        AppLanguage.FRENCH -> "Ceci est une app backend %s, actuellement en mode aperçu (code source uniquement). Téléchargez le runtime Node.js dans Gestion des runtimes, puis revenez pour l'exécuter."
+        AppLanguage.GERMAN -> "Dies ist eine %s-Backend-App, derzeit im Vorschaumodus (nur Quellcode). Laden Sie die Node.js-Runtime in der Runtime-Verwaltung herunter und kehren Sie zurück, um sie auszuführen."
+        AppLanguage.RUSSIAN -> "Это серверное приложение %s, сейчас в режиме предпросмотра (только исходный код). Скачайте среду выполнения Node.js в «Управлении средами выполнения» и вернитесь для запуска."
+        AppLanguage.JAPANESE -> "これは %s バックエンドアプリで、現在プレビューモード（ソースのみ）です。ランタイム管理で Node.js ランタイムをダウンロードしてから戻ると実行できます。"
+        AppLanguage.KOREAN -> "%s 백엔드 앱이며 현재 미리보기 모드(소스만)입니다. 런타임 관리에서 Node.js 런타임을 다운로드한 뒤 다시 돌아와 실행하세요."
     }
-
-
 
     val previewNodeTipReady: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_node_tip_ready)
+        AppLanguage.CHINESE -> "Node.js 运行时已就绪，但本次启动 server 失败 / 未配置入口。检查 entryFile 是否存在、package.json 的 dependencies 是否需要先 npm install。"
+        AppLanguage.ENGLISH -> "Node.js runtime is ready, but the server failed to start or no entry is configured. Check that entryFile exists and whether package.json dependencies need npm install first."
+        AppLanguage.ARABIC -> "وقت تشغيل Node.js جاهز، لكن فشل تشغيل الخادم أو لم يُضبط ملف الدخول. تحقق من وجود entryFile وما إذا كانت تبعيات package.json تحتاج إلى npm install أولاً."
+        AppLanguage.PORTUGUESE -> "O runtime do Node.js está pronto, mas o servidor falhou ao iniciar ou nenhum entry foi configurado. Verifique se o entryFile existe e se as dependências do package.json precisam de npm install primeiro."
+        AppLanguage.SPANISH -> "El runtime de Node.js está listo, pero el servidor falló al iniciar o no se configuró un entry. Verifica si entryFile existe y si las dependencias de package.json necesitan npm install primero."
+        AppLanguage.FRENCH -> "Le runtime Node.js est prêt, mais le serveur n'a pas démarré ou aucune entrée n'est configurée. Vérifiez que entryFile existe et si les dépendances de package.json nécessitent d'abord npm install."
+        AppLanguage.GERMAN -> "Die Node.js-Runtime ist bereit, aber der Server startete nicht oder es ist kein Einstieg konfiguriert. Prüfen Sie, ob entryFile existiert und ob die package.json-Abhängigkeiten zunächst npm install benötigen."
+        AppLanguage.RUSSIAN -> "Среда выполнения Node.js готова, но сервер не запустился или точка входа не настроена. Проверьте существование entryFile и не нужен ли сначала npm install для зависимостей package.json."
+        AppLanguage.JAPANESE -> "Node.jsランタイムの準備は完了していますが、サーバー起動に失敗したかエントリが未設定です。entryFile の存在や、package.json の dependencies に先に npm install が必要か確認してください。"
+        AppLanguage.KOREAN -> "Node.js 런타임이 준비되었지만 서버 시작에 실패했거나 진입점이 설정되지 않았습니다. entryFile이 있는지, package.json의 dependencies에 먼저 npm install이 필요한지 확인하세요."
     }
-
-
 
     val previewProjectFilesLabel: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_files_label)
+        AppLanguage.CHINESE -> "项目文件"
+        AppLanguage.ENGLISH -> "Project Files"
+        AppLanguage.ARABIC -> "ملفات المشروع"
+        AppLanguage.PORTUGUESE -> "Arquivos do Projeto"
+        AppLanguage.SPANISH -> "Archivos del Proyecto"
+        AppLanguage.FRENCH -> "Fichiers du Projet"
+        AppLanguage.GERMAN -> "Projektdateien"
+        AppLanguage.RUSSIAN -> "Файлы проекта"
+        AppLanguage.JAPANESE -> "プロジェクトファイル"
+        AppLanguage.KOREAN -> "프로젝트 파일"
     }
-
-
 
     val previewProjectSuffix: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_suffix)
+        AppLanguage.CHINESE -> "项目预览"
+        AppLanguage.ENGLISH -> "Project Preview"
+        AppLanguage.ARABIC -> "معاينة المشروع"
+        AppLanguage.PORTUGUESE -> "Pré-visualização do Projeto"
+        AppLanguage.SPANISH -> "Vista Previa del Proyecto"
+        AppLanguage.FRENCH -> "Aperçu du Projet"
+        AppLanguage.GERMAN -> "Projektvorschau"
+        AppLanguage.RUSSIAN -> "Предпросмотр проекта"
+        AppLanguage.JAPANESE -> "プロジェクトプレビュー"
+        AppLanguage.KOREAN -> "프로젝트 미리보기"
     }
-
-
 
     val previewPythonNeedRuntime: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_python_need_runtime)
+        AppLanguage.CHINESE -> "需要下载 Python 运行时"
+        AppLanguage.ENGLISH -> "Python runtime required"
+        AppLanguage.ARABIC -> "مطلوب وقت تشغيل Python"
+        AppLanguage.PORTUGUESE -> "Runtime do Python necessário"
+        AppLanguage.SPANISH -> "Se requiere el runtime de Python"
+        AppLanguage.FRENCH -> "Runtime Python requis"
+        AppLanguage.GERMAN -> "Python-Runtime erforderlich"
+        AppLanguage.RUSSIAN -> "Требуется среда выполнения Python"
+        AppLanguage.JAPANESE -> "Pythonランタイムが必要です"
+        AppLanguage.KOREAN -> "Python 런타임 필요"
     }
-
-
 
     val previewPythonTipNotReady: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_python_tip_not_ready)
+        AppLanguage.CHINESE -> "需要先下载 Python 运行时才能运行。"
+        AppLanguage.ENGLISH -> "Download the Python runtime first to run it."
+        AppLanguage.ARABIC -> "نزّل وقت تشغيل Python أولاً لتتمكن من تشغيله."
+        AppLanguage.PORTUGUESE -> "Baixe o runtime do Python primeiro para executá-lo."
+        AppLanguage.SPANISH -> "Descarga el runtime de Python primero para ejecutarlo."
+        AppLanguage.FRENCH -> "Téléchargez d'abord le runtime Python pour l'exécuter."
+        AppLanguage.GERMAN -> "Laden Sie zuerst die Python-Runtime herunter, um sie auszuführen."
+        AppLanguage.RUSSIAN -> "Сначала скачайте среду выполнения Python, чтобы запустить."
+        AppLanguage.JAPANESE -> "実行するには先に Python ランタイムをダウンロードしてください。"
+        AppLanguage.KOREAN -> "실행하려면 먼저 Python 런타임을 다운로드하세요."
     }
-
-
 
     val previewPythonTipReady: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_python_tip_ready)
+        AppLanguage.CHINESE -> "Python 运行时已就绪，可直接启动服务器。"
+        AppLanguage.ENGLISH -> "Python runtime is ready; the server can start directly."
+        AppLanguage.ARABIC -> "وقت تشغيل Python جاهز؛ يمكن تشغيل الخادم مباشرة."
+        AppLanguage.PORTUGUESE -> "O runtime do Python está pronto; o servidor pode iniciar diretamente."
+        AppLanguage.SPANISH -> "El runtime de Python está listo; el servidor puede iniciar directamente."
+        AppLanguage.FRENCH -> "Le runtime Python est prêt ; le serveur peut démarrer directement."
+        AppLanguage.GERMAN -> "Die Python-Runtime ist bereit; der Server kann direkt starten."
+        AppLanguage.RUSSIAN -> "Среда выполнения Python готова; сервер можно запустить напрямую."
+        AppLanguage.JAPANESE -> "Pythonランタイムの準備が完了しました。サーバーを直接起動できます。"
+        AppLanguage.KOREAN -> "Python 런타임이 준비되었습니다. 서버를 바로 시작할 수 있습니다."
     }
-
-
 
     val previewRuntimeReadyBadge: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_runtime_ready)
+        AppLanguage.CHINESE -> "运行时就绪"
+        AppLanguage.ENGLISH -> "Runtime Ready"
+        AppLanguage.ARABIC -> "وقت التشغيل جاهز"
+        AppLanguage.PORTUGUESE -> "Runtime Pronto"
+        AppLanguage.SPANISH -> "Runtime Listo"
+        AppLanguage.FRENCH -> "Runtime Prêt"
+        AppLanguage.GERMAN -> "Runtime Bereit"
+        AppLanguage.RUSSIAN -> "Среда выполнения готова"
+        AppLanguage.JAPANESE -> "ランタイム準備完了"
+        AppLanguage.KOREAN -> "런타임 준비됨"
     }
-
-
 
     val previewServerStartFailedTitle: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_server_start_failed_title)
+        AppLanguage.CHINESE -> "服务器启动失败 — 详细错误"
+        AppLanguage.ENGLISH -> "Server startup failed — details"
+        AppLanguage.ARABIC -> "فشل تشغيل الخادم — التفاصيل"
+        AppLanguage.PORTUGUESE -> "Falha ao iniciar o servidor — detalhes"
+        AppLanguage.SPANISH -> "Error al iniciar el servidor — detalles"
+        AppLanguage.FRENCH -> "Échec du démarrage du serveur — détails"
+        AppLanguage.GERMAN -> "Serverstart fehlgeschlagen — Details"
+        AppLanguage.RUSSIAN -> "Не удалось запустить сервер — подробности"
+        AppLanguage.JAPANESE -> "サーバー起動失敗 — 詳細"
+        AppLanguage.KOREAN -> "서버 시작 실패 — 상세 정보"
     }
 
-
-
     val previewStartupFailedBadge: String get() = when (Strings.lang) {
-        else -> Strings.getString(R.string.appstr_project_preview_startup_failed)
+        AppLanguage.CHINESE -> "启动失败"
+        AppLanguage.ENGLISH -> "Startup Failed"
+        AppLanguage.ARABIC -> "فشل بدء التشغيل"
+        AppLanguage.PORTUGUESE -> "Falha na Inicialização"
+        AppLanguage.SPANISH -> "Error de Inicio"
+        AppLanguage.FRENCH -> "Échec du Démarrage"
+        AppLanguage.GERMAN -> "Start fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Ошибка запуска"
+        AppLanguage.JAPANESE -> "起動失敗"
+        AppLanguage.KOREAN -> "시작 실패"
     }
 
 

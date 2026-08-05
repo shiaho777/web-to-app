@@ -19,13 +19,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.webtoapp.R
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.i18n.LanguageManager
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.util.isRunningOnTv
 import kotlinx.coroutines.launch
 
@@ -78,7 +77,7 @@ fun LanguageSelectorButton(
     ) {
         Icon(
             imageVector = Icons.Outlined.Language,
-            contentDescription = stringResource(R.string.language_settings),
+            contentDescription = Strings.languageSettings,
             modifier = Modifier.size(22.dp),
             tint = MaterialTheme.colorScheme.onSurface
         )
@@ -112,7 +111,7 @@ fun LanguageSelectionDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = stringResource(R.string.language_settings),
+                text = Strings.languageSettings,
                 style = MaterialTheme.typography.titleLarge
             )
         },
@@ -135,7 +134,7 @@ fun LanguageSelectionDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.btn_cancel))
+                Text(Strings.btnCancel)
             }
         }
     )
@@ -482,7 +481,7 @@ fun LanguageSettingsCard(
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = stringResource(R.string.language_settings),
+                        text = Strings.languageSettings,
                         style = MaterialTheme.typography.titleMedium
                     )
                 }

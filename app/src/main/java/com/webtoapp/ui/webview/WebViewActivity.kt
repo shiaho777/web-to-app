@@ -2294,7 +2294,7 @@ fun WebViewScreen(
             }
 
             override fun onSslError(error: String) {
-                errorMessage = context.getString(com.webtoapp.R.string.webview_ssl_error)
+                errorMessage = Strings.sslError
             }
 
             override fun onExternalLink(url: String) {
@@ -2307,7 +2307,7 @@ fun WebViewScreen(
                     AppLogger.w("WebViewActivity", "No app to handle external link: $url", e)
                     android.widget.Toast.makeText(
                         context,
-                        context.getString(com.webtoapp.R.string.webview_cannot_open_link),
+                        Strings.cannotOpenLink,
                         android.widget.Toast.LENGTH_SHORT
                     ).show()
                 }

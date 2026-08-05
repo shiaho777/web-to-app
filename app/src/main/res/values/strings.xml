@@ -54,7 +54,6 @@
     <string name="btn_preview">预览</string>
     <string name="btn_export">导出APK</string>
     <string name="btn_save">保存</string>
-    <string name="btn_cancel">取消</string>
     <string name="btn_delete">删除</string>
     <string name="btn_edit">编辑</string>
     <string name="btn_launch">启动</string>
@@ -74,17 +73,14 @@
 
     
     <string name="webview_error">加载失败</string>
-    <string name="webview_ssl_error">SSL 安全错误</string>
     <string name="webview_retry">重试</string>
     <string name="webview_back">返回</string>
     <string name="webview_forward">前进</string>
     <string name="webview_refresh">刷新</string>
     <string name="webview_share">分享</string>
     <string name="webview_open_browser">在浏览器中打开</string>
-    <string name="webview_cannot_open_link">无法打开链接</string>
 
     
-    <string name="language_settings">语言</string>
     <string name="language_chinese">中文</string>
     <string name="language_english">英文</string>
     <string name="language_arabic">阿拉伯语</string>
@@ -112,11 +108,8 @@
     <string name="module_disabled">已禁用</string>
     <string name="ai_module_developer">AI 模块开发</string>
 
-    <string name="njs_package_json_not_found">未找到 package.json，请选有效项目目录</string>
 
 
-    <string name="theme_dark">深色模式</string>
-    <string name="theme_light">浅色模式</string>
 
     <string name="ai_generating">AI 生成中…</string>
     <string name="ai_analyzing">正在分析需求…</string>
@@ -359,7 +352,6 @@
     <string name="saved">已保存</string>
     <string name="operation_success">操作成功</string>
     <string name="operation_failed">操作失败</string>
-    <string name="unknown_error">未知错误</string>
     <string name="please_wait">请稍候…</string>
     <string name="processing">处理中…</string>
     <string name="enabled">已启用</string>
@@ -625,8 +617,6 @@
     <string name="delete_account_button">永久删除账号</string>
 
     
-    <string name="msg_import_success">模块 %s 导入成功</string>
-    <string name="msg_import_failed">模块导入失败: %s</string>
 
     
     <string name="change_password">修改密码</string>

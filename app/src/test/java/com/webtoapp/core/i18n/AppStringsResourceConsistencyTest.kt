@@ -107,6 +107,55 @@ class AppStringsResourceConsistencyTest {
         }
     }
 
+    @Test
+    fun `kotlin source never references R string for user-visible text`() {
+        val sourceRoots = listOf(
+            "app/src/main/java",
+            "src/main/java",
+        ).map(::File).filter(File::exists)
+        assertWithMessage("Could not locate Kotlin source root")
+            .that(sourceRoots).isNotEmpty()
+
+        val offenders = mutableListOf<String>()
+        sourceRoots.forEach { root ->
+            root.walkTopDown()
+                .filter { it.isFile && it.extension == "kt" }
+                .forEach { file ->
+                    val relPath = file.relativeTo(root).path
+                    file.useLines { lines ->
+                        lines.forEachIndexed { index, raw ->
+                            val line = raw.trim()
+                            if (line.startsWith("//") || line.startsWith("*")) {
+                                return@forEachIndexed
+                            }
+                            if (R_STRING_REFERENCE.containsMatchIn(line)) {
+                                offenders += "${relPath}:${index + 1}: ${raw.trim()}"
+                            }
+                        }
+                    }
+                }
+        }
+
+        assertWithMessage(
+            buildString {
+                appendLine("Kotlin source references R.string.* for user-visible text.")
+                appendLine("All user-facing strings must live in Strings.kt as inline")
+                appendLine("when(Strings.lang) blocks covering all 10 languages.")
+                appendLine()
+                appendLine("R.string.* is forbidden because res/values*/ is not maintained")
+                appendLine("for all 10 locales — resource lookups silently fall back to the")
+                appendLine("default values/ (Chinese) for pt/es/fr/de/ru/ja/ko, masking")
+                appendLine("missing translations. Use Strings.xxx (or Strings.funName(arg)")
+                appendLine("for parameterised strings) instead.")
+                appendLine()
+                appendLine("Offending references:")
+                offenders.forEach { appendLine("  $it") }
+            }
+        ).that(offenders).isEmpty()
+    }
+
+    private val R_STRING_REFERENCE = Regex("""\bR\.string\.[A-Za-z_][A-Za-z0-9_]*""")
+
     private fun resolveExistingDir(vararg candidates: String): File {
         return candidates
             .asSequence()

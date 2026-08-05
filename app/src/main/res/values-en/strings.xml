@@ -52,7 +52,6 @@
     <string name="btn_preview">Preview</string>
     <string name="btn_export">Export APK</string>
     <string name="btn_save">Save</string>
-    <string name="btn_cancel">Cancel</string>
     <string name="btn_delete">Delete</string>
     <string name="btn_edit">Edit</string>
     <string name="btn_launch">Launch</string>
@@ -72,17 +71,14 @@
 
     
     <string name="webview_error">Load failed</string>
-    <string name="webview_ssl_error">SSL security error</string>
     <string name="webview_retry">Retry</string>
     <string name="webview_back">Back</string>
     <string name="webview_forward">Forward</string>
     <string name="webview_refresh">Refresh</string>
     <string name="webview_share">Share</string>
     <string name="webview_open_browser">Open in Browser</string>
-    <string name="webview_cannot_open_link">Unable to open link</string>
 
     
-    <string name="language_settings">Language</string>
     <string name="language_chinese">Chinese</string>
     <string name="language_english">English</string>
     <string name="language_arabic">Arabic</string>
@@ -110,11 +106,8 @@
     <string name="module_disabled">Disabled</string>
     <string name="ai_module_developer">AI Module Developer</string>
 
-    <string name="njs_package_json_not_found">package.json not found. Select a valid project folder.</string>
 
 
-    <string name="theme_dark">Dark mode</string>
-    <string name="theme_light">Light mode</string>
 
     <string name="ai_generating">AI Generating…</string>
     <string name="ai_analyzing">Analyzing requirements…</string>
@@ -265,7 +258,6 @@
     <string name="saved">Saved</string>
     <string name="operation_success">Operation successful</string>
     <string name="operation_failed">Operation failed</string>
-    <string name="unknown_error">Unknown error</string>
     <string name="please_wait">Please wait…</string>
     <string name="processing">Processing…</string>
     <string name="enabled">Enabled</string>
@@ -623,8 +615,6 @@
     <string name="delete_account_button">Permanently Delete Account</string>
 
     
-    <string name="msg_import_success">Module %s imported successfully</string>
-    <string name="msg_import_failed">Module import failed: %s</string>
 
     
     <string name="change_password">Change Password</string>

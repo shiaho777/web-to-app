@@ -161,7 +161,7 @@ fun CreateNodeJsAppScreen(
                         val projectDir = runtime.createProjectFromUri(newProjectId, treeUri)
 
                         if (!File(projectDir, "package.json").exists()) {
-                            errorMessage = context.getString(com.webtoapp.R.string.njs_package_json_not_found)
+                            errorMessage = Strings.importPackageJsonNotFound
                             projectDir.deleteRecursively()
                             isCreating = false
                             return@withContext

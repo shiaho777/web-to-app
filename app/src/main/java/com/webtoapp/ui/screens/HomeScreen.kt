@@ -39,7 +39,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import com.webtoapp.R
 import coil.ImageLoader
 import coil.compose.AsyncImage
@@ -276,9 +275,9 @@ fun HomeScreen(
                         Icon(
                             imageVector = if (isDarkNow) Icons.Outlined.DarkMode else Icons.Outlined.LightMode,
                             contentDescription = if (isDarkNow) {
-                                stringResource(com.webtoapp.R.string.theme_dark)
+                                Strings.statusBarDarkModeLabel
                             } else {
-                                stringResource(com.webtoapp.R.string.theme_light)
+                                Strings.statusBarLightModeLabel
                             },
                             modifier = Modifier.size(22.dp),
                             tint = MaterialTheme.colorScheme.onSurface

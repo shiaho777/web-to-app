@@ -52,7 +52,6 @@
     <string name="btn_preview">معاينة</string>
     <string name="btn_export">تصدير APK</string>
     <string name="btn_save">حفظ</string>
-    <string name="btn_cancel">إلغاء</string>
     <string name="btn_delete">حذف</string>
     <string name="btn_edit">تعديل</string>
     <string name="btn_launch">تشغيل</string>
@@ -72,17 +71,14 @@
 
     
     <string name="webview_error">فشل تحميل الصفحة</string>
-    <string name="webview_ssl_error">خطأ أمان SSL</string>
     <string name="webview_retry">إعادة المحاولة</string>
     <string name="webview_back">رجوع</string>
     <string name="webview_forward">تقدم</string>
     <string name="webview_refresh">تحديث</string>
     <string name="webview_share">مشاركة</string>
     <string name="webview_open_browser">فتح في المتصفح</string>
-    <string name="webview_cannot_open_link">تعذر فتح الرابط</string>
 
     
-    <string name="language_settings">اللغة</string>
     <string name="language_chinese">الصينية</string>
     <string name="language_english">الإنجليزية</string>
     <string name="language_arabic">العربية</string>
@@ -110,11 +106,8 @@
     <string name="module_disabled">معطل</string>
     <string name="ai_module_developer">مطور وحدات AI</string>
 
-    <string name="njs_package_json_not_found">لم يتم العثور على package.json. يرجى اختيار مجلد مشروع Node.js صالح.</string>
 
 
-    <string name="theme_dark">الوضع الداكن</string>
-    <string name="theme_light">الوضع الفاتح</string>
 
     <string name="ai_generating">AI يولد…</string>
     <string name="ai_analyzing">تحليل المتطلبات…</string>
@@ -265,7 +258,6 @@
     <string name="saved">تم الحفظ</string>
     <string name="operation_success">تمت العملية بنجاح</string>
     <string name="operation_failed">فشلت العملية</string>
-    <string name="unknown_error">خطأ غير معروف</string>
     <string name="please_wait">يرجى الانتظار…</string>
     <string name="processing">جاري المعالجة…</string>
     <string name="enabled">مفعل</string>
@@ -561,8 +553,6 @@
     <string name="delete_account_button">حذف الحساب نهائيًا</string>
 
     
-    <string name="msg_import_success">تم استيراد الوحدة %s بنجاح</string>
-    <string name="msg_import_failed">فشل استيراد الوحدة: %s</string>
 
     <string name="click_button_to_experience">انقر على الزر أدناه للتجربة</string>
     <string name="animation_disabled">الرسوم المتحركة معطلة</string>

@@ -48,7 +48,9 @@ Mental model:
 ## i18n
 
 - Host UI strings live in `app/src/main/java/com/webtoapp/core/i18n/Strings.kt` (split across `Strings` / `StringsA` … `StringsE`).
-- Any new user-facing host string needs all 10 languages: Chinese, English, Arabic, Portuguese, Spanish, French, German, Russian, Japanese, Korean.
+- **All** user-visible strings must be inline `when (Strings.lang)` blocks covering all 10 languages: Chinese, English, Arabic, Portuguese, Spanish, French, German, Russian, Japanese, Korean. `when(lang)` blocks may never use `else ->` — `AppStringsResourceConsistencyTest` and `StringsKtTranslationParityTest` enforce this.
+- **Never** load user-visible text via `context.getString(R.string.*)` / `stringResource(R.string.*)`. `res/values*/` is only maintained for zh/en/ar; the other 7 locales have no `values-*/` directory, so resource lookups silently fall back to the default `values/` (Chinese). Use `Strings.xxx` (or `Strings.funName(arg)` for parameterised strings — see `linuxEnvInstalledToast(name)` for the pattern). A test gates this: `kotlin source never references R string for user-visible text`.
+- `R.string` is reserved for `translatable="false"` non-localised resources only (e.g. `app_name`).
 - Prefer adding properties on the existing split objects; match surrounding style.
 
 ## Android and packaging constraints

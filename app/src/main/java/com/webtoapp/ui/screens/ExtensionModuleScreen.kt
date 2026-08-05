@@ -67,7 +67,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
-import com.webtoapp.R
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -108,13 +107,13 @@ fun ExtensionModuleScreen(
                     context.contentResolver.openInputStream(it)?.use { stream ->
                         val result = extensionManager.importModule(stream)
                         result.onSuccess { module ->
-                            Toast.makeText(context, context.getString(R.string.msg_import_success, module.name), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, Strings.moduleImportSuccess(module.name), Toast.LENGTH_SHORT).show()
                         }.onFailure { e ->
-                            Toast.makeText(context, context.getString(R.string.msg_import_failed, e.message ?: context.getString(R.string.unknown_error)), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, Strings.moduleImportFailed(e.message ?: Strings.unknownError), Toast.LENGTH_SHORT).show()
                         }
                     }
                 } catch (e: Exception) {
-                    Toast.makeText(context, context.getString(R.string.msg_import_failed, e.message ?: context.getString(R.string.unknown_error)), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, Strings.moduleImportFailed(e.message ?: Strings.unknownError), Toast.LENGTH_SHORT).show()
                 } finally {
                     isImporting = false
                 }
@@ -133,7 +132,7 @@ fun ExtensionModuleScreen(
                         showUserScriptPreview = result.parseResult
                     }
                     is ExtensionFileManager.ImportResult.Error -> {
-                        Toast.makeText(context, context.getString(R.string.msg_import_failed, result.message), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, Strings.moduleImportFailed(result.message), Toast.LENGTH_SHORT).show()
                     }
                     else -> {}
                 }
@@ -160,7 +159,7 @@ fun ExtensionModuleScreen(
                         showJsPackagePreview = result
                     }
                     is ExtensionFileManager.ImportResult.Error -> {
-                        Toast.makeText(context, context.getString(R.string.msg_import_failed, result.message), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, Strings.moduleImportFailed(result.message), Toast.LENGTH_SHORT).show()
                     }
                     else -> {}
                 }
@@ -181,7 +180,7 @@ fun ExtensionModuleScreen(
                         showJsPackagePreview = result
                     }
                     is ExtensionFileManager.ImportResult.Error -> {
-                        Toast.makeText(context, context.getString(R.string.msg_import_failed, result.message), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, Strings.moduleImportFailed(result.message), Toast.LENGTH_SHORT).show()
                     }
                     else -> {}
                 }
@@ -201,9 +200,9 @@ fun ExtensionModuleScreen(
                             val qrContent = QrCodeUtils.decodeQrCode(bitmap)
                             if (qrContent != null) {
                                 extensionManager.importFromShareCode(qrContent).onSuccess { module ->
-                                    Toast.makeText(context, context.getString(R.string.msg_import_success, module.name), Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, Strings.moduleImportSuccess(module.name), Toast.LENGTH_SHORT).show()
                                 }.onFailure { e ->
-                                    Toast.makeText(context, context.getString(R.string.msg_import_failed, e.message ?: "Unknown error"), Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, Strings.moduleImportFailed(e.message ?: "Unknown error"), Toast.LENGTH_SHORT).show()
                                 }
                             } else {
                                 Toast.makeText(context, Strings.qrCodeNotFound, Toast.LENGTH_SHORT).show()
@@ -213,7 +212,7 @@ fun ExtensionModuleScreen(
                         }
                     }
                 } catch (e: Exception) {
-                    Toast.makeText(context, context.getString(R.string.msg_import_failed, e.message ?: "Unknown error"), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, Strings.moduleImportFailed(e.message ?: "Unknown error"), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -555,7 +554,7 @@ fun ExtensionModuleScreen(
                                 }
                             }
                         }.onFailure { e ->
-                            Toast.makeText(context, context.getString(R.string.msg_import_failed, e.message ?: "Unknown error"), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, Strings.moduleImportFailed(e.message ?: "Unknown error"), Toast.LENGTH_SHORT).show()
                         }
                         showUserScriptPreview = null
                     }
@@ -720,9 +719,9 @@ fun ExtensionModuleScreen(
                             name = editableName.ifBlank { jsPackage.module.name }
                         )
                         extensionManager.addModule(finalModule).onSuccess { module ->
-                            Toast.makeText(context, context.getString(R.string.msg_import_success, module.name), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, Strings.moduleImportSuccess(module.name), Toast.LENGTH_SHORT).show()
                         }.onFailure { e ->
-                            Toast.makeText(context, context.getString(R.string.msg_import_failed, e.message ?: "Unknown error"), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, Strings.moduleImportFailed(e.message ?: "Unknown error"), Toast.LENGTH_SHORT).show()
                         }
                     }
                     showJsPackagePreview = null
@@ -834,11 +833,11 @@ fun ExtensionModuleScreen(
                         if (successCount > 0) {
                             Toast.makeText(
                                 context,
-                                "${context.getString(R.string.msg_import_success, parseResult.extensionName)} ($successCount ${Strings.contentScripts})",
+                                "${Strings.moduleImportSuccess(parseResult.extensionName)} ($successCount ${Strings.contentScripts})",
                                 Toast.LENGTH_SHORT
                             ).show()
                         } else {
-                            Toast.makeText(context, context.getString(R.string.msg_import_failed, context.getString(R.string.unknown_error)), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, Strings.moduleImportFailed(Strings.unknownError), Toast.LENGTH_SHORT).show()
                         }
                         showChromeExtPreview = null
                         pendingChromeExtDir = null
