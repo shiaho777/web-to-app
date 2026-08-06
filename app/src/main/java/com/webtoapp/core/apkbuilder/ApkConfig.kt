@@ -6,6 +6,7 @@ import com.webtoapp.core.shell.LrcShellTheme
 data class ApkConfig(
     val meta: MetaBlock,
     val activation: ActivationBlock = ActivationBlock(),
+    val appLock: AppLockBlock = AppLockBlock(),
     val adBlock: AdBlockBlock = AdBlockBlock(),
     val announcement: AnnouncementBlock = AnnouncementBlock(),
     val ads: AdsBlock = AdsBlock(),
@@ -401,6 +402,12 @@ data class MetaBlock(
     val loggingEnabled: Boolean = false
 )
 
+data class AppLockBlock(
+    val enabled: Boolean = false,
+    val pin: String = "",
+    val lockDelaySeconds: Int = 0
+)
+
 data class ActivationBlock(
     val enabled: Boolean = false,
     val codes: List<String> = emptyList(),
@@ -411,8 +418,7 @@ data class ActivationBlock(
     val dialogButtonText: String = "",
     val remoteEnabled: Boolean = false,
     val remoteVerifyUrl: String = "",
-    val remotePublicKey: String = "",
-    val remoteOfflinePolicy: String = "ALLOW_CACHED",
+    val remotePublicKey: String = "",    val remoteOfflinePolicy: String = "ALLOW_CACHED",
     val remoteDeliverUrl: Boolean = false,
     val remoteEncryptUrl: Boolean = false,
     val remoteAesKey: String = ""

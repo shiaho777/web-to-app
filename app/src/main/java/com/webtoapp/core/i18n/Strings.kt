@@ -849,6 +849,17 @@ object Strings {
     val remainingUsage: String get() = StringsA.remainingUsage
     val deviceBound: String get() = StringsA.deviceBound
     val deviceBoundRemoteTip: String get() = StringsA.deviceBoundRemoteTip
+    val appLockTitle: String get() = StringsA.appLockTitle
+    val appLockPinHint: String get() = StringsA.appLockPinHint
+    val appLockUnlockButton: String get() = StringsA.appLockUnlockButton
+    val appLockWrongPin: String get() = StringsA.appLockWrongPin
+    val appLockSettingTitle: String get() = StringsA.appLockSettingTitle
+    val appLockSettingHint: String get() = StringsA.appLockSettingHint
+    val appLockPinLabel: String get() = StringsA.appLockPinLabel
+    val appLockDelayLabel: String get() = StringsA.appLockDelayLabel
+    val appLockDelayImmediately: String get() = StringsA.appLockDelayImmediately
+    val appLockDelay1Minute: String get() = StringsA.appLockDelay1Minute
+    val appLockDelay5Minutes: String get() = StringsA.appLockDelay5Minutes
     val invalidActivationCode: String get() = StringsA.invalidActivationCode
     val remoteActivationTitle: String get() = StringsA.remoteActivationTitle
     val activationSectionRemoteEnabled: (String) -> String get() = StringsA.activationSectionRemoteEnabled
@@ -6331,16 +6342,16 @@ object StringsA {
     }
 
     val startingServer: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "正在启动服务器..."
-        AppLanguage.ENGLISH -> "Starting server..."
-        AppLanguage.ARABIC -> "جارٍ تشغيل الخادم..."
-        AppLanguage.PORTUGUESE -> "Iniciando servidor..."
-        AppLanguage.SPANISH -> "Iniciando servidor..."
-        AppLanguage.FRENCH -> "Démarrage du serveur..."
-        AppLanguage.GERMAN -> "Server wird gestartet..."
-        AppLanguage.RUSSIAN -> "Запуск сервера..."
-        AppLanguage.JAPANESE -> "サーバーを起動中..."
-        AppLanguage.KOREAN -> "서버 시작 중..."
+        AppLanguage.CHINESE -> "正在准备应用..."
+        AppLanguage.ENGLISH -> "Preparing your app..."
+        AppLanguage.ARABIC -> "جارٍ تجهيز التطبيق..."
+        AppLanguage.PORTUGUESE -> "Preparando seu aplicativo..."
+        AppLanguage.SPANISH -> "Preparando tu aplicación..."
+        AppLanguage.FRENCH -> "Préparation de votre application..."
+        AppLanguage.GERMAN -> "Ihre App wird vorbereitet..."
+        AppLanguage.RUSSIAN -> "Подготовка приложения..."
+        AppLanguage.JAPANESE -> "アプリを準備中..."
+        AppLanguage.KOREAN -> "앱을 준비하는 중..."
     }
 
     val serverStartFailed: String get() = when (Strings.lang) {
@@ -7106,16 +7117,16 @@ object StringsA {
     }
 
     val wpStartingServer: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "正在启动 PHP 服务器..."
-        AppLanguage.ENGLISH -> "Starting PHP server..."
-        AppLanguage.ARABIC -> "جارٍ تشغيل خادم PHP..."
-        AppLanguage.PORTUGUESE -> "Iniciando servidor PHP..."
-        AppLanguage.SPANISH -> "Iniciando servidor PHP..."
-        AppLanguage.FRENCH -> "Démarrage du serveur PHP..."
-        AppLanguage.GERMAN -> "PHP-Server wird gestartet..."
-        AppLanguage.RUSSIAN -> "Запуск сервера PHP..."
-        AppLanguage.JAPANESE -> "PHPサーバーを起動中..."
-        AppLanguage.KOREAN -> "PHP 서버 시작 중..."
+        AppLanguage.CHINESE -> "正在准备应用..."
+        AppLanguage.ENGLISH -> "Preparing your app..."
+        AppLanguage.ARABIC -> "جارٍ تجهيز التطبيق..."
+        AppLanguage.PORTUGUESE -> "Preparando seu aplicativo..."
+        AppLanguage.SPANISH -> "Preparando tu aplicación..."
+        AppLanguage.FRENCH -> "Préparation de votre application..."
+        AppLanguage.GERMAN -> "Ihre App wird vorbereitet..."
+        AppLanguage.RUSSIAN -> "Подготовка приложения..."
+        AppLanguage.JAPANESE -> "アプリを準備中..."
+        AppLanguage.KOREAN -> "앱을 준비하는 중..."
     }
 
     val wpServerError: String get() = when (Strings.lang) {
@@ -15634,6 +15645,138 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Примечание: привязка к устройству действует только на этом устройстве (предотвращает повторную активацию после локального сброса или замены железа). Ограничение между устройствами требует настройки удалённого проверяющего в приложении, чтобы сервер отклонял другие устройства по ID."
         AppLanguage.JAPANESE -> "注意: デバイス紐付けはこの端末のみで有効です（ローカルリセットやハードウェア変更後の再アクティベーションを防ぎます）。端末間の制限には、アプリでリモート検証サービスを設定し、サーバーがデバイス ID で他の端末を拒否する必要があります。"
         AppLanguage.KOREAN -> "참고: 기기 연결은 이 기기에서만 적용됩니다(로컬 초기화 또는 하드웨어 변경 후 재활성화 방지). 기기 간 제한은 앱에서 원격 인증 서비스를 구성하여 서버가 기기 ID로 다른 기기를 거부하도록 해야 합니다."
+    }
+    val appLockTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "应用已锁定"
+        AppLanguage.ENGLISH -> "App locked"
+        AppLanguage.ARABIC -> "التطبيق مقفل"
+        AppLanguage.PORTUGUESE -> "Aplicativo bloqueado"
+        AppLanguage.SPANISH -> "Aplicación bloqueada"
+        AppLanguage.FRENCH -> "Application verrouillée"
+        AppLanguage.GERMAN -> "App gesperrt"
+        AppLanguage.RUSSIAN -> "Приложение заблокировано"
+        AppLanguage.JAPANESE -> "アプリがロックされています"
+        AppLanguage.KOREAN -> "앱이 잠겨 있습니다"
+    }
+    val appLockPinHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "输入 PIN 码解锁"
+        AppLanguage.ENGLISH -> "Enter PIN to unlock"
+        AppLanguage.ARABIC -> "أدخل رقم التعريف الشخصي لفتح القفل"
+        AppLanguage.PORTUGUESE -> "Digite o PIN para desbloquear"
+        AppLanguage.SPANISH -> "Introduce el PIN para desbloquear"
+        AppLanguage.FRENCH -> "Saisissez le code PIN pour déverrouiller"
+        AppLanguage.GERMAN -> "PIN zum Entsperren eingeben"
+        AppLanguage.RUSSIAN -> "Введите PIN-код для разблокировки"
+        AppLanguage.JAPANESE -> "PINコードを入力してロックを解除"
+        AppLanguage.KOREAN -> "PIN을 입력하여 잠금 해제"
+    }
+    val appLockUnlockButton: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "解锁"
+        AppLanguage.ENGLISH -> "Unlock"
+        AppLanguage.ARABIC -> "فتح"
+        AppLanguage.PORTUGUESE -> "Desbloquear"
+        AppLanguage.SPANISH -> "Desbloquear"
+        AppLanguage.FRENCH -> "Déverrouiller"
+        AppLanguage.GERMAN -> "Entsperren"
+        AppLanguage.RUSSIAN -> "Разблокировать"
+        AppLanguage.JAPANESE -> "ロック解除"
+        AppLanguage.KOREAN -> "잠금 해제"
+    }
+    val appLockWrongPin: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PIN 错误，请重试"
+        AppLanguage.ENGLISH -> "Incorrect PIN, try again"
+        AppLanguage.ARABIC -> "رقم التعريف الشخصي غير صحيح، حاول مرة أخرى"
+        AppLanguage.PORTUGUESE -> "PIN incorreto, tente novamente"
+        AppLanguage.SPANISH -> "PIN incorrecto, inténtalo de nuevo"
+        AppLanguage.FRENCH -> "Code PIN incorrect, réessayez"
+        AppLanguage.GERMAN -> "Falscher PIN, versuchen Sie es erneut"
+        AppLanguage.RUSSIAN -> "Неверный PIN-код, попробуйте снова"
+        AppLanguage.JAPANESE -> "PINコードが違います。もう一度お試しください"
+        AppLanguage.KOREAN -> "PIN이 올바르지 않습니다. 다시 시도하세요"
+    }
+    val appLockSettingTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "应用锁"
+        AppLanguage.ENGLISH -> "App lock"
+        AppLanguage.ARABIC -> "قفل التطبيق"
+        AppLanguage.PORTUGUESE -> "Bloqueio do aplicativo"
+        AppLanguage.SPANISH -> "Bloqueo de la aplicación"
+        AppLanguage.FRENCH -> "Verrouillage de l'application"
+        AppLanguage.GERMAN -> "App-Sperre"
+        AppLanguage.RUSSIAN -> "Блокировка приложения"
+        AppLanguage.JAPANESE -> "アプリロック"
+        AppLanguage.KOREAN -> "앱 잠금"
+    }
+    val appLockSettingHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "启动应用时要求输入 PIN 码"
+        AppLanguage.ENGLISH -> "Require a PIN when the app opens"
+        AppLanguage.ARABIC -> "طلب رقم التعريف الشخصي عند فتح التطبيق"
+        AppLanguage.PORTUGUESE -> "Exigir PIN ao abrir o aplicativo"
+        AppLanguage.SPANISH -> "Solicitar PIN al abrir la aplicación"
+        AppLanguage.FRENCH -> "Demander un code PIN à l'ouverture de l'application"
+        AppLanguage.GERMAN -> "PIN beim Öffnen der App verlangen"
+        AppLanguage.RUSSIAN -> "Требовать PIN-код при открытии приложения"
+        AppLanguage.JAPANESE -> "アプリを開くときにPINを要求"
+        AppLanguage.KOREAN -> "앱을 열 때 PIN 요구"
+    }
+    val appLockPinLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "PIN 码（4-6 位数字）"
+        AppLanguage.ENGLISH -> "PIN (4-6 digits)"
+        AppLanguage.ARABIC -> "رقم التعريف الشخصي (4-6 أرقام)"
+        AppLanguage.PORTUGUESE -> "PIN (4-6 dígitos)"
+        AppLanguage.SPANISH -> "PIN (4-6 dígitos)"
+        AppLanguage.FRENCH -> "Code PIN (4-6 chiffres)"
+        AppLanguage.GERMAN -> "PIN (4-6 Ziffern)"
+        AppLanguage.RUSSIAN -> "PIN-код (4-6 цифр)"
+        AppLanguage.JAPANESE -> "PIN（4〜6桁の数字）"
+        AppLanguage.KOREAN -> "PIN(4-6자리 숫자)"
+    }
+    val appLockDelayLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "锁屏延迟"
+        AppLanguage.ENGLISH -> "Lock delay"
+        AppLanguage.ARABIC -> "تأخير القفل"
+        AppLanguage.PORTUGUESE -> "Atraso do bloqueio"
+        AppLanguage.SPANISH -> "Retraso del bloqueo"
+        AppLanguage.FRENCH -> "Délai de verrouillage"
+        AppLanguage.GERMAN -> "Sperrverzögerung"
+        AppLanguage.RUSSIAN -> "Задержка блокировки"
+        AppLanguage.JAPANESE -> "ロック遅延"
+        AppLanguage.KOREAN -> "잠금 지연"
+    }
+    val appLockDelayImmediately: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "立即"
+        AppLanguage.ENGLISH -> "Immediately"
+        AppLanguage.ARABIC -> "فورًا"
+        AppLanguage.PORTUGUESE -> "Imediatamente"
+        AppLanguage.SPANISH -> "Inmediatamente"
+        AppLanguage.FRENCH -> "Immédiatement"
+        AppLanguage.GERMAN -> "Sofort"
+        AppLanguage.RUSSIAN -> "Сразу"
+        AppLanguage.JAPANESE -> "すぐに"
+        AppLanguage.KOREAN -> "즉시"
+    }
+    val appLockDelay1Minute: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "1 分钟"
+        AppLanguage.ENGLISH -> "1 minute"
+        AppLanguage.ARABIC -> "دقيقة واحدة"
+        AppLanguage.PORTUGUESE -> "1 minuto"
+        AppLanguage.SPANISH -> "1 minuto"
+        AppLanguage.FRENCH -> "1 minute"
+        AppLanguage.GERMAN -> "1 Minute"
+        AppLanguage.RUSSIAN -> "1 минута"
+        AppLanguage.JAPANESE -> "1分"
+        AppLanguage.KOREAN -> "1분"
+    }
+    val appLockDelay5Minutes: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "5 分钟"
+        AppLanguage.ENGLISH -> "5 minutes"
+        AppLanguage.ARABIC -> "5 دقائق"
+        AppLanguage.PORTUGUESE -> "5 minutos"
+        AppLanguage.SPANISH -> "5 minutos"
+        AppLanguage.FRENCH -> "5 minutes"
+        AppLanguage.GERMAN -> "5 Minuten"
+        AppLanguage.RUSSIAN -> "5 минут"
+        AppLanguage.JAPANESE -> "5分"
+        AppLanguage.KOREAN -> "5분"
     }
 
     val invalidActivationCode: String get() = when (Strings.lang) {

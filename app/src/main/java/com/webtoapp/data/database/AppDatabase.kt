@@ -19,7 +19,7 @@ import com.webtoapp.core.stats.AppUsageStatsDao
 
 @Database(
     entities = [WebApp::class, AppCategory::class, AppUsageStats::class, AppHealthRecord::class],
-    version = 43,
+    version = 44,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -1004,8 +1004,7 @@ abstract class AppDatabase : RoomDatabase() {
         private val MIGRATION_42_43 = object : Migration(42, 43) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 AppLogger.i("AppDatabase", "Migration 42->43: rebuilding web_apps to drop disguiseConfig (Icon & App feature removed)")
-                rebuildWebAppsTable(
-                    db = db,
+                rebuildWebAppsTable(                    db = db,
                     createTableSql = """
                         CREATE TABLE IF NOT EXISTS web_apps_new (
                             id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -1067,6 +1066,9 @@ abstract class AppDatabase : RoomDatabase() {
                 )
             }
         }
+
+        private val MIGRATION_43_44 =
+            createAddColumnMigration(43, 44, "appLockConfig")
 
         private val MIGRATION_27_28_COLUMNS = """
             id, name, url, iconPath, packageName, appType,
@@ -1229,7 +1231,8 @@ abstract class AppDatabase : RoomDatabase() {
                     MIGRATION_39_40,
                     MIGRATION_40_41,
                     MIGRATION_41_42,
-                    MIGRATION_42_43
+                    MIGRATION_42_43,
+                    MIGRATION_43_44
                 )
                 .fallbackToDestructiveMigrationOnDowngrade()
                 .fallbackToDestructiveMigrationFrom(1, 2, 3, 4, 5, 6, 7)

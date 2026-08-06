@@ -59,6 +59,8 @@ data class WebApp(
     val activationRemoteConfig: RemoteActivationConfig? = null,
     val isActivated: Boolean = false,
 
+    val appLockConfig: AppLockConfig? = null,
+
     val adsEnabled: Boolean = false,
     val adConfig: AdConfig? = null,
 
@@ -1328,6 +1330,19 @@ data class RemoteActivationConfig(
     val deliverUrl: Boolean = false,
     val encryptUrl: Boolean = false,
     val aesKeyBase64: String = ""
+)
+
+/**
+ * App lock for generated APKs: a PIN gate shown on launch (and on resume
+ * after [lockDelaySeconds] when configured). The PIN is set by the packager
+ * and shipped inside the app config; it is compared at runtime without being
+ * stored in plaintext in user-visible state.
+ */
+data class AppLockConfig(
+    val enabled: Boolean = false,
+    val pin: String = "",
+    // 0 = lock on every launch/resume; otherwise lock after N seconds in background.
+    val lockDelaySeconds: Int = 0
 )
 
 data class AutoStartConfig(

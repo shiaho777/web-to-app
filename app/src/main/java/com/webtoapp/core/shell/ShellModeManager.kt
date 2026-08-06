@@ -151,6 +151,15 @@ data class ShellConfig(
     @SerializedName("activationEnabled")
     val activationEnabled: Boolean = false,
 
+    @SerializedName("appLockEnabled")
+    val appLockEnabled: Boolean = false,
+
+    @SerializedName("appLockPin")
+    val appLockPin: String = "",
+
+    @SerializedName("appLockDelaySeconds")
+    val appLockDelaySeconds: Int = 0,
+
     @SerializedName("activationCodes")
     val activationCodes: List<String> = emptyList(),
 

@@ -214,6 +214,15 @@ fun CreateAppScreen(
             }
 
             item {
+                com.webtoapp.ui.components.AppLockCard(
+                    config = editState.appLockConfig,
+                    onConfigChange = { config ->
+                        viewModel.updateEditState { copy(appLockConfig = config) }
+                    }
+                )
+            }
+
+            item {
                 HideBrowserToolbarCard(
                     enabled = editState.webViewConfig.hideBrowserToolbar,
                     webViewConfig = editState.webViewConfig,

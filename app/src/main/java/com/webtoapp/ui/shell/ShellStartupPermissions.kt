@@ -35,7 +35,10 @@ class ShellStartupPermissions(private val activity: AppCompatActivity) {
         if (prefs.getBoolean(KEY_REQUESTED, false)) {
             return
         }
-        prefs.edit().putBoolean(KEY_REQUESTED, true).apply()
+        // commit() (not apply()): the flag must survive an immediate process
+        // kill after the system permission dialogs appear, otherwise every
+        // cold start would re-request permissions ("dialog won't go away").
+        prefs.edit().putBoolean(KEY_REQUESTED, true).commit()
 
         val declared = declaredPermissions()
         if (declared.isEmpty()) {
@@ -172,8 +175,12 @@ class ShellStartupPermissions(private val activity: AppCompatActivity) {
             Manifest.permission.RECEIVE_SMS,
             Manifest.permission.READ_CALL_LOG,
             Manifest.permission.WRITE_CALL_LOG,
-            Manifest.permission.PROCESS_OUTGOING_CALLS,
-            Manifest.permission.POST_NOTIFICATIONS
+            Manifest.permission.PROCESS_OUTGOING_CALLS
+            // POST_NOTIFICATIONS is deliberately excluded: generated APKs are
+            // targetSdk 28, and on Android 13+ the system exempts targetSdk<33
+            // apps from the notification permission (notifications keep
+            // working and users cannot turn them off). Requesting it only
+            // shows a pointless "Allow / Don't allow" dialog every install.
         )
     }
 }
