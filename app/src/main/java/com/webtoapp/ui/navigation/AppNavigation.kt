@@ -760,7 +760,8 @@ fun AppNavigation() {
                 val initialTab = rawTab.toIntOrNull() ?: 0
                 ModuleMarketScreen(
                     onNavigateBack = { navController.popBackStack() },
-                    initialTab = initialTab
+                    initialTab = initialTab,
+                    onOpenHostsAdBlock = { navController.navigate(Routes.HOSTS_ADBLOCK) }
                 )
             }
 

@@ -3742,6 +3742,7 @@ object Strings {
     val cwsDlModule: String get() = StringsE.cwsDlModule
     val cwsDlIcon: String get() = StringsE.cwsDlIcon
     val cwsDlTags: String get() = StringsE.cwsDlTags
+    val cwsAdBlockTip: String get() = StringsE.cwsAdBlockTip
     val cwsTagAdBlocking: String get() = StringsE.cwsTagAdBlocking
     val cwsTagTranslate: String get() = StringsE.cwsTagTranslate
     val cwsTagDarkMode: String get() = StringsE.cwsTagDarkMode
@@ -51580,10 +51581,22 @@ object StringsE {
         AppLanguage.PORTUGUESE -> "Gerando etiquetas de recursos"
         AppLanguage.SPANISH -> "Generando etiquetas de funciones"
         AppLanguage.FRENCH -> "Génération des étiquettes de fonctionnalités"
-        AppLanguage.GERMAN -> "Funktions-Tags werden erstellt"
-        AppLanguage.RUSSIAN -> "Создание тегов функций"
+        AppLanguage.GERMAN -> "Funktions-Tags werden generiert"
+        AppLanguage.RUSSIAN -> "Генерация тегов функций"
         AppLanguage.JAPANESE -> "機能タグを生成中"
         AppLanguage.KOREAN -> "기능 태그 생성 중"
+    }
+    val cwsAdBlockTip: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "需要广告拦截？试试内置广告过滤（hosts 规则 + 20 个过滤列表），无需安装扩展"
+        AppLanguage.ENGLISH -> "Need ad blocking? Try the built-in ad blocker (hosts rules + 20 filter lists) instead of an extension"
+        AppLanguage.ARABIC -> "تحتاج إلى حظر الإعلانات؟ جرّب مانع الإعلانات المدمج (قواعد hosts + 20 قائمة تصفية) بدلاً من الإضافة"
+        AppLanguage.PORTUGUESE -> "Precisa bloquear anúncios? Experimente o bloqueador de anúncios integrado (regras hosts + 20 listas de filtros) em vez de uma extensão"
+        AppLanguage.SPANISH -> "¿Necesitas bloquear anuncios? Prueba el bloqueador integrado (reglas hosts + 20 listas de filtros) en lugar de una extensión"
+        AppLanguage.FRENCH -> "Besoin de bloquer les pubs ? Essayez le bloqueur intégré (règles hosts + 20 listes de filtres) au lieu d'une extension"
+        AppLanguage.GERMAN -> "Werbeblocker nötig? Probieren Sie den integrierten Blocker (hosts-Regeln + 20 Filterlisten) statt einer Erweiterung"
+        AppLanguage.RUSSIAN -> "Нужна блокировка рекламы? Попробуйте встроенный блокировщик (правила hosts + 20 списков фильтров) вместо расширения"
+        AppLanguage.JAPANESE -> "広告ブロックが必要ですか？拡張機能の代わりに内蔵ブロッカー（hosts ルール + 20 のフィルターリスト）をお試しください"
+        AppLanguage.KOREAN -> "광고 차단이 필요하신가요? 확장 프로그램 대신 내장 광고 차단기(hosts 규칙 + 필터 목록 20개)를 사용해 보세요"
     }
     val cwsTagAdBlocking: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "广告拦截"

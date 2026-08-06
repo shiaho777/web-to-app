@@ -140,8 +140,9 @@ class ExtensionFileManager(private val context: Context) {
         }
         val crxFile = File(tempDir, "store_${cleanId}_${System.currentTimeMillis()}.crx")
         try {
-            if (!downloadCrxFromStore(cleanId, crxFile, onProgress)) {
-                return@withContext ImportResult.Error("Failed to download extension from store")
+            val downloadError = downloadCrxFromStore(cleanId, crxFile, onProgress)
+            if (downloadError != null) {
+                return@withContext ImportResult.Error(downloadError)
             }
             importChromeExtensionFromFile(crxFile, cleanId)
         } catch (e: Exception) {
@@ -152,12 +153,17 @@ class ExtensionFileManager(private val context: Context) {
         }
     }
 
+    /**
+     * Downloads a CRX from the Chrome Web Store update endpoint.
+     *
+     * @return null on success, or a user-actionable error message on failure.
+     */
     private fun downloadCrxFromStore(
         storeId: String,
         dest: File,
         onProgress: (DownloadProgress) -> Unit
-    ): Boolean {
-        val prodVersions = listOf("132.0.0.0", "120.0.0.0", "124.0.0.0", "138.0.0.0")
+    ): String? {
+        val prodVersions = listOf("132.0.0.0", "138.0.0.0", "124.0.0.0")
         for (pv in prodVersions) {
             try {
                 val url = "https://clients2.google.com/service/update2/crx" +
@@ -167,8 +173,11 @@ class ExtensionFileManager(private val context: Context) {
                     .url(url)
                     .header("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/$pv Safari/537.36")
                     .build()
-                httpClient.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) return@use
+                NetworkModule.downloadClient.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        AppLogger.w(TAG, "CRX download HTTP ${response.code} for $storeId (prodversion=$pv)")
+                        return@use
+                    }
                     val body = response.body ?: return@use
                     val reportedTotal = body.contentLength().coerceAtLeast(0L)
                     dest.outputStream().use { out ->
@@ -184,7 +193,7 @@ class ExtensionFileManager(private val context: Context) {
                                 total += read
                                 if (total > MAX_EXTENSION_SIZE) {
                                     AppLogger.w(TAG, "CRX exceeds max size, aborting: $storeId")
-                                    return false
+                                    return "Extension too large (max 50MB)"
                                 }
                                 out.write(buffer, 0, read)
                                 val now = System.currentTimeMillis()
@@ -207,13 +216,20 @@ class ExtensionFileManager(private val context: Context) {
                 }
                 if (dest.exists() && dest.length() > 0 && ChromeExtensionParser.isCrxFile(dest)) {
                     AppLogger.i(TAG, "Downloaded CRX for $storeId (${dest.length() / 1024} KB, prodversion=$pv)")
-                    return true
+                    return null
                 }
             } catch (e: Exception) {
                 AppLogger.w(TAG, "CRX download attempt failed (prodversion=$pv): $storeId", e)
             }
         }
-        return false
+        return if (dest.exists() && dest.length() > 0 && !ChromeExtensionParser.isCrxFile(dest)) {
+            "Downloaded file is not a valid Chrome extension (CRX). " +
+                "The store may have restricted this extension, or the download was interrupted."
+        } else {
+            "Failed to download extension from the Chrome Web Store. " +
+                "The store is not reachable from your network — check your connection or proxy, " +
+                "then try again. (extension id: $storeId)"
+        }
     }
 
     fun downloadIconForExtension(iconUrl: String, targetDir: File): File? {

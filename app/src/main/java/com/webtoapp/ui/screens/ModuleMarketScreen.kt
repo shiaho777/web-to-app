@@ -129,6 +129,7 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.VolunteerActivism
 import kotlinx.coroutines.flow.collectLatest
@@ -140,7 +141,8 @@ import java.time.format.DateTimeParseException
 @Composable
 fun ModuleMarketScreen(
     onNavigateBack: () -> Unit,
-    initialTab: Int = 0
+    initialTab: Int = 0,
+    onOpenHostsAdBlock: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -514,7 +516,35 @@ fun ModuleMarketScreen(
                         listState = listState
                     )
                 } else if (selectedTab == 1) {
-                    CwsSearchContent(
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        Surface(
+                            onClick = { onOpenHostsAdBlock() },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 6.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Block,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = Strings.cwsAdBlockTip,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                        CwsSearchContent(
                         query = searchQuery.trim(),
                         results = cwsViews,
                         isSearching = cwsSearching,
@@ -560,7 +590,8 @@ fun ModuleMarketScreen(
                             }
                         },
                         listState = listState
-                    )
+                        )
+                    }
                 } else {
                     when (val s = state) {
                         is MarketState.Idle, is MarketState.Loading -> {

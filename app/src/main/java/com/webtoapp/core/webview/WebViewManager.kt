@@ -3698,7 +3698,12 @@ class WebViewManager(
                 )
                 runtime.initialize(webView)
                 extensionRuntimes[extId] = runtime
-                loadDeclarativeNetRequestRules(extId, primaryModule.manifestJson)
+                // Load static DNR rulesets (uBO filter lists can be several MB with
+                // ~100k rules) off the main thread so activating an extension never
+                // blocks the WebView setup.
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    loadDeclarativeNetRequestRules(extId, primaryModule.manifestJson)
+                }
                 AppLogger.d("WebViewManager", "Created background runtime for extension: $extId")
             }
 

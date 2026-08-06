@@ -43,6 +43,7 @@ object DeclarativeNetRequestEngine {
         val excludedResourceTypes: Set<ResourceType>,
         val domains: Set<String>,
         val excludedDomains: Set<String>,
+        val requestDomains: Set<String> = emptySet(),
         val requestMethods: Set<String>,
         val excludedRequestMethods: Set<String>,
         val requestHeaders: List<HeaderOp> = emptyList(),
@@ -71,6 +72,19 @@ object DeclarativeNetRequestEngine {
     private val dynamicRules = ConcurrentHashMap<String, MutableList<DnrRule>>()
     private val sessionRules = ConcurrentHashMap<String, MutableList<DnrRule>>()
 
+    /**
+     * Immutable candidate index over all currently active rules, keyed by
+     * hostname buckets. Rebuilt whenever any ruleset changes; read lock-free
+     * (volatile snapshot) from the WebView request thread.
+     */
+    private data class RuleIndex(
+        val domainBuckets: Map<String, List<DnrRule>>,
+        val genericRules: List<DnrRule>
+    )
+
+    @Volatile
+    private var ruleIndex: RuleIndex = RuleIndex(emptyMap(), emptyList())
+
     @Volatile
     var matchedCount: Long = 0
         private set
@@ -90,6 +104,108 @@ object DeclarativeNetRequestEngine {
             }
         }
         modifyHeaderRuleCount = count
+        rebuildIndex()
+    }
+
+    /** Rebuilds the immutable domain candidate index from all active rules. */
+    private fun rebuildIndex() {
+        val buckets = HashMap<String, MutableList<DnrRule>>()
+        val generic = mutableListOf<DnrRule>()
+
+        fun addRule(rule: DnrRule) {
+            val keys = indexKeysFor(rule)
+            if (keys.isEmpty()) {
+                generic.add(rule)
+                return
+            }
+            for (key in keys) {
+                buckets.getOrPut(key) { mutableListOf() }.add(rule)
+            }
+        }
+
+        for ((_, rules) in sessionRules) rules.forEach(::addRule)
+        for ((_, rules) in dynamicRules) rules.forEach(::addRule)
+        for ((_, rulesets) in staticRulesets) {
+            rulesets.values.filter { it.enabled }.forEach { rs -> rs.rules.forEach(::addRule) }
+        }
+
+        ruleIndex = RuleIndex(
+            domainBuckets = buckets.mapValues { it.value.toList() },
+            genericRules = generic.toList()
+        )
+    }
+
+    /**
+     * Extracts the hostname bucket keys a rule should be indexed under.
+     * `requestDomains` matches the request URL host (or subdomains), so each
+     * entry becomes a key. Otherwise a stable host is extracted from the
+     * urlFilter; rules that cannot be reliably keyed go to the generic pool.
+     */
+    private fun indexKeysFor(rule: DnrRule): Set<String> {
+        if (rule.requestDomains.isNotEmpty()) {
+            return rule.requestDomains
+        }
+        val filter = rule.urlFilter ?: return emptySet()
+        return extractHostFromFilter(filter.pattern())?.let { setOf(it) } ?: emptySet()
+    }
+
+    private fun extractHostFromFilter(filter: String): String? {
+        val cleaned = filter
+            .replace("||", "")
+            .replace("|", "")
+            .replace("*", "")
+            .replace("^", "")
+            .replace("http://", "")
+            .replace("https://", "")
+            .replace("ws://", "")
+            .replace("wss://", "")
+            .trimStart('/')
+            .substringBefore("/")
+            .substringBefore("?")
+            .substringBefore("#")
+            .trim()
+        if (cleaned.isEmpty()) return null
+        if (!cleaned.contains(".")) return null
+        if (cleaned.any { !it.isLetterOrDigit() && it != '.' && it != '-' }) return null
+        return cleaned
+    }
+
+    /** Returns [host] and each parent domain, e.g. "a.b.example.com" → [a.b.example.com, b.example.com, example.com, com]. */
+    private fun parentDomains(host: String): List<String> {
+        if (host.isEmpty()) return emptyList()
+        val parts = host.split(".")
+        if (parts.size <= 1) return listOf(host)
+        return (0 until parts.size).map { i -> parts.drop(i).joinToString(".") }
+    }
+
+    private fun matchesRequestDomain(requestHost: String, domains: Set<String>): Boolean {
+        if (domains.isEmpty()) return true
+        if (requestHost.isEmpty()) return false
+        return domains.any { d -> requestHost == d || requestHost.endsWith(".$d") }
+    }
+
+    /** Candidate rules for a request: generic pool + hostname-bucket hits (host + parent domains). */
+    private fun buildCandidates(index: RuleIndex, requestHost: String): List<DnrRule> {
+        if (index.genericRules.isEmpty() && index.domainBuckets.isEmpty()) return emptyList()
+        val buckets = index.domainBuckets
+        val matched = ArrayList<DnrRule>(index.genericRules.size + 16)
+        if (index.genericRules.isNotEmpty()) {
+            matched.addAll(index.genericRules)
+        }
+        if (requestHost.isNotEmpty() && buckets.isNotEmpty()) {
+            for (domain in parentDomains(requestHost)) {
+                buckets[domain]?.let { matched.addAll(it) }
+            }
+        }
+        return matched
+    }
+
+    private fun extractHost(url: String): String {
+        return try {
+            android.net.Uri.parse(url).host ?: ""
+        } catch (_: Exception) {
+            ""
+        }
     }
 
     fun loadStaticRules(
@@ -231,28 +347,19 @@ object DeclarativeNetRequestEngine {
         initiatorDomain: String = "",
         method: String = "GET"
     ): EvalResult? {
-        val allRuleSets = mutableListOf<List<DnrRule>>()
-
-        for ((_, rules) in sessionRules) allRuleSets.add(rules)
-        for ((_, rules) in dynamicRules) allRuleSets.add(rules)
-        for ((_, rulesets) in staticRulesets) {
-            rulesets.values
-                .filter { it.enabled }
-                .forEach { allRuleSets.add(it.rules) }
-        }
-
-        if (allRuleSets.all { it.isEmpty() }) return null
-
         val resType = ResourceType.fromString(resourceType)
+        val requestHost = extractHost(url)
+        val index = ruleIndex
+        val candidates = buildCandidates(index, requestHost)
+        if (candidates.isEmpty()) return null
+
         var bestMatch: Pair<DnrRule, Int>? = null
 
-        for (ruleSet in allRuleSets) {
-            for (rule in ruleSet) {
-                if (!matchesRule(rule, url, resType, initiatorDomain, method)) continue
-                val effectivePriority = rule.priority
-                if (bestMatch == null || effectivePriority > bestMatch.second) {
-                    bestMatch = rule to effectivePriority
-                }
+        for (rule in candidates) {
+            if (!matchesRule(rule, url, resType, initiatorDomain, method, requestHost)) continue
+            val effectivePriority = rule.priority
+            if (bestMatch == null || effectivePriority > bestMatch.second) {
+                bestMatch = rule to effectivePriority
             }
         }
 
@@ -285,24 +392,19 @@ object DeclarativeNetRequestEngine {
         if (modifyHeaderRuleCount == 0) return null
 
         val resType = ResourceType.fromString(resourceType)
-        val allRuleSets = mutableListOf<List<DnrRule>>()
-        for ((_, rules) in sessionRules) allRuleSets.add(rules)
-        for ((_, rules) in dynamicRules) allRuleSets.add(rules)
-        for ((_, rulesets) in staticRulesets) {
-            rulesets.values.filter { it.enabled }.forEach { allRuleSets.add(it.rules) }
-        }
+        val requestHost = extractHost(url)
+        val index = ruleIndex
+        val candidates = buildCandidates(index, requestHost)
 
         var maxAllowPriority = 0
         val matchedHeaderRules = mutableListOf<DnrRule>()
-        for (ruleSet in allRuleSets) {
-            for (rule in ruleSet) {
-                if (!matchesRule(rule, url, resType, initiatorDomain, method)) continue
-                when (rule.action) {
-                    ActionType.ALLOW, ActionType.ALLOW_ALL_REQUESTS ->
-                        if (rule.priority > maxAllowPriority) maxAllowPriority = rule.priority
-                    ActionType.MODIFY_HEADERS -> matchedHeaderRules.add(rule)
-                    else -> {}
-                }
+        for (rule in candidates) {
+            if (!matchesRule(rule, url, resType, initiatorDomain, method, requestHost)) continue
+            when (rule.action) {
+                ActionType.ALLOW, ActionType.ALLOW_ALL_REQUESTS ->
+                    if (rule.priority > maxAllowPriority) maxAllowPriority = rule.priority
+                ActionType.MODIFY_HEADERS -> matchedHeaderRules.add(rule)
+                else -> {}
             }
         }
 
@@ -339,7 +441,8 @@ object DeclarativeNetRequestEngine {
         url: String,
         resType: ResourceType?,
         initiatorDomain: String,
-        method: String
+        method: String,
+        requestHost: String
     ): Boolean {
         val urlMatched = when {
             rule.urlFilter != null -> rule.urlFilter.matcher(url).find()
@@ -352,6 +455,9 @@ object DeclarativeNetRequestEngine {
             if (rule.resourceTypes.isNotEmpty() && resType !in rule.resourceTypes) return false
             if (resType in rule.excludedResourceTypes) return false
         }
+
+        // requestDomains constrains the *request URL's* host (uBO filter lists rely on it).
+        if (rule.requestDomains.isNotEmpty() && !matchesRequestDomain(requestHost, rule.requestDomains)) return false
 
         if (initiatorDomain.isNotEmpty()) {
             if (rule.domains.isNotEmpty() && !matchesDomain(initiatorDomain, rule.domains)) return false
@@ -425,6 +531,8 @@ object DeclarativeNetRequestEngine {
             ?: condition?.optJSONArray("domains"))
         val excludedDomains = parseStringSet(condition?.optJSONArray("excludedInitiatorDomains")
             ?: condition?.optJSONArray("excludedDomains"))
+        // requestDomains matches the *request URL's* host (uBO filter lists rely on this).
+        val requestDomains = parseStringSet(condition?.optJSONArray("requestDomains"))
         val requestMethods = parseStringSet(condition?.optJSONArray("requestMethods")).map { it.uppercase() }.toSet()
         val excludedRequestMethods = parseStringSet(condition?.optJSONArray("excludedRequestMethods")).map { it.uppercase() }.toSet()
 
@@ -444,6 +552,7 @@ object DeclarativeNetRequestEngine {
             excludedResourceTypes = excludedResourceTypes,
             domains = domains,
             excludedDomains = excludedDomains,
+            requestDomains = requestDomains,
             requestMethods = requestMethods,
             excludedRequestMethods = excludedRequestMethods,
             requestHeaders = requestHeaderOps,
