@@ -228,6 +228,69 @@ class WebViewManager(
             browsingDataClearGeneration++
         }
 
+        /**
+         * (Re-)applies the "follow system dark mode" state to a single WebView, derived from
+         * the CURRENT system uiMode. Safe to call at setup time and again whenever the system
+         * theme changes (e.g. Activity.onConfigurationChanged), which is required because:
+         *
+         *  - Both the host builder and generated APKs are targetSdk 28 (<=32). On such apps the
+         *    WebView only applies algorithmic darkening when FORCE_DARK is ON — the modern
+         *    setAlgorithmicDarkeningAllowed(true) API is a no-op. FORCE_DARK must therefore be
+         *    preferred (regression from #342, reported as #485).
+         *  - FORCE_DARK is a static switch: it does not track system theme changes by itself,
+         *    so the hosting activity must re-derive ON/OFF from the uiMode on every change
+         *    (#301 / #341).
+         *
+         * DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING keeps pages that ship their
+         * own prefers-color-scheme: dark theme using their own theme, while pages without one
+         * still get algorithmically darkened — so both categories follow the system.
+         */
+        @JvmStatic
+        fun refreshSystemDarkMode(webView: WebView?, followSystemDarkMode: Boolean) {
+            if (webView == null) return
+            try {
+                val systemInDarkMode = (webView.context.resources.configuration.uiMode and
+                    android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                    android.content.res.Configuration.UI_MODE_NIGHT_YES
+                if (followSystemDarkMode) {
+                    if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                        @Suppress("DEPRECATION")
+                        WebSettingsCompat.setForceDark(
+                            webView.settings,
+                            if (systemInDarkMode) WebSettingsCompat.FORCE_DARK_ON else WebSettingsCompat.FORCE_DARK_OFF
+                        )
+                        if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
+                            @Suppress("DEPRECATION")
+                            WebSettingsCompat.setForceDarkStrategy(
+                                webView.settings,
+                                WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING
+                            )
+                        }
+                        AppLogger.d(
+                            "WebViewManager",
+                            "Follow system dark mode: FORCE_DARK ${if (systemInDarkMode) "ON" else "OFF"}"
+                        )
+                    } else if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
+                        // Fallback for very old WebViews without FORCE_DARK.
+                        WebSettingsCompat.setAlgorithmicDarkeningAllowed(webView.settings, true)
+                        AppLogger.d("WebViewManager", "Follow system dark mode: algorithmic darkening allowed")
+                    }
+                } else {
+                    // Explicitly off: reset both mechanisms so a previously dark WebView
+                    // stops being darkened even after the system theme changed.
+                    if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                        @Suppress("DEPRECATION")
+                        WebSettingsCompat.setForceDark(webView.settings, WebSettingsCompat.FORCE_DARK_OFF)
+                    }
+                    if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
+                        WebSettingsCompat.setAlgorithmicDarkeningAllowed(webView.settings, false)
+                    }
+                }
+            } catch (e: Exception) {
+                AppLogger.w("WebViewManager", "refreshSystemDarkMode failed", e)
+            }
+        }
+
         @Suppress("DEPRECATION")
         fun clearBrowsingData(context: Context, webView: WebView?) {
             try {
@@ -1422,35 +1485,12 @@ class WebViewManager(
                 allowFileAccessFromFileURLs = config.allowFileAccessFromFileURLs
                 allowUniversalAccessFromFileURLs = config.allowUniversalAccessFromFileURLs
 
-                if (config.followSystemDarkMode) {
-                    if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
-                        // Modern WebView (API 33+): algorithmic darkening follows the system dark
-                        // mode automatically and respects the page's own prefers-color-scheme theme,
-                        // so it keeps responding to system theme changes at runtime.
-                        WebSettingsCompat.setAlgorithmicDarkeningAllowed(this, true)
-                        AppLogger.d("WebViewManager", "Follow system dark mode: algorithmic darkening allowed")
-                    } else if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
-                        // Legacy WebView: FORCE_DARK is a fixed setting, so derive it from the
-                        // current system state (on these older devices the activity is recreated on
-                        // a uiMode change, which re-applies it).
-                        val systemInDarkMode = (context.resources.configuration.uiMode and
-                            android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
-                            android.content.res.Configuration.UI_MODE_NIGHT_YES
-                        @Suppress("DEPRECATION")
-                        WebSettingsCompat.setForceDark(
-                            this,
-                            if (systemInDarkMode) WebSettingsCompat.FORCE_DARK_ON else WebSettingsCompat.FORCE_DARK_OFF
-                        )
-                        if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK_STRATEGY)) {
-                            @Suppress("DEPRECATION")
-                            WebSettingsCompat.setForceDarkStrategy(
-                                this,
-                                WebSettingsCompat.DARK_STRATEGY_PREFER_WEB_THEME_OVER_USER_AGENT_DARKENING
-                            )
-                        }
-                        AppLogger.d("WebViewManager", "Follow system dark mode: FORCE_DARK ${if (systemInDarkMode) "ON" else "OFF"}")
-                    }
-                }
+                // Follow system dark mode. Both the host builder and generated APKs are
+                // targetSdk 28 (<=32): on such apps the WebView only performs algorithmic
+                // darkening via FORCE_DARK (setAlgorithmicDarkeningAllowed is a no-op), so
+                // FORCE_DARK must be preferred and re-applied whenever the system uiMode
+                // changes (ShellActivity.onConfigurationChanged calls refreshSystemDarkMode).
+                WebViewManager.refreshSystemDarkMode(webView, config.followSystemDarkMode)
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
