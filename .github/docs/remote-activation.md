@@ -40,7 +40,8 @@ Accept: application/json
   "deviceId": "f3a9…",
   "packageName": "com.example.app",
   "nonce": "Base64-random-24-bytes",
-  "ts": 1733270400000
+  "ts": 1733270400000,
+  "deviceBound": false
 }
 ```
 
@@ -49,6 +50,14 @@ Accept: application/json
 - `nonce` is fresh per request — you **must** echo it back unchanged (replay
   protection).
 - `ts` is the client clock in epoch milliseconds.
+- `deviceBound` is `true` when the entered code is a **device-bound** code. For
+  such codes your server should enforce per-device binding: record the first
+  `deviceId` that activates a given `code`, and reject the same `code` from any
+  different `deviceId` (return `{ "ok": false }`). This is the only way to
+  truly restrict a device-bound code to one device — the app itself has no
+  shared state between devices, so a purely local device-bound code can only
+  prevent re-activation on the same device after a local reset or hardware
+  change.
 
 ## Response (your server → app)
 

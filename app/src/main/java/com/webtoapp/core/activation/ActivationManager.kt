@@ -95,7 +95,8 @@ class ActivationManager(private val context: Context) {
         offlinePolicy: com.webtoapp.data.model.RemoteActivationOfflinePolicy,
         deliverUrl: Boolean = false,
         encryptUrl: Boolean = false,
-        aesKeyBase64: String = ""
+        aesKeyBase64: String = "",
+        deviceBound: Boolean = false
     ): RemoteActivationVerifier.RemoteRequest {
         return RemoteActivationVerifier.RemoteRequest(
             verifyUrl = verifyUrl,
@@ -106,7 +107,8 @@ class ActivationManager(private val context: Context) {
             packageName = context.packageName,
             deliverUrl = deliverUrl,
             encryptUrl = encryptUrl,
-            aesKeyBase64 = aesKeyBase64
+            aesKeyBase64 = aesKeyBase64,
+            deviceBound = deviceBound
         )
     }
 

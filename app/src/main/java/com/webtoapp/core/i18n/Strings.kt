@@ -848,6 +848,7 @@ object Strings {
     val expireTime: String get() = StringsA.expireTime
     val remainingUsage: String get() = StringsA.remainingUsage
     val deviceBound: String get() = StringsA.deviceBound
+    val deviceBoundRemoteTip: String get() = StringsA.deviceBoundRemoteTip
     val invalidActivationCode: String get() = StringsA.invalidActivationCode
     val remoteActivationTitle: String get() = StringsA.remoteActivationTitle
     val activationSectionRemoteEnabled: (String) -> String get() = StringsA.activationSectionRemoteEnabled
@@ -15621,6 +15622,18 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Привязан к устройству: Включено"
         AppLanguage.JAPANESE -> "デバイス紐付け: 有効"
         AppLanguage.KOREAN -> "기기 연결: 활성화됨"
+    }
+    val deviceBoundRemoteTip: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "提示：设备绑定在本机生效（防止本机重激活/硬件变更后旧码复用）。跨设备限制需要在应用中配置远程激活验证服务，由服务器按设备 ID 拒绝其他设备。"
+        AppLanguage.ENGLISH -> "Note: device binding is enforced on this device only (prevents re-activation after a local reset or hardware change). Cross-device restriction requires configuring the remote activation verifier in the app, so the server can reject other devices by device ID."
+        AppLanguage.ARABIC -> "ملاحظة: ربط الجهاز يُطبَّق على هذا الجهاز فقط (يمنع إعادة التفعيل بعد إعادة الضبط المحلية أو تغيير العتاد). التقييد عبر الأجهزة يتطلب إعداد خدمة التحقق عن بُعد في التطبيق، بحيث يرفض الخادم الأجهزة الأخرى حسب معرّف الجهاز."
+        AppLanguage.PORTUGUESE -> "Observação: a vinculação ao dispositivo vale apenas neste aparelho (impede reativação após redefinição local ou troca de hardware). A restrição entre dispositivos exige configurar o verificador remoto no aplicativo, para o servidor rejeitar outros dispositivos pelo ID."
+        AppLanguage.SPANISH -> "Nota: la vinculación al dispositivo solo se aplica en este equipo (evita reactivar tras un restablecimiento local o cambio de hardware). La restricción entre dispositivos requiere configurar el verificador remoto en la app, para que el servidor rechace otros dispositivos por ID."
+        AppLanguage.FRENCH -> "Remarque : la liaison à l'appareil ne s'applique qu'à cet appareil (empêche la réactivation après une réinitialisation locale ou un changement de matériel). La restriction multi-appareils nécessite de configurer le vérificateur distant dans l'application, pour que le serveur rejette les autres appareils par ID."
+        AppLanguage.GERMAN -> "Hinweis: Die Gerätebindung gilt nur für dieses Gerät (verhindert Reaktivierung nach lokalem Reset oder Hardwarewechsel). Geräteübergreifende Einschränkung erfordert die Konfiguration des Remote-Verifizierers in der App, damit der Server andere Geräte per ID ablehnt."
+        AppLanguage.RUSSIAN -> "Примечание: привязка к устройству действует только на этом устройстве (предотвращает повторную активацию после локального сброса или замены железа). Ограничение между устройствами требует настройки удалённого проверяющего в приложении, чтобы сервер отклонял другие устройства по ID."
+        AppLanguage.JAPANESE -> "注意: デバイス紐付けはこの端末のみで有効です（ローカルリセットやハードウェア変更後の再アクティベーションを防ぎます）。端末間の制限には、アプリでリモート検証サービスを設定し、サーバーがデバイス ID で他の端末を拒否する必要があります。"
+        AppLanguage.KOREAN -> "참고: 기기 연결은 이 기기에서만 적용됩니다(로컬 초기화 또는 하드웨어 변경 후 재활성화 방지). 기기 간 제한은 앱에서 원격 인증 서비스를 구성하여 서버가 기기 ID로 다른 기기를 거부하도록 해야 합니다."
     }
 
     val invalidActivationCode: String get() = when (Strings.lang) {

@@ -46,7 +46,12 @@ class RemoteActivationVerifier(private val context: Context) {
         val packageName: String,
         val deliverUrl: Boolean = false,
         val encryptUrl: Boolean = false,
-        val aesKeyBase64: String = ""
+        val aesKeyBase64: String = "",
+        // True when the entered code is a DEVICE_BOUND code: tells the verifier
+        // endpoint this activation must be enforced per deviceId (the server
+        // rejects the same code from any other device). Pure-local mode cannot
+        // enforce cross-device binding because there is no shared state.
+        val deviceBound: Boolean = false
     )
 
     private val secureRandom = SecureRandom()
@@ -171,6 +176,7 @@ class RemoteActivationVerifier(private val context: Context) {
         obj.addProperty("packageName", request.packageName)
         obj.addProperty("nonce", nonce)
         obj.addProperty("ts", timestamp)
+        obj.addProperty("deviceBound", request.deviceBound)
         return obj.toString()
     }
 

@@ -42,6 +42,12 @@ fun ShellActivationDialog(
             activationError = null
             scope?.launch {
                 val result = if (config.activationRemoteEnabled) {
+                    val deviceBound = config.activationCodes.any { raw ->
+                        val parsed = com.webtoapp.core.activation.ActivationCode.fromJson(raw)
+                            ?: com.webtoapp.core.activation.ActivationCode.fromLegacyString(raw)
+                        parsed.code == code &&
+                            parsed.type == com.webtoapp.core.activation.ActivationCodeType.DEVICE_BOUND
+                    }
                     activation.verifyRemoteActivation(
                         -1L,
                         code,
@@ -51,7 +57,8 @@ fun ShellActivationDialog(
                             offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy),
                             deliverUrl = config.activationRemoteDeliverUrl,
                             encryptUrl = config.activationRemoteEncryptUrl,
-                            aesKeyBase64 = config.activationRemoteAesKey
+                            aesKeyBase64 = config.activationRemoteAesKey,
+                            deviceBound = deviceBound
                         )
                     )
                 } else {

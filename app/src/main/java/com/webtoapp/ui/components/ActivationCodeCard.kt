@@ -1171,6 +1171,18 @@ private fun EnhancedActivationCodeItem(
                     }
                 }
             }
+
+            if (code.type == ActivationCodeType.DEVICE_BOUND) {
+                Text(
+                    text = Strings.deviceBoundRemoteTip,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                    fontSize = 11.sp,
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .fillMaxWidth()
+                )
+            }
         }
     }
 }
