@@ -651,6 +651,36 @@ class MediaSessionBridge(
 
               const mediaSession = navigator.mediaSession || null;
 
+              // WebView has no native MediaMetadata constructor; sites that do
+              // `navigator.mediaSession.metadata = new MediaMetadata({...})`
+              // would throw ReferenceError. Provide a compatible constructor —
+              // metadata is read as plain properties by sendMetadata() below.
+              if (typeof window.MediaMetadata === "undefined") {
+                window.MediaMetadata = class MediaMetadata {
+                  constructor(options = {}) {
+                    this.title = options.title || "";
+                    this.artist = options.artist || "";
+                    this.album = options.album || "";
+                    this.artwork = Array.isArray(options.artwork)
+                      ? options.artwork.map(art => ({
+                          src: (art && art.src) || "",
+                          sizes: (art && art.sizes) || "",
+                          type: (art && art.type) || ""
+                        }))
+                      : [];
+                  }
+                };
+              }
+
+              // Call/camera state APIs (edge case): keep them callable so sites
+              // using them do not crash; state is not surfaced to the system UI.
+              if (mediaSession && typeof mediaSession.setMicrophoneActive !== "function") {
+                mediaSession.setMicrophoneActive = function() {};
+              }
+              if (mediaSession && typeof mediaSession.setCameraActive !== "function") {
+                mediaSession.setCameraActive = function() {};
+              }
+
               function absoluteUrl(value) {
                 if (!value) return "";
 
