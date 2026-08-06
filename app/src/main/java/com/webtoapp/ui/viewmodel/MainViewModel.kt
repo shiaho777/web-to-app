@@ -131,11 +131,17 @@ class MainViewModel(
     fun deleteAppById(id: Long) {
         viewModelScope.launch {
             try {
+                // Fetch the full WebApp before deleting the DB row so we can resolve the project
+                // directory and clean it up (otherwise wordpress_projects/<id> etc. are orphaned).
+                val webApp = repository.getWebApp(id)
                 repository.deleteWebAppById(id)
                 withContext(Dispatchers.IO) {
                     com.webtoapp.core.script.UserScriptStorage.deleteScriptsForApp(
                         getApplication(), id
                     )
+                    if (webApp != null) {
+                        com.webtoapp.core.app.ProjectDirCleaner.deleteForApp(getApplication(), webApp)
+                    }
                 }
                 _uiState.value = UiState.Success(Strings.appDeleted)
             } catch (e: Exception) {
@@ -460,6 +466,9 @@ class MainViewModel(
                     com.webtoapp.core.script.UserScriptStorage.deleteScriptsForApp(
                         getApplication(), webApp.id
                     )
+                    // Remove the on-disk project directory (e.g. wordpress_projects/<id>) so the
+                    // source files — including the WordPress SQLite DB — don't linger as orphans.
+                    com.webtoapp.core.app.ProjectDirCleaner.deleteForApp(getApplication(), webApp)
                 }
                 _uiState.value = UiState.Success(Strings.appDeleted)
             } catch (e: Exception) {
