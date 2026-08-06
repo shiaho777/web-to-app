@@ -777,7 +777,6 @@ fun CreateNodeJsAppScreen(
                         accentColor = accentColor
                     )
 
-                    Spacer(Modifier.height(8.dp))
                     com.webtoapp.ui.components.RuntimePortConflictSelector(
                         portConflictMode = portConflictMode,
                         onPortConflictModeChange = { portConflictMode = it },

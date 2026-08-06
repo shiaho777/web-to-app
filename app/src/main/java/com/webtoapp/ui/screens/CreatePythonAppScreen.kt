@@ -609,7 +609,6 @@ fun CreatePythonAppScreen(
                     onRemove = { key -> envVars = envVars.toMutableMap().apply { remove(key) } }
                 )
 
-                Spacer(Modifier.height(12.dp))
                 com.webtoapp.ui.components.RuntimePortConfigSection(
                     port = serverPort,
                     portConflictMode = portConflictMode,

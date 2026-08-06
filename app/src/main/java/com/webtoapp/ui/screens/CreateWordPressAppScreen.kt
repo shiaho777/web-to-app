@@ -496,7 +496,6 @@ fun CreateWordPressAppScreen(
 
                 WpDbInfoCard(accentColor = accentColor)
 
-                Spacer(Modifier.height(12.dp))
                 com.webtoapp.ui.components.RuntimePortConfigSection(
                     port = phpPort,
                     portConflictMode = portConflictMode,
