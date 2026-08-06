@@ -80,9 +80,10 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
-    <!-- ====== 前台服务（宿主必需：打包任务 + 悬浮窗预览）====== -->
+    <!-- ====== 前台服务（宿主必需：打包任务 + 悬浮窗预览 + WebView 媒体播放）====== -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <!-- ====== 系统运行（宿主必需：打包 / 启动等长任务保持唤醒）====== -->
@@ -357,6 +358,18 @@
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!--
+            WebMediaPlaybackService - WebView 内媒体播放的后台保活前台服务。
+            音频本身仍在 WebView 内播放；该服务提供 mediaPlayback 前台服务 + 唤醒锁 +
+            媒体通知生命周期（播放中启动 / 暂停分离 / 停止移除）。
+        -->
+        <service
+            android:name=".core.webview.WebMediaPlaybackService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback"
+            android:stopWithTask="false" />
 
         <!--
             NodeService - Node.js 嵌入式运行时的独立子进程容器。

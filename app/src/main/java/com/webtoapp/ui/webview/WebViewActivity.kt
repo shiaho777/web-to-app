@@ -131,6 +131,7 @@ class WebViewActivity : AppCompatActivity() {
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
+    private var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
 
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeolocationOrigin: String? = null
@@ -767,11 +768,22 @@ class WebViewActivity : AppCompatActivity() {
 
                         if (previewWvConfig?.enableMediaSession == true) {
                             val mediaBridge = com.webtoapp.core.webview.MediaSessionBridge(
-                                context = this@WebViewActivity,
-                                scope = lifecycleScope,
-                                webViewProvider = { wv }
+                                this@WebViewActivity,
+                                wv
                             )
-                            wv.addJavascriptInterface(mediaBridge, com.webtoapp.core.webview.MediaSessionBridge.JS_INTERFACE_NAME)
+                            try {
+                                androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
+                                    wv,
+                                    com.webtoapp.core.webview.MediaSessionBridge.INJECTION_SCRIPT,
+                                    setOf("*")
+                                )
+                            } catch (e: Exception) {
+                                mediaBridge.injectNow()
+                            }
+                            // Fallback for pages that were already loaded before the
+                            // document-start script was registered (idempotent).
+                            mediaBridge.injectNow()
+                            mediaSessionBridge = mediaBridge
                         }
 
                         if (previewApp?.translateEnabled == true) {
@@ -933,6 +945,9 @@ class WebViewActivity : AppCompatActivity() {
     override fun onDestroy() {
 
         if (trackedAppId > 0) usageTracker?.trackClose(trackedAppId)
+
+        mediaSessionBridge?.release()
+        mediaSessionBridge = null
 
         android.webkit.CookieManager.getInstance().flush()
         webView?.let { wv ->

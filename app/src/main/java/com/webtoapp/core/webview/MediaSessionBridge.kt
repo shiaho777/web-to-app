@@ -1,347 +1,1037 @@
 package com.webtoapp.core.webview
 
-import android.app.NotificationChannel
+import android.app.Activity
+import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.media.AudioManager
-import android.os.Build
-import android.os.SystemClock
-import android.view.KeyEvent
+import android.media.MediaMetadata
+import android.media.session.MediaSession
+import android.media.session.PlaybackState
+import android.os.Handler
+import android.os.Looper
+import android.support.v4.media.session.MediaSessionCompat
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.core.app.NotificationCompat
-import android.support.v4.media.MediaMetadataCompat
-import android.support.v4.media.session.MediaSessionCompat
-import android.support.v4.media.session.PlaybackStateCompat
 import androidx.media.app.NotificationCompat.MediaStyle
-import com.google.gson.JsonParser
 import com.webtoapp.core.logging.AppLogger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import org.json.JSONObject
+import java.lang.ref.WeakReference
+import java.net.HttpURLConnection
 import java.net.URL
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.Executors
+import kotlin.math.abs
 
 /**
  * Bridges the web [Media Session API](https://developer.mozilla.org/en-US/docs/Web/API/Media_Session_API)
- * (`navigator.mediaSession`) to a native Android [MediaSessionCompat].
+ * (`navigator.mediaSession`) to a native Android [MediaSession].
  *
  * Audio is NOT transferred — it keeps playing inside the WebView. This bridge only
- * carries metadata and control commands between the page and the system media
- * controls (notification, lock screen, Bluetooth, Android Auto).
+ * carries metadata, position and control commands between the page and the system
+ * media controls (notification, lock screen, Bluetooth, Android Auto), backed by
+ * [WebMediaPlaybackService] for background playback and wake lock.
+ *
+ * The bridge constructor already registers the `WtaMediaSession` JavaScript
+ * interface; callers only need to install [INJECTION_SCRIPT] at document start
+ * (plus [injectNow] from `onPageFinished` as a fallback).
  */
 class MediaSessionBridge(
-    private val context: Context,
-    private val scope: CoroutineScope,
-    private val webViewProvider: () -> WebView? = { null },
-    private val smallIconRes: Int = context.applicationInfo.icon
+    private val activity: Activity,
+    private val webView: WebView
 ) {
 
-    companion object {
-        const val JS_INTERFACE_NAME = "AndroidMediaSession"
-        private const val TAG = "MediaSessionBridge"
-        private const val CHANNEL_ID = "wta_media_session"
-        private const val NOTIFICATION_ID = 3100
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val artworkExecutor = Executors.newSingleThreadExecutor()
 
-        /** The document-start JS polyfill that hooks navigator.mediaSession. */
-        fun getInjectionScript(): String = INJECTION_SCRIPT
+    private val notificationManager =
+        activity.getSystemService(NotificationManager::class.java)
 
-        private val INJECTION_SCRIPT = """
-(function(){
-    'use strict';
-    if(window._wtaMediaSessionHooked)return;
-    window._wtaMediaSessionHooked=true;
-    var Bridge=window.AndroidMediaSession;
-    if(!Bridge)return;
-    var handlers={};
-    var lastReported='';
-    function reportActions(){
-        var a=Object.keys(handlers).join(',');
-        if(a!==lastReported){lastReported=a;try{Bridge.reportActionSupported(a);}catch(e){}}
-    }
-    var hasNative='mediaSession'in navigator;
-    var ms;
-    if(hasNative){
-        ms=navigator.mediaSession;
-        ms._wtaHandlers=handlers;
-        var orig=ms.setActionHandler?ms.setActionHandler.bind(ms):null;
-        ms.setActionHandler=function(action,handler){
-            if(handler&&typeof handler==='function'){handlers[action]=handler;}else{delete handlers[action];}
-            reportActions();
-            if(orig){try{orig(action,handler);}catch(e){}}
-        };
-    }else{
-        ms={metadata:null,playbackState:'none',setActionHandler:function(a,h){if(h){handlers[a]=h;}else{delete handlers[a];}reportActions();},setPositionState:function(){},_wtaHandlers:handlers};
-        navigator.mediaSession=ms;
-    }
-    var lastMeta=null,lastState=null,lastPos=0,lastDur=0;
-    function poll(){
-        try{
-            if(ms.metadata){
-                var m={title:ms.metadata.title||'',artist:ms.metadata.artist||'',album:ms.metadata.album||'',artwork:[]};
-                try{var art=ms.metadata.artwork;if(art&&art.length){for(var i=0;i<art.length;i++){m.artwork.push({src:art[i].src||'',sizes:art[i].sizes||'',type:art[i].type||''});}}}catch(e2){}
-                var s=JSON.stringify(m);
-                if(s!==lastMeta){lastMeta=s;try{Bridge.updateMetadata(s);}catch(e3){}}
-            }else if(!hasNative){
-                var f=JSON.stringify({title:document.title||'',artist:'',album:'',artwork:[]});
-                if(f!==lastMeta){lastMeta=f;try{Bridge.updateMetadata(f);}catch(e4){}}
+    private val mediaSession = MediaSession(
+        activity,
+        "WebToAppMediaSession"
+    )
+
+    private var title = ""
+    private var artist = ""
+    private var album = ""
+    private var artworkUrl = ""
+
+    private var artworkBitmap: Bitmap? = null
+    private var loadedArtworkUrl = ""
+
+    private var durationSeconds = 0.0
+    private var positionSeconds = 0.0
+    private var playbackRate = 1.0f
+
+    private var playbackState = PlaybackState.STATE_NONE
+
+    private val supportedActions = mutableSetOf<String>()
+
+    @Volatile
+    private var lastNotification: Notification? = null
+
+    init {
+        activeBridge = WeakReference(this)
+
+        webView.addJavascriptInterface(
+            this,
+            JAVASCRIPT_INTERFACE_NAME
+        )
+
+        createLaunchPendingIntent()?.let { pendingIntent ->
+            /*
+             * Opens or returns to the app when the user taps the
+             * notification, lock-screen media card, or system media player.
+             */
+            mediaSession.setSessionActivity(pendingIntent)
+        }
+
+        mediaSession.setCallback(
+            object : MediaSession.Callback() {
+                override fun onPlay() {
+                    dispatchCommand("play")
+                }
+
+                override fun onPause() {
+                    dispatchCommand("pause")
+                }
+
+                override fun onStop() {
+                    dispatchCommand("stop")
+                }
+
+                override fun onSeekTo(position: Long) {
+                    dispatchCommand(
+                        "seekto",
+                        position.toDouble() / 1000.0
+                    )
+                }
+
+                override fun onSkipToPrevious() {
+                    dispatchCommand("previoustrack")
+                }
+
+                override fun onSkipToNext() {
+                    dispatchCommand("nexttrack")
+                }
+
+                override fun onRewind() {
+                    dispatchCommand("seekbackward", 10.0)
+                }
+
+                override fun onFastForward() {
+                    dispatchCommand("seekforward", 10.0)
+                }
             }
-            var els=document.querySelectorAll('audio,video');
-            var pos=0,dur=0,rate=1,st='none';
-            for(var i=0;i<els.length;i++){
-                if(!els[i].paused&&!els[i].ended){pos=els[i].currentTime||0;dur=els[i].duration||0;rate=els[i].playbackRate||1;st='playing';break;}
-            }
-            if(st==='none'){for(var j=0;j<els.length;j++){if(els[j].currentTime>0){st='paused';pos=els[j].currentTime;dur=els[j].duration||0;break;}}}
-            if(st!==lastState||Math.abs(pos-lastPos)>0.5||dur!==lastDur){lastState=st;lastPos=pos;lastDur=dur;try{Bridge.updatePlaybackState(st,pos,dur,rate);}catch(e5){}}
-        }catch(e){}
-    }
-    setInterval(poll,800);
-    poll();
-    document.addEventListener('play',function(e){if(e.target&&(e.target.tagName==='AUDIO'||e.target.tagName==='VIDEO')){poll();}},true);
-    document.addEventListener('pause',function(e){if(e.target&&(e.target.tagName==='AUDIO'||e.target.tagName==='VIDEO')){poll();}},true);
-    document.addEventListener('loadedmetadata',function(e){poll();},true);
-})();
-        """.trimIndent()
+        )
     }
 
-    private var mediaSession: MediaSessionCompat? = null
-    private val currentMeta = AtomicReference<Meta?>(null)
-
-    @Volatile private var isPlaying = false
-    @Volatile private var positionMs: Long = 0L
-    @Volatile private var durationMs: Long = 0L
-    @Volatile private var rate: Float = 1f
-    @Volatile private var supportedActions: Set<String> = emptySet()
-    @Volatile private var lastUpdateElapsed: Long = 0L
-
-    // ---- Lifecycle ----
-
-    fun ensureSession() {
-        if (mediaSession != null) return
-        try {
-            ensureNotificationChannel()
-            val session = MediaSessionCompat(context, "WebToAppMediaSession")
-            session.setCallback(object : MediaSessionCompat.Callback() {
-                override fun onPlay() = dispatchAction("play")
-                override fun onPause() = dispatchAction("pause")
-                override fun onStop() = dispatchAction("stop")
-                override fun onSkipToNext() = dispatchAction("nexttrack")
-                override fun onSkipToPrevious() = dispatchAction("previoustrack")
-                override fun onSeekTo(pos: Long) = dispatchSeek(pos)
-                override fun onFastForward() = dispatchAction("seekforward")
-                override fun onRewind() = dispatchAction("seekbackward")
-            })
-            session.setFlags(
-                MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS or
-                MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS
-            )
-            session.isActive = true
-            mediaSession = session
-            AppLogger.d(TAG, "MediaSession created")
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "create MediaSession failed: ${e.message}", e)
+    /**
+     * Install this script using WebViewCompat.addDocumentStartJavaScript().
+     *
+     * Also call injectNow() from onPageFinished() as a fallback for pages that
+     * were already loaded before the document-start script was registered.
+     */
+    fun injectNow() {
+        webView.post {
+            webView.evaluateJavascript(INJECTION_SCRIPT, null)
         }
     }
 
-    fun release() {
-        mediaSession?.runCatching { isActive = false; release() }
-        mediaSession = null
-        cancelNotification()
-    }
-
-    // ---- JS → Android ----
-
     @JavascriptInterface
-    fun updateMetadata(json: String) {
-        scope.launch(Dispatchers.Main) { applyMetadata(json) }
-    }
+    fun updateMetadata(
+        newTitle: String?,
+        newArtist: String?,
+        newAlbum: String?,
+        newArtworkUrl: String?
+    ) {
+        mainHandler.post {
+            title = newTitle.orEmpty()
+            artist = newArtist.orEmpty()
+            album = newAlbum.orEmpty()
 
-    @JavascriptInterface
-    fun updatePlaybackState(stateStr: String, positionSec: Double, durationSec: Double, rate: Float) {
-        isPlaying = stateStr == "playing"
-        positionMs = (positionSec * 1000).toLong().coerceAtLeast(0)
-        durationMs = if (durationSec > 0) (durationSec * 1000).toLong() else 0
-        this.rate = if (rate > 0) rate else 1f
-        lastUpdateElapsed = SystemClock.elapsedRealtime()
-        scope.launch(Dispatchers.Main) { applyPlaybackState() }
-    }
+            val normalizedArtwork = newArtworkUrl.orEmpty()
 
-    @JavascriptInterface
-    fun reportActionSupported(actions: String) {
-        supportedActions = if (actions.isBlank()) emptySet()
-                           else actions.split(",").map { it.trim() }.toSet()
-    }
-
-    // ---- Android → JS ----
-
-    fun dispatchAction(action: String) {
-        val js = "(function(){try{var ms=navigator.mediaSession;if(ms&&ms._wtaHandlers&&ms._wtaHandlers['$action']){ms._wtaHandlers['$action']({});}}catch(e){}})();"
-        scope.launch(Dispatchers.Main) { webViewProvider()?.evaluateJavascript(js, null) }
-    }
-
-    fun dispatchSeek(posMs: Long) {
-        val sec = posMs / 1000.0
-        val js = "(function(){try{var ms=navigator.mediaSession;if(ms&&ms._wtaHandlers&&ms._wtaHandlers['seekto']){ms._wtaHandlers['seekto']({seekTime:$sec});}else{var els=document.querySelectorAll('audio,video');for(var i=0;i<els.length;i++){if(!els[i].paused){els[i].currentTime=$sec;break;}}}}catch(e){}})();"
-        scope.launch(Dispatchers.Main) { webViewProvider()?.evaluateJavascript(js, null) }
-    }
-
-    // ---- Apply state ----
-
-    private fun applyMetadata(json: String) {
-        ensureSession()
-        val session = mediaSession ?: return
-        try {
-            val obj = JsonParser.parseString(json).takeIf { it.isJsonObject }?.asJsonObject ?: return
-            val title = obj.get("title")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
-            val artist = obj.get("artist")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
-            val album = obj.get("album")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
-            var artworkUrl: String? = null
-            obj.getAsJsonArray("artwork")?.let { arr ->
-                var best = -1
-                for (i in 0 until arr.size()) {
-                    val art = arr[i]?.takeIf { it.isJsonObject }?.asJsonObject ?: continue
-                    val src = art.get("src")?.takeIf { !it.isJsonNull }?.asString ?: continue
-                    val sz = art.get("sizes")?.takeIf { !it.isJsonNull }?.asString.orEmpty()
-                        .split("x").firstOrNull()?.toIntOrNull() ?: 0
-                    if (sz > best) { best = sz; artworkUrl = src }
-                }
+            if (artworkUrl != normalizedArtwork) {
+                artworkUrl = normalizedArtwork
+                loadArtwork(normalizedArtwork)
             }
-            val mb = MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
-                .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, album)
-                .putLong(MediaMetadataCompat.METADATA_KEY_DURATION, durationMs)
-            currentMeta.set(Meta(title, artist, album, artworkUrl))
-            if (artworkUrl != null) {
-                loadBitmap(artworkUrl) { bmp ->
-                    if (bmp != null) mb.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, bmp)
-                    session.setMetadata(mb.build())
-                    updateNotification()
-                }
+
+            publish()
+        }
+    }
+
+    @JavascriptInterface
+    fun updatePlaybackState(state: String?) {
+        mainHandler.post {
+            playbackState = when (state?.lowercase()) {
+                "playing" -> PlaybackState.STATE_PLAYING
+                "paused" -> PlaybackState.STATE_PAUSED
+                "buffering" -> PlaybackState.STATE_BUFFERING
+                "none", "stopped", null -> PlaybackState.STATE_NONE
+                else -> PlaybackState.STATE_PAUSED
+            }
+
+            publish()
+        }
+    }
+
+    @JavascriptInterface
+    fun updatePosition(
+        duration: Double,
+        position: Double,
+        rate: Double
+    ) {
+        mainHandler.post {
+            val durationChanged =
+                abs(durationSeconds - duration) >= 0.5
+
+            durationSeconds =
+                duration.takeIf { it.isFinite() && it > 0.0 } ?: 0.0
+
+            positionSeconds =
+                position.takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
+
+            playbackRate =
+                rate.takeIf { it.isFinite() && it > 0.0 }
+                    ?.toFloat()
+                    ?: 1.0f
+
+            /*
+             * Playback state must be updated regularly for progress tracking.
+             * Metadata is also republished when duration changes so the
+             * duration is never stuck at 0 when metadata arrived first.
+             */
+            applyPlaybackState()
+
+            if (durationChanged) {
+                applyMetadata()
+            }
+
+            updateNotification()
+        }
+    }
+
+    @JavascriptInterface
+    fun setActionSupported(
+        action: String?,
+        supported: Boolean
+    ) {
+        if (action.isNullOrBlank()) {
+            return
+        }
+
+        mainHandler.post {
+            if (supported) {
+                supportedActions.add(action)
             } else {
-                session.setMetadata(mb.build())
-                updateNotification()
+                supportedActions.remove(action)
             }
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "applyMetadata failed: ${e.message}")
+
+            /*
+             * Apply immediately instead of waiting for another playback event.
+             */
+            applyPlaybackState()
+            updateNotification()
         }
+    }
+
+    // ---- State publishing ----
+
+    private fun publish() {
+        if (playbackState == PlaybackState.STATE_NONE) {
+            clearPlayback()
+            return
+        }
+
+        applyMetadata()
+        applyPlaybackState()
+
+        mediaSession.isActive = true
+
+        updateNotification()
+
+        WebMediaPlaybackService.synchronize(
+            activity.applicationContext,
+            playbackState == PlaybackState.STATE_PLAYING
+        )
+    }
+
+    private fun applyMetadata() {
+        val metadata = MediaMetadata.Builder()
+            .putString(
+                MediaMetadata.METADATA_KEY_TITLE,
+                title.ifBlank { appLabel() }
+            )
+            .putString(
+                MediaMetadata.METADATA_KEY_ARTIST,
+                artist
+            )
+            .putString(
+                MediaMetadata.METADATA_KEY_ALBUM,
+                album
+            )
+            .putLong(
+                MediaMetadata.METADATA_KEY_DURATION,
+                (durationSeconds * 1000.0).toLong()
+            )
+
+        artworkBitmap?.let { bitmap ->
+            metadata.putBitmap(
+                MediaMetadata.METADATA_KEY_ART,
+                bitmap
+            )
+
+            metadata.putBitmap(
+                MediaMetadata.METADATA_KEY_ALBUM_ART,
+                bitmap
+            )
+
+            metadata.putBitmap(
+                MediaMetadata.METADATA_KEY_DISPLAY_ICON,
+                bitmap
+            )
+        }
+
+        mediaSession.setMetadata(metadata.build())
     }
 
     private fun applyPlaybackState() {
-        ensureSession()
-        val session = mediaSession ?: return
-        try {
-            var actions = (PlaybackStateCompat.ACTION_PLAY
-                or PlaybackStateCompat.ACTION_PAUSE
-                or PlaybackStateCompat.ACTION_PLAY_PAUSE
-                or PlaybackStateCompat.ACTION_STOP)
-            if ("previoustrack" in supportedActions) actions = actions or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
-            if ("nexttrack" in supportedActions) actions = actions or PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-            if ("seekto" in supportedActions) actions = actions or PlaybackStateCompat.ACTION_SEEK_TO
-            if ("seekforward" in supportedActions) actions = actions or PlaybackStateCompat.ACTION_FAST_FORWARD
-            if ("seekbackward" in supportedActions) actions = actions or PlaybackStateCompat.ACTION_REWIND
+        var actions =
+            PlaybackState.ACTION_PLAY or
+                PlaybackState.ACTION_PAUSE or
+                PlaybackState.ACTION_PLAY_PAUSE or
+                PlaybackState.ACTION_STOP or
+                PlaybackState.ACTION_SEEK_TO
 
-            val stateCode = when {
-                isPlaying -> PlaybackStateCompat.STATE_PLAYING
-                positionMs > 0 -> PlaybackStateCompat.STATE_PAUSED
-                else -> PlaybackStateCompat.STATE_NONE
-            }
-            val pos = if (isPlaying) {
-                positionMs + ((SystemClock.elapsedRealtime() - lastUpdateElapsed) * rate).toLong()
-            } else positionMs
-
-            val pb = PlaybackStateCompat.Builder()
-                .setActions(actions)
-                .setState(stateCode, pos, if (isPlaying) rate else 0f)
-            session.setPlaybackState(pb.build())
-            updateNotification()
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "applyPlaybackState failed: ${e.message}")
+        if ("previoustrack" in supportedActions) {
+            actions = actions or PlaybackState.ACTION_SKIP_TO_PREVIOUS
         }
+
+        if ("nexttrack" in supportedActions) {
+            actions = actions or PlaybackState.ACTION_SKIP_TO_NEXT
+        }
+
+        if ("seekbackward" in supportedActions) {
+            actions = actions or PlaybackState.ACTION_REWIND
+        }
+
+        if ("seekforward" in supportedActions) {
+            actions = actions or PlaybackState.ACTION_FAST_FORWARD
+        }
+
+        val state = PlaybackState.Builder()
+            .setActions(actions)
+            .setState(
+                playbackState,
+                (positionSeconds * 1000.0).toLong(),
+                playbackRate
+            )
+            .build()
+
+        mediaSession.setPlaybackState(state)
     }
 
     // ---- Notification ----
 
-    private fun ensureNotificationChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (nm.getNotificationChannel(CHANNEL_ID) == null) {
-            nm.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "Media Session", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "Media playback controls"; setShowBadge(false)
+    private fun updateNotification() {
+        if (playbackState == PlaybackState.STATE_NONE) {
+            notificationManager.cancel(
+                WebMediaPlaybackService.NOTIFICATION_ID
+            )
+
+            lastNotification = null
+            return
+        }
+
+        val notification = buildNotification()
+
+        lastNotification = notification
+
+        notificationManager.notify(
+            WebMediaPlaybackService.NOTIFICATION_ID,
+            notification
+        )
+    }
+
+    private fun buildNotification(): Notification {
+        val builder = NotificationCompat.Builder(
+            activity,
+            WebMediaPlaybackService.CHANNEL_ID
+        )
+            .setSmallIcon(android.R.drawable.ic_media_play)
+            .setContentTitle(title.ifBlank { appLabel() })
+            .setContentText(
+                artist.ifBlank {
+                    album.ifBlank { "Media playback" }
                 }
             )
-        }
-    }
-
-    private fun mediaButtonIntent(keyCode: Int): PendingIntent {
-        val intent = Intent(Intent.ACTION_MEDIA_BUTTON).apply {
-            setPackage(context.packageName)
-            putExtra(Intent.EXTRA_KEY_EVENT, KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
-        }
-        val flags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M)
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        else PendingIntent.FLAG_UPDATE_CURRENT
-        return PendingIntent.getBroadcast(context, keyCode, intent, flags)
-    }
-
-    private fun updateNotification() {
-        val session = mediaSession ?: return
-        val meta = currentMeta.get() ?: return
-        try {
-            val token = session.sessionToken
-            val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(smallIconRes)
-                .setContentTitle(meta.title)
-                .setContentText(listOfNotNull(
-                    meta.artist.takeIf { it.isNotBlank() },
-                    meta.album.takeIf { it.isNotBlank() }
-                ).joinToString(" - "))
-                .setStyle(MediaStyle().setMediaSession(token))
-                .setOngoing(isPlaying)
-                .setOnlyAlertOnce(true)
-                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-
-            if ("previoustrack" in supportedActions) {
-                builder.addAction(android.R.drawable.ic_media_previous, "Prev",
-                    mediaButtonIntent(KeyEvent.KEYCODE_MEDIA_PREVIOUS))
-            }
-            builder.addAction(
-                if (isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
-                if (isPlaying) "Pause" else "Play",
-                if (isPlaying) mediaButtonIntent(KeyEvent.KEYCODE_MEDIA_PAUSE)
-                else mediaButtonIntent(KeyEvent.KEYCODE_MEDIA_PLAY)
+            .setSubText(album.takeIf { it.isNotBlank() })
+            .setCategory(NotificationCompat.CATEGORY_TRANSPORT)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setOnlyAlertOnce(true)
+            .setOngoing(
+                playbackState == PlaybackState.STATE_PLAYING
             )
-            if ("nexttrack" in supportedActions) {
-                builder.addAction(android.R.drawable.ic_media_next, "Next",
-                    mediaButtonIntent(KeyEvent.KEYCODE_MEDIA_NEXT))
+            .setContentIntent(createLaunchPendingIntent())
+            .setDeleteIntent(
+                WebMediaPlaybackService.commandPendingIntent(
+                    activity,
+                    "stop"
+                )
+            )
+
+        artworkBitmap?.let(builder::setLargeIcon)
+
+        val compactActionIndexes = mutableListOf<Int>()
+        var actionIndex = 0
+
+        if ("previoustrack" in supportedActions) {
+            builder.addAction(
+                android.R.drawable.ic_media_previous,
+                "Previous",
+                WebMediaPlaybackService.commandPendingIntent(
+                    activity,
+                    "previoustrack"
+                )
+            )
+
+            compactActionIndexes.add(actionIndex)
+            actionIndex++
+        }
+
+        val isPlaying =
+            playbackState == PlaybackState.STATE_PLAYING
+
+        builder.addAction(
+            if (isPlaying) {
+                android.R.drawable.ic_media_pause
+            } else {
+                android.R.drawable.ic_media_play
+            },
+            if (isPlaying) "Pause" else "Play",
+            WebMediaPlaybackService.commandPendingIntent(
+                activity,
+                if (isPlaying) "pause" else "play"
+            )
+        )
+
+        compactActionIndexes.add(actionIndex)
+        actionIndex++
+
+        if ("nexttrack" in supportedActions) {
+            builder.addAction(
+                android.R.drawable.ic_media_next,
+                "Next",
+                WebMediaPlaybackService.commandPendingIntent(
+                    activity,
+                    "nexttrack"
+                )
+            )
+
+            compactActionIndexes.add(actionIndex)
+        }
+
+        val mediaStyle = MediaStyle()
+            .setMediaSession(
+                MediaSessionCompat.Token.fromToken(mediaSession.sessionToken)
+            )
+            .setShowCancelButton(true)
+            .setCancelButtonIntent(
+                WebMediaPlaybackService.commandPendingIntent(
+                    activity,
+                    "stop"
+                )
+            )
+
+        if (compactActionIndexes.isNotEmpty()) {
+            mediaStyle.setShowActionsInCompactView(
+                *compactActionIndexes
+                    .take(3)
+                    .toIntArray()
+            )
+        }
+
+        builder.setStyle(mediaStyle)
+
+        return builder.build()
+    }
+
+    private fun createLaunchPendingIntent(): PendingIntent? {
+        val launchIntent =
+            activity.packageManager.getLaunchIntentForPackage(
+                activity.packageName
+            ) ?: return null
+
+        launchIntent.addFlags(
+            Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP
+        )
+
+        return PendingIntent.getActivity(
+            activity,
+            3101,
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or
+                PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    // ---- Android → JS commands ----
+
+    private fun dispatchCommand(
+        command: String,
+        value: Double = 0.0
+    ) {
+        val escapedCommand = JSONObject.quote(command)
+
+        val script = """
+            window.__wtaMediaCommand &&
+            window.__wtaMediaCommand($escapedCommand, $value);
+        """.trimIndent()
+
+        webView.post {
+            webView.evaluateJavascript(script, null)
+        }
+    }
+
+    // ---- Artwork ----
+
+    private fun loadArtwork(url: String) {
+        if (url.isBlank()) {
+            artworkBitmap = null
+            loadedArtworkUrl = ""
+            publish()
+            return
+        }
+
+        if (url == loadedArtworkUrl && artworkBitmap != null) {
+            return
+        }
+
+        artworkExecutor.execute {
+            val bitmap = downloadBitmap(url)
+
+            mainHandler.post {
+                /*
+                 * Ignore an old request when the website changed tracks while
+                 * the image was still downloading.
+                 */
+                if (artworkUrl != url) {
+                    return@post
+                }
+
+                artworkBitmap = bitmap
+                loadedArtworkUrl = url
+
+                if (playbackState != PlaybackState.STATE_NONE) {
+                    applyMetadata()
+                    updateNotification()
+                }
             }
-
-            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            nm.notify(NOTIFICATION_ID, builder.build())
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "updateNotification failed: ${e.message}")
         }
     }
 
-    private fun cancelNotification() {
+    private fun downloadBitmap(url: String): Bitmap? {
+        return try {
+            val connection = URL(url).openConnection()
+                as HttpURLConnection
+
+            connection.connectTimeout = 8_000
+            connection.readTimeout = 8_000
+            connection.instanceFollowRedirects = true
+            connection.doInput = true
+            connection.connect()
+
+            connection.inputStream.use {
+                BitmapFactory.decodeStream(it)
+            }.also {
+                connection.disconnect()
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun appLabel(): String {
+        return activity.applicationInfo
+            .loadLabel(activity.packageManager)
+            .toString()
+    }
+
+    private fun clearPlayback() {
+        playbackState = PlaybackState.STATE_NONE
+        positionSeconds = 0.0
+        durationSeconds = 0.0
+
+        mediaSession.setPlaybackState(
+            PlaybackState.Builder()
+                .setState(
+                    PlaybackState.STATE_NONE,
+                    0L,
+                    1.0f
+                )
+                .build()
+        )
+
+        mediaSession.isActive = false
+
+        notificationManager.cancel(
+            WebMediaPlaybackService.NOTIFICATION_ID
+        )
+
+        lastNotification = null
+
+        WebMediaPlaybackService.stop(
+            activity.applicationContext
+        )
+    }
+
+    fun release() {
+        clearPlayback()
+
         try {
-            (context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager).cancel(NOTIFICATION_ID)
-        } catch (e: Exception) {}
-    }
+            webView.removeJavascriptInterface(
+                JAVASCRIPT_INTERFACE_NAME
+            )
+        } catch (_: Exception) {
+            // WebView may already be destroyed.
+        }
 
-    private fun loadBitmap(url: String, cb: (android.graphics.Bitmap?) -> Unit) {
-        scope.launch(Dispatchers.IO) {
-            val bmp = try {
-                URL(url).openConnection().apply { connectTimeout = 5000; readTimeout = 5000 }
-                    .getInputStream().use { BitmapFactory.decodeStream(it) }
-            } catch (e: Exception) { null }
-            cb(bmp)
+        artworkExecutor.shutdownNow()
+        mediaSession.release()
+
+        if (activeBridge?.get() === this) {
+            activeBridge = null
         }
     }
 
-    private data class Meta(val title: String, val artist: String, val album: String, val artworkUrl: String?)
+    companion object {
+        const val JAVASCRIPT_INTERFACE_NAME =
+            "WtaMediaSession"
+
+        @Volatile
+        private var activeBridge:
+            WeakReference<MediaSessionBridge>? = null
+
+        internal fun dispatchFromService(
+            command: String,
+            value: Double
+        ) {
+            activeBridge?.get()?.dispatchCommand(
+                command,
+                value
+            )
+        }
+
+        internal fun getForegroundNotification(
+            context: Context
+        ): Notification? {
+            return activeBridge?.get()?.lastNotification
+        }
+
+        /** The document-start JS polyfill that hooks navigator.mediaSession. */
+        fun getInjectionScript(): String = INJECTION_SCRIPT
+
+        val INJECTION_SCRIPT = """
+            (() => {
+              if (window.__wtaMediaBridgeInstalled) return;
+              window.__wtaMediaBridgeInstalled = true;
+
+              const nativeBridge = window.WtaMediaSession;
+
+              if (!nativeBridge) return;
+
+              const registeredHandlers = Object.create(null);
+              const boundElements = new WeakSet();
+
+              const mediaSession = navigator.mediaSession || null;
+
+              function absoluteUrl(value) {
+                if (!value) return "";
+
+                try {
+                  return new URL(value, document.baseURI).href;
+                } catch (_) {
+                  return String(value);
+                }
+              }
+
+              function collectMedia(root, output) {
+                if (!root || !root.querySelectorAll) return;
+
+                root.querySelectorAll("audio, video").forEach(element => {
+                  output.push(element);
+                });
+
+                root.querySelectorAll("*").forEach(element => {
+                  if (element.shadowRoot) {
+                    collectMedia(element.shadowRoot, output);
+                  }
+                });
+              }
+
+              function getMediaElements() {
+                const output = [];
+                collectMedia(document, output);
+                return output;
+              }
+
+              function getActiveMedia() {
+                const elements = getMediaElements();
+
+                return (
+                  elements.find(element =>
+                    !element.paused &&
+                    !element.ended &&
+                    element.readyState > 0
+                  ) ||
+                  elements.find(element =>
+                    element.currentTime > 0 &&
+                    !element.ended
+                  ) ||
+                  elements[0] ||
+                  null
+                );
+              }
+
+              function sendMetadata() {
+                const metadata = mediaSession?.metadata;
+
+                let artwork = "";
+
+                if (metadata?.artwork?.length) {
+                  const candidates = Array.from(metadata.artwork);
+
+                  candidates.sort((a, b) => {
+                    const aSize =
+                      parseInt(String(a.sizes || "0"), 10) || 0;
+
+                    const bSize =
+                      parseInt(String(b.sizes || "0"), 10) || 0;
+
+                    return bSize - aSize;
+                  });
+
+                  artwork = absoluteUrl(
+                    candidates[0]?.src || ""
+                  );
+                }
+
+                nativeBridge.updateMetadata(
+                  metadata?.title || document.title || "",
+                  metadata?.artist || "",
+                  metadata?.album || "",
+                  artwork
+                );
+              }
+
+              function sendPosition(element) {
+                if (!element) {
+                  nativeBridge.updatePosition(0, 0, 1);
+                  return;
+                }
+
+                const duration =
+                  Number.isFinite(element.duration)
+                    ? element.duration
+                    : 0;
+
+                const position =
+                  Number.isFinite(element.currentTime)
+                    ? element.currentTime
+                    : 0;
+
+                const playbackRate =
+                  Number.isFinite(element.playbackRate) &&
+                  element.playbackRate > 0
+                    ? element.playbackRate
+                    : 1;
+
+                nativeBridge.updatePosition(
+                  duration,
+                  position,
+                  playbackRate
+                );
+              }
+
+              function sendPlaybackState(element) {
+                let state = mediaSession?.playbackState;
+
+                if (!state || state === "none") {
+                  if (!element) {
+                    state = "none";
+                  } else if (
+                    !element.paused &&
+                    !element.ended
+                  ) {
+                    state = "playing";
+                  } else if (
+                    element.currentTime > 0 &&
+                    !element.ended
+                  ) {
+                    state = "paused";
+                  } else {
+                    state = "none";
+                  }
+                }
+
+                nativeBridge.updatePlaybackState(state);
+              }
+
+              function synchronize() {
+                const element = getActiveMedia();
+
+                sendMetadata();
+                sendPlaybackState(element);
+                sendPosition(element);
+
+                getMediaElements().forEach(bindElement);
+              }
+
+              function bindElement(element) {
+                if (!element || boundElements.has(element)) {
+                  return;
+                }
+
+                boundElements.add(element);
+
+                [
+                  "play",
+                  "playing",
+                  "pause",
+                  "ended",
+                  "emptied",
+                  "loadedmetadata",
+                  "durationchange",
+                  "ratechange",
+                  "timeupdate",
+                  "waiting",
+                  "stalled"
+                ].forEach(eventName => {
+                  element.addEventListener(
+                    eventName,
+                    synchronize,
+                    { passive: true }
+                  );
+                });
+              }
+
+              async function callHandler(
+                action,
+                value
+              ) {
+                const handler =
+                  registeredHandlers[action];
+
+                if (!handler) {
+                  return false;
+                }
+
+                let details = { action };
+
+                if (action === "seekto") {
+                  details = {
+                    action,
+                    seekTime: Number(value) || 0,
+                    fastSeek: false
+                  };
+                } else if (
+                  action === "seekforward" ||
+                  action === "seekbackward"
+                ) {
+                  details = {
+                    action,
+                    seekOffset:
+                      Number(value) || 10
+                  };
+                }
+
+                try {
+                  await handler(details);
+                  return true;
+                } catch (error) {
+                  console.error(
+                    "Media Session handler failed:",
+                    action,
+                    error
+                  );
+
+                  return false;
+                }
+              }
+
+              async function fallbackCommand(
+                action,
+                value
+              ) {
+                const element = getActiveMedia();
+
+                if (!element) return;
+
+                switch (action) {
+                  case "play":
+                    try {
+                      await element.play();
+                    } catch (_) {}
+                    break;
+
+                  case "pause":
+                    element.pause();
+                    break;
+
+                  case "stop":
+                    element.pause();
+
+                    try {
+                      element.currentTime = 0;
+                    } catch (_) {}
+                    break;
+
+                  case "seekto":
+                    if (Number.isFinite(Number(value))) {
+                      try {
+                        element.currentTime =
+                          Number(value);
+                      } catch (_) {}
+                    }
+                    break;
+
+                  case "seekforward":
+                    try {
+                      element.currentTime = Math.min(
+                        Number.isFinite(element.duration)
+                          ? element.duration
+                          : element.currentTime + 10,
+                        element.currentTime +
+                          (Number(value) || 10)
+                      );
+                    } catch (_) {}
+                    break;
+
+                  case "seekbackward":
+                    try {
+                      element.currentTime = Math.max(
+                        0,
+                        element.currentTime -
+                          (Number(value) || 10)
+                      );
+                    } catch (_) {}
+                    break;
+                }
+              }
+
+              window.__wtaMediaCommand =
+                async function(action, value) {
+                  const handled =
+                    await callHandler(action, value);
+
+                  if (!handled) {
+                    await fallbackCommand(
+                      action,
+                      value
+                    );
+                  }
+
+                  setTimeout(synchronize, 50);
+                };
+
+              if (
+                mediaSession &&
+                typeof mediaSession.setActionHandler ===
+                  "function"
+              ) {
+                const originalSetActionHandler =
+                  mediaSession.setActionHandler.bind(
+                    mediaSession
+                  );
+
+                mediaSession.setActionHandler =
+                  function(action, handler) {
+                    registeredHandlers[action] =
+                      typeof handler === "function"
+                        ? handler
+                        : null;
+
+                    nativeBridge.setActionSupported(
+                      action,
+                      typeof handler === "function"
+                    );
+
+                    return originalSetActionHandler(
+                      action,
+                      handler
+                    );
+                  };
+              }
+
+              if (
+                mediaSession &&
+                typeof mediaSession.setPositionState ===
+                  "function"
+              ) {
+                const originalSetPositionState =
+                  mediaSession.setPositionState.bind(
+                    mediaSession
+                  );
+
+                mediaSession.setPositionState =
+                  function(state) {
+                    if (state) {
+                      nativeBridge.updatePosition(
+                        Number(state.duration) || 0,
+                        Number(state.position) || 0,
+                        Number(state.playbackRate) || 1
+                      );
+                    }
+
+                    return originalSetPositionState(
+                      state
+                    );
+                  };
+              }
+
+              const observer = new MutationObserver(() => {
+                getMediaElements().forEach(bindElement);
+              });
+
+              observer.observe(
+                document.documentElement || document,
+                {
+                  childList: true,
+                  subtree: true
+                }
+              );
+
+              getMediaElements().forEach(bindElement);
+
+              /*
+               * A one-second heartbeat keeps lock-screen progress accurate and
+               * detects metadata changes made by the website.
+               */
+              window.__wtaMediaHeartbeat =
+                window.setInterval(
+                  synchronize,
+                  1000
+                );
+
+              window.addEventListener(
+                "pagehide",
+                event => {
+                  if (!event.persisted) {
+                    nativeBridge.updatePlaybackState(
+                      "none"
+                    );
+                  }
+                }
+              );
+
+              synchronize();
+            })();
+        """.trimIndent()
+    }
 }

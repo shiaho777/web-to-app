@@ -516,21 +516,19 @@ class ShellActivity : AppCompatActivity() {
 
                             if (config.webViewConfig.enableMediaSession) {
                                 val mediaBridge = com.webtoapp.core.webview.MediaSessionBridge(
-                                    context = this@ShellActivity,
-                                    scope = lifecycleScope,
-                                    webViewProvider = { wv }
+                                    this@ShellActivity,
+                                    wv
                                 )
-                                wv.addJavascriptInterface(mediaBridge, com.webtoapp.core.webview.MediaSessionBridge.JS_INTERFACE_NAME)
                                 try {
                                     androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
                                         wv,
-                                        com.webtoapp.core.webview.MediaSessionBridge.getInjectionScript(),
+                                        com.webtoapp.core.webview.MediaSessionBridge.INJECTION_SCRIPT,
                                         setOf("*")
                                     )
                                     com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "[MediaSession] Installed at document start")
                                 } catch (e: Exception) {
-                                    wv.evaluateJavascript(com.webtoapp.core.webview.MediaSessionBridge.getInjectionScript(), null)
-                                    com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "[MediaSession] Used evaluateJavascript fallback", e)
+                                    mediaBridge.injectNow()
+                                    com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "[MediaSession] Document-start unsupported, used injectNow fallback", e)
                                 }
                                 mediaSessionBridge = mediaBridge
                             }
