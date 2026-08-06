@@ -289,4 +289,85 @@ class ApkBuildCacheTest {
         )
         assertThat(nullPlan.identityFingerprint).isNotEqualTo(withLibsPlan.identityFingerprint)
     }
+
+    @Test
+    fun `host versionCode change forces full rebuild instead of reuse`() {
+        val context = RuntimeEnvironment.getApplication()
+        val cache = ApkBuildCache(context)
+        cache.clearAll()
+
+        val webApp = com.webtoapp.data.model.WebApp(
+            id = 21,
+            name = "HostVcApp",
+            url = "https://example.com"
+        )
+        val template = File(context.cacheDir, "shell_hostvc.apk").apply {
+            writeBytes(ByteArray(16) { 9 })
+        }
+        val config = ApkConfig(
+            meta = MetaBlock(
+                appName = "HostVcApp",
+                packageName = "com.demo.hostvc",
+                targetUrl = "https://example.com",
+                versionCode = 1,
+                versionName = "1.0",
+                appType = "WEB"
+            )
+        )
+
+        // Build #1 with host versionCode 50 → cache miss → FULL; cache the unsigned APK.
+        val plan1 = cache.plan(
+            webApp = webApp,
+            packageName = "com.demo.hostvc",
+            config = config,
+            templateApk = template,
+            encryptionEnabled = false,
+            abiFilters = emptyList(),
+            projectDirs = emptyList(),
+            mediaContentPath = null,
+            splashMediaPath = null,
+            bgmPlaylistPaths = emptyList(),
+            htmlFiles = emptyList(),
+            galleryItems = emptyList(),
+            errorPageMediaPath = null,
+            hostVersionCode = 50,
+            forceFullRebuild = false
+        )
+        assertThat(plan1.mode).isEqualTo(IncrementalBuildMode.FULL)
+
+        val unsigned = File(context.cacheDir, "hostvc_unsigned.apk").apply {
+            writeBytes(ByteArray(64) { 1 })
+        }
+        cache.saveUnsigned(
+            webApp = webApp,
+            packageName = "com.demo.hostvc",
+            unsignedApk = unsigned,
+            identityFingerprint = plan1.identityFingerprint,
+            contentFingerprint = plan1.contentFingerprint,
+            shellTemplateId = plan1.shellTemplateId
+        )
+
+        // Same app + config + template, but the host just upgraded (versionCode 50 -> 51).
+        // The cache MUST NOT reuse the stale unsigned APK — a FULL rebuild is required so the
+        // latest export/packaging/alignment logic is re-applied.
+        val plan2 = cache.plan(
+            webApp = webApp,
+            packageName = "com.demo.hostvc",
+            config = config,
+            templateApk = template,
+            encryptionEnabled = false,
+            abiFilters = emptyList(),
+            projectDirs = emptyList(),
+            mediaContentPath = null,
+            splashMediaPath = null,
+            bgmPlaylistPaths = emptyList(),
+            htmlFiles = emptyList(),
+            galleryItems = emptyList(),
+            errorPageMediaPath = null,
+            hostVersionCode = 51,
+            forceFullRebuild = false
+        )
+        assertThat(plan2.mode).isEqualTo(IncrementalBuildMode.FULL)
+        assertThat(plan2.identityFingerprint).isNotEqualTo(plan1.identityFingerprint)
+    }
 }

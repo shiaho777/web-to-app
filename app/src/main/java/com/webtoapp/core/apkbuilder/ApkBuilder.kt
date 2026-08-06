@@ -600,6 +600,7 @@ class ApkBuilder(private val context: Context) {
                 ?.let { File(context.filesDir, "html_projects/$it") }
 
             logger.section("Incremental Build Plan")
+            val hostVersionCode = rememberHostVersionCode()
             val incrementalPlan = buildCache.plan(
                 webApp = webApp,
                 packageName = packageName,
@@ -629,6 +630,7 @@ class ApkBuilder(private val context: Context) {
                 } else {
                     null
                 },
+                hostVersionCode = hostVersionCode,
                 forceFullRebuild = forceFullRebuild
             )
             logger.logKeyValue("incrementalMode", incrementalPlan.mode.name)
@@ -1987,6 +1989,33 @@ class ApkBuilder(private val context: Context) {
      * Returns null for non-Node.js apps (no native lib injection), which is treated as
      * "not applicable" by the cache and does not affect other app types' cache keys.
      */
+
+    @Volatile
+    private var cachedHostVersionCode: Int? = null
+
+    /**
+     * The host app's own versionCode, cached after first lookup. Fed into the incremental
+     * build cache's identity fingerprint so a host upgrade invalidates every cached unsigned
+     * APK (forcing FULL rebuild + re-alignment), even when the source libs and app config are
+     * unchanged.
+     */
+    private fun rememberHostVersionCode(): Int {
+        cachedHostVersionCode?.let { return it }
+        val code = try {
+            val info = context.packageManager.getPackageInfo(context.packageName, 0)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                info.longVersionCode.toInt()
+            } else {
+                @Suppress("DEPRECATION")
+                info.versionCode
+            }
+        } catch (_: Exception) {
+            0
+        }
+        cachedHostVersionCode = code
+        return code
+    }
+
     private fun nativeLibsFingerprint(): String? {
         val nativeDir = File(context.applicationInfo.nativeLibraryDir)
         val bridge = File(nativeDir, "libnode_bridge.so")

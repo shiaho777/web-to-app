@@ -108,6 +108,7 @@ class ApkBuildCache(private val context: Context) {
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
         errorPageMediaPath: String?,
         nativeLibsFingerprint: String? = null,
+        hostVersionCode: Int = 0,
         forceFullRebuild: Boolean
     ): IncrementalPlan {
         val shellId = shellTemplateId(templateApk)
@@ -117,7 +118,8 @@ class ApkBuildCache(private val context: Context) {
             encryptionEnabled = encryptionEnabled,
             abiFilters = abiFilters,
             iconPath = webApp.iconPath,
-            nativeLibsFingerprint = nativeLibsFingerprint
+            nativeLibsFingerprint = nativeLibsFingerprint,
+            hostVersionCode = hostVersionCode
         )
         val content = contentFingerprint(
             config = config,
@@ -333,13 +335,21 @@ class ApkBuildCache(private val context: Context) {
         encryptionEnabled: Boolean,
         abiFilters: List<String>,
         iconPath: String?,
-        nativeLibsFingerprint: String? = null
+        nativeLibsFingerprint: String? = null,
+        hostVersionCode: Int = 0
     ): String {
         val parts = mutableListOf<String>()
         parts += "shell=$shellTemplateId"
         parts += "pkg=${config.packageName}"
         parts += "vc=${config.versionCode}"
         parts += "vn=${config.versionName}"
+        // Host app versionCode participates so a host upgrade (which may ship improved
+        // packaging/alignment/export logic) invalidates every cached unsigned APK, forcing a
+        // FULL rebuild that re-applies the latest logic. Without this, a user who built a
+        // NODEJS_APP on an older host and upgrades without re-downloading libnode.so would
+        // keep hitting REUSE_UNSIGNED and serving a stale APK (e.g. one with an unaligned
+        // libnode.so that dlopen rejects on Android 15+/16KB-page devices).
+        parts += "hostVc=$hostVersionCode"
         parts += "name=${config.appName}"
         parts += "type=${config.appType}"
         parts += "engine=${config.engineType}"
