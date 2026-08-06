@@ -673,6 +673,14 @@ object Strings {
     val updateCurrentVersionLabel: String get() = StringsA.updateCurrentVersionLabel
     val updateDownloadButton: String get() = StringsA.updateDownloadButton
     val updateDownloadStarted: String get() = StringsA.updateDownloadStarted
+    val updateInstallReady: String get() = StringsA.updateInstallReady
+    val updateDownloading: String get() = StringsA.updateDownloading
+    val updateVerifying: String get() = StringsA.updateVerifying
+    val updateCancelDownload: String get() = StringsA.updateCancelDownload
+    val updateRetry: String get() = StringsA.updateRetry
+    val updateDownloadFailed: String get() = StringsA.updateDownloadFailed
+    val updateReadyHint: String get() = StringsA.updateReadyHint
+    val updatePerSec: String get() = StringsA.updatePerSec
     val updateReleaseNotesLabel: String get() = StringsA.updateReleaseNotesLabel
     val updateSizeLabel: String get() = StringsA.updateSizeLabel
     val updateVerificationFailed: String get() = StringsA.updateVerificationFailed
@@ -4645,6 +4653,7 @@ object Strings {
     val fileManagerSectionApk: String get() = StringsE.fileManagerSectionApk
     val fileManagerSectionAab: String get() = StringsE.fileManagerSectionAab
     val fileManagerSectionCloned: String get() = StringsE.fileManagerSectionCloned
+    val fileManagerSectionUpdateApks: String get() = StringsE.fileManagerSectionUpdateApks
     val fileManagerSectionLogs: String get() = StringsE.fileManagerSectionLogs
     val fileManagerSectionUserFiles: String get() = StringsE.fileManagerSectionUserFiles
     val fileManagerOpen: String get() = StringsE.fileManagerOpen
@@ -13334,16 +13343,16 @@ object StringsA {
         AppLanguage.KOREAN -> "현재 버전"
     }
     val updateDownloadButton: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "下载并安装"
-        AppLanguage.ENGLISH -> "Download & install"
-        AppLanguage.ARABIC -> "تنزيل وتثبيت"
-        AppLanguage.PORTUGUESE -> "Baixar e instalar"
-        AppLanguage.SPANISH -> "Descargar e instalar"
-        AppLanguage.FRENCH -> "Télécharger et installer"
-        AppLanguage.GERMAN -> "Herunterladen & installieren"
-        AppLanguage.RUSSIAN -> "Скачать и установить"
-        AppLanguage.JAPANESE -> "ダウンロードしてインストール"
-        AppLanguage.KOREAN -> "다운로드 및 설치"
+        AppLanguage.CHINESE -> "下载"
+        AppLanguage.ENGLISH -> "Download"
+        AppLanguage.ARABIC -> "تنزيل"
+        AppLanguage.PORTUGUESE -> "Baixar"
+        AppLanguage.SPANISH -> "Descargar"
+        AppLanguage.FRENCH -> "Télécharger"
+        AppLanguage.GERMAN -> "Herunterladen"
+        AppLanguage.RUSSIAN -> "Скачать"
+        AppLanguage.JAPANESE -> "ダウンロード"
+        AppLanguage.KOREAN -> "다운로드"
     }
     val updateDownloadStarted: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "已开始下载，完成后将提示安装"
@@ -13356,6 +13365,102 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Загрузка начата; по завершении вам будет предложено установить"
         AppLanguage.JAPANESE -> "ダウンロードを開始しました。完了時にインストールを促されます"
         AppLanguage.KOREAN -> "다운로드가 시작되었습니다. 완료되면 설치하라는 메시지가 표시됩니다"
+    }
+    val updateInstallReady: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装包已就绪"
+        AppLanguage.ENGLISH -> "Update package ready"
+        AppLanguage.ARABIC -> "حزمة التحديث جاهزة"
+        AppLanguage.PORTUGUESE -> "Pacote de atualização pronto"
+        AppLanguage.SPANISH -> "Paquete de actualización listo"
+        AppLanguage.FRENCH -> "Mise à jour prête"
+        AppLanguage.GERMAN -> "Update-Paket bereit"
+        AppLanguage.RUSSIAN -> "Пакет обновления готов"
+        AppLanguage.JAPANESE -> "更新パッケージの準備ができました"
+        AppLanguage.KOREAN -> "업데이트 패키지 준비됨"
+    }
+    val updateDownloading: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在下载…"
+        AppLanguage.ENGLISH -> "Downloading…"
+        AppLanguage.ARABIC -> "جاري التنزيل…"
+        AppLanguage.PORTUGUESE -> "Baixando…"
+        AppLanguage.SPANISH -> "Descargando…"
+        AppLanguage.FRENCH -> "Téléchargement…"
+        AppLanguage.GERMAN -> "Wird heruntergeladen…"
+        AppLanguage.RUSSIAN -> "Загрузка…"
+        AppLanguage.JAPANESE -> "ダウンロード中…"
+        AppLanguage.KOREAN -> "다운로드 중…"
+    }
+    val updateVerifying: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在校验…"
+        AppLanguage.ENGLISH -> "Verifying…"
+        AppLanguage.ARABIC -> "جاري التحقق…"
+        AppLanguage.PORTUGUESE -> "Verificando…"
+        AppLanguage.SPANISH -> "Verificando…"
+        AppLanguage.FRENCH -> "Vérification…"
+        AppLanguage.GERMAN -> "Wird verifiziert…"
+        AppLanguage.RUSSIAN -> "Проверка…"
+        AppLanguage.JAPANESE -> "検証中…"
+        AppLanguage.KOREAN -> "검증 중…"
+    }
+    val updateCancelDownload: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "取消下载"
+        AppLanguage.ENGLISH -> "Cancel download"
+        AppLanguage.ARABIC -> "إلغاء التنزيل"
+        AppLanguage.PORTUGUESE -> "Cancelar download"
+        AppLanguage.SPANISH -> "Cancelar descarga"
+        AppLanguage.FRENCH -> "Annuler le téléchargement"
+        AppLanguage.GERMAN -> "Download abbrechen"
+        AppLanguage.RUSSIAN -> "Отменить загрузку"
+        AppLanguage.JAPANESE -> "ダウンロードをキャンセル"
+        AppLanguage.KOREAN -> "다운로드 취소"
+    }
+    val updateRetry: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重试"
+        AppLanguage.ENGLISH -> "Retry"
+        AppLanguage.ARABIC -> "إعادة المحاولة"
+        AppLanguage.PORTUGUESE -> "Tentar novamente"
+        AppLanguage.SPANISH -> "Reintentar"
+        AppLanguage.FRENCH -> "Réessayer"
+        AppLanguage.GERMAN -> "Erneut versuchen"
+        AppLanguage.RUSSIAN -> "Повторить"
+        AppLanguage.JAPANESE -> "再試行"
+        AppLanguage.KOREAN -> "재시도"
+    }
+    val updateDownloadFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下载失败"
+        AppLanguage.ENGLISH -> "Download failed"
+        AppLanguage.ARABIC -> "فشل التنزيل"
+        AppLanguage.PORTUGUESE -> "Falha no download"
+        AppLanguage.SPANISH -> "Error en la descarga"
+        AppLanguage.FRENCH -> "Échec du téléchargement"
+        AppLanguage.GERMAN -> "Download fehlgeschlagen"
+        AppLanguage.RUSSIAN -> "Ошибка загрузки"
+        AppLanguage.JAPANESE -> "ダウンロードに失敗しました"
+        AppLanguage.KOREAN -> "다운로드 실패"
+    }
+    val updateReadyHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下载完成，点击安装"
+        AppLanguage.ENGLISH -> "Downloaded. Tap install to continue."
+        AppLanguage.ARABIC -> "تم التنزيل. اضغط تثبيت للمتابعة."
+        AppLanguage.PORTUGUESE -> "Baixado. Toque em instalar para continuar."
+        AppLanguage.SPANISH -> "Descargado. Toca instalar para continuar."
+        AppLanguage.FRENCH -> "Téléchargé. Appuyez sur installer pour continuer."
+        AppLanguage.GERMAN -> "Heruntergeladen. Zum Fortfahren auf Installieren tippen."
+        AppLanguage.RUSSIAN -> "Загружено. Нажмите «Установить», чтобы продолжить."
+        AppLanguage.JAPANESE -> "ダウンロード完了。インストールをタップして続行してください。"
+        AppLanguage.KOREAN -> "다운로드 완료. 계속하려면 설치를 탭하세요."
+    }
+    val updatePerSec: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "/秒"
+        AppLanguage.ENGLISH -> "/s"
+        AppLanguage.ARABIC -> "/ث"
+        AppLanguage.PORTUGUESE -> "/s"
+        AppLanguage.SPANISH -> "/s"
+        AppLanguage.FRENCH -> "/s"
+        AppLanguage.GERMAN -> "/s"
+        AppLanguage.RUSSIAN -> "/с"
+        AppLanguage.JAPANESE -> "/秒"
+        AppLanguage.KOREAN -> "/초"
     }
     val updateReleaseNotesLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "更新说明"
@@ -61754,6 +61859,18 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Клоны приложений"
         AppLanguage.JAPANESE -> "アプリクローン"
         AppLanguage.KOREAN -> "앱 복제"
+    }
+    val fileManagerSectionUpdateApks: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "更新安装包"
+        AppLanguage.ENGLISH -> "Update Packages"
+        AppLanguage.ARABIC -> "حزم التحديث"
+        AppLanguage.PORTUGUESE -> "Pacotes de Atualização"
+        AppLanguage.SPANISH -> "Paquetes de Actualización"
+        AppLanguage.FRENCH -> "Mises à jour"
+        AppLanguage.GERMAN -> "Update-Pakete"
+        AppLanguage.RUSSIAN -> "Пакеты обновлений"
+        AppLanguage.JAPANESE -> "更新パッケージ"
+        AppLanguage.KOREAN -> "업데이트 패키지"
     }
     val fileManagerSectionLogs: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "构建日志"

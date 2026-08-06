@@ -132,26 +132,43 @@ private fun AuthorHeroCard(
     }
     var isCheckingUpdate by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
     var showUpdateDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var downloadState by androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf<com.webtoapp.core.update.UpdateDownloadState>(
+            com.webtoapp.core.update.UpdateDownloadState.Idle
+        )
+    }
+    val apkBuilder = remember(context) { com.webtoapp.core.apkbuilder.ApkBuilder(context.applicationContext) }
 
     if (showUpdateDialog) {
         UpdateCheckDialog(
             isChecking = isCheckingUpdate,
             result = updateResult,
             currentVersionName = versionName,
+            downloadState = downloadState,
             onDownload = { info ->
                 com.webtoapp.core.update.ApkUpdateInstaller.download(
                     context = context,
                     url = info.downloadUrl,
                     version = info.version,
                     expectedSha256 = info.sha256,
-                    onVerificationFailed = {
-                        Toast.makeText(context, Strings.updateVerificationFailed, Toast.LENGTH_LONG).show()
-                    }
+                    onState = { state -> downloadState = state }
                 )
-                Toast.makeText(context, Strings.updateDownloadStarted, Toast.LENGTH_LONG).show()
-                showUpdateDialog = false
             },
-            onDismiss = { showUpdateDialog = false }
+            onCancelDownload = {
+                com.webtoapp.core.update.ApkUpdateInstaller.cancel()
+                downloadState = com.webtoapp.core.update.UpdateDownloadState.Idle
+            },
+            onInstall = { file ->
+                val started = apkBuilder.installApk(file)
+                if (!started) {
+                    Toast.makeText(context, Strings.fileManagerInstallFailed, Toast.LENGTH_SHORT).show()
+                }
+            },
+            onDismiss = {
+                com.webtoapp.core.update.ApkUpdateInstaller.cancel()
+                showUpdateDialog = false
+                downloadState = com.webtoapp.core.update.UpdateDownloadState.Idle
+            }
         )
     }
 
@@ -527,11 +544,21 @@ private fun UpdateCheckDialog(
     isChecking: Boolean,
     result: com.webtoapp.core.update.UpdateChecker.Result?,
     currentVersionName: String,
+    downloadState: com.webtoapp.core.update.UpdateDownloadState,
     onDownload: (com.webtoapp.core.update.UpdateChecker.ReleaseInfo) -> Unit,
+    onCancelDownload: () -> Unit,
+    onInstall: (java.io.File) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val available = result as? com.webtoapp.core.update.UpdateChecker.Result.UpdateAvailable
+    val downloading = downloadState is com.webtoapp.core.update.UpdateDownloadState.Downloading ||
+        downloadState is com.webtoapp.core.update.UpdateDownloadState.Verifying
+
     androidx.compose.material3.AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            // Block dismiss via outside touch while a download is in flight.
+            if (!downloading) onDismiss()
+        },
         icon = {
             Icon(Icons.Outlined.Sync, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         },
@@ -549,44 +576,12 @@ private fun UpdateCheckDialog(
                             Text(Strings.updateChecking, style = MaterialTheme.typography.bodyMedium)
                         }
                     }
-                    result is com.webtoapp.core.update.UpdateChecker.Result.UpdateAvailable -> {
-                        val info = result.info
-                        Text(
-                            Strings.updateAvailableTitle,
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.primary
+                    available != null -> {
+                        UpdateAvailableContent(
+                            info = available.info,
+                            currentVersion = available.currentVersion,
+                            downloadState = downloadState
                         )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "${Strings.updateNewVersionLabel}: v${info.version}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            "${Strings.updateCurrentVersionLabel}: v${result.currentVersion}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        if (info.sizeBytes > 0) {
-                            Text(
-                                "${Strings.updateSizeLabel}: ${formatBytes(info.sizeBytes)}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        if (info.releaseNotes.isNotBlank()) {
-                            Spacer(Modifier.height(12.dp))
-                            Text(
-                                Strings.updateReleaseNotesLabel,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                info.releaseNotes,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
                     }
                     result is com.webtoapp.core.update.UpdateChecker.Result.UpToDate -> {
                         Text(Strings.updateUpToDate, style = MaterialTheme.typography.bodyMedium)
@@ -612,27 +607,169 @@ private fun UpdateCheckDialog(
             }
         },
         confirmButton = {
-            val available = result as? com.webtoapp.core.update.UpdateChecker.Result.UpdateAvailable
-            if (available != null) {
-                androidx.compose.material3.TextButton(
-                    onClick = { onDownload(available.info) }
-                ) {
-                    Text(Strings.updateDownloadButton)
+            when {
+                // Download finished: show Install.
+                downloadState is com.webtoapp.core.update.UpdateDownloadState.Done -> {
+                    androidx.compose.material3.TextButton(onClick = {
+                        onInstall(downloadState.file)
+                    }) {
+                        Text(Strings.install)
+                    }
                 }
-            } else {
-                androidx.compose.material3.TextButton(onClick = onDismiss) {
-                    Text(Strings.close)
+                // Download failed: Retry.
+                downloadState is com.webtoapp.core.update.UpdateDownloadState.Failed && available != null -> {
+                    androidx.compose.material3.TextButton(onClick = { onDownload(available.info) }) {
+                        Text(Strings.updateRetry)
+                    }
+                }
+                // Downloading / verifying: Cancel.
+                downloading -> {
+                    androidx.compose.material3.TextButton(onClick = onCancelDownload) {
+                        Text(Strings.updateCancelDownload)
+                    }
+                }
+                // Update available, idle: Download.
+                available != null -> {
+                    androidx.compose.material3.TextButton(onClick = { onDownload(available.info) }) {
+                        Text(Strings.updateDownloadButton)
+                    }
+                }
+                else -> {
+                    androidx.compose.material3.TextButton(onClick = onDismiss) {
+                        Text(Strings.close)
+                    }
                 }
             }
         },
         dismissButton = {
-            val available = result as? com.webtoapp.core.update.UpdateChecker.Result.UpdateAvailable
-            if (available != null) {
-                androidx.compose.material3.TextButton(onClick = onDismiss) {
-                    Text(Strings.close)
-                }
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                Text(Strings.close)
             }
         }
+    )
+}
+
+@Composable
+private fun UpdateAvailableContent(
+    info: com.webtoapp.core.update.UpdateChecker.ReleaseInfo,
+    currentVersion: String,
+    downloadState: com.webtoapp.core.update.UpdateDownloadState
+) {
+    Text(
+        Strings.updateAvailableTitle,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary
+    )
+    Spacer(Modifier.height(8.dp))
+    Text(
+        "${Strings.updateNewVersionLabel}: v${info.version}",
+        style = MaterialTheme.typography.bodyMedium
+    )
+    Text(
+        "${Strings.updateCurrentVersionLabel}: v$currentVersion",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    if (info.sizeBytes > 0) {
+        Text(
+            "${Strings.updateSizeLabel}: ${formatBytes(info.sizeBytes)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+    Spacer(Modifier.height(12.dp))
+
+    when (downloadState) {
+        is com.webtoapp.core.update.UpdateDownloadState.Downloading -> {
+            DownloadProgressRow(
+                downloaded = downloadState.downloadedBytes,
+                total = downloadState.totalBytes,
+                speed = downloadState.speedBytesPerSec
+            )
+        }
+        com.webtoapp.core.update.UpdateDownloadState.Verifying -> {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp
+                )
+                Spacer(Modifier.width(10.dp))
+                Text(Strings.updateVerifying, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        is com.webtoapp.core.update.UpdateDownloadState.Done -> {
+            Text(
+                Strings.updateInstallReady,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                Strings.updateReadyHint,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        is com.webtoapp.core.update.UpdateDownloadState.Failed -> {
+            Text(
+                Strings.updateDownloadFailed,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.error
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                downloadState.message,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        com.webtoapp.core.update.UpdateDownloadState.Idle -> {
+            if (info.releaseNotes.isNotBlank()) {
+                Text(
+                    Strings.updateReleaseNotesLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    info.releaseNotes,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DownloadProgressRow(downloaded: Long, total: Long, speed: Long) {
+    val percent = if (total > 0) {
+        (downloaded.toFloat() / total.toFloat()).coerceIn(0f, 1f)
+    } else {
+        // indeterminate when Content-Length unknown
+        -1f
+    }
+    Text(Strings.updateDownloading, style = MaterialTheme.typography.labelMedium)
+    Spacer(Modifier.height(6.dp))
+    if (percent >= 0f) {
+        androidx.compose.material3.LinearProgressIndicator(
+            progress = { percent },
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    } else {
+        androidx.compose.material3.LinearProgressIndicator(
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+    Spacer(Modifier.height(6.dp))
+    val percentText = if (percent >= 0f) "${(percent * 100).toInt()}% · " else ""
+    val totalText = if (total > 0) "${formatBytes(downloaded)} / ${formatBytes(total)}" else formatBytes(downloaded)
+    Text(
+        "$percentText$totalText · ${formatBytes(speed)}${Strings.updatePerSec}",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 

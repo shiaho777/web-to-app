@@ -1,108 +1,165 @@
 package com.webtoapp.core.update
 
-import android.app.DownloadManager
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.database.Cursor
-import android.net.Uri
-import android.os.Environment
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.core.network.NetworkModule
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import okhttp3.Request
 import java.io.File
 import java.security.MessageDigest
+
+/**
+ * States emitted by [download]. The UI renders a deterministic view per state.
+ *
+ * [DownloadProgress.totalBytes] is -1 when the server does not advertise Content-Length.
+ */
+sealed interface UpdateDownloadState {
+    data object Idle : UpdateDownloadState
+    data class Downloading(
+        val downloadedBytes: Long,
+        val totalBytes: Long,
+        val speedBytesPerSec: Long
+    ) : UpdateDownloadState
+    data object Verifying : UpdateDownloadState
+    data class Done(val file: File) : UpdateDownloadState
+    data class Failed(val message: String) : UpdateDownloadState
+}
 
 object ApkUpdateInstaller {
 
     private const val TAG = "ApkUpdateInstaller"
 
+    /** Directory under app-private external storage that the file manager scans. */
+    const val UPDATE_APK_DIR = "update_apks"
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** Last started download so a second "download" tap cancels / no-ops the previous. */
+    @Volatile
+    private var activeJob: Job? = null
+
+    /** Resolved on first use; reused across calls. */
+    private fun targetDir(context: android.content.Context): File {
+        val base = context.getExternalFilesDir(null)
+            ?: File(context.filesDir, "external").apply { mkdirs() }
+        return File(base, UPDATE_APK_DIR).apply { mkdirs() }
+    }
+
+    /**
+     * Streams [url] into `update_apks/web-to-app-<version>.apk` via OkHttp, emitting progress
+     * roughly once per second. On completion the file is SHA-256 verified against [expectedSha256]
+     * (if provided); on mismatch the file is deleted and [UpdateDownloadState.Failed] is emitted.
+     *
+     * The APK is **not** auto-installed; the caller decides when to launch the system installer
+     * (see `ApkBuilder.installApk`). This keeps the user in control and matches Android's rule
+     * that apps cannot silently install packages.
+     *
+     * @return the [Job] backing the download; cancel it to abort.
+     */
     fun download(
-        context: Context,
+        context: android.content.Context,
         url: String,
         version: String,
         expectedSha256: String? = null,
-        onStarted: (() -> Unit)? = null,
-        onVerificationFailed: (() -> Unit)? = null
-    ) {
-        try {
-            val appContext = context.applicationContext
-            val fileName = "web-to-app-$version.apk"
-
-            val targetDir = appContext.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
-            File(targetDir, fileName).takeIf { it.exists() }?.delete()
-
-            val request = DownloadManager.Request(Uri.parse(url)).apply {
-                setTitle("WebToApp $version")
-                setMimeType("application/vnd.android.package-archive")
-                setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                setDestinationInExternalFilesDir(appContext, Environment.DIRECTORY_DOWNLOADS, fileName)
-                setAllowedNetworkTypes(
-                    DownloadManager.Request.NETWORK_WIFI or DownloadManager.Request.NETWORK_MOBILE
-                )
-            }
-
-            val dm = appContext.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            val downloadId = dm.enqueue(request)
-            registerCompletionReceiver(appContext, dm, downloadId, expectedSha256, onVerificationFailed)
-            onStarted?.invoke()
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to enqueue update download", e)
-        }
-    }
-
-    private fun registerCompletionReceiver(
-        context: Context,
-        dm: DownloadManager,
-        downloadId: Long,
-        expectedSha256: String?,
-        onVerificationFailed: (() -> Unit)?
-    ) {
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(ctx: Context?, intent: Intent?) {
-                val id = intent?.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1L) ?: -1L
-                if (id != downloadId) return
-                try {
-                    context.unregisterReceiver(this)
-                } catch (_: Exception) {
-                }
-                val localUri = resolveLocalUri(dm, downloadId) ?: return
-                val file = localUri.path?.let { File(it) }
-                if (expectedSha256 != null && file != null && file.exists()) {
+        onState: (UpdateDownloadState) -> Unit
+    ): Job {
+        activeJob?.cancel()
+        val appContext = context.applicationContext
+        val job = scope.launch {
+            try {
+                onState(UpdateDownloadState.Downloading(0L, -1L, 0L))
+                val file = streamToFile(appContext, url, version, onState)
+                if (expectedSha256 != null) {
+                    onState(UpdateDownloadState.Verifying)
                     val actual = sha256Of(file)
-                    if (actual != null && !actual.equals(expectedSha256, ignoreCase = true)) {
-                        AppLogger.e(TAG, "APK integrity check failed: expected=$expectedSha256 actual=$actual")
+                    if (actual == null || !actual.equals(expectedSha256, ignoreCase = true)) {
+                        AppLogger.e(
+                            TAG,
+                            "APK integrity check failed: expected=$expectedSha256 actual=$actual"
+                        )
                         file.delete()
-                        onVerificationFailed?.invoke()
-                        return
+                        onState(UpdateDownloadState.Failed("sha256-mismatch"))
+                        return@launch
                     }
                     AppLogger.i(TAG, "APK integrity verified (sha256 match)")
                 }
-                installApk(context, localUri)
+                onState(UpdateDownloadState.Done(file))
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Update download failed", e)
+                onState(UpdateDownloadState.Failed(e.message ?: e.javaClass.simpleName))
             }
         }
-        ContextCompat.registerReceiver(
-            context,
-            receiver,
-            IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE),
-            ContextCompat.RECEIVER_EXPORTED
-        )
+        activeJob = job
+        return job
     }
 
-    private fun resolveLocalUri(dm: DownloadManager, downloadId: Long): Uri? {
-        val query = DownloadManager.Query().setFilterById(downloadId)
-        val cursor: Cursor? = dm.query(query)
-        cursor?.use {
-            if (it.moveToFirst()) {
-                val statusIndex = it.getColumnIndex(DownloadManager.COLUMN_STATUS)
-                val uriIndex = it.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI)
-                if (statusIndex >= 0 && it.getInt(statusIndex) == DownloadManager.STATUS_SUCCESSFUL && uriIndex >= 0) {
-                    return it.getString(uriIndex)?.let { s -> Uri.parse(s) }
+    fun cancel() {
+        activeJob?.cancel()
+        activeJob = null
+    }
+
+    private suspend fun streamToFile(
+        context: android.content.Context,
+        url: String,
+        version: String,
+        onState: (UpdateDownloadState) -> Unit
+    ): File {
+        val dir = targetDir(context)
+        val fileName = "web-to-app-$version.apk"
+        // Wipe stale copies of the same name so a partial previous download never resumes silently.
+        File(dir, fileName).takeIf { it.exists() }?.delete()
+        val target = File(dir, fileName)
+
+        val response = NetworkModule.downloadClient.newCall(Request.Builder().url(url).build()).execute()
+        if (!response.isSuccessful) {
+            response.close()
+            throw IllegalStateException("HTTP ${response.code}")
+        }
+        val body = response.body ?: throw IllegalStateException("empty response body")
+        val total = body.contentLength()
+
+        body.byteStream().use { input ->
+            target.outputStream().buffered().use { output ->
+                val buffer = ByteArray(64 * 1024)
+                var downloaded = 0L
+                var windowStartBytes = 0L
+                var windowStartTime = System.currentTimeMillis()
+                var lastEmit = 0L
+                while (true) {
+                    // ensureActive so cancel() propagates promptly.
+                    kotlinx.coroutines.coroutineScope { ensureActive() }
+                    val read = input.read(buffer)
+                    if (read == -1) break
+                    output.write(buffer, 0, read)
+                    downloaded += read
+
+                    val now = System.currentTimeMillis()
+                    val elapsed = now - windowStartTime
+                    if (now - lastEmit >= 1000L || (total > 0 && downloaded == total)) {
+                        val speed = if (elapsed > 0) {
+                            (downloaded - windowStartBytes) * 1000L / elapsed
+                        } else 0L
+                        onState(UpdateDownloadState.Downloading(downloaded, total, speed))
+                        lastEmit = now
+                        // reset sampling window so speed reflects the recent second, not whole run.
+                        windowStartBytes = downloaded
+                        windowStartTime = now
+                    }
                 }
+                output.flush()
+                // final emit so the bar reaches 100% with exact totals.
+                onState(UpdateDownloadState.Downloading(downloaded, total.coerceAtLeast(downloaded), 0L))
             }
         }
-        return null
+        return target
     }
 
     private fun sha256Of(file: File): String? {
@@ -119,25 +176,6 @@ object ApkUpdateInstaller {
         } catch (e: Exception) {
             AppLogger.w(TAG, "Failed to compute sha256: ${e.message}")
             null
-        }
-    }
-
-    private fun installApk(context: Context, localUri: Uri) {
-        try {
-            val installUri = if (localUri.scheme == "file") {
-                val file = File(localUri.path ?: return)
-                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            } else {
-                localUri
-            }
-            val intent = Intent(Intent.ACTION_VIEW).apply {
-                setDataAndType(installUri, "application/vnd.android.package-archive")
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(intent)
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to launch APK installer", e)
         }
     }
 }
