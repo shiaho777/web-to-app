@@ -61,6 +61,7 @@ class PythonRuntime(private val context: Context) {
         entryFile: String = "app.py",
         framework: String = "raw",
         port: Int = 0,
+        portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL,
         envVars: Map<String, String> = emptyMap(),
         installDeps: Boolean = true,
         customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> = emptyList()
@@ -141,7 +142,12 @@ class PythonRuntime(private val context: Context) {
             }
 
             val projectId = projDir.name
-            val serverPort = PortManager.allocateForPython(projectId, port, conflictPolicy = if (port > 0) PortManager.ConflictPolicy.AUTO_KILL else PortManager.ConflictPolicy.REASSIGN)
+            val conflictPolicy = if (port > 0) {
+                PortManager.ConflictPolicy.fromName(portConflictMode.name)
+            } else {
+                PortManager.ConflictPolicy.REASSIGN
+            }
+            val serverPort = PortManager.allocateForPython(projectId, port, conflictPolicy = conflictPolicy)
             if (serverPort < 0) {
                 _serverState.value = ServerState.Error("无法分配端口")
                 return@withContext -1

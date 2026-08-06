@@ -41,6 +41,7 @@ class NodeRuntime(private val context: Context) {
         projectDir: String,
         entryFile: String = "index.js",
         port: Int = 0,
+        portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL,
         envVars: Map<String, String> = emptyMap(),
         customNodeExtensions: List<com.webtoapp.data.model.CustomNodeExtension> = emptyList()
     ): Int = withContext(Dispatchers.IO) {
@@ -68,6 +69,7 @@ class NodeRuntime(private val context: Context) {
                 projectDir = projectDir,
                 entryFile = entryFile,
                 portPref = port,
+                portConflictMode = portConflictMode.name,
                 envVars = effectiveEnvVars
             )
 
@@ -81,6 +83,7 @@ class NodeRuntime(private val context: Context) {
                     projectDir = projectDir,
                     entryFile = entryFile,
                     portPref = port,
+                    portConflictMode = portConflictMode.name,
                     envVars = envVars
                 )
             } else {

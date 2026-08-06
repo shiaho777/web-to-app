@@ -54,7 +54,7 @@ class WordPressPhpRuntime(private val context: Context) {
         return WordPressDependencyManager.isPhpReady(context)
     }
 
-    suspend fun startServer(documentRoot: String, port: Int = 0, customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()): Int = withContext(Dispatchers.IO) {
+    suspend fun startServer(documentRoot: String, port: Int = 0, portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL, customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()): Int = withContext(Dispatchers.IO) {
         try {
 
             if (!isPhpAvailable()) {
@@ -75,7 +75,12 @@ class WordPressPhpRuntime(private val context: Context) {
             _serverState.value = ServerState.Starting
 
             val projectId = File(documentRoot).name
-            val serverPort = PortManager.allocateForPhp("wp:$projectId", port, conflictPolicy = if (port > 0) PortManager.ConflictPolicy.AUTO_KILL else PortManager.ConflictPolicy.REASSIGN)
+            val conflictPolicy = if (port > 0) {
+                PortManager.ConflictPolicy.fromName(portConflictMode.name)
+            } else {
+                PortManager.ConflictPolicy.REASSIGN
+            }
+            val serverPort = PortManager.allocateForPhp("wp:$projectId", port, conflictPolicy = conflictPolicy)
             if (serverPort < 0) {
                 _serverState.value = ServerState.Error("无法分配端口")
                 return@withContext -1

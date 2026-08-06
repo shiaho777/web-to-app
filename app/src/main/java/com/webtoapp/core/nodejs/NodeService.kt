@@ -117,6 +117,7 @@ class NodeService : Service() {
         val projectDir = data.getString(NodeServiceProtocol.Keys.PROJECT_DIR).orEmpty()
         val entryFile = data.getString(NodeServiceProtocol.Keys.ENTRY_FILE) ?: "index.js"
         val portPref = data.getInt(NodeServiceProtocol.Keys.PORT_PREF, 0)
+        val portConflictModeName = data.getString(NodeServiceProtocol.Keys.PORT_CONFLICT_MODE) ?: "AUTO_KILL"
         val envBundle = data.getBundle(NodeServiceProtocol.Keys.ENV_VARS) ?: Bundle()
         val envVars = envBundle.keySet().associateWith { envBundle.getString(it).orEmpty() }
 
@@ -181,10 +182,15 @@ class NodeService : Service() {
             }
 
             val projectId = File(projectDir).name
+            val conflictPolicy = if (portPref > 0) {
+                PortManager.ConflictPolicy.fromName(portConflictModeName)
+            } else {
+                PortManager.ConflictPolicy.REASSIGN
+            }
             val serverPort = PortManager.allocateForNodeJs(
                 projectId,
                 portPref,
-                conflictPolicy = if (portPref > 0) PortManager.ConflictPolicy.AUTO_KILL else PortManager.ConflictPolicy.REASSIGN
+                conflictPolicy = conflictPolicy
             )
             if (serverPort == PortManager.PORT_CONFLICT) {
                 replyFailed(replyTo, requestId, "端口被占用: $portPref")

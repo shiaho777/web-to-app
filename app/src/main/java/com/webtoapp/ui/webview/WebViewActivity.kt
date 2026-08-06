@@ -1058,28 +1058,28 @@ fun WebViewScreen(
     var statusBarBackgroundAlphaDark by remember { mutableFloatStateOf(1.0f) }
 
     var wordPressPreviewState by remember { mutableStateOf<WordPressPreviewState>(WordPressPreviewState.Idle) }
-    val phpRuntime = remember { WordPressPhpRuntime(context) }
+    val phpRuntime = remember(webApp?.id) { WordPressPhpRuntime(context) }
     val wpDownloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
     var wpRetryTrigger by remember { mutableIntStateOf(0) }
 
     var phpAppPreviewState by remember { mutableStateOf<PhpAppPreviewState>(PhpAppPreviewState.Idle) }
-    val phpAppRuntime = remember { PhpAppRuntime(context) }
+    val phpAppRuntime = remember(webApp?.id) { PhpAppRuntime(context) }
     val phpAppDownloadState by WordPressDependencyManager.downloadState.collectAsStateWithLifecycle()
     var phpAppRetryTrigger by remember { mutableIntStateOf(0) }
 
     var pythonAppPreviewState by remember { mutableStateOf<PythonAppPreviewState>(PythonAppPreviewState.Idle) }
-    val pythonRuntime = remember { com.webtoapp.core.python.PythonRuntime(context) }
-    val pythonHttpServer = remember { com.webtoapp.core.webview.LocalHttpServer(context) }
+    val pythonRuntime = remember(webApp?.id) { com.webtoapp.core.python.PythonRuntime(context) }
+    val pythonHttpServer = remember(webApp?.id) { com.webtoapp.core.webview.LocalHttpServer(context) }
     var pythonAppRetryTrigger by remember { mutableIntStateOf(0) }
 
     var nodeJsAppPreviewState by remember { mutableStateOf<NodeJsAppPreviewState>(NodeJsAppPreviewState.Idle) }
-    val nodeRuntime = remember { com.webtoapp.core.nodejs.NodeRuntime(context) }
-    val nodeHttpServer = remember { com.webtoapp.core.webview.LocalHttpServer(context) }
+    val nodeRuntime = remember(webApp?.id) { com.webtoapp.core.nodejs.NodeRuntime(context) }
+    val nodeHttpServer = remember(webApp?.id) { com.webtoapp.core.webview.LocalHttpServer(context) }
     var nodeJsAppRetryTrigger by remember { mutableIntStateOf(0) }
 
     var goAppPreviewState by remember { mutableStateOf<GoAppPreviewState>(GoAppPreviewState.Idle) }
-    val goRuntime = remember { com.webtoapp.core.golang.GoRuntime(context) }
-    val goHttpServer = remember { com.webtoapp.core.webview.LocalHttpServer(context) }
+    val goRuntime = remember(webApp?.id) { com.webtoapp.core.golang.GoRuntime(context) }
+    val goHttpServer = remember(webApp?.id) { com.webtoapp.core.webview.LocalHttpServer(context) }
     var goAppRetryTrigger by remember { mutableIntStateOf(0) }
 
     var autoRefreshController by remember { mutableStateOf<com.webtoapp.core.webview.AutoRefreshController?>(null) }
@@ -1519,7 +1519,7 @@ fun WebViewScreen(
             return@LaunchedEffect
         }
         WordPressManager.ensureDbPhpExists(context, wpDir)
-        val port = phpRuntime.startServer(wpDir.absolutePath, app.wordpressConfig?.phpPort ?: 0)
+        val port = phpRuntime.startServer(wpDir.absolutePath, app.wordpressConfig?.phpPort ?: 0, app.wordpressConfig?.portConflictMode ?: com.webtoapp.data.model.PortConflictMode.AUTO_KILL)
 
         if (port > 0) {
             val url = "http://127.0.0.1:$port/"
@@ -1639,6 +1639,7 @@ fun WebViewScreen(
             documentRoot = actualDocRoot,
             entryFile = actualEntryFile,
             port = config.phpPort,
+            portConflictMode = config.portConflictMode,
             envVars = config.envVars,
             phpExtensions = config.phpExtensions
         )
@@ -1796,6 +1797,7 @@ fun WebViewScreen(
                     entryFile = actualEntryFile,
                     framework = actualFramework,
                     port = config.serverPort,
+                    portConflictMode = config.portConflictMode,
                     envVars = config.envVars,
                     installDeps = config.hasPipDeps
                 )
@@ -1965,6 +1967,7 @@ fun WebViewScreen(
                     projectDir = projectDir.absolutePath,
                     entryFile = config.entryFile.ifBlank { "index.js" },
                     port = config.serverPort,
+                    portConflictMode = config.portConflictMode,
                     envVars = config.envVars,
                 )
 
@@ -2033,6 +2036,12 @@ fun WebViewScreen(
     DisposableEffect(nodeHttpServer) {
         onDispose {
             nodeHttpServer.stop()
+        }
+    }
+
+    DisposableEffect(nodeRuntime) {
+        onDispose {
+            nodeRuntime.stopServer()
         }
     }
 
@@ -2130,6 +2139,7 @@ fun WebViewScreen(
                         projectDir = projectDir.absolutePath,
                         binaryName = config.binaryName,
                         port = config.serverPort,
+                        portConflictMode = config.portConflictMode,
                         envVars = config.envVars
                     )
 

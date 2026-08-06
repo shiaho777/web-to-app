@@ -65,6 +65,8 @@ fun CreatePythonAppScreen(
     var entryFile by remember { mutableStateOf("app.py") }
     var entryModule by remember { mutableStateOf("") }
     var serverType by remember { mutableStateOf("builtin") }
+    var serverPort by remember { mutableStateOf(0) }
+    var portConflictMode by remember { mutableStateOf(com.webtoapp.data.model.PortConflictMode.AUTO_KILL) }
     var envVars by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var newEnvKey by remember { mutableStateOf("") }
     var newEnvValue by remember { mutableStateOf("") }
@@ -108,6 +110,8 @@ fun CreatePythonAppScreen(
                     entryFile = config.entryFile
                     entryModule = config.entryModule
                     serverType = config.serverType
+                    serverPort = config.serverPort
+                    portConflictMode = config.portConflictMode
                     envVars = config.envVars.toMutableMap()
                     customPythonExtensions = config.customPythonExtensions
                     detectedFramework = config.framework
@@ -351,6 +355,8 @@ fun CreatePythonAppScreen(
                                 entryFile = entryFile,
                                 entryModule = entryModule,
                                 serverType = serverType,
+                                serverPort = serverPort,
+                                portConflictMode = portConflictMode,
                                 envVars = envVars,
                                 requirementsFile = if (localProjectDir?.let { File(it, "requirements.txt").exists() } == true) "requirements.txt" else "",
                                 hasPipDeps = localProjectDir?.let { File(it, "requirements.txt").exists() } ?: false,
@@ -601,6 +607,14 @@ fun CreatePythonAppScreen(
                         }
                     },
                     onRemove = { key -> envVars = envVars.toMutableMap().apply { remove(key) } }
+                )
+
+                Spacer(Modifier.height(12.dp))
+                com.webtoapp.ui.components.RuntimePortConfigSection(
+                    port = serverPort,
+                    portConflictMode = portConflictMode,
+                    onPortChange = { serverPort = it },
+                    onPortConflictModeChange = { portConflictMode = it }
                 )
 
                 PythonExtensionsCard(

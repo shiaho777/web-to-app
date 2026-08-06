@@ -4110,12 +4110,14 @@ private fun WebApp.buildWordpressBlock(): WordpressBlock = WordpressBlock(
     siteLanguage = wordpressConfig?.siteLanguage ?: "zh_CN",
     autoInstall = wordpressConfig?.autoInstall ?: true,
     phpPort = wordpressConfig?.phpPort ?: 0,
+    portConflictMode = wordpressConfig?.portConflictMode?.name ?: "AUTO_KILL",
     customPhpExtensions = wordpressConfig?.customPhpExtensions ?: emptyList()
 )
 
 private fun WebApp.buildNodejsBlock(): NodejsBlock = NodejsBlock(
     mode = nodejsConfig?.buildMode?.name ?: "STATIC",
     port = nodejsConfig?.serverPort ?: 0,
+    portConflictMode = nodejsConfig?.portConflictMode?.name ?: "AUTO_KILL",
     entryFile = nodejsConfig?.entryFile ?: "",
     envVars = nodejsConfig?.envVars ?: emptyMap(),
     customNodeExtensions = nodejsConfig?.customNodeExtensions ?: emptyList()
@@ -4126,6 +4128,7 @@ private fun WebApp.buildPhpAppBlock(): PhpAppBlock = PhpAppBlock(
     documentRoot = phpAppConfig?.documentRoot ?: "",
     entryFile = phpAppConfig?.entryFile ?: "index.php",
     port = phpAppConfig?.phpPort ?: 0,
+    portConflictMode = phpAppConfig?.portConflictMode?.name ?: "AUTO_KILL",
     envVars = phpAppConfig?.envVars ?: emptyMap(),
     phpExtensions = phpAppConfig?.phpExtensions ?: emptyMap(),
     customPhpExtensions = phpAppConfig?.customPhpExtensions ?: emptyList()
@@ -4137,6 +4140,7 @@ private fun WebApp.buildPythonAppBlock(): PythonAppBlock = PythonAppBlock(
     entryModule = pythonAppConfig?.entryModule ?: "",
     serverType = pythonAppConfig?.serverType ?: "builtin",
     port = pythonAppConfig?.serverPort ?: 0,
+    portConflictMode = pythonAppConfig?.portConflictMode?.name ?: "AUTO_KILL",
     envVars = pythonAppConfig?.envVars ?: emptyMap(),
     customPythonExtensions = pythonAppConfig?.customPythonExtensions ?: emptyList()
 )
@@ -4146,6 +4150,7 @@ private fun WebApp.buildGoAppBlock(): GoAppBlock = GoAppBlock(
     binaryName = goAppConfig?.binaryName ?: "",
     targetArch = goAppConfig?.targetArch ?: "arm64-v8a",
     port = goAppConfig?.serverPort ?: 0,
+    portConflictMode = goAppConfig?.portConflictMode?.name ?: "AUTO_KILL",
     staticDir = goAppConfig?.staticDir ?: "",
     envVars = goAppConfig?.envVars ?: emptyMap()
 )

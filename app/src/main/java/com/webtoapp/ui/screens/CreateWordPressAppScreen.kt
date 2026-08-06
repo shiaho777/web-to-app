@@ -75,6 +75,9 @@ fun CreateWordPressAppScreen(
 
     var permalink by remember { mutableStateOf("postname") }
 
+    var phpPort by remember { mutableStateOf(0) }
+    var portConflictMode by remember { mutableStateOf(com.webtoapp.data.model.PortConflictMode.AUTO_KILL) }
+
     var siteLanguage by remember { mutableStateOf(Strings.wpDefaultSiteLanguageCode) }
 
     var detectedThemes by remember { mutableStateOf<List<String>>(emptyList()) }
@@ -224,6 +227,8 @@ fun CreateWordPressAppScreen(
                                 siteLanguage = siteLanguage,
                                 autoInstall = true,
                                 sourceType = sourceType,
+                                phpPort = phpPort,
+                                portConflictMode = portConflictMode,
                                 customPhpExtensions = customPhpExtensions
                             ),
                             appIcon,
@@ -490,6 +495,14 @@ fun CreateWordPressAppScreen(
                 )
 
                 WpDbInfoCard(accentColor = accentColor)
+
+                Spacer(Modifier.height(12.dp))
+                com.webtoapp.ui.components.RuntimePortConfigSection(
+                    port = phpPort,
+                    portConflictMode = portConflictMode,
+                    onPortChange = { phpPort = it },
+                    onPortConflictModeChange = { portConflictMode = it }
+                )
             }
             }
 

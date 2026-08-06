@@ -15,6 +15,13 @@ object ShellServerLauncher {
 
     private const val TAG = "ShellServerLauncher"
 
+    /** Safely parse a stored port-conflict-mode string (from ShellConfig JSON) into the enum. */
+    private fun resolvePortConflictMode(name: String?): com.webtoapp.data.model.PortConflictMode {
+        return runCatching {
+            com.webtoapp.data.model.PortConflictMode.valueOf(name ?: "AUTO_KILL")
+        }.getOrDefault(com.webtoapp.data.model.PortConflictMode.AUTO_KILL)
+    }
+
     fun interface RuntimeStopper {
         fun stop()
     }
@@ -66,6 +73,7 @@ object ShellServerLauncher {
                 documentRoot = config.phpAppConfig.documentRoot,
                 entryFile = entryFile,
                 port = config.phpAppConfig.port,
+                portConflictMode = resolvePortConflictMode(config.phpAppConfig.portConflictMode),
                 envVars = config.phpAppConfig.envVars,
                 phpExtensions = config.phpAppConfig.phpExtensions,
                 customPhpExtensions = config.phpAppConfig.customPhpExtensions
@@ -119,6 +127,7 @@ object ShellServerLauncher {
                 entryFile = entryFile,
                 framework = framework,
                 port = pyConfig.port,
+                portConflictMode = resolvePortConflictMode(pyConfig.portConflictMode),
                 envVars = pyConfig.envVars,
                 installDeps = true,
                 customPythonExtensions = pyConfig.customPythonExtensions
@@ -178,6 +187,7 @@ object ShellServerLauncher {
                 projectDir = projectDir.absolutePath,
                 binaryName = binaryName,
                 port = goConfig.port,
+                portConflictMode = resolvePortConflictMode(goConfig.portConflictMode),
                 envVars = goConfig.envVars
             )
             if (port > 0) {
@@ -236,6 +246,7 @@ object ShellServerLauncher {
                 projectDir = projectDir.absolutePath,
                 entryFile = entryFile,
                 port = config.nodejsConfig.port,
+                portConflictMode = resolvePortConflictMode(config.nodejsConfig.portConflictMode),
                 envVars = envVars,
                 customNodeExtensions = config.nodejsConfig.customNodeExtensions
             )
@@ -276,6 +287,7 @@ object ShellServerLauncher {
             val port = runtime.startServer(
                 wpDir.absolutePath,
                 config.wordpressConfig.phpPort,
+                resolvePortConflictMode(config.wordpressConfig.portConflictMode),
                 config.wordpressConfig.customPhpExtensions
             )
             if (port <= 0) {

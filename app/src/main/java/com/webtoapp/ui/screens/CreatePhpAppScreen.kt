@@ -67,6 +67,8 @@ fun CreatePhpAppScreen(
 
     var documentRoot by remember { mutableStateOf("") }
     var entryFile by remember { mutableStateOf("index.php") }
+    var phpPort by remember { mutableStateOf(0) }
+    var portConflictMode by remember { mutableStateOf(com.webtoapp.data.model.PortConflictMode.AUTO_KILL) }
     var envVars by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var newEnvKey by remember { mutableStateOf("") }
     var newEnvValue by remember { mutableStateOf("") }
@@ -117,6 +119,8 @@ fun CreatePhpAppScreen(
                 app.phpAppConfig?.let { config ->
                     documentRoot = config.documentRoot
                     entryFile = config.entryFile
+                    phpPort = config.phpPort
+                    portConflictMode = config.portConflictMode
                     envVars = config.envVars.toMutableMap()
                     detectedFramework = config.framework
                     projectId = config.projectId
@@ -365,6 +369,8 @@ fun CreatePhpAppScreen(
                                 framework = detectedFramework ?: "raw",
                                 documentRoot = documentRoot,
                                 entryFile = entryFile,
+                                phpPort = phpPort,
+                                portConflictMode = portConflictMode,
                                 envVars = envVars,
                                 hasComposerJson = localProjectDir?.let { File(it, "composer.json").exists() } ?: false,
                                 phpExtensions = phpExtensions,
@@ -591,6 +597,14 @@ fun CreatePhpAppScreen(
                         }
                     },
                     onRemove = { key -> envVars = envVars.toMutableMap().apply { remove(key) } }
+                )
+
+                Spacer(Modifier.height(12.dp))
+                com.webtoapp.ui.components.RuntimePortConfigSection(
+                    port = phpPort,
+                    portConflictMode = portConflictMode,
+                    onPortChange = { phpPort = it },
+                    onPortConflictModeChange = { portConflictMode = it }
                 )
             }
             }

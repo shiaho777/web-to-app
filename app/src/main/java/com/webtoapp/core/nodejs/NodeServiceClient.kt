@@ -94,6 +94,7 @@ object NodeServiceClient {
         projectDir: String,
         entryFile: String,
         portPref: Int,
+        portConflictMode: String = "AUTO_KILL",
         envVars: Map<String, String>
     ): StartResult = withContext(Dispatchers.IO) {
         ensureBound(context)
@@ -112,6 +113,7 @@ object NodeServiceClient {
             putString(NodeServiceProtocol.Keys.PROJECT_DIR, projectDir)
             putString(NodeServiceProtocol.Keys.ENTRY_FILE, entryFile)
             putInt(NodeServiceProtocol.Keys.PORT_PREF, portPref)
+            putString(NodeServiceProtocol.Keys.PORT_CONFLICT_MODE, portConflictMode)
             val envBundle = Bundle()
             envVars.forEach { (k, v) -> envBundle.putString(k, v) }
             putBundle(NodeServiceProtocol.Keys.ENV_VARS, envBundle)

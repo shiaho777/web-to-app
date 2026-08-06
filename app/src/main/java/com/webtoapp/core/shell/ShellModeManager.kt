@@ -796,6 +796,9 @@ data class WordPressShellConfig(
     @SerializedName("phpPort")
     val phpPort: Int = 0,
 
+    @SerializedName("portConflictMode")
+    val portConflictMode: String = "AUTO_KILL",
+
     @SerializedName("customPhpExtensions")
     val customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
 )
@@ -806,6 +809,9 @@ data class NodeJsShellConfig(
 
     @SerializedName("port")
     val port: Int = 0,
+
+    @SerializedName("portConflictMode")
+    val portConflictMode: String = "AUTO_KILL",
 
     @SerializedName("entryFile")
     val entryFile: String = "",
@@ -829,6 +835,9 @@ data class PhpAppShellConfig(
 
     @SerializedName("port")
     val port: Int = 0,
+
+    @SerializedName("portConflictMode")
+    val portConflictMode: String = "AUTO_KILL",
 
     @SerializedName("envVars")
     val envVars: Map<String, String> = emptyMap(),
@@ -856,6 +865,9 @@ data class PythonAppShellConfig(
     @SerializedName("port")
     val port: Int = 0,
 
+    @SerializedName("portConflictMode")
+    val portConflictMode: String = "AUTO_KILL",
+
     @SerializedName("envVars")
     val envVars: Map<String, String> = emptyMap(),
 
@@ -875,6 +887,9 @@ data class GoAppShellConfig(
 
     @SerializedName("port")
     val port: Int = 0,
+
+    @SerializedName("portConflictMode")
+    val portConflictMode: String = "AUTO_KILL",
 
     @SerializedName("staticDir")
     val staticDir: String = "",

@@ -23,6 +23,7 @@ object NodeServiceProtocol {
         const val PROJECT_DIR = "projectDir"
         const val ENTRY_FILE = "entryFile"
         const val PORT_PREF = "portPref"
+        const val PORT_CONFLICT_MODE = "portConflictMode"
         const val ENV_VARS = "envVars"
         const val REQUEST_ID = "requestId"
 

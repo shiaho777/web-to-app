@@ -705,6 +705,7 @@ data class NodeJsConfig(
     val buildMode: NodeJsBuildMode = NodeJsBuildMode.API_BACKEND,
     val entryFile: String = "index.js",
     val serverPort: Int = 0,
+    val portConflictMode: PortConflictMode = PortConflictMode.AUTO_KILL,
     val envVars: Map<String, String> = emptyMap(),
     val hasNodeModules: Boolean = false,
     val nodeVersion: String = "",
@@ -727,6 +728,7 @@ data class WordPressConfig(
     val sourceType: String = "BLANK",
     val sourceProjectId: String = "",
     val phpPort: Int = 0,
+    val portConflictMode: PortConflictMode = PortConflictMode.AUTO_KILL,
     val customPhpExtensions: List<CustomPhpExtension> = emptyList()
 )
 
@@ -737,6 +739,7 @@ data class PhpAppConfig(
     val documentRoot: String = "",
     val entryFile: String = "index.php",
     val phpPort: Int = 0,
+    val portConflictMode: PortConflictMode = PortConflictMode.AUTO_KILL,
     val envVars: Map<String, String> = emptyMap(),
     val hasComposerJson: Boolean = false,
     val phpExtensions: Map<String, Boolean> = emptyMap(),
@@ -786,6 +789,7 @@ data class PythonAppConfig(
     val entryModule: String = "",
     val serverType: String = "builtin",
     val serverPort: Int = 0,
+    val portConflictMode: PortConflictMode = PortConflictMode.AUTO_KILL,
     val envVars: Map<String, String> = emptyMap(),
     val pythonVersion: String = "",
     val requirementsFile: String = "requirements.txt",
@@ -800,6 +804,7 @@ data class GoAppConfig(
     val binaryName: String = "",
     val targetArch: String = "arm64",
     val serverPort: Int = 0,
+    val portConflictMode: PortConflictMode = PortConflictMode.AUTO_KILL,
     val envVars: Map<String, String> = emptyMap(),
     val staticDir: String = ""
 )

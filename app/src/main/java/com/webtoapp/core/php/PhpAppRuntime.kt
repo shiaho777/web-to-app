@@ -69,6 +69,7 @@ class PhpAppRuntime(private val context: Context) {
         documentRoot: String = "",
         entryFile: String = "index.php",
         port: Int = 0,
+        portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL,
         envVars: Map<String, String> = emptyMap(),
         phpExtensions: Map<String, Boolean> = emptyMap(),
         customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
@@ -109,7 +110,12 @@ class PhpAppRuntime(private val context: Context) {
             }
 
             val projectId = File(projectDir).name
-            val serverPort = PortManager.allocateForPhp(projectId, port, conflictPolicy = if (port > 0) PortManager.ConflictPolicy.AUTO_KILL else PortManager.ConflictPolicy.REASSIGN)
+            val conflictPolicy = if (port > 0) {
+                PortManager.ConflictPolicy.fromName(portConflictMode.name)
+            } else {
+                PortManager.ConflictPolicy.REASSIGN
+            }
+            val serverPort = PortManager.allocateForPhp(projectId, port, conflictPolicy = conflictPolicy)
             if (serverPort < 0) {
                 _serverState.value = ServerState.Error("无法分配端口")
                 return@withContext -1

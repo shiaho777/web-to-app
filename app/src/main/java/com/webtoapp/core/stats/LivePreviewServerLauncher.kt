@@ -192,9 +192,10 @@ object LivePreviewServerLauncher {
 
         val runtime = WordPressPhpRuntime(context)
         val port = runtime.startServer(
-            projectDir.absolutePath,
-            config.phpPort,
-            config.customPhpExtensions
+            documentRoot = projectDir.absolutePath,
+            port = config.phpPort,
+            portConflictMode = config.portConflictMode,
+            customPhpExtensions = config.customPhpExtensions
         )
         if (port <= 0) return null
 

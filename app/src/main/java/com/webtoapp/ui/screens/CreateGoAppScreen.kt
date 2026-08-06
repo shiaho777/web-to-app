@@ -60,6 +60,8 @@ fun CreateGoAppScreen(
 
     var binaryName by remember { mutableStateOf("") }
     var staticDir by remember { mutableStateOf("") }
+    var serverPort by remember { mutableStateOf(0) }
+    var portConflictMode by remember { mutableStateOf(com.webtoapp.data.model.PortConflictMode.AUTO_KILL) }
     var envVars by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var newEnvKey by remember { mutableStateOf("") }
     var newEnvValue by remember { mutableStateOf("") }
@@ -110,6 +112,8 @@ fun CreateGoAppScreen(
                 app.goAppConfig?.let { config ->
                     binaryName = config.binaryName
                     staticDir = config.staticDir
+                    serverPort = config.serverPort
+                    portConflictMode = config.portConflictMode
                     envVars = config.envVars.toMutableMap()
                     detectedFramework = config.framework
                     projectId = config.projectId
@@ -258,7 +262,8 @@ fun CreateGoAppScreen(
                                 framework = detectedFramework ?: "raw",
                                 binaryName = binaryName,
                                 targetArch = targetArch,
-                                serverPort = 0,
+                                serverPort = serverPort,
+                                portConflictMode = portConflictMode,
                                 envVars = envVars,
                                 staticDir = staticDir,
                             ),
@@ -493,6 +498,14 @@ fun CreateGoAppScreen(
                         }
                     },
                     onRemove = { key -> envVars = envVars.toMutableMap().apply { remove(key) } }
+                )
+
+                Spacer(Modifier.height(12.dp))
+                com.webtoapp.ui.components.RuntimePortConfigSection(
+                    port = serverPort,
+                    portConflictMode = portConflictMode,
+                    onPortChange = { serverPort = it },
+                    onPortConflictModeChange = { portConflictMode = it }
                 )
             }
             }

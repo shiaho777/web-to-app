@@ -497,12 +497,14 @@ internal object ApkConfigJsonFactory {
         "siteLanguage" to wordpress.siteLanguage,
         "autoInstall" to wordpress.autoInstall,
         "phpPort" to wordpress.phpPort,
+        "portConflictMode" to wordpress.portConflictMode,
         "customPhpExtensions" to wordpress.customPhpExtensions
     )
 
     private fun ApkConfig.nodejsConfigPayload(): Map<String, Any?> = linkedMapOf(
         "mode" to nodejs.mode,
         "port" to nodejs.port,
+        "portConflictMode" to nodejs.portConflictMode,
         "entryFile" to nodejs.entryFile,
         "envVars" to nodejs.envVars,
         "customNodeExtensions" to nodejs.customNodeExtensions
@@ -513,6 +515,7 @@ internal object ApkConfigJsonFactory {
         "documentRoot" to phpApp.documentRoot,
         "entryFile" to phpApp.entryFile,
         "port" to phpApp.port,
+        "portConflictMode" to phpApp.portConflictMode,
         "envVars" to phpApp.envVars,
         "phpExtensions" to phpApp.phpExtensions,
         "customPhpExtensions" to phpApp.customPhpExtensions
@@ -524,6 +527,7 @@ internal object ApkConfigJsonFactory {
         "entryModule" to pythonApp.entryModule,
         "serverType" to pythonApp.serverType,
         "port" to pythonApp.port,
+        "portConflictMode" to pythonApp.portConflictMode,
         "envVars" to pythonApp.envVars,
         "customPythonExtensions" to pythonApp.customPythonExtensions
     )
@@ -533,6 +537,7 @@ internal object ApkConfigJsonFactory {
         "binaryName" to goApp.binaryName,
         "targetArch" to goApp.targetArch,
         "port" to goApp.port,
+        "portConflictMode" to goApp.portConflictMode,
         "staticDir" to goApp.staticDir,
         "envVars" to goApp.envVars
     )

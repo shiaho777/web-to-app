@@ -798,12 +798,14 @@ data class WordpressBlock(
     val siteLanguage: String = "zh_CN",
     val autoInstall: Boolean = true,
     val phpPort: Int = 0,
+    val portConflictMode: String = "AUTO_KILL",
     val customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
 )
 
 data class NodejsBlock(
     val mode: String = "STATIC",
     val port: Int = 0,
+    val portConflictMode: String = "AUTO_KILL",
     val entryFile: String = "",
     val envVars: Map<String, String> = emptyMap(),
     val customNodeExtensions: List<com.webtoapp.data.model.CustomNodeExtension> = emptyList()
@@ -814,6 +816,7 @@ data class PhpAppBlock(
     val documentRoot: String = "",
     val entryFile: String = "index.php",
     val port: Int = 0,
+    val portConflictMode: String = "AUTO_KILL",
     val envVars: Map<String, String> = emptyMap(),
     val phpExtensions: Map<String, Boolean> = emptyMap(),
     val customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
@@ -825,6 +828,7 @@ data class PythonAppBlock(
     val entryModule: String = "",
     val serverType: String = "builtin",
     val port: Int = 0,
+    val portConflictMode: String = "AUTO_KILL",
     val envVars: Map<String, String> = emptyMap(),
     val customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> = emptyList()
 )
@@ -834,8 +838,9 @@ data class GoAppBlock(
     val binaryName: String = "",
     val targetArch: String = "arm64-v8a",
     val port: Int = 0,
+    val portConflictMode: String = "AUTO_KILL",
     val staticDir: String = "",
-    val envVars: Map<String, String> = emptyMap(),
+    val envVars: Map<String, String> = emptyMap()
 )
 
 data class MultiWebBlock(

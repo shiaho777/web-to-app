@@ -98,6 +98,7 @@ fun CreateNodeJsAppScreen(
 
     var detectedPort by remember { mutableStateOf<Int?>(null) }
     var customPort by remember { mutableStateOf("") }
+    var portConflictMode by remember { mutableStateOf(com.webtoapp.data.model.PortConflictMode.AUTO_KILL) }
 
     var nodeEngineVersion by remember { mutableStateOf<String?>(null) }
 
@@ -122,6 +123,7 @@ fun CreateNodeJsAppScreen(
                     projectId = config.projectId
                     selectedProjectDir = config.projectName
                     packageName = config.projectName
+                    portConflictMode = config.portConflictMode
                     if (config.serverPort > 0) {
                         detectedPort = config.serverPort
                         customPort = config.serverPort.toString()
@@ -337,6 +339,7 @@ fun CreateNodeJsAppScreen(
             buildMode = buildMode,
             entryFile = entryFile,
             serverPort = finalPort,
+            portConflictMode = portConflictMode,
             envVars = envVars,
             hasNodeModules = dependencies.isNotEmpty(),
             nodeVersion = nodeEngineVersion ?: "",
@@ -771,6 +774,13 @@ fun CreateNodeJsAppScreen(
                         detectedPort = detectedPort,
                         customPort = customPort,
                         onCustomPortChange = { customPort = it },
+                        accentColor = accentColor
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+                    com.webtoapp.ui.components.RuntimePortConflictSelector(
+                        portConflictMode = portConflictMode,
+                        onPortConflictModeChange = { portConflictMode = it },
                         accentColor = accentColor
                     )
                 }
