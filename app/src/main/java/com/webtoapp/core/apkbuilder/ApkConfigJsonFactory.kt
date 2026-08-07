@@ -78,6 +78,7 @@ internal object ApkConfigJsonFactory {
         "splashType" to splash.type,
         "splashDuration" to splash.duration,
         "splashClickToSkip" to splash.clickToSkip,
+        "splashShowCountdown" to splash.showCountdown,
         "splashVideoStartMs" to splash.videoStartMs,
         "splashVideoEndMs" to splash.videoEndMs,
         "splashLandscape" to splash.landscape,

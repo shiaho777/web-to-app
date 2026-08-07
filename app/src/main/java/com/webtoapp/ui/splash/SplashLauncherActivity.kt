@@ -243,6 +243,7 @@ fun SplashLauncherScreen(
                 videoEndMs = videoEndMs,
                 fillScreen = fillScreen,
                 enableAudio = enableAudio,
+                showCountdown = splashConfig.showCountdown,
                 onSkip = {
                     showSplash = false
                     onLaunchTarget()
@@ -427,6 +428,7 @@ fun SplashContent(
     videoEndMs: Long,
     fillScreen: Boolean,
     enableAudio: Boolean = false,
+    showCountdown: Boolean = true,
     onSkip: () -> Unit
 ) {
     val context = LocalContext.current

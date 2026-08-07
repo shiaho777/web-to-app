@@ -379,6 +379,11 @@ fun CreateAppScreen(
                             copy(splashConfig = splashConfig.copy(clickToSkip = it))
                         }
                     },
+                    onShowCountdownChange = {
+                        viewModel.updateEditState {
+                            copy(splashConfig = splashConfig.copy(showCountdown = it))
+                        }
+                    },
                     onOrientationChange = {
                         viewModel.updateEditState {
                             copy(splashConfig = splashConfig.copy(orientation = it))

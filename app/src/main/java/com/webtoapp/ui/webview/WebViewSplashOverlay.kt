@@ -169,7 +169,8 @@ fun SplashOverlay(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (displayTime > 0) {
+                val showNumber = splashConfig.showCountdown && displayTime > 0
+                if (showNumber) {
                     Text(
                         text = "${displayTime}s",
                         color = Color.White,
@@ -177,7 +178,7 @@ fun SplashOverlay(
                     )
                 }
                 if (onSkip != null) {
-                    if (displayTime > 0) {
+                    if (showNumber) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "|",

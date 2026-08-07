@@ -468,6 +468,7 @@ fun ShellScreen(
             fillScreen = config.splashFillScreen,
             enableAudio = config.splashEnableAudio,
             mediaPath = config.splashMediaPath,
+            showCountdown = config.splashShowCountdown,
 
             onSkip = if (config.splashClickToSkip) { closeSplash } else null,
 

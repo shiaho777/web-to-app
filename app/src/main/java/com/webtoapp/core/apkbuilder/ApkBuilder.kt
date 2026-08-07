@@ -3957,7 +3957,8 @@ private fun WebApp.buildSplashBlock(): SplashBlock = SplashBlock(
     videoEndMs = splashConfig?.videoEndMs ?: 5000L,
     landscape = splashConfig?.orientation == com.webtoapp.data.model.SplashOrientation.LANDSCAPE,
     fillScreen = splashConfig?.fillScreen ?: true,
-    enableAudio = splashConfig?.enableAudio ?: false
+    enableAudio = splashConfig?.enableAudio ?: false,
+    showCountdown = splashConfig?.showCountdown ?: true
 )
 
 private fun WebApp.buildMediaBlock(): MediaBlock = MediaBlock(

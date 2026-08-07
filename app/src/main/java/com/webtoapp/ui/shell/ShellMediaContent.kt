@@ -29,6 +29,7 @@ fun ShellSplashOverlay(
     fillScreen: Boolean = true,
     enableAudio: Boolean = false,
     mediaPath: String? = null,
+    showCountdown: Boolean = true,
     onSkip: (() -> Unit)?,
     onComplete: (() -> Unit)? = null
 ) {
@@ -233,7 +234,8 @@ fun ShellSplashOverlay(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (displayTime > 0) {
+                val showNumber = showCountdown && displayTime > 0
+                if (showNumber) {
                     Text(
                         text = "${displayTime}s",
                         color = Color.White,
@@ -241,7 +243,7 @@ fun ShellSplashOverlay(
                     )
                 }
                 if (onSkip != null) {
-                    if (displayTime > 0) {
+                    if (showNumber) {
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "|",

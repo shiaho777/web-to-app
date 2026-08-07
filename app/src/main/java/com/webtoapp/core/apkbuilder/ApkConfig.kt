@@ -696,7 +696,8 @@ data class SplashBlock(
     val landscape: Boolean = false,
     val fillScreen: Boolean = true,
     val enableAudio: Boolean = false,
-    val mediaPath: String? = null
+    val mediaPath: String? = null,
+    val showCountdown: Boolean = true
 )
 
 data class MediaBlock(

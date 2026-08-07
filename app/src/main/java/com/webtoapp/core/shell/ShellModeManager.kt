@@ -301,6 +301,9 @@ data class ShellConfig(
     @SerializedName("splashClickToSkip")
     val splashClickToSkip: Boolean = true,
 
+    @SerializedName("splashShowCountdown")
+    val splashShowCountdown: Boolean = true,
+
     @SerializedName("splashVideoStartMs")
     val splashVideoStartMs: Long = 0,
 

@@ -54,6 +54,7 @@ fun SplashScreenCard(
     onSelectVideo: () -> Unit,
     onDurationChange: (Int) -> Unit,
     onClickToSkipChange: (Boolean) -> Unit,
+    onShowCountdownChange: (Boolean) -> Unit,
     onOrientationChange: (SplashOrientation) -> Unit,
     onFillScreenChange: (Boolean) -> Unit,
     onEnableAudioChange: (Boolean) -> Unit,
@@ -70,6 +71,7 @@ fun SplashScreenCard(
         onSelectVideo = onSelectVideo,
         onDurationChange = onDurationChange,
         onClickToSkipChange = onClickToSkipChange,
+        onShowCountdownChange = onShowCountdownChange,
         onOrientationChange = onOrientationChange,
         onFillScreenChange = onFillScreenChange,
         onEnableAudioChange = onEnableAudioChange,
@@ -89,6 +91,7 @@ fun SplashScreenCard(
     onSelectVideo: () -> Unit,
     onDurationChange: (Int) -> Unit,
     onClickToSkipChange: (Boolean) -> Unit,
+    onShowCountdownChange: (Boolean) -> Unit,
     onOrientationChange: (SplashOrientation) -> Unit,
     onFillScreenChange: (Boolean) -> Unit,
     onEnableAudioChange: (Boolean) -> Unit,
@@ -271,6 +274,14 @@ fun SplashScreenCard(
                         icon = Icons.Outlined.TouchApp,
                         checked = splashConfig.clickToSkip,
                         onCheckedChange = onClickToSkipChange
+                    )
+
+                    WtaToggleRow(
+                        title = Strings.splashShowCountdownLabel,
+                        subtitle = Strings.splashShowCountdownHint,
+                        icon = Icons.Outlined.Timer,
+                        checked = splashConfig.showCountdown,
+                        onCheckedChange = onShowCountdownChange
                     )
 
                     WtaToggleRow(

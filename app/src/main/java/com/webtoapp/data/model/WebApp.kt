@@ -533,7 +533,9 @@ data class SplashConfig(
     val enableAudio: Boolean = false,
     val videoStartMs: Long = 0,
     val videoEndMs: Long = 5000,
-    val videoDurationMs: Long = 0
+    val videoDurationMs: Long = 0,
+    // Show the Ns countdown in the top-right corner of the splash screen.
+    val showCountdown: Boolean = true
 )
 
 enum class SplashType {

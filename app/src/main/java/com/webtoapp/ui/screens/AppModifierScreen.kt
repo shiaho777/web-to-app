@@ -773,6 +773,9 @@ private fun AppModifyContent(
                 onClickToSkipChange = { skip ->
                     update { copy(splashConfig = splashConfig.copy(clickToSkip = skip)) }
                 },
+                onShowCountdownChange = { show ->
+                    update { copy(splashConfig = splashConfig.copy(showCountdown = show)) }
+                },
                 onOrientationChange = { orientation ->
                     update { copy(splashConfig = splashConfig.copy(orientation = orientation)) }
                 },

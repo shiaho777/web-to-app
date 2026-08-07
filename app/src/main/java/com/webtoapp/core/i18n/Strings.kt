@@ -2303,6 +2303,8 @@ object Strings {
     val configFontSize: String get() = StringsC.configFontSize
     val allowSkip: String get() = StringsC.allowSkip
     val allowSkipHint: String get() = StringsC.allowSkipHint
+    val splashShowCountdownLabel: String get() = StringsC.splashShowCountdownLabel
+    val splashShowCountdownHint: String get() = StringsC.splashShowCountdownHint
     val showTranslateButton: String get() = StringsC.showTranslateButton
     val showTranslateButtonHint: String get() = StringsC.showTranslateButtonHint
     val translateEngine: String get() = StringsC.translateEngine
@@ -33671,6 +33673,32 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Разрешить пропуск"
         AppLanguage.JAPANESE -> "スキップを許可"
         AppLanguage.KOREAN -> "건너뛰기 허용"
+    }
+
+    val splashShowCountdownLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "显示倒计时"
+        AppLanguage.ENGLISH -> "Show countdown"
+        AppLanguage.ARABIC -> "إظهار العد التنازلي"
+        AppLanguage.PORTUGUESE -> "Mostrar contagem regressiva"
+        AppLanguage.SPANISH -> "Mostrar cuenta atrás"
+        AppLanguage.FRENCH -> "Afficher le compte à rebours"
+        AppLanguage.GERMAN -> "Countdown anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать обратный отсчёт"
+        AppLanguage.JAPANESE -> "カウントダウンを表示"
+        AppLanguage.KOREAN -> "카운트다운 표시"
+    }
+
+    val splashShowCountdownHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "在启动画面右上角显示剩余秒数"
+        AppLanguage.ENGLISH -> "Show remaining seconds in the top-right corner of the splash screen"
+        AppLanguage.ARABIC -> "عرض الثواني المتبقية في الزاوية العلوية اليمنى لشاشة البداية"
+        AppLanguage.PORTUGUESE -> "Mostrar segundos restantes no canto superior direito da tela inicial"
+        AppLanguage.SPANISH -> "Mostrar los segundos restantes en la esquina superior derecha de la pantalla de inicio"
+        AppLanguage.FRENCH -> "Afficher les secondes restantes en haut à droite de l'écran de démarrage"
+        AppLanguage.GERMAN -> "Verbleibende Sekunden oben rechts auf dem Startbildschirm anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать оставшиеся секунды в правом верхнем углу заставки"
+        AppLanguage.JAPANESE -> "スプラッシュ画面の右上に残り秒数を表示"
+        AppLanguage.KOREAN -> "시작 화면 오른쪽 상단에 남은 초 표시"
     }
 
     val allowSkipHint: String get() = when (Strings.lang) {
