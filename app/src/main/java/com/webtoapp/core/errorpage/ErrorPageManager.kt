@@ -332,22 +332,27 @@ function retryLoad(){
     else location.reload();
 }
 ${if (autoRetry > 0) """
-(function(){
+var __autoRetryTimer=null;
+function __stopAutoRetry(){if(__autoRetryTimer){clearInterval(__autoRetryTimer);__autoRetryTimer=null;}}
+function __startAutoRetry(){
+    if(__autoRetryTimer)return;
     var sec=$autoRetry,el=document.getElementById('countdown');
-    var t=setInterval(function(){
+    __autoRetryTimer=setInterval(function(){
         sec--;if(el)el.textContent=sec;
-        if(sec<=0){clearInterval(t);retryLoad();}
+        if(sec<=0){__stopAutoRetry();retryLoad();}
     },1000);
-})();
+}
+__startAutoRetry();
 """ else ""}
 
 ${if (showGame) """
 var __gameStarted=false;
 function showGame(){
+    __stopAutoRetry();
     document.getElementById('gameOverlay').classList.add('active');
     if(!__gameStarted){__gameStarted=true;startGame();}
 }
-function hideGame(){document.getElementById('gameOverlay').classList.remove('active');}
+function hideGame(){document.getElementById('gameOverlay').classList.remove('active');__startAutoRetry();}
 function startGame(){
     $gameJs
 }
@@ -478,22 +483,27 @@ function retryLoad(){
     else location.reload();
 }
 ${if (autoRetry > 0) """
-(function(){
+var __autoRetryTimer=null;
+function __stopAutoRetry(){if(__autoRetryTimer){clearInterval(__autoRetryTimer);__autoRetryTimer=null;}}
+function __startAutoRetry(){
+    if(__autoRetryTimer)return;
     var sec=$autoRetry,el=document.getElementById('countdown');
-    var t=setInterval(function(){
+    __autoRetryTimer=setInterval(function(){
         sec--;if(el)el.textContent=sec;
-        if(sec<=0){clearInterval(t);retryLoad();}
+        if(sec<=0){__stopAutoRetry();retryLoad();}
     },1000);
-})();
+}
+__startAutoRetry();
 """ else ""}
 
 ${if (showGame) """
 var __gameStarted=false;
 function showGame(){
+    __stopAutoRetry();
     document.getElementById('gameOverlay').classList.add('active');
     if(!__gameStarted){__gameStarted=true;startGame();}
 }
-function hideGame(){document.getElementById('gameOverlay').classList.remove('active');}
+function hideGame(){document.getElementById('gameOverlay').classList.remove('active');__startAutoRetry();}
 function startGame(){
     $gameJs
 }
