@@ -56,7 +56,7 @@ jobs:
             -PallowDebugSignedRelease=true \
             :app:compileStandardDebugKotlin \
             :shell:compileDebugKotlin \
-            :app:testDebugUnitTest \
+            :app:testStandardDebugUnitTest \
             :app:checkConfigFieldDrift
 
   package-apks:
