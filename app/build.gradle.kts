@@ -77,6 +77,24 @@ android {
         }
     }
 
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("standard") {
+            // Default full-capability variant: targetSdk 28 is required so the host can
+            // fork+exec native server runtimes (Node/PHP/Python/Go/WordPress) from app
+            // storage. Keep this low — do not raise without re-validating every runtime.
+            buildConfigField("boolean", "GPLAY_CHANNEL", "false")
+        }
+        create("gplay") {
+            // Google Play distribution variant. Play requires targetSdk 35+ for new apps.
+            // NOTE: native fork+exec runtimes (esp. Node.js V8 JIT, Go memfd exec) may fail
+            // under the stricter SELinux policy of high targetSdk; runtime launch is guarded
+            // to degrade gracefully (see BuildConfig.GPLAY_CHANNEL) rather than crash.
+            targetSdk = 35
+            buildConfigField("boolean", "GPLAY_CHANNEL", "true")
+        }
+    }
+
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")

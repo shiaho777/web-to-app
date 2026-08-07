@@ -700,10 +700,15 @@ class ShellActivity : AppCompatActivity() {
             putExtra(FloatingWindowService.EXTRA_TRANSLATE_TARGET_LANGUAGE, config.translateTargetLanguage)
             putExtra(FloatingWindowService.EXTRA_TRANSLATE_SHOW_BUTTON, config.translateShowButton)
         }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+        } catch (e: Exception) {
+            // targetSdk 34+ may reject background FGS start; the floating window may not appear.
+            com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "悬浮窗服务启动被拒: ${e.message}")
         }
         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "悬浮窗服务已启动，关闭主 Activity")
         finish()

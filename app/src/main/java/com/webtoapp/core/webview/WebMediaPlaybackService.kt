@@ -216,7 +216,13 @@ class WebMediaPlaybackService : Service() {
                 if (isPlaying) ACTION_PLAYING else ACTION_PAUSED
             )
 
-            ContextCompat.startForegroundService(context, intent)
+            try {
+                ContextCompat.startForegroundService(context, intent)
+            } catch (e: Exception) {
+                // targetSdk 34+ may reject background FGS start with
+                // ForegroundServiceStartNotAllowedException; fail soft rather than crash.
+                android.util.Log.w("WebMediaPlayback", "startForegroundService rejected for media playback", e)
+            }
         }
 
         fun stop(context: Context) {
@@ -225,7 +231,11 @@ class WebMediaPlaybackService : Service() {
                 WebMediaPlaybackService::class.java
             ).setAction(ACTION_STOPPED)
 
-            ContextCompat.startForegroundService(context, intent)
+            try {
+                ContextCompat.startForegroundService(context, intent)
+            } catch (e: Exception) {
+                android.util.Log.w("WebMediaPlayback", "startForegroundService rejected for media stop", e)
+            }
         }
 
         fun commandPendingIntent(

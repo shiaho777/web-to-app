@@ -1365,7 +1365,12 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun bindService() {
         val intent = Intent(ctx, AgentService::class.java)
-        ContextCompat.startForegroundService(ctx, intent)
+        try {
+            ContextCompat.startForegroundService(ctx, intent)
+        } catch (e: Exception) {
+            // targetSdk 34+ may reject background FGS start; bind only in that case.
+            AppLogger.w("AgentViewModel", "startForegroundService rejected, falling back to bind only", e)
+        }
         ctx.bindService(intent, connection, Context.BIND_AUTO_CREATE)
     }
 

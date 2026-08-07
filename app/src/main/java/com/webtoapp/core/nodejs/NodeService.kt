@@ -25,6 +25,17 @@ class NodeService : Service() {
         private const val TAG = "NodeService"
         private const val MAX_HEALTH_CHECK_RETRIES = 60
         private const val HEALTH_CHECK_INTERVAL_MS = 500L
+
+        /**
+         * Node.js runs via dlopen(libnode.so) + V8 JIT, which needs RWX memory. Under the stricter
+         * SELinux policy of a high-targetSdk (Google Play) channel this can fail at dlopen/exec time.
+         * Surface the channel limitation to the user instead of looking like a generic crash.
+         * Runtime-layer string (shell-synced); intentionally not routed through Strings i18n.
+         */
+        private fun channelNote(): String =
+            if (com.webtoapp.BuildConfig.GPLAY_CHANNEL) {
+                " [Google Play 渠道：受高 targetSdk 限制，Node.js 运行时可能不可用]"
+            } else ""
     }
 
     private val workerThread = HandlerThread("NodeService-worker").apply { start() }
@@ -150,7 +161,7 @@ class NodeService : Service() {
                 replyFailed(
                     replyTo,
                     requestId,
-                    "libnode_bridge.so 加载失败 ($detail)。导出的 NODEJS_APP 需包含 libnode_bridge.so 与 libc++_shared.so；请用最新构建器重新导出。"
+                    "libnode_bridge.so 加载失败 ($detail)。导出的 NODEJS_APP 需包含 libnode_bridge.so 与 libc++_shared.so；请用最新构建器重新导出。${channelNote()}"
                 )
                 return
             }
@@ -160,7 +171,7 @@ class NodeService : Service() {
                 replyFailed(
                     replyTo,
                     requestId,
-                    "libnode.so 加载失败 ($path)。请确认 APK 含 16KB 对齐的 libnode.so，或在主机下载 Node 运行时后重新导出。"
+                    "libnode.so 加载失败 ($path)。请确认 APK 含 16KB 对齐的 libnode.so，或在主机下载 Node 运行时后重新导出。${channelNote()}"
                 )
                 return
             }

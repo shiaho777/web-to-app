@@ -315,7 +315,16 @@ class AgentService : Service() {
 
     private fun promoteToForeground(text: String) {
         if (inForeground) return
-        startForeground(NOTIFICATION_ID, buildNotification(text))
+        val notification = buildNotification(text)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIFICATION_ID,
+                notification,
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
+        }
         inForeground = true
     }
 

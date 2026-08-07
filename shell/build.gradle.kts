@@ -28,6 +28,11 @@ android {
 
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "true")
 
+        // Shell template never ships to Google Play — it is the runtime host for *generated* apps,
+        // which always use targetSdk 28 (fork+exec). The GPLAY_CHANNEL flag is mirrored here only so
+        // shell-synced runtime sources (NodeService/GoRuntime) that reference it compile cleanly.
+        buildConfigField("boolean", "GPLAY_CHANNEL", "false")
+
         vectorDrawables {
             useSupportLibrary = true
         }
