@@ -3475,7 +3475,6 @@ fun WebApp.toApkConfig(packageName: String, context: android.content.Context? = 
     return ApkConfig(
         meta = buildMetaBlock(packageName, effectiveTargetUrl, htmlUsesFileScheme, bakedDarkMode),
         activation = buildActivationBlock(),
-        appLock = buildAppLockBlock(),
         adBlock = buildAdBlockBlock(),
         announcement = buildAnnouncementBlock(),
         ads = buildAdsBlock(),
@@ -3595,12 +3594,6 @@ private fun WebApp.buildActivationBlock(): ActivationBlock = ActivationBlock(
     remoteDeliverUrl = activationRemoteConfig?.deliverUrl ?: false,
     remoteEncryptUrl = activationRemoteConfig?.encryptUrl ?: false,
     remoteAesKey = activationRemoteConfig?.aesKeyBase64 ?: ""
-)
-
-private fun WebApp.buildAppLockBlock(): AppLockBlock = AppLockBlock(
-    enabled = appLockConfig?.enabled ?: false,
-    pin = appLockConfig?.pin.orEmpty(),
-    lockDelaySeconds = appLockConfig?.lockDelaySeconds ?: 0
 )
 
 private fun WebApp.buildAdBlockBlock(): AdBlockBlock = AdBlockBlock(

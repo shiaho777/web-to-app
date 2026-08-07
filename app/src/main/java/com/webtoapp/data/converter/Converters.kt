@@ -306,12 +306,6 @@ class Converters {
     fun toRemoteActivationConfig(value: String): com.webtoapp.data.model.RemoteActivationConfig? = fromJson(value)
 
     @TypeConverter
-    fun fromAppLockConfig(value: com.webtoapp.data.model.AppLockConfig?): String = toJson(value)
-
-    @TypeConverter
-    fun toAppLockConfig(value: String): com.webtoapp.data.model.AppLockConfig? = fromJson(value)
-
-    @TypeConverter
     fun fromAutoStartConfig(value: AutoStartConfig?): String = toJson(value)
 
     @TypeConverter

@@ -36,12 +36,6 @@ class ShellActivity : AppCompatActivity() {
 
     private var deepLinkUrl = mutableStateOf<String?>(null)
 
-    // App lock (PIN gate) state. Unlock time lives only in-process: a process
-    // restart always re-locks, and lockDelaySeconds only applies to
-    // background/resume transitions.
-    private var appUnlockedAtMs by mutableStateOf(0L)
-    private var showAppLock by mutableStateOf(false)
-
     val permissionDelegate = ShellPermissionDelegate(this)
     private val startupPermissions = ShellStartupPermissions(this)
 
@@ -250,34 +244,6 @@ class ShellActivity : AppCompatActivity() {
         browserSurface?.reload() ?: webView?.reload()
     }
 
-    /**
-     * App-lock gate: shows the PIN screen on launch, and on resume when the
-     * configured lock delay (or 0 = always) has elapsed since the last unlock.
-     * The unlock timestamp is in-process only, so a process restart always
-     * re-locks. No-op when the lock is disabled or the PIN is blank.
-     */
-    private fun refreshAppLockFromConfig() {
-        try {
-            val config = WebToAppApplication.shellMode.getConfig() ?: return
-            val enabled = config.appLockEnabled && config.appLockPin.isNotBlank()
-            if (!enabled) {
-                showAppLock = false
-                return
-            }
-            val delaySec = config.appLockDelaySeconds
-            val locked = if (appUnlockedAtMs == 0L) {
-                true
-            } else if (delaySec <= 0) {
-                true
-            } else {
-                android.os.SystemClock.elapsedRealtime() - appUnlockedAtMs > delaySec * 1000L
-            }
-            showAppLock = locked
-        } catch (e: Exception) {
-            com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "refreshAppLock failed", e)
-        }
-    }
-
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
         super.onConfigurationChanged(newConfig)
         // The shell manifest declares configChanges including uiMode, so switching the system
@@ -481,18 +447,6 @@ class ShellActivity : AppCompatActivity() {
                     }
                 }
 
-                LaunchedEffect(Unit) { refreshAppLockFromConfig() }
-
-                if (showAppLock) {
-                    AppLockScreen(
-                        appName = config.appName,
-                        expectedPin = config.appLockPin,
-                        onUnlock = {
-                            appUnlockedAtMs = android.os.SystemClock.elapsedRealtime()
-                            showAppLock = false
-                        }
-                    )
-                } else {
                 ShellScreen(
                     config = config,
                     deepLinkUrl = deepLinkUrl.value,
@@ -662,7 +616,6 @@ class ShellActivity : AppCompatActivity() {
                     statusBarBackgroundImageDark = statusBarBackgroundImageDark,
                     statusBarBackgroundAlphaDark = statusBarBackgroundAlphaDark
                 )
-                }
             }
         }
 
@@ -826,8 +779,6 @@ class ShellActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-
-        refreshAppLockFromConfig()
 
         if (pendingFloatingWindowLaunch) {
             val config = WebToAppApplication.shellMode.getConfig()
