@@ -684,6 +684,15 @@ object Strings {
     val updateReleaseNotesLabel: String get() = StringsA.updateReleaseNotesLabel
     val updateSizeLabel: String get() = StringsA.updateSizeLabel
     val updateVerificationFailed: String get() = StringsA.updateVerificationFailed
+    val versionHistoryTitle: String get() = StringsA.versionHistoryTitle
+    val versionHistoryButtonHint: String get() = StringsA.versionHistoryButtonHint
+    val versionHistoryLoading: String get() = StringsA.versionHistoryLoading
+    val versionHistoryLoadFailed: String get() = StringsA.versionHistoryLoadFailed
+    val versionHistoryEmpty: String get() = StringsA.versionHistoryEmpty
+    val versionHistoryCurrentVersion: String get() = StringsA.versionHistoryCurrentVersion
+    val versionHistoryDownload: String get() = StringsA.versionHistoryDownload
+    val versionHistoryInstall: String get() = StringsA.versionHistoryInstall
+    val versionHistoryNoApk: String get() = StringsA.versionHistoryNoApk
     val downloadComplete: String get() = StringsA.downloadComplete
     val close: String get() = StringsA.close
     val cancel: String get() = StringsA.cancel
@@ -13501,6 +13510,123 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Скачанный файл не прошёл проверку целостности (несоответствие SHA-256); он был удалён для вашей безопасности"
         AppLanguage.JAPANESE -> "ダウンロードしたファイルの整合性チェックに失敗しました（SHA-256不一致）。安全のため削除されました"
         AppLanguage.KOREAN -> "다운로드한 파일의 무결성 검사에 실패했습니다 (SHA-256 불일치). 안전을 위해 삭제되었습니다"
+    }
+
+    val versionHistoryTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "版本历史"
+        AppLanguage.ENGLISH -> "Version history"
+        AppLanguage.ARABIC -> "سجل الإصدارات"
+        AppLanguage.PORTUGUESE -> "Histórico de versões"
+        AppLanguage.SPANISH -> "Historial de versiones"
+        AppLanguage.FRENCH -> "Historique des versions"
+        AppLanguage.GERMAN -> "Versionsverlauf"
+        AppLanguage.RUSSIAN -> "История версий"
+        AppLanguage.JAPANESE -> "バージョン履歴"
+        AppLanguage.KOREAN -> "버전 기록"
+    }
+
+    val versionHistoryButtonHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "版本历史"
+        AppLanguage.ENGLISH -> "Version history"
+        AppLanguage.ARABIC -> "سجل الإصدارات"
+        AppLanguage.PORTUGUESE -> "Histórico de versões"
+        AppLanguage.SPANISH -> "Historial de versiones"
+        AppLanguage.FRENCH -> "Historique des versions"
+        AppLanguage.GERMAN -> "Versionsverlauf"
+        AppLanguage.RUSSIAN -> "История версий"
+        AppLanguage.JAPANESE -> "バージョン履歴"
+        AppLanguage.KOREAN -> "버전 기록"
+    }
+
+    val versionHistoryLoading: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "正在加载版本历史…"
+        AppLanguage.ENGLISH -> "Loading version history…"
+        AppLanguage.ARABIC -> "جارٍ تحميل سجل الإصدارات…"
+        AppLanguage.PORTUGUESE -> "Carregando histórico de versões…"
+        AppLanguage.SPANISH -> "Cargando historial de versiones…"
+        AppLanguage.FRENCH -> "Chargement de l'historique des versions…"
+        AppLanguage.GERMAN -> "Versionsverlauf wird geladen…"
+        AppLanguage.RUSSIAN -> "Загрузка истории версий…"
+        AppLanguage.JAPANESE -> "バージョン履歴を読み込み中…"
+        AppLanguage.KOREAN -> "버전 기록을 불러오는 중…"
+    }
+
+    val versionHistoryLoadFailed: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "加载版本历史失败"
+        AppLanguage.ENGLISH -> "Failed to load version history"
+        AppLanguage.ARABIC -> "فشل تحميل سجل الإصدارات"
+        AppLanguage.PORTUGUESE -> "Falha ao carregar o histórico de versões"
+        AppLanguage.SPANISH -> "Error al cargar el historial de versiones"
+        AppLanguage.FRENCH -> "Échec du chargement de l'historique des versions"
+        AppLanguage.GERMAN -> "Versionsverlauf konnte nicht geladen werden"
+        AppLanguage.RUSSIAN -> "Не удалось загрузить историю версий"
+        AppLanguage.JAPANESE -> "バージョン履歴の読み込みに失敗しました"
+        AppLanguage.KOREAN -> "버전 기록을 불러오지 못했습니다"
+    }
+
+    val versionHistoryEmpty: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "暂无历史版本"
+        AppLanguage.ENGLISH -> "No releases yet"
+        AppLanguage.ARABIC -> "لا توجد إصدارات بعد"
+        AppLanguage.PORTUGUESE -> "Nenhuma versão ainda"
+        AppLanguage.SPANISH -> "Aún no hay versiones"
+        AppLanguage.FRENCH -> "Aucune version pour le moment"
+        AppLanguage.GERMAN -> "Noch keine Versionen"
+        AppLanguage.RUSSIAN -> "Версий пока нет"
+        AppLanguage.JAPANESE -> "まだリリースがありません"
+        AppLanguage.KOREAN -> "아직 릴리스가 없습니다"
+    }
+
+    val versionHistoryCurrentVersion: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "当前版本"
+        AppLanguage.ENGLISH -> "Current"
+        AppLanguage.ARABIC -> "الحالي"
+        AppLanguage.PORTUGUESE -> "Atual"
+        AppLanguage.SPANISH -> "Actual"
+        AppLanguage.FRENCH -> "Actuelle"
+        AppLanguage.GERMAN -> "Aktuell"
+        AppLanguage.RUSSIAN -> "Текущая"
+        AppLanguage.JAPANESE -> "現行"
+        AppLanguage.KOREAN -> "현재"
+    }
+
+    val versionHistoryDownload: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "下载此版本"
+        AppLanguage.ENGLISH -> "Download this version"
+        AppLanguage.ARABIC -> "تنزيل هذا الإصدار"
+        AppLanguage.PORTUGUESE -> "Baixar esta versão"
+        AppLanguage.SPANISH -> "Descargar esta versión"
+        AppLanguage.FRENCH -> "Télécharger cette version"
+        AppLanguage.GERMAN -> "Diese Version herunterladen"
+        AppLanguage.RUSSIAN -> "Скачать эту версию"
+        AppLanguage.JAPANESE -> "このバージョンをダウンロード"
+        AppLanguage.KOREAN -> "이 버전 다운로드"
+    }
+
+    val versionHistoryInstall: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "安装"
+        AppLanguage.ENGLISH -> "Install"
+        AppLanguage.ARABIC -> "تثبيت"
+        AppLanguage.PORTUGUESE -> "Instalar"
+        AppLanguage.SPANISH -> "Instalar"
+        AppLanguage.FRENCH -> "Installer"
+        AppLanguage.GERMAN -> "Installieren"
+        AppLanguage.RUSSIAN -> "Установить"
+        AppLanguage.JAPANESE -> "インストール"
+        AppLanguage.KOREAN -> "설치"
+    }
+
+    val versionHistoryNoApk: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "此版本无安装包"
+        AppLanguage.ENGLISH -> "No APK for this release"
+        AppLanguage.ARABIC -> "لا يوجد APK لهذا الإصدار"
+        AppLanguage.PORTUGUESE -> "Sem APK para esta versão"
+        AppLanguage.SPANISH -> "Sin APK para esta versión"
+        AppLanguage.FRENCH -> "Aucun APK pour cette version"
+        AppLanguage.GERMAN -> "Kein APK für diese Version"
+        AppLanguage.RUSSIAN -> "Нет APK для этой версии"
+        AppLanguage.JAPANESE -> "このリリースのAPKはありません"
+        AppLanguage.KOREAN -> "이 릴리스에 대한 APK가 없습니다"
     }
 
     val downloadComplete: String get() = when (Strings.lang) {

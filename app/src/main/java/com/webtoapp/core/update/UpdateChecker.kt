@@ -17,6 +17,8 @@ object UpdateChecker {
     private const val REPO = "web-to-app"
     private const val LATEST_RELEASE_API =
         "https://api.github.com/repos/$OWNER/$REPO/releases/latest"
+    private const val ALL_RELEASES_API =
+        "https://api.github.com/repos/$OWNER/$REPO/releases?per_page=100"
 
     private const val TIMEOUT_MS = 12000
 
@@ -48,6 +50,24 @@ object UpdateChecker {
         val sizeBytes: Long,
         val sha256: String?,
         val releaseNotes: String
+    )
+
+    /**
+     * A single historical release as needed by the version history UI. Each entry keeps
+     * enough info to render, show its changelog, and offer a download without re-fetching.
+     *
+     * [downloadUrl] is the already-mirrored browser_download_url; null when the release has
+     * no APK asset (e.g. source-only / draft).
+     */
+    data class ReleaseSummary(
+        val tag: String,
+        val version: String,
+        val name: String,
+        val publishedAt: String,
+        val body: String,
+        val downloadUrl: String?,
+        val sizeBytes: Long,
+        val sha256: String?
     )
 
     sealed class Result {
@@ -99,6 +119,48 @@ object UpdateChecker {
         }
     }
 
+    /**
+     * Fetches the full release history (newest first) for the version-history UI. Each entry
+     * carries its changelog body and — when available — a (mirrored) APK download URL.
+     *
+     * Releases without a parseable version tag or without an APK asset are still listed (so
+     * the user can read their notes), but [ReleaseSummary.downloadUrl] is null when there is
+     * no APK to download. Draft releases are excluded by the API.
+     */
+    suspend fun fetchAllReleases(): List<ReleaseSummary> = withContext(Dispatchers.IO) {
+        try {
+            val json = fetchAllReleasesJson()
+                ?: return@withContext emptyList()
+            val arr = org.json.JSONArray(json)
+            val out = ArrayList<ReleaseSummary>(arr.length())
+            for (i in 0 until arr.length()) {
+                val release = arr.optJSONObject(i) ?: continue
+                val tag = release.optString("tag_name").ifBlank { release.optString("name") }
+                val version = Version.parse(tag)?.toString() ?: tag
+                val asset = pickBestApkAsset(release)
+                val rawUrl = asset?.optString("browser_download_url")?.takeIf { it.isNotBlank() }
+                out.add(
+                    ReleaseSummary(
+                        tag = tag,
+                        version = version,
+                        name = release.optString("name").trim(),
+                        publishedAt = release.optString("published_at").trim(),
+                        body = release.optString("body").trim(),
+                        downloadUrl = rawUrl?.let { withMirror(it) },
+                        sizeBytes = asset?.optLong("size", 0L) ?: 0L,
+                        sha256 = asset?.optString("digest").takeIf { !it.isNullOrBlank() }
+                            ?.substringAfter("sha256:", "")?.takeIf { it.isNotBlank() }
+                    )
+                )
+            }
+            // Sort by version descending so newest is on top; unparseable tags sink to the bottom.
+            out.sortedWith(compareByDescending { Version.parse(it.version) ?: Version(0, 0, 0) })
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Fetch all releases failed", e)
+            throw e
+        }
+    }
+
     private fun pickBestApkAsset(release: JSONObject): JSONObject? {
         val assets = release.optJSONArray("assets") ?: return null
         var best: JSONObject? = null
@@ -125,6 +187,21 @@ object UpdateChecker {
                 return httpGet(endpoint)
             } catch (e: Exception) {
                 AppLogger.w(TAG, "Release API failed via $endpoint: ${e.message}")
+                lastError = e
+            }
+        }
+        lastError?.let { throw it }
+        return null
+    }
+
+    private fun fetchAllReleasesJson(): String? {
+        val candidates = listOf(withMirror(ALL_RELEASES_API), ALL_RELEASES_API)
+        var lastError: Exception? = null
+        for (endpoint in candidates) {
+            try {
+                return httpGet(endpoint)
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "All-releases API failed via $endpoint: ${e.message}")
                 lastError = e
             }
         }

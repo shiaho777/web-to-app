@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,6 +24,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,19 +34,30 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Chat
 import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.ExpandLess
+import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.Tag
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -137,6 +151,19 @@ private fun AuthorHeroCard(
             com.webtoapp.core.update.UpdateDownloadState.Idle
         )
     }
+
+    // Version history state
+    var showHistorySheet by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var historyLoading by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var historyError by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var historyReleases by androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateOf<List<com.webtoapp.core.update.UpdateChecker.ReleaseSummary>>(emptyList())
+    }
+    // Per-release download state keyed by tag, so each version downloads independently.
+    val historyDownloadStates = androidx.compose.runtime.remember {
+        androidx.compose.runtime.mutableStateMapOf<String, com.webtoapp.core.update.UpdateDownloadState>()
+    }
+
     val apkBuilder = remember(context) { com.webtoapp.core.apkbuilder.ApkBuilder(context.applicationContext) }
 
     if (showUpdateDialog) {
@@ -171,6 +198,41 @@ private fun AuthorHeroCard(
             }
         )
     }
+
+    if (showHistorySheet) {
+        VersionHistorySheet(
+            releases = historyReleases,
+            loading = historyLoading,
+            error = historyError,
+            currentVersion = versionName,
+            downloadStates = historyDownloadStates,
+            onDownload = { release ->
+                val url = release.downloadUrl ?: return@VersionHistorySheet
+                com.webtoapp.core.update.ApkUpdateInstaller.download(
+                    context = context,
+                    url = url,
+                    version = release.version,
+                    expectedSha256 = release.sha256,
+                    onState = { state -> historyDownloadStates[release.tag] = state }
+                )
+            },
+            onCancelDownload = { tag ->
+                com.webtoapp.core.update.ApkUpdateInstaller.cancel()
+                historyDownloadStates.remove(tag)
+            },
+            onInstall = { file ->
+                val started = apkBuilder.installApk(file)
+                if (!started) {
+                    Toast.makeText(context, Strings.fileManagerInstallFailed, Toast.LENGTH_SHORT).show()
+                }
+            },
+            onDismiss = {
+                com.webtoapp.core.update.ApkUpdateInstaller.cancel()
+                showHistorySheet = false
+            }
+        )
+    }
+
 
     WtaCard(
         modifier = Modifier.fillMaxWidth(),
@@ -257,6 +319,22 @@ private fun AuthorHeroCard(
                         versionCopied,
                         Toast.LENGTH_SHORT
                     ).show()
+                },
+                onHistory = {
+                    showHistorySheet = true
+                    if (historyReleases.isEmpty() && !historyLoading) {
+                        historyLoading = true
+                        historyError = null
+                        scope.launch {
+                            try {
+                                historyReleases = com.webtoapp.core.update.UpdateChecker.fetchAllReleases()
+                            } catch (e: Exception) {
+                                historyError = e.message ?: e.javaClass.simpleName
+                            } finally {
+                                historyLoading = false
+                            }
+                        }
+                    }
                 }
             )
         }
@@ -268,11 +346,13 @@ private fun VersionPill(
     versionName: String,
     versionCode: Long,
     onClick: () -> Unit,
-    onCopy: () -> Unit
+    onCopy: () -> Unit,
+    onHistory: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val hapticClick = rememberHapticClick(onClick)
     val hapticCopy = rememberHapticClick(onCopy)
+    val hapticHistory = rememberHapticClick(onHistory)
 
     Row(
         modifier = Modifier
@@ -309,6 +389,16 @@ private fun VersionPill(
             Icons.Outlined.Sync,
             contentDescription = Strings.updateCheckTitle,
             modifier = Modifier.size(14.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(Modifier.width(10.dp))
+        Icon(
+            Icons.Outlined.History,
+            contentDescription = Strings.versionHistoryButtonHint,
+            modifier = Modifier
+                .clip(CircleShape)
+                .clickable(onClick = hapticHistory)
+                .size(15.dp),
             tint = MaterialTheme.colorScheme.primary
         )
         Spacer(Modifier.width(10.dp))
@@ -730,12 +820,400 @@ private fun UpdateAvailableContent(
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(6.dp))
+                ReleaseNotesMarkdown(text = info.releaseNotes)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VersionHistorySheet(
+    releases: List<com.webtoapp.core.update.UpdateChecker.ReleaseSummary>,
+    loading: Boolean,
+    error: String?,
+    currentVersion: String,
+    downloadStates: androidx.compose.runtime.snapshots.SnapshotStateMap<String, com.webtoapp.core.update.UpdateDownloadState>,
+    onDownload: (com.webtoapp.core.update.UpdateChecker.ReleaseSummary) -> Unit,
+    onCancelDownload: (String) -> Unit,
+    onInstall: (java.io.File) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Outlined.History,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(10.dp))
                 Text(
-                    info.releaseNotes,
-                    style = MaterialTheme.typography.bodySmall,
+                    Strings.versionHistoryTitle,
+                    style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+            }
+            when {
+                loading && releases.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(modifier = Modifier.size(28.dp), strokeWidth = 2.dp)
+                            Spacer(Modifier.height(12.dp))
+                            Text(
+                                Strings.versionHistoryLoading,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                error != null && releases.isEmpty() -> {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            Strings.versionHistoryLoadFailed,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            error,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                releases.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            Strings.versionHistoryEmpty,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                else -> {
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        items(releases, key = { it.tag }) { release ->
+                            VersionHistoryItem(
+                                release = release,
+                                isCurrent = release.version == currentVersion,
+                                downloadState = downloadStates[release.tag]
+                                    ?: com.webtoapp.core.update.UpdateDownloadState.Idle,
+                                onDownload = { onDownload(release) },
+                                onCancelDownload = { onCancelDownload(release.tag) },
+                                onInstall = onInstall
+                            )
+                        }
+                        item { Spacer(Modifier.height(8.dp)) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VersionHistoryItem(
+    release: com.webtoapp.core.update.UpdateChecker.ReleaseSummary,
+    isCurrent: Boolean,
+    downloadState: com.webtoapp.core.update.UpdateDownloadState,
+    onDownload: () -> Unit,
+    onCancelDownload: () -> Unit,
+    onInstall: (java.io.File) -> Unit
+) {
+    var expanded by remember(release.tag) { androidx.compose.runtime.mutableStateOf(false) }
+    val date = remember(release.publishedAt) { release.publishedAt.substringBefore('T').ifBlank { release.publishedAt } }
+    val hasNotes = release.body.isNotBlank()
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = hasNotes) { expanded = !expanded }
+                .padding(horizontal = 24.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "v${release.version}",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (isCurrent) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface
+                    )
+                    if (isCurrent) {
+                        Spacer(Modifier.width(8.dp))
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(999.dp))
+                                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                Strings.versionHistoryCurrentVersion,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(2.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (date.isNotBlank()) {
+                        Text(
+                            date,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    if (date.isNotBlank() && release.sizeBytes > 0) {
+                        Text(
+                            " · ",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+                    if (release.sizeBytes > 0) {
+                        Text(
+                            formatBytes(release.sizeBytes),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            if (hasNotes) {
+                Icon(
+                    if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+
+        AnimatedVisibility(visible = expanded) {
+            Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+                if (hasNotes) {
+                    // Thin divider line above notes.
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        Strings.updateReleaseNotesLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    ReleaseNotesMarkdown(text = release.body)
+                }
+                Spacer(Modifier.height(10.dp))
+                VersionHistoryDownloadRow(
+                    release = release,
+                    isCurrent = isCurrent,
+                    downloadState = downloadState,
+                    onDownload = onDownload,
+                    onCancelDownload = onCancelDownload,
+                    onInstall = onInstall
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+        }
+        // Divider between items.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        )
+    }
+}
+
+@Composable
+private fun VersionHistoryDownloadRow(
+    release: com.webtoapp.core.update.UpdateChecker.ReleaseSummary,
+    isCurrent: Boolean,
+    downloadState: com.webtoapp.core.update.UpdateDownloadState,
+    onDownload: () -> Unit,
+    onCancelDownload: () -> Unit,
+    onInstall: (java.io.File) -> Unit
+) {
+    when (downloadState) {
+        is com.webtoapp.core.update.UpdateDownloadState.Downloading -> {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        Strings.updateDownloading,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.weight(1f))
+                    TextButton(onClick = onCancelDownload) {
+                        Text(Strings.updateCancelDownload)
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+                DownloadProgressRow(
+                    downloaded = downloadState.downloadedBytes,
+                    total = downloadState.totalBytes,
+                    speed = downloadState.speedBytesPerSec
+                )
+            }
+        }
+        com.webtoapp.core.update.UpdateDownloadState.Verifying -> {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                Spacer(Modifier.width(10.dp))
+                Text(Strings.updateVerifying, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        is com.webtoapp.core.update.UpdateDownloadState.Done -> {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    Strings.updateInstallReady,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(Modifier.height(4.dp))
+                Row {
+                    TextButton(onClick = { onInstall(downloadState.file) }) {
+                        Text(Strings.versionHistoryInstall)
+                    }
+                }
+            }
+        }
+        is com.webtoapp.core.update.UpdateDownloadState.Failed -> {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    Strings.updateDownloadFailed,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    downloadState.message,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(Modifier.height(6.dp))
+                if (release.downloadUrl != null) {
+                    TextButton(onClick = onDownload) {
+                        Text(Strings.updateRetry)
+                    }
+                }
+            }
+        }
+        com.webtoapp.core.update.UpdateDownloadState.Idle -> {
+            if (release.downloadUrl == null) {
+                Text(
+                    Strings.versionHistoryNoApk,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else if (isCurrent) {
+                // Already installed — no download button.
+            } else {
+                TextButton(onClick = onDownload) {
+                    Icon(
+                        Icons.Outlined.Download,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(Strings.versionHistoryDownload)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Lightweight Markdown renderer for GitHub release notes, tuned for the
+ * "## Added / ## Improved / ## Fixed" + "- item" changelog format.
+ *
+ * It only handles what release notes actually contain — second-level headings
+ * (`##`), unordered list items (`-`/`*`), and plain paragraphs — so it stays
+ * dependency-free. Anything else is shown as plain text.
+ */
+@Composable
+private fun ReleaseNotesMarkdown(text: String) {
+    val titleColor = MaterialTheme.colorScheme.primary
+    val textColor = MaterialTheme.colorScheme.onSurface
+    val mutedColor = MaterialTheme.colorScheme.onSurfaceVariant
+
+    val lines = remember(text) { text.lines() }
+    var inList = false
+    Column {
+        lines.forEachIndexed { index, rawLine ->
+            val line = rawLine.trimEnd()
+            when {
+                // Second-level heading: the Added / Improved / Fixed sections.
+                line.startsWith("## ") -> {
+                    if (inList) Spacer(Modifier.height(4.dp))
+                    inList = false
+                    if (index > 0) Spacer(Modifier.height(6.dp))
+                    Text(
+                        line.removePrefix("## ").trim(),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = titleColor
+                    )
+                }
+                // Unordered list item.
+                line.startsWith("- ") || line.startsWith("* ") -> {
+                    if (!inList && index > 0) Spacer(Modifier.height(2.dp))
+                    inList = true
+                    Row(modifier = Modifier.padding(start = 4.dp, top = 1.dp)) {
+                        Text(
+                            "•",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = mutedColor,
+                            modifier = Modifier.width(12.dp)
+                        )
+                        Text(
+                            line.removePrefix("- ").removePrefix("* ").trim(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = textColor
+                        )
+                    }
+                }
+                // Blank line: just spacing, closes any open list.
+                line.isBlank() -> {
+                    inList = false
+                }
+                // Fallback: plain paragraph text.
+                else -> {
+                    if (inList) Spacer(Modifier.height(4.dp))
+                    inList = false
+                    Text(
+                        line,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = textColor
+                    )
+                }
             }
         }
     }
