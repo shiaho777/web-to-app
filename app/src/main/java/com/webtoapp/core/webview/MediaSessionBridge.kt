@@ -69,6 +69,15 @@ class MediaSessionBridge(
 
     private var playbackState = PlaybackState.STATE_NONE
 
+    /**
+     * `true` once any non-`none` playback state has ever been reported. Used to
+     * guard [clearPlayback] so the initial `STATE_NONE` event (emitted during
+     * page load before any media exists) does not run full media-session
+     * teardown — which would otherwise stop the playback service on every cold
+     * start.
+     */
+    private var hasActivePlaybackSession = false
+
     private val supportedActions = mutableSetOf<String>()
 
     @Volatile
@@ -244,9 +253,16 @@ class MediaSessionBridge(
 
     private fun publish() {
         if (playbackState == PlaybackState.STATE_NONE) {
-            clearPlayback()
+            // Only tear down when media has actually been active at some point.
+            // The initial "none" state arrives during page load before any media
+            // exists, and running full cleanup there is unnecessary and risky.
+            if (hasActivePlaybackSession || mediaSession.isActive || lastNotification != null) {
+                clearPlayback()
+            }
             return
         }
+
+        hasActivePlaybackSession = true
 
         applyMetadata()
         applyPlaybackState()
@@ -564,6 +580,8 @@ class MediaSessionBridge(
     }
 
     private fun clearPlayback() {
+        hasActivePlaybackSession = false
+
         playbackState = PlaybackState.STATE_NONE
         positionSeconds = 0.0
         durationSeconds = 0.0

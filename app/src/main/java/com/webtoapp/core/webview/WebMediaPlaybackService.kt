@@ -55,17 +55,6 @@ class WebMediaPlaybackService : Service() {
                 stopSelf()
             }
 
-            ACTION_STOPPED -> {
-                releaseWakeLock()
-
-                stopForegroundCompat(STOP_FOREGROUND_REMOVE)
-
-                getSystemService(NotificationManager::class.java)
-                    .cancel(NOTIFICATION_ID)
-
-                stopSelf()
-            }
-
             ACTION_MEDIA_COMMAND -> {
                 /*
                  * A foreground-service PendingIntent is used for notification
@@ -196,9 +185,6 @@ class WebMediaPlaybackService : Service() {
         private const val ACTION_PAUSED =
             "com.webtoapp.media.PAUSED"
 
-        private const val ACTION_STOPPED =
-            "com.webtoapp.media.STOPPED"
-
         private const val ACTION_MEDIA_COMMAND =
             "com.webtoapp.media.COMMAND"
 
@@ -225,17 +211,31 @@ class WebMediaPlaybackService : Service() {
             }
         }
 
+        /**
+         * Stops the media playback service if it is running.
+         *
+         * This deliberately uses [Context.stopService] instead of
+         * [ContextCompat.startForegroundService] with a stop action: starting a
+         * foreground service only to stop it violates the foreground-service
+         * contract (the service must call [android.app.Service.startForeground]
+         * within the startup deadline), which crashed generated apps on launch
+         * when the initial Media Session state was `none`. [Context.stopService]
+         * is a no-op when the service is not running and creates no such
+         * obligation.
+         */
         fun stop(context: Context) {
-            val intent = Intent(
-                context,
-                WebMediaPlaybackService::class.java
-            ).setAction(ACTION_STOPPED)
+            val appContext = context.applicationContext
 
-            try {
-                ContextCompat.startForegroundService(context, intent)
-            } catch (e: Exception) {
-                android.util.Log.w("WebMediaPlayback", "startForegroundService rejected for media stop", e)
-            }
+            appContext
+                .getSystemService(NotificationManager::class.java)
+                .cancel(NOTIFICATION_ID)
+
+            appContext.stopService(
+                Intent(
+                    appContext,
+                    WebMediaPlaybackService::class.java
+                )
+            )
         }
 
         fun commandPendingIntent(
