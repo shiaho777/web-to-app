@@ -357,11 +357,17 @@ class NodeService : Service() {
                 "HOME" to filesDir.absolutePath,
                 "TMPDIR" to cacheDir.absolutePath,
                 "NODE_ENV" to "production",
-                "PORT" to port.toString(),
                 "HOST" to "127.0.0.1",
                 "NODE_PATH" to File(projectDir, "node_modules").absolutePath
             )
             envMap.putAll(envVars)
+            // The actually-allocated port always wins and must be set AFTER putAll(envVars).
+            // envVars may carry a stale PORT — e.g. ShellServerLauncher forwards the *requested*
+            // port from ShellConfig (nodejsConfig.port). Once PortManager reassigned the port
+            // (the preferred one was taken by another app's still-running server), forcing the
+            // stale value makes the script bind the taken port, crash with EADDRINUSE, and the
+            // health check on the real port then times out as "Node.js 服务器启动超时".
+            envMap["PORT"] = port.toString()
             val dnsProxyPort = LocalDnsBridgeProxy.getListenPort()
             if (dnsProxyPort > 0) {
                 LocalDnsBridgeProxy.proxyEnvFor(dnsProxyPort).forEach { (k, v) -> envMap[k] = v }
