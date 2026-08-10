@@ -643,6 +643,11 @@ private fun UpdateCheckDialog(
     val available = result as? com.webtoapp.core.update.UpdateChecker.Result.UpdateAvailable
     val downloading = downloadState is com.webtoapp.core.update.UpdateDownloadState.Downloading ||
         downloadState is com.webtoapp.core.update.UpdateDownloadState.Verifying
+    // True when the confirmButton shows a real action (Download/Install/Retry/Cancel). When false
+    // (UpToDate / Failed), confirmButton itself is "Close" — the dismissButton must stay empty in
+    // that case or the dialog shows two identical Close buttons.
+    val hasActionButton = available != null ||
+        downloadState is com.webtoapp.core.update.UpdateDownloadState.Done
 
     androidx.compose.material3.AlertDialog(
         onDismissRequest = {
@@ -732,8 +737,10 @@ private fun UpdateCheckDialog(
             }
         },
         dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDismiss) {
-                Text(Strings.close)
+            if (hasActionButton) {
+                androidx.compose.material3.TextButton(onClick = onDismiss) {
+                    Text(Strings.close)
+                }
             }
         }
     )

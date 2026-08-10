@@ -1,5 +1,7 @@
 package com.webtoapp.core.update
 
+import com.webtoapp.core.i18n.AppLanguage
+import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 import java.io.BufferedReader
 import java.net.HttpURLConnection
@@ -21,6 +23,33 @@ object UpdateChecker {
         "https://api.github.com/repos/$OWNER/$REPO/releases?per_page=100"
 
     private const val TIMEOUT_MS = 12000
+
+    /**
+     * Invisible boundary that separates the English and Chinese halves of a GitHub release body
+     * (English first, Chinese after the marker). It renders as nothing on the releases page, so
+     * readers see English then Chinese; the app picks the half matching the current language.
+     * Releases without the marker (older notes, or a future release nobody localized yet) fall
+     * back to the whole body, which is English — never blank.
+     */
+    private const val ZH_MARKER = "<!-- zh-CN -->"
+
+    /**
+     * Returns the release body in the current app language: the Chinese half when the app is set
+     * to Chinese and a Chinese half exists, otherwise the English half (or the whole body when the
+     * marker is absent).
+     */
+    private fun localizeReleaseBody(body: String): String {
+        val raw = body.trim()
+        val idx = raw.indexOf(ZH_MARKER)
+        if (idx < 0) return raw
+        val english = raw.substring(0, idx).trim()
+        val chinese = raw.substring(idx + ZH_MARKER.length).trim()
+        return if (Strings.currentLanguage.value == AppLanguage.CHINESE && chinese.isNotBlank()) {
+            chinese
+        } else {
+            english
+        }
+    }
 
     data class Version(val major: Int, val minor: Int, val patch: Int) : Comparable<Version> {
         override fun toString(): String = "$major.$minor.$patch"
@@ -110,7 +139,7 @@ object UpdateChecker {
                 sizeBytes = asset.optLong("size", 0L),
                 sha256 = asset.optString("digest").takeIf { it.isNotBlank() }
                     ?.substringAfter("sha256:", "")?.takeIf { it.isNotBlank() },
-                releaseNotes = release.optString("body").trim()
+                releaseNotes = localizeReleaseBody(release.optString("body"))
             )
             Result.UpdateAvailable(info, current.toString())
         } catch (e: Exception) {
@@ -145,7 +174,7 @@ object UpdateChecker {
                         version = version,
                         name = release.optString("name").trim(),
                         publishedAt = release.optString("published_at").trim(),
-                        body = release.optString("body").trim(),
+                        body = localizeReleaseBody(release.optString("body")),
                         downloadUrl = rawUrl?.let { withMirror(it) },
                         sizeBytes = asset?.optLong("size", 0L) ?: 0L,
                         sha256 = asset?.optString("digest").takeIf { !it.isNullOrBlank() }
