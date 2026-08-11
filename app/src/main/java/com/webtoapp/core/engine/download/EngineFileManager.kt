@@ -34,13 +34,15 @@ class EngineFileManager(private val context: Context) {
         return File(getEngineDir(type), "lib/$abi").apply { mkdirs() }
     }
 
-    fun isEngineDownloaded(type: EngineType): Boolean {
+    fun isEngineDownloaded(type: EngineType, requiredVersion: String? = null): Boolean {
         if (!type.requiresDownload) return true
         val engineDir = getEngineDir(type)
         val libDir = File(engineDir, "lib")
         if (!libDir.exists()) return false
 
         if (type == EngineType.GECKOVIEW && !getOmniJaFile(type).exists()) return false
+
+        if (requiredVersion != null && getDownloadedVersion(type) != requiredVersion) return false
 
         return libDir.listFiles()?.any { abiDir ->
             abiDir.isDirectory && abiDir.listFiles()?.any { it.extension == "so" } == true

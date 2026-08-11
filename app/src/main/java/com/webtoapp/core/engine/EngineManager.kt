@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import com.webtoapp.core.adblock.AdBlocker
 import com.webtoapp.core.engine.download.EngineFileManager
+import com.webtoapp.core.engine.download.GeckoEngineDownloader
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,14 +42,20 @@ class EngineManager private constructor(private val context: Context) {
     fun isEngineAvailable(type: EngineType): Boolean {
         return when (type) {
             EngineType.SYSTEM_WEBVIEW -> true
-            EngineType.GECKOVIEW -> fileManager.isEngineDownloaded(EngineType.GECKOVIEW)
+            EngineType.GECKOVIEW -> fileManager.isEngineDownloaded(
+                EngineType.GECKOVIEW,
+                GeckoEngineDownloader.DEFAULT_VERSION
+            )
         }
     }
 
     fun getEngineStatus(type: EngineType): EngineStatus {
         return when {
             !type.requiresDownload -> EngineStatus.READY
-            fileManager.isEngineDownloaded(type) -> {
+            fileManager.isEngineDownloaded(
+                type,
+                if (type == EngineType.GECKOVIEW) GeckoEngineDownloader.DEFAULT_VERSION else null
+            ) -> {
                 val version = fileManager.getDownloadedVersion(type)
                 EngineStatus.DOWNLOADED(version ?: "unknown")
             }

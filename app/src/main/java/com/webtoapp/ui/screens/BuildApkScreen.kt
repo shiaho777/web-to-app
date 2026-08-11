@@ -205,7 +205,10 @@ private fun BuildApkContent(
     LaunchedEffect(selectedEngineType, uiReady) {
         if (!uiReady) return@LaunchedEffect
         isGeckoDownloaded = withContext(Dispatchers.IO) {
-            engineFileManager.isEngineDownloaded(com.webtoapp.core.engine.EngineType.GECKOVIEW)
+            engineFileManager.isEngineDownloaded(
+                com.webtoapp.core.engine.EngineType.GECKOVIEW,
+                com.webtoapp.core.engine.download.GeckoEngineDownloader.DEFAULT_VERSION
+            )
         }
     }
 

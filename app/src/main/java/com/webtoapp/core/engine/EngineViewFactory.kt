@@ -24,7 +24,10 @@ object EngineViewFactory {
             type = EngineType.GECKOVIEW
         }
         if (type == EngineType.GECKOVIEW) {
-            val available = EngineFileManager(context).isEngineDownloaded(EngineType.GECKOVIEW) ||
+            val available = EngineFileManager(context).isEngineDownloaded(
+                EngineType.GECKOVIEW,
+                com.webtoapp.core.engine.download.GeckoEngineDownloader.DEFAULT_VERSION
+            ) ||
                 isBundledGeckoAvailable(context)
             if (!available) {
                 AppLogger.w(TAG, "GeckoView requested but runtime not available; falling back to System WebView")

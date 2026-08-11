@@ -475,7 +475,7 @@ dependencies {
 
     implementation("com.android.tools.build:apksig:8.3.0")
 
-    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:137.0.20250414091429")
+    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:142.0.20250827004350")
 
     implementation("com.google.zxing:core:3.5.2")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0")

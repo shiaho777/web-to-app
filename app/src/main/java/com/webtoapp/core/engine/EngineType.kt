@@ -18,7 +18,7 @@ enum class EngineType(
 
     GECKOVIEW(
         displayName = "GeckoView (Firefox)",
-        estimatedSizeMb = 55,
+        estimatedSizeMb = 80,
         requiresDownload = true
     );
 

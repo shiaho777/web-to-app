@@ -30,7 +30,7 @@ class GeckoEngineDownloader(
         private const val TAG = "GeckoEngineDownloader"
         private const val MAVEN_BASE_URL = "https://maven.mozilla.org/maven2/org/mozilla/geckoview"
 
-        const val DEFAULT_VERSION = "137.0.20250414091429"
+        const val DEFAULT_VERSION = "142.0.20250827004350"
         val SUPPORTED_ABIS = listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
 
         private val ABI_ARTIFACT_MAP = mapOf(
@@ -108,6 +108,18 @@ class GeckoEngineDownloader(
                     }
 
                     _downloadState.value = DownloadState.Downloading(0.85f, "Extracting...")
+
+                    val installedVersion = fileManager.getDownloadedVersion(EngineType.GECKOVIEW)
+                    if (
+                        fileManager.isEngineDownloaded(EngineType.GECKOVIEW) &&
+                        installedVersion != candidateVersion
+                    ) {
+                        AppLogger.i(
+                            TAG,
+                            "Replacing GeckoView ${installedVersion ?: "unknown"} with $candidateVersion"
+                        )
+                        fileManager.deleteEngineFiles(EngineType.GECKOVIEW)
+                    }
 
                     val extractSuccess = extractEngineFilesFromAar(tempAar, targetAbi)
                     tempAar.delete()

@@ -441,7 +441,7 @@ dependencies {
     implementation("org.apache.commons:commons-compress:1.26.0")
     implementation("org.tukaani:xz:1.9")
 
-    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:137.0.20250414091429")
+    implementation("org.mozilla.geckoview:geckoview-arm64-v8a:142.0.20250827004350")
 
     implementation("androidx.browser:browser:1.8.0")
 
