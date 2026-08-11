@@ -462,6 +462,7 @@ data class WebViewBlock(
     val allowContentAccess: Boolean = true,
     val cacheEnabled: Boolean = true,
     val clearBrowsingDataOnLaunch: Boolean = false,
+    val clientCertificateAuthEnabled: Boolean = false,
     val zoomEnabled: Boolean = true,
     val desktopMode: Boolean = false,
     val userAgent: String? = null,

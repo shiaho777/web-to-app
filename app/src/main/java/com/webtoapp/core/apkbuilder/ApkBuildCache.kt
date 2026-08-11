@@ -37,7 +37,7 @@ data class ApkBuildCacheMeta(
         .put("updatedAt", updatedAt)
 
     companion object {
-        const val SCHEMA_VERSION = 1
+        const val SCHEMA_VERSION = 2
 
         fun fromJson(raw: String): ApkBuildCacheMeta? {
             return try {

@@ -694,6 +694,25 @@ class WebViewActivity : AppCompatActivity() {
         } else null
 
         enableBackStatePreservation = previewApp?.webViewConfig?.enableBackStatePreservation ?: false
+        com.webtoapp.core.engine.GeckoViewEngine.applyEnterpriseRootsEnabled(
+            previewApp?.apkExportConfig?.networkTrustConfig?.trustUserCa == true
+        )
+        val previewClientCertificateAuthEnabled =
+            previewApp?.webViewConfig?.clientCertificateAuthEnabled == true
+        val clientCertificatePreferencesReady = mutableStateOf(!previewClientCertificateAuthEnabled)
+        if (previewClientCertificateAuthEnabled) {
+            WebView.clearClientCertPreferences {
+                runOnUiThread {
+                    if (!isDestroyed) {
+                        clientCertificatePreferencesReady.value = true
+                        AppLogger.i(
+                            "WebViewActivity",
+                            "Client certificate preferences cleared for preview"
+                        )
+                    }
+                }
+            }
+        }
 
         setContent {
             WebToAppTheme { isDarkTheme ->
@@ -718,7 +737,8 @@ class WebViewActivity : AppCompatActivity() {
                     }
                 }
 
-                WebViewScreen(
+                if (clientCertificatePreferencesReady.value) {
+                    WebViewScreen(
                     appId = appId,
                     directUrl = directUrl,
                     previewApp = previewApp,
@@ -811,7 +831,15 @@ class WebViewActivity : AppCompatActivity() {
                             applyImmersiveFullscreen(enabled)
                         }
                     }
-                )
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
             }
         }
 

@@ -1,6 +1,9 @@
 package com.webtoapp.core.engine
 
+import android.app.Activity
 import android.content.Context
+import android.content.ContextWrapper
+import android.security.KeyChain
 import com.webtoapp.core.logging.AppLogger
 import android.view.View
 import com.webtoapp.data.model.UserAgentMode
@@ -47,6 +50,9 @@ class GeckoViewEngine(
         private var activeNativeBridge: com.webtoapp.core.webview.NativeBridge? = null
 
         private const val NATIVE_BRIDGE_APP = "wta_native_bridge"
+
+        internal fun clientCertificateClearFlags(enabled: Boolean): Long =
+            if (enabled) StorageController.ClearFlags.SITE_SETTINGS else 0L
 
         fun ensureNativeBridgeExtension(runtime: GeckoRuntime): WebExtension? {
             nativeBridgeExtension?.let { return it }
@@ -97,7 +103,7 @@ class GeckoViewEngine(
             val ech = currentDnsConfig?.echEffective == true
             val proxy = currentProxyConfig?.let { buildProxyPrefs(it) } ?: emptyMap()
             val proxyKey = proxy.entries.joinToString(",") { "${it.key}=${it.value}" }
-            return "ech=$ech|proxy=$proxyKey|tlsMitm=$tlsMitmActive"
+            return "ech=$ech|proxy=$proxyKey|tlsMitm=$tlsMitmActive|enterpriseRoots=$enterpriseRootsEnabled|antiCapture=$antiCaptureActive"
         }
 
         fun getRuntime(context: Context): GeckoRuntime {
@@ -149,6 +155,9 @@ class GeckoViewEngine(
         @Volatile
         private var antiCaptureActive: Boolean = false
 
+        @Volatile
+        private var enterpriseRootsEnabled: Boolean = false
+
         fun setTlsMitmActive(active: Boolean) {
             tlsMitmActive = active
         }
@@ -156,6 +165,11 @@ class GeckoViewEngine(
         fun applyAntiCapture(active: Boolean) {
             antiCaptureActive = active
             AppLogger.d(TAG, "applyAntiCapture: active=$active")
+        }
+
+        fun applyEnterpriseRootsEnabled(enabled: Boolean) {
+            enterpriseRootsEnabled = enabled
+            AppLogger.d(TAG, "Android user CA trust for GeckoView: enabled=$enabled")
         }
 
         fun applyDnsConfig(config: com.webtoapp.data.model.DnsConfig) {
@@ -273,7 +287,7 @@ class GeckoViewEngine(
 
             if (antiCaptureActive) {
                 prefs["security.enterprise_roots.enabled"] = false
-            } else if (tlsMitmActive) {
+            } else if (tlsMitmActive || enterpriseRootsEnabled) {
                 prefs["security.enterprise_roots.enabled"] = true
             }
 
@@ -365,6 +379,8 @@ class GeckoViewEngine(
     private var lastConfig: WebViewConfig? = null
     private var lastGeckoUaMode: Int = GeckoSessionSettings.USER_AGENT_MODE_MOBILE
     private var lastUserAgentOverride: String? = null
+    private var clientCertificateDecisionResetPending = false
+    private var pendingUrlAfterClientCertificateReset: String? = null
 
     private var bridgeScope: kotlinx.coroutines.CoroutineScope? = null
 
@@ -387,6 +403,24 @@ class GeckoViewEngine(
         ensureRuntimeForConfig(context)
 
         val runtime = getRuntime(context)
+
+        val clientCertificateClearFlags = clientCertificateClearFlags(
+            config.clientCertificateAuthEnabled
+        )
+        clientCertificateDecisionResetPending = clientCertificateClearFlags != 0L
+        pendingUrlAfterClientCertificateReset = null
+        if (clientCertificateDecisionResetPending) {
+            runtime.storageController.clearData(clientCertificateClearFlags).accept(
+                {
+                    finishClientCertificateDecisionReset()
+                    AppLogger.i(TAG, "Remembered Gecko client certificate decisions cleared")
+                },
+                { error ->
+                    AppLogger.e(TAG, "Failed to clear remembered Gecko client certificate decisions", error)
+                    finishClientCertificateDecisionReset()
+                }
+            )
+        }
 
         if (config.enableCorsBypass || config.enablePrivateNetworkBridge) {
             if (bridgeScope == null) bridgeScope = kotlinx.coroutines.MainScope()
@@ -417,7 +451,7 @@ class GeckoViewEngine(
             .build()
 
         val newSession = GeckoSession(sessionSettings)
-        setupDelegates(newSession, callback)
+        setupDelegates(newSession, callback, context, config)
 
         newSession.open(runtime)
         session = newSession
@@ -445,12 +479,17 @@ class GeckoViewEngine(
         return view
     }
 
-    private fun setupDelegates(session: GeckoSession, callback: BrowserEngineCallback) {
+    private fun setupDelegates(
+        session: GeckoSession,
+        callback: BrowserEngineCallback,
+        viewContext: Context,
+        config: WebViewConfig
+    ) {
         setupContentDelegate(session, callback)
         setupNavigationDelegate(session, callback)
         setupProgressDelegate(session, callback)
         setupPermissionDelegate(session)
-        setupPromptDelegate(session, callback)
+        setupPromptDelegate(session, callback, viewContext, config)
     }
 
     private fun setupContentDelegate(session: GeckoSession, callback: BrowserEngineCallback) {
@@ -496,8 +535,49 @@ class GeckoViewEngine(
         }
     }
 
-    private fun setupPromptDelegate(session: GeckoSession, callback: BrowserEngineCallback) {
+    private fun setupPromptDelegate(
+        session: GeckoSession,
+        callback: BrowserEngineCallback,
+        viewContext: Context,
+        config: WebViewConfig
+    ) {
         session.promptDelegate = object : GeckoSession.PromptDelegate {
+            override fun onRequestCertificate(
+                session: GeckoSession,
+                request: GeckoSession.PromptDelegate.CertificateRequest
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                if (!config.clientCertificateAuthEnabled) {
+                    return GeckoResult.fromValue(request.confirm(null))
+                }
+
+                val activity = viewContext.findActivity()
+                if (activity == null || activity.isFinishing || activity.isDestroyed) {
+                    AppLogger.w(TAG, "Client certificate request ignored: no active Activity")
+                    return GeckoResult.fromValue(request.confirm(null))
+                }
+
+                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                activity.runOnUiThread {
+                    KeyChain.choosePrivateKeyAlias(
+                        activity,
+                        { alias ->
+                            result.complete(request.confirm(alias))
+                            if (alias == null) {
+                                AppLogger.i(TAG, "Client certificate selection cancelled for ${request.host}")
+                            } else {
+                                AppLogger.i(TAG, "Client certificate selected for ${request.host}")
+                            }
+                        },
+                        null,
+                        request.issuers,
+                        request.host,
+                        -1,
+                        null
+                    )
+                }
+                return result
+            }
+
             override fun onFilePrompt(
                 session: GeckoSession,
                 prompt: GeckoSession.PromptDelegate.FilePrompt
@@ -536,6 +616,17 @@ class GeckoViewEngine(
                 return result
             }
         }
+    }
+
+    private fun Context.findActivity(): Activity? {
+        var current: Context = this
+        while (current is ContextWrapper) {
+            if (current is Activity) return current
+            val base = current.baseContext
+            if (base === current) break
+            current = base
+        }
+        return current as? Activity
     }
 
     private fun setupNavigationDelegate(session: GeckoSession, callback: BrowserEngineCallback) {
@@ -711,7 +802,12 @@ class GeckoViewEngine(
                 .build()
 
             val newSession = GeckoSession(sessionSettings)
-            setupDelegates(newSession, cb)
+            setupDelegates(
+                session = newSession,
+                callback = cb,
+                viewContext = view.context,
+                config = lastConfig ?: WebViewConfig()
+            )
             newSession.open(runtime)
 
             lastUserAgentOverride?.let {
@@ -734,7 +830,20 @@ class GeckoViewEngine(
     }
 
     override fun loadUrl(url: String) {
-        session?.loadUri(url)
+        if (clientCertificateDecisionResetPending) {
+            pendingUrlAfterClientCertificateReset = url
+            AppLogger.d(TAG, "Deferring first navigation until client certificate decisions are cleared")
+        } else {
+            session?.loadUri(url)
+        }
+    }
+
+    private fun finishClientCertificateDecisionReset() {
+        clientCertificateDecisionResetPending = false
+        pendingUrlAfterClientCertificateReset?.let { pendingUrl ->
+            pendingUrlAfterClientCertificateReset = null
+            session?.loadUri(pendingUrl)
+        }
     }
 
     override fun evaluateJavascript(script: String, resultCallback: ((String?) -> Unit)?) {
@@ -789,6 +898,8 @@ class GeckoViewEngine(
         geckoView = null
         callback = null
         lastConfig = null
+        clientCertificateDecisionResetPending = false
+        pendingUrlAfterClientCertificateReset = null
     }
 
     override fun clearCache(includeDiskFiles: Boolean) {

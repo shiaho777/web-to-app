@@ -2373,6 +2373,8 @@ object Strings {
     val trustSystemCaHint: String get() = StringsC.trustSystemCaHint
     val trustUserCa: String get() = StringsC.trustUserCa
     val trustUserCaHint: String get() = StringsC.trustUserCaHint
+    val clientCertificateAuthTitle: String get() = StringsC.clientCertificateAuthTitle
+    val clientCertificateAuthDescription: String get() = StringsC.clientCertificateAuthDescription
     val cleartextTrafficAllowed: String get() = StringsC.cleartextTrafficAllowed
     val cleartextTrafficAllowedHint: String get() = StringsC.cleartextTrafficAllowedHint
     val importCustomCa: String get() = StringsC.importCustomCa
@@ -34611,6 +34613,32 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Для сред с CA интрасети или разработки, установленными в настройках системы"
         AppLanguage.JAPANESE -> "システム設定にインストールされたイントラネットまたは開発CA環境用"
         AppLanguage.KOREAN -> "시스템 설정에 설치된 인트라넷 또는 개발 CA 환경용"
+    }
+
+    val clientCertificateAuthTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "客户端证书认证 (mTLS)"
+        AppLanguage.ENGLISH -> "Client Certificate Authentication (mTLS)"
+        AppLanguage.ARABIC -> "مصادقة شهادة العميل (mTLS)"
+        AppLanguage.PORTUGUESE -> "Autenticação por certificado do cliente (mTLS)"
+        AppLanguage.SPANISH -> "Autenticación con certificado de cliente (mTLS)"
+        AppLanguage.FRENCH -> "Authentification par certificat client (mTLS)"
+        AppLanguage.GERMAN -> "Client-Zertifikatsauthentifizierung (mTLS)"
+        AppLanguage.RUSSIAN -> "Аутентификация по клиентскому сертификату (mTLS)"
+        AppLanguage.JAPANESE -> "クライアント証明書認証 (mTLS)"
+        AppLanguage.KOREAN -> "클라이언트 인증서 인증 (mTLS)"
+    }
+
+    val clientCertificateAuthDescription: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "服务器请求客户端证书时，打开 Android 系统证书选择器并使用设备上安装的身份凭据。这不同于信任服务器 CA。生成的应用每次重新启动后都会再次询问。"
+        AppLanguage.ENGLISH -> "When a server requests a client certificate, open Android's system certificate picker and use the selected device-installed identity. This is different from trusting a server CA. The generated app asks again after each restart."
+        AppLanguage.ARABIC -> "عندما يطلب الخادم شهادة عميل، يفتح منتقي شهادات Android ويستخدم هوية مثبتة على الجهاز. يختلف هذا عن الوثوق بشهادة CA للخادم. يسأل التطبيق من جديد بعد كل إعادة تشغيل."
+        AppLanguage.PORTUGUESE -> "Quando um servidor solicita um certificado de cliente, abre o seletor do Android e usa uma identidade instalada no dispositivo. Isso é diferente de confiar na CA do servidor. O app pergunta novamente após cada reinício."
+        AppLanguage.SPANISH -> "Cuando un servidor solicita un certificado de cliente, abre el selector de Android y usa una identidad instalada en el dispositivo. Esto es distinto de confiar en la CA del servidor. La app vuelve a preguntar tras cada reinicio."
+        AppLanguage.FRENCH -> "Lorsqu'un serveur demande un certificat client, ouvre le sélecteur Android et utilise une identité installée sur l'appareil. Cela diffère de la confiance accordée à l'AC du serveur. L'application redemande après chaque redémarrage."
+        AppLanguage.GERMAN -> "Wenn ein Server ein Client-Zertifikat anfordert, wird die Android-Auswahl geöffnet und eine auf dem Gerät installierte Identität verwendet. Dies unterscheidet sich vom Vertrauen in die Server-CA. Die App fragt nach jedem Neustart erneut."
+        AppLanguage.RUSSIAN -> "Когда сервер запрашивает клиентский сертификат, открывает системный выбор сертификата Android и использует выбранное удостоверение, установленное на устройстве. Это не то же самое, что доверие сертификату сервера. Созданное приложение спросит снова после каждого перезапуска."
+        AppLanguage.JAPANESE -> "サーバーがクライアント証明書を要求したとき、Android の証明書選択画面を開き、端末にインストール済みのIDを使用します。サーバーCAの信頼とは異なります。生成したアプリは再起動のたびに再確認します。"
+        AppLanguage.KOREAN -> "서버가 클라이언트 인증서를 요청하면 Android 인증서 선택기를 열고 기기에 설치된 ID를 사용합니다. 서버 CA 신뢰와는 다릅니다. 생성된 앱은 다시 시작할 때마다 다시 묻습니다."
     }
 
     val cleartextTrafficAllowed: String get() = when (Strings.lang) {

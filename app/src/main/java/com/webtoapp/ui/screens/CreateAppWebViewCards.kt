@@ -1731,6 +1731,8 @@ private fun normalizeIpv4(raw: String): String? {
 fun ApkExportSettingsCard(
     config: ApkExportConfig,
     onConfigChange: (ApkExportConfig) -> Unit,
+    clientCertificateAuthEnabled: Boolean,
+    onClientCertificateAuthEnabledChange: (Boolean) -> Unit,
     onOpenPermissionConfig: (() -> Unit)? = null,
     canOverrideTargetSdk: Boolean = false
 ) {
@@ -1798,6 +1800,8 @@ fun ApkExportSettingsCard(
         ApkExportSection(
             config = config,
             onConfigChange = onConfigChange,
+            clientCertificateAuthEnabled = clientCertificateAuthEnabled,
+            onClientCertificateAuthEnabledChange = onClientCertificateAuthEnabledChange,
             onOpenPermissionConfig = onOpenPermissionConfig,
             canOverrideTargetSdk = canOverrideTargetSdk
         )

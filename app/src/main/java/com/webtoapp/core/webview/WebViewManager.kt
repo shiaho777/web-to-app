@@ -9,6 +9,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
+import android.security.KeyChain
 import android.view.ViewGroup
 import android.webkit.*
 import androidx.annotation.RequiresApi
@@ -39,6 +40,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 class WebViewManager(
@@ -2603,6 +2605,72 @@ class WebViewManager(
                 }
             }
 
+            override fun onReceivedClientCertRequest(
+                view: WebView?,
+                request: ClientCertRequest?
+            ) {
+                if (request == null) return
+                if (!config.clientCertificateAuthEnabled) {
+                    request.cancel()
+                    return
+                }
+
+                val activity = view?.context?.findActivity()
+                if (activity == null || activity.isFinishing || activity.isDestroyed) {
+                    AppLogger.w("WebViewManager", "Client certificate request ignored: no active Activity")
+                    request.ignore()
+                    return
+                }
+
+                activity.runOnUiThread {
+                    KeyChain.choosePrivateKeyAlias(
+                        activity,
+                        { alias ->
+                            if (alias == null) {
+                                view.post { request.cancel() }
+                                AppLogger.i(
+                                    "WebViewManager",
+                                    "Client certificate selection cancelled for ${request.host}:${request.port}"
+                                )
+                                return@choosePrivateKeyAlias
+                            }
+
+                            proxyScope.launch {
+                                val credentials = withContext(Dispatchers.IO) {
+                                    runCatching {
+                                        val privateKey = KeyChain.getPrivateKey(context.applicationContext, alias)
+                                        val certificateChain = KeyChain.getCertificateChain(context.applicationContext, alias)
+                                        if (privateKey == null || certificateChain.isNullOrEmpty()) null
+                                        else privateKey to certificateChain
+                                    }.onFailure { error ->
+                                        AppLogger.e(
+                                            "WebViewManager",
+                                            "Failed to load selected client certificate alias",
+                                            error
+                                        )
+                                    }.getOrNull()
+                                }
+
+                                if (credentials == null) {
+                                    request.ignore()
+                                } else {
+                                    request.proceed(credentials.first, credentials.second)
+                                    AppLogger.i(
+                                        "WebViewManager",
+                                        "Client certificate supplied for ${request.host}:${request.port}"
+                                    )
+                                }
+                            }
+                        },
+                        request.keyTypes,
+                        request.principals,
+                        request.host,
+                        request.port,
+                        null
+                    )
+                }
+            }
+
             override fun onReceivedHttpAuthRequest(
                 view: WebView?,
                 handler: HttpAuthHandler?,
@@ -2752,6 +2820,17 @@ class WebViewManager(
                 return true
             }
         }
+    }
+
+    private fun Context.findActivity(): Activity? {
+        var current: Context = this
+        while (current is android.content.ContextWrapper) {
+            if (current is Activity) return current
+            val base = current.baseContext
+            if (base === current) break
+            current = base
+        }
+        return current as? Activity
     }
 
     private fun normalizeNetworkErrorDescription(rawDescription: String): String {

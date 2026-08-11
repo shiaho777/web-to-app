@@ -409,6 +409,10 @@ data class ShellConfig(
     @SerializedName("engineType")
     val engineType: String = "SYSTEM_WEBVIEW",
 
+    @SerializedName("networkTrustConfig")
+    val networkTrustConfig: com.webtoapp.data.model.NetworkTrustConfig =
+        com.webtoapp.data.model.NetworkTrustConfig(),
+
     @SerializedName("galleryConfig")
     val galleryConfig: GalleryShellConfig = GalleryShellConfig(),
 
@@ -1098,6 +1102,9 @@ data class WebViewShellConfig(
 
     @SerializedName("clearBrowsingDataOnLaunch")
     val clearBrowsingDataOnLaunch: Boolean = false,
+
+    @SerializedName("clientCertificateAuthEnabled")
+    val clientCertificateAuthEnabled: Boolean = false,
 
     @SerializedName("zoomEnabled")
     val zoomEnabled: Boolean = true,

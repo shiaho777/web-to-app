@@ -77,6 +77,18 @@ class ApkBuilder(private val context: Context) {
         internal fun injectedDeviceLibEntries(appType: String, deviceAbi: String): Set<String> =
             injectedNativeLibNames(appType).mapTo(mutableSetOf()) { "lib/$deviceAbi/$it" }
 
+        internal fun geckoRuntimeEntryNames(
+            nativeLibNamesByAbi: Map<String, List<String>>,
+            abiFilters: List<String>
+        ): Set<String> = buildSet {
+            nativeLibNamesByAbi.forEach { (abi, libNames) ->
+                if (abiFilters.isEmpty() || abi in abiFilters) {
+                    libNames.forEach { libName -> add("lib/$abi/$libName") }
+                }
+            }
+            add("assets/omni.ja")
+        }
+
         private fun injectedNativeLibNames(appType: String): Set<String> = when (appType) {
             "GO_APP" -> setOf("libgo_exec_loader.so")
             "NODEJS_APP" -> setOf("libc++_shared.so", "libnode_bridge.so", "libnode.so")
@@ -1096,6 +1108,21 @@ class ApkBuilder(private val context: Context) {
         val deviceAbi = android.os.Build.SUPPORTED_ABIS?.firstOrNull() ?: "arm64-v8a"
         val injectedDeviceLibs = injectedDeviceLibEntries(config.appType, deviceAbi)
 
+        val geckoEngineFiles = if (mode == ModifyApkMode.FULL && config.engineType == "GECKOVIEW") {
+            val manager = com.webtoapp.core.engine.download.EngineFileManager(context)
+            val engineType = com.webtoapp.core.engine.EngineType.GECKOVIEW
+            GeckoRuntimeFiles(
+                nativeLibs = manager.listEngineNativeLibs(engineType),
+                omniJa = manager.getOmniJaFile(engineType)
+            )
+        } else null
+        val geckoRuntimeEntries = geckoEngineFiles?.let { runtime ->
+            geckoRuntimeEntryNames(
+                runtime.nativeLibs.mapValues { (_, files) -> files.map(File::getName) },
+                abiFilters
+            )
+        }.orEmpty()
+
         val assetEncryptor = if (encryptionConfig.enabled && encryptionKey != null) {
             AssetEncryptor(encryptionKey)
         } else null
@@ -1187,6 +1214,10 @@ class ApkBuilder(private val context: Context) {
                             writeEntryDeflated(zipOut, entry.name, iconBytes)
                             replacedIconPaths.add(entry.name)
                             AppLogger.d("ApkBuilder", "Replaced icon entry: ${entry.name} (${iconBytes.size} bytes)")
+                        }
+
+                        entry.name in geckoRuntimeEntries -> {
+                            AppLogger.d("ApkBuilder", "Skipping template Gecko runtime entry; downloaded runtime will replace it: ${entry.name}")
                         }
 
                         entry.name.startsWith("lib/") -> {
@@ -1431,7 +1462,7 @@ class ApkBuilder(private val context: Context) {
                 if (mode == ModifyApkMode.FULL && config.engineType == "GECKOVIEW") {
                     onProgress(98, "Injecting native runtime...")
                     logger.section("Inject GeckoView Runtime (native libs + omni.ja)")
-                    injectGeckoViewRuntime(zipOut, abiFilters)
+                    injectGeckoViewRuntime(zipOut, abiFilters, checkNotNull(geckoEngineFiles))
                 }
             }
         }
@@ -1472,6 +1503,7 @@ class ApkBuilder(private val context: Context) {
         }
 
         val geckoViewLibs = setOf(
+            "libcrashhelper.so",
             "libgkcodecs.so",
             "libminidump_analyzer.so",
             "libnss3.so",
@@ -1488,18 +1520,23 @@ class ApkBuilder(private val context: Context) {
         return true
     }
 
+    private data class GeckoRuntimeFiles(
+        val nativeLibs: Map<String, List<File>>,
+        val omniJa: File
+    )
+
     private fun injectGeckoViewRuntime(
         zipOut: ZipOutputStream,
-        abiFilters: List<String>
+        abiFilters: List<String>,
+        runtimeFiles: GeckoRuntimeFiles
     ) {
         try {
-            val engineFileManager = com.webtoapp.core.engine.download.EngineFileManager(context)
-            val engineType = com.webtoapp.core.engine.EngineType.GECKOVIEW
-            val nativeLibs = engineFileManager.listEngineNativeLibs(engineType)
+            val nativeLibs = runtimeFiles.nativeLibs
 
             if (nativeLibs.isEmpty()) {
-                logger.warn("GeckoView engine selected but no native libs found! Make sure engine is downloaded.")
-                return
+                throw IllegalStateException(
+                    "GeckoView native libraries were not found. Download the Firefox engine before building."
+                )
             }
 
             var totalInjected = 0
@@ -1513,16 +1550,21 @@ class ApkBuilder(private val context: Context) {
                 soFiles.forEach { soFile ->
                     val entryPath = "lib/$abi/" + soFile.name
                     logger.log("Injecting: $entryPath (" + (soFile.length() / 1024) + " KB)")
-                    writeEntryStoredStreaming(zipOut, entryPath, soFile)
+                    ZipUtils.writeEntryDeflatedStreaming(zipOut, entryPath, soFile)
                     totalInjected++
                 }
             }
 
+            if (totalInjected == 0) {
+                throw IllegalStateException(
+                    "GeckoView has no downloaded native libraries for the selected APK architectures: ${abiFilters.ifEmpty { listOf("all") }}"
+                )
+            }
             logger.logKeyValue("geckoNativeLibsInjected", totalInjected)
 
-            val omniJa = engineFileManager.getOmniJaFile(engineType)
+            val omniJa = runtimeFiles.omniJa
             if (omniJa.exists() && omniJa.length() > 0) {
-                writeEntryStoredStreaming(zipOut, "assets/omni.ja", omniJa)
+                ZipUtils.writeEntryDeflatedStreaming(zipOut, "assets/omni.ja", omniJa)
                 logger.log("Injecting: assets/omni.ja (" + (omniJa.length() / 1024) + " KB)")
                 logger.logKeyValue("geckoOmniJaInjected", true)
             } else {
@@ -3717,6 +3759,7 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
         allowContentAccess = allowContentAccess,
         cacheEnabled = cacheEnabled && !clearBrowsingDataOnLaunch,
         clearBrowsingDataOnLaunch = clearBrowsingDataOnLaunch,
+        clientCertificateAuthEnabled = clientCertificateAuthEnabled,
         zoomEnabled = zoomEnabled,
         desktopMode = desktopMode,
         userAgent = userAgent,

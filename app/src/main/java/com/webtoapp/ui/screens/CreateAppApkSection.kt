@@ -41,6 +41,8 @@ private val PACKAGE_NAME_REGEX = AppConstants.PACKAGE_NAME_REGEX
 fun ApkExportSection(
     config: ApkExportConfig,
     onConfigChange: (ApkExportConfig) -> Unit,
+    clientCertificateAuthEnabled: Boolean,
+    onClientCertificateAuthEnabledChange: (Boolean) -> Unit,
     onOpenPermissionConfig: (() -> Unit)? = null,
     canOverrideTargetSdk: Boolean = false
 ) {
@@ -221,10 +223,12 @@ fun ApkExportSection(
 
         NetworkTrustConfigPanel(
             config = config.networkTrustConfig,
+            clientCertificateAuthEnabled = clientCertificateAuthEnabled,
             importError = caImportError,
             onConfigChange = { networkTrustConfig ->
                 onConfigChange(config.copy(networkTrustConfig = networkTrustConfig))
             },
+            onClientCertificateAuthEnabledChange = onClientCertificateAuthEnabledChange,
             onImportCertificate = {
                 caPickerLauncher.launch(
                     arrayOf(
@@ -422,8 +426,10 @@ private fun PerformanceOptimizationSection(
 @Composable
 private fun NetworkTrustConfigPanel(
     config: NetworkTrustConfig,
+    clientCertificateAuthEnabled: Boolean,
     importError: String?,
     onConfigChange: (NetworkTrustConfig) -> Unit,
+    onClientCertificateAuthEnabledChange: (Boolean) -> Unit,
     onImportCertificate: () -> Unit
 ) {
     val context = LocalContext.current
@@ -451,6 +457,14 @@ private fun NetworkTrustConfigPanel(
                 icon = Icons.Outlined.AdminPanelSettings,
                 checked = config.trustUserCa,
                 onCheckedChange = { onConfigChange(config.copy(trustUserCa = it)) }
+            )
+            WtaSectionDivider()
+            WtaToggleRow(
+                title = Strings.clientCertificateAuthTitle,
+                subtitle = Strings.clientCertificateAuthDescription,
+                icon = Icons.Outlined.Badge,
+                checked = clientCertificateAuthEnabled,
+                onCheckedChange = onClientCertificateAuthEnabledChange
             )
             WtaSectionDivider()
             WtaToggleRow(

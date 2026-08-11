@@ -96,6 +96,19 @@ object ZipUtils {
         AppLogger.d("ZipUtils", "Large file streaming embedded(STORED): $name (${fileSize / 1024} KB)")
     }
 
+    fun writeEntryDeflatedStreaming(zipOut: ZipOutputStream, name: String, file: File) {
+        val entry = ZipEntry(name)
+        entry.method = ZipEntry.DEFLATED
+
+        zipOut.putNextEntry(entry)
+        file.inputStream().buffered().use { input ->
+            input.copyTo(zipOut)
+        }
+        zipOut.closeEntry()
+
+        AppLogger.d("ZipUtils", "Large file streaming embedded(DEFLATED): $name (${file.length() / 1024} KB raw)")
+    }
+
     fun copyEntry(zipIn: ZipFile, zipOut: ZipOutputStream, entry: ZipEntry) {
         val data = zipIn.getInputStream(entry).readBytes()
         writeEntryDeflated(zipOut, entry.name, data)

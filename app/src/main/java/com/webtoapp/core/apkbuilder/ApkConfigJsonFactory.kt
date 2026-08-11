@@ -158,6 +158,7 @@ internal object ApkConfigJsonFactory {
         "allowContentAccess" to webView.allowContentAccess,
         "cacheEnabled" to webView.cacheEnabled,
         "clearBrowsingDataOnLaunch" to webView.clearBrowsingDataOnLaunch,
+        "clientCertificateAuthEnabled" to webView.clientCertificateAuthEnabled,
         "zoomEnabled" to webView.zoomEnabled,
         "desktopMode" to webView.desktopMode,
         "userAgent" to webView.userAgent,

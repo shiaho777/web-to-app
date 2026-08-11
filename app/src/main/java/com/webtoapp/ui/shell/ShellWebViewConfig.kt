@@ -17,6 +17,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         allowContentAccess = config.webViewConfig.allowContentAccess || needsFileAccess,
         cacheEnabled = config.webViewConfig.cacheEnabled && !config.webViewConfig.clearBrowsingDataOnLaunch,
         clearBrowsingDataOnLaunch = config.webViewConfig.clearBrowsingDataOnLaunch,
+        clientCertificateAuthEnabled = config.webViewConfig.clientCertificateAuthEnabled,
         zoomEnabled = config.webViewConfig.zoomEnabled,
         desktopMode = config.webViewConfig.desktopMode,
         userAgent = config.webViewConfig.userAgent,

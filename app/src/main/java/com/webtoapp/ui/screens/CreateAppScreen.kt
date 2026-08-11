@@ -516,6 +516,11 @@ fun CreateAppScreen(
                     onExportConfigChange = { viewModel.updateEditState { copy(apkExportConfig = it) } },
                     onRuntimePermissionsTransform = viewModel::updateRuntimePermissions,
                     webViewConfig = editState.webViewConfig,
+                    onClientCertificateAuthEnabledChange = { enabled ->
+                        viewModel.updateEditState {
+                            copy(webViewConfig = webViewConfig.copy(clientCertificateAuthEnabled = enabled))
+                        }
+                    },
                     autoStartConfig = editState.autoStartConfig,
                     bgmEnabled = editState.bgmEnabled,
                     appType = editState.appType
@@ -563,6 +568,7 @@ private fun ExportAndPermissionDrawer(
     onExportConfigChange: (ApkExportConfig) -> Unit,
     onRuntimePermissionsTransform: ((ApkRuntimePermissions) -> ApkRuntimePermissions) -> Unit,
     webViewConfig: WebViewConfig,
+    onClientCertificateAuthEnabledChange: (Boolean) -> Unit,
     autoStartConfig: AutoStartConfig?,
     bgmEnabled: Boolean,
     appType: AppType
@@ -608,6 +614,8 @@ private fun ExportAndPermissionDrawer(
                     ApkExportSettingsCard(
                         config = exportConfig,
                         onConfigChange = onExportConfigChange,
+                        clientCertificateAuthEnabled = webViewConfig.clientCertificateAuthEnabled,
+                        onClientCertificateAuthEnabledChange = onClientCertificateAuthEnabledChange,
                         onOpenPermissionConfig = null,
                         canOverrideTargetSdk = !appType.requiresProcessExec
                     )
