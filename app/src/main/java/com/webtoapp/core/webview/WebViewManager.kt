@@ -2529,6 +2529,29 @@ class WebViewManager(
                     return
                 }
 
+                // Imported custom CA: if the only problem is an untrusted chain and the server
+                // leaf cryptographically validates against an anchor the user imported in the
+                // editor, honor it. Applies to both main-frame and sub-resource requests so that
+                // CSS/JS/XHR served over the same custom-CA HTTPS also load.
+                if (error != null &&
+                    error.primaryError == android.net.http.SslError.SSL_UNTRUSTED) {
+                    runCatching { CustomCaTrustStore.init(context) }
+                    if (CustomCaTrustStore.hasAnchors()) {
+                        val trustedCert = extractServerCert(error)
+                        if (trustedCert != null &&
+                            runCatching { CustomCaTrustStore.isServerCertTrusted(trustedCert) }
+                                .getOrDefault(false)) {
+                            AppLogger.i(
+                                "WebViewManager",
+                                "Proceeding with custom-CA-trusted certificate for: $errorUrl " +
+                                    "(subject=${trustedCert.subjectX500Principal})"
+                            )
+                            handler?.proceed()
+                            return
+                        }
+                    }
+                }
+
                 if (!isMainFrameSslError) {
 
                     handler?.cancel()
@@ -2835,15 +2858,7 @@ class WebViewManager(
 
     private fun isMitmSslError(error: android.net.http.SslError?): Boolean {
         if (error == null) return false
-        val cert = error.certificate?.let { sslCert ->
-            try {
-                val certField = sslCert.javaClass.getDeclaredField("mX509Certificate")
-                certField.isAccessible = true
-                certField.get(sslCert) as? java.security.cert.X509Certificate
-            } catch (_: Exception) {
-                null
-            }
-        }
+        val cert = extractServerCert(error)
         if (cert != null) {
             return TlsMitmCaManager.isSignedByLocalCa(cert)
         }
@@ -2853,6 +2868,15 @@ class WebViewManager(
             error.primaryError == android.net.http.SslError.SSL_NOTYETVALID ||
             error.primaryError == android.net.http.SslError.SSL_IDMISMATCH
         )
+    }
+
+    private fun extractServerCert(error: android.net.http.SslError?): java.security.cert.X509Certificate? {
+        val sslCert = error?.certificate ?: return null
+        return runCatching {
+            val field = sslCert.javaClass.getDeclaredField("mX509Certificate")
+            field.isAccessible = true
+            field.get(sslCert) as? java.security.cert.X509Certificate
+        }.getOrNull()
     }
 
     private fun refetchWithHeaderModifications(

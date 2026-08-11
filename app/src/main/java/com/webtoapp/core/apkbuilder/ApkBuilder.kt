@@ -37,6 +37,7 @@ import java.io.*
 import java.util.zip.*
 import javax.crypto.SecretKey
 import com.webtoapp.util.AppConstants
+import com.webtoapp.util.NetworkTrustStorage
 import com.webtoapp.util.TextFileClassifier
 
 private fun resolveOutputDir(context: Context): File {
@@ -1340,6 +1341,8 @@ class ApkBuilder(private val context: Context) {
                     addBgmToAssets(zipOut, bgmPlaylistPaths, bgmLrcDataList, bgmCoverPaths, assetEncryptor, encryptionConfig)
                 }
 
+                addCustomCaCertsToAssets(zipOut, config.networkTrustConfig.customCaCertificates)
+
                 val projectDir = when (config.appType) {
                     "WORDPRESS" -> wordPressProjectDir
                     "NODEJS_APP" -> nodejsProjectDir
@@ -1697,6 +1700,45 @@ class ApkBuilder(private val context: Context) {
         } catch (e: Exception) {
             AppLogger.e("ApkBuilder", "Failed to embed status bar background: ${e.message}", e)
         }
+    }
+
+    /**
+     * Embed each imported custom CA as canonical DER under assets/wta_custom_ca/. The generated
+     * APK's runtime (CustomCaTrustStore) scans this directory and trusts leaves that validate
+     * against these anchors. CA certificates are public, so they are stored as plain (unencrypted)
+     * assets even for encrypted builds — nothing sensitive is leaked.
+     */
+    private fun addCustomCaCertsToAssets(
+        zipOut: ZipOutputStream,
+        certificates: List<com.webtoapp.data.model.CustomCaCertificate>
+    ) {
+        if (certificates.isEmpty()) return
+        val factory = java.security.cert.CertificateFactory.getInstance("X.509")
+        var written = 0
+        certificates.forEachIndexed { index, cert ->
+            val file = File(cert.filePath)
+            if (!file.isFile || !file.canRead()) {
+                AppLogger.w("ApkBuilder", "Custom CA file unavailable, skipping: ${cert.filePath}")
+                return@forEachIndexed
+            }
+            runCatching {
+                // Re-parse and re-encode to canonical DER so the stored format is robust to the
+                // original import source (PEM/DER/PKCS#7/base64).
+                val parsed = NetworkTrustStorage.parseCertificates(file.readBytes())
+                if (parsed.isEmpty()) {
+                    AppLogger.w("ApkBuilder", "Custom CA unparsable at build time, skipping: ${cert.filePath}")
+                    return@runCatching
+                }
+                parsed.forEachIndexed { sub, x509 ->
+                    val name = if (parsed.size == 1) "${index + 1}.cer" else "${index + 1}_${sub + 1}.cer"
+                    writeEntryDeflated(zipOut, "assets/wta_custom_ca/$name", x509.encoded)
+                    written++
+                }
+            }.onFailure { e ->
+                AppLogger.w("ApkBuilder", "Failed to embed custom CA ${cert.filePath}: ${e.message}")
+            }
+        }
+        logger.logKeyValue("customCaCertsEmbedded", written.toString())
     }
 
     private fun addFloatingWindowMinimizedIconToAssets(

@@ -6,7 +6,13 @@ import java.io.File
 
 object NetworkSecurityConfigBuilder {
     fun build(config: NetworkTrustConfig): String {
-        val anchors = buildAnchors(config)
+        // Filter unreadable certs once and re-index sequentially, so the trust anchors and the
+        // res/raw entries we emit always reference the SAME resource names. Previously
+        // buildAnchors emitted @raw/wta_custom_ca_N for every cert by original index while
+        // customRawEntries dropped the unreadable ones — a missing middle cert then produced
+        // a <certificates src="@raw/..."> with no matching res/raw file and aapt failed.
+        val entries = customRawEntries(config)
+        val anchors = buildAnchors(config, entries)
         val cleartext = config.cleartextTrafficPermitted.toString()
         return """
 <?xml version="1.0" encoding="utf-8"?>
@@ -24,22 +30,27 @@ $anchors
         """.trimIndent()
     }
 
-    fun customRawEntries(config: NetworkTrustConfig): List<CustomCaRawEntry> =
-        config.customCaCertificates.mapIndexedNotNull { index, certificate ->
+    fun customRawEntries(config: NetworkTrustConfig): List<CustomCaRawEntry> {
+        var seq = 0
+        return config.customCaCertificates.mapNotNull { certificate ->
             val file = File(certificate.filePath)
-            if (!file.isFile || !file.canRead()) return@mapIndexedNotNull null
+            if (!file.isFile || !file.canRead()) return@mapNotNull null
             CustomCaRawEntry(
-                resourceName = NetworkTrustStorage.rawResourceName(index),
+                resourceName = NetworkTrustStorage.rawResourceName(seq++),
                 sourceFile = file
             )
         }
+    }
 
-    private fun buildAnchors(config: NetworkTrustConfig): String {
+    private fun buildAnchors(
+        config: NetworkTrustConfig,
+        entries: List<CustomCaRawEntry>
+    ): String {
         val certs = mutableListOf<String>()
         if (config.trustSystemCa) certs += """            <certificates src="system" />"""
         if (config.trustUserCa) certs += """            <certificates src="user" />"""
-        config.customCaCertificates.forEachIndexed { index, _ ->
-            certs += """            <certificates src="@raw/${NetworkTrustStorage.rawResourceName(index)}" />"""
+        entries.forEach { entry ->
+            certs += """            <certificates src="@raw/${entry.resourceName}" />"""
         }
         val body = if (certs.isEmpty()) {
             """            <certificates src="system" />"""

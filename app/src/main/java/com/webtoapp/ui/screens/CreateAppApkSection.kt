@@ -55,15 +55,24 @@ fun ApkExportSection(
     ) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
         runCatching {
-            NetworkTrustStorage.importCertificate(context, uri)
-        }.onSuccess { cert ->
-            val next = config.networkTrustConfig.copy(
-                customCaCertificates = config.networkTrustConfig.customCaCertificates + cert
-            )
-            caImportError = null
-            onConfigChange(config.copy(networkTrustConfig = next))
+            NetworkTrustStorage.importCertificates(context, uri)
+        }.onSuccess { certs ->
+            if (certs.isEmpty()) {
+                caImportError = Strings.invalidCertificate
+            } else {
+                val next = config.networkTrustConfig.copy(
+                    customCaCertificates = config.networkTrustConfig.customCaCertificates + certs
+                )
+                caImportError = null
+                onConfigChange(config.copy(networkTrustConfig = next))
+            }
         }.onFailure { error ->
-            caImportError = error.message ?: Strings.invalidCertificate
+            val reason = (error as? NetworkTrustStorage.InvalidCertificateException)?.reason
+            caImportError = when (reason) {
+                NetworkTrustStorage.InvalidReason.PRIVATE_KEY -> Strings.invalidCertificatePrivateKey
+                NetworkTrustStorage.InvalidReason.UNRECOGNIZED -> Strings.invalidCertificateUnrecognized
+                null -> error.message ?: Strings.invalidCertificate
+            }
         }
     }
 

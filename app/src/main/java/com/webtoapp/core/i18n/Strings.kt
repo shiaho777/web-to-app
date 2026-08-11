@@ -2386,6 +2386,8 @@ object Strings {
     val saveNetworkPresetTitle: String get() = StringsC.saveNetworkPresetTitle
     val presetName: String get() = StringsC.presetName
     val invalidCertificate: String get() = StringsC.invalidCertificate
+    val invalidCertificatePrivateKey: String get() = StringsC.invalidCertificatePrivateKey
+    val invalidCertificateUnrecognized: String get() = StringsC.invalidCertificateUnrecognized
     val preflightPackageAutoTitle: String get() = StringsC.preflightPackageAutoTitle
     val preflightPackageAutoMessage: String get() = StringsC.preflightPackageAutoMessage
     val preflightIconMissingTitle: String get() = StringsC.preflightIconMissingTitle
@@ -34726,16 +34728,16 @@ object StringsC {
     }
 
     val networkTrustTemplateLimitHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "源码项目导出会写入自定义 CA。模板 APK 构建会继续信任系统和用户安装 CA；如需任意导入 CA 进入模板 APK，需要二进制资源表级支持。"
-        AppLanguage.ENGLISH -> "Source project export writes imported custom CAs. Template APK builds still rely on system and user-installed CAs; arbitrary imported CAs in template APKs need binary resource-table support."
-        AppLanguage.ARABIC -> "تقوم صادرات المشروع المصدري بكتابة شهادات CA المخصصة المستوردة. ما تزال بنية APK القالب تعتمد على شهادات النظام والمستخدم، وإدخال أي CA مخصصة إلى APK القالب يحتاج إلى دعم على مستوى جدول الموارد الثنائي."
-        AppLanguage.PORTUGUESE -> "A exportação do projeto fonte grava CAs personalizadas importadas. Builds de APK de modelo ainda dependem de CAs do sistema e instaladas pelo usuário; CAs importadas arbitrárias em APKs de modelo precisam de suporte no nível da tabela de recursos binários."
-        AppLanguage.SPANISH -> "La exportación del proyecto fuente escribe CAs personalizadas importadas. Las builds de APK de plantilla aún dependen de CAs del sistema e instaladas por el usuario; las CAs importadas arbitrarias en APKs de plantilla necesitan soporte a nivel de tabla de recursos binarios."
-        AppLanguage.FRENCH -> "L'export du projet source écrit les CA personnalisés importés. Les builds d'APK de modèle s'appuient toujours sur les CA système et installés par l'utilisateur ; les CA importés arbitraires dans les APK de modèle nécessitent un support au niveau de la table de ressources binaires."
-        AppLanguage.GERMAN -> "Der Quellprojekt-Export schreibt importierte benutzerdefinierte CAs. Template-APK-Builds verlassen sich weiterhin auf System- und benutzerinstallierte CAs; beliebig importierte CAs in Template-APKs benötigen Unterstützung auf Binär-Ressourcentabellenebene."
-        AppLanguage.RUSSIAN -> "Экспорт исходного проекта записывает импортированные пользовательские CA. Сборки APK-шаблонов по-прежнему полагаются на системные и пользовательские CA; произвольные импортированные CA в APK-шаблонах требуют поддержки на уровне бинарной таблицы ресурсов."
-        AppLanguage.JAPANESE -> "ソースプロジェクトのエクスポートはインポートされたカスタムCAを書き込みます。テンプレートAPKビルドは引き続きシステムおよびユーザーインストールCAに依存します。テンプレートAPKに任意のCAをインポートするには、バイナリリソーステーブルレベルのサポートが必要です。"
-        AppLanguage.KOREAN -> "소스 프로젝트 내보내기는 가져온 사용자 지정 CA를 기록합니다. 템플릿 APK 빌드는 여전히 시스템 및 사용자 설치 CA에 의존합니다. 템플릿 APK에 임의의 CA를 가져오려면 바이너리 리소스 테이블 수준의 지원이 필요합니다."
+        AppLanguage.CHINESE -> "导入的自定义 CA 会在构建出的 APK 内生效:由该 CA 直接签发的证书将被信任。完整的证书链校验(根 CA + 中间 CA)请使用源码项目导出。"
+        AppLanguage.ENGLISH -> "Imported custom CAs take effect inside built APKs: certificates directly signed by an imported CA are trusted. For full chain validation (root + intermediate), use source-project export."
+        AppLanguage.ARABIC -> "شهادات CA المخصصة المستوردة تسري داخل ملفات APK المبنية: الشهادات الموقعة مباشرة من CA مستورد موثوقة. للتحقق الكامل من السلسلة (جذر + وسيط)، استخدم تصدير المشروع المصدري."
+        AppLanguage.PORTUGUESE -> "CAs personalizadas importadas passam a valer dentro dos APKs gerados: certificados assinados diretamente por uma CA importada são confiáveis. Para validação completa da cadeia (raiz + intermediária), use a exportação do projeto fonte."
+        AppLanguage.SPANISH -> "Las CAs personalizadas importadas funcionan dentro de los APK generados: los certificados firmados directamente por una CA importada son de confianza. Para validación completa de cadena (raíz + intermedia), usa la exportación del proyecto fuente."
+        AppLanguage.FRENCH -> "Les CA personnalisés importés prennent effet dans les APK générés : les certificats signés directement par un CA importé sont approuvés. Pour une validation complète de chaîne (racine + intermédiaire), utilisez l'export du projet source."
+        AppLanguage.GERMAN -> "Importierte benutzerdefinierte CAs wirken in erstellten APKs: Zertifikate, die direkt von einer importierten CA signiert sind, werden vertraut. Für volle Kettenvalidierung (Root + Intermediate) verwenden Sie den Quellprojekt-Export."
+        AppLanguage.RUSSIAN -> "Импортированные пользовательские CA действуют в собранных APK: сертификаты, напрямую подписанные импортированной CA, считаются доверенными. Для полной проверки цепочки (корень + промежуточный) используйте экспорт исходного проекта."
+        AppLanguage.JAPANESE -> "インポートしたカスタムCAは生成されたAPK内で有効になり、そのCAで直接署名された証明書は信頼されます。完全なチェーン検証(ルート+中間)にはソースプロジェクトのエクスポートを使用してください。"
+        AppLanguage.KOREAN -> "가져온 사용자 지정 CA는 빌드된 APK에서 적용되며, 해당 CA로 직접 서명된 인증서는 신뢰됩니다. 전체 체인 검증(루트 + 중간)이 필요하면 소스 프로젝트 내보내기를 사용하세요."
     }
 
     val saveNetworkPresetTitle: String get() = when (Strings.lang) {
@@ -34775,6 +34777,32 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Недействительный сертификат"
         AppLanguage.JAPANESE -> "無効な証明書"
         AppLanguage.KOREAN -> "잘못된 인증서"
+    }
+
+    val invalidCertificatePrivateKey: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "这是私钥,不是证书。请只导出证书部分(.crt/.cer/.pem)"
+        AppLanguage.ENGLISH -> "This is a private key, not a certificate. Export only the certificate (.crt/.cer/.pem)"
+        AppLanguage.ARABIC -> "هذا مفتاح خاص وليس شهادة. صدّر الشهادة فقط (.crt/.cer/.pem)"
+        AppLanguage.PORTUGUESE -> "Esta é uma chave privada, não um certificado. Exporte apenas o certificado (.crt/.cer/.pem)"
+        AppLanguage.SPANISH -> "Esta es una clave privada, no un certificado. Exporta solo el certificado (.crt/.cer/.pem)"
+        AppLanguage.FRENCH -> "Ceci est une clé privée, pas un certificat. Exportez uniquement le certificat (.crt/.cer/.pem)"
+        AppLanguage.GERMAN -> "Dies ist ein privater Schlüssel, kein Zertifikat. Exportieren Sie nur das Zertifikat (.crt/.cer/.pem)"
+        AppLanguage.RUSSIAN -> "Это закрытый ключ, а не сертификат. Экспортируйте только сертификат (.crt/.cer/.pem)"
+        AppLanguage.JAPANESE -> "これは証明書ではなく秘密鍵です。証明書のみをエクスポートしてください(.crt/.cer/.pem)"
+        AppLanguage.KOREAN -> "인증서가 아니라 개인 키입니다. 인증서만 내보내세요(.crt/.cer/.pem)"
+    }
+
+    val invalidCertificateUnrecognized: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法识别该证书格式。常见原因:PKCS#12/.pfx 密钥库、证书签名请求(CSR)、缺少 PEM 头的 Base64、或编码异常。请导出为 X.509 证书(PEM 或 DER)"
+        AppLanguage.ENGLISH -> "Unrecognized certificate format. Common causes: a PKCS#12/.pfx keystore, a signing request (CSR), Base64 without PEM headers, or an odd encoding. Export it as an X.509 certificate (PEM or DER)"
+        AppLanguage.ARABIC -> "تنسيق شهادة غير معروف. الأسباب الشائعة: مستودع مفاتيح PKCS#12/.pfx، أو طلب توقيع (CSR)، أو Base64 بدون ترويسات PEM، أو ترميز غير معتاد. صدّرها كشهادة X.509 (PEM أو DER)"
+        AppLanguage.PORTUGUESE -> "Formato de certificado não reconhecido. Causas comuns: keystore PKCS#12/.pfx, solicitação de assinatura (CSR), Base64 sem cabeçalhos PEM ou codificação incomum. Exporte como certificado X.509 (PEM ou DER)"
+        AppLanguage.SPANISH -> "Formato de certificado no reconocido. Causas comunes: almacén PKCS#12/.pfx, solicitud de firma (CSR), Base64 sin cabeceras PEM o codificación inusual. Expórtalo como certificado X.509 (PEM o DER)"
+        AppLanguage.FRENCH -> "Format de certificat non reconnu. Causes courantes : keystore PKCS#12/.pfx, requête de signature (CSR), Base64 sans en-têtes PEM ou encodage inhabituel. Exportez-le comme certificat X.509 (PEM ou DER)"
+        AppLanguage.GERMAN -> "Unbekanntes Zertifikatsformat. Häufige Ursachen: PKCS#12/.pfx-Keystore, Signing-Request (CSR), Base64 ohne PEM-Header oder unübliche Codierung. Exportieren Sie es als X.509-Zertifikat (PEM oder DER)"
+        AppLanguage.RUSSIAN -> "Формат сертификата не распознан. Частые причины: хранилище ключей PKCS#12/.pfx, запрос на подпись (CSR), Base64 без PEM-заголовков или необычная кодировка. Экспортируйте как сертификат X.509 (PEM или DER)"
+        AppLanguage.JAPANESE -> "証明書フォーマットを認識できません。よくある原因: PKCS#12/.pfx キーストア、署名要求(CSR)、PEMヘッダーのないBase64、特異なエンコーディング。X.509証明書(PEMまたはDER)としてエクスポートしてください"
+        AppLanguage.KOREAN -> "인증서 형식을 인식할 수 없습니다. 흔한 원인: PKCS#12/.pfx 키스토어, 서명 요청(CSR), PEM 헤더가 없는 Base64, 잘못된 인코딩. X.509 인증서(PEM 또는 DER)로 내보내세요"
     }
 
     val preflightPackageAutoTitle: String get() = when (Strings.lang) {
@@ -34895,16 +34923,16 @@ object StringsC {
     }
 
     val preflightTemplateCaLimitMessage: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "源码项目导出会写入导入的 CA；当前模板 APK 构建仍主要依赖系统 CA 和用户安装 CA。"
-        AppLanguage.ENGLISH -> "Source project export writes imported CAs; current template APK builds still mainly rely on system and user-installed CAs."
-        AppLanguage.ARABIC -> "تقوم صادرات المشروع المصدري بكتابة شهادات CA المستوردة؛ وما تزال بنية APK القالب الحالية تعتمد أساسًا على شهادات النظام والمستخدم."
-        AppLanguage.PORTUGUESE -> "A exportação do projeto fonte grava CAs importadas; as builds de APK de modelo atuais ainda dependem principalmente de CAs do sistema e instaladas pelo usuário."
-        AppLanguage.SPANISH -> "La exportación del proyecto fuente escribe CAs importadas; las builds de APK de plantilla actuales aún dependen principalmente de CAs del sistema e instaladas por el usuario."
-        AppLanguage.FRENCH -> "L'export du projet source écrit les CA importés ; les builds d'APK de modèle actuels s'appuient encore principalement sur les CA système et installés par l'utilisateur."
-        AppLanguage.GERMAN -> "Der Quellprojekt-Export schreibt importierte CAs; aktuelle Template-APK-Builds verlassen sich weiterhin hauptsächlich auf System- und benutzerinstallierte CAs."
-        AppLanguage.RUSSIAN -> "Экспорт исходного проекта записывает импортированные CA; текущие сборки APK-шаблонов по-прежнему в основном полагаются на системные и пользовательские CA."
-        AppLanguage.JAPANESE -> "ソースプロジェクトのエクスポートはインポートされたCAを書き込みます。現在のテンプレートAPKビルドは引き続き主にシステムCAとユーザーインストールCAに依存しています。"
-        AppLanguage.KOREAN -> "소스 프로젝트 내보내기는 가져온 CA를 기록합니다. 현재 템플릿 APK 빌드는 여전히 주로 시스템 및 사용자 설치 CA에 의존합니다."
+        AppLanguage.CHINESE -> "导入的 CA 会在构建出的 APK 内生效:由该 CA 直接签发的证书会被信任。完整证书链(根+中间)请用源码项目导出。"
+        AppLanguage.ENGLISH -> "Imported CAs take effect in built APKs: certificates directly signed by an imported CA are trusted. For full chain (root + intermediate), use source-project export."
+        AppLanguage.ARABIC -> "شهادات CA المستوردة تسري داخل APK المبني: الشهادات الموقعة مباشرة من CA مستورد موثوقة. للسلسلة الكاملة (جذر + وسيط) استخدم تصدير المشروع المصدري."
+        AppLanguage.PORTUGUESE -> "CAs importadas passam a valer nos APKs gerados: certificados assinados diretamente por uma CA importada são confiáveis. Para cadeia completa (raiz + intermediária), use a exportação do projeto fonte."
+        AppLanguage.SPANISH -> "Las CAs importadas funcionan en los APK generados: los certificados firmados directamente por una CA importada son de confianza. Para cadena completa (raíz + intermedia), usa la exportación del proyecto fuente."
+        AppLanguage.FRENCH -> "Les CA importés prennent effet dans les APK générés : les certificats signés directement par un CA importé sont approuvés. Pour la chaîne complète (racine + intermédiaire), utilisez l'export du projet source."
+        AppLanguage.GERMAN -> "Importierte CAs wirken in erstellten APKs: direkt von einer importierten CA signierte Zertifikate werden vertraut. Für volle Kette (Root + Intermediate) verwenden Sie den Quellprojekt-Export."
+        AppLanguage.RUSSIAN -> "Импортированные CA действуют в собранных APK: сертификаты, напрямую подписанные импортированной CA, считаются доверенными. Для полной цепочки (корень + промежуточный) используйте экспорт исходного проекта."
+        AppLanguage.JAPANESE -> "インポートしたCAは生成されたAPK内で有効になり、そのCAで直接署名された証明書は信頼されます。完全なチェーン(ルート+中間)にはソースプロジェクトのエクスポートを使用してください。"
+        AppLanguage.KOREAN -> "가져온 CA는 빌드된 APK에서 적용되며, 해당 CA로 직접 서명된 인증서는 신뢰됩니다. 전체 체인(루트 + 중간)이 필요하면 소스 프로젝트 내보내기를 사용하세요."
     }
 
     val preflightCleartextTitle: String get() = when (Strings.lang) {
