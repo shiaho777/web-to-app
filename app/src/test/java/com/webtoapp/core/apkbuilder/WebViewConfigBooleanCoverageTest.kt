@@ -40,7 +40,8 @@ class WebViewConfigBooleanCoverageTest {
         // added to WebViewConfig but missing here, this test fails immediately.
         val listedFields = setOf(
             "javaScriptEnabled", "domStorageEnabled", "allowFileAccess", "allowContentAccess",
-            "cacheEnabled", "clearBrowsingDataOnLaunch", "zoomEnabled", "desktopMode",
+            "cacheEnabled", "clearBrowsingDataOnLaunch", "clientCertificateAuthEnabled",
+            "zoomEnabled", "desktopMode",
             "hideToolbar", "hideBrowserToolbar", "toolbarShowTitle", "toolbarShowUrl",
             "toolbarShowBack", "toolbarShowForward", "toolbarShowRefresh",
             "browserToolbarCustomized", "showStatusBarInFullscreen",
@@ -273,6 +274,7 @@ class WebViewConfigBooleanCoverageTest {
             allowContentAccess = bool("allowContentAccess"),
             cacheEnabled = bool("cacheEnabled"),
             clearBrowsingDataOnLaunch = bool("clearBrowsingDataOnLaunch"),
+            clientCertificateAuthEnabled = bool("clientCertificateAuthEnabled"),
             zoomEnabled = bool("zoomEnabled"),
             desktopMode = bool("desktopMode"),
             hideToolbar = bool("hideToolbar"),

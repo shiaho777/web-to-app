@@ -19,6 +19,10 @@ Packaging and identity settings for the generated APK. This is the export drawer
 
 - Permissions are derived from the enabled features (feature-driven), and unused permissions are pruned from the template manifest at build time.
 
+## Network trust
+
+- **Client Certificate Authentication (mTLS)** — when a server requests a client certificate, the generated app opens Android's system certificate picker and uses the selected device-installed identity. This is separate from trusting a server CA. The choice is cleared when the app restarts, so Android asks again on the next connection.
+
 ## Build-time options (in the Build dialog)
 
 These are chosen when you [Build APK](/guide/app-actions/build-apk):

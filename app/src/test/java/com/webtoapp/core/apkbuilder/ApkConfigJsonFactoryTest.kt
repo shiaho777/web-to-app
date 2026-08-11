@@ -155,6 +155,26 @@ class ApkConfigJsonFactoryTest {
     }
 
     @Test
+    fun `user installed CA trust reaches generated Gecko shell`() {
+        val config = ApkConfig(
+            meta = MetaBlock(
+                appName = "Private Service",
+                packageName = "com.example.privateservice",
+                targetUrl = "https://service.example.test",
+                engineType = "GECKOVIEW",
+                networkTrustConfig = NetworkTrustConfig(trustUserCa = true)
+            )
+        )
+
+        val shellConfig = GsonProvider.gson.fromJson(
+            ApkConfigJsonFactory.create(config),
+            ShellConfig::class.java
+        )
+
+        assertThat(shellConfig.networkTrustConfig.trustUserCa).isTrue()
+    }
+
+    @Test
     fun `web apk config carries dedicated oauth callback scheme to shell config`() {
         val config = WebApp(
             name = "OAuth App",

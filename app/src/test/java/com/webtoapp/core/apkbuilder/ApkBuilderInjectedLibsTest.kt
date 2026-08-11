@@ -13,6 +13,24 @@ import org.junit.Test
 class ApkBuilderInjectedLibsTest {
 
     @Test
+    fun `gecko runtime entries replace matching template entries for every selected abi`() {
+        val runtimeEntries = ApkBuilder.geckoRuntimeEntryNames(
+            nativeLibNamesByAbi = mapOf(
+                "arm64-v8a" to listOf("libcrashhelper.so", "libxul.so"),
+                "x86_64" to listOf("libcrashhelper.so")
+            ),
+            abiFilters = listOf("arm64-v8a", "x86_64")
+        )
+
+        assertThat(runtimeEntries).containsExactly(
+            "lib/arm64-v8a/libcrashhelper.so",
+            "lib/arm64-v8a/libxul.so",
+            "lib/x86_64/libcrashhelper.so",
+            "assets/omni.ja"
+        )
+    }
+
+    @Test
     fun `go app skips the device-abi go exec loader from the template`() {
         assertThat(ApkBuilder.injectedDeviceLibEntries("GO_APP", "arm64-v8a"))
             .containsExactly("lib/arm64-v8a/libgo_exec_loader.so")
