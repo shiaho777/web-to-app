@@ -19,6 +19,7 @@ import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.StorageController
 import org.mozilla.geckoview.WebResponse
 import org.mozilla.geckoview.WebExtension
+import java.util.concurrent.atomic.AtomicBoolean
 
 data class ProxyConfig(
     val mode: String = "NONE",
@@ -49,10 +50,19 @@ class GeckoViewEngine(
         @Volatile
         private var activeNativeBridge: com.webtoapp.core.webview.NativeBridge? = null
 
+        private val clientCertificateDecisionResetRequested = AtomicBoolean(false)
+
         private const val NATIVE_BRIDGE_APP = "wta_native_bridge"
 
         internal fun clientCertificateClearFlags(enabled: Boolean): Long =
             if (enabled) StorageController.ClearFlags.SITE_SETTINGS else 0L
+
+        fun requestClientCertificateDecisionReset() {
+            clientCertificateDecisionResetRequested.set(true)
+        }
+
+        private fun consumeClientCertificateDecisionResetRequest(): Boolean =
+            clientCertificateDecisionResetRequested.getAndSet(false)
 
         fun ensureNativeBridgeExtension(runtime: GeckoRuntime): WebExtension? {
             nativeBridgeExtension?.let { return it }
@@ -405,7 +415,7 @@ class GeckoViewEngine(
         val runtime = getRuntime(context)
 
         val clientCertificateClearFlags = clientCertificateClearFlags(
-            config.clientCertificateAuthEnabled
+            config.clientCertificateAuthEnabled && consumeClientCertificateDecisionResetRequest()
         )
         clientCertificateDecisionResetPending = clientCertificateClearFlags != 0L
         pendingUrlAfterClientCertificateReset = null
