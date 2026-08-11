@@ -22,6 +22,8 @@ class AxmlRebuilder {
         private const val ATTR_NAME = 0x01010003
         private const val ATTR_VERSION_CODE = 0x0101021b
         private const val ATTR_VERSION_NAME = 0x0101021c
+        private const val ATTR_MIN_SDK_VERSION = 0x0101020c
+        private const val ATTR_TARGET_SDK_VERSION = 0x01010270
         private const val ATTR_TEST_ONLY = 0x01010272
         private const val ATTR_LABEL = 0x01010001
         private const val ATTR_ICON = 0x01010002
@@ -969,7 +971,8 @@ class AxmlRebuilder {
         deepLinkHosts: List<String> = emptyList(),
         deepLinkSchemes: List<String> = emptyList(),
         permissions: List<String> = BASELINE_RUNTIME_PERMISSIONS,
-        requiredComponents: Set<String> = DEFAULT_RUNTIME_COMPONENTS
+        requiredComponents: Set<String> = DEFAULT_RUNTIME_COMPONENTS,
+        targetSdk: Int? = null
     ): ByteArray {
         return try {
             val parsed = parseAxml(axmlData)
@@ -988,6 +991,10 @@ class AxmlRebuilder {
             replacePackageString(parsed, originalPackage, newPackage)
 
             modifyVersionInfo(parsed, versionCode, versionName)
+
+            if (targetSdk != null) {
+                modifyTargetSdk(parsed, targetSdk)
+            }
 
             stripTestOnlyFlag(parsed)
 
@@ -1128,6 +1135,67 @@ class AxmlRebuilder {
 
             break
         }
+    }
+
+    /**
+     * Rewrites the `<uses-sdk android:targetSdkVersion>` integer attribute in place. The shell
+     * template ships targetSdkVersion = 28; this lets a WebView-only generated APK raise it
+     * (e.g. to 34+) for Play Store compliance without changing the template.
+     */
+    private fun modifyTargetSdk(parsed: ParsedAxml, targetSdk: Int) {
+        val resourceMap = parsed.resourceMap ?: return
+        val targetSdkAttrIndex = resourceMap.indexOf(ATTR_TARGET_SDK_VERSION)
+        if (targetSdkAttrIndex < 0) {
+            AppLogger.d(TAG, "targetSdkVersion attribute not in resource map, skipping targetSdk rewrite")
+            return
+        }
+
+        for (chunk in parsed.chunks) {
+            if (chunk.type != CHUNK_START_ELEMENT) continue
+
+            val buffer = ByteBuffer.wrap(chunk.data).order(ByteOrder.LITTLE_ENDIAN)
+            buffer.position(16)
+
+            val namespaceUri = buffer.int
+            val elementName = buffer.int
+            val attrStart = buffer.short.toInt() and 0xFFFF
+            val attrSize = buffer.short.toInt() and 0xFFFF
+            val attrCount = buffer.short.toInt() and 0xFFFF
+
+            if (attrSize == 0 || attrCount == 0) continue
+
+            val elementNameStr = parsed.stringPool.strings.getOrNull(elementName) ?: continue
+            if (elementNameStr != "uses-sdk") continue
+
+            for (i in 0 until attrCount) {
+                val attrOffset = 36 + i * attrSize
+                if (attrOffset + 20 > chunk.data.size) break
+
+                buffer.position(attrOffset)
+                val attrNs = buffer.int
+                val attrName = buffer.int
+                buffer.position(attrOffset + 15)
+                val attrValueType = buffer.get().toInt() and 0xFF
+
+                if (attrName == targetSdkAttrIndex) {
+                    if (attrValueType == 0x10) {
+                        buffer.position(attrOffset + 16)
+                        buffer.putInt(targetSdk)
+                        AppLogger.d(TAG, "Modified targetSdkVersion to $targetSdk")
+                    } else {
+                        AppLogger.w(
+                            TAG,
+                            "uses-sdk targetSdkVersion has unexpected type 0x" +
+                                attrValueType.toString(16) + ", skipping rewrite"
+                        )
+                    }
+                    return
+                }
+            }
+            AppLogger.w(TAG, "<uses-sdk> found but targetSdkVersion attribute absent, skipping rewrite")
+            return
+        }
+        AppLogger.d(TAG, "No <uses-sdk> element found, skipping targetSdk rewrite")
     }
 
     private fun stripTestOnlyFlag(parsed: ParsedAxml) {

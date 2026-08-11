@@ -114,12 +114,10 @@ class AabExportCoordinator(private val context: Context) {
 
         private const val BUILD_PROGRESS_WEIGHT = 45
 
-        val PROCESS_EXEC_APP_TYPES: Set<AppType> = setOf(
-            AppType.PHP_APP,
-            AppType.NODEJS_APP,
-            AppType.PYTHON_APP,
-            AppType.GO_APP,
-            AppType.WORDPRESS
+        @Deprecated(
+            "Use AppType.requiresProcessExec / AppType.REQUIRES_PROCESS_EXEC",
+            replaceWith = ReplaceWith("AppType.REQUIRES_PROCESS_EXEC")
         )
+        val PROCESS_EXEC_APP_TYPES: Set<AppType> get() = AppType.REQUIRES_PROCESS_EXEC
     }
 }

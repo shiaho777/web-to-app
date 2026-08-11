@@ -134,7 +134,7 @@ object PlayPolicyChecker {
             )
         }
 
-        if (webApp.appType in com.webtoapp.core.playstore.aab.AabExportCoordinator.PROCESS_EXEC_APP_TYPES) {
+        if (webApp.appType.requiresProcessExec) {
             violations.add(
                 Violation(
                     ruleId = "SERVER_RUNTIME_APP_TYPE",

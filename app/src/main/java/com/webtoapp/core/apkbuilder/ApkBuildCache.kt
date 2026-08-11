@@ -366,6 +366,9 @@ class ApkBuildCache(private val context: Context) {
         // unsigned APK. Otherwise REUSE_UNSIGNED serves a stale unaligned lib that dlopen
         // rejects on Android 15+ (16KB-page) devices.
         parts += "nativeLibs=${nativeLibsFingerprint ?: "none"}"
+        // targetSdk override changes the manifest's <uses-sdk>; without this a cached unsigned
+        // APK with targetSdk 28 would be reused after the user raises it, defeating the change.
+        parts += "targetSdk=${config.targetSdkOverride ?: 28}"
         return sha256(parts.joinToString("\n"))
     }
 

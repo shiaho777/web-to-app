@@ -20,7 +20,29 @@ enum class AppType {
     PHP_APP,
     PYTHON_APP,
     GO_APP,
-    MULTI_WEB
+    MULTI_WEB;
+
+    /**
+     * Whether this app type execves native server runtimes (Node/PHP/Python/Go/WordPress) from
+     * app-private storage. Such apps must keep `targetSdk <= 28`: starting at targetSdk 29 the
+     * platform enforces write-xor-execute (W^X) on the app's writable data dir, which blocks
+     * execve on the bundled binaries. WebView-only types are free to raise targetSdk for Play.
+     *
+     * Single source of truth for "server runtime app" — also used by the Play policy checker
+     * (was previously duplicated as `AabExportCoordinator.PROCESS_EXEC_APP_TYPES`).
+     */
+    val requiresProcessExec: Boolean
+        get() = this in REQUIRES_PROCESS_EXEC
+
+    companion object {
+        val REQUIRES_PROCESS_EXEC: Set<AppType> = setOf(
+            NODEJS_APP,
+            PHP_APP,
+            PYTHON_APP,
+            GO_APP,
+            WORDPRESS
+        )
+    }
 }
 
 @Entity(
@@ -1080,7 +1102,19 @@ data class ApkExportConfig(
     val performanceConfig: PerformanceOptimizationConfig = PerformanceOptimizationConfig(),
     val notificationEnabled: Boolean = false,
     val notificationConfig: NotificationExportConfig = NotificationExportConfig(),
-    val loggingEnabled: Boolean = false
+    val loggingEnabled: Boolean = false,
+    /**
+     * Override the generated APK's `targetSdkVersion` (manifest `<uses-sdk>`).
+     *
+     * Why: the shell template ships targetSdk = 28 because fork+exec server runtimes
+     * (Node/PHP/Python/Go/WordPress) need it — targetSdk >= 29 enforces W^X on the app's
+     * writable data dir and blocks execve of the bundled binaries. WebView-only app types
+     * don't need that capability, so they can raise targetSdk for Play Store compliance.
+     *
+     * Enforced: server-runtime app types (`AppType.requiresProcessExec`) ignore this field
+     * and always stay at 28. `null`/`<= 0` means "leave the template's 28 alone".
+     */
+    val targetSdk: Int? = null
 )
 
 data class NetworkTrustConfig(

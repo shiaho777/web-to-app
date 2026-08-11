@@ -517,7 +517,8 @@ fun CreateAppScreen(
                     onRuntimePermissionsTransform = viewModel::updateRuntimePermissions,
                     webViewConfig = editState.webViewConfig,
                     autoStartConfig = editState.autoStartConfig,
-                    bgmEnabled = editState.bgmEnabled
+                    bgmEnabled = editState.bgmEnabled,
+                    appType = editState.appType
                 )
             }
 
@@ -563,7 +564,8 @@ private fun ExportAndPermissionDrawer(
     onRuntimePermissionsTransform: ((ApkRuntimePermissions) -> ApkRuntimePermissions) -> Unit,
     webViewConfig: WebViewConfig,
     autoStartConfig: AutoStartConfig?,
-    bgmEnabled: Boolean
+    bgmEnabled: Boolean,
+    appType: AppType
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     val featureReasons = remember(
@@ -606,7 +608,8 @@ private fun ExportAndPermissionDrawer(
                     ApkExportSettingsCard(
                         config = exportConfig,
                         onConfigChange = onExportConfigChange,
-                        onOpenPermissionConfig = null
+                        onOpenPermissionConfig = null,
+                        canOverrideTargetSdk = !appType.requiresProcessExec
                     )
 
                     PermissionConfigPanel(

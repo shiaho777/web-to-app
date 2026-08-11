@@ -23,5 +23,5 @@
 ## 说明
 
 - 你也可以从某个应用的[构建 APK](/zh/guide/app-actions/build-apk) 对话框直接针对该应用启动 AAB 导出。
-- 生成的 APK 保持 `targetSdk` 28(为 fork+exec 运行时);只有 AAB 为 Play 重写。见[构建 APK](/zh/guide/app-actions/build-apk)。
+- 生成的 APK 默认保持 `targetSdk` 28（fork+exec 运行时 —— Node.js、PHP、Python、Go、WordPress —— 所需）；只有 AAB 会为 Play 重写。纯 WebView 应用类型可在 APK 导出设置中可选地提升独立 APK 的 `targetSdk`；见[构建 APK](/zh/guide/app-actions/build-apk)。
 - 导出前会显示上传前建议和警告。

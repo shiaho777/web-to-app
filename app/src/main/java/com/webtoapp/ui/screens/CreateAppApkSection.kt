@@ -41,7 +41,8 @@ private val PACKAGE_NAME_REGEX = AppConstants.PACKAGE_NAME_REGEX
 fun ApkExportSection(
     config: ApkExportConfig,
     onConfigChange: (ApkExportConfig) -> Unit,
-    onOpenPermissionConfig: (() -> Unit)? = null
+    onOpenPermissionConfig: (() -> Unit)? = null,
+    canOverrideTargetSdk: Boolean = false
 ) {
     val coroutineScope = rememberCoroutineScope()
     val packageNameBringIntoViewRequester = remember { BringIntoViewRequester() }
@@ -246,6 +247,13 @@ fun ApkExportSection(
                     onCheckedChange = { onConfigChange(config.copy(loggingEnabled = it)) }
                 )
             }
+        }
+
+        if (canOverrideTargetSdk) {
+            TargetSdkOverrideSection(
+                config = config,
+                onConfigChange = onConfigChange
+            )
         }
 
         CustomSigningSection()
@@ -1359,3 +1367,58 @@ private fun copyToClipboard(context: android.content.Context, label: String, tex
         as android.content.ClipboardManager
     clipboard.setPrimaryClip(android.content.ClipData.newPlainText(label, text))
 }
+
+@Composable
+private fun TargetSdkOverrideSection(
+    config: ApkExportConfig,
+    onConfigChange: (ApkExportConfig) -> Unit
+) {
+    val enabled = config.targetSdk != null
+
+    WtaSection(
+        title = Strings.targetSdkOverrideTitle,
+        headerStyle = WtaSectionHeaderStyle.Quiet
+    ) {
+        WtaSettingCard {
+            WtaToggleRow(
+                title = Strings.targetSdkOverrideTitle,
+                subtitle = if (enabled) Strings.targetSdkOverrideOnHint else Strings.targetSdkOverrideOffHint,
+                icon = Icons.Outlined.SystemUpdate,
+                checked = enabled,
+                onCheckedChange = { on ->
+                    onConfigChange(
+                        config.copy(targetSdk = if (on) TARGET_SDK_OVERRIDE_DEFAULT else null)
+                    )
+                }
+            )
+
+            AnimatedVisibility(
+                visible = enabled,
+                enter = CardExpandTransition,
+                exit = CardCollapseTransition
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = WtaSpacing.RowHorizontal,
+                            vertical = WtaSpacing.ContentGap
+                        ),
+                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                ) {
+                    TARGET_SDK_OVERRIDE_CHOICES.forEach { value ->
+                        PremiumFilterChip(
+                            selected = config.targetSdk == value,
+                            onClick = { onConfigChange(config.copy(targetSdk = value)) },
+                            label = { Text(value.toString()) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private const val TARGET_SDK_OVERRIDE_DEFAULT = 35
+
+private val TARGET_SDK_OVERRIDE_CHOICES = listOf(34, 35, 36)

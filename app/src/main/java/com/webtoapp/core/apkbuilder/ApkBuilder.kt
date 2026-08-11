@@ -1156,7 +1156,8 @@ class ApkBuilder(private val context: Context) {
                                 config.deepLinkHosts,
                                 config.deepLinkSchemes,
                                 buildRequiredPermissions(config),
-                                buildRequiredComponents(config)
+                                buildRequiredComponents(config),
+                                targetSdk = config.targetSdkOverride
                             )
                             writeEntryDeflated(zipOut, entry.name, modifiedData)
                         }
@@ -3576,7 +3577,9 @@ private fun WebApp.buildMetaBlock(packageName: String, effectiveTargetUrl: Strin
     language = com.webtoapp.core.i18n.Strings.currentLanguage.value.name,
     engineType = apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW",
     htmlUsesFileScheme = htmlUsesFileScheme,
-    loggingEnabled = apkExportConfig?.loggingEnabled ?: false
+    loggingEnabled = apkExportConfig?.loggingEnabled ?: false,
+    targetSdkOverride = apkExportConfig?.targetSdk
+        ?.takeIf { it > 0 && !appType.requiresProcessExec }
 )
 
 private fun WebApp.buildActivationBlock(): ActivationBlock = ActivationBlock(

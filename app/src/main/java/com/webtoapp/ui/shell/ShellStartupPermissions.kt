@@ -87,12 +87,20 @@ class ShellStartupPermissions(private val activity: AppCompatActivity) {
         Manifest.permission.ACTIVITY_RECOGNITION ->
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
         Manifest.permission.POST_NOTIFICATIONS ->
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                runtimeTargetSdk() >= Build.VERSION_CODES.TIRAMISU
         else -> true
     }
 
     private fun isGranted(permission: String): Boolean =
         ContextCompat.checkSelfPermission(activity, permission) == PackageManager.PERMISSION_GRANTED
+
+    private fun runtimeTargetSdk(): Int = try {
+        activity.applicationInfo.targetSdkVersion
+    } catch (e: Exception) {
+        AppLogger.w(TAG, "读取 targetSdkVersion 失败，按 28 处理", e)
+        Build.VERSION_CODES.P
+    }
 
     private fun buildSpecialQueue(declared: Set<String>, floatingWindowHandlesOverlay: Boolean) {
         specialQueue.clear()
@@ -175,12 +183,8 @@ class ShellStartupPermissions(private val activity: AppCompatActivity) {
             Manifest.permission.RECEIVE_SMS,
             Manifest.permission.READ_CALL_LOG,
             Manifest.permission.WRITE_CALL_LOG,
-            Manifest.permission.PROCESS_OUTGOING_CALLS
-            // POST_NOTIFICATIONS is deliberately excluded: generated APKs are
-            // targetSdk 28, and on Android 13+ the system exempts targetSdk<33
-            // apps from the notification permission (notifications keep
-            // working and users cannot turn them off). Requesting it only
-            // shows a pointless "Allow / Don't allow" dialog every install.
+            Manifest.permission.PROCESS_OUTGOING_CALLS,
+            Manifest.permission.POST_NOTIFICATIONS
         )
     }
 }

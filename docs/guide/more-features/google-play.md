@@ -23,5 +23,5 @@ Create, import, and manage the signing keys used for the AAB.
 ## Notes
 
 - You can also launch AAB export for a specific app from its [Build APK](/guide/app-actions/build-apk) dialog.
-- The generated APK keeps `targetSdk` 28 (for fork+exec runtimes); only the AAB is rewritten for Play. See [Build APK](/guide/app-actions/build-apk).
+- The generated APK keeps `targetSdk` 28 by default (required for fork+exec runtimes — Node.js, PHP, Python, Go, WordPress); only the AAB is rewritten for Play. WebView-only app types can optionally raise the standalone APK's `targetSdk` from the APK export section; see [Build APK](/guide/app-actions/build-apk).
 - A pre-upload advisory and warning are shown before exporting.

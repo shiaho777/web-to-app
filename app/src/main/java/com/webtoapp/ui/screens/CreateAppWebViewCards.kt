@@ -1731,7 +1731,8 @@ private fun normalizeIpv4(raw: String): String? {
 fun ApkExportSettingsCard(
     config: ApkExportConfig,
     onConfigChange: (ApkExportConfig) -> Unit,
-    onOpenPermissionConfig: (() -> Unit)? = null
+    onOpenPermissionConfig: (() -> Unit)? = null,
+    canOverrideTargetSdk: Boolean = false
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)) {
 
@@ -1797,7 +1798,8 @@ fun ApkExportSettingsCard(
         ApkExportSection(
             config = config,
             onConfigChange = onConfigChange,
-            onOpenPermissionConfig = onOpenPermissionConfig
+            onOpenPermissionConfig = onOpenPermissionConfig,
+            canOverrideTargetSdk = canOverrideTargetSdk
         )
     }
 }

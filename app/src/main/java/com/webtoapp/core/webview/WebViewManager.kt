@@ -233,10 +233,12 @@ class WebViewManager(
          * the CURRENT system uiMode. Safe to call at setup time and again whenever the system
          * theme changes (e.g. Activity.onConfigurationChanged), which is required because:
          *
-         *  - Both the host builder and generated APKs are targetSdk 28 (<=32). On such apps the
-         *    WebView only applies algorithmic darkening when FORCE_DARK is ON — the modern
-         *    setAlgorithmicDarkeningAllowed(true) API is a no-op. FORCE_DARK must therefore be
-         *    preferred (regression from #342, reported as #485).
+         *  - Which darkening API the WebView honors depends on the host app's targetSdkVersion:
+         *    targetSdk <= 32 only honors FORCE_DARK; targetSdk >= 33 only honors
+         *    setAlgorithmicDarkeningAllowed. Dispatch on the real runtime targetSdk (see
+         *    preferAlgorithmicDarkening) so dark mode keeps working on generated APKs whose
+         *    targetSdk is raised above 32 and on the Play AAB (targetSdk rewritten to 36)
+         *    (regression from #342, reported as #485).
          *  - FORCE_DARK is a static switch: it does not track system theme changes by itself,
          *    so the hosting activity must re-derive ON/OFF from the uiMode on every change
          *    (#301 / #341).
@@ -252,8 +254,25 @@ class WebViewManager(
                 val systemInDarkMode = (webView.context.resources.configuration.uiMode and
                     android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
                     android.content.res.Configuration.UI_MODE_NIGHT_YES
+                // Which darkening API actually takes effect depends on the HOST app's
+                // targetSdkVersion (read at runtime from the APK's own manifest), NOT on
+                // the WebView version:
+                //   targetSdk <= 32: setForceDark() works; setAlgorithmicDarkeningAllowed() is a no-op.
+                //   targetSdk >= 33: setForceDark() is a no-op; setAlgorithmicDarkeningAllowed() works.
+                // Picking by WebViewFeature alone silently broke dark mode on the Play AAB path
+                // (whose manifest is rewritten to targetSdk 36) and on any generated APK whose
+                // targetSdk is raised above 32. Dispatch on the real runtime targetSdk instead.
+                val useAlgorithmic = preferAlgorithmicDarkening(webView.context)
                 if (followSystemDarkMode) {
-                    if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                    if (useAlgorithmic) {
+                        if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
+                            WebSettingsCompat.setAlgorithmicDarkeningAllowed(webView.settings, systemInDarkMode)
+                            AppLogger.d(
+                                "WebViewManager",
+                                "Follow system dark mode: algorithmic darkening ${if (systemInDarkMode) "allowed" else "disallowed"}"
+                            )
+                        }
+                    } else if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
                         @Suppress("DEPRECATION")
                         WebSettingsCompat.setForceDark(
                             webView.settings,
@@ -271,8 +290,8 @@ class WebViewManager(
                             "Follow system dark mode: FORCE_DARK ${if (systemInDarkMode) "ON" else "OFF"}"
                         )
                     } else if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
-                        // Fallback for very old WebViews without FORCE_DARK.
-                        WebSettingsCompat.setAlgorithmicDarkeningAllowed(webView.settings, true)
+                        // Very old WebViews without FORCE_DARK: algorithmic is the only option.
+                        WebSettingsCompat.setAlgorithmicDarkeningAllowed(webView.settings, systemInDarkMode)
                         AppLogger.d("WebViewManager", "Follow system dark mode: algorithmic darkening allowed")
                     }
                 } else {
@@ -289,6 +308,23 @@ class WebViewManager(
             } catch (e: Exception) {
                 AppLogger.w("WebViewManager", "refreshSystemDarkMode failed", e)
             }
+        }
+
+        /**
+         * Whether the modern [WebSettingsCompat.setAlgorithmicDarkeningAllowed] API must be
+         * used instead of the legacy FORCE_DARK. On apps whose own targetSdkVersion is >= 33
+         * (TIRAMISU), FORCE_DARK becomes a no-op and algorithmic darkening is the only path.
+         * Read from the actual runtime manifest so this works correctly for the Play AAB
+         * (targetSdk rewritten to 36) and for any generated APK whose targetSdk is raised.
+         */
+        private fun preferAlgorithmicDarkening(context: Context): Boolean {
+            val targetSdk = try {
+                context.applicationInfo.targetSdkVersion
+            } catch (e: Exception) {
+                AppLogger.w("WebViewManager", "Could not read targetSdkVersion; assuming <= 32", e)
+                return false
+            }
+            return targetSdk >= android.os.Build.VERSION_CODES.TIRAMISU
         }
 
         @Suppress("DEPRECATION")
@@ -1485,11 +1521,11 @@ class WebViewManager(
                 allowFileAccessFromFileURLs = config.allowFileAccessFromFileURLs
                 allowUniversalAccessFromFileURLs = config.allowUniversalAccessFromFileURLs
 
-                // Follow system dark mode. Both the host builder and generated APKs are
-                // targetSdk 28 (<=32): on such apps the WebView only performs algorithmic
-                // darkening via FORCE_DARK (setAlgorithmicDarkeningAllowed is a no-op), so
-                // FORCE_DARK must be preferred and re-applied whenever the system uiMode
-                // changes (ShellActivity.onConfigurationChanged calls refreshSystemDarkMode).
+                // Follow system dark mode. The effective API depends on the host app's
+                // targetSdkVersion (see refreshSystemDarkMode / preferAlgorithmicDarkening):
+                // targetSdk <= 32 uses FORCE_DARK, targetSdk >= 33 uses algorithmic darkening.
+                // Re-applied whenever the system uiMode changes (ShellActivity.onConfigurationChanged
+                // calls refreshSystemDarkMode).
                 WebViewManager.refreshSystemDarkMode(webView, config.followSystemDarkMode)
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

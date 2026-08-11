@@ -51,6 +51,7 @@ data class ApkConfig(
     val darkMode: String get() = meta.darkMode
     val language: String get() = meta.language
     val engineType: String get() = meta.engineType
+    val targetSdkOverride: Int? get() = meta.targetSdkOverride
 
     val activationEnabled: Boolean get() = activation.enabled
     val activationCodes: List<String> get() = activation.codes
@@ -398,7 +399,8 @@ data class MetaBlock(
     val language: String = "CHINESE",
     val engineType: String = "SYSTEM_WEBVIEW",
     val htmlUsesFileScheme: Boolean = false,
-    val loggingEnabled: Boolean = false
+    val loggingEnabled: Boolean = false,
+    val targetSdkOverride: Int? = null
 )
 
 data class ActivationBlock(
