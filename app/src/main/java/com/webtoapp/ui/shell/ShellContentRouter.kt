@@ -12,7 +12,6 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.data.model.WebViewConfig
-import com.webtoapp.ui.components.EdgeSwipeRefreshLayout
 
 @Composable
 fun ShellContentRouter(

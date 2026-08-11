@@ -12,10 +12,11 @@ import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.engine.BrowserSurface
 import com.webtoapp.core.engine.EngineViewFactory
 import com.webtoapp.core.shell.ShellConfig
+import com.webtoapp.core.webview.WebScrollTracker
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.core.webview.WebViewManager
 import com.webtoapp.data.model.WebViewConfig
-import com.webtoapp.ui.components.EdgeSwipeRefreshLayout
+import com.webtoapp.ui.components.WebSwipeRefreshLayout
 
 @Composable
 fun ShellBrowserAndroidView(
@@ -37,7 +38,7 @@ fun ShellBrowserAndroidView(
     key(webViewRecreationKey) {
         AndroidView(
             factory = { ctx ->
-                EdgeSwipeRefreshLayout(ctx).apply {
+                WebSwipeRefreshLayout(ctx).apply {
                     layoutParams = ViewGroup.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
@@ -54,7 +55,11 @@ fun ShellBrowserAndroidView(
                     }
                     setOnChildScrollUpCallback { _, child ->
                         val wv = child as? WebView
-                        if (wv != null) wv.scrollY > 0 else (child?.canScrollVertically(-1) == true)
+                        if (wv != null) {
+                            WebScrollTracker.scrollUpBlocked(wv, wv.scrollY)
+                        } else {
+                            child?.canScrollVertically(-1) == true
+                        }
                     }
 
                     val surface = EngineViewFactory.create(
@@ -97,6 +102,7 @@ fun ShellBrowserAndroidView(
                     }
 
                     if (wv != null) {
+                        WebScrollTracker.install(wv)
                         onWebViewCreated(wv)
                         onWebViewRefUpdated(wv)
                         if (wv.tag == "state_restored") {
@@ -121,9 +127,6 @@ fun ShellBrowserAndroidView(
                 swipeLayout.isEnabled = swipeRefreshEnabled
                 if (swipeLayout.isRefreshing != isRefreshing) {
                     swipeLayout.isRefreshing = isRefreshing
-                }
-                if (!isRefreshing && swipeLayout.isRefreshing) {
-                    swipeLayout.isRefreshing = false
                 }
             },
             modifier = modifier

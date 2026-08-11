@@ -13,6 +13,7 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.LongPressHandler
+import com.webtoapp.core.webview.WebScrollTracker
 import com.webtoapp.core.webview.WebViewCallbacks
 
 private fun isLocalRuntimeShellUrl(url: String?): Boolean {
@@ -49,6 +50,7 @@ fun createShellWebViewCallbacks(
             if (url == "about:blank") return
             updateLoading(true)
             updateUrl(url ?: "")
+            webViewRefProvider()?.let { WebScrollTracker.reset(it) }
             resetStatusBarAutoColor()
             com.webtoapp.core.shell.ShellLogger.logWebView("开始加载", url ?: "")
         }
@@ -88,6 +90,7 @@ fun createShellWebViewCallbacks(
             webViewRefProvider()?.let {
                 val isLocalRuntimePage = isLocalRuntimeShellUrl(url)
                 updateNavigation(it.canGoBack(), it.canGoForward())
+                WebScrollTracker.injectScript(it)
 
                 if (config.translateEnabled && !isLocalRuntimePage) {
                     injectTranslateScript(it, config.translateTargetLanguage, config.translateShowButton)

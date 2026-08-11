@@ -20,7 +20,6 @@ import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.webview.WebViewCallbacks
-import com.webtoapp.ui.components.EdgeSwipeRefreshLayout
 import com.webtoapp.data.model.WebViewConfig
 import androidx.activity.compose.BackHandler
 import kotlinx.coroutines.Dispatchers

@@ -48,7 +48,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.lifecycleScope
-import com.webtoapp.ui.components.EdgeSwipeRefreshLayout
+import com.webtoapp.ui.components.WebSwipeRefreshLayout
 import com.webtoapp.WebToAppApplication
 import com.webtoapp.core.bgm.BgmPlayer
 import com.webtoapp.core.webview.HtmlRuntimeLoadInspector
@@ -56,6 +56,7 @@ import com.webtoapp.core.port.PortConflictException
 import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.webview.LocalHttpServer
 import com.webtoapp.core.webview.LongPressHandler
+import com.webtoapp.core.webview.WebScrollTracker
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.core.webview.WebViewManager
 import com.webtoapp.core.i18n.Strings
@@ -81,7 +82,6 @@ import com.webtoapp.ui.shell.ConsolePanel
 import com.webtoapp.ui.shell.ShellWebViewNavigation
 import com.webtoapp.ui.shell.GeolocationPermissionsSingleton
 import java.io.File
-import java.util.concurrent.atomic.AtomicInteger
 import com.webtoapp.core.wordpress.WordPressDependencyManager
 import com.webtoapp.core.wordpress.WordPressPhpRuntime
 import com.webtoapp.core.wordpress.WordPressManager
@@ -972,15 +972,6 @@ class WebViewActivity : AppCompatActivity() {
     }
 }
 
-private class WtaScrollBridge(
-    private val onScrollChanged: (Int) -> Unit
-) {
-    @JavascriptInterface
-    fun onScroll(y: Int) {
-        onScrollChanged(y)
-    }
-}
-
 @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1045,9 +1036,6 @@ fun WebViewScreen(
         if (surface != null) surface.reload() else webViewRef?.reload()
     }
 
-
-    val jsScrollTop = remember { AtomicInteger(0) }
-    val scrollBridge: WtaScrollBridge = remember { WtaScrollBridge { y -> jsScrollTop.set(y) } }
 
     var showLongPressMenu by remember { mutableStateOf(false) }
     var longPressResult by remember { mutableStateOf<LongPressHandler.LongPressResult?>(null) }
@@ -2228,7 +2216,7 @@ fun WebViewScreen(
                 isLoading = true
                 currentUrl = url ?: ""
                 errorMessage = null
-                jsScrollTop.set(0)
+                webViewRef?.let { WebScrollTracker.reset(it) }
                 if (usesPageTopStatusBarColor(webApp ?: previewApp)) {
                     statusBarColorTracker?.reset()
                     statusBarAutoColor = null
@@ -2264,24 +2252,7 @@ fun WebViewScreen(
                 webViewRef?.let {
                     canGoBack = it.canGoBack()
                     canGoForward = it.canGoForward()
-
-                    it.evaluateJavascript("""
-                        (function(){
-                            if(window._wtaScrollTrackerInstalled) return;
-                            window._wtaScrollTrackerInstalled = true;
-                            function report(){
-                                var y = Math.round(Math.max(
-                                    window.pageYOffset || 0,
-                                    document.documentElement ? document.documentElement.scrollTop : 0,
-                                    document.body ? document.body.scrollTop : 0
-                                ));
-                                try { _wtaScrollBridge.onScroll(y); } catch(e) { /* bridge unavailable */ }
-                            }
-                            window.addEventListener('scroll', report, {passive:true, capture:true});
-                            document.addEventListener('scroll', report, {passive:true, capture:true});
-                            report();
-                        })();
-                    """.trimIndent(), null)
+                    WebScrollTracker.injectScript(it)
 
                     if (webApp?.webViewConfig?.longPressMenuEnabled ?: true) {
                         longPressHandler.injectLongPressEnhancer(it)
@@ -3038,7 +3009,7 @@ fun WebViewScreen(
 
                     AndroidView(
                         factory = { ctx ->
-                            EdgeSwipeRefreshLayout(ctx).apply {
+                            WebSwipeRefreshLayout(ctx).apply {
                                 layoutParams = ViewGroup.LayoutParams(
                                     ViewGroup.LayoutParams.MATCH_PARENT,
                                     ViewGroup.LayoutParams.MATCH_PARENT
@@ -3057,7 +3028,7 @@ fun WebViewScreen(
                                 var swipeChildWebView: WebView? = null
                                 setOnChildScrollUpCallback { _, _ ->
                                     val wv = swipeChildWebView ?: return@setOnChildScrollUpCallback false
-                                    wv.scrollY > 0 || jsScrollTop.get() > 0
+                                    WebScrollTracker.scrollUpBlocked(wv, wv.scrollY)
                                 }
 
                                 val moduleIds = if (isTestMode && !testModuleIds.isNullOrEmpty()) {
@@ -3166,7 +3137,6 @@ fun WebViewScreen(
                                         webViewCallbacks.onLongPress(this, lastTouchX, lastTouchY)
                                     }
 
-                                    addJavascriptInterface(scrollBridge, "_wtaScrollBridge")
                                     statusBarColorTracker?.detach()
                                     val tracker = com.webtoapp.core.webview.StatusBarPageColorTracker(
                                         webView = this,
@@ -3181,6 +3151,7 @@ fun WebViewScreen(
                                     tracker.attach()
                                     statusBarColorTracker = tracker
                                     onWebViewCreated(this)
+                                    WebScrollTracker.install(this)
 
                                     webViewRef = this
 

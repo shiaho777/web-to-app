@@ -209,7 +209,7 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/ui/components/PermissionRationale.kt",
         "**/ui/components/ThemeSelector.kt",
         "**/ui/components/StatusBarPreview.kt",
-        "**/ui/components/EdgeSwipeRefreshLayout.kt",
+        "**/ui/components/WebSwipeRefreshLayout.kt",
         "**/ui/components/VirtualNavigationBar.kt",
         "**/ui/components/StatusBarBackground.kt",
         "**/ui/components/LongPressMenu.kt",
