@@ -731,6 +731,7 @@ data class ExtensionModule(
             "showOnlyOnMatch" to uiConfig.showOnlyOnMatch
         ))
         val runModeStr = runMode.name
+        val urlMatchesJson = gson.toJson(urlMatches)
 
         val effectiveCode = if (codeFiles.isNotEmpty()) {
 
@@ -753,6 +754,44 @@ data class ExtensionModule(
                 const __MODULE_CONFIG__ = $configJson;
                 const __MODULE_UI_CONFIG__ = $uiConfigJson;
                 const __MODULE_RUN_MODE__ = '$runModeStr';
+                // URL匹配规则（与 matchesUrl 语义一致）：面板据此显示 Active/Inactive
+                const __MODULE_URL_MATCHES__ = $urlMatchesJson;
+                function __moduleMatchesUrl__() {
+                    try {
+                        var href = location.href;
+                        if (!__MODULE_URL_MATCHES__ || __MODULE_URL_MATCHES__.length === 0) return true;
+                        function __escapeReChar__(c) {
+                            return '.+?^${'$'}()|[]/'.indexOf(c) !== -1 ? '\\' + c : c;
+                        }
+                        function __ruleToRegExp__(rule) {
+                            var p = rule.pattern;
+                            if (rule.isRegex) return new RegExp(p, 'i');
+                            if (p === '*' || p === '<all_urls>') return null;
+                            var re = '^';
+                            var i = 0;
+                            while (i < p.length) {
+                                var c = p[i];
+                                if (c === '*' && p.startsWith('*://', i)) { re += '(https?|ftp|file)://'; i += 4; }
+                                else if (c === '*') { re += '.*'; i++; }
+                                else { re += __escapeReChar__(c); i++; }
+                            }
+                            re += '${'$'}';
+                            return new RegExp(re, 'i');
+                        }
+                        var excludes = __MODULE_URL_MATCHES__.filter(function(r) { return r.exclude; });
+                        for (var j = 0; j < excludes.length; j++) {
+                            var er = __ruleToRegExp__(excludes[j]);
+                            if (er && er.test(href)) return false;
+                        }
+                        var includes = __MODULE_URL_MATCHES__.filter(function(r) { return !r.exclude; });
+                        if (includes.length === 0) return true;
+                        for (var k = 0; k < includes.length; k++) {
+                            var ir = __ruleToRegExp__(includes[k]);
+                            if (!ir || ir.test(href)) return true;
+                        }
+                        return false;
+                    } catch (e) { return true; }
+                }
                 const __MODULE_INFO__ = {
                     id: '${id.escapeForJsSingleQuote()}',
                     name: '${name.escapeForJsSingleQuote()}',
@@ -812,6 +851,8 @@ data class ExtensionModule(
                         icon: __MODULE_INFO__.icon,
                         uiConfig: __MODULE_UI_CONFIG__,
                         runMode: __MODULE_RUN_MODE__,
+                        active: __moduleMatchesUrl__(),
+                        urlMatches: __MODULE_URL_MATCHES__,
                         panelHtml: __MODULE_PANEL_HTML__ || undefined
                     });
                 })();

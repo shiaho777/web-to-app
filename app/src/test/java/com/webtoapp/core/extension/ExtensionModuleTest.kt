@@ -90,6 +90,35 @@ class ExtensionModuleTest {
     }
 
     @Test
+    fun `generateExecutableCode auto-registration carries url match state`() {
+        val module = ExtensionModule(
+            id = "module-2",
+            name = "Reddit tweak",
+            icon = "🧰",
+            code = "console.log('hi')",
+            urlMatches = listOf(
+                UrlMatchRule(pattern = "https://*.reddit.com/*", isRegex = false, exclude = false),
+                UrlMatchRule(pattern = "*://*.reddit.com/r/nsfw*", isRegex = false, exclude = true)
+            )
+        )
+
+        val executable = module.generateExecutableCode()
+
+        // The panel decides Active/Inactive from the module's url match state;
+        // without it every module registered through the auto-register path was
+        // shown as "Inactive / Does not match current page".
+        assertThat(executable).contains("const __MODULE_URL_MATCHES__")
+        assertThat(executable).contains("https://*.reddit.com/*")
+        assertThat(executable).contains("\"exclude\":true")
+        assertThat(executable).contains("function __moduleMatchesUrl__")
+        assertThat(executable).contains("active: __moduleMatchesUrl__(),")
+        assertThat(executable).contains("urlMatches: __MODULE_URL_MATCHES__,")
+        // The JS matcher must escape regex metacharacters and anchor the pattern.
+        assertThat(executable).contains("__escapeReChar__")
+        assertThat(executable).contains("re += '${'$'}';")
+    }
+
+    @Test
     fun `sanitized coerces Gson-null fields back to defaults`() {
         // Gson allocates via Unsafe and leaves Kotlin non-null fields null when the JSON
         // omits them (Kotlin defaults are bypassed). sanitized() must restore the declared

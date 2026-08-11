@@ -15,6 +15,7 @@ object ChromeExtensionPolyfill {
     'use strict';
 
     var EXT_ID = '$safeExtId';
+    var STORAGE_PREFIX = '__WTA_EXT_' + EXT_ID + '_';
 
     // ===== Prevent double-init (per extension) =====
     var POLYFILL_KEY = '__WTA_CHROME_POLYFILL_' + EXT_ID + '__';
