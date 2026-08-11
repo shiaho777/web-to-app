@@ -27,9 +27,28 @@ object PythonDependencyManager {
         RegexOption.IGNORE_CASE
     )
 
+    /** pip reports this when no wheel matches the interpreter/platform, or the index is unreachable. */
+    private val NO_DISTRIBUTION_RE = Regex(
+        """(?:No matching distribution found for|Could not find a version that satisfies the requirement)\s+(\S+)"""
+    )
+
+    /** Evidence that the package index actually responded (downloads started). */
+    private val INDEX_PROOF_RE = Regex("""Collecting \S+|Downloading \S+""")
+
+    /** A source build failed while building a wheel (usually a missing compiler). */
+    private val FAILED_BUILD_WHEEL_RE = Regex("""Failed building wheel for (\S+)""")
+
+    /** A compiler invocation failed (no toolchain ships with the on-device Python). */
+    private val COMPILER_MISSING_RE = Regex("""error: command '[^']*' failed""")
+
     const val PYTHON_VERSION = "3.14"
     const val PYTHON_FULL_VERSION = "3.14.6"
     private const val PYTHON_BUILD_TAG = "20260623"
+
+    private const val SITE_CUSTOMIZE_FILE_NAME = "sitecustomize.py"
+
+    /** Cap on pip output retained for failure analysis (pattern matching). */
+    private const val MAX_PIP_OUTPUT_CHARS = 512 * 1024
 
     private const val MUSL_VERSION = "1.2.5-r11"
     private const val MUSL_ALPINE_BRANCH = "v3.21"
@@ -394,6 +413,93 @@ object PythonDependencyManager {
         }
     }
 
+    /**
+     * Extracts the package name pip could not resolve, when the failure is a
+     * missing distribution (no wheel for this Python/platform). Returns null
+     * for other failure modes.
+     */
+    internal fun findNoWheelPackage(output: String): String? {
+        NO_DISTRIBUTION_RE.find(output)?.let { return it.groupValues[1] }
+        FAILED_BUILD_WHEEL_RE.find(output)?.let { return it.groupValues[1] }
+        return null
+    }
+
+    /**
+     * True when the `--only-binary` pass failed because no wheel matched and
+     * the index clearly responded. Retrying without `--only-binary` would try
+     * to build from source, which cannot work on-device (no compiler), so we
+     * skip it and report an actionable hint instead.
+     */
+    internal fun shouldSkipSourceBuildRetry(output: String): Boolean {
+        if (!NO_DISTRIBUTION_RE.containsMatchIn(output)) return false
+        return INDEX_PROOF_RE.containsMatchIn(output)
+    }
+
+    /**
+     * A `sitecustomize.py` installed into the Python runtime dir. It is imported
+     * by *every* Python process (including pip subprocesses and PEP 517 build
+     * isolation venv pythons) and routes any python-like executable through the
+     * on-device musl loader, because the ELF interpreter path
+     * (`/lib/ld-musl-<arch>.so.1`) does not exist on Android. This is the safety
+     * net for subprocess spawns that bypass the explicit-loader launcher; the
+     * primary fix is patching PT_INTERP to an `$ORIGIN`-relative path.
+     */
+    internal fun buildSitecustomizeScript(): String = """
+import os
+import sys
+
+# WebToApp: route python subprocesses through the on-device musl dynamic linker.
+# The python ELF interpreter (/lib/ld-musl-*.so.1) does not exist on Android,
+# so direct kernel execs of the binary fail. This module is imported by every
+# python process via the site machinery and rewrites subprocess/exec calls that
+# target python-like executables to go through the bundled loader instead.
+
+_MUSL = os.environ.get('_WTA_MUSL_LINKER', '')
+_LIB = os.environ.get('_WTA_MUSL_LIB_PATH', '')
+_PYBIN = os.environ.get('_WTA_PYTHON_BIN', '')
+# 'python' covers venv symlinks (pip build isolation creates venv/bin/python).
+_PYNAMES = ('python', 'python3', 'python${PYTHON_VERSION}', 'libpython3.so')
+
+
+def _is_py(p):
+    return bool(p) and (p == _PYBIN or os.path.basename(str(p)) in _PYNAMES)
+
+
+if _MUSL and _LIB:
+    import subprocess
+
+    _OrigPopen = subprocess.Popen
+
+    class _MPopen(_OrigPopen):
+        def __init__(self, args, *a, **kw):
+            if isinstance(args, (list, tuple)) and len(args) > 0 and _is_py(str(args[0])):
+                args = [_MUSL, '--library-path', _LIB] + list(args)
+            super().__init__(args, *a, **kw)
+
+    subprocess.Popen = _MPopen
+
+    _oexecv = os.execv
+
+    def _mexecv(p, a):
+        if _is_py(p):
+            a = [_MUSL, '--library-path', _LIB] + list(a)
+            p = _MUSL
+        return _oexecv(p, a)
+
+    os.execv = _mexecv
+
+    if hasattr(os, 'execve'):
+        _oexecve = os.execve
+
+        def _mexecve(p, a, e):
+            if _is_py(p):
+                a = [_MUSL, '--library-path', _LIB] + list(a)
+                p = _MUSL
+            return _oexecve(p, a, e)
+
+        os.execve = _mexecve
+""".trimIndent()
+
     private fun runPipWithWrapper(
         context: Context,
         projectDir: File,
@@ -492,12 +598,28 @@ sys.exit(main())
 
         AppLogger.i(TAG, "Installing Python dependencies (wrapper mode): ${command.joinToString(" ")}")
 
-        val exitCode = executeCommand(command, projectDir, pythonBin, pythonHome, muslLinker,
+        val firstResult = executeCommand(command, projectDir, pythonBin, pythonHome, muslLinker,
             wrapperScript.absolutePath, context, extraEnv, onOutput)
 
-        if (exitCode == 0) return true
+        if (firstResult.exitCode == 0) return true
 
-        AppLogger.w(TAG, "pip --only-binary failed (exitCode=$exitCode), retrying without restrictions...")
+        val noWheelPackage = findNoWheelPackage(firstResult.output)
+        if (noWheelPackage != null && shouldSkipSourceBuildRetry(firstResult.output)) {
+            // A source build needs a compiler, which does not exist on-device.
+            // Retrying without --only-binary would only fail at the gcc step
+            // with a confusing error, so surface an actionable hint instead.
+            AppLogger.w(
+                TAG,
+                "pip --only-binary found no usable wheel for '$noWheelPackage' on Python $PYTHON_VERSION; skipping source-build retry"
+            )
+            sitePackages.deleteRecursively()
+            onOutput?.invoke(
+                String.format(com.webtoapp.core.i18n.Strings.pyDepsNoWheelHint, noWheelPackage, PYTHON_VERSION)
+            )
+            return false
+        }
+
+        AppLogger.w(TAG, "pip --only-binary failed (exitCode=${firstResult.exitCode}), retrying without restrictions...")
         onOutput?.invoke(com.webtoapp.core.i18n.Strings.pyDepsRetrying)
         sitePackages.deleteRecursively()
         sitePackages.mkdirs()
@@ -520,8 +642,21 @@ sys.exit(main())
 
         AppLogger.i(TAG, "Installing Python dependencies (wrapper-mode retry): ${retryCommand.joinToString(" ")}")
 
-        return executeCommand(retryCommand, projectDir, pythonBin, pythonHome, muslLinker,
-            wrapperScript.absolutePath, context, extraEnv, onOutput) == 0
+        val retryResult = executeCommand(retryCommand, projectDir, pythonBin, pythonHome, muslLinker,
+            wrapperScript.absolutePath, context, extraEnv, onOutput)
+        if (retryResult.exitCode == 0) return true
+
+        // The retry also failed: give an actionable hint when the cause is a
+        // missing wheel/compiler rather than a transient network issue.
+        val retryPackage = findNoWheelPackage(retryResult.output)
+        if (retryPackage != null) {
+            onOutput?.invoke(
+                String.format(com.webtoapp.core.i18n.Strings.pyDepsNoWheelHint, retryPackage, PYTHON_VERSION)
+            )
+        } else if (COMPILER_MISSING_RE.containsMatchIn(retryResult.output)) {
+            onOutput?.invoke(String.format(com.webtoapp.core.i18n.Strings.pyDepsSourceBuildHint, PYTHON_VERSION))
+        }
+        return false
     }
 
     private fun runPipDirect(
@@ -543,8 +678,10 @@ sys.exit(main())
         )
         AppLogger.i(TAG, "Installing Python dependencies (direct mode): ${command.joinToString(" ")}")
         return executeCommand(command, projectDir, pythonBin, pythonHome, null, null,
-            context, emptyMap(), onOutput) == 0
+            context, emptyMap(), onOutput).exitCode == 0
     }
+
+    data class CommandResult(val exitCode: Int, val output: String)
 
     private fun executeCommand(
         command: List<String>,
@@ -556,7 +693,7 @@ sys.exit(main())
         context: Context,
         extraEnv: Map<String, String>,
         onOutput: ((String) -> Unit)?
-    ): Int {
+    ): CommandResult {
         val processBuilder = ProcessBuilder(command)
         processBuilder.directory(workDir)
         processBuilder.redirectErrorStream(true)
@@ -583,14 +720,17 @@ sys.exit(main())
         AppLogger.i(TAG, "executeCommand: starting process...")
         val process = processBuilder.start()
 
-        val outputLines = mutableListOf<String>()
+        val output = StringBuilder()
+        val outputLock = Any()
         val readerThread = Thread {
             try {
                 process.inputStream.bufferedReader().forEachLine { line ->
                     AppLogger.d(TAG, "[pip] $line")
                     onOutput?.invoke(line)
-                    synchronized(outputLines) {
-                        if (outputLines.size < 50) outputLines.add(line)
+                    synchronized(outputLock) {
+                        if (output.length < MAX_PIP_OUTPUT_CHARS) {
+                            output.append(line).append('\n')
+                        }
                     }
                 }
             } catch (e: Exception) {
@@ -617,18 +757,19 @@ sys.exit(main())
             onOutput?.invoke(String.format(com.webtoapp.core.i18n.Strings.pyDepsInstallTimeout, PIP_TIMEOUT_SECONDS))
             process.destroyForciblyCompat()
             readerThread.interrupt()
-            return -1
+            return CommandResult(-1, synchronized(outputLock) { output.toString() })
         }
 
         readerThread.join(3000)
 
         val exitCode = process.exitValue()
+        val capturedOutput = synchronized(outputLock) { output.toString() }
         if (exitCode != 0) {
-            val lastOutput = synchronized(outputLines) { outputLines.takeLast(5).joinToString("\n") }
+            val lastOutput = capturedOutput.lines().takeLast(5).joinToString("\n")
             AppLogger.e(TAG, "pip install failed, exitCode=$exitCode, output=$lastOutput")
             onOutput?.invoke(String.format(com.webtoapp.core.i18n.Strings.pyDepsInstallFailedCode, exitCode))
         }
-        return exitCode
+        return CommandResult(exitCode, capturedOutput)
     }
 
     fun clearCache(context: Context) {
@@ -733,6 +874,30 @@ sys.exit(main())
 
             File(destDir, "lib").listFiles()?.filter { it.name.endsWith(".so") || it.name.contains(".so.") }?.forEach {
                 it.setExecutable(true, false)
+            }
+
+            // The python binaries ship with an absolute ELF interpreter
+            // (/lib/ld-musl-<arch>.so.1) that does not exist on Android. Direct
+            // launches work because we exec through the explicit loader, but
+            // pip's PEP 517 build isolation spawns subprocesses (venv pythons)
+            // that the kernel execs directly. Patch PT_INTERP to an
+            // $ORIGIN-relative path so those execs resolve the bundled loader.
+            val linkerName = getMuslLinkerName(abi)
+            val patchedCount = ElfInterpPatcher.patchPythonBinaries(destDir, linkerName)
+            if (patchedCount > 0) {
+                AppLogger.i(TAG, "Patched $patchedCount Python ELF interpreter(s) to \$ORIGIN-relative musl loader")
+            } else {
+                AppLogger.w(TAG, "No Python ELF binaries needed interpreter patching")
+            }
+
+            // Fallback for any subprocess spawn that still bypasses the patched
+            // interpreter (e.g. older kernels without $ORIGIN expansion): every
+            // python process imports sitecustomize, which routes python-like
+            // executables through the musl loader.
+            val siteCustomize = File(destDir, "lib/python$PYTHON_VERSION/$SITE_CUSTOMIZE_FILE_NAME")
+            if (!siteCustomize.exists()) {
+                siteCustomize.writeText(buildSitecustomizeScript())
+                AppLogger.i(TAG, "Installed $SITE_CUSTOMIZE_FILE_NAME for subprocess loader bridging: ${siteCustomize.absolutePath}")
             }
 
             archiveFile.delete()

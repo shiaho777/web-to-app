@@ -152,6 +152,58 @@ class PythonDependencyManagerTest {
         assertThat(PythonDependencyManager.hasInstalledPackages(emptyDir)).isTrue()
     }
 
+    @Test
+    fun `findNoWheelPackage extracts the package from pip missing-distribution output`() {
+        assertThat(PythonDependencyManager.findNoWheelPackage(
+            "Collecting MarkupSafe==3.0.2 (from -r requirements.txt)\n" +
+                "ERROR: Could not find a version that satisfies the requirement MarkupSafe==3.0.2 (from versions: none)"
+        )).isEqualTo("MarkupSafe==3.0.2")
+
+        assertThat(PythonDependencyManager.findNoWheelPackage(
+            "ERROR: No matching distribution found for MarkupSafe==3.0.2"
+        )).isEqualTo("MarkupSafe==3.0.2")
+
+        assertThat(PythonDependencyManager.findNoWheelPackage(
+            "ERROR: Failed building wheel for MarkupSafe"
+        )).isEqualTo("MarkupSafe")
+    }
+
+    @Test
+    fun `findNoWheelPackage returns null when no distribution failure is present`() {
+        assertThat(PythonDependencyManager.findNoWheelPackage(
+            "Collecting Flask==3.0.0\nDownloading flask-3.0.0-py3-none-any.whl (101 kB)\nInstalling collected packages: Flask"
+        )).isNull()
+    }
+
+    @Test
+    fun `shouldSkipSourceBuildRetry requires a responding index`() {
+        // Index responded (Collecting...) and no wheel matched -> skip retry.
+        assertThat(PythonDependencyManager.shouldSkipSourceBuildRetry(
+            "Collecting MarkupSafe==3.0.2\n" +
+                "ERROR: No matching distribution found for MarkupSafe==3.0.2"
+        )).isTrue()
+
+        // No evidence the index responded -> likely a network problem; keep retrying.
+        assertThat(PythonDependencyManager.shouldSkipSourceBuildRetry(
+            "ERROR: No matching distribution found for MarkupSafe==3.0.2"
+        )).isFalse()
+
+        // Not a distribution failure at all.
+        assertThat(PythonDependencyManager.shouldSkipSourceBuildRetry(
+            "Collecting Flask==3.0.0\nDownloading flask-3.0.0-py3-none-any.whl (101 kB)"
+        )).isFalse()
+    }
+
+    @Test
+    fun `sitecustomize script bridges python subprocesses through the musl loader`() {
+        val script = PythonDependencyManager.buildSitecustomizeScript()
+        assertThat(script).contains("_WTA_MUSL_LINKER")
+        assertThat(script).contains("_WTA_MUSL_LIB_PATH")
+        assertThat(script).contains("'python', 'python3', 'python${PythonDependencyManager.PYTHON_VERSION}'")
+        assertThat(script).contains("subprocess.Popen = _MPopen")
+        assertThat(script).contains("--library-path")
+    }
+
     private fun tempDir(name: String): File {
         return File(context.cacheDir, "python-dep-test-$name-${System.nanoTime()}").apply { mkdirs() }
     }

@@ -3581,6 +3581,8 @@ object Strings {
     val pyDepsRetrying: String get() = StringsD.pyDepsRetrying
     val pyDepsInstallTimeout: String get() = StringsD.pyDepsInstallTimeout
     val pyDepsInstallFailedCode: String get() = StringsD.pyDepsInstallFailedCode
+    val pyDepsNoWheelHint: String get() = StringsD.pyDepsNoWheelHint
+    val pyDepsSourceBuildHint: String get() = StringsD.pyDepsSourceBuildHint
     val pyDownloadSourceLabel: String get() = StringsD.pyDownloadSourceLabel
     val pyExtractNoBinary: String get() = StringsD.pyExtractNoBinary
     val pyExtractFailed: String get() = StringsD.pyExtractFailed
@@ -49647,6 +49649,30 @@ object StringsD {
         AppLanguage.RUSSIAN -> "Установка зависимостей не удалась (exitCode=%d)"
         AppLanguage.JAPANESE -> "依存関係のインストール失敗 (exitCode=%d)"
         AppLanguage.KOREAN -> "의존성 설치 실패 (exitCode=%d)"
+    }
+    val pyDepsNoWheelHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "软件包 \"%s\" 没有适用于本机 Python %s 的预编译 wheel，且设备端 Python 无法从源码编译。请尝试升级该软件包或移除版本锁定。"
+        AppLanguage.ENGLISH -> "Package \"%s\" has no prebuilt wheel for Python %s on this device, and the on-device Python cannot compile packages from source. Try upgrading the package or removing its version pin."
+        AppLanguage.ARABIC -> "لا توجد حزمة wheel جاهزة للحزمة \"%s\" لإصدار Python %s على هذا الجهاز، ولا يمكن لبيئة Python على الجهاز تجميع الحزم من المصدر. جرّب ترقية الحزمة أو إزالة تثبيت الإصدار."
+        AppLanguage.PORTUGUESE -> "O pacote \"%s\" não tem wheel pré-compilada para Python %s neste dispositivo, e o Python no dispositivo não consegue compilar pacotes a partir do código-fonte. Tente atualizar o pacote ou remover a fixação de versão."
+        AppLanguage.SPANISH -> "El paquete \"%s\" no tiene wheel precompilada para Python %s en este dispositivo, y el Python del dispositivo no puede compilar paquetes desde el código fuente. Intenta actualizar el paquete o eliminar la fijación de versión."
+        AppLanguage.FRENCH -> "Le paquet « %s » n'a pas de wheel précompilée pour Python %s sur cet appareil, et le Python de l'appareil ne peut pas compiler les paquets depuis le code source. Essayez de mettre à jour le paquet ou de retirer l'épinglage de version."
+        AppLanguage.GERMAN -> "Für Paket \"%s\" gibt es kein vorgefertigtes Wheel für Python %s auf diesem Gerät, und das Python auf dem Gerät kann Pakete nicht aus dem Quellcode kompilieren. Versuchen Sie, das Paket zu aktualisieren oder die Versionsfestlegung zu entfernen."
+        AppLanguage.RUSSIAN -> "Для пакета «%s» нет готового wheel для Python %s на этом устройстве, а Python на устройстве не может компилировать пакеты из исходного кода. Попробуйте обновить пакет или убрать фиксацию версии."
+        AppLanguage.JAPANESE -> "このデバイスの Python %s 向けにパッケージ「%s」のプリビルド wheel がなく、デバイス上の Python はソースからのコンパイルができません。パッケージをアップグレードするか、バージョン固定を解除してみてください。"
+        AppLanguage.KOREAN -> "이 기기의 Python %s용 패키지 \"%s\" 사전 빌드 wheel이 없으며, 기기 내 Python은 소스에서 패키지를 컴파일할 수 없습니다. 패키지를 업그레이드하거나 버전 고정을 제거해 보세요."
+    }
+    val pyDepsSourceBuildHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "本机 Python %s 没有可用的预编译 wheel，源码构建需要编译器，而设备端没有编译器。请尝试升级软件包或移除版本锁定。"
+        AppLanguage.ENGLISH -> "No prebuilt wheel is available for Python %s on this device, and source builds need a compiler that is not available on-device. Try upgrading the package or removing the version pin."
+        AppLanguage.ARABIC -> "لا توجد حزمة wheel جاهزة لإصدار Python %s على هذا الجهاز، ويتطلب البناء من المصدر مترجمًا غير متوفر على الجهاز. جرّب ترقية الحزمة أو إزالة تثبيت الإصدار."
+        AppLanguage.PORTUGUESE -> "Não há wheel pré-compilada disponível para Python %s neste dispositivo, e a compilação a partir do código-fonte exige um compilador indisponível no dispositivo. Tente atualizar o pacote ou remover a fixação de versão."
+        AppLanguage.SPANISH -> "No hay wheel precompilada disponible para Python %s en este dispositivo, y compilar desde el código fuente requiere un compilador no disponible en el dispositivo. Intenta actualizar el paquete o eliminar la fijación de versión."
+        AppLanguage.FRENCH -> "Aucune wheel précompilée n'est disponible pour Python %s sur cet appareil, et la compilation depuis le code source nécessite un compilateur indisponible sur l'appareil. Essayez de mettre à jour le paquet ou de retirer l'épinglage de version."
+        AppLanguage.GERMAN -> "Für Python %s ist auf diesem Gerät kein vorgefertigtes Wheel verfügbar, und Quellcode-Builds benötigen einen Compiler, der auf dem Gerät nicht vorhanden ist. Versuchen Sie, das Paket zu aktualisieren oder die Versionsfestlegung zu entfernen."
+        AppLanguage.RUSSIAN -> "Нет готового wheel для Python %s на этом устройстве, а сборка из исходного кода требует компилятор, который недоступен на устройстве. Попробуйте обновить пакет или убрать фиксацию версии."
+        AppLanguage.JAPANESE -> "このデバイスの Python %s 向けにプリビルド wheel がなく、ソースビルドにはデバイス上にないコンパイラが必要です。パッケージをアップグレードするか、バージョン固定を解除してみてください。"
+        AppLanguage.KOREAN -> "이 기기의 Python %s용 사전 빌드 wheel이 없으며, 소스 빌드에는 기기에 없는 컴파일러가 필요합니다. 패키지를 업그레이드하거나 버전 고정을 제거해 보세요."
     }
     val pyDownloadSourceLabel: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "%s [源%d/%d]"
