@@ -21,7 +21,7 @@ Packaging and identity settings for the generated APK. This is the export drawer
 
 ## Network trust
 
-- **Client Certificate Authentication (mTLS)** — when a server requests a client certificate, the generated app opens Android's system certificate picker and uses the selected device-installed identity. This is separate from trusting a server CA. The choice is cleared when the app restarts, so Android asks again on the next connection.
+- **Client Certificate Authentication (mTLS)** — when a server requests a client certificate, the generated app opens Android's system certificate picker and uses the selected device-installed identity. This is separate from trusting a server CA. The selected identity is reused for later connections to the same server.
 
 ## Build-time options (in the Build dialog)
 

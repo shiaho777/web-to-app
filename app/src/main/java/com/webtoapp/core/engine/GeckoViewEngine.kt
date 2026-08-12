@@ -19,7 +19,6 @@ import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.StorageController
 import org.mozilla.geckoview.WebResponse
 import org.mozilla.geckoview.WebExtension
-import java.util.concurrent.atomic.AtomicBoolean
 
 data class ProxyConfig(
     val mode: String = "NONE",
@@ -50,19 +49,7 @@ class GeckoViewEngine(
         @Volatile
         private var activeNativeBridge: com.webtoapp.core.webview.NativeBridge? = null
 
-        private val clientCertificateDecisionResetRequested = AtomicBoolean(false)
-
         private const val NATIVE_BRIDGE_APP = "wta_native_bridge"
-
-        internal fun clientCertificateClearFlags(enabled: Boolean): Long =
-            if (enabled) StorageController.ClearFlags.SITE_SETTINGS else 0L
-
-        fun requestClientCertificateDecisionReset() {
-            clientCertificateDecisionResetRequested.set(true)
-        }
-
-        private fun consumeClientCertificateDecisionResetRequest(): Boolean =
-            clientCertificateDecisionResetRequested.getAndSet(false)
 
         fun ensureNativeBridgeExtension(runtime: GeckoRuntime): WebExtension? {
             nativeBridgeExtension?.let { return it }
@@ -389,8 +376,6 @@ class GeckoViewEngine(
     private var lastConfig: WebViewConfig? = null
     private var lastGeckoUaMode: Int = GeckoSessionSettings.USER_AGENT_MODE_MOBILE
     private var lastUserAgentOverride: String? = null
-    private var clientCertificateDecisionResetPending = false
-    private var pendingUrlAfterClientCertificateReset: String? = null
 
     private var bridgeScope: kotlinx.coroutines.CoroutineScope? = null
 
@@ -413,24 +398,6 @@ class GeckoViewEngine(
         ensureRuntimeForConfig(context)
 
         val runtime = getRuntime(context)
-
-        val clientCertificateClearFlags = clientCertificateClearFlags(
-            config.clientCertificateAuthEnabled && consumeClientCertificateDecisionResetRequest()
-        )
-        clientCertificateDecisionResetPending = clientCertificateClearFlags != 0L
-        pendingUrlAfterClientCertificateReset = null
-        if (clientCertificateDecisionResetPending) {
-            runtime.storageController.clearData(clientCertificateClearFlags).accept(
-                {
-                    finishClientCertificateDecisionReset()
-                    AppLogger.i(TAG, "Remembered Gecko client certificate decisions cleared")
-                },
-                { error ->
-                    AppLogger.e(TAG, "Failed to clear remembered Gecko client certificate decisions", error)
-                    finishClientCertificateDecisionReset()
-                }
-            )
-        }
 
         if (config.enableCorsBypass || config.enablePrivateNetworkBridge) {
             if (bridgeScope == null) bridgeScope = kotlinx.coroutines.MainScope()
@@ -840,20 +807,7 @@ class GeckoViewEngine(
     }
 
     override fun loadUrl(url: String) {
-        if (clientCertificateDecisionResetPending) {
-            pendingUrlAfterClientCertificateReset = url
-            AppLogger.d(TAG, "Deferring first navigation until client certificate decisions are cleared")
-        } else {
-            session?.loadUri(url)
-        }
-    }
-
-    private fun finishClientCertificateDecisionReset() {
-        clientCertificateDecisionResetPending = false
-        pendingUrlAfterClientCertificateReset?.let { pendingUrl ->
-            pendingUrlAfterClientCertificateReset = null
-            session?.loadUri(pendingUrl)
-        }
+        session?.loadUri(url)
     }
 
     override fun evaluateJavascript(script: String, resultCallback: ((String?) -> Unit)?) {
@@ -908,8 +862,6 @@ class GeckoViewEngine(
         geckoView = null
         callback = null
         lastConfig = null
-        clientCertificateDecisionResetPending = false
-        pendingUrlAfterClientCertificateReset = null
     }
 
     override fun clearCache(includeDiskFiles: Boolean) {

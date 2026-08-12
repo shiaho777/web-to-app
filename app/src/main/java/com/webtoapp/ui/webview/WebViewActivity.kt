@@ -1,7 +1,6 @@
 package com.webtoapp.ui.webview
 import com.webtoapp.core.engine.BrowserSurface
 import com.webtoapp.core.engine.EngineViewFactory
-import com.webtoapp.core.engine.EngineType
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.AutoRefreshCountdownChip
@@ -91,7 +90,6 @@ import com.webtoapp.core.php.PhpAppRuntime
 import com.webtoapp.core.stats.AppUsageTracker
 import androidx.compose.ui.text.style.TextOverflow
 import com.webtoapp.ui.components.announcement.toUiTemplate
-import com.webtoapp.ui.design.WtaLoadingState
 
 class WebViewActivity : AppCompatActivity() {
 
@@ -101,8 +99,6 @@ class WebViewActivity : AppCompatActivity() {
         private const val EXTRA_TEST_URL = "test_url"
         private const val EXTRA_TEST_MODULE_IDS = "test_module_ids"
         private const val EXTRA_PREVIEW_APP_JSON = "preview_app_json"
-        private const val EXTRA_RESET_CLIENT_CERTIFICATE_DECISIONS =
-            "reset_client_certificate_decisions"
 
         fun start(context: Context, appId: Long) {
             context.startActivity(Intent(context, WebViewActivity::class.java).apply {
@@ -136,7 +132,6 @@ class WebViewActivity : AppCompatActivity() {
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     private var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
-    private var clientCertificateAuthEnabled = false
 
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeolocationOrigin: String? = null
@@ -702,35 +697,6 @@ class WebViewActivity : AppCompatActivity() {
         com.webtoapp.core.engine.GeckoViewEngine.applyEnterpriseRootsEnabled(
             previewApp?.apkExportConfig?.networkTrustConfig?.trustUserCa == true
         )
-        clientCertificateAuthEnabled =
-            previewApp?.webViewConfig?.clientCertificateAuthEnabled == true
-        val explicitClientCertificateReset =
-            intent.getBooleanExtra(EXTRA_RESET_CLIENT_CERTIFICATE_DECISIONS, false)
-        intent.removeExtra(EXTRA_RESET_CLIENT_CERTIFICATE_DECISIONS)
-        val shouldResetClientCertificateDecisions =
-            clientCertificateAuthEnabled && (savedInstanceState == null || explicitClientCertificateReset)
-        val previewUsesGeckoView =
-            previewApp?.apkExportConfig?.engineType == EngineType.GECKOVIEW.name
-        val clientCertificatePreferencesReady = mutableStateOf(
-            !shouldResetClientCertificateDecisions || previewUsesGeckoView
-        )
-        if (shouldResetClientCertificateDecisions) {
-            if (previewUsesGeckoView) {
-                com.webtoapp.core.engine.GeckoViewEngine.requestClientCertificateDecisionReset()
-            } else {
-                WebView.clearClientCertPreferences {
-                    runOnUiThread {
-                        if (!isDestroyed) {
-                            clientCertificatePreferencesReady.value = true
-                            AppLogger.i(
-                                "WebViewActivity",
-                                "Client certificate preferences cleared for preview"
-                            )
-                        }
-                    }
-                }
-            }
-        }
 
         setContent {
             WebToAppTheme { isDarkTheme ->
@@ -755,104 +721,100 @@ class WebViewActivity : AppCompatActivity() {
                     }
                 }
 
-                if (clientCertificatePreferencesReady.value) {
-                    WebViewScreen(
-                    appId = appId,
-                    directUrl = directUrl,
-                    previewApp = previewApp,
-                    testUrl = testUrl,
-                    testModuleIds = testModuleIds,
-                    onStatusBarConfigChanged = { colorMode, customColor, darkIcons, showStatusBar, backgroundType, colorModeDark, customColorDark, darkIconsDark, backgroundTypeDark ->
+                WebViewScreen(
+                appId = appId,
+                directUrl = directUrl,
+                previewApp = previewApp,
+                testUrl = testUrl,
+                testModuleIds = testModuleIds,
+                onStatusBarConfigChanged = { colorMode, customColor, darkIcons, showStatusBar, backgroundType, colorModeDark, customColorDark, darkIconsDark, backgroundTypeDark ->
 
-                        statusBarColorMode = colorMode
-                        statusBarCustomColor = customColor
-                        statusBarDarkIcons = darkIcons
-                        showStatusBarInFullscreen = showStatusBar
-                        statusBarBackgroundType = backgroundType
+                    statusBarColorMode = colorMode
+                    statusBarCustomColor = customColor
+                    statusBarDarkIcons = darkIcons
+                    showStatusBarInFullscreen = showStatusBar
+                    statusBarBackgroundType = backgroundType
 
-                        statusBarColorModeDark = colorModeDark
-                        statusBarCustomColorDark = customColorDark
-                        statusBarDarkIconsDark = darkIconsDark
-                        statusBarBackgroundTypeDark = backgroundTypeDark
-                    },
-                    onStatusBarAutoColorChanged = { color ->
-                        if (statusBarAutoColor == color) return@WebViewScreen
-                        statusBarAutoColor = color
-                        refreshStatusBarAppearance()
-                    },
-                    onWebViewCreated = { wv ->
-                        webView = wv
+                    statusBarColorModeDark = colorModeDark
+                    statusBarCustomColorDark = customColorDark
+                    statusBarDarkIconsDark = darkIconsDark
+                    statusBarBackgroundTypeDark = backgroundTypeDark
+                },
+                onStatusBarAutoColorChanged = { color ->
+                    if (statusBarAutoColor == color) return@WebViewScreen
+                    statusBarAutoColor = color
+                    refreshStatusBarAppearance()
+                },
+                onWebViewCreated = { wv ->
+                    webView = wv
 
-                        wv.onResume()
-                        wv.resumeTimers()
+                    wv.onResume()
+                    wv.resumeTimers()
 
-                        val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
-                            this@WebViewActivity,
-                            lifecycleScope,
-                            previewApp?.webViewConfig?.downloadLocationMode ?: com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
-                            previewApp?.webViewConfig?.customDownloadDirUri ?: ""
-                        )
-                        wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
-
-                        val previewWvConfig = previewApp?.webViewConfig
-                        if (previewWvConfig?.enablePrintBridge != false) {
-                            val printBridge = com.webtoapp.core.webview.PrintBridge(
-                                context = this@WebViewActivity,
-                                scope = lifecycleScope,
-                                webViewProvider = { wv }
-                            )
-                            wv.addJavascriptInterface(printBridge, com.webtoapp.core.webview.PrintBridge.JS_INTERFACE_NAME)
-                        }
-
-                        if (previewWvConfig?.enableMediaSession == true) {
-                            val mediaBridge = com.webtoapp.core.webview.MediaSessionBridge(
-                                this@WebViewActivity,
-                                wv
-                            )
-                            try {
-                                androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
-                                    wv,
-                                    com.webtoapp.core.webview.MediaSessionBridge.INJECTION_SCRIPT,
-                                    setOf("*")
-                                )
-                            } catch (e: Exception) {
-                                mediaBridge.injectNow()
-                            }
-                            // Fallback for pages that were already loaded before the
-                            // document-start script was registered (idempotent).
-                            mediaBridge.injectNow()
-                            mediaSessionBridge = mediaBridge
-                        }
-
-                        if (previewApp?.translateEnabled == true) {
-                            val translateBridge = com.webtoapp.core.webview.TranslateBridge(wv, lifecycleScope)
-                            wv.addJavascriptInterface(
-                                translateBridge,
-                                com.webtoapp.core.webview.TranslateBridge.JS_INTERFACE_NAME
-                            )
-                        }
-                    },
-                    onFileChooser = { callback, params ->
-                        handleFileChooser(callback, params)
-                    },
-                    onShowCustomView = { view, callback ->
-                        customView = view
-                        customViewCallback = callback
-                        showCustomView(view)
-                    },
-                    onHideCustomView = {
-                        hideCustomView()
-                    },
-                    onFullscreenModeChanged = { enabled ->
-                        immersiveFullscreenEnabled = enabled
-                        if (customView == null) {
-                            applyImmersiveFullscreen(enabled)
-                        }
-                    }
+                    val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
+                        this@WebViewActivity,
+                        lifecycleScope,
+                        previewApp?.webViewConfig?.downloadLocationMode ?: com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
+                        previewApp?.webViewConfig?.customDownloadDirUri ?: ""
                     )
-                } else {
-                    WtaLoadingState()
+                    wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
+
+                    val previewWvConfig = previewApp?.webViewConfig
+                    if (previewWvConfig?.enablePrintBridge != false) {
+                        val printBridge = com.webtoapp.core.webview.PrintBridge(
+                            context = this@WebViewActivity,
+                            scope = lifecycleScope,
+                            webViewProvider = { wv }
+                        )
+                        wv.addJavascriptInterface(printBridge, com.webtoapp.core.webview.PrintBridge.JS_INTERFACE_NAME)
+                    }
+
+                    if (previewWvConfig?.enableMediaSession == true) {
+                        val mediaBridge = com.webtoapp.core.webview.MediaSessionBridge(
+                            this@WebViewActivity,
+                            wv
+                        )
+                        try {
+                            androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
+                                wv,
+                                com.webtoapp.core.webview.MediaSessionBridge.INJECTION_SCRIPT,
+                                setOf("*")
+                            )
+                        } catch (e: Exception) {
+                            mediaBridge.injectNow()
+                        }
+                        // Fallback for pages that were already loaded before the
+                        // document-start script was registered (idempotent).
+                        mediaBridge.injectNow()
+                        mediaSessionBridge = mediaBridge
+                    }
+
+                    if (previewApp?.translateEnabled == true) {
+                        val translateBridge = com.webtoapp.core.webview.TranslateBridge(wv, lifecycleScope)
+                        wv.addJavascriptInterface(
+                            translateBridge,
+                            com.webtoapp.core.webview.TranslateBridge.JS_INTERFACE_NAME
+                        )
+                    }
+                },
+                onFileChooser = { callback, params ->
+                    handleFileChooser(callback, params)
+                },
+                onShowCustomView = { view, callback ->
+                    customView = view
+                    customViewCallback = callback
+                    showCustomView(view)
+                },
+                onHideCustomView = {
+                    hideCustomView()
+                },
+                onFullscreenModeChanged = { enabled ->
+                    immersiveFullscreenEnabled = enabled
+                    if (customView == null) {
+                        applyImmersiveFullscreen(enabled)
+                    }
                 }
+                )
             }
         }
 
@@ -945,11 +907,7 @@ class WebViewActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         val newAppId = intent.getLongExtra(EXTRA_APP_ID, -1)
-        if (newAppId <= 0 || newAppId != trackedAppId || clientCertificateAuthEnabled) {
-            if (clientCertificateAuthEnabled) {
-                intent.putExtra(EXTRA_RESET_CLIENT_CERTIFICATE_DECISIONS, true)
-                setIntent(intent)
-            }
+        if (newAppId <= 0 || newAppId != trackedAppId) {
             recreate()
         }
     }

@@ -68,9 +68,6 @@ class ShellActivity : AppCompatActivity() {
 
     private var pendingFloatingWindowLaunch = false
     private var notificationPolyfillEnabled = false
-    private var clientCertificateAuthEnabled = false
-    private val clientCertificatePreferencesReady = mutableStateOf(true)
-    private val clientCertificateResetExtra = "reset_client_certificate_decisions"
     private var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
 
     // Screen-awake (ALWAYS/TIMED) timer management. The timed clear is tracked so it can be
@@ -295,12 +292,7 @@ class ShellActivity : AppCompatActivity() {
             return
         }
 
-        val explicitClientCertificateReset =
-            intent.getBooleanExtra(clientCertificateResetExtra, false)
-        intent.removeExtra(clientCertificateResetExtra)
-        if (!explicitClientCertificateReset) {
-            savedInstanceState?.let { webViewStateBundle = it }
-        }
+        savedInstanceState?.let { webViewStateBundle = it }
 
         if (WebToAppApplication.shellMode.requiresCustomPassword()) {
             showPasswordDialog()
@@ -322,25 +314,6 @@ class ShellActivity : AppCompatActivity() {
         com.webtoapp.core.engine.GeckoViewEngine.applyEnterpriseRootsEnabled(
             config.networkTrustConfig.trustUserCa
         )
-        clientCertificateAuthEnabled = config.webViewConfig.clientCertificateAuthEnabled
-        val shouldResetClientCertificateDecisions =
-            clientCertificateAuthEnabled && (savedInstanceState == null || explicitClientCertificateReset)
-        if (shouldResetClientCertificateDecisions) {
-            if (config.engineType == EngineType.GECKOVIEW.name) {
-                com.webtoapp.core.engine.GeckoViewEngine.requestClientCertificateDecisionReset()
-            } else {
-                clientCertificatePreferencesReady.value = false
-                WebView.clearClientCertPreferences {
-                    runOnUiThread {
-                        clientCertificatePreferencesReady.value = true
-                        com.webtoapp.core.shell.ShellLogger.i(
-                            "ShellActivity",
-                            "Client certificate preferences cleared for a new app launch"
-                        )
-                    }
-                }
-            }
-        }
         AppLogger.d("ShellActivity", "WebView UA config from shell: userAgentMode=${config.webViewConfig.userAgentMode}, customUserAgent=${config.webViewConfig.customUserAgent}, userAgent=${config.webViewConfig.userAgent}")
         clearBrowsingDataOnLaunch = config.webViewConfig.clearBrowsingDataOnLaunch
         if (clearBrowsingDataOnLaunch) {
@@ -478,177 +451,175 @@ class ShellActivity : AppCompatActivity() {
                     }
                 }
 
-                if (clientCertificatePreferencesReady.value) {
-                    ShellScreen(
-                    config = config,
-                    deepLinkUrl = deepLinkUrl.value,
-                    onBrowserSurfaceCreated = { surface ->
-                        browserSurface = surface
-                        if (surface.webView == null) {
-                            webView = null
-                            com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "Browser surface created (GeckoView), ECH engine active")
+                ShellScreen(
+                config = config,
+                deepLinkUrl = deepLinkUrl.value,
+                onBrowserSurfaceCreated = { surface ->
+                    browserSurface = surface
+                    if (surface.webView == null) {
+                        webView = null
+                        com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "Browser surface created (GeckoView), ECH engine active")
+                    }
+                },
+                onWebViewCreated = { wv ->
+                    try {
+                        webView = wv
+                        if (browserSurface == null || browserSurface?.webView != null) {
+                            browserSurface = BrowserSurface.fromWebView(wv)
                         }
-                    },
-                    onWebViewCreated = { wv ->
-                        try {
-                            webView = wv
-                            if (browserSurface == null || browserSurface?.webView != null) {
-                                browserSurface = BrowserSurface.fromWebView(wv)
+
+                        wv.resumeTimers()
+                        com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebView 创建成功, timers resumed")
+
+                        val savedState = webViewStateBundle
+                        if (savedState != null) {
+                            val restored = wv.restoreState(savedState)
+                            webViewStateBundle = null
+                            if (restored != null) {
+
+                                wv.tag = "state_restored"
+                                com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebView state restored from saved bundle")
                             }
+                        }
 
-                            wv.resumeTimers()
-                            com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebView 创建成功, timers resumed")
+                        translateBridge = TranslateBridge(wv, lifecycleScope)
+                        wv.addJavascriptInterface(translateBridge!!, TranslateBridge.JS_INTERFACE_NAME)
 
-                            val savedState = webViewStateBundle
-                            if (savedState != null) {
-                                val restored = wv.restoreState(savedState)
-                                webViewStateBundle = null
-                                if (restored != null) {
-
-                                    wv.tag = "state_restored"
-                                    com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "WebView state restored from saved bundle")
-                                }
-                            }
-
-                            translateBridge = TranslateBridge(wv, lifecycleScope)
-                            wv.addJavascriptInterface(translateBridge!!, TranslateBridge.JS_INTERFACE_NAME)
-
-                            val downloadLocationMode = try {
-                                com.webtoapp.data.model.DownloadLocationMode.valueOf(config.webViewConfig.downloadLocationMode)
-                            } catch (e: Exception) {
-                                com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
-                            }
-                            val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
-                                this@ShellActivity,
-                                lifecycleScope,
-                                downloadLocationMode,
-                                config.webViewConfig.customDownloadDirUri
-                            )
-                            wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
-
-                            if (config.webViewConfig.enablePrintBridge) {
-                                val printBridge = com.webtoapp.core.webview.PrintBridge(
-                                    context = this@ShellActivity,
-                                    scope = lifecycleScope,
-                                    webViewProvider = { wv }
-                                )
-                                wv.addJavascriptInterface(printBridge, com.webtoapp.core.webview.PrintBridge.JS_INTERFACE_NAME)
-                                try {
-                                    androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
-                                        wv,
-                                        com.webtoapp.core.webview.PrintBridge.getInjectionScript(),
-                                        setOf("*")
-                                    )
-                                    com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "[PrintBridge] Installed at document start (applies to all hosts)")
-                                } catch (e: Exception) {
-                                    wv.evaluateJavascript(com.webtoapp.core.webview.PrintBridge.getInjectionScript(), null)
-                                    com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "[PrintBridge] Document-start unsupported, used evaluateJavascript fallback", e)
-                                }
-                            }
-
-                            if (config.webViewConfig.enableMediaSession) {
-                                val mediaBridge = com.webtoapp.core.webview.MediaSessionBridge(
-                                    this@ShellActivity,
-                                    wv
-                                )
-                                try {
-                                    androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
-                                        wv,
-                                        com.webtoapp.core.webview.MediaSessionBridge.INJECTION_SCRIPT,
-                                        setOf("*")
-                                    )
-                                    com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "[MediaSession] Installed at document start")
-                                } catch (e: Exception) {
-                                    mediaBridge.injectNow()
-                                    com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "[MediaSession] Document-start unsupported, used injectNow fallback", e)
-                                }
-                                mediaSessionBridge = mediaBridge
-                            }
-
-                            if (config.webViewConfig.enableNativeBridge) {
-                                val capabilities = com.webtoapp.data.model.NativeBridgeCapabilities(
-                                    clipboard = config.webViewConfig.nativeBridgeClipboard,
-                                    vibration = config.webViewConfig.nativeBridgeVibration,
-                                    geolocation = config.webViewConfig.nativeBridgeGeolocation,
-                                    brightness = config.webViewConfig.nativeBridgeBrightness,
-                                    notification = config.webViewConfig.nativeBridgeNotification,
-                                    notificationScheduled = config.webViewConfig.nativeBridgeNotificationScheduled,
-                                    notificationPersistent = config.webViewConfig.nativeBridgeNotificationPersistent,
-                                    download = config.webViewConfig.nativeBridgeDownload,
-                                    privateNetwork = config.webViewConfig.nativeBridgePrivateNetwork,
-                                    screenWake = config.webViewConfig.nativeBridgeScreenWake,
-                                    openExternal = config.webViewConfig.nativeBridgeOpenExternal,
-                                    deviceInfo = config.webViewConfig.nativeBridgeDeviceInfo,
-                                    securityInfo = config.webViewConfig.nativeBridgeSecurityInfo,
-                                    networkInfo = config.webViewConfig.nativeBridgeNetworkInfo,
-                                    toast = config.webViewConfig.nativeBridgeToast,
-                                    logging = config.webViewConfig.nativeBridgeLogging,
-                                    findInPage = config.webViewConfig.nativeBridgeFindInPage,
-                                    orientation = config.webViewConfig.nativeBridgeOrientation,
-                                    fullscreen = config.webViewConfig.nativeBridgeFullscreen,
-                                    print = config.webViewConfig.nativeBridgePrint,
-                                )
-                                val nativeBridge = com.webtoapp.core.webview.NativeBridge(
-                                    context = this@ShellActivity,
-                                    scope = lifecycleScope,
-                                    webViewProvider = { wv },
-                                    capabilities = capabilities,
-                                    corsBypass = config.webViewConfig.enableCorsBypass,
-                                    downloadLocationMode = downloadLocationMode,
-                                    customDownloadDirUri = config.webViewConfig.customDownloadDirUri
-                                )
-                                wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
-                            } else if (config.webViewConfig.enablePrivateNetworkBridge || config.webViewConfig.enableCorsBypass) {
-                                val privateNetworkBridge = com.webtoapp.core.webview.PrivateNetworkNativeBridgeAdapter(
-                                    context = this@ShellActivity,
-                                    scope = lifecycleScope,
-                                    webViewProvider = { wv },
-                                    corsBypass = config.webViewConfig.enableCorsBypass
-                                )
-                                wv.addJavascriptInterface(privateNetworkBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
-                            } else {
-                                wv.removeJavascriptInterface(com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
-                            }
-                            com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "JS 桥接接口注册完成")
+                        val downloadLocationMode = try {
+                            com.webtoapp.data.model.DownloadLocationMode.valueOf(config.webViewConfig.downloadLocationMode)
                         } catch (e: Exception) {
-                            com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "WebView 初始化失败", e)
+                            com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
                         }
-                    },
-                    onStatusBarAutoColorChanged = { color ->
-                        if (statusBarAutoColor == color) return@ShellScreen
-                        statusBarAutoColor = color
-                        refreshStatusBarAppearance()
-                    },
-                    onFileChooser = { callback, params ->
-                        permissionDelegate.handleFileChooser(callback, params)
-                    },
-                    onShowCustomView = { view, callback ->
-                        customView = view
-                        customViewCallback = callback
-                        showCustomView(view)
-                    },
-                    onHideCustomView = {
-                        hideCustomView()
-                    },
-                    onFullscreenModeChanged = { enabled ->
-                        immersiveFullscreenEnabled = enabled
-                        if (customView == null) {
-                            applyImmersiveFullscreen(enabled)
+                        val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
+                            this@ShellActivity,
+                            lifecycleScope,
+                            downloadLocationMode,
+                            config.webViewConfig.customDownloadDirUri
+                        )
+                        wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
+
+                        if (config.webViewConfig.enablePrintBridge) {
+                            val printBridge = com.webtoapp.core.webview.PrintBridge(
+                                context = this@ShellActivity,
+                                scope = lifecycleScope,
+                                webViewProvider = { wv }
+                            )
+                            wv.addJavascriptInterface(printBridge, com.webtoapp.core.webview.PrintBridge.JS_INTERFACE_NAME)
+                            try {
+                                androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
+                                    wv,
+                                    com.webtoapp.core.webview.PrintBridge.getInjectionScript(),
+                                    setOf("*")
+                                )
+                                com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "[PrintBridge] Installed at document start (applies to all hosts)")
+                            } catch (e: Exception) {
+                                wv.evaluateJavascript(com.webtoapp.core.webview.PrintBridge.getInjectionScript(), null)
+                                com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "[PrintBridge] Document-start unsupported, used evaluateJavascript fallback", e)
+                            }
                         }
-                    },
 
-                    statusBarBackgroundType = statusBarBackgroundType,
-                    statusBarBackgroundColor = statusBarCustomColor,
-                    statusBarBackgroundImage = statusBarBackgroundImage,
-                    statusBarBackgroundAlpha = statusBarBackgroundAlpha,
-                    statusBarHeightDp = statusBarHeightDp,
+                        if (config.webViewConfig.enableMediaSession) {
+                            val mediaBridge = com.webtoapp.core.webview.MediaSessionBridge(
+                                this@ShellActivity,
+                                wv
+                            )
+                            try {
+                                androidx.webkit.WebViewCompat.addDocumentStartJavaScript(
+                                    wv,
+                                    com.webtoapp.core.webview.MediaSessionBridge.INJECTION_SCRIPT,
+                                    setOf("*")
+                                )
+                                com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "[MediaSession] Installed at document start")
+                            } catch (e: Exception) {
+                                mediaBridge.injectNow()
+                                com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "[MediaSession] Document-start unsupported, used injectNow fallback", e)
+                            }
+                            mediaSessionBridge = mediaBridge
+                        }
 
-                    statusBarBackgroundTypeDark = statusBarBackgroundTypeDark,
-                    statusBarBackgroundColorDark = statusBarCustomColorDark,
-                    statusBarBackgroundImageDark = statusBarBackgroundImageDark,
-                    statusBarBackgroundAlphaDark = statusBarBackgroundAlphaDark
-                    )
-                }
+                        if (config.webViewConfig.enableNativeBridge) {
+                            val capabilities = com.webtoapp.data.model.NativeBridgeCapabilities(
+                                clipboard = config.webViewConfig.nativeBridgeClipboard,
+                                vibration = config.webViewConfig.nativeBridgeVibration,
+                                geolocation = config.webViewConfig.nativeBridgeGeolocation,
+                                brightness = config.webViewConfig.nativeBridgeBrightness,
+                                notification = config.webViewConfig.nativeBridgeNotification,
+                                notificationScheduled = config.webViewConfig.nativeBridgeNotificationScheduled,
+                                notificationPersistent = config.webViewConfig.nativeBridgeNotificationPersistent,
+                                download = config.webViewConfig.nativeBridgeDownload,
+                                privateNetwork = config.webViewConfig.nativeBridgePrivateNetwork,
+                                screenWake = config.webViewConfig.nativeBridgeScreenWake,
+                                openExternal = config.webViewConfig.nativeBridgeOpenExternal,
+                                deviceInfo = config.webViewConfig.nativeBridgeDeviceInfo,
+                                securityInfo = config.webViewConfig.nativeBridgeSecurityInfo,
+                                networkInfo = config.webViewConfig.nativeBridgeNetworkInfo,
+                                toast = config.webViewConfig.nativeBridgeToast,
+                                logging = config.webViewConfig.nativeBridgeLogging,
+                                findInPage = config.webViewConfig.nativeBridgeFindInPage,
+                                orientation = config.webViewConfig.nativeBridgeOrientation,
+                                fullscreen = config.webViewConfig.nativeBridgeFullscreen,
+                                print = config.webViewConfig.nativeBridgePrint,
+                            )
+                            val nativeBridge = com.webtoapp.core.webview.NativeBridge(
+                                context = this@ShellActivity,
+                                scope = lifecycleScope,
+                                webViewProvider = { wv },
+                                capabilities = capabilities,
+                                corsBypass = config.webViewConfig.enableCorsBypass,
+                                downloadLocationMode = downloadLocationMode,
+                                customDownloadDirUri = config.webViewConfig.customDownloadDirUri
+                            )
+                            wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
+                        } else if (config.webViewConfig.enablePrivateNetworkBridge || config.webViewConfig.enableCorsBypass) {
+                            val privateNetworkBridge = com.webtoapp.core.webview.PrivateNetworkNativeBridgeAdapter(
+                                context = this@ShellActivity,
+                                scope = lifecycleScope,
+                                webViewProvider = { wv },
+                                corsBypass = config.webViewConfig.enableCorsBypass
+                            )
+                            wv.addJavascriptInterface(privateNetworkBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
+                        } else {
+                            wv.removeJavascriptInterface(com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
+                        }
+                        com.webtoapp.core.shell.ShellLogger.d("ShellActivity", "JS 桥接接口注册完成")
+                    } catch (e: Exception) {
+                        com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "WebView 初始化失败", e)
+                    }
+                },
+                onStatusBarAutoColorChanged = { color ->
+                    if (statusBarAutoColor == color) return@ShellScreen
+                    statusBarAutoColor = color
+                    refreshStatusBarAppearance()
+                },
+                onFileChooser = { callback, params ->
+                    permissionDelegate.handleFileChooser(callback, params)
+                },
+                onShowCustomView = { view, callback ->
+                    customView = view
+                    customViewCallback = callback
+                    showCustomView(view)
+                },
+                onHideCustomView = {
+                    hideCustomView()
+                },
+                onFullscreenModeChanged = { enabled ->
+                    immersiveFullscreenEnabled = enabled
+                    if (customView == null) {
+                        applyImmersiveFullscreen(enabled)
+                    }
+                },
+
+                statusBarBackgroundType = statusBarBackgroundType,
+                statusBarBackgroundColor = statusBarCustomColor,
+                statusBarBackgroundImage = statusBarBackgroundImage,
+                statusBarBackgroundAlpha = statusBarBackgroundAlpha,
+                statusBarHeightDp = statusBarHeightDp,
+
+                statusBarBackgroundTypeDark = statusBarBackgroundTypeDark,
+                statusBarBackgroundColorDark = statusBarCustomColorDark,
+                statusBarBackgroundImageDark = statusBarBackgroundImageDark,
+                statusBarBackgroundAlphaDark = statusBarBackgroundAlphaDark
+                )
             }
         }
 
@@ -774,17 +745,9 @@ class ShellActivity : AppCompatActivity() {
 
         val launcherRelaunch = intent?.action == Intent.ACTION_MAIN &&
             intent.hasCategory(Intent.CATEGORY_LAUNCHER)
-        if ((clearBrowsingDataOnLaunch || clientCertificateAuthEnabled) && launcherRelaunch) {
-            if (clearBrowsingDataOnLaunch) {
-                resetFreshBrowsingSession()
-                com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "Fresh session reset after launcher relaunch")
-            }
-            if (clientCertificateAuthEnabled) {
-                intent?.let { relaunchIntent ->
-                    relaunchIntent.putExtra(clientCertificateResetExtra, true)
-                    setIntent(relaunchIntent)
-                }
-            }
+        if (clearBrowsingDataOnLaunch && launcherRelaunch) {
+            resetFreshBrowsingSession()
+            com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "Fresh session reset after launcher relaunch")
             recreate()
             return
         }
@@ -935,9 +898,6 @@ class ShellActivity : AppCompatActivity() {
                         Toast.makeText(this, Strings.wrongPasswordCannotDecrypt, Toast.LENGTH_LONG).show()
                         finish()
                     } else {
-                        if (config.webViewConfig.clientCertificateAuthEnabled) {
-                            intent.putExtra(clientCertificateResetExtra, true)
-                        }
                         recreate()
                     }
                 } else {
