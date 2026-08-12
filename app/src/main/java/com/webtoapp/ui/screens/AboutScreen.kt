@@ -31,7 +31,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.ExpandLess
@@ -42,6 +41,7 @@ import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.MenuBook
+import androidx.compose.material.icons.outlined.NorthEast
 import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.Sync
@@ -69,6 +69,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -84,6 +85,7 @@ import com.webtoapp.ui.design.WtaSectionHeaderStyle
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.rememberHapticClick
 import com.webtoapp.ui.design.wtaPressScale
+import com.webtoapp.ui.theme.LocalIsDarkTheme
 import kotlinx.coroutines.launch
 
 @Composable
@@ -425,12 +427,6 @@ private fun ContactGrid() {
     val entries = remember(groupWord, qqCopied, authorLabel, docsLabel) {
         listOf(
             ContactEntry(
-                icon = Icons.Outlined.Code,
-                label = "GitHub",
-                value = "shiaho777/web-to-app",
-                action = ContactAction.OpenUrl("https://github.com/shiaho777/web-to-app")
-            ),
-            ContactEntry(
                 icon = Icons.Outlined.MenuBook,
                 label = docsLabel,
                 value = "shiaho777.github.io",
@@ -478,6 +474,7 @@ private fun ContactGrid() {
         headerStyle = WtaSectionHeaderStyle.Quiet
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)) {
+            GitHubRepoCard(onClick = { context.openUrl("https://github.com/shiaho777/web-to-app") })
             entries.chunked(2).forEach { pair ->
                 Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)) {
                     pair.forEach { entry ->
@@ -523,6 +520,77 @@ private sealed interface ContactAction {
         val text: String,
         val toast: String
     ) : ContactAction
+}
+
+@Composable
+private fun GitHubRepoCard(onClick: () -> Unit) {
+    val isDark = LocalIsDarkTheme.current
+    // GitHub brand mark: keep it recognizable in both themes by inverting the badge.
+    val badgeColor = if (isDark) Color(0xFFE6EDF3) else Color(0xFF24292F)
+    val markColor = if (isDark) Color(0xFF24292F) else Color.White
+
+    WtaCard(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Elevated,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(18.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(badgeColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_github_mark),
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp),
+                    tint = markColor
+                )
+            }
+            Spacer(Modifier.width(14.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = "shiaho777 / web-to-app",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "github.com/shiaho777/web-to-app",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontFamily = FontFamily.Monospace,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Outlined.NorthEast,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
 }
 
 @Composable
