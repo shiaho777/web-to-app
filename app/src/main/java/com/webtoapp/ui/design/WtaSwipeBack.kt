@@ -17,8 +17,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.webtoapp.ui.theme.LocalAnimationSettings
@@ -44,47 +46,45 @@ fun WtaSwipeBackContainer(
     val offsetX = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
     val animSettings = LocalAnimationSettings.current
+    val view = LocalView.current
 
     val swipeModifier = if (enabled && animSettings.enabled) {
         Modifier.pointerInput(Unit) {
             var dragStartedFromEdge = false
-            var lastVelocity = 0f
-            var lastPosition = 0f
-            var lastTimestamp = 0L
+            var thresholdHapticked = false
+            val tracker = VelocityTracker()
 
             detectHorizontalDragGestures(
                 onDragStart = { start ->
                     dragStartedFromEdge = start.x <= edgeWidthPx
-                    if (dragStartedFromEdge) {
-                        lastPosition = start.x
-                        lastTimestamp = System.nanoTime()
-                    }
+                    thresholdHapticked = false
+                    tracker.resetTracking()
                 },
                 onHorizontalDrag = { change, dragAmount ->
                     if (!dragStartedFromEdge) return@detectHorizontalDragGestures
 
                     if (dragAmount > 0 || offsetX.value > 0) {
                         change.consume()
+                        tracker.addPosition(change.uptimeMillis, change.position)
                         val next = (offsetX.value + dragAmount).coerceAtLeast(0f)
                         scope.launch { offsetX.snapTo(next) }
 
-                        val now = System.nanoTime()
-                        val deltaMs = (now - lastTimestamp) / 1_000_000f
-                        if (deltaMs > 0f) {
-                            lastVelocity = dragAmount / deltaMs * 1000f
+                        if (!thresholdHapticked && next > dismissThresholdPx && animSettings.hapticsEnabled) {
+                            thresholdHapticked = true
+                            performHaptic(view)
                         }
-                        lastPosition = change.position.x
-                        lastTimestamp = now
                     }
                 },
                 onDragEnd = {
                     if (!dragStartedFromEdge) return@detectHorizontalDragGestures
 
+                    val lastVelocity = tracker.calculateVelocity().x
                     val shouldDismiss = offsetX.value > dismissThresholdPx ||
                         lastVelocity > velocityThreshold
 
                     scope.launch {
                         if (shouldDismiss) {
+                            if (animSettings.hapticsEnabled) performHeavyHaptic(view)
 
                             offsetX.animateTo(
                                 targetValue = screenWidthPx,

@@ -639,6 +639,7 @@ private fun MediaGrid(
 
             Box(
                 modifier = Modifier
+                    .animateItem()
                     .aspectRatio(1f)
                     .clip(MaterialTheme.shapes.small)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -1723,7 +1724,7 @@ fun CreateGalleryAppScreenV2(
                                     }
                                 },
                                 onLongClick = { selectedItems = setOf(item.id) },
-                                modifier = Modifier.animateItemPlacement()
+                                modifier = Modifier.animateItem()
                             )
                         }
                         item { Spacer(modifier = Modifier.height(80.dp)) }

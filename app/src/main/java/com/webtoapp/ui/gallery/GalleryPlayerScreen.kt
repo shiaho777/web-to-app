@@ -355,11 +355,12 @@ private fun ThumbnailBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             contentPadding = PaddingValues(horizontal = 16.dp)
         ) {
-            itemsIndexed(items) { index, item ->
+            itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
                 val isSelected = index == currentIndex
 
                 Box(
                     modifier = Modifier
+                        .animateItem()
                         .size(if (isSelected) 64.dp else 56.dp)
                         .clip(RoundedCornerShape(4.dp))
                         .border(

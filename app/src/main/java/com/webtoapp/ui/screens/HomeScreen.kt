@@ -568,6 +568,7 @@ fun HomeScreen(
 
                         AppCard(
                             app = app,
+                            modifier = Modifier.animateItem(),
                             onClick = {
                                 scope.launch {
                                     viewModel.getWebApp(app.id)?.let(onPreviewApp)

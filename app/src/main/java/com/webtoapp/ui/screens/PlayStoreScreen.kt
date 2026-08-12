@@ -68,6 +68,7 @@ import com.webtoapp.ui.design.WtaButton
 import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaColors
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.viewmodel.MainViewModel
 import java.io.File
@@ -502,7 +503,7 @@ private fun ExportActionCard(
                 if (warnings > 0) {
                     StatusChip(
                         label = Strings.playStoreSeverityWarning + " $warnings",
-                        color = Color(0xFFED6C02)
+                        color = WtaColors.semantic.warning
                     )
                 }
                 if (infos > 0) {
@@ -514,7 +515,7 @@ private fun ExportActionCard(
                 if (blockers == 0 && warnings == 0) {
                     StatusChip(
                         label = Strings.playStoreReportClean,
-                        color = Color(0xFF2E7D32)
+                        color = WtaColors.semantic.success
                     )
                 }
             }
@@ -694,7 +695,7 @@ private fun ReportSummaryCard(report: PlayPolicyChecker.Report) {
         report.isClean -> ReportSummary(
             icon = Icons.Outlined.CheckCircle,
             tone = WtaCardTone.Highlighted,
-            headlineColor = Color(0xFF2E7D32),
+            headlineColor = WtaColors.semantic.success,
             headline = Strings.playStoreReportClean
         )
         report.blockerCount > 0 -> ReportSummary(
@@ -706,7 +707,7 @@ private fun ReportSummaryCard(report: PlayPolicyChecker.Report) {
         else -> ReportSummary(
             icon = Icons.Outlined.Warning,
             tone = WtaCardTone.Elevated,
-            headlineColor = Color(0xFFED6C02),
+            headlineColor = WtaColors.semantic.warning,
             headline = String.format(Strings.playStoreReportWarning, report.warningCount)
         )
     }
@@ -747,7 +748,7 @@ private fun ViolationCard(violation: PlayPolicyChecker.Violation) {
     val resolved = PlayPolicyChecker.resolveViolation(violation)
     val severityColor = when (violation.severity) {
         PlayPolicyChecker.Severity.BLOCKER -> MaterialTheme.colorScheme.error
-        PlayPolicyChecker.Severity.WARNING -> Color(0xFFED6C02)
+        PlayPolicyChecker.Severity.WARNING -> WtaColors.semantic.warning
         PlayPolicyChecker.Severity.INFO -> MaterialTheme.colorScheme.primary
     }
     val severityIcon = when (violation.severity) {
@@ -903,7 +904,7 @@ private fun ExportStateCard(
                         Icon(
                             Icons.Outlined.CheckCircle,
                             contentDescription = null,
-                            tint = Color(0xFF2E7D32),
+                            tint = WtaColors.semantic.success,
                             modifier = Modifier.size(22.dp)
                         )
                         Spacer(modifier = Modifier.width(10.dp))

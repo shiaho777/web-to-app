@@ -1855,10 +1855,11 @@ private fun ZipEntryFileDialog(
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                items(htmlFiles) { file ->
+                items(htmlFiles, key = { it }) { file ->
                     val isSelected = file == currentEntry
                     Row(
                         modifier = Modifier
+                            .animateItem()
                             .fillMaxWidth()
                             .clip(MaterialTheme.shapes.small)
                             .background(
@@ -1948,9 +1949,10 @@ private fun ZipFileListDialog(
                     }
 
                     val filesOfType = analysis.allFiles.filter { it.resourceType == stat.type }
-                    items(filesOfType) { file ->
+                    items(filesOfType, key = { it.relativePath }) { file ->
                         Row(
                             modifier = Modifier
+                                .animateItem()
                                 .fillMaxWidth()
                                 .background(
                                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),

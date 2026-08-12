@@ -974,7 +974,8 @@ fun ExtensionModuleSelectorDialog(
                                 ModuleSelectItem(
                                     module = module,
                                     isSelected = isUnitSelected(module),
-                                    onToggle = { toggleUnit(module) }
+                                    onToggle = { toggleUnit(module) },
+                                    modifier = Modifier.animateItem(),
                                 )
                             }
                         }
@@ -1018,10 +1019,12 @@ fun ExtensionModuleSelectorDialog(
 private fun ModuleSelectItem(
     module: ExtensionModule,
     isSelected: Boolean,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     WtaCard(
         onClick = onToggle,
+        modifier = modifier,
         tone = if (isSelected) WtaCardTone.Highlighted else WtaCardTone.Surface,
         shape = RoundedCornerShape(WtaRadius.Control),
         contentPadding = PaddingValues(0.dp),

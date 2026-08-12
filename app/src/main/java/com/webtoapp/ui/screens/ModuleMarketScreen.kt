@@ -807,7 +807,8 @@ private fun ModuleListContent(
                 onInstall = { onInstall(view.entry) },
                 onOpenSource = { onOpenSource(view.entry) },
                 onOpenPullRequest = onOpenPullRequest,
-                onOpenSubmitter = onOpenSubmitter
+                onOpenSubmitter = onOpenSubmitter,
+                modifier = Modifier.animateItem(),
             )
         }
     }
@@ -1578,16 +1579,17 @@ private fun MarketModuleCard(
     onInstall: () -> Unit,
     onOpenSource: () -> Unit,
     onOpenPullRequest: (String) -> Unit,
-    onOpenSubmitter: (String) -> Unit
+    onOpenSubmitter: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val cardTone = if (isHighlighted) WtaCardTone.Highlighted else WtaCardTone.Surface
     val cardModifier = if (isHighlighted) {
-        Modifier
+        modifier
             .fillMaxWidth()
             .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(WtaRadius.Card))
     } else {
-        Modifier.fillMaxWidth()
+        modifier.fillMaxWidth()
     }
 
     WtaCard(

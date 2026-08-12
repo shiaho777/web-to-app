@@ -174,7 +174,7 @@ fun IconLibraryDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(icons) { icon ->
+                        items(icons, key = { it.id }) { icon ->
                             IconGridItem(
                                 icon = icon,
                                 onClick = { onSelectIcon(icon.path) },
@@ -182,7 +182,8 @@ fun IconLibraryDialog(
                                     scope.launch {
                                         IconLibraryStorage.delete(context, icon)
                                     }
-                                }
+                                },
+                                modifier = Modifier.animateItem(),
                             )
                         }
                     }
@@ -207,12 +208,13 @@ fun IconLibraryDialog(
 private fun IconGridItem(
     icon: IconLibraryItem,
     onClick: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .aspectRatio(1f)
             .clip(RoundedCornerShape(12.dp))
             .border(

@@ -867,6 +867,7 @@ fun ModuleCard(
     extensionManager: ExtensionManager,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -906,7 +907,7 @@ fun ModuleCard(
         }
     }
 
-    WtaCard(modifier = Modifier.fillMaxWidth()) {
+    WtaCard(modifier = modifier.fillMaxWidth()) {
         Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
@@ -1255,6 +1256,7 @@ private fun ExtensionModulesTabContent(
                             Toast.makeText(context, Strings.deleted, Toast.LENGTH_SHORT).show()
                         }
                     },
+                    modifier = Modifier.animateItem(),
                 )
             }
 
@@ -1342,7 +1344,8 @@ private fun UserScriptsTabContent(
                         extensionManager.deleteModule(module.id)
                         Toast.makeText(context, Strings.deleted, Toast.LENGTH_SHORT).show()
                     }
-                }
+                },
+                modifier = Modifier.animateItem(),
             )
         }
 
@@ -1407,7 +1410,8 @@ private fun UserScriptsTabContent(
 @Composable
 private fun UserScriptCard(
     module: ExtensionModule,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showSourceDialog by remember { mutableStateOf(false) }
@@ -1426,7 +1430,7 @@ private fun UserScriptCard(
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(WtaRadius.Card))
             .background(MaterialTheme.colorScheme.surfaceContainerLow)
