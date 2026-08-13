@@ -837,21 +837,33 @@ fun CustomSigningSection() {
                                 }
 
                                 val keyPassParam = keyPasswordInput.takeIf { it.isNotEmpty() }
-                                val success = signer.importKeystore(tempFile, passwordInput, keyPassParam)
+                                val result = signer.importKeystore(tempFile, passwordInput, keyPassParam)
                                 tempFile.delete()
 
                                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                                    if (success) {
-                                        signerType = signer.getSignerType()
-                                        certInfo = signer.getCertificateInfo()
-                                        showImportPasswordDialog = false
-                                        pendingKeystoreUri = null
-                                        passwordInput = ""
-                                        keyPasswordInput = ""
-                                        importError = null
-                                        snackbarMessage = Strings.keystoreImportSuccess
-                                    } else {
-                                        importError = Strings.keystoreImportFailed
+                                    when (result) {
+                                        is com.webtoapp.core.apkbuilder.JarSigner.KeystoreImportResult.Success -> {
+                                            signerType = signer.getSignerType()
+                                            certInfo = signer.getCertificateInfo()
+                                            showImportPasswordDialog = false
+                                            pendingKeystoreUri = null
+                                            passwordInput = ""
+                                            keyPasswordInput = ""
+                                            importError = null
+                                            snackbarMessage = Strings.keystoreImportSuccess
+                                        }
+
+                                        com.webtoapp.core.apkbuilder.JarSigner.KeystoreImportResult.StorePasswordRejected ->
+                                            importError = Strings.keystoreStorePasswordRejected
+
+                                        is com.webtoapp.core.apkbuilder.JarSigner.KeystoreImportResult.KeyPasswordRejected ->
+                                            importError = Strings.keystoreKeyPasswordRejected
+
+                                        com.webtoapp.core.apkbuilder.JarSigner.KeystoreImportResult.NoKeyEntry ->
+                                            importError = Strings.keystoreNoKeyEntry
+
+                                        com.webtoapp.core.apkbuilder.JarSigner.KeystoreImportResult.UnsupportedFormat ->
+                                            importError = Strings.keystoreUnsupportedFormat
                                     }
                                 }
                             } catch (e: Exception) {

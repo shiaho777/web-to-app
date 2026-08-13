@@ -10,6 +10,7 @@ import com.android.apksig.ApkSigner
 import com.android.apksig.ApkVerifier
 import com.webtoapp.util.GsonProvider
 import com.webtoapp.util.threadLocalCompat
+import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.io.*
 import java.math.BigInteger
 import java.security.*
@@ -63,6 +64,30 @@ class JarSigner(private val context: Context) {
         PKCS12_AUTO,
         PKCS12_CUSTOM
     }
+
+    /**
+     * Structured outcome of a keystore import so the UI can tell the user *which* step failed
+     * (store password / key password / no key entry / unsupported format) instead of one generic
+     * "check your password" message.
+     */
+    sealed class KeystoreImportResult {
+        data class Success(val alias: String, val sourceFormat: String) : KeystoreImportResult()
+
+        /** The file format was recognized, but the keystore (store) password was rejected on load. */
+        object StorePasswordRejected : KeystoreImportResult()
+
+        /** The store loaded, but the private key could not be recovered with the given passwords. */
+        data class KeyPasswordRejected(val keyPasswordFieldUsed: Boolean) : KeystoreImportResult()
+
+        /** The keystore parsed but contains no private key entry (certificate-only or empty). */
+        object NoKeyEntry : KeystoreImportResult()
+
+        /** No supported format (PKCS12 / JKS / JCEKS / BKS) could parse the file at all. */
+        object UnsupportedFormat : KeystoreImportResult()
+    }
+
+    /** Keystore container format detected from the file's magic bytes, independent of any password. */
+    private enum class KeystoreFileFormat { PKCS12, JKS, JCEKS, UNKNOWN }
 
     data class SigningSchemeOptions(
         val v1Enabled: Boolean = true,
@@ -426,6 +451,79 @@ class JarSigner(private val context: Context) {
         return password
     }
 
+    /**
+     * Full BouncyCastle (bundled dependency), used explicitly for *reading* keystores.
+     * The platform's stripped BC provider on many Android versions cannot decrypt PKCS12
+     * files written by modern keytool / Android Studio (PBES2 with AES-256), which is exactly
+     * the `.jks`-named file most users import. We never register it globally — instance-scoped
+     * lookups keep every other crypto path untouched.
+     */
+    private val bcProvider: Provider? by lazy {
+        runCatching { BouncyCastleProvider() }.getOrNull()
+    }
+
+    /**
+     * Detect the keystore container format from magic bytes. Works on fully-encrypted files
+     * because container headers are plaintext: JKS starts with 0xFEEDFEED, JCEKS with
+     * 0xCECECECE, and PKCS12 is DER ASN.1 starting with a SEQUENCE tag (0x30).
+     */
+    private fun detectKeystoreFormat(file: File): KeystoreFileFormat {
+        return try {
+            FileInputStream(file).use { fis ->
+                val magic = ByteArray(4)
+                var read = 0
+                while (read < 4) {
+                    val n = fis.read(magic, read, 4 - read)
+                    if (n < 0) return KeystoreFileFormat.UNKNOWN
+                    read += n
+                }
+                when {
+                    magic[0] == 0xFE.toByte() && magic[1] == 0xED.toByte() &&
+                        magic[2] == 0xFE.toByte() && magic[3] == 0xED.toByte() ->
+                        KeystoreFileFormat.JKS
+
+                    magic[0] == 0xCE.toByte() && magic[1] == 0xCE.toByte() &&
+                        magic[2] == 0xCE.toByte() && magic[3] == 0xCE.toByte() ->
+                        KeystoreFileFormat.JCEKS
+
+                    magic[0] == 0x30.toByte() -> KeystoreFileFormat.PKCS12
+                    else -> KeystoreFileFormat.UNKNOWN
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Keystore format detection failed: ${e.message}")
+            KeystoreFileFormat.UNKNOWN
+        }
+    }
+
+    /**
+     * Load a keystore file, preferring the full BC provider (understands PBES2, JCEKS)
+     * and falling back to the platform provider. Returns null when neither can load it.
+     */
+    private fun openKeyStore(type: String, file: File, password: CharArray): KeyStore? {
+        val providers: List<Provider?> =
+            if (bcProvider != null) listOf(bcProvider, null) else listOf<Provider?>(null)
+        for (provider in providers) {
+            try {
+                val keyStore = if (provider != null) {
+                    KeyStore.getInstance(type, provider)
+                } else {
+                    KeyStore.getInstance(type)
+                }
+                FileInputStream(file).use { fis ->
+                    keyStore.load(fis, password.copyOf())
+                }
+                return keyStore
+            } catch (e: Exception) {
+                AppLogger.w(
+                    TAG,
+                    "Keystore '$type' load via ${provider?.name ?: "platform"} failed: ${e.message}"
+                )
+            }
+        }
+        return null
+    }
+
     private fun loadPkcs12(
         file: File,
         password: CharArray,
@@ -433,11 +531,7 @@ class JarSigner(private val context: Context) {
         keyPassword: CharArray? = null
     ): Boolean {
         return try {
-            val keyStore = KeyStore.getInstance("PKCS12")
-            FileInputStream(file).use { fis ->
-
-                keyStore.load(fis, password.copyOf())
-            }
+            val keyStore = openKeyStore("PKCS12", file, password.copyOf()) ?: return false
 
             val keyAlias = alias?.takeIf { keyStore.isKeyEntry(it) }
                 ?: keyStore.aliases().toList().firstOrNull { keyStore.isKeyEntry(it) }
@@ -449,11 +543,21 @@ class JarSigner(private val context: Context) {
 
             val effectiveKeyPass = keyPassword?.copyOf() ?: password.copyOf()
             privateKey = try {
-                keyStore.getKey(keyAlias, effectiveKeyPass) as? PrivateKey
+                keyStore.getKey(keyAlias, effectiveKeyPass.copyOf()) as? PrivateKey
             } catch (e: java.security.UnrecoverableKeyException) {
-
                 AppLogger.w(TAG, "getKey($keyAlias) failed — keypass might differ from storepass: ${e.message}")
-                throw e
+
+                // JDK/keytool-generated PKCS12 ignores a separate key password; retry with the
+                // store password before giving up (also covers users who filled the wrong field).
+                if (!effectiveKeyPass.contentEquals(password)) {
+                    try {
+                        keyStore.getKey(keyAlias, password.copyOf()) as? PrivateKey
+                    } catch (e2: java.security.UnrecoverableKeyException) {
+                        null
+                    }
+                } else {
+                    null
+                }
             }
             certificate = keyStore.getCertificate(keyAlias) as? X509Certificate
 
@@ -566,129 +670,143 @@ class JarSigner(private val context: Context) {
     }
 
     @JvmOverloads
-    fun importPkcs12(sourceFile: File, password: String, keyPassword: String? = null): Boolean {
-        return try {
-            val storePassChars = password.toCharArray()
-            val keyPassChars = keyPassword
-                ?.takeIf { it.isNotEmpty() }
-                ?.toCharArray()
-
-            val keyStore = KeyStore.getInstance("PKCS12")
-            FileInputStream(sourceFile).use { fis ->
-                keyStore.load(fis, storePassChars.copyOf())
-            }
-
-            val keyAlias = keyStore.aliases().toList().firstOrNull { keyStore.isKeyEntry(it) }
-            if (keyAlias == null) {
-                AppLogger.e(TAG, "Import failed: no key entry in PKCS12")
-                return false
-            }
-
-            val targetFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
-            sourceFile.copyTo(targetFile, overwrite = true)
-
-            File(context.filesDir, CUSTOM_PASSWORD_FILE).writeText(password)
-            File(context.filesDir, CUSTOM_ALIAS_FILE).writeText(keyAlias)
-            val keypassSidecar = File(context.filesDir, CUSTOM_KEYPASS_FILE)
-            if (keyPassChars != null) {
-                keypassSidecar.writeText(keyPassword)
-            } else if (keypassSidecar.exists()) {
-
-                keypassSidecar.delete()
-            }
-
-            if (loadPkcs12(targetFile, storePassChars, keyAlias, keyPassChars)) {
-                currentSignerType = SignerType.PKCS12_CUSTOM
-                AppLogger.d(TAG, "Custom PKCS12 import successful (alias=$keyAlias, separateKeyPass=${keyPassChars != null})")
-                return true
-            }
-
-            false
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "PKCS12 import failed", e)
-            false
-        }
-    }
-
-    @JvmOverloads
-    fun importKeystore(sourceFile: File, password: String, keyPassword: String? = null): Boolean {
+    fun importKeystore(
+        sourceFile: File,
+        password: String,
+        keyPassword: String? = null
+    ): KeystoreImportResult {
         val storePassChars = password.toCharArray()
         val keyPassChars = keyPassword
             ?.takeIf { it.isNotEmpty() }
             ?.toCharArray()
-            ?: storePassChars
 
-        val keystoreTypes = listOf("PKCS12", "BKS", "JKS")
+        val detected = detectKeystoreFormat(sourceFile)
 
-        for (type in keystoreTypes) {
-            try {
-                val keyStore = KeyStore.getInstance(type)
-                FileInputStream(sourceFile).use { fis ->
-                    keyStore.load(fis, storePassChars.copyOf())
-                }
-
-                val keyAlias = keyStore.aliases().toList().firstOrNull { keyStore.isKeyEntry(it) }
-                if (keyAlias == null) {
-                    AppLogger.w(TAG, "$type has no key entry, skipping")
-                    continue
-                }
-
-                AppLogger.d(TAG, "Successfully parsed signature file as $type, alias=$keyAlias")
-
-                if (type == "PKCS12") {
-
-                    val targetFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
-                    sourceFile.copyTo(targetFile, overwrite = true)
-                } else {
-
-                    val key = try {
-                        keyStore.getKey(keyAlias, keyPassChars.copyOf()) as? PrivateKey
-                    } catch (e: java.security.UnrecoverableKeyException) {
-                        AppLogger.w(TAG, "$type getKey($keyAlias) failed — keypass might differ from storepass: ${e.message}")
-
-                        null
-                    }
-                    val cert = keyStore.getCertificate(keyAlias) as? java.security.cert.X509Certificate
-                    if (key == null || cert == null) {
-                        AppLogger.w(TAG, "$type has empty key or certificate（alias=$keyAlias）")
-                        continue
-                    }
-
-                    val p12KeyStore = KeyStore.getInstance("PKCS12")
-                    p12KeyStore.load(null, storePassChars.copyOf())
-                    p12KeyStore.setKeyEntry(keyAlias, key, storePassChars.copyOf(), arrayOf(cert))
-
-                    val targetFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
-                    FileOutputStream(targetFile).use { fos ->
-                        p12KeyStore.store(fos, storePassChars.copyOf())
-                    }
-                    AppLogger.d(TAG, "Converted $type converted to a unified-password PKCS12 (storepass==keypass) and saved")
-                }
-
-                File(context.filesDir, CUSTOM_PASSWORD_FILE).writeText(password)
-                File(context.filesDir, CUSTOM_ALIAS_FILE).writeText(keyAlias)
-                val keypassSidecar = File(context.filesDir, CUSTOM_KEYPASS_FILE)
-                if (type == "PKCS12" && keyPassword != null && keyPassword.isNotEmpty() && keyPassword != password) {
-
-                    keypassSidecar.writeText(keyPassword)
-                } else if (keypassSidecar.exists()) {
-                    keypassSidecar.delete()
-                }
-
-                val targetFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
-                val effectiveKeyPass = if (type == "PKCS12") keyPassChars else storePassChars
-                if (loadPkcs12(targetFile, storePassChars, keyAlias, effectiveKeyPass)) {
-                    currentSignerType = SignerType.PKCS12_CUSTOM
-                    AppLogger.d(TAG, "Custom signature file imported (original format: $type, alias=$keyAlias)")
-                    return true
-                }
-            } catch (e: Exception) {
-                AppLogger.w(TAG, "Attempting to parse as $type failed: ${e.message}")
-            }
+        // A confidently-detected format gets a single specific parse attempt; unknown magic
+        // (e.g. BKS) falls back to the historical brute-force list, now including JCEKS via BC.
+        val candidates: List<String> = when (detected) {
+            KeystoreFileFormat.PKCS12 -> listOf("PKCS12")
+            KeystoreFileFormat.JKS -> listOf("JKS")
+            KeystoreFileFormat.JCEKS -> listOf("JCEKS")
+            KeystoreFileFormat.UNKNOWN -> listOf("PKCS12", "JKS", "BKS", "JCEKS")
         }
 
+        var sawRecognizedLoadFailure = false
+
+        for (type in candidates) {
+            val keyStore = openKeyStore(type, sourceFile, storePassChars.copyOf())
+            if (keyStore == null) {
+                // Load failure on a recognized container is a store-password rejection: the
+                // container parses, but its integrity/MAC check fails with the wrong password.
+                if (detected != KeystoreFileFormat.UNKNOWN) {
+                    sawRecognizedLoadFailure = true
+                    break
+                }
+                continue
+            }
+
+            val keyAlias = keyStore.aliases().toList().firstOrNull { keyStore.isKeyEntry(it) }
+            if (keyAlias == null) {
+                AppLogger.w(TAG, "$type has no key entry, skipping")
+                if (detected != KeystoreFileFormat.UNKNOWN) {
+                    return KeystoreImportResult.NoKeyEntry
+                }
+                continue
+            }
+
+            AppLogger.d(TAG, "Successfully parsed signature file as $type, alias=$keyAlias")
+
+            // Recover the private key up front so a wrong key password surfaces as its own
+            // error instead of a failed verification load much later.
+            val key = recoverPrivateKey(keyStore, keyAlias, storePassChars, keyPassChars)
+            if (key == null) {
+                AppLogger.w(TAG, "$type key recovery failed（alias=$keyAlias）")
+                if (detected != KeystoreFileFormat.UNKNOWN) {
+                    return KeystoreImportResult.KeyPasswordRejected(keyPassChars != null)
+                }
+                continue
+            }
+            val cert = keyStore.getCertificate(keyAlias) as? java.security.cert.X509Certificate
+            if (cert == null) {
+                AppLogger.w(TAG, "$type has empty certificate（alias=$keyAlias）")
+                if (detected != KeystoreFileFormat.UNKNOWN) {
+                    return KeystoreImportResult.NoKeyEntry
+                }
+                continue
+            }
+
+            if (type == "PKCS12") {
+
+                val targetFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
+                sourceFile.copyTo(targetFile, overwrite = true)
+            } else {
+
+                // JKS/JCEKS/BKS: re-store into a unified-password PKCS12 so the app's own
+                // loading path (and any later export) works with storepass == keypass.
+                // Written through the platform provider on purpose: legacy algorithms that
+                // every consumer (including AabSigner and desktop keytool) can read.
+                val p12KeyStore = KeyStore.getInstance("PKCS12")
+                p12KeyStore.load(null, storePassChars.copyOf())
+                p12KeyStore.setKeyEntry(keyAlias, key, storePassChars.copyOf(), arrayOf(cert))
+
+                val targetFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
+                FileOutputStream(targetFile).use { fos ->
+                    p12KeyStore.store(fos, storePassChars.copyOf())
+                }
+                AppLogger.d(TAG, "Converted $type converted to a unified-password PKCS12 (storepass==keypass) and saved")
+            }
+
+            File(context.filesDir, CUSTOM_PASSWORD_FILE).writeText(password)
+            File(context.filesDir, CUSTOM_ALIAS_FILE).writeText(keyAlias)
+            val keypassSidecar = File(context.filesDir, CUSTOM_KEYPASS_FILE)
+            if (type == "PKCS12" && keyPassword != null && keyPassword.isNotEmpty() && keyPassword != password) {
+
+                keypassSidecar.writeText(keyPassword)
+            } else if (keypassSidecar.exists()) {
+                keypassSidecar.delete()
+            }
+
+            val targetFile = File(context.filesDir, CUSTOM_PKCS12_FILE)
+            val effectiveKeyPass = if (type == "PKCS12") keyPassChars else storePassChars
+            if (loadPkcs12(targetFile, storePassChars.copyOf(), keyAlias, effectiveKeyPass?.copyOf())) {
+                currentSignerType = SignerType.PKCS12_CUSTOM
+                AppLogger.d(TAG, "Custom signature file imported (original format: $type, alias=$keyAlias)")
+                return KeystoreImportResult.Success(keyAlias, type)
+            }
+            AppLogger.w(TAG, "$type imported but verification load failed")
+        }
+
+        if (sawRecognizedLoadFailure) {
+            return KeystoreImportResult.StorePasswordRejected
+        }
         AppLogger.e(TAG, "Couldn't parse signature file in any supported format")
-        return false
+        return KeystoreImportResult.UnsupportedFormat
+    }
+
+    /**
+     * Get the private key from a loaded keystore, trying the user-provided key password
+     * first and the store password as fallback (JDK-generated PKCS12 ignores a separate
+     * key password, and users often fill the wrong field).
+     */
+    private fun recoverPrivateKey(
+        keyStore: KeyStore,
+        alias: String,
+        storePass: CharArray,
+        keyPass: CharArray?
+    ): PrivateKey? {
+        val attempts = ArrayList<CharArray>(2)
+        keyPass?.let { attempts.add(it.copyOf()) }
+        if (keyPass == null || !keyPass.contentEquals(storePass)) {
+            attempts.add(storePass.copyOf())
+        }
+        for (pass in attempts) {
+            try {
+                return keyStore.getKey(alias, pass.copyOf()) as? PrivateKey
+            } catch (e: java.security.UnrecoverableKeyException) {
+                AppLogger.w(TAG, "getKey($alias) with candidate passwords failed: ${e.message}")
+            }
+        }
+        return null
     }
 
     fun createCustomKeystore(spec: CertificateSpec): Boolean {

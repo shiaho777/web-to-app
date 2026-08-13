@@ -2561,6 +2561,10 @@ object Strings {
     val exportPasswordHint: String get() = StringsC.exportPasswordHint
     val keystoreImportSuccess: String get() = StringsC.keystoreImportSuccess
     val keystoreImportFailed: String get() = StringsC.keystoreImportFailed
+    val keystoreStorePasswordRejected: String get() = StringsC.keystoreStorePasswordRejected
+    val keystoreKeyPasswordRejected: String get() = StringsC.keystoreKeyPasswordRejected
+    val keystoreNoKeyEntry: String get() = StringsC.keystoreNoKeyEntry
+    val keystoreUnsupportedFormat: String get() = StringsC.keystoreUnsupportedFormat
     val keystoreExportSuccess: String get() = StringsC.keystoreExportSuccess
     val keystoreExportFailed: String get() = StringsC.keystoreExportFailed
     val keystoreRemoveSuccess: String get() = StringsC.keystoreRemoveSuccess
@@ -37037,6 +37041,58 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Ошибка импорта keystore. Проверьте пароль keystore; если ваш keystore — JKS с отдельным паролем ключа, также заполните поле «Пароль ключа»"
         AppLanguage.JAPANESE -> "Keystoreのインポートに失敗しました。keystoreパスワードを確認してください。JKSでキーパスワードが別の場合は、「キーパスワード」欄も入力してください"
         AppLanguage.KOREAN -> "Keystore 가져오기 실패. keystore 비밀번호를 확인하세요. JKS이고 키 비밀번호가 다른 경우, \"키 비밀번호\" 필드도 입력하세요"
+    }
+
+    val keystoreStorePasswordRejected: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Keystore 密码被拒绝。文件格式已识别，请仔细核对「Keystore 密码」是否输入正确"
+        AppLanguage.ENGLISH -> "The keystore password was rejected. The file format was recognized — double-check the Keystore Password field for typos"
+        AppLanguage.ARABIC -> "تم رفض كلمة مرور مخزن المفاتيح. تم التعرّف على تنسيق الملف — تحقق من حقل كلمة مرور مخزن المفاتيح بحثًا عن أخطاء كتابية"
+        AppLanguage.PORTUGUESE -> "A senha do keystore foi rejeitada. O formato do arquivo foi reconhecido — verifique erros de digitação no campo Senha do Keystore"
+        AppLanguage.SPANISH -> "La contraseña del keystore fue rechazada. El formato del archivo se reconoció correctamente — revisa si hay errores en el campo Contraseña del Keystore"
+        AppLanguage.FRENCH -> "Le mot de passe du keystore a été rejeté. Le format du fichier a été reconnu — vérifiez les fautes de frappe dans le champ Mot de passe du Keystore"
+        AppLanguage.GERMAN -> "Das Keystore-Passwort wurde abgelehnt. Das Dateiformat wurde erkannt — prüfe das Feld Keystore-Passwort auf Tippfehler"
+        AppLanguage.RUSSIAN -> "Пароль keystore отклонён. Формат файла распознан — проверьте опечатки в поле «Пароль keystore»"
+        AppLanguage.JAPANESE -> "keystoreパスワードが拒否されました。ファイル形式は認識できています。「keystoreパスワード」欄の入力ミスをご確認ください"
+        AppLanguage.KOREAN -> "keystore 비밀번호가 거부되었습니다. 파일 형식은 정상적으로 인식되었습니다. \"keystore 비밀번호\" 필드에 오타가 없는지 확인하세요"
+    }
+
+    val keystoreKeyPasswordRejected: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "密钥密码被拒绝。该 keystore 的 key 密码与 store 密码不同——请正确填写或修正「密钥密码」字段"
+        AppLanguage.ENGLISH -> "The key password was rejected. This keystore's key password differs from the store password — correct the Key Password field"
+        AppLanguage.ARABIC -> "تم رفض كلمة مرور المفتاح. كلمة مرور المفتاح في هذا المخزن تختلف عن كلمة مرور المخزن — صحّح حقل كلمة مرور المفتاح"
+        AppLanguage.PORTUGUESE -> "A senha da chave foi rejeitada. A senha de chave deste keystore é diferente da senha do keystore — corrija o campo Senha da Chave"
+        AppLanguage.SPANISH -> "La contraseña de la clave fue rechazada. La contraseña de clave de este keystore difiere de la del keystore — corrige el campo Contraseña de Clave"
+        AppLanguage.FRENCH -> "Le mot de passe de la clé a été rejeté. Le mot de passe de clé de ce keystore diffère de celui du magasin — corrigez le champ Mot de passe de la Clé"
+        AppLanguage.GERMAN -> "Das Schlüsselpasswort wurde abgelehnt. Das Schlüsselpasswort dieses Keystores weicht vom Keystore-Passwort ab — korrigiere das Feld Schlüsselpasswort"
+        AppLanguage.RUSSIAN -> "Пароль ключа отклонён. Пароль ключа в этом keystore отличается от пароля хранилища — исправьте поле «Пароль ключа»"
+        AppLanguage.JAPANESE -> "キーパスワードが拒否されました。このkeystoreのキーパスワードはstoreパスワードと異なります。「キーパスワード」欄を修正してください"
+        AppLanguage.KOREAN -> "키 비밀번호가 거부되었습니다. 이 keystore의 키 비밀번호는 store 비밀번호와 다릅니다. \"키 비밀번호\" 필드를 수정하세요"
+    }
+
+    val keystoreNoKeyEntry: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "keystore 中没有找到私钥条目。请导入包含密钥对的 keystore（例如通过 Android Studio 签名向导创建），而不是仅含证书的文件"
+        AppLanguage.ENGLISH -> "No private key entry was found in this keystore. Import a keystore that contains a key pair (e.g. one created via Android Studio's signed-APK wizard), not a certificate-only file"
+        AppLanguage.ARABIC -> "لم يتم العثور على إدخال مفتاح خاص في مخزن المفاتيح هذا. استورد مخزن مفاتيح يحتوي على زوج مفاتيح (مثل الذي ينشئه معالج التوقيع في Android Studio)، وليس ملف شهادات فقط"
+        AppLanguage.PORTUGUESE -> "Nenhuma entrada de chave privada foi encontrada neste keystore. Importe um keystore que contenha um par de chaves (ex.: criado pelo assistente de APK assinado do Android Studio), não um arquivo só de certificados"
+        AppLanguage.SPANISH -> "No se encontró ninguna entrada de clave privada en este keystore. Importa un keystore que contenga un par de claves (p. ej., uno creado con el asistente de APK firmado de Android Studio), no un archivo de solo certificados"
+        AppLanguage.FRENCH -> "Aucune entrÉe de clé privée n'a été trouvée dans ce keystore. Importez un keystore contenant une paire de clés (p. ex. créée via l'assistant APK signé d'Android Studio), et non un fichier de certificats seuls"
+        AppLanguage.GERMAN -> "In diesem Keystore wurde kein privater Schlüssel-Eintrag gefunden. Importiere einen Keystore mit einem Schlüsselpaar (z. B. über den Signierungs-Assistenten von Android Studio erstellt), keine reine Zertifikatsdatei"
+        AppLanguage.RUSSIAN -> "В этом keystore не найдена запись с приватным ключом. Импортируйте keystore с парой ключей (например, созданный мастером подписи Android Studio), а не файл только с сертификатами"
+        AppLanguage.JAPANESE -> "このkeystoreに秘密鍵エントリが見つかりません。証明書のみのファイルではなく、鍵ペアを含むkeystore（例：Android Studioの署名ウィザードで作成）をインポートしてください"
+        AppLanguage.KOREAN -> "이 keystore에서 개인 키 항목을 찾을 수 없습니다. 인증서만 포함된 파일이 아니라 키 쌍이 포함된 keystore(예: Android Studio 서명 마법사로 생성)를 가져오세요"
+    }
+
+    val keystoreUnsupportedFormat: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "无法识别的 keystore 格式。支持 PKCS12、JKS、JCEKS 和 BKS；若问题持续，请用原工具重新导出"
+        AppLanguage.ENGLISH -> "Unrecognized keystore format. Supported types: PKCS12, JKS, JCEKS and BKS. If the problem persists, re-export the keystore from your original tool"
+        AppLanguage.ARABIC -> "تنسيق مخزن مفاتيح غير معروف. الأنواع المدعومة: PKCS12 و JKS و JCEKS و BKS. إذا استمرت المشكلة، أعد تصدير مخزن المفاتيح من الأداة الأصلية"
+        AppLanguage.PORTUGUESE -> "Formato de keystore não reconhecido. Tipos suportados: PKCS12, JKS, JCEKS e BKS. Se o problema persistir, exporte novamente o keystore a partir da ferramenta original"
+        AppLanguage.SPANISH -> "Formato de keystore no reconocido. Tipos admitidos: PKCS12, JKS, JCEKS y BKS. Si el problema continúa, vuelve a exportar el keystore desde tu herramienta original"
+        AppLanguage.FRENCH -> "Format de keystore non reconnu. Types pris en charge : PKCS12, JKS, JCEKS et BKS. Si le problème persiste, réexportez le keystore depuis votre outil d'origine"
+        AppLanguage.GERMAN -> "Unbekanntes Keystore-Format. Unterstützte Typen: PKCS12, JKS, JCEKS und BKS. Falls das Problem weiterhin besteht, exportiere den Keystore mit dem ursprünglichen Tool neu"
+        AppLanguage.RUSSIAN -> "Неизвестный формат keystore. Поддерживаются: PKCS12, JKS, JCEKS и BKS. Если проблема не исчезнет, повторно экспортируйте keystore из исходного инструмента"
+        AppLanguage.JAPANESE -> "認識できないkeystore形式です。対応形式：PKCS12、JKS、JCEKS、BKS。問題が続く場合は、元のツールでkeystoreを再エクスポートしてください"
+        AppLanguage.KOREAN -> "인식할 수 없는 keystore 형식입니다. 지원 형식: PKCS12, JKS, JCEKS, BKS. 문제가 계속되면 원래 도구에서 keystore를 다시 내보내세요"
     }
 
     val keystoreExportSuccess: String get() = when (Strings.lang) {
