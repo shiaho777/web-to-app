@@ -15,13 +15,24 @@ static void enable_16kb_app_compat_if_needed(void) {
     if (page_size < 16384L) {
         return;
     }
-    set_16kb_appcompat_fn fn =
-        (set_16kb_appcompat_fn)dlsym(RTLD_DEFAULT, "__loader_android_set_16kb_appcompat_mode");
+
+    set_16kb_appcompat_fn fn = NULL;
+
+    // Android 16+ loader 符号（首选）
+    fn = (set_16kb_appcompat_fn)dlsym(RTLD_DEFAULT, "__loader_android_set_16kb_appcompat_mode");
+
+    // Android 15/16 通用符号
     if (fn == NULL) {
         fn = (set_16kb_appcompat_fn)dlsym(RTLD_DEFAULT, "android_set_16kb_appcompat_mode");
     }
+
+    // 极端 fallback（防止符号被移除）
+    if (fn == NULL) {
+        fn = (set_16kb_appcompat_fn)dlsym(RTLD_DEFAULT, "__android_set_16kb_appcompat_mode");
+    }
+
     if (fn != NULL) {
-        fn(1);
+        fn(1);  // enable 16KB appcompat
     }
 }
 
