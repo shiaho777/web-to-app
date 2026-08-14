@@ -90,6 +90,11 @@ android {
             // NOTE: native fork+exec runtimes (esp. Node.js V8 JIT, Go memfd exec) may fail
             // under the stricter SELinux policy of high targetSdk; runtime launch is guarded
             // to degrade gracefully (see BuildConfig.GPLAY_CHANNEL) rather than crash.
+            //
+            // `com.webtoapp` is already registered on Google Play by another party, so the
+            // Play build ships under a distinct applicationId. The standard flavor (GitHub
+            // releases) keeps `com.webtoapp` so existing users keep their update path.
+            applicationId = "shiaho.webtoapp"
             targetSdk = 35
             buildConfigField("boolean", "GPLAY_CHANNEL", "true")
         }
