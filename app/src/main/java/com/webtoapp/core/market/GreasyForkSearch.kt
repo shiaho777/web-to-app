@@ -66,7 +66,10 @@ enum class GfBrowseCategory(val apiQuery: String?) {
 object GreasyForkSearch {
 
     private const val TAG = "GfSearch"
-    private const val BASE = "https://greasyfork.org"
+
+    // Must be the api subdomain: greasyfork.org 308-redirects here and drops the whole
+    // query string, which silently turned every search/sort/category into the default hot list.
+    private const val BASE = "https://api.greasyfork.org"
     private const val MAX_SCRIPT_SIZE = 4L * 1024 * 1024
 
     private const val BROWSER_UA =
@@ -102,13 +105,9 @@ object GreasyForkSearch {
         return fetchScripts(query = category.apiQuery, locale = locale, sort = sort)
     }
 
-    private suspend fun fetchScripts(
-        query: String?,
-        locale: String,
-        sort: GfSort
-    ): Result<List<GfSearchResult>> = withContext(Dispatchers.IO) {
+    internal fun buildScriptsUrl(query: String?, locale: String, sort: GfSort): String {
         val pathLocale = mapLocale(locale)
-        val url = buildString {
+        return buildString {
             append(BASE)
             append('/')
             append(pathLocale)
@@ -122,6 +121,14 @@ object GreasyForkSearch {
             append("sort=")
             append(sort.apiValue)
         }
+    }
+
+    private suspend fun fetchScripts(
+        query: String?,
+        locale: String,
+        sort: GfSort
+    ): Result<List<GfSearchResult>> = withContext(Dispatchers.IO) {
+        val url = buildScriptsUrl(query, locale, sort)
         val label = query?.trim().orEmpty().ifBlank { "browse:${sort.apiValue}" }
 
         try {

@@ -281,6 +281,8 @@ fun ModuleMarketScreen(
             gfSearching = false
             gfHasSearched = true
         }.onFailure {
+            // Clear stale hits so the error UI (shown only when results are empty) can appear.
+            gfResults = emptyList()
             gfSearching = false
             gfHasSearched = true
             gfError = it.message ?: Strings.gfSearchFailed
