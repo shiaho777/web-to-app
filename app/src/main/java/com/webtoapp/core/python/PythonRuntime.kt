@@ -22,10 +22,22 @@ class PythonRuntime(private val context: Context) {
 
     companion object {
         private const val TAG = "PythonRuntime"
-        private const val MAX_HEALTH_CHECK_RETRIES = 60
+
+        // Progress-driven startup budget (#534): the base window resets on every
+        // progress signal (process output line, bound socket, probe response) so
+        // slow-but-alive servers keep waiting, while the hard cap bounds the
+        // total wait. Replaces the old fixed 30s cutoff that killed Flask
+        // servers which bound just after the deadline.
+        internal const val HEALTH_CHECK_BASE_BUDGET_MS = 90_000L
+        internal const val HEALTH_CHECK_HARD_CAP_MS = 300_000L
         private const val HEALTH_CHECK_INTERVAL_MS = 500L
         private const val HEALTH_CHECK_STABILITY_DELAY_MS = 150L
         private const val REQUIRED_HEALTHY_RESPONSES = 2
+
+        // Consecutive bound-socket polls (without an HTTP probe success) that
+        // alone count as ready — covers apps whose probe paths never answer
+        // 2xx-499 (e.g. a user handler returning 500 on /).
+        private const val REQUIRED_BOUND_SOCKET_SUCCESSES = 6
     }
 
     sealed class ServerState {
@@ -214,6 +226,10 @@ class PythonRuntime(private val context: Context) {
 
             pythonOutputBuffer.setLength(0)
             pythonStderrBuffer.setLength(0)
+            val readinessBudget = ReadinessBudget(
+                baseMs = HEALTH_CHECK_BASE_BUDGET_MS,
+                hardCapMs = HEALTH_CHECK_HARD_CAP_MS
+            )
             pythonProcess = processBuilder.start()
             attachProcessExitWatcher(pythonProcess!!, framework, serverPort)
 
@@ -223,6 +239,7 @@ class PythonRuntime(private val context: Context) {
                         stream.bufferedReader().forEachLine { line ->
                             AppLogger.d(TAG, "[Python] $line")
                             ShellLogger.d(TAG, "[Python] $line")
+                            readinessBudget.markProgress()
                             if (pythonOutputBuffer.length < 4096) pythonOutputBuffer.appendLine(line)
                         }
                     } catch (e: Exception) { AppLogger.d(TAG, "Python stdout reader ended", e) }
@@ -235,13 +252,14 @@ class PythonRuntime(private val context: Context) {
                         stream.bufferedReader().forEachLine { line ->
                             AppLogger.w(TAG, "[Python-ERR] $line")
                             ShellLogger.w(TAG, "[Python-ERR] $line")
+                            readinessBudget.markProgress()
                             if (pythonStderrBuffer.length < 4096) pythonStderrBuffer.appendLine(line)
                         }
                     } catch (e: Exception) { AppLogger.d(TAG, "Python stderr reader ended", e) }
                 }.apply { isDaemon = true; start() }
             }
 
-            val ready = waitForServerReady(serverPort, framework)
+            val ready = waitForServerReady(serverPort, framework, readinessBudget)
             if (ready) {
                 val pid = getProcessPid(pythonProcess)
                 pythonProcess?.let { PortManager.registerProcess(serverPort, it, pid) }
@@ -254,7 +272,10 @@ class PythonRuntime(private val context: Context) {
                 val stderr = pythonStderrBuffer.toString().trim().take(500)
                 val processAlive = pythonProcess?.isAliveCompat() == true
                 val exitCode = if (!processAlive) try { pythonProcess?.exitValue() } catch (_: Exception) { null } else null
-                val detail = "processAlive=$processAlive, exitCode=$exitCode\nstdout: ${stdout.ifEmpty { "(无)" }}\nstderr: ${stderr.ifEmpty { "(无)" }}"
+                val detail = "processAlive=$processAlive, exitCode=$exitCode" +
+                    ", startupElapsedMs=${readinessBudget.elapsedMs()}" +
+                    ", msSinceProgress=${readinessBudget.msSinceProgress()}" +
+                    "\nstdout: ${stdout.ifEmpty { "(无)" }}\nstderr: ${stderr.ifEmpty { "(无)" }}"
                 AppLogger.e(TAG, "Python server startup timed out, $detail")
                 val errorMsg = if (stderr.isNotEmpty()) {
                     "Python 服务器启动超时\n$stderr"
@@ -684,14 +705,35 @@ else:
         return "config.settings"
     }
 
-    private suspend fun waitForServerReady(port: Int, framework: String): Boolean {
+    /**
+     * True when something is listening on the loopback port. A bound socket is
+     * both a progress signal (imports finished, server loop starting) and —
+     * when stable — readiness on its own, covering apps whose HTTP handlers
+     * never answer 2xx-499 on the probe paths.
+     */
+    internal fun isPortBound(port: Int): Boolean {
+        if (port <= 0) return false
+        return try {
+            java.net.Socket().use { socket ->
+                socket.connect(java.net.InetSocketAddress("127.0.0.1", port), 500)
+                true
+            }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    internal suspend fun waitForServerReady(port: Int, framework: String, budget: ReadinessBudget): Boolean {
         val probePaths = when (framework.lowercase()) {
             "flask" -> listOf("/__w2a_health", "/")
             else -> listOf("/__w2a_health", "/__health", "/")
         }
         var consecutiveSuccesses = 0
+        var consecutiveBound = 0
+        var attempt = 0
 
-        repeat(MAX_HEALTH_CHECK_RETRIES) { attempt ->
+        while (true) {
+            attempt++
             var successfulPath: String? = null
             var successfulCode = -1
             for (path in probePaths) {
@@ -719,6 +761,8 @@ else:
 
             if (successfulPath != null) {
                 consecutiveSuccesses++
+                consecutiveBound = 0
+                budget.markProgress()
                 AppLogger.i(
                     TAG,
                     "Python health check passed (attempt ${attempt + 1}, path=$successfulPath, code=$successfulCode, consecutive=$consecutiveSuccesses/$REQUIRED_HEALTHY_RESPONSES)"
@@ -740,12 +784,26 @@ else:
                         return false
                     }
                 }
-                return@repeat
+                continue
             }
 
             if (consecutiveSuccesses > 0) {
                 AppLogger.d(TAG, "Python health check stability reset: attempt=${attempt + 1}, previousConsecutive=$consecutiveSuccesses")
                 consecutiveSuccesses = 0
+            }
+
+            if (isPortBound(port)) {
+                consecutiveBound++
+                budget.markProgress()
+                if (consecutiveBound >= REQUIRED_BOUND_SOCKET_SUCCESSES) {
+                    AppLogger.i(
+                        TAG,
+                        "Python server socket stable without HTTP probe success (attempt=${attempt + 1}, consecutiveBound=$consecutiveBound); treating as ready"
+                    )
+                    return true
+                }
+            } else {
+                consecutiveBound = 0
             }
 
             pythonProcess?.let { process ->
@@ -757,10 +815,17 @@ else:
                     return false
                 }
             }
+
+            if (budget.expired()) {
+                AppLogger.e(
+                    TAG,
+                    "Python server startup timed out (elapsedMs=${budget.elapsedMs()}, msSinceProgress=${budget.msSinceProgress()})"
+                )
+                return false
+            }
+
             delay(HEALTH_CHECK_INTERVAL_MS)
         }
-        AppLogger.e(TAG, "Python server startup timed out (${MAX_HEALTH_CHECK_RETRIES * HEALTH_CHECK_INTERVAL_MS}ms)")
-        return false
     }
 
     private fun attachProcessExitWatcher(process: Process, framework: String, port: Int) {
