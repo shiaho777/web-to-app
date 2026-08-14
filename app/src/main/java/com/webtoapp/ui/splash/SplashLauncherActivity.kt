@@ -258,58 +258,32 @@ fun SplashLauncherScreen(
 
     if (showActivationDialog) {
         val dialogConfig = payload.activationDialogConfig
-        val scope = rememberCoroutineScope()
-        var activationError by remember { mutableStateOf<String?>(null) }
-        ActivationDialog(
+        com.webtoapp.ui.components.EnhancedActivationDialog(
             onDismiss = { showActivationDialog = false },
-            errorMessage = activationError,
             onActivate = { code ->
-                if (remoteConfig.enabled) {
-                    activationError = null
-                    scope.launch {
-                        val result = activation.verifyRemoteActivation(
-                            activationAppId,
-                            code,
-                            activation.buildRemoteRequest(
-                                verifyUrl = remoteConfig.verifyUrl,
-                                publicKeyBase64 = remoteConfig.publicKeyBase64,
-                                offlinePolicy = remoteConfig.offlinePolicy
-                            )
+                val result = if (remoteConfig.enabled) {
+                    activation.verifyRemoteActivation(
+                        activationAppId,
+                        code,
+                        activation.buildRemoteRequest(
+                            verifyUrl = remoteConfig.verifyUrl,
+                            publicKeyBase64 = remoteConfig.publicKeyBase64,
+                            offlinePolicy = remoteConfig.offlinePolicy
                         )
-                        if (result is com.webtoapp.core.activation.ActivationResult.Success) {
-                            isActivated = true
-                            showActivationDialog = false
-                        } else if (result is com.webtoapp.core.activation.ActivationResult.Invalid) {
-                            activationError = result.message
-                        } else {
-                            activationError = com.webtoapp.core.i18n.Strings.invalidActivationCode
-                        }
-                    }
+                    )
                 } else {
-                    activationError = null
-                    scope.launch {
-                        val result = activation.verifyActivationCodeWithObjects(
-                            activationAppId,
-                            code,
-                            activationCodes
-                        )
-                        when (result) {
-                            is com.webtoapp.core.activation.ActivationResult.Success,
-                            is com.webtoapp.core.activation.ActivationResult.AlreadyActivated -> {
-                                isActivated = true
-                                showActivationDialog = false
-                            }
-                            is com.webtoapp.core.activation.ActivationResult.Invalid -> {
-                                activationError = result.message.ifBlank {
-                                    com.webtoapp.core.i18n.Strings.invalidActivationCode
-                                }
-                            }
-                            else -> {
-                                activationError = com.webtoapp.core.i18n.Strings.invalidActivationCode
-                            }
-                        }
-                    }
+                    activation.verifyActivationCodeWithObjects(
+                        activationAppId,
+                        code,
+                        activationCodes
+                    )
                 }
+                if (result is com.webtoapp.core.activation.ActivationResult.Success ||
+                    result is com.webtoapp.core.activation.ActivationResult.AlreadyActivated
+                ) {
+                    isActivated = true
+                }
+                result
             },
             customTitle = dialogConfig.title,
             customSubtitle = dialogConfig.subtitle,
@@ -340,63 +314,6 @@ fun SplashLauncherScreen(
 
 private fun normalizeExternalUrlForIntent(rawUrl: String): String {
     return normalizeExternalIntentUrl(rawUrl)
-}
-
-@Composable
-fun ActivationDialog(
-    onDismiss: () -> Unit,
-    onActivate: (String) -> Unit,
-    customTitle: String = "",
-    customSubtitle: String = "",
-    customInputLabel: String = "",
-    customButtonText: String = "",
-    errorMessage: String? = null
-) {
-    var code by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
-    val displayError = error ?: errorMessage?.takeIf { it.isNotBlank() }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(customTitle.ifBlank { com.webtoapp.core.i18n.Strings.activateApp }) },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState())
-            ) {
-                Text(customSubtitle.ifBlank { com.webtoapp.core.i18n.Strings.enterCodeToContinue })
-                Spacer(modifier = Modifier.height(16.dp))
-                OutlinedTextField(
-                    value = code,
-                    onValueChange = {
-                        code = it
-                        error = null
-                    },
-                    label = { Text(customInputLabel.ifBlank { com.webtoapp.core.i18n.Strings.activationCode }) },
-                    singleLine = true,
-                    isError = displayError != null,
-                    supportingText = displayError?.let { { Text(it) } }
-                )
-            }
-        },
-        confirmButton = {
-            PremiumButton(
-                onClick = {
-                    if (code.isBlank()) {
-                        error = com.webtoapp.core.i18n.Strings.pleaseEnterActivationCode
-                    } else {
-                        onActivate(code)
-                    }
-                }
-            ) {
-                Text(customButtonText.ifBlank { com.webtoapp.core.i18n.Strings.activate })
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(com.webtoapp.core.i18n.Strings.btnCancel)
-            }
-        }
-    )
 }
 
 @Composable
