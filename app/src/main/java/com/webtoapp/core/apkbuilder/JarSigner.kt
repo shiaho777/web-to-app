@@ -47,6 +47,22 @@ class JarSigner(private val context: Context) {
 
         private const val V1_SIGNER_NAME_MAX_LEN = 8
 
+        /**
+         * Full BouncyCastle (bundled dependency), used explicitly for *reading* keystores.
+         * The platform's stripped BC provider on many Android versions cannot decrypt PKCS12
+         * files written by modern keytool / Android Studio (PBES2 with AES-256), which is exactly
+         * the `.jks`-named file most users import. We never register it globally — instance-scoped
+         * lookups keep every other crypto path untouched.
+         *
+         * Must live in the companion, not as an instance `by lazy`: the `init` block runs
+         * `initializeKey()` before properties declared later in the class body are
+         * initialized, and the startup load of an already-imported custom keystore
+         * touches this provider during construction (#531).
+         */
+        private val bcProvider: Provider? by lazy {
+            runCatching { BouncyCastleProvider() }.getOrNull()
+        }
+
         private val GENERALIZED_TIME_FORMAT = threadLocalCompat {
             java.text.SimpleDateFormat("yyyyMMddHHmmss'Z'", Locale.US).apply {
                 timeZone = TimeZone.getTimeZone("UTC")
@@ -449,17 +465,6 @@ class JarSigner(private val context: Context) {
         }
 
         return password
-    }
-
-    /**
-     * Full BouncyCastle (bundled dependency), used explicitly for *reading* keystores.
-     * The platform's stripped BC provider on many Android versions cannot decrypt PKCS12
-     * files written by modern keytool / Android Studio (PBES2 with AES-256), which is exactly
-     * the `.jks`-named file most users import. We never register it globally — instance-scoped
-     * lookups keep every other crypto path untouched.
-     */
-    private val bcProvider: Provider? by lazy {
-        runCatching { BouncyCastleProvider() }.getOrNull()
     }
 
     /**
