@@ -204,7 +204,117 @@ class PythonDependencyManagerTest {
         assertThat(script).contains("--library-path")
     }
 
+    @Test
+    fun `sitecustomize script rescues the packaging musl probe`() {
+        // packaging executes the PT_INTERP string of sys.executable verbatim to
+        // compute musllinux tags; the bridge must re-route it to the loader.
+        val script = PythonDependencyManager.buildSitecustomizeScript()
+        assertThat(script).contains("def _is_loader(p)")
+        assertThat(script).contains("head != _MUSL and _is_loader(head)")
+        assertThat(script).contains("args = [_MUSL] + list(args)[1:]")
+    }
+
+    @Test
+    fun `ensureRuntimePatched heals a stale runtime downloaded by an older version`() {
+        val pythonHome = PythonDependencyManager.getPythonDir(context)
+        val binDir = File(pythonHome, "bin").apply { mkdirs() }
+        val pythonBin = File(binDir, "python3.14").apply {
+            writeBytes(buildTestElfBytes("/lib/ld-musl-aarch64.so.1") + ByteArray(1024 * 1024))
+            setExecutable(true)
+        }
+        val linkerName = PythonDependencyManager.getMuslLinkerName(PythonDependencyManager.getDeviceAbi())
+        val linker = File(pythonHome, "lib/$linkerName").apply {
+            parentFile?.mkdirs()
+            writeBytes(ByteArray(2048) { 1 })
+        }
+
+        assertThat(PythonDependencyManager.ensureRuntimePatched(context)).isTrue()
+
+        // The stock /lib interpreter was rewritten to the on-device loader path.
+        assertThat(ElfInterpPatcher.currentInterp(pythonBin)).isEqualTo(linker.absolutePath)
+
+        val siteCustomize = File(pythonHome, "lib/python${PythonDependencyManager.PYTHON_VERSION}/sitecustomize.py")
+        assertThat(siteCustomize.exists()).isTrue()
+        assertThat(siteCustomize.readText()).contains("_is_loader")
+
+        val marker = File(pythonHome, ".w2a-musl-heal")
+        assertThat(marker.exists()).isTrue()
+        assertThat(marker.readText())
+            .isEqualTo("${linker.absolutePath}|v${PythonDependencyManager.SITE_CUSTOMIZE_VERSION}")
+
+        // Second run short-circuits via the marker and stays healed.
+        assertThat(PythonDependencyManager.ensureRuntimePatched(context)).isTrue()
+        assertThat(ElfInterpPatcher.currentInterp(pythonBin)).isEqualTo(linker.absolutePath)
+    }
+
+    @Test
+    fun `ensureRuntimePatched re-heals when the marker is stale`() {
+        val pythonHome = PythonDependencyManager.getPythonDir(context)
+        val binDir = File(pythonHome, "bin").apply { mkdirs() }
+        val pythonBin = File(binDir, "python3.14").apply {
+            writeBytes(
+                buildTestElfBytes("\$ORIGIN/../lib/ld-musl-aarch64.so.1") + ByteArray(1024 * 1024)
+            )
+        }
+        val linkerName = PythonDependencyManager.getMuslLinkerName(PythonDependencyManager.getDeviceAbi())
+        val linker = File(pythonHome, "lib/$linkerName").apply {
+            parentFile?.mkdirs()
+            writeBytes(ByteArray(2048) { 1 })
+        }
+        // A marker from an older heal (different interp / script version).
+        File(pythonHome, ".w2a-musl-heal").writeText("/old/path/ld-musl-aarch64.so.1|v1")
+
+        assertThat(PythonDependencyManager.ensureRuntimePatched(context)).isTrue()
+        // The $ORIGIN form written by the 2.4.5 patcher migrates to the
+        // absolute on-device loader path.
+        assertThat(ElfInterpPatcher.currentInterp(pythonBin)).isEqualTo(linker.absolutePath)
+    }
+
+    @Test
+    fun `ensureRuntimePatched skips when no runtime is installed`() {
+        assertThat(PythonDependencyManager.ensureRuntimePatched(context)).isFalse()
+    }
+
     private fun tempDir(name: String): File {
         return File(context.cacheDir, "python-dep-test-$name-${System.nanoTime()}").apply { mkdirs() }
+    }
+
+    /** Minimal 64-bit little-endian ELF with a single PT_INTERP segment. */
+    private fun buildTestElfBytes(interp: String): ByteArray {
+        val interpBytes = interp.toByteArray(Charsets.UTF_8) + 0
+        val ehdr = ByteArray(64)
+        ehdr[0] = 0x7F.toByte()
+        ehdr[1] = 'E'.code.toByte()
+        ehdr[2] = 'L'.code.toByte()
+        ehdr[3] = 'F'.code.toByte()
+        ehdr[4] = 2 // ELFCLASS64
+        ehdr[5] = 1 // ELFDATA2LSB
+        putU16(ehdr, 16, 2) // e_type ET_EXEC
+        putU16(ehdr, 18, 183) // e_machine AArch64
+        putU64(ehdr, 32, 64) // e_phoff
+        putU16(ehdr, 54, 56) // e_phentsize
+        putU16(ehdr, 56, 1) // e_phnum
+
+        val phdr = ByteArray(56)
+        putU32(phdr, 0, 3) // PT_INTERP
+        putU64(phdr, 8, 120) // p_offset (after header + phdr)
+        putU64(phdr, 32, interpBytes.size.toLong()) // p_filesz
+
+        return ehdr + phdr + interpBytes
+    }
+
+    private fun putU16(bytes: ByteArray, offset: Int, value: Int) {
+        bytes[offset] = (value and 0xFF).toByte()
+        bytes[offset + 1] = ((value shr 8) and 0xFF).toByte()
+    }
+
+    private fun putU32(bytes: ByteArray, offset: Int, value: Int) {
+        putU16(bytes, offset, value and 0xFFFF)
+        putU16(bytes, offset + 2, (value shr 16) and 0xFFFF)
+    }
+
+    private fun putU64(bytes: ByteArray, offset: Int, value: Long) {
+        putU32(bytes, offset, value.toInt())
+        putU32(bytes, offset + 4, (value shr 32).toInt())
     }
 }

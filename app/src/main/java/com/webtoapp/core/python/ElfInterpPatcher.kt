@@ -6,21 +6,30 @@ import java.io.RandomAccessFile
 import java.nio.charset.StandardCharsets
 
 /**
- * Rewrites the PT_INTERP (ELF program interpreter) of executables so the
- * kernel can locate the musl dynamic linker without relying on `/lib`, which
- * does not exist on Android.
+ * Rewrites the PT_INTERP (ELF program interpreter) of executables so direct
+ * kernel execs resolve the on-device musl dynamic linker.
  *
  * The python-build-standalone musl builds ship with an absolute interpreter
- * path such as `/lib/ld-musl-aarch64.so.1`. Launching them through the explicit
- * loader (`ld-musl-* --library-path ... python3`) works, but **any subprocess
- * spawned by Python itself** (e.g. pip's PEP 517 build-isolation venv pythons)
- * is exec'd directly by the kernel, which resolves PT_INTERP verbatim and
- * fails with `ENOENT` on Android.
+ * path such as `/lib/ld-musl-aarch64.so.1`, which does not exist on Android.
+ * Launching through the explicit loader (`ld-musl-* --library-path ... python3`)
+ * works, but **any subprocess spawned by Python itself** (pip's PEP 517
+ * build-isolation venv pythons) is exec'd directly by the kernel, which
+ * resolves PT_INTERP verbatim and fails with `ENOENT`.
  *
- * Patching the interpreter to an `$ORIGIN`-relative path
- * (`$ORIGIN/../lib/ld-musl-<arch>.so.1`) makes direct kernel execs resolve the
- * bundled loader, which is exactly how relocatable musl toolchains work on
- * regular Linux.
+ * The interpreter is therefore patched to the **absolute path of the bundled
+ * loader on this device** (`<pythonHome>/lib/ld-musl-<arch>.so.1`). An
+ * absolute path is required rather than an `$ORIGIN`-relative one because:
+ *
+ *  - the kernel does not expand `$ORIGIN` in PT_INTERP (it would be resolved
+ *    as a literal relative path against the process CWD), and
+ *  - `packaging`'s musl version probe reads PT_INTERP of `sys.executable` and
+ *    executes that string verbatim (`subprocess.run([ld])`) to compute the
+ *    `musllinux_*` platform tags — an absolute, existing path makes the probe
+ *    succeed so compiled wheels match without any source build.
+ *
+ * The baked path lives under the app's `filesDir`, which is stable across app
+ * updates (unlike `nativeLibraryDir`, which is randomized per install and
+ * must never be embedded).
  */
 object ElfInterpPatcher {
 
@@ -45,21 +54,21 @@ object ElfInterpPatcher {
     private const val SIZEOF_EHDR32 = 52
     private const val SIZEOF_PHDR32 = 32
 
-    /** The interpreter path of an Android-incompatible absolute musl loader. */
-    private val ABSOLUTE_MUSL_INTERP = Regex("^/lib/ld-musl-[^/]+\\.so\\.1$")
+    private const val ORIGIN_PREFIX = "\$ORIGIN/"
 
     /**
-     * The `$ORIGIN`-relative interpreter path that resolves to the on-device
-     * musl loader bundled under `<pythonHome>/lib/`.
-     *
-     * @param linkerName e.g. `ld-musl-aarch64.so.1` (see
-     * [PythonDependencyManager.getMuslLinkerName]).
+     * True when [interp] points at a musl dynamic loader that this device
+     * cannot resolve verbatim: the stock absolute `/lib/ld-musl-<arch>.so.1`,
+     * the `$ORIGIN`-relative form written by the 2.4.5 patcher (the kernel
+     * does not expand `$ORIGIN` in PT_INTERP), or a stale absolute path baked
+     * by an earlier heal after the runtime moved.
      */
-    fun relocatableInterp(linkerName: String): String = "\$ORIGIN/../lib/$linkerName"
-
-    /** True when [interp] is an absolute musl loader path that Android cannot resolve. */
-    fun isAbsoluteMuslInterp(interp: String): Boolean =
-        ABSOLUTE_MUSL_INTERP.matches(interp)
+    fun isUnresolvedMuslInterp(interp: String, resolvedInterp: String): Boolean {
+        if (interp == resolvedInterp) return false
+        if (!interp.startsWith("/") && !interp.startsWith(ORIGIN_PREFIX)) return false
+        val base = interp.substringAfterLast('/')
+        return base.startsWith("ld-musl-") && base.endsWith(".so.1")
+    }
 
     /**
      * Reads the current PT_INTERP of [file], or null when the file is not a
@@ -190,32 +199,32 @@ object ElfInterpPatcher {
     }
 
     /**
-     * Patches [file] when its interpreter is an absolute musl path that cannot
-     * resolve on Android.
+     * Patches [file] when its interpreter is a musl loader path this device
+     * cannot resolve verbatim.
      *
+     * @param resolvedInterp absolute on-device loader path to bake in (see
+     * [PythonDependencyManager.resolvedMuslInterpPath]).
      * @return true when the file was modified.
      */
-    fun patchMuslInterp(file: File, linkerName: String): Boolean {
+    fun patchMuslInterp(file: File, resolvedInterp: String): Boolean {
         val current = currentInterp(file) ?: return false
-        if (!isAbsoluteMuslInterp(current)) return false
-        val newInterp = relocatableInterp(linkerName)
-        if (current == newInterp) return false
-        return rewriteInterp(file, newInterp)
+        if (!isUnresolvedMuslInterp(current, resolvedInterp)) return false
+        return rewriteInterp(file, resolvedInterp)
     }
 
     /**
-     * Patches every ELF executable under `<pythonHome>/bin/` that carries an
-     * absolute musl interpreter.
+     * Patches every ELF executable under `<pythonHome>/bin/` whose musl
+     * interpreter cannot be resolved on this device.
      *
      * @return number of binaries patched.
      */
-    fun patchPythonBinaries(pythonHome: File, linkerName: String): Int {
+    fun patchPythonBinaries(pythonHome: File, resolvedInterp: String): Int {
         val binDir = File(pythonHome, "bin")
         if (!binDir.isDirectory) return 0
         var patched = 0
         binDir.listFiles()?.forEach { file ->
             if (file.isFile && file.length() > 1024 * 1024) {
-                if (patchMuslInterp(file, linkerName)) patched++
+                if (patchMuslInterp(file, resolvedInterp)) patched++
             }
         }
         return patched

@@ -15,6 +15,7 @@ class ElfInterpPatcherTest {
 
     private val ABSOLUTE = "/lib/ld-musl-aarch64.so.1"
     private val RELATIVE = "\$ORIGIN/../lib/ld-musl-aarch64.so.1"
+    private val TARGET = "/data/user/0/com.webtoapp/files/python_deps/python/lib/ld-musl-aarch64.so.1"
 
     @Test
     fun `currentInterp reads the interp string`() {
@@ -40,39 +41,58 @@ class ElfInterpPatcherTest {
 
     @Test
     fun `rewriteInterp writes in place when the new path fits`() {
-        val file = writeElf(ABSOLUTE, pFilesz = 64)
-        assertThat(ElfInterpPatcher.rewriteInterp(file, RELATIVE)).isTrue()
-        assertThat(ElfInterpPatcher.currentInterp(file)).isEqualTo(RELATIVE)
+        val file = writeElf(ABSOLUTE, pFilesz = 128)
+        assertThat(ElfInterpPatcher.rewriteInterp(file, TARGET)).isTrue()
+        assertThat(ElfInterpPatcher.currentInterp(file)).isEqualTo(TARGET)
     }
 
     @Test
     fun `rewriteInterp grows the segment when the new path is longer`() {
         val file = writeElf(ABSOLUTE) // p_filesz = 28
-        assertThat(ElfInterpPatcher.rewriteInterp(file, RELATIVE)).isTrue()
-        assertThat(ElfInterpPatcher.currentInterp(file)).isEqualTo(RELATIVE)
+        assertThat(ElfInterpPatcher.rewriteInterp(file, TARGET)).isTrue()
+        assertThat(ElfInterpPatcher.currentInterp(file)).isEqualTo(TARGET)
     }
 
     @Test
-    fun `patchMuslInterp rewrites absolute musl interp and is idempotent`() {
+    fun `patchMuslInterp rewrites stock absolute interp and is idempotent`() {
         val file = writeElf(ABSOLUTE)
-        assertThat(ElfInterpPatcher.patchMuslInterp(file, "ld-musl-aarch64.so.1")).isTrue()
-        assertThat(ElfInterpPatcher.currentInterp(file)).isEqualTo(RELATIVE)
-        // Second pass: already relative, nothing to do.
-        assertThat(ElfInterpPatcher.patchMuslInterp(file, "ld-musl-aarch64.so.1")).isFalse()
-        assertThat(ElfInterpPatcher.currentInterp(file)).isEqualTo(RELATIVE)
+        assertThat(ElfInterpPatcher.patchMuslInterp(file, TARGET)).isTrue()
+        assertThat(ElfInterpPatcher.currentInterp(file)).isEqualTo(TARGET)
+        // Second pass: already resolved, nothing to do.
+        assertThat(ElfInterpPatcher.patchMuslInterp(file, TARGET)).isFalse()
+        assertThat(ElfInterpPatcher.currentInterp(file)).isEqualTo(TARGET)
+    }
+
+    @Test
+    fun `patchMuslInterp migrates the ORIGIN-relative form written by 2_4_5`() {
+        val file = writeElf(RELATIVE)
+        assertThat(ElfInterpPatcher.patchMuslInterp(file, TARGET)).isTrue()
+        assertThat(ElfInterpPatcher.currentInterp(file)).isEqualTo(TARGET)
+    }
+
+    @Test
+    fun `patchMuslInterp re-heals a stale absolute musl path`() {
+        val stale = "/data/user/0/com.webtoapp-old/files/python/lib/ld-musl-aarch64.so.1"
+        val file = writeElf(stale)
+        assertThat(ElfInterpPatcher.patchMuslInterp(file, TARGET)).isTrue()
+        assertThat(ElfInterpPatcher.currentInterp(file)).isEqualTo(TARGET)
     }
 
     @Test
     fun `patchMuslInterp leaves non-musl interps alone`() {
         val file = writeElf("/lib/ld-linux-aarch64.so.1")
-        assertThat(ElfInterpPatcher.patchMuslInterp(file, "ld-musl-aarch64.so.1")).isFalse()
+        assertThat(ElfInterpPatcher.patchMuslInterp(file, TARGET)).isFalse()
         assertThat(ElfInterpPatcher.currentInterp(file)).isEqualTo("/lib/ld-linux-aarch64.so.1")
     }
 
     @Test
-    fun `relocatableInterp builds an origin-relative path`() {
-        assertThat(ElfInterpPatcher.relocatableInterp("ld-musl-aarch64.so.1"))
-            .isEqualTo("\$ORIGIN/../lib/ld-musl-aarch64.so.1")
+    fun `isUnresolvedMuslInterp classifies resolvability`() {
+        assertThat(ElfInterpPatcher.isUnresolvedMuslInterp(ABSOLUTE, TARGET)).isTrue()
+        assertThat(ElfInterpPatcher.isUnresolvedMuslInterp(RELATIVE, TARGET)).isTrue()
+        assertThat(ElfInterpPatcher.isUnresolvedMuslInterp(TARGET, TARGET)).isFalse()
+        assertThat(ElfInterpPatcher.isUnresolvedMuslInterp("/lib/ld-linux-aarch64.so.1", TARGET)).isFalse()
+        // Relative paths without $ORIGIN are never kernel-resolvable to our loader.
+        assertThat(ElfInterpPatcher.isUnresolvedMuslInterp("lib/ld-musl-aarch64.so.1", TARGET)).isFalse()
     }
 
     @Test
@@ -86,9 +106,9 @@ class ElfInterpPatcherTest {
         // binaries are tens of MB, so pad to clear the >1MB binary filter.
         pythonBin.writeBytes(buildElfBytes(ABSOLUTE) + ByteArray(1024 * 1024))
 
-        val patched = ElfInterpPatcher.patchPythonBinaries(pythonHome, "ld-musl-aarch64.so.1")
+        val patched = ElfInterpPatcher.patchPythonBinaries(pythonHome, TARGET)
         assertThat(patched).isEqualTo(1)
-        assertThat(ElfInterpPatcher.currentInterp(pythonBin)).isEqualTo(RELATIVE)
+        assertThat(ElfInterpPatcher.currentInterp(pythonBin)).isEqualTo(TARGET)
         assertThat(other.readText()).contains("#!/bin/sh")
     }
 

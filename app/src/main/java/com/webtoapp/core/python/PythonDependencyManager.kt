@@ -47,6 +47,12 @@ object PythonDependencyManager {
 
     private const val SITE_CUSTOMIZE_FILE_NAME = "sitecustomize.py"
 
+    /** Bump when [buildSitecustomizeScript] content changes so existing runtimes re-heal. */
+    internal const val SITE_CUSTOMIZE_VERSION = 2
+
+    /** Marker file under the runtime root recording the last applied heal. */
+    private const val HEAL_MARKER_FILE_NAME = ".w2a-musl-heal"
+
     /** Cap on pip output retained for failure analysis (pattern matching). */
     private const val MAX_PIP_OUTPUT_CHARS = 512 * 1024
 
@@ -261,6 +267,10 @@ object PythonDependencyManager {
             val pythonReady = resolvePythonBinary(context) != null
             val muslReady = resolveMuslLinker(context) != null
             if (pythonReady && muslReady) {
+                // Runtimes that persisted across an app update never received
+                // the on-device fixes (they only used to run after a fresh
+                // download) — heal them in place before declaring ready.
+                ensureRuntimePatched(context)
                 markComplete()
                 return@withContext true
             }
@@ -340,6 +350,11 @@ object PythonDependencyManager {
                 return@withContext false
             }
 
+            // Heal runtimes downloaded by older app versions before pip runs:
+            // pip's subprocess spawns and packaging's musl platform probe both
+            // depend on the patched interpreter / sitecustomize bridge.
+            ensureRuntimePatched(context)
+
             val result = runPipWithWrapper(context, projectDir, pythonBin, pythonHome, muslLinker,
                 sitePackages, installReqFile, extraEnv, onOutput)
 
@@ -359,6 +374,79 @@ object PythonDependencyManager {
             if (installReqFile != reqFile) {
                 installReqFile.delete()
             }
+        }
+    }
+
+    /**
+     * The absolute loader path to bake into PT_INTERP: the loader co-located
+     * with the runtime under `filesDir`, which is stable across app updates.
+     * The `nativeLibraryDir` loader is deliberately not used — that path is
+     * randomized on every app install/update, which would break embedded
+     * interpreters after the next update.
+     */
+    fun resolvedMuslInterpPath(context: Context): String? {
+        val linkerName = getMuslLinkerName(getDeviceAbi())
+        val coLocated = File(getPythonDir(context), "lib/$linkerName")
+        if (coLocated.isFile && coLocated.length() > 1024) return coLocated.absolutePath
+        return null
+    }
+
+    /**
+     * Idempotently applies the on-device compatibility fixes to an extracted
+     * Python runtime: patches musl PT_INTERP paths this device cannot resolve
+     * (the stock `/lib/ld-musl-*.so.1`, the `$ORIGIN` form written by the
+     * 2.4.5 patcher, or a stale absolute path) to [resolvedInterp], and
+     * refreshes the `sitecustomize.py` subprocess bridge. A marker file
+     * short-circuits repeated runs.
+     *
+     * @return true when the runtime exists and is (now) healed.
+     */
+    internal fun healRuntimeInPlace(pythonHome: File, resolvedInterp: String): Boolean {
+        val binDir = File(pythonHome, "bin")
+        if (!binDir.isDirectory) return false
+
+        val marker = File(pythonHome, HEAL_MARKER_FILE_NAME)
+        val markerValue = "$resolvedInterp|v$SITE_CUSTOMIZE_VERSION"
+        if (marker.isFile && marker.readText() == markerValue) {
+            AppLogger.d(TAG, "Python runtime already healed: ${marker.absolutePath}")
+            return true
+        }
+
+        val patchedCount = ElfInterpPatcher.patchPythonBinaries(pythonHome, resolvedInterp)
+        if (patchedCount > 0) {
+            AppLogger.i(TAG, "Patched $patchedCount Python ELF interpreter(s) to $resolvedInterp")
+        }
+
+        val siteCustomize = File(pythonHome, "lib/python$PYTHON_VERSION/$SITE_CUSTOMIZE_FILE_NAME")
+        siteCustomize.parentFile?.mkdirs()
+        siteCustomize.writeText(buildSitecustomizeScript())
+        AppLogger.i(TAG, "Installed/refreshed $SITE_CUSTOMIZE_FILE_NAME for subprocess loader bridging: ${siteCustomize.absolutePath}")
+
+        marker.writeText(markerValue)
+        return true
+    }
+
+    /**
+     * Heals a runtime installed by an older app version (or after a partially
+     * failed download): the interp patch and sitecustomize bridge used to run
+     * only right after a fresh download, so runtimes that persisted across an
+     * app update never received them and pip kept failing with
+     * `No such file or directory: '/lib/ld-musl-*.so.1'`.
+     *
+     * @return true when a runtime exists and is (now) healed.
+     */
+    fun ensureRuntimePatched(context: Context): Boolean {
+        return try {
+            val pythonHome = getPythonDir(context)
+            if (!File(pythonHome, "bin").isDirectory) return false
+            val resolvedInterp = resolvedMuslInterpPath(context) ?: run {
+                AppLogger.w(TAG, "musl loader not present yet; skipping runtime heal")
+                return false
+            }
+            healRuntimeInPlace(pythonHome, resolvedInterp)
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Runtime heal failed: ${e.message}")
+            false
         }
     }
 
@@ -439,20 +527,28 @@ object PythonDependencyManager {
      * A `sitecustomize.py` installed into the Python runtime dir. It is imported
      * by *every* Python process (including pip subprocesses and PEP 517 build
      * isolation venv pythons) and routes any python-like executable through the
-     * on-device musl loader, because the ELF interpreter path
+     * on-device musl loader, because the stock ELF interpreter path
      * (`/lib/ld-musl-<arch>.so.1`) does not exist on Android. This is the safety
-     * net for subprocess spawns that bypass the explicit-loader launcher; the
-     * primary fix is patching PT_INTERP to an `$ORIGIN`-relative path.
+     * net for subprocess spawns on runtimes whose PT_INTERP patch did not apply;
+     * the primary fix is patching PT_INTERP to the on-device absolute loader
+     * path.
+     *
+     * It also rescues `packaging`'s musl version probe: the probe reads the
+     * PT_INTERP string of `sys.executable` and executes it verbatim
+     * (`subprocess.run([ld])`) to compute the `musllinux_*` platform tags. On
+     * Android that string is never directly executable, so it is re-routed to
+     * the bundled loader — without this, compiled wheels (e.g. MarkupSafe for
+     * Flask) never match and pip falls back to a source build that cannot work.
      */
     internal fun buildSitecustomizeScript(): String = """
 import os
 import sys
 
 # WebToApp: route python subprocesses through the on-device musl dynamic linker.
-# The python ELF interpreter (/lib/ld-musl-*.so.1) does not exist on Android,
-# so direct kernel execs of the binary fail. This module is imported by every
-# python process via the site machinery and rewrites subprocess/exec calls that
-# target python-like executables to go through the bundled loader instead.
+# The stock python ELF interpreter (/lib/ld-musl-*.so.1) does not exist on
+# Android, so direct kernel execs of the binary fail. This module is imported
+# by every python process via the site machinery and rewrites subprocess/exec
+# calls that target python-like executables to go through the bundled loader.
 
 _MUSL = os.environ.get('_WTA_MUSL_LINKER', '')
 _LIB = os.environ.get('_WTA_MUSL_LIB_PATH', '')
@@ -465,6 +561,11 @@ def _is_py(p):
     return bool(p) and (p == _PYBIN or os.path.basename(str(p)) in _PYNAMES)
 
 
+def _is_loader(p):
+    b = os.path.basename(str(p))
+    return b.startswith('ld-musl-') and '.so.' in b
+
+
 if _MUSL and _LIB:
     import subprocess
 
@@ -472,8 +573,15 @@ if _MUSL and _LIB:
 
     class _MPopen(_OrigPopen):
         def __init__(self, args, *a, **kw):
-            if isinstance(args, (list, tuple)) and len(args) > 0 and _is_py(str(args[0])):
-                args = [_MUSL, '--library-path', _LIB] + list(args)
+            if isinstance(args, (list, tuple)) and len(args) > 0:
+                head = str(args[0])
+                if _is_py(head):
+                    args = [_MUSL, '--library-path', _LIB] + list(args)
+                elif head != _MUSL and _is_loader(head):
+                    # packaging's musl probe executes the PT_INTERP string of
+                    # sys.executable verbatim; run the bundled loader instead
+                    # so the musllinux platform tags resolve.
+                    args = [_MUSL] + list(args)[1:]
             super().__init__(args, *a, **kw)
 
     subprocess.Popen = _MPopen
@@ -483,6 +591,9 @@ if _MUSL and _LIB:
     def _mexecv(p, a):
         if _is_py(p):
             a = [_MUSL, '--library-path', _LIB] + list(a)
+            p = _MUSL
+        elif p != _MUSL and _is_loader(p):
+            a = list(a)
             p = _MUSL
         return _oexecv(p, a)
 
@@ -494,6 +605,9 @@ if _MUSL and _LIB:
         def _mexecve(p, a, e):
             if _is_py(p):
                 a = [_MUSL, '--library-path', _LIB] + list(a)
+                p = _MUSL
+            elif p != _MUSL and _is_loader(p):
+                a = list(a)
                 p = _MUSL
             return _oexecve(p, a, e)
 
@@ -513,64 +627,72 @@ if _MUSL and _LIB:
     ): Boolean {
         val cacheDir = context.cacheDir
 
-        val wrapperScript = File(cacheDir, "python_wrapper.sh")
-        wrapperScript.writeText("""#!/system/bin/sh
-exec "$muslLinker" --library-path "$pythonHome/lib" "$pythonBin" "${'$'}@"
-""")
-        wrapperScript.setExecutable(true, false)
-        AppLogger.d(TAG, "Creating Python wrapper: ${wrapperScript.absolutePath}")
-
         val bootstrapScript = File(cacheDir, "pip_bootstrap.py")
         bootstrapScript.writeText("""
 import sys
 import os
 
-# ★ 核心: 将 sys.executable 设为 shell wrapper
-# pip 在内部调用子进程时使用 sys.executable，
-# 原始值指向 libpython3.so (musl ELF)，直接 exec 会失败
-# wrapper 脚本封装了 musl-linker 调用，确保子进程正确执行
-wrapper_path = os.environ.get('_PYTHON_WRAPPER')
-if wrapper_path and os.path.exists(wrapper_path):
-    sys.executable = wrapper_path
-    # 同时修改 _base_executable 确保 venv/pip 子组件也使用 wrapper
-    if hasattr(sys, '_base_executable'):
-        sys._base_executable = wrapper_path
+# ★ sys.executable 必须保持真实的 python ELF 路径，不能改写成 shell wrapper：
+# 1) 运行时 PT_INTERP 已被修补为设备上的绝对 musl loader 路径，pip 派生的
+#    子进程直接 exec 即可；
+# 2) packaging 的 musl 版本探测会读取 sys.executable 的 ELF 头，并把其
+#    PT_INTERP 字符串当命令执行，以计算 musllinux 平台标签。若指向非 ELF
+#    的 wrapper，探测静默失败 → 编译型 wheel（如 MarkupSafe）全部无法匹配
+#    → pip 退回源码构建并在 Android 上失败。补丁未生效的旧运行时由下面的
+#    subprocess/os.execv 劫持兜底。
 
-# 额外安全: monkey-patch subprocess.Popen 和 os.execv
-# 以防某些 pip 插件直接使用旧的 sys.executable 值
+# 安全网: monkey-patch subprocess.Popen 和 os.execv，把 python 目标的调用
+# 改道到 musl loader（覆盖 PT_INTERP 补丁未生效的情况）
 import subprocess
 _OrigPopen = subprocess.Popen
 _MUSL = os.environ.get('_WTA_MUSL_LINKER', '')
 _LIB = os.environ.get('_WTA_MUSL_LIB_PATH', '')
 _PYBIN = os.environ.get('_WTA_PYTHON_BIN', '')
-_PYNAMES = ('python3', '${getVersionedPythonBinaryName()}', 'libpython3.so')
+_PYNAMES = ('python', 'python3', '${getVersionedPythonBinaryName()}', 'libpython3.so')
 
 def _is_py(p):
     return p == _PYBIN or os.path.basename(str(p)) in _PYNAMES
 
+def _is_loader(p):
+    b = os.path.basename(str(p))
+    return b.startswith('ld-musl-') and '.so.' in b
+
 class _MPopen(_OrigPopen):
     def __init__(self, args, *a, **kw):
         if isinstance(args, (list, tuple)) and len(args) > 0 and _MUSL and _LIB:
-            if _is_py(str(args[0])):
+            head = str(args[0])
+            if _is_py(head):
                 args = [_MUSL, '--library-path', _LIB] + list(args)
+            elif head != _MUSL and _is_loader(head):
+                # packaging 的 musl 探测会把 PT_INTERP 字符串当命令执行，
+                # 改道到随包 loader 让 musllinux 标签可解析。
+                args = [_MUSL] + list(args)[1:]
         super().__init__(args, *a, **kw)
 
 subprocess.Popen = _MPopen
 
 _oexecv = os.execv
 def _mexecv(p, a):
-    if _MUSL and _LIB and _is_py(p):
-        a = [_MUSL, '--library-path', _LIB] + list(a)
-        p = _MUSL
+    if _MUSL and _LIB:
+        if _is_py(p):
+            a = [_MUSL, '--library-path', _LIB] + list(a)
+            p = _MUSL
+        elif p != _MUSL and _is_loader(p):
+            a = list(a)
+            p = _MUSL
     return _oexecv(p, a)
 os.execv = _mexecv
 
 if hasattr(os, 'execve'):
     _oexecve = os.execve
     def _mexecve(p, a, e):
-        if _MUSL and _LIB and _is_py(p):
-            a = [_MUSL, '--library-path', _LIB] + list(a)
-            p = _MUSL
+        if _MUSL and _LIB:
+            if _is_py(p):
+                a = [_MUSL, '--library-path', _LIB] + list(a)
+                p = _MUSL
+            elif p != _MUSL and _is_loader(p):
+                a = list(a)
+                p = _MUSL
         return _oexecve(p, a, e)
     os.execve = _mexecve
 
@@ -599,7 +721,7 @@ sys.exit(main())
         AppLogger.i(TAG, "Installing Python dependencies (wrapper mode): ${command.joinToString(" ")}")
 
         val firstResult = executeCommand(command, projectDir, pythonBin, pythonHome, muslLinker,
-            wrapperScript.absolutePath, context, extraEnv, onOutput)
+            context, extraEnv, onOutput)
 
         if (firstResult.exitCode == 0) return true
 
@@ -643,7 +765,7 @@ sys.exit(main())
         AppLogger.i(TAG, "Installing Python dependencies (wrapper-mode retry): ${retryCommand.joinToString(" ")}")
 
         val retryResult = executeCommand(retryCommand, projectDir, pythonBin, pythonHome, muslLinker,
-            wrapperScript.absolutePath, context, extraEnv, onOutput)
+            context, extraEnv, onOutput)
         if (retryResult.exitCode == 0) return true
 
         // The retry also failed: give an actionable hint when the cause is a
@@ -677,7 +799,7 @@ sys.exit(main())
             "-r", reqFile.absolutePath
         )
         AppLogger.i(TAG, "Installing Python dependencies (direct mode): ${command.joinToString(" ")}")
-        return executeCommand(command, projectDir, pythonBin, pythonHome, null, null,
+        return executeCommand(command, projectDir, pythonBin, pythonHome, null,
             context, emptyMap(), onOutput).exitCode == 0
     }
 
@@ -689,7 +811,6 @@ sys.exit(main())
         pythonBin: String,
         pythonHome: String,
         muslLinker: String?,
-        wrapperPath: String?,
         context: Context,
         extraEnv: Map<String, String>,
         onOutput: ((String) -> Unit)?
@@ -711,9 +832,6 @@ sys.exit(main())
             env["_WTA_MUSL_LIB_PATH"] = "$pythonHome/lib"
         }
         env["_WTA_PYTHON_BIN"] = pythonBin
-        if (wrapperPath != null) {
-            env["_PYTHON_WRAPPER"] = wrapperPath
-        }
 
         extraEnv.forEach { (k, v) -> env[k] = v }
 
@@ -876,30 +994,11 @@ sys.exit(main())
                 it.setExecutable(true, false)
             }
 
-            // The python binaries ship with an absolute ELF interpreter
-            // (/lib/ld-musl-<arch>.so.1) that does not exist on Android. Direct
-            // launches work because we exec through the explicit loader, but
-            // pip's PEP 517 build isolation spawns subprocesses (venv pythons)
-            // that the kernel execs directly. Patch PT_INTERP to an
-            // $ORIGIN-relative path so those execs resolve the bundled loader.
-            val linkerName = getMuslLinkerName(abi)
-            val patchedCount = ElfInterpPatcher.patchPythonBinaries(destDir, linkerName)
-            if (patchedCount > 0) {
-                AppLogger.i(TAG, "Patched $patchedCount Python ELF interpreter(s) to \$ORIGIN-relative musl loader")
-            } else {
-                AppLogger.w(TAG, "No Python ELF binaries needed interpreter patching")
-            }
-
-            // Fallback for any subprocess spawn that still bypasses the patched
-            // interpreter (e.g. older kernels without $ORIGIN expansion): every
-            // python process imports sitecustomize, which routes python-like
-            // executables through the musl loader.
-            val siteCustomize = File(destDir, "lib/python$PYTHON_VERSION/$SITE_CUSTOMIZE_FILE_NAME")
-            if (!siteCustomize.exists()) {
-                siteCustomize.writeText(buildSitecustomizeScript())
-                AppLogger.i(TAG, "Installed $SITE_CUSTOMIZE_FILE_NAME for subprocess loader bridging: ${siteCustomize.absolutePath}")
-            }
-
+            // The python binaries ship with an ELF interpreter the kernel
+            // cannot resolve on Android. The interp patch + sitecustomize
+            // bridge need the musl loader on disk, so they run as an
+            // idempotent heal after the loader download below (same path used
+            // for runtimes that persisted across an app update).
             archiveFile.delete()
         } catch (e: Exception) {
             AppLogger.e(TAG, "Python extraction failed", e)
@@ -915,6 +1014,10 @@ sys.exit(main())
         } else {
             AppLogger.w(TAG, "Current ABI ($abi) has no available musl linker")
         }
+
+        // Applies the interp patch + sitecustomize bridge now that the loader
+        // is on disk; no-ops safely when the loader download failed.
+        ensureRuntimePatched(context)
 
         return true
     }
