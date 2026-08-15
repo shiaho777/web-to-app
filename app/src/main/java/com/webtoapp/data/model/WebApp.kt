@@ -282,6 +282,8 @@ data class WebViewConfig(
     val toolbarShowBack: Boolean = true,
     val toolbarShowForward: Boolean = true,
     val toolbarShowRefresh: Boolean = true,
+    val toolbarShowConsole: Boolean = true,
+    val toolbarShowZoom: Boolean = true,
     val browserToolbarCustomized: Boolean = false,
     val hideToolbar: Boolean = false,
     val showStatusBarInFullscreen: Boolean = false,

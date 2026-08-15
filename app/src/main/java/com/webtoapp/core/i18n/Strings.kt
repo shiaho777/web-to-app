@@ -2331,6 +2331,8 @@ object Strings {
     val toolbarShowBackLabel: String get() = StringsC.toolbarShowBackLabel
     val toolbarShowForwardLabel: String get() = StringsC.toolbarShowForwardLabel
     val toolbarShowRefreshLabel: String get() = StringsC.toolbarShowRefreshLabel
+    val toolbarShowConsoleLabel: String get() = StringsC.toolbarShowConsoleLabel
+    val toolbarShowZoomLabel: String get() = StringsC.toolbarShowZoomLabel
     val clickToSelectImageOrVideo: String get() = StringsC.clickToSelectImageOrVideo
     val displayDuration: String get() = StringsC.displayDuration
     val displayDurationSeconds: String get() = StringsC.displayDurationSeconds
@@ -34075,6 +34077,32 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Показывать кнопку «Обновить»"
         AppLanguage.JAPANESE -> "更新ボタンを表示"
         AppLanguage.KOREAN -> "새로고침 버튼 표시"
+    }
+
+    val toolbarShowConsoleLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "显示控制台按钮"
+        AppLanguage.ENGLISH -> "Show Console Button"
+        AppLanguage.ARABIC -> "إظهار زر وحدة التحكم"
+        AppLanguage.PORTUGUESE -> "Mostrar Botão do Console"
+        AppLanguage.SPANISH -> "Mostrar Botón de Consola"
+        AppLanguage.FRENCH -> "Afficher le Bouton de la Console"
+        AppLanguage.GERMAN -> "Konsolen-Button anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать кнопку консоли"
+        AppLanguage.JAPANESE -> "コンソールボタンを表示"
+        AppLanguage.KOREAN -> "콘솔 버튼 표시"
+    }
+
+    val toolbarShowZoomLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "显示页面缩放按钮"
+        AppLanguage.ENGLISH -> "Show Page Zoom Button"
+        AppLanguage.ARABIC -> "إظهار زر تكبير الصفحة"
+        AppLanguage.PORTUGUESE -> "Mostrar Botão de Zoom da Página"
+        AppLanguage.SPANISH -> "Mostrar Botón de Zoom de Página"
+        AppLanguage.FRENCH -> "Afficher le Bouton de Zoom de Page"
+        AppLanguage.GERMAN -> "Seiten-Zoom-Button anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать кнопку масштабирования страницы"
+        AppLanguage.JAPANESE -> "ページズームボタンを表示"
+        AppLanguage.KOREAN -> "페이지 확대/축소 버튼 표시"
     }
 
     val clickToSelectImageOrVideo: String get() = when (Strings.lang) {

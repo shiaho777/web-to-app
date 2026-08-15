@@ -116,7 +116,9 @@ fun BoxScope.ShellScaffoldLayout(
         toolbarShowUrl = toolbarCfg.toolbarShowUrl,
         toolbarShowBack = toolbarCfg.toolbarShowBack,
         toolbarShowForward = toolbarCfg.toolbarShowForward,
-        toolbarShowRefresh = toolbarCfg.toolbarShowRefresh
+        toolbarShowRefresh = toolbarCfg.toolbarShowRefresh,
+        toolbarShowConsole = toolbarCfg.toolbarShowConsole,
+        toolbarShowZoom = toolbarCfg.toolbarShowZoom
     )
 
     // Per-app runtime page zoom (persists across cold starts). 0 = no override.
@@ -158,7 +160,7 @@ fun BoxScope.ShellScaffoldLayout(
                     showConsole = showConsole,
                     onToggleConsole = onToggleConsole,
                     consoleErrorCount = consoleMessages.count { it.level == ConsoleLevel.ERROR },
-                    showOverflowButton = toolbarVisibility.showOverflowButton,
+                    showZoom = toolbarVisibility.showZoom,
                     currentZoomPercent = pageZoomPercent,
                     onZoomChange = onZoomChange
                 )
@@ -290,7 +292,7 @@ private fun ShellTopAppBar(
     showConsole: Boolean = false,
     onToggleConsole: () -> Unit = {},
     consoleErrorCount: Int = 0,
-    showOverflowButton: Boolean = true,
+    showZoom: Boolean = true,
     currentZoomPercent: Int = 0,
     onZoomChange: (Int) -> Unit = {}
 ) {
@@ -367,7 +369,7 @@ private fun ShellTopAppBar(
             }
             // Page-zoom button: opens the zoom presets dialog directly. When more page-level
             // actions (find-in-page, …) land, this can become a ⋮ overflow menu again.
-            if (showOverflowButton) {
+            if (showZoom) {
                 var zoomDialogOpen by remember { mutableStateOf(false) }
                 com.webtoapp.ui.design.WtaIconButton(
                     onClick = { zoomDialogOpen = true },

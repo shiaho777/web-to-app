@@ -2279,6 +2279,28 @@ fun HideBrowserToolbarCard(
                                 ))
                             }
                         )
+                        WtaSectionDivider()
+                        WtaToggleRow(
+                            title = Strings.toolbarShowConsoleLabel,
+                            checked = webViewConfig.toolbarShowConsole,
+                            onCheckedChange = {
+                                onWebViewConfigChange(webViewConfig.copy(
+                                    toolbarShowConsole = it,
+                                    browserToolbarCustomized = true
+                                ))
+                            }
+                        )
+                        WtaSectionDivider()
+                        WtaToggleRow(
+                            title = Strings.toolbarShowZoomLabel,
+                            checked = webViewConfig.toolbarShowZoom,
+                            onCheckedChange = {
+                                onWebViewConfigChange(webViewConfig.copy(
+                                    toolbarShowZoom = it,
+                                    browserToolbarCustomized = true
+                                ))
+                            }
+                        )
                     }
                 }
             }

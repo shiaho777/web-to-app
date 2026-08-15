@@ -3772,6 +3772,8 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
         toolbarShowBack = toolbarShowBack,
         toolbarShowForward = toolbarShowForward,
         toolbarShowRefresh = toolbarShowRefresh,
+        toolbarShowConsole = toolbarShowConsole,
+        toolbarShowZoom = toolbarShowZoom,
         browserToolbarCustomized = browserToolbarCustomized,
         showStatusBarInFullscreen = showStatusBarInFullscreen,
         showNavigationBarInFullscreen = showNavigationBarInFullscreen,

@@ -175,6 +175,8 @@ internal object ApkConfigJsonFactory {
         "toolbarShowBack" to webView.toolbarShowBack,
         "toolbarShowForward" to webView.toolbarShowForward,
         "toolbarShowRefresh" to webView.toolbarShowRefresh,
+        "toolbarShowConsole" to webView.toolbarShowConsole,
+        "toolbarShowZoom" to webView.toolbarShowZoom,
         "browserToolbarCustomized" to webView.browserToolbarCustomized,
         "showStatusBarInFullscreen" to webView.showStatusBarInFullscreen,
         "showNavigationBarInFullscreen" to webView.showNavigationBarInFullscreen,

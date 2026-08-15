@@ -2668,7 +2668,9 @@ fun WebViewScreen(
             toolbarShowUrl = it.toolbarShowUrl,
             toolbarShowBack = it.toolbarShowBack,
             toolbarShowForward = it.toolbarShowForward,
-            toolbarShowRefresh = it.toolbarShowRefresh
+            toolbarShowRefresh = it.toolbarShowRefresh,
+            toolbarShowConsole = it.toolbarShowConsole,
+            toolbarShowZoom = it.toolbarShowZoom
         )
     }
 
@@ -2766,7 +2768,7 @@ fun WebViewScreen(
                         }
                         // Page-zoom button: opens the zoom presets dialog directly (mirrors
                         // the shell/export toolbar so preview and export behave the same).
-                        if (isTestMode || browserToolbarVisibility?.showOverflowButton == true) {
+                        if (isTestMode || browserToolbarVisibility?.showZoom == true) {
                             var zoomDialogOpen by remember { mutableStateOf(false) }
                             com.webtoapp.ui.design.WtaIconButton(
                                 onClick = { zoomDialogOpen = true },

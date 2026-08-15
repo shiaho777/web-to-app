@@ -26,7 +26,7 @@ class ToolbarVisibilityTest {
         assertThat(visibility.showForward).isTrue()
         assertThat(visibility.showRefresh).isTrue()
         assertThat(visibility.showConsoleButton).isTrue()
-        assertThat(visibility.showOverflowButton).isTrue()
+        assertThat(visibility.showZoom).isTrue()
     }
 
     @Test
@@ -46,12 +46,14 @@ class ToolbarVisibilityTest {
         assertThat(visibility.showBack).isFalse()
         assertThat(visibility.showForward).isTrue()
         assertThat(visibility.showRefresh).isFalse()
-        assertThat(visibility.showConsoleButton).isTrue() // at least one item checked
-        assertThat(visibility.showOverflowButton).isTrue()
+        assertThat(visibility.showConsoleButton).isTrue()
+        assertThat(visibility.showZoom).isTrue()
     }
 
     @Test
-    fun `customized slim mode with all items unchecked hides the console button too`() {
+    fun `slim mode keeps console and zoom on their own toggles`() {
+        // The five navigation toggles off no longer force console/zoom off — each has
+        // its own switch now.
         val visibility = resolveToolbarButtons(
             hideBrowserToolbar = true,
             browserToolbarCustomized = true,
@@ -67,8 +69,45 @@ class ToolbarVisibilityTest {
         assertThat(visibility.showBack).isFalse()
         assertThat(visibility.showForward).isFalse()
         assertThat(visibility.showRefresh).isFalse()
+        assertThat(visibility.showConsoleButton).isTrue()
+        assertThat(visibility.showZoom).isTrue()
+    }
+
+    @Test
+    fun `slim mode hides console and zoom when their toggles are off`() {
+        val visibility = resolveToolbarButtons(
+            hideBrowserToolbar = true,
+            browserToolbarCustomized = true,
+            toolbarShowTitle = true,
+            toolbarShowUrl = true,
+            toolbarShowBack = true,
+            toolbarShowForward = true,
+            toolbarShowRefresh = true,
+            toolbarShowConsole = false,
+            toolbarShowZoom = false
+        )
+
         assertThat(visibility.showConsoleButton).isFalse()
-        assertThat(visibility.showOverflowButton).isFalse()
+        assertThat(visibility.showZoom).isFalse()
+        assertThat(visibility.showTitle).isTrue()
+    }
+
+    @Test
+    fun `normal mode ignores the console and zoom toggles`() {
+        val visibility = resolveToolbarButtons(
+            hideBrowserToolbar = false,
+            browserToolbarCustomized = false,
+            toolbarShowTitle = false,
+            toolbarShowUrl = false,
+            toolbarShowBack = false,
+            toolbarShowForward = false,
+            toolbarShowRefresh = false,
+            toolbarShowConsole = false,
+            toolbarShowZoom = false
+        )
+
+        assertThat(visibility.showConsoleButton).isTrue()
+        assertThat(visibility.showZoom).isTrue()
     }
 
     @Test
@@ -89,6 +128,6 @@ class ToolbarVisibilityTest {
         assertThat(visibility.showBack).isTrue()
         assertThat(visibility.showRefresh).isTrue()
         assertThat(visibility.showConsoleButton).isTrue()
-        assertThat(visibility.showOverflowButton).isTrue()
+        assertThat(visibility.showZoom).isTrue()
     }
 }

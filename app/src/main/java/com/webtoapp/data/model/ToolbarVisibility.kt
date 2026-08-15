@@ -18,7 +18,7 @@ data class ToolbarButtonVisibility(
     val showForward: Boolean,
     val showRefresh: Boolean,
     val showConsoleButton: Boolean,
-    val showOverflowButton: Boolean
+    val showZoom: Boolean
 )
 
 /**
@@ -32,18 +32,18 @@ fun resolveToolbarButtons(
     toolbarShowUrl: Boolean,
     toolbarShowBack: Boolean,
     toolbarShowForward: Boolean,
-    toolbarShowRefresh: Boolean
+    toolbarShowRefresh: Boolean,
+    toolbarShowConsole: Boolean = true,
+    toolbarShowZoom: Boolean = true
 ): ToolbarButtonVisibility {
     val customizedSlim = hideBrowserToolbar && browserToolbarCustomized
-    val hasAnyToolbarItem = toolbarShowTitle || toolbarShowUrl ||
-        toolbarShowBack || toolbarShowForward || toolbarShowRefresh
     return ToolbarButtonVisibility(
         showTitle = !customizedSlim || toolbarShowTitle,
         showUrl = !customizedSlim || toolbarShowUrl,
         showBack = !customizedSlim || toolbarShowBack,
         showForward = !customizedSlim || toolbarShowForward,
         showRefresh = !customizedSlim || toolbarShowRefresh,
-        showConsoleButton = !customizedSlim || hasAnyToolbarItem,
-        showOverflowButton = !customizedSlim || hasAnyToolbarItem
+        showConsoleButton = !customizedSlim || toolbarShowConsole,
+        showZoom = !customizedSlim || toolbarShowZoom
     )
 }
