@@ -1076,6 +1076,7 @@ object Strings {
     val templateManage: String get() = StringsB.templateManage
     val templateRename: String get() = StringsB.templateRename
     val templateEmpty: String get() = StringsB.templateEmpty
+    val templateOverwriteHint: String get() = StringsB.templateOverwriteHint
     fun templateApplied(name: String): String = StringsB.templateApplied(name)
     fun templateSaved(name: String): String = StringsB.templateSaved(name)
     val sectionWebEngine: String get() = StringsB.sectionWebEngine
@@ -18626,6 +18627,19 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Шаблонов пока нет"
         AppLanguage.JAPANESE -> "テンプレートはまだありません"
         AppLanguage.KOREAN -> "아직 템플릿이 없습니다"
+    }
+
+    val templateOverwriteHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "同名模板已存在，保存将覆盖它"
+        AppLanguage.ENGLISH -> "A template with this name exists; saving will overwrite it"
+        AppLanguage.ARABIC -> "يوجد قالب بهذا الاسم؛ الحفظ سيستبدله"
+        AppLanguage.PORTUGUESE -> "Já existe um modelo com este nome; salvar o substituirá"
+        AppLanguage.SPANISH -> "Ya existe una plantilla con este nombre; guardar la sobrescribirá"
+        AppLanguage.FRENCH -> "Un modèle portant ce nom existe déjà ; l'enregistrer le remplacera"
+        AppLanguage.GERMAN -> "Eine Vorlage mit diesem Namen existiert bereits; Speichern überschreibt sie"
+        AppLanguage.RUSSIAN -> "Шаблон с таким названием уже существует; сохранение перезапишет его"
+        AppLanguage.JAPANESE -> "同じ名前のテンプレートが存在します。保存すると上書きされます"
+        AppLanguage.KOREAN -> "같은 이름의 템플릿이 있습니다. 저장하면 덮어씁니다"
     }
 
     fun templateApplied(name: String): String = when (Strings.lang) {
