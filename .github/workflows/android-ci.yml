@@ -105,12 +105,20 @@ jobs:
             :shell:assembleDebug \
             :shell:assembleRelease
 
-      - name: Upload APK artifacts
+      - name: Upload standard APKs
         uses: actions/upload-artifact@v4
         with:
-          name: android-apks-DEBUG-SIGNED-do-not-distribute-${{ github.run_number }}
+          name: standard-apks-DEBUG-SIGNED-do-not-distribute-${{ github.run_number }}
           path: |
-            app/build/outputs/apk/**/*.apk
+            app/build/outputs/apk/standard/**/*.apk
             shell/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload gplay APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: gplay-apks-shiaho.webtoapp-DEBUG-SIGNED-do-not-distribute-${{ github.run_number }}
+          path: app/build/outputs/apk/gplay/**/*.apk
           if-no-files-found: error
           retention-days: 14
