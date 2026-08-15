@@ -80,27 +80,16 @@ android {
     flavorDimensions += "distribution"
     productFlavors {
         create("standard") {
-            // Full-capability sideloaded variant (GitHub releases, keeps `com.webtoapp`).
-            // Inherits targetSdk 35 from defaultConfig: low targetSdk is a top heuristic
-            // for antivirus / Play Protect "legacy malware" flags, which got the host
-            // wrongly blocked. The cost is SELinux W^X (applies from targetSdk 29):
-            // exec of downloaded runtimes (Python / PHP / WordPress) from app storage is
-            // blocked, so those host previews degrade with a clear message
-            // (RuntimeExecPolicy). Node (JNI via native libs) and Go (memfd exec) are
-            // unaffected. Generated APKs still ship targetSdk 28 via the shell template.
-            buildConfigField("boolean", "GPLAY_CHANNEL", "false")
+            // Sideloaded variant (GitHub releases, keeps `com.webtoapp` for the existing
+            // update path). Identical to gplay in every way except the applicationId —
+            // both inherit targetSdk 35 from defaultConfig and run the same code paths
+            // (runtime capability gates key off the installed targetSdk, not the channel).
         }
         create("gplay") {
-            // Google Play distribution variant (Play requires targetSdk 35+; inherits 35
-            // from defaultConfig). Native fork+exec runtimes (esp. Node.js V8 JIT, Go
-            // memfd exec) may still fail under the stricter SELinux policy; launch paths
-            // degrade gracefully rather than crash.
-            //
-            // `com.webtoapp` is already registered on Google Play by another party, so the
-            // Play build ships under a distinct applicationId. The standard flavor (GitHub
-            // releases) keeps `com.webtoapp` so existing users keep their update path.
+            // Google Play variant. Only Play's applicationId requirement differs
+            // (`com.webtoapp` is registered on Google Play by another party); behavior,
+            // targetSdk and every build rule are shared with the standard flavor.
             applicationId = "shiaho.webtoapp"
-            buildConfigField("boolean", "GPLAY_CHANNEL", "true")
         }
     }
 
