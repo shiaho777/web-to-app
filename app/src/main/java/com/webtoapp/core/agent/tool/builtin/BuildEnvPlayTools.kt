@@ -14,6 +14,9 @@ class GetBuildEnvStatusTool : Tool {
         Check the local build environment status: Node.js/npm/PHP/Composer/Python readiness,
         versions, storage used, and cache size. This environment is needed for on-device
         frontend builds (React/Vue) and PHP/Composer/Python dependency installation.
+        On host builds with targetSdk >= 29 (SELinux W^X, localExecAllowed=false) the
+        environment binaries cannot be exec'd, so components report "not ready" even when
+        installed — that is expected on those builds, not a broken install.
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {}
     override fun isReadOnly() = true
@@ -21,7 +24,9 @@ class GetBuildEnvStatusTool : Tool {
         val mgr = LinuxEnvironmentManager.getInstance(ctx.androidContext)
         mgr.checkEnvironment()
         val info = mgr.getEnvironmentInfo()
+        val execAllowed = com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(ctx.androidContext)
         return ToolResult.ok(buildString {
+            appendLine("localExecAllowed=$execAllowed" + if (execAllowed) "" else " (targetSdk>=29 host: build-env binaries cannot be executed; components report not-ready even when installed)")
             appendLine("Installed: ${info.isInstalled}")
             appendLine("Node: ${info.nodeVersion ?: "not installed"} (${if (info.nodeReady) "ready" else "not ready"})")
             appendLine("npm: ${info.npmVersion ?: "not installed"} (${if (info.npmReady) "ready" else "not ready"})")
@@ -44,6 +49,8 @@ class InitializeBuildEnvTool : Tool {
         - component "php": install PHP runtime.
         - component "composer": install Composer (requires PHP first).
         - component "python": install Python runtime.
+        Note: on host builds with targetSdk >= 29 the environment cannot be exec'd at all,
+        so installs "succeed" but the components stay not-ready — do not retry.
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
         enum("component", listOf("core", "php", "composer", "python"), "The component to install.", required = true)

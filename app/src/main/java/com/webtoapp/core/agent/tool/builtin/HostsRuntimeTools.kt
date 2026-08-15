@@ -92,7 +92,10 @@ class GetRuntimeStatusTool : Tool {
     override val name = "GetRuntimeStatus"
     override val description = """
         Check which server runtimes are installed and ready: PHP/WordPress, Node.js, Python, Go.
-        Pass a specific runtime to check just one.
+        Pass a specific runtime to check just one. "ready" means installed on disk; on host
+        builds with targetSdk >= 29 (SELinux W^X) the exec-based runtimes (PHP/WordPress/
+        Python/Go) still cannot start locally for preview — see localExecAllowed in the
+        output. Node.js (JNI) and every exported APK are unaffected either way.
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
         enum("runtime", listOf("php", "node", "python", "go"), "Check a specific runtime only.")
@@ -100,7 +103,9 @@ class GetRuntimeStatusTool : Tool {
     override fun isReadOnly() = true
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
         val c = ctx.androidContext
+        val execAllowed = com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(c)
         val lines = buildList {
+            add("localExecAllowed=$execAllowed" + if (execAllowed) "" else " (targetSdk>=29 host: PHP/WordPress/Python/Go cannot start locally for preview; Node.js and exported APKs are unaffected)")
             if (args.get("runtime")?.asString?.let { it == "php" || it == "wordpress" } != false) {
                 add("PHP: ready=${WordPressDependencyManager.isPhpReady(c)}")
                 add("WordPress: ready=${WordPressDependencyManager.isWordPressReady(c)}")
@@ -124,6 +129,9 @@ class InstallRuntimeTool : Tool {
     override val description = """
         Download and install a server runtime (PHP/WordPress, Node.js, Python, or Go).
         This is a large download. Use GetRuntimeStatus first to check what's needed.
+        On host builds with targetSdk >= 29 (localExecAllowed=false in GetRuntimeStatus),
+        installing PHP/Python/Go still makes sense for building/exporting apps, but their
+        local preview cannot start; do not retry the install to "fix" that.
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
         enum("runtime", listOf("php", "node", "python", "go"), "The runtime to install.", required = true)
