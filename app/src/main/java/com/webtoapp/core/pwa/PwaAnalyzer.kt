@@ -208,7 +208,7 @@ object PwaAnalyzer {
                 FetchTextResult.Success(body = content, finalUrl = finalUrl)
             }
         } catch (e: Exception) {
-            val userMessage = buildExceptionMessage(e, kind)
+            val userMessage = buildExceptionMessage(e, kind, url)
             AppLogger.e(TAG, "${kind.name} request failed for $url: $userMessage", e)
             FetchTextResult.Failure(userMessage = userMessage)
         }
@@ -242,12 +242,17 @@ object PwaAnalyzer {
         }
     }
 
-    private fun buildExceptionMessage(error: Exception, kind: RequestKind): String {
+    private fun buildExceptionMessage(error: Exception, kind: RequestKind, url: String): String {
+        // LAN denials under the Android 16/17 local-network permission surface as silent
+        // TCP timeouts, so a timing-out private address gets a targeted hint.
+        val lanHint = com.webtoapp.core.webview.LocalNetworkPermission.isPrivateNetworkUrl(url)
         return when (error) {
             is UnknownHostException -> "无法解析站点地址"
             is SocketTimeoutException, is InterruptedIOException ->
                 if (kind == RequestKind.MANIFEST) {
                     "Manifest 请求超时"
+                } else if (lanHint) {
+                    Strings.siteAnalyzeLanTimeoutHint
                 } else {
                     "站点连接超时，目标站点可能拦截了自动分析请求"
                 }
@@ -255,6 +260,8 @@ object PwaAnalyzer {
             is IOException ->
                 if (kind == RequestKind.MANIFEST) {
                     "Manifest 下载失败"
+                } else if (lanHint) {
+                    Strings.siteAnalyzeLanTimeoutHint
                 } else {
                     "无法访问网站，目标站点可能拒绝了自动分析请求"
                 }

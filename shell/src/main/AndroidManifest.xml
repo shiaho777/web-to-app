@@ -8,6 +8,10 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
+    <!-- Android 16 opt-in / Android 17 enforced on some ROMs regardless of targetSdk;
+         without it LAN hosts fail with ERR_LOCAL_NETWORK_PERMISSION_MISSING. Harmless on
+         older releases (unknown permissions are ignored). -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
     
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"

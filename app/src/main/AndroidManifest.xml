@@ -27,6 +27,10 @@
     <!-- ====== 网络（宿主必需：加载网页、下载运行时、推送请求）====== -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- 宿主使用：预览/分析局域网地址。Android 16 opt-in、17 强制（部分 ROM 不分
+         targetSdk 直接强制）；缺失时 LAN 请求超时或报 ERR_LOCAL_NETWORK_PERMISSION_MISSING。
+         旧系统会忽略未知权限，无副作用。 -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
     <!-- ====== 存储 / 媒体（宿主必需：选择图标、导入 HTML、素材库）====== -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"

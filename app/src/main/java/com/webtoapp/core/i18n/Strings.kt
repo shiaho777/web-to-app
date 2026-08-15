@@ -194,6 +194,7 @@ object Strings {
     val pyRuntimeModeAuto: String get() = StringsA.pyRuntimeModeAuto
     val pyRuntimeModeAutoDesc: String get() = StringsA.pyRuntimeModeAutoDesc
     val pythonStaticFallbackBanner: String get() = StringsA.pythonStaticFallbackBanner
+    val siteAnalyzeLanTimeoutHint: String get() = StringsA.siteAnalyzeLanTimeoutHint
     val pyProjectReady: String get() = StringsA.pyProjectReady
     val pyProjectNotFound: String get() = StringsA.pyProjectNotFound
     val pyStartingPreview: String get() = StringsA.pyStartingPreview
@@ -6753,6 +6754,19 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Бэкенд Python не запущен — только статический предпросмотр, запросы к API не сработают"
         AppLanguage.JAPANESE -> "Pythonバックエンドが実行されていません — 静的プレビューのみで、APIリクエストは失敗します"
         AppLanguage.KOREAN -> "Python 백엔드가 실행 중이 아닙니다 — 정적 미리보기만 제공되며 API 요청은 실패합니다"
+    }
+
+    val siteAnalyzeLanTimeoutHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "连接局域网地址超时：请确认与目标设备在同一网络，并在系统设置中允许本应用访问本地网络/局域网"
+        AppLanguage.ENGLISH -> "Timed out connecting to a LAN address: make sure you are on the same network as the target device, and allow local network access for this app in system settings"
+        AppLanguage.ARABIC -> "انتهت مهلة الاتصال بعنوان شبكة محلية: تأكد من أنك على نفس شبكة الجهاز الهدف، واسمح لهذا التطبيق بالوصول إلى الشبكة المحلية في إعدادات النظام"
+        AppLanguage.PORTUGUESE -> "Tempo esgotado ao conectar a um endereço de rede local: verifique se você está na mesma rede do dispositivo de destino e permita o acesso à rede local para este app nas configurações do sistema"
+        AppLanguage.SPANISH -> "Se agotó el tiempo de conexión a una dirección de red local: compruebe que está en la misma red que el dispositivo de destino y permita el acceso a la red local para esta app en los ajustes del sistema"
+        AppLanguage.FRENCH -> "Délai dépassé lors de la connexion à une adresse réseau locale : vérifiez que vous êtes sur le même réseau que l'appareil cible et autorisez l'accès au réseau local pour cette application dans les paramètres système"
+        AppLanguage.GERMAN -> "Zeitüberschreitung bei der Verbindung zu einer lokalen Netzwerkadresse: Stellen Sie sicher, dass Sie sich im selben Netzwerk wie das Zielgerät befinden, und erlauben Sie dieser App in den Systemeinstellungen den Zugriff auf das lokale Netzwerk"
+        AppLanguage.RUSSIAN -> "Истекло время ожидания при подключении к локальному сетевому адресу: убедитесь, что вы в одной сети с целевым устройством, и разрешите этому приложению доступ к локальной сети в настройках системы"
+        AppLanguage.JAPANESE -> "ローカルネットワークアドレスへの接続がタイムアウトしました：対象デバイスと同じネットワークにいることを確認し、システム設定でこのアプリのローカルネットワークへのアクセスを許可してください"
+        AppLanguage.KOREAN -> "로컬 네트워크 주소 연결 시간이 초과되었습니다: 대상 기기와 같은 네트워크에 있는지 확인하고, 시스템 설정에서 이 앱의 로컬 네트워크 접근을 허용해 주세요"
     }
 
     val pyProjectReady: String get() = when (Strings.lang) {

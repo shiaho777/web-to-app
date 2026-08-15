@@ -2411,6 +2411,14 @@ class WebViewManager(
                         }
                     }
 
+                    if (view != null) {
+                        // On ROMs enforcing the Android 17 local-network permission, LAN
+                        // loads fail here with ERR_LOCAL_NETWORK_PERMISSION_MISSING or a
+                        // bare timeout; request the permission and auto-reload on grant.
+                        // The error page below still shows while the dialog is pending.
+                        maybeRequestLocalNetworkPermission(view, failedUrl, rawDescription)
+                    }
+
                     if (view != null && failedUrl.startsWith("file://")) {
                         val isSameRetry = failedUrl == fileRetryUrl
                         val currentRetry = if (isSameRetry) fileRetryCount else 0
@@ -2831,6 +2839,58 @@ class WebViewManager(
             current = base
         }
         return current as? Activity
+    }
+
+    private val localNetworkPermissionRequestedUrls = mutableSetOf<String>()
+
+    /**
+     * Fires the local-network permission dialog for a failing LAN main-frame request.
+     * The manager has no hook into the hosting activity's onRequestPermissionsResult,
+     * so grant detection is a bounded poll instead; on grant the page reloads, on
+     * denial the already-rendered error page stays. Each failed URL prompts at most
+     * once per WebViewManager instance.
+     */
+    private fun maybeRequestLocalNetworkPermission(view: WebView, failedUrl: String, errorDescription: String) {
+        if (!LocalNetworkPermission.shouldRequest(context, failedUrl, errorDescription)) return
+        if (!localNetworkPermissionRequestedUrls.add(failedUrl)) {
+            AppLogger.d("WebViewManager", "Local network permission already requested for: $failedUrl")
+            return
+        }
+        val activity = try {
+            view.context.findActivity()
+        } catch (_: Exception) {
+            null
+        }
+        if (activity == null || activity.isFinishing || activity.isDestroyed) {
+            AppLogger.w("WebViewManager", "Local network permission request skipped: no active activity")
+            return
+        }
+        if (!LocalNetworkPermission.request(activity)) {
+            localNetworkPermissionRequestedUrls.remove(failedUrl)
+            return
+        }
+        AppLogger.i("WebViewManager", "Requested local network permission for: $failedUrl")
+        pollLocalNetworkGrant(view, failedUrl, attempts = 75)
+    }
+
+    private fun pollLocalNetworkGrant(view: WebView, url: String, attempts: Int) {
+        if (attempts <= 0) return
+        view.postDelayed({
+            // The interim error page reports about:blank / file:/// as its URL; treat
+            // those as "still on the failed page" and only give up once the user has
+            // navigated to a genuinely different destination.
+            val current = view.url
+            if (current != null && current != url && current != "about:blank" && !current.startsWith("file:///")) {
+                AppLogger.d("WebViewManager", "Skip local network reload, WebView navigated away: $current")
+                return@postDelayed
+            }
+            if (LocalNetworkPermission.isGranted(context)) {
+                AppLogger.i("WebViewManager", "Local network permission granted, reloading: $url")
+                view.loadUrl(url)
+            } else {
+                pollLocalNetworkGrant(view, url, attempts - 1)
+            }
+        }, 800)
     }
 
     private fun normalizeNetworkErrorDescription(rawDescription: String): String {
