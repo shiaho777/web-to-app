@@ -28,10 +28,9 @@ class GoRuntime(private val context: Context) {
     }
 
     /**
-     * Go execs via memfd_create + execveat, which is increasingly restricted under the SELinux
-     * policy of a high-targetSdk build. Surface the restriction on launch failure instead of
-     * looking like a generic crash. Keyed off the actual app targetSdk (not the channel flag)
-     * so every high-target build gets the note.
+     * Go execs via memfd_create + execveat, which SELinux fully blocks under targetSdk 29+
+     * (memfd_file open is denied, verified on API 35). Kept as a failure-note fallback for
+     * OEM-specific policies; the startServer precheck handles the standard case.
      * Runtime-layer string (shell-synced); intentionally not routed through Strings i18n.
      */
     private fun channelNote(): String =
@@ -96,6 +95,17 @@ class GoRuntime(private val context: Context) {
         envVars: Map<String, String> = emptyMap()
     ): Int = withContext(Dispatchers.IO) {
         try {
+            // The loader's three-tier fallback (direct exec -> system linker -> memfd
+            // execveat) is fully blocked under SELinux W^X at targetSdk 29+: exec and
+            // execute_no_trans on app_data_file, and open on memfd_file are all denied
+            // (verified on an API 35 emulator). Only generated APKs (targetSdk 28) pass.
+            if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)) {
+                _serverState.value = ServerState.Error(
+                    com.webtoapp.core.linux.RuntimeExecPolicy.hostPreviewBlockedMessage("Go")
+                )
+                return@withContext -1
+            }
+
             stopServer()
             _serverState.value = ServerState.Starting
 
