@@ -1,6 +1,9 @@
 package com.webtoapp.core.activation
 
 import android.util.Base64
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
@@ -189,5 +192,35 @@ class RemoteActivationVerifierTest {
 
         assertThat(verifier.decodeAesKey("")).isNull()
         assertThat(verifier.decodeAesKey("not-valid-base64!!!")).isNull()
+    }
+}
+
+
+@RunWith(RobolectricTestRunner::class)
+class RemoteStartupCacheProbeTest {
+
+    @Test
+    fun `startup probe with empty code accepts a valid cache`() = kotlinx.coroutines.test.runTest {
+        val context = androidx.test.core.app.ApplicationProvider.getApplicationContext<android.content.Context>()
+        val verifier = RemoteActivationVerifier(context)
+        val request = RemoteActivationVerifier.RemoteRequest(
+            verifyUrl = "https://example.com/verify",
+            publicKeyBase64 = "",
+            offlinePolicy = com.webtoapp.data.model.RemoteActivationOfflinePolicy.ALLOW_CACHED,
+            code = "",
+            deviceId = "device",
+            packageName = "pkg",
+            deliverUrl = false,
+            encryptUrl = false,
+            aesKeyBase64 = "",
+            deviceBound = false
+        )
+        // seed a cache exactly the way a successful verification does
+        context.activationDataStore.edit { prefs ->
+            prefs[stringPreferencesKey("remote_code_-1")] = "ABCD-1234"
+            prefs[longPreferencesKey("remote_expires_-1")] = 0L
+        }
+
+        assertThat(verifier.resolveCachedStartup(-1L, request)).isTrue()
     }
 }

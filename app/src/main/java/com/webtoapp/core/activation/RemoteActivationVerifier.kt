@@ -332,7 +332,10 @@ class RemoteActivationVerifier(private val context: Context) {
     private suspend fun readValidCache(appId: Long, request: RemoteRequest): Long? {
         val prefs = context.activationDataStore.data.first()
         val cachedCode = prefs[stringPreferencesKey("remote_code_$appId")] ?: return null
-        if (normalize(cachedCode) != normalize(request.code)) return null
+        // Startup probes are built with an empty code (no user input yet); any cached
+        // code is theirs. Comparing literally against "" invalidated the cache on every
+        // launch, forcing re-verification even with "verify every launch" off.
+        if (request.code.isNotBlank() && normalize(cachedCode) != normalize(request.code)) return null
         val expiresAt = prefs[longPreferencesKey("remote_expires_$appId")] ?: return null
         if (expiresAt != 0L && System.currentTimeMillis() > expiresAt + CACHE_GRACE_MS) return null
         return expiresAt
