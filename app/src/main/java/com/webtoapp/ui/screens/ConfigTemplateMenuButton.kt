@@ -3,13 +3,15 @@ package com.webtoapp.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DriveFileRenameOutline
-import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material.icons.outlined.LibraryAddCheck
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -18,98 +20,89 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.WebViewConfig
 import com.webtoapp.data.repository.ConfigTemplateStore
 import com.webtoapp.ui.components.PremiumTextField
-import com.webtoapp.ui.design.*
 
 /**
- * Save / apply named snapshots of the common config (WebViewConfig). Applying replaces
- * the whole WebViewConfig — a template is a full snapshot, so the result is exactly
- * what was saved, never a mix of old and new values.
+ * Top-bar action for common-config templates: save the current WebViewConfig as a named
+ * snapshot, apply one to the app (a template is a full snapshot — applying replaces the
+ * whole WebViewConfig), and manage saved templates. Lives in the editor's fixed top bar
+ * instead of the scrolling config list, since it applies to the config as a whole.
  */
 @Composable
-fun ConfigTemplateCard(
+fun ConfigTemplateMenuButton(
     config: WebViewConfig,
+    snackbarHostState: SnackbarHostState,
     onApplyConfig: (WebViewConfig) -> Unit
 ) {
     val context = LocalContext.current
     var templates by remember { mutableStateOf(ConfigTemplateStore.list(context)) }
     var refresh by remember { mutableIntStateOf(0) }
-    LaunchedEffect(refresh) {
+    LaunchedEffect(refresh, templates.isEmpty()) {
+        // reload after any mutation; also opportunistically refresh when the menu opens
         if (refresh > 0) templates = ConfigTemplateStore.list(context)
     }
 
+    var menuOpen by remember { mutableStateOf(false) }
     var saveDialogOpen by remember { mutableStateOf(false) }
     var manageOpen by remember { mutableStateOf(false) }
     var renameTarget by remember { mutableStateOf<ConfigTemplateStore.ConfigTemplate?>(null) }
     var renameText by remember { mutableStateOf("") }
-    var toast by remember { mutableStateOf<String?>(null) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(toast) {
-        toast?.let {
-            snackbarHostState.showSnackbar(it)
-            toast = null
-        }
+    val scope = rememberCoroutineScope()
+
+    fun notify(message: String) {
+        scope.launch { snackbarHostState.showSnackbar(message) }
     }
 
     Box {
-        WtaSettingCard {
-            Column {
-                WtaChoiceRow(
-                    title = Strings.configTemplates,
-                    subtitle = Strings.configTemplatesDesc,
-                    icon = Icons.Outlined.LibraryAddCheck,
-                    value = "",
-                    isExpanded = templates.isNotEmpty(),
-                    onClick = { manageOpen = true }
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = WtaSpacing.RowHorizontal, vertical = WtaSpacing.ContentGap),
-                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
-                ) {
-                    WtaButton(
-                        onClick = { saveDialogOpen = true },
-                        text = Strings.templateSaveAs,
-                        modifier = Modifier.weight(1f),
-                        variant = WtaButtonVariant.Outlined,
-                        leadingIcon = Icons.Outlined.EditNote
-                    )
+        IconButton(onClick = {
+            templates = ConfigTemplateStore.list(context)
+            menuOpen = true
+        }) {
+            Icon(
+                Icons.Outlined.LibraryAddCheck,
+                contentDescription = Strings.configTemplates
+            )
+        }
+        DropdownMenu(
+            expanded = menuOpen,
+            onDismissRequest = { menuOpen = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text(Strings.templateSaveAs) },
+                onClick = {
+                    menuOpen = false
+                    saveDialogOpen = true
                 }
-
-                if (templates.isNotEmpty()) {
-                    Column(modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal)) {
-                        Text(
-                            Strings.templateApplyHint,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
-                        templates.forEach { template ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                TextButton(onClick = {
-                                    onApplyConfig(template.webViewConfig)
-                                    toast = Strings.templateApplied(template.name)
-                                }) {
-                                    Text(template.name, style = MaterialTheme.typography.bodyMedium)
-                                }
+            )
+            if (templates.isNotEmpty()) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                Text(
+                    Strings.templateApplyHint,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
+                )
+                Column(modifier = Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState())) {
+                    templates.forEach { template ->
+                        DropdownMenuItem(
+                            text = { Text(template.name) },
+                            onClick = {
+                                menuOpen = false
+                                onApplyConfig(template.webViewConfig)
+                                notify(Strings.templateApplied(template.name))
                             }
-                        }
-                        Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
-                        TextButton(onClick = { manageOpen = true }) {
-                            Text(Strings.templateManage)
-                        }
+                        )
                     }
                 }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                DropdownMenuItem(
+                    text = { Text(Strings.templateManage) },
+                    onClick = {
+                        menuOpen = false
+                        manageOpen = true
+                    }
+                )
             }
         }
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
     }
 
     if (saveDialogOpen) {
@@ -131,7 +124,7 @@ fun ConfigTemplateCard(
                     onClick = {
                         if (ConfigTemplateStore.save(context, name, config)) {
                             refresh++
-                            toast = Strings.templateSaved(name.trim())
+                            notify(Strings.templateSaved(name.trim()))
                         }
                         saveDialogOpen = false
                     }

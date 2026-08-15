@@ -148,6 +148,15 @@ fun CreateAppScreen(
         onBack = {
             if (hasUnsavedChanges) showDiscardDialog = true else onBack()
         },
+        actions = {
+            ConfigTemplateMenuButton(
+                config = editState.webViewConfig,
+                snackbarHostState = snackbarHostState,
+                onApplyConfig = { templateConfig ->
+                    viewModel.updateEditState { copy(webViewConfig = templateConfig) }
+                }
+            )
+        },
         bottomBar = {
             CreateAppBottomBar(
                 canPreview = canPreview,
@@ -185,15 +194,6 @@ fun CreateAppScreen(
                     onSelectIcon = { imagePickerLauncher.launch("image/*") },
                     onSelectIconFromLibrary = { path ->
                         viewModel.updateEditState { copy(savedIconPath = path, iconUri = null) }
-                    }
-                )
-            }
-
-            item {
-                ConfigTemplateCard(
-                    config = editState.webViewConfig,
-                    onApplyConfig = { templateConfig ->
-                        viewModel.updateEditState { copy(webViewConfig = templateConfig) }
                     }
                 )
             }

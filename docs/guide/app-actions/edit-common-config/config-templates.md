@@ -2,7 +2,7 @@
 
 Save the whole common config as a named template once, then apply it to any app in one tap — so a heavily customized browser setup never has to be re-configured app by app.
 
-**Where:** the **Config Templates** card at the top of the [Edit Common Config](/guide/app-actions/edit-common-config/) editor.
+**Where:** the **Config Templates** button (library icon) in the top bar of the [Edit Common Config](/guide/app-actions/edit-common-config/) editor.
 
 ## What a template contains
 
