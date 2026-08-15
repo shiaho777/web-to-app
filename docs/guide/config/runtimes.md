@@ -31,6 +31,9 @@ When you export a runtime app, the required native libraries are embedded into t
 `libnode.so` and other large ELF natives are 16KB-aligned for Android 15+ devices. The native launcher enables 16KB app-compat before `dlopen`.
 :::
 
+::: info Host-side preview vs generated apps
+Host preview of Node.js apps goes through the same JNI launcher and works at any `targetSdk`. The exec-based runtimes (PHP / Python / Go / WordPress) can only be previewed when the host build permits exec from app storage — on the `targetSdk` 35 host, SELinux W^X blocks it and those previews degrade with an explicit message. Generated APKs always ship `targetSdk` 28 and are never affected.
+
 ---
 
 ::: tip Per-runtime setup guides coming soon

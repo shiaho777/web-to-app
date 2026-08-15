@@ -28,7 +28,7 @@ Backed by `PythonAppConfig`.
 
 - **Entry file** (`entryFile`) — defaults to `app.py`.
 - **Entry module** (`entryModule`) — for module-style entry (e.g. `main:app`).
-- **Server type** (`serverType`) — `builtin`, uvicorn, etc.
+- **Server type** (`serverType`) — derived automatically from the detected framework (FastAPI→uvicorn, Django→gunicorn, everything else→`builtin`); configured on import, no manual selection.
 - **Port** (`serverPort`) — allocated through the [Port Manager](/guide/more-features/port-manager).
 - **Environment variables** (`envVars`) — key/value pairs passed to the process.
 

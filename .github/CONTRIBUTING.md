@@ -64,8 +64,9 @@ python3 .github/scripts/ci/validate_modules.py
   approach you have in mind. This is much cheaper than rewriting after review.
 - **Avoid adding new dependencies.** The list in `app/build.gradle.kts` is
   intentionally restrained — the project signs and packages APKs in-process,
-  and the host pins `targetSdk = 28` on purpose because generated apps rely on
-  fork+exec native runtimes. New dependencies need a strong justification.
+  and the shell template pins `targetSdk = 28` on purpose because generated
+  apps rely on fork+exec native runtimes. New dependencies need a strong
+  justification.
 
 ### Local setup
 
@@ -264,8 +265,8 @@ python3 .github/scripts/ci/validate_modules.py
   类似讨论
 - 较大的改动请先开 issue 说明要解决的问题和方案
 - **谨慎引入新依赖**。`app/build.gradle.kts` 的依赖列表刻意保持精简——本项目
-  全程在设备内签名打包 APK，并特意把 `targetSdk` 锁在 28，因为生成应用依赖
-  `fork`、`exec` 原生运行时。新依赖需要充分理由。
+  全程在设备内签名打包 APK，shell 模板也特意把 `targetSdk` 锁在 28，因为
+  生成应用依赖 `fork`、`exec` 原生运行时。新依赖需要充分理由。
 
 **本地环境**
 

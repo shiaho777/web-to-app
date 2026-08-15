@@ -269,7 +269,7 @@ App 会同时拉取 `registry.json` 和 `submissions.json`,只展示两边都存
 - 仓库有**三个 Gradle 模块**:`app`(完整构建器和宿主)、`shell`(嵌入生成 APK 的运行时宿主)、`clone-host`(应用克隆的宿主代码 —— 编译提取 `classes.jar`,经 d8 转 DEX,作为 asset 供 `AppCloner` 使用)。
 - 运行时代码以 `app` 为唯一事实来源,再同步到 `shell`,所以共享 WebView/运行时行为只维护一份(`core/shell`、`core/webview`、`core/engine`、`core/extension`、`ui/shell` 等)。
 - APK 构建器在二进制 AXML/ARSC 层修补模板 APK,注入配置与资源,裁剪权限,并用 `apksig` 签名。另有独立的加密构建路径(`EncryptedApkBuilder`)提供资源加密、加壳和完整性校验。
-- 宿主把 `targetSdk = 28` 钉死 —— 这是让生成应用能从 app 存储 `fork`、`exec` 原生运行时(Node.js、PHP、Python、Go、WordPress)的关键,网址转 APK 类工具做不到这点;导出 AAB 时会单独把 `targetSdk` 改写以满足 Google Play 上架要求。
+- 生成 APK(经 shell 模板)特意把 `targetSdk` 钉在 28 —— 这是让它们能从 app 存储 `fork`、`exec` 原生运行时(Node.js、PHP、Python、Go、WordPress)的关键,网址转 APK 类工具做不到这点。宿主应用自身以 35 为目标(杀毒引擎会把低 targetSdk 构建误判为旧木马);该级别的 SELinux W^X 会拦截宿主侧基于 exec 的运行时预览,它们会以明确提示优雅降级 —— Node.js 预览(JNI)和所有导出的应用均不受影响。导出 AAB 时会单独把 `targetSdk` 改写以满足 Google Play 上架要求;纯 WebView 应用类型(Web/HTML/Frontend/Gallery/Media/MultiWeb)还可在 APK 导出面板选择提高独立 APK 的 `targetSdk`(34/35/36),服务端运行时类型固定 28,因为 `targetSdk >= 29` 的 W^X 会破坏内置二进制的 fork+exec。
 - 服务端运行时和可选 GeckoView 原生库(`.so` + `omni.ja`)不会打进基础 APK,而是在首次使用时下载;GeckoView 的 API 类来自 gradle 依赖,而体积大的原生制品按需拉取。
 - 配置中心是 `WebApp`(`data/model/WebApp.kt`)及其各 `*Config` 类 —— 所有功能配置的单一事实来源,经一条完整的打包透传链带进生成的 APK。
 

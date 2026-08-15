@@ -28,7 +28,7 @@ Flask、Django、FastAPI、Tornado 应用,或内置 HTTP 服务器。
 
 - **入口文件**(`entryFile`)—— 默认 `app.py`。
 - **入口模块**(`entryModule`)—— 用于模块式入口(如 `main:app`)。
-- **服务器类型**(`serverType`)—— `builtin`、uvicorn 等。
+- **服务器类型**(`serverType`)—— 按检测到的框架自动推导(FastAPI→uvicorn、Django→gunicorn、其余→`builtin`),导入项目时自动配置,无需手动选择。
 - **端口**(`serverPort`)—— 通过[端口管理](/zh/guide/more-features/port-manager)分配。
 - **环境变量**(`envVars`)—— 传给进程的键值对。
 

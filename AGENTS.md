@@ -56,6 +56,7 @@ Mental model:
 ## Android and packaging constraints
 
 - Generated apps keep a low `targetSdk` (28) on the shell path because they rely on on-device fork+exec runtimes. Do not raise shell targetSdk casually.
+- The host app targets SDK 35 (antivirus reputation); SELinux W^X therefore blocks host-side exec of downloaded runtimes. `RuntimeExecPolicy` (`core/linux`) gates those previews by probing the installed targetSdk — generated APKs (always 28) pass unconditionally. Node preview (JNI via native libs) is unaffected.
 - Avoid new third-party dependencies unless strongly justified (`app/build.gradle.kts` / `shell/build.gradle.kts`). Prefer platform APIs and existing modules.
 - Notification push channels: Web Notification polyfill, polling, WebSocket, FCM (developer-owned Firebase config). Do not add OEM vendor push SDKs by default.
 - Foreground services and notification helpers must use `SafeNotificationChannels` (or equivalent fail-soft create). Channel creation failures must not crash FGS startup.
