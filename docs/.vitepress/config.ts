@@ -20,6 +20,7 @@ const t = {
       advancedExport: 'Advanced & Export',
       appIcon: 'App Icon',
       appName: 'App Name',
+      configTemplates: 'Config Templates',
       urlWebpage: 'URL / Webpage',
       activation: 'Activation Code',
       hideToolbar: 'Hide Browser Toolbar',
@@ -139,6 +140,7 @@ const t = {
       advancedExport: '高级与导出',
       appIcon: '应用图标',
       appName: '应用名称',
+      configTemplates: '配置模板',
       urlWebpage: '网址/网页',
       activation: '激活码验证',
       hideToolbar: '隐藏浏览器工具栏',
@@ -319,6 +321,7 @@ function sidebar(lang: Lang, prefix: string) {
             collapsed: false,
             items: [
               { text: s.cc.appIcon, link: `${prefix}/guide/app-actions/edit-common-config/app-icon` },
+              { text: s.cc.configTemplates, link: `${prefix}/guide/app-actions/edit-common-config/config-templates` },
               { text: s.cc.appName, link: `${prefix}/guide/app-actions/edit-common-config/app-name` },
               { text: s.cc.urlWebpage, link: `${prefix}/guide/app-actions/edit-common-config/url-webpage` }
             ]

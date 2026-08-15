@@ -1068,6 +1068,16 @@ object Strings {
     val basicInfo: String get() = StringsB.basicInfo
     val code: String get() = StringsB.code
     val advancedSettings: String get() = StringsB.advancedSettings
+    val configTemplates: String get() = StringsB.configTemplates
+    val configTemplatesDesc: String get() = StringsB.configTemplatesDesc
+    val templateSaveAs: String get() = StringsB.templateSaveAs
+    val templateNameLabel: String get() = StringsB.templateNameLabel
+    val templateApplyHint: String get() = StringsB.templateApplyHint
+    val templateManage: String get() = StringsB.templateManage
+    val templateRename: String get() = StringsB.templateRename
+    val templateEmpty: String get() = StringsB.templateEmpty
+    fun templateApplied(name: String): String = StringsB.templateApplied(name)
+    fun templateSaved(name: String): String = StringsB.templateSaved(name)
     val sectionWebEngine: String get() = StringsB.sectionWebEngine
     val sectionContentDisplay: String get() = StringsB.sectionContentDisplay
     val sectionNavigation: String get() = StringsB.sectionNavigation
@@ -18512,6 +18522,136 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Расширенные настройки"
         AppLanguage.JAPANESE -> "詳細設定"
         AppLanguage.KOREAN -> "고급 설정"
+    }
+
+    val configTemplates: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "配置模板"
+        AppLanguage.ENGLISH -> "Config Templates"
+        AppLanguage.ARABIC -> "قوالب الإعداد"
+        AppLanguage.PORTUGUESE -> "Modelos de Configuração"
+        AppLanguage.SPANISH -> "Plantillas de Configuración"
+        AppLanguage.FRENCH -> "Modèles de Configuration"
+        AppLanguage.GERMAN -> "Konfigurationsvorlagen"
+        AppLanguage.RUSSIAN -> "Шаблоны конфигурации"
+        AppLanguage.JAPANESE -> "設定テンプレート"
+        AppLanguage.KOREAN -> "구성 템플릿"
+    }
+
+    val configTemplatesDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "把当前通用配置保存为模板，创建或编辑任何应用时一键套用"
+        AppLanguage.ENGLISH -> "Save the current common config as a template and apply it to any app in one tap"
+        AppLanguage.ARABIC -> "احفظ الإعداد العام الحالي كقالب وطبّقه على أي تطبيق بلمسة واحدة"
+        AppLanguage.PORTUGUESE -> "Salve a configuração comum atual como modelo e aplique-a a qualquer app com um toque"
+        AppLanguage.SPANISH -> "Guarde la configuración común actual como plantilla y aplíquela a cualquier app con un toque"
+        AppLanguage.FRENCH -> "Enregistrez la configuration commune actuelle comme modèle et appliquez-le à n'importe quelle app en un geste"
+        AppLanguage.GERMAN -> "Speichere die aktuelle gemeinsame Konfiguration als Vorlage und wende sie mit einem Tipp auf jede App an"
+        AppLanguage.RUSSIAN -> "Сохраните текущую общую конфигурацию как шаблон и применяйте её к любому приложению одним нажатием"
+        AppLanguage.JAPANESE -> "現在の共通設定をテンプレートとして保存し、任意のアプリにワンタップで適用できます"
+        AppLanguage.KOREAN -> "현재 공통 구성을 템플릿으로 저장하고 원하는 앱에 한 번에 적용하세요"
+    }
+
+    val templateSaveAs: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "保存为模板"
+        AppLanguage.ENGLISH -> "Save as template"
+        AppLanguage.ARABIC -> "حفظ كقالب"
+        AppLanguage.PORTUGUESE -> "Salvar como modelo"
+        AppLanguage.SPANISH -> "Guardar como plantilla"
+        AppLanguage.FRENCH -> "Enregistrer comme modèle"
+        AppLanguage.GERMAN -> "Als Vorlage speichern"
+        AppLanguage.RUSSIAN -> "Сохранить как шаблон"
+        AppLanguage.JAPANESE -> "テンプレートとして保存"
+        AppLanguage.KOREAN -> "템플릿으로 저장"
+    }
+
+    val templateNameLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "模板名称"
+        AppLanguage.ENGLISH -> "Template name"
+        AppLanguage.ARABIC -> "اسم القالب"
+        AppLanguage.PORTUGUESE -> "Nome do modelo"
+        AppLanguage.SPANISH -> "Nombre de la plantilla"
+        AppLanguage.FRENCH -> "Nom du modèle"
+        AppLanguage.GERMAN -> "Vorlagenname"
+        AppLanguage.RUSSIAN -> "Название шаблона"
+        AppLanguage.JAPANESE -> "テンプレート名"
+        AppLanguage.KOREAN -> "템플릿 이름"
+    }
+
+    val templateApplyHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "点击模板名称，将其套用到当前应用（整体替换通用配置）："
+        AppLanguage.ENGLISH -> "Tap a template name to apply it to the current app (replaces the whole common config):"
+        AppLanguage.ARABIC -> "اضغط على اسم القالب لتطبيقه على التطبيق الحالي (يستبدل الإعداد العام بالكامل):"
+        AppLanguage.PORTUGUESE -> "Toque no nome de um modelo para aplicá-lo ao app atual (substitui toda a configuração comum):"
+        AppLanguage.SPANISH -> "Toque el nombre de una plantilla para aplicarla a la app actual (reemplaza toda la configuración común):"
+        AppLanguage.FRENCH -> "Touchez le nom d'un modèle pour l'appliquer à l'app actuelle (remplace toute la configuration commune) :"
+        AppLanguage.GERMAN -> "Tippen Sie auf einen Vorlagennamen, um ihn auf die aktuelle App anzuwenden (ersetzt die gesamte gemeinsame Konfiguration):"
+        AppLanguage.RUSSIAN -> "Нажмите на название шаблона, чтобы применить его к текущему приложению (заменяет всю общую конфигурацию):"
+        AppLanguage.JAPANESE -> "テンプレート名をタップすると現在のアプリに適用されます（共通設定をすべて置き換えます）："
+        AppLanguage.KOREAN -> "템플릿 이름을 탭하면 현재 앱에 적용됩니다(공통 구성 전체를 교체):"
+    }
+
+    val templateManage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "管理模板"
+        AppLanguage.ENGLISH -> "Manage templates"
+        AppLanguage.ARABIC -> "إدارة القوالب"
+        AppLanguage.PORTUGUESE -> "Gerenciar modelos"
+        AppLanguage.SPANISH -> "Gestionar plantillas"
+        AppLanguage.FRENCH -> "Gérer les modèles"
+        AppLanguage.GERMAN -> "Vorlagen verwalten"
+        AppLanguage.RUSSIAN -> "Управление шаблонами"
+        AppLanguage.JAPANESE -> "テンプレートを管理"
+        AppLanguage.KOREAN -> "템플릿 관리"
+    }
+
+    val templateRename: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重命名模板"
+        AppLanguage.ENGLISH -> "Rename template"
+        AppLanguage.ARABIC -> "إعادة تسمية القالب"
+        AppLanguage.PORTUGUESE -> "Renomear modelo"
+        AppLanguage.SPANISH -> "Renombrar plantilla"
+        AppLanguage.FRENCH -> "Renommer le modèle"
+        AppLanguage.GERMAN -> "Vorlage umbenennen"
+        AppLanguage.RUSSIAN -> "Переименовать шаблон"
+        AppLanguage.JAPANESE -> "テンプレートの名前を変更"
+        AppLanguage.KOREAN -> "템플릿 이름 바꾸기"
+    }
+
+    val templateEmpty: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "暂无模板"
+        AppLanguage.ENGLISH -> "No templates yet"
+        AppLanguage.ARABIC -> "لا توجد قوالب بعد"
+        AppLanguage.PORTUGUESE -> "Ainda não há modelos"
+        AppLanguage.SPANISH -> "Aún no hay plantillas"
+        AppLanguage.FRENCH -> "Aucun modèle pour le moment"
+        AppLanguage.GERMAN -> "Noch keine Vorlagen"
+        AppLanguage.RUSSIAN -> "Шаблонов пока нет"
+        AppLanguage.JAPANESE -> "テンプレートはまだありません"
+        AppLanguage.KOREAN -> "아직 템플릿이 없습니다"
+    }
+
+    fun templateApplied(name: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已套用模板「$name」"
+        AppLanguage.ENGLISH -> "Applied template \"$name\""
+        AppLanguage.ARABIC -> "تم تطبيق القالب \"$name\""
+        AppLanguage.PORTUGUESE -> "Modelo \"$name\" aplicado"
+        AppLanguage.SPANISH -> "Plantilla \"$name\" aplicada"
+        AppLanguage.FRENCH -> "Modèle \"$name\" appliqué"
+        AppLanguage.GERMAN -> "Vorlage \"$name\" angewendet"
+        AppLanguage.RUSSIAN -> "Шаблон \"$name\" применён"
+        AppLanguage.JAPANESE -> "テンプレート「$name」を適用しました"
+        AppLanguage.KOREAN -> "템플릿 \"$name\"을(를) 적용했습니다"
+    }
+
+    fun templateSaved(name: String): String = when (Strings.lang) {
+        AppLanguage.CHINESE -> "模板「$name」已保存"
+        AppLanguage.ENGLISH -> "Template \"$name\" saved"
+        AppLanguage.ARABIC -> "تم حفظ القالب \"$name\""
+        AppLanguage.PORTUGUESE -> "Modelo \"$name\" salvo"
+        AppLanguage.SPANISH -> "Plantilla \"$name\" guardada"
+        AppLanguage.FRENCH -> "Modèle \"$name\" enregistré"
+        AppLanguage.GERMAN -> "Vorlage \"$name\" gespeichert"
+        AppLanguage.RUSSIAN -> "Шаблон \"$name\" сохранён"
+        AppLanguage.JAPANESE -> "テンプレート「$name」を保存しました"
+        AppLanguage.KOREAN -> "템플릿 \"$name\"을(를) 저장했습니다"
     }
 
     val sectionWebEngine: String get() = when (Strings.lang) {

@@ -190,6 +190,15 @@ fun CreateAppScreen(
             }
 
             item {
+                ConfigTemplateCard(
+                    config = editState.webViewConfig,
+                    onApplyConfig = { templateConfig ->
+                        viewModel.updateEditState { copy(webViewConfig = templateConfig) }
+                    }
+                )
+            }
+
+            item {
                 if (editState.appType == AppType.WEB) {
                     PwaAnalysisSection(
                         viewModel = viewModel,

@@ -49,6 +49,10 @@ import com.webtoapp.core.agent.tool.builtin.ShareApkTool
 import com.webtoapp.core.agent.tool.builtin.TodoUpdateTool
 import com.webtoapp.core.agent.tool.builtin.TodoWriteTool
 import com.webtoapp.core.agent.tool.builtin.UpdateAppTool
+import com.webtoapp.core.agent.tool.builtin.ListConfigTemplatesTool
+import com.webtoapp.core.agent.tool.builtin.SaveConfigTemplateTool
+import com.webtoapp.core.agent.tool.builtin.ApplyConfigTemplateTool
+import com.webtoapp.core.agent.tool.builtin.DeleteConfigTemplateTool
 import com.webtoapp.core.agent.tool.builtin.UpdateModuleTool
 import com.webtoapp.core.agent.tool.builtin.WriteFileTool
 import com.webtoapp.core.agent.tool.builtin.imagery.GenerateImageTool
@@ -85,6 +89,11 @@ class ToolRegistryFactory(
         CreateAppTool(),
         UpdateAppTool(),
         ReadAppFileTool(),
+        // Common-config templates
+        ListConfigTemplatesTool(),
+        SaveConfigTemplateTool(),
+        ApplyConfigTemplateTool(),
+        DeleteConfigTemplateTool(),
         // App lifecycle
         BuildApkTool(),
         ShareApkTool(),
