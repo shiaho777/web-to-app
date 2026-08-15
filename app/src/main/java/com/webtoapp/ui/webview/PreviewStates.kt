@@ -24,7 +24,11 @@ sealed class PythonAppPreviewState {
     object Starting : PythonAppPreviewState()
     object InstallingDeps : PythonAppPreviewState()
     object StartingServer : PythonAppPreviewState()
-    data class Ready(val url: String) : PythonAppPreviewState()
+    data class Ready(
+        val url: String,
+        /** True when the backend never started and only static files are served. */
+        val staticFallback: Boolean = false,
+    ) : PythonAppPreviewState()
     data class Error(val message: String, val throwable: Throwable? = null) : PythonAppPreviewState()
 }
 

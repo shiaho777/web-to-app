@@ -3,6 +3,7 @@ package com.webtoapp.core.python
 import android.content.Context
 import com.google.common.truth.Truth.assertThat
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStreamReader
 import java.net.InetAddress
 import java.net.ServerSocket
@@ -109,5 +110,33 @@ class PythonRuntimeTest {
         val budget = ReadinessBudget(baseMs = 1_000L, hardCapMs = 3_000L)
         val ready = runBlocking { runtime.waitForServerReady(port, "flask", budget) }
         assertThat(ready).isFalse()
+    }
+
+    @Test
+    fun `bootstrap script forces the allocated port beyond Flask`() {
+        val runtime = PythonRuntime(context)
+        val dir = File(context.cacheDir, "bootstrap-test-${System.nanoTime()}").apply { mkdirs() }
+        try {
+            runtime.createBootstrapScript(dir, 19527)
+            val script = File(dir, "_w2a_bootstrap.py").readText()
+
+            // Flask patch (health endpoint + forced port) stays in place
+            assertThat(script).contains("flask.Flask.run")
+            assertThat(script).contains("__w2a_health")
+
+            // raw / http.server apps hardcode their port and never read PORT;
+            // TCPServer.__init__ must rewrite it to the allocated one
+            assertThat(script).contains("TCPServer.__init__")
+            assertThat(script).contains("_w2a_port")
+            assertThat(script).contains("os.environ['PORT'] = str(_w2a_port)")
+
+            // tornado listens through HTTPServer.listen, outside socketserver
+            assertThat(script).contains("HTTPServer.listen")
+
+            // the entry file still runs as __main__ with clean argv
+            assertThat(script).contains("'__name__': '__main__'")
+        } finally {
+            dir.deleteRecursively()
+        }
     }
 }

@@ -621,7 +621,7 @@ ${if (escapedReqs.isNotBlank()) """<div class="section"><div class="section-titl
         return linkerPrefix + pythonArgs
     }
 
-    private fun createBootstrapScript(projectDir: File, port: Int) {
+    internal fun createBootstrapScript(projectDir: File, port: Int) {
         val bootstrapFile = File(projectDir, "_w2a_bootstrap.py")
         bootstrapFile.writeText("""#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -678,6 +678,33 @@ try:
         _orig_run(self, host='127.0.0.1', port=_w2a_port, **kwargs)
     flask.Flask.run = _patched_run
 except ImportError:
+    pass
+
+# === 2b. Force the allocated port for raw / http.server apps ===
+# Apps built on http.server / socketserver (raw framework) hardcode their own
+# port and never read PORT; rewrite TCPServer.__init__ so the bound port always
+# matches the one the WebView was loaded from and the health probe checks.
+try:
+    import socketserver as _w2a_socketserver
+    _w2a_orig_tcp_init = _w2a_socketserver.TCPServer.__init__
+    def _w2a_patched_tcp_init(self, server_address, *args, **kwargs):
+        if isinstance(server_address, tuple) and len(server_address) == 2:
+            host, port = server_address
+            if isinstance(port, int) and port != _w2a_port:
+                server_address = (host, _w2a_port)
+        _w2a_orig_tcp_init(self, server_address, *args, **kwargs)
+    _w2a_socketserver.TCPServer.__init__ = _w2a_patched_tcp_init
+except Exception:
+    pass
+
+# tornado listens through HTTPServer.listen(port), outside socketserver
+try:
+    import tornado.httpserver as _w2a_tornado_hs
+    _w2a_orig_t_listen = _w2a_tornado_hs.HTTPServer.listen
+    def _w2a_patched_t_listen(self, port, *args, **kwargs):
+        _w2a_orig_t_listen(self, _w2a_port, *args, **kwargs)
+    _w2a_tornado_hs.HTTPServer.listen = _w2a_patched_t_listen
+except Exception:
     pass
 
 # === 3. Execute the actual entry file ===

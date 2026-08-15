@@ -191,6 +191,9 @@ object Strings {
     val phpZipNoPhpFiles: String get() = StringsA.phpZipNoPhpFiles
     val pySelectProject: String get() = StringsA.pySelectProject
     val pyServerType: String get() = StringsA.pyServerType
+    val pyRuntimeModeAuto: String get() = StringsA.pyRuntimeModeAuto
+    val pyRuntimeModeAutoDesc: String get() = StringsA.pyRuntimeModeAutoDesc
+    val pythonStaticFallbackBanner: String get() = StringsA.pythonStaticFallbackBanner
     val pyProjectReady: String get() = StringsA.pyProjectReady
     val pyProjectNotFound: String get() = StringsA.pyProjectNotFound
     val pyStartingPreview: String get() = StringsA.pyStartingPreview
@@ -6711,6 +6714,45 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Тип сервера"
         AppLanguage.JAPANESE -> "サーバータイプ"
         AppLanguage.KOREAN -> "서버 유형"
+    }
+
+    val pyRuntimeModeAuto: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动配置（推荐）"
+        AppLanguage.ENGLISH -> "Auto-configured (recommended)"
+        AppLanguage.ARABIC -> "إعداد تلقائي (موصى به)"
+        AppLanguage.PORTUGUESE -> "Configuração automática (recomendado)"
+        AppLanguage.SPANISH -> "Configuración automática (recomendada)"
+        AppLanguage.FRENCH -> "Configuration automatique (recommandée)"
+        AppLanguage.GERMAN -> "Automatisch konfiguriert (empfohlen)"
+        AppLanguage.RUSSIAN -> "Автоматическая настройка (рекомендуется)"
+        AppLanguage.JAPANESE -> "自動設定（推奨）"
+        AppLanguage.KOREAN -> "자동 구성(권장)"
+    }
+
+    val pyRuntimeModeAutoDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已根据检测到的项目框架自动选择最兼容的运行方式，无需手动设置"
+        AppLanguage.ENGLISH -> "The most compatible runtime mode is selected automatically from the detected framework — no manual setup needed"
+        AppLanguage.ARABIC -> "يتم اختيار وضع التشغيل الأكثر توافقًا تلقائيًا حسب إطار العمل المكتشف — لا حاجة لإعداد يدوي"
+        AppLanguage.PORTUGUESE -> "O modo de execução mais compatível é escolhido automaticamente a partir do framework detectado — sem configuração manual"
+        AppLanguage.SPANISH -> "El modo de ejecución más compatible se selecciona automáticamente según el framework detectado; no requiere configuración manual"
+        AppLanguage.FRENCH -> "Le mode d'exécution le plus compatible est choisi automatiquement selon le framework détecté — aucune configuration manuelle"
+        AppLanguage.GERMAN -> "Der kompatibelste Laufzeitmodus wird automatisch anhand des erkannten Frameworks gewählt — keine manuelle Einrichtung nötig"
+        AppLanguage.RUSSIAN -> "Наиболее совместимый режим выполнения выбирается автоматически по обнаруженному фреймворку — ручная настройка не требуется"
+        AppLanguage.JAPANESE -> "検出されたフレームワークに基づいて最も互換性の高い実行モードが自動的に選択されます。手動設定は不要です"
+        AppLanguage.KOREAN -> "감지된 프레임워크에 따라 가장 호환되는 실행 모드가 자동으로 선택됩니다 — 수동 설정이 필요 없습니다"
+    }
+
+    val pythonStaticFallbackBanner: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "Python 后端未运行：当前为静态预览，接口请求不可用"
+        AppLanguage.ENGLISH -> "Python backend is not running — static preview only, API calls will fail"
+        AppLanguage.ARABIC -> "خادم Python لا يعمل — معاينة ثابتة فقط، ولن تعمل طلبات API"
+        AppLanguage.PORTUGUESE -> "O backend Python não está em execução — apenas visualização estática, chamadas de API falharão"
+        AppLanguage.SPANISH -> "El backend de Python no se está ejecutando: solo vista previa estática, las llamadas a la API fallarán"
+        AppLanguage.FRENCH -> "Le backend Python ne fonctionne pas — aperçu statique uniquement, les appels d'API échoueront"
+        AppLanguage.GERMAN -> "Python-Backend läuft nicht — nur statische Vorschau, API-Aufrufe schlagen fehl"
+        AppLanguage.RUSSIAN -> "Бэкенд Python не запущен — только статический предпросмотр, запросы к API не сработают"
+        AppLanguage.JAPANESE -> "Pythonバックエンドが実行されていません — 静的プレビューのみで、APIリクエストは失敗します"
+        AppLanguage.KOREAN -> "Python 백엔드가 실행 중이 아닙니다 — 정적 미리보기만 제공되며 API 요청은 실패합니다"
     }
 
     val pyProjectReady: String get() = when (Strings.lang) {

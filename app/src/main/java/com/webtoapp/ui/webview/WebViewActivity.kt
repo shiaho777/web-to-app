@@ -1072,6 +1072,7 @@ fun WebViewScreen(
     val pythonRuntime = remember(webApp?.id) { com.webtoapp.core.python.PythonRuntime(context) }
     val pythonHttpServer = remember(webApp?.id) { com.webtoapp.core.webview.LocalHttpServer(context) }
     var pythonAppRetryTrigger by remember { mutableIntStateOf(0) }
+    var dismissedPythonFallbackBannerUrl by remember { mutableStateOf<String?>(null) }
 
     var nodeJsAppPreviewState by remember { mutableStateOf<NodeJsAppPreviewState>(NodeJsAppPreviewState.Idle) }
     val nodeRuntime = remember(webApp?.id) { com.webtoapp.core.nodejs.NodeRuntime(context) }
@@ -1769,26 +1770,9 @@ fun WebViewScreen(
         AppLogger.i("PythonAppPreview", "Final configuration: projectDir=${actualProjectDir.absolutePath}, framework=$actualFramework, entry=$actualEntryFile")
 
         try {
-            val candidates = listOf("dist", "build", "public", "static", "www", "templates", "")
-            var docRoot: File? = null
-            for (dir in candidates) {
-                val candidate = if (dir.isEmpty()) actualProjectDir else File(actualProjectDir, dir)
-                val hasIndex = File(candidate, "index.html").exists()
-                AppLogger.d("PythonAppPreview", "Checking candidate: '$dir' -> ${candidate.absolutePath}, isDir=${candidate.isDirectory}, hasIndex=$hasIndex")
-                if (candidate.isDirectory && hasIndex) {
-                    docRoot = candidate
-                    AppLogger.i("PythonAppPreview", "Found docRoot: ${candidate.absolutePath}")
-                    break
-                }
-            }
+            val entryFileExists = File(actualProjectDir, actualEntryFile).exists()
 
-            if (docRoot != null) {
-                val url = pythonHttpServer.start(docRoot)
-                AppLogger.i("PythonAppPreview", "LocalHttpServer started: $url")
-                pythonAppPreviewState = PythonAppPreviewState.Ready(url)
-                delay(200)
-                loadInBrowser(url)
-            } else if (pythonRuntime.isPythonAvailable()) {
+            if (pythonRuntime.isPythonAvailable() && entryFileExists) {
 
                 AppLogger.i("PythonAppPreview", "Python runtime available, starting backend server")
                 pythonAppPreviewState = PythonAppPreviewState.StartingServer
@@ -1833,7 +1817,10 @@ fun WebViewScreen(
                 }
             } else {
 
-                AppLogger.w("PythonAppPreview", "Python runtime unavailable, generating project preview page")
+                AppLogger.w(
+                    "PythonAppPreview",
+                    "Static fallback preview: pythonAvailable=${pythonRuntime.isPythonAvailable()}, entryExists=$entryFileExists"
+                )
                 val url = pythonHttpServer.start(actualProjectDir)
                 File(actualProjectDir, "_preview_.html").delete()
 
@@ -1841,7 +1828,7 @@ fun WebViewScreen(
                 if (htmlFiles.isNotEmpty()) {
                     val relPath = htmlFiles.first().relativeTo(actualProjectDir).path
                     val targetUrl = "$url/$relPath"
-                    pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl)
+                    pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl, staticFallback = true)
                     delay(200)
                     loadInBrowser(targetUrl)
                 } else {
@@ -1853,7 +1840,7 @@ fun WebViewScreen(
                     val previewFile = File(actualProjectDir, "_preview_.html")
                     previewFile.writeText(previewHtml)
                     val targetUrl = "$url/_preview_.html"
-                    pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl)
+                    pythonAppPreviewState = PythonAppPreviewState.Ready(targetUrl, staticFallback = true)
                     delay(200)
                     loadInBrowser(targetUrl)
                 }
@@ -3248,6 +3235,17 @@ fun WebViewScreen(
                 PythonAppLoadingOverlay(
                     state = pythonAppPreviewState,
                     onRetry = { pythonAppRetryTrigger++ }
+                )
+            }
+
+            val pythonReadyState = pythonAppPreviewState as? PythonAppPreviewState.Ready
+            if (webApp?.appType == com.webtoapp.data.model.AppType.PYTHON_APP &&
+                pythonReadyState?.staticFallback == true &&
+                pythonReadyState.url != dismissedPythonFallbackBannerUrl
+            ) {
+                PythonStaticFallbackBanner(
+                    onDismiss = { dismissedPythonFallbackBannerUrl = pythonReadyState.url },
+                    modifier = Modifier.align(Alignment.TopCenter)
                 )
             }
 

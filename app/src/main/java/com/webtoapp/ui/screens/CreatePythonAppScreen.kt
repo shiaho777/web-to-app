@@ -64,7 +64,6 @@ fun CreatePythonAppScreen(
 
     var entryFile by remember { mutableStateOf("app.py") }
     var entryModule by remember { mutableStateOf("") }
-    var serverType by remember { mutableStateOf("builtin") }
     var serverPort by remember { mutableStateOf(0) }
     var portConflictMode by remember { mutableStateOf(com.webtoapp.data.model.PortConflictMode.AUTO_KILL) }
     var envVars by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
@@ -109,7 +108,6 @@ fun CreatePythonAppScreen(
                 app.pythonAppConfig?.let { config ->
                     entryFile = config.entryFile
                     entryModule = config.entryModule
-                    serverType = config.serverType
                     serverPort = config.serverPort
                     portConflictMode = config.portConflictMode
                     envVars = config.envVars.toMutableMap()
@@ -162,12 +160,6 @@ fun CreatePythonAppScreen(
 
                         val detected = runtime.detectEntryFile(copiedDir, framework)
                         entryFile = detected
-
-                        serverType = when (framework) {
-                            "fastapi" -> "uvicorn"
-                            "django" -> "gunicorn"
-                            else -> "builtin"
-                        }
 
                         val venvDirs = listOf("venv", ".venv", "env", ".env")
                         for (vDir in venvDirs) {
@@ -354,7 +346,11 @@ fun CreatePythonAppScreen(
                                 framework = detectedFramework ?: "raw",
                                 entryFile = entryFile,
                                 entryModule = entryModule,
-                                serverType = serverType,
+                                serverType = when (detectedFramework?.lowercase()) {
+                                    "fastapi" -> "uvicorn"
+                                    "django" -> "gunicorn"
+                                    else -> "builtin"
+                                },
                                 serverPort = serverPort,
                                 portConflictMode = portConflictMode,
                                 envVars = envVars,
@@ -405,11 +401,6 @@ fun CreatePythonAppScreen(
                                         val framework = runtime.detectFramework(projectDir)
                                         detectedFramework = framework
                                         entryFile = runtime.detectEntryFile(projectDir, framework)
-                                        serverType = when (framework) {
-                                            "fastapi" -> "uvicorn"
-                                            "django" -> "gunicorn"
-                                            else -> "builtin"
-                                        }
                                         appName = sample.name
                                         creationPhase = Strings.copyingProjectFiles
                                         val newProjectId = java.util.UUID.randomUUID().toString()
@@ -562,9 +553,7 @@ fun CreatePythonAppScreen(
                 }
 
                 PythonServerTypeCard(
-                    serverType = serverType,
                     detectedFramework = detectedFramework,
-                    onServerTypeChange = { serverType = it },
                     accentColor = accentColor
                 )
 
@@ -573,7 +562,7 @@ fun CreatePythonAppScreen(
                     onEntryFileChange = { entryFile = it },
                     entryModule = entryModule,
                     onEntryModuleChange = { entryModule = it },
-                    serverType = serverType
+                    detectedFramework = detectedFramework
                 )
 
                 if (detectedFramework == "django") {
@@ -842,16 +831,12 @@ private fun PythonRequirementsCard(
 
 @Composable
 private fun PythonServerTypeCard(
-    serverType: String,
     detectedFramework: String?,
-    onServerTypeChange: (String) -> Unit,
     accentColor: Color
 ) {
-    val recommendedServer = when (detectedFramework?.lowercase()) {
-        "fastapi" -> "uvicorn"
-        "django" -> "gunicorn"
-        "flask" -> "gunicorn"
-        else -> null
+    val serverMode = when (detectedFramework?.lowercase()) {
+        "fastapi" -> Strings.pyServerUvicorn
+        else -> Strings.pyServerBuiltin
     }
 
     EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
@@ -862,93 +847,31 @@ private fun PythonServerTypeCard(
             )
             Spacer(modifier = Modifier.height(12.dp))
 
-            PythonServerOption(
-                title = Strings.pyServerBuiltin,
-                description = Strings.pyServerBuiltinDesc,
-                selected = serverType == "builtin",
-                isRecommended = recommendedServer == null,
-                onClick = { onServerTypeChange("builtin") },
-                accentColor = accentColor
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            PythonServerOption(
-                title = Strings.pyServerGunicorn,
-                description = Strings.pyServerGunicornDesc,
-                selected = serverType == "gunicorn",
-                isRecommended = recommendedServer == "gunicorn",
-                onClick = { onServerTypeChange("gunicorn") },
-                accentColor = accentColor
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            PythonServerOption(
-                title = Strings.pyServerUvicorn,
-                description = Strings.pyServerUvicornDesc,
-                selected = serverType == "uvicorn",
-                isRecommended = recommendedServer == "uvicorn",
-                onClick = { onServerTypeChange("uvicorn") },
-                accentColor = accentColor
-            )
-        }
-    }
-}
-
-@Composable
-private fun PythonServerOption(
-    title: String,
-    description: String,
-    selected: Boolean,
-    isRecommended: Boolean,
-    onClick: () -> Unit,
-    accentColor: Color
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(10.dp),
-        color = if (selected) accentColor.copy(alpha = 0.08f)
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-        onClick = onClick
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            RadioButton(
-                selected = selected,
-                onClick = onClick,
-                colors = RadioButtonDefaults.colors(selectedColor = accentColor)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = accentColor.copy(alpha = 0.12f)
+                ) {
                     Text(
-                        title,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (selected) accentColor else MaterialTheme.colorScheme.onSurface
+                        Strings.pyRuntimeModeAuto,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = accentColor
                     )
-                    if (isRecommended) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = accentColor.copy(alpha = 0.12f)
-                        ) {
-                            Text(
-                                Strings.pyRecommended,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = accentColor
-                            )
-                        }
-                    }
                 }
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    serverMode,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                Strings.pyRuntimeModeAutoDesc,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -959,7 +882,7 @@ private fun PythonModuleConfigCard(
     onEntryFileChange: (String) -> Unit,
     entryModule: String,
     onEntryModuleChange: (String) -> Unit,
-    serverType: String
+    detectedFramework: String?
 ) {
     EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -977,7 +900,7 @@ private fun PythonModuleConfigCard(
                 singleLine = true
             )
 
-            AnimatedVisibility(visible = serverType != "builtin") {
+            AnimatedVisibility(visible = detectedFramework?.lowercase() == "fastapi") {
                 Column {
                     Spacer(modifier = Modifier.height(8.dp))
                     PremiumTextField(
@@ -989,8 +912,7 @@ private fun PythonModuleConfigCard(
                         singleLine = true,
                         supportingText = {
                             Text(
-                                if (serverType == "gunicorn") "WSGI: module.wsgi:application"
-                                else "ASGI: module:app",
+                                "ASGI: module:app",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontFamily = FontFamily.Monospace
                             )
