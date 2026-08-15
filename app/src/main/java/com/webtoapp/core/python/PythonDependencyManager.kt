@@ -318,6 +318,13 @@ object PythonDependencyManager {
         extraEnv: Map<String, String> = emptyMap(),
         onOutput: ((String) -> Unit)? = null
     ): Boolean = withContext(Dispatchers.IO) {
+        if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)) {
+            val msg = com.webtoapp.core.linux.RuntimeExecPolicy.hostPreviewBlockedMessage("Python")
+            AppLogger.w(TAG, msg)
+            onOutput?.invoke(msg)
+            return@withContext false
+        }
+
         val reqFile = File(projectDir, "requirements.txt")
         if (!reqFile.exists()) {
             AppLogger.i(TAG, "No requirements.txt, skipping dependency install")

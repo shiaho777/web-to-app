@@ -56,6 +56,12 @@ class WordPressPhpRuntime(private val context: Context) {
 
     suspend fun startServer(documentRoot: String, port: Int = 0, portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL, customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()): Int = withContext(Dispatchers.IO) {
         try {
+            if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)) {
+                _serverState.value = ServerState.Error(
+                    com.webtoapp.core.linux.RuntimeExecPolicy.hostPreviewBlockedMessage("WordPress (PHP)")
+                )
+                return@withContext -1
+            }
 
             if (!isPhpAvailable()) {
                 _serverState.value = ServerState.Error("PHP 二进制未就绪，请先下载依赖")

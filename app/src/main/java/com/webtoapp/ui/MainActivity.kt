@@ -103,6 +103,25 @@ class MainActivity : ComponentActivity() {
 
         AppLogger.i("MainActivity", "Normal mode, showing main UI")
 
+        // targetSdk 33+: notifications (build progress, runtime downloads) are
+        // runtime-gated and silently off unless requested once up front.
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            try {
+                if (androidx.core.content.ContextCompat.checkSelfPermission(
+                        this, android.Manifest.permission.POST_NOTIFICATIONS
+                    ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                ) {
+                    androidx.core.app.ActivityCompat.requestPermissions(
+                        this,
+                        arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                        4356
+                    )
+                }
+            } catch (e: Exception) {
+                AppLogger.w("MainActivity", "POST_NOTIFICATIONS request failed", e)
+            }
+        }
+
         try {
             enableEdgeToEdge()
         } catch (e: Exception) {

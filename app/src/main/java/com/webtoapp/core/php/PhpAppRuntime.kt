@@ -75,6 +75,13 @@ class PhpAppRuntime(private val context: Context) {
         customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
     ): Int = withContext(Dispatchers.IO) {
         try {
+            if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)) {
+                _serverState.value = ServerState.Error(
+                    com.webtoapp.core.linux.RuntimeExecPolicy.hostPreviewBlockedMessage("PHP")
+                )
+                return@withContext -1
+            }
+
             if (!isPhpAvailable()) {
                 _serverState.value = ServerState.Error("PHP 二进制未就绪，请先下载依赖")
                 return@withContext -1

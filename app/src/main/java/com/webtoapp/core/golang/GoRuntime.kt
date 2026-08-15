@@ -25,18 +25,19 @@ class GoRuntime(private val context: Context) {
         private const val TAG = "GoRuntime"
         private const val MAX_HEALTH_CHECK_RETRIES = 30
         private const val HEALTH_CHECK_INTERVAL_MS = 500L
-
-        /**
-         * Go execs via memfd_create + execveat, which is increasingly restricted under the SELinux
-         * policy of a high-targetSdk (Google Play) channel. Surface the channel limitation on
-         * launch failure instead of looking like a generic crash.
-         * Runtime-layer string (shell-synced); intentionally not routed through Strings i18n.
-         */
-        private fun channelNote(): String =
-            if (com.webtoapp.BuildConfig.GPLAY_CHANNEL) {
-                " [Google Play 渠道：受高 targetSdk 限制，Go 运行时可能不可用]"
-            } else ""
     }
+
+    /**
+     * Go execs via memfd_create + execveat, which is increasingly restricted under the SELinux
+     * policy of a high-targetSdk build. Surface the restriction on launch failure instead of
+     * looking like a generic crash. Keyed off the actual app targetSdk (not the channel flag)
+     * so every high-target build gets the note.
+     * Runtime-layer string (shell-synced); intentionally not routed through Strings i18n.
+     */
+    private fun channelNote(): String =
+        if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)) {
+            com.webtoapp.core.linux.RuntimeExecPolicy.restrictionNote()
+        } else ""
 
     sealed class ServerState {
         object Stopped : ServerState()

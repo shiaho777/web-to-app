@@ -25,18 +25,19 @@ class NodeService : Service() {
         private const val TAG = "NodeService"
         private const val MAX_HEALTH_CHECK_RETRIES = 60
         private const val HEALTH_CHECK_INTERVAL_MS = 500L
-
-        /**
-         * Node.js runs via dlopen(libnode.so) + V8 JIT, which needs RWX memory. Under the stricter
-         * SELinux policy of a high-targetSdk (Google Play) channel this can fail at dlopen/exec time.
-         * Surface the channel limitation to the user instead of looking like a generic crash.
-         * Runtime-layer string (shell-synced); intentionally not routed through Strings i18n.
-         */
-        private fun channelNote(): String =
-            if (com.webtoapp.BuildConfig.GPLAY_CHANNEL) {
-                " [Google Play 渠道：受高 targetSdk 限制，Node.js 运行时可能不可用]"
-            } else ""
     }
+
+    /**
+     * Node.js runs via dlopen(libnode.so) + V8 JIT, which needs RWX memory. Under the stricter
+     * SELinux policy of a high-targetSdk build this can fail at dlopen/exec time. Surface the
+     * restriction to the user instead of looking like a generic crash. Keyed off the actual
+     * app targetSdk (not the channel flag) so every high-target build gets the note.
+     * Runtime-layer string (shell-synced); intentionally not routed through Strings i18n.
+     */
+    private fun channelNote(): String =
+        if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(applicationContext)) {
+            com.webtoapp.core.linux.RuntimeExecPolicy.restrictionNote()
+        } else ""
 
     private val workerThread = HandlerThread("NodeService-worker").apply { start() }
     private val workerHandler = Handler(workerThread.looper)

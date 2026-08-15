@@ -79,6 +79,14 @@ class PythonRuntime(private val context: Context) {
         customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> = emptyList()
     ): Int = withContext(Dispatchers.IO) {
         try {
+            if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)) {
+                val msg = com.webtoapp.core.linux.RuntimeExecPolicy.hostPreviewBlockedMessage("Python")
+                AppLogger.w(TAG, msg)
+                ShellLogger.w(TAG, msg)
+                _serverState.value = ServerState.Error(msg)
+                return@withContext -1
+            }
+
             if (!isPythonAvailable()) {
                 _serverState.value = ServerState.Error("Python 运行时未就绪，请先下载依赖")
                 return@withContext -1

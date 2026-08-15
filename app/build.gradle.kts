@@ -56,7 +56,7 @@ android {
         applicationId = "com.webtoapp"
         minSdk = 23
 
-        targetSdk = 28
+        targetSdk = 35
         versionCode = 55
         versionName = "2.4.5"
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
@@ -80,22 +80,26 @@ android {
     flavorDimensions += "distribution"
     productFlavors {
         create("standard") {
-            // Default full-capability variant: targetSdk 28 is required so the host can
-            // fork+exec native server runtimes (Node/PHP/Python/Go/WordPress) from app
-            // storage. Keep this low — do not raise without re-validating every runtime.
+            // Full-capability sideloaded variant (GitHub releases, keeps `com.webtoapp`).
+            // Inherits targetSdk 35 from defaultConfig: low targetSdk is a top heuristic
+            // for antivirus / Play Protect "legacy malware" flags, which got the host
+            // wrongly blocked. The cost is SELinux W^X (applies from targetSdk 29):
+            // exec of downloaded runtimes (Python / PHP / WordPress) from app storage is
+            // blocked, so those host previews degrade with a clear message
+            // (RuntimeExecPolicy). Node (JNI via native libs) and Go (memfd exec) are
+            // unaffected. Generated APKs still ship targetSdk 28 via the shell template.
             buildConfigField("boolean", "GPLAY_CHANNEL", "false")
         }
         create("gplay") {
-            // Google Play distribution variant. Play requires targetSdk 35+ for new apps.
-            // NOTE: native fork+exec runtimes (esp. Node.js V8 JIT, Go memfd exec) may fail
-            // under the stricter SELinux policy of high targetSdk; runtime launch is guarded
-            // to degrade gracefully (see BuildConfig.GPLAY_CHANNEL) rather than crash.
+            // Google Play distribution variant (Play requires targetSdk 35+; inherits 35
+            // from defaultConfig). Native fork+exec runtimes (esp. Node.js V8 JIT, Go
+            // memfd exec) may still fail under the stricter SELinux policy; launch paths
+            // degrade gracefully rather than crash.
             //
             // `com.webtoapp` is already registered on Google Play by another party, so the
             // Play build ships under a distinct applicationId. The standard flavor (GitHub
             // releases) keeps `com.webtoapp` so existing users keep their update path.
             applicationId = "shiaho.webtoapp"
-            targetSdk = 35
             buildConfigField("boolean", "GPLAY_CHANNEL", "true")
         }
     }
