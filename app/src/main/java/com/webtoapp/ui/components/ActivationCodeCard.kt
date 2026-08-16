@@ -120,7 +120,6 @@ fun ActivationCodeCard(
                 WtaToggleRow(
                     icon = Icons.Outlined.VpnKey,
                     title = Strings.activationCodeVerify,
-                    subtitle = Strings.activationCodeHint,
                     checked = enabled,
                     onCheckedChange = onEnabledChange
                 )
@@ -155,8 +154,7 @@ fun ActivationCodeCard(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = Strings.activationModeLocal,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = if (!remoteConfig.enabled) FontWeight.SemiBold else FontWeight.Normal
+                                style = MaterialTheme.typography.bodySmall
                             )
                         }
                         Row(
@@ -172,17 +170,9 @@ fun ActivationCodeCard(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = Strings.activationModeRemote,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = if (remoteConfig.enabled) FontWeight.SemiBold else FontWeight.Normal
+                                style = MaterialTheme.typography.bodySmall
                             )
                         }
-                        Text(
-                            text = if (remoteConfig.enabled) Strings.activationModeRemoteDesc
-                            else Strings.activationModeLocalDesc,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
                         WtaSectionDivider()
 
                         if (!remoteConfig.enabled) {
