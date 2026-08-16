@@ -13,6 +13,7 @@ import android.media.session.MediaSession
 import android.media.session.PlaybackState
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.support.v4.media.session.MediaSessionCompat
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
@@ -70,6 +71,17 @@ class MediaSessionBridge(
     private var playbackState = PlaybackState.STATE_NONE
 
     /**
+     * Identity of the frame that currently owns the session. The injected script
+     * runs once per frame (document-start, wildcard origin), so every frame would
+     * otherwise write metadata/state/position into this single bridge and the last
+     * writer would win — a muted ad iframe could clobber the real player (#566).
+     * Only a frame reporting `playing`/`buffering` claims ownership; its updates
+     * stay authoritative while fresh, others are dropped.
+     */
+    private var activeFrameId: String? = null
+    private var activeFrameLastSeenMs = 0L
+
+    /**
      * `true` once any non-`none` playback state has ever been reported. Used to
      * guard [clearPlayback] so the initial `STATE_NONE` event (emitted during
      * page load before any media exists) does not run full media-session
@@ -77,6 +89,8 @@ class MediaSessionBridge(
      * start.
      */
     private var hasActivePlaybackSession = false
+
+    private var teardownRunnable: Runnable? = null
 
     private val supportedActions = mutableSetOf<String>()
 
@@ -156,9 +170,37 @@ class MediaSessionBridge(
         newTitle: String?,
         newArtist: String?,
         newAlbum: String?,
-        newArtworkUrl: String?
+        newArtworkUrl: String?,
+        frameId: String?
     ) {
         mainHandler.post {
+            if (!isAuthoritative(frameId)) {
+                return@post
+            }
+
+            val incomingBlank =
+                newTitle.isNullOrBlank() &&
+                    newArtist.isNullOrBlank() &&
+                    newAlbum.isNullOrBlank() &&
+                    newArtworkUrl.isNullOrBlank()
+
+            val currentBlank =
+                title.isBlank() &&
+                    artist.isBlank() &&
+                    album.isBlank() &&
+                    artworkUrl.isBlank()
+
+            /*
+             * A frame without media metadata used to send ("", "", "", "")
+             * every second, wiping real track info and falling back to the
+             * app label. Empty payloads never replace known metadata.
+             */
+            if (incomingBlank && !currentBlank) {
+                return@post
+            }
+
+            cancelTeardown()
+
             title = newTitle.orEmpty()
             artist = newArtist.orEmpty()
             album = newAlbum.orEmpty()
@@ -175,14 +217,42 @@ class MediaSessionBridge(
     }
 
     @JavascriptInterface
-    fun updatePlaybackState(state: String?) {
+    fun updatePlaybackState(
+        state: String?,
+        frameId: String?,
+        audible: Boolean
+    ) {
         mainHandler.post {
-            playbackState = when (state?.lowercase()) {
+            val resolved = when (state?.lowercase()) {
                 "playing" -> PlaybackState.STATE_PLAYING
                 "paused" -> PlaybackState.STATE_PAUSED
                 "buffering" -> PlaybackState.STATE_BUFFERING
                 "none", "stopped", null -> PlaybackState.STATE_NONE
                 else -> PlaybackState.STATE_PAUSED
+            }
+
+            /*
+             * Only an audible, actively playing frame claims session ownership.
+             * A muted autoplaying clip (ad/preview) may still report state while
+             * no fresh owner exists, but never steals the session from the real
+             * player (#566). Frames without an element (WebAudio players with
+             * an explicit playbackState) report as audible.
+             */
+            if (resolved == PlaybackState.STATE_PLAYING ||
+                resolved == PlaybackState.STATE_BUFFERING
+            ) {
+                if (audible) {
+                    activeFrameId = frameId
+                    activeFrameLastSeenMs = SystemClock.elapsedRealtime()
+                }
+            } else if (!isAuthoritative(frameId)) {
+                return@post
+            }
+
+            playbackState = resolved
+
+            if (resolved != PlaybackState.STATE_NONE) {
+                cancelTeardown()
             }
 
             publish()
@@ -193,9 +263,18 @@ class MediaSessionBridge(
     fun updatePosition(
         duration: Double,
         position: Double,
-        rate: Double
+        rate: Double,
+        frameId: String?
     ) {
         mainHandler.post {
+            if (!isAuthoritative(frameId)) {
+                return@post
+            }
+
+            if (frameId != null && frameId == activeFrameId) {
+                activeFrameLastSeenMs = SystemClock.elapsedRealtime()
+            }
+
             val durationChanged =
                 abs(durationSeconds - duration) >= 0.5
 
@@ -251,16 +330,60 @@ class MediaSessionBridge(
 
     // ---- State publishing ----
 
+    /**
+     * A frame owns its updates while it is the active frame and has reported
+     * within [FRAME_TAKEOVER_MS]. Frames that never played only get through
+     * while no fresh owner exists.
+     */
+    private fun isAuthoritative(frameId: String?): Boolean {
+        val current = activeFrameId ?: return true
+        if (frameId == null || frameId == current) return true
+        return SystemClock.elapsedRealtime() - activeFrameLastSeenMs > FRAME_TAKEOVER_MS
+    }
+
+    private fun cancelTeardown() {
+        teardownRunnable?.let { runnable ->
+            mainHandler.removeCallbacks(runnable)
+        }
+        teardownRunnable = null
+    }
+
+    private fun scheduleTeardown() {
+        cancelTeardown()
+
+        val runnable = Runnable {
+            teardownRunnable = null
+
+            if (playbackState == PlaybackState.STATE_NONE &&
+                (
+                    hasActivePlaybackSession ||
+                        mediaSession.isActive ||
+                        lastNotification != null
+                    )
+            ) {
+                clearPlayback()
+            }
+        }
+
+        teardownRunnable = runnable
+        mainHandler.postDelayed(runnable, TEARDOWN_GRACE_MS)
+    }
+
     private fun publish() {
         if (playbackState == PlaybackState.STATE_NONE) {
-            // Only tear down when media has actually been active at some point.
-            // The initial "none" state arrives during page load before any media
-            // exists, and running full cleanup there is unnecessary and risky.
+            /*
+             * "none" arrives from any frame whose media ended (or that never
+             * had any). Tearing down immediately let one ended ad element kill
+             * a session another frame was still playing (#566); wait out the
+             * grace period and cancel if anything reports activity again.
+             */
             if (hasActivePlaybackSession || mediaSession.isActive || lastNotification != null) {
-                clearPlayback()
+                scheduleTeardown()
             }
             return
         }
+
+        cancelTeardown()
 
         hasActivePlaybackSession = true
 
@@ -580,7 +703,12 @@ class MediaSessionBridge(
     }
 
     private fun clearPlayback() {
+        cancelTeardown()
+
         hasActivePlaybackSession = false
+
+        activeFrameId = null
+        activeFrameLastSeenMs = 0L
 
         playbackState = PlaybackState.STATE_NONE
         positionSeconds = 0.0
@@ -632,6 +760,14 @@ class MediaSessionBridge(
         const val JAVASCRIPT_INTERFACE_NAME =
             "WtaMediaSession"
 
+        /**
+         * How long the active frame's reports stay authoritative after the
+         * last one, and how long a `none` report must survive before the
+         * session is torn down.
+         */
+        private const val FRAME_TAKEOVER_MS = 3_000L
+        private const val TEARDOWN_GRACE_MS = 2_500L
+
         @Volatile
         private var activeBridge:
             WeakReference<MediaSessionBridge>? = null
@@ -664,10 +800,37 @@ class MediaSessionBridge(
 
               if (!nativeBridge) return;
 
+              /*
+               * This script runs once per frame (document start, wildcard
+               * origin). Every frame gets a stable id so the native bridge can
+               * arbitrate when several frames report at once (#566).
+               */
+              const frameId =
+                window.__wtaMediaFrameId ||
+                (window.__wtaMediaFrameId =
+                  "f" + Math.random().toString(36).slice(2, 10));
+
               const registeredHandlers = Object.create(null);
               const boundElements = new WeakSet();
 
-              const mediaSession = navigator.mediaSession || null;
+              const hadNativeSession =
+                !!(navigator.mediaSession && navigator.mediaSession);
+
+              /*
+               * True once the page itself called setPositionState(); such a
+               * site manages progress itself, so the heartbeat must not
+               * overwrite its values with DOM-derived ones.
+               */
+              let siteManagesPosition = false;
+
+              let metadataValue = null;
+              let playbackStateValue = "none";
+
+              function notifyChange() {
+                try {
+                  synchronize();
+                } catch (_) {}
+              }
 
               // WebView has no native MediaMetadata constructor; sites that do
               // `navigator.mediaSession.metadata = new MediaMetadata({...})`
@@ -689,6 +852,74 @@ class MediaSessionBridge(
                   }
                 };
               }
+
+              // WebView does not expose the Web Media Session API at all, so
+              // every `navigator.mediaSession.metadata = ...` assignment a
+              // site makes would throw (or be skipped by feature checks) and
+              // the bridge could never see site-provided track info (#566).
+              // Polyfill it with getters/setters that feed the bridge.
+              if (!hadNativeSession) {
+                const polyfillSession = {
+                  get metadata() {
+                    return metadataValue;
+                  },
+                  set metadata(value) {
+                    metadataValue = value || null;
+                    notifyChange();
+                  },
+                  get playbackState() {
+                    return playbackStateValue;
+                  },
+                  set playbackState(value) {
+                    playbackStateValue =
+                      value && value !== "none"
+                        ? String(value)
+                        : "none";
+                    notifyChange();
+                  },
+                  setActionHandler: function(action, handler) {
+                    const isFunction =
+                      typeof handler === "function";
+
+                    registeredHandlers[action] =
+                      isFunction ? handler : null;
+
+                    nativeBridge.setActionSupported(
+                      action,
+                      isFunction
+                    );
+                  },
+                  setPositionState: function(state) {
+                    if (!state) return;
+
+                    siteManagesPosition = true;
+
+                    nativeBridge.updatePosition(
+                      Number(state.duration) || 0,
+                      Number(state.position) || 0,
+                      Number(state.playbackRate) || 1,
+                      frameId
+                    );
+                  },
+                  setMicrophoneActive: function() {},
+                  setCameraActive: function() {}
+                };
+
+                try {
+                  Object.defineProperty(
+                    navigator,
+                    "mediaSession",
+                    {
+                      value: polyfillSession,
+                      configurable: true,
+                      writable: true
+                    }
+                  );
+                } catch (_) {}
+              }
+
+              const mediaSession =
+                navigator.mediaSession || null;
 
               // Call/camera state APIs (edge case): keep them callable so sites
               // using them do not crash; state is not surfaced to the system UI.
@@ -729,25 +960,72 @@ class MediaSessionBridge(
                 return output;
               }
 
+              /*
+               * Playing beats paused-with-progress beats idle; audible beats
+               * muted. Keeps a muted 10-second ad clip from winning over the
+               * real player inside the same frame.
+               */
+              function mediaScore(element) {
+                let score = 0;
+
+                if (
+                  !element.paused &&
+                  !element.ended &&
+                  element.readyState > 0
+                ) {
+                  score += 4;
+                } else if (
+                  element.currentTime > 0 &&
+                  !element.ended
+                ) {
+                  score += 2;
+                }
+
+                if (!element.muted && element.volume > 0) {
+                  score += 1;
+                }
+
+                return score;
+              }
+
               function getActiveMedia() {
                 const elements = getMediaElements();
 
+                let best = null;
+                let bestScore = -1;
+
+                elements.forEach(element => {
+                  const score = mediaScore(element);
+                  if (score > bestScore) {
+                    best = element;
+                    bestScore = score;
+                  }
+                });
+
+                return best;
+              }
+
+              /*
+               * Frames without media elements, without page metadata and
+               * without an active playback state must stay completely silent —
+               * reporting zeros or "none" from such a frame used to wipe the
+               * real player's session (#566).
+               */
+              function frameOwnsMedia() {
+                if (getMediaElements().length > 0) return true;
+
+                if (mediaSession && mediaSession.metadata) return true;
+
+                const reported =
+                  mediaSession && mediaSession.playbackState;
+
                 return (
-                  elements.find(element =>
-                    !element.paused &&
-                    !element.ended &&
-                    element.readyState > 0
-                  ) ||
-                  elements.find(element =>
-                    element.currentTime > 0 &&
-                    !element.ended
-                  ) ||
-                  elements[0] ||
-                  null
+                  !!reported &&
+                  reported !== "none"
                 );
               }
 
-              function sendMetadata() {
+              function sendMetadata(element) {
                 const metadata = mediaSession?.metadata;
 
                 let artwork = "";
@@ -770,17 +1048,28 @@ class MediaSessionBridge(
                   );
                 }
 
+                // document.title is only a sane fallback for the frame that
+                // actually owns the playing element.
+                const fallbackTitle =
+                  metadata?.title || (element ? document.title : "");
+
                 nativeBridge.updateMetadata(
-                  metadata?.title || document.title || "",
+                  fallbackTitle,
                   metadata?.artist || "",
                   metadata?.album || "",
-                  artwork
+                  artwork,
+                  frameId
                 );
               }
 
               function sendPosition(element) {
+                if (siteManagesPosition) {
+                  // setPositionState() already forwarded the site's own
+                  // values; DOM-derived ones would only fight them.
+                  return;
+                }
+
                 if (!element) {
-                  nativeBridge.updatePosition(0, 0, 1);
                   return;
                 }
 
@@ -803,7 +1092,8 @@ class MediaSessionBridge(
                 nativeBridge.updatePosition(
                   duration,
                   position,
-                  playbackRate
+                  playbackRate,
+                  frameId
                 );
               }
 
@@ -828,15 +1118,30 @@ class MediaSessionBridge(
                   }
                 }
 
-                nativeBridge.updatePlaybackState(state);
+                // Frames without an element (WebAudio players driving an
+                // explicit playbackState) count as audible; muted clips never
+                // claim the session away from the real player.
+                const audible =
+                  !element ||
+                  (!element.muted && element.volume > 0);
+
+                nativeBridge.updatePlaybackState(
+                  state,
+                  frameId,
+                  audible
+                );
               }
 
               function synchronize() {
+                if (!frameOwnsMedia()) return;
+
                 const element = getActiveMedia();
 
-                sendMetadata();
-                sendPlaybackState(element);
+                // Position first so a state change publishes fresh values;
+                // state last so publish() applies metadata and position.
                 sendPosition(element);
+                sendMetadata(element);
+                sendPlaybackState(element);
 
                 getMediaElements().forEach(bindElement);
               }
@@ -989,6 +1294,7 @@ class MediaSessionBridge(
                 };
 
               if (
+                hadNativeSession &&
                 mediaSession &&
                 typeof mediaSession.setActionHandler ===
                   "function"
@@ -1018,6 +1324,7 @@ class MediaSessionBridge(
               }
 
               if (
+                hadNativeSession &&
                 mediaSession &&
                 typeof mediaSession.setPositionState ===
                   "function"
@@ -1030,10 +1337,13 @@ class MediaSessionBridge(
                 mediaSession.setPositionState =
                   function(state) {
                     if (state) {
+                      siteManagesPosition = true;
+
                       nativeBridge.updatePosition(
                         Number(state.duration) || 0,
                         Number(state.position) || 0,
-                        Number(state.playbackRate) || 1
+                        Number(state.playbackRate) || 1,
+                        frameId
                       );
                     }
 
@@ -1072,7 +1382,9 @@ class MediaSessionBridge(
                 event => {
                   if (!event.persisted) {
                     nativeBridge.updatePlaybackState(
-                      "none"
+                      "none",
+                      frameId,
+                      true
                     );
                   }
                 }

@@ -746,7 +746,7 @@ class WebViewActivity : AppCompatActivity() {
                     statusBarAutoColor = color
                     refreshStatusBarAppearance()
                 },
-                onWebViewCreated = { wv ->
+                onWebViewCreated = { wv, loadedApp ->
                     webView = wv
 
                     wv.onResume()
@@ -770,7 +770,13 @@ class WebViewActivity : AppCompatActivity() {
                         wv.addJavascriptInterface(printBridge, com.webtoapp.core.webview.PrintBridge.JS_INTERFACE_NAME)
                     }
 
-                    if (previewWvConfig?.enableMediaSession == true) {
+                    // App-id launches resolve the saved config before the WebView is
+                    // created (targetUrl gates the AndroidView on the loaded app);
+                    // preview launches carry it in the intent. Both paths must
+                    // install the media bridge, otherwise playback started from the
+                    // app list never publishes a media session.
+                    val effectiveMediaConfig = previewApp?.webViewConfig ?: loadedApp?.webViewConfig
+                    if (effectiveMediaConfig?.enableMediaSession == true) {
                         val mediaBridge = com.webtoapp.core.webview.MediaSessionBridge(
                             this@WebViewActivity,
                             wv
@@ -982,7 +988,7 @@ fun WebViewScreen(
     testModuleIds: List<String>? = null,
     onStatusBarConfigChanged: ((com.webtoapp.data.model.StatusBarColorMode, String?, Boolean?, Boolean, com.webtoapp.data.model.StatusBarBackgroundType, com.webtoapp.data.model.StatusBarColorMode, String?, Boolean, com.webtoapp.data.model.StatusBarBackgroundType) -> Unit)? = null,
     onStatusBarAutoColorChanged: ((String?) -> Unit)? = null,
-    onWebViewCreated: (WebView) -> Unit,
+    onWebViewCreated: (WebView, WebApp?) -> Unit,
     onFileChooser: (ValueCallback<Array<Uri>>?, WebChromeClient.FileChooserParams?) -> Boolean,
     onShowCustomView: (View, WebChromeClient.CustomViewCallback?) -> Unit,
     onHideCustomView: () -> Unit,
@@ -2959,7 +2965,7 @@ fun WebViewScreen(
                             tracker.attach()
                             statusBarColorTracker = tracker
                             webViewRef = wv
-                            onWebViewCreated(wv)
+                            onWebViewCreated(wv, null)
                             tracker.scheduleSample(80L)
                         },
                         swipeRefreshEnabled = mwApp.webViewConfig.swipeRefreshEnabled,
@@ -3139,7 +3145,7 @@ fun WebViewScreen(
                                     )
                                     tracker.attach()
                                     statusBarColorTracker = tracker
-                                    onWebViewCreated(this)
+                                    onWebViewCreated(this, webApp)
                                     WebScrollTracker.install(this)
 
                                     webViewRef = this
