@@ -12,8 +12,7 @@ class ActivationCodeTest {
               "code":"ABC-123",
               "type":"TIME_LIMITED",
               "timeLimitMs":3600000,
-              "usageLimit":5,
-              "allowDeviceBinding":true
+              "usageLimit":5
             }
         """.trimIndent()
 
@@ -24,7 +23,6 @@ class ActivationCodeTest {
         assertThat(parsed?.type).isEqualTo(ActivationCodeType.TIME_LIMITED)
         assertThat(parsed?.timeLimitMs).isEqualTo(3_600_000L)
         assertThat(parsed?.usageLimit).isEqualTo(5)
-        assertThat(parsed?.allowDeviceBinding).isTrue()
     }
 
     @Test
@@ -56,7 +54,6 @@ class ActivationCodeTest {
             type = ActivationCodeType.COMBINED,
             timeLimitMs = 60_000L,
             usageLimit = 10,
-            allowDeviceBinding = true,
             note = "test"
         )
 
@@ -64,5 +61,14 @@ class ActivationCodeTest {
 
         assertThat(restored).isNotNull()
         assertThat(restored?.copy(createdAt = 0L)).isEqualTo(original.copy(createdAt = 0L))
+    }
+
+    @Test
+    fun `fromJson downgrades the removed DEVICE_BOUND type to PERMANENT`() {
+        val json = """{"code":"DEV1","type":"DEVICE_BOUND","allowDeviceBinding":true}"""
+        val parsed = ActivationCode.fromJson(json)
+        assertThat(parsed).isNotNull()
+        assertThat(parsed!!.code).isEqualTo("DEV1")
+        assertThat(parsed.type).isEqualTo(ActivationCodeType.PERMANENT)
     }
 }

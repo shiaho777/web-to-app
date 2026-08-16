@@ -73,11 +73,6 @@ private fun getCodeTypeTheme(type: ActivationCodeType): CodeTypeTheme {
             color = scheme.tertiary,
             labelBg = scheme.tertiary.copy(alpha = 0.10f)
         )
-        ActivationCodeType.DEVICE_BOUND -> CodeTypeTheme(
-            icon = Icons.Outlined.PhonelinkLock,
-            color = com.webtoapp.ui.design.WtaColors.semantic.warning,
-            labelBg = com.webtoapp.ui.design.WtaColors.semantic.warningContainer
-        )
         ActivationCodeType.COMBINED -> CodeTypeTheme(
             icon = Icons.Outlined.Layers,
             color = com.webtoapp.ui.design.WtaColors.semantic.info,
@@ -1106,9 +1101,6 @@ private fun EnhancedActivationCodeItem(
                             add("🔢 $limit ${Strings.times}")
                         }
                     }
-                    ActivationCodeType.DEVICE_BOUND -> {
-                        add("🔒 ${Strings.deviceBound}")
-                    }
                     ActivationCodeType.PERMANENT -> {
                         add("♾️ ${Strings.permanentValid}")
                     }
@@ -1135,17 +1127,6 @@ private fun EnhancedActivationCodeItem(
                 }
             }
 
-            if (code.type == ActivationCodeType.DEVICE_BOUND) {
-                Text(
-                    text = Strings.deviceBoundRemoteTip,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                    fontSize = 11.sp,
-                    modifier = Modifier
-                        .padding(top = 4.dp)
-                        .fillMaxWidth()
-                )
-            }
         }
     }
 }
@@ -1193,55 +1174,34 @@ private fun AddActivationCodeDialog(
                     fontWeight = FontWeight.SemiBold
                 )
 
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    ActivationCodeType.values().forEach { type ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ActivationCodeType.entries.forEach { type ->
                         val theme = getCodeTypeTheme(type)
-                        val isSelected = codeType == type
-
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (isSelected) theme.labelBg else Color.Transparent,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { codeType = type }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
-                                    selected = isSelected,
-                                    onClick = { codeType = type },
-                                    colors = RadioButtonDefaults.colors(
-                                        selectedColor = theme.color
-                                    )
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
+                        FilterChip(
+                            selected = codeType == type,
+                            onClick = { codeType = type },
+                            label = { Text(getActivationTypeName(type)) },
+                            leadingIcon = {
                                 Icon(
                                     theme.icon,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                    tint = if (isSelected) theme.color else MaterialTheme.colorScheme.onSurfaceVariant
+                                    null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = if (codeType == type) theme.color else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                                    Text(
-                                        text = getActivationTypeName(type),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                        color = if (isSelected) theme.color else MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = getActivationTypeDesc(type),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        lineHeight = 16.sp
-                                    )
-                                }
                             }
-                        }
+                        )
                     }
                 }
+                Text(
+                    text = getActivationTypeDesc(codeType),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
@@ -1766,7 +1726,6 @@ private fun getActivationTypeName(type: ActivationCodeType): String = when (type
     ActivationCodeType.PERMANENT -> Strings.activationTypePermanent
     ActivationCodeType.TIME_LIMITED -> Strings.activationTypeTimeLimited
     ActivationCodeType.USAGE_LIMITED -> Strings.activationTypeUsageLimited
-    ActivationCodeType.DEVICE_BOUND -> Strings.activationTypeDeviceBound
     ActivationCodeType.COMBINED -> Strings.activationTypeCombined
 }
 
@@ -1774,6 +1733,5 @@ private fun getActivationTypeDesc(type: ActivationCodeType): String = when (type
     ActivationCodeType.PERMANENT -> Strings.activationTypePermanentDesc
     ActivationCodeType.TIME_LIMITED -> Strings.activationTypeTimeLimitedDesc
     ActivationCodeType.USAGE_LIMITED -> Strings.activationTypeUsageLimitedDesc
-    ActivationCodeType.DEVICE_BOUND -> Strings.activationTypeDeviceBoundDesc
     ActivationCodeType.COMBINED -> Strings.activationTypeCombinedDesc
 }

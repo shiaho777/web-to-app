@@ -190,7 +190,7 @@ private fun ActivationDialogHeader(
     val semantic = com.webtoapp.ui.design.WtaColors.semantic
     val iconBgColor = when (result) {
         is ActivationResult.Success -> semantic.success
-        is ActivationResult.Invalid, is ActivationResult.DeviceMismatch,
+        is ActivationResult.Invalid,
         is ActivationResult.Expired, is ActivationResult.UsageExceeded -> MaterialTheme.colorScheme.error
         is ActivationResult.AlreadyActivated -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.primary
@@ -199,7 +199,6 @@ private fun ActivationDialogHeader(
     val icon: ImageVector = when (result) {
         is ActivationResult.Success -> Icons.Filled.CheckCircle
         is ActivationResult.Invalid -> Icons.Filled.Cancel
-        is ActivationResult.DeviceMismatch -> Icons.Filled.PhonelinkErase
         is ActivationResult.Expired -> Icons.Filled.TimerOff
         is ActivationResult.UsageExceeded -> Icons.Filled.Block
         is ActivationResult.AlreadyActivated -> Icons.Filled.Verified
@@ -290,14 +289,6 @@ private fun ActivationResultCard(result: ActivationResult) {
             containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
             contentColor = MaterialTheme.colorScheme.error,
             suggestion = Strings.invalidCodeSuggestion
-        )
-        is ActivationResult.DeviceMismatch -> ResultCardData(
-            icon = Icons.Filled.PhonelinkErase,
-            title = Strings.activationCodeBoundToOtherDevice,
-            message = Strings.deviceMismatchDetail,
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
-            contentColor = MaterialTheme.colorScheme.error,
-            suggestion = Strings.deviceMismatchSuggestion
         )
         is ActivationResult.Expired -> ResultCardData(
             icon = Icons.Filled.TimerOff,
@@ -578,7 +569,6 @@ private fun getStatusTypeName(type: ActivationCodeType): String = when (type) {
     ActivationCodeType.PERMANENT -> Strings.activationTypePermanent
     ActivationCodeType.TIME_LIMITED -> Strings.activationTypeTimeLimited
     ActivationCodeType.USAGE_LIMITED -> Strings.activationTypeUsageLimited
-    ActivationCodeType.DEVICE_BOUND -> Strings.activationTypeDeviceBound
     ActivationCodeType.COMBINED -> Strings.activationTypeCombined
 }
 

@@ -32,14 +32,6 @@ class ActivationCodeExtendedTest {
         assertThat(code.usageLimit).isEqualTo(5)
     }
 
-    @Test
-    fun `fromJson parses DEVICE_BOUND type with allowDeviceBinding`() {
-        val json = """{"code":"DEV1","type":"DEVICE_BOUND","allowDeviceBinding":true}"""
-        val code = ActivationCode.fromJson(json)
-        assertThat(code).isNotNull()
-        assertThat(code!!.type).isEqualTo(ActivationCodeType.DEVICE_BOUND)
-        assertThat(code.allowDeviceBinding).isTrue()
-    }
 
     @Test
     fun `fromJson parses COMBINED type`() {
@@ -91,7 +83,6 @@ class ActivationCodeExtendedTest {
             code = "ROUNDTRIP",
             type = ActivationCodeType.USAGE_LIMITED,
             usageLimit = 100,
-            allowDeviceBinding = true,
             note = "test note"
         )
         val json = original.toJson()
@@ -100,7 +91,6 @@ class ActivationCodeExtendedTest {
         assertThat(restored!!.code).isEqualTo(original.code)
         assertThat(restored.type).isEqualTo(original.type)
         assertThat(restored.usageLimit).isEqualTo(original.usageLimit)
-        assertThat(restored.allowDeviceBinding).isEqualTo(original.allowDeviceBinding)
         assertThat(restored.note).isEqualTo(original.note)
     }
 
@@ -116,7 +106,7 @@ class ActivationCodeExtendedTest {
         val code = ActivationCode.fromLegacyString("SIMPLE")
         assertThat(code.timeLimitMs).isNull()
         assertThat(code.usageLimit).isNull()
-        assertThat(code.allowDeviceBinding).isFalse()
+        assertThat(code.note).isNull()
     }
 
     @Test
@@ -125,7 +115,6 @@ class ActivationCodeExtendedTest {
             ActivationCodeType.PERMANENT,
             ActivationCodeType.TIME_LIMITED,
             ActivationCodeType.USAGE_LIMITED,
-            ActivationCodeType.DEVICE_BOUND,
             ActivationCodeType.COMBINED
         )
     }

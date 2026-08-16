@@ -76,7 +76,7 @@ class WebAppModelTest {
             name = "Demo",
             url = "https://example.com",
             activationCodeList = listOf(
-                ActivationCode(code = "NEW", type = ActivationCodeType.DEVICE_BOUND)
+                ActivationCode(code = "NEW", type = ActivationCodeType.COMBINED)
             )
         )
 

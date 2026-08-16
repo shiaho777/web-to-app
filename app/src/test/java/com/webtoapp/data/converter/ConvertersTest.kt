@@ -71,7 +71,7 @@ class ConvertersTest {
             [
               {"code":"GOOD","type":"PERMANENT","note":"ok"},
               "broken-item",
-              {"code":"GOOD2","type":"DEVICE_BOUND","note":"ok2"}
+              {"code":"GOOD2","type":"USAGE_LIMITED","note":"ok2"}
             ]
         """.trimIndent()
 

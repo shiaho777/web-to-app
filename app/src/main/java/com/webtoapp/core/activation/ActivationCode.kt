@@ -6,7 +6,6 @@ enum class ActivationCodeType(val displayName: String, val description: String) 
     PERMANENT("Permanent", "Valid permanently after activation, no restrictions"),
     TIME_LIMITED("Time Limited", "Valid within specified time after activation"),
     USAGE_LIMITED("Usage Limited", "Can be used specified number of times after activation"),
-    DEVICE_BOUND("Device Bound", "Bound to current device after activation"),
     COMBINED("Combined", "Supports both time and usage limits")
 }
 
@@ -23,9 +22,6 @@ data class ActivationCode(
     @SerializedName("usageLimit")
     val usageLimit: Int? = null,
 
-    @SerializedName("allowDeviceBinding")
-    val allowDeviceBinding: Boolean = false,
-
     @SerializedName("note")
     val note: String? = null,
 
@@ -38,7 +34,11 @@ data class ActivationCode(
         fun fromJson(json: String): ActivationCode? {
             return try {
                 if (json.trimStart().startsWith("{")) {
-                    gson.fromJson(json, ActivationCode::class.java)
+                    // Legacy configs may still carry a removed type value (e.g. the old
+                    // DEVICE_BOUND); Gson maps unknown enum names to null, so fall back
+                    // to PERMANENT instead of leaking a null type into callers.
+                    val parsed = gson.fromJson(json, ActivationCode::class.java)
+                    if (parsed?.type == null) parsed?.copy(type = ActivationCodeType.PERMANENT) else parsed
                 } else {
                     null
                 }

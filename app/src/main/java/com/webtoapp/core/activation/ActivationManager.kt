@@ -221,18 +221,6 @@ class ActivationManager(private val context: Context) {
             if (currentStatus.isUsageExceeded) {
                 return ActivationResult.UsageExceeded
             }
-            if (code.type == ActivationCodeType.DEVICE_BOUND &&
-                currentStatus.deviceId != null &&
-                currentStatus.deviceId != deviceId
-            ) {
-                return ActivationResult.DeviceMismatch
-            }
-        }
-
-        if (code.type == ActivationCodeType.DEVICE_BOUND && code.allowDeviceBinding) {
-            if (currentStatus.deviceId != null && currentStatus.deviceId != deviceId) {
-                return ActivationResult.DeviceMismatch
-            }
         }
 
         if (code.type == ActivationCodeType.TIME_LIMITED ||
@@ -330,9 +318,6 @@ class ActivationManager(private val context: Context) {
                 preferences[intPreferencesKey("usage_limit_$appId")] = it
                 preferences[intPreferencesKey("usage_count_$appId")] = 0
             }
-            if (code.type == ActivationCodeType.DEVICE_BOUND && code.allowDeviceBinding) {
-                preferences[stringPreferencesKey("device_id_$appId")] = deviceId
-            }
             preferences[stringPreferencesKey("code_type_$appId")] = code.type.name
         }
         AppLogger.i(TAG, "Activation status saved: app=$appId, type=${code.type}")
@@ -393,7 +378,6 @@ class ActivationManager(private val context: Context) {
             type = type,
             timeLimitMs = timeLimitMs,
             usageLimit = usageLimit,
-            allowDeviceBinding = type == ActivationCodeType.DEVICE_BOUND,
             note = note
         )
     }
@@ -501,7 +485,6 @@ sealed class ActivationResult {
     data class Invalid(val message: String = "") : ActivationResult()
     data object Empty : ActivationResult()
     data object AlreadyActivated : ActivationResult()
-    data object DeviceMismatch : ActivationResult()
     data object Expired : ActivationResult()
     data object UsageExceeded : ActivationResult()
 }
