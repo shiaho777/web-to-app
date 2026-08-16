@@ -7,6 +7,7 @@ import com.webtoapp.core.agent.tool.builtin.BatchImportAppsTool
 import com.webtoapp.core.agent.tool.builtin.BuildApkTool
 import com.webtoapp.core.agent.tool.builtin.CheckPlayPolicyTool
 import com.webtoapp.core.agent.tool.builtin.CheckAppHealthTool
+import com.webtoapp.core.agent.tool.builtin.ClearAppCacheTool
 import com.webtoapp.core.agent.tool.builtin.ClearRuntimeCacheTool
 import com.webtoapp.core.agent.tool.builtin.CreateAppTool
 import com.webtoapp.core.agent.tool.builtin.CreateModuleTool
@@ -100,6 +101,7 @@ class ToolRegistryFactory(
         ExportAppTool(),
         CreateShortcutTool(),
         MoveToCategoryTool(),
+        ClearAppCacheTool(),
         DeleteAppTool(),
         DuplicateAppTool(),
         ExportAabTool(),

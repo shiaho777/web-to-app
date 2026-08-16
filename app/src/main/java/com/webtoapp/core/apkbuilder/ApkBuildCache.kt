@@ -262,6 +262,13 @@ class ApkBuildCache(private val context: Context) {
         }
     }
 
+    /** Disk bytes the [clear] call for this app would free; 0 when nothing is cached. */
+    fun entrySizeBytes(webApp: WebApp, packageName: String): Long {
+        val dir = File(rootDir, cacheKeyFor(webApp, packageName))
+        if (!dir.exists()) return 0L
+        return dir.walkBottomUp().filter { it.isFile }.sumOf { it.length() }
+    }
+
     fun clearAll() {
         if (rootDir.exists()) {
             rootDir.deleteRecursively()

@@ -165,6 +165,33 @@ class MoveToCategoryTool : Tool {
     }
 }
 
+class ClearAppCacheTool : Tool {
+    override val name = "ClearAppCache"
+    override val description = """
+        Clear one app's host-side caches: the incremental APK build cache entry (usually
+        the largest disk consumer, regenerated on the next build), the app's WebView
+        origin storage (site localStorage/IndexedDB, so the site starts fresh) and the
+        shared WebView HTTP cache. Cookies, app configuration and exported APKs are kept.
+        Use it to free disk space or to reset a site's local data before retesting.
+    """.trimIndent()
+    override val parametersSchema: JsonElement = jsonSchema {
+        integer("appId", "The app id (from ListApps).", required = true)
+    }
+    override fun isReadOnly() = false
+    override fun activityDescription(args: JsonObject): String? =
+        args.get("appId")?.asString?.let { "Clearing cache for app $it" }
+    override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
+        val appId = args.get("appId")?.asLong ?: return ToolResult.error("ClearAppCache: missing appId.")
+        val app = ctx.appRepository.getWebApp(appId) ?: return ToolResult.error("ClearAppCache: app $appId not found.")
+        val result = com.webtoapp.core.appcache.AppCacheCleaner.clearForApp(ctx.androidContext, app)
+        return ToolResult.ok(
+            "Cleared caches for \"${app.name}\": freed ${result.freedBytesText}, " +
+                "${result.originsCleared} site storage origin(s) reset. " +
+                "The build cache is regenerated on the next build."
+        )
+    }
+}
+
 class DeleteAppTool : Tool {
     override val name = "DeleteApp"
     override val description = """

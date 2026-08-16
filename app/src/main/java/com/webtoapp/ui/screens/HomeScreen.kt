@@ -149,6 +149,8 @@ fun HomeScreen(
     var editingCategory by remember { mutableStateOf<AppCategory?>(null) }
     var showMoveToCategoryDialog by remember { mutableStateOf(false) }
     var appToMove by remember { mutableStateOf<WebAppSummary?>(null) }
+    var showClearCacheDialog by remember { mutableStateOf(false) }
+    var appToClearCache by remember { mutableStateOf<WebAppSummary?>(null) }
 
     var isSearchActive by remember { mutableStateOf(false) }
     var selectedApp by remember { mutableStateOf<WebAppSummary?>(null) }
@@ -687,6 +689,10 @@ fun HomeScreen(
                                 appToMove = app
                                 showMoveToCategoryDialog = true
                             },
+                            onClearCache = {
+                                appToClearCache = app
+                                showClearCacheDialog = true
+                            },
                             healthStatus = healthMap[app.id]?.status,
                             previewImageLoader = previewImageLoader,
                             screenshotPath = if (previewSpec.captureUrl != null) {
@@ -905,6 +911,46 @@ fun HomeScreen(
         )
     }
 
+    if (showClearCacheDialog && appToClearCache != null) {
+        AnimatedAlertDialog(
+            onDismissRequest = {
+                showClearCacheDialog = false
+                appToClearCache = null
+            },
+            title = { Text(Strings.clearAppCacheTitle) },
+            text = { Text(Strings.clearAppCacheConfirm) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val target = appToClearCache
+                        showClearCacheDialog = false
+                        appToClearCache = null
+                        if (target != null) {
+                            scope.launch {
+                                val fullApp = viewModel.getWebApp(target.id) ?: return@launch
+                                val result = com.webtoapp.core.appcache.AppCacheCleaner
+                                    .clearForApp(context, fullApp)
+                                snackbarHostState.showSnackbar(
+                                    Strings.clearAppCacheDone.replace("%s", result.freedBytesText)
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Text(Strings.clearAppCacheMenu)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showClearCacheDialog = false
+                    appToClearCache = null
+                }) {
+                    Text(Strings.btnCancel)
+                }
+            }
+        )
+    }
+
     if (showCategoryEditor) {
         CategoryEditorDialog(
             category = editingCategory,
@@ -1054,6 +1100,7 @@ fun AppCard(
     onBuildApk: () -> Unit = {},
     onShareApk: () -> Unit = {},
     onMoveToCategory: () -> Unit = {},
+    onClearCache: () -> Unit = {},
     healthStatus: com.webtoapp.core.stats.HealthStatus? = null,
     previewImageLoader: ImageLoader,
     screenshotPath: String? = null,
@@ -1332,6 +1379,14 @@ fun AppCard(
                         onClick = {
                             expanded = false
                             onMoveToCategory()
+                        }
+                    )
+                    com.webtoapp.ui.design.WtaDropdownMenuItem(
+                        text = Strings.clearAppCacheMenu,
+                        leadingIcon = Icons.Outlined.CleaningServices,
+                        onClick = {
+                            expanded = false
+                            onClearCache()
                         }
                     )
                     HorizontalDivider()

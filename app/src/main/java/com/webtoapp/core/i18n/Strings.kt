@@ -2859,6 +2859,10 @@ object Strings {
     val categoryNamePlaceholder: String get() = StringsD.categoryNamePlaceholder
     val categoryIcon: String get() = StringsD.categoryIcon
     val moveToCategory: String get() = StringsD.moveToCategory
+    val clearAppCacheMenu: String get() = StringsD.clearAppCacheMenu
+    val clearAppCacheTitle: String get() = StringsD.clearAppCacheTitle
+    val clearAppCacheConfirm: String get() = StringsD.clearAppCacheConfirm
+    val clearAppCacheDone: String get() = StringsD.clearAppCacheDone
     val deleteCategoryConfirm: String get() = StringsD.deleteCategoryConfirm
     val randomNameTooltip: String get() = StringsD.randomNameTooltip
     val sampleVueCounterName: String get() = StringsD.sampleVueCounterName
@@ -40895,6 +40899,58 @@ object StringsD {
         AppLanguage.RUSSIAN -> "Переместить в категорию"
         AppLanguage.JAPANESE -> "カテゴリに移動"
         AppLanguage.KOREAN -> "카테고리로 이동"
+    }
+
+    val clearAppCacheMenu: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "清理缓存"
+        AppLanguage.ENGLISH -> "Clear Cache"
+        AppLanguage.ARABIC -> "مسح ذاكرة التخزين المؤقت"
+        AppLanguage.PORTUGUESE -> "Limpar Cache"
+        AppLanguage.SPANISH -> "Borrar Caché"
+        AppLanguage.FRENCH -> "Vider le Cache"
+        AppLanguage.GERMAN -> "Cache leeren"
+        AppLanguage.RUSSIAN -> "Очистить кэш"
+        AppLanguage.JAPANESE -> "キャッシュを消去"
+        AppLanguage.KOREAN -> "캐시 지우기"
+    }
+
+    val clearAppCacheTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "清理应用缓存"
+        AppLanguage.ENGLISH -> "Clear App Cache"
+        AppLanguage.ARABIC -> "مسح ذاكرة التخزين المؤقت للتطبيق"
+        AppLanguage.PORTUGUESE -> "Limpar Cache do Aplicativo"
+        AppLanguage.SPANISH -> "Borrar Caché de la Aplicación"
+        AppLanguage.FRENCH -> "Vider le Cache de l'Application"
+        AppLanguage.GERMAN -> "App-Cache leeren"
+        AppLanguage.RUSSIAN -> "Очистить кэш приложения"
+        AppLanguage.JAPANESE -> "アプリのキャッシュを消去"
+        AppLanguage.KOREAN -> "앱 캐시 지우기"
+    }
+
+    val clearAppCacheConfirm: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "将删除该应用的 APK 增量构建缓存和站点本地数据（保留 Cookie 与应用配置）。被清理的构建缓存会在下次构建时重新生成。"
+        AppLanguage.ENGLISH -> "Deletes this app's incremental APK build cache and site local storage. Cookies and app settings are kept; the build cache is regenerated on the next build."
+        AppLanguage.ARABIC -> "سيتم حذف ذاكرة التخزين المؤقت لبناء APK والبيانات المحلية للموقع لهذا التطبيق. تُحفظ ملفات تعريف الارتباط وإعدادات التطبيق، ويُعاد توليد ذاكرة البناء في البناء التالي."
+        AppLanguage.PORTUGUESE -> "Exclui o cache incremental de build do APK e os dados locais do site deste aplicativo. Cookies e configurações são mantidos; o cache de build é recriado no próximo build."
+        AppLanguage.SPANISH -> "Elimina la caché de compilación incremental del APK y los datos locales del sitio de esta aplicación. Se conservan las cookies y la configuración; la caché se regenera en la próxima compilación."
+        AppLanguage.FRENCH -> "Supprime le cache de build APK incrémental et les données locales du site de cette application. Les cookies et les réglages sont conservés ; le cache est régénéré au prochain build."
+        AppLanguage.GERMAN -> "Löscht den inkrementellen APK-Build-Cache und die lokalen Websitedaten dieser App. Cookies und Einstellungen bleiben erhalten; der Build-Cache wird beim nächsten Build neu erzeugt."
+        AppLanguage.RUSSIAN -> "Удалит инкрементальный кэш сборки APK и локальные данные сайта этого приложения. Cookie и настройки сохраняются; кэш сборки создастся заново при следующей сборке."
+        AppLanguage.JAPANESE -> "このアプリのAPK増分ビルドキャッシュとサイトのローカルデータを削除します。Cookieとアプリ設定は保持され、ビルドキャッシュは次回ビルド時に再生成されます。"
+        AppLanguage.KOREAN -> "이 앱의 APK 증분 빌드 캐시와 사이트 로컬 데이터를 삭제합니다. 쿠키와 앱 설정은 유지되며, 빌드 캐시는 다음 빌드 때 다시 생성됩니다."
+    }
+
+    val clearAppCacheDone: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "已清理，释放 %s"
+        AppLanguage.ENGLISH -> "Cleared — freed %s"
+        AppLanguage.ARABIC -> "تم المسح — تم تحرير %s"
+        AppLanguage.PORTUGUESE -> "Limpo — liberado %s"
+        AppLanguage.SPANISH -> "Borrado — liberado %s"
+        AppLanguage.FRENCH -> "Vidé — %s libérés"
+        AppLanguage.GERMAN -> "Geleert — %s freigegeben"
+        AppLanguage.RUSSIAN -> "Очищено — освобождено %s"
+        AppLanguage.JAPANESE -> "消去しました — %s 解放"
+        AppLanguage.KOREAN -> "지웠습니다 — %s 확보"
     }
 
     val deleteCategoryConfirm: String get() = when (Strings.lang) {

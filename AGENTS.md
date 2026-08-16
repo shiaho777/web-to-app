@@ -208,7 +208,7 @@ Checklist in order:
 
 ### 11. Change a feature that has an Agent tool
 
-The in-app Agent exposes 53 tools that wrap host service classes. When you change a feature, trace the tool chain:
+The in-app Agent exposes 54 tools that wrap host service classes. When you change a feature, trace the tool chain:
 
 ```text
 LLM response (tool_calls)
@@ -348,4 +348,4 @@ Landed:
 - Config field drift detection (`checkConfigFieldDrift`)
 - Module Market: Chrome Web Store live search + GreasyFork browse
 - Code editor find-and-replace
-- Agent tool system: 53 tools (app lifecycle, config templates, ports/engine, hosts/runtime, stats/modifier/import, build env/Play, modules, files, imagery) with Channel-based permission prompting, per-section SSE parse resilience, and plan mode; runtime/build-env tools surface `localExecAllowed` so the LLM knows targetSdk>=29 hosts cannot exec app-storage binaries
+- Agent tool system: 54 tools (app lifecycle, config templates, ports/engine, hosts/runtime, stats/modifier/import, build env/Play, modules, files, imagery) with Channel-based permission prompting, per-section SSE parse resilience, and plan mode; runtime/build-env tools surface `localExecAllowed` so the LLM knows targetSdk>=29 hosts cannot exec app-storage binaries
