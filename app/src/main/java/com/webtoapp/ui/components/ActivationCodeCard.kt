@@ -3,6 +3,7 @@ package com.webtoapp.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import com.webtoapp.ui.design.WtaChoiceRow
 import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.design.WtaToggleRow
 import androidx.compose.animation.core.Spring
@@ -116,35 +117,43 @@ fun ActivationCodeCard(
 
     Box {
         com.webtoapp.ui.design.WtaSettingCard {
-            Column {
-                WtaToggleRow(
-                    icon = Icons.Outlined.VpnKey,
-                    title = Strings.activationCodeVerify,
-                    checked = enabled,
-                    onCheckedChange = onEnabledChange
-                )
+            WtaToggleRow(
+                icon = Icons.Outlined.VpnKey,
+                title = Strings.activationCodeVerify,
+                checked = enabled,
+                onCheckedChange = onEnabledChange
+            )
 
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = enabled,
-                    enter = CardExpandTransition,
-                    exit = CardCollapseTransition
-                ) {
+            androidx.compose.animation.AnimatedVisibility(
+                visible = enabled,
+                enter = CardExpandTransition,
+                exit = CardCollapseTransition
+            ) {
+                Column {
+                    WtaSectionDivider()
+
+                    // Verification mode: exactly one scheme is active at a time; runtime
+                    // treats remoteConfig.enabled as "online verification wins", so these
+                    // radios write that single flag and gate the scheme blocks below.
+                    // Same radio-group pattern as the PWA offline strategy selector.
                     Column(
-                        modifier = Modifier.padding(horizontal = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        modifier = Modifier.padding(
+                            horizontal = WtaSpacing.RowHorizontal,
+                            vertical = WtaSpacing.ContentGap
+                        )
                     ) {
-                        // --- Verification mode: exactly one scheme is active at a time.
-                        // runtime treats remoteConfig.enabled as "online verification wins",
-                        // so these radio rows write that single flag and gate the scheme UI below.
                         Text(
                             text = Strings.activationModeLabel,
                             style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 4.dp)
                         )
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onRemoteConfigChange(remoteConfig.copy(enabled = false)) },
+                                .clip(MaterialTheme.shapes.small)
+                                .clickable { onRemoteConfigChange(remoteConfig.copy(enabled = false)) }
+                                .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
@@ -160,7 +169,9 @@ fun ActivationCodeCard(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { onRemoteConfigChange(remoteConfig.copy(enabled = true)) },
+                                .clip(MaterialTheme.shapes.small)
+                                .clickable { onRemoteConfigChange(remoteConfig.copy(enabled = true)) }
+                                .padding(vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
@@ -173,171 +184,177 @@ fun ActivationCodeCard(
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
-                        WtaSectionDivider()
+                    }
 
-                        if (!remoteConfig.enabled) {
-                            WtaChoiceRow(
-                                title = Strings.activationSectionCodes,
-                                subtitle = if (activationCodes.isNotEmpty())
-                                    Strings.activationSectionCodesCount(activationCodes.size)
-                                else Strings.activationSectionCodesEmpty,
-                                icon = Icons.Outlined.ListAlt,
-                                value = "",
-                                isExpanded = showCodesSection,
-                                onClick = { showCodesSection = !showCodesSection }
-                            )
-                            androidx.compose.animation.AnimatedVisibility(
-                                visible = showCodesSection,
-                                enter = CardExpandTransition,
-                                exit = CardCollapseTransition
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(horizontal = 4.dp),
-                                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        PremiumButton(
-                                            onClick = { showAddDialog = true },
-                                            modifier = Modifier.weight(1f)
-                                        ) {
-                                            Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
-                                            Spacer(modifier = Modifier.width(6.dp))
-                                            Text(Strings.addActivationCode, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                        }
-                                        PremiumOutlinedButton(
-                                            onClick = { showBatchDialog = true },
-                                            shape = RoundedCornerShape(12.dp)
-                                        ) {
-                                            Icon(Icons.Outlined.AutoAwesome, null, modifier = Modifier.size(18.dp))
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(Strings.batchGenerate, maxLines = 1)
-                                        }
-                                    }
-                                    PremiumOutlinedButton(
-                                        onClick = { showBatchImportDialog = true },
-                                        shape = RoundedCornerShape(12.dp),
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Icon(Icons.Outlined.PostAdd, null, modifier = Modifier.size(18.dp))
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(Strings.batchImport, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    }
-                                    if (activationCodes.isNotEmpty()) {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.End,
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            TextButton(
-                                                onClick = {
-                                                    val allCodes = activationCodes.joinToString("\n") { it.code }
-                                                    clipboardManager.setText(AnnotatedString(allCodes))
-                                                    snackbarMessage = Strings.copiedToClipboard
-                                                },
-                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                            ) {
-                                                Icon(Icons.Outlined.CopyAll, null, modifier = Modifier.size(16.dp))
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text(Strings.copyAllCodes, style = MaterialTheme.typography.labelSmall)
-                                            }
-                                            TextButton(
-                                                onClick = { showDeleteAllDialog = true },
-                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                                colors = ButtonDefaults.textButtonColors(
-                                                    contentColor = MaterialTheme.colorScheme.error
-                                                )
-                                            ) {
-                                                Icon(Icons.Outlined.DeleteSweep, null, modifier = Modifier.size(16.dp))
-                                                Text(Strings.deleteAllCodes, style = MaterialTheme.typography.labelSmall)
-                                            }
-                                        }
-                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            activationCodes.forEachIndexed { index, code ->
-                                                EnhancedActivationCodeItem(
-                                                    code = code,
-                                                    onDelete = {
-                                                        onCodesChange(activationCodes.filterIndexed { i, _ -> i != index })
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    } else {
-                                        EmptyActivationCodesState()
-                                    }
-                                }
-                            }
-                        } else {
-                            RemoteActivationSection(
-                                remoteConfig = remoteConfig,
-                                onRemoteConfigChange = onRemoteConfigChange,
-                                onShowGuide = { showRemoteGuideDialog = true }
-                            )
-                        }
+                    WtaSectionDivider()
 
-                        WtaSectionDivider()
-
-                        WtaToggleRow(
-                            title = Strings.requireEveryLaunch,
-                            subtitle = if (requireEveryTime) Strings.requireEveryLaunchHintOn else Strings.requireEveryLaunchHintOff,
-                            checked = requireEveryTime,
-                            onCheckedChange = onRequireEveryTimeChange
-                        )
-
-                        WtaSectionDivider()
-
+                    if (!remoteConfig.enabled) {
                         WtaChoiceRow(
-                            title = Strings.customDialogText,
-                            subtitle = Strings.customDialogTextHint,
-                            icon = Icons.Outlined.Edit,
+                            title = Strings.activationSectionCodes,
+                            subtitle = if (activationCodes.isNotEmpty())
+                                Strings.activationSectionCodesCount(activationCodes.size)
+                            else Strings.activationSectionCodesEmpty,
+                            icon = Icons.Outlined.ListAlt,
                             value = "",
-                            isExpanded = showCustomTextSection,
-                            onClick = { showCustomTextSection = !showCustomTextSection }
+                            isExpanded = showCodesSection,
+                            onClick = { showCodesSection = !showCodesSection }
                         )
                         androidx.compose.animation.AnimatedVisibility(
-                            visible = showCustomTextSection,
+                            visible = showCodesSection,
                             enter = CardExpandTransition,
                             exit = CardCollapseTransition
                         ) {
                             Column(
-                                modifier = Modifier.padding(horizontal = 4.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                modifier = Modifier.padding(
+                                    horizontal = WtaSpacing.RowHorizontal,
+                                    vertical = WtaSpacing.ContentGap
+                                ),
+                                verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
                             ) {
-                                PremiumTextField(
-                                    value = dialogConfig.title,
-                                    onValueChange = { onDialogConfigChange(dialogConfig.copy(title = it)) },
-                                    label = { Text(Strings.dialogTitle) },
-                                    placeholder = { Text(Strings.dialogTitleHint) },
-                                    singleLine = true,
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    PremiumButton(
+                                        onClick = { showAddDialog = true },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(Strings.addActivationCode, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    }
+                                    PremiumOutlinedButton(
+                                        onClick = { showBatchDialog = true },
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Icon(Icons.Outlined.AutoAwesome, null, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(Strings.batchGenerate, maxLines = 1)
+                                    }
+                                }
+                                PremiumOutlinedButton(
+                                    onClick = { showBatchImportDialog = true },
+                                    shape = RoundedCornerShape(12.dp),
                                     modifier = Modifier.fillMaxWidth()
-                                )
-                                PremiumTextField(
-                                    value = dialogConfig.subtitle,
-                                    onValueChange = { onDialogConfigChange(dialogConfig.copy(subtitle = it)) },
-                                    label = { Text(Strings.dialogSubtitle) },
-                                    placeholder = { Text(Strings.dialogSubtitleHint) },
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                                PremiumTextField(
-                                    value = dialogConfig.inputLabel,
-                                    onValueChange = { onDialogConfigChange(dialogConfig.copy(inputLabel = it)) },
-                                    label = { Text(Strings.dialogInputLabel) },
-                                    placeholder = { Text(Strings.dialogInputLabelHint) },
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                                PremiumTextField(
-                                    value = dialogConfig.buttonText,
-                                    onValueChange = { onDialogConfigChange(dialogConfig.copy(buttonText = it)) },
-                                    label = { Text(Strings.dialogButtonText) },
-                                    placeholder = { Text(Strings.dialogButtonTextHint) },
-                                    singleLine = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
+                                ) {
+                                    Icon(Icons.Outlined.PostAdd, null, modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(Strings.batchImport, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                }
+                                if (activationCodes.isNotEmpty()) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        TextButton(
+                                            onClick = {
+                                                val allCodes = activationCodes.joinToString("\n") { it.code }
+                                                clipboardManager.setText(AnnotatedString(allCodes))
+                                                snackbarMessage = Strings.copiedToClipboard
+                                            },
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                        ) {
+                                            Icon(Icons.Outlined.CopyAll, null, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(Strings.copyAllCodes, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                        TextButton(
+                                            onClick = { showDeleteAllDialog = true },
+                                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                            colors = ButtonDefaults.textButtonColors(
+                                                contentColor = MaterialTheme.colorScheme.error
+                                            )
+                                        ) {
+                                            Icon(Icons.Outlined.DeleteSweep, null, modifier = Modifier.size(16.dp))
+                                            Text(Strings.deleteAllCodes, style = MaterialTheme.typography.labelSmall)
+                                        }
+                                    }
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        activationCodes.forEachIndexed { index, code ->
+                                            EnhancedActivationCodeItem(
+                                                code = code,
+                                                onDelete = {
+                                                    onCodesChange(activationCodes.filterIndexed { i, _ -> i != index })
+                                                }
+                                            )
+                                        }
+                                    }
+                                } else {
+                                    EmptyActivationCodesState()
+                                }
                             }
+                        }
+                    } else {
+                        RemoteActivationSection(
+                            remoteConfig = remoteConfig,
+                            onRemoteConfigChange = onRemoteConfigChange,
+                            onShowGuide = { showRemoteGuideDialog = true }
+                        )
+                    }
+
+                    WtaSectionDivider()
+
+                    WtaToggleRow(
+                        title = Strings.requireEveryLaunch,
+                        subtitle = if (requireEveryTime) Strings.requireEveryLaunchHintOn else Strings.requireEveryLaunchHintOff,
+                        checked = requireEveryTime,
+                        onCheckedChange = onRequireEveryTimeChange
+                    )
+
+                    WtaSectionDivider()
+
+                    WtaChoiceRow(
+                        title = Strings.customDialogText,
+                        icon = Icons.Outlined.Edit,
+                        value = "",
+                        isExpanded = showCustomTextSection,
+                        onClick = { showCustomTextSection = !showCustomTextSection }
+                    )
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = showCustomTextSection,
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(
+                                horizontal = WtaSpacing.RowHorizontal,
+                                vertical = WtaSpacing.ContentGap
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+                        ) {
+                            PremiumTextField(
+                                value = dialogConfig.title,
+                                onValueChange = { onDialogConfigChange(dialogConfig.copy(title = it)) },
+                                label = { Text(Strings.dialogTitle) },
+                                placeholder = { Text(Strings.dialogTitleHint) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            PremiumTextField(
+                                value = dialogConfig.subtitle,
+                                onValueChange = { onDialogConfigChange(dialogConfig.copy(subtitle = it)) },
+                                label = { Text(Strings.dialogSubtitle) },
+                                placeholder = { Text(Strings.dialogSubtitleHint) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            PremiumTextField(
+                                value = dialogConfig.inputLabel,
+                                onValueChange = { onDialogConfigChange(dialogConfig.copy(inputLabel = it)) },
+                                label = { Text(Strings.dialogInputLabel) },
+                                placeholder = { Text(Strings.dialogInputLabelHint) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            PremiumTextField(
+                                value = dialogConfig.buttonText,
+                                onValueChange = { onDialogConfigChange(dialogConfig.copy(buttonText = it)) },
+                                label = { Text(Strings.dialogButtonText) },
+                                placeholder = { Text(Strings.dialogButtonTextHint) },
+                                singleLine = true,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }
@@ -432,7 +449,15 @@ private fun RemoteActivationSection(
     onRemoteConfigChange: (com.webtoapp.data.model.RemoteActivationConfig) -> Unit,
     onShowGuide: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    // Same padded expanded-zone pattern as the proxy / PWA-strategy blocks in the
+    // browser advanced card: labelMedium primary group labels + radio rows.
+    Column(
+        modifier = Modifier.padding(
+            horizontal = WtaSpacing.RowHorizontal,
+            vertical = WtaSpacing.ContentGap
+        ),
+        verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
+    ) {
         PremiumTextField(
             value = remoteConfig.verifyUrl,
             onValueChange = { onRemoteConfigChange(remoteConfig.copy(verifyUrl = it.trim())) },
@@ -452,40 +477,36 @@ private fun RemoteActivationSection(
             modifier = Modifier.fillMaxWidth()
         )
 
-        WtaSectionDivider()
-
         Text(
             text = Strings.remoteActivationOfflineLabel,
             style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold
+            color = MaterialTheme.colorScheme.primary
         )
         val policies = listOf(
             com.webtoapp.data.model.RemoteActivationOfflinePolicy.ALLOW_CACHED to Strings.remoteActivationOfflineAllowCached,
             com.webtoapp.data.model.RemoteActivationOfflinePolicy.DENY to Strings.remoteActivationOfflineDeny,
             com.webtoapp.data.model.RemoteActivationOfflinePolicy.ALLOW to Strings.remoteActivationOfflineAllow
         )
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            policies.forEach { (policy, label) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onRemoteConfigChange(remoteConfig.copy(offlinePolicy = policy)) },
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = remoteConfig.offlinePolicy == policy,
-                        onClick = { onRemoteConfigChange(remoteConfig.copy(offlinePolicy = policy)) }
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = label,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
+        policies.forEach { (policy, label) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.small)
+                    .clickable { onRemoteConfigChange(remoteConfig.copy(offlinePolicy = policy)) }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(
+                    selected = remoteConfig.offlinePolicy == policy,
+                    onClick = { onRemoteConfigChange(remoteConfig.copy(offlinePolicy = policy)) }
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
-
-        WtaSectionDivider()
 
         WtaToggleRow(
             title = Strings.remoteActivationDeliverUrlTitle,
@@ -494,26 +515,35 @@ private fun RemoteActivationSection(
             onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(deliverUrl = it)) }
         )
 
-        if (remoteConfig.deliverUrl) {
-            WtaToggleRow(
-                title = Strings.remoteActivationEncryptUrlTitle,
-                subtitle = Strings.remoteActivationEncryptUrlHint,
-                checked = remoteConfig.encryptUrl,
-                onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(encryptUrl = it)) }
-            )
-
-            if (remoteConfig.encryptUrl) {
-                PremiumTextField(
-                    value = remoteConfig.aesKeyBase64,
-                    onValueChange = {
-                        onRemoteConfigChange(remoteConfig.copy(aesKeyBase64 = it.trim()))
-                    },
-                    label = { Text(Strings.remoteActivationAesKeyLabel) },
-                    placeholder = { Text("openssl rand -base64 32") },
-                    supportingText = { Text(Strings.remoteActivationAesKeyHint) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+        AnimatedVisibility(
+            visible = remoteConfig.deliverUrl,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)) {
+                WtaToggleRow(
+                    title = Strings.remoteActivationEncryptUrlTitle,
+                    subtitle = Strings.remoteActivationEncryptUrlHint,
+                    checked = remoteConfig.encryptUrl,
+                    onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(encryptUrl = it)) }
                 )
+                AnimatedVisibility(
+                    visible = remoteConfig.encryptUrl,
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
+                    PremiumTextField(
+                        value = remoteConfig.aesKeyBase64,
+                        onValueChange = {
+                            onRemoteConfigChange(remoteConfig.copy(aesKeyBase64 = it.trim()))
+                        },
+                        label = { Text(Strings.remoteActivationAesKeyLabel) },
+                        placeholder = { Text("openssl rand -base64 32") },
+                        supportingText = { Text(Strings.remoteActivationAesKeyHint) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
 
