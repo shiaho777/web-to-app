@@ -243,6 +243,15 @@ Key paths:
 
 ---
 
+### 12. Change or add editor / common-config UI
+
+The editor screens have an established card language. **Find the neighboring cards first and copy their patterns element by element — do not invent your own layout**, even if it looks better in isolation. Hard rules learned the hard way (#571):
+
+1. **Container**: `WtaSettingCard`. **Header toggle**: `WtaToggleRow` (icon + title + subtitle + switch). **Collapsible section**: `WtaChoiceRow` + `AnimatedVisibility(CardExpandTransition)`. **Inner toggles**: `WtaToggleRow`. **Separators**: `WtaSectionDivider`. **Single-choice**: radio rows (see the offline-policy selector). **Text input**: `PremiumTextField`. **List-manager dialogs**: `Dialog` + `WtaCard` + embedded `TopAppBar` (see `AdBlockSubscriptionSelectorDialog`).
+2. **Never couple `isExpanded` to a feature `enabled` flag** — expanding a card to look around must never change app state; only the row's switch does.
+3. Canonical templates: `FullscreenModeCard` (toggle card), `BrowserAdvancedConfigCard` (collapsible config card), `ActivationCodeCard`'s offline-policy rows (radio selection).
+4. If a UI rework PR gets "this doesn't match the other cards" feedback, the fix is realignment to these patterns, not further invention.
+
 ## Easy-to-miss points
 
 - **Shared sources are authored in `app/`.** Editing only a file under `shell/src` is usually wrong; it will be overwritten on sync or diverge from host.
