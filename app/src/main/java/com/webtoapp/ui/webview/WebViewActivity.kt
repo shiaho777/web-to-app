@@ -56,6 +56,7 @@ import com.webtoapp.core.port.PortConflictException
 import com.webtoapp.core.port.PortManager
 import com.webtoapp.core.webview.LocalHttpServer
 import com.webtoapp.core.webview.LongPressHandler
+import com.webtoapp.core.webview.VideoPosterCompat
 import com.webtoapp.core.webview.WebScrollTracker
 import com.webtoapp.core.webview.WebViewCallbacks
 import com.webtoapp.core.webview.WebViewManager
@@ -2238,6 +2239,7 @@ fun WebViewScreen(
                     canGoBack = it.canGoBack()
                     canGoForward = it.canGoForward()
                     WebScrollTracker.injectScript(it)
+                    VideoPosterCompat.injectScript(it)
 
                     if (webApp?.webViewConfig?.longPressMenuEnabled ?: true) {
                         longPressHandler.injectLongPressEnhancer(it)

@@ -13,6 +13,7 @@ import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.shell.ShellConfig
 import com.webtoapp.core.webview.LongPressHandler
+import com.webtoapp.core.webview.VideoPosterCompat
 import com.webtoapp.core.webview.WebScrollTracker
 import com.webtoapp.core.webview.WebViewCallbacks
 
@@ -91,6 +92,7 @@ fun createShellWebViewCallbacks(
                 val isLocalRuntimePage = isLocalRuntimeShellUrl(url)
                 updateNavigation(it.canGoBack(), it.canGoForward())
                 WebScrollTracker.injectScript(it)
+                VideoPosterCompat.injectScript(it)
 
                 if (config.translateEnabled && !isLocalRuntimePage) {
                     injectTranslateScript(it, config.translateTargetLanguage, config.translateShowButton)
