@@ -1,6 +1,7 @@
 package com.webtoapp.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import com.webtoapp.ui.design.WtaChoiceRow
 import com.webtoapp.ui.design.WtaSwitch
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -30,7 +31,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -102,366 +105,251 @@ fun ActivationCodeCard(
     var showDeleteAllDialog by remember { mutableStateOf(false) }
     var showRemoteGuideDialog by remember { mutableStateOf(false) }
     var showCustomTextSection by remember { mutableStateOf(false) }
-    var showRemoteSection by remember { mutableStateOf(false) }
     var showCodesSection by remember { mutableStateOf(true) }
     val clipboardManager = LocalClipboardManager.current
     val snackbarHostState = remember { SnackbarHostState() }
-    var showCopiedSnackbar by remember { mutableStateOf(false) }
+    var snackbarMessage by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(showCopiedSnackbar) {
-        if (showCopiedSnackbar) {
-            snackbarHostState.showSnackbar(
-                message = Strings.copiedToClipboard,
-                duration = SnackbarDuration.Short
-            )
-            showCopiedSnackbar = false
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let {
+            snackbarHostState.showSnackbar(message = it, duration = SnackbarDuration.Short)
+            snackbarMessage = null
         }
     }
 
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(
-                                if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                else MaterialTheme.colorScheme.surfaceVariant
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            Icons.Outlined.VpnKey,
-                            null,
-                            tint = if (enabled) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = Strings.activationCodeVerify,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-                WtaSwitch(
-                    checked = enabled,
-                    onCheckedChange = onEnabledChange
-                )
-            }
-
-            AnimatedVisibility(
-                visible = enabled,
-                enter = CardExpandTransition,
-                exit = CardCollapseTransition
-            ) {
-              Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = Strings.activationCodeHint,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+    Box {
+        com.webtoapp.ui.design.WtaSettingCard {
+            Column {
+                WtaChoiceRow(
+                    title = Strings.activationCodeVerify,
+                    subtitle = Strings.activationCodeHint,
+                    icon = Icons.Outlined.VpnKey,
+                    value = "",
+                    isExpanded = enabled,
+                    onClick = { onEnabledChange(!enabled) }
                 )
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showCodesSection = !showCodesSection },
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                        Text(
-                            text = Strings.activationSectionCodes,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        val codesSubtitle = if (activationCodes.isNotEmpty()) {
-                            Strings.activationSectionCodesCount(activationCodes.size)
-                        } else {
-                            Strings.activationSectionCodesEmpty
-                        }
-                        Text(
-                            text = codesSubtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    val codesArrowRotation by animateFloatAsState(
-                        targetValue = if (showCodesSection) 180f else 0f,
-                        animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow),
-                        label = "codesArrowRotation"
-                    )
-                    Icon(
-                        imageVector = Icons.Default.ExpandMore,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.graphicsLayer { rotationZ = codesArrowRotation }
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = showCodesSection,
-                    enter = CardExpandTransition,
-                    exit = CardCollapseTransition
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-
-                            PremiumButton(
-                                onClick = { showAddDialog = true },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(Strings.addActivationCode, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            }
-
-                            PremiumOutlinedButton(
-                                onClick = { showBatchDialog = true },
-                                shape = RoundedCornerShape(12.dp)
-                            ) {
-                                Icon(Icons.Outlined.AutoAwesome, null, modifier = Modifier.size(18.dp))
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(Strings.batchGenerate, maxLines = 1)
-                            }
-                        }
-
-                        PremiumOutlinedButton(
-                            onClick = { showBatchImportDialog = true },
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Outlined.PostAdd, null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(Strings.batchImport, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-
-                        if (activationCodes.isNotEmpty()) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                TextButton(
-                                    onClick = {
-                                        val allCodes = activationCodes.joinToString("\n") { it.code }
-                                        clipboardManager.setText(AnnotatedString(allCodes))
-                                        showCopiedSnackbar = true
-                                    },
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    Icon(Icons.Outlined.CopyAll, null, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(Strings.copyAllCodes, style = MaterialTheme.typography.labelSmall)
-                                }
-
-                                TextButton(
-                                    onClick = { showDeleteAllDialog = true },
-                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                                    colors = ButtonDefaults.textButtonColors(
-                                        contentColor = MaterialTheme.colorScheme.error
-                                    )
-                                ) {
-                                    Icon(Icons.Outlined.DeleteSweep, null, modifier = Modifier.size(16.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(Strings.deleteAllCodes, style = MaterialTheme.typography.labelSmall)
-                                }
-                            }
-                        }
-
-                        if (activationCodes.isNotEmpty()) {
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                activationCodes.forEachIndexed { index, code ->
-                                    EnhancedActivationCodeItem(
-                                        code = code,
-                                        onDelete = {
-                                            onCodesChange(activationCodes.filterIndexed { i, _ -> i != index })
-                                        }
-                                    )
-                                }
-                            }
-                        } else {
-
-                            EmptyActivationCodesState()
-                        }
-                    }
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                        Text(
-                            text = Strings.requireEveryLaunch,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = if (requireEveryTime) Strings.requireEveryLaunchHintOn else Strings.requireEveryLaunchHintOff,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    WtaSwitch(
-                        checked = requireEveryTime,
-                        onCheckedChange = onRequireEveryTimeChange
-                    )
-                }
-                HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showRemoteSection = !showRemoteSection },
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                        Text(
-                            text = Strings.remoteActivationTitle,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        val remoteSubtitle = if (remoteConfig.enabled) {
-                            val rawUrl = remoteConfig.verifyUrl.trim()
-                            val displayUrl = if (rawUrl.length > 30) rawUrl.take(30) + "…" else rawUrl
-                            Strings.activationSectionRemoteEnabled(displayUrl)
-                        } else {
-                            Strings.activationSectionRemoteDisabled
-                        }
-                        Text(
-                            text = remoteSubtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    val remoteArrowRotation by animateFloatAsState(
-                        targetValue = if (showRemoteSection) 180f else 0f,
-                        animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow),
-                        label = "remoteArrowRotation"
-                    )
-                    Icon(
-                        imageVector = Icons.Default.ExpandMore,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.graphicsLayer { rotationZ = remoteArrowRotation }
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = showRemoteSection,
-                    enter = CardExpandTransition,
-                    exit = CardCollapseTransition
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        RemoteActivationSection(
-                            remoteConfig = remoteConfig,
-                            onRemoteConfigChange = onRemoteConfigChange,
-                            onShowGuide = { showRemoteGuideDialog = true }
-                        )
-                    }
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { showCustomTextSection = !showCustomTextSection },
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                        Text(
-                            text = Strings.customDialogText,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = Strings.customDialogTextHint,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    val customArrowRotation by animateFloatAsState(
-                        targetValue = if (showCustomTextSection) 180f else 0f,
-                        animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow),
-                        label = "customArrowRotation"
-                    )
-                    Icon(
-                        imageVector = Icons.Default.ExpandMore,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.graphicsLayer { rotationZ = customArrowRotation }
-                    )
-                }
-
-                AnimatedVisibility(
-                    visible = showCustomTextSection,
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = enabled,
                     enter = CardExpandTransition,
                     exit = CardCollapseTransition
                 ) {
                     Column(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.padding(horizontal = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        PremiumTextField(
-                            value = dialogConfig.title,
-                            onValueChange = { onDialogConfigChange(dialogConfig.copy(title = it)) },
-                            label = { Text(Strings.dialogTitle) },
-                            placeholder = { Text(Strings.dialogTitleHint) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
+                        // --- Verification mode: exactly one scheme is active at a time.
+                        // runtime treats remoteConfig.enabled as "online verification wins",
+                        // so the two cards write that single flag and hide the other scheme's UI.
+                        Text(
+                            text = Strings.activationModeLabel,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
                         )
-                        PremiumTextField(
-                            value = dialogConfig.subtitle,
-                            onValueChange = { onDialogConfigChange(dialogConfig.copy(subtitle = it)) },
-                            label = { Text(Strings.dialogSubtitle) },
-                            placeholder = { Text(Strings.dialogSubtitleHint) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
+                        ActivationModeOptionRow(
+                            selected = !remoteConfig.enabled,
+                            title = Strings.activationModeLocal,
+                            description = Strings.activationModeLocalDesc,
+                            icon = Icons.Outlined.Key,
+                            onClick = { onRemoteConfigChange(remoteConfig.copy(enabled = false)) }
                         )
-                        PremiumTextField(
-                            value = dialogConfig.inputLabel,
-                            onValueChange = { onDialogConfigChange(dialogConfig.copy(inputLabel = it)) },
-                            label = { Text(Strings.dialogInputLabel) },
-                            placeholder = { Text(Strings.dialogInputLabelHint) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
+                        ActivationModeOptionRow(
+                            selected = remoteConfig.enabled,
+                            title = Strings.activationModeRemote,
+                            description = Strings.activationModeRemoteDesc,
+                            icon = Icons.Outlined.CloudDone,
+                            onClick = { onRemoteConfigChange(remoteConfig.copy(enabled = true)) }
                         )
-                        PremiumTextField(
-                            value = dialogConfig.buttonText,
-                            onValueChange = { onDialogConfigChange(dialogConfig.copy(buttonText = it)) },
-                            label = { Text(Strings.dialogButtonText) },
-                            placeholder = { Text(Strings.dialogButtonTextHint) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+
+                        if (!remoteConfig.enabled) {
+                            WtaChoiceRow(
+                                title = Strings.activationSectionCodes,
+                                subtitle = if (activationCodes.isNotEmpty())
+                                    Strings.activationSectionCodesCount(activationCodes.size)
+                                else Strings.activationSectionCodesEmpty,
+                                icon = Icons.Outlined.ListAlt,
+                                value = "",
+                                isExpanded = showCodesSection,
+                                onClick = { showCodesSection = !showCodesSection }
+                            )
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = showCodesSection,
+                                enter = CardExpandTransition,
+                                exit = CardCollapseTransition
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(horizontal = 4.dp),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        PremiumButton(
+                                            onClick = { showAddDialog = true },
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(Strings.addActivationCode, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                        }
+                                        PremiumOutlinedButton(
+                                            onClick = { showBatchDialog = true },
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Icon(Icons.Outlined.AutoAwesome, null, modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(Strings.batchGenerate, maxLines = 1)
+                                        }
+                                    }
+                                    PremiumOutlinedButton(
+                                        onClick = { showBatchImportDialog = true },
+                                        shape = RoundedCornerShape(12.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Icon(Icons.Outlined.PostAdd, null, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(Strings.batchImport, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    }
+                                    if (activationCodes.isNotEmpty()) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.End,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            TextButton(
+                                                onClick = {
+                                                    val allCodes = activationCodes.joinToString("\n") { it.code }
+                                                    clipboardManager.setText(AnnotatedString(allCodes))
+                                                    snackbarMessage = Strings.copiedToClipboard
+                                                },
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                            ) {
+                                                Icon(Icons.Outlined.CopyAll, null, modifier = Modifier.size(16.dp))
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(Strings.copyAllCodes, style = MaterialTheme.typography.labelSmall)
+                                            }
+                                            TextButton(
+                                                onClick = { showDeleteAllDialog = true },
+                                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                                colors = ButtonDefaults.textButtonColors(
+                                                    contentColor = MaterialTheme.colorScheme.error
+                                                )
+                                            ) {
+                                                Icon(Icons.Outlined.DeleteSweep, null, modifier = Modifier.size(16.dp))
+                                                Text(Strings.deleteAllCodes, style = MaterialTheme.typography.labelSmall)
+                                            }
+                                        }
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            activationCodes.forEachIndexed { index, code ->
+                                                EnhancedActivationCodeItem(
+                                                    code = code,
+                                                    onDelete = {
+                                                        onCodesChange(activationCodes.filterIndexed { i, _ -> i != index })
+                                                    }
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        EmptyActivationCodesState()
+                                    }
+                                }
+                            }
+                        } else {
+                            RemoteActivationSection(
+                                remoteConfig = remoteConfig,
+                                onRemoteConfigChange = onRemoteConfigChange,
+                                onShowGuide = { showRemoteGuideDialog = true }
+                            )
+                        }
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                                Text(
+                                    text = Strings.requireEveryLaunch,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = if (requireEveryTime) Strings.requireEveryLaunchHintOn else Strings.requireEveryLaunchHintOff,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            WtaSwitch(
+                                checked = requireEveryTime,
+                                onCheckedChange = onRequireEveryTimeChange
+                            )
+                        }
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+
+                        WtaChoiceRow(
+                            title = Strings.customDialogText,
+                            subtitle = Strings.customDialogTextHint,
+                            icon = Icons.Outlined.Edit,
+                            value = "",
+                            isExpanded = showCustomTextSection,
+                            onClick = { showCustomTextSection = !showCustomTextSection }
                         )
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = showCustomTextSection,
+                            enter = CardExpandTransition,
+                            exit = CardCollapseTransition
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 4.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                PremiumTextField(
+                                    value = dialogConfig.title,
+                                    onValueChange = { onDialogConfigChange(dialogConfig.copy(title = it)) },
+                                    label = { Text(Strings.dialogTitle) },
+                                    placeholder = { Text(Strings.dialogTitleHint) },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                PremiumTextField(
+                                    value = dialogConfig.subtitle,
+                                    onValueChange = { onDialogConfigChange(dialogConfig.copy(subtitle = it)) },
+                                    label = { Text(Strings.dialogSubtitle) },
+                                    placeholder = { Text(Strings.dialogSubtitleHint) },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                PremiumTextField(
+                                    value = dialogConfig.inputLabel,
+                                    onValueChange = { onDialogConfigChange(dialogConfig.copy(inputLabel = it)) },
+                                    label = { Text(Strings.dialogInputLabel) },
+                                    placeholder = { Text(Strings.dialogInputLabelHint) },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                PremiumTextField(
+                                    value = dialogConfig.buttonText,
+                                    onValueChange = { onDialogConfigChange(dialogConfig.copy(buttonText = it)) },
+                                    label = { Text(Strings.dialogButtonText) },
+                                    placeholder = { Text(Strings.dialogButtonTextHint) },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
                     }
                 }
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
-              }
             }
         }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 
     if (showAddDialog) {
@@ -534,9 +422,65 @@ fun ActivationCodeCard(
             onDismiss = { showRemoteGuideDialog = false },
             onCopy = {
                 clipboardManager.setText(AnnotatedString(it))
-                showCopiedSnackbar = true
-            }
+                snackbarMessage = Strings.copiedToClipboard
+            },
+            onSaved = { snackbarMessage = Strings.remoteGuideSaved }
         )
+    }
+}
+
+/** One selectable verification-scheme card; exactly one is selected at any time. */
+@Composable
+private fun ActivationModeOptionRow(
+    selected: Boolean,
+    title: String,
+    description: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+        border = if (selected) androidx.compose.foundation.BorderStroke(
+            1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+        ) else null,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                icon,
+                null,
+                tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (selected) {
+                Icon(
+                    Icons.Default.CheckCircle,
+                    null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
     }
 }
 
@@ -546,7 +490,67 @@ private fun RemoteActivationSection(
     onRemoteConfigChange: (com.webtoapp.data.model.RemoteActivationConfig) -> Unit,
     onShowGuide: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = Strings.remoteActivationTitle,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        PremiumTextField(
+            value = remoteConfig.verifyUrl,
+            onValueChange = { onRemoteConfigChange(remoteConfig.copy(verifyUrl = it.trim())) },
+            label = { Text(Strings.remoteActivationUrlLabel) },
+            placeholder = { Text("https://") },
+            supportingText = { Text(Strings.remoteActivationUrlSupporting) },
+            singleLine = true,
+            isError = remoteConfig.verifyUrl.isNotBlank() &&
+                !remoteConfig.verifyUrl.startsWith("https://", ignoreCase = true),
+            modifier = Modifier.fillMaxWidth()
+        )
+        PremiumTextField(
+            value = remoteConfig.publicKeyBase64,
+            onValueChange = { onRemoteConfigChange(remoteConfig.copy(publicKeyBase64 = it.trim())) },
+            label = { Text(Strings.remoteActivationPublicKeyLabel) },
+            supportingText = { Text(Strings.remoteActivationPublicKeySupporting) },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+
+        Text(
+            text = Strings.remoteActivationOfflineLabel,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        val policies = listOf(
+            com.webtoapp.data.model.RemoteActivationOfflinePolicy.ALLOW_CACHED to Strings.remoteActivationOfflineAllowCached,
+            com.webtoapp.data.model.RemoteActivationOfflinePolicy.DENY to Strings.remoteActivationOfflineDeny,
+            com.webtoapp.data.model.RemoteActivationOfflinePolicy.ALLOW to Strings.remoteActivationOfflineAllow
+        )
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            policies.forEach { (policy, label) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onRemoteConfigChange(remoteConfig.copy(offlinePolicy = policy)) },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = remoteConfig.offlinePolicy == policy,
+                        onClick = { onRemoteConfigChange(remoteConfig.copy(offlinePolicy = policy)) }
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -554,197 +558,114 @@ private fun RemoteActivationSection(
         ) {
             Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                 Text(
-                    text = Strings.remoteActivationTitle,
+                    text = Strings.remoteActivationDeliverUrlTitle,
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = Strings.remoteActivationHint,
+                    text = Strings.remoteActivationDeliverUrlHint,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             WtaSwitch(
-                checked = remoteConfig.enabled,
-                onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(enabled = it)) }
+                checked = remoteConfig.deliverUrl,
+                onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(deliverUrl = it)) }
             )
         }
 
-        TextButton(
-            onClick = onShowGuide,
-            contentPadding = PaddingValues(horizontal = 0.dp, vertical = 2.dp)
-        ) {
-            Icon(
-                Icons.Outlined.Info,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(Strings.remoteActivationGuideButton)
-        }
-
-        AnimatedVisibility(
-            visible = remoteConfig.enabled,
-            enter = CardExpandTransition,
-            exit = CardCollapseTransition
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Icon(
-                            Icons.Outlined.DataObject,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Text(
-                            text = Strings.remoteActivationProtocolSummary,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                PremiumTextField(
-                    value = remoteConfig.verifyUrl,
-                    onValueChange = { onRemoteConfigChange(remoteConfig.copy(verifyUrl = it.trim())) },
-                    label = { Text(Strings.remoteActivationUrlLabel) },
-                    placeholder = { Text("https://") },
-                    supportingText = { Text(Strings.remoteActivationUrlSupporting) },
-                    singleLine = true,
-                    isError = remoteConfig.verifyUrl.isNotBlank() &&
-                        !remoteConfig.verifyUrl.startsWith("https://", ignoreCase = true),
-                    modifier = Modifier.fillMaxWidth()
-                )
-                PremiumTextField(
-                    value = remoteConfig.publicKeyBase64,
-                    onValueChange = { onRemoteConfigChange(remoteConfig.copy(publicKeyBase64 = it.trim())) },
-                    label = { Text(Strings.remoteActivationPublicKeyLabel) },
-                    supportingText = { Text(Strings.remoteActivationPublicKeySupporting) },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Text(
-                    text = Strings.remoteActivationOfflineLabel,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                val policies = listOf(
-                    com.webtoapp.data.model.RemoteActivationOfflinePolicy.ALLOW_CACHED to Strings.remoteActivationOfflineAllowCached,
-                    com.webtoapp.data.model.RemoteActivationOfflinePolicy.DENY to Strings.remoteActivationOfflineDeny,
-                    com.webtoapp.data.model.RemoteActivationOfflinePolicy.ALLOW to Strings.remoteActivationOfflineAllow
-                )
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    policies.forEach { (policy, label) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onRemoteConfigChange(remoteConfig.copy(offlinePolicy = policy)) },
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = remoteConfig.offlinePolicy == policy,
-                                onClick = { onRemoteConfigChange(remoteConfig.copy(offlinePolicy = policy)) }
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = label,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                        Text(
-                            text = Strings.remoteActivationDeliverUrlTitle,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = Strings.remoteActivationDeliverUrlHint,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    WtaSwitch(
-                        checked = remoteConfig.deliverUrl,
-                        onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(deliverUrl = it)) }
+        if (remoteConfig.deliverUrl) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
+                    Text(
+                        text = Strings.remoteActivationEncryptUrlTitle,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        text = Strings.remoteActivationEncryptUrlHint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                WtaSwitch(
+                    checked = remoteConfig.encryptUrl,
+                    onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(encryptUrl = it)) }
+                )
+            }
 
-                // AES encryption controls – only relevant when URL delivery is enabled
-                if (remoteConfig.deliverUrl) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                            Text(
-                                text = Strings.remoteActivationEncryptUrlTitle,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = Strings.remoteActivationEncryptUrlHint,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        WtaSwitch(
-                            checked = remoteConfig.encryptUrl,
-                            onCheckedChange = {
-                                onRemoteConfigChange(remoteConfig.copy(encryptUrl = it))
-                            }
-                        )
-                    }
-
-                    if (remoteConfig.encryptUrl) {
-                        PremiumTextField(
-                            value = remoteConfig.aesKeyBase64,
-                            onValueChange = {
-                                onRemoteConfigChange(remoteConfig.copy(aesKeyBase64 = it.trim()))
-                            },
-                            label = { Text(Strings.remoteActivationAesKeyLabel) },
-                            placeholder = { Text("openssl rand -base64 32") },
-                            supportingText = { Text(Strings.remoteActivationAesKeyHint) },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
-                }
-
-                Text(
-                    text = Strings.remoteActivationPrivacyNote,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = com.webtoapp.ui.design.WtaColors.semantic.warning
+            if (remoteConfig.encryptUrl) {
+                PremiumTextField(
+                    value = remoteConfig.aesKeyBase64,
+                    onValueChange = {
+                        onRemoteConfigChange(remoteConfig.copy(aesKeyBase64 = it.trim()))
+                    },
+                    label = { Text(Strings.remoteActivationAesKeyLabel) },
+                    placeholder = { Text("openssl rand -base64 32") },
+                    supportingText = { Text(Strings.remoteActivationAesKeyHint) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
+
+        PremiumOutlinedButton(
+            onClick = onShowGuide,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Outlined.IntegrationInstructions, null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(Strings.remoteActivationGuideButton, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+
+        Text(
+            text = Strings.remoteActivationPrivacyNote,
+            style = MaterialTheme.typography.bodySmall,
+            color = com.webtoapp.ui.design.WtaColors.semantic.warning
+        )
     }
 }
 
 @Composable
 private fun RemoteActivationGuideDialog(
     onDismiss: () -> Unit,
-    onCopy: (String) -> Unit
+    onCopy: (String) -> Unit,
+    onSaved: () -> Unit
 ) {
     var copiedCode by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val saveLauncher = rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("text/markdown")
+    ) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.openOutputStream(uri)?.use { out ->
+                    out.write(buildRemoteGuideMarkdown().toByteArray(Charsets.UTF_8))
+                }
+            }.onSuccess { onSaved() }
+        }
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(Strings.close)
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = { saveLauncher.launch("webtoapp-activation-api.md") }) {
+                    Icon(Icons.Outlined.SaveAlt, null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(Strings.remoteGuideSaveDoc)
+                }
+                TextButton(onClick = { onCopy(buildRemoteGuideMarkdown()) }) {
+                    Icon(Icons.Outlined.CopyAll, null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(Strings.remoteGuideCopyFull)
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(Strings.close)
+                }
             }
         },
         title = {
@@ -833,6 +754,48 @@ private fun RemoteActivationGuideDialog(
         }
     )
 }
+
+/** The full server-integration guide as Markdown — used by "copy all" and "save as document". */
+private fun buildRemoteGuideMarkdown(): String = buildString {
+    appendLine("# ${Strings.remoteActivationGuideTitle}")
+    appendLine()
+    appendLine(Strings.remoteActivationGuideIntro)
+    appendLine()
+    appendLine("## ${Strings.remoteActivationGuideRequestTitle}")
+    appendLine(Strings.remoteActivationGuideRequestBody)
+    appendLine()
+    appendLine("### ${Strings.remoteActivationGuideRequestExampleTitle}")
+    appendLine("```json")
+    appendLine(remoteActivationRequestExample.trimIndent())
+    appendLine("```")
+    appendLine()
+    appendLine("## ${Strings.remoteActivationGuideResponseTitle}")
+    appendLine(Strings.remoteActivationGuideResponseBody)
+    appendLine()
+    appendLine("### ${Strings.remoteActivationGuideResponseExampleTitle}")
+    appendLine("```json")
+    appendLine(remoteActivationResponseExample.trimIndent())
+    appendLine("```")
+    appendLine()
+    appendLine("## ${Strings.remoteActivationGuideSignatureTitle}")
+    appendLine(Strings.remoteActivationGuideSignatureBody)
+    appendLine()
+    appendLine("### ${Strings.remoteActivationGuideSignatureExampleTitle}")
+    appendLine("```text")
+    appendLine(remoteActivationSignedPayloadExample.trimIndent())
+    appendLine("```")
+    appendLine()
+    appendLine("## ${Strings.remoteActivationGuideKeysTitle}")
+    appendLine(Strings.remoteActivationGuideKeysBody)
+    appendLine()
+    appendLine("### ${Strings.remoteActivationGuidePhpExampleTitle}")
+    appendLine("```php")
+    appendLine(remoteActivationPhpExample.trimIndent())
+    appendLine("```")
+    appendLine()
+    appendLine("## ${Strings.remoteActivationGuideDeployTitle}")
+    appendLine(Strings.remoteActivationGuideDeployBody)
+}.trimEnd() + "\n"
 
 @Composable
 private fun RemoteActivationGuideSection(

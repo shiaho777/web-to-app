@@ -586,6 +586,14 @@ object Strings {
     val editApp: String get() = StringsA.editApp
     val inputAppName: String get() = StringsA.inputAppName
     val activationCodeVerify: String get() = StringsA.activationCodeVerify
+    val activationModeLabel: String get() = StringsA.activationModeLabel
+    val activationModeLocal: String get() = StringsA.activationModeLocal
+    val activationModeLocalDesc: String get() = StringsA.activationModeLocalDesc
+    val activationModeRemote: String get() = StringsA.activationModeRemote
+    val activationModeRemoteDesc: String get() = StringsA.activationModeRemoteDesc
+    val remoteGuideCopyFull: String get() = StringsA.remoteGuideCopyFull
+    val remoteGuideSaveDoc: String get() = StringsA.remoteGuideSaveDoc
+    val remoteGuideSaved: String get() = StringsA.remoteGuideSaved
     val activationCodeHint: String get() = StringsA.activationCodeHint
     val inputActivationCode: String get() = StringsA.inputActivationCode
     val popupAnnouncement: String get() = StringsA.popupAnnouncement
@@ -12284,6 +12292,110 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Код активации"
         AppLanguage.JAPANESE -> "アクティベーションコード"
         AppLanguage.KOREAN -> "활성화 코드"
+    }
+
+    val activationModeLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "验证方式"
+        AppLanguage.ENGLISH -> "Verification mode"
+        AppLanguage.ARABIC -> "طريقة التحقق"
+        AppLanguage.PORTUGUESE -> "Modo de verificação"
+        AppLanguage.SPANISH -> "Modo de verificación"
+        AppLanguage.FRENCH -> "Mode de vérification"
+        AppLanguage.GERMAN -> "Verifizierungsmodus"
+        AppLanguage.RUSSIAN -> "Режим проверки"
+        AppLanguage.JAPANESE -> "認証方式"
+        AppLanguage.KOREAN -> "인증 방식"
+    }
+
+    val activationModeLocal: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "本地激活码"
+        AppLanguage.ENGLISH -> "Local activation codes"
+        AppLanguage.ARABIC -> "رموز تفعيل محلية"
+        AppLanguage.PORTUGUESE -> "Códigos de ativação locais"
+        AppLanguage.SPANISH -> "Códigos de activación locales"
+        AppLanguage.FRENCH -> "Codes d'activation locaux"
+        AppLanguage.GERMAN -> "Lokale Aktivierungscodes"
+        AppLanguage.RUSSIAN -> "Локальные коды активации"
+        AppLanguage.JAPANESE -> "ローカル認証コード"
+        AppLanguage.KOREAN -> "로컬 인증 코드"
+    }
+
+    val activationModeLocalDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "激活码打包进应用，离线可用，适合分发给少量用户"
+        AppLanguage.ENGLISH -> "Codes ship inside the app and work offline — good for a small distribution list"
+        AppLanguage.ARABIC -> "تُحزم الرموز داخل التطبيق وتعمل دون اتصال — مناسبة لقائمة توزيع صغيرة"
+        AppLanguage.PORTUGUESE -> "Os códigos vão dentro do app e funcionam offline — bons para uma lista pequena de usuários"
+        AppLanguage.SPANISH -> "Los códigos van dentro de la app y funcionan sin conexión — aptos para una lista pequeña"
+        AppLanguage.FRENCH -> "Les codes sont intégrés à l'app et fonctionnent hors ligne — adaptés à une petite liste"
+        AppLanguage.GERMAN -> "Codes liegen in der App und funktionieren offline — gut für eine kleine Verteilerliste"
+        AppLanguage.RUSSIAN -> "Коды встроены в приложение и работают офлайн — подходят для небольшого списка пользователей"
+        AppLanguage.JAPANESE -> "コードをアプリ内に同梱し、オフラインで動作します。少数の配布向け"
+        AppLanguage.KOREAN -> "코드가 앱에 포함되어 오프라인으로 동작합니다 — 소규모 배포에 적합"
+    }
+
+    val activationModeRemote: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "在线验证"
+        AppLanguage.ENGLISH -> "Online verification"
+        AppLanguage.ARABIC -> "تحقق عبر الإنترنت"
+        AppLanguage.PORTUGUESE -> "Verificação online"
+        AppLanguage.SPANISH -> "Verificación en línea"
+        AppLanguage.FRENCH -> "Vérification en ligne"
+        AppLanguage.GERMAN -> "Online-Verifizierung"
+        AppLanguage.RUSSIAN -> "Онлайн-проверка"
+        AppLanguage.JAPANESE -> "オンライン認証"
+        AppLanguage.KOREAN -> "온라인 인증"
+    }
+
+    val activationModeRemoteDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "由你的服务器实时验证，支持有效期与动态下发网址"
+        AppLanguage.ENGLISH -> "Verified live by your server, with expiry and dynamic URL delivery"
+        AppLanguage.ARABIC -> "يتحقق خادمك في الوقت الفعلي، مع انتهاء الصلاحية وتسليم عنوان URL ديناميكي"
+        AppLanguage.PORTUGUESE -> "Verificado em tempo real pelo seu servidor, com expiração e entrega dinâmica de URL"
+        AppLanguage.SPANISH -> "Verificado en vivo por tu servidor, con caducidad y entrega dinámica de URL"
+        AppLanguage.FRENCH -> "Vérifié en direct par votre serveur, avec expiration et livraison dynamique d'URL"
+        AppLanguage.GERMAN -> "Live von Ihrem Server geprüft, mit Ablauf und dynamischer URL-Auslieferung"
+        AppLanguage.RUSSIAN -> "Проверяется вашим сервером в реальном времени, со сроком действия и динамической выдачей URL"
+        AppLanguage.JAPANESE -> "独自サーバーがリアルタイムに検証。有効期限と動的 URL 配信に対応"
+        AppLanguage.KOREAN -> "사용자의 서버가 실시간으로 검증합니다. 만료 및 동적 URL 전달 지원"
+    }
+
+    val remoteGuideCopyFull: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "复制全文"
+        AppLanguage.ENGLISH -> "Copy all"
+        AppLanguage.ARABIC -> "نسخ الكل"
+        AppLanguage.PORTUGUESE -> "Copiar tudo"
+        AppLanguage.SPANISH -> "Copiar todo"
+        AppLanguage.FRENCH -> "Tout copier"
+        AppLanguage.GERMAN -> "Alles kopieren"
+        AppLanguage.RUSSIAN -> "Копировать всё"
+        AppLanguage.JAPANESE -> "全文をコピー"
+        AppLanguage.KOREAN -> "전체 복사"
+    }
+
+    val remoteGuideSaveDoc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "保存为文档"
+        AppLanguage.ENGLISH -> "Save as document"
+        AppLanguage.ARABIC -> "حفظ كمستند"
+        AppLanguage.PORTUGUESE -> "Salvar como documento"
+        AppLanguage.SPANISH -> "Guardar como documento"
+        AppLanguage.FRENCH -> "Enregistrer en document"
+        AppLanguage.GERMAN -> "Als Dokument speichern"
+        AppLanguage.RUSSIAN -> "Сохранить как документ"
+        AppLanguage.JAPANESE -> "ドキュメントとして保存"
+        AppLanguage.KOREAN -> "문서로 저장"
+    }
+
+    val remoteGuideSaved: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "接口文档已保存"
+        AppLanguage.ENGLISH -> "Guide saved"
+        AppLanguage.ARABIC -> "تم حفظ الدليل"
+        AppLanguage.PORTUGUESE -> "Guia salvo"
+        AppLanguage.SPANISH -> "Guía guardada"
+        AppLanguage.FRENCH -> "Guide enregistré"
+        AppLanguage.GERMAN -> "Anleitung gespeichert"
+        AppLanguage.RUSSIAN -> "Руководство сохранено"
+        AppLanguage.JAPANESE -> "ドキュメントを保存しました"
+        AppLanguage.KOREAN -> "문서를 저장했습니다"
     }
 
     val activationCodeHint: String get() = when (Strings.lang) {
