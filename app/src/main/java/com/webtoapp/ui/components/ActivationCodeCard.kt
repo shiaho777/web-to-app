@@ -2,7 +2,9 @@ package com.webtoapp.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import com.webtoapp.ui.design.WtaChoiceRow
+import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaSwitch
+import com.webtoapp.ui.design.WtaToggleRow
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -115,13 +117,12 @@ fun ActivationCodeCard(
     Box {
         com.webtoapp.ui.design.WtaSettingCard {
             Column {
-                WtaChoiceRow(
+                WtaToggleRow(
+                    icon = Icons.Outlined.VpnKey,
                     title = Strings.activationCodeVerify,
                     subtitle = Strings.activationCodeHint,
-                    icon = Icons.Outlined.VpnKey,
-                    value = "",
-                    isExpanded = enabled,
-                    onClick = { onEnabledChange(!enabled) }
+                    checked = enabled,
+                    onCheckedChange = onEnabledChange
                 )
 
                 androidx.compose.animation.AnimatedVisibility(
@@ -135,28 +136,54 @@ fun ActivationCodeCard(
                     ) {
                         // --- Verification mode: exactly one scheme is active at a time.
                         // runtime treats remoteConfig.enabled as "online verification wins",
-                        // so the two cards write that single flag and hide the other scheme's UI.
+                        // so these radio rows write that single flag and gate the scheme UI below.
                         Text(
                             text = Strings.activationModeLabel,
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold
                         )
-                        ActivationModeOptionRow(
-                            selected = !remoteConfig.enabled,
-                            title = Strings.activationModeLocal,
-                            description = Strings.activationModeLocalDesc,
-                            icon = Icons.Outlined.Key,
-                            onClick = { onRemoteConfigChange(remoteConfig.copy(enabled = false)) }
-                        )
-                        ActivationModeOptionRow(
-                            selected = remoteConfig.enabled,
-                            title = Strings.activationModeRemote,
-                            description = Strings.activationModeRemoteDesc,
-                            icon = Icons.Outlined.CloudDone,
-                            onClick = { onRemoteConfigChange(remoteConfig.copy(enabled = true)) }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onRemoteConfigChange(remoteConfig.copy(enabled = false)) },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = !remoteConfig.enabled,
+                                onClick = { onRemoteConfigChange(remoteConfig.copy(enabled = false)) }
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = Strings.activationModeLocal,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (!remoteConfig.enabled) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onRemoteConfigChange(remoteConfig.copy(enabled = true)) },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = remoteConfig.enabled,
+                                onClick = { onRemoteConfigChange(remoteConfig.copy(enabled = true)) }
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = Strings.activationModeRemote,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = if (remoteConfig.enabled) FontWeight.SemiBold else FontWeight.Normal
+                            )
+                        }
+                        Text(
+                            text = if (remoteConfig.enabled) Strings.activationModeRemoteDesc
+                            else Strings.activationModeLocalDesc,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+                        WtaSectionDivider()
 
                         if (!remoteConfig.enabled) {
                             WtaChoiceRow(
@@ -260,31 +287,16 @@ fun ActivationCodeCard(
                             )
                         }
 
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+                        WtaSectionDivider()
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                                Text(
-                                    text = Strings.requireEveryLaunch,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Text(
-                                    text = if (requireEveryTime) Strings.requireEveryLaunchHintOn else Strings.requireEveryLaunchHintOff,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            WtaSwitch(
-                                checked = requireEveryTime,
-                                onCheckedChange = onRequireEveryTimeChange
-                            )
-                        }
+                        WtaToggleRow(
+                            title = Strings.requireEveryLaunch,
+                            subtitle = if (requireEveryTime) Strings.requireEveryLaunchHintOn else Strings.requireEveryLaunchHintOff,
+                            checked = requireEveryTime,
+                            onCheckedChange = onRequireEveryTimeChange
+                        )
 
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+                        WtaSectionDivider()
 
                         WtaChoiceRow(
                             title = Strings.customDialogText,
@@ -424,61 +436,6 @@ fun ActivationCodeCard(
     }
 }
 
-/** One selectable verification-scheme card; exactly one is selected at any time. */
-@Composable
-private fun ActivationModeOptionRow(
-    selected: Boolean,
-    title: String,
-    description: String,
-    icon: ImageVector,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
-        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-        border = if (selected) androidx.compose.foundation.BorderStroke(
-            1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-        ) else null,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                icon,
-                null,
-                tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                    color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (selected) {
-                Icon(
-                    Icons.Default.CheckCircle,
-                    null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-    }
-}
-
 @Composable
 private fun RemoteActivationSection(
     remoteConfig: com.webtoapp.data.model.RemoteActivationConfig,
@@ -486,12 +443,6 @@ private fun RemoteActivationSection(
     onShowGuide: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(
-            text = Strings.remoteActivationTitle,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-
         PremiumTextField(
             value = remoteConfig.verifyUrl,
             onValueChange = { onRemoteConfigChange(remoteConfig.copy(verifyUrl = it.trim())) },
@@ -511,7 +462,7 @@ private fun RemoteActivationSection(
             modifier = Modifier.fillMaxWidth()
         )
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+        WtaSectionDivider()
 
         Text(
             text = Strings.remoteActivationOfflineLabel,
@@ -544,52 +495,22 @@ private fun RemoteActivationSection(
             }
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+        WtaSectionDivider()
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                Text(
-                    text = Strings.remoteActivationDeliverUrlTitle,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = Strings.remoteActivationDeliverUrlHint,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            WtaSwitch(
-                checked = remoteConfig.deliverUrl,
-                onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(deliverUrl = it)) }
-            )
-        }
+        WtaToggleRow(
+            title = Strings.remoteActivationDeliverUrlTitle,
+            subtitle = Strings.remoteActivationDeliverUrlHint,
+            checked = remoteConfig.deliverUrl,
+            onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(deliverUrl = it)) }
+        )
 
         if (remoteConfig.deliverUrl) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-                    Text(
-                        text = Strings.remoteActivationEncryptUrlTitle,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        text = Strings.remoteActivationEncryptUrlHint,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                WtaSwitch(
-                    checked = remoteConfig.encryptUrl,
-                    onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(encryptUrl = it)) }
-                )
-            }
+            WtaToggleRow(
+                title = Strings.remoteActivationEncryptUrlTitle,
+                subtitle = Strings.remoteActivationEncryptUrlHint,
+                checked = remoteConfig.encryptUrl,
+                onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(encryptUrl = it)) }
+            )
 
             if (remoteConfig.encryptUrl) {
                 PremiumTextField(
