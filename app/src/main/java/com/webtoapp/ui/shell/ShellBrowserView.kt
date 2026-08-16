@@ -47,6 +47,7 @@ fun ShellBrowserAndroidView(
                         android.graphics.Color.parseColor("#6750A4"),
                         android.graphics.Color.parseColor("#7F67BE")
                     )
+                    gestureZone = webViewConfig.swipeRefreshZone
                     isEnabled = swipeRefreshEnabled
                     var surfaceRef: BrowserSurface? = null
                     setOnRefreshListener {

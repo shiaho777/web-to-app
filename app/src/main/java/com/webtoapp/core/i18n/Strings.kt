@@ -1166,6 +1166,9 @@ object Strings {
     val zoomSetting: String get() = StringsB.zoomSetting
     val zoomSettingHint: String get() = StringsB.zoomSettingHint
     val swipeRefreshSetting: String get() = StringsB.swipeRefreshSetting
+    val swipeRefreshZoneLabel: String get() = StringsB.swipeRefreshZoneLabel
+    val swipeRefreshZoneTopEdge: String get() = StringsB.swipeRefreshZoneTopEdge
+    val swipeRefreshZoneAnywhere: String get() = StringsB.swipeRefreshZoneAnywhere
     val swipeRefreshSettingHint: String get() = StringsB.swipeRefreshSettingHint
     val autoRefreshSettingLabel: String get() = StringsB.autoRefreshSettingLabel
     val autoRefreshSettingDesc: String get() = StringsB.autoRefreshSettingDesc
@@ -19821,6 +19824,45 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Разрешить обновление свайпом вниз"
         AppLanguage.JAPANESE -> "下にスワイプして更新を許可"
         AppLanguage.KOREAN -> "아래로 스와이프하여 새로고침 허용"
+    }
+
+    val swipeRefreshZoneLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "触发区域"
+        AppLanguage.ENGLISH -> "Trigger area"
+        AppLanguage.ARABIC -> "منطقة التشغيل"
+        AppLanguage.PORTUGUESE -> "Área de disparo"
+        AppLanguage.SPANISH -> "Área de activación"
+        AppLanguage.FRENCH -> "Zone de déclenchement"
+        AppLanguage.GERMAN -> "Auslösebereich"
+        AppLanguage.RUSSIAN -> "Зона срабатывания"
+        AppLanguage.JAPANESE -> "発生エリア"
+        AppLanguage.KOREAN -> "트리거 영역"
+    }
+
+    val swipeRefreshZoneTopEdge: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "仅顶部边缘（经典）"
+        AppLanguage.ENGLISH -> "Top edge only (classic)"
+        AppLanguage.ARABIC -> "الحافة العلوية فقط (كلاسيكي)"
+        AppLanguage.PORTUGUESE -> "Somente a borda superior (clássico)"
+        AppLanguage.SPANISH -> "Solo el borde superior (clásico)"
+        AppLanguage.FRENCH -> "Bord supérieur uniquement (classique)"
+        AppLanguage.GERMAN -> "Nur oberer Rand (klassisch)"
+        AppLanguage.RUSSIAN -> "Только верхний край (классика)"
+        AppLanguage.JAPANESE -> "上部端のみ（クラシック）"
+        AppLanguage.KOREAN -> "상단 가장자리만 (클래식)"
+    }
+
+    val swipeRefreshZoneAnywhere: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "页面顶部时任意位置"
+        AppLanguage.ENGLISH -> "Anywhere while at page top"
+        AppLanguage.ARABIC -> "أي مكان عند أعلى الصفحة"
+        AppLanguage.PORTUGUESE -> "Qualquer lugar no topo da página"
+        AppLanguage.SPANISH -> "Cualquier lugar en la parte superior de la página"
+        AppLanguage.FRENCH -> "N'importe où en haut de la page"
+        AppLanguage.GERMAN -> "Überall am Seitenanfang"
+        AppLanguage.RUSSIAN -> "В любом месте вверху страницы"
+        AppLanguage.JAPANESE -> "ページ最上部ではどこでも"
+        AppLanguage.KOREAN -> "페이지 상단이라면 어디든"
     }
 
     val autoRefreshSettingLabel: String get() = when (Strings.lang) {

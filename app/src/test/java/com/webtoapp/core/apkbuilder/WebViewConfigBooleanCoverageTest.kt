@@ -199,6 +199,7 @@ class WebViewConfigBooleanCoverageTest {
                 orientationMode = com.webtoapp.data.model.OrientationMode.LANDSCAPE,
                 cloudflareCompatMode = com.webtoapp.data.model.CloudflareCompatMode.ALWAYS_ON,
                 mixedContentMode = com.webtoapp.data.model.MixedContentMode.COMPATIBILITY,
+                swipeRefreshZone = com.webtoapp.data.model.SwipeRefreshZone.ANYWHERE,
                 autoRefreshIntervalSec = 120,
                 blobInterceptThresholdMb = 10,
                 screenAwakeTimeoutMinutes = 15
@@ -222,6 +223,7 @@ class WebViewConfigBooleanCoverageTest {
         readShell("newWindowBehavior", "POPUP_WINDOW")
         readShell("orientationMode", "LANDSCAPE")
         readShell("cloudflareCompatMode", "ALWAYS_ON")
+        readShell("swipeRefreshZone", "ANYWHERE")
         readShell("autoRefreshIntervalSec", 120)
         readShell("blobInterceptThresholdMb", 10)
         readShell("screenAwakeTimeoutMinutes", 15)

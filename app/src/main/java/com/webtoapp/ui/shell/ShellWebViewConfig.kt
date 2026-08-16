@@ -240,6 +240,11 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         ),
 
         swipeRefreshEnabled = config.webViewConfig.swipeRefreshEnabled,
+        swipeRefreshZone = try {
+            com.webtoapp.data.model.SwipeRefreshZone.valueOf(config.webViewConfig.swipeRefreshZone)
+        } catch (e: Exception) {
+            com.webtoapp.data.model.SwipeRefreshZone.TOP_EDGE
+        },
         fullscreenEnabled = config.webViewConfig.fullscreenEnabled,
 
         performanceOptimization = config.webViewConfig.performanceOptimization,

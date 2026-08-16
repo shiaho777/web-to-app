@@ -1499,6 +1499,9 @@ data class WebViewShellConfig(
     @SerializedName("swipeRefreshEnabled")
     val swipeRefreshEnabled: Boolean = true,
 
+    @SerializedName("swipeRefreshZone")
+    val swipeRefreshZone: String = "TOP_EDGE",
+
     @SerializedName("fullscreenEnabled")
     val fullscreenEnabled: Boolean = true,
 

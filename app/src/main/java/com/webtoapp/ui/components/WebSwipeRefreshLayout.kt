@@ -6,6 +6,7 @@ import android.view.MotionEvent
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.webtoapp.data.model.SwipeRefreshZone
 import kotlin.math.roundToInt
 
 class WebSwipeRefreshLayout @JvmOverloads constructor(
@@ -13,7 +14,16 @@ class WebSwipeRefreshLayout @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : SwipeRefreshLayout(context, attrs) {
 
+    /**
+     * Where a touch may start a pull. [SwipeRefreshZone.TOP_EDGE] arms the
+     * gesture only inside a narrow band below the status-bar exclusion (the
+     * pre-#515 EdgeSwipeRefreshLayout behaviour); [SwipeRefreshZone.ANYWHERE]
+     * arms it across the whole content area (#515 behaviour).
+     */
+    var gestureZone: SwipeRefreshZone = SwipeRefreshZone.TOP_EDGE
+
     var topExclusionDp: Float = 12f
+    var edgeBandDp: Float = 48f
     var indicatorTravelDp: Float = 96f
     var triggerDistanceDp: Float = 64f
 
@@ -26,6 +36,9 @@ class WebSwipeRefreshLayout @JvmOverloads constructor(
 
     private val topExclusionPx: Float
         get() = topExclusionDp * density
+
+    private val edgeBandPx: Float
+        get() = edgeBandDp * density
 
     private val indicatorTravelPx: Float
         get() = indicatorTravelDp * density
@@ -65,7 +78,13 @@ class WebSwipeRefreshLayout @JvmOverloads constructor(
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 refreshIndicatorOffsetIfNeeded()
-                pullArmed = ev.y >= topExclusionLowerBoundPx()
+                val lowerBound = topExclusionLowerBoundPx()
+                pullArmed = when (gestureZone) {
+                    SwipeRefreshZone.TOP_EDGE ->
+                        ev.y in lowerBound..(lowerBound + edgeBandPx)
+                    SwipeRefreshZone.ANYWHERE ->
+                        ev.y >= lowerBound
+                }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> pullArmed = false
         }

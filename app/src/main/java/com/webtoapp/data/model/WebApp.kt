@@ -190,6 +190,17 @@ enum class LongPressMenuStyle {
     CONTEXT
 }
 
+/**
+ * Where on the screen the pull-to-refresh gesture may start.
+ * [TOP_EDGE] is the classic narrow band under the status bar (pre-2.4.5
+ * behaviour, the default); [ANYWHERE] arms the pull across the whole content
+ * area while the page is scrolled to the top (#511 / #515 behaviour).
+ */
+enum class SwipeRefreshZone {
+    TOP_EDGE,
+    ANYWHERE
+}
+
 enum class UserAgentMode(
     val displayName: String,
     val description: String,
@@ -268,6 +279,7 @@ data class WebViewConfig(
     val desktopMode: Boolean = false,
     val zoomEnabled: Boolean = true,
     val swipeRefreshEnabled: Boolean = true,
+    val swipeRefreshZone: SwipeRefreshZone = SwipeRefreshZone.TOP_EDGE,
     val autoRefreshEnabled: Boolean = false,
     val autoRefreshIntervalSec: Int = 60,
     val autoRefreshShowCountdown: Boolean = true,

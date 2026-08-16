@@ -3013,6 +3013,8 @@ fun WebViewScreen(
                                     android.graphics.Color.parseColor("#6750A4"),
                                     android.graphics.Color.parseColor("#7F67BE")
                                 )
+                                gestureZone = webApp?.webViewConfig?.swipeRefreshZone
+                                    ?: com.webtoapp.data.model.SwipeRefreshZone.TOP_EDGE
                                 isEnabled = swipeRefreshEnabled
                                 setOnRefreshListener {
                                     isRefreshing = true

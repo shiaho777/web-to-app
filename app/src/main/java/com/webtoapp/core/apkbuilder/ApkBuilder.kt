@@ -3790,6 +3790,7 @@ private fun com.webtoapp.data.model.WebViewConfig.toWebViewBlock(context: androi
         showFloatingBackButton = showFloatingBackButton,
         backButtonBehavior = backButtonBehavior,
         swipeRefreshEnabled = swipeRefreshEnabled,
+        swipeRefreshZone = swipeRefreshZone.name,
         fullscreenEnabled = fullscreenEnabled,
         performanceOptimization = performanceOptimization,
         pwaOfflineEnabled = pwaOfflineEnabled && !clearBrowsingDataOnLaunch,

@@ -1018,6 +1018,60 @@ fun BrowserAdvancedConfigCard(
                                 checked = config.swipeRefreshEnabled,
                                 onCheckedChange = { onConfigChange(config.copy(swipeRefreshEnabled = it)) }
                             )
+
+                            // Same radio-group pattern as the PWA offline
+                            // strategy selector in sectionOfflinePerformance.
+                            androidx.compose.animation.AnimatedVisibility(
+                                visible = config.swipeRefreshEnabled,
+                                enter = CardExpandTransition,
+                                exit = CardCollapseTransition
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(
+                                        horizontal = WtaSpacing.RowHorizontal,
+                                        vertical = WtaSpacing.ContentGap
+                                    )
+                                ) {
+                                    Text(
+                                        text = Strings.swipeRefreshZoneLabel,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(bottom = 4.dp)
+                                    )
+                                    listOf(
+                                        com.webtoapp.data.model.SwipeRefreshZone.TOP_EDGE to Strings.swipeRefreshZoneTopEdge,
+                                        com.webtoapp.data.model.SwipeRefreshZone.ANYWHERE to Strings.swipeRefreshZoneAnywhere
+                                    ).forEach { (zone, label) ->
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(MaterialTheme.shapes.small)
+                                                .clickable {
+                                                    onConfigChange(
+                                                        config.copy(swipeRefreshZone = zone)
+                                                    )
+                                                }
+                                                .padding(vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            RadioButton(
+                                                selected = config.swipeRefreshZone == zone,
+                                                onClick = {
+                                                    onConfigChange(
+                                                        config.copy(swipeRefreshZone = zone)
+                                                    )
+                                                }
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = label,
+                                                style = MaterialTheme.typography.bodySmall
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
                             WtaSectionDivider()
                             WtaToggleRow(
                                 title = Strings.externalLinksSetting,
