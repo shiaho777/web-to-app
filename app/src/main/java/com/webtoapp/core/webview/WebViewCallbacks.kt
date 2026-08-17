@@ -49,4 +49,13 @@ interface WebViewCallbacks {
     fun onAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
         onResult(true)
     }
+
+    /**
+     * Request location access (Android permission + system location service check, with the same
+     * settings dialog used by the Chromium prompt path) on behalf of GeolocationBridge. Default
+     * denies so hosts without an Activity do not silently fake a grant.
+     */
+    fun requestGeolocationAccess(onResult: (Boolean) -> Unit) {
+        onResult(false)
+    }
 }

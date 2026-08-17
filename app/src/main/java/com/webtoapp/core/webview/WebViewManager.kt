@@ -58,6 +58,7 @@ class WebViewManager(
     private val cloudflareCompatScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val backStateGuardScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
     private val printBridgeScriptHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
+    private val geolocationShimHandlers = java.util.WeakHashMap<WebView, ScriptHandler>()
 
     companion object {
 
@@ -1092,6 +1093,7 @@ class WebViewManager(
     private var extensionMasterEnabled: Boolean = true
 
     private var gmBridge: com.webtoapp.core.extension.GreasemonkeyBridge? = null
+    private var geoBridge: GeolocationBridge? = null
 
     private var extensionRuntimes: MutableMap<String, com.webtoapp.core.extension.ChromeExtensionRuntime> = mutableMapOf()
     private val extensionPopupDialogs = mutableMapOf<String, Dialog>()
@@ -1603,6 +1605,20 @@ class WebViewManager(
                 installPrintBridgeDocumentStart(this)
             }
 
+            if (config.geolocationEnabled) {
+                geoBridge?.destroy()
+                val bridge = GeolocationBridge(
+                    context = context,
+                    policy = config.geolocationPolicy.name,
+                    accuracy = config.geolocationAccuracy.name,
+                    webViewProvider = { webView },
+                    permissionRequester = { onResult -> callbacks.requestGeolocationAccess(onResult) }
+                )
+                geoBridge = bridge
+                addJavascriptInterface(bridge, GeolocationBridge.JS_INTERFACE_NAME)
+                installGeolocationShimDocumentStart(this)
+            }
+
             // Device disguise desktop spoof: patch JS-detectable signals (platform,
             // touchPoints, screen, matchMedia, Client Hints) that UA alone can't cover.
             val ddConfig = currentDeviceDisguiseConfig
@@ -2085,6 +2101,10 @@ class WebViewManager(
 
                 if (config.enableClipboardPolyfill) {
                     view?.evaluateJavascript(CLIPBOARD_POLYFILL_JS, null)
+                }
+
+                if (config.geolocationEnabled) {
+                    view?.evaluateJavascript(GeolocationBridge.getShimScript(), null)
                 }
 
                 // Warm up the audio session on the first user gesture so async audio (e.g. AI
@@ -3669,6 +3689,7 @@ class WebViewManager(
                 removeJavascriptInterface("DownloadBridge")
                 removeJavascriptInterface("NativeShareBridge")
                 removeJavascriptInterface("AndroidPrint")
+                removeJavascriptInterface(GeolocationBridge.JS_INTERFACE_NAME)
                 removeJavascriptInterface(com.webtoapp.core.extension.GreasemonkeyBridge.JS_INTERFACE_NAME)
                 removeJavascriptInterface(com.webtoapp.core.extension.ChromeExtensionRuntime.JS_BRIDGE_NAME)
 
@@ -3702,12 +3723,18 @@ class WebViewManager(
             runCatching { handler.remove() }
         }
         blobCacheHookHandlers.clear()
+        geolocationShimHandlers.values.toList().forEach { handler ->
+            runCatching { handler.remove() }
+        }
+        geolocationShimHandlers.clear()
         managedWebViews.keys.toList().forEach { webView ->
             destroyWebView(webView)
         }
         managedWebViews.clear()
         gmBridge?.destroy()
         gmBridge = null
+        geoBridge?.destroy()
+        geoBridge = null
 
         extensionRuntimes.values.forEach { it.destroy() }
         extensionRuntimes.clear()
@@ -3805,6 +3832,24 @@ class WebViewManager(
             AppLogger.i("WebViewManager", "[DownloadBridge] Installed at document start (applies to all hosts)")
         } catch (e: Exception) {
             AppLogger.w("WebViewManager", "[DownloadBridge] Document-start install failed, will use onPageStarted fallback", e)
+        }
+    }
+
+    private fun installGeolocationShimDocumentStart(webView: WebView) {
+        if (geolocationShimHandlers.containsKey(webView)) return
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            AppLogger.d("WebViewManager", "[GeolocationBridge] Document-start script unsupported; shim will use onPageStarted fallback")
+            return
+        }
+        try {
+            geolocationShimHandlers[webView] = WebViewCompat.addDocumentStartJavaScript(
+                webView,
+                GeolocationBridge.getShimScript(),
+                setOf("*")
+            )
+            AppLogger.i("WebViewManager", "[GeolocationBridge] Native geolocation shim installed at document start")
+        } catch (e: Exception) {
+            AppLogger.w("WebViewManager", "[GeolocationBridge] Document-start install failed, will use onPageStarted fallback", e)
         }
     }
 

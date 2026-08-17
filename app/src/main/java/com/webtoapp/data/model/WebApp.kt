@@ -373,7 +373,7 @@ data class WebViewConfig(
     val nativeBridgeCapabilities: NativeBridgeCapabilities = NativeBridgeCapabilities(),
 
     val geolocationEnabled: Boolean = false,
-    val geolocationAccuracy: GeolocationAccuracy = GeolocationAccuracy.COARSE,
+    val geolocationAccuracy: GeolocationAccuracy = GeolocationAccuracy.FINE,
     val geolocationPolicy: GeolocationPolicy = GeolocationPolicy.ALWAYS_ASK,
     val enableBlobDownloadInterception: Boolean = true,
     val blobInterceptScope: BlobInterceptScope = BlobInterceptScope.ALL,

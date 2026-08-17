@@ -29,6 +29,7 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeolocationOrigin: String? = null
     private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
+    private val pendingLocationAccessCallbacks = mutableListOf<(Boolean) -> Unit>()
 
     private var pendingDownload: PendingDownload? = null
 
@@ -451,6 +452,12 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val granted = permissions.values.any { it }
+        if (pendingLocationAccessCallbacks.isNotEmpty()) {
+            if (granted && isSystemLocationEnabled()) settleLocationAccess(true)
+            else if (granted) showLocationSettingsDialog()
+            else settleLocationAccess(false)
+            return@registerForActivityResult
+        }
         if (granted && pendingGeolocationOrigin != null) {
             GeolocationPermissionsSingleton.addAllowedOrigin(pendingGeolocationOrigin!!)
             if (isSystemLocationEnabled()) {
@@ -470,6 +477,10 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
     private val locationSettingsLauncher = activity.registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
+        if (pendingLocationAccessCallbacks.isNotEmpty()) {
+            settleLocationAccess(isSystemLocationEnabled())
+            return@registerForActivityResult
+        }
         val origin = pendingGeolocationOrigin
         val cb = pendingGeolocationCallback
         if (origin != null && cb != null && isSystemLocationEnabled()) {
@@ -499,18 +510,53 @@ class ShellPermissionDelegate(private val activity: AppCompatActivity) {
                     )
                 } catch (e: Exception) {
                     AppLogger.w("ShellPermission", "location settings intent failed: ${e.message}")
+                    settleLocationAccess(false)
                     pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, false, false)
                     pendingGeolocationOrigin = null
                     pendingGeolocationCallback = null
                 }
             }
             .setNegativeButton(Strings.geolocationLocationOffCancel) { _, _ ->
+                settleLocationAccess(false)
                 pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, false, false)
                 pendingGeolocationOrigin = null
                 pendingGeolocationCallback = null
             }
             .setCancelable(false)
             .show()
+    }
+
+    /**
+     * Request location access (Android runtime permission + system location service check)
+     * on behalf of GeolocationBridge's native navigator.geolocation backend. The host shows
+     * the same system dialog and location-services dialog used by the Chromium prompt path.
+     */
+    fun requestLocationAccess(accuracy: String, onResult: (Boolean) -> Unit) {
+        val perms = if (accuracy.equals("FINE", ignoreCase = true)) {
+            arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+        } else {
+            arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+        val notGranted = perms.filter {
+            ContextCompat.checkSelfPermission(activity, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (notGranted.isEmpty()) {
+            if (isSystemLocationEnabled()) {
+                onResult(true)
+            } else {
+                pendingLocationAccessCallbacks.add(onResult)
+                showLocationSettingsDialog()
+            }
+            return
+        }
+        pendingLocationAccessCallbacks.add(onResult)
+        locationPermissionLauncher.launch(notGranted.toTypedArray())
+    }
+
+    private fun settleLocationAccess(granted: Boolean) {
+        val callbacks = pendingLocationAccessCallbacks.toList()
+        pendingLocationAccessCallbacks.clear()
+        callbacks.forEach { it(granted) }
     }
 
     fun handlePermissionRequest(request: PermissionRequest) {

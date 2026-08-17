@@ -222,6 +222,13 @@ class ShellActivity : AppCompatActivity() {
         )
     }
 
+    fun requestGeolocationAccess(onResult: (Boolean) -> Unit) {
+        permissionDelegate.requestLocationAccess(
+            accuracy = shellConfig?.webViewConfig?.geolocationAccuracy ?: "COARSE",
+            onResult = onResult
+        )
+    }
+
     fun handleDownloadWithPermission(
         url: String,
         userAgent: String,

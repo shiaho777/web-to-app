@@ -137,6 +137,7 @@ class WebViewActivity : AppCompatActivity() {
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeolocationOrigin: String? = null
     private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
+    private val pendingLocationAccessCallbacks = mutableListOf<(Boolean) -> Unit>()
     internal var geolocationPolicy: String = "ALWAYS_ASK"
     internal var geolocationAccuracy: String = "COARSE"
 
@@ -468,6 +469,12 @@ class WebViewActivity : AppCompatActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         val granted = permissions.values.any { it }
+        if (pendingLocationAccessCallbacks.isNotEmpty()) {
+            if (granted && isSystemLocationEnabled()) settleLocationAccess(true)
+            else if (granted) showLocationSettingsDialog()
+            else settleLocationAccess(false)
+            return@registerForActivityResult
+        }
         if (granted && pendingGeolocationOrigin != null) {
             GeolocationPermissionsSingleton.addAllowedOrigin(pendingGeolocationOrigin!!)
             if (isSystemLocationEnabled()) {
@@ -487,6 +494,10 @@ class WebViewActivity : AppCompatActivity() {
     private val locationSettingsLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
+        if (pendingLocationAccessCallbacks.isNotEmpty()) {
+            settleLocationAccess(isSystemLocationEnabled())
+            return@registerForActivityResult
+        }
         val origin = pendingGeolocationOrigin
         val cb = pendingGeolocationCallback
         if (origin != null && cb != null && isSystemLocationEnabled()) {
@@ -516,18 +527,51 @@ class WebViewActivity : AppCompatActivity() {
                     )
                 } catch (e: Exception) {
                     AppLogger.w("WebViewActivity", "location settings intent failed: ${e.message}")
+                    settleLocationAccess(false)
                     pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, false, false)
                     pendingGeolocationOrigin = null
                     pendingGeolocationCallback = null
                 }
             }
             .setNegativeButton(Strings.geolocationLocationOffCancel) { _, _ ->
+                settleLocationAccess(false)
                 pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, false, false)
                 pendingGeolocationOrigin = null
                 pendingGeolocationCallback = null
             }
             .setCancelable(false)
             .show()
+    }
+
+    fun requestGeolocationAccess(onResult: (Boolean) -> Unit) {
+        val perms = if (geolocationAccuracy.equals("FINE", ignoreCase = true)) {
+            arrayOf(
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        } else {
+            arrayOf(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+        }
+        val notGranted = perms.filter {
+            androidx.core.content.ContextCompat.checkSelfPermission(this, it) !=
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+        if (notGranted.isEmpty()) {
+            if (isSystemLocationEnabled()) onResult(true)
+            else {
+                pendingLocationAccessCallbacks.add(onResult)
+                showLocationSettingsDialog()
+            }
+            return
+        }
+        pendingLocationAccessCallbacks.add(onResult)
+        locationPermissionLauncher.launch(notGranted.toTypedArray())
+    }
+
+    private fun settleLocationAccess(granted: Boolean) {
+        val callbacks = pendingLocationAccessCallbacks.toList()
+        pendingLocationAccessCallbacks.clear()
+        callbacks.forEach { it(granted) }
     }
 
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -2316,7 +2360,12 @@ fun WebViewScreen(
             ) {
 
                 (activity as? WebViewActivity)?.handleGeolocationPermission(origin, callback)
-                    ?: callback?.invoke(origin, true, false)
+                    ?: callback?.invoke(origin, false, false)
+            }
+
+            override fun requestGeolocationAccess(onResult: (Boolean) -> Unit) {
+                (activity as? WebViewActivity)?.requestGeolocationAccess(onResult)
+                    ?: onResult(false)
             }
 
             override fun onPermissionRequest(request: PermissionRequest?) {

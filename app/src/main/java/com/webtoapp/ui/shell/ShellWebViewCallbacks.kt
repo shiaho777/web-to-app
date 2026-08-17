@@ -160,12 +160,17 @@ fun createShellWebViewCallbacks(
         ) {
 
             (context as? ShellActivity)?.handleGeolocationPermission(origin, callback)
-                ?: callback?.invoke(origin, true, false)
+                ?: callback?.invoke(origin, false, false)
         }
 
         override fun onAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
             (context as? ShellActivity)?.handleAndroidPermissionsRequest(permissions, onResult)
                 ?: onResult(true)
+        }
+
+        override fun requestGeolocationAccess(onResult: (Boolean) -> Unit) {
+            (context as? ShellActivity)?.requestGeolocationAccess(onResult)
+                ?: onResult(false)
         }
 
         override fun onPermissionRequest(request: PermissionRequest?) {
