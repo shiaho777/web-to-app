@@ -12,6 +12,12 @@ class PermissionChecker(
     @Volatile var mode: PermissionMode = initialMode
         private set
 
+    // Baseline mode outside plan sessions. Plan mode is a temporary overlay on top
+    // of this baseline; approve()/resetToBaseline() return to it so an enabled
+    // auto-approve preference survives a plan round-trip, and a Plan mode left
+    // over from an abandoned plan review never leaks into later sessions.
+    @Volatile private var baselineMode: PermissionMode = initialMode
+
     private val alwaysAllow = mutableSetOf<String>()
 
     private val planAllowedTools = setOf(
@@ -28,6 +34,21 @@ class PermissionChecker(
 
     fun setMode(newMode: PermissionMode) {
         mode = newMode
+    }
+
+    /**
+     * Record the user's auto-approve preference as the baseline mode. Applied
+     * immediately only when no plan session is active — clobbering an active
+     * Plan mode here would silently re-allow writes the plan prompt forbids.
+     */
+    fun syncAutoApprove(enabled: Boolean) {
+        baselineMode = if (enabled) PermissionMode.AutoApprove else PermissionMode.Default
+        if (mode != PermissionMode.Plan) mode = baselineMode
+    }
+
+    /** Drop any active Plan overlay and return to the baseline mode. */
+    fun resetToBaseline() {
+        mode = baselineMode
     }
 
     fun isAlwaysAllowed(toolName: String): Boolean = toolName in alwaysAllow

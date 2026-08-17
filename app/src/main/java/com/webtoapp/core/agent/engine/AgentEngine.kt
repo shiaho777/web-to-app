@@ -192,7 +192,12 @@ class AgentEngine(
                     send(AgentEvent.Notice(Strings.agentOutputTruncated))
                 }
 
+                // Keep the raw (pre-sanitised) arguments per call: a truncated
+                // arguments stream must be reported to the model as such, not
+                // silently coerced to "{}" and executed with missing params.
+                val rawArgsById = HashMap<String, String>()
                 val assistantToolCalls = pending.entries.map { (id, pair) ->
+                    rawArgsById[id] = pair.second.toString()
                     LlmToolCall(id, pair.first, sanitizeArgumentsJson(pair.second.toString()))
                 }
                 messages += LlmMessage(
@@ -216,13 +221,13 @@ class AgentEngine(
                 for (batch in batches) {
                     if (abortController.aborted) { send(AgentEvent.Aborted); return@channelFlow }
                     if (batch.parallel) {
-                        val results = runParallel(batch.calls, input, channel)
+                        val results = runParallel(batch.calls, input, channel, rawArgsById)
                         for ((call, result) in results) {
                             totalToolCalls++
                             emitToolFinish(call, result, channel)
                             toolMessages += LlmMessage(
                                 role = LlmMessage.Role.TOOL,
-                                content = trimToolText(result.text),
+                                content = trimToolText(result.text).ifEmpty { NO_TOOL_OUTPUT },
                                 toolCallId = call.id,
                                 name = call.name,
                                 images = result.images
@@ -239,12 +244,12 @@ class AgentEngine(
                     } else {
                         for (call in batch.calls) {
                             if (abortController.aborted) { send(AgentEvent.Aborted); return@channelFlow }
-                            val result = runSequential(call, input, channel)
+                            val result = runSequential(call, input, channel, rawArgsById)
                             totalToolCalls++
                             emitToolFinish(call, result, channel)
                             toolMessages += LlmMessage(
                                 role = LlmMessage.Role.TOOL,
-                                content = trimToolText(result.text),
+                                content = trimToolText(result.text).ifEmpty { NO_TOOL_OUTPUT },
                                 toolCallId = call.id,
                                 name = call.name,
                                 images = result.images
@@ -289,19 +294,33 @@ class AgentEngine(
     private suspend fun runSequential(
         call: LlmToolCall,
         input: Input,
-        out: SendChannel<AgentEvent>
+        out: SendChannel<AgentEvent>,
+        rawArgsById: Map<String, String>
     ): ToolResult {
         val tool = input.registry[call.name]
             ?: return ToolResult.error("Unknown tool: ${call.name}")
-        val args = parseArgs(call.argumentsJson)
 
         out.send(
             AgentEvent.ToolExecuting(
                 toolCallId = call.id,
                 name = call.name,
-                activity = tool.activityDescription(args) ?: call.name
+                activity = tool.activityDescription(parseArgs(call.argumentsJson)) ?: call.name
             )
         )
+
+        // Weak models frequently get cut off by the token limit mid-arguments,
+        // leaving invalid JSON. Coercing that to "{}" and executing anyway just
+        // produces confusing "missing parameter" errors the model cannot trace
+        // back to the truncation — reject with the real reason instead.
+        val rawArgs = rawArgsById[call.id]
+        if (!rawArgs.isNullOrBlank() && !isValidJsonObject(rawArgs)) {
+            return ToolResult.error(
+                "${call.name}: arguments JSON was invalid or truncated (likely cut off by the " +
+                    "token limit) and were NOT executed. Re-issue this tool call with complete arguments."
+            )
+        }
+
+        val args = parseArgs(call.argumentsJson)
 
         val decision = permissionChecker.check(tool, args, input.toolContext)
         if (decision == PermissionDecision.Deny) {
@@ -348,12 +367,13 @@ class AgentEngine(
     private suspend fun runParallel(
         calls: List<LlmToolCall>,
         input: Input,
-        out: SendChannel<AgentEvent>
+        out: SendChannel<AgentEvent>,
+        rawArgsById: Map<String, String>
     ): List<Pair<LlmToolCall, ToolResult>> =
         coroutineScope {
             val deferred = calls.map { call ->
                 async {
-                    call to runSequential(call, input, out)
+                    call to runSequential(call, input, out, rawArgsById)
                 }
             }
             deferred.map { it.await() }
@@ -390,6 +410,10 @@ class AgentEngine(
         return if (valid) json else "{}"
     }
 
+    private fun isValidJsonObject(json: String): Boolean = runCatching {
+        JsonParser.parseString(json).isJsonObject
+    }.getOrDefault(false)
+
     private fun trimToolText(text: String): String =
         if (text.length <= MAX_TOOL_RESULT_CHARS) text
         else text.substring(0, MAX_TOOL_RESULT_CHARS) + "\n… (tool result truncated)"
@@ -400,6 +424,10 @@ class AgentEngine(
         private const val TAG = "AgentEngine"
         private const val MAX_TOOL_RESULT_CHARS = 32_000
         private const val MAX_RATE_LIMIT_RETRIES = 5
+
+        // Some OpenAI-compat gateways reject tool messages with empty content;
+        // always send a placeholder instead of "".
+        private const val NO_TOOL_OUTPUT = "(no output)"
         // If the LLM stream emits nothing for this long, treat it as a stalled
         // connection and retry (some OpenAI-compat endpoints open the SSE channel,
         // send a partial response, then go silent without ever closing it). 90s is

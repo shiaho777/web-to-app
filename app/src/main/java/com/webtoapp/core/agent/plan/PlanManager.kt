@@ -48,7 +48,7 @@ class PlanManager(
     }
 
     fun approve() {
-        permissionChecker.setMode(PermissionMode.Default)
+        permissionChecker.resetToBaseline()
         _state.value = State(active = false)
     }
 

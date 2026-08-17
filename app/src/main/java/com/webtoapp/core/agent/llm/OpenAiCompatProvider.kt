@@ -142,7 +142,12 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
         addProperty("model", req.model.id); addProperty("stream", true); addProperty("temperature", req.temperature)
         req.maxTokens?.let { addProperty("max_tokens", it) }
         add("messages", JsonArray().apply { req.messages.forEach { msg -> add(buildMsg(msg)) } })
-        if (req.useTools && req.tools.isNotEmpty()) add("tools", JsonArray().apply { req.tools.forEach { t -> add(buildTool(t)) } })
+        if (req.useTools && req.tools.isNotEmpty()) {
+            add("tools", JsonArray().apply { req.tools.forEach { t -> add(buildTool(t)) } })
+            // Some OpenAI-compat gateways (SenseNova etc.) don't default to "auto"
+            // and never emit tool calls unless tool_choice is explicit.
+            addProperty("tool_choice", "auto")
+        }
     }
     private fun buildMsg(msg: LlmMessage) = JsonObject().apply {
         addProperty("role", when(msg.role){LlmMessage.Role.SYSTEM->"system";LlmMessage.Role.USER->"user";LlmMessage.Role.ASSISTANT->"assistant";LlmMessage.Role.TOOL->"tool"})

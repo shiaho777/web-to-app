@@ -159,10 +159,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun applyAutoApproveToService(enabled: Boolean) {
         val checker = service?.permissionChecker ?: return
-        checker.setMode(
-            if (enabled) com.webtoapp.core.agent.permission.PermissionMode.AutoApprove
-            else com.webtoapp.core.agent.permission.PermissionMode.Default
-        )
+        checker.syncAutoApprove(enabled)
     }
 
     private fun observeCurrentModel() {
@@ -1841,6 +1838,11 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val session = sessionStore.get(id) ?: return
         val checker = service?.permissionChecker
         if (checker != null) {
+            // Fresh PlanManager per session — the checker's mode must follow suit.
+            // Without this reset, a Plan mode left over from an abandoned plan
+            // review in a previous session denies all writes while the prompt
+            // (and this fresh manager) say "not in plan mode".
+            checker.resetToBaseline()
             planManager = PlanManager(session.id, files, checker)
             registryFactory = ToolRegistryFactory(planManager!!, imageRegistry)
         } else {
