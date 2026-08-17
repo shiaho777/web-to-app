@@ -349,12 +349,135 @@ abstract class SyncNativeExecutableJniLibsTask : DefaultTask() {
     }
 }
 
+/**
+ * Builds the patched musl dynamic linker (libmusl-linker.so) into generated
+ * jniLibs for arm64-v8a / x86_64. The linker carries the W^X exec bridge:
+ * app_data library fds that SELinux refuses to exec-map are copied into an
+ * executable memfd and mapped from there, restoring Python host previews on
+ * targetSdk>=29 builds. Source provenance: upstream musl tarball +
+ * scripts/patches/musl-1.2.5-wta-exec-bridge.patch +
+ * scripts/musl-bridge/wta_mulxc3.c (NDK compiler-rt drops x86_80 routines).
+ */
+abstract class BuildMuslBridgeTask : DefaultTask() {
+    @get:Input
+    abstract val muslVersion: org.gradle.api.provider.Property<String>
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val patchFile: RegularFileProperty
+
+    @get:InputFile
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val x80ShimFile: RegularFileProperty
+
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.NONE)
+    abstract val ndkToolchainDir: DirectoryProperty
+
+    @get:Internal
+    abstract val workDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    private fun run(cmd: List<String>, cwd: File? = null, env: Map<String, String> = emptyMap()) {
+        val proc = ProcessBuilder(cmd).apply {
+            if (cwd != null) directory(cwd)
+            environment().putAll(env)
+            redirectErrorStream(true)
+        }.start()
+        val out = proc.inputStream.bufferedReader().readText()
+        val code = proc.waitFor()
+        if (code != 0) throw GradleException("command failed ($code): ${cmd.joinToString(" ")}\n$out")
+    }
+
+    @TaskAction
+    fun build() {
+        val tc = ndkToolchainDir.get().asFile
+        if (!File(tc, "bin/clang").isFile) {
+            throw GradleException("NDK toolchain not found at $tc (set NDKVersion or install the NDK)")
+        }
+        val libccDir = File(tc, "lib/clang")
+            .listFiles { f -> f.isDirectory }?.map { File(it, "lib/linux") }.orEmpty()
+        fun libcc(name: String): String =
+            libccDir.firstOrNull { File(it, name).isFile }?.resolve(name)?.absolutePath
+                ?: throw GradleException("compiler-rt $name not found under $tc")
+
+        val work = workDir.get().asFile.apply { mkdirs() }
+        val version = muslVersion.get()
+        val tarball = File(work, "musl-$version.tar.gz")
+        if (!tarball.isFile) {
+            run(
+                listOf(
+                    "curl", "-fsSL", "--max-time", "180", "-o", tarball.absolutePath,
+                    "https://musl.libc.org/releases/musl-$version.tar.gz"
+                )
+            )
+        }
+        val src = File(work, "musl-$version")
+        src.deleteRecursively()
+        run(listOf("tar", "xzf", tarball.absolutePath, "-C", work.absolutePath))
+        run(listOf("patch", "-p1", "-d", src.absolutePath, "--input", patchFile.get().asFile.absolutePath))
+        File(src, "src/math/x86_64").also { it.mkdirs() }
+            .resolve(x80ShimFile.get().asFile.name).run {
+                x80ShimFile.get().asFile.copyTo(this, overwrite = true)
+            }
+
+        val clang = File(tc, "bin/clang").absolutePath
+        val strip = File(tc, "bin/llvm-strip").absolutePath
+        val jobs = Runtime.getRuntime().availableProcessors().toString()
+        val targets = listOf(
+            "arm64-v8a" to ("aarch64-linux-musl" to "libclang_rt.builtins-aarch64-android.a"),
+            "x86_64" to ("x86_64-linux-musl" to "libclang_rt.builtins-x86_64-android.a")
+        )
+        val out = outputDir.get().asFile
+        out.deleteRecursively()
+        for ((abi, target) in targets) {
+            val (triple, rt) = target
+            val buildDir = File(work, "build-$abi").apply { deleteRecursively(); mkdirs() }
+            val libccPath = libcc(rt)
+            val configureEnv = mapOf(
+                "CC" to "$clang --target=$triple",
+                "CROSS_COMPILE" to "${File(tc, "bin/llvm-").absolutePath}",
+                "CFLAGS" to "-O2",
+                "LDFLAGS" to "-Wl,-z,max-page-size=16384"
+            )
+            run(listOf("../musl-$version/configure", "--target=$triple"), cwd = buildDir, env = configureEnv)
+            run(listOf("make", "-j$jobs", "LIBCC=$libccPath"), cwd = buildDir, env = configureEnv)
+            val dest = File(out, "$abi/libmusl-linker.so")
+            dest.parentFile.mkdirs()
+            run(listOf(strip, File(buildDir, "lib/libc.so").absolutePath, "-o", dest.absolutePath))
+            dest.setExecutable(true, false)
+        }
+    }
+}
+
+val muslBridgeTask = tasks.register<BuildMuslBridgeTask>("buildMuslBridge") {
+    group = "build"
+    description = "Builds the patched musl dynamic linker (libmusl-linker.so) with the W^X exec bridge into generated jniLibs."
+    muslVersion.set("1.2.5")
+    patchFile.set(rootProject.file("scripts/patches/musl-1.2.5-wta-exec-bridge.patch"))
+    x80ShimFile.set(rootProject.file("scripts/musl-bridge/wta_mulxc3.c"))
+    val hostTag = if (System.getProperty("os.name").lowercase().contains("mac")) "darwin-x86_64" else "linux-x86_64"
+    ndkToolchainDir.set(File(android.ndkDirectory, "toolchains/llvm/prebuilt/$hostTag"))
+    workDir.set(layout.buildDirectory.dir("musl-bridge"))
+    outputDir.set(layout.buildDirectory.dir("generated/jniLibs/muslBridge"))
+}
+
 androidComponents {
     onVariants { variant ->
         val capName = variant.name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
         val variantBuildTypeName = variant.buildType ?: "release"
         val cxxBuildType = if (variantBuildTypeName.equals("debug", ignoreCase = true)) "Debug" else "RelWithDebInfo"
         val nativeBuildTaskName = "buildCMake$cxxBuildType"
+
+        tasks.matching { it.name == "merge${capName}NativeLibs" }.configureEach {
+            dependsOn(muslBridgeTask)
+        }
+        variant.sources.jniLibs?.addGeneratedSourceDirectory(
+            muslBridgeTask,
+            BuildMuslBridgeTask::outputDir
+        )
         val syncNodeLauncherTask = tasks.register<SyncNativeExecutableJniLibsTask>("syncNodeLauncherJniLibs$capName") {
             group = "build"
             description = "Copies ABI-specific node launcher executables into generated jniLibs for ${variant.name}."

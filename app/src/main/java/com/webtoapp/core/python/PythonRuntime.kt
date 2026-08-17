@@ -79,7 +79,9 @@ class PythonRuntime(private val context: Context) {
         customPythonExtensions: List<com.webtoapp.data.model.CustomPythonExtension> = emptyList()
     ): Int = withContext(Dispatchers.IO) {
         try {
-            if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)) {
+            if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context) &&
+                !com.webtoapp.core.linux.RuntimeExecPolicy.hasMuslExecBridge(context)
+            ) {
                 val msg = com.webtoapp.core.linux.RuntimeExecPolicy.hostPreviewBlockedMessage("Python")
                 AppLogger.w(TAG, msg)
                 ShellLogger.w(TAG, msg)

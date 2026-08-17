@@ -318,7 +318,9 @@ object PythonDependencyManager {
         extraEnv: Map<String, String> = emptyMap(),
         onOutput: ((String) -> Unit)? = null
     ): Boolean = withContext(Dispatchers.IO) {
-        if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)) {
+        if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context) &&
+            !com.webtoapp.core.linux.RuntimeExecPolicy.hasMuslExecBridge(context)
+        ) {
             val msg = com.webtoapp.core.linux.RuntimeExecPolicy.hostPreviewBlockedMessage("Python")
             AppLogger.w(TAG, msg)
             onOutput?.invoke(msg)
