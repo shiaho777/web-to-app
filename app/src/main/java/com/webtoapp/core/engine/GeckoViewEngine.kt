@@ -315,7 +315,33 @@ class GeckoViewEngine(
             else -> "\"" + value.toString().replace("\\", "\\\\").replace("\"", "\\\"") + "\""
         }
 
+        /**
+         * GeckoView 142 race workaround (#582). GeckoRuntime.init() calls
+         * ProcessLifecycleOwner.addObserver(LifecycleListener) right after
+         * GeckoThread.launch(). When the process lifecycle is already RESUMED at that
+         * moment (generated apps create the engine from Compose's first layout, after
+         * the activity has resumed), LifecycleRegistry synchronously dispatches
+         * ON_RESUME and LifecycleListener.onResume() dereferences
+         * ThreadUtils.sGeckoHandler — a field the native side only assigns later on
+         * the gecko thread, so the dereference is a guaranteed NPE. Seed it with the
+         * main handler; the only runnable ever posted through this path
+         * (Clipboard.updateSequenceNumber) is main-thread safe, and native overwrites
+         * the field with the real gecko-thread handler once the thread boots.
+         */
+        internal fun ensureGeckoHandlerSeeded() {
+            try {
+                if (org.mozilla.gecko.util.ThreadUtils.sGeckoHandler == null) {
+                    org.mozilla.gecko.util.ThreadUtils.sGeckoHandler =
+                        android.os.Handler(android.os.Looper.getMainLooper())
+                    AppLogger.i(TAG, "Seeded ThreadUtils.sGeckoHandler with main handler (lifecycle race workaround)")
+                }
+            } catch (t: Throwable) {
+                AppLogger.w(TAG, "sGeckoHandler seed failed: ${t.message}")
+            }
+        }
+
         private fun createRuntime(context: Context): GeckoRuntime {
+            ensureGeckoHandlerSeeded()
             val settingsBuilder = GeckoRuntimeSettings.Builder()
                 .javaScriptEnabled(true)
                 .consoleOutput(true)
