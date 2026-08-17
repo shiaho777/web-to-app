@@ -28,13 +28,14 @@ class GoRuntime(private val context: Context) {
     }
 
     /**
-     * Go execs via memfd_create + execveat, which SELinux fully blocks under targetSdk 29+
-     * (memfd_file open is denied, verified on API 35). Kept as a failure-note fallback for
-     * OEM-specific policies; the startServer precheck handles the standard case.
+     * Failure-note fallback for OEM-specific policies that deny even the memfd
+     * exec-map bridge; the startServer precheck handles the standard W^X case.
      * Runtime-layer string (shell-synced); intentionally not routed through Strings i18n.
      */
     private fun channelNote(): String =
-        if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)) {
+        if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context) &&
+            !com.webtoapp.core.linux.RuntimeExecPolicy.hasMuslExecBridge(context)
+        ) {
             com.webtoapp.core.linux.RuntimeExecPolicy.restrictionNote()
         } else ""
 
@@ -98,8 +99,11 @@ class GoRuntime(private val context: Context) {
             // The loader's three-tier fallback (direct exec -> system linker -> memfd
             // execveat) is fully blocked under SELinux W^X at targetSdk 29+: exec and
             // execute_no_trans on app_data_file, and open on memfd_file are all denied
-            // (verified on an API 35 emulator). Only generated APKs (targetSdk 28) pass.
-            if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)) {
+            // (verified on an API 35 emulator). Android Go binaries are PIE with
+            // PT_DYNAMIC and no DT_NEEDED, so the patched musl linker can load them
+            // in program mode and bridge exec-mapped segments through memfds.
+            val wxRestricted = !com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)
+            if (wxRestricted && !com.webtoapp.core.linux.RuntimeExecPolicy.hasMuslExecBridge(context)) {
                 _serverState.value = ServerState.Error(
                     com.webtoapp.core.linux.RuntimeExecPolicy.hostPreviewBlockedMessage("Go")
                 )
@@ -135,7 +139,7 @@ class GoRuntime(private val context: Context) {
             }
             currentPort = serverPort
 
-            if (!GoDependencyManager.isGoExecLoaderReady(context)) {
+            if (!wxRestricted && !GoDependencyManager.isGoExecLoaderReady(context)) {
                 val path = GoDependencyManager.getGoExecLoaderPath(context)
                 _serverState.value = ServerState.Error(
                     "Go executable loader 未就绪 ($path)。导出的 GO_APP 需包含 libgo_exec_loader.so；请用含原生 loader 的构建器重新导出。"
@@ -143,7 +147,11 @@ class GoRuntime(private val context: Context) {
                 return@withContext -1
             }
 
-            val command = GoDependencyManager.buildBinaryCommand(context, binaryPath, emptyList())
+            val command = if (wxRestricted) {
+                GoDependencyManager.buildMuslBridgeCommand(context, binaryPath, emptyList())
+            } else {
+                GoDependencyManager.buildBinaryCommand(context, binaryPath, emptyList())
+            }
 
             AppLogger.i(TAG, "启动 Go 服务器: $binaryPath")
             AppLogger.i(TAG, "工作目录: $projectDir, 端口: $serverPort")

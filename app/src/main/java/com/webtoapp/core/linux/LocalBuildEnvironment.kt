@@ -204,13 +204,17 @@ object LocalBuildEnvironment {
         return try {
             val execPrefix = com.webtoapp.core.wordpress.WordPressDependencyManager.buildPhpExecPrefix(context)
             val cmd = execPrefix + listOf(phar.absolutePath, "--version")
-            val pb = ProcessBuilder(cmd)
-            pb.redirectErrorStream(true)
-
-            pb.environment()["USE_ZEND_ALLOC"] = "0"
-            pb.environment()["TMPDIR"] = context.cacheDir.absolutePath
-            val proc = pb.start()
-            val out = proc.inputStream.bufferedReader().readText()
+            val launch = HostProcessLauncher.start(
+                context, cmd,
+                mapOf(
+                    "USE_ZEND_ALLOC" to "0",
+                    "TMPDIR" to context.cacheDir.absolutePath
+                ),
+                null
+            )
+            val proc = launch.process ?: return null
+            // `composer --version` prints to stdout; drain it, then wait.
+            val out = proc.inputStream.bufferedReader().use { it.readText() }
             val finished = proc.waitForCompat(5_000)
             if (!finished) {
                 proc.destroyForciblyCompat()

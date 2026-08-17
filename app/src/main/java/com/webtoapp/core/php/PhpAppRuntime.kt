@@ -75,7 +75,9 @@ class PhpAppRuntime(private val context: Context) {
         customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()
     ): Int = withContext(Dispatchers.IO) {
         try {
-            if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)) {
+            if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context) &&
+                !com.webtoapp.core.linux.RuntimeExecPolicy.hasStaticExecBridge(context)
+            ) {
                 _serverState.value = ServerState.Error(
                     com.webtoapp.core.linux.RuntimeExecPolicy.hostPreviewBlockedMessage("PHP")
                 )
@@ -145,16 +147,13 @@ class PhpAppRuntime(private val context: Context) {
             AppLogger.i(TAG, "项目目录: $projectDir")
             AppLogger.i(TAG, "Document root: $actualDocRoot")
 
-            val processBuilder = ProcessBuilder(command)
-            processBuilder.directory(File(projectDir))
-
-            val env = processBuilder.environment()
-            env["HOME"] = context.filesDir.absolutePath
-            env["TMPDIR"] = context.cacheDir.absolutePath
-            env["PHP_INI_SCAN_DIR"] = ""
-            env["APP_ENV"] = "production"
-            env["APP_DEBUG"] = "false"
-
+            val env = mutableMapOf(
+                "HOME" to context.filesDir.absolutePath,
+                "TMPDIR" to context.cacheDir.absolutePath,
+                "PHP_INI_SCAN_DIR" to "",
+                "APP_ENV" to "production",
+                "APP_DEBUG" to "false"
+            )
             envVars.forEach { (k, v) -> env[k] = v }
 
             val proxyPort = LocalDnsBridgeProxy.start()
@@ -166,7 +165,15 @@ class PhpAppRuntime(private val context: Context) {
 
             phpOutputBuffer.setLength(0)
             phpStderrBuffer.setLength(0)
-            phpProcess = processBuilder.start()
+            val launch = com.webtoapp.core.linux.HostProcessLauncher.start(
+                context, command, env, File(projectDir)
+            )
+            if (launch.process == null) {
+                stopServer()
+                _serverState.value = ServerState.Error(launch.error ?: "PHP 进程启动失败")
+                return@withContext -1
+            }
+            phpProcess = launch.process
 
             phpProcess?.inputStream?.let { stream ->
                 Thread {

@@ -56,7 +56,9 @@ class WordPressPhpRuntime(private val context: Context) {
 
     suspend fun startServer(documentRoot: String, port: Int = 0, portConflictMode: com.webtoapp.data.model.PortConflictMode = com.webtoapp.data.model.PortConflictMode.AUTO_KILL, customPhpExtensions: List<com.webtoapp.data.model.CustomPhpExtension> = emptyList()): Int = withContext(Dispatchers.IO) {
         try {
-            if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)) {
+            if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context) &&
+                !com.webtoapp.core.linux.RuntimeExecPolicy.hasStaticExecBridge(context)
+            ) {
                 _serverState.value = ServerState.Error(
                     com.webtoapp.core.linux.RuntimeExecPolicy.hostPreviewBlockedMessage("WordPress (PHP)")
                 )
@@ -103,14 +105,11 @@ class WordPressPhpRuntime(private val context: Context) {
 
             AppLogger.i(TAG, "启动 PHP 服务器: ${command.joinToString(" ")}")
 
-            val processBuilder = ProcessBuilder(command)
-            processBuilder.directory(File(documentRoot))
-            processBuilder.redirectErrorStream(false)
-
-            val env = processBuilder.environment()
-            env["HOME"] = context.filesDir.absolutePath
-            env["TMPDIR"] = context.cacheDir.absolutePath
-            env["PHP_INI_SCAN_DIR"] = ""
+            val env = mutableMapOf(
+                "HOME" to context.filesDir.absolutePath,
+                "TMPDIR" to context.cacheDir.absolutePath,
+                "PHP_INI_SCAN_DIR" to ""
+            )
 
             val proxyPort = LocalDnsBridgeProxy.start()
             if (proxyPort > 0) {
@@ -120,7 +119,15 @@ class WordPressPhpRuntime(private val context: Context) {
             }
 
             phpOutputBuffer.setLength(0)
-            phpProcess = processBuilder.start()
+            val launch = com.webtoapp.core.linux.HostProcessLauncher.start(
+                context, command, env, File(documentRoot), "WordPress (PHP)"
+            )
+            if (launch.process == null) {
+                stopServer()
+                _serverState.value = ServerState.Error(launch.error ?: "WordPress PHP 进程启动失败")
+                return@withContext -1
+            }
+            phpProcess = launch.process
 
             phpProcess?.inputStream?.let { stream ->
                 Thread {

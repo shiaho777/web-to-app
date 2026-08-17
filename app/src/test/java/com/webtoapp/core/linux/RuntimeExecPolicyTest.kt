@@ -58,4 +58,26 @@ class RuntimeExecPolicyTest {
             linker.delete()
         }
     }
+
+    @Test
+    fun `static exec bridge requires the native loader on an arm64 device`() {
+        val app = contextWithTargetSdk(35)
+        val lib = File(app.applicationInfo.nativeLibraryDir, "libstatic_exec.so")
+        lib.parentFile?.mkdirs()
+        lib.writeBytes(byteArrayOf(0x7f, 'E'.code.toByte(), 'L'.code.toByte(), 'F'.code.toByte()))
+        val saved = android.os.Build.SUPPORTED_ABIS.copyOf()
+        try {
+            android.os.Build.SUPPORTED_ABIS[0] = "arm64-v8a"
+            assertThat(RuntimeExecPolicy.hasStaticExecBridge(app)).isTrue()
+            // The loader cannot parse or trampoline non-AArch64 images; other
+            // primary ABIs must fall back to the plain blocked message.
+            android.os.Build.SUPPORTED_ABIS[0] = "x86_64"
+            assertThat(RuntimeExecPolicy.hasStaticExecBridge(app)).isFalse()
+            android.os.Build.SUPPORTED_ABIS[0] = "armeabi-v7a"
+            assertThat(RuntimeExecPolicy.hasStaticExecBridge(app)).isFalse()
+        } finally {
+            System.arraycopy(saved, 0, android.os.Build.SUPPORTED_ABIS, 0, saved.size)
+            lib.delete()
+        }
+    }
 }

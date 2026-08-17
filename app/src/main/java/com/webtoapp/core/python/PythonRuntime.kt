@@ -231,6 +231,16 @@ class PythonRuntime(private val context: Context) {
             AppLogger.i(TAG, "=========================")
 
             env["PATH"] = "${File(pythonHome, "bin").absolutePath}:${env["PATH"] ?: "/usr/bin"}"
+            if (muslLinker != null) {
+                // Activate the sitecustomize subprocess rewrite for server-lifetime
+                // children: under host W^X (targetSdk>=29) the PT_INTERP baked into
+                // the python binaries lives in app storage and cannot be kernel
+                // exec'd, so children must be routed through the native (patched)
+                // linker instead. resolveMuslLinker already prefers the native copy.
+                env["_WTA_MUSL_LINKER"] = muslLinker
+                env["_WTA_MUSL_LIB_PATH"] = "$pythonHome/lib"
+                env["_WTA_PYTHON_BIN"] = pythonBin
+            }
 
             envVars.forEach { (k, v) -> env[k] = v }
 

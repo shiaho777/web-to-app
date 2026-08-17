@@ -40,6 +40,21 @@ object RuntimeExecPolicy {
     }
 
     /**
+     * True when the user-mode exec loader (libstatic_exec.so) is installed as
+     * a native lib. It rebuilds execve in user mode (memfd image + AArch64
+     * initial stack + jump to entry), so static ELFs (pmmp PHP) can start
+     * even where [canExecAppDataBinaries] is false. AArch64 devices only —
+     * the loader neither parses nor trampolines any other architecture, so
+     * other ABIs get the plain blocked message instead of a spawn error.
+     */
+    fun hasStaticExecBridge(context: Context): Boolean {
+        val primaryAbi = android.os.Build.SUPPORTED_ABIS.firstOrNull() ?: return false
+        if (!primaryAbi.startsWith("arm64-v8a")) return false
+        val lib = File(context.applicationInfo.nativeLibraryDir, "libstatic_exec.so")
+        return lib.exists() && lib.canRead()
+    }
+
+    /**
      * Runtime-layer suffix appended to launch failures under the restriction.
      * (shell-synced runtime string; intentionally not routed through Strings i18n)
      */
@@ -47,5 +62,6 @@ object RuntimeExecPolicy {
         " [受 targetSdk≥29 SELinux 限制，无法执行应用数据目录中的本地运行时]"
 
     fun hostPreviewBlockedMessage(runtimeName: String): String =
-        "当前构建 targetSdk≥29，系统安全策略禁止从应用数据目录启动 $runtimeName 运行时，本地服务器预览不可用"
+        "当前构建 targetSdk≥29，系统安全策略禁止从应用数据目录启动 $runtimeName 运行时，本地服务器预览不可用。" +
+            "导出的 APK（targetSdk 28）不受此限制，可用导出安装验证"
 }

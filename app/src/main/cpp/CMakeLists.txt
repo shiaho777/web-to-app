@@ -128,6 +128,34 @@ add_executable(
     go_exec_loader.c
 )
 
+# User-mode exec loader for static ELFs (pmmp PHP) under SELinux W^X —
+# host-preview only; a real JNI shared library, loaded lazily by
+# StaticExecBridge when plain execve is unavailable. AArch64 only: the
+# child trampoline is AArch64 asm, and the loader parses AArch64 ELFs.
+if (ANDROID_ABI STREQUAL "arm64-v8a")
+    add_library(
+        static_exec
+        SHARED
+        static_exec_loader.c
+    )
+
+    target_link_libraries(
+        static_exec
+        ${log-lib}
+    )
+
+    target_compile_options(static_exec PRIVATE
+        -ffunction-sections
+        -fdata-sections
+        -O2
+        -DNDEBUG
+    )
+
+    set_target_properties(static_exec PROPERTIES
+        LINK_FLAGS "-Wl,--gc-sections -Wl,-z,max-page-size=16384"
+    )
+endif()
+
 set_property(TARGET node_launcher PROPERTY C_STANDARD 11)
 
 target_compile_options(node_launcher PRIVATE

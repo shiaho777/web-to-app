@@ -138,6 +138,10 @@ android {
             excludes += "**/libplugin-container.so"
 
             excludes += "**/libphp.so"
+
+            // Host-preview-only user-mode exec loader; generated APKs
+            // (targetSdk 28) always execve directly and never load it.
+            excludes += "**/libstatic_exec.so"
         }
     }
     androidResources {

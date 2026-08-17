@@ -621,6 +621,48 @@ if _MUSL and _LIB:
             return _oexecve(p, a, e)
 
         os.execve = _mexecve
+
+    if hasattr(os, 'posix_spawn'):
+        _opspawn = os.posix_spawn
+
+        def _mpspawn(p, a, e, **kw):
+            if _is_py(p):
+                a = [_MUSL, '--library-path', _LIB] + list(a)
+                p = _MUSL
+            elif p != _MUSL and _is_loader(p):
+                a = list(a)
+                p = _MUSL
+            return _opspawn(p, a, e, **kw)
+
+        os.posix_spawn = _mpspawn
+
+    if hasattr(os, 'spawnv'):
+        _ospawnv = os.spawnv
+
+        def _mspawnv(m, p, a):
+            if _is_py(p):
+                a = [_MUSL, '--library-path', _LIB] + list(a)
+                p = _MUSL
+            elif p != _MUSL and _is_loader(p):
+                a = list(a)
+                p = _MUSL
+            return _ospawnv(m, p, a)
+
+        os.spawnv = _mspawnv
+
+    if hasattr(os, 'spawnve'):
+        _ospawnve = os.spawnve
+
+        def _mspawnve(m, p, a, e):
+            if _is_py(p):
+                a = [_MUSL, '--library-path', _LIB] + list(a)
+                p = _MUSL
+            elif p != _MUSL and _is_loader(p):
+                a = list(a)
+                p = _MUSL
+            return _ospawnve(m, p, a, e)
+
+        os.spawnve = _mspawnve
 """.trimIndent()
 
     private fun runPipWithWrapper(
