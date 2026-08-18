@@ -1,1 +1,471 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Turni di Lavoro 4K</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22Turni%20di%20Lavoro%204K%22%2C%22short_name%22%3A%22Turni%22%2C%22start_url%22%3A%22%2F%22%2C%22scope%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%2305070a%22%2C%22theme_color%22%3A%22%2305070a%22%2C%22icons%22%3A%5B%5D%7D">
+    <style>
+        :root {
+            --bg-color: #05070a;
+            --card-bg: rgba(15, 23, 42, 0.85);
+            --border-color: rgba(0, 243, 255, 0.3);
+            --accent-color: #00f3ff;
+            --accent-gradient: linear-gradient(135deg, #00f3ff, #0066ff);
+            --text-main: #ffffff;
+            --text-sub: rgba(255, 255, 255, 0.7);
+        }
+
+        [data-theme="ciano"] {
+            --bg-color: #05070a;
+            --card-bg: rgba(15, 23, 42, 0.85);
+            --border-color: rgba(0, 243, 255, 0.4);
+            --accent-color: #00f3ff;
+            --accent-gradient: linear-gradient(135deg, #00f3ff, #0066ff);
+        }
+        [data-theme="turchese"] {
+            --bg-color: #021a18;
+            --card-bg: rgba(6, 38, 35, 0.85);
+            --border-color: rgba(0, 255, 213, 0.4);
+            --accent-color: #00ffd5;
+            --accent-gradient: linear-gradient(135deg, #00ffd5, #008870);
+        }
+        [data-theme="verde"] {
+            --bg-color: #021c0c;
+            --card-bg: rgba(6, 43, 20, 0.85);
+            --border-color: rgba(0, 255, 102, 0.4);
+            --accent-color: #00ff66;
+            --accent-gradient: linear-gradient(135deg, #00ff66, #007722);
+        }
+        [data-theme="marrone"] {
+            --bg-color: #1a120b;
+            --card-bg: rgba(43, 30, 20, 0.85);
+            --border-color: rgba(212, 163, 115, 0.4);
+            --accent-color: #d4a373;
+            --accent-gradient: linear-gradient(135deg, #d4a373, #8c6239);
+        }
+
+        body { 
+            font-family: 'Outfit', sans-serif; 
+            touch-action: manipulation; 
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+        .glass-card { 
+            background: var(--card-bg); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px); 
+            border: 1px solid var(--border-color); 
+        }
+        .btn-3d { 
+            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2); 
+            transition: all 0.15s ease; 
+        }
+        .btn-3d:active { 
+            transform: translateY(2px); 
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(0, 0, 0, 0.3); 
+        }
+        .day-cell { min-height: 76px; transition: all 0.2s; }
+    </style>
+</head>
+<body id="appBody" class="w-screen h-screen overflow-hidden flex flex-col justify-between p-3 select-none" data-theme="ciano">
+
+    <!-- Header Fullscreen -->
+    <header class="w-full glass-card rounded-2xl p-3 text-center shadow-xl">
+        <div class="text-[10px] font-semibold tracking-wider uppercase" style="color: var(--text-sub);">Saldo Mensile</div>
+        <div id="monthlyTotal" class="text-3xl font-extrabold my-0.5" style="color: var(--accent-color); text-shadow: 0 0 20px var(--accent-color);">€ 0,00</div>
+        <div id="monthlyBreakdown" class="text-[11px] mb-2" style="color: var(--text-sub);">Base: € 0,00 · Straord: € 0,00</div>
+        <div class="flex gap-2">
+            <button onclick="manualPdfBackup()" class="flex-1 py-2 px-2 rounded-xl border font-semibold text-xs btn-3d flex items-center justify-center gap-1" style="background: var(--card-bg); border-color: var(--border-color); color: var(--accent-color);">
+                📥 Backup PDF
+            </button>
+            <button id="installBtn" onclick="installApp()" class="flex-1 py-2 px-2 rounded-xl border font-semibold text-xs btn-3d flex items-center justify-center gap-1" style="background: var(--accent-gradient); color: #000; border-color: transparent;">
+                📲 Installa App
+            </button>
+        </div>
+    </header>
+
+    <!-- Pulsanti Azione Rapida -->
+    <div class="w-full flex gap-3 my-1">
+        <button onclick="openThemeModal()" class="flex-1 py-2.5 px-4 rounded-xl font-bold btn-3d flex items-center justify-center gap-2 text-white text-sm" style="background: var(--accent-gradient);">🎨 Temi 4K</button>
+        <button onclick="openConfigModal()" class="flex-1 py-2.5 px-4 rounded-xl font-bold btn-3d flex items-center justify-center gap-2 text-white text-sm" style="background: var(--accent-gradient);">⚙️ Gestisci Turni</button>
+    </div>
+
+    <!-- Mese e Navigazione -->
+    <div class="w-full flex items-center justify-between px-2">
+        <button onclick="changeMonth(-1)" class="p-2 rounded-xl glass-card btn-3d" style="color: var(--accent-color);">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <h2 id="currentMonthYear" class="text-lg font-bold tracking-wide uppercase">Agosto 2026</h2>
+        <button onclick="changeMonth(1)" class="p-2 rounded-xl glass-card btn-3d" style="color: var(--accent-color);">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+    </div>
+
+    <!-- Calendario Fullscreen Espanso -->
+    <div class="w-full flex-1 flex flex-col glass-card rounded-2xl p-2.5 shadow-2xl my-1 overflow-hidden">
+        <div class="grid grid-cols-7 gap-1 text-center text-[11px] font-bold mb-2" style="color: var(--text-sub);">
+            <div>LUN</div><div>MAR</div><div>MER</div><div>GIO</div><div>VEN</div><div>SAB</div><div>DOM</div>
+        </div>
+        <div id="calendarDays" class="grid grid-cols-7 gap-1.5 flex-1"></div>
+    </div>
+
+    <div id="backupStatus" class="w-full text-center text-[10px]" style="color: var(--text-sub);">
+        💾 Sincronizzazione automatica PDF attiva
+    </div>
+
+    <!-- Modale Selezione Turno -->
+    <div id="shiftModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="glass-card w-full max-w-xs rounded-2xl p-4 shadow-2xl">
+            <h3 id="modalDateTitle" class="text-sm font-bold mb-3 text-center uppercase tracking-wide" style="color: var(--accent-color);">Seleziona Turno</h3>
+            <div class="mb-3">
+                <label class="block text-[10px] font-semibold uppercase mb-1" style="color: var(--text-sub);">Straordinario Extra (€)</label>
+                <input type="number" step="0.5" id="dayExtraInput" class="w-full bg-black/50 border rounded-xl p-2 text-white text-sm focus:outline-none" style="border-color: var(--border-color);">
+            </div>
+            <div id="modalShiftsList" class="space-y-1.5 mb-3 max-h-48 overflow-y-auto"></div>
+            <button onclick="closeModals()" class="w-full py-2 rounded-xl bg-white/10 text-xs font-semibold btn-3d text-white">Annulla</button>
+        </div>
+    </div>
+
+    <!-- Modale Configurazione Turni -->
+    <div id="configModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="glass-card w-full max-w-xs rounded-2xl p-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <h3 class="text-sm font-bold mb-3 text-center uppercase tracking-wide" style="color: var(--accent-color);">Configura Turni</h3>
+            <div id="configShiftsContainer" class="space-y-2 mb-3"></div>
+            <hr class="my-3" style="border-color: var(--border-color);">
+            <div class="text-xs font-bold mb-2" style="color: var(--accent-color);">Aggiungi Nuovo Turno</div>
+            <div class="space-y-2 mb-3">
+                <input type="text" id="newShiftName" placeholder="Nome Turno" class="w-full bg-black/50 border rounded-xl p-2 text-white text-xs" style="border-color: var(--border-color);">
+                <input type="number" step="0.5" id="newShiftBase" placeholder="Base (€)" class="w-full bg-black/50 border rounded-xl p-2 text-white text-xs" style="border-color: var(--border-color);">
+                <input type="color" id="newShiftColor" value="#00f3ff" class="w-full h-8 bg-transparent rounded-xl cursor-pointer">
+                <button onclick="addNewShift()" class="w-full py-2 rounded-xl text-xs font-bold btn-3d text-black" style="background: var(--accent-gradient);">Salva Turno</button>
+            </div>
+            <button onclick="closeModals()" class="w-full py-2 rounded-xl bg-white/10 text-xs font-semibold text-white">Chiudi</button>
+        </div>
+    </div>
+
+    <!-- Modale Tema 4K -->
+    <div id="themeModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="glass-card w-full max-w-xs rounded-2xl p-4 shadow-2xl">
+            <h3 class="text-sm font-bold mb-3 text-center uppercase tracking-wide" style="color: var(--accent-color);">Temi 4K Premium</h3>
+            <div class="grid grid-cols-2 gap-2 mb-3">
+                <button onclick="setTheme('ciano')" class="p-3 rounded-xl font-bold text-xs btn-3d text-black bg-[#00f3ff]">Ciano 4K</button>
+                <button onclick="setTheme('turchese')" class="p-3 rounded-xl font-bold text-xs btn-3d text-black bg-[#00ffd5]">Turchese</button>
+                <button onclick="setTheme('verde')" class="p-3 rounded-xl font-bold text-xs btn-3d text-black bg-[#00ff66]">Smeraldo</button>
+                <button onclick="setTheme('marrone')" class="p-3 rounded-xl font-bold text-xs btn-3d text-black bg-[#d4a373]">Marrone</button>
+            </div>
+            <button onclick="closeModals()" class="w-full py-2 rounded-xl bg-white/10 text-xs font-semibold text-white">Chiudi</button>
+        </div>
+    </div>
+
+    <!-- Modale Guida Installazione Universale Chrome (Fallback se prompt nativo bloccato) -->
+    <div id="installGuideModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="glass-card w-full max-w-xs rounded-2xl p-4 shadow-2xl text-center">
+            <h3 class="text-sm font-bold mb-2 uppercase tracking-wide" style="color: var(--accent-color);">Installazione Rapida Chrome</h3>
+            <p class="text-xs mb-4 leading-relaxed" style="color: var(--text-sub);">
+                Se il pulsante automatico non risponde:<br><br>
+                1. Tocca i tre puntini in alto a destra <b>(⋮)</b>.<br>
+                2. Seleziona <b>"Installa app"</b> o <b>"Aggiungi a schermata Home"</b> dal menu di Chrome.
+            </p>
+            <button onclick="document.getElementById('installGuideModal').style.display='none'" class="w-full py-2 rounded-xl text-xs font-bold btn-3d text-black" style="background: var(--accent-gradient);">Ho capito</button>
+        </div>
+    </div>
+
+    <script>
+        let currentDate = new Date(2026, 7, 1);
+        let currentTheme = localStorage.getItem('app_theme') || 'ciano';
+        let shiftsConfig = JSON.parse(localStorage.getItem('shifts_config')) || [
+            { id: '1', name: 'Mattina', base: 60.00, extra: 0.00, color: '#00f3ff' },
+            { id: '2', name: 'Notte', base: 85.00, extra: 0.00, color: '#bd00ff' }
+        ];
+        let monthlyData = JSON.parse(localStorage.getItem('monthly_data')) || {};
+        let directoryHandle = null;
+        let selectedDateKey = null;
+        let deferredPrompt = null;
+        const monthNames = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+
+        // Fix Totale per l'installabilità PWA su Chrome (Service Worker registrato correttamente)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const swCode = `
+                        self.addEventListener('install', (e) => { self.skipWaiting(); });
+                        self.addEventListener('activate', (e) => { e.clients.claim(); });
+                        self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });
+                    `;
+                    const blob = new Blob([swCode], { type: 'text/javascript' });
+                    const swUrl = URL.createObjectURL(blob);
+                    await navigator.serviceWorker.register(swUrl);
+                } catch (err) {
+                    console.warn('SW registration failed:', err);
+                }
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const btn = document.getElementById('installBtn');
+            if (btn) btn.style.display = 'flex';
+        });
+
+        async function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    const btn = document.getElementById('installBtn');
+                    if (btn) btn.style.display = 'none';
+                }
+                deferredPrompt = null;
+            } else {
+                document.getElementById('installGuideModal').style.display = 'flex';
+            }
+        }
+
+        function initApp() {
+            setTheme(currentTheme, false);
+            renderCalendar();
+            updateMonthlySummary();
+        }
+
+        function setTheme(themeName, save = true) {
+            currentTheme = themeName;
+            document.body.setAttribute('data-theme', themeName);
+            if (save) {
+                localStorage.setItem('app_theme', themeName);
+                closeModals();
+            }
+        }
+
+        async function manualPdfBackup() {
+            if ('showDirectoryPicker' in window) {
+                try {
+                    directoryHandle = await window.showDirectoryPicker();
+                    document.getElementById('backupStatus').innerText = `📁 Cartella collegata!`;
+                    triggerAutoPdfOverwrite();
+                } catch (err) { console.warn(err); }
+            } else {
+                alert("La selezione delle cartelle non è supportata da questo browser.");
+            }
+        }
+
+        async function triggerAutoPdfOverwrite() {
+            if (!directoryHandle) return;
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const fileName = `Turni_${monthNames[month]}_${year}.pdf`;
+            const pdfBlob = generatePdfBlobObject(year, month);
+            try {
+                const fileHandle = await directoryHandle.getFileHandle(fileName, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(pdfBlob);
+                await writable.close();
+                document.getElementById('backupStatus').innerText = `⚡ PDF aggiornato: ${fileName}`;
+            } catch (err) { console.warn(err); }
+        }
+
+        function generatePdfBlobObject(year, month) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+            doc.text(`Riepilogo Turni - ${monthNames[month]} ${year}`, 14, 20);
+            
+            let rows = [];
+            let totalBaseSum = 0;
+            let totalExtraSum = 0;
+
+            for (const [dateKey, entry] of Object.entries(monthlyData)) {
+                if (dateKey.startsWith(prefix) && entry) {
+                    const shift = shiftsConfig.find(s => s.id === entry.shiftId);
+                    if (shift) {
+                        const baseVal = shift.base;
+                        const extraVal = entry.extra || 0;
+                        const totalDayVal = baseVal + extraVal;
+                        
+                        totalBaseSum += baseVal;
+                        totalExtraSum += extraVal;
+
+                        rows.push([
+                            dateKey, 
+                            shift.name, 
+                            `€ ${baseVal.toFixed(2)}`, 
+                            `€ ${extraVal.toFixed(2)}`, 
+                            `€ ${totalDayVal.toFixed(2)}`
+                        ]);
+                    }
+                }
+            }
+
+            const grandTotalSum = totalBaseSum + totalExtraSum;
+
+            doc.autoTable?.({ 
+                startY: 30, 
+                head: [['Data', 'Turno', 'Base', 'Extra', 'Totale Giorno']], 
+                body: rows,
+                foot: [['Totale Mese', '', `€ ${totalBaseSum.toFixed(2)}`, `€ ${totalExtraSum.toFixed(2)}`, `€ ${grandTotalSum.toFixed(2)}`]],
+                footStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold' }
+            });
+
+            return doc.output('blob');
+        }
+
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            document.getElementById('currentMonthYear').innerText = `${monthNames[month]} ${year}`;
+
+            const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+            const totalDays = new Date(year, month + 1, 0).getDate();
+            const grid = document.getElementById('calendarDays');
+            grid.innerHTML = '';
+
+            for (let i = 0; i < firstDayIndex; i++) {
+                grid.appendChild(document.createElement('div'));
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const cell = document.createElement('div');
+                cell.className = 'day-cell glass-card rounded-xl p-1 flex flex-col justify-between cursor-pointer';
+                
+                let contentHTML = `<span class="text-[11px] font-bold" style="color: var(--text-sub);">${day}</span>`;
+                const entry = monthlyData[dateKey];
+                if (entry) {
+                    const shift = shiftsConfig.find(s => s.id === entry.shiftId);
+                    if (shift) {
+                        cell.style.borderColor = shift.color;
+                        const baseVal = shift.base;
+                        const extraVal = entry.extra || 0;
+                        
+                        contentHTML += `<div class="text-[9px] font-bold px-1 py-0.5 rounded truncate text-center" style="background:${shift.color}33; color:${shift.color};">${shift.name}</div>`;
+                        
+                        if (extraVal > 0) {
+                            contentHTML += `<div class="text-[8px] text-teal-300/80 text-center leading-tight">B:€${baseVal.toFixed(0)} | E:€${extraVal.toFixed(0)}</div>`;
+                        } else {
+                            contentHTML += `<div class="text-[8px] text-teal-300/80 text-center leading-tight">B:€${baseVal.toFixed(0)}</div>`;
+                        }
+                    }
+                }
+                cell.innerHTML = contentHTML;
+                cell.onclick = () => openShiftModal(dateKey);
+                grid.appendChild(cell);
+            }
+        }
+
+        function updateMonthlySummary() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const prefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+            let totalBase = 0;
+            let totalExtra = 0;
+
+            for (const [dateKey, entry] of Object.entries(monthlyData)) {
+                if (dateKey.startsWith(prefix) && entry) {
+                    const shift = shiftsConfig.find(s => s.id === entry.shiftId);
+                    if (shift) {
+                        totalBase += shift.base;
+                        totalExtra += (entry.extra || 0);
+                    }
+                }
+            }
+
+            const grandTotal = totalBase + totalExtra;
+            document.getElementById('monthlyTotal').innerText = `€ ${grandTotal.toFixed(2)}`;
+            document.getElementById('monthlyBreakdown').innerText = `Base: € ${totalBase.toFixed(2)} · Straord: € ${totalExtra.toFixed(2)}`;
+        }
+
+        function changeMonth(dir) {
+            currentDate.setMonth(currentDate.getMonth() + dir);
+            renderCalendar();
+            updateMonthlySummary();
+        }
+
+        function openShiftModal(dateKey) {
+            selectedDateKey = dateKey;
+            document.getElementById('modalDateTitle').innerText = `Giorno ${dateKey}`;
+            document.getElementById('dayExtraInput').value = monthlyData[dateKey]?.extra || 0;
+
+            const container = document.getElementById('modalShiftsList');
+            container.innerHTML = '';
+
+            shiftsConfig.forEach(shift => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full p-2 rounded-xl text-xs font-bold flex justify-between items-center btn-3d';
+                btn.style.background = `${shift.color}33`;
+                btn.style.color = shift.color;
+                btn.innerHTML = `<span>${shift.name}</span><span>€ ${shift.base.toFixed(2)}</span>`;
+                btn.onclick = () => assignShift(shift.id);
+                container.appendChild(btn);
+            });
+
+            const clearBtn = document.createElement('button');
+            clearBtn.className = 'w-full p-2 rounded-xl text-xs font-bold bg-red-500/20 text-red-300 btn-3d mt-2';
+            clearBtn.innerText = 'Rimuovi Turno';
+            clearBtn.onclick = () => assignShift(null);
+            container.appendChild(clearBtn);
+
+            document.getElementById('shiftModal').style.display = 'flex';
+        }
+
+        function assignShift(shiftId) {
+            const extra = parseFloat(document.getElementById('dayExtraInput').value) || 0;
+            if (shiftId) {
+                monthlyData[selectedDateKey] = { shiftId, extra };
+            } else {
+                delete monthlyData[selectedDateKey];
+            }
+            localStorage.setItem('monthly_data', JSON.stringify(monthlyData));
+            closeModals();
+            renderCalendar();
+            updateMonthlySummary();
+            triggerAutoPdfOverwrite();
+        }
+
+        function openConfigModal() {
+            const container = document.getElementById('configShiftsContainer');
+            container.innerHTML = '';
+            shiftsConfig.forEach((s, idx) => {
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center p-2 rounded-xl bg-black/40 text-xs';
+                div.innerHTML = `<span style="color:${s.color}">${s.name} (€${s.base})</span> <button onclick="deleteShift(${idx})" class="text-red-400 font-bold">Elimina</button>`;
+                container.appendChild(div);
+            });
+            document.getElementById('configModal').style.display = 'flex';
+        }
+
+        function addNewShift() {
+            const name = document.getElementById('newShiftName').value.trim();
+            const base = parseFloat(document.getElementById('newShiftBase').value) || 0;
+            const color = document.getElementById('newShiftColor').value;
+            if (!name) return;
+            shiftsConfig.push({ id: Date.now().toString(), name, base, extra: 0, color });
+            localStorage.setItem('shifts_config', JSON.stringify(shiftsConfig));
+            openConfigModal();
+            document.getElementById('newShiftName').value = '';
+            document.getElementById('newShiftBase').value = '';
+        }
+
+        function deleteShift(idx) {
+            shiftsConfig.splice(idx, 1);
+            localStorage.setItem('shifts_config', JSON.stringify(shiftsConfig));
+            openConfigModal();
+        }
+
+        function openThemeModal() {
+            document.getElementById('themeModal').style.display = 'flex';
+        }
+
+        function closeModals() {
+            document.querySelectorAll('[id$="Modal"]').forEach(m => m.style.display = 'none');
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
 
