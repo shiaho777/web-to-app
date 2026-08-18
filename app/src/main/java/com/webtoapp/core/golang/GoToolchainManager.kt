@@ -313,18 +313,9 @@ object GoToolchainManager {
         destFile: File,
         displayName: String,
         context: Context?,
-    ): Boolean {
-        for (attempt in 1..MAX_RETRY_PER_URL) {
-            val ok = DependencyDownloadEngine.downloadFile(url, destFile, displayName, context)
-            if (ok) return true
-            if (attempt < MAX_RETRY_PER_URL) {
-                AppLogger.i(TAG, "$displayName 下载失败, ${RETRY_DELAY_MS / 1000}s 后重试 ($attempt/$MAX_RETRY_PER_URL)")
-                kotlinx.coroutines.delay(RETRY_DELAY_MS)
-                DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Idle)
-            }
-        }
-        return false
-    }
+    ): Boolean = DependencyDownloadEngine.downloadFileWithFallback(
+        listOf(url), destFile, displayName, context, MAX_RETRY_PER_URL, RETRY_DELAY_MS
+    )
 
     internal fun selectGoArchiveUrls(preferChinaMirror: Boolean): List<String> {
         return if (preferChinaMirror) {
@@ -361,20 +352,9 @@ object GoToolchainManager {
             AppLogger.e(TAG, "$displayName 没有可用的下载源")
             return false
         }
-        urls.forEachIndexed { index, url ->
-            AppLogger.i(TAG, "$displayName 尝试源 ${index + 1}/${urls.size}: $url")
-            val ok = downloadWithRetry(url, destFile, displayName, context)
-            if (ok) {
-                if (index > 0) {
-                    AppLogger.i(TAG, "$displayName 从备选源下载成功: $url")
-                }
-                return true
-            }
-            AppLogger.w(TAG, "$displayName 源 $url 全部重试仍失败,切换下一源")
-            DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Idle)
-        }
-        AppLogger.e(TAG, "$displayName 所有源均失败,共尝试 ${urls.size} 个")
-        return false
+        return DependencyDownloadEngine.downloadFileWithFallback(
+            urls, destFile, displayName, context, MAX_RETRY_PER_URL, RETRY_DELAY_MS
+        )
     }
 
     private fun extractGoArchiveToRoot(archiveFile: File, destGoRoot: File) {

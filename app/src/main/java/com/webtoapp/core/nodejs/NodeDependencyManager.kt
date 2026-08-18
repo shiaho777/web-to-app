@@ -25,11 +25,6 @@ object NodeDependencyManager {
 
     enum class MirrorRegion { CN, GLOBAL }
 
-    private val GITHUB_CN_PROXIES = listOf(
-        "https://ghfast.top/",
-        "https://gh-proxy.com/"
-    )
-
     // capawesome-team fork: same Node 18.20.4 core, Android binaries pre-built with 16 KB page
     // alignment (upstream `release18-20-4+16kb-fix` branch) — no runtime ELF rewrite needed.
     private val NODE_GITHUB_URL = "https://github.com/capawesome-team/nodejs-mobile/releases/download/v18.20.4-capawesome.1/nodejs-mobile-v18.20.4-capawesome.1-android.zip"
@@ -39,12 +34,9 @@ object NodeDependencyManager {
         val nodeUrls: List<String>
     )
 
-    private fun buildCnMirror(): MirrorConfig {
-        val orderedProxies = com.webtoapp.core.network.CnMirrorProbe.getOrderedProxies(GITHUB_CN_PROXIES)
-        return MirrorConfig(
-            nodeUrls = orderedProxies.map { proxy -> "${proxy}${NODE_GITHUB_URL}" } + NODE_GITHUB_URL
-        )
-    }
+    private fun buildCnMirror(): MirrorConfig = MirrorConfig(
+        nodeUrls = com.webtoapp.core.network.GitHubMirror.proxiedCn(NODE_GITHUB_URL)
+    )
 
     private val GLOBAL_MIRROR = MirrorConfig(
         nodeUrls = listOf(NODE_GITHUB_URL)
@@ -227,31 +219,9 @@ object NodeDependencyManager {
         destFile: File,
         displayName: String,
         context: Context?
-    ): Boolean {
-        for ((urlIndex, url) in urls.withIndex()) {
-            val sourceName = if (urls.size > 1) "$displayName [源${urlIndex + 1}/${urls.size}]" else displayName
-            AppLogger.i(TAG, "Attempting to download $sourceName: $url")
-
-            for (attempt in 1..MAX_RETRY_PER_URL) {
-                val success = DependencyDownloadEngine.downloadFile(url, destFile, sourceName, context)
-                if (success) return true
-
-                if (attempt < MAX_RETRY_PER_URL) {
-                    AppLogger.i(TAG, "$sourceName download failed, retrying in ${RETRY_DELAY_MS / 1000}s ($attempt/$MAX_RETRY_PER_URL)")
-                    kotlinx.coroutines.delay(RETRY_DELAY_MS)
-                    DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Idle)
-                }
-            }
-
-            if (urlIndex < urls.lastIndex) {
-                val tmpFile = File(destFile.parentFile, "${destFile.name}.tmp")
-                tmpFile.delete()
-                AppLogger.i(TAG, "$sourceName failed, switching to next source...")
-                DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Idle)
-            }
-        }
-        return false
-    }
+    ): Boolean = DependencyDownloadEngine.downloadFileWithFallback(
+        urls, destFile, displayName, context, MAX_RETRY_PER_URL, RETRY_DELAY_MS
+    )
 
     private suspend fun downloadNode(context: Context, mirror: MirrorConfig): Boolean {
         val abi = getDeviceAbi()

@@ -61,11 +61,6 @@ object PythonDependencyManager {
 
     enum class MirrorRegion { CN, GLOBAL }
 
-    private val GITHUB_CN_PROXIES = listOf(
-        "https://ghfast.top/",
-        "https://gh-proxy.com/"
-    )
-
     private fun getPythonUrl(abi: String): String {
 
         val tripleMap = mapOf(
@@ -105,14 +100,10 @@ object PythonDependencyManager {
         val muslLinkerUrl: String? = null
     )
 
-    private fun getCnMirror(abi: String): MirrorConfig {
-        val baseUrl = getPythonUrl(abi)
-        val orderedProxies = com.webtoapp.core.network.CnMirrorProbe.getOrderedProxies(GITHUB_CN_PROXIES)
-        return MirrorConfig(
-            pythonUrls = orderedProxies.map { proxy -> "${proxy}${baseUrl}" } + baseUrl,
-            muslLinkerUrl = getMuslLinkerUrl(abi)
-        )
-    }
+    private fun getCnMirror(abi: String): MirrorConfig = MirrorConfig(
+        pythonUrls = com.webtoapp.core.network.GitHubMirror.proxiedCn(getPythonUrl(abi)),
+        muslLinkerUrl = getMuslLinkerUrl(abi)
+    )
 
     private fun getGlobalMirror(abi: String): MirrorConfig {
         return MirrorConfig(
@@ -955,31 +946,9 @@ sys.exit(main())
         destFile: File,
         displayName: String,
         context: Context?
-    ): Boolean {
-        for ((urlIndex, url) in urls.withIndex()) {
-            val sourceName = if (urls.size > 1) String.format(com.webtoapp.core.i18n.Strings.pyDownloadSourceLabel, displayName, urlIndex + 1, urls.size) else displayName
-            AppLogger.i(TAG, "Attempting to download $sourceName: $url")
-
-            for (attempt in 1..MAX_RETRY_PER_URL) {
-                val success = DependencyDownloadEngine.downloadFile(url, destFile, sourceName, context)
-                if (success) return true
-
-                if (attempt < MAX_RETRY_PER_URL) {
-                    AppLogger.i(TAG, "$sourceName download failed, retrying in ${RETRY_DELAY_MS / 1000}s ($attempt/$MAX_RETRY_PER_URL)")
-                    kotlinx.coroutines.delay(RETRY_DELAY_MS)
-                    DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Idle)
-                }
-            }
-
-            if (urlIndex < urls.lastIndex) {
-                val tmpFile = File(destFile.parentFile, "${destFile.name}.tmp")
-                tmpFile.delete()
-                AppLogger.i(TAG, "$sourceName failed, trying next source...")
-                DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Idle)
-            }
-        }
-        return false
-    }
+    ): Boolean = DependencyDownloadEngine.downloadFileWithFallback(
+        urls, destFile, displayName, context, MAX_RETRY_PER_URL, RETRY_DELAY_MS
+    )
 
     private suspend fun downloadPython(context: Context, mirror: MirrorConfig, abi: String): Boolean {
         val pythonUrls = mirror.pythonUrls

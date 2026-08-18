@@ -102,10 +102,18 @@ object LocalBuildEnvironment {
 
     private const val COMPOSER_VERSION = "2.10.2"
 
-    private val COMPOSER_PHAR_URLS = listOf(
-        "https://getcomposer.org/download/$COMPOSER_VERSION/composer.phar",
-        "https://github.com/composer/composer/releases/download/$COMPOSER_VERSION/composer.phar"
-    )
+    private val COMPOSER_OFFICIAL_URL = "https://getcomposer.org/download/$COMPOSER_VERSION/composer.phar"
+    private val COMPOSER_GITHUB_URL = "https://github.com/composer/composer/releases/download/$COMPOSER_VERSION/composer.phar"
+
+    // CN: probed GitHub proxies first (release-asset throughput), then the
+    // slow official origin, then direct GitHub as the last resort.
+    private fun composerPharUrls(): List<String> {
+        val cn = com.webtoapp.core.wordpress.WordPressDependencyManager.getMirrorRegion() ==
+            com.webtoapp.core.wordpress.WordPressDependencyManager.MirrorRegion.CN
+        if (!cn) return listOf(COMPOSER_OFFICIAL_URL, COMPOSER_GITHUB_URL)
+        val proxied = com.webtoapp.core.network.GitHubMirror.proxiedCn(COMPOSER_GITHUB_URL)
+        return proxied.dropLast(1) + COMPOSER_OFFICIAL_URL + proxied.last()
+    }
 
     private val IGNORED_PLATFORM_REQS = listOf(
         "ext-session",
@@ -162,8 +170,8 @@ object LocalBuildEnvironment {
         }
 
         var lastError: Exception? = null
-        for ((idx, url) in COMPOSER_PHAR_URLS.withIndex()) {
-            val sourceLabel = if (idx == 0) Strings.localBuildComposerSourceOfficial else Strings.localBuildComposerSourceMirror
+        for (url in composerPharUrls()) {
+            val sourceLabel = if (url.contains("getcomposer.org")) Strings.localBuildComposerSourceOfficial else Strings.localBuildComposerSourceMirror
             onProgress(Strings.localBuildDownloadComposer.format(COMPOSER_VERSION, sourceLabel), 0.5f)
             target.parentFile?.mkdirs()
 
@@ -465,6 +473,13 @@ object LocalBuildEnvironment {
         throw IOException(Strings.nodeLauncherNotPackaged.format(packagedLauncher.absolutePath))
     }
 
+    private fun npmToolTarballUrls(path: String): List<String> =
+        com.webtoapp.core.network.GitHubMirror.npmTarballUrls(
+            "https://registry.npmjs.org/$path",
+            com.webtoapp.core.nodejs.NodeDependencyManager.getMirrorRegion() ==
+                com.webtoapp.core.nodejs.NodeDependencyManager.MirrorRegion.CN
+        )
+
     suspend fun ensureNpm(
         context: Context,
         onProgress: (String, Float) -> Unit = { _, _ -> }
@@ -473,7 +488,8 @@ object LocalBuildEnvironment {
         onProgress(Strings.localBuildInstallingNpm, 0.35f)
         installTarballPackage(
             context = context,
-            tarballUrl = "https://registry.npmjs.org/npm/-/npm-$NPM_VERSION.tgz",
+            tarballUrls = npmToolTarballUrls("npm/-/npm-$NPM_VERSION.tgz"),
+            displayName = "npm $NPM_VERSION",
             targetDir = File(getToolDir(context), "npm")
         )
     }
@@ -486,7 +502,8 @@ object LocalBuildEnvironment {
         onProgress(Strings.localBuildInstallingPnpm, 0.6f)
         installTarballPackage(
             context = context,
-            tarballUrl = "https://registry.npmjs.org/pnpm/-/pnpm-$PNPM_VERSION.tgz",
+            tarballUrls = npmToolTarballUrls("pnpm/-/pnpm-$PNPM_VERSION.tgz"),
+            displayName = "pnpm $PNPM_VERSION",
             targetDir = File(getToolDir(context), "pnpm")
         )
     }
@@ -499,7 +516,8 @@ object LocalBuildEnvironment {
         onProgress(Strings.localBuildInstallingYarn, 0.8f)
         installTarballPackage(
             context = context,
-            tarballUrl = "https://registry.npmjs.org/yarn/-/yarn-$YARN_VERSION.tgz",
+            tarballUrls = npmToolTarballUrls("yarn/-/yarn-$YARN_VERSION.tgz"),
+            displayName = "yarn $YARN_VERSION",
             targetDir = File(getToolDir(context), "yarn")
         )
     }
@@ -685,6 +703,20 @@ object LocalBuildEnvironment {
         processEnv["npm_config_cache"] = getNpmCacheDir(context).absolutePath
         processEnv["npm_config_prefix"] = getNpmPrefixDir(context).absolutePath
         processEnv["npm_config_userconfig"] = File(rootDir, "npmrc").absolutePath
+
+        // CN region: ride the npmmirror registry for every npm/pnpm/yarn
+        // invocation (install included) unless the project or the managed
+        // userconfig pins one already, or the caller supplied its own.
+        if (processEnv["npm_config_registry"] == null &&
+            !npmrcPinsRegistry(workingDir) &&
+            !npmrcPinsRegistry(File(rootDir, "npmrc")) &&
+            com.webtoapp.core.nodejs.NodeDependencyManager.getMirrorRegion() ==
+                com.webtoapp.core.nodejs.NodeDependencyManager.MirrorRegion.CN
+        ) {
+            processEnv["npm_config_registry"] =
+                com.webtoapp.core.network.GitHubMirror.NPM_MIRROR_REGISTRY
+        }
+
         processEnv["COREPACK_ENABLE_AUTO_PIN"] = "0"
         processEnv["CI"] = "1"
         env.forEach { (key, value) -> processEnv[key] = value }
@@ -759,19 +791,48 @@ object LocalBuildEnvironment {
 
     private suspend fun installTarballPackage(
         context: Context,
-        tarballUrl: String,
+        tarballUrls: List<String>,
+        displayName: String,
         targetDir: File
     ) = withContext(Dispatchers.IO) {
         targetDir.parentFile?.mkdirs()
         if (targetDir.exists()) targetDir.deleteRecursively()
         val tempFile = File.createTempFile("wta-tool", ".tgz", context.cacheDir)
         try {
-            downloadFile(tarballUrl, tempFile)
-            extractTarGz(tempFile, targetDir)
+            var lastError: Exception? = null
+            for (url in tarballUrls) {
+                try {
+                    downloadFile(url, tempFile)
+                    // A proxy may answer 200 with an HTML error page — only a
+                    // plausible gzip tarball proceeds to extraction.
+                    if (tempFile.length() < 10_000 || !isGzipFile(tempFile)) {
+                        throw IOException("invalid tarball from $url (${tempFile.length()} bytes)")
+                    }
+                    extractTarGz(tempFile, targetDir)
+                    return@withContext
+                } catch (e: Exception) {
+                    lastError = e
+                    AppLogger.w(TAG, "$displayName download from $url failed: ${e.message}")
+                }
+            }
+            throw IOException("$displayName 下载失败: ${lastError?.message}")
         } finally {
             tempFile.delete()
         }
     }
+
+    private fun isGzipFile(file: File): Boolean = runCatching {
+        FileInputStream(file).use { input ->
+            input.read() == 0x1f && input.read() == 0x8b
+        }
+    }.getOrDefault(false)
+
+    private fun npmrcPinsRegistry(npmrc: File): Boolean = runCatching {
+        npmrc.exists() && npmrc.readLines().any { line ->
+            val trimmed = line.trim()
+            trimmed.startsWith("registry") && trimmed.contains('=')
+        }
+    }.getOrDefault(false)
 
     private fun downloadFile(url: String, targetFile: File) {
         val connection = URL(url).openConnection() as HttpURLConnection

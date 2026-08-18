@@ -22,31 +22,11 @@ object NativeNodeEngine {
 
     private const val NODE_VERSION = "18.20.4"
 
-    private val NODE_DOWNLOAD_URLS = mapOf(
-        "arm64-v8a" to "https://github.com/nicolo-ribaudo/pnpm-prebuilt-android/releases/download/v8.15.4/pnpm-android-arm64",
-        "armeabi-v7a" to "https://github.com/nicolo-ribaudo/pnpm-prebuilt-android/releases/download/v8.15.4/pnpm-android-arm"
-    )
-
     private val ESBUILD_DOWNLOAD_URLS = mapOf(
         "arm64-v8a" to "https://registry.npmmirror.com/@esbuild/android-arm64/-/android-arm64-0.20.0.tgz",
         "armeabi-v7a" to "https://registry.npmmirror.com/@esbuild/android-arm/-/android-arm-0.20.0.tgz",
         "x86_64" to "https://registry.npmmirror.com/@esbuild/android-x64/-/android-x64-0.20.0.tgz"
     )
-
-    private val GITHUB_CN_PROXIES = listOf(
-        "https://ghfast.top/",
-        "https://gh-proxy.com/"
-    )
-
-    private fun getNodeDownloadUrls(abi: String): List<String> {
-        val direct = NODE_DOWNLOAD_URLS[abi] ?: return emptyList()
-        return if (java.util.Locale.getDefault().language == "zh") {
-            val ordered = com.webtoapp.core.network.CnMirrorProbe.getOrderedProxies(GITHUB_CN_PROXIES)
-            ordered.map { proxy -> "$proxy$direct" } + direct
-        } else {
-            listOf(direct)
-        }
-    }
 
     private val _state = MutableStateFlow<NodeEngineState>(NodeEngineState.NotInitialized)
     val state: StateFlow<NodeEngineState> = _state

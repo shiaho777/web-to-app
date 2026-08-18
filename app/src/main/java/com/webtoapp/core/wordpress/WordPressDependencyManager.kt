@@ -26,11 +26,6 @@ object WordPressDependencyManager {
 
     enum class MirrorRegion { CN, GLOBAL }
 
-    private val GITHUB_CN_PROXIES = listOf(
-        "https://ghfast.top/",
-        "https://gh-proxy.com/"
-    )
-
     private val PHP_GITHUB_URL = "https://github.com/pmmp/PHP-Binaries/releases/download/pm5-php-${PHP_VERSION}-latest/PHP-${PHP_VERSION}-Android-arm64-PM5.tar.gz"
 
     data class MirrorConfig(
@@ -41,19 +36,16 @@ object WordPressDependencyManager {
         val sqlitePluginUrl: String
     )
 
-    private fun buildCnMirror(): MirrorConfig {
-        val orderedProxies = com.webtoapp.core.network.CnMirrorProbe.getOrderedProxies(GITHUB_CN_PROXIES)
-        return MirrorConfig(
-            phpUrls = orderedProxies.map { proxy -> "${proxy}${PHP_GITHUB_URL}" } + PHP_GITHUB_URL,
-            wordpressUrls = listOf(
-                "https://cn.wordpress.org/wordpress-${WORDPRESS_VERSION}-zh_CN.tar.gz",
-                "https://cn.wordpress.org/latest-zh_CN.tar.gz",
-                "https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz",
-                "https://wordpress.org/latest.tar.gz"
-            ),
-            sqlitePluginUrl = "https://downloads.wordpress.org/plugin/"
-        )
-    }
+    private fun buildCnMirror(): MirrorConfig = MirrorConfig(
+        phpUrls = com.webtoapp.core.network.GitHubMirror.proxiedCn(PHP_GITHUB_URL),
+        wordpressUrls = listOf(
+            "https://cn.wordpress.org/wordpress-${WORDPRESS_VERSION}-zh_CN.tar.gz",
+            "https://cn.wordpress.org/latest-zh_CN.tar.gz",
+            "https://wordpress.org/wordpress-${WORDPRESS_VERSION}.tar.gz",
+            "https://wordpress.org/latest.tar.gz"
+        ),
+        sqlitePluginUrl = "https://downloads.wordpress.org/plugin/"
+    )
 
     private val GLOBAL_MIRROR = MirrorConfig(
         phpUrls = listOf(PHP_GITHUB_URL),
@@ -273,31 +265,9 @@ object WordPressDependencyManager {
         destFile: File,
         displayName: String,
         context: Context?
-    ): Boolean {
-        for ((urlIndex, url) in urls.withIndex()) {
-            val sourceName = if (urls.size > 1) "$displayName [源${urlIndex + 1}/${urls.size}]" else displayName
-            AppLogger.i(TAG, "Attempting to download $sourceName: $url")
-
-            for (attempt in 1..MAX_RETRY_PER_URL) {
-                val success = DependencyDownloadEngine.downloadFile(url, destFile, sourceName, context)
-                if (success) return true
-
-                if (attempt < MAX_RETRY_PER_URL) {
-                    AppLogger.i(TAG, "$sourceName download failed, retrying in ${RETRY_DELAY_MS / 1000}s ($attempt/$MAX_RETRY_PER_URL)")
-                    kotlinx.coroutines.delay(RETRY_DELAY_MS)
-                    DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Idle)
-                }
-            }
-
-            if (urlIndex < urls.lastIndex) {
-                val tmpFile = File(destFile.parentFile, "${destFile.name}.tmp")
-                tmpFile.delete()
-                AppLogger.i(TAG, "$sourceName failed, switching to next source...")
-                DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Idle)
-            }
-        }
-        return false
-    }
+    ): Boolean = DependencyDownloadEngine.downloadFileWithFallback(
+        urls, destFile, displayName, context, MAX_RETRY_PER_URL, RETRY_DELAY_MS
+    )
 
     private suspend fun downloadWithRetry(
         url: String,

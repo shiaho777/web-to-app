@@ -12,14 +12,22 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.util.concurrent.TimeUnit
-import kotlin.system.measureTimeMillis
 
 object CnMirrorProbe {
 
     private const val TAG = "CnMirrorProbe"
     private const val CACHE_TTL_MS = 10L * 60 * 1000
 
-    private const val PROBE_SUFFIX = "https://raw.githubusercontent.com/github/gitignore/main/README.md"
+    // Probe through a real GitHub release asset — the exact path large runtime
+    // downloads take (proxy -> github release CDN). A HEAD on a README says
+    // nothing about release throughput, which is what actually matters.
+    private const val PROBE_TARGET =
+        "https://github.com/git-lfs/git-lfs/releases/download/v3.7.0/git-lfs-linux-amd64-v3.7.0.tar.gz"
+
+    // Measure sustained download speed on the first 256 KB, capped at ~3.5 s
+    // per proxy; mirrors are ordered by measured bandwidth, not RTT.
+    private const val PROBE_BYTES = 256L * 1024
+    private const val PROBE_BUDGET_MS = 3500L
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val mutex = Mutex()
@@ -64,17 +72,17 @@ object CnMirrorProbe {
         try {
             val results = withContext(Dispatchers.IO) {
                 baseList.map { proxy ->
-                    async { proxy to measureProxy(proxy) }
+                    async { proxy to measureProxyBandwidth(proxy) }
                 }.awaitAll()
             }
             val ordered = results
                 .filter { it.second > 0 }
-                .sortedBy { it.second }
+                .sortedByDescending { it.second }
                 .map { it.first }
             if (ordered.isNotEmpty()) {
                 cachedOrder = ordered
                 cachedAt = System.currentTimeMillis()
-                AppLogger.i(TAG, "Probed proxies: $ordered (rtt ms: ${results.filter { it.second > 0 }.joinToString { "${it.first.substringAfter("//").substringBefore("/")}=${it.second}" }})")
+                AppLogger.i(TAG, "Probed proxies: $ordered (KB/s: ${results.filter { it.second > 0 }.joinToString { "${it.first.substringAfter("//").substringBefore("/")}=${it.second / 1024}" }})")
             } else {
                 AppLogger.w(TAG, "All proxies failed probe; keeping previous order")
             }
@@ -83,18 +91,33 @@ object CnMirrorProbe {
         }
     }
 
-    private fun measureProxy(proxy: String): Long {
-        val url = "$proxy$PROBE_SUFFIX"
+    /** Sustained download speed in bytes/sec through the proxy; -1 when unusable. */
+    private fun measureProxyBandwidth(proxy: String): Long {
+        val url = "$proxy$PROBE_TARGET"
         return try {
-            var code = 0
-            val elapsed = measureTimeMillis {
-                val req = Request.Builder().url(url).head().build()
-                probeClient.newCall(req).execute().use { resp ->
-                    code = resp.code
+            val req = Request.Builder()
+                .url(url)
+                .header("Range", "bytes=0-${PROBE_BYTES - 1}")
+                .build()
+            probeClient.newCall(req).execute().use { resp ->
+                if (resp.code !in 200..399) return -1
+                val body = resp.body ?: return -1
+                body.byteStream().use { input ->
+                    val buffer = ByteArray(16 * 1024)
+                    var read = 0L
+                    val start = System.currentTimeMillis()
+                    while (read < PROBE_BYTES) {
+                        val left = (PROBE_BYTES - read).toInt().coerceAtMost(buffer.size)
+                        val n = input.read(buffer, 0, left)
+                        if (n == -1) break
+                        read += n
+                        if (System.currentTimeMillis() - start > PROBE_BUDGET_MS) break
+                    }
+                    val elapsed = System.currentTimeMillis() - start
+                    if (read <= 0L || elapsed <= 0L) -1 else read * 1000 / elapsed
                 }
             }
-            if (code in 200..399) elapsed else -1
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             -1
         }
     }
