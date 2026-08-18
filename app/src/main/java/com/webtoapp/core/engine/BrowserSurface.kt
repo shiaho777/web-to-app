@@ -9,7 +9,7 @@ import android.webkit.WebView
 class BrowserSurface private constructor(
     val view: View,
     val webView: WebView?,
-    private val engine: BrowserEngine?
+    val engine: BrowserEngine?
 ) {
     val isGecko: Boolean
         get() = engine != null

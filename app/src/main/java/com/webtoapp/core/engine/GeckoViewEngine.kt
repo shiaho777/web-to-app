@@ -19,6 +19,7 @@ import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.StorageController
 import org.mozilla.geckoview.WebResponse
 import org.mozilla.geckoview.WebExtension
+import org.mozilla.geckoview.MediaSession as GeckoMediaSession
 
 data class ProxyConfig(
     val mode: String = "NONE",
@@ -394,6 +395,13 @@ class GeckoViewEngine(
     private var geckoView: GeckoView? = null
     private var session: GeckoSession? = null
     private var callback: BrowserEngineCallback? = null
+
+    /**
+     * Media session delegate to re-attach on every session (re)creation —
+     * GeckoView rebuilds sessions per createView, so a delegate installed
+     * once would be lost (#593).
+     */
+    private var mediaSessionDelegate: GeckoMediaSession.Delegate? = null
     private var currentUrl: String? = null
     private var currentTitle: String? = null
     private var canGoBackFlag = false
@@ -482,6 +490,16 @@ class GeckoViewEngine(
         return view
     }
 
+    /**
+     * Installs a media session delegate on the current session and every
+     * future (re)created one; pass null to detach. Callers own the delegate's
+     * lifecycle (see GeckoMediaSessionAdapter).
+     */
+    fun setMediaSessionDelegate(delegate: GeckoMediaSession.Delegate?) {
+        mediaSessionDelegate = delegate
+        session?.mediaSessionDelegate = delegate
+    }
+
     private fun setupDelegates(
         session: GeckoSession,
         callback: BrowserEngineCallback,
@@ -493,6 +511,7 @@ class GeckoViewEngine(
         setupProgressDelegate(session, callback)
         setupPermissionDelegate(session)
         setupPromptDelegate(session, callback, viewContext, config)
+        mediaSessionDelegate?.let { session.mediaSessionDelegate = it }
     }
 
     private fun setupContentDelegate(session: GeckoSession, callback: BrowserEngineCallback) {

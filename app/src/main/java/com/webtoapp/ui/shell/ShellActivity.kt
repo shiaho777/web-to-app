@@ -69,6 +69,7 @@ class ShellActivity : AppCompatActivity() {
     private var pendingFloatingWindowLaunch = false
     private var notificationPolyfillEnabled = false
     private var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
+    private var geckoMediaAdapter: com.webtoapp.core.engine.GeckoMediaSessionAdapter? = null
 
     // Screen-awake (ALWAYS/TIMED) timer management. The timed clear is tracked so it can be
     // cancelled/re-scheduled whenever the mode is re-applied (e.g. after a forced-run change).
@@ -466,6 +467,19 @@ class ShellActivity : AppCompatActivity() {
                     if (surface.webView == null) {
                         webView = null
                         com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "Browser surface created (GeckoView), ECH engine active")
+                        // GeckoView implements the web Media Session API itself;
+                        // its engine events feed the shared native core (#593).
+                        if (config.webViewConfig.enableMediaSession) {
+                            val geckoEngine = surface.engine as? com.webtoapp.core.engine.GeckoViewEngine
+                            if (geckoEngine != null) {
+                                geckoMediaAdapter?.release()
+                                geckoMediaAdapter = com.webtoapp.core.engine.GeckoMediaSessionAdapter(
+                                    this@ShellActivity,
+                                    geckoEngine
+                                )
+                                com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "[MediaSession] Gecko adapter attached")
+                            }
+                        }
                     }
                 },
                 onWebViewCreated = { wv ->
@@ -881,6 +895,8 @@ class ShellActivity : AppCompatActivity() {
         webView = null
         mediaSessionBridge?.runCatching { release() }
         mediaSessionBridge = null
+        geckoMediaAdapter?.runCatching { release() }
+        geckoMediaAdapter = null
         super.onDestroy()
     }
 

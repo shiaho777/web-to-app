@@ -21,8 +21,8 @@ import com.webtoapp.util.SafeNotificationChannels
  * eligible for ongoing media playback, holds a wake lock while playing, and owns
  * the media notification lifecycle (start while playing, detach on pause, remove
  * on stop). Notification controls dispatch explicit commands back to the active
- * [MediaSessionBridge] — they do NOT depend on a generic ACTION_MEDIA_BUTTON
- * broadcast receiver.
+ * [MediaSessionCore] (WebView bridge or GeckoView adapter) — they do NOT depend
+ * on a generic ACTION_MEDIA_BUTTON broadcast receiver.
  */
 class WebMediaPlaybackService : Service() {
 
@@ -67,7 +67,7 @@ class WebMediaPlaybackService : Service() {
                 val value = intent.getDoubleExtra(EXTRA_VALUE, 0.0)
 
                 if (!command.isNullOrBlank()) {
-                    MediaSessionBridge.dispatchFromService(command, value)
+                    MediaSessionCore.dispatchFromService(command, value)
                 }
 
                 /*
@@ -94,7 +94,7 @@ class WebMediaPlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun startAsForeground() {
-        val notification = MediaSessionBridge.getForegroundNotification(this)
+        val notification = MediaSessionCore.getForegroundNotification(this)
             ?: buildFallbackNotification()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

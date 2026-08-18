@@ -133,6 +133,7 @@ class WebViewActivity : AppCompatActivity() {
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
     private var mediaSessionBridge: com.webtoapp.core.webview.MediaSessionBridge? = null
+    internal var geckoMediaAdapter: com.webtoapp.core.engine.GeckoMediaSessionAdapter? = null
 
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeolocationOrigin: String? = null
@@ -997,6 +998,8 @@ class WebViewActivity : AppCompatActivity() {
 
         mediaSessionBridge?.release()
         mediaSessionBridge = null
+        geckoMediaAdapter?.runCatching { release() }
+        geckoMediaAdapter = null
 
         android.webkit.CookieManager.getInstance().flush()
         webView?.let { wv ->
@@ -3110,6 +3113,19 @@ fun WebViewScreen(
                                 browserSurfaceRef = surface
                                 (context as? WebViewActivity)?.browserSurface = surface
                                 val createdWebView = surface.webView
+                                if (createdWebView == null &&
+                                    webApp?.webViewConfig?.enableMediaSession == true
+                                ) {
+                                    // Gecko engine preview: bridge Gecko's own media
+                                    // session events into the shared native core (#593).
+                                    val geckoEngine = surface.engine as? com.webtoapp.core.engine.GeckoViewEngine
+                                    if (geckoEngine != null) {
+                                        (context as? WebViewActivity)?.let { host ->
+                                            host.geckoMediaAdapter?.runCatching { release() }
+                                            host.geckoMediaAdapter = com.webtoapp.core.engine.GeckoMediaSessionAdapter(host, geckoEngine)
+                                        }
+                                    }
+                                }
                                 if (createdWebView != null) {
                                     createdWebView.apply {
                                     layoutParams = ViewGroup.LayoutParams(
