@@ -169,48 +169,58 @@ private fun TabsMode(
                     color = MaterialTheme.colorScheme.surface,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    LazyRow(
-                        state = tabsListState,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        contentPadding = PaddingValues(horizontal = 8.dp)
-                    ) {
-                        itemsIndexed(sites) { index, site ->
-                            val isSelected = selectedTab == index
-                            Column(
-                                modifier = Modifier
-                                    .widthIn(min = 72.dp)
-                                    .fillMaxHeight()
-                                    .clickable { selectedTab = index },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                if (site.iconEmoji.isNotBlank()) {
+                    // 站点少时每个 tab 平分整条底栏（对称布局，回归 #597 报告的行为）；
+                    // 平分后不足 72dp（站点多）则保持 #283 的最小宽度 + 横向滚动。
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        val evenWidth =
+                            (maxWidth - 16.dp - 4.dp * (sites.size - 1)) / sites.size
+                        val tabModifier = if (evenWidth >= 72.dp) {
+                            Modifier.width(evenWidth)
+                        } else {
+                            Modifier.widthIn(min = 72.dp)
+                        }
+                        LazyRow(
+                            state = tabsListState,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            contentPadding = PaddingValues(horizontal = 8.dp)
+                        ) {
+                            itemsIndexed(sites) { index, site ->
+                                val isSelected = selectedTab == index
+                                Column(
+                                    modifier = tabModifier
+                                        .fillMaxHeight()
+                                        .clickable { selectedTab = index },
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    if (site.iconEmoji.isNotBlank()) {
+                                        Text(
+                                            site.iconEmoji,
+                                            fontSize = if (isSelected) 18.sp else 16.sp
+                                        )
+                                    } else {
+                                        Icon(
+                                            Icons.Outlined.Language,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(if (isSelected) 20.dp else 18.dp),
+                                            tint = if (isSelected) MaterialTheme.colorScheme.primary
+                                                   else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                     Text(
-                                        site.iconEmoji,
-                                        fontSize = if (isSelected) 18.sp else 16.sp
-                                    )
-                                } else {
-                                    Icon(
-                                        Icons.Outlined.Language,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(if (isSelected) 20.dp else 18.dp),
-                                        tint = if (isSelected) MaterialTheme.colorScheme.primary
-                                               else MaterialTheme.colorScheme.onSurfaceVariant
+                                        site.name.ifBlank { extractDomain(site.url) },
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        fontSize = 10.sp,
+                                        color = if (isSelected) MaterialTheme.colorScheme.primary
+                                               else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        lineHeight = 12.sp
                                     )
                                 }
-                                Text(
-                                    site.name.ifBlank { extractDomain(site.url) },
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    fontSize = 10.sp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary
-                                           else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    lineHeight = 12.sp
-                                )
                             }
                         }
                     }
