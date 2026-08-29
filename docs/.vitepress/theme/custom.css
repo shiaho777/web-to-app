@@ -273,6 +273,30 @@
   margin-top: 20px;
 }
 
+/*
+ * On homepages the LatestRelease slot sits right after the hero actions
+ * container; tuck it into the same row (button then version caption),
+ * inheriting the actions row's wrap + centering. The -6px margin cancels
+ * .actions' own -6px gutter so the two rows line up seamlessly.
+ */
+.VPHero .wta-release {
+  display: inline-flex;
+  margin: -6px;
+  margin-top: -6px;
+  padding-top: 0;
+  align-self: center;
+}
+
+.VPHero.has-image .wta-release {
+  justify-content: center;
+}
+
+@media (min-width: 960px) {
+  .VPHero.has-image .wta-release {
+    justify-content: flex-start;
+  }
+}
+
 .wta-release-btn {
   display: inline-flex;
   align-items: center;
