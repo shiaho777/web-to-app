@@ -43,3 +43,219 @@
   --vp-button-alt-hover-text: #ffffff;
   --vp-button-alt-active-text: #ffffff;
 }
+
+/*
+ * Homepage content below the features grid. The markdown lives inside
+ * VPHomeContent's 1280px container; .wta-home narrows to 1152px so the
+ * custom sections line up with the features grid above.
+ */
+.wta-home {
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 8px 0 48px;
+}
+
+.wta-home h2 {
+  margin-top: 56px;
+  margin-bottom: 20px;
+  padding-top: 0;
+  border-top: none;
+  font-size: 28px;
+}
+
+/* Three-step getting started: numbered cards in a responsive row. */
+.wta-steps {
+  counter-reset: wta-step;
+}
+
+.wta-steps ol {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 959px) {
+  .wta-steps ol {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wta-steps li {
+  counter-increment: wta-step;
+  position: relative;
+  padding: 20px 20px 16px 62px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background-color: var(--vp-c-bg-soft);
+}
+
+.wta-steps li::before {
+  content: counter(wta-step);
+  position: absolute;
+  left: 18px;
+  top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #171717;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dark .wta-steps li::before {
+  background-color: #2e2e2e;
+}
+
+.wta-steps li p {
+  margin: 0 0 8px;
+}
+
+.wta-steps li p:last-child {
+  margin-bottom: 0;
+  color: var(--vp-c-text-2);
+  font-size: 14px;
+}
+
+.wta-steps li a {
+  font-weight: 500;
+  text-decoration: none;
+}
+
+/* Tile grids: app types and toolbox, mirroring the features card language. */
+.wta-types {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 959px) {
+  .wta-types {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 639px) {
+  .wta-types {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wta-types > div {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background-color: var(--vp-c-bg-soft);
+  padding: 16px 20px;
+  transition: border-color 0.25s, background-color 0.25s;
+}
+
+.wta-types > div:hover {
+  border-color: var(--vp-c-text-1);
+}
+
+.wta-types p {
+  margin: 0;
+  padding: 4px 0;
+  line-height: 1.7;
+  font-size: 14px;
+  color: var(--vp-c-text-2);
+}
+
+.wta-types p > a {
+  color: var(--vp-c-text-1);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.25s;
+}
+
+.wta-types p > a:hover {
+  color: var(--vp-c-brand-1);
+}
+
+/* Stat strip: number + label pairs in a flat row. */
+.wta-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 767px) {
+  .wta-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.wta-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 12px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background-color: var(--vp-c-bg-soft);
+}
+
+.wta-stat b {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--vp-c-text-1);
+}
+
+.wta-stat span {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--vp-c-text-2);
+}
+
+/* Closing call-to-action. */
+.wta-cta {
+  margin-top: 56px;
+  padding: 32px 24px;
+  text-align: center;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background-color: var(--vp-c-bg-soft);
+}
+
+.wta-cta p {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+}
+
+.wta-cta a {
+  display: inline-block;
+  padding: 6px 20px;
+  border-radius: 20px;
+  background-color: #171717;
+  color: #ffffff !important;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.25s;
+}
+
+.wta-cta a:hover {
+  background-color: #262626;
+}
+
+.dark .wta-cta a {
+  background-color: #2e2e2e;
+}
+
+.dark .wta-cta a:hover {
+  background-color: #3a3a3a;
+}
+
+/* Feature cards: calmer hover that matches the flat look. */
+.VPFeature.link:hover {
+  border-color: var(--vp-c-text-1);
+}
