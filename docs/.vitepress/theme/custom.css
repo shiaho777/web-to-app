@@ -2,6 +2,7 @@
  * WebToApp brand theme.
  * Accent is a confident blue that reads well in both light and dark mode.
  * deliberately flat: no hero glow, no gradient text — plain color only.
+ * Buttons stay black in both themes: dark background, light text.
  */
 :root {
   --vp-c-brand-1: #2563eb;
@@ -23,4 +24,22 @@
   --vp-home-hero-name-color: var(--vp-c-brand-1);
   --vp-home-hero-image-background-image: none;
   --vp-home-hero-image-filter: none;
+}
+
+/* Buttons: black in light and dark mode instead of the blue accent. */
+:root,
+.dark {
+  --vp-button-brand-bg: #171717;
+  --vp-button-brand-hover-bg: #262626;
+  --vp-button-brand-active-bg: #262626;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-active-text: #ffffff;
+
+  --vp-button-alt-bg: #2b2b2b;
+  --vp-button-alt-hover-bg: #383838;
+  --vp-button-alt-active-bg: #383838;
+  --vp-button-alt-text: #ffffff;
+  --vp-button-alt-hover-text: #ffffff;
+  --vp-button-alt-active-text: #ffffff;
 }
