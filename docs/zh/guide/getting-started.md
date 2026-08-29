@@ -6,6 +6,16 @@
 
 在运行 **Android 6.0(API 23)或更高版本** 的设备上安装 WebToApp 构建器。
 
+<div class="wta-install">
+
+**下载构建器**
+
+<LatestRelease variant="install" />
+
+从 [GitHub Releases](https://github.com/shiaho777/web-to-app/releases) 获取 APK,像普通应用一样安装即可。按钮会自动检测最新版本。
+
+</div>
+
 启动时,`WebToAppApplication` 以 **构建器模式**(`SHELL_RUNTIME_ONLY = false`)启动:初始化 i18n 字符串、Room 数据库和依赖图,然后显示 **我的应用** —— 即列出你所创建的全部应用的主页。见[主界面](/zh/guide/main-screen/my-apps)。
 
 ## 2. 创建一个应用定义

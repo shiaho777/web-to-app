@@ -259,3 +259,83 @@
 .VPFeature.link:hover {
   border-color: var(--vp-c-text-1);
 }
+
+/*
+ * Hero download button, rendered through the home-hero-actions-after slot.
+ * Shares the black-pill grammar of the brand buttons above.
+ */
+.wta-release {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 12px;
+  margin-top: 20px;
+}
+
+.wta-release-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  line-height: 38px;
+  border: 1px solid transparent;
+  border-radius: 20px;
+  background-color: #171717;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color 0.25s;
+}
+
+.wta-release-btn:hover {
+  background-color: #262626;
+}
+
+.dark .wta-release-btn {
+  background-color: #2e2e2e;
+}
+
+.dark .wta-release-btn:hover {
+  background-color: #3a3a3a;
+}
+
+.wta-release-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.wta-release-meta {
+  font-size: 12px;
+  color: var(--vp-c-text-3);
+}
+
+/* Install-download block for guide pages. */
+.wta-install {
+  margin: 16px 0;
+  padding: 20px 24px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  background-color: var(--vp-c-bg-soft);
+}
+
+.wta-install p {
+  margin: 0 0 12px;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+}
+
+.wta-install p:last-child {
+  margin-bottom: 0;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--vp-c-text-2);
+}
+
+.wta-install .wta-release {
+  justify-content: flex-start;
+  margin-top: 4px;
+}

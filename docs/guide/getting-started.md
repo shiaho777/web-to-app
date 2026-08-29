@@ -6,6 +6,16 @@ This walkthrough takes you from a fresh install to your first signed APK. At eac
 
 Install the WebToApp builder on a device running **Android 6.0 (API 23) or newer**.
 
+<div class="wta-install">
+
+**Download the builder**
+
+<LatestRelease variant="install" />
+
+Get the APK from [GitHub Releases](https://github.com/shiaho777/web-to-app/releases) and install it like any other APK. The button auto-detects the newest version.
+
+</div>
+
 On launch, `WebToAppApplication` starts in **builder mode** (`SHELL_RUNTIME_ONLY = false`): it initializes the i18n strings, the Room database, and the dependency graph, then shows **My Apps** — the home screen that lists every app you create. See [Main Screen](/guide/main-screen/my-apps).
 
 ## 2. Create an app definition
