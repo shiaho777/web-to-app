@@ -12,13 +12,37 @@ class GitHubMirrorTest {
 
     @Test
     fun `proxiedCn expands a github release asset with direct fallback`() {
-        val urls = GitHubMirror.proxiedCn("https://github.com/oct/x/releases/download/v1/a.zip")
+        val asset = "https://github.com/oct/x/releases/download/v1/a.zip"
+        val urls = GitHubMirror.proxiedCn(asset)
         assertThat(urls).hasSize(GitHubMirror.CN_PROXIES.size + 1)
-        // No probe cache in tests: base order (proxies first), direct last.
+        // No probe cache in tests: declaration order (proxies first), direct last.
         GitHubMirror.CN_PROXIES.forEachIndexed { i, proxy ->
-            assertThat(urls[i]).isEqualTo(proxy + "https://github.com/oct/x/releases/download/v1/a.zip")
+            assertThat(urls[i]).isEqualTo(proxy.rewrite(asset))
         }
-        assertThat(urls.last()).isEqualTo("https://github.com/oct/x/releases/download/v1/a.zip")
+        assertThat(urls.last()).isEqualTo(asset)
+    }
+
+    @Test
+    fun `direct channel leaves the url untouched`() {
+        val asset = "https://github.com/oct/x/releases/download/v1/a.zip"
+        assertThat(GitHubMirror.MirrorChannel.DIRECT.rewrite(asset)).isEqualTo(asset)
+    }
+
+    @Test
+    fun `every proxy channel rewrites to a prefix url`() {
+        val asset = "https://github.com/oct/x/releases/download/v1/a.zip"
+        GitHubMirror.CN_PROXIES.forEach { channel ->
+            val rewritten = channel.rewrite(asset)
+            assertThat(rewritten).startsWith(channel.prefix)
+            assertThat(rewritten).endsWith(asset)
+        }
+    }
+
+    @Test
+    fun `channel pool has no duplicate ids`() {
+        val ids = GitHubMirror.ALL_CHANNELS.map { it.id }
+        assertThat(ids).containsNoDuplicates()
+        assertThat(ids).contains("direct")
     }
 
     @Test

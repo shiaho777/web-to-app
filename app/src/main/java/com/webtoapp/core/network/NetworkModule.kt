@@ -22,6 +22,9 @@ object NetworkModule {
     val defaultClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectionPool(sharedConnectionPool)
+            // Pinned GitHub IPs first, system resolver right behind them, so a
+            // stale entry costs one failed connect instead of a dead download.
+            .dns(GitHubHostsDns)
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
