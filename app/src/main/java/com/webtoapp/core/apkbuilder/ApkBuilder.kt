@@ -99,6 +99,122 @@ class ApkBuilder(private val context: Context) {
             "PYTHON_APP" -> setOf("libpython3.so", "libmusl-linker.so")
             else -> emptySet()
         }
+
+        private const val DEFAULT_VERSION_NAME = "1.0.0"
+
+        /**
+         * The package name this app will actually ship with: an explicit custom
+         * package when it is set and well-formed, otherwise the name-derived one.
+         *
+         * This rule used to be copy-pasted in three places (here, the build
+         * pipeline and the export screen). That drift is the root cause of
+         * issue #672: the screen could not reproduce a derived package name, so
+         * it never found the already-installed app and never bumped the version.
+         */
+        fun resolvePackageName(webApp: WebApp): String {
+            val custom = webApp.apkExportConfig?.customPackageName?.takeIf {
+                it.isNotBlank() && it.matches(PACKAGE_NAME_REGEX)
+            }
+            return custom ?: generatePackageName(webApp.name)
+        }
+
+        fun generatePackageName(appName: String): String {
+            val raw = appName.hashCode().let {
+                if (it < 0) (-it).toString(36) else it.toString(36)
+            }.take(4).padStart(4, '0')
+
+            val segment = normalizePackageSegment(raw)
+
+            return "com.w2a.$segment"
+        }
+
+        private fun normalizePackageSegment(segment: String): String {
+            if (segment.isEmpty()) return "a"
+
+            val chars = segment.lowercase().toCharArray()
+
+            chars[0] = when {
+                chars[0] in 'a'..'z' -> chars[0]
+                chars[0] in '0'..'9' -> ('a' + (chars[0] - '0'))
+                else -> 'a'
+            }
+
+            return String(chars)
+        }
+
+        /** Installed versionCode for [packageName], or null when not installed. */
+        fun findInstalledVersionCode(context: Context, packageName: String): Long? {
+            if (packageName.isBlank()) return null
+            return try {
+                val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    context.packageManager.getPackageInfo(
+                        packageName,
+                        PackageManager.PackageInfoFlags.of(0)
+                    )
+                } else {
+                    @Suppress("DEPRECATION")
+                    context.packageManager.getPackageInfo(packageName, 0)
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    info.longVersionCode
+                } else {
+                    @Suppress("DEPRECATION")
+                    info.versionCode.toLong()
+                }
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        /**
+         * Android refuses to install over an existing package unless versionCode
+         * is strictly greater, so rebuilds targeting an already-installed
+         * package bump the version. An explicit higher version set by the user
+         * is left alone — we only step in when the build would not install.
+         */
+        internal fun withInstallAwareVersion(context: Context, webApp: WebApp): WebApp {
+            val (code, name) = suggestedVersionForInstall(context, webApp) ?: return webApp
+            val config = webApp.apkExportConfig
+                ?: com.webtoapp.data.model.ApkExportConfig()
+            return webApp.copy(
+                apkExportConfig = config.copy(
+                    customVersionCode = code,
+                    customVersionName = name
+                )
+            )
+        }
+
+        /**
+         * The version this build should ship with when the target package is
+         * already installed, or null when nothing has to change. Shared by the
+         * export screen (so the suggested version matches what the build will
+         * actually use) and by the build itself (so agent tools and batch export
+         * bump identically).
+         */
+        fun suggestedVersionForInstall(context: Context, webApp: WebApp): Pair<Int, String>? {
+            val installed = findInstalledVersionCode(context, resolvePackageName(webApp))
+                ?: return null
+            val config = webApp.apkExportConfig
+            val configured = config?.customVersionCode ?: 1
+            if (configured > installed) return null
+
+            val bumpedCode = (installed + 1).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+            val currentName = config?.customVersionName?.takeIf { it.isNotBlank() }
+                ?: DEFAULT_VERSION_NAME
+            return bumpedCode to bumpVersionName(currentName)
+        }
+
+        /**
+         * Bumps the last numeric segment ("1.0.0" -> "1.0.1", "v2.1" -> "v2.2").
+         * Anything not ending in digits (for example "1.0.0-beta") is returned
+         * untouched rather than mangled into a version nobody asked for.
+         */
+        internal fun bumpVersionName(current: String): String {
+            val match = Regex("""^(.*?)(\d+)$""").find(current.trim()) ?: return current
+            val (prefix, number) = match.destructured
+            val bumped = number.toLongOrNull()?.plus(1) ?: return current
+            return "$prefix$bumped"
+        }
     }
 
     private val template = ApkTemplate(context)
@@ -124,11 +240,7 @@ class ApkBuilder(private val context: Context) {
     }
 
     fun clearIncrementalCache(webApp: WebApp) {
-        val customPkg = webApp.apkExportConfig?.customPackageName?.takeIf {
-            it.isNotBlank() && it.matches(PACKAGE_NAME_REGEX)
-        }
-        val packageName = customPkg ?: generatePackageName(webApp.name)
-        buildCache.clear(webApp, packageName)
+        buildCache.clear(webApp, resolvePackageName(webApp))
     }
 
     fun clearAllIncrementalCaches() {
@@ -171,10 +283,33 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
+    /**
+     * Every build goes through here, so version bumping lives here too. Doing it
+     * at the entry point means the agent tools and batch export get the same
+     * behaviour as the export screen, and the incremental cache fingerprints the
+     * final version rather than the pre-bump one.
+     */
     suspend fun buildApk(
         webApp: WebApp,
         forceFullRebuild: Boolean = false,
         onProgress: (Int, String) -> Unit = { _, _ -> }
+    ): BuildResult = withContext(Dispatchers.IO) {
+        val versioned = withInstallAwareVersion(context, webApp)
+        if (versioned !== webApp) {
+            AppLogger.i(
+                "ApkBuilder",
+                "Bumped version for ${resolvePackageName(webApp)}: " +
+                    "${webApp.apkExportConfig?.customVersionCode ?: 1} -> " +
+                    "${versioned.apkExportConfig?.customVersionCode}"
+            )
+        }
+        buildApkInternal(versioned, forceFullRebuild, onProgress)
+    }
+
+    private suspend fun buildApkInternal(
+        webApp: WebApp,
+        forceFullRebuild: Boolean,
+        onProgress: (Int, String) -> Unit
     ): BuildResult = withContext(Dispatchers.IO) {
         var currentStage = BuildStage.PREPARE
         var currentPackageName: String? = null
@@ -262,12 +397,12 @@ class ApkBuilder(private val context: Context) {
             AppLogger.d("ApkBuilder", "  appType=${webApp.appType}")
 
             logger.section("Generate Package Name")
-            val customPkg = webApp.apkExportConfig?.customPackageName?.takeIf {
-                it.isNotBlank() &&
-                it.matches(PACKAGE_NAME_REGEX)
-            }
-            val packageName = customPkg ?: generatePackageName(webApp.name)
+            val packageName = resolvePackageName(webApp)
             currentPackageName = packageName
+
+            val customPkg = webApp.apkExportConfig?.customPackageName?.takeIf {
+                it.isNotBlank() && it.matches(PACKAGE_NAME_REGEX)
+            }
 
             if (webApp.apkExportConfig?.customPackageName?.isNotBlank() == true && customPkg == null) {
                 logger.warn("Custom package name format invalid, using auto-generated: $packageName")
@@ -3200,31 +3335,6 @@ builtins.__import__ = _w2a_import
 
     private fun copyEntry(zipIn: ZipFile, zipOut: ZipOutputStream, entry: ZipEntry) {
         ZipUtils.copyEntry(zipIn, zipOut, entry)
-    }
-
-    private fun generatePackageName(appName: String): String {
-
-        val raw = appName.hashCode().let {
-            if (it < 0) (-it).toString(36) else it.toString(36)
-        }.take(4).padStart(4, '0')
-
-        val segment = normalizePackageSegment(raw)
-
-        return "com.w2a.$segment"
-    }
-
-    private fun normalizePackageSegment(segment: String): String {
-        if (segment.isEmpty()) return "a"
-
-        val chars = segment.lowercase().toCharArray()
-
-        chars[0] = when {
-            chars[0] in 'a'..'z' -> chars[0]
-            chars[0] in '0'..'9' -> ('a' + (chars[0] - '0'))
-            else -> 'a'
-        }
-
-        return String(chars)
     }
 
     private fun sanitizeFileName(name: String): String {

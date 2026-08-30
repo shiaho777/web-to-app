@@ -185,20 +185,19 @@ private fun BuildApkContent(
     var selectedEngineType by remember(webApp.id) {
         mutableStateOf(webApp.apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW")
     }
-    val updatePackageName = webApp.apkExportConfig?.customPackageName
-        ?.takeIf { it.isNotBlank() && it.matches(com.webtoapp.util.AppConstants.PACKAGE_NAME_REGEX) }
+    // Resolve the package exactly the way the builder does. That rule used to
+    // live inside ApkBuilder, so the screen could not reproduce a derived
+    // package name, never found the installed app, and never bumped the version.
+    val resolvedPackageName = com.webtoapp.core.apkbuilder.ApkBuilder.resolvePackageName(webApp)
     val baseVersionCode = webApp.apkExportConfig?.customVersionCode ?: 1
-    var installedVersionCode by remember(updatePackageName) { mutableStateOf<Long?>(null) }
-    LaunchedEffect(updatePackageName, uiReady) {
-        if (!uiReady || updatePackageName == null) return@LaunchedEffect
-        installedVersionCode = withContext(Dispatchers.IO) {
-            findInstalledVersionCode(context, updatePackageName)
-        }
+    var suggestedVersion by remember(resolvedPackageName) {
+        mutableStateOf<Pair<Int, String>?>(null)
     }
-    val suggestedUpdateVersionCode = if (updatePackageName != null) {
-        (maxOf(baseVersionCode.toLong(), installedVersionCode ?: 0L) + 1L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-    } else {
-        baseVersionCode
+    LaunchedEffect(resolvedPackageName, baseVersionCode, uiReady) {
+        if (!uiReady) return@LaunchedEffect
+        suggestedVersion = withContext(Dispatchers.IO) {
+            com.webtoapp.core.apkbuilder.ApkBuilder.suggestedVersionForInstall(context, webApp)
+        }
     }
     val engineFileManager = remember { com.webtoapp.core.engine.download.EngineFileManager(context) }
     var isGeckoDownloaded by remember { mutableStateOf(false) }
@@ -223,8 +222,12 @@ private fun BuildApkContent(
                 notificationConfig = notificationConfig,
                 engineType = selectedEngineType
             ).let { exportConfig ->
-                if (updatePackageName != null && (exportConfig.customVersionCode ?: 1) < suggestedUpdateVersionCode) {
-                    exportConfig.copy(customVersionCode = suggestedUpdateVersionCode)
+                val suggested = suggestedVersion
+                if (suggested != null && (exportConfig.customVersionCode ?: 1) < suggested.first) {
+                    exportConfig.copy(
+                        customVersionCode = suggested.first,
+                        customVersionName = suggested.second
+                    )
                 } else {
                     exportConfig
                 }
@@ -615,7 +618,7 @@ private fun BuildApkContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    if (updatePackageName != null) {
+                    if (suggestedVersion != null) {
                         Surface(
                             shape = RoundedCornerShape(WtaRadius.Control),
                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
@@ -633,8 +636,8 @@ private fun BuildApkContent(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    Strings.updateApkGuide.replace("%s", updatePackageName)
-                                        .replace("%d", suggestedUpdateVersionCode.toString()),
+                                    Strings.updateApkGuide.replace("%s", resolvedPackageName)
+                                        .replace("%d", (suggestedVersion?.first ?: baseVersionCode).toString()),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
@@ -877,27 +880,6 @@ private fun resolveBuildIsolationDefault(
     return config ?: com.webtoapp.core.privacy.IsolationConfig.DISABLED
 }
 
-private fun findInstalledVersionCode(context: android.content.Context, packageName: String): Long? {
-    return try {
-        val packageInfo = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            context.packageManager.getPackageInfo(
-                packageName,
-                android.content.pm.PackageManager.PackageInfoFlags.of(0)
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            context.packageManager.getPackageInfo(packageName, 0)
-        }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-            packageInfo.longVersionCode
-        } else {
-            @Suppress("DEPRECATION")
-            packageInfo.versionCode.toLong()
-        }
-    } catch (_: Exception) {
-        null
-    }
-}
 
 @Composable
 private fun BuildSummaryCard(
