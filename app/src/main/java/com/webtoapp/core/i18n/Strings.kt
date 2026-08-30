@@ -751,6 +751,8 @@ object Strings {
     val invalidTimeLimitConfig: String get() = StringsA.invalidTimeLimitConfig
     val invalidUsageLimitConfig: String get() = StringsA.invalidUsageLimitConfig
     val validityDays: String get() = StringsA.validityDays
+    val activationCodeExpiryDays: String get() = StringsA.activationCodeExpiryDays
+    val activationCodeValidUntil: String get() = StringsA.activationCodeValidUntil
     val usageCount: String get() = StringsA.usageCount
     val noteOptional: String get() = StringsA.noteOptional
     val vipUserOnly: String get() = StringsA.vipUserOnly
@@ -14378,6 +14380,30 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Срок действия (дни)"
         AppLanguage.JAPANESE -> "有効期間（日）"
         AppLanguage.KOREAN -> "유효기간 (일)"
+    }
+    val activationCodeExpiryDays: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "截止天数（自生成日起，留空永久）"
+        AppLanguage.ENGLISH -> "Expires in (days from creation, blank = never)"
+        AppLanguage.ARABIC -> "ينتهي بعد (أيام من الإنشاء، فارغ = أبدًا)"
+        AppLanguage.PORTUGUESE -> "Expira em (dias desde a criação, vazio = nunca)"
+        AppLanguage.SPANISH -> "Caduca en (días desde la creación, vacío = nunca)"
+        AppLanguage.FRENCH -> "Expire dans (jours depuis la création, vide = jamais)"
+        AppLanguage.GERMAN -> "Läuft ab in (Tage ab Erstellung, leer = nie)"
+        AppLanguage.RUSSIAN -> "Истекает через (дней с создания, пусто = никогда)"
+        AppLanguage.JAPANESE -> "有効期限（生成日からの日数、空欄は無期限）"
+        AppLanguage.KOREAN -> "만료 기간(생성일부터 일수, 비우면 무제한)"
+    }
+    val activationCodeValidUntil: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "截止 %s"
+        AppLanguage.ENGLISH -> "Until %s"
+        AppLanguage.ARABIC -> "حتى %s"
+        AppLanguage.PORTUGUESE -> "Até %s"
+        AppLanguage.SPANISH -> "Hasta %s"
+        AppLanguage.FRENCH -> "Jusqu'au %s"
+        AppLanguage.GERMAN -> "Bis %s"
+        AppLanguage.RUSSIAN -> "До %s"
+        AppLanguage.JAPANESE -> "期限 %s"
+        AppLanguage.KOREAN -> "만료 %s"
     }
 
     val usageCount: String get() = when (Strings.lang) {

@@ -26,8 +26,23 @@ data class ActivationCode(
     val note: String? = null,
 
     @SerializedName("createdAt")
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+
+    /**
+     * Absolute expiry (epoch millis) baked into the code itself.
+     *
+     * A relative [timeLimitMs] is measured from first activation and lives only
+     * in local state, so clearing app data resets the clock. This field travels
+     * with the code, so it survives a wipe and is the one offline anchor a user
+     * cannot reset. Null means no absolute limit; older codes simply omit it.
+     */
+    @SerializedName("expiresAt")
+    val expiresAt: Long? = null
 ) {
+
+    fun isExpiredAt(timeMillis: Long = System.currentTimeMillis()): Boolean =
+        expiresAt != null && timeMillis > expiresAt
+
     companion object {
         private val gson = com.webtoapp.util.GsonProvider.gson
 

@@ -1047,6 +1047,14 @@ private fun EnhancedActivationCodeItem(
                     }
                 }
 
+                code.expiresAt?.let { expiresAt ->
+                    val formatted = java.text.SimpleDateFormat(
+                        "yyyy-MM-dd",
+                        java.util.Locale.getDefault()
+                    ).format(java.util.Date(expiresAt))
+                    add("📅 ${Strings.activationCodeValidUntil.replace("%s", formatted)}")
+                }
+
                 code.note?.takeIf { it.isNotBlank() }?.let { note ->
                     add("📝 $note")
                 }
@@ -1080,6 +1088,7 @@ private fun AddActivationCodeDialog(
     var codeType by remember { mutableStateOf(ActivationCodeType.PERMANENT) }
     var timeLimitDays by remember { mutableStateOf("7") }
     var usageLimit by remember { mutableStateOf("100") }
+    var expiryDays by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
     var customCode by remember { mutableStateOf("") }
     var useCustomCode by remember { mutableStateOf(false) }
@@ -1265,6 +1274,25 @@ private fun AddActivationCodeDialog(
                 }
 
                 PremiumTextField(
+                    value = expiryDays,
+                    onValueChange = {
+                        if (it.all { char -> char.isDigit() }) {
+                            expiryDays = it
+                        }
+                    },
+                    label = { Text(Strings.activationCodeExpiryDays) },
+                    placeholder = { Text("365") },
+                    leadingIcon = {
+                        Icon(Icons.Outlined.Event, null, modifier = Modifier.size(18.dp))
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    )
+                )
+
+                PremiumTextField(
                     value = note,
                     onValueChange = { note = it },
                     label = { Text(Strings.noteOptional) },
@@ -1296,6 +1324,12 @@ private fun AddActivationCodeDialog(
                         else -> null
                     }
 
+                    // Counted from generation, not from first activation, so the
+                    // deadline survives a data wipe on the user's device.
+                    val expiresAt = expiryDays.toLongOrNull()
+                        ?.takeIf { it > 0 }
+                        ?.let { System.currentTimeMillis() + TimeUnit.DAYS.toMillis(it) }
+
                     val code = if (useCustomCode && customCode.isNotBlank()) {
                         val trimmed = customCode.trim()
                         if (trimmed.length < com.webtoapp.core.activation.ActivationManager.MIN_CODE_LENGTH) {
@@ -1307,7 +1341,8 @@ private fun AddActivationCodeDialog(
                             type = codeType,
                             timeLimitMs = timeLimitMs,
                             usageLimit = usageLimitInt,
-                            note = note.takeIf { it.isNotBlank() }
+                            note = note.takeIf { it.isNotBlank() },
+                            expiresAt = expiresAt
                         )
                     } else {
                         val activationManager = com.webtoapp.WebToAppApplication.getInstance()
@@ -1317,7 +1352,8 @@ private fun AddActivationCodeDialog(
                             timeLimitMs = timeLimitMs,
                             usageLimit = usageLimitInt,
                             note = note.takeIf { it.isNotBlank() },
-                            length = codeLength.toInt()
+                            length = codeLength.toInt(),
+                            expiresAt = expiresAt
                         )
                     }
 
@@ -1346,6 +1382,7 @@ private fun BatchGenerateDialog(
     var batchCount by remember { mutableStateOf("5") }
     var timeLimitDays by remember { mutableStateOf("7") }
     var usageLimit by remember { mutableStateOf("100") }
+    var expiryDays by remember { mutableStateOf("") }
     var codeLength by remember { mutableStateOf(com.webtoapp.core.activation.ActivationManager.DEFAULT_CODE_LENGTH.toFloat()) }
 
     AlertDialog(
@@ -1477,6 +1514,18 @@ private fun BatchGenerateDialog(
                         )
                     )
                 }
+
+                PremiumTextField(
+                    value = expiryDays,
+                    onValueChange = { if (it.all { c -> c.isDigit() }) expiryDays = it },
+                    label = { Text(Strings.activationCodeExpiryDays) },
+                    leadingIcon = { Icon(Icons.Outlined.Event, null, modifier = Modifier.size(18.dp)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    )
+                )
             }
         },
         confirmButton = {
@@ -1493,6 +1542,9 @@ private fun BatchGenerateDialog(
                             usageLimit.toIntOrNull()
                         else -> null
                     }
+                    val expiresAt = expiryDays.toLongOrNull()
+                        ?.takeIf { it > 0 }
+                        ?.let { System.currentTimeMillis() + TimeUnit.DAYS.toMillis(it) }
 
                     val activationManager = com.webtoapp.WebToAppApplication.getInstance()
                         .activationManager
@@ -1501,7 +1553,8 @@ private fun BatchGenerateDialog(
                         type = codeType,
                         timeLimitMs = timeLimitMs,
                         usageLimit = usageLimitInt,
-                        length = codeLength.toInt()
+                        length = codeLength.toInt(),
+                        expiresAt = expiresAt
                     )
                     onConfirm(codes)
                 }

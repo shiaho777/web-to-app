@@ -212,6 +212,14 @@ class ActivationManager(private val context: Context) {
         appId: Long,
         deviceId: String
     ): ActivationResult {
+        // An absolute expiry travels with the code, so it still holds after the
+        // local state was wiped. Check it before anything that reads that state,
+        // otherwise clearing data would reset the clock.
+        if (code.isExpiredAt()) {
+            AppLogger.w(TAG, "Activation rejected: code expired (absolute), app=$appId")
+            return ActivationResult.Expired
+        }
+
         val currentStatus = getActivationStatus(appId)
 
         if (currentStatus.isActivated) {
@@ -301,12 +309,16 @@ class ActivationManager(private val context: Context) {
 
     suspend fun saveActivationStatus(appId: Long, code: ActivationCode, deviceId: String) {
         val currentTime = System.currentTimeMillis()
-        val expireTime = when (code.type) {
+        val relativeExpiry = when (code.type) {
             ActivationCodeType.TIME_LIMITED, ActivationCodeType.COMBINED -> {
                 code.timeLimitMs?.let { currentTime + it }
             }
             else -> null
         }
+        // Whichever limit comes first wins, so an absolute expiry also caps a
+        // relative one. Writing it into local state is what makes the startup
+        // check (ActivationStatus.isExpired) honour it without a re-activation.
+        val expireTime = listOfNotNull(relativeExpiry, code.expiresAt).minOrNull()
 
         context.activationDataStore.edit { preferences ->
             preferences[booleanPreferencesKey("activated_$appId")] = true
@@ -319,8 +331,17 @@ class ActivationManager(private val context: Context) {
                 preferences[intPreferencesKey("usage_count_$appId")] = 0
             }
             preferences[stringPreferencesKey("code_type_$appId")] = code.type.name
+            // Recorded so state is complete and callers can audit where a code
+            // was redeemed. Deliberately NOT enforced: a changed device id
+            // (new phone, reflash, factory reset) would lock out paying users,
+            // while enforcement would only ever stop a partial-state wipe.
+            preferences[stringPreferencesKey("device_id_$appId")] = deviceId
         }
-        AppLogger.i(TAG, "Activation status saved: app=$appId, type=${code.type}")
+        AppLogger.i(
+            TAG,
+            "Activation status saved: app=$appId, type=${code.type}, " +
+                "expireTime=$expireTime, absoluteExpiry=${code.expiresAt}"
+        )
     }
 
     suspend fun saveActivationStatus(appId: Long, activated: Boolean) {
@@ -370,7 +391,8 @@ class ActivationManager(private val context: Context) {
         timeLimitMs: Long? = null,
         usageLimit: Int? = null,
         note: String? = null,
-        length: Int = DEFAULT_CODE_LENGTH
+        length: Int = DEFAULT_CODE_LENGTH,
+        expiresAt: Long? = null
     ): ActivationCode {
         val code = generateActivationCode(length)
         return ActivationCode(
@@ -378,7 +400,8 @@ class ActivationManager(private val context: Context) {
             type = type,
             timeLimitMs = timeLimitMs,
             usageLimit = usageLimit,
-            note = note
+            note = note,
+            expiresAt = expiresAt
         )
     }
 
@@ -391,7 +414,8 @@ class ActivationManager(private val context: Context) {
         type: ActivationCodeType = ActivationCodeType.PERMANENT,
         timeLimitMs: Long? = null,
         usageLimit: Int? = null,
-        length: Int = DEFAULT_CODE_LENGTH
+        length: Int = DEFAULT_CODE_LENGTH,
+        expiresAt: Long? = null
     ): List<ActivationCode> {
         return (1..count).map { index ->
             generateActivationCode(
@@ -399,7 +423,8 @@ class ActivationManager(private val context: Context) {
                 timeLimitMs = timeLimitMs,
                 usageLimit = usageLimit,
                 note = "${Strings.batchGeneratedNote} #$index",
-                length = length
+                length = length,
+                expiresAt = expiresAt
             )
         }
     }
