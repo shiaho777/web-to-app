@@ -195,6 +195,26 @@ openssl ecparam -name prime256v1 -genkey -noout -out ec_private.pem
 openssl ec -in ec_private.pem -pubout -out ec_public.pem
 ```
 
+## Ready-to-deploy option (Cloudflare Worker)
+
+If you would rather not run a server at all, there is a complete reference
+worker in
+[`examples/remote-activation-worker/`](../../examples/remote-activation-worker/README.md):
+codes held in Workers KV (revocable without rebuilding the APK), signed
+responses, device binding, optional AES-256-GCM URL delivery, and a
+`GET /` self-check that hands you the public key to paste into the app. It
+deploys with `npx wrangler deploy` and ships a test that verifies responses the
+way the client does.
+
+One caveat it documents, because it applies to any server you write: **the
+request does not say whether the app expects a delivered URL**, so the server
+cannot discover it. A code that carries a `url` must be paired with an app that
+has "Deliver target URL" enabled, and a code without one with an app that has it
+disabled — otherwise the two sides sign different payloads and every activation
+fails.
+
+The Node example below is the same contract for your own infrastructure.
+
 ## Reference server (Node.js, no framework)
 
 ```js

@@ -1,0 +1,20 @@
+name = "webtoapp-activation"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+# Codes live in KV. Create the namespace with:
+#   npx wrangler kv:namespace create ACTIVATION_CODES
+# then paste the returned id into the binding below.
+[[kv_namespaces]]
+binding = "ACTIVATION_CODES"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+[vars]
+# How far the client clock may drift from server time before a request is
+# rejected. Defaults to 24h in code; tighten it if your users keep accurate time.
+MAX_CLOCK_SKEW_MS = "86400000"
+
+# Secrets — set with `npx wrangler secret put <NAME>`, never commit them.
+#
+# SIGNING_KEY       PKCS#8 EC P-256 private key, single-line Base64 (required)
+# AES_KEY           32-byte Base64 key, only when a code sets encryptUrl

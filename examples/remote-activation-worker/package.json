@@ -1,0 +1,17 @@
+{
+  "name": "webtoapp-activation-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reference remote-activation verification server for WebToApp (Cloudflare Worker)",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "check": "node test/protocol-check.mjs",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "kv:create": "wrangler kv:namespace create ACTIVATION_CODES"
+  },
+  "devDependencies": {
+    "wrangler": "^3.78.0"
+  }
+}
