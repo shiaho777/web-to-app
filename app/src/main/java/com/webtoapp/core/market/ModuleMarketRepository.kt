@@ -61,7 +61,6 @@ class ModuleMarketRepository private constructor(
             "https://cdn.jsdelivr.net/gh/$OWNER/$REPO@$BRANCH/$MODULES_DIR"
         )
 
-        private const val MIRROR_PREFIX = "https://v4.gh-proxy.org/"
     }
 
     private val gson: Gson = GsonBuilder().setLenient().create()
@@ -283,7 +282,8 @@ class ModuleMarketRepository private constructor(
         if (raw.startsWith("https://") || raw.startsWith("http://")) return raw
 
         val normalised = raw.removePrefix("./").removePrefix("/")
-        return "$MIRROR_PREFIX${SOURCES.first()}/${entry.path}/$normalised"
+        val direct = "${SOURCES.first()}/${entry.path}/$normalised"
+        return com.webtoapp.core.network.GitHubMirror.proxiedCnGitHubHost(direct).first()
     }
 
     val contributingUrl: String =
@@ -291,11 +291,12 @@ class ModuleMarketRepository private constructor(
 
     private fun fetchRaw(relativePath: String): String? {
         for (base in SOURCES) {
-            val mirroredUrl = "$MIRROR_PREFIX$base/$relativePath"
-            fetchOnce(mirroredUrl)?.let { return it }
-
             val directUrl = "$base/$relativePath"
-            fetchOnce(directUrl)?.let { return it }
+            // GitHub hosts get the measured mirror pool; jsDelivr is not a
+            // GitHub host and passes through as a single candidate.
+            for (candidate in com.webtoapp.core.network.GitHubMirror.proxiedCnGitHubHost(directUrl)) {
+                fetchOnce(candidate)?.let { return it }
+            }
         }
         return null
     }

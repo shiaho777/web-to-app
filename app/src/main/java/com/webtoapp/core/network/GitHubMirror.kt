@@ -66,6 +66,34 @@ object GitHubMirror {
     }
 
     /**
+     * Same routing as [proxiedCn], but for the smaller GitHub-hosted JSON
+     * fetches that never touch a release asset: `api.github.com` for update
+     * checks and `raw.githubusercontent.com` for the module catalogue.
+     *
+     * Kept separate from [proxiedCn] on purpose. Release downloads are the
+     * paths that were measured and shipped; widening that function's host
+     * match would quietly change where they fetch from. Anything that is not
+     * a GitHub host (jsDelivr, for instance) comes back unchanged.
+     */
+    fun proxiedCnGitHubHost(url: String): List<String> {
+        if (!isGitHubHost(url)) return listOf(url)
+        val ordered = CnMirrorProbe.orderedChannels()
+        return (ordered.map { it.rewrite(url) } + url).distinct()
+    }
+
+    private fun isGitHubHost(url: String): Boolean {
+        val host = url
+            .substringAfter("https://", "")
+            .substringBefore("/")
+            .lowercase()
+        if (host.isEmpty()) return false
+        return host == "github.com" ||
+            host == "api.github.com" ||
+            host.endsWith(".github.com") ||
+            host.endsWith("githubusercontent.com")
+    }
+
+    /**
      * npm registry tarball URLs with the npmmirror CN variant first when
      * [cn] is set; anything not hosted on registry.npmjs.org passes through.
      */

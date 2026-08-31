@@ -14,7 +14,6 @@ object UpdateChecker {
 
     private const val TAG = "UpdateChecker"
 
-    private const val MIRROR_PREFIX = "https://gh-proxy.org/"
     private const val OWNER = "shiaho777"
     private const val REPO = "web-to-app"
     private const val LATEST_RELEASE_API =
@@ -105,8 +104,17 @@ object UpdateChecker {
         data class Failed(val message: String, val throwable: Throwable? = null) : Result()
     }
 
+    /**
+     * Best current route for a GitHub URL. Release assets go through the
+     * measured mirror pool (same routing the runtime downloads use, so an
+     * update APK is not stuck on one hard-coded accelerator); anything else
+     * comes back untouched.
+     *
+     * Single URL rather than a list because the result is carried on [Result]
+     * and handed to the installer, which has no fallback logic of its own.
+     */
     fun withMirror(url: String): String =
-        if (url.startsWith(MIRROR_PREFIX)) url else MIRROR_PREFIX + url
+        com.webtoapp.core.network.GitHubMirror.proxiedCn(url).firstOrNull() ?: url
 
     suspend fun check(currentVersionName: String): Result = withContext(Dispatchers.IO) {
         val current = Version.parse(currentVersionName)
@@ -209,7 +217,7 @@ object UpdateChecker {
     }
 
     private fun fetchLatestReleaseJson(): String? {
-        val candidates = listOf(withMirror(LATEST_RELEASE_API), LATEST_RELEASE_API)
+        val candidates = com.webtoapp.core.network.GitHubMirror.proxiedCnGitHubHost(LATEST_RELEASE_API)
         var lastError: Exception? = null
         for (endpoint in candidates) {
             try {
@@ -224,7 +232,7 @@ object UpdateChecker {
     }
 
     private fun fetchAllReleasesJson(): String? {
-        val candidates = listOf(withMirror(ALL_RELEASES_API), ALL_RELEASES_API)
+        val candidates = com.webtoapp.core.network.GitHubMirror.proxiedCnGitHubHost(ALL_RELEASES_API)
         var lastError: Exception? = null
         for (endpoint in candidates) {
             try {
