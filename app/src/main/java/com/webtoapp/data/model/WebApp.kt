@@ -344,16 +344,21 @@ data class WebViewConfig(
     val enableCrossOriginIsolation: Boolean = false,
     val hideUrlPreview: Boolean = false,
 
-    val decodeBase64DeepLinks: Boolean = false,
+    // Features below default to ON: each one is opt-in-free, fails soft, and does not
+    // affect the normal run of the overwhelming majority of pages. Users can still turn
+    // any of them off per app in the editor's advanced settings. Only affects newly
+    // created apps — saved configs keep their stored values (Room converter preserves
+    // existing JSON fields).
+    val decodeBase64DeepLinks: Boolean = true,
     val decodeBase64Mode: Base64DeepLinkMode = Base64DeepLinkMode.GESTURE_ONLY,
-    val javaScriptCanOpenWindows: Boolean = false,
+    val javaScriptCanOpenWindows: Boolean = true,
     val jsOpenWindowsPolicy: JsOpenWindowsPolicy = JsOpenWindowsPolicy.ALLOW,
 
     val mediaAutoplayEnabled: Boolean = false,
     val mediaAutoplayScope: MediaAutoplayScope = MediaAutoplayScope.VIDEO_ONLY,
-    val enableImageRepair: Boolean = false,
-    val enableScrollMemory: Boolean = false,
-    val enableBackStatePreservation: Boolean = false,
+    val enableImageRepair: Boolean = true,
+    val enableScrollMemory: Boolean = true,
+    val enableBackStatePreservation: Boolean = true,
 
     val enableKernelDisguise: Boolean = false,
     val kernelDisguiseLevel: KernelDisguiseLevel = KernelDisguiseLevel.STANDARD,
@@ -362,7 +367,7 @@ data class WebViewConfig(
     val cloudflareCompatMode: CloudflareCompatMode = CloudflareCompatMode.AUTO_DETECT,
     val allowMixedContent: Boolean = false,
     val mixedContentMode: MixedContentMode = MixedContentMode.COMPATIBILITY,
-    val enablePrivateNetworkBridge: Boolean = false,
+    val enablePrivateNetworkBridge: Boolean = true,
     val privateNetworkScope: PrivateNetworkScope = PrivateNetworkScope.LOCAL_ONLY,
     val enableCorsBypass: Boolean = true,
 
@@ -371,14 +376,20 @@ data class WebViewConfig(
     val databaseEnabled: Boolean = true,
     val enableCookiePersistence: Boolean = true,
 
-    val enableClipboardPolyfill: Boolean = false,
+    val enableClipboardPolyfill: Boolean = true,
+    // Notification polyfill stays default-OFF: enabling it makes every exported app
+    // request POST_NOTIFICATIONS on first launch (RuntimePermissionSync), a visible
+    // permission prompt most pages never earn.
     val enableNotificationPolyfill: Boolean = false,
-    val enableOrientationPolyfill: Boolean = false,
-    val enableCompatPolyfills: Boolean = false,
+    val enableOrientationPolyfill: Boolean = true,
+    val enableCompatPolyfills: Boolean = true,
 
     val enableNativeBridge: Boolean = false,
     val nativeBridgeCapabilities: NativeBridgeCapabilities = NativeBridgeCapabilities(),
 
+    // Geolocation stays default-OFF: enabling it makes every exported app declare and
+    // request location permission (RuntimePermissionSync), a heavy default with
+    // antivirus-reputation cost.
     val geolocationEnabled: Boolean = false,
     val geolocationAccuracy: GeolocationAccuracy = GeolocationAccuracy.FINE,
     val geolocationPolicy: GeolocationPolicy = GeolocationPolicy.ALWAYS_ASK,
@@ -388,9 +399,9 @@ data class WebViewConfig(
 
     val enablePrintBridge: Boolean = true,
 
-    val enableMediaSession: Boolean = false,
+    val enableMediaSession: Boolean = true,
 
-    val primeUserActivation: Boolean = false,
+    val primeUserActivation: Boolean = true,
     val primeUserActivationMode: PrimeUserActivationMode = PrimeUserActivationMode.SYNTHETIC_TAP,
     val primeUserActivationTiming: PrimeUserActivationTiming = PrimeUserActivationTiming.ON_PAGE_FINISHED,
 
