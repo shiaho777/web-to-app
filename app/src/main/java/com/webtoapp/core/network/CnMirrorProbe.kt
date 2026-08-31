@@ -159,7 +159,19 @@ object CnMirrorProbe {
                 if (resp.code !in 200..399) return -1
                 val body = resp.body ?: return -1
                 body.byteStream().use { input ->
-                    input.read(ByteArray(PROBE_RANGE_BYTES))
+                    var read = 0
+                    val buffer = ByteArray(PROBE_RANGE_BYTES)
+                    while (read < PROBE_RANGE_BYTES) {
+                        val n = input.read(buffer, read, PROBE_RANGE_BYTES - read)
+                        if (n == -1) break
+                        read += n
+                    }
+                    // A proxy that answers 200 with a short plain-text error
+                    // ("Suspent", "404 not found") hits EOF long before the
+                    // requested range. It measures as the fastest route and
+                    // then poisons every consumer of the ordering, so a
+                    // truncated body counts as dead, same as a timeout.
+                    if (read < PROBE_RANGE_BYTES) return -1
                 }
                 val elapsedMs = (System.nanoTime() - start) / 1_000_000
                 if (elapsedMs > PROBE_BUDGET_MS) -1 else elapsedMs

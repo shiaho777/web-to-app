@@ -221,7 +221,13 @@ object UpdateChecker {
         var lastError: Exception? = null
         for (endpoint in candidates) {
             try {
-                return httpGet(endpoint)
+                val body = httpGet(endpoint) ?: continue
+                // A proxy can answer 200 with a plain-text error ("Suspent",
+                // "404 not found") — not every mirror actually proxies
+                // api.github.com. Only a JSON object counts as a hit; anything
+                // else falls through to the next candidate.
+                if (body.trimStart().startsWith("{")) return body
+                AppLogger.w(TAG, "Release API returned non-JSON via $endpoint: ${body.take(80)}")
             } catch (e: Exception) {
                 AppLogger.w(TAG, "Release API failed via $endpoint: ${e.message}")
                 lastError = e
@@ -236,7 +242,10 @@ object UpdateChecker {
         var lastError: Exception? = null
         for (endpoint in candidates) {
             try {
-                return httpGet(endpoint)
+                // fetchAllReleasesJson expects an array response, not an object.
+                val body = httpGet(endpoint) ?: continue
+                if (body.trimStart().startsWith("[")) return body
+                AppLogger.w(TAG, "All-releases API returned non-JSON via $endpoint: ${body.take(80)}")
             } catch (e: Exception) {
                 AppLogger.w(TAG, "All-releases API failed via $endpoint: ${e.message}")
                 lastError = e
