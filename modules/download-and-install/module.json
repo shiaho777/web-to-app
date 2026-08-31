@@ -1,0 +1,73 @@
+/*
+====================================================================
+ Download and Install - Extended Notes (Module Documentation)
+====================================================================
+ Module name     : Download and install
+ Module ID       : wta-download-install
+ Version         : 1.0.0
+ Purpose         :
+     Provides "download APK and install in one tap" for WebToApp.
+     When the page contains any link ending with ".apk", this module
+     intercepts the click so the WebView does NOT open/download the
+     file directly. Instead it hands the download to the native bridge
+     (window.WebToAppBridge) and, once finished, shows a floating bar
+     "APK已下载完成，点击安装" at the bottom of the page. Tapping it
+     calls the native openInstallApk() to install the APK.
+
+ How it works    :
+     - Listens to global "click" on <a> links via a single listener.
+     - On a ".apk" link it calls WebToAppBridge.downloadFile().
+     - In the completion callback it builds a floating banner; clicking
+       the banner triggers openInstallApk().
+
+ Caveats        :
+     - Depends on the native WebToAppBridge injected by the app.
+     - If the bridge is missing, it falls back to the browser default
+       behavior (window.location.href = url).
+
+ NOTE: The body below is a standard JSON manifest consumed by the app
+       installer. // comments are tolerated by lenient parsers; a strict
+       JSON validator may flag them. The official repo checker
+       (validate_modules.py) treats this as a warning.
+====================================================================
+*/
+{
+  // Globally unique module id
+  "id": "wta-download-install",
+  // Display name shown in the market
+  "name": "Download and install",
+  // Paragraph shown on the install page
+  "description": "Intercepts every .apk link on the page, downloads the file through the native WebToAppBridge, then shows a floating bar to install it in one tap. Ideal for sites that distribute APK files via links.",
+  // Material Icons name (google font icons)
+  "icon": "system_update_alt",
+  // Category enum, see modules/README.md
+  "category": "FUNCTION_ENHANCE",
+  // Search tags
+  "tags": ["download", "apk", "install", "bridge", "tool"],
+  // Version: code must monotonically increase when name changes
+  "version": {
+    "code": 1,
+    "name": "1.0.0",
+    "changelog": "Initial release. Intercept .apk links, download via native bridge, and install in one tap."
+  },
+  // Author information
+  "author": {
+    "name": "ppkkgzs",
+    "url": "https://github.com/ppkkgzs"
+  },
+  // When to run: after the document has finished loading
+  "runAt": "DOCUMENT_END",
+  // Match rules: every URL, because an .apk link can appear on any page
+  "urlMatches": [
+    { "pattern": "*", "isRegex": false, "exclude": false }
+  ],
+  // Permission declarations (shown to the user on install)
+  "permissions": [
+    "DOM_ACCESS", // read/listen to the DOM to capture link clicks
+    "CSS_INJECT", // inject styles for the completion banner
+    "DOWNLOAD",   // initiate a file download through the native bridge
+    "FILE_ACCESS" // access the downloaded file path to trigger install
+  ],
+  // Config items: none required for this module
+  "configItems": []
+}
