@@ -247,6 +247,30 @@ object WindowHelper {
                     activity.window.navigationBarColor = activity.window.statusBarColor
                 }
                 applyKeyboardMode(activity, keyboardAdjustMode, tag, decorFitsSystemWindows)
+                if (classicKeyboardResize && enabled) {
+                    // Classic (below API 30, RESIZE) windows have no insets controller: hiding
+                    // a bar sets the legacy SYSTEM_UI_FLAG_* bits, and the system clears the
+                    // fullscreen flag again whenever the hidden bar finishes animating away
+                    // (no ViewCompat.requestApplyInsets pass re-asserts it there). Without
+                    // this re-assert the window background shows through as a white strip
+                    // where the status bar was (2.5.5 fullscreen regression on Android 10).
+                    activity.window.decorView.postDelayed({
+                        try {
+                            val target = activity.window.decorView.systemUiVisibility
+                            val want = View.SYSTEM_UI_FLAG_LOW_PROFILE or
+                                View.SYSTEM_UI_FLAG_FULLSCREEN or
+                                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            if ((target and (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)) !=
+                                (View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+                            ) {
+                                activity.window.decorView.systemUiVisibility = target or want
+                            }
+                        } catch (e: Exception) {
+                            AppLogger.w(tag, "re-assert immersive flags failed", e)
+                        }
+                    }, 350)
+                }
             }
         } catch (e: Exception) {
             AppLogger.w(tag, "applyImmersiveFullscreen failed", e)
