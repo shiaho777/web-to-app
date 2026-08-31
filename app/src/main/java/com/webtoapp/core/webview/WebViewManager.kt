@@ -3977,10 +3977,15 @@ class WebViewManager(
 
     private fun injectPrivateNetworkApiBridgeFallback(webView: WebView, pageUrl: String?) {
         if (!isLocalRuntimeUrl(pageUrl ?: webView.url)) return
+        // Only install the fetch/XHR hijack when a Java-side NativeBridge actually
+        // exists. Without this gate the hijack intercepts cross-origin fetches on
+        // local pages and rejects them with "bridge is unavailable" even though the
+        // user never enabled any bridge — the request should just use the WebView's
+        // normal (CORS-enforcing) behavior instead.
+        val cfg = currentConfig ?: return
+        if (!cfg.enableNativeBridge && !cfg.enablePrivateNetworkBridge && !cfg.enableCorsBypass) return
         try {
-
-            val cfg = currentConfig
-            val script = if (cfg != null) privateNetworkScriptWithScope(cfg) else PrivateNetworkApiBridgeScriptHolder.SCRIPT
+            val script = privateNetworkScriptWithScope(cfg)
             webView.evaluateJavascript(script, null)
         } catch (e: Exception) {
             AppLogger.w("WebViewManager", "Private network bridge fallback injection failed", e)
@@ -6340,7 +6345,12 @@ class WebViewManager(
 
                 function nativeHttpRequest(payload) {
                     if (!window.NativeBridge || typeof window.NativeBridge.httpRequest !== 'function') {
-                        return Promise.reject(new TypeError('Native private network bridge is unavailable'));
+                        // Defensive only since the wrapper is no longer injected without a
+                        // bridge; kept actionable in case interface removal races injection.
+                        return Promise.reject(new TypeError(
+                            'Native private network bridge is unavailable. ' +
+                            'Enable "Private network bridge" (or CORS bypass) for this app in the WebToApp editor and rebuild.'
+                        ));
                     }
                     return bodyToBase64(payload.body).then(function(bodyBase64) {
                         var raw = window.NativeBridge.httpRequest(JSON.stringify({

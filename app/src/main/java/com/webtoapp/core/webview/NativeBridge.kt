@@ -1242,7 +1242,11 @@ if (NativeBridge.isFullscreen()) {
     @JavascriptInterface
     fun httpRequest(requestJson: String): String {
         if (!capabilities.privateNetwork && !corsBypass) {
-            return privateNetworkBridgeError("disabled", "Native private network capability disabled")
+            return privateNetworkBridgeError(
+                "disabled",
+                "Native private network capability disabled. " +
+                    "Enable the private network (or CORS bypass) capability for the native bridge in the WebToApp editor and rebuild."
+            )
         }
         return try {
             val request = org.json.JSONObject(requestJson)
