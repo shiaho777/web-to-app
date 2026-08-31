@@ -526,6 +526,13 @@ function executePHP($client, string $filePath, array $request, string $docRoot, 
                 $output = '<h1>500 Internal Server Error</h1><pre>' . htmlspecialchars($message) . '</pre>';
             }
         }
+        // Surface the router's own diagnostic (fatal message / trace) to the WebView
+        // layer: local error pages read this header to show the cause instead of a
+        // bare "HTTP 500" that hides whether the failure is a fatal, a thrown
+        // exception, or PHP output. Keep it bounded — response bodies can be large.
+        if ($code >= 500 && $output !== '' && strlen($output) <= 65536) {
+            $headerList[] = 'X-Wta-Router-Error: ' . base64_encode($output);
+        }
         if (function_exists('header_remove')) header_remove();
 
         fwrite(STDERR, "[RouterServer] Shutdown response uri=$uri code=$code bytes=" . strlen($output) . " " . describeHeaders($headerList) . "\n");
@@ -556,6 +563,9 @@ function executePHP($client, string $filePath, array $request, string $docRoot, 
             . htmlspecialchars($e->getTraceAsString()) . "</pre>";
     }
 
+    // Thrown-exception path: response goes through the normal-path sender below,
+    // which also stamps X-Wta-Router-Error on 5xx (see the shutdown handler).
+
     // 自动保存 session 数据（模拟 PHP 原生 session 行为）
     if (function_exists('session_write_close') && ($GLOBALS['__session_started'] ?? false)) {
         session_write_close();
@@ -570,6 +580,10 @@ function executePHP($client, string $filePath, array $request, string $docRoot, 
         }
         $code       = http_response_code() ?: 200;
         $headerList = headers_list();
+        // Same 5xx diagnostic stamping as the shutdown handler (see there).
+        if ($code >= 500 && $output !== '' && strlen($output) <= 65536) {
+            $headerList[] = 'X-Wta-Router-Error: ' . base64_encode($output);
+        }
         if (function_exists('header_remove')) header_remove();
 
         fwrite(STDERR, "[RouterServer] Response uri=$uri code=$code bytes=" . strlen($output) . " " . describeHeaders($headerList) . "\n");

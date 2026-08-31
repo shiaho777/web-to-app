@@ -3,6 +3,7 @@ package com.webtoapp.core.webview
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Dialog
+import android.util.Base64
 import com.webtoapp.core.logging.AppLogger
 import android.content.Context
 import android.content.Intent
@@ -2588,6 +2589,20 @@ class WebViewManager(
                     }
 
                     val manager = errorPageManager
+                    // Local router runtimes (PHP/WordPress) stamp their own diagnostic page
+                    // (fatal message / stack trace) into X-Wta-Router-Error on 5xx. Showing the
+                    // body beats replacing it with a generic "HTTP 500" page that hides whether
+                    // the failure is a fatal, an exception, or app-level PHP output.
+                    val routerErrorBody = if (statusCode in 500..599) {
+                        extractRouterErrorBody(errorResponse)
+                    } else null
+                    if (routerErrorBody != null && view != null && failedUrl != null) {
+                        lastFailedUrl = failedUrl
+                        view.loadDataWithBaseURL(failedUrl, routerErrorBody, "text/html", "UTF-8", failedUrl)
+                        AppLogger.d("WebViewManager", "Router 5xx diagnostic body shown for: $failedUrl, code=$statusCode")
+                        callbacks.onError(statusCode, description)
+                        return
+                    }
                     if (!isCloudflareResponse && manager != null && view != null && failedUrl != null && failedUrl != "about:blank") {
                         val errorHtml = manager.generateErrorPage(statusCode, description, failedUrl)
                         if (errorHtml != null) {
@@ -3095,6 +3110,23 @@ class WebViewManager(
 
         return com.webtoapp.core.perf.NativePerfEngine.extractHost(target)?.lowercase()
             ?: runCatching { Uri.parse(target).host?.lowercase() }.getOrNull()
+    }
+
+    /**
+     * Reads and base64-decodes the X-Wta-Router-Error diagnostic header that the local
+     * PHP router stamps onto 5xx responses. Returns null when the header is absent
+     * (non-router origins) or unreadable.
+     */
+    private fun extractRouterErrorBody(errorResponse: WebResourceResponse?): String? {
+        val headers = runCatching { errorResponse?.responseHeaders }.getOrNull() ?: return null
+        val encoded = headers.entries
+            .firstOrNull { it.key.equals("X-Wta-Router-Error", ignoreCase = true) }
+            ?.value
+            ?.takeIf { it.isNotBlank() }
+            ?: return null
+        return runCatching {
+            String(Base64.decode(encoded, Base64.DEFAULT), Charsets.UTF_8)
+        }.getOrNull()?.takeIf { it.isNotBlank() }
     }
 
     private fun isMitmSslError(error: android.net.http.SslError?): Boolean {

@@ -44,6 +44,8 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         toolbarShowBack = config.webViewConfig.toolbarShowBack,
         toolbarShowForward = config.webViewConfig.toolbarShowForward,
         toolbarShowRefresh = config.webViewConfig.toolbarShowRefresh,
+        toolbarShowConsole = config.webViewConfig.toolbarShowConsole,
+        toolbarShowFind = config.webViewConfig.toolbarShowFind,
         showStatusBarInFullscreen = config.webViewConfig.showStatusBarInFullscreen,
         showNavigationBarInFullscreen = config.webViewConfig.showNavigationBarInFullscreen,
         showToolbarInFullscreen = config.webViewConfig.showToolbarInFullscreen,
