@@ -10,7 +10,8 @@ const { frontmatter } = useData()
 <template>
   <Layout>
     <template #home-hero-actions-after>
-      <LatestRelease v-if="frontmatter.layout === 'home' && frontmatter.hero" />
+      <!-- leading space: soft wrap point between .actions and the download pill -->
+      {{ ' ' }}<LatestRelease v-if="frontmatter.layout === 'home' && frontmatter.hero" />
     </template>
   </Layout>
 </template>

@@ -274,27 +274,26 @@
 }
 
 /*
- * On homepages the LatestRelease slot sits right after the hero actions
- * container; tuck it into the same row (button then version caption),
- * inheriting the actions row's wrap + centering. The -6px margin cancels
- * .actions' own -6px gutter so the two rows line up seamlessly.
+ * On homepages the LatestRelease slot follows the hero actions container in
+ * the same inline formatting context. Because the shrink-to-fit .main column
+ * is narrower than buttons + pill together, the pill usually wraps to its
+ * own row right below the actions (it stays inline when they do fit);
+ * margin-top minus .actions' -6px bottom margin leaves a small gutter there.
+ * The pill must be inline-flex, not inline: an inline box's line box is
+ * sized by font metrics, so the 40px button bleeds above it into the actions
+ * row — that was the overlap bug. Baseline alignment keeps the pill's text
+ * on the buttons' text baseline when they share a row. Row alignment
+ * (centered below 960px, left above) follows .container's text-align,
+ * matching how VitePress aligns the actions row itself.
  */
+.VPHero .actions {
+  display: inline-flex;
+}
+
 .VPHero .wta-release {
   display: inline-flex;
-  margin: -6px;
-  margin-top: -6px;
-  padding-top: 0;
-  align-self: center;
-}
-
-.VPHero.has-image .wta-release {
-  justify-content: center;
-}
-
-@media (min-width: 960px) {
-  .VPHero.has-image .wta-release {
-    justify-content: flex-start;
-  }
+  vertical-align: baseline;
+  margin-top: 12px;
 }
 
 .wta-release-btn {

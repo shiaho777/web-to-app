@@ -1,4 +1,5 @@
 node_modules/
 .vitepress/dist/
+.vitepress/.temp/
 .vitepress/cache/
 *.log
