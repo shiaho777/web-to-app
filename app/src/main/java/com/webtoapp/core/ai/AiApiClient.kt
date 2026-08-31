@@ -51,18 +51,15 @@ class AiApiClient(private val context: Context) {
 
             val modelsEndpoint = apiKey.getEffectiveModelsEndpoint()
             val fullUrl = buildApiUrl(baseUrl, modelsEndpoint)
-            val displayUrl = when (apiKey.provider) {
-                AiProvider.GOOGLE -> "$fullUrl?key=***"
-                else -> fullUrl
-            }
-
-            AppLogger.i("AiApiClient", "Testing API connection: provider=${apiKey.provider.name}, url=$displayUrl")
+            // The key travels in a header now, so the URL is safe to log as-is.
+            AppLogger.i("AiApiClient", "Testing API connection: provider=${apiKey.provider.name}, url=$fullUrl")
 
             val request = when (apiKey.provider) {
                 AiProvider.GOOGLE -> {
 
                     Request.Builder()
-                        .url("$fullUrl?key=${apiKey.apiKey.trim()}")
+                        .url(fullUrl)
+                        .header("x-goog-api-key", apiKey.apiKey.trim())
                         .get()
                         .build()
                 }
@@ -137,7 +134,8 @@ class AiApiClient(private val context: Context) {
             val request = when (apiKey.provider) {
                 AiProvider.GOOGLE -> {
                     Request.Builder()
-                        .url("$fullUrl?key=${apiKey.apiKey.trim()}")
+                        .url(fullUrl)
+                        .header("x-goog-api-key", apiKey.apiKey.trim())
                         .get()
                         .build()
                 }
@@ -385,15 +383,19 @@ class AiApiClient(private val context: Context) {
             return listOf(ModelCapability.IMAGE_GENERATION)
         }
 
+        // Matched on the family prefix rather than individual generations, so a
+        // new major version does not silently lose capabilities. Listing
+        // "claude-3"/"claude-4" used to drop Claude 5 back to text-only.
         if (id.contains("vision") || id.contains("gpt-4o") || id.contains("gpt-5") ||
-            id.contains("gemini") || id.contains("claude-3") || id.contains("claude-4") ||
+            id.contains("gemini") || id.contains("claude-") ||
             id.contains("pixtral") || id.contains("mistral-large") ||
             id.contains("llava") || id.contains("bakllava") ||
             id.contains("qwen-vl") || id.contains("qwen2-vl") || id.contains("qwen2.5-vl") ||
-            id.contains("glm-4v") || id.contains("step-1v") || id.contains("step-2v") ||
+            id.contains("glm-4v") || id.contains("glm-5") || id.contains("step-1v") || id.contains("step-2v") ||
             id.contains("yi-vision") || id.contains("internvl") ||
             id.contains("moonshot-v") || id.contains("kimi-v") ||
-            id.contains("hunyuan-vision") || id.contains("grok-2-vision") || id.contains("grok-3") ||
+            id.contains("hunyuan-vision") || id.contains("grok-2") ||
+            id.contains("grok-3") || id.contains("grok-4") ||
             id.contains("audio") || id.contains("whisper") || id.contains("realtime")) {
             return listOf(ModelCapability.MULTIMODAL)
         }
@@ -423,7 +425,9 @@ class AiApiClient(private val context: Context) {
             id.contains("gpt-3.5") -> 16000
             id.contains("o1") || id.contains("o3") || id.contains("o4") -> 200000
 
-            id.contains("claude-3") || id.contains("claude-4") -> 200000
+            // Family-prefixed so a new generation inherits the floor instead of
+            // falling through to the 8192 default and truncating every prompt.
+            id.contains("claude-") -> 200000
 
             id.contains("gemini-1.5") || id.contains("gemini-2") || id.contains("gemini-3") -> 1000000
             id.contains("gemini") -> 32000
@@ -439,7 +443,9 @@ class AiApiClient(private val context: Context) {
             id.contains("jamba-1.5") -> 256000
             id.contains("jamba") -> 256000
 
-            id.contains("grok-3") || id.contains("grok-2") -> 131072
+            // Grok 4 ships a longer window than this; 128k is a deliberate floor
+            // because the registry is the authoritative source when it is reachable.
+            id.contains("grok-4") || id.contains("grok-3") || id.contains("grok-2") -> 131072
             id.contains("grok") -> 8192
 
             id.contains("deepseek") -> 64000
@@ -447,6 +453,10 @@ class AiApiClient(private val context: Context) {
             id.contains("qwen-long") || id.contains("qwen-turbo") -> 1000000
             id.contains("qwen2.5") || id.contains("qwen3") -> 131072
             id.contains("qwen") -> 32000
+            // Zhipu is absent from the models.dev catalogue, so GLM models always
+            // land on these fallbacks — getting GLM-5 wrong truncated a 200k
+            // window down to 8192.
+            id.contains("glm-5") -> 200000
             id.contains("glm-4") -> 128000
             id.contains("glm") -> 8192
             id.contains("doubao") -> 32000
@@ -615,7 +625,8 @@ class AiApiClient(private val context: Context) {
         }
 
         val request = Request.Builder()
-            .url("$baseUrl/v1beta/models/$modelId:generateContent?key=$apiKey")
+            .url("$baseUrl/v1beta/models/$modelId:generateContent")
+            .header("x-goog-api-key", apiKey)
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
             .build()
 
@@ -785,7 +796,8 @@ class AiApiClient(private val context: Context) {
         }
 
         val request = Request.Builder()
-            .url("$baseUrl/v1beta/models/$modelId:generateContent?key=$apiKey")
+            .url("$baseUrl/v1beta/models/$modelId:generateContent")
+            .header("x-goog-api-key", apiKey)
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
             .build()
 
@@ -1322,7 +1334,8 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
 
         return Request.Builder()
-            .url("$baseUrl/v1beta/models/$modelId:streamGenerateContent?alt=sse&key=$apiKey")
+            .url("$baseUrl/v1beta/models/$modelId:streamGenerateContent?alt=sse")
+            .header("x-goog-api-key", apiKey)
             .header("Content-Type", "application/json")
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
             .build()
@@ -1600,7 +1613,8 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
 
         val request = Request.Builder()
-            .url("$baseUrl/v1beta/models/$modelId:generateContent?key=$apiKey")
+            .url("$baseUrl/v1beta/models/$modelId:generateContent")
+            .header("x-goog-api-key", apiKey)
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
             .build()
 
@@ -2299,7 +2313,8 @@ val json = gson.fromJson(body, JsonObject::class.java)
         }
 
         val request = Request.Builder()
-            .url("$baseUrl/v1beta/models/$modelId:generateContent?key=$apiKey")
+            .url("$baseUrl/v1beta/models/$modelId:generateContent")
+            .header("x-goog-api-key", apiKey)
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
             .build()
 
