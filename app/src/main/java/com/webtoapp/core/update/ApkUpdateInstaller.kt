@@ -52,9 +52,14 @@ object ApkUpdateInstaller {
     }
 
     /**
-     * Streams [url] into `update_apks/web-to-app-<version>.apk` via OkHttp, emitting progress
-     * roughly once per second. On completion the file is SHA-256 verified against [expectedSha256]
-     * (if provided); on mismatch the file is deleted and [UpdateDownloadState.Failed] is emitted.
+     * Streams the update APK into `update_apks/web-to-app-<version>.apk` via OkHttp, emitting
+     * progress roughly once per second.
+     *
+     * [url] is the raw GitHub asset URL; the measured mirror pool expands it into candidates and
+     * each is tried in turn — a mirror that stalls, errors mid-stream, or yields a file that
+     * fails the SHA-256 check falls through to the next one instead of failing the download.
+     * On completion the file is SHA-256 verified against [expectedSha256] (if provided); on
+     * final mismatch the file is deleted and [UpdateDownloadState.Failed] is emitted.
      *
      * The APK is **not** auto-installed; the caller decides when to launch the system installer
      * (see `ApkBuilder.installApk`). This keeps the user in control and matches Android's rule
@@ -72,30 +77,48 @@ object ApkUpdateInstaller {
         activeJob?.cancel()
         val appContext = context.applicationContext
         val job = scope.launch {
-            try {
-                onState(UpdateDownloadState.Downloading(0L, -1L, 0L))
-                val file = streamToFile(appContext, url, version, onState)
-                if (expectedSha256 != null) {
-                    onState(UpdateDownloadState.Verifying)
-                    val actual = sha256Of(file)
-                    if (actual == null || !actual.equals(expectedSha256, ignoreCase = true)) {
-                        AppLogger.e(
-                            TAG,
-                            "APK integrity check failed: expected=$expectedSha256 actual=$actual"
-                        )
-                        file.delete()
-                        onState(UpdateDownloadState.Failed("sha256-mismatch"))
-                        return@launch
+            // Fastest-first measured routes, plain GitHub URL last. If the URL
+            // was already mirrored upstream this still works: non-GitHub URLs
+            // expand to themselves, so behaviour degrades to the old single
+            // attempt instead of breaking.
+            val candidates = com.webtoapp.core.network.GitHubMirror.proxiedCn(url)
+            var lastError: Exception? = null
+            for (candidate in candidates) {
+                try {
+                    onState(UpdateDownloadState.Downloading(0L, -1L, 0L))
+                    val file = streamToFile(appContext, candidate, version, onState)
+                    if (expectedSha256 != null) {
+                        onState(UpdateDownloadState.Verifying)
+                        val actual = sha256Of(file)
+                        if (actual == null || !actual.equals(expectedSha256, ignoreCase = true)) {
+                            AppLogger.e(
+                                TAG,
+                                "APK integrity check failed via $candidate: " +
+                                    "expected=$expectedSha256 actual=$actual"
+                            )
+                            // A mismatch here means the route served something
+                            // other than the release asset; treat it like any
+                            // other broken mirror and try the next route.
+                            file.delete()
+                            lastError = IllegalStateException("sha256-mismatch")
+                            continue
+                        }
+                        AppLogger.i(TAG, "APK integrity verified (sha256 match)")
                     }
-                    AppLogger.i(TAG, "APK integrity verified (sha256 match)")
+                    onState(UpdateDownloadState.Done(file))
+                    return@launch
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    AppLogger.w(TAG, "Update download failed via $candidate: ${e.message}")
+                    lastError = e
                 }
-                onState(UpdateDownloadState.Done(file))
-            } catch (e: kotlinx.coroutines.CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "Update download failed", e)
-                onState(UpdateDownloadState.Failed(e.message ?: e.javaClass.simpleName))
             }
+            onState(
+                UpdateDownloadState.Failed(
+                    lastError?.message ?: lastError?.javaClass?.simpleName ?: "all routes failed"
+                )
+            )
         }
         activeJob = job
         return job

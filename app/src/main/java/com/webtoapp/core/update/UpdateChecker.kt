@@ -104,18 +104,6 @@ object UpdateChecker {
         data class Failed(val message: String, val throwable: Throwable? = null) : Result()
     }
 
-    /**
-     * Best current route for a GitHub URL. Release assets go through the
-     * measured mirror pool (same routing the runtime downloads use, so an
-     * update APK is not stuck on one hard-coded accelerator); anything else
-     * comes back untouched.
-     *
-     * Single URL rather than a list because the result is carried on [Result]
-     * and handed to the installer, which has no fallback logic of its own.
-     */
-    fun withMirror(url: String): String =
-        com.webtoapp.core.network.GitHubMirror.proxiedCn(url).firstOrNull() ?: url
-
     suspend fun check(currentVersionName: String): Result = withContext(Dispatchers.IO) {
         val current = Version.parse(currentVersionName)
             ?: return@withContext Result.Failed("Cannot parse current version: $currentVersionName")
@@ -143,7 +131,10 @@ object UpdateChecker {
 
             val info = ReleaseInfo(
                 version = latest.toString(),
-                downloadUrl = withMirror(rawUrl),
+                // Raw asset URL: ApkUpdateInstaller expands the measured mirror
+                // candidates itself and retries, so a single stale prefix can
+                // no longer sink the download.
+                downloadUrl = rawUrl,
                 sizeBytes = asset.optLong("size", 0L),
                 sha256 = asset.optString("digest").takeIf { it.isNotBlank() }
                     ?.substringAfter("sha256:", "")?.takeIf { it.isNotBlank() },
@@ -183,7 +174,7 @@ object UpdateChecker {
                         name = release.optString("name").trim(),
                         publishedAt = release.optString("published_at").trim(),
                         body = localizeReleaseBody(release.optString("body")),
-                        downloadUrl = rawUrl?.let { withMirror(it) },
+                        downloadUrl = rawUrl,
                         sizeBytes = asset?.optLong("size", 0L) ?: 0L,
                         sha256 = asset?.optString("digest").takeIf { !it.isNullOrBlank() }
                             ?.substringAfter("sha256:", "")?.takeIf { it.isNotBlank() }
