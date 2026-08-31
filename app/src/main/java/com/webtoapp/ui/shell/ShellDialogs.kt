@@ -46,7 +46,8 @@ fun ShellActivationDialog(
                         offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy),
                         deliverUrl = config.activationRemoteDeliverUrl,
                         encryptUrl = config.activationRemoteEncryptUrl,
-                        aesKeyBase64 = config.activationRemoteAesKey
+                        aesKeyBase64 = config.activationRemoteAesKey,
+                        deviceBound = config.activationRemoteDeviceBound
                     )
                 )
             } else {

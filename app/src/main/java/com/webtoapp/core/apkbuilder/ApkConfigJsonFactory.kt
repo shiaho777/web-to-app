@@ -44,6 +44,7 @@ internal object ApkConfigJsonFactory {
         "activationRemoteDeliverUrl" to activation.remoteDeliverUrl,
         "activationRemoteEncryptUrl" to activation.remoteEncryptUrl,
         "activationRemoteAesKey" to activation.remoteAesKey,
+        "activationRemoteDeviceBound" to activation.remoteDeviceBound,
         "adBlockEnabled" to adBlock.enabled,
         "adBlockRules" to adBlock.rules,
         "adBlockSubscriptions" to adBlock.subscriptions,

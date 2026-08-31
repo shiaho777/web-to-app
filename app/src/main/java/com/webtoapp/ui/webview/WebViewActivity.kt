@@ -1398,7 +1398,8 @@ fun WebViewScreen(
                                         offlinePolicy = remote.offlinePolicy,
                                         deliverUrl = remote.deliverUrl,
                                         encryptUrl = remote.encryptUrl,
-                                        aesKeyBase64 = remote.aesKeyBase64
+                                        aesKeyBase64 = remote.aesKeyBase64,
+                                        deviceBound = remote.deviceBound
                                     )
                                 )
                         } else {
@@ -3554,7 +3555,8 @@ fun WebViewScreen(
                             offlinePolicy = remote.offlinePolicy,
                             deliverUrl = remote.deliverUrl,
                             encryptUrl = remote.encryptUrl,
-                            aesKeyBase64 = remote.aesKeyBase64
+                            aesKeyBase64 = remote.aesKeyBase64,
+                            deviceBound = remote.deviceBound
                         )
                     )
                     if (result is com.webtoapp.core.activation.ActivationResult.Success && remote.deliverUrl) {

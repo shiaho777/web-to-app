@@ -1396,7 +1396,12 @@ data class RemoteActivationConfig(
     val offlinePolicy: RemoteActivationOfflinePolicy = RemoteActivationOfflinePolicy.ALLOW_CACHED,
     val deliverUrl: Boolean = false,
     val encryptUrl: Boolean = false,
-    val aesKeyBase64: String = ""
+    val aesKeyBase64: String = "",
+    // When true, the verification request carries deviceBound=true so the server can
+    // enforce per-device seats (maxDevices, default 1 = one-time / single-device code).
+    // Requires a remote verifier; purely local activation cannot bind devices because
+    // there is no shared state between devices.
+    val deviceBound: Boolean = false
 )
 
 data class AutoStartConfig(

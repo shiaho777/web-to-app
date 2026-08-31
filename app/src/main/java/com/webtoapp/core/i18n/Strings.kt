@@ -909,6 +909,8 @@ object Strings {
     val remoteActivationPrivacyNote: String get() = StringsA.remoteActivationPrivacyNote
     val remoteActivationDeliverUrlTitle: String get() = StringsA.remoteActivationDeliverUrlTitle
     val remoteActivationDeliverUrlHint: String get() = StringsA.remoteActivationDeliverUrlHint
+    val remoteActivationDeviceBoundTitle: String get() = StringsA.remoteActivationDeviceBoundTitle
+    val remoteActivationDeviceBoundHint: String get() = StringsA.remoteActivationDeviceBoundHint
     val remoteActivationEncryptUrlTitle: String get() = StringsA.remoteActivationEncryptUrlTitle
     val remoteActivationEncryptUrlHint: String get() = StringsA.remoteActivationEncryptUrlHint
     val remoteActivationAesKeyLabel: String get() = StringsA.remoteActivationAesKeyLabel
@@ -16424,6 +16426,31 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Если включено, целевой URL доставляется сервером проверки после успешной активации вместо упаковки (URL можно оставить пустым). Сервер должен включать подписанное поле url в ответ."
         AppLanguage.JAPANESE -> "有効にすると、ターゲットURLはパッケージ化される代わりに、アクティベーション成功後に検証サーバーから配信されます（URLは空欄可）。サーバーは応答に署名付きのurlフィールドを含める必要があります。"
         AppLanguage.KOREAN -> "활성화 시, 대상 URL이 패키징되는 대신 활성화 성공 후 검증 서버에서 전달됩니다(URL은 비워둘 수 있음). 서버는 응답에 서명된 url 필드를 포함해야 합니다."
+    }
+
+    val remoteActivationDeviceBoundTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "设备绑定（一码一次）"
+        AppLanguage.ENGLISH -> "Device binding (one-time codes)"
+        AppLanguage.ARABIC -> "ربط الجهاز (رموز لمرة واحدة)"
+        AppLanguage.PORTUGUESE -> "Vínculo de dispositivo (códigos únicos)"
+        AppLanguage.SPANISH -> "Vinculación de dispositivo (códigos de un solo uso)"
+        AppLanguage.FRENCH -> "Liaison d'appareil (codes à usage unique)"
+        AppLanguage.GERMAN -> "Gerätebindung (Einmalcodes)"
+        AppLanguage.RUSSIAN -> "Привязка к устройству (одноразовые коды)"
+        AppLanguage.JAPANESE -> "デバイスバインディング（使い切りコード）"
+        AppLanguage.KOREAN -> "기기 바인딩(일회용 코드)"
+    }
+    val remoteActivationDeviceBoundHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "需要远程验证。开启后，激活请求携带设备标识，由服务器执行绑定：每个码默认限 1 台设备（首个激活的设备占座），其他设备激活将被拒绝。卸载重装不换设备不受影响；清除数据/换机后需服务器释放座位。本地（离线）验证无法实现此能力。"
+        AppLanguage.ENGLISH -> "Requires remote verification. The activation request carries a device identifier and the server enforces binding: each code is limited to 1 device by default (the first device to activate claims the seat); other devices are rejected. Reinstalling on the same device is unaffected; after clearing data or switching devices the server must release the seat. Not possible with local (offline) verification."
+        AppLanguage.ARABIC -> "يتطلب التحقق عن بُعد. يحمل طلب التفعيل معرّف الجهاز ويقوم الخادم بالربط: كل رمز محدود بجهاز واحد افتراضياً (أول جهاز يفعّل يحجز المقعد)؛ تُرفض الأجهزة الأخرى. إعادة التثبيت على نفس الجهاز لا تتأثر؛ بعد مسح البيانات أو تغيير الجهاز يجب أن يفرغ الخادم المقعد. غير ممكن مع التحقق المحلي (دون اتصال)."
+        AppLanguage.PORTUGUESE -> "Requer verificação remota. A solicitação de ativação carrega um identificador de dispositivo e o servidor impõe o vínculo: cada código é limitado a 1 dispositivo por padrão (o primeiro dispositivo a ativar reivindica a vaga); outros dispositivos são rejeitados. Reinstalar no mesmo dispositivo não é afetado; após limpar dados ou trocar de dispositivo o servidor precisa liberar a vaga. Não é possível com verificação local (offline)."
+        AppLanguage.SPANISH -> "Requiere verificación remota. La solicitud de activación lleva un identificador de dispositivo y el servidor aplica la vinculación: cada código está limitado a 1 dispositivo por defecto (el primer dispositivo que activa reclama el cupo); otros dispositivos son rechazados. Reinstalar en el mismo dispositivo no se ve afectado; tras borrar datos o cambiar de dispositivo el servidor debe liberar el cupo. No es posible con verificación local (sin conexión)."
+        AppLanguage.FRENCH -> "Nécessite la vérification distante. La requête d'activation transporte un identifiant d'appareil et le serveur applique la liaison : chaque code est limité à 1 appareil par défaut (le premier appareil qui active réserve la place) ; les autres appareils sont refusés. Réinstaller sur le même appareil n'a aucun effet ; après effacement des données ou changement d'appareil, le serveur doit libérer la place. Impossible avec la vérification locale (hors ligne)."
+        AppLanguage.GERMAN -> "Erfordert Remote-Verifizierung. Die Aktivierungsanfrage überträgt eine Gerätekennung, der Server erzwingt die Bindung: Jeder Code ist standardmäßig auf 1 Gerät begrenzt (das erste Gerät, das aktiviert, belegt den Platz); andere Geräte werden abgelehnt. Neuinstallation auf demselben Gerät bleibt unberührt; nach Datenlöschung oder Gerätewechsel muss der Server den Platz freigeben. Mit lokaler (Offline-)Verifizierung nicht möglich."
+        AppLanguage.RUSSIAN -> "Требуется удалённая проверка. Запрос активации несёт идентификатор устройства, сервер выполняет привязку: каждый код по умолчанию ограничен 1 устройством (первое активировавшее устройство занимает место); другие устройства отклоняются. Переустановка на том же устройстве не влияет; после очистки данных или смены устройства сервер должен освободить место. При локальной (офлайн) проверке невозможно."
+        AppLanguage.JAPANESE -> "リモート検証が必要です。アクティベーション要求にデバイス識別子を含め、サーバー側でバインディングを強制します：各コードは既定で1台のデバイスに制限され（最初にアクティベートしたデバイスが席を確保）、他のデバイスは拒否されます。同じデバイスへの再インストールは影響しません。データ消去や機種変更後はサーバーで席を解放する必要があります。ローカル（オフライン）検証では実現できません。"
+        AppLanguage.KOREAN -> "원격 검증이 필요합니다. 활성화 요청에 기기 식별자를 담아 서버가 바인딩을 강제합니다: 각 코드는 기본적으로 1대의 기기로 제한되며(최초 활성화한 기기가 자리를 차지), 다른 기기는 거부됩니다. 같은 기기에 재설치해도 영향이 없으며, 데이터 삭제나 기기 변경 후에는 서버에서 자리를 해제해야 합니다. 로컬(오프라인) 검증으로는 불가능합니다."
     }
 
     val remoteActivationEncryptUrlTitle: String get() = when (Strings.lang) {

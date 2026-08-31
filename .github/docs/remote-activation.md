@@ -50,14 +50,23 @@ Accept: application/json
 - `nonce` is fresh per request — you **must** echo it back unchanged (replay
   protection).
 - `ts` is the client clock in epoch milliseconds.
-- `deviceBound` is `true` when the entered code is a **device-bound** code. For
-  such codes your server should enforce per-device binding: record the first
-  `deviceId` that activates a given `code`, and reject the same `code` from any
-  different `deviceId` (return `{ "ok": false }`). This is the only way to
-  truly restrict a device-bound code to one device — the app itself has no
-  shared state between devices, so a purely local device-bound code can only
-  prevent re-activation on the same device after a local reset or hardware
-  change.
+- `deviceBound` is `true` when the app has the **Device binding (one-time codes)**
+  toggle enabled in the editor's remote-activation section (it is always `false`
+  for purely local verification — see below). For such codes your server should
+  enforce per-device binding: record the first `deviceId` that activates a given
+  `code`, and reject the same `code` from any different `deviceId` (return
+  `{ "ok": false }`). This is the only way to truly restrict a device-bound code
+  to one device — the app itself has no shared state between devices, so a purely
+  local device-bound code can only prevent re-activation on the same device
+  after a local reset or hardware change.
+
+  The reference worker in `examples/remote-activation-worker` implements this as
+  seats: `maxDevices` (default `1`) devices may claim a code; a code with
+  `maxDevices: 1` behaves as a **one-time / single-device code**. The claimed
+  device id survives uninstall + reinstall on the same device (it derives from
+  `ANDROID_ID`, stable per signing key), so a seat is only released when you edit
+  the KV record. To free a seat manually, remove the `deviceId` entry from
+  `record.devices` (or delete `code:<CODE>`).
 
 ## Response (your server → app)
 

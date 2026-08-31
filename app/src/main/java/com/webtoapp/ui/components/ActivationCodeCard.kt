@@ -515,6 +515,13 @@ private fun RemoteActivationSection(
             onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(deliverUrl = it)) }
         )
 
+        WtaToggleRow(
+            title = Strings.remoteActivationDeviceBoundTitle,
+            subtitle = Strings.remoteActivationDeviceBoundHint,
+            checked = remoteConfig.deviceBound,
+            onCheckedChange = { onRemoteConfigChange(remoteConfig.copy(deviceBound = it)) }
+        )
+
         AnimatedVisibility(
             visible = remoteConfig.deliverUrl,
             enter = CardExpandTransition,
