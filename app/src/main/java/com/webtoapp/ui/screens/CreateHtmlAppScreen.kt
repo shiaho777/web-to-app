@@ -1,6 +1,7 @@
 package com.webtoapp.ui.screens
 
 import android.net.Uri
+import android.widget.Toast
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.components.PremiumOutlinedButton
 import android.provider.DocumentsContract
@@ -420,7 +421,7 @@ fun CreateHtmlAppScreen(
     if (showCodeEditorDialog) {
         CodeEditorDialog(
             fileType = codeEditorType,
-            initialContent = codeEditorContent,
+            initialContent = codeEditorContent.takeIf { it.length <= MAX_CODE_EDITOR_FILE_BYTES / 4 } ?: "",
             onSave = { content ->
 
                 val fileName = codeEditorFileName ?: when (codeEditorType) {
@@ -720,8 +721,10 @@ fun CreateHtmlAppScreen(
                                 onSelect = { filePickerLauncher.launch("*/*") },
                                 onClear = { manualFiles = manualFiles.toMutableList().also { it.removeAt(index) } },
                                 onEdit = {
+                                    val editFile = File(file.path)
+                                    if (!isFileEditableInCodeEditor(context, editFile)) return@HtmlFileSlot
                                     codeEditorType = file.type.takeIf { it == HtmlFileType.HTML || it == HtmlFileType.CSS || it == HtmlFileType.JS } ?: HtmlFileType.OTHER
-                                    codeEditorContent = try { File(file.path).readText() } catch (e: Exception) { "" }
+                                    codeEditorContent = try { editFile.readText() } catch (e: Exception) { "" }
 
                                     codeEditorFileName = file.name
                                     showCodeEditorDialog = true
@@ -778,6 +781,7 @@ fun CreateHtmlAppScreen(
                                 onClick = {
                                     codeEditorType = HtmlFileType.HTML
                                     val existingHtml = manualFiles.firstOrNull { it.type == HtmlFileType.HTML || it.name.endsWith(".html", ignoreCase = true) }
+                                    if (existingHtml != null && !isFileEditableInCodeEditor(context, File(existingHtml.path))) return@PremiumOutlinedButton
                                     codeEditorContent = if (existingHtml != null) {
                                         try { File(existingHtml.path).readText() } catch (e: Exception) { "" }
                                     } else "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>My App</title>\n</head>\n<body>\n    <h1>Hello World</h1>\n</body>\n</html>"
@@ -795,6 +799,7 @@ fun CreateHtmlAppScreen(
                                 onClick = {
                                     codeEditorType = HtmlFileType.CSS
                                     val existingCss = manualFiles.firstOrNull { it.type == HtmlFileType.CSS }
+                                    if (existingCss != null && !isFileEditableInCodeEditor(context, File(existingCss.path))) return@PremiumOutlinedButton
                                     codeEditorContent = if (existingCss != null) {
                                         try { File(existingCss.path).readText() } catch (e: Exception) { "" }
                                     } else "/* Styles */\nbody {\n    margin: 0;\n    padding: 0;\n    font-family: sans-serif;\n}\n"
@@ -812,6 +817,7 @@ fun CreateHtmlAppScreen(
                                 onClick = {
                                     codeEditorType = HtmlFileType.JS
                                     val existingJs = manualFiles.firstOrNull { it.type == HtmlFileType.JS }
+                                    if (existingJs != null && !isFileEditableInCodeEditor(context, File(existingJs.path))) return@PremiumOutlinedButton
                                     codeEditorContent = if (existingJs != null) {
                                         try { File(existingJs.path).readText() } catch (e: Exception) { "" }
                                     } else "// JavaScript\ndocument.addEventListener('DOMContentLoaded', () => {\n    console.log('App loaded');\n});\n"
@@ -1549,6 +1555,40 @@ private fun getFileType(fileName: String): HtmlFileType {
         "ttf", "otf", "woff", "woff2", "eot" -> HtmlFileType.FONT
         else -> HtmlFileType.OTHER
     }
+}
+
+private const val MAX_CODE_EDITOR_FILE_BYTES = 1L shl 20
+
+/**
+ * Guards the in-app code editor. Binary files (images, fonts, …) and oversized text
+ * files would render the whole content into one composable tree and freeze / OOM the
+ * app, so they are refused with a toast before the editor opens.
+ */
+private fun isFileEditableInCodeEditor(context: android.content.Context, file: File?): Boolean {
+    if (file == null) return true
+    if (file.length() > MAX_CODE_EDITOR_FILE_BYTES) {
+        Toast.makeText(context, Strings.codeEditorFileTooLarge, Toast.LENGTH_SHORT).show()
+        return false
+    }
+    val sample = try {
+        file.inputStream().use { input ->
+            val buffer = ByteArray(4096)
+            val read = input.read(buffer)
+            if (read > 0) buffer.copyOf(read) else ByteArray(0)
+        }
+    } catch (e: Exception) {
+        Toast.makeText(context, Strings.codeEditorBinaryFile, Toast.LENGTH_SHORT).show()
+        return false
+    }
+    val isBinary = sample.any { b ->
+        val v = b.toInt() and 0xFF
+        v < 32 && v != '\n'.code && v != '\r'.code && v != '\t'.code
+    }
+    if (isBinary) {
+        Toast.makeText(context, Strings.codeEditorBinaryFile, Toast.LENGTH_SHORT).show()
+        return false
+    }
+    return true
 }
 
 @OptIn(ExperimentalLayoutApi::class)

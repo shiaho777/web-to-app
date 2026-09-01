@@ -4106,6 +4106,8 @@ object Strings {
     val codeEditorReplaceHint: String get() = StringsE.codeEditorReplaceHint
     val codeEditorMatchCase: String get() = StringsE.codeEditorMatchCase
     val codeEditorNoMatches: String get() = StringsE.codeEditorNoMatches
+    val codeEditorBinaryFile: String get() = StringsE.codeEditorBinaryFile
+    val codeEditorFileTooLarge: String get() = StringsE.codeEditorFileTooLarge
     val orWriteDirectly: String get() = StringsE.orWriteDirectly
     val deviceDisguiseTitle: String get() = StringsE.deviceDisguiseTitle
     val deviceDisguiseHint: String get() = StringsE.deviceDisguiseHint
@@ -56247,6 +56249,30 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Совпадений нет"
         AppLanguage.JAPANESE -> "一致なし"
         AppLanguage.KOREAN -> "결과 없음"
+    }
+    val codeEditorBinaryFile: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "此文件是二进制文件（图片、字体等），不支持文本编辑"
+        AppLanguage.ENGLISH -> "This file is binary (image, font, etc.) and cannot be edited as text"
+        AppLanguage.ARABIC -> "هذا ملف ثنائي (صورة أو خط وما إلى ذلك) ولا يمكن تحريره كنص"
+        AppLanguage.PORTUGUESE -> "Este arquivo é binário (imagem, fonte etc.) e não pode ser editado como texto"
+        AppLanguage.SPANISH -> "Este archivo es binario (imagen, fuente, etc.) y no se puede editar como texto"
+        AppLanguage.FRENCH -> "Ce fichier est binaire (image, police, etc.) et ne peut pas être modifié comme texte"
+        AppLanguage.GERMAN -> "Diese Datei ist binär (Bild, Schriftart usw.) und kann nicht als Text bearbeitet werden"
+        AppLanguage.RUSSIAN -> "Этот файл бинарный (изображение, шрифт и т.п.) и не может быть изменён как текст"
+        AppLanguage.JAPANESE -> "このファイルはバイナリ（画像・フォントなど）のため、テキスト編集できません"
+        AppLanguage.KOREAN -> "이 파일은 바이너리(이미지, 글꼴 등)이므로 텍스트로 편집할 수 없습니다"
+    }
+    val codeEditorFileTooLarge: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "文件过大（超过 1 MB），不支持在应用内编辑"
+        AppLanguage.ENGLISH -> "File is too large (over 1 MB) to edit in-app"
+        AppLanguage.ARABIC -> "الملف كبير جدًا (أكثر من 1 ميغابايت) ولا يمكن تحريره داخل التطبيق"
+        AppLanguage.PORTUGUESE -> "O arquivo é grande demais (mais de 1 MB) para editar no app"
+        AppLanguage.SPANISH -> "El archivo es demasiado grande (más de 1 MB) para editarse en la app"
+        AppLanguage.FRENCH -> "Le fichier est trop volumineux (plus de 1 Mo) pour être modifié dans l'appli"
+        AppLanguage.GERMAN -> "Die Datei ist zu groß (über 1 MB), um sie in der App zu bearbeiten"
+        AppLanguage.RUSSIAN -> "Файл слишком большой (более 1 МБ) для редактирования в приложении"
+        AppLanguage.JAPANESE -> "ファイルが大きすぎる（1 MB 超）ため、アプリ内では編集できません"
+        AppLanguage.KOREAN -> "파일이 너무 커서(1 MB 초과) 앱에서 편집할 수 없습니다"
     }
     val orWriteDirectly: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "或直接编写"
