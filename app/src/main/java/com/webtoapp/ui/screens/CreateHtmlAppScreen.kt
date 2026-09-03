@@ -421,7 +421,7 @@ fun CreateHtmlAppScreen(
     if (showCodeEditorDialog) {
         CodeEditorDialog(
             fileType = codeEditorType,
-            initialContent = codeEditorContent.takeIf { it.length <= MAX_CODE_EDITOR_FILE_BYTES / 4 } ?: "",
+            initialContent = codeEditorContent,
             onSave = { content ->
 
                 val fileName = codeEditorFileName ?: when (codeEditorType) {
@@ -1557,16 +1557,21 @@ private fun getFileType(fileName: String): HtmlFileType {
     }
 }
 
-private const val MAX_CODE_EDITOR_FILE_BYTES = 1L shl 20
+// Files up to this size are fine on disk, but rendering them whole in one Compose
+// text field is where the freeze/OOM actually happens, so the editor only opens
+// files under this bound.
+private const val CODE_EDITOR_RENDER_LIMIT_CHARS = 256 * 1024
 
 /**
  * Guards the in-app code editor. Binary files (images, fonts, …) and oversized text
  * files would render the whole content into one composable tree and freeze / OOM the
- * app, so they are refused with a toast before the editor opens.
+ * app, so they are refused with a toast before the editor opens. The size guard uses
+ * the render limit — admitting files that the dialog then silently empties would let
+ * a save wipe the file.
  */
 private fun isFileEditableInCodeEditor(context: android.content.Context, file: File?): Boolean {
     if (file == null) return true
-    if (file.length() > MAX_CODE_EDITOR_FILE_BYTES) {
+    if (file.length() > CODE_EDITOR_RENDER_LIMIT_CHARS) {
         Toast.makeText(context, Strings.codeEditorFileTooLarge, Toast.LENGTH_SHORT).show()
         return false
     }
