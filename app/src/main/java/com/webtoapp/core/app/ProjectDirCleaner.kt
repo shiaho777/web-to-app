@@ -100,7 +100,18 @@ object ProjectDirCleaner {
                 if (importedDir != null) {
                     deleteIfSandboxed(importedDir)
                 } else if (pid != null) {
-                    deleteIfSandboxed(File(appContext.filesDir, "html_projects/$pid"))
+                    // A MULTI_WEB app built purely from EXISTING sites borrows the source HTML
+                    // app's projectId (MainViewModel.saveMultiWebApp). That directory is still
+                    // owned by the source app — deleting it would wipe another live app's files.
+                    // Only delete when the multi-web app owns the id (no site points back at it).
+                    val borrowedFromSite = app.multiWebConfig?.sites?.any {
+                        it.type == "EXISTING" && it.sourceProjectId.isNotBlank() && it.sourceProjectId == pid
+                    } == true
+                    if (borrowedFromSite) {
+                        AppLogger.i(TAG, "Skip html_projects/$pid: MULTI_WEB app borrows the source app's project id")
+                    } else {
+                        deleteIfSandboxed(File(appContext.filesDir, "html_projects/$pid"))
+                    }
                 }
             }
             // WEB / IMAGE / VIDEO / GALLERY have no source project directory on disk.
