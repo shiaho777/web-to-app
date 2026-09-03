@@ -77,6 +77,14 @@ class AgentEngine(
 
                 val turnThinking = StringBuilder()
                 val pending = LinkedHashMap<String, Pair<String, StringBuilder>>()
+                // Index in accText where this attempt's output begins; a recoverable-error
+                // retry rewrites from here instead of appending a duplicate attempt.
+                var attemptStartedIndex = accText.length
+                fun rebuildAccFromPrefix() {
+                    if (accText.length > attemptStartedIndex) {
+                        accText.setLength(attemptStartedIndex)
+                    }
+                }
                 var finishReason = FinishReason.STOP
                 var hardError: String? = null
                 var continuationCount = 0
@@ -117,6 +125,7 @@ class AgentEngine(
                             is LlmEvent.Started -> Unit
                             is LlmEvent.TextDelta -> {
                                 turnText.append(ev.delta)
+                                rebuildAccFromPrefix()
                                 accText.append(ev.delta)
                                 send(AgentEvent.TextDelta(ev.delta, accText.toString()))
                             }
@@ -128,6 +137,7 @@ class AgentEngine(
                                 if (turnThinking.isEmpty()) {
                                     val segmentId = "th-turn-$turn"
                                     val marker = "\u2063TH:$segmentId\u2063"
+                                    rebuildAccFromPrefix()
                                     accText.append(marker)
                                     send(AgentEvent.TextDelta(marker, accText.toString()))
                                 }
@@ -138,6 +148,7 @@ class AgentEngine(
                                 pending[ev.id] = ev.name to StringBuilder()
 
                                 val marker = "\u2063TC:${ev.id}\u2063"
+                                rebuildAccFromPrefix()
                                 accText.append(marker)
                                 send(AgentEvent.TextDelta(marker, accText.toString()))
                                 send(AgentEvent.ToolCallStarted(ev.id, ev.name))
@@ -168,6 +179,19 @@ class AgentEngine(
                         rateLimitRetries++
                         val backoff = retryAfterMs ?: (1000L shl (rateLimitRetries - 1).coerceAtMost(4))
                         send(AgentEvent.Notice(Strings.agentRateLimitRetry(rateLimitRetries, MAX_RATE_LIMIT_RETRIES, backoff)))
+
+                        // The retry regenerates this attempt from scratch: clear the
+                        // attempt-local accumulators (text, thinking, pending tool calls)
+                        // and rebuild the global accumulated text WITHOUT the attempt-1
+                        // partial output, otherwise the retry duplicates everything in the
+                        // UI timeline, the persisted message, and can resurrect phantom
+                        // tool calls from the aborted attempt.
+                        rebuildAccFromPrefix()
+                        turnText.setLength(0)
+                        turnThinking.setLength(0)
+                        pending.clear()
+                        finishReason = FinishReason.STOP
+
                         delay(backoff)
                         retryableError = null
                         retryAfterMs = null
