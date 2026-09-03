@@ -41,7 +41,7 @@ object ShellActivityInit {
                 autoStartManager.setBootStart(
                     appId = 0L,
                     enabled = autoStartConfig.bootStartEnabled,
-                    delayMs = com.webtoapp.core.autostart.AutoStartManager.DEFAULT_BOOT_DELAY_MS
+                    delayMs = autoStartConfig.bootDelay
                 )
 
                 if (autoStartConfig.scheduledStartEnabled) {
@@ -55,7 +55,11 @@ object ShellActivityInit {
                     autoStartManager.setScheduledStart(appId = 0L, enabled = false)
                 }
 
-                com.webtoapp.core.shell.ShellLogger.i("ShellActivity", "自启动配置已注册: 开机=${autoStartConfig.bootStartEnabled}, 定时=${autoStartConfig.scheduledStartEnabled}")
+                com.webtoapp.core.shell.ShellLogger.i(
+                    "ShellActivity",
+                    "自启动配置已注册: 开机=${autoStartConfig.bootStartEnabled}, delay=${autoStartConfig.bootDelay}ms, " +
+                        "定时=${autoStartConfig.scheduledStartEnabled}"
+                )
             } catch (e: Exception) {
                 com.webtoapp.core.shell.ShellLogger.e("ShellActivity", "自启动配置注册失败", e)
             }
