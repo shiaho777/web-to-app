@@ -32,7 +32,7 @@ import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSpacing
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun StatusBarConfigCard(
     config: WebViewConfig,
@@ -150,29 +150,36 @@ fun StatusBarConfigCard(
             StatusBarBackgroundType.COLOR -> {
                 Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
                     GroupLabel(Strings.backgroundColor)
-                    Row(
+                    // Four modes no longer fit one weighted row in every locale
+                    // ("Transparent" overflows a quarter-width chip in English),
+                    // so this group wraps like the viewport-mode chips do.
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                     ) {
                         WtaChip(
                             selected = config.statusBarColorMode == StatusBarColorMode.THEME,
                             onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.THEME)) },
                             label = Strings.tagTheme,
-                            modifier = Modifier.weight(1f),
                             showSelectedCheck = false
                         )
                         WtaChip(
                             selected = config.statusBarColorMode == StatusBarColorMode.PAGE_TOP,
                             onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.PAGE_TOP)) },
                             label = Strings.followPageTop,
-                            modifier = Modifier.weight(1f),
                             showSelectedCheck = false
                         )
                         WtaChip(
                             selected = config.statusBarColorMode == StatusBarColorMode.CUSTOM,
                             onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.CUSTOM)) },
                             label = Strings.backgroundColor,
-                            modifier = Modifier.weight(1f),
+                            showSelectedCheck = false
+                        )
+                        WtaChip(
+                            selected = config.statusBarColorMode == StatusBarColorMode.TRANSPARENT,
+                            onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.TRANSPARENT)) },
+                            label = Strings.transparent,
                             showSelectedCheck = false
                         )
                     }
@@ -187,6 +194,40 @@ fun StatusBarConfigCard(
                     currentImagePath = config.statusBarBackgroundImage,
                     onSelectImage = { imagePickerLauncher.launch("image/*") },
                     onClearImage = { onConfigChange(config.copy(statusBarBackgroundImage = null, statusBarBackgroundType = StatusBarBackgroundType.COLOR)) }
+                )
+            }
+        }
+
+        // Icon shade used to be permanently auto: the model field was plumbed
+        // end-to-end but the editor exposed no control, so a wrong auto guess
+        // could never be overridden. Tri-state (auto/dark/light) for both tabs —
+        // the dark tab maps through the shared slot like the color fields do.
+        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+            GroupLabel(Strings.statusBarIconsLabel)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+            ) {
+                WtaChip(
+                    selected = config.statusBarDarkIcons == null,
+                    onClick = { onConfigChange(config.copy(statusBarDarkIcons = null)) },
+                    label = Strings.statusBarIconsAuto,
+                    modifier = Modifier.weight(1f),
+                    showSelectedCheck = false
+                )
+                WtaChip(
+                    selected = config.statusBarDarkIcons == true,
+                    onClick = { onConfigChange(config.copy(statusBarDarkIcons = true)) },
+                    label = Strings.statusBarIconsDark,
+                    modifier = Modifier.weight(1f),
+                    showSelectedCheck = false
+                )
+                WtaChip(
+                    selected = config.statusBarDarkIcons == false,
+                    onClick = { onConfigChange(config.copy(statusBarDarkIcons = false)) },
+                    label = Strings.statusBarIconsLight,
+                    modifier = Modifier.weight(1f),
+                    showSelectedCheck = false
                 )
             }
         }

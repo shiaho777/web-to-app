@@ -169,8 +169,10 @@ class WebViewActivity : AppCompatActivity() {
 
     private var statusBarColorModeDark: com.webtoapp.data.model.StatusBarColorMode = com.webtoapp.data.model.StatusBarColorMode.THEME
     private var statusBarCustomColorDark: String? = null
-    private var statusBarDarkIconsDark: Boolean = false
+    private var statusBarDarkIconsDark: Boolean? = null
     private var statusBarBackgroundTypeDark: com.webtoapp.data.model.StatusBarBackgroundType = com.webtoapp.data.model.StatusBarBackgroundType.COLOR
+    private var statusBarBackgroundAlpha: Float = 1.0f
+    private var statusBarBackgroundAlphaDark: Float = 1.0f
     private var statusBarAutoColor: String? = null
     internal var keyboardAdjustMode: KeyboardAdjustMode = KeyboardAdjustMode.RESIZE
 
@@ -207,7 +209,8 @@ class WebViewActivity : AppCompatActivity() {
         val effectiveColorMode = if (currentIsDarkTheme) statusBarColorModeDark else statusBarColorMode
         val effectiveCustomColor = if (currentIsDarkTheme) statusBarCustomColorDark else statusBarCustomColor
         val effectiveDarkIcons = if (currentIsDarkTheme) statusBarDarkIconsDark else statusBarDarkIcons
-        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, effectiveDarkIcons, currentIsDarkTheme)
+        val effectiveAlpha = if (currentIsDarkTheme) statusBarBackgroundAlphaDark else statusBarBackgroundAlpha
+        applyStatusBarColor(effectiveColorMode, effectiveCustomColor, effectiveDarkIcons, currentIsDarkTheme, effectiveAlpha)
     }
 
     private fun applyStatusBarColor(
@@ -790,18 +793,20 @@ class WebViewActivity : AppCompatActivity() {
                 previewApp = previewApp,
                 testUrl = testUrl,
                 testModuleIds = testModuleIds,
-                onStatusBarConfigChanged = { colorMode, customColor, darkIcons, showStatusBar, backgroundType, colorModeDark, customColorDark, darkIconsDark, backgroundTypeDark ->
+                onStatusBarConfigChanged = { colorMode, customColor, darkIcons, showStatusBar, backgroundType, backgroundAlpha, colorModeDark, customColorDark, darkIconsDark, backgroundTypeDark, backgroundAlphaDark ->
 
                     statusBarColorMode = colorMode
                     statusBarCustomColor = customColor
                     statusBarDarkIcons = darkIcons
                     showStatusBarInFullscreen = showStatusBar
                     statusBarBackgroundType = backgroundType
+                    statusBarBackgroundAlpha = backgroundAlpha
 
                     statusBarColorModeDark = colorModeDark
                     statusBarCustomColorDark = customColorDark
                     statusBarDarkIconsDark = darkIconsDark
                     statusBarBackgroundTypeDark = backgroundTypeDark
+                    statusBarBackgroundAlphaDark = backgroundAlphaDark
                 },
                 onStatusBarAutoColorChanged = { color ->
                     if (statusBarAutoColor == color) return@WebViewScreen
@@ -1097,7 +1102,7 @@ fun WebViewScreen(
     previewApp: com.webtoapp.data.model.WebApp? = null,
     testUrl: String? = null,
     testModuleIds: List<String>? = null,
-    onStatusBarConfigChanged: ((com.webtoapp.data.model.StatusBarColorMode, String?, Boolean?, Boolean, com.webtoapp.data.model.StatusBarBackgroundType, com.webtoapp.data.model.StatusBarColorMode, String?, Boolean, com.webtoapp.data.model.StatusBarBackgroundType) -> Unit)? = null,
+    onStatusBarConfigChanged: ((com.webtoapp.data.model.StatusBarColorMode, String?, Boolean?, Boolean, com.webtoapp.data.model.StatusBarBackgroundType, Float, com.webtoapp.data.model.StatusBarColorMode, String?, Boolean?, com.webtoapp.data.model.StatusBarBackgroundType, Float) -> Unit)? = null,
     onStatusBarAutoColorChanged: ((String?) -> Unit)? = null,
     onSavedAppLoaded: ((WebApp) -> Unit)? = null,
     onWebViewCreated: (WebView, WebApp?) -> Unit,
@@ -1240,10 +1245,12 @@ fun WebViewScreen(
                 app.webViewConfig.statusBarDarkIcons,
                 app.webViewConfig.showStatusBarInFullscreen,
                 app.webViewConfig.statusBarBackgroundType,
+                app.webViewConfig.statusBarBackgroundAlpha,
                 app.webViewConfig.statusBarColorModeDark,
                 app.webViewConfig.statusBarColorDark,
                 app.webViewConfig.statusBarDarkIconsDark,
-                app.webViewConfig.statusBarBackgroundTypeDark
+                app.webViewConfig.statusBarBackgroundTypeDark,
+                app.webViewConfig.statusBarBackgroundAlphaDark
             )
 
             statusBarBackgroundType = app.webViewConfig.statusBarBackgroundType.name
@@ -3002,6 +3009,12 @@ fun WebViewScreen(
 
         val actualStatusBarPadding = if (statusBarHeightDp >= 0) statusBarHeightDp.dp else systemStatusBarHeightDp
 
+        // Fullscreen content padding mirrors the exported shell (ShellScaffoldLayout):
+        // reserve the status-bar height on top when the bar is shown, pad the
+        // remaining edges so corner controls stay tappable. Preview used to ignore
+        // this setting entirely, so the slider appeared dead until export.
+        val contentPad = (webApp?.webViewConfig?.fullscreenContentPaddingDp ?: 0).dp
+
         val contentModifier = when {
             hideToolbar && showToolbarInPreview -> {
 
@@ -3009,11 +3022,16 @@ fun WebViewScreen(
             }
             hideToolbar && webApp?.webViewConfig?.showStatusBarInFullscreen == true -> {
 
-                Modifier.fillMaxSize().padding(top = actualStatusBarPadding)
+                Modifier.fillMaxSize().padding(
+                    top = actualStatusBarPadding,
+                    start = contentPad,
+                    end = contentPad,
+                    bottom = contentPad
+                )
             }
             hideToolbar -> {
 
-                Modifier.fillMaxSize()
+                Modifier.fillMaxSize().padding(contentPad)
             }
             else -> {
 

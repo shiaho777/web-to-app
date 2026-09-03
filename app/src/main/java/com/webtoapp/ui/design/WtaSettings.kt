@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -535,6 +537,7 @@ fun WtaTextFieldRow(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun WtaSliderRow(
     title: String,
@@ -544,7 +547,8 @@ fun WtaSliderRow(
     subtitle: String? = null,
     valueLabel: String? = null,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    presets: List<Pair<String, Float>>? = null
 ) {
     Column(
         modifier = modifier
@@ -568,6 +572,25 @@ fun WtaSliderRow(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+        }
+        if (!presets.isNullOrEmpty()) {
+            FlowRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = WtaSpacing.Small),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+            ) {
+                presets.forEach { (label, presetValue) ->
+                    com.webtoapp.ui.design.WtaChip(
+                        selected = value == presetValue,
+                        onClick = { onValueChange(presetValue) },
+                        label = label,
+                        showSelectedCheck = false,
+                        enabled = enabled
+                    )
+                }
             }
         }
         Slider(

@@ -85,8 +85,13 @@ fun StatusBarBackground(
             }
             else -> {
 
-                val bgColor = try {
-                    val hex = backgroundColor?.removePrefix("#") ?: "000000"
+                // A null color means TRANSPARENT mode (the only resolver path that
+                // yields null). It must stay see-through: falling back to black
+                // painted an opaque band over the content (issue #762).
+                val bgColor = if (backgroundColor == null) {
+                    Color.Transparent
+                } else try {
+                    val hex = backgroundColor.removePrefix("#")
                     when (hex.length) {
                         6 -> Color(android.graphics.Color.parseColor("#$hex")).copy(alpha = alpha)
                         8 -> Color(android.graphics.Color.parseColor("#$hex")).copy(alpha = alpha)
@@ -175,8 +180,12 @@ fun StatusBarOverlay(
             }
             else -> {
 
-                val bgColor = try {
-                    val hex = backgroundColor?.removePrefix("#") ?: "000000"
+                // Same TRANSPARENT rule as StatusBarBackground above: null stays
+                // see-through instead of degrading to a black band (issue #762).
+                val bgColor = if (backgroundColor == null) {
+                    Color.Transparent
+                } else try {
+                    val hex = backgroundColor.removePrefix("#")
                     when (hex.length) {
                         6 -> Color(android.graphics.Color.parseColor("#$hex")).copy(alpha = alpha)
                         8 -> Color(android.graphics.Color.parseColor("#$hex")).copy(alpha = alpha)

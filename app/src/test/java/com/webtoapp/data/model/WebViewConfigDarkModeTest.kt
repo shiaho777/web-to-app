@@ -11,7 +11,7 @@ class WebViewConfigDarkModeTest {
 
         assertThat(config.statusBarColorModeDark).isEqualTo(StatusBarColorMode.THEME)
         assertThat(config.statusBarColorDark).isNull()
-        assertThat(config.statusBarDarkIconsDark).isFalse()
+        assertThat(config.statusBarDarkIconsDark).isNull()
         assertThat(config.statusBarBackgroundTypeDark).isEqualTo(StatusBarBackgroundType.COLOR)
         assertThat(config.statusBarBackgroundImageDark).isNull()
         assertThat(config.statusBarBackgroundAlphaDark).isWithin(0.01f).of(1.0f)

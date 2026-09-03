@@ -321,7 +321,7 @@ data class WebViewConfig(
 
     val statusBarColorModeDark: StatusBarColorMode = StatusBarColorMode.THEME,
     val statusBarColorDark: String? = null,
-    val statusBarDarkIconsDark: Boolean = false,
+    val statusBarDarkIconsDark: Boolean? = null,
     val statusBarBackgroundTypeDark: StatusBarBackgroundType = StatusBarBackgroundType.COLOR,
     val statusBarBackgroundImageDark: String? = null,
     val statusBarBackgroundAlphaDark: Float = 1.0f,

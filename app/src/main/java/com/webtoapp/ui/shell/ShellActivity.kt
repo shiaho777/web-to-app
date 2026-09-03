@@ -64,7 +64,6 @@ class ShellActivity : AppCompatActivity() {
     private var statusBarBackgroundImageDark: String? = null
     private var statusBarBackgroundAlphaDark: Float = 1.0f
     private var statusBarAutoColor: String? = null
-    private var forceHideSystemUi: Boolean = false
     private var keyboardAdjustMode: KeyboardAdjustMode = KeyboardAdjustMode.RESIZE
 
     private var pendingFloatingWindowLaunch = false
@@ -106,7 +105,7 @@ class ShellActivity : AppCompatActivity() {
     private fun refreshStatusBarAppearance() {
         if (customView != null) return
         val systemDark = isSystemInDarkMode()
-        if (immersiveFullscreenEnabled || forceHideSystemUi) {
+        if (immersiveFullscreenEnabled) {
             applyImmersiveFullscreen(true, isDarkTheme = systemDark)
             return
         }
@@ -138,7 +137,6 @@ class ShellActivity : AppCompatActivity() {
             hideNavBar = shouldHideNavBar,
             isDarkTheme = isDarkTheme,
             showStatusBar = effectiveShowStatusBar,
-            forceHideSystemUi = forceHideSystemUi,
             statusBarColorMode = resolved.first,
             statusBarCustomColor = resolved.second,
             statusBarDarkIcons = if (systemDark) statusBarDarkIconsDark else statusBarDarkIcons,
@@ -767,7 +765,7 @@ class ShellActivity : AppCompatActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
-            if (customView != null || immersiveFullscreenEnabled || forceHideSystemUi) {
+            if (customView != null || immersiveFullscreenEnabled) {
                 applyImmersiveFullscreen(true, isDarkTheme = isSystemInDarkMode())
             } else {
                 val systemDark = isSystemInDarkMode()

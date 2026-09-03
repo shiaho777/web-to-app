@@ -2358,6 +2358,10 @@ object Strings {
     val statusBarStyleConfigLabel: String get() = StringsC.statusBarStyleConfigLabel
     val statusBarLightModeLabel: String get() = StringsC.statusBarLightModeLabel
     val statusBarDarkModeLabel: String get() = StringsC.statusBarDarkModeLabel
+    val statusBarIconsLabel: String get() = StringsC.statusBarIconsLabel
+    val statusBarIconsAuto: String get() = StringsC.statusBarIconsAuto
+    val statusBarIconsDark: String get() = StringsC.statusBarIconsDark
+    val statusBarIconsLight: String get() = StringsC.statusBarIconsLight
     val browserToolbarLabel: String get() = StringsC.browserToolbarLabel
     val toolbarShowTitleLabel: String get() = StringsC.toolbarShowTitleLabel
     val toolbarShowTitleHint: String get() = StringsC.toolbarShowTitleHint
@@ -34373,16 +34377,16 @@ object StringsC {
     }
 
     val fullscreenContentPaddingHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "全屏模式下给内容四周留白，让屏幕角落的按钮更容易点按，并缓解与返回手势边缘的冲突。若返回手势区仍偏小，可开启上方的“显示导航栏”恢复标准手势区。"
-        AppLanguage.ENGLISH -> "Add padding around content in fullscreen so corner buttons are easier to tap and it conflicts less with the back-gesture edge. If the back-gesture area still feels small, turn on “Show Navigation Bar” above to restore the standard gesture zone."
-        AppLanguage.ARABIC -> "أضف هامشًا حول المحتوى في وضع ملء الشاشة لتسهيل النقر على أزرار الزوايا وتقليل التعارض مع حافة إيماءة الرجوع. إذا ظل منطقة إيماءة الرجوع صغيرة، فعّل «إظهار شريط التنقل» بالأعلى لاستعادة منطقة الإيماءات القياسية."
-        AppLanguage.PORTUGUESE -> "Adicione preenchimento ao redor do conteúdo em tela cheia para facilitar tocar nos botões dos cantos e reduzir conflitos com a borda do gesto de voltar. Se a área do gesto de voltar ainda parecer pequena, ative “Mostrar Barra de Navegação” acima para restaurar a zona padrão de gestos."
-        AppLanguage.SPANISH -> "Añade relleno alrededor del contenido en pantalla completa para que los botones de las esquinas sean más fáciles de tocar y haya menos conflicto con el borde del gesto de retroceso. Si el área del gesto sigue pareciendo pequeña, activa “Mostrar Barra de Navegación” arriba para restaurar la zona estándar de gestos."
-        AppLanguage.FRENCH -> "Ajoutez une marge autour du contenu en plein écran pour faciliter l'appui sur les boutons d'angle et réduire les conflits avec la zone du geste de retour. Si la zone du geste de retour reste petite, activez « Afficher la Barre de Navigation » ci-dessus pour restaurer la zone de gestes standard."
-        AppLanguage.GERMAN -> "Fügt im Vollbildmodus einen Abstand um den Inhalt hinzu, damit Eckbuttons leichter antippbar sind und weniger Konflikte mit der Zurück-Geste-Kante entstehen. Wenn die Zone für die Zurück-Geste noch klein wirkt, aktivieren Sie oben „Navigationsleiste anzeigen“, um die Standard-Gestenzone wiederherzustellen."
-        AppLanguage.RUSSIAN -> "Добавляет отступ вокруг контента в полноэкранном режиме, чтобы кнопки в углах было легче нажимать, и уменьшает конфликт с краем жеста «назад». Если зона жеста «назад» всё ещё мала, включите выше «Показывать панель навигации», чтобы восстановить стандартную зону жестов."
-        AppLanguage.JAPANESE -> "全画面モードでコンテンツの周囲に余白を設け、画面の隅のボタンをタップしやすくし、戻るジェスチャーの縁との競合を和らげます。戻るジェスチャー領域がまだ狭い場合は、上の「ナビゲーションバーを表示」をオンにして標準のジェスチャー領域を復元してください。"
-        AppLanguage.KOREAN -> "전체 화면 모드에서 콘텐츠 주위에 여백을 추가해 화면 모서리의 버튼을 누르기 쉽게 하고, 뒤로 가기 제스처 경계와의 충돌을 줄입니다. 뒤로 가기 제스처 영역이 여전히 좁게 느껴지면 위의 “내비게이션 바 표시”를 켜서 표준 제스처 영역을 복원하세요."
+        AppLanguage.CHINESE -> "全屏时给内容留边，角落按钮更好点，也能缓解返回手势冲突"
+        AppLanguage.ENGLISH -> "Pad content in fullscreen: easier corner taps, fewer edge-gesture conflicts"
+        AppLanguage.ARABIC -> "هامش حول المحتوى في ملء الشاشة: نقر أسهل على أزرار الزوايا وتعاوض أقل مع إيماءات الحافة"
+        AppLanguage.PORTUGUESE -> "Margem no conteúdo em tela cheia: cantos mais fáceis de tocar, menos conflito com gestos de borda"
+        AppLanguage.SPANISH -> "Margen en pantalla completa: esquinas más fáciles y menos conflicto con gestos de borde"
+        AppLanguage.FRENCH -> "Marge en plein écran : boutons d'angle plus faciles, moins de conflits de gestes"
+        AppLanguage.GERMAN -> "Abstand im Vollbild: leichtere Eckbuttons, weniger Kantengesten-Konflikte"
+        AppLanguage.RUSSIAN -> "Отступ в полноэкранном режиме: кнопки в углах удобнее, меньше конфликтов с жестами"
+        AppLanguage.JAPANESE -> "全画面で余白を設け、隅のボタンを押しやすくし、エッジジェスチャーとの競合を軽減"
+        AppLanguage.KOREAN -> "전체 화면 여백: 모서리 버튼이 쉬워지고 가장자리 제스처 충돌 감소"
     }
 
     val statusBarStyleConfigLabel: String get() = when (Strings.lang) {
@@ -34422,6 +34426,58 @@ object StringsC {
         AppLanguage.RUSSIAN -> "Тёмный режим"
         AppLanguage.JAPANESE -> "ダークモード"
         AppLanguage.KOREAN -> "다크 모드"
+    }
+
+    val statusBarIconsLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "状态栏图标"
+        AppLanguage.ENGLISH -> "Status bar icons"
+        AppLanguage.ARABIC -> "أيقونات شريط الحالة"
+        AppLanguage.PORTUGUESE -> "Ícones da barra de status"
+        AppLanguage.SPANISH -> "Iconos de la barra de estado"
+        AppLanguage.FRENCH -> "Icônes de la barre d'état"
+        AppLanguage.GERMAN -> "Symbole der Statusleiste"
+        AppLanguage.RUSSIAN -> "Значки строки состояния"
+        AppLanguage.JAPANESE -> "ステータスバーのアイコン"
+        AppLanguage.KOREAN -> "상태 표시줄 아이콘"
+    }
+
+    val statusBarIconsAuto: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自动"
+        AppLanguage.ENGLISH -> "Auto"
+        AppLanguage.ARABIC -> "تلقائي"
+        AppLanguage.PORTUGUESE -> "Automático"
+        AppLanguage.SPANISH -> "Automático"
+        AppLanguage.FRENCH -> "Auto"
+        AppLanguage.GERMAN -> "Auto"
+        AppLanguage.RUSSIAN -> "Авто"
+        AppLanguage.JAPANESE -> "自動"
+        AppLanguage.KOREAN -> "자동"
+    }
+
+    val statusBarIconsDark: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "深色"
+        AppLanguage.ENGLISH -> "Dark"
+        AppLanguage.ARABIC -> "داكن"
+        AppLanguage.PORTUGUESE -> "Escuros"
+        AppLanguage.SPANISH -> "Oscuros"
+        AppLanguage.FRENCH -> "Sombres"
+        AppLanguage.GERMAN -> "Dunkel"
+        AppLanguage.RUSSIAN -> "Тёмные"
+        AppLanguage.JAPANESE -> "ダーク"
+        AppLanguage.KOREAN -> "어둡게"
+    }
+
+    val statusBarIconsLight: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "浅色"
+        AppLanguage.ENGLISH -> "Light"
+        AppLanguage.ARABIC -> "فاتح"
+        AppLanguage.PORTUGUESE -> "Claros"
+        AppLanguage.SPANISH -> "Claros"
+        AppLanguage.FRENCH -> "Claires"
+        AppLanguage.GERMAN -> "Hell"
+        AppLanguage.RUSSIAN -> "Светлые"
+        AppLanguage.JAPANESE -> "ライト"
+        AppLanguage.KOREAN -> "밝게"
     }
 
     val browserToolbarLabel: String get() = when (Strings.lang) {

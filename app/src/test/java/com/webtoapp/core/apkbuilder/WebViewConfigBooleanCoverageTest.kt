@@ -68,7 +68,7 @@ class WebViewConfigBooleanCoverageTest {
             "databaseEnabled", "primeUserActivation", "failoverEnabled",
             "hostsMappingEnabled", "autoRefreshEnabled", "autoRefreshShowCountdown",
             "allowFileAccessFromFileURLs", "allowUniversalAccessFromFileURLs",
-            "tlsFingerprintEnabled", "statusBarDarkIconsDark"
+            "tlsFingerprintEnabled"
         )
 
         val missing = allBooleanFields - listedFields
@@ -232,6 +232,23 @@ class WebViewConfigBooleanCoverageTest {
         readShell("pageZoomPercent", 125)
     }
 
+    @Test
+    fun `nullable statusBarDarkIconsDark round-trips through export`() {
+        fun shellDarkIconsOf(config: WebViewConfig): Any? {
+            val shellWv = shellWvOf(roundTrip(WebApp(name = "t", url = "https://t.example.com", webViewConfig = config)))
+            val field = shellWv.javaClass.declaredFields.associateBy { it.name }["statusBarDarkIconsDark"]
+                ?: throw AssertionError("ShellWebViewConfig missing field 'statusBarDarkIconsDark'")
+            field.isAccessible = true
+            return field.get(shellWv)
+        }
+
+        // Explicit choices survive; the default (auto) stays null instead of
+        // degrading to false, so the runtime keeps its luminance fallback.
+        assertThat(shellDarkIconsOf(WebViewConfig(statusBarDarkIconsDark = true))).isEqualTo(true)
+        assertThat(shellDarkIconsOf(WebViewConfig(statusBarDarkIconsDark = false))).isEqualTo(false)
+        assertThat(shellDarkIconsOf(WebViewConfig())).isNull()
+    }
+
     // ────────────────────────────────────────────────────────────
     //  Helpers
     // ────────────────────────────────────────────────────────────
@@ -346,8 +363,7 @@ class WebViewConfigBooleanCoverageTest {
             autoRefreshShowCountdown = bool("autoRefreshShowCountdown"),
             allowFileAccessFromFileURLs = bool("allowFileAccessFromFileURLs"),
             allowUniversalAccessFromFileURLs = bool("allowUniversalAccessFromFileURLs"),
-            tlsFingerprintEnabled = bool("tlsFingerprintEnabled"),
-            statusBarDarkIconsDark = bool("statusBarDarkIconsDark")
+            tlsFingerprintEnabled = bool("tlsFingerprintEnabled")
         )
     }
 }

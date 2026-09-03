@@ -98,7 +98,6 @@ object WindowHelper {
         hideNavBar: Boolean = true,
         isDarkTheme: Boolean = false,
         showStatusBar: Boolean = false,
-        forceHideSystemUi: Boolean = false,
         statusBarColorMode: String = "THEME",
         statusBarCustomColor: String? = null,
         statusBarDarkIcons: Boolean? = null,
@@ -132,7 +131,7 @@ object WindowHelper {
                     if (!classicKeyboardResize) {
                         activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
                     }
-                    val shouldShowStatusBar = if (forceHideSystemUi) false else showStatusBar
+                    val shouldShowStatusBar = showStatusBar
 
                     if (shouldShowStatusBar) {
                         decorFitsSystemWindows = classicKeyboardResize
@@ -183,7 +182,7 @@ object WindowHelper {
                         controller.hide(WindowInsetsCompat.Type.statusBars())
                     }
 
-                    if (hideNavBar || forceHideSystemUi) {
+                    if (hideNavBar) {
                         controller.hide(WindowInsetsCompat.Type.navigationBars())
                         controller.systemBarsBehavior =
                             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE

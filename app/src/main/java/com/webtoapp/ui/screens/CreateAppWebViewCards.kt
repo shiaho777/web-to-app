@@ -2301,7 +2301,8 @@ fun FullscreenModeCard(
                         )
                     },
                     valueLabel = "${webViewConfig.fullscreenContentPaddingDp}dp",
-                    valueRange = 0f..48f
+                    valueRange = 0f..48f,
+                    presets = listOf("0dp" to 0f, "8dp" to 8f, "16dp" to 16f, "24dp" to 24f)
                 )
 
                 AnimatedVisibility(
@@ -2372,10 +2373,14 @@ fun FullscreenModeCard(
                                                 webViewConfig.copy(
                                                     statusBarColorModeDark = newConfig.statusBarColorMode,
                                                     statusBarColorDark = newConfig.statusBarColor,
-                                                    statusBarDarkIconsDark = newConfig.statusBarDarkIcons ?: false,
+                                                    statusBarDarkIconsDark = newConfig.statusBarDarkIcons,
                                                     statusBarBackgroundTypeDark = newConfig.statusBarBackgroundType,
                                                     statusBarBackgroundImageDark = newConfig.statusBarBackgroundImage,
-                                                    statusBarBackgroundAlphaDark = newConfig.statusBarBackgroundAlpha
+                                                    statusBarBackgroundAlphaDark = newConfig.statusBarBackgroundAlpha,
+                                                    // statusBarHeightDp is a shared (non-per-theme)
+                                                    // field: the dark tab edits it in place, so it
+                                                    // must be written back like the light tab does.
+                                                    statusBarHeightDp = newConfig.statusBarHeightDp
                                                 )
                                             )
                                         }
