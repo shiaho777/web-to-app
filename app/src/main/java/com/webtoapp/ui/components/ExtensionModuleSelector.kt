@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import com.webtoapp.core.extension.*
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaBadge
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
@@ -189,40 +191,40 @@ fun ModuleSelectionDialog(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
-                PremiumFilterChip(
+                WtaChip(
                     selected = selectedCategory == null,
                     onClick = { selectedCategory = null },
-                    label = { Text(Strings.filterAll, style = MaterialTheme.typography.labelSmall) },
-                    modifier = Modifier.height(28.dp)
+                    label = Strings.filterAll,
+                    showSelectedCheck = false
                 )
-                PremiumFilterChip(
+                WtaChip(
                     selected = selectedCategory == ModuleCategory.CONTENT_FILTER,
                     onClick = {
                         selectedCategory = if (selectedCategory == ModuleCategory.CONTENT_FILTER) null
                                           else ModuleCategory.CONTENT_FILTER
                     },
-                    label = { Text(Strings.filterContent, style = MaterialTheme.typography.labelSmall) },
-                    modifier = Modifier.height(28.dp)
+                    label = Strings.filterContent,
+                    showSelectedCheck = false
                 )
-                PremiumFilterChip(
+                WtaChip(
                     selected = selectedCategory == ModuleCategory.STYLE_MODIFIER,
                     onClick = {
                         selectedCategory = if (selectedCategory == ModuleCategory.STYLE_MODIFIER) null
                                           else ModuleCategory.STYLE_MODIFIER
                     },
-                    label = { Text(Strings.filterStyle, style = MaterialTheme.typography.labelSmall) },
-                    modifier = Modifier.height(28.dp)
+                    label = Strings.filterStyle,
+                    showSelectedCheck = false
                 )
-                PremiumFilterChip(
+                WtaChip(
                     selected = selectedCategory == ModuleCategory.FUNCTION_ENHANCE,
                     onClick = {
                         selectedCategory = if (selectedCategory == ModuleCategory.FUNCTION_ENHANCE) null
                                           else ModuleCategory.FUNCTION_ENHANCE
                     },
-                    label = { Text(Strings.filterFunction, style = MaterialTheme.typography.labelSmall) },
-                    modifier = Modifier.height(28.dp)
+                    label = Strings.filterFunction,
+                    showSelectedCheck = false
                 )
             }
 
@@ -353,7 +355,7 @@ fun QuickModuleSelector(
         Text(
             Strings.quickEnable,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -363,7 +365,7 @@ fun QuickModuleSelector(
         ) {
             quickModules.forEach { module ->
                 val isSelected = module.id in selectedModuleIds
-                PremiumFilterChip(
+                WtaChip(
                     selected = isSelected,
                     onClick = {
                         onSelectionChange(
@@ -371,9 +373,18 @@ fun QuickModuleSelector(
                             else selectedModuleIds + module.id
                         )
                     },
-                    label = { Text(module.name.take(4)) },
-                    leadingIcon = { ModuleIcon(iconId = module.icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface) }
-                )
+                    showSelectedCheck = false,
+                    leadingContent = {
+                        ModuleIcon(
+                            iconId = module.icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = LocalContentColor.current
+                        )
+                    }
+                ) {
+                    Text(module.name.take(4))
+                }
             }
         }
     }

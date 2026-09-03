@@ -1,7 +1,6 @@
 package com.webtoapp.ui.screens
 
 import android.net.Uri
-import com.webtoapp.ui.components.PremiumOutlinedButton
 import androidx.compose.animation.AnimatedVisibility
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
@@ -235,84 +234,103 @@ fun SplashScreenCard(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                 ) {
-                    PremiumOutlinedButton(
+                    WtaButton(
                         onClick = onSelectImage,
+                        variant = WtaButtonVariant.Outlined,
                         modifier = Modifier.weight(weight = 1f, fill = true)
                     ) {
-                        Icon(Icons.Outlined.Image, null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.Outlined.Image, null, modifier = Modifier.size(WtaSize.IconSmall))
+                        Spacer(modifier = Modifier.width(WtaSpacing.Tiny))
                         Text(Strings.selectImage)
                     }
-                    PremiumOutlinedButton(
+                    WtaButton(
                         onClick = onSelectVideo,
+                        variant = WtaButtonVariant.Outlined,
                         modifier = Modifier.weight(weight = 1f, fill = true)
                     ) {
-                        Icon(Icons.Outlined.VideoFile, null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(Icons.Outlined.VideoFile, null, modifier = Modifier.size(WtaSize.IconSmall))
+                        Spacer(modifier = Modifier.width(WtaSpacing.Tiny))
                         Text(Strings.selectVideo)
                     }
                 }
 
-                if (splashMediaUri != null && mediaExists) {
-
-                    if (splashConfig.type == SplashType.IMAGE) {
-                        WtaSliderRow(
-                            title = Strings.displayDuration,
-                            subtitle = Strings.displayDurationSeconds.replace("%d", splashConfig.duration.toString()),
-                            value = splashConfig.duration.toFloat(),
-                            onValueChange = { onDurationChange(it.toInt()) },
-                            valueLabel = "${splashConfig.duration}s",
-                            valueRange = 1f..5f
-                        )
-                    }
-
-                    WtaToggleRow(
-                        title = Strings.allowSkip,
-                        subtitle = Strings.allowSkipHint,
-                        icon = Icons.Outlined.TouchApp,
-                        checked = splashConfig.clickToSkip,
-                        onCheckedChange = onClickToSkipChange
-                    )
-
-                    WtaToggleRow(
-                        title = Strings.splashShowCountdownLabel,
-                        subtitle = Strings.splashShowCountdownHint,
-                        icon = Icons.Outlined.Timer,
-                        checked = splashConfig.showCountdown,
-                        onCheckedChange = onShowCountdownChange
-                    )
-
-                    WtaToggleRow(
-                        title = Strings.landscapeDisplay,
-                        subtitle = Strings.landscapeDisplayHint,
-                        icon = Icons.Outlined.ScreenRotation,
-                        checked = splashConfig.orientation == SplashOrientation.LANDSCAPE,
-                        onCheckedChange = { isLandscape ->
-                            onOrientationChange(
-                                if (isLandscape) SplashOrientation.LANDSCAPE
-                                else SplashOrientation.PORTRAIT
-                            )
+                AnimatedVisibility(
+                    visible = splashMediaUri != null && mediaExists,
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
+                    Column {
+                        AnimatedVisibility(
+                            visible = splashConfig.type == SplashType.IMAGE,
+                            enter = CardExpandTransition,
+                            exit = CardCollapseTransition
+                        ) {
+                            Column {
+                                WtaSliderRow(
+                                    title = Strings.displayDuration,
+                                    subtitle = Strings.displayDurationSeconds.replace("%d", splashConfig.duration.toString()),
+                                    value = splashConfig.duration.toFloat(),
+                                    onValueChange = { onDurationChange(it.toInt()) },
+                                    valueLabel = "${splashConfig.duration}s",
+                                    valueRange = 1f..5f
+                                )
+                            }
                         }
-                    )
 
-                    WtaToggleRow(
-                        title = Strings.fillScreen,
-                        subtitle = Strings.fillScreenHint,
-                        icon = Icons.Outlined.AspectRatio,
-                        checked = splashConfig.fillScreen,
-                        onCheckedChange = onFillScreenChange
-                    )
-
-                    if (splashConfig.type == SplashType.VIDEO) {
                         WtaToggleRow(
-                            title = Strings.enableAudio,
-                            subtitle = Strings.enableAudioHint,
-                            icon = Icons.AutoMirrored.Outlined.VolumeUp,
-                            checked = splashConfig.enableAudio,
-                            onCheckedChange = onEnableAudioChange
+                            title = Strings.allowSkip,
+                            subtitle = Strings.allowSkipHint,
+                            icon = Icons.Outlined.TouchApp,
+                            checked = splashConfig.clickToSkip,
+                            onCheckedChange = onClickToSkipChange
                         )
+
+                        WtaToggleRow(
+                            title = Strings.splashShowCountdownLabel,
+                            subtitle = Strings.splashShowCountdownHint,
+                            icon = Icons.Outlined.Timer,
+                            checked = splashConfig.showCountdown,
+                            onCheckedChange = onShowCountdownChange
+                        )
+
+                        WtaToggleRow(
+                            title = Strings.landscapeDisplay,
+                            subtitle = Strings.landscapeDisplayHint,
+                            icon = Icons.Outlined.ScreenRotation,
+                            checked = splashConfig.orientation == SplashOrientation.LANDSCAPE,
+                            onCheckedChange = { isLandscape ->
+                                onOrientationChange(
+                                    if (isLandscape) SplashOrientation.LANDSCAPE
+                                    else SplashOrientation.PORTRAIT
+                                )
+                            }
+                        )
+
+                        WtaToggleRow(
+                            title = Strings.fillScreen,
+                            subtitle = Strings.fillScreenHint,
+                            icon = Icons.Outlined.AspectRatio,
+                            checked = splashConfig.fillScreen,
+                            onCheckedChange = onFillScreenChange
+                        )
+
+                        AnimatedVisibility(
+                            visible = splashConfig.type == SplashType.VIDEO,
+                            enter = CardExpandTransition,
+                            exit = CardCollapseTransition
+                        ) {
+                            Column {
+                                WtaToggleRow(
+                                    title = Strings.enableAudio,
+                                    subtitle = Strings.enableAudioHint,
+                                    icon = Icons.AutoMirrored.Outlined.VolumeUp,
+                                    checked = splashConfig.enableAudio,
+                                    onCheckedChange = onEnableAudioChange
+                                )
+                            }
+                        }
                     }
                 }
               }

@@ -1,6 +1,10 @@
 package com.webtoapp.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.ui.animation.CardExpandTransition
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -95,48 +99,43 @@ fun IsolationConfigCard(
                 )
             }
 
-            AnimatedVisibility(visible = config.enabled) {
+            AnimatedVisibility(
+                visible = config.enabled,
+                enter = CardExpandTransition,
+                exit = CardCollapseTransition
+            ) {
                 Column(
-                    modifier = Modifier.padding(top = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.padding(top = WtaSpacing.ContentGap),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
                 ) {
 
                     Text(
                         text = Strings.isolationLevel,
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.primary
                     )
 
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                     ) {
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = isBasicConfig(config),
                             onClick = { onConfigChange(IsolationConfig.BASIC) },
-                            label = { Text(Strings.basic) },
-                            leadingIcon = if (isBasicConfig(config)) {
-                                { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                            } else null
+                            label = Strings.basic
                         )
 
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = isStandardConfig(config),
                             onClick = { onConfigChange(IsolationConfig.STANDARD) },
-                            label = { Text(Strings.standard) },
-                            leadingIcon = if (isStandardConfig(config)) {
-                                { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                            } else null
+                            label = Strings.standard
                         )
 
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = isMaximumConfig(config),
                             onClick = { onConfigChange(IsolationConfig.MAXIMUM) },
-                            label = { Text(Strings.maximum) },
-                            leadingIcon = if (isMaximumConfig(config)) {
-                                { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                            } else null
+                            label = Strings.maximum
                         )
                     }
 
@@ -237,9 +236,14 @@ fun IsolationConfigCard(
                             }
                         )
 
-                        AnimatedVisibility(visible = config.ipSpoofConfig.enabled) {
+                        AnimatedVisibility(
+                            visible = config.ipSpoofConfig.enabled,
+                            enter = CardExpandTransition,
+                            exit = CardCollapseTransition
+                        ) {
                             Column(
-                                modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+                                modifier = Modifier.padding(start = WtaSpacing.RowHorizontal, top = WtaSpacing.ContentGap),
+                                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)
                             ) {
                                 Text(
                                     text = Strings.ipRegion,
@@ -247,26 +251,29 @@ fun IsolationConfigCard(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Row(
-                                    modifier = Modifier.padding(top = 4.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)
                                 ) {
                                     IpRange.entries.forEach { range ->
-                                        PremiumFilterChip(
+                                        WtaChip(
                                             selected = config.ipSpoofConfig.randomIpRange == range,
                                             onClick = {
                                                 onConfigChange(config.copy(
                                                     ipSpoofConfig = config.ipSpoofConfig.copy(randomIpRange = range)
                                                 ))
                                             },
-                                            label = { Text(range.displayName, style = MaterialTheme.typography.labelSmall) },
-                                            modifier = Modifier.height(28.dp)
+                                            label = range.displayName,
+                                            showSelectedCheck = false
                                         )
                                     }
                                 }
 
-                                AnimatedVisibility(visible = config.ipSpoofConfig.randomIpRange == IpRange.SEARCH) {
+                                AnimatedVisibility(
+                                    visible = config.ipSpoofConfig.randomIpRange == IpRange.SEARCH,
+                                    enter = CardExpandTransition,
+                                    exit = CardCollapseTransition
+                                ) {
                                     Column(
-                                        modifier = Modifier.padding(top = 8.dp)
+                                        modifier = Modifier.padding(top = WtaSpacing.ContentGap)
                                     ) {
                                         PremiumTextField(
                                             value = config.ipSpoofConfig.searchKeyword ?: "",

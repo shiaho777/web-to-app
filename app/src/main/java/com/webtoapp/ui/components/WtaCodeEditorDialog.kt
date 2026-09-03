@@ -28,7 +28,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.FindReplace
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaRadius
 
 @Composable
@@ -371,18 +371,14 @@ fun WtaCodeEditorDialog(
                                     .padding(top = 4.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                FilterChip(
+                                WtaChip(
                                     selected = matchCase,
                                     onClick = {
                                         matchCase = !matchCase
                                         activeMatchIndex = 0
                                     },
-                                    label = {
-                                        Text(
-                                            Strings.codeEditorMatchCase,
-                                            style = MaterialTheme.typography.labelSmall
-                                        )
-                                    }
+                                    label = Strings.codeEditorMatchCase,
+                                    showSelectedCheck = false
                                 )
                                 Spacer(Modifier.width(8.dp))
                                 if (searchQuery.isNotBlank() && matches.isEmpty()) {

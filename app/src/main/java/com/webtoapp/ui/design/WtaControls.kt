@@ -14,6 +14,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -187,7 +188,11 @@ fun WtaChip(
     enabled: Boolean = true,
     leadingIcon: ImageVector? = null,
     showSelectedCheck: Boolean = true,
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    selectedContainerColor: Color? = null,
+    selectedContentColor: Color? = null,
+    leadingContent: (@Composable () -> Unit)? = null,
+    trailingContent: (@Composable RowScope.() -> Unit)? = null
 ) {
     WtaChip(
         selected = selected,
@@ -196,7 +201,11 @@ fun WtaChip(
         enabled = enabled,
         leadingIcon = leadingIcon,
         showSelectedCheck = showSelectedCheck,
-        onLongClick = onLongClick
+        onLongClick = onLongClick,
+        selectedContainerColor = selectedContainerColor,
+        selectedContentColor = selectedContentColor,
+        leadingContent = leadingContent,
+        trailingContent = trailingContent
     ) {
         Text(label, style = MaterialTheme.typography.labelLarge)
     }
@@ -212,6 +221,10 @@ fun WtaChip(
     leadingIcon: ImageVector? = null,
     showSelectedCheck: Boolean = true,
     onLongClick: (() -> Unit)? = null,
+    selectedContainerColor: Color? = null,
+    selectedContentColor: Color? = null,
+    leadingContent: (@Composable () -> Unit)? = null,
+    trailingContent: (@Composable RowScope.() -> Unit)? = null,
     label: @Composable () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
@@ -219,13 +232,14 @@ fun WtaChip(
     val hapticClick = rememberHapticClick(onClick)
 
     val containerColor by animateColorAsState(
-        targetValue = if (selected) colors.primary
+        targetValue = if (selected) selectedContainerColor ?: colors.primary
         else colors.surfaceContainerHigh,
         animationSpec = WtaMotion.standardTween(),
         label = "chipBg"
     )
     val contentColor by animateColorAsState(
-        targetValue = if (selected) colors.onPrimary else colors.onSurfaceVariant,
+        targetValue = if (selected) selectedContentColor ?: colors.onPrimary
+        else colors.onSurfaceVariant,
         animationSpec = WtaMotion.standardTween(),
         label = "chipContent"
     )
@@ -247,7 +261,10 @@ fun WtaChip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            if (selected && showSelectedCheck) {
+            if (leadingContent != null) {
+                leadingContent()
+                Spacer(Modifier.width(6.dp))
+            } else if (selected && showSelectedCheck) {
                 Icon(
                     Icons.Default.Check,
                     contentDescription = null,
@@ -266,6 +283,10 @@ fun WtaChip(
             }
             CompositionLocalProvider(LocalContentColor provides contentColor) {
                 label()
+            }
+            if (trailingContent != null) {
+                Spacer(Modifier.width(4.dp))
+                trailingContent()
             }
         }
     }

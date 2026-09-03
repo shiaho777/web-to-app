@@ -2,7 +2,8 @@ package com.webtoapp.ui.screens
 
 import androidx.compose.foundation.background
 import com.webtoapp.ui.components.PremiumOutlinedButton
-import com.webtoapp.ui.components.PremiumFilterChip
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -154,38 +155,33 @@ fun WordPressSettingsScreen(
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                     ) {
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = mirrorRegion == WordPressDependencyManager.MirrorRegion.CN,
                             onClick = {
                                 mirrorRegion = WordPressDependencyManager.MirrorRegion.CN
                                 WordPressDependencyManager.setMirrorRegion(WordPressDependencyManager.MirrorRegion.CN)
                             },
-                            label = { Text(Strings.wpMirrorCN) },
-                            leadingIcon = if (mirrorRegion == WordPressDependencyManager.MirrorRegion.CN) {
-                                { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                            } else null
+                            label = Strings.wpMirrorCN
                         )
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = mirrorRegion == WordPressDependencyManager.MirrorRegion.GLOBAL,
                             onClick = {
                                 mirrorRegion = WordPressDependencyManager.MirrorRegion.GLOBAL
                                 WordPressDependencyManager.setMirrorRegion(WordPressDependencyManager.MirrorRegion.GLOBAL)
                             },
-                            label = { Text(Strings.wpMirrorGlobal) },
-                            leadingIcon = if (mirrorRegion == WordPressDependencyManager.MirrorRegion.GLOBAL) {
-                                { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                            } else null
+                            label = Strings.wpMirrorGlobal
                         )
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = mirrorRegion != WordPressDependencyManager.MirrorRegion.CN
                                     && mirrorRegion != WordPressDependencyManager.MirrorRegion.GLOBAL,
                             onClick = {
                                 WordPressDependencyManager.setMirrorRegion(null)
                                 mirrorRegion = WordPressDependencyManager.getMirrorRegion()
                             },
-                            label = { Text(Strings.wpAutoDetect) }
+                            label = Strings.wpAutoDetect,
+                            showSelectedCheck = false
                         )
                     }
                 }

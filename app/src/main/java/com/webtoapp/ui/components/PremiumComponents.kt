@@ -85,37 +85,6 @@ fun PremiumTextField(
 }
 
 @Composable
-fun PremiumFilterChip(
-    selected: Boolean,
-    onClick: () -> Unit,
-    label: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    leadingIcon: @Composable (() -> Unit)? = null,
-) {
-
-    WtaChip(
-        selected = selected,
-        onClick = onClick,
-        modifier = modifier,
-        enabled = enabled,
-        showSelectedCheck = false
-    ) {
-        if (leadingIcon != null) {
-            androidx.compose.foundation.layout.Row(
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)
-            ) {
-                leadingIcon()
-                label()
-            }
-        } else {
-            label()
-        }
-    }
-}
-
-@Composable
 fun PremiumButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,

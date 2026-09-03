@@ -1715,7 +1715,7 @@ private fun ZipImportSection(
                 Text(
                     text = Strings.zipResourceStats,
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -2158,7 +2158,7 @@ private fun FolderImportSection(
                 Text(
                     text = Strings.zipResourceStats,
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
 

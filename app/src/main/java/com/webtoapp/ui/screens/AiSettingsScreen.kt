@@ -4,7 +4,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import androidx.compose.foundation.BorderStroke
 import com.webtoapp.ui.components.PremiumButton
-import com.webtoapp.ui.components.PremiumFilterChip
+import com.webtoapp.ui.design.WtaChip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.*
@@ -1027,14 +1027,14 @@ private fun AddModelDialog(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
 
-                                    PremiumFilterChip(
+                                    WtaChip(
                                         selected = isBatchMode,
                                         onClick = {
                                             isBatchMode = !isBatchMode
                                             if (!isBatchMode) selectedModels = emptySet()
                                         },
-                                        label = { Text(Strings.batchSelectModels, style = MaterialTheme.typography.labelSmall) },
-                                        modifier = Modifier.height(28.dp)
+                                        label = Strings.batchSelectModels,
+                                        showSelectedCheck = false
                                     )
                                 }
                             }
@@ -1154,14 +1154,15 @@ private fun AddModelDialog(
 
                             FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                             ) {
                                 ModelCapability.entries.forEach { capability ->
-                                    PremiumFilterChip(
+                                    WtaChip(
                                         selected = selectedCategory == capability,
                                         onClick = { selectedCategory = capability },
-                                        label = { Text(capability.displayName) }
+                                        label = capability.displayName,
+                                        showSelectedCheck = false
                                     )
                                 }
                             }
@@ -1312,14 +1313,15 @@ private fun EditModelDialog(
 
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                     ) {
                         ModelCapability.entries.forEach { capability ->
-                            PremiumFilterChip(
+                            WtaChip(
                                 selected = selectedCategory == capability,
                                 onClick = { selectedCategory = capability },
-                                label = { Text(capability.displayName) }
+                                label = capability.displayName,
+                                showSelectedCheck = false
                             )
                         }
                     }

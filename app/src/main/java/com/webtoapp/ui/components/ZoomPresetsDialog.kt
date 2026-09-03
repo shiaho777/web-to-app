@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ZoomIn
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -17,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.i18n.Strings
+import com.webtoapp.ui.design.WtaChip
 
 /** Page-zoom preset percentages offered in the overflow menu. Mirrors Chrome's stops. */
 val PAGE_ZOOM_PRESETS: List<Int> = listOf(50, 67, 75, 80, 90, 100, 110, 125, 150)
@@ -47,21 +46,11 @@ fun ZoomPresetsDialog(
             ) {
                 PAGE_ZOOM_PRESETS.forEach { preset ->
                     val isSelected = preset == selected
-                    AssistChip(
+                    WtaChip(
+                        selected = isSelected,
                         onClick = { onSelect(preset); onDismiss() },
-                        label = { Text("$preset%") },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = if (isSelected) {
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
-                            } else {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            },
-                            labelColor = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
+                        label = "$preset%",
+                        showSelectedCheck = false
                     )
                 }
             }

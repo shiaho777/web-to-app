@@ -1,6 +1,8 @@
 package com.webtoapp.ui.components
 
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
 import android.content.Context
 import android.media.MediaPlayer
@@ -316,23 +318,25 @@ fun BgmSelectorDialog(
                     }
 
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         item {
-                            PremiumFilterChip(
+                            WtaChip(
                                 selected = selectedTagFilter == null,
                                 onClick = { selectedTagFilter = null },
-                                label = { Text(Strings.allTag) }
+                                label = Strings.allTag,
+                                showSelectedCheck = false
                             )
                         }
                         items(BgmTag.entries.take(10)) { tag ->
-                            PremiumFilterChip(
+                            WtaChip(
                                 selected = selectedTagFilter == tag,
                                 onClick = {
                                     selectedTagFilter = if (selectedTagFilter == tag) null else tag
                                 },
-                                label = { Text(tag.displayName) }
+                                label = tag.displayName,
+                                showSelectedCheck = false
                             )
                         }
                     }
@@ -451,21 +455,24 @@ fun BgmSelectorDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(Strings.playMode, style = MaterialTheme.typography.bodyMedium)
-                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            PremiumFilterChip(
+                        Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                            WtaChip(
                                 selected = playMode == BgmPlayMode.LOOP,
                                 onClick = { playMode = BgmPlayMode.LOOP },
-                                label = { Text(Strings.loopMode, style = MaterialTheme.typography.labelSmall) }
+                                label = Strings.loopMode,
+                                showSelectedCheck = false
                             )
-                            PremiumFilterChip(
+                            WtaChip(
                                 selected = playMode == BgmPlayMode.SEQUENTIAL,
                                 onClick = { playMode = BgmPlayMode.SEQUENTIAL },
-                                label = { Text(Strings.sequentialMode, style = MaterialTheme.typography.labelSmall) }
+                                label = Strings.sequentialMode,
+                                showSelectedCheck = false
                             )
-                            PremiumFilterChip(
+                            WtaChip(
                                 selected = playMode == BgmPlayMode.SHUFFLE,
                                 onClick = { playMode = BgmPlayMode.SHUFFLE },
-                                label = { Text(Strings.shuffleMode, style = MaterialTheme.typography.labelSmall) }
+                                label = Strings.shuffleMode,
+                                showSelectedCheck = false
                             )
                         }
                     }
@@ -1198,11 +1205,11 @@ private fun EditTagsDialog(
 
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                 ) {
                     BgmTag.entries.forEach { tag ->
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = tag in selectedTags,
                             onClick = {
                                 selectedTags = if (tag in selectedTags) {
@@ -1211,7 +1218,7 @@ private fun EditTagsDialog(
                                     selectedTags + tag
                                 }
                             },
-                            label = { Text(tag.displayName) }
+                            label = tag.displayName
                         )
                     }
                 }

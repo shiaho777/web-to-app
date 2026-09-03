@@ -55,7 +55,6 @@ app/src/main/java/com/webtoapp/ui/components/RuntimeScreenComponents.kt|raw_surf
 app/src/main/java/com/webtoapp/ui/components/SampleProjectCard.kt|raw_corner_shape|3
 app/src/main/java/com/webtoapp/ui/components/Shimmer.kt|hardcoded_color|2
 app/src/main/java/com/webtoapp/ui/components/Shimmer.kt|raw_corner_shape|7
-app/src/main/java/com/webtoapp/ui/components/StatusBarConfigCard.kt|raw_corner_shape|6
 app/src/main/java/com/webtoapp/ui/components/StatusBarImageCropper.kt|raw_corner_shape|3
 app/src/main/java/com/webtoapp/ui/components/StatusBarImageCropper.kt|raw_card|2
 app/src/main/java/com/webtoapp/ui/components/TypedSampleProjectCard.kt|raw_corner_shape|3

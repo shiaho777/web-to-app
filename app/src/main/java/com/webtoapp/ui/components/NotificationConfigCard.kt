@@ -11,11 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -38,7 +35,11 @@ import com.webtoapp.ui.design.WtaDivider
 import com.webtoapp.ui.design.WtaFeatureCard
 import com.webtoapp.ui.design.WtaFeatureCardHeader
 import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.design.WtaStatusBanner
+import com.webtoapp.ui.design.WtaStatusTone
 import com.webtoapp.ui.design.WtaSwitch
+import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.ui.animation.CardExpandTransition
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +66,11 @@ fun NotificationConfigCard(
             }
         )
 
-        AnimatedVisibility(visible = enabled) {
+        AnimatedVisibility(
+            visible = enabled,
+            enter = CardExpandTransition,
+            exit = CardCollapseTransition
+        ) {
             Column(
                 modifier = Modifier.padding(top = WtaSpacing.Large),
                 verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)
@@ -76,7 +81,7 @@ fun NotificationConfigCard(
                 Text(
                     Strings.notificationTypeLabel,
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Row(
                     modifier = Modifier
@@ -106,23 +111,23 @@ fun NotificationConfigCard(
                     )
                 }
 
-                if (config.type == NotificationType.WEB_API) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            Strings.notificationWebApiDesc,
-                            modifier = Modifier.padding(12.dp),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                AnimatedVisibility(
+                    visible = config.type == NotificationType.WEB_API,
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
+                    WtaStatusBanner(
+                        message = Strings.notificationWebApiDesc,
+                        tone = WtaStatusTone.Info
+                    )
                 }
 
-                if (config.type == NotificationType.POLLING) {
+                AnimatedVisibility(
+                    visible = config.type == NotificationType.POLLING,
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)) {
                     PremiumTextField(
                         value = config.pollUrl,
                         onValueChange = { onConfigChange(config.copy(pollUrl = it)) },
@@ -172,7 +177,11 @@ fun NotificationConfigCard(
                         Text(if (expanded) Strings.hideAdvanced else Strings.showAdvanced)
                     }
 
-                    AnimatedVisibility(visible = expanded) {
+                    AnimatedVisibility(
+                        visible = expanded,
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
+                    ) {
                         Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -219,22 +228,19 @@ fun NotificationConfigCard(
                             )
                         }
                     }
+                    }
                 }
 
-                if (config.type == NotificationType.WEBSOCKET) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            Strings.notificationWebsocketDesc,
-                            modifier = Modifier.padding(12.dp),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                AnimatedVisibility(
+                    visible = config.type == NotificationType.WEBSOCKET,
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)) {
+                    WtaStatusBanner(
+                        message = Strings.notificationWebsocketDesc,
+                        tone = WtaStatusTone.Info
+                    )
 
                     PremiumTextField(
                         value = config.wsUrl,
@@ -270,7 +276,11 @@ fun NotificationConfigCard(
                         Text(if (expanded) Strings.hideAdvanced else Strings.showAdvanced)
                     }
 
-                    AnimatedVisibility(visible = expanded) {
+                    AnimatedVisibility(
+                        visible = expanded,
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
+                    ) {
                         Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)) {
                             PremiumTextField(
                                 value = config.wsHeaders,
@@ -302,22 +312,19 @@ fun NotificationConfigCard(
                             )
                         }
                     }
+                    }
                 }
 
-                if (config.type == NotificationType.FCM) {
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
-                        Text(
-                            Strings.notificationFcmDesc,
-                            modifier = Modifier.padding(12.dp),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                AnimatedVisibility(
+                    visible = config.type == NotificationType.FCM,
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)) {
+                    WtaStatusBanner(
+                        message = Strings.notificationFcmDesc,
+                        tone = WtaStatusTone.Info
+                    )
 
                     PremiumTextField(
                         value = config.fcmGoogleServicesJson,
@@ -396,7 +403,11 @@ fun NotificationConfigCard(
                         Text(if (expanded) Strings.hideAdvanced else Strings.showAdvanced)
                     }
 
-                    AnimatedVisibility(visible = expanded) {
+                    AnimatedVisibility(
+                        visible = expanded,
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
+                    ) {
                         Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Medium)) {
                             PremiumTextField(
                                 value = config.authToken,
@@ -424,6 +435,7 @@ fun NotificationConfigCard(
                                 singleLine = true
                             )
                         }
+                    }
                     }
                 }
             }

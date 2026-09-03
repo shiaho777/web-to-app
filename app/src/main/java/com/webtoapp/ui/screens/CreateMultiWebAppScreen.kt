@@ -29,6 +29,8 @@ import com.webtoapp.data.model.HtmlFileType
 import com.webtoapp.ui.components.EnhancedElevatedCard
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.RuntimeIconPickerCard
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 import java.util.UUID
@@ -348,62 +350,60 @@ private fun ExistingAppPicker(
 
         if (availableTypes.size > 1) {
             LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 item {
-                    FilterChip(
+                    WtaChip(
                         selected = filterType == null,
                         onClick = { onFilterTypeChange(null) },
-                        label = { Text(Strings.all, fontSize = 12.sp) }
+                        label = Strings.all,
+                        showSelectedCheck = false
                     )
                 }
                 items(availableTypes.size) { index ->
                     val type = availableTypes[index]
                     val (icon, label) = appTypeFilterInfo(type)
-                    FilterChip(
+                    WtaChip(
                         selected = filterType == type,
                         onClick = { onFilterTypeChange(if (filterType == type) null else type) },
-                        label = { Text(label, fontSize = 12.sp) },
-                        leadingIcon = { Icon(icon, null, modifier = Modifier.size(16.dp)) }
+                        label = label,
+                        leadingIcon = icon,
+                        showSelectedCheck = false
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(WtaSpacing.Tiny))
         }
 
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
             modifier = Modifier.fillMaxWidth()
         ) {
             item {
-                FilterChip(
+                WtaChip(
                     selected = filterCategoryId == null,
                     onClick = { onFilterCategoryChange(null) },
-                    label = { Text(Strings.allApps, fontSize = 12.sp) }
+                    label = Strings.allApps,
+                    showSelectedCheck = false
                 )
             }
             item {
-                FilterChip(
+                WtaChip(
                     selected = filterCategoryId == -1L,
                     onClick = { onFilterCategoryChange(-1L) },
-                    label = { Text(Strings.uncategorized, fontSize = 12.sp) }
+                    label = Strings.uncategorized,
+                    showSelectedCheck = false
                 )
             }
             items(categories.size) { index ->
                 val cat = categories[index]
-                FilterChip(
+                WtaChip(
                     selected = filterCategoryId == cat.id,
                     onClick = { onFilterCategoryChange(if (filterCategoryId == cat.id) null else cat.id) },
-                    label = { Text(cat.name, fontSize = 12.sp) },
-                    leadingIcon = {
-                        Icon(
-                            com.webtoapp.util.SvgIconMapper.getIcon(cat.icon),
-                            null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                    label = cat.name,
+                    leadingIcon = com.webtoapp.util.SvgIconMapper.getIcon(cat.icon),
+                    showSelectedCheck = false
                 )
             }
         }

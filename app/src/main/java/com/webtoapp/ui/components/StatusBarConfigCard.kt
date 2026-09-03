@@ -5,12 +5,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,6 +25,12 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.StatusBarBackgroundType
 import com.webtoapp.data.model.StatusBarColorMode
 import com.webtoapp.data.model.WebViewConfig
+import com.webtoapp.ui.design.WtaButton
+import com.webtoapp.ui.design.WtaButtonVariant
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaSettingRow
+import com.webtoapp.ui.design.WtaSpacing
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,9 +99,12 @@ fun StatusBarConfigCard(
         )
     }
 
+    // Zone content: the caller (FullscreenModeCard) already provides the
+    // 16dp padded zone, so this column only spaces sections like its
+    // neighbours (DnsProviderSection / staticAssetPack block).
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(WtaSpacing.SectionGap)
     ) {
         StatusBarPreviewBox(
             heightDp = currentHeightDp,
@@ -114,62 +121,65 @@ fun StatusBarConfigCard(
             onHeightChange = { onConfigChange(config.copy(statusBarHeightDp = it)) }
         )
 
-        HorizontalDivider()
-
-        Text(Strings.backgroundType, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PremiumFilterChip(
-                selected = config.statusBarBackgroundType == StatusBarBackgroundType.COLOR,
-                onClick = { onConfigChange(config.copy(statusBarBackgroundType = StatusBarBackgroundType.COLOR)) },
-                label = { Text(Strings.solidColor) },
-                leadingIcon = if (config.statusBarBackgroundType == StatusBarBackgroundType.COLOR) {
-                    { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                } else { { Icon(Icons.Outlined.Palette, null, Modifier.size(18.dp)) } }
-            )
-            PremiumFilterChip(
-                selected = config.statusBarBackgroundType == StatusBarBackgroundType.IMAGE,
-                onClick = { onConfigChange(config.copy(statusBarBackgroundType = StatusBarBackgroundType.IMAGE)) },
-                label = { Text(Strings.image) },
-                leadingIcon = if (config.statusBarBackgroundType == StatusBarBackgroundType.IMAGE) {
-                    { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                } else { { Icon(Icons.Outlined.Image, null, Modifier.size(18.dp)) } }
-            )
+        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+            GroupLabel(Strings.backgroundType)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+            ) {
+                WtaChip(
+                    selected = config.statusBarBackgroundType == StatusBarBackgroundType.COLOR,
+                    onClick = { onConfigChange(config.copy(statusBarBackgroundType = StatusBarBackgroundType.COLOR)) },
+                    label = Strings.solidColor,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Default.Palette,
+                    showSelectedCheck = false
+                )
+                WtaChip(
+                    selected = config.statusBarBackgroundType == StatusBarBackgroundType.IMAGE,
+                    onClick = { onConfigChange(config.copy(statusBarBackgroundType = StatusBarBackgroundType.IMAGE)) },
+                    label = Strings.image,
+                    modifier = Modifier.weight(1f),
+                    leadingIcon = Icons.Default.Image,
+                    showSelectedCheck = false
+                )
+            }
         }
 
         when (config.statusBarBackgroundType) {
             StatusBarBackgroundType.COLOR -> {
-                Text(Strings.backgroundColor, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                    GroupLabel(Strings.backgroundColor)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+                    ) {
+                        WtaChip(
+                            selected = config.statusBarColorMode == StatusBarColorMode.THEME,
+                            onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.THEME)) },
+                            label = Strings.tagTheme,
+                            modifier = Modifier.weight(1f),
+                            showSelectedCheck = false
+                        )
+                        WtaChip(
+                            selected = config.statusBarColorMode == StatusBarColorMode.PAGE_TOP,
+                            onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.PAGE_TOP)) },
+                            label = Strings.followPageTop,
+                            modifier = Modifier.weight(1f),
+                            showSelectedCheck = false
+                        )
+                        WtaChip(
+                            selected = config.statusBarColorMode == StatusBarColorMode.CUSTOM,
+                            onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.CUSTOM)) },
+                            label = Strings.backgroundColor,
+                            modifier = Modifier.weight(1f),
+                            showSelectedCheck = false
+                        )
+                    }
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PremiumFilterChip(
-                        selected = config.statusBarColorMode == StatusBarColorMode.THEME,
-                        onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.THEME)) },
-                        label = { Text(Strings.tagTheme) },
-                        leadingIcon = if (config.statusBarColorMode == StatusBarColorMode.THEME) {
-                            { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                        } else { { Icon(Icons.Outlined.Palette, null, Modifier.size(18.dp)) } }
-                    )
-                    PremiumFilterChip(
-                        selected = config.statusBarColorMode == StatusBarColorMode.PAGE_TOP,
-                        onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.PAGE_TOP)) },
-                        label = { Text(Strings.followPageTop) },
-                        leadingIcon = if (config.statusBarColorMode == StatusBarColorMode.PAGE_TOP) {
-                            { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                        } else { { Icon(Icons.Outlined.Language, null, Modifier.size(18.dp)) } }
-                    )
-                    PremiumFilterChip(
-                        selected = config.statusBarColorMode == StatusBarColorMode.CUSTOM,
-                        onClick = { onConfigChange(config.copy(statusBarColorMode = StatusBarColorMode.CUSTOM)) },
-                        label = { Text(Strings.backgroundColor) },
-                        leadingIcon = if (config.statusBarColorMode == StatusBarColorMode.CUSTOM) {
-                            { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                        } else { { Icon(Icons.Outlined.Edit, null, Modifier.size(18.dp)) } }
-                    )
-                }
-
-                if (config.statusBarColorMode == StatusBarColorMode.CUSTOM) {
-                    ColorSelectionRow(currentColor = config.statusBarColor, onColorClick = { showColorPicker = true })
+                    if (config.statusBarColorMode == StatusBarColorMode.CUSTOM) {
+                        ColorSelectionRow(currentColor = config.statusBarColor, onColorClick = { showColorPicker = true })
+                    }
                 }
             }
             StatusBarBackgroundType.IMAGE -> {
@@ -181,11 +191,19 @@ fun StatusBarConfigCard(
             }
         }
 
-        HorizontalDivider()
-
         AlphaSlider(alpha = config.statusBarBackgroundAlpha, onAlphaChange = { onConfigChange(config.copy(statusBarBackgroundAlpha = it)) })
     }
 }
+
+@Composable
+private fun GroupLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.primary
+    )
+}
+
 @Composable
 private fun StatusBarPreviewBox(
     heightDp: Int,
@@ -206,12 +224,15 @@ private fun StatusBarPreviewBox(
         }
     }
 
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(Strings.statusBarPreview, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+    ) {
+        GroupLabel(Strings.statusBarPreview)
 
         Box(
-            modifier = Modifier.fillMaxWidth().height(heightDp.dp).clip(RoundedCornerShape(4.dp))
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
+            modifier = Modifier.fillMaxWidth().height(heightDp.dp).clip(RoundedCornerShape(WtaRadius.Control))
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(WtaRadius.Control))
         ) {
             when (backgroundType) {
                 StatusBarBackgroundType.COLOR -> {
@@ -230,10 +251,10 @@ private fun StatusBarPreviewBox(
                     }
                 }
             }
-            Row(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+            Row(modifier = Modifier.fillMaxSize().padding(horizontal = WtaSpacing.RowHorizontal),
                 horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text("12:00", style = MaterialTheme.typography.labelSmall, color = Color.White, fontSize = 11.sp)
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.SignalCellularAlt, null, Modifier.size(12.dp), tint = Color.White)
                     Icon(Icons.Default.Wifi, null, Modifier.size(12.dp), tint = Color.White)
                     Icon(Icons.Default.BatteryFull, null, Modifier.size(12.dp), tint = Color.White)
@@ -245,9 +266,12 @@ private fun StatusBarPreviewBox(
 
 @Composable
 private fun HeightSlider(currentHeight: Int, systemDefaultHeight: Int, onHeightChange: (Int) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    // Same slider-in-zone pattern as the staticAssetPack block: primary group
+    // label plus a raw Slider (WtaSliderRow is a full-bleed row and would
+    // double-pad inside the caller's padded zone).
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(Strings.statusBarHeight, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            GroupLabel(Strings.statusBarHeight)
             Text("${currentHeight}dp", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
         }
 
@@ -255,7 +279,7 @@ private fun HeightSlider(currentHeight: Int, systemDefaultHeight: Int, onHeightC
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("0dp", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-            TextButton(onClick = { onHeightChange(-1) }, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)) {
+            TextButton(onClick = { onHeightChange(-1) }, contentPadding = PaddingValues(horizontal = WtaSpacing.Small, vertical = 0.dp)) {
                 Text("${Strings.restoreDefault} (${systemDefaultHeight}dp)", fontSize = 12.sp)
             }
             Text("48dp", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -266,24 +290,30 @@ private fun HeightSlider(currentHeight: Int, systemDefaultHeight: Int, onHeightC
 @Composable
 private fun ColorSelectionRow(currentColor: String?, onColorClick: () -> Unit) {
     val color = remember(currentColor) { currentColor?.let { parseColor(it) } ?: Color.Black }
-    Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).clickable(onClick = onColorClick).padding(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(color).border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)))
-        Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
-            Text(Strings.backgroundColor, style = MaterialTheme.typography.bodyMedium)
-            Text(currentColor?.uppercase() ?: "#000000", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    WtaSettingRow(
+        title = Strings.backgroundColor,
+        subtitle = currentColor?.uppercase() ?: "#000000",
+        onClick = onColorClick,
+        iconContent = {
+            Box(
+                modifier = Modifier.size(WtaSpacing.ExtraLarge)
+                    .clip(RoundedCornerShape(WtaRadius.Chip))
+                    .background(color)
+                    .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(WtaRadius.Chip))
+            )
         }
+    ) {
         Icon(Icons.Default.Edit, contentDescription = Strings.selectColor, tint = MaterialTheme.colorScheme.primary)
     }
 }
 
 @Composable
 private fun ImageSelectionRow(currentImagePath: String?, onSelectImage: () -> Unit, onClearImage: () -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
         if (currentImagePath != null) {
-            Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)).padding(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                AsyncImage(model = currentImagePath, contentDescription = null, modifier = Modifier.width(80.dp).height(32.dp).clip(RoundedCornerShape(4.dp)), contentScale = ContentScale.Crop)
+            Row(modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(WtaRadius.Control)).border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(WtaRadius.Control)).padding(WtaSpacing.Small),
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Medium), verticalAlignment = Alignment.CenterVertically) {
+                AsyncImage(model = currentImagePath, contentDescription = null, modifier = Modifier.width(80.dp).height(32.dp).clip(RoundedCornerShape(WtaRadius.Chip)), contentScale = ContentScale.Crop)
                 Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                     Text(Strings.imageSelected, style = MaterialTheme.typography.bodyMedium)
                     Text(Strings.clickToChangeOrClear, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -292,20 +322,22 @@ private fun ImageSelectionRow(currentImagePath: String?, onSelectImage: () -> Un
                 IconButton(onClick = onClearImage) { Icon(Icons.Default.Delete, Strings.clearImage, tint = MaterialTheme.colorScheme.error) }
             }
         } else {
-            PremiumOutlinedButton(onClick = onSelectImage, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.AddPhotoAlternate, null, Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp))
-                Text(Strings.selectBackgroundImage)
-            }
+            WtaButton(
+                onClick = onSelectImage,
+                text = Strings.selectBackgroundImage,
+                variant = WtaButtonVariant.Outlined,
+                leadingIcon = Icons.Default.AddPhotoAlternate,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
 
 @Composable
 private fun AlphaSlider(alpha: Float, onAlphaChange: (Float) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(Strings.backgroundAlpha, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            GroupLabel(Strings.backgroundAlpha)
             Text("${(alpha * 100).toInt()}%", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
         }
         Slider(value = alpha, onValueChange = onAlphaChange, valueRange = 0f..1f, modifier = Modifier.fillMaxWidth())

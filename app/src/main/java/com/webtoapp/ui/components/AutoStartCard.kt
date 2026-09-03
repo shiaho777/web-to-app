@@ -25,6 +25,7 @@ import com.webtoapp.core.autostart.AutoStartManager
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.AutoStartConfig
 import com.webtoapp.ui.design.WtaSettingCard
+import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaToggleRow
 import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaSpacing
@@ -256,7 +257,7 @@ fun AutoStartCard(
                                 dayNames.forEachIndexed { index, name ->
                                     val day = index + 1
                                     val isSelected = scheduledDays.contains(day)
-                                    PremiumFilterChip(
+                                    WtaChip(
                                         selected = isSelected,
                                         onClick = {
                                             scheduledDays = if (isSelected) {
@@ -266,8 +267,7 @@ fun AutoStartCard(
                                             }
                                             updateConfig()
                                         },
-                                        label = { Text(name) },
-                                        modifier = Modifier.padding(horizontal = 2.dp)
+                                        label = name
                                     )
                                 }
                             }

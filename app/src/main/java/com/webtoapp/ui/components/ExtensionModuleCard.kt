@@ -4,8 +4,10 @@ import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaBadge
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaDivider
 import com.webtoapp.ui.design.WtaRadius
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
 
 import android.content.Intent
@@ -395,7 +397,7 @@ private fun SelectedModulesSection(
             Text(
                 text = Strings.extensionEnabledModulesLabel,
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.primary
             )
             Row(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
@@ -668,7 +670,7 @@ private fun FabIconSelector(
     Text(
         text = Strings.extensionFabIconLabel,
         style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
+        color = MaterialTheme.colorScheme.primary
     )
 
     Spacer(modifier = Modifier.height(6.dp))
@@ -917,28 +919,22 @@ fun ExtensionModuleSelectorDialog(
                     Spacer(modifier = Modifier.height(12.dp))
 
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                     ) {
                         item {
-                            PremiumFilterChip(
+                            WtaChip(
                                 selected = selectedCategory == null,
                                 onClick = { selectedCategory = null },
-                                label = { Text(Strings.all) },
-                                leadingIcon = if (selectedCategory == null) {
-                                    { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                                } else null
+                                label = Strings.all
                             )
                         }
                         items(ModuleCategory.values().toList()) { category ->
-                            PremiumFilterChip(
+                            WtaChip(
                                 selected = selectedCategory == category,
                                 onClick = {
                                     selectedCategory = if (selectedCategory == category) null else category
                                 },
-                                label = { Text(category.getDisplayName()) },
-                                leadingIcon = if (selectedCategory == category) {
-                                    { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                                } else null
+                                label = category.getDisplayName()
                             )
                         }
                     }
@@ -1214,16 +1210,13 @@ fun ModuleTestDialog(
                     )
 
                     LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                     ) {
                         items(testPages) { page ->
-                            PremiumFilterChip(
+                            WtaChip(
                                 selected = selectedTestPage?.id == page.id,
                                 onClick = { selectedTestPage = page },
-                                label = { Text("${page.icon} ${page.name}") },
-                                leadingIcon = if (selectedTestPage?.id == page.id) {
-                                    { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                                } else null
+                                label = "${page.icon} ${page.name}"
                             )
                         }
                     }

@@ -2,7 +2,6 @@ package com.webtoapp.ui.screens
 
 import android.widget.Toast
 import com.webtoapp.ui.components.PremiumButton
-import com.webtoapp.ui.components.PremiumFilterChip
 import com.webtoapp.core.logging.AppLogger
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
@@ -48,6 +47,8 @@ import com.webtoapp.ui.design.WtaSection
 import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaSettingCard
 import com.webtoapp.ui.design.WtaSettingRow
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaAlertDialog
@@ -1083,23 +1084,17 @@ private fun CodeTab(
             .padding(16.dp)
     ) {
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PremiumFilterChip(
+        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                WtaChip(
                     selected = showJsTab,
                     onClick = { showJsTab = true },
-                    label = { Text("JavaScript") },
-                    leadingIcon = if (showJsTab) {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                    } else null
+                    label = "JavaScript"
                 )
-                PremiumFilterChip(
+                WtaChip(
                     selected = !showJsTab,
                     onClick = { showJsTab = false },
-                    label = { Text("CSS") },
-                    leadingIcon = if (!showJsTab) {
-                        { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                    } else null
+                    label = "CSS"
                 )
             }
 

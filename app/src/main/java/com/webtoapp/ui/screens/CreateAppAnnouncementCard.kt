@@ -441,17 +441,19 @@ private fun AnnouncementTriggerSection(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = WtaSpacing.RowHorizontal),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
-                PremiumFilterChip(
+                WtaChip(
                     selected = announcement.showOnce,
                     onClick = { onAnnouncementChange(announcement.copy(showOnce = true)) },
-                    label = { Text(Strings.showOnce) }
+                    label = Strings.showOnce,
+                    showSelectedCheck = false
                 )
-                PremiumFilterChip(
+                WtaChip(
                     selected = !announcement.showOnce,
                     onClick = { onAnnouncementChange(announcement.copy(showOnce = false)) },
-                    label = { Text(Strings.everyLaunch) }
+                    label = Strings.everyLaunch,
+                    showSelectedCheck = false
                 )
             }
         }

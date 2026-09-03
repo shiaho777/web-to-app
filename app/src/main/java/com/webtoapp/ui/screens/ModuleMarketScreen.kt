@@ -103,7 +103,6 @@ import com.webtoapp.core.market.ChromeWebStoreSearch
 import com.webtoapp.core.market.CwsSearchResult
 import com.webtoapp.core.market.CwsTags
 import com.webtoapp.core.extension.BrowserExtensionStore
-import com.webtoapp.ui.components.PremiumFilterChip
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.GreasyForkSearchContent
 import com.webtoapp.ui.components.installGreasyForkScript
@@ -113,6 +112,7 @@ import com.webtoapp.ui.design.WtaButtonSize
 import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaTab
@@ -433,19 +433,21 @@ fun ModuleMarketScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item {
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = selectedCategory == null,
                             onClick = { selectedCategory = null },
-                            label = { Text(Strings.moduleMarketAll) }
+                            label = Strings.moduleMarketAll,
+                            showSelectedCheck = false
                         )
                     }
                     items(MarketCategoryHighlights) { category ->
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = selectedCategory == category,
                             onClick = {
                                 selectedCategory = if (selectedCategory == category) null else category
                             },
-                            label = { Text(category.getDisplayName()) }
+                            label = category.getDisplayName(),
+                            showSelectedCheck = false
                         )
                     }
                 }
@@ -946,10 +948,11 @@ private fun CwsSearchContent(
                     contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
                     items(BrowserExtensionStore.browseCategories(), key = { it.name }) { category ->
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = browseCategory == category,
                             onClick = { browseCategory = category },
-                            label = { Text(cwsCategoryLabel(category)) }
+                            label = cwsCategoryLabel(category),
+                            showSelectedCheck = false
                         )
                     }
                 }
@@ -1046,10 +1049,11 @@ private fun CwsSortRow(
             )
         }
         items(CwsSortMode.values().toList(), key = { it.name }) { mode ->
-            PremiumFilterChip(
+            WtaChip(
                 selected = sortMode == mode,
                 onClick = { onSortModeChange(mode) },
-                label = { Text(cwsSortLabel(mode)) }
+                label = cwsSortLabel(mode),
+                showSelectedCheck = false
             )
         }
     }

@@ -23,7 +23,8 @@ import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -125,23 +126,19 @@ fun BatchImportDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                 ) {
-                    FilterChip(
+                    WtaChip(
                         selected = tab == 0,
                         onClick = {
                             tab = 0
                             importResult = null
                             parseError = null
                         },
-                        label = {
-                            Text(
-                                Strings.batchImportFromText,
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
+                        label = Strings.batchImportFromText,
+                        showSelectedCheck = false
                     )
-                    FilterChip(
+                    WtaChip(
                         selected = tab == 1,
                         onClick = {
                             tab = 1
@@ -149,12 +146,8 @@ fun BatchImportDialog(
                             parseError = null
                             parseResult = BatchImportService.ParseResult(emptyList())
                         },
-                        label = {
-                            Text(
-                                Strings.batchImportFromBookmarks,
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
+                        label = Strings.batchImportFromBookmarks,
+                        showSelectedCheck = false
                     )
                 }
 

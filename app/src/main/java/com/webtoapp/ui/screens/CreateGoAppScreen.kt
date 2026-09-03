@@ -30,6 +30,8 @@ import com.webtoapp.core.golang.GoSampleManager
 import com.webtoapp.data.model.GoAppConfig
 import com.webtoapp.ui.components.TypedSampleProjectsCard
 import com.webtoapp.ui.components.*
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 import com.webtoapp.ui.screens.create.runtime.GoProjectSourceLoader
@@ -723,18 +725,16 @@ private fun GoTargetArchCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
                 architectures.forEach { (arch, label) ->
-                    PremiumFilterChip(
+                    WtaChip(
                         selected = targetArch == arch,
-                        onClick = { onArchChange(arch) },
-                        label = { Text(label, fontFamily = FontFamily.Monospace) },
-                        leadingIcon = if (targetArch == arch) {
-                            { Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
-                        } else null
-                    )
+                        onClick = { onArchChange(arch) }
+                    ) {
+                        Text(label, fontFamily = FontFamily.Monospace)
+                    }
                 }
             }
         }

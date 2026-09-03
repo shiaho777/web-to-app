@@ -29,6 +29,8 @@ import androidx.compose.ui.window.DialogProperties
 import com.webtoapp.core.extension.CodeSnippet
 import com.webtoapp.core.extension.CodeSnippetCategory
 import com.webtoapp.core.extension.CodeSnippets
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import androidx.compose.ui.graphics.Color
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -118,32 +120,26 @@ fun CodeSnippetSelectorDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                     ) {
 
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = selectedCategory == null && searchQuery.isBlank(),
                             onClick = {
                                 selectedCategory = null
                                 searchQuery = ""
                             },
-                            label = { Text(com.webtoapp.core.i18n.Strings.hotTag) },
-                            leadingIcon = if (selectedCategory == null && searchQuery.isBlank()) {
-                                { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                            } else null
+                            label = com.webtoapp.core.i18n.Strings.hotTag
                         )
 
                         allCategories.forEach { category ->
-                            PremiumFilterChip(
+                            WtaChip(
                                 selected = selectedCategory == category,
                                 onClick = {
                                     selectedCategory = if (selectedCategory == category) null else category
                                     searchQuery = ""
                                 },
-                                label = { Text(category.name) },
-                                leadingIcon = if (selectedCategory == category) {
-                                    { Icon(Icons.Default.Check, null, Modifier.size(16.dp)) }
-                                } else null
+                                label = category.name
                             )
                         }
                     }
@@ -531,19 +527,15 @@ fun CodeSnippetQuickPicker(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
                 popularSnippets.forEach { snippet ->
-                    SuggestionChip(
+                    WtaChip(
+                        selected = false,
                         onClick = { onSelect(snippet) },
-                        label = { Text(snippet.name, maxLines = 1) },
-                        icon = {
-                            Icon(
-                                Icons.Outlined.Code,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
+                        label = snippet.name,
+                        leadingIcon = Icons.Outlined.Code,
+                        showSelectedCheck = false
                     )
                 }
             }

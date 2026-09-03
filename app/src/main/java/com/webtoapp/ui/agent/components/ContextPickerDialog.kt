@@ -13,7 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.FilterChip
+import com.webtoapp.ui.design.WtaChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -129,16 +129,18 @@ private fun AppsPage(
                     .padding(vertical = WtaSpacing.Small),
                 horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
-                FilterChip(
+                WtaChip(
                     selected = selectedCategory == null,
                     onClick = { onSelectCategory(null) },
-                    label = { Text(Strings.agentContextAllCategories) }
+                    label = Strings.agentContextAllCategories,
+                    showSelectedCheck = false
                 )
                 categories.forEach { category ->
-                    FilterChip(
+                    WtaChip(
                         selected = selectedCategory == category.id,
                         onClick = { onSelectCategory(category.id) },
-                        label = { Text("${category.icon} ${category.name}") }
+                        label = "${category.icon} ${category.name}",
+                        showSelectedCheck = false
                     )
                 }
             }

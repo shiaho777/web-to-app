@@ -62,6 +62,7 @@ import com.webtoapp.ui.design.WtaButtonSize
 import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSpacing
 
@@ -151,10 +152,11 @@ fun GreasyForkSearchContent(
                     contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
                     items(GfBrowseCategory.browseOrder(), key = { it.name }) { category ->
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = browseCategory == category,
                             onClick = { onBrowseCategoryChange(category) },
-                            label = { Text(gfBrowseCategoryLabel(category)) }
+                            label = gfBrowseCategoryLabel(category),
+                            showSelectedCheck = false
                         )
                     }
                 }
@@ -292,10 +294,11 @@ private fun GfSortRow(
             )
         }
         items(GfSort.values().toList(), key = { it.name }) { mode ->
-            PremiumFilterChip(
+            WtaChip(
                 selected = sortMode == mode,
                 onClick = { onSortModeChange(mode) },
-                label = { Text(gfSortLabel(mode)) }
+                label = gfSortLabel(mode),
+                showSelectedCheck = false
             )
         }
     }

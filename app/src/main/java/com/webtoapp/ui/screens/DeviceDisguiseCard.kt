@@ -16,10 +16,10 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.animation.CardCollapseTransition
 import com.webtoapp.ui.design.WtaSettingCard
+import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaToggleRow
 import com.webtoapp.ui.design.WtaSectionDivider
 import com.webtoapp.ui.design.WtaSpacing
-import com.webtoapp.ui.components.PremiumFilterChip
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.components.SettingsSwitch
 
@@ -79,11 +79,11 @@ fun DeviceDisguiseCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = WtaSpacing.RowHorizontal),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                 ) {
                     deviceTypes.forEach { (type, label) ->
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = config.deviceType == type,
                             onClick = {
                                 val presets = DevicePresets.getPresetsForType(type)
@@ -93,7 +93,8 @@ fun DeviceDisguiseCard(
                                     onConfigChange(config.copy(deviceType = type))
                                 }
                             },
-                            label = { Text(label) }
+                            label = label,
+                            showSelectedCheck = false
                         )
                     }
                 }
@@ -104,7 +105,7 @@ fun DeviceDisguiseCard(
                 Text(
                     text = Strings.devicePopularPresets,
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.tertiary,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(
                         start = WtaSpacing.RowHorizontal,
                         top = WtaSpacing.ContentGap,
@@ -118,11 +119,11 @@ fun DeviceDisguiseCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = WtaSpacing.RowHorizontal),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                 ) {
                     presets.forEach { preset ->
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = config.deviceModel == preset.model &&
                                     config.deviceBrand == preset.brand,
                             onClick = {
@@ -130,7 +131,8 @@ fun DeviceDisguiseCard(
                                     deviceType = config.deviceType
                                 ))
                             },
-                            label = { Text(preset.name) }
+                            label = preset.name,
+                            showSelectedCheck = false
                         )
                     }
                 }
@@ -138,7 +140,11 @@ fun DeviceDisguiseCard(
                 Spacer(modifier = Modifier.height(WtaSpacing.ContentGap))
                 WtaSectionDivider()
 
-                if (config.deviceType !in listOf(DeviceType.DESKTOP, DeviceType.LAPTOP)) {
+                AnimatedVisibility(
+                    visible = config.deviceType !in listOf(DeviceType.DESKTOP, DeviceType.LAPTOP),
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
+                ) {
                     SettingsSwitch(
                         title = Strings.deviceDesktopViewport,
                         subtitle = Strings.deviceDesktopViewportHint,

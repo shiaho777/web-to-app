@@ -1,6 +1,8 @@
 package com.webtoapp.ui.screens
 
 import android.net.Uri
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -690,22 +692,22 @@ private fun MediaPlaybackSpeedCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
                 speeds.forEach { s ->
                     val isSelected = speed == s
-                    PremiumFilterChip(
+                    WtaChip(
                         selected = isSelected,
                         onClick = { onSpeedChange(s) },
-                        label = {
-                            Text(
-                                "${s}x",
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                fontFamily = FontFamily.Monospace
-                            )
-                        },
-                        modifier = Modifier.weight(weight = 1f, fill = true)
-                    )
+                        modifier = Modifier.weight(weight = 1f, fill = true),
+                        showSelectedCheck = false
+                    ) {
+                        Text(
+                            "${s}x",
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            fontFamily = FontFamily.Monospace
+                        )
+                    }
                 }
             }
         }

@@ -116,7 +116,7 @@ fun DnsConfigCard(
                     Text(
                         text = Strings.advancedOptions,
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = WtaSpacing.Tiny)
                     )
 
@@ -227,7 +227,7 @@ private fun DnsProviderSection(
         Text(
             text = Strings.dnsProviderLabel,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.primary
         )
         DnsProvider.entries.chunked(3).forEach { row ->
             Row(
@@ -260,7 +260,7 @@ private fun DohModeSection(
         Text(
             text = Strings.dohModeLabel,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.primary
         )
         Row(
             modifier = Modifier.fillMaxWidth(),

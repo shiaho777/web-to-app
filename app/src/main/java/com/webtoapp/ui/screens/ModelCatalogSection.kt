@@ -20,7 +20,6 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +48,7 @@ import com.webtoapp.data.model.AiModel
 import com.webtoapp.data.model.ApiKeyConfig
 import com.webtoapp.data.model.ModelCapability
 import com.webtoapp.data.model.SavedModel
+import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaSpacing
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -137,16 +137,18 @@ fun ModelCatalogSection(
                 .padding(horizontal = WtaSpacing.ScreenHorizontal, vertical = WtaSpacing.Small),
             horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
         ) {
-            FilterChip(
+            WtaChip(
                 selected = selectedProvider == null,
                 onClick = { selectedProvider = null },
-                label = { Text(Strings.aiCatalogAllProviders) }
+                label = Strings.aiCatalogAllProviders,
+                showSelectedCheck = false
             )
             providers.forEach { p ->
-                FilterChip(
+                WtaChip(
                     selected = selectedProvider == p.id,
                     onClick = { selectedProvider = if (selectedProvider == p.id) null else p.id },
-                    label = { Text(p.name) }
+                    label = p.name,
+                    showSelectedCheck = false
                 )
             }
         }
@@ -160,10 +162,11 @@ fun ModelCatalogSection(
             horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
         ) {
             CapabilityFilter.entries.forEach { f ->
-                FilterChip(
+                WtaChip(
                     selected = capabilityFilter == f,
                     onClick = { capabilityFilter = f },
-                    label = { Text(catalogCapabilityLabel(f)) }
+                    label = catalogCapabilityLabel(f),
+                    showSelectedCheck = false
                 )
             }
         }

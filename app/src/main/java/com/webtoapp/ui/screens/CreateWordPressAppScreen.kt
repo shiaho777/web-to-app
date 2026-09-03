@@ -1,5 +1,7 @@
 package com.webtoapp.ui.screens
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.PremiumOutlinedButton
@@ -728,7 +730,7 @@ private fun WpThemeCard(
                 Text(
                     Strings.wpInstalledThemes,
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(6.dp))
 
@@ -976,15 +978,15 @@ private fun WpLanguageCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
                 languages.forEach { (code, label) ->
-                    val isSelected = selected == code
-                    PremiumFilterChip(
-                        selected = isSelected,
+                    WtaChip(
+                        selected = selected == code,
                         onClick = { onSelect(code) },
-                        label = { Text(label, style = MaterialTheme.typography.bodySmall) }
+                        label = label,
+                        showSelectedCheck = false
                     )
                 }
             }

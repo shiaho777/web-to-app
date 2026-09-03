@@ -34,6 +34,7 @@ import com.webtoapp.ui.components.IconSwitchCard
 import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.PremiumTextField
 import com.webtoapp.ui.design.WtaBackground
+import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaSettingCard
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSectionDivider
@@ -321,17 +322,12 @@ fun PermissionConfigPanel(
         ) {
             PERMISSION_PRESETS.forEach { preset ->
                 val selected = preset.match(permissions)
-                FilterChip(
+                WtaChip(
                     selected = selected,
                     onClick = { onPermissionsTransform { preset.apply(it) } },
-                    label = { Text(preset.label()) },
-                    leadingIcon = {
-                        Icon(
-                            preset.icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
+                    label = preset.label(),
+                    leadingIcon = preset.icon,
+                    showSelectedCheck = false
                 )
             }
         }
@@ -566,18 +562,13 @@ private fun PermissionSchemeCard(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     savedPresets.forEach { preset ->
-                        ElevatedFilterChip(
+                        WtaChip(
                             selected = false,
                             onClick = { onApplyScheme(preset) },
-                            label = { Text(preset.name) },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Outlined.Bolt,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            },
-                            trailingIcon = {
+                            label = preset.name,
+                            leadingIcon = Icons.Outlined.Bolt,
+                            showSelectedCheck = false,
+                            trailingContent = {
                                 IconButton(
                                     onClick = { onDeleteScheme(preset) },
                                     modifier = Modifier.size(24.dp)

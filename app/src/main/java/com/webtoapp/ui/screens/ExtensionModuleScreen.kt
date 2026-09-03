@@ -1,7 +1,8 @@
 package com.webtoapp.ui.screens
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.webtoapp.ui.components.PremiumButton
-import com.webtoapp.ui.components.PremiumFilterChip
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -1218,22 +1219,24 @@ private fun ExtensionModulesTabContent(
     Column(modifier = Modifier.fillMaxSize()) {
 
         LazyRow(
-            modifier = Modifier.padding(vertical = 8.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(vertical = WtaSpacing.Small),
+            contentPadding = PaddingValues(horizontal = WtaSpacing.ScreenHorizontal),
+            horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
         ) {
             item {
-                PremiumFilterChip(
+                WtaChip(
                     selected = selectedCategory == null,
                     onClick = { onCategoryChange(null) },
-                    label = { Text(Strings.all) }
+                    label = Strings.all,
+                    showSelectedCheck = false
                 )
             }
             items(ModuleCategory.values().toList()) { category ->
-                PremiumFilterChip(
+                WtaChip(
                     selected = selectedCategory == category,
                     onClick = { onCategoryChange(if (selectedCategory == category) null else category) },
-                    label = { Text(category.getDisplayName()) }
+                    label = category.getDisplayName(),
+                    showSelectedCheck = false
                 )
             }
         }

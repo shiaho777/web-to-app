@@ -4,11 +4,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -25,7 +20,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -36,6 +30,7 @@ import com.webtoapp.data.model.FloatingWindowConfig
 import com.webtoapp.ui.animation.CardCollapseTransition
 import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.design.WtaDivider
+import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaFeatureCard
 import com.webtoapp.ui.design.WtaFeatureCardHeader
 import com.webtoapp.ui.design.WtaRadius
@@ -121,8 +116,8 @@ fun FloatingWindowConfigCard(
 
                     AnimatedVisibility(
                         visible = aspectRatioMode == FloatingWindowAspectRatioMode.FREE,
-                        enter = fadeIn(tween(200)) + expandVertically(tween(300)),
-                        exit = fadeOut(tween(200)) + shrinkVertically(tween(300))
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
                     ) {
                         SliderWithLabel(
                             label = Strings.fwHeightLabel,
@@ -138,12 +133,13 @@ fun FloatingWindowConfigCard(
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = Strings.fwAspectRatio,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        modifier = Modifier.padding(bottom = 6.dp)
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = WtaSpacing.Tiny)
                     )
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                     ) {
                         data class AspectOption(
                             val mode: FloatingWindowAspectRatioMode,
@@ -159,7 +155,7 @@ fun FloatingWindowConfigCard(
                             AspectOption(FloatingWindowAspectRatioMode.CUSTOM, Strings.fwAspectCustom)
                         )
                         aspectOptions.forEach { option ->
-                            FilterChip(
+                            WtaChip(
                                 selected = aspectRatioMode == option.mode,
                                 onClick = {
                                     onConfigChange(config.copy(
@@ -167,24 +163,15 @@ fun FloatingWindowConfigCard(
                                         lockAspectRatio = option.mode != FloatingWindowAspectRatioMode.FREE
                                     ))
                                 },
-                                label = { Text(option.label, style = MaterialTheme.typography.labelSmall) },
-                                leadingIcon = if (aspectRatioMode == option.mode) {
-                                    {
-                                        Icon(
-                                            Icons.Outlined.Check,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                } else null
+                                label = option.label
                             )
                         }
                     }
 
                     AnimatedVisibility(
                         visible = aspectRatioMode == FloatingWindowAspectRatioMode.CUSTOM,
-                        enter = fadeIn(tween(200)) + expandVertically(tween(300)),
-                        exit = fadeOut(tween(200)) + shrinkVertically(tween(300))
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -246,12 +233,13 @@ fun FloatingWindowConfigCard(
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = Strings.fwBorderStyle,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                        modifier = Modifier.padding(bottom = 6.dp)
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = WtaSpacing.Tiny)
                     )
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                     ) {
                         data class BorderOption(
                             val style: FloatingBorderStyle,
@@ -266,17 +254,12 @@ fun FloatingWindowConfigCard(
                         )
                         borderOptions.forEach { option ->
                             val isSelected = config.borderStyle == option.style
-                            FilterChip(
+                            WtaChip(
                                 selected = isSelected,
                                 onClick = { onConfigChange(config.copy(borderStyle = option.style)) },
-                                label = { Text(option.label, style = MaterialTheme.typography.labelSmall) },
-                                leadingIcon = {
-                                    Icon(
-                                        option.icon,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
+                                label = option.label,
+                                leadingIcon = option.icon,
+                                showSelectedCheck = false
                             )
                         }
                     }
@@ -327,8 +310,8 @@ fun FloatingWindowConfigCard(
 
                     AnimatedVisibility(
                         visible = config.showTitleBar,
-                        enter = fadeIn(tween(200)) + expandVertically(tween(200)),
-                        exit = fadeOut(tween(200)) + shrinkVertically(tween(200))
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
                     ) {
                         ToggleRow(
                             title = Strings.fwAutoHideTitleBar,
@@ -386,8 +369,8 @@ fun FloatingWindowConfigCard(
 
                     AnimatedVisibility(
                         visible = showAdvanced,
-                        enter = fadeIn(tween(200)) + expandVertically(tween(300)),
-                        exit = fadeOut(tween(200)) + shrinkVertically(tween(300))
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
                     ) {
                         Column(
                             modifier = Modifier.padding(top = 12.dp),
@@ -496,8 +479,8 @@ private fun FloatingWindowMinimizedIconPicker(
                 }
                 AnimatedVisibility(
                     visible = hasIcon,
-                    enter = fadeIn(tween(150)),
-                    exit = fadeOut(tween(150))
+                    enter = CardExpandTransition,
+                    exit = CardCollapseTransition
                 ) {
                     TextButton(
                         onClick = onClear,

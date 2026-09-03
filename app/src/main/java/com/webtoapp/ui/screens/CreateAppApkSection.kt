@@ -1,6 +1,5 @@
 package com.webtoapp.ui.screens
 
-import com.webtoapp.ui.components.PremiumFilterChip
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -196,11 +195,12 @@ fun ApkExportSection(
                     ) {
                         ApkArchitecture.entries.forEach { arch ->
                             val isSelected = config.architecture == arch
-                            PremiumFilterChip(
+                            WtaChip(
                                 selected = isSelected,
                                 onClick = { onConfigChange(config.copy(architecture = arch)) },
-                                label = { Text(arch.displayName) },
+                                label = arch.displayName,
                                 modifier = Modifier.weight(1f),
+                                showSelectedCheck = false
                             )
                         }
                     }
@@ -1289,12 +1289,13 @@ private fun CreateKeystoreDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
                     listOf(2048, 4096).forEach { size ->
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = keySize == size,
                             onClick = { keySize = size },
-                            label = { Text("$size") }
+                            label = "$size",
+                            showSelectedCheck = false
                         )
                     }
                 }
@@ -1442,10 +1443,11 @@ private fun TargetSdkOverrideSection(
                     horizontalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)
                 ) {
                     TARGET_SDK_OVERRIDE_CHOICES.forEach { value ->
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = config.targetSdk == value,
                             onClick = { onConfigChange(config.copy(targetSdk = value)) },
-                            label = { Text(value.toString()) }
+                            label = value.toString(),
+                            showSelectedCheck = false
                         )
                     }
                 }

@@ -36,6 +36,10 @@ import com.webtoapp.core.wordpress.WordPressDependencyManager
 import com.webtoapp.ui.components.TypedSampleProjectsCard
 import com.webtoapp.data.model.PhpAppConfig
 import com.webtoapp.ui.components.*
+import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.ui.animation.CardExpandTransition
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.screens.create.WtaCreateFlowScaffold
 import com.webtoapp.ui.screens.create.WtaCreateFlowSection
 import kotlinx.coroutines.Dispatchers
@@ -789,42 +793,39 @@ private fun PhpDocRootCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             if (detectedWebDirs.isNotEmpty()) {
-                Text(Strings.phpDetectedDirs, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Spacer(modifier = Modifier.height(8.dp))
+                Text(Strings.phpDetectedDirs, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.height(WtaSpacing.Small))
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                    verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                 ) {
-                    PremiumFilterChip(
+                    WtaChip(
                         selected = currentDocRoot.isBlank() && !useCustom,
                         onClick = { onSelectDir("") },
-                        label = { Text("/ (${Strings.phpProjectRoot})") },
-                        leadingIcon = if (currentDocRoot.isBlank() && !useCustom) {
-                            { Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
-                        } else null
+                        label = "/ (${Strings.phpProjectRoot})"
                     )
                     detectedWebDirs.forEach { dir ->
-                        PremiumFilterChip(
+                        WtaChip(
                             selected = currentDocRoot == dir && !useCustom,
                             onClick = { onSelectDir(dir) },
-                            label = { Text("$dir/") },
-                            leadingIcon = if (currentDocRoot == dir && !useCustom) {
-                                { Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
-                            } else null
+                            label = "$dir/"
                         )
                     }
-                    PremiumFilterChip(
+                    WtaChip(
                         selected = useCustom,
                         onClick = { onToggleCustom(true) },
-                        label = { Text(Strings.phpCustomPath) },
-                        leadingIcon = if (useCustom) {
-                            { Icon(Icons.Default.Edit, null, modifier = Modifier.size(16.dp)) }
-                        } else null
+                        label = Strings.phpCustomPath,
+                        leadingIcon = Icons.Default.Edit,
+                        showSelectedCheck = false
                     )
                 }
             }
 
-            AnimatedVisibility(visible = useCustom || detectedWebDirs.isEmpty()) {
+            AnimatedVisibility(
+                visible = useCustom || detectedWebDirs.isEmpty(),
+                enter = CardExpandTransition,
+                exit = CardCollapseTransition
+            ) {
                 Column {
                     Spacer(modifier = Modifier.height(8.dp))
                     PremiumTextField(
@@ -875,18 +876,16 @@ private fun PhpExtensionsCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small),
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
             ) {
                 extensions.forEach { (ext, enabled) ->
-                    PremiumFilterChip(
+                    WtaChip(
                         selected = enabled,
-                        onClick = { onToggle(ext, !enabled) },
-                        label = { Text(ext, fontFamily = FontFamily.Monospace) },
-                        leadingIcon = if (enabled) {
-                            { Icon(Icons.Default.Check, null, modifier = Modifier.size(16.dp)) }
-                        } else null
-                    )
+                        onClick = { onToggle(ext, !enabled) }
+                    ) {
+                        Text(ext, fontFamily = FontFamily.Monospace)
+                    }
                 }
             }
 

@@ -2,7 +2,11 @@ package com.webtoapp.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import com.webtoapp.ui.design.WtaChoiceRow
+import com.webtoapp.ui.design.WtaChip
+import com.webtoapp.ui.design.WtaButton
+import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaSwitch
 import com.webtoapp.ui.design.WtaToggleRow
@@ -188,7 +192,12 @@ fun ActivationCodeCard(
 
                     WtaSectionDivider()
 
-                    if (!remoteConfig.enabled) {
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = !remoteConfig.enabled,
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
+                    ) {
+                        Column {
                         WtaChoiceRow(
                             title = Strings.activationSectionCodes,
                             subtitle = if (activationCodes.isNotEmpty())
@@ -213,32 +222,32 @@ fun ActivationCodeCard(
                             ) {
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                                 ) {
-                                    PremiumButton(
+                                    WtaButton(
                                         onClick = { showAddDialog = true },
                                         modifier = Modifier.weight(1f)
                                     ) {
-                                        Icon(Icons.Default.Add, null, modifier = Modifier.size(18.dp))
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Icon(Icons.Default.Add, null, modifier = Modifier.size(WtaSize.IconSmall))
+                                        Spacer(modifier = Modifier.width(WtaSpacing.Tiny))
                                         Text(Strings.addActivationCode, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     }
-                                    PremiumOutlinedButton(
+                                    WtaButton(
                                         onClick = { showBatchDialog = true },
-                                        shape = RoundedCornerShape(12.dp)
+                                        variant = WtaButtonVariant.Outlined
                                     ) {
-                                        Icon(Icons.Outlined.AutoAwesome, null, modifier = Modifier.size(18.dp))
-                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Icon(Icons.Outlined.AutoAwesome, null, modifier = Modifier.size(WtaSize.IconSmall))
+                                        Spacer(modifier = Modifier.width(WtaSpacing.Tiny))
                                         Text(Strings.batchGenerate, maxLines = 1)
                                     }
                                 }
-                                PremiumOutlinedButton(
+                                WtaButton(
                                     onClick = { showBatchImportDialog = true },
-                                    shape = RoundedCornerShape(12.dp),
+                                    variant = WtaButtonVariant.Outlined,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Icon(Icons.Outlined.PostAdd, null, modifier = Modifier.size(18.dp))
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Icon(Icons.Outlined.PostAdd, null, modifier = Modifier.size(WtaSize.IconSmall))
+                                    Spacer(modifier = Modifier.width(WtaSpacing.Tiny))
                                     Text(Strings.batchImport, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                                 if (activationCodes.isNotEmpty()) {
@@ -285,7 +294,13 @@ fun ActivationCodeCard(
                                 }
                             }
                         }
-                    } else {
+                        }
+                    }
+                    androidx.compose.animation.AnimatedVisibility(
+                        visible = remoteConfig.enabled,
+                        enter = CardExpandTransition,
+                        exit = CardCollapseTransition
+                    ) {
                         RemoteActivationSection(
                             remoteConfig = remoteConfig,
                             onRemoteConfigChange = onRemoteConfigChange,
@@ -1139,18 +1154,14 @@ private fun AddActivationCodeDialog(
                 ) {
                     ActivationCodeType.entries.forEach { type ->
                         val theme = getCodeTypeTheme(type)
-                        FilterChip(
+                        WtaChip(
                             selected = codeType == type,
                             onClick = { codeType = type },
-                            label = { Text(getActivationTypeName(type)) },
-                            leadingIcon = {
-                                Icon(
-                                    theme.icon,
-                                    null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = if (codeType == type) theme.color else MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
+                            label = getActivationTypeName(type),
+                            leadingIcon = theme.icon,
+                            showSelectedCheck = false,
+                            selectedContainerColor = theme.labelBg,
+                            selectedContentColor = theme.color
                         )
                     }
                 }
@@ -1442,23 +1453,14 @@ private fun BatchGenerateDialog(
                     ActivationCodeType.values().forEach { type ->
                         val theme = getCodeTypeTheme(type)
                         val isSelected = codeType == type
-                        FilterChip(
+                        WtaChip(
                             selected = isSelected,
                             onClick = { codeType = type },
-                            label = {
-                                Text(
-                                    getActivationTypeName(type),
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(theme.icon, null, modifier = Modifier.size(14.dp))
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = theme.labelBg,
-                                selectedLabelColor = theme.color,
-                                selectedLeadingIconColor = theme.color
-                            )
+                            label = getActivationTypeName(type),
+                            leadingIcon = theme.icon,
+                            showSelectedCheck = false,
+                            selectedContainerColor = theme.labelBg,
+                            selectedContentColor = theme.color
                         )
                     }
                 }
