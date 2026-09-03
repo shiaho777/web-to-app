@@ -162,7 +162,7 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
     private fun buildMsg(msg: LlmMessage) = JsonObject().apply {
         addProperty("role", when(msg.role){LlmMessage.Role.SYSTEM->"system";LlmMessage.Role.USER->"user";LlmMessage.Role.ASSISTANT->"assistant";LlmMessage.Role.TOOL->"tool"})
         if (msg.toolCalls.isNotEmpty()) { add("tool_calls", JsonArray().apply { msg.toolCalls.forEach { tc -> add(JsonObject().apply { addProperty("id",tc.id);addProperty("type","function");add("function",JsonObject().apply{addProperty("name",tc.name);addProperty("arguments",tc.argumentsJson)}) }) } }); if(msg.content.isNotEmpty()) addProperty("content",msg.content) }
-        else if (msg.images.isNotEmpty()) {
+        else if (msg.images.isNotEmpty() && msg.role != LlmMessage.Role.TOOL) {
             add("content", JsonArray().apply {
                 if (msg.content.isNotEmpty()) add(JsonObject().apply { addProperty("type", "text"); addProperty("text", msg.content) })
                 msg.images.forEach { img ->
@@ -176,6 +176,17 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
             })
         }
         else addProperty("content", msg.content)
+
+        if (msg.role == LlmMessage.Role.TOOL) {
+            // The OpenAI Chat Completions schema only allows string content on role:"tool"
+            // messages — image content parts are valid solely on user messages. Tool
+            // results that carry images (ViewImage / GenerateImage / image-file reads) must
+            // degrade to a text reference here, otherwise strict endpoints reject the whole
+            // request with 400 and the engine retries the same invalid payload 5 times.
+            if (msg.images.isNotEmpty() && msg.content.isEmpty()) {
+                addProperty("content", "[${msg.images.size} image(s) returned by tool; not displayable in this message role]")
+            }
+        }
 
         if (msg.role == LlmMessage.Role.ASSISTANT) {
             // GLM thinking mode requires reasoning_content on every assistant message
