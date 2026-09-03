@@ -257,6 +257,7 @@ class DataBackupManager(private val context: Context) {
             val extractedResources = mutableMapOf<String, String>()
             var modulesJsonBytes: ByteArray? = null
             var builtInStatesJsonBytes: ByteArray? = null
+            val pendingLocalEntries = mutableListOf<PendingLocalEntry>()
 
             context.contentResolver.openInputStream(inputUri)?.use { inputStream ->
                 ZipInputStream(BufferedInputStream(inputStream, BUFFER_SIZE)).use { zipIn ->
@@ -291,7 +292,7 @@ class DataBackupManager(private val context: Context) {
                                 }
                             }
                             isLocalBackupEntry(entry.name) && !entry.isDirectory -> {
-                                restoreLocalBackupEntry(entry.name, zipIn)
+                                stageLocalBackupEntry(entry.name, zipIn)?.let { pendingLocalEntries.add(it) }
                             }
                         }
 
@@ -299,13 +300,20 @@ class DataBackupManager(private val context: Context) {
                         entry = zipIn.nextEntry
                     }
                 }
-            } ?: return@withContext Result.failure(Exception("无法读取备份文件"))
+            } ?: run {
+                discardPendingLocalEntries(pendingLocalEntries)
+                return@withContext Result.failure(Exception("无法读取备份文件"))
+            }
 
             val data = backupData
             if (data == null) {
                 cleanupExtractedFiles(extractedFiles)
+                discardPendingLocalEntries(pendingLocalEntries)
                 return@withContext Result.failure(Exception("备份文件格式无效"))
             }
+
+            // The backup has validated — only now overwrite live local config files.
+            commitPendingLocalEntries(pendingLocalEntries)
 
             onProgress(60, 100, Strings.backupImportingData)
             coroutineContext.ensureActive()
@@ -867,14 +875,27 @@ class DataBackupManager(private val context: Context) {
             zipPath.startsWith(SHARED_PREFS_DIR)
     }
 
-    private fun restoreLocalBackupEntry(zipPath: String, zipIn: ZipInputStream) {
+    /**
+     * Pends a local entry (files/shared_prefs/datastore) for deferred restore instead of
+     * writing it during zip streaming. Writing live config files before apps.json is parsed
+     * meant a corrupt/truncated backup aborted with "格式无效" AFTER already overwriting
+     * presets, extension storage and theme prefs — with no rollback. Entries are buffered
+     * to temp files first and only swapped in after the backup validates.
+     */
+    private data class PendingLocalEntry(
+        val zipPath: String,
+        val targetFile: File,
+        val tempFile: File
+    )
+
+    private fun stageLocalBackupEntry(zipPath: String, zipIn: ZipInputStream): PendingLocalEntry? {
         val targetFile = when {
             zipPath.startsWith(LOCAL_FILES_DIR) -> {
                 val relativePath = zipPath.removePrefix(LOCAL_FILES_DIR)
                 resolveSafeChild(context.filesDir, relativePath)
             }
             zipPath.startsWith(LOCAL_EXTERNAL_FILES_DIR) -> {
-                val externalFilesDir = context.getExternalFilesDir(null) ?: return
+                val externalFilesDir = context.getExternalFilesDir(null) ?: return null
                 val relativePath = zipPath.removePrefix(LOCAL_EXTERNAL_FILES_DIR)
                 resolveSafeChild(externalFilesDir, relativePath)
             }
@@ -891,16 +912,35 @@ class DataBackupManager(private val context: Context) {
                 if (allowed) File(File(context.applicationInfo.dataDir, "shared_prefs"), fileName) else null
             }
             else -> null
-        } ?: return
+        } ?: return null
 
-        runCatching {
-            targetFile.parentFile?.mkdirs()
-            FileOutputStream(targetFile).use { output ->
+        val tempFile = File.createTempFile("wta_backup_", ".part", context.cacheDir)
+        return try {
+            FileOutputStream(tempFile).use { output ->
                 zipIn.copyTo(output, BUFFER_SIZE)
             }
-        }.onFailure { e ->
-            AppLogger.w(TAG, "恢复本地数据失败: $zipPath", e)
+            PendingLocalEntry(zipPath, targetFile, tempFile)
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "暂存本地备份数据失败: $zipPath", e)
+            tempFile.delete()
+            null
         }
+    }
+
+    private fun commitPendingLocalEntries(pending: List<PendingLocalEntry>) {
+        pending.forEach { entry ->
+            runCatching {
+                entry.targetFile.parentFile?.mkdirs()
+                entry.tempFile.copyTo(entry.targetFile, overwrite = true)
+            }.onFailure { e ->
+                AppLogger.w(TAG, "恢复本地数据失败: ${entry.zipPath}", e)
+            }
+            entry.tempFile.delete()
+        }
+    }
+
+    private fun discardPendingLocalEntries(pending: List<PendingLocalEntry>) {
+        pending.forEach { it.tempFile.delete() }
     }
 
     private fun resolveSafeChild(baseDir: File, relativePath: String): File? {
