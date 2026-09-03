@@ -107,6 +107,9 @@ class AgentService : Service() {
         val store = request.sessionStore
         val sessionId = request.sessionId
         val accumulator = TurnAccumulator(sessionId)
+        currentSessionId = sessionId
+        currentStore = store
+        currentAccumulator = accumulator
 
         _activeTurn.value = TurnSnapshot(
             sessionId = sessionId,
@@ -159,12 +162,19 @@ class AgentService : Service() {
                     runCatching { persistEvent(store, sessionId, accumulator, ev) }
                 }
             } finally {
-                _isRunning.value = false
+                // Only clear state if THIS turn is still the active one — a cancelled
+                // turn's finally can run after a new start() installed its snapshot,
+                // and blindly flipping isRunning would corrupt the new turn's state.
+                if (currentSessionId == sessionId) {
+                    _isRunning.value = false
+                }
+                if (currentSessionId == sessionId && _activeTurn.value?.sessionId == sessionId) {
+                    _activeTurn.value = _activeTurn.value?.copy(isRunning = false)
+                }
                 releaseWakeLock()
-                abortController = null
-                // Keep the final snapshot briefly so a UI that rebinds right at the
-                // boundary can still observe the finished draft; clear the running flag.
-                _activeTurn.value = _activeTurn.value?.copy(isRunning = false)
+                if (abortController == null || currentSessionId == sessionId) {
+                    abortController = null
+                }
             }
         }
     }
@@ -289,10 +299,60 @@ class AgentService : Service() {
         }
     }
 
+    private var currentSessionId: String? = null
+    private var currentStore: SessionStore? = null
+    private var currentAccumulator: TurnAccumulator? = null
+
     fun cancel() {
+        // Signal abort FIRST so the engine's own abort checkpoints (AgentEvent.Aborted)
+        // fire while the flow is still alive and the collector can persist the turn.
         abortController?.abort()
-        turnJob?.cancel()
+        val job = turnJob
+        val sessionId = currentSessionId
+        val store = currentStore
+        val acc = currentAccumulator
+        if (job != null) {
+            // Give the engine a short window to emit Aborted (and let this collector
+            // persist it) before the job is killed outright.
+            scope.launch {
+                kotlinx.coroutines.withTimeoutOrNull(ABORT_PERSIST_GRACE_MS) { job.join() }
+                job.cancel()
+            }
+        }
+        if (store != null && sessionId != null && acc != null) {
+            // Belt-and-braces persistence in case the engine was suspended somewhere
+            // that never observes the abort flag: finalize (or drop) the draft here so
+            // no orphaned "running" draft with phantom tool entries survives.
+            scope.launch {
+                kotlinx.coroutines.withTimeoutOrNull(ABORT_PERSIST_GRACE_MS) {
+                    runCatching { persistAbortedTurn(store, sessionId, acc) }
+                }
+            }
+        }
         _isRunning.value = false
+    }
+
+    /**
+     * Fallback finalization for an aborted turn, mirroring the engine's Aborted branch:
+     * finalize the draft as aborted, or drop it when nothing substantive accumulated.
+     * Safe to race with the engine's own Aborted handling — both paths produce the same
+     * final message for the same draftId, and finalizeDraft is an upsert.
+     */
+    private suspend fun persistAbortedTurn(store: SessionStore, sessionId: String, acc: TurnAccumulator) {
+        acc.finishRunningToolsAsAborted()
+        val msg = acc.buildFinalMessage(
+            summaryFallback = null,
+            isError = true,
+            errorSuffix = null,
+            aborted = true
+        )
+        if (msg != null) {
+            store.finalizeDraft(sessionId, msg)
+            _activeTurn.value = null
+        } else {
+            acc.draftId?.let { store.dropDraft(sessionId, it) }
+            _activeTurn.value = null
+        }
     }
 
     override fun onDestroy() {
@@ -383,6 +443,7 @@ class AgentService : Service() {
 
     companion object {
         private const val TAG = "AgentService"
+        private const val ABORT_PERSIST_GRACE_MS = 2000L
         private const val CHANNEL_ID = "aicoding_agent_v3"
         private const val NOTIFICATION_ID = 1201
         private const val WAKE_LOCK_TIMEOUT_MS = 20L * 60 * 1000
@@ -483,6 +544,24 @@ private class TurnAccumulator(private val sessionId: String) {
 
     fun recordProducedFile(path: String) {
         if (path !in producedFiles) producedFiles += path
+    }
+
+    /**
+     * Marks tools still showing the running sentinel as failed/aborted so a cancelled
+     * turn doesn't persist phantom "running" tool entries in the session history.
+     */
+    fun finishRunningToolsAsAborted() {
+        val keys = tools.keys.toList()
+        keys.forEach { id ->
+            val t = tools[id] ?: return@forEach
+            if (t.resultPreview == RecordedToolCall.RUNNING_SENTINEL) {
+                tools[id] = t.copy(
+                    resultPreview = Strings.agentAbortedHint,
+                    ok = false
+                )
+            }
+        }
+        toolArgs.clear()
     }
 
     /**
