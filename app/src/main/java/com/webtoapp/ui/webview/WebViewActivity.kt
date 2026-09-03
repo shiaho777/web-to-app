@@ -1308,6 +1308,37 @@ fun WebViewScreen(
         }
     }
 
+    // MULTI_WEB preview: resolve EXISTING sites' source apps OFF the main thread. This
+    // used to runBlocking a Room query per site inside composition, freezing/ANR-ing the
+    // UI on every recomposition.
+    var sourceAppShellConfigs by remember { mutableStateOf<Map<Long, com.webtoapp.core.shell.ShellConfig>>(emptyMap()) }
+    LaunchedEffect(webApp?.id, webApp?.multiWebConfig?.sites) {
+        val app = webApp ?: return@LaunchedEffect
+        val sites = app.multiWebConfig?.sites ?: return@LaunchedEffect
+        val ids = sites.filter { it.sourceAppId > 0 }.mapNotNull { it.sourceAppId }.distinct()
+        if (ids.isEmpty()) {
+            sourceAppShellConfigs = emptyMap()
+            return@LaunchedEffect
+        }
+        val activityContext = activity
+        val resolved = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val repo = org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(
+                com.webtoapp.data.repository.WebAppRepository::class.java
+            )
+            ids.mapNotNull src@ { srcId ->
+                val source = try {
+                    kotlinx.coroutines.runBlocking { repo.getWebApp(srcId) }
+                } catch (_: Exception) { null } ?: return@src null
+                val site = sites.firstOrNull { it.sourceAppId == srcId } ?: return@src null
+                val shell = try {
+                    com.webtoapp.core.apkbuilder.buildSiteShellConfig(source, "preview", site.id, activityContext, isPreview = true)
+                } catch (_: Exception) { null } ?: return@src null
+                srcId to shell
+            }.toMap()
+        }
+        sourceAppShellConfigs = resolved
+    }
+
     LaunchedEffect(appId, directUrl, testUrl, previewApp) {
         if (isTestMode) {
             isActivated = true
@@ -3047,23 +3078,13 @@ fun WebViewScreen(
                 val mwApp = webApp
                 val multiWebConfig = mwApp?.multiWebConfig
                 if (mwApp != null && multiWebConfig != null && multiWebConfig.sites.isNotEmpty()) {
-                    val ctx = androidx.compose.ui.platform.LocalContext.current
                     val shellConfig = com.webtoapp.core.shell.ShellConfig(
                         appName = mwApp.name,
                         appType = "MULTI_WEB",
                         engineType = mwApp.apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW",
                         multiWebConfig = com.webtoapp.core.shell.MultiWebShellConfig(
                             sites = multiWebConfig.sites.map { site ->
-                                val siteShellConfig = if (site.sourceAppId > 0) {
-                                    try {
-                                        val repo = org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(
-                                            com.webtoapp.data.repository.WebAppRepository::class.java
-                                        )
-                                        kotlinx.coroutines.runBlocking { repo.getWebApp(site.sourceAppId) }?.let { sourceApp ->
-                                            com.webtoapp.core.apkbuilder.buildSiteShellConfig(sourceApp, "preview", site.id, ctx, isPreview = true)
-                                        }
-                                    } catch (_: Exception) { null }
-                                } else null
+                                val siteShellConfig = sourceAppShellConfigs[site.sourceAppId]
                                 com.webtoapp.core.shell.MultiWebSiteShellConfig(
                                     id = site.id,
                                     name = site.name,
