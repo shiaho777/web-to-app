@@ -1518,6 +1518,13 @@ class ApkBuilder(private val context: Context) {
                     addStatusBarBackgroundToAssets(zipOut, config.statusBarBackgroundImage!!)
                 }
 
+                // The config JSON promises assets/statusbar_background_dark.png whenever the
+                // dark variant is an image (ApkConfigJsonFactory). Without this embed the
+                // generated app fails to open the asset and silently falls back to a color.
+                if (config.statusBarBackgroundTypeDark == "IMAGE" && !config.statusBarBackgroundImageDark.isNullOrEmpty()) {
+                    addStatusBarBackgroundToAssets(zipOut, config.statusBarBackgroundImageDark!!, "assets/statusbar_background_dark.png")
+                }
+
                 if (config.floatingWindowEnabled && !config.floatingWindowMinimizedIconPath.isNullOrEmpty()) {
                     addFloatingWindowMinimizedIconToAssets(zipOut, config.floatingWindowMinimizedIconPath!!)
                 }
@@ -1870,9 +1877,10 @@ class ApkBuilder(private val context: Context) {
 
     private fun addStatusBarBackgroundToAssets(
         zipOut: ZipOutputStream,
-        imagePath: String
+        imagePath: String,
+        assetEntry: String = "assets/statusbar_background.png"
     ) {
-        AppLogger.d("ApkBuilder", "Preparing to embed status bar background: path=$imagePath")
+        AppLogger.d("ApkBuilder", "Preparing to embed status bar background: path=$imagePath, entry=$assetEntry")
 
         val imageFile = File(imagePath)
         if (!imageFile.exists()) {
@@ -1892,8 +1900,8 @@ class ApkBuilder(private val context: Context) {
                 return
             }
 
-            writeEntryDeflated(zipOut, "assets/statusbar_background.png", imageBytes)
-            AppLogger.d("ApkBuilder", "Status bar background embedded: assets/statusbar_background.png (${imageBytes.size} bytes)")
+            writeEntryDeflated(zipOut, assetEntry, imageBytes)
+            AppLogger.d("ApkBuilder", "Status bar background embedded: $assetEntry (${imageBytes.size} bytes)")
         } catch (e: Exception) {
             AppLogger.e("ApkBuilder", "Failed to embed status bar background: ${e.message}", e)
         }

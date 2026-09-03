@@ -131,6 +131,7 @@ class ApkBuildCache(private val context: Context) {
             galleryItems = galleryItems,
             errorPageMediaPath = errorPageMediaPath,
             statusBarImage = config.statusBarBackgroundImage,
+            statusBarImageDark = config.statusBarBackgroundImageDark,
             floatingIcon = config.floatingWindowMinimizedIconPath
         )
 
@@ -389,6 +390,7 @@ class ApkBuildCache(private val context: Context) {
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
         errorPageMediaPath: String?,
         statusBarImage: String?,
+        statusBarImageDark: String?,
         floatingIcon: String?
     ): String {
         val parts = mutableListOf<String>()
@@ -400,6 +402,7 @@ class ApkBuildCache(private val context: Context) {
         parts += "splash=${fileFingerprint(splashMediaPath)}"
         parts += "errorPage=${fileFingerprint(errorPageMediaPath)}"
         parts += "statusBar=${fileFingerprint(statusBarImage)}"
+        parts += "statusBarDark=${fileFingerprint(statusBarImageDark)}"
         parts += "floatingIcon=${fileFingerprint(floatingIcon)}"
         bgmPlaylistPaths.forEachIndexed { index, path ->
             parts += "bgm[$index]=${fileFingerprint(path)}"
