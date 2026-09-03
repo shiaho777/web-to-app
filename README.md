@@ -23,6 +23,16 @@
 </p>
 
 <p align="center">
+  <a href="https://www.swiftproxy.net/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset=".github/assets/sponsors/swiftproxy-logo-white.svg" />
+      <img src=".github/assets/sponsors/swiftproxy-logo.svg" alt="Swiftproxy" width="200" />
+    </picture>
+  </a><br/>
+  <b>Sponsored by <a href="https://www.swiftproxy.net/">Swiftproxy</a></b> — high-performance rotating residential proxies with anti-ban solutions that boost data-collection success rates and lower the barrier to web scraping.
+</p>
+
+<p align="center">
   <a href="https://trendshift.io/repositories/22597?utm_source=trendshift-badge&utm_medium=badge&utm_campaign=badge-trendshift-22597" target="_blank" rel="noopener noreferrer">
     <img src="https://trendshift.io/api/badge/trendshift/repositories/22597/weekly?language=Kotlin" alt="shiaho777%2Fweb-to-app | Trendshift" width="250" height="55">
   </a>

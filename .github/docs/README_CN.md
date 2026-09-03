@@ -15,6 +15,16 @@
 [![License](https://img.shields.io/badge/License-Unlicense-blue?style=for-the-badge)](../../LICENSE)
 [![Android](https://img.shields.io/badge/Android-23%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](#)
 
+<p>
+  <a href="https://www.swiftproxy.net/">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="../assets/sponsors/swiftproxy-logo-white.svg" />
+      <img src="../assets/sponsors/swiftproxy-logo.svg" alt="Swiftproxy" width="200" />
+    </picture>
+  </a><br/>
+  <b>由 <a href="https://www.swiftproxy.net/">Swiftproxy</a> 赞助</b> —— 高性能轮换住宅代理提供商,专注反封禁解决方案,提升数据采集成功率,降低网络爬虫门槛。
+</p>
+
 </div>
 
 <p align="center">
@@ -33,17 +43,6 @@
 <div align="center">
 <img src="../assets/social-preview.png" width="90%" alt="WebToApp:我的应用首页、应用列表与主工具箱(Agent、扩展模块、端口管理器)、单个应用的 APK 操作(编辑、创建快捷方式、构建/分享/导出 APK),以及关于页面——全部运行在 Android 手机上" />
 </div>
-
-### 演示视频
-
-<details>
-<summary><b>观看:在设备上构建并打包一个应用的快速演示</b></summary>
-
-<video src="https://github.com/user-attachments/assets/4e1a476d-2687-4d97-90a9-d077a15ebe31" controls muted loop playsinline>
-  您的浏览器不支持 video 标签。
-</video>
-
-</details>
 
 ---
 
