@@ -139,9 +139,11 @@ class DependencyDownloadNotification private constructor(private val context: Co
             append(dl.url)
         }
 
+        // The receiver is registered RECEIVER_NOT_EXPORTED; on Android 14+ an implicit
+        // intent is dropped before it ever reaches it, so the action must carry the package.
         val pauseIntent = PendingIntent.getBroadcast(
             context, 0,
-            Intent(ACTION_PAUSE),
+            Intent(ACTION_PAUSE).setPackage(context.packageName),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -172,7 +174,7 @@ class DependencyDownloadNotification private constructor(private val context: Co
 
         val resumeIntent = PendingIntent.getBroadcast(
             context, 0,
-            Intent(ACTION_RESUME),
+            Intent(ACTION_RESUME).setPackage(context.packageName),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
