@@ -32,6 +32,23 @@ data class ToolContext(
     val progress: suspend (String) -> Unit = NO_OP_PROGRESS
 ) {
 
+    // Plan mode entered mid-turn publishes the generated plan file path here so
+    // PermissionChecker.checkPlan (which compares against activePlanFile) can allow
+    // writes to it for the rest of the turn. Kept outside the data-class constructor
+    // because the constructor value is a per-turn snapshot that is always null in
+    // the mid-turn flow.
+    @Volatile
+    var livePlanFile: String? = null
+        private set
+
+    /** Publishes the active plan file path (plan mode entered mid-turn). */
+    fun setActivePlanFile(path: String?) {
+        livePlanFile = path
+    }
+
+    /** The path plan-mode writes must go to: live publication wins over the snapshot. */
+    fun effectivePlanFile(): String? = livePlanFile ?: activePlanFile
+
     fun resolveSafePath(rawPath: String?): String? {
         if (rawPath.isNullOrBlank()) return null
         val cleaned = rawPath.trim().trimStart('/').trim('\\')

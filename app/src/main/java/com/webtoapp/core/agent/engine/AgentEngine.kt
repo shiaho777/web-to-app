@@ -326,7 +326,7 @@ class AgentEngine(
         if (decision == PermissionDecision.Deny) {
 
             val mode = permissionChecker.mode
-            val planFile = input.toolContext.activePlanFile
+            val planFile = input.toolContext.effectivePlanFile()
             val hint = when {
                 mode == com.webtoapp.core.agent.permission.PermissionMode.Plan && planFile != null ->
                     " — in plan mode, only Write/Edit to $planFile is allowed. " +

@@ -67,7 +67,7 @@ class PermissionChecker(
         if (tool.name in planWriteTools) {
             val path = args.get("path")?.asString ?: args.get("file_path")?.asString
             val resolved = path?.let { ctx.resolveSafePath(it) }
-            if (resolved != null && resolved == ctx.activePlanFile) return PermissionDecision.Allow
+            if (resolved != null && resolved == ctx.effectivePlanFile()) return PermissionDecision.Allow
             return PermissionDecision.Deny
         }
         return PermissionDecision.Deny
