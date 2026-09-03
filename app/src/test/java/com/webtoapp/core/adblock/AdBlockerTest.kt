@@ -110,4 +110,27 @@ class AdBlockerTest {
         assertThat(adBlocker.shouldBlock("https://s.click.aliexpress.com/e/abc", resourceType = "xmlhttprequest")).isFalse()
     }
 
+    @Test
+    fun `dollar modifier is split from single-slash path rules instead of staying in the pattern`() {
+        adBlocker.addRule("||sumo-test.example/px.gif\$third-party")
+        adBlocker.setEnabled(true)
+
+        // The $ must parse as the third-party option, not become a dead end-anchor in the regex.
+        assertThat(
+            adBlocker.shouldBlock("https://sumo-test.example/px.gif", resourceType = "script", isThirdParty = true)
+        ).isTrue()
+        // Same-origin loads of the same URL are exempt from a third-party-only rule.
+        assertThat(
+            adBlocker.shouldBlock("https://sumo-test.example/px.gif", resourceType = "script", isThirdParty = false)
+        ).isFalse()
+    }
+
+    @Test
+    fun `regex rules with dollar signs are not split into a bogus modifier`() {
+        adBlocker.addRule("/banner\\.js\\$/")
+        adBlocker.setEnabled(true)
+
+        assertThat(adBlocker.shouldBlock("https://cdn.example.com/static/banner.js\$rev=2", resourceType = "script")).isTrue()
+    }
+
 }

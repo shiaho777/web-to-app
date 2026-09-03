@@ -1292,7 +1292,7 @@ class AdBlocker {
         if (dollarIdx > 0) {
 
             val beforeDollar = raw.substring(0, dollarIdx)
-            if (!beforeDollar.contains('/') || beforeDollar.count { it == '/' } % 2 == 0) {
+            if (isValidModifierPart(raw.substring(dollarIdx + 1))) {
                 patternPart = beforeDollar
                 modifierPart = raw.substring(dollarIdx + 1)
             }
@@ -1376,11 +1376,15 @@ class AdBlocker {
         }
 
         if (isException) {
+            val idx = networkExceptionFilters.size
             networkExceptionFilters.add(filter)
-            unanchoredFilterIndex.remove(networkExceptionFilters)
+            unanchoredFilterIndex[networkExceptionFilters] =
+                (unanchoredFilterIndex[networkExceptionFilters] ?: emptyList()) + idx
         } else {
+            val idx = networkBlockFilters.size
             networkBlockFilters.add(filter)
-            unanchoredFilterIndex.remove(networkBlockFilters)
+            unanchoredFilterIndex[networkBlockFilters] =
+                (unanchoredFilterIndex[networkBlockFilters] ?: emptyList()) + idx
         }
     }
 
@@ -1407,13 +1411,17 @@ class AdBlocker {
                 .replace("[", "\\[")
                 .replace("]", "\\]")
 
+            // Order matters: the '^' separator must be converted to its character class
+            // BEFORE the '||'/'|' anchors insert their own regex (which contain '^' inside
+            // [^/]). Doing it afterwards corrupts the inserted [^/] class, so every
+            // '||host/path' regex rule failed to match.
+            p = p.replace("^", "[^\\w%.\\-]")
+
             p = p.replace("||", "^(?:https?|wss?)://(?:[^/]*\\.)?")
 
             if (p.startsWith("|")) p = "^" + p.removePrefix("|")
 
             if (p.endsWith("|")) p = p.removeSuffix("|") + "$"
-
-            p = p.replace("^", "[^\\w%.\\-]")
 
             p = p.replace("*", ".*")
 
@@ -1421,6 +1429,27 @@ class AdBlocker {
             Regex(p, options)
         } catch (e: Throwable) {
             null
+        }
+    }
+
+    /**
+     * Decides whether the text after the last '$' is an option list ($script,
+     * $third-party, $domain=…) rather than part of the pattern. The old heuristic
+     * ("don't split when the pattern has an odd number of slashes", meant to protect
+     * /regex/ rules) misfired on ordinary one-slash paths — ||host/path$script kept
+     * the $ in the pattern, where it compiled to a dead end-anchor regex.
+     * A modifier part must be a comma list of known options; anything else
+     * (empty option, /regex/ leftovers like ^w+$) stays in the pattern.
+     */
+    private fun isValidModifierPart(part: String): Boolean {
+        if (part.isBlank()) return false
+        return part.split(",").all { option ->
+            val o = option.trim().lowercase()
+            o == "third-party" || o == "3p" || o == "~third-party" || o == "first-party" ||
+                o == "1p" || o == "match-case" || o == "important" ||
+                o.startsWith("domain=") ||
+                (o.startsWith("~") && TYPE_MODIFIERS.containsKey(o.removePrefix("~"))) ||
+                TYPE_MODIFIERS.containsKey(o)
         }
     }
 
