@@ -1286,7 +1286,7 @@ class MainViewModel(
     ) = updateApp(appId, "HTML", iconUri) { existingApp, savedIconPath ->
         val context = getApplication<Application>()
 
-        val finalHtmlConfig = if (htmlConfig != null && htmlConfig != existingApp.htmlConfig) {
+        val finalHtmlConfig = if (htmlConfig != null && (htmlConfig != existingApp.htmlConfig || htmlContentChanged(existingApp.htmlConfig, htmlConfig))) {
             AppLogger.d("MainViewModel", "HTML files changed, re-processing...")
 
             // ⚠ 顺序很重要:不能先删旧项目目录再处理文件。
@@ -1325,6 +1325,30 @@ class MainViewModel(
             htmlConfig = finalHtmlConfig,
             updatedAt = System.currentTimeMillis()
         )
+    }
+
+    /**
+     * Data-class equality on [HtmlConfig] compares file *paths*, not contents. The editor
+     * writes CSS/JS edits straight into the stored files (paths unchanged), so a content-only
+     * edit compares equal and used to skip reprocessing — the first save had already inlined
+     * the old CSS/JS into the HTML, so the on-disk edit never took effect. Compare the
+     * referenced files' bytes too.
+     */
+    private fun htmlContentChanged(old: HtmlConfig?, new: HtmlConfig?): Boolean {
+        if (old == null || new == null) return true
+        val oldByPath = old.files.associateBy { it.path }
+        return new.files.any { file ->
+            val previous = oldByPath[file.path] ?: return@any false
+            if (previous.path != file.path) return@any false
+            try {
+                val f = java.io.File(file.path)
+                if (!f.isFile) return@any false
+                java.io.File(previous.path).let { it.length() != f.length() || !it.readBytes().contentEquals(f.readBytes()) }
+            } catch (e: Exception) {
+                AppLogger.w("MainViewModel", "htmlContentChanged probe failed for ${file.path}: ${e.message}")
+                false
+            }
+        }
     }
 
     fun updateZipHtmlApp(

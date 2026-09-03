@@ -23,6 +23,12 @@ object HtmlProjectProcessor {
     private val localCssRegex = Regex("""<link[^>]*\shref\s*=\s*(["'])([^"']*\.css(?:[?#][^"']*)?)\1[^>]*>""", RegexOption.IGNORE_CASE)
 
     private val localJsRegex = Regex("""(?s)<script[^>]*\ssrc\s*=\s*(["'])([^"']*\.m?js(?:[?#][^"']*)?)\1[^>]*>.*?</script>""", RegexOption.IGNORE_CASE)
+    // Matches blocks emitted by inlineCss/inlineJs so a reprocess removes them before
+    // appending a fresh copy (idempotent re-inlining).
+    private val inlinedCssBlockRegex = Regex("""(?s)<style>\s*/\* Inlined CSS \*/.*?</style>\s*""", RegexOption.IGNORE_CASE)
+    private val inlinedJsBlockRegex = Regex("""(?s)<script>\s*/\* Inlined JS \*/.*?</script>\s*""", RegexOption.IGNORE_CASE)
+    // Left-over comment markers from a previous inline pass.
+    private val inlinedMarkerCommentRegex = Regex("""<!-- (CSS|JS) inlined -->\s*""", RegexOption.IGNORE_CASE)
     private val charsetRegex = Regex("""charset=["']?([^"'\s>]+)""", RegexOption.IGNORE_CASE)
     private val referenceSchemeRegex = Regex("""^[a-z][a-z0-9+.-]*:""", RegexOption.IGNORE_CASE)
     private val dynamicReferenceMarkers = listOf("${'$'}{", "{{", "}}", "<%", "%>", "||", "&&")
@@ -286,12 +292,18 @@ object HtmlProjectProcessor {
         var result = html
 
         if (hasCssContent) {
+            // Drop previously-inlined blocks before appending a fresh one, otherwise
+            // reprocessing an already-inlined HTML (file-list change on edit) stacks one
+            // more <style>/<script> copy per save and the JS executes N times.
+            result = inlinedCssBlockRegex.replace(result, "")
             result = localCssRegex.replace(result) { match ->
                 if (shouldAnalyzeLocalReference(match.groupValues[2])) "<!-- CSS inlined -->" else match.value
             }
         }
 
         if (hasJsContent) {
+            result = inlinedJsBlockRegex.replace(result, "")
+            result = inlinedMarkerCommentRegex.replace(result, "")
             result = localJsRegex.replace(result) { match ->
                 if (shouldAnalyzeLocalReference(match.groupValues[2])) "<!-- JS inlined -->" else match.value
             }

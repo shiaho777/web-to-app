@@ -113,4 +113,52 @@ class HtmlProjectProcessorTest {
 
         assertThat(analysis.issues).isEmpty()
     }
+
+    @Test
+    fun `reprocessing already-inlined html does not stack duplicate style or script blocks`() {
+        val css = "body { color: red; }"
+        val js = "console.log('hello');"
+        val first = HtmlProjectProcessor.processHtmlContent(
+            htmlContent = "<html><head></head><body><script src=\"app.js\"></script></body></html>",
+            cssContent = css,
+            jsContent = js,
+            fixPaths = false
+        )
+
+        // Simulate a second save where the HTML now already contains the inlined blocks.
+        val second = HtmlProjectProcessor.processHtmlContent(
+            htmlContent = first,
+            cssContent = css,
+            jsContent = js,
+            fixPaths = false
+        )
+
+        val openStyles = Regex("<style>", RegexOption.IGNORE_CASE).findAll(second).count()
+        val inlineScripts = Regex("""<script>\s*/\* Inlined JS \*/""", RegexOption.IGNORE_CASE)
+            .findAll(second).count()
+        assertThat(openStyles).isEqualTo(1)
+        assertThat(inlineScripts).isEqualTo(1)
+        assertThat(second).contains("body { color: red; }")
+        assertThat(second).contains("console.log('hello');")
+    }
+
+    @Test
+    fun `re-inlining picks up edited css content instead of the stale copy`() {
+        val first = HtmlProjectProcessor.processHtmlContent(
+            htmlContent = "<html><head></head><body></body></html>",
+            cssContent = "body { color: red; }",
+            jsContent = null,
+            fixPaths = false
+        )
+        val second = HtmlProjectProcessor.processHtmlContent(
+            htmlContent = first,
+            cssContent = "body { color: blue; }",
+            jsContent = null,
+            fixPaths = false
+        )
+
+        assertThat(second).contains("color: blue;")
+        assertThat(second).doesNotContain("color: red;")
+        assertThat(Regex("<style>", RegexOption.IGNORE_CASE).findAll(second).count()).isEqualTo(1)
+    }
 }
