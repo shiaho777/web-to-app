@@ -185,12 +185,25 @@ class NotificationWebSocketService : Service() {
                 val intent = Intent(context, NotificationWebSocketService::class.java).apply {
                     action = ACTION_RESTART
                 }
-                val pending = PendingIntent.getService(
-                    context,
-                    RESTART_REQUEST_CODE,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
+                // The restart alarm fires while the app is backgrounded (that's exactly
+                // when onTaskRemoved / system reclaim happens), so startService() would
+                // throw IllegalStateException on API 26+. Mirror NotificationPollingService
+                // and use a foreground-service PendingIntent on O+.
+                val pending = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    PendingIntent.getForegroundService(
+                        context,
+                        RESTART_REQUEST_CODE,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                } else {
+                    PendingIntent.getService(
+                        context,
+                        RESTART_REQUEST_CODE,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                    )
+                }
                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
                 val triggerAt = SystemClock.elapsedRealtime() + RESTART_DELAY_MS
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -208,12 +221,23 @@ class NotificationWebSocketService : Service() {
                 val intent = Intent(context, NotificationWebSocketService::class.java).apply {
                     action = ACTION_RESTART
                 }
-                val pending = PendingIntent.getService(
-                    context,
-                    RESTART_REQUEST_CODE,
-                    intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
+                // Must match the scheduleRestart flavor (getForegroundService on O+),
+                // otherwise alarmManager.cancel cannot find the pending intent.
+                val pending = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    PendingIntent.getForegroundService(
+                        context,
+                        RESTART_REQUEST_CODE,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE
+                    )
+                } else {
+                    PendingIntent.getService(
+                        context,
+                        RESTART_REQUEST_CODE,
+                        intent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE
+                    )
+                }
                 val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
                 alarmManager.cancel(pending)
             } catch (_: Exception) {
@@ -290,6 +314,26 @@ class NotificationWebSocketService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // A getForegroundService restart PendingIntent requires startForeground promptly,
+        // even when this start ends in an early stopSelf (missing config) — otherwise the
+        // system raises ForegroundServiceDidNotStartInTimeException.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !isRunning) {
+            try {
+                val earlyNotification = createForegroundNotification()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    startForeground(
+                        FOREGROUND_NOTIFICATION_ID,
+                        earlyNotification,
+                        android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                    )
+                } else {
+                    startForeground(FOREGROUND_NOTIFICATION_ID, earlyNotification)
+                }
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "early startForeground failed", e)
+            }
+        }
+
         if (intent?.action == ACTION_STOP) {
             shouldReconnect.set(false)
             stopSelfGracefully()
