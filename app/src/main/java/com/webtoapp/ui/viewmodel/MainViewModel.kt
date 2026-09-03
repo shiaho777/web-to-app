@@ -353,16 +353,17 @@ class MainViewModel(
         }
     }
 
+    /**
+     * Icon/splash files referenced by a saved app's DB row must not be deleted during the
+     * editing session: the DB row is only rewritten on save, so discarding the edit (back
+     * press → 放弃更改) would leave the row pointing at a deleted file — a permanently
+     * broken icon/splash. Deletes are deferred to [deleteReplacedIconIfUnused] /
+     * [deleteReplacedSplashIfUnused], which run after the save has committed the new path.
+     */
     fun handleIconSelected(uri: Uri) {
         viewModelScope.launch {
-            val oldPath = _editState.value.savedIconPath
             val savedPath = withContext(Dispatchers.IO) {
-                val path = IconStorage.saveIconFromUri(getApplication(), uri)
-
-                if (path != null && oldPath != null && oldPath != path) {
-                    IconStorage.deleteIcon(oldPath)
-                }
-                path
+                IconStorage.saveIconFromUri(getApplication(), uri)
             }
             if (savedPath != null) {
                 _editState.value = _editState.value.copy(
@@ -377,13 +378,8 @@ class MainViewModel(
 
     fun handleSplashMediaSelected(uri: Uri, isVideo: Boolean) {
         viewModelScope.launch {
-            val oldPath = _editState.value.savedSplashPath
             val savedPath = withContext(Dispatchers.IO) {
-                val path = SplashStorage.saveMediaFromUri(getApplication(), uri, isVideo)
-                if (path != null && oldPath != null && oldPath != path) {
-                    SplashStorage.deleteMedia(oldPath)
-                }
-                path
+                SplashStorage.saveMediaFromUri(getApplication(), uri, isVideo)
             }
             if (savedPath != null) {
                 val newType = if (isVideo) SplashType.VIDEO else SplashType.IMAGE
@@ -399,18 +395,22 @@ class MainViewModel(
     }
 
     fun clearSplashMedia() {
-        viewModelScope.launch {
-            val oldPath = _editState.value.savedSplashPath
-            if (oldPath != null) {
-                withContext(Dispatchers.IO) {
-                    SplashStorage.deleteMedia(oldPath)
-                }
-            }
-            _editState.value = _editState.value.copy(
-                splashMediaUri = null,
-                savedSplashPath = null
-            )
-        }
+        _editState.value = _editState.value.copy(
+            splashMediaUri = null,
+            savedSplashPath = null
+        )
+    }
+
+    /** Deletes the app's previous icon file once the DB row references the replacement. */
+    private suspend fun deleteReplacedIconIfUnused(previousPath: String?, currentPath: String?) {
+        if (previousPath.isNullOrBlank() || previousPath == currentPath) return
+        withContext(Dispatchers.IO) { IconStorage.deleteIcon(previousPath) }
+    }
+
+    /** Deletes the app's previous splash media once the DB row references the replacement. */
+    private suspend fun deleteReplacedSplashIfUnused(previousPath: String?, currentPath: String?) {
+        if (previousPath.isNullOrBlank() || previousPath == currentPath) return
+        withContext(Dispatchers.IO) { SplashStorage.deleteMedia(previousPath) }
     }
 
     fun saveApp() {
@@ -434,8 +434,14 @@ class MainViewModel(
                 AppLogger.d("MainViewModel", "saveApp: activationEnabled=${state.activationEnabled}, " +
                     "activationCodeList.size=${state.activationCodeList.size}")
 
+                val previousIconPath = _currentApp.value?.iconPath
+                val previousSplashPath = _currentApp.value?.splashConfig?.mediaPath
+
                 if (_currentApp.value != null) {
                     repository.updateWebApp(webApp)
+                    // DB now references the new files — safe to remove the replaced ones.
+                    deleteReplacedIconIfUnused(previousIconPath, state.savedIconPath ?: state.iconUri?.toString())
+                    deleteReplacedSplashIfUnused(previousSplashPath, state.splashConfig?.mediaPath)
                 } else {
                     val newId = repository.createWebApp(webApp)
 
@@ -689,6 +695,9 @@ class MainViewModel(
                 val updatedApp = applyUpdate(existingApp, savedIconPath)
 
                 withContext(Dispatchers.IO) { repository.updateWebApp(updatedApp) }
+                // DB now references the new files — safe to remove the replaced ones.
+                deleteReplacedIconIfUnused(existingApp.iconPath, updatedApp.iconPath)
+                deleteReplacedSplashIfUnused(existingApp.splashConfig?.mediaPath, updatedApp.splashConfig?.mediaPath)
                 _uiState.value = UiState.Success(Strings.appUpdatedSuccessfully.replaceFirst("%s", typeName))
             } catch (e: Exception) {
                 AppLogger.e("MainViewModel", "Failed to update $typeName app", e)
