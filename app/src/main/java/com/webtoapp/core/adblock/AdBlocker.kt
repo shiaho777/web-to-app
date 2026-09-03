@@ -1376,11 +1376,15 @@ class AdBlocker {
         }
 
         if (isException) {
+            val idx = networkExceptionFilters.size
             networkExceptionFilters.add(filter)
-            unanchoredFilterIndex.remove(networkExceptionFilters)
+            unanchoredFilterIndex[networkExceptionFilters] =
+                (unanchoredFilterIndex[networkExceptionFilters] ?: emptyList()) + idx
         } else {
+            val idx = networkBlockFilters.size
             networkBlockFilters.add(filter)
-            unanchoredFilterIndex.remove(networkBlockFilters)
+            unanchoredFilterIndex[networkBlockFilters] =
+                (unanchoredFilterIndex[networkBlockFilters] ?: emptyList()) + idx
         }
     }
 
@@ -1869,9 +1873,6 @@ class AdBlocker {
             t.startsWith("[Adblock") || t.startsWith("!") || t.startsWith("||") ||
                 t.startsWith("@@") || t.contains("##") || t.contains("#@#")
         }
-
-        unanchoredFilterIndex.remove(networkBlockFilters)
-        unanchoredFilterIndex.remove(networkExceptionFilters)
 
         val lines = content.lineSequence().iterator()
         while (lines.hasNext()) {
