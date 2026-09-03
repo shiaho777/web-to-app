@@ -168,27 +168,6 @@ fun ExtensionModuleScreen(
         }
     }
 
-    val jsZipPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri ->
-        uri?.let {
-            isImporting = true
-            scope.launch {
-                val result = extensionFileManager.importJsZipPackage(it)
-                isImporting = false
-                when (result) {
-                    is ExtensionFileManager.ImportResult.JsPackage -> {
-                        showJsPackagePreview = result
-                    }
-                    is ExtensionFileManager.ImportResult.Error -> {
-                        Toast.makeText(context, Strings.moduleImportFailed(result.message), Toast.LENGTH_SHORT).show()
-                    }
-                    else -> {}
-                }
-            }
-        }
-    }
-
     val qrCodeImagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
@@ -322,11 +301,6 @@ fun ExtensionModuleScreen(
                                 text = { Text(Strings.importChromeExtension) },
                                 onClick = { showMoreMenu = false; chromeExtPickerLauncher.launch("*/*") },
                                 leadingIcon = { Icon(Icons.Default.Extension, null, Modifier.size(20.dp)) }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(Strings.importJsPackage) },
-                                onClick = { showMoreMenu = false; jsZipPickerLauncher.launch("*/*") },
-                                leadingIcon = { Icon(Icons.Default.FolderZip, null, Modifier.size(20.dp)) }
                             )
                             DropdownMenuItem(
                                 text = { Text(Strings.importFromFile) },

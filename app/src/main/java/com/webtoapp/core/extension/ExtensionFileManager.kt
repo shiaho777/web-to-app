@@ -321,39 +321,6 @@ class ExtensionFileManager(private val context: Context) {
         }
     }
 
-    suspend fun importJsZipPackage(uri: Uri): ImportResult = withContext(Dispatchers.IO) {
-        try {
-            val tempFile = File(tempDir, "jszip_${System.currentTimeMillis()}")
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                FileOutputStream(tempFile).use { output ->
-                    val copied = input.copyTo(output)
-                    if (copied > MAX_EXTENSION_SIZE) {
-                        tempFile.delete()
-                        return@withContext ImportResult.Error("ZIP too large (max 50MB)")
-                    }
-                }
-            } ?: return@withContext ImportResult.Error("Cannot read file")
-
-            val extractDir = File(tempDir, "jszip_extract_${System.currentTimeMillis()}")
-            extractDir.mkdirs()
-
-            try {
-                extractZipToDirectory(tempFile, extractDir)
-                val result = tryImportAsJsPackage(extractDir)
-                if (result != null) {
-                    return@withContext result
-                }
-                return@withContext ImportResult.Error("No JS files found in ZIP")
-            } finally {
-                tempFile.delete()
-                extractDir.deleteRecursively()
-            }
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to import JS ZIP package", e)
-            ImportResult.Error("Import failed: ${e.message}")
-        }
-    }
-
     private fun tryImportAsJsPackage(dir: File): ImportResult? {
         val jsFiles = dir.walkTopDown()
             .filter { it.isFile && (it.extension.equals("js", true) || it.extension.equals("mjs", true)) }
