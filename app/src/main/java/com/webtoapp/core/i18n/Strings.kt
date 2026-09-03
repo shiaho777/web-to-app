@@ -34325,16 +34325,16 @@ object StringsC {
     }
 
     val showStatusBarHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "全屏模式下仍显示状态栏，可解决导航栏问题"
-        AppLanguage.ENGLISH -> "Show status bar in fullscreen mode, can fix navigation bar issues"
-        AppLanguage.ARABIC -> "إظهار شريط الحالة في وضع ملء الشاشة، يمكن أن يحل مشاكل شريط التنقل"
-        AppLanguage.PORTUGUESE -> "Mostrar barra de status no modo tela cheia, pode corrigir problemas da barra de navegação"
-        AppLanguage.SPANISH -> "Mostrar barra de estado en modo pantalla completa, puede solucionar problemas de la barra de navegación"
-        AppLanguage.FRENCH -> "Afficher la barre d'état en mode plein écran, peut corriger les problèmes de barre de navigation"
-        AppLanguage.GERMAN -> "Statusleiste im Vollbildmodus anzeigen, kann Navigationsleistenprobleme beheben"
-        AppLanguage.RUSSIAN -> "Показывать строку состояния в полноэкранном режиме, может решить проблемы с панелью навигации"
-        AppLanguage.JAPANESE -> "全画面モードでステータスバーを表示、ナビゲーションバーの問題を解決できる場合があります"
-        AppLanguage.KOREAN -> "전체 화면 모드에서 상태 표시줄 표시, 내비게이션 바 문제를 해결할 수 있습니다"
+        AppLanguage.CHINESE -> "全屏时保留顶部状态栏，网页内容从状态栏下方开始排布"
+        AppLanguage.ENGLISH -> "Keep the status bar visible in fullscreen; page content starts below it"
+        AppLanguage.ARABIC -> "إبقاء شريط الحالة مرئيًا في ملء الشاشة؛ يبدأ محتوى الصفحة أسفله"
+        AppLanguage.PORTUGUESE -> "Manter a barra de status visível em tela cheia; o conteúdo começa abaixo dela"
+        AppLanguage.SPANISH -> "Mantener visible la barra de estado en pantalla completa; el contenido empieza debajo"
+        AppLanguage.FRENCH -> "Garder la barre d'état visible en plein écran ; le contenu commence en dessous"
+        AppLanguage.GERMAN -> "Statusleiste im Vollbildmodus behalten; der Inhalt beginnt darunter"
+        AppLanguage.RUSSIAN -> "Оставлять строку состояния видимой в полноэкранном режиме; контент начинается под ней"
+        AppLanguage.JAPANESE -> "全画面でもステータスバーを表示し、ページ内容はその下から配置"
+        AppLanguage.KOREAN -> "전체 화면에서도 상태 표시줄을 유지하고 페이지 콘텐츠는 그 아래부터 배치"
     }
 
     val showNavigationBar: String get() = when (Strings.lang) {
