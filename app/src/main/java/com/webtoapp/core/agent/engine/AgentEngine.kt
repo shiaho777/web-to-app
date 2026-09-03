@@ -24,7 +24,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.withTimeoutOrNull
 
 class AgentEngine(
     private val gateway: LlmGateway,
@@ -443,42 +443,50 @@ class AgentEngine(
  * Some OpenAI-compatible SSE endpoints open the channel, send a partial response
  * (e.g. the first reasoning chunk), then go silent without ever closing the
  * connection — which would otherwise hang the agent loop for the full OkHttp
- * read timeout (10 minutes). On idle timeout, [onTimeout] is invoked (typically
- * to set a retryable error) and the flow collection is cancelled.
+ * read timeout (10 minutes). On idle timeout, [onTimeout] is invoked and the
+ * collection ends normally so the engine's retry loop can take over.
+ *
+ * The deadline must live on the caller's own suspension path. A sibling-coroutine
+ * watchdog would NOT work: a child `launch` throwing into a shared scope rethrows
+ * the child's exception out of this function itself, bypassing the caller's
+ * try/catch — which is exactly why the previous watchdog implementation left the
+ * engine's idle-retry path unreachable. Here each event is awaited inside a
+ * fresh [withTimeoutOrNull] window; a window expiring with no event means the
+ * stream went idle, and a normal collect completion ends the loop.
  */
 private suspend fun <T> Flow<T>.collectWithIdleTimeout(
     idleTimeoutMs: Long,
     onTimeout: () -> Unit,
     action: suspend (T) -> Unit
 ) {
-    val lastEventAt = AtomicLong(System.currentTimeMillis())
-    coroutineScope {
-        // Watchdog: poll every second; if no event for idleTimeoutMs, cancel this scope
-        // (which cancels the collector below).
-        val watchdog = launch {
-            while (true) {
-                delay(1000)
-                val idle = System.currentTimeMillis() - lastEventAt.get()
-                if (idle >= idleTimeoutMs) {
-                    onTimeout()
-                    throw IdleStreamTimeout
+    val timeoutMs = idleTimeoutMs.coerceAtLeast(1L)
+    while (true) {
+        var gotEvent = false
+        val outcome = withTimeoutOrNull(timeoutMs) {
+            try {
+                collect { value ->
+                    gotEvent = true
+                    action(value)
+                    throw ElementReceived()
                 }
+                StreamEnd
+            } catch (e: ElementReceived) {
+                NoEvent
             }
         }
-        try {
-            collect {
-                lastEventAt.set(System.currentTimeMillis())
-                action(it)
+        when {
+            outcome === StreamEnd -> return
+            gotEvent -> Unit // loop re-arms a fresh window for the next event
+            else -> {
+                onTimeout()
+                return
             }
-        } catch (e: IdleStreamTimeout) {
-            // Expected — onTimeout already set the retryable error.
-        } finally {
-            watchdog.cancel()
         }
     }
 }
 
-/** Marker exception used to break out of a stalled stream collector. */
-private object IdleStreamTimeout : RuntimeException() {
+private object StreamEnd
+private object NoEvent
+private class ElementReceived : RuntimeException() {
     override fun fillInStackTrace(): Throwable = this
 }
