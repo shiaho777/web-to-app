@@ -197,17 +197,32 @@ object TlsMitmBridge {
             safeClose(client); return
         }
 
+        // Handshake with the WebView FIRST and remember which ALPN protocol it picked,
+        // so the upstream connection can be restricted to the same protocol. The bridge
+        // relays raw bytes — if the two sides negotiated independently, a WebView on h2
+        // facing an http/1.1-only origin would stream HTTP/2 frames into an HTTP/1.1
+        // server and every request to that host would fail.
+        val mitmSocket = try {
+            performTlsHandshake(client, host)
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "MITM TLS handshake failed for $host: ${e.message}")
+            sendStatus(clientOut, 502, "Bad Gateway")
+            safeClose(client); return
+        }
+        val clientProtocol = try { mitmSocket.applicationProtocol } catch (_: Exception) { null }
+
         val upstreamSocket = try {
             TlsUpstreamConnector.connect(
                 host = host,
                 port = port,
                 template = config.template,
                 customCipherSuites = config.customCipherSuites,
-                upstreamSocks = config.upstreamSocks
+                upstreamSocks = config.upstreamSocks,
+                restrictAlpnTo = clientProtocol
             ).sslSocket
         } catch (e: Exception) {
             AppLogger.w(TAG, "Upstream TLS connect failed for $host:$port: ${e.message}")
-            sendStatus(clientOut, 502, "Bad Gateway")
+            safeClose(mitmSocket)
             safeClose(client); return
         }
 
@@ -220,13 +235,13 @@ object TlsMitmBridge {
             safeClose(client); return
         }
 
-        val mitmSocket = try {
-            performTlsHandshake(client, host)
-        } catch (e: Exception) {
-            AppLogger.w(TAG, "MITM TLS handshake failed for $host: ${e.message}")
-            safeClose(upstreamSocket)
-            safeClose(client); return
-        }
+        // Tunnel mode (SSE/WebSocket/long-poll) can stay idle for minutes. The 60s
+        // handshake-phase SO_TIMEOUT would kill any such connection mid-session
+        // (copyStream swallows the SocketTimeoutException, so the teardown looks like a
+        // silent drop) — clear it once the tunnel is established, mirroring
+        // Socks5Connector's reset to 0 after the SOCKS handshake.
+        try { mitmSocket.soTimeout = 0 } catch (_: Exception) {}
+        try { upstreamSocket.soTimeout = 0 } catch (_: Exception) {}
 
         bridge(mitmSocket, upstreamSocket)
     }

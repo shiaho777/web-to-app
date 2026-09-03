@@ -27,7 +27,8 @@ object TlsUpstreamConnector {
         port: Int,
         template: TlsFingerprintTemplate,
         customCipherSuites: List<String> = emptyList(),
-        upstreamSocks: LocalHttpToSocksBridge.Upstream? = null
+        upstreamSocks: LocalHttpToSocksBridge.Upstream? = null,
+        restrictAlpnTo: String? = null
     ): TlsResult {
         val rawSocket = if (upstreamSocks != null) {
             LocalHttpToSocksBridge.Socks5Connector.connect(
@@ -56,7 +57,22 @@ object TlsUpstreamConnector {
         )
 
         val sslSocket = factory.createSocket(rawSocket, host, port, true) as SSLSocket
+        if (restrictAlpnTo != null) {
+            // The MITM socket already negotiated with the WebView; offering more
+            // protocols upstream than the client side speaks would let the two ends
+            // disagree (h2 into an http/1.1 server) and break the whole host.
+            try {
+                val params = sslSocket.sslParameters
+                params.applicationProtocols = arrayOf(restrictAlpnTo)
+                sslSocket.sslParameters = params
+            } catch (_: Exception) {
+            }
+        }
         sslSocket.startHandshake()
+
+        // The raw socket's connect-phase SO_TIMEOUT must not survive into tunnel
+        // mode: an idle SSE/WebSocket stream would otherwise be dropped after 60s.
+        try { sslSocket.soTimeout = 0 } catch (_: Exception) {}
 
         val negotiatedProtocol = try {
             sslSocket.applicationProtocol
