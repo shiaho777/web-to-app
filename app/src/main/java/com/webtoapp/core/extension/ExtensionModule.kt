@@ -568,6 +568,28 @@ data class ExtensionModule(
 
         private const val SHARE_CODE_PREFIX_V1 = "WTA1:"
         private const val SHARE_CODE_PREFIX_V0 = ""
+        /**
+         * Compact share frame (issue #768). V1 carries the full Gson payload; V2
+         * carries only entries that differ from a fresh [ExtensionModule] default
+         * (id/timestamps are always excluded — import regenerates them), so the
+         * same module compresses ~40-60% smaller before gzip and fits bigger
+         * modules into a single QR code. Decode keeps reading every generation.
+         */
+        private const val SHARE_CODE_PREFIX_V2 = "WTA2:"
+
+        /** JSON keys never carried in a share payload (regenerated on import). */
+        private val shareExcludedKeys = setOf("id", "createdAt", "updatedAt")
+
+        /**
+         * Physical single-QR ceiling in bytes: version 40, ECC-L, byte mode.
+         * Lives here (rather than QrCodeUtils, which is host-only and excluded
+         * from the shell sync) so [toShareCode] stays compilable in generated
+         * APKs. ASCII payloads such as Base64 share codes are 1 byte/char.
+         */
+        const val QR_SINGLE_CODE_MAX_BYTES = 2953
+
+        /** Diff baseline: `name` is the only parameter without a default. */
+        private val shareDefaultsInstance = ExtensionModule(name = "")
 
         fun fromJson(json: String): ExtensionModule? {
             return try {
@@ -580,6 +602,14 @@ data class ExtensionModule(
         fun fromShareCode(shareCode: String): ExtensionModule? {
             return try {
                 val json = when {
+
+                    shareCode.startsWith(SHARE_CODE_PREFIX_V2) -> {
+                        val compressed = android.util.Base64.decode(
+                            shareCode.removePrefix(SHARE_CODE_PREFIX_V2),
+                            android.util.Base64.DEFAULT
+                        )
+                        expandShareJson(decompressGzip(compressed))
+                    }
 
                     shareCode.startsWith(SHARE_CODE_PREFIX_V1) -> {
                         val compressed = android.util.Base64.decode(
@@ -599,6 +629,37 @@ data class ExtensionModule(
             }
         }
 
+        /**
+         * Merges a compact V2 payload onto a fresh default instance. A plain
+         * [fromJson] would leave Java defaults (false/0) in omitted primitive
+         * fields instead of the declared Kotlin defaults (e.g. enabled=true),
+         * so the merge must happen before parsing.
+         */
+        private fun expandShareJson(compactJson: String): String {
+            val base = gson.toJsonTree(shareDefaultsInstance).asJsonObject
+            val compact = gson.fromJson(compactJson, com.google.gson.JsonObject::class.java)
+            for ((key, value) in compact.entrySet()) {
+                base.add(key, value)
+            }
+            return gson.toJson(base)
+        }
+
+        /**
+         * Emits only payload entries that differ from a fresh default instance
+         * (deep-compared, so partially customized nested objects are kept whole).
+         */
+        private fun compactShareJson(module: ExtensionModule): String {
+            val full = gson.toJsonTree(module).asJsonObject
+            val defaults = gson.toJsonTree(shareDefaultsInstance).asJsonObject
+            val out = com.google.gson.JsonObject()
+            for ((key, value) in full.entrySet()) {
+                if (key in shareExcludedKeys) continue
+                if (value == defaults.get(key)) continue
+                out.add(key, value)
+            }
+            return gson.toJson(out)
+        }
+
         private fun decompressGzip(compressed: ByteArray): String {
             java.util.zip.GZIPInputStream(java.io.ByteArrayInputStream(compressed)).use { gzip ->
                 return gzip.bufferedReader().readText()
@@ -608,6 +669,23 @@ data class ExtensionModule(
         private fun compressGzip(data: String): ByteArray {
             val bos = java.io.ByteArrayOutputStream()
             java.util.zip.GZIPOutputStream(bos).use { gzip ->
+                gzip.write(data.toByteArray())
+            }
+            return bos.toByteArray()
+        }
+
+        /**
+         * Same gzip framing as [compressGzip] (decoders are unaffected) but with
+         * the deflater at maximum strength. `def` is protected in
+         * [java.util.zip.DeflaterOutputStream], hence the anonymous subclass.
+         */
+        private fun compressGzipBest(data: String): ByteArray {
+            val bos = java.io.ByteArrayOutputStream()
+            object : java.util.zip.GZIPOutputStream(bos) {
+                init {
+                    def.setLevel(java.util.zip.Deflater.BEST_COMPRESSION)
+                }
+            }.use { gzip ->
                 gzip.write(data.toByteArray())
             }
             return bos.toByteArray()
@@ -658,8 +736,21 @@ data class ExtensionModule(
     fun toJson(): String = gson.toJson(this)
 
     fun toShareCode(): String {
+        // Prefer V1 while it fits a single QR code so older app versions can
+        // still read the share; V2 is only emitted when V1 would not fit.
+        val v1 = toShareCodeV1()
+        if (v1.toByteArray(Charsets.UTF_8).size <= QR_SINGLE_CODE_MAX_BYTES) return v1
+        return toShareCodeV2()
+    }
+
+    fun toShareCodeV1(): String {
         val compressed = compressGzip(toJson())
         return SHARE_CODE_PREFIX_V1 + android.util.Base64.encodeToString(compressed, android.util.Base64.NO_WRAP)
+    }
+
+    fun toShareCodeV2(): String {
+        val compressed = compressGzipBest(compactShareJson(this))
+        return SHARE_CODE_PREFIX_V2 + android.util.Base64.encodeToString(compressed, android.util.Base64.NO_WRAP)
     }
 
     fun toShareCodeLegacy(): String {

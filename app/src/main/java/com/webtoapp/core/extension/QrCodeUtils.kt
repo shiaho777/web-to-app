@@ -17,7 +17,12 @@ object QrCodeUtils {
 
     private const val TAG = "QrCodeUtils"
 
-    private const val QR_MAX_BYTES = 4200
+    /**
+     * Physical single-QR ceiling: version 40, ECC-L, byte mode holds 2953 data
+     * bytes (ASCII payloads such as Base64 share codes use byte mode). The old
+     * 4200 cap let through codes that then failed to encode.
+     */
+    private const val QR_MAX_BYTES = ExtensionModule.QR_SINGLE_CODE_MAX_BYTES
 
     fun generateQrCode(
         content: String,
