@@ -2314,7 +2314,7 @@ fun FullscreenModeCard(
                         WtaSectionDivider()
 
                         WtaChoiceRow(
-                            title = Strings.statusBarStyleConfigLabel,
+                            title = Strings.statusBarCustomizeLabel,
                             icon = Icons.Outlined.Tune,
                             value = if (statusBarConfigExpanded) Strings.collapse else Strings.expand,
                             isExpanded = statusBarConfigExpanded,

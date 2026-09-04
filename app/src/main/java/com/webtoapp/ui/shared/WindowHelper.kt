@@ -182,21 +182,30 @@ object WindowHelper {
                         controller.hide(WindowInsetsCompat.Type.statusBars())
                     }
 
+                    // Issue #771: a shown status bar must stay (BEHAVIOR_DEFAULT).
+                    // Transient bars auto-hide seconds after appearing, which is
+                    // why "show status bar" never stayed until swiped back.
+                    // Hidden paths keep the transient swipe-to-peek behavior.
+                    val barsBehavior = if (shouldShowStatusBar) {
+                        WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
+                    } else {
+                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    }
+
                     if (hideNavBar) {
                         controller.hide(WindowInsetsCompat.Type.navigationBars())
-                        controller.systemBarsBehavior =
-                            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                     } else {
                         controller.show(WindowInsetsCompat.Type.navigationBars())
-                        controller.systemBarsBehavior =
-                            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
                     }
+                    controller.systemBarsBehavior = barsBehavior
                 } else {
                     decorFitsSystemWindows = classicKeyboardResize
                     WindowCompat.setDecorFitsSystemWindows(activity.window, classicKeyboardResize)
                     controller.show(WindowInsetsCompat.Type.systemBars())
+                    // Non-fullscreen bars are permanently shown chrome: default
+                    // behavior, never transient auto-hide (issue #771).
                     controller.systemBarsBehavior =
-                        WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                        WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
                     if (!classicKeyboardResize) {
                         activity.window.navigationBarColor = android.graphics.Color.TRANSPARENT
                     }

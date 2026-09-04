@@ -191,6 +191,15 @@ fun BoxScope.ShellScaffoldLayout(
         // 同时缓解与系统返回手势边缘带的冲突。默认 0 → 向后兼容旧行为。
         val contentPad = config.webViewConfig.fullscreenContentPaddingDp.dp
 
+        // Issue #771: transparent/image bars overlay the content (persistent
+        // WeChat-style bar) instead of reserving a strip; solid bars keep the
+        // reservation so page controls stay clear of the status icons.
+        val shellDark = androidx.compose.foundation.isSystemInDarkTheme()
+        val shellBgType = if (shellDark) config.webViewConfig.statusBarBackgroundTypeDark else config.webViewConfig.statusBarBackgroundType
+        val shellMode = if (shellDark) config.webViewConfig.statusBarColorModeDark else config.webViewConfig.statusBarColorMode
+        val shellOverlaysContent = shellBgType == "IMAGE" ||
+            shellMode == com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT.name
+
         val contentModifier = when {
             hideToolbar && showToolbar -> {
 
@@ -199,7 +208,7 @@ fun BoxScope.ShellScaffoldLayout(
             hideToolbar && config.webViewConfig.showStatusBarInFullscreen -> {
 
                 Modifier.fillMaxSize().padding(
-                    top = actualStatusBarPadding,
+                    top = if (shellOverlaysContent) 0.dp else actualStatusBarPadding,
                     start = contentPad,
                     end = contentPad,
                     bottom = contentPad

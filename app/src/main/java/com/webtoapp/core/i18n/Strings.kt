@@ -2355,7 +2355,7 @@ object Strings {
     val showNavigationBarHint: String get() = StringsC.showNavigationBarHint
     val fullscreenContentPadding: String get() = StringsC.fullscreenContentPadding
     val fullscreenContentPaddingHint: String get() = StringsC.fullscreenContentPaddingHint
-    val statusBarStyleConfigLabel: String get() = StringsC.statusBarStyleConfigLabel
+    val statusBarCustomizeLabel: String get() = StringsC.statusBarCustomizeLabel
     val statusBarLightModeLabel: String get() = StringsC.statusBarLightModeLabel
     val statusBarDarkModeLabel: String get() = StringsC.statusBarDarkModeLabel
     val statusBarIconsLabel: String get() = StringsC.statusBarIconsLabel
@@ -34312,29 +34312,29 @@ object StringsC {
     }
 
     val showStatusBar: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "显示状态栏"
-        AppLanguage.ENGLISH -> "Show Status Bar"
-        AppLanguage.ARABIC -> "إظهار شريط الحالة"
-        AppLanguage.PORTUGUESE -> "Mostrar Barra de Status"
-        AppLanguage.SPANISH -> "Mostrar Barra de Estado"
-        AppLanguage.FRENCH -> "Afficher la Barre d'État"
-        AppLanguage.GERMAN -> "Statusleiste anzeigen"
-        AppLanguage.RUSSIAN -> "Показывать строку состояния"
-        AppLanguage.JAPANESE -> "ステータスバーを表示"
-        AppLanguage.KOREAN -> "상태 표시줄 표시"
+        AppLanguage.CHINESE -> "状态栏常驻"
+        AppLanguage.ENGLISH -> "Always show status bar"
+        AppLanguage.ARABIC -> "إبقاء شريط الحالة ظاهرًا دائمًا"
+        AppLanguage.PORTUGUESE -> "Manter barra de status sempre visível"
+        AppLanguage.SPANISH -> "Mantener siempre visible la barra de estado"
+        AppLanguage.FRENCH -> "Toujours afficher la barre d'état"
+        AppLanguage.GERMAN -> "Statusleiste immer anzeigen"
+        AppLanguage.RUSSIAN -> "Всегда показывать строку состояния"
+        AppLanguage.JAPANESE -> "ステータスバーを常に表示"
+        AppLanguage.KOREAN -> "상태 표시줄 항상 표시"
     }
 
     val showStatusBarHint: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "全屏时保留顶部状态栏，网页内容从状态栏下方开始排布"
-        AppLanguage.ENGLISH -> "Keep the status bar visible in fullscreen; page content starts below it"
-        AppLanguage.ARABIC -> "إبقاء شريط الحالة مرئيًا في ملء الشاشة؛ يبدأ محتوى الصفحة أسفله"
-        AppLanguage.PORTUGUESE -> "Manter a barra de status visível em tela cheia; o conteúdo começa abaixo dela"
-        AppLanguage.SPANISH -> "Mantener visible la barra de estado en pantalla completa; el contenido empieza debajo"
-        AppLanguage.FRENCH -> "Garder la barre d'état visible en plein écran ; le contenu commence en dessous"
-        AppLanguage.GERMAN -> "Statusleiste im Vollbildmodus behalten; der Inhalt beginnt darunter"
-        AppLanguage.RUSSIAN -> "Оставлять строку состояния видимой в полноэкранном режиме; контент начинается под ней"
-        AppLanguage.JAPANESE -> "全画面でもステータスバーを表示し、ページ内容はその下から配置"
-        AppLanguage.KOREAN -> "전체 화면에서도 상태 표시줄을 유지하고 페이지 콘텐츠는 그 아래부터 배치"
+        AppLanguage.CHINESE -> "全屏时状态栏始终显示，不会自动隐藏"
+        AppLanguage.ENGLISH -> "Status bar stays visible in fullscreen and never auto-hides"
+        AppLanguage.ARABIC -> "يبقى شريط الحالة ظاهرًا في ملء الشاشة ولا يختفي تلقائيًا"
+        AppLanguage.PORTUGUESE -> "A barra de status permanece visível em tela cheia e nunca se oculta sozinha"
+        AppLanguage.SPANISH -> "La barra de estado permanece visible en pantalla completa y nunca se oculta sola"
+        AppLanguage.FRENCH -> "La barre d'état reste visible en plein écran et ne se masque jamais toute seule"
+        AppLanguage.GERMAN -> "Die Statusleiste bleibt im Vollbildmodus sichtbar und blendet sich nie automatisch aus"
+        AppLanguage.RUSSIAN -> "Строка состояния остаётся видимой в полноэкранном режиме и никогда не скрывается сама"
+        AppLanguage.JAPANESE -> "全画面でもステータスバーは表示されたままになり、自動では隠れません"
+        AppLanguage.KOREAN -> "전체 화면에서도 상태 표시줄이 계속 표시되며 자동으로 숨겨지지 않습니다"
     }
 
     val showNavigationBar: String get() = when (Strings.lang) {
@@ -34389,17 +34389,17 @@ object StringsC {
         AppLanguage.KOREAN -> "전체 화면 여백: 모서리 버튼이 쉬워지고 가장자리 제스처 충돌 감소"
     }
 
-    val statusBarStyleConfigLabel: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "状态栏样式配置"
-        AppLanguage.ENGLISH -> "Status Bar Style Config"
-        AppLanguage.ARABIC -> "إعدادات نمط شريط الحالة"
-        AppLanguage.PORTUGUESE -> "Configuração de Estilo da Barra de Status"
-        AppLanguage.SPANISH -> "Configuración de Estilo de la Barra de Estado"
-        AppLanguage.FRENCH -> "Configuration du Style de la Barre d'État"
-        AppLanguage.GERMAN -> "Konfiguration des Statusleistenstils"
-        AppLanguage.RUSSIAN -> "Настройка стиля строки состояния"
-        AppLanguage.JAPANESE -> "ステータスバースタイル設定"
-        AppLanguage.KOREAN -> "상태 표시줄 스타일 설정"
+    val statusBarCustomizeLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "状态栏自定义"
+        AppLanguage.ENGLISH -> "Customize status bar"
+        AppLanguage.ARABIC -> "تخصيص شريط الحالة"
+        AppLanguage.PORTUGUESE -> "Personalizar barra de status"
+        AppLanguage.SPANISH -> "Personalizar barra de estado"
+        AppLanguage.FRENCH -> "Personnaliser la barre d'état"
+        AppLanguage.GERMAN -> "Statusleiste anpassen"
+        AppLanguage.RUSSIAN -> "Настроить строку состояния"
+        AppLanguage.JAPANESE -> "ステータスバーをカスタマイズ"
+        AppLanguage.KOREAN -> "상태 표시줄 사용자 설정"
     }
 
     val statusBarLightModeLabel: String get() = when (Strings.lang) {

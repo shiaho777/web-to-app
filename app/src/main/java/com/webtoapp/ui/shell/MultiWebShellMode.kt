@@ -230,9 +230,16 @@ private fun TabsMode(
     ) { padding ->
         // 全屏模式下可选的内容内边距，与单站点 ShellScaffoldLayout 行为一致：
         // 把网页交互区从屏幕边缘内移，让角落按钮易于点按，并缓解与系统返回手势边缘带的冲突。
+        // Issue #771: transparent/image 状态栏覆盖在内容上（常驻微信式），顶部不预留；
+        // 实色栏保留预留，避免遮挡页面顶部控件。
         val contentPad = webViewConfig.fullscreenContentPaddingDp.dp
+        val multiDark = androidx.compose.foundation.isSystemInDarkTheme()
+        val multiBgType = if (multiDark) webViewConfig.statusBarBackgroundTypeDark else webViewConfig.statusBarBackgroundType
+        val multiMode = if (multiDark) webViewConfig.statusBarColorModeDark else webViewConfig.statusBarColorMode
+        val multiOverlaysContent = multiBgType == com.webtoapp.data.model.StatusBarBackgroundType.IMAGE ||
+            multiMode == com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT
         val topPad = if (webViewConfig.hideToolbar && webViewConfig.showStatusBarInFullscreen) {
-            WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            if (multiOverlaysContent) 0.dp else WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
         } else {
             contentPad
         }

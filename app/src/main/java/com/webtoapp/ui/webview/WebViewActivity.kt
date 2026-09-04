@@ -3009,6 +3009,15 @@ fun WebViewScreen(
 
         val actualStatusBarPadding = if (statusBarHeightDp >= 0) statusBarHeightDp.dp else systemStatusBarHeightDp
 
+        // Issue #771: transparent/image bars overlay the content instead of
+        // reserving a strip (WeChat-style persistent bar); solid bars keep the
+        // reservation so page controls stay clear of the status icons.
+        val previewDark = com.webtoapp.ui.theme.LocalIsDarkTheme.current
+        val effBgType = if (previewDark) statusBarBackgroundTypeDarkLocal else statusBarBackgroundType
+        val effMode = if (previewDark) webApp?.webViewConfig?.statusBarColorModeDark else webApp?.webViewConfig?.statusBarColorMode
+        val barOverlaysContent = effBgType == "IMAGE" ||
+            effMode == com.webtoapp.data.model.StatusBarColorMode.TRANSPARENT
+
         // Fullscreen content padding mirrors the exported shell (ShellScaffoldLayout):
         // reserve the status-bar height on top when the bar is shown, pad the
         // remaining edges so corner controls stay tappable. Preview used to ignore
@@ -3023,7 +3032,7 @@ fun WebViewScreen(
             hideToolbar && webApp?.webViewConfig?.showStatusBarInFullscreen == true -> {
 
                 Modifier.fillMaxSize().padding(
-                    top = actualStatusBarPadding,
+                    top = if (barOverlaysContent) 0.dp else actualStatusBarPadding,
                     start = contentPad,
                     end = contentPad,
                     bottom = contentPad
