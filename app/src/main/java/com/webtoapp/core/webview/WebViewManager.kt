@@ -1964,6 +1964,16 @@ class WebViewManager(
                             return adBlocker.createEmptyResponse(adResType)
                         }
                     }
+
+                    // Legacy proxy fallback for pre-PROXY_OVERRIDE WebViews: fetch via
+                    // the configured proxy in-app. Null when disarmed/bypassed/scheme
+                    // mismatch (normal loading continues); 502 on fetch failure so a
+                    // dead proxy fails closed instead of leaking direct.
+                    LegacyProxyFetchBridge.intercept(
+                        url = url,
+                        method = it.method,
+                        requestHeaders = it.requestHeaders ?: emptyMap()
+                    )?.let { proxied -> return proxied }
                 }
 
                 return super.shouldInterceptRequest(view, request)

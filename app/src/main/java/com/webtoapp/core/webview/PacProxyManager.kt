@@ -52,9 +52,13 @@ class PacProxyManager(private val context: Context) {
         password: String = ""
     ) {
         if (!isProxyOverrideSupported()) {
-            AppLogger.w(TAG, "PROXY_OVERRIDE not supported on this WebView version")
+            // Pre-67 WebView: ProxyController is a no-op. Arm the in-app fetch
+            // fallback (same settings) instead of silently doing nothing.
+            AppLogger.w(TAG, "PROXY_OVERRIDE not supported, arming legacy fetch fallback")
+            applyLegacyFallback(proxyMode, staticProxyHost, staticProxyPort, staticProxyType, pacUrl, bypassRules, username, password)
             return
         }
+        LegacyProxyFetchBridge.clear()
 
         currentProxyUsername = username
         currentProxyPassword = password
@@ -77,6 +81,7 @@ class PacProxyManager(private val context: Context) {
     }
 
     fun clearProxy() {
+        LegacyProxyFetchBridge.clear()
         if (!isProxyOverrideSupported()) return
 
         try {
@@ -261,6 +266,59 @@ class PacProxyManager(private val context: Context) {
             )
         } catch (e: Exception) {
             AppLogger.e(TAG, "Failed to apply PAC proxy", e)
+        }
+    }
+
+    /**
+     * Same settings as [applyProxy], routed to [LegacyProxyFetchBridge] for
+     * WebViews without PROXY_OVERRIDE. Reuses the PAC download/parse below so
+     * both paths resolve identical upstreams.
+     */
+    private suspend fun applyLegacyFallback(
+        proxyMode: String,
+        staticProxyHost: String,
+        staticProxyPort: Int,
+        staticProxyType: String,
+        pacUrl: String,
+        bypassRules: List<String>,
+        username: String,
+        password: String
+    ) {
+        when (proxyMode.uppercase()) {
+            "NONE" -> LegacyProxyFetchBridge.clear()
+            "STATIC" -> {
+                val spec = LegacyProxyFetchBridge.resolveStatic(
+                    mode = proxyMode,
+                    host = staticProxyHost,
+                    port = staticProxyPort,
+                    type = staticProxyType,
+                    bypassRules = bypassRules,
+                    username = username,
+                    password = password
+                )
+                LegacyProxyFetchBridge.configure(spec)
+            }
+            "PAC" -> {
+                if (pacUrl.isBlank()) {
+                    AppLogger.w(TAG, "Empty PAC URL")
+                    LegacyProxyFetchBridge.clear()
+                    return
+                }
+                val pacScript = downloadPacScript(pacUrl)
+                if (pacScript.isNullOrBlank()) {
+                    AppLogger.e(TAG, "Failed to download PAC script from: $pacUrl")
+                    LegacyProxyFetchBridge.clear()
+                    return
+                }
+                val entries = parsePacScript(pacScript)
+                LegacyProxyFetchBridge.configure(
+                    LegacyProxyFetchBridge.resolvePacEntries(entries, bypassRules, username, password)
+                )
+            }
+            else -> {
+                AppLogger.w(TAG, "Unknown proxy mode: $proxyMode, clearing proxy")
+                LegacyProxyFetchBridge.clear()
+            }
         }
     }
 
