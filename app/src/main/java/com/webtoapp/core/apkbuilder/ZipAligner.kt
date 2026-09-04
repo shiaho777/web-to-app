@@ -34,6 +34,16 @@ object ZipAligner {
     }
 
     fun alignInPlace(apkFile: File): Boolean {
+        // Fast path: cached/REUSE outputs are already aligned — header-only scan
+        // is far cheaper than a full rewrite. Skip when native libs pass.
+        try {
+            if (verifyNativeLibAlignment(apkFile)) {
+                AppLogger.d(TAG, "APK already 16KB-aligned, skipping rewrite")
+                return true
+            }
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Pre-align check failed, proceeding with full align: ${e.message}")
+        }
         val tempFile = File(apkFile.parent, apkFile.name + ".aligned")
         return try {
             val result = align(apkFile, tempFile)

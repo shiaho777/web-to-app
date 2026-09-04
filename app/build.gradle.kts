@@ -175,6 +175,14 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            // Gecko omni.ja is downloaded on demand, never bundle it in host.
+            excludes += "assets/omni.ja"
+            excludes += "**/omni.ja"
+            // BouncyCastle post-quantum experimental blobs (~1.2M), unused.
+            excludes += "**/org/bouncycastle/pqc/**"
+            // Django gettext sources (~5.9M raw): the Python runtime only reads
+            // compiled .mo files, .po never ships in a working install.
+            excludes += "**/*.po"
         }
 
         jniLibs {
@@ -186,11 +194,23 @@ android {
             excludes += "**/libmozavutil.so"
             excludes += "**/libmozavcodec.so"
 
+            excludes += "**/libgkcodecs.so"
+            excludes += "**/libminidump_analyzer.so"
+            excludes += "**/libnss3.so"
+            excludes += "**/libfreebl3.so"
+            excludes += "**/libsoftokn3.so"
+            excludes += "**/liblgpllibs.so"
+            excludes += "**/libplugin-container.so"
+
             excludes += "**/libcrypto_engine.so"
         }
     }
     androidResources {
-        ignoreAssetsPattern = ""
+        // Keep "" semantics (include dot-dirs like .pypackages) while dropping
+        // Django gettext sources (*.po, runtime reads .mo only) and Gecko's
+        // omni.ja (downloaded on demand). packaging.resources.excludes does
+        // NOT cover assets, hence aapt-level filtering (verified by APK audit).
+        ignoreAssetsPattern = "*.po:*.ja"
 
         localeFilters += listOf("zh", "en", "ar")
     }
@@ -568,7 +588,6 @@ dependencies {
 
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("io.coil-kt:coil-video:2.5.0")
-    implementation("io.coil-kt:coil-gif:2.5.0")
 
     implementation("com.google.code.gson:gson:2.10.1")
 
@@ -598,9 +617,6 @@ dependencies {
     implementation("org.mozilla.geckoview:geckoview-arm64-v8a:142.0.20250827004350")
 
     implementation("com.google.zxing:core:3.5.2")
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
-
-    implementation("com.patrykandpatrick.vico:compose-m3:2.0.0-beta.3")
 
     implementation("androidx.credentials:credentials:1.3.0")
     implementation("androidx.browser:browser:1.8.0")

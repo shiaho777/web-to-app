@@ -27,7 +27,16 @@ class ThemeManager(private val context: Context) {
     private var cachedDarkMode: DarkModeSettings? = null
 
     val currentDarkMode: DarkModeSettings
-        get() = cachedDarkMode ?: readDarkModeBlocking().also { cachedDarkMode = it }
+        get() = cachedDarkMode ?: run {
+            // Main-safe: never block UI thread on DataStore. Flow value is kept
+            // fresh by Eagerly-started stateIn; export path (IO thread) still gets
+            // the exact value via the blocking read below.
+            if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+                darkModeFlow.value.also { cachedDarkMode = it }
+            } else {
+                readDarkModeBlocking().also { cachedDarkMode = it }
+            }
+        }
 
     private fun readDarkModeBlocking(): DarkModeSettings = try {
         kotlinx.coroutines.runBlocking {

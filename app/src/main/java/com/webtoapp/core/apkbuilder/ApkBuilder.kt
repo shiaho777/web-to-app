@@ -1014,7 +1014,11 @@ class ApkBuilder(private val context: Context) {
                 )
             }
 
-            if (!encryptionConfig.enabled && unsignedApk.isFile && unsignedApk.length() > 0L) {
+            // REUSE_UNSIGNED just copied the cached file — re-saving it is a pure
+            // 50-150MB disk copy with no benefit. Only cache FULL/OVERLAY outputs.
+            if (!encryptionConfig.enabled && incrementalPlan.mode != IncrementalBuildMode.REUSE_UNSIGNED &&
+                unsignedApk.isFile && unsignedApk.length() > 0L
+            ) {
                 buildCache.saveUnsigned(
                     webApp = webApp,
                     packageName = packageName,
@@ -1274,6 +1278,8 @@ class ApkBuilder(private val context: Context) {
                 val entryNames = entries.map { it.name }.toSet()
 
                 var processedCount = 0
+                var lastReportedProgress = -1
+                var lastReportTimeMs = 0L
 
                 entries.forEach { entry ->
                     processedCount++
@@ -1282,7 +1288,18 @@ class ApkBuilder(private val context: Context) {
                     } else {
                         "Repacking base template..."
                     }
-                    onProgress((processedCount * 100) / entries.size, progressLabel)
+                    // Throttle: report on >=2% delta, 200ms elapsed, or last entry.
+                    val progress = (processedCount * 100) / entries.size
+                    val nowMs = System.currentTimeMillis()
+                    if (progress != lastReportedProgress &&
+                        (progress - lastReportedProgress >= 2 ||
+                            nowMs - lastReportTimeMs >= 200 ||
+                            processedCount == entries.size)
+                    ) {
+                        lastReportedProgress = progress
+                        lastReportTimeMs = nowMs
+                        onProgress(progress, progressLabel)
+                    }
 
                     if (mode == ModifyApkMode.CONTENT_OVERLAY) {
                         when {
@@ -3056,15 +3073,19 @@ builtins.__import__ = _w2a_import
 
     private fun detectFileEncoding(file: File): String {
         return try {
-            val bytes = file.readBytes().take(1000).toByteArray()
+            // Sniff only the first KB: BOM + <meta charset> always live at the
+            // top. The old code read the entire file to inspect 1000 bytes.
+            val bytes = ByteArray(1024)
+            val read = file.inputStream().buffered().use { it.read(bytes) }.let { if (it < 0) 0 else it }
+            val head = bytes.copyOf(read)
 
             when {
-                bytes.size >= 3 && bytes[0] == 0xEF.toByte() && bytes[1] == 0xBB.toByte() && bytes[2] == 0xBF.toByte() -> "UTF-8"
-                bytes.size >= 2 && bytes[0] == 0xFE.toByte() && bytes[1] == 0xFF.toByte() -> "UTF-16BE"
-                bytes.size >= 2 && bytes[0] == 0xFF.toByte() && bytes[1] == 0xFE.toByte() -> "UTF-16LE"
+                head.size >= 3 && head[0] == 0xEF.toByte() && head[1] == 0xBB.toByte() && head[2] == 0xBF.toByte() -> "UTF-8"
+                head.size >= 2 && head[0] == 0xFE.toByte() && head[1] == 0xFF.toByte() -> "UTF-16BE"
+                head.size >= 2 && head[0] == 0xFF.toByte() && head[1] == 0xFE.toByte() -> "UTF-16LE"
                 else -> {
 
-                    val content = String(bytes, Charsets.ISO_8859_1)
+                    val content = String(head, Charsets.ISO_8859_1)
                     val charsetMatch = CHARSET_REGEX.find(content)
                     charsetMatch?.groupValues?.get(1)?.uppercase() ?: "UTF-8"
                 }

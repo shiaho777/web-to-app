@@ -110,11 +110,47 @@ object ZipUtils {
     }
 
     fun copyEntry(zipIn: ZipFile, zipOut: ZipOutputStream, entry: ZipEntry) {
+        // Large entries (>2MB) stream to avoid heap pressure from readBytes().
+        if (entry.size > 2L * 1024 * 1024) {
+            val newEntry = ZipEntry(entry.name)
+            newEntry.method = ZipEntry.DEFLATED
+            zipOut.putNextEntry(newEntry)
+            zipIn.getInputStream(entry).use { it.copyTo(zipOut, 64 * 1024) }
+            zipOut.closeEntry()
+            return
+        }
         val data = zipIn.getInputStream(entry).readBytes()
         writeEntryDeflated(zipOut, entry.name, data)
     }
 
     fun copyEntryPreserveMethod(zipIn: ZipFile, zipOut: ZipOutputStream, entry: ZipEntry) {
+        // Fast path: large entries stream without readBytes(). STORED entries can
+        // reuse size/crc from the source central directory (bytes unchanged).
+        if (entry.size > 2L * 1024 * 1024) {
+            if (entry.method == ZipEntry.STORED && entry.size != -1L && entry.crc != -1L) {
+                val newEntry = ZipEntry(entry.name)
+                newEntry.method = ZipEntry.STORED
+                newEntry.size = entry.size
+                newEntry.compressedSize = entry.size
+                newEntry.crc = entry.crc
+                // Preserve alignment padding for resources.arsc if present.
+                if (entry.extra != null && entry.extra!!.isNotEmpty()) {
+                    newEntry.extra = entry.extra
+                }
+                zipOut.putNextEntry(newEntry)
+                zipIn.getInputStream(entry).use { it.copyTo(zipOut, 64 * 1024) }
+                zipOut.closeEntry()
+                return
+            }
+            if (entry.method != ZipEntry.STORED) {
+                val newEntry = ZipEntry(entry.name)
+                newEntry.method = ZipEntry.DEFLATED
+                zipOut.putNextEntry(newEntry)
+                zipIn.getInputStream(entry).use { it.copyTo(zipOut, 64 * 1024) }
+                zipOut.closeEntry()
+                return
+            }
+        }
         val data = zipIn.getInputStream(entry).readBytes()
         if (entry.method == ZipEntry.STORED) {
 

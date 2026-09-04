@@ -699,8 +699,24 @@ class AdBlocker {
     }
 
     @Suppress("serial")
-    private val blockResultCache = object : LinkedHashMap<Int, Boolean>(256, 0.75f, true) {
-        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, Boolean>?): Boolean = size > 512
+    private val blockResultCache = object : LinkedHashMap<Int, Boolean>(512, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<Int, Boolean>?): Boolean = size > 2048
+    }
+
+    // Memoized per-host CSS/scriptlets. Building them scans every cosmetic rule
+    // on every page load; rules only change via initialize()/setEnabled()/
+    // subscription edits (all funnel through invalidateCache()), so a version
+    // counter keeps this correct without per-navigation rebuilds.
+    @Volatile
+    private var cosmeticVersion = 0
+    private data class CosmeticEntry(val version: Int, val css: String, val script: String)
+    private val cosmeticCache = object : LinkedHashMap<String, CosmeticEntry>(64, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CosmeticEntry>?): Boolean = size > 128
+    }
+
+    private fun bumpCosmeticVersion() {
+        cosmeticVersion++
+        synchronized(cosmeticCache) { cosmeticCache.clear() }
     }
 
     private val cosmeticBlockFilters = mutableListOf<CosmeticFilter>()
@@ -717,6 +733,7 @@ class AdBlocker {
         enabled = enable
         if (!enable) blockedCount = 0L
         synchronized(blockResultCache) { blockResultCache.clear() }
+        bumpCosmeticVersion()
     }
     fun isEnabled(): Boolean = enabled
 
@@ -725,6 +742,7 @@ class AdBlocker {
 
     fun invalidateCache() {
         synchronized(blockResultCache) { blockResultCache.clear() }
+        bumpCosmeticVersion()
     }
 
     fun initialize(customRules: List<String> = emptyList(), useDefaultRules: Boolean = false) {
@@ -748,6 +766,7 @@ class AdBlocker {
 
         customRules.forEach { parseAndAddRule(it) }
         rebuildUnanchoredIndex()
+        bumpCosmeticVersion()
     }
 
     fun shouldBlock(
@@ -772,7 +791,14 @@ class AdBlocker {
 
         if (ESSENTIAL_RESOURCE_REGEX.containsMatchIn(lowerUrl)) return false
 
-        val cacheKey = url.hashCode() xor (if (isThirdParty) 0x9e3779b9.toInt() else 0)
+        // Cache key must include pageHost + resource type: exception rules like
+        // @@||ads.com$domain=example.com give different results per page.
+        // Including them makes the cache correct across navigations, so callers
+        // must NOT clear it on every page load (only on rule changes).
+        var cacheKey = url.hashCode()
+        cacheKey = cacheKey * 31 + (pageHost?.hashCode() ?: 0)
+        cacheKey = cacheKey * 31 + resType.ordinal
+        cacheKey = cacheKey * 31 + (if (isThirdParty) 1 else 0)
         synchronized(blockResultCache) {
             val cached = blockResultCache[cacheKey]
             if (cached != null) {
@@ -862,6 +888,21 @@ class AdBlocker {
 
     fun getCosmeticFilterCss(pageHost: String): String {
         if (!enabled) return ""
+        return cosmeticEntry(pageHost).css
+    }
+
+    private fun cosmeticEntry(pageHost: String): CosmeticEntry {
+        val v = cosmeticVersion
+        synchronized(cosmeticCache) {
+            val hit = cosmeticCache[pageHost]
+            if (hit != null && hit.version == v) return hit
+        }
+        val entry = CosmeticEntry(v, buildCosmeticCss(pageHost), buildAntiAdblockScript(pageHost))
+        synchronized(cosmeticCache) { cosmeticCache[pageHost] = entry }
+        return entry
+    }
+
+    private fun buildCosmeticCss(pageHost: String): String {
 
         val exceptionSelectors = cosmeticExceptionFilters
             .filter { matchesCosmeticDomain(it, pageHost) }
@@ -927,6 +968,10 @@ class AdBlocker {
 
     fun getAntiAdblockScript(pageHost: String): String {
         if (!enabled) return ""
+        return cosmeticEntry(pageHost).script
+    }
+
+    private fun buildAntiAdblockScript(pageHost: String): String {
 
         val applicableScriptlets = scriptletRules.filter { (domains, _) ->
             domains.isEmpty() || domains.any { d ->
@@ -1056,6 +1101,7 @@ class AdBlocker {
         scriptletRules.clear()
         unanchoredFilterIndex.clear()
         synchronized(blockResultCache) { blockResultCache.clear() }
+        bumpCosmeticVersion()
     }
 
     private fun ingestFilterContent(sourceKey: String, content: String): Int {
@@ -1140,6 +1186,7 @@ class AdBlocker {
         parseAndAddRule(rule)
         rebuildUnanchoredIndex()
         synchronized(blockResultCache) { blockResultCache.clear() }
+        bumpCosmeticVersion()
     }
 
     fun removeRule(rule: String) {
@@ -1150,6 +1197,7 @@ class AdBlocker {
         cosmeticExceptionFilters.removeAll { it.rawRule == rule }
         rebuildUnanchoredIndex()
         synchronized(blockResultCache) { blockResultCache.clear() }
+        bumpCosmeticVersion()
     }
 
     fun clearRules() {
@@ -1162,6 +1210,7 @@ class AdBlocker {
         cosmeticExceptionFilters.clear()
         scriptletRules.clear()
         blockResultCache.clear()
+        bumpCosmeticVersion()
     }
 
     fun clearHostsFileRules() {
@@ -1170,6 +1219,7 @@ class AdBlocker {
         disabledHostsSources.clear()
         sourceRuleCounts.clear()
         synchronized(blockResultCache) { blockResultCache.clear() }
+        bumpCosmeticVersion()
     }
 
     fun getEnabledHostsSources(): Set<String> = enabledHostsSources.toSet()
@@ -2084,6 +2134,7 @@ class AdBlocker {
         cosmeticExceptionFilters.clear()
         scriptletRules.clear()
         blockResultCache.clear()
+        bumpCosmeticVersion()
 
         exactHosts.addAll(state.exactHosts)
         hostsFileHosts.addAll(state.hostsFileHosts)

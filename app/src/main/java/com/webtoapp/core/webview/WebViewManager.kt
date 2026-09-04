@@ -2099,7 +2099,10 @@ class WebViewManager(
                     scheduleFailoverTimeoutIfNeeded(view, config, url)
                 }
 
-                adBlocker.invalidateCache()
+                // NOTE: do NOT invalidate adBlocker cache here. The cache key
+                // includes pageHost + resource type so it is correct across
+                // navigations; clearing per page destroys the hit rate and
+                // forces cold regex matching for every subresource.
 
                 val isBack = isNavigatingBack
 
@@ -2142,12 +2145,18 @@ class WebViewManager(
                     view?.let { com.webtoapp.core.kernel.BrowserKernel.injectKernelJs(it, kernelLevel) }
                 }
 
+                // Batch the static config-gated shims below into ONE evaluateJavascript:
+                // each call is a Binder IPC + renderer round-trip on the first-paint
+                // path. Chunks stay in original order and are try/catch-isolated so
+                // one failing shim can't suppress the rest (separate evals used to
+                // provide that isolation for free).
+                val startBatch = StringBuilder()
                 if (config.enableClipboardPolyfill) {
-                    view?.evaluateJavascript(CLIPBOARD_POLYFILL_JS, null)
+                    startBatch.append("try{").append(CLIPBOARD_POLYFILL_JS).append("}catch(e){};\n")
                 }
 
                 if (config.geolocationEnabled) {
-                    view?.evaluateJavascript(GeolocationBridge.getShimScript(), null)
+                    startBatch.append("try{").append(GeolocationBridge.getShimScript()).append("}catch(e){};\n")
                 }
 
                 // Warm up the audio session on the first user gesture so async audio (e.g. AI
@@ -2162,17 +2171,21 @@ class WebViewManager(
                 view?.let { injectPrivateNetworkApiBridgeFallback(it, url) }
 
                 if (config.enableScrollMemory) {
-                    view?.evaluateJavascript(SCROLL_SAVE_JS, null)
+                    startBatch.append("try{").append(SCROLL_SAVE_JS).append("}catch(e){};\n")
                 }
 
                 if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
-                    view?.evaluateJavascript(VIEWPORT_FIT_SCREEN_JS, null)
+                    startBatch.append("try{").append(VIEWPORT_FIT_SCREEN_JS).append("}catch(e){};\n")
                 }
 
                 if (config.viewportMode == com.webtoapp.data.model.ViewportMode.CUSTOM) {
                     val customWidth = config.customViewportWidth.coerceIn(320, 3840)
                     val customJs = VIEWPORT_CUSTOM_JS.replace("CUSTOM_WIDTH_PLACEHOLDER", customWidth.toString())
-                    view?.evaluateJavascript(customJs, null)
+                    startBatch.append("try{").append(customJs).append("}catch(e){};\n")
+                }
+
+                if (startBatch.isNotEmpty()) {
+                    view?.evaluateJavascript(startBatch.toString(), null)
                 }
 
                 view?.let { injectScripts(it, config.injectScripts, ScriptRunTime.DOCUMENT_START, url) }
@@ -2238,15 +2251,13 @@ class WebViewManager(
 
                 if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
 
-                    view?.evaluateJavascript("window.__wtaViewportFitApplied=false;", null)
-                    view?.evaluateJavascript(VIEWPORT_FIT_SCREEN_JS, null)
+                    view?.evaluateJavascript("window.__wtaViewportFitApplied=false;\n$VIEWPORT_FIT_SCREEN_JS", null)
                 }
 
                 if (config.viewportMode == com.webtoapp.data.model.ViewportMode.CUSTOM) {
                     val customWidth = config.customViewportWidth.coerceIn(320, 3840)
                     val customJs = VIEWPORT_CUSTOM_JS.replace("CUSTOM_WIDTH_PLACEHOLDER", customWidth.toString())
-                    view?.evaluateJavascript("window.__wtaViewportCustomApplied=false;", null)
-                    view?.evaluateJavascript(customJs, null)
+                    view?.evaluateJavascript("window.__wtaViewportCustomApplied=false;\n$customJs", null)
                 }
 
                 if (url != null && (url.startsWith("http://") || url.startsWith("https://")) && config.enableImageRepair) {

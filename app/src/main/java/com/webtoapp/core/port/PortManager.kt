@@ -87,8 +87,11 @@ object PortManager {
         preferredPort: Int = 0,
         conflictPolicy: ConflictPolicy = ConflictPolicy.REASSIGN
     ): Int {
-        purgeStaleAllocations()
-
+        // NOTE: no purgeStaleAllocations() here — tryClaimPort() already purges
+        // under the same write lock on every path. Purging twice per allocate
+        // doubles the cost (each stale candidate costs a ServerSocket bind).
+        // bind(0) is deliberately NOT used: ranges are curated per runtime and
+        // surfaced to users/configs, so the allocator must stay in-range.
         if (preferredPort > 0) {
             val preferred = tryClaimPort(range, owner, preferredPort, allowPreferredOnly = true)
             if (preferred > 0) return preferred

@@ -1334,7 +1334,7 @@ fun WebViewScreen(
             )
             ids.mapNotNull src@ { srcId ->
                 val source = try {
-                    kotlinx.coroutines.runBlocking { repo.getWebApp(srcId) }
+                    repo.getWebApp(srcId)
                 } catch (_: Exception) { null } ?: return@src null
                 val site = sites.firstOrNull { it.sourceAppId == srcId } ?: return@src null
                 val shell = try {

@@ -428,6 +428,13 @@ class ApkBuildCache(private val context: Context) {
         val digest = MessageDigest.getInstance("SHA-256")
         dir.walkTopDown()
             .filter { it.isFile }
+            // .git is excluded by every embed config (RuntimeAssetEmbedder) so it
+            // can never affect the APK — but it can be thousands of files. Skip it
+            // here to avoid hashing the entire git history on every build.
+            .filter { file ->
+                !file.relativeTo(dir).invariantSeparatorsPath
+                    .split('/').contains(".git")
+            }
             .sortedBy { it.relativeTo(dir).invariantSeparatorsPath }
             .forEach { file ->
                 val relativePath = file.relativeTo(dir).invariantSeparatorsPath

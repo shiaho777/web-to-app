@@ -216,18 +216,9 @@
 -dontwarn org.mozilla.geckoview.**
 
 # ============================================================
-# ZXing — 反射查找编码格式
+# ZXing — shell 未依赖，仅兜底
 # ============================================================
--keep class com.google.zxing.** { *; }
--keep class com.journeyapps.** { *; }
 -dontwarn com.google.zxing.**
--dontwarn com.journeyapps.**
-
-# ============================================================
-# Vico 图表 — Compose 渲染器反射
-# ============================================================
--keep class com.patrykandpatrick.vico.** { *; }
--dontwarn com.patrykandpatrick.vico.**
 
 # ============================================================
 # BillingClient — AIDL stub

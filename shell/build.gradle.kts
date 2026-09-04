@@ -74,9 +74,13 @@ android {
         getByName("main") {
             manifest.srcFile("src/main/AndroidManifest.xml")
 
-            java.srcDirs("src/main/java", "src/main/java-overrides")
+            // Runtime Kotlin is synced from ../app into build/generated (see
+            // syncShellRuntimeSources below) and ordered via preBuild deps —
+            // never into the source tree, so git stays clean. Plain string
+            // paths here: AGP forbids Provider instances in srcDirs.
+            java.srcDirs("src/main/java-overrides", "build/generated/shellRuntimeSrc")
             res.srcDirs("../app/src/main/res")
-            assets.srcDirs("src/main/assets")
+            assets.srcDirs("src/main/assets", "build/generated/shellRuntimeAssets")
         }
     }
 
@@ -119,6 +123,9 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "assets/omni.ja"
+            excludes += "**/omni.ja"
+            excludes += "**/org/bouncycastle/pqc/**"
         }
         jniLibs {
             useLegacyPackaging = true
@@ -249,12 +256,12 @@ val syncShellRuntimeSources by tasks.registering(Sync::class) {
         "**/core/extension/ModulePreset.kt"
     )
 
-    into("src/main/java")
+    into(layout.buildDirectory.dir("generated/shellRuntimeSrc"))
 }
 
-tasks.matching { it.name.startsWith("compile") && it.name.contains("Kotlin") }.configureEach {
-    dependsOn(syncShellRuntimeSources)
-}
+// Explicit wiring (no tasks.matching scan, which breaks configuration cache):
+// generated sources must exist before any compilation.
+tasks.named("preBuild") { dependsOn(syncShellRuntimeSources) }
 
 val syncShellRuntimeAssets by tasks.registering(Copy::class) {
     description = "Mirror runtime-only asset files from app module to shell template (single source of truth: app/src/main/assets)."
@@ -265,17 +272,18 @@ val syncShellRuntimeAssets by tasks.registering(Copy::class) {
         include("php_router_server.php")
     }
 
-    into("src/main/assets")
+    into(layout.buildDirectory.dir("generated/shellRuntimeAssets"))
 }
 
-tasks.matching { it.name.startsWith("merge") && it.name.contains("Assets") }.configureEach {
-    dependsOn(syncShellRuntimeAssets)
-}
-tasks.matching { it.name == "preBuild" }.configureEach {
-    dependsOn(syncShellRuntimeAssets)
-}
+tasks.named("preBuild") { dependsOn(syncShellRuntimeAssets) }
 
-tasks.matching { it.name.startsWith("merge") && it.name.contains("Assets") }.configureEach {
+// omni.ja arrives via the GeckoView AAR's assets and packaging.resources.excludes
+// does not cover AAR assets, so strip it from the merged dir. Named wiring +
+// execution-time-only access keeps this configuration-cache safe; the merge
+// task stays up-to-date-aware (a skipped merge means outputs already stripped).
+// Lazy exact-name match: the merge task is created after configuration, so
+// named() would fail. The closure touches only task-scoped state.
+tasks.matching { it.name == "mergeReleaseAssets" }.configureEach {
     doLast {
         val mergedAssetsDir = outputs.files.files.firstOrNull { it.isDirectory }
         val omniJa = mergedAssetsDir?.resolve("omni.ja")
@@ -373,10 +381,8 @@ androidComponents {
             dependsOn(nativeBuildTaskName)
         }
 
-        tasks.matching { it.name == "merge${capName}NativeLibs" }.configureEach {
-            dependsOn(syncNodeLauncherTask)
-            dependsOn(syncGoLoaderTask)
-        }
+        // NOTE: no explicit merge${capName}NativeLibs wiring — the
+        // addGeneratedSourceDirectory calls below already infer task deps.
 
         variant.sources.jniLibs?.addGeneratedSourceDirectory(
             syncNodeLauncherTask,
@@ -411,14 +417,12 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
     implementation("androidx.navigation:navigation-compose:2.7.5")
 
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
+    implementation("androidx.room:room-runtime:2.7.2")
+    implementation("androidx.room:room-ktx:2.7.2")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
     implementation("io.coil-kt:coil-compose:2.5.0")
-    implementation("io.coil-kt:coil-video:2.5.0")
-    implementation("io.coil-kt:coil-gif:2.5.0")
 
     implementation("com.google.code.gson:gson:2.10.1")
 

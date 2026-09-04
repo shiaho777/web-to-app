@@ -21,33 +21,77 @@ object ElfAligner16k {
         val alreadyAligned: Boolean
     )
 
+    // Process-lifetime memo: host runtime libs (libnode.so etc.) are identical
+    // across builds in one session. Keyed by identity (path+size+mtime), validated
+    // by re-inspecting the cached output (header-only read).
+    private data class AlignCacheKey(val path: String, val size: Long, val mtime: Long)
+    private val alignCache = java.util.concurrent.ConcurrentHashMap<AlignCacheKey, AlignmentResult>()
+
     fun ensureAligned(inputFile: File, workDir: File): AlignmentResult {
         if (!inputFile.isFile || inputFile.length() < 64L || !isElf(inputFile)) {
             return AlignmentResult(inputFile, changed = false, repacked = false, alreadyAligned = true)
         }
-        val inspection = inspect(inputFile)
-        if (inspection.aligned) {
+        val cacheKey = AlignCacheKey(inputFile.absolutePath, inputFile.length(), inputFile.lastModified())
+        alignCache[cacheKey]?.let { cached ->
+            if (cached.outputFile.isFile) {
+                try {
+                    if (inspect(cached.outputFile).aligned || cached.alreadyAligned) return cached
+                } catch (_: Exception) { /* fall through and re-align */ }
+                alignCache.remove(cacheKey)
+            } else {
+                alignCache.remove(cacheKey)
+            }
+        }
+        // Single read: parse from memory, align from memory, verify from memory.
+        // The old path read the input 3x (inspect + align + output inspect).
+        val inputBytes = inputFile.readBytes()
+        val inspection: ElfInspection
+        try {
+            inspection = parse(inputBytes).toInspection()
+        } catch (e: IllegalArgumentException) {
             return AlignmentResult(inputFile, changed = false, repacked = false, alreadyAligned = true)
+        }
+        if (inspection.aligned) {
+            val result = AlignmentResult(inputFile, changed = false, repacked = false, alreadyAligned = true)
+            alignCache[cacheKey] = result
+            return result
         }
         workDir.mkdirs()
         val outputFile = File(workDir, inputFile.nameWithoutExtension + ".aligned16k." + inputFile.extension.ifBlank { "so" })
-        align(inputFile, outputFile)
-        val alignedInspection = inspect(outputFile)
-        if (!alignedInspection.aligned) {
+        val outputBytes = alignBytes(inputBytes)
+        try {
+            parse(outputBytes).toInspection().let {
+                if (!it.aligned) {
+                    outputFile.delete()
+                    throw IllegalStateException("ELF 16KB alignment failed for ${inputFile.name}")
+                }
+            }
+        } catch (e: IllegalArgumentException) {
             outputFile.delete()
             throw IllegalStateException("ELF 16KB alignment failed for ${inputFile.name}")
         }
-        return AlignmentResult(outputFile, changed = true, repacked = inspection.needsRepack, alreadyAligned = false)
+        outputFile.parentFile?.mkdirs()
+        outputFile.writeBytes(outputBytes)
+        outputFile.setExecutable(inputFile.canExecute(), false)
+        outputFile.setReadable(inputFile.canRead(), false)
+        val result = AlignmentResult(outputFile, changed = true, repacked = inspection.needsRepack, alreadyAligned = false)
+        alignCache[cacheKey] = result
+        return result
     }
 
     fun align(inputFile: File, outputFile: File) {
         val input = inputFile.readBytes()
-        val elf = parse(input)
-        val output = if (elf.needsRepack) repack(input, elf) else patchMetadata(input, elf)
+        val output = alignBytes(input)
         outputFile.parentFile?.mkdirs()
         outputFile.writeBytes(output)
         outputFile.setExecutable(inputFile.canExecute(), false)
         outputFile.setReadable(inputFile.canRead(), false)
+    }
+
+    /** Pure bytes-in/bytes-out alignment; caller owns all IO. */
+    fun alignBytes(input: ByteArray): ByteArray {
+        val elf = parse(input)
+        return if (elf.needsRepack) repack(input, elf) else patchMetadata(input, elf)
     }
 
     fun isAligned16k(file: File): Boolean {
