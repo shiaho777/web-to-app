@@ -38,7 +38,7 @@ class AdBlocker {
 
     private data class NetworkFilter(
         val pattern: String,
-        val regex: Regex?,
+        val regexSource: String?,
         val isException: Boolean,
         val matchCase: Boolean,
 
@@ -54,7 +54,28 @@ class AdBlocker {
         val anchorDomain: String?,
 
         val rawRule: String = ""
-    )
+    ) {
+        // Compiled on first MATCH, not at import: a 100k-rule list (AdGuard Base
+        // is 6.4MB) would otherwise pin ~100MB+ of Pattern objects and OOM
+        // 256MB-heap devices on import — and twice that at export, which builds
+        // a second engine. Most rules never match a given device's traffic.
+        // Body property: excluded from equals/hashCode/copy.
+        @Volatile
+        private var compiledRegex: Regex? = null
+        @Volatile
+        private var compileAttempted: Boolean = false
+
+        fun regex(): Regex? {
+            if (compileAttempted) return compiledRegex
+            synchronized(this) {
+                if (!compileAttempted) {
+                    compiledRegex = regexSource?.let { compileTranslatedRegex(it, matchCase) }
+                    compileAttempted = true
+                }
+                return compiledRegex
+            }
+        }
+    }
 
     data class CosmeticFilter(
         val selector: String,
@@ -661,9 +682,6 @@ class AdBlocker {
         val BLOCKED_JS_BYTES = "/* blocked */".toByteArray()
         val BLOCKED_CSS_BYTES = "/* blocked */".toByteArray()
         val BLOCKED_JSON_BYTES = "{}".toByteArray()
-
-        private const val MAX_ABP_PATTERN_LEN = 1024
-        private val MAX_CONSECUTIVE_STARS_REGEX = Regex("\\*{2,}(?:\\^\\*{2,})?")
     }
 
     private val exactHosts = mutableSetOf<String>()
@@ -1395,11 +1413,11 @@ class AdBlocker {
             return
         }
 
-        val regex = compileAbpPattern(patternPart, matchCase)
+        val regexSource = translateAbpPattern(patternPart)
 
         val filter = NetworkFilter(
             pattern = patternPart,
-            regex = regex,
+            regexSource = regexSource,
             isException = isException,
             matchCase = matchCase,
             domains = domainConstraints,
@@ -1435,50 +1453,6 @@ class AdBlocker {
             networkBlockFilters.add(filter)
             unanchoredFilterIndex[networkBlockFilters] =
                 (unanchoredFilterIndex[networkBlockFilters] ?: emptyList()) + idx
-        }
-    }
-
-    private fun compileAbpPattern(pattern: String, matchCase: Boolean): Regex? {
-        if (pattern.isEmpty()) return null
-        if (pattern.length > MAX_ABP_PATTERN_LEN) return null
-        if (MAX_CONSECUTIVE_STARS_REGEX.containsMatchIn(pattern)) return null
-        return try {
-            var p = pattern
-
-            if (p.startsWith("/") && p.endsWith("/") && p.length > 2) {
-                val options = if (matchCase) emptySet() else setOf(RegexOption.IGNORE_CASE)
-                return Regex(p.substring(1, p.length - 1), options)
-            }
-
-            p = p.replace("\\", "\\\\")
-                .replace(".", "\\.")
-                .replace("+", "\\+")
-                .replace("?", "\\?")
-                .replace("{", "\\{")
-                .replace("}", "\\}")
-                .replace("(", "\\(")
-                .replace(")", "\\)")
-                .replace("[", "\\[")
-                .replace("]", "\\]")
-
-            // Order matters: the '^' separator must be converted to its character class
-            // BEFORE the '||'/'|' anchors insert their own regex (which contain '^' inside
-            // [^/]). Doing it afterwards corrupts the inserted [^/] class, so every
-            // '||host/path' regex rule failed to match.
-            p = p.replace("^", "[^\\w%.\\-]")
-
-            p = p.replace("||", "^(?:https?|wss?)://(?:[^/]*\\.)?")
-
-            if (p.startsWith("|")) p = "^" + p.removePrefix("|")
-
-            if (p.endsWith("|")) p = p.removeSuffix("|") + "$"
-
-            p = p.replace("*", ".*")
-
-            val options = if (matchCase) emptySet() else setOf(RegexOption.IGNORE_CASE)
-            Regex(p, options)
-        } catch (e: Throwable) {
-            null
         }
     }
 
@@ -1594,7 +1568,7 @@ class AdBlocker {
             if (filter.excludedDomains.any { pageHost == it || pageHost.endsWith(".$it") }) return false
         }
 
-        val regex = filter.regex ?: return false
+        val regex = filter.regex() ?: return false
         return regex.containsMatchIn(url)
     }
 
@@ -1884,20 +1858,27 @@ class AdBlocker {
                     val buffer = ByteArray(8192)
                     val builder = StringBuilder()
                     var downloaded = 0L
+                    // Progress fires per 8KB chunk (~800 callbacks for AdGuard Base);
+                    // throttle UI updates to 6/sec, always emit the final one below.
+                    var lastProgressAt = 0L
                     while (true) {
                         ensureActive()
                         val read = stream.read(buffer)
                         if (read <= 0) break
                         downloaded += read
-                        builder.append(String(buffer, 0, read))
+                        builder.append(String(buffer, 0, read, Charsets.UTF_8))
                         if (onProgress != null) {
-                            onProgress(
-                                DownloadProgress(
-                                    downloadedBytes = downloaded,
-                                    totalBytes = totalBytes,
-                                    elapsedMillis = System.currentTimeMillis() - startTime
+                            val now = System.currentTimeMillis()
+                            if (now - lastProgressAt >= 150) {
+                                lastProgressAt = now
+                                onProgress(
+                                    DownloadProgress(
+                                        downloadedBytes = downloaded,
+                                        totalBytes = totalBytes,
+                                        elapsedMillis = now - startTime
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                     builder.toString()
@@ -2178,7 +2159,7 @@ class AdBlocker {
 
     private fun AdBlockFilterCache.SerializableNetworkFilter.toNetworkFilter() = NetworkFilter(
         pattern = pattern,
-        regex = compileAbpPattern(pattern, matchCase),
+        regexSource = translateAbpPattern(pattern),
         isException = isException,
         matchCase = matchCase,
         domains = domains,
@@ -2193,6 +2174,62 @@ class AdBlocker {
         firstPartyOnly = firstPartyOnly,
         anchorDomain = anchorDomain
     )
+}
+
+private const val MAX_ABP_PATTERN_LEN = 1024
+private val MAX_CONSECUTIVE_STARS_REGEX = Regex("\\*{2,}(?:\\^\\*{2,})?")
+
+/**
+ * Cheap half of rule compilation: ABP syntax -> regex source string.
+ * Runs at import for every rule; the expensive [compileTranslatedRegex] step
+ * is deferred to first match (see NetworkFilter.regex).
+ */
+private fun translateAbpPattern(pattern: String): String? {
+    if (pattern.isEmpty()) return null
+    if (pattern.length > MAX_ABP_PATTERN_LEN) return null
+    if (MAX_CONSECUTIVE_STARS_REGEX.containsMatchIn(pattern)) return null
+
+    var p = pattern
+
+    if (p.startsWith("/") && p.endsWith("/") && p.length > 2) {
+        return p.substring(1, p.length - 1)
+    }
+
+    p = p.replace("\\", "\\\\")
+        .replace(".", "\\.")
+        .replace("+", "\\+")
+        .replace("?", "\\?")
+        .replace("{", "\\{")
+        .replace("}", "\\}")
+        .replace("(", "\\(")
+        .replace(")", "\\)")
+        .replace("[", "\\[")
+        .replace("]", "\\]")
+
+    // Order matters: the '^' separator must be converted to its character class
+    // BEFORE the '||'/'|' anchors insert their own regex (which contain '^' inside
+    // [^/]). Doing it afterwards corrupts the inserted [^/] class, so every
+    // '||host/path' regex rule failed to match.
+    p = p.replace("^", "[^\\w%.\\-]")
+
+    p = p.replace("||", "^(?:https?|wss?)://(?:[^/]*\\.)?")
+
+    if (p.startsWith("|")) p = "^" + p.removePrefix("|")
+
+    if (p.endsWith("|")) p = p.removeSuffix("|") + "$"
+
+    p = p.replace("*", ".*")
+    return p
+}
+
+/** Expensive half: regex source -> compiled Pattern. Runs at most once per rule. */
+private fun compileTranslatedRegex(translated: String, matchCase: Boolean): Regex? {
+    return try {
+        val options = if (matchCase) emptySet() else setOf(RegexOption.IGNORE_CASE)
+        Regex(translated, options)
+    } catch (e: Throwable) {
+        null
+    }
 }
 
 private val TRANSPARENT_GIF = byteArrayOf(
