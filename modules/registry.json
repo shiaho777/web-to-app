@@ -289,6 +289,42 @@
         }
       ],
       "hasCss": false
+    },
+    {
+      "id": "wta-download-install",
+      "path": "download-and-install",
+      "name": "Download and install",
+      "description": "Intercepts every .apk link on the page, downloads the file through the native WebToAppBridge, then shows a floating bar to install it in one tap.",
+      "icon": "system_update_alt",
+      "category": "FUNCTION_ENHANCE",
+      "tags": [
+        "download",
+        "apk",
+        "install",
+        "bridge",
+        "tool"
+      ],
+      "version": "1.0.0",
+      "minAppVersion": 33,
+      "author": {
+        "name": "ppkkgzs",
+        "url": "https://github.com/ppkkgzs"
+      },
+      "runAt": "DOCUMENT_END",
+      "permissions": [
+        "DOM_ACCESS",
+        "CSS_INJECT",
+        "DOWNLOAD",
+        "FILE_ACCESS"
+      ],
+      "urlMatches": [
+        {
+          "pattern": "*",
+          "isRegex": false,
+          "exclude": false
+        }
+      ],
+      "hasCss": true
     }
   ]
 }
