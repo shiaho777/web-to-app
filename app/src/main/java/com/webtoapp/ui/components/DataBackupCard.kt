@@ -117,9 +117,12 @@ fun DataBackupCard() {
                     ).show()
                     // Restored DataStore/SharedPreferences files only take effect
                     // after restart (in-memory caches would otherwise clobber them).
-                    scope.launch {
-                        kotlinx.coroutines.delay(1200)
-                        backupManager.scheduleAppRestart()
+                    // Room-only restores are live already: stay put, don't restart.
+                    if (importResult.localFilesRestored) {
+                        scope.launch {
+                            kotlinx.coroutines.delay(1200)
+                            backupManager.scheduleAppRestart()
+                        }
                     }
                 }.onFailure { e ->
                     errorScope = "Data backup import"

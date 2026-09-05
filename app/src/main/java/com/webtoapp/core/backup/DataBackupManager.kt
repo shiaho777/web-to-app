@@ -26,6 +26,29 @@ import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 import kotlin.coroutines.coroutineContext
 
+/**
+ * Time-based gate for high-frequency progress callbacks. A thousand-file backup
+ * must not recompose the progress UI a thousand times; milestones (0/50/60/100)
+ * bypass the gate and always emit. Pure logic, unit-tested on plain JVM.
+ */
+internal class ProgressThrottle(
+    private val minIntervalMs: Long = 150,
+    private val clockMs: () -> Long = System::currentTimeMillis
+) {
+    private var lastEmitMs: Long = -minIntervalMs
+
+    fun shouldEmit(force: Boolean = false): Boolean {
+        if (force) {
+            lastEmitMs = clockMs()
+            return true
+        }
+        val now = clockMs()
+        if (now - lastEmitMs < minIntervalMs) return false
+        lastEmitMs = now
+        return true
+    }
+}
+
 class DataBackupManager(private val context: Context) {
 
     companion object {
@@ -194,10 +217,13 @@ class DataBackupManager(private val context: Context) {
             }
 
             val resourceFiles = mutableMapOf<String, String>()
+            val collectThrottle = ProgressThrottle()
 
             apps.forEachIndexed { index, app ->
                 coroutineContext.ensureActive()
-                onProgress(10 + (index * 30 / apps.size), 100, Strings.backupCollectingResources.format(app.name))
+                if (collectThrottle.shouldEmit()) {
+                    onProgress(10 + (index * 30 / apps.size), 100, Strings.backupCollectingResources.format(app.name))
+                }
                 collectAppResources(app, resourceFiles)
             }
 
@@ -232,6 +258,7 @@ class DataBackupManager(private val context: Context) {
                     val totalFileCount = resourceFiles.size + localFiles.size
                     val writtenZipPaths = HashSet<String>(totalFileCount * 2)
                     var processedFiles = 0
+                    val packThrottle = ProgressThrottle()
 
                     fun writeZipFile(zipPath: String, file: File) {
 
@@ -246,6 +273,7 @@ class DataBackupManager(private val context: Context) {
 
                     fun reportPackaging() {
                         processedFiles++
+                        if (!packThrottle.shouldEmit()) return
                         val pct = if (totalFileCount > 0) {
                             50 + (processedFiles * 45 / totalFileCount)
                         } else 95
@@ -308,11 +336,14 @@ class DataBackupManager(private val context: Context) {
                 ZipInputStream(BufferedInputStream(inputStream, BUFFER_SIZE)).use { zipIn ->
                     var entry = zipIn.nextEntry
                     var totalEntries = 0
+                    val extractThrottle = ProgressThrottle()
 
                     while (entry != null) {
                         coroutineContext.ensureActive()
                         totalEntries++
-                        onProgress(10 + (totalEntries % 40), 100, Strings.backupExtracting.format(entry.name))
+                        if (extractThrottle.shouldEmit()) {
+                            onProgress(10 + (totalEntries % 40), 100, Strings.backupExtracting.format(entry.name))
+                        }
 
                         when {
                             entry.name == APPS_JSON -> {
@@ -358,7 +389,9 @@ class DataBackupManager(private val context: Context) {
             }
 
             // The backup has validated — only now overwrite live local config files.
-            commitPendingLocalEntries(pendingLocalEntries)
+            // Restart is only needed when local files actually changed: Room writes
+            // take effect immediately, so an apps-only restore stays put.
+            val localsRestored = commitPendingLocalEntries(pendingLocalEntries)
 
             onProgress(60, 100, Strings.backupImportingData)
             coroutineContext.ensureActive()
@@ -368,14 +401,17 @@ class DataBackupManager(private val context: Context) {
             val categoryIdMap = restoreCategories(data.categories)
 
             val appIdMap = mutableMapOf<Long, Long>()
+            val importThrottle = ProgressThrottle()
 
             data.apps.forEachIndexed { index, app ->
                 coroutineContext.ensureActive()
-                onProgress(
-                    60 + (index * 35 / data.apps.size),
-                    100,
-                    Strings.backupImportingApp.format(app.name)
-                )
+                if (importThrottle.shouldEmit()) {
+                    onProgress(
+                        60 + (index * 35 / data.apps.size),
+                        100,
+                        Strings.backupImportingApp.format(app.name)
+                    )
+                }
 
                 try {
 
@@ -410,7 +446,8 @@ class DataBackupManager(private val context: Context) {
             Result.success(ImportResult(
                 totalCount = data.appCount,
                 importedCount = importedCount,
-                skippedCount = skippedCount
+                skippedCount = skippedCount,
+                localFilesRestored = localsRestored
             ))
 
         } catch (e: Exception) {
@@ -1037,16 +1074,20 @@ class DataBackupManager(private val context: Context) {
         }
     }
 
-    private fun commitPendingLocalEntries(pending: List<PendingLocalEntry>) {
+    /** Visible for unit tests (commit accounting). */
+    internal fun commitPendingLocalEntries(pending: List<PendingLocalEntry>): Boolean {
+        var committed = false
         pending.forEach { entry ->
             runCatching {
                 entry.targetFile.parentFile?.mkdirs()
                 entry.tempFile.copyTo(entry.targetFile, overwrite = true)
+                committed = true
             }.onFailure { e ->
                 AppLogger.w(TAG, "恢复本地数据失败: ${entry.zipPath}", e)
             }
             entry.tempFile.delete()
         }
+        return committed
     }
 
     private fun discardPendingLocalEntries(pending: List<PendingLocalEntry>) {
@@ -1120,5 +1161,7 @@ data class ExportResult(
 data class ImportResult(
     val totalCount: Int,
     val importedCount: Int,
-    val skippedCount: Int
+    val skippedCount: Int,
+    /** True when any local (prefs/datastore/shared/file) entry was committed. */
+    val localFilesRestored: Boolean = false
 )
