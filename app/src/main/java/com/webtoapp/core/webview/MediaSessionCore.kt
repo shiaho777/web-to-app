@@ -661,7 +661,9 @@ class MediaSessionCore(
             connection.connect()
 
             connection.inputStream.use {
-                BitmapFactory.decodeStream(it)
+                // Notification art: 1024px is plenty for lockscreen/SystemUI and
+                // keeps the binder transaction far under its limit (#779).
+                com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapStream(it, 1024)
             }.also {
                 connection.disconnect()
             }

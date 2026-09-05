@@ -570,8 +570,12 @@ object PerformanceOptimizer {
             if (originalSize > 5 * 1024 * 1024) inSampleSize = 4
         }
 
-        val bitmap = BitmapFactory.decodeFile(file.absolutePath, options)
-            ?: return 0
+        // Same OOM containment as compressImageBytes below (#779).
+        val bitmap = try {
+            BitmapFactory.decodeFile(file.absolutePath, options)
+        } catch (t: Throwable) {
+            null
+        } ?: return 0
 
         try {
             val tempFile = File(file.parent, "${file.nameWithoutExtension}_opt.${file.extension}")
@@ -621,7 +625,13 @@ object PerformanceOptimizer {
     }
 
     private fun compressImageBytes(data: ByteArray, ext: String, config: OptimizeConfig): ByteArray? {
-        val bitmap = BitmapFactory.decodeByteArray(data, 0, data.size) ?: return null
+        // Full resolution is the point here (recompression); contain OOM instead:
+        // a hostile image skips optimization rather than killing the export (#779).
+        val bitmap = try {
+            BitmapFactory.decodeByteArray(data, 0, data.size)
+        } catch (t: Throwable) {
+            null
+        } ?: return null
         try {
             val format = when {
                 config.convertToWebP -> Bitmap.CompressFormat.WEBP

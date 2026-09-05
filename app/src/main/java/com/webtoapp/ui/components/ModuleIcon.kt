@@ -1,6 +1,5 @@
 package com.webtoapp.ui.components
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -53,7 +52,7 @@ fun ModuleIcon(
             val bitmap = remember(assetPath) {
                 try {
                     context.assets.open(assetPath).use { inputStream ->
-                        BitmapFactory.decodeStream(inputStream)
+                        com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapStream(inputStream)
                     }
                 } catch (e: Exception) {
                     null

@@ -1340,14 +1340,23 @@ class FloatingWindowManager(private val context: Context) {
             when {
                 iconPath.startsWith("content://") -> {
                     context.contentResolver.openInputStream(Uri.parse(iconPath))?.use { stream ->
-                        BitmapFactory.decodeStream(stream)
+                        com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapStream(
+                            stream,
+                            com.webtoapp.util.BoundedBitmaps.ICON_MAX_DIMENSION
+                        )
                     }
                 }
-                iconPath.startsWith("/") -> BitmapFactory.decodeFile(iconPath)
+                iconPath.startsWith("/") -> com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(
+                    iconPath,
+                    com.webtoapp.util.BoundedBitmaps.ICON_MAX_DIMENSION
+                )
                 else -> {
                     val assetPath = iconPath.removePrefix("assets/")
                     context.assets.open(assetPath.ifBlank { FLOATING_WINDOW_MINIMIZED_ICON_ASSET }).use { stream ->
-                        BitmapFactory.decodeStream(stream)
+                        com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapStream(
+                            stream,
+                            com.webtoapp.util.BoundedBitmaps.ICON_MAX_DIMENSION
+                        )
                     }
                 }
             }

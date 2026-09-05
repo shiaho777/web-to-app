@@ -344,7 +344,7 @@ fun AnnouncementDialog(
             announcement = announcement,
             template = announcement.template.toUiTemplate(),
             customIconBitmap = announcement.customIconPath?.let { p ->
-                try { android.graphics.BitmapFactory.decodeFile(p) } catch (e: Exception) { null }
+                try { com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(p) } catch (e: Exception) { null }
             }
         ),
         onDismiss = onDismiss,

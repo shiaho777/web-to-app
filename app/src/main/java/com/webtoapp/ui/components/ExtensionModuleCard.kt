@@ -570,7 +570,10 @@ private fun FabIconSelector(
         uri ?: return@rememberLauncherForActivityResult
         try {
             val inputStream = context.contentResolver.openInputStream(uri) ?: return@rememberLauncherForActivityResult
-            val original = BitmapFactory.decodeStream(inputStream)
+            // Bounded first: the full-res decode below OOMs on panoramas; the
+            // output is cropped and scaled to 96px anyway (#779).
+            val original = com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapStream(inputStream)
+                ?: return@rememberLauncherForActivityResult
             inputStream.close()
 
             val size = minOf(original.width, original.height)
@@ -595,7 +598,7 @@ private fun FabIconSelector(
         if (selectedIcon.startsWith("custom:")) {
             try {
                 val bytes = Base64.decode(selectedIcon.removePrefix("custom:"), Base64.NO_WRAP)
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(bytes)
             } catch (e: Exception) { null }
         } else null
     }

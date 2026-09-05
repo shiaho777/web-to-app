@@ -160,21 +160,22 @@ class AppExporter(private val context: Context) {
                     path.startsWith("/") -> {
                         val file = File(path)
                         if (file.exists()) {
-                            BitmapFactory.decodeFile(path)
+                            // Output is scaled to SHORTCUT_ICON_SIZE below; cap the decode (#779).
+                            com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(path, 1024)
                         } else null
                     }
 
                     path.startsWith("file://") -> {
                         val file = File(Uri.parse(path).path ?: return null)
                         if (file.exists()) {
-                            BitmapFactory.decodeFile(file.absolutePath)
+                            com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(file.absolutePath, 1024)
                         } else null
                     }
 
                     else -> {
                         val uri = Uri.parse(path)
                         context.contentResolver.openInputStream(uri)?.use { stream ->
-                            BitmapFactory.decodeStream(stream)
+                            com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapStream(stream, 1024)
                         }
                     }
                 }

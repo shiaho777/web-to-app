@@ -58,7 +58,8 @@ object IconLibraryStorage {
     ): IconLibraryItem? = withContext(Dispatchers.IO) {
         try {
             val bytes = Base64.decode(base64Data, Base64.DEFAULT)
-            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            val bitmap = com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(bytes)
+                ?: return@withContext null
 
             val id = "ai_${UUID.randomUUID().toString().take(8)}"
             val file = File(getLibraryDir(context), "$id.png")
@@ -89,7 +90,9 @@ object IconLibraryStorage {
     ): IconLibraryItem? = withContext(Dispatchers.IO) {
         try {
             val inputStream = context.contentResolver.openInputStream(uri) ?: return@withContext null
-            val bitmap = BitmapFactory.decodeStream(inputStream)
+            // Library icons render tiny; never store hostile full-res originals (#779).
+            val bitmap = com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapStream(inputStream)
+                ?: return@withContext null
             inputStream.close()
 
             val id = "lib_${UUID.randomUUID().toString().take(8)}"

@@ -176,14 +176,15 @@ class ApkTemplate(private val context: Context) {
 
     fun loadBitmap(iconPath: String): Bitmap? {
         return try {
+            // Downstream re-encodes at mipmap scale; cap the decode (#779).
             if (iconPath.startsWith("/")) {
-                BitmapFactory.decodeFile(iconPath)
+                com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(iconPath, 1024)
             } else if (iconPath.startsWith("content://")) {
                 context.contentResolver.openInputStream(android.net.Uri.parse(iconPath))?.use {
-                    BitmapFactory.decodeStream(it)
+                    com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapStream(it, 1024)
                 }
             } else {
-                BitmapFactory.decodeFile(iconPath)
+                com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(iconPath, 1024)
             }
         } catch (e: Exception) {
             null

@@ -1,6 +1,5 @@
 package com.webtoapp.ui.components
 
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -244,7 +243,7 @@ fun IconGeneratorDialog(
                         val bitmap = remember(base64) {
                             try {
                                 val bytes = Base64.decode(base64, Base64.DEFAULT)
-                                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                                com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(bytes)
                             } catch (e: Exception) { null }
                         }
                         bitmap?.let {

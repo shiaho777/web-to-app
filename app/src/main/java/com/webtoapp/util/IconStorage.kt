@@ -76,7 +76,7 @@ object IconStorage {
 
     fun saveIconFromBytes(context: Context, bytes: ByteArray): String? {
         return try {
-            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+            val bitmap = BoundedBitmaps.decodeBoundedBitmapBytes(bytes) ?: return null
             val result = saveIconFromBitmap(context, bitmap)
             bitmap.recycle()
             result

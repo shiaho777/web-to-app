@@ -450,7 +450,7 @@ fun ShellGalleryImageViewer(
 
                 context.assets.open(item.assetPath).use { it.readBytes() }
             }
-            bitmap = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+            bitmap = com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(imageBytes)
         } catch (e: Exception) {
             AppLogger.e("ShellGallery", "Failed to load image: ${item.assetPath}", e)
         }
@@ -855,7 +855,7 @@ private fun ShellThumbnailCell(
             } catch (_: Exception) {
                 context.assets.open(thumbAssetPath).use { it.readBytes() }
             }
-            android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(bytes)
         } catch (e: Exception) {
             AppLogger.e("ShellGallery", "Failed to load thumbnail: $thumbAssetPath", e)
             null

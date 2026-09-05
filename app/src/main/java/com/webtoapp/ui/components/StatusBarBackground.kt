@@ -1,9 +1,10 @@
 package com.webtoapp.ui.components
 
-import android.graphics.BitmapFactory
+import android.content.Context
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
-import androidx.compose.foundation.Image
+import com.webtoapp.ui.shared.SafeBitmapImage
+import com.webtoapp.util.BoundedBitmaps
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -15,6 +16,31 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import java.io.File
+
+/**
+ * Loads a status-bar background image bounded to a drawable-safe size (#779).
+ * The file comes from user storage and can be arbitrarily large (panoramas,
+ * full-resolution crops); decoding it raw once crashed MainActivity screens
+ * with "Canvas: trying to draw too large" at DRAW time — past any decode
+ * try/catch. Returns null when the file is missing, oversized, or unreadable.
+ */
+private fun loadStatusBarImageBitmap(context: Context, backgroundImagePath: String): android.graphics.Bitmap? {
+    return try {
+        val file = File(backgroundImagePath)
+        if (file.exists()) {
+            if (!BoundedBitmaps.isProbablyImageFile(file)) return null
+            BoundedBitmaps.decodeBoundedBitmapFile(backgroundImagePath)
+        } else {
+            val assetPath = backgroundImagePath.removePrefix("assets/")
+            context.assets.open(assetPath).use { inputStream ->
+                BoundedBitmaps.decodeBoundedBitmapStream(inputStream)
+            }
+        }
+    } catch (e: Exception) {
+        AppLogger.e("StatusBarBackground", "加载状态栏背景图片失败: $backgroundImagePath", e)
+        null
+    }
+}
 
 @Composable
 fun StatusBarBackground(
@@ -44,22 +70,7 @@ fun StatusBarBackground(
 
     val imageBitmap = remember(backgroundImagePath) {
         if (backgroundType == "IMAGE" && !backgroundImagePath.isNullOrEmpty()) {
-            try {
-
-                val file = File(backgroundImagePath)
-                if (file.exists()) {
-                    BitmapFactory.decodeFile(backgroundImagePath)?.asImageBitmap()
-                } else {
-
-                    val assetPath = backgroundImagePath.removePrefix("assets/")
-                    context.assets.open(assetPath).use { inputStream ->
-                        BitmapFactory.decodeStream(inputStream)?.asImageBitmap()
-                    }
-                }
-            } catch (e: Exception) {
-                AppLogger.e("StatusBarBackground", "加载状态栏背景图片失败: $backgroundImagePath", e)
-                null
-            }
+            loadStatusBarImageBitmap(context, backgroundImagePath)?.asImageBitmap()
         } else {
             null
         }
@@ -73,7 +84,7 @@ fun StatusBarBackground(
         when {
             backgroundType == "IMAGE" && imageBitmap != null -> {
 
-                Image(
+                SafeBitmapImage(
                     bitmap = imageBitmap,
                     contentDescription = Strings.statusBarBackground,
                     modifier = Modifier
@@ -141,22 +152,7 @@ fun StatusBarOverlay(
 
     val imageBitmap = remember(backgroundImagePath) {
         if (backgroundType == "IMAGE" && !backgroundImagePath.isNullOrEmpty()) {
-            try {
-
-                val file = File(backgroundImagePath)
-                if (file.exists()) {
-                    BitmapFactory.decodeFile(backgroundImagePath)?.asImageBitmap()
-                } else {
-
-                    val assetPath = backgroundImagePath.removePrefix("assets/")
-                    context.assets.open(assetPath).use { inputStream ->
-                        BitmapFactory.decodeStream(inputStream)?.asImageBitmap()
-                    }
-                }
-            } catch (e: Exception) {
-                AppLogger.e("StatusBarOverlay", "加载状态栏背景图片失败: $backgroundImagePath", e)
-                null
-            }
+            loadStatusBarImageBitmap(context, backgroundImagePath)?.asImageBitmap()
         } else {
             null
         }
@@ -170,7 +166,7 @@ fun StatusBarOverlay(
         when {
             backgroundType == "IMAGE" && imageBitmap != null -> {
 
-                Image(
+                SafeBitmapImage(
                     bitmap = imageBitmap,
                     contentDescription = Strings.statusBarBackground,
                     modifier = Modifier.fillMaxSize(),

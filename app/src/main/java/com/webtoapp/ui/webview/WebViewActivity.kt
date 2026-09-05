@@ -3666,7 +3666,7 @@ com.webtoapp.ui.components.announcement.AnnouncementDialog(
                 announcement = ann,
                 template = ann.template.toUiTemplate(),
                 customIconBitmap = ann.customIconPath?.let { p ->
-                    try { android.graphics.BitmapFactory.decodeFile(p) } catch (e: Exception) { null }
+                    try { com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(p) } catch (e: Exception) { null }
                 }
             ),
             onDismiss = {

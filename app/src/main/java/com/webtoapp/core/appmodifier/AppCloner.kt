@@ -181,14 +181,16 @@ class AppCloner(private val context: Context) {
 
     private fun loadBitmapFromPath(path: String): Bitmap? {
         return try {
+            // Clone icons are re-encoded small; never decode hostile originals raw (#779).
+            val cap = com.webtoapp.util.BoundedBitmaps.ICON_MAX_DIMENSION * 2
             when {
-                path.startsWith("/") -> BitmapFactory.decodeFile(path)
+                path.startsWith("/") -> com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(path, cap)
                 path.startsWith("content://") || path.startsWith("file://") -> {
                     context.contentResolver.openInputStream(Uri.parse(path))?.use {
-                        BitmapFactory.decodeStream(it)
+                        com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapStream(it, cap)
                     }
                 }
-                else -> BitmapFactory.decodeFile(path)
+                else -> com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(path, cap)
             }
         } catch (e: Exception) {
             null

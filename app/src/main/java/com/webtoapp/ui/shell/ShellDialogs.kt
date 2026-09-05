@@ -107,7 +107,7 @@ fun ShellAnnouncementDialog(
     val customIconBitmap = if (config.announcementHasCustomIcon) {
         try {
             val bytes = com.webtoapp.core.crypto.AssetDecryptor(context).loadAsset("announcement_icon.png")
-            android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(bytes)
         } catch (e: Exception) { null }
     } else null
 

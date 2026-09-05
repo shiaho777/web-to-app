@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import com.webtoapp.ui.components.EnhancedElevatedCard
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
+import com.webtoapp.util.BoundedBitmaps.toBoundedBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -599,9 +600,17 @@ private fun InstalledBrowserCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-                if (browser.icon != null) {
+                val iconBitmap = remember(browser.icon) {
+                    // Third-party app icons can be arbitrarily large; raster bounded (#779).
+                    try {
+                        browser.icon?.toBoundedBitmap()?.asImageBitmap()
+                    } catch (t: Throwable) {
+                        null
+                    }
+                }
+                if (iconBitmap != null) {
                 Image(
-                    bitmap = browser.icon.toBitmap().asImageBitmap(),
+                    bitmap = iconBitmap,
                     contentDescription = browser.name,
                     modifier = Modifier
                         .size(48.dp)

@@ -162,7 +162,10 @@ object FaviconFetcher {
             val fileName = "favicon_${System.currentTimeMillis()}.png"
             val outputFile = File(iconsDir, fileName)
 
-            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            val bitmap = com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(
+                bytes,
+                com.webtoapp.util.BoundedBitmaps.ICON_MAX_DIMENSION
+            )
             if (bitmap == null) {
                 AppLogger.w(TAG, "无法解码图片: $iconUrl")
                 return null

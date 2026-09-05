@@ -67,11 +67,11 @@ fun ShellSplashOverlay(
                         try {
                             val previewFile = mediaPath?.let { java.io.File(it) }
                             if (previewFile != null && previewFile.exists()) {
-                                android.graphics.BitmapFactory.decodeFile(previewFile.absolutePath)
+                                com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(previewFile.absolutePath)
                             } else {
                                 val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
                                 val imageBytes = decryptor.loadAsset(assetPath)
-                                android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                                com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(imageBytes)
                             }
                         } catch (e: Exception) {
                             AppLogger.e("ShellSplash", "Failed to load splash image", e)
@@ -428,7 +428,7 @@ fun MediaContentDisplay(
                     try {
                         val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
                         val imageBytes = decryptor.loadAsset("media_content.png")
-                        android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                        com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(imageBytes)
                     } catch (e: Exception) {
                         AppLogger.e("MediaContent", "Failed to load image media", e)
                         null

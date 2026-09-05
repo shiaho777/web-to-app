@@ -6,7 +6,6 @@ import com.webtoapp.ui.design.WtaSpacing
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
@@ -175,7 +174,8 @@ fun ExtensionModuleScreen(
             scope.launch {
                 try {
                     context.contentResolver.openInputStream(it)?.use { stream ->
-                        val bitmap = BitmapFactory.decodeStream(stream)
+                        // Bounded: a shared image can be an arbitrary camera panorama (#779).
+                        val bitmap = com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapStream(stream)
                         if (bitmap != null) {
                             val qrContent = QrCodeUtils.decodeQrCode(bitmap)
                             if (qrContent != null) {

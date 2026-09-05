@@ -2,7 +2,6 @@ package com.webtoapp.ui.viewmodel
 
 import android.app.Application
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -342,7 +341,7 @@ class MainViewModel(
                 "Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 Chrome/131.0.0.0 Mobile Safari/537.36")
             try {
                 if (conn.responseCode !in 200..299) return null
-                val bitmap = BitmapFactory.decodeStream(conn.inputStream) ?: return null
+                val bitmap = com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapStream(conn.inputStream) ?: return null
                 IconStorage.saveIconFromBitmap(getApplication(), bitmap)
             } finally {
                 conn.disconnect()

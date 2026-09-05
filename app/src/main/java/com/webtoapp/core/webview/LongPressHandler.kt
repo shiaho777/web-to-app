@@ -418,10 +418,10 @@ class LongPressHandler(
         val extension = MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "png"
 
         val imageBytes = Base64.decode(base64Data, Base64.DEFAULT)
-        val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-            ?: return null
 
-        return saveBitmapToGallery(bitmap, "IMG_${System.currentTimeMillis()}.$extension", mimeType)
+        // Write bytes directly: no decode roundtrip (lossless, faster, and immune
+        // to oversized-bitmap OOM on hostile data URLs, #779).
+        return saveBytesToGallery(imageBytes, "IMG_${System.currentTimeMillis()}.$extension", mimeType)
     }
 
     private fun saveUrlImage(imageUrl: String): Uri? {
@@ -432,17 +432,15 @@ class LongPressHandler(
 
         val imageBytes = connection.getInputStream().use { it.readBytes() }
 
-        val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
-            ?: return null
-
         val fileName = DownloadHelper.parseFileName(imageUrl, null, connection.contentType)
             .ifBlank { "IMG_${System.currentTimeMillis()}.jpg" }
         val mimeType = connection.contentType ?: "image/jpeg"
 
-        return saveBitmapToGallery(bitmap, fileName, mimeType)
+        return saveBytesToGallery(imageBytes, fileName, mimeType)
     }
 
-    private fun saveBitmapToGallery(bitmap: Bitmap, fileName: String, mimeType: String): Uri? {
+    private fun saveBytesToGallery(bytes: ByteArray, fileName: String, mimeType: String): Uri? {
+        if (bytes.isEmpty()) return null
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 
             val contentValues = ContentValues().apply {
@@ -458,8 +456,7 @@ class LongPressHandler(
             ) ?: return null
 
             context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                val format = if (mimeType.contains("png")) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG
-                bitmap.compress(format, 95, outputStream)
+                outputStream.write(bytes)
             }
 
             contentValues.clear()
@@ -475,8 +472,7 @@ class LongPressHandler(
 
             val file = File(appDir, fileName)
             FileOutputStream(file).use { outputStream ->
-                val format = if (mimeType.contains("png")) Bitmap.CompressFormat.PNG else Bitmap.CompressFormat.JPEG
-                bitmap.compress(format, 95, outputStream)
+                outputStream.write(bytes)
             }
 
             val values = ContentValues().apply {

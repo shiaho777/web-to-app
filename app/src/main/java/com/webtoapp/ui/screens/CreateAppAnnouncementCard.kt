@@ -71,7 +71,7 @@ fun AnnouncementCard(
 
     val previewBitmap = remember(announcement.customIconPath) {
         announcement.customIconPath?.let { p ->
-            try { android.graphics.BitmapFactory.decodeFile(p) } catch (e: Exception) { null }
+            try { com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapFile(p) } catch (e: Exception) { null }
         }
     }
 
