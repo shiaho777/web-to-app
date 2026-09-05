@@ -76,7 +76,9 @@ interface AppUsageStatsDao {
     @Query("SELECT * FROM app_health_records WHERE appId = :appId ORDER BY checkedAt DESC LIMIT :limit")
     suspend fun getRecentHealthRecords(appId: Long, limit: Int = 50): List<AppHealthRecord>
 
-    @Query("""
+    /** Full-table read for backup export. No schema change, no migration needed. */
+    @Query("SELECT * FROM app_health_records ORDER BY checkedAt DESC")
+    suspend fun getAllHealthRecords(): List<AppHealthRecord>    @Query("""
         SELECT h.* FROM app_health_records h
         INNER JOIN (
             SELECT appId, MAX(checkedAt) as maxCheckedAt
