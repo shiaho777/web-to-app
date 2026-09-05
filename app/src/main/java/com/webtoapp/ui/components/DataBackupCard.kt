@@ -115,6 +115,12 @@ fun DataBackupCard() {
                         ),
                         Toast.LENGTH_LONG
                     ).show()
+                    // Restored DataStore/SharedPreferences files only take effect
+                    // after restart (in-memory caches would otherwise clobber them).
+                    scope.launch {
+                        kotlinx.coroutines.delay(1200)
+                        backupManager.scheduleAppRestart()
+                    }
                 }.onFailure { e ->
                     errorScope = "Data backup import"
                     errorThrowable = e
