@@ -7,8 +7,14 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,6 +24,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
@@ -213,6 +220,24 @@ fun ShellGalleryPlayer(
                         )
                     }
                 }
+            }
+        }
+
+        if (galleryConfig.showThumbnailBar) {
+            AnimatedVisibility(
+                visible = showControls,
+                enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+                exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
+                modifier = Modifier.align(Alignment.BottomCenter)
+            ) {
+                ShellThumbnailBar(
+                    items = effectiveItems,
+                    currentIndex = currentIndex,
+                    assetDecryptor = assetDecryptor,
+                    onItemClick = { index ->
+                        scope.launch { pagerState.animateScrollToPage(index) }
+                    }
+                )
             }
         }
 
@@ -681,6 +706,125 @@ fun ShellGalleryVideoPlayer(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ShellThumbnailBar(
+    items: List<com.webtoapp.core.shell.GalleryShellItem>,
+    currentIndex: Int,
+    assetDecryptor: com.webtoapp.core.crypto.AssetDecryptor,
+    onItemClick: (Int) -> Unit
+) {
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(currentIndex) {
+        if (currentIndex in items.indices) {
+            listState.animateScrollToItem(
+                index = currentIndex,
+                scrollOffset = -100
+            )
+        }
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.Black.copy(alpha = 0.6f)
+    ) {
+        LazyRow(
+            state = listState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+                .navigationBarsPadding(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
+                val isSelected = index == currentIndex
+
+                Box(
+                    modifier = Modifier
+                        .animateItem()
+                        .size(if (isSelected) 64.dp else 56.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .border(
+                            width = if (isSelected) 2.dp else 0.dp,
+                            color = if (isSelected) Color.White else Color.Transparent,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                        .clickable { onItemClick(index) }
+                ) {
+                    ShellThumbnailCell(item = item, assetDecryptor = assetDecryptor)
+
+                    if (item.type == "VIDEO") {
+                        Icon(
+                            Icons.Default.PlayCircle,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .align(Alignment.Center),
+                            tint = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShellThumbnailCell(
+    item: com.webtoapp.core.shell.GalleryShellItem,
+    assetDecryptor: com.webtoapp.core.crypto.AssetDecryptor
+) {
+    val context = LocalContext.current
+    // Mirror host fallback: use the full image when no dedicated thumbnail was
+    // embedded. Videos without a thumbnail get a placeholder (shell ships no
+    // video-frame decoder).
+    val thumbAssetPath = item.thumbnailPath
+        ?: if (item.type == "IMAGE") item.assetPath else null
+
+    var bitmap by remember(thumbAssetPath) { mutableStateOf<android.graphics.Bitmap?>(null) }
+
+    LaunchedEffect(thumbAssetPath) {
+        bitmap = null
+        if (thumbAssetPath == null) return@LaunchedEffect
+        bitmap = try {
+            val bytes = try {
+                assetDecryptor.loadAsset(thumbAssetPath)
+            } catch (_: Exception) {
+                context.assets.open(thumbAssetPath).use { it.readBytes() }
+            }
+            android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        } catch (e: Exception) {
+            AppLogger.e("ShellGallery", "Failed to load thumbnail: $thumbAssetPath", e)
+            null
+        }
+    }
+
+    val bmp = bitmap
+    if (bmp != null) {
+        Image(
+            bitmap = bmp.asImageBitmap(),
+            contentDescription = item.name,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.DarkGray),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                if (item.type == "VIDEO") Icons.Outlined.Videocam else Icons.Outlined.Image,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.7f),
+                modifier = Modifier.size(20.dp)
+            )
         }
     }
 }
