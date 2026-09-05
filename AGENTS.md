@@ -150,6 +150,16 @@ Trace and update **all** of:
    a spot-check to `key non-Boolean WebViewConfig fields survive the export
    round-trip`. This is the safety net that catches "preview works, export
    broken" before it ships.
+7. **Shell UI parity (REQUIRED for per-type player screens).** Gallery / media /
+   splash-style app types render through DIFFERENT composables in preview
+   (`ui/gallery/`, `ui/media/`) vs generated APKs (`ui/shell/`). A flag that flows
+   end-to-end still does nothing if the shell screen never reads it (gallery
+   thumbnail bar shipped config + assets correctly and still rendered nothing,
+   #781). `ShellUiParityTest.kt` enforces this: every model field read by host
+   runtime UI must also be read by shell runtime UI. If you add a field and read
+   it in a host player, the test fails naming the field until you port the
+   behavior to shell or add an explicit `allow` entry with a reason. When adding
+   a new per-type player pair, extend its `pairs` list the same way.
 
 Missing any step usually yields: editor shows the switch, export ignores it, or export embeds config the runtime never reads.
 
@@ -291,6 +301,7 @@ The editor screens have an established card language. **Find the neighboring car
 - **Adblock is wired for preview + export.** Do not wipe host filter state during export; the host AdBlocker serves preview and the compiled rule set ships in the APK.
 - **Runtime permissions are feature-driven.** `RuntimePermissionSync` derives the permission list from enabled features; do not revert to a static template.
 - **Splash preview media path.** Preview reads splash media from the host filesystem (`splashMediaPath`); export packages it into assets. Do not hardcode `assets/splash_media.*` as the only source.
+- **Host player UI ≠ shell player UI.** Preview players (`ui/gallery/`, `ui/media/`) and generated-APK players (`ui/shell/`) are separate composables sharing only the config. Port every visible behavior across (thumbnail bar, background, keep-screen-on, orientation) and let `ShellUiParityTest` verify the flags; config flowing end-to-end is necessary but not sufficient.
 - **Port conflict policy.** Local server runtimes must allocate through `PortManager` and clean up on stop; do not bind ports directly.
 - **Agent tool ↔ service drift.** When a service class API changes, the corresponding Agent tool in `core/agent/tool/builtin/` must be updated in the same PR. A stale tool either fails to compile or silently passes wrong arguments at runtime. Check `ToolRegistryFactory.baseTools()` for the full tool list.
 - **Editor card UI grammar.** Config-screen cards share one layout grammar (recipe 12): rows are full-bleed, non-row content sits in 16dp-padded zones, expansion never toggles the feature, and card UI is verified on the emulator — not just compiled.
@@ -308,6 +319,7 @@ The editor screens have an established card language. **Find the neighboring car
 - Crashing FGS when notification channel creation fails
 - Committing secrets, keystores, or local machine config
 - Regressing HTML/FRONTEND file access in packaged shells
+- Shipping a host player-screen feature without its shell counterpart (preview-only UI)
 - Shipping NODEJS_APP without `libnode_bridge.so` / `libnode.so` / `libc++_shared.so`
 - Skipping 16KB alignment for large ELF natives
 - Inventing editor card layout/spacing/animations instead of copying the neighbouring cards' patterns, or shipping card UI verified only by compilation

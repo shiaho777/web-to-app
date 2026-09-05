@@ -304,10 +304,32 @@ fun MediaContentDisplay(
 ) {
     val context = LocalContext.current
 
+    val bgColor = remember(mediaConfig.backgroundColor) {
+        try {
+            Color(android.graphics.Color.parseColor(mediaConfig.backgroundColor))
+        } catch (e: Exception) {
+            Color.Black
+        }
+    }
+
+    // Mirror host MediaAppActivity: keep the screen awake for the lifetime of
+    // this screen when configured. Add-only like the host (no explicit clear).
+    LaunchedEffect(mediaConfig.keepScreenOn) {
+        if (mediaConfig.keepScreenOn) {
+            try {
+                (context as? android.app.Activity)?.window?.addFlags(
+                    android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                )
+            } catch (e: Exception) {
+                AppLogger.w("ShellMedia", "Failed to set keep-screen-on: ${e.message}")
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black),
+            .background(bgColor),
         contentAlignment = Alignment.Center
     ) {
         if (isVideo) {

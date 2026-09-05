@@ -4172,7 +4172,8 @@ private fun WebApp.buildMediaBlock(): MediaBlock = MediaBlock(
     autoPlay = mediaConfig?.autoPlay ?: true,
     fillScreen = mediaConfig?.fillScreen ?: true,
     landscape = mediaConfig?.orientation == com.webtoapp.data.model.SplashOrientation.LANDSCAPE,
-    keepScreenOn = mediaConfig?.keepScreenOn ?: true
+    keepScreenOn = mediaConfig?.keepScreenOn ?: true,
+    backgroundColor = mediaConfig?.backgroundColor ?: "#000000"
 )
 
 private fun com.webtoapp.data.model.HtmlConfig?.toHtmlBlock(): HtmlBlock = HtmlBlock(

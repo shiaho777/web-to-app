@@ -711,7 +711,8 @@ data class MediaBlock(
     val autoPlay: Boolean = true,
     val fillScreen: Boolean = true,
     val landscape: Boolean = false,
-    val keepScreenOn: Boolean = true
+    val keepScreenOn: Boolean = true,
+    val backgroundColor: String = "#000000"
 )
 
 data class HtmlBlock(

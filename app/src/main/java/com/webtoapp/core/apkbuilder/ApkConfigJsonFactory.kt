@@ -384,7 +384,8 @@ internal object ApkConfigJsonFactory {
         "autoPlay" to media.autoPlay,
         "fillScreen" to media.fillScreen,
         "landscape" to media.landscape,
-        "keepScreenOn" to media.keepScreenOn
+        "keepScreenOn" to media.keepScreenOn,
+        "backgroundColor" to media.backgroundColor
     )
 
     private fun ApkConfig.htmlConfigPayload(): Map<String, Any?> = linkedMapOf(

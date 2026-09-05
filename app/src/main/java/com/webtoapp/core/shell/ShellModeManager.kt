@@ -810,7 +810,10 @@ data class MediaShellConfig(
     val landscape: Boolean = false,
 
     @SerializedName("keepScreenOn")
-    val keepScreenOn: Boolean = true
+    val keepScreenOn: Boolean = true,
+
+    @SerializedName("backgroundColor")
+    val backgroundColor: String = "#000000"
 )
 
 data class WordPressShellConfig(
