@@ -1123,6 +1123,11 @@ class WebViewManager(
     private val LOOPBACK_MAIN_FRAME_MAX_RETRIES = 3
     private val LOOPBACK_MAIN_FRAME_RETRY_DELAY_MS = 150L
 
+    // Cross-URL budget over all app-initiated auto-reloads (#654): per-path counters
+    // reset when the URL changes, so only this breaker can stop error-navigation
+    // cycles (e.g. login redirect loops) from reloading forever.
+    private val reloadBreaker = ReloadCircuitBreaker()
+
     // A download-intercepted navigation surfaces as an aborted main-frame load; remember
     // the URL so the loopback auto-retry does not re-navigate into the same download.
     private var lastDownloadInterceptedUrl: String? = null
@@ -1172,6 +1177,13 @@ class WebViewManager(
             return false
         }
         val nextUrl = urls[current]
+        // Circuit breaker (#654): error-navigation-error cycles reset the per-URL
+        // counters above, so only a cross-URL budget can stop a reload storm.
+        // Tripping falls through to the error UI instead of another loadUrl.
+        if (!reloadBreaker.noteAutoReload(nextUrl)) {
+            AppLogger.w("WebViewManager", "Failover circuit breaker tripped, showing error instead: $nextUrl reason=$reason")
+            return false
+        }
         failoverCursor[view] = current + 1
         AppLogger.i(
             "WebViewManager",
@@ -1422,6 +1434,8 @@ class WebViewManager(
 
         val preferLandscapeEmbeddedViewport = config.landscapeMode && !isDesktopModeRequested
 
+        val zoomPlan = planPageZoom(config.pageZoomPercent, config.initialScale)
+
         webView.apply {
             settings.apply {
 
@@ -1450,7 +1464,14 @@ class WebViewManager(
                 displayZoomControls = false
 
                 useWideViewPort = true
-                loadWithOverviewMode = !preferLandscapeEmbeddedViewport
+                // Whole-page zoom (initialScale) is overridden by overview fit, so
+                // overview must stay off while an explicit zoom is active. Default
+                // path (zoom 100) keeps the historical behavior.
+                loadWithOverviewMode = if (zoomPlan.zoomActive) {
+                    false
+                } else {
+                    !preferLandscapeEmbeddedViewport
+                }
 
                 if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
                     useWideViewPort = true
@@ -1549,17 +1570,17 @@ class WebViewManager(
 
             com.webtoapp.core.perf.NativePerfEngine.optimizeWebViewSettings(this)
 
-            // Per-app page zoom (textZoom) configured in the editor's Advanced Settings (#654).
-            // The tool was transferred from the runtime hidden toolbar into the build-time
-            // config — the config value is the single source of truth, applied on every run.
-            // Applied AFTER the viewport/dark-mode settings above (which may pin textZoom to
-            // 100 in DESKTOP mode) so zoom wins. 0 (legacy data) is treated as 100.
-            if (config.pageZoomPercent > 0 && config.pageZoomPercent != 100) {
-                settings.textZoom = config.pageZoomPercent
-                AppLogger.d("WebViewManager", "Applied page zoom: textZoom=${config.pageZoomPercent}%")
-            }
-
-            if (config.initialScale > 0) {
+            // Per-app page zoom (#654): whole-page scaling via initialScale — text
+            // AND layout/images/canvas, unlike textZoom (glyphs only, invisible on
+            // dashboard/canvas UIs). Runs AFTER the viewport block above so an
+            // explicit zoom wins over FIT_SCREEN/CUSTOM scale-1 forcing; textZoom
+            // stays pinned at 100 so text is never scaled twice. Default (100)
+            // leaves everything untouched; pooled instances are reset to auto.
+            if (zoomPlan.zoomActive) {
+                settings.textZoom = 100
+                setInitialScale(zoomPlan.initialScalePercent)
+                AppLogger.d("WebViewManager", "Applied page zoom: initialScale=${zoomPlan.initialScalePercent}% (overview off)")
+            } else if (config.initialScale > 0) {
                 setInitialScale(config.initialScale)
                 AppLogger.d("WebViewManager", "Set initial scale: ${config.initialScale}%")
             } else if (config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN) {
@@ -1570,6 +1591,9 @@ class WebViewManager(
 
                 setInitialScale(1)
                 AppLogger.d("WebViewManager", "ViewportMode.CUSTOM: forced initial scale to 1 (custom width=${config.customViewportWidth})")
+            } else {
+                // DEFAULT mode, no zoom: clear any scale a pooled WebView may carry.
+                setInitialScale(0)
             }
 
             settings.setSupportMultipleWindows(config.newWindowBehavior != NewWindowBehavior.SAME_WINDOW)
@@ -2458,34 +2482,40 @@ class WebViewManager(
                         val isSameRetry = failedUrl == loopbackMainFrameRetryUrl
                         val currentRetry = if (isSameRetry) loopbackMainFrameRetryCount else 0
                         if (currentRetry < LOOPBACK_MAIN_FRAME_MAX_RETRIES) {
+                            if (!reloadBreaker.noteAutoReload(failedUrl)) {
+                                AppLogger.w(
+                                    "WebViewManager",
+                                    "Loopback auto-retry circuit breaker tripped, showing error instead: $failedUrl"
+                                )
+                            } else {
+                                loopbackMainFrameRetryRunnable?.let { view.removeCallbacks(it) }
 
-                            loopbackMainFrameRetryRunnable?.let { view.removeCallbacks(it) }
+                                loopbackMainFrameRetryUrl = failedUrl
+                                loopbackMainFrameRetryCount = currentRetry + 1
+                                loopbackMainFrameRetryPending = true
+                                loopbackMainFrameRetryView = view
+                                AppLogger.i(
+                                    "WebViewManager",
+                                    "Loopback main-frame load failed (code=$errorCode, desc=$rawDescription), auto-retry ${loopbackMainFrameRetryCount}/$LOOPBACK_MAIN_FRAME_MAX_RETRIES after ${LOOPBACK_MAIN_FRAME_RETRY_DELAY_MS}ms: $failedUrl"
+                                )
+                                val retryRunnable = Runnable {
+                                    val currentUrl = view.url
+                                    if (currentUrl == null || currentUrl == "about:blank" || currentUrl == failedUrl || currentMainFrameUrl == failedUrl) {
+                                        AppLogger.d("WebViewManager", "Retrying loopback main-frame request: $failedUrl")
+                                        view.loadUrl(failedUrl)
+                                    } else {
+                                        AppLogger.d(
+                                            "WebViewManager",
+                                            "Skip loopback auto-retry because WebView navigated away: current=$currentUrl, failed=$failedUrl"
+                                        )
+                                    }
 
-                            loopbackMainFrameRetryUrl = failedUrl
-                            loopbackMainFrameRetryCount = currentRetry + 1
-                            loopbackMainFrameRetryPending = true
-                            loopbackMainFrameRetryView = view
-                            AppLogger.i(
-                                "WebViewManager",
-                                "Loopback main-frame load failed (code=$errorCode, desc=$rawDescription), auto-retry ${loopbackMainFrameRetryCount}/$LOOPBACK_MAIN_FRAME_MAX_RETRIES after ${LOOPBACK_MAIN_FRAME_RETRY_DELAY_MS}ms: $failedUrl"
-                            )
-                            val retryRunnable = Runnable {
-                                val currentUrl = view.url
-                                if (currentUrl == null || currentUrl == "about:blank" || currentUrl == failedUrl || currentMainFrameUrl == failedUrl) {
-                                    AppLogger.d("WebViewManager", "Retrying loopback main-frame request: $failedUrl")
-                                    view.loadUrl(failedUrl)
-                                } else {
-                                    AppLogger.d(
-                                        "WebViewManager",
-                                        "Skip loopback auto-retry because WebView navigated away: current=$currentUrl, failed=$failedUrl"
-                                    )
+                                    loopbackMainFrameRetryRunnable = null
                                 }
-
-                                loopbackMainFrameRetryRunnable = null
+                                loopbackMainFrameRetryRunnable = retryRunnable
+                                view.postDelayed(retryRunnable, LOOPBACK_MAIN_FRAME_RETRY_DELAY_MS)
+                                return
                             }
-                            loopbackMainFrameRetryRunnable = retryRunnable
-                            view.postDelayed(retryRunnable, LOOPBACK_MAIN_FRAME_RETRY_DELAY_MS)
-                            return
                         } else {
                             AppLogger.w(
                                 "WebViewManager",
@@ -2507,16 +2537,23 @@ class WebViewManager(
                         val isSameRetry = failedUrl == fileRetryUrl
                         val currentRetry = if (isSameRetry) fileRetryCount else 0
                         if (currentRetry < FILE_MAX_RETRIES) {
-                            fileRetryUrl = failedUrl
-                            fileRetryCount = currentRetry + 1
-                            AppLogger.d(
-                                "WebViewManager",
-                                "file:// load failed (code=$errorCode, desc=$rawDescription), auto-retry ${fileRetryCount}/$FILE_MAX_RETRIES after ${FILE_RETRY_DELAY_MS}ms: $failedUrl"
-                            )
-                            view.postDelayed({
-                                view.loadUrl(failedUrl)
-                            }, FILE_RETRY_DELAY_MS)
-                            return
+                            if (!reloadBreaker.noteAutoReload(failedUrl)) {
+                                AppLogger.w(
+                                    "WebViewManager",
+                                    "file:// auto-retry circuit breaker tripped, showing error instead: $failedUrl"
+                                )
+                            } else {
+                                fileRetryUrl = failedUrl
+                                fileRetryCount = currentRetry + 1
+                                AppLogger.d(
+                                    "WebViewManager",
+                                    "file:// load failed (code=$errorCode, desc=$rawDescription), auto-retry ${fileRetryCount}/$FILE_MAX_RETRIES after ${FILE_RETRY_DELAY_MS}ms: $failedUrl"
+                                )
+                                view.postDelayed({
+                                    view.loadUrl(failedUrl)
+                                }, FILE_RETRY_DELAY_MS)
+                                return
+                            }
                         } else {
                             AppLogger.w(
                                 "WebViewManager",

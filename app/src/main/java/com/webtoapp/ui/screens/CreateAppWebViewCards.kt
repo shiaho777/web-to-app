@@ -996,7 +996,7 @@ fun BrowserAdvancedConfigCard(
                             WtaSectionDivider()
                             // Per-app page zoom (#654): transferred from the runtime hidden
                             // toolbar into Advanced Settings — this is THE zoom for the app,
-                            // applied via textZoom on every run. Same Chrome-style presets.
+                            // applied via initialScale (whole page) on every run. Same Chrome-style presets.
                             var pageZoomDialogOpen by remember { mutableStateOf(false) }
                             WtaChoiceRow(
                                 title = Strings.pageZoomSettingLabel,
