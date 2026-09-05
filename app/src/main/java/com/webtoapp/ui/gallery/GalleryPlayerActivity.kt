@@ -23,16 +23,19 @@ class GalleryPlayerActivity : ComponentActivity() {
     companion object {
         private const val EXTRA_CONFIG = "gallery_config"
         private const val EXTRA_START_INDEX = "start_index"
+        private const val EXTRA_GALLERY_ID = "gallery_id"
         private val gson = com.webtoapp.util.GsonProvider.gson
 
         fun launch(
             context: Context,
             config: GalleryConfig,
-            startIndex: Int = 0
+            startIndex: Int = 0,
+            galleryId: Long = 0L
         ) {
             val intent = Intent(context, GalleryPlayerActivity::class.java).apply {
                 putExtra(EXTRA_CONFIG, gson.toJson(config))
                 putExtra(EXTRA_START_INDEX, startIndex)
+                putExtra(EXTRA_GALLERY_ID, galleryId)
             }
             context.startActivity(intent)
         }
@@ -40,6 +43,8 @@ class GalleryPlayerActivity : ComponentActivity() {
 
     private var config: GalleryConfig? = null
     private var startIndex: Int = 0
+    private var positionKey: String? = null
+    private var startInOverview: Boolean = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +63,20 @@ class GalleryPlayerActivity : ComponentActivity() {
         if (galleryConfig == null || galleryConfig.items.isEmpty()) {
             finish()
             return
+        }
+
+        // rememberPosition: resume where the user left off (keyed per gallery).
+        // A restored non-zero position opens the pager directly; otherwise the
+        // overview (grid/list/timeline per defaultView) is the entry.
+        val galleryId = intent.getLongExtra(EXTRA_GALLERY_ID, 0L)
+        if (galleryConfig.rememberPosition && galleryId > 0) {
+            val key = galleryPositionKey(galleryId)
+            val saved = getSharedPreferences(GALLERY_POSITION_PREFS, MODE_PRIVATE).getInt(key, -1)
+            if (saved >= 0) {
+                startIndex = saved.coerceIn(0, galleryConfig.items.size - 1)
+                positionKey = key
+                startInOverview = startIndex > 0
+            }
         }
 
         requestedOrientation = when (galleryConfig.orientation) {
@@ -81,7 +100,9 @@ class GalleryPlayerActivity : ComponentActivity() {
                 GalleryPlayerScreen(
                     config = galleryConfig,
                     startIndex = startIndex.coerceIn(0, galleryConfig.items.size - 1),
-                    onBack = { finish() }
+                    onBack = { finish() },
+                    positionKey = positionKey,
+                    startInOverview = startInOverview
                 )
             }
         }

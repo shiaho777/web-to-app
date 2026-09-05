@@ -805,7 +805,7 @@ fun PreviewScreen(appId: Long, onBack: () -> Unit) {
 
                 com.webtoapp.data.model.AppType.GALLERY -> {
                     app.galleryConfig?.let { config ->
-                        com.webtoapp.ui.gallery.GalleryPlayerActivity.launch(context, config, 0)
+                        com.webtoapp.ui.gallery.GalleryPlayerActivity.launch(context, config, 0, appId)
                     }
                 }
 

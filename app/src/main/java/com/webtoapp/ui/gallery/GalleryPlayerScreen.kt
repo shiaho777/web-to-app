@@ -7,7 +7,11 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
@@ -43,17 +47,29 @@ import java.io.File
 fun GalleryPlayerScreen(
     config: GalleryConfig,
     startIndex: Int,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    // Persistence key for rememberPosition (e.g. per-app id). Null disables saving.
+    positionKey: String? = null,
+    // Overview (grid/list/timeline) is the entry unless resuming into the pager.
+    startInOverview: Boolean = true
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    val items = remember(config) {
+    val positionPrefs = remember(positionKey) {
+        positionKey?.let {
+            context.getSharedPreferences(GALLERY_POSITION_PREFS, android.content.Context.MODE_PRIVATE)
+        }
+    }
+
+    val initialOrder = remember(config) {
         when (config.playMode) {
             GalleryPlayMode.SHUFFLE -> config.getSortedItems().shuffled()
             else -> config.getSortedItems()
         }
     }
+    // Mutable playback order: shuffle-on-loop reshuffles in place on every wrap.
+    var items by remember(config) { mutableStateOf(initialOrder) }
 
     val pagerState = rememberPagerState(
         initialPage = startIndex,
@@ -63,6 +79,46 @@ fun GalleryPlayerScreen(
     val currentIndex by remember { derivedStateOf { pagerState.settledPage } }
     val currentItem = items.getOrNull(currentIndex)
 
+    // rememberPosition: persist the settled page so reopening continues here.
+    LaunchedEffect(currentIndex) {
+        val key = positionKey
+        if (key != null && currentIndex in items.indices) {
+            positionPrefs?.edit()?.putInt(key, currentIndex)?.apply()
+        }
+    }
+
+    var showGrid by remember { mutableStateOf(startInOverview) }
+    // Pager back returns to the overview only when the session started there;
+    // a resume-to-pager session exits directly.
+    val canReturnToGrid = startInOverview
+    androidx.activity.compose.BackHandler(enabled = !showGrid && canReturnToGrid) {
+        showGrid = true
+    }
+
+    val bgColor = remember(config.backgroundColor) {
+        try {
+            Color(android.graphics.Color.parseColor(config.backgroundColor))
+        } catch (e: Exception) {
+            Color.Black
+        }
+    }
+
+    if (showGrid) {
+        GalleryOverview(
+            config = config,
+            items = items,
+            bgColor = bgColor,
+            onBack = onBack,
+            onItemClick = { index ->
+                scope.launch {
+                    showGrid = false
+                    pagerState.scrollToPage(index.coerceIn(0, items.size - 1))
+                }
+            }
+        )
+        return
+    }
+
     var showControls by remember { mutableStateOf(true) }
     var isPlaying by remember { mutableStateOf(config.autoPlay) }
 
@@ -71,10 +127,12 @@ fun GalleryPlayerScreen(
         if (isPlaying && currentItem?.type == GalleryItemType.IMAGE && !pagerState.isScrollInProgress) {
             delay(config.imageInterval * 1000L)
 
-            if (currentIndex < items.size - 1) {
-                pagerState.animateScrollToPage(currentIndex + 1)
-            } else if (config.loop) {
-                pagerState.animateScrollToPage(0)
+            val advance = com.webtoapp.ui.shared.galleryAutoAdvanceTarget(
+                currentIndex, items.size, config.loop, config.shuffleOnLoop
+            )
+            if (advance != null) {
+                if (advance.reshuffle) items = items.shuffled()
+                pagerState.animateScrollToPage(advance.targetIndex)
             } else {
                 isPlaying = false
             }
@@ -85,14 +143,6 @@ fun GalleryPlayerScreen(
         if (showControls) {
             delay(3000)
             showControls = false
-        }
-    }
-
-    val bgColor = remember(config.backgroundColor) {
-        try {
-            Color(android.graphics.Color.parseColor(config.backgroundColor))
-        } catch (e: Exception) {
-            Color.Black
         }
     }
 
@@ -131,10 +181,12 @@ fun GalleryPlayerScreen(
                             onVideoEnded = {
                                 if (config.videoAutoNext) {
                                     scope.launch {
-                                        if (currentIndex < items.size - 1) {
-                                            pagerState.animateScrollToPage(currentIndex + 1)
-                                        } else if (config.loop) {
-                                            pagerState.animateScrollToPage(0)
+                                        val advance = com.webtoapp.ui.shared.galleryAutoAdvanceTarget(
+                                            currentIndex, items.size, config.loop, config.shuffleOnLoop
+                                        )
+                                        if (advance != null) {
+                                            if (advance.reshuffle) items = items.shuffled()
+                                            pagerState.animateScrollToPage(advance.targetIndex)
                                         }
                                     }
                                 }
@@ -157,7 +209,7 @@ fun GalleryPlayerScreen(
                 currentItem = currentItem,
                 currentIndex = currentIndex,
                 totalCount = items.size,
-                onBack = onBack
+                onBack = { if (canReturnToGrid) showGrid = true else onBack() }
             )
         }
 
@@ -771,5 +823,222 @@ private fun formatTime(ms: Long): String {
         String.format(java.util.Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds)
     } else {
         String.format(java.util.Locale.getDefault(), "%02d:%02d", minutes, seconds)
+    }
+}
+
+/** SharedPreferences file for gallery resume positions, keyed per gallery. */
+internal const val GALLERY_POSITION_PREFS = "gallery_positions"
+
+internal fun galleryPositionKey(galleryId: Long): String = "pos_$galleryId"
+
+@Composable
+private fun GalleryOverview(
+    config: GalleryConfig,
+    items: List<GalleryItem>,
+    bgColor: Color,
+    onBack: () -> Unit,
+    onItemClick: (Int) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(bgColor)
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = Color.Black.copy(alpha = 0.6f)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+                    .statusBarsPadding(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = Strings.back,
+                        tint = Color.White
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "${items.size}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White
+                )
+            }
+        }
+
+        when (config.defaultView) {
+            GalleryViewMode.LIST -> GalleryListView(items = items, onItemClick = onItemClick)
+            GalleryViewMode.TIMELINE -> GalleryTimelineView(items = items, onItemClick = onItemClick)
+            else -> GalleryGridView(
+                items = items,
+                columns = config.gridColumns.coerceIn(1, 6),
+                onItemClick = onItemClick
+            )
+        }
+    }
+}
+
+@Composable
+private fun GalleryGridView(
+    items: List<GalleryItem>,
+    columns: Int,
+    onItemClick: (Int) -> Unit
+) {
+    val context = LocalContext.current
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(columns),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        gridItemsIndexed(items, key = { _, item -> item.id }) { index, item ->
+            Box(
+                modifier = Modifier
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(4.dp))
+                    .clickable { onItemClick(index) }
+            ) {
+                val imagePath = item.thumbnailPath ?: item.path
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(File(imagePath))
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = item.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+                if (item.type == GalleryItemType.VIDEO) {
+                    Icon(
+                        Icons.Default.PlayCircle,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .align(Alignment.Center),
+                        tint = Color.White.copy(alpha = 0.8f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GalleryListView(
+    items: List<GalleryItem>,
+    onItemClick: (Int) -> Unit
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        itemsIndexed(items, key = { _, item -> item.id }) { index, item ->
+            GalleryOverviewRow(
+                item = item,
+                onClick = { onItemClick(index) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun GalleryTimelineView(
+    items: List<GalleryItem>,
+    onItemClick: (Int) -> Unit
+) {
+    val dateFormat = remember { java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US) }
+    val groups = remember(items) {
+        items.withIndex().groupBy { (_, item) ->
+            if (item.createdAt > 0) dateFormat.format(java.util.Date(item.createdAt)) else ""
+        }
+    }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(vertical = 8.dp)
+    ) {
+        groups.forEach { (date, indexed) ->
+            if (date.isNotEmpty()) {
+                item(key = "header_$date") {
+                    Text(
+                        text = date,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+                }
+            }
+            itemsIndexed(indexed, key = { _, (_, item) -> item.id }) { _, (index, item) ->
+                GalleryOverviewRow(
+                    item = item,
+                    onClick = { onItemClick(index) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GalleryOverviewRow(
+    item: GalleryItem,
+    onClick: () -> Unit
+) {
+    val context = LocalContext.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(56.dp)
+                .clip(RoundedCornerShape(4.dp))
+        ) {
+            val imagePath = item.thumbnailPath ?: item.path
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(File(imagePath))
+                    .crossfade(true)
+                    .build(),
+                contentDescription = item.name,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            if (item.type == GalleryItemType.VIDEO) {
+                Icon(
+                    Icons.Default.PlayCircle,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .align(Alignment.Center),
+                    tint = Color.White.copy(alpha = 0.8f)
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = item.name.ifBlank { "Media" },
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (item.type == GalleryItemType.VIDEO && item.formattedDuration.isNotEmpty()) {
+                Text(
+                    text = item.formattedDuration,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.7f)
+                )
+            }
+        }
     }
 }
