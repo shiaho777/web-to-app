@@ -4409,9 +4409,21 @@ private fun WebApp.buildMultiWebBlock(context: android.content.Context?, package
     val sites = multiWebConfig?.sites?.map { site ->
         val siteShellConfig = if (repo != null && site.sourceAppId > 0) {
             kotlinx.coroutines.runBlocking { repo.getWebApp(site.sourceAppId) }?.let { sourceApp ->
-                buildSiteShellConfig(sourceApp, packageName, site.id, context)
+                val resolved = resolveMultiWebSiteSource(sourceApp, parentAppId = this.id, siteName = site.name)
+                resolved?.let {
+                    runCatching {
+                        buildSiteShellConfig(it, packageName, site.id, context)
+                    }.getOrElse { e ->
+                        AppLogger.w("ApkBuilder", "MultiWeb site \"${site.name}\" config skipped (${e.message}), using its URL")
+                        null
+                    }
+                }
             }
         } else null
+        // A site left without embedded config but still typed MULTI_WEB would hit
+        // the shell's recursive-nesting guard and render blank: normalize it to a
+        // plain URL site, which the shell always knows how to display.
+        val siteAppType = if (siteShellConfig == null && site.appType == "MULTI_WEB") "WEB" else site.appType
         com.webtoapp.core.shell.MultiWebSiteShellConfig(
             id = site.id,
             name = site.name,
@@ -4428,7 +4440,7 @@ private fun WebApp.buildMultiWebBlock(context: android.content.Context?, package
             faviconUrl = site.faviconUrl,
             themeColor = site.themeColor,
             sortIndex = site.sortIndex,
-            appType = site.appType,
+            appType = siteAppType,
             siteProjectId = site.siteProjectId,
             siteShellConfig = siteShellConfig
         )
@@ -4442,8 +4454,39 @@ private fun WebApp.buildMultiWebBlock(context: android.content.Context?, package
     )
 }
 
-internal fun buildSiteShellConfig(
-    sourceWebApp: WebApp,
+/**
+ * Resolves the source app a multi-web site embeds. Returns null (caller falls
+ * back to the site's plain URL) when embedding is impossible or unsafe:
+ * nested multi-web apps, self references, or a deleted source. A null source
+ * (deleted app) was always tolerated; the first two used to abort the whole
+ * build with "MultiWeb site source cannot be MULTI_WEB".
+ */
+internal fun resolveMultiWebSiteSource(
+    sourceApp: WebApp?,
+    parentAppId: Long,
+    siteName: String
+): WebApp? {
+    if (sourceApp == null) return null
+    if (sourceApp.appType == com.webtoapp.data.model.AppType.MULTI_WEB) {
+        AppLogger.w(
+            "ApkBuilder",
+            "MultiWeb site \"$siteName\" points at another multi-web app " +
+                "(id=${sourceApp.id}); nesting is not supported, embedding its URL instead"
+        )
+        return null
+    }
+    if (parentAppId > 0 && sourceApp.id == parentAppId) {
+        AppLogger.w(
+            "ApkBuilder",
+            "MultiWeb site \"$siteName\" points at its own app; self-nesting is not " +
+                "supported, embedding its URL instead"
+        )
+        return null
+    }
+    return sourceApp
+}
+
+internal fun buildSiteShellConfig(    sourceWebApp: WebApp,
     parentPkg: String,
     siteId: String,
     context: android.content.Context?,
