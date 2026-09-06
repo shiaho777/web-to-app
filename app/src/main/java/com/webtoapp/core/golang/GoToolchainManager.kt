@@ -172,15 +172,6 @@ object GoToolchainManager {
         return true
     }
 
-    fun ensureDnsPatched(context: Context) {
-        val goBin = getGoBinary(context)
-        if (!goBin.exists()) return
-        runCatching {
-            GoDnsPatcher.patchGoBinaryDnsPaths(context, goBin)
-            GoDnsPatcher.refreshResolvConf(context)
-        }.onFailure { AppLogger.w(TAG, "ensureDnsPatched 失败", it) }
-    }
-
     fun isGoExecLoaderReady(context: Context): Boolean =
         GoDependencyManager.isGoExecLoaderReady(context)
 
@@ -262,11 +253,13 @@ object GoToolchainManager {
                     return@withLock false
                 }
 
-                val patched = GoDnsPatcher.patchGoBinaryDnsPaths(context, getGoBinary(context))
-                AppLogger.i(TAG, "Go binary DNS 路径补丁应用次数: $patched")
-
-                GoDnsPatcher.refreshResolvConf(context)
-
+                // NOTE: no DNS binary-patching here. Stock Go toolchains only
+                // consult /etc/resolv.conf (absent on Android, unpatchable: the
+                // slot fits no app-controlled path), and Go 1.26 no longer
+                // carries the Termux fallback paths the old patcher rewrote.
+                // Network access for toolchain ops goes through
+                // LocalDnsBridgeProxy env (see GoBuildEnvironment.runCommand),
+                // whose JVM side resolves DNS via Android APIs.
                 AppLogger.i(TAG, "Go 工具链已就绪: ${getGoBinary(context).absolutePath}")
                 markComplete()
                 true
@@ -284,15 +277,22 @@ object GoToolchainManager {
         }
         val goBin = getGoBinary(context)
         try {
-            val pb = ProcessBuilder(goBin.absolutePath, "version")
-                .directory(getToolchainRoot(context))
-                .redirectErrorStream(true)
-
-            pb.environment()["GOROOT"] = getGoRoot(context).absolutePath
-            pb.environment()["GOPATH"] = getGoPath(context).absolutePath
-            pb.environment()["HOME"] = context.filesDir.absolutePath
-            pb.environment()["TMPDIR"] = context.cacheDir.absolutePath
-            val proc = pb.start()
+            val env = mutableMapOf<String, String>()
+            env["GOROOT"] = getGoRoot(context).absolutePath
+            env["GOPATH"] = getGoPath(context).absolutePath
+            env["HOME"] = context.filesDir.absolutePath
+            env["TMPDIR"] = context.cacheDir.absolutePath
+            val launch = com.webtoapp.core.linux.HostProcessLauncher.start(
+                context,
+                listOf(goBin.absolutePath, "version"),
+                env,
+                getToolchainRoot(context),
+                "Go"
+            )
+            val proc = launch.process
+                ?: return@withContext Result.failure(
+                    IllegalStateException(launch.error ?: "Go 工具链未安装")
+                )
             val out = proc.inputStream.bufferedReader().readText().trim()
             val finished = proc.waitFor()
             if (finished == 0 && out.isNotBlank()) {

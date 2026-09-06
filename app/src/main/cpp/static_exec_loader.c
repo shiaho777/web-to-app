@@ -6,11 +6,13 @@
  * what the kernel does for execve, entirely in user mode:
  *
  *   1. fork a clean child (raw syscall; no atfork handlers run)
- *   2. map the ELF's PT_LOAD segments from an executable memfd — the same
- *      permission class ART JIT and the patched-musl bridge (#590) ride on;
- *      direct exec-maps of app_data are what W^X denies
+ *   2. map each PT_LOAD at its fixed vaddr (ET_EXEC) or at a picked base
+ *      (static-PIE ET_DYN: first free of 256MB/1GB/64GB via MAP_FIXED_NOREPLACE,
+ *      then R_AARCH64_RELATIVE relocs) from an executable memfd — the same
+ *      permission class ART JIT rides on; direct exec-maps of app_data are
+ *      what W^X denies
  *   3. build the initial stack (argc/argv/envp/auxv) per the AArch64 ELF ABI
- *   4. jump to e_entry
+ *   4. jump to e_entry (+ load bias for PIE)
  *
  * Everything after fork() uses only raw syscalls plus lock-free libc string
  * helpers writing into freshly mmap'd regions — async-signal-safe by
@@ -95,6 +97,7 @@ typedef struct {
     uint64_t map_start;
     uint64_t map_end;
     int      has_tls;
+    int      is_pie; /* ET_DYN without INTERP/NEEDED: needs load bias + RELATIVE relocs */
 } WtaElf;
 
 static uint64_t wta_round_down(uint64_t v, uint64_t a) { return v & ~(a - 1); }
@@ -116,8 +119,8 @@ static int wta_parse_elf(const uint8_t *image, size_t len, WtaElf *out)
         snprintf(out->err, sizeof out->err, "only ELF64 little-endian is supported");
         return 0;
     }
-    if (eh->e_type != 2) {
-        snprintf(out->err, sizeof out->err, "only static ET_EXEC images are supported (e_type=%u)", eh->e_type);
+    if (eh->e_type != 2 && eh->e_type != 3) {
+        snprintf(out->err, sizeof out->err, "only static ET_EXEC/ET_DYN images are supported (e_type=%u)", eh->e_type);
         return 0;
     }
     if (eh->e_machine != 183) {
@@ -141,6 +144,7 @@ static int wta_parse_elf(const uint8_t *image, size_t len, WtaElf *out)
     out->phoff = eh->e_phoff;
     out->phentsize = eh->e_phentsize;
     out->phnum = eh->e_phnum;
+    out->is_pie = (eh->e_type == 3);
 
     uint64_t lo = UINT64_MAX, hi = 0;
     uint64_t first_load_off = UINT64_MAX;
@@ -155,7 +159,7 @@ static int wta_parse_elf(const uint8_t *image, size_t len, WtaElf *out)
             snprintf(out->err, sizeof out->err, "phdr %d: filesz > memsz", i);
             return 0;
         }
-        if (ph->p_vaddr < WTA_PAGE) {
+        if (ph->p_vaddr < WTA_PAGE && !out->is_pie) {
             snprintf(out->err, sizeof out->err, "phdr %d: vaddr below page 1", i);
             return 0;
         }
@@ -193,57 +197,226 @@ static int wta_parse_elf(const uint8_t *image, size_t len, WtaElf *out)
         }
     }
 
+    if (out->is_pie) {
+        /* Static-PIE only: no shared-library dependencies (DT_NEEDED).
+         * PT_INTERP is deliberately ignored: Go android/arm64 outputs carry
+         * INTERP=/system/bin/linker64 yet are fully self-contained (no
+         * NEEDED); we never hand off to an interpreter — we map + relocate
+         * + jump to the app entry directly. */
+        for (int i = 0; i < eh->e_phnum; i++) {
+            const WtaPhdr *ph = &out->ph[i];
+            if (ph->p_type == 2 /* PT_DYNAMIC */) {
+                uint64_t doff = ph->p_offset;
+                uint64_t dend = doff + ph->p_filesz;
+                for (uint64_t o = doff; o + 16 <= dend && o + 16 <= len; o += 16) {
+                    int64_t tag;
+                    memcpy(&tag, image + o, 8);
+                    if (tag == 0 /* DT_NULL */) break;
+                    if (tag == 1 /* DT_NEEDED */) {
+                        snprintf(out->err, sizeof out->err, "PIE has DT_NEEDED (not static)");
+                        return 0;
+                    }
+                }
+            }
+        }
+    }
     out->map_start = wta_round_down(lo, WTA_PAGE);
     out->map_end = wta_round_up(hi, WTA_PAGE);
     out->ok = 1;
     return 1;
 }
 
-/* Map the image at its fixed vaddrs from an already-prepared executable
- * memfd. musl map_library strategy: one RW file mapping over the whole span,
- * zero the bss tails, then mprotect each segment to its final prot — that
- * mprotect is where PROT_EXEC arrives, via the memfd permission class, never
- * as an exec-map of app_data. */
-__attribute__((unused))
-static int wta_map_image(int memfd, const WtaElf *elf, char *err, size_t errlen)
+/* Map the image kernel-style: each PT_LOAD on its own (file offset and vaddr
+ * only need congruence modulo the page size, which linkers guarantee), with
+ * an anonymous zero tail covering memsz-filesz (BSS). The previous single
+ * mmap over [map_start, map_end) assumed file offsets equal vaddr-map_start
+ * for every segment AND a file at least as large as the span — NDK-linked
+ * binaries (tiny file, spread vaddrs) and Go binaries (27MB BSS tail past
+ * EOF) both died with SIGBUS on first touch. Gaps between segments stay
+ * unmapped, exactly like execve. PROT_EXEC arrives via mprotect on the memfd
+ * mapping (the ART-JIT permission class), never as an exec-map of app_data.
+ *
+ * p_flags are ELF-standard: PF_X=1, PF_W=2, PF_R=4.
+ */
+#ifndef MAP_FIXED_NOREPLACE
+#define MAP_FIXED_NOREPLACE 0x100000
+#endif
+#define WTA_R_AARCH64_RELATIVE 1027U
+
+/* Map one candidate base. Returns 1 on success (bias stored), 0 on failure
+ * (anything partially mapped is unmapped again). */
+static int wta_try_map_at(int memfd, const WtaElf *elf, uint64_t page,
+                          uint64_t bias, int noreplace,
+                          char *err, size_t errlen)
 {
-    size_t span = (size_t)(elf->map_end - elf->map_start);
-    void *base = mmap((void *)elf->map_start, span, PROT_READ | PROT_WRITE,
-                      MAP_PRIVATE | MAP_FIXED, memfd, 0);
-    if (base == MAP_FAILED) {
-        snprintf(err, errlen, "mmap span %zu at 0x%llx failed: %s",
-                 span, (unsigned long long)elf->map_start, strerror(errno));
-        return 0;
-    }
+    uint64_t mapped[WTA_MAX_PHDR * 2][2];
+    int nmapped = 0;
     for (int i = 0; i < elf->phnum; i++) {
         const WtaPhdr *ph = &elf->ph[i];
         if (ph->p_type != PT_LOAD) continue;
-        if (ph->p_memsz > ph->p_filesz) {
-            memset((void *)(ph->p_vaddr + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
-        }
-    }
-    for (int i = 0; i < elf->phnum; i++) {
-        const WtaPhdr *ph = &elf->ph[i];
-        if (ph->p_type != PT_LOAD) continue;
-        int prot = ((ph->p_flags & 4) ? PROT_EXEC : 0) |
-                   ((ph->p_flags & 2) ? PROT_WRITE : 0) |
-                   ((ph->p_flags & 1) ? PROT_READ : 0);
-        uint64_t s = wta_round_down(ph->p_vaddr, WTA_PAGE);
-        uint64_t e = wta_round_up(ph->p_vaddr + ph->p_memsz, WTA_PAGE);
-        if (mprotect((void *)s, (size_t)(e - s), prot) != 0) {
-            snprintf(err, errlen, "mprotect phdr %d at 0x%llx: %s",
-                     i, (unsigned long long)s, strerror(errno));
+        if (ph->p_memsz == 0) continue;
+        if ((ph->p_offset & (page - 1)) != (ph->p_vaddr & (page - 1))) {
+            snprintf(err, errlen, "phdr %d: offset/vaddr incongruent", i);
             return 0;
         }
-    }
-    for (int i = 0; i < elf->phnum; i++) {
-        const WtaPhdr *ph = &elf->ph[i];
-        if (ph->p_type != PT_GNU_RELRO || ph->p_memsz == 0) continue;
-        uint64_t s = wta_round_down(ph->p_vaddr, WTA_PAGE);
-        uint64_t e = wta_round_up(ph->p_vaddr + ph->p_memsz, WTA_PAGE);
-        mprotect((void *)s, (size_t)(e - s), PROT_READ);
+        uint64_t vbeg = wta_round_down(ph->p_vaddr + bias, page);
+        uint64_t vend = wta_round_up(ph->p_vaddr + bias + ph->p_memsz, page);
+        int mflags = MAP_PRIVATE | (noreplace ? MAP_FIXED_NOREPLACE : MAP_FIXED);
+        if (ph->p_filesz > 0) {
+            uint64_t fbeg = wta_round_down(ph->p_offset, page);
+            uint64_t fend = wta_round_up(ph->p_offset + ph->p_filesz, page);
+            void *m = mmap((void *)vbeg, (size_t)(fend - fbeg),
+                           PROT_READ | PROT_WRITE, mflags,
+                           memfd, (off_t)fbeg);
+            if (m == MAP_FAILED) {
+                snprintf(err, errlen, "mmap phdr %d at 0x%llx (%zu): %s",
+                         i, (unsigned long long)vbeg, (size_t)(fend - fbeg),
+                         strerror(errno));
+                goto fail;
+            }
+            mapped[nmapped][0] = vbeg;
+            mapped[nmapped][1] = vbeg + (fend - fbeg);
+            nmapped++;
+            uint64_t mapped_end = vbeg + (fend - fbeg);
+            if (mapped_end < vend) {
+                void *z = mmap((void *)mapped_end, (size_t)(vend - mapped_end),
+                               PROT_READ | PROT_WRITE,
+                               MAP_PRIVATE | mflags | MAP_ANONYMOUS, -1, 0);
+                if (z == MAP_FAILED) {
+                    snprintf(err, errlen, "mmap bss phdr %d at 0x%llx: %s",
+                             i, (unsigned long long)mapped_end, strerror(errno));
+                    goto fail;
+                }
+                mapped[nmapped][0] = mapped_end;
+                mapped[nmapped][1] = vend;
+                nmapped++;
+            }
+        } else {
+            void *z = mmap((void *)vbeg, (size_t)(vend - vbeg),
+                           PROT_READ | PROT_WRITE,
+                           MAP_PRIVATE | mflags | MAP_ANONYMOUS, -1, 0);
+            if (z == MAP_FAILED) {
+                snprintf(err, errlen, "mmap nobits phdr %d at 0x%llx: %s",
+                         i, (unsigned long long)vbeg, strerror(errno));
+                return 0;
+            }
+            mapped[nmapped][0] = vbeg;
+            mapped[nmapped][1] = vend;
+            nmapped++;
+        }
+        if (ph->p_memsz > ph->p_filesz) {
+            memset((void *)(ph->p_vaddr + bias + ph->p_filesz), 0,
+                   ph->p_memsz - ph->p_filesz);
+        }
+        int prot = ((ph->p_flags & 1) ? PROT_EXEC : 0) |
+                   ((ph->p_flags & 2) ? PROT_WRITE : 0) |
+                   ((ph->p_flags & 4) ? PROT_READ : 0);
+        if (mprotect((void *)vbeg, (size_t)(vend - vbeg), prot) != 0) {
+            snprintf(err, errlen, "mprotect phdr %d at 0x%llx: %s",
+                     i, (unsigned long long)vbeg, strerror(errno));
+            goto fail;
+        }
     }
     return 1;
+fail:
+    for (int k = 0; k < nmapped; k++) {
+        munmap((void *)mapped[k][0], (size_t)(mapped[k][1] - mapped[k][0]));
+    }
+    return 0;
+}
+
+/* Apply R_AARCH64_RELATIVE relocations for a static-PIE image mapped at bias.
+ * Any other reloc type means the image is not self-contained: refuse. */
+static int wta_apply_relative_relocs(const WtaElf *elf, uint64_t bias,
+                                     char *err, size_t errlen)
+{
+    for (int i = 0; i < elf->phnum; i++) {
+        const WtaPhdr *ph = &elf->ph[i];
+        if (ph->p_type != 2 /* PT_DYNAMIC */) continue;
+        const uint8_t *dyn = (const uint8_t *)(size_t)(ph->p_vaddr + bias);
+        uint64_t rela = 0, relasz = 0, relaent = 24;
+        for (const uint8_t *e = dyn; ; e += 16) {
+            int64_t tag;
+            uint64_t val;
+            memcpy(&tag, e, 8);
+            memcpy(&val, e + 8, 8);
+            if (tag == 0 /* DT_NULL */) break;
+            if (tag == 7 /* DT_RELA */) rela = val;
+            else if (tag == 8 /* DT_RELASZ */) relasz = val;
+            else if (tag == 9 /* DT_RELAENT */) relaent = val;
+            if (e > dyn + ph->p_memsz) {
+                snprintf(err, errlen, "dynamic table overruns segment");
+                return 0;
+            }
+        }
+        if (relasz == 0) return 1;
+        if (relaent != 24) {
+            snprintf(err, errlen, "unexpected rela entry size %llu",
+                     (unsigned long long)relaent);
+            return 0;
+        }
+        for (uint64_t o = 0; o < relasz; o += 24) {
+            const uint8_t *r = (const uint8_t *)(size_t)(rela + bias + o);
+            uint64_t roff, info;
+            int64_t addend;
+            memcpy(&roff, r, 8);
+            memcpy(&info, r + 8, 8);
+            memcpy(&addend, r + 16, 8);
+            if ((uint32_t)(info & 0xffffffffu) != WTA_R_AARCH64_RELATIVE) {
+                snprintf(err, errlen, "unsupported reloc type %u",
+                         (unsigned)(info & 0xffffffffu));
+                return 0;
+            }
+            *(uint64_t *)(size_t)(roff + bias) = (uint64_t)(addend + (int64_t)bias);
+        }
+        return 1;
+    }
+    return 1; /* no PT_DYNAMIC: nothing to relocate */
+}
+
+static int wta_map_image(int memfd, const WtaElf *elf, uint64_t page,
+                         uint64_t *bias_out, char *err, size_t errlen)
+{
+    static const uint64_t bases[] = { 0x10000000UL, 0x40000000UL, 0x1000000000UL };
+    if (!elf->is_pie) {
+        if (!wta_try_map_at(memfd, elf, page, 0, 0, err, errlen)) return 0;
+        *bias_out = 0;
+        for (int i = 0; i < elf->phnum; i++) {
+            const WtaPhdr *ph = &elf->ph[i];
+            if (ph->p_type != PT_GNU_RELRO || ph->p_memsz == 0) continue;
+            uint64_t s = wta_round_down(ph->p_vaddr, page);
+            uint64_t e = wta_round_up(ph->p_vaddr + ph->p_memsz, page);
+            mprotect((void *)s, (size_t)(e - s), PROT_READ);
+        }
+        return 1;
+    }
+    for (size_t b = 0; b < sizeof bases / sizeof bases[0]; b++) {
+        if (!wta_try_map_at(memfd, elf, page, bases[b], 1, err, errlen)) {
+            if (errno == EEXIST) continue; /* occupied: try next base */
+            return 0;
+        }
+        if (!wta_apply_relative_relocs(elf, bases[b], err, errlen)) return 0;
+        *bias_out = bases[b];
+        return 1;
+    }
+    snprintf(err, errlen, "no free PIE base found");
+    return 0;
+}
+
+/* Actual runtime address of the program-header table: the vaddr inside the
+ * PT_LOAD covering file offset e_phoff. (map_start+phoff is only valid when
+ * the first LOAD starts the span.) Parse guarantees coverage. */
+static uint64_t wta_phdr_vaddr(const WtaElf *elf)
+{
+    for (int i = 0; i < elf->phnum; i++) {
+        const WtaPhdr *ph = &elf->ph[i];
+        if (ph->p_type != PT_LOAD) continue;
+        if (elf->phoff >= ph->p_offset &&
+            elf->phoff < ph->p_offset + ph->p_filesz) {
+            return ph->p_vaddr + (elf->phoff - ph->p_offset);
+        }
+    }
+    return elf->map_start + elf->phoff;
 }
 
 /* ---- initial-stack assembly ------------------------------------------- */
@@ -308,7 +481,7 @@ static void wta_child_fail(int sync_wr, int code)
     for (;;) syscall(SYS_exit, 127);
 }
 
-static void wta_child_run(int memfd, const WtaElf *elf,
+static void wta_child_run(int memfd, const WtaElf *elf, uint64_t page,
                           const char *blob, const WtaStackInfo *si,
                           const WtaParentAux *paux,
                           const char *cwd,
@@ -341,7 +514,8 @@ static void wta_child_run(int memfd, const WtaElf *elf,
         syscall(SYS_rt_sigprocmask, SIG_SETMASK, &empty, NULL, 8);
     }
 
-    if (!wta_map_image(memfd, elf, errbuf, sizeof errbuf)) {
+    uint64_t bias = 0;
+    if (!wta_map_image(memfd, elf, page, &bias, errbuf, sizeof errbuf)) {
         size_t n = strlen(errbuf);
         sys_write(2, errbuf, n);
         sys_write(2, "\n", 1);
@@ -382,13 +556,13 @@ static void wta_child_run(int memfd, const WtaElf *elf,
         WTA_AT_RANDOM, WTA_AT_EXECFN, WTA_AT_SYSINFO_EHDR, WTA_AT_NULL
     };
     const uint64_t vals[WTA_AUX_COUNT] = {
-        elf->map_start + elf->phoff,
+        wta_phdr_vaddr(elf) + bias,
         elf->phentsize,
         elf->phnum,
-        WTA_PAGE,
+        page,
         0,
         0,
-        elf->entry,
+        elf->entry + bias,
         (uint64_t)getuid(),
         (uint64_t)geteuid(),
         (uint64_t)getgid(),
@@ -407,9 +581,13 @@ static void wta_child_run(int memfd, const WtaElf *elf,
     sys_close(sync_wr);
 
     register uint64_t x_sp asm("x0") = sp;
-    register uint64_t x_entry asm("x1") = elf->entry;
+    register uint64_t x_entry asm("x1") = elf->entry + bias;
+    /* NOTE: stash e_entry in x16 (IP0) BEFORE zeroing the argument
+     * registers — the previous sequence did "mov x1, xzr" then "br x1",
+     * i.e. it always jumped to address 0 (instant SIGSEGV, si_addr=0). */
     asm volatile(
         "mov sp, x0\n"
+        "mov x16, x1\n"
         "mov x0, xzr\n"
         "mov x1, xzr\n"
         "mov x2, xzr\n"
@@ -428,8 +606,8 @@ static void wta_child_run(int memfd, const WtaElf *elf,
         "mov x15, xzr\n"
         "mov x17, xzr\n"
         "mov x18, xzr\n"
-        "br x1\n"
-        :: "r"(x_sp), "r"(x_entry) : "memory");
+        "br x16\n"
+        :: "r"(x_sp), "r"(x_entry) : "memory", "x16");
     __builtin_unreachable();
 }
 
@@ -567,6 +745,11 @@ Java_com_webtoapp_core_linux_StaticExecBridge_nativeSpawn(
     const char *cwd = jcwd ? (*env)->GetStringUTFChars(env, jcwd, NULL) : NULL;
 
     do {
+        /* Runtime page size (4K vs 16K kernels): drives every rounding in the
+         * child mapping. Falls back to the classic 4K. */
+        long ps = sysconf(_SC_PAGESIZE);
+        uint64_t page = (ps > 0) ? (uint64_t)ps : WTA_PAGE;
+        if ((page & (page - 1)) != 0) page = WTA_PAGE;
         src = open(path, O_RDONLY | O_CLOEXEC);
         if (src < 0) { err_code = 1; err_detail = errno; break; }
 
@@ -595,7 +778,7 @@ Java_com_webtoapp_core_linux_StaticExecBridge_nativeSpawn(
         if (pid < 0) { err_code = 8; err_detail = errno; break; }
         if (pid == 0) {
             close(sync_pipe[0]);
-            wta_child_run(memfd, &elf, blob, &si, &paux, cwd, fd_in, fd_out, fd_err, sync_pipe[1]);
+            wta_child_run(memfd, &elf, page, blob, &si, &paux, cwd, fd_in, fd_out, fd_err, sync_pipe[1]);
             __builtin_unreachable();
         }
 

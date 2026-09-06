@@ -177,9 +177,15 @@ class StaticExecProcess private constructor(
             outPipe[1].close()
             errPipe[1].close()
 
+            // Detach (not just read .fd): the raw int must become UNOWNED
+            // before adoptFd takes over, otherwise fdsan aborts the process
+            // ("expected to be unowned"). This killed the first in-app spawn.
+            val outRead = outPipe[0].detachFd()
+            val errRead = errPipe[0].detachFd()
+
             // Read ends are adopted below; their PFD wrappers must be left
             // untouched from here on.
-            val proc = StaticExecProcess(pid, outPipe[0].fd, errPipe[0].fd)
+            val proc = StaticExecProcess(pid, outRead, errRead)
             proc.startReaper()
             return proc
         }
@@ -187,7 +193,7 @@ class StaticExecProcess private constructor(
         private fun spawnErrorMessage(err: IntArray): String = when (val code = err.getOrElse(0) { 0 }) {
             1 -> "无法打开 PHP 二进制 (errno ${err.getOrElse(1) { 0 }})"
             2 -> "读取 PHP 二进制失败 (errno ${err.getOrElse(1) { 0 }})"
-            3 -> "PHP 二进制不是受支持的静态 AArch64 ELF"
+            3 -> "目标不是受支持的静态 AArch64 ELF（需 static ET_EXEC 或无依赖 static-PIE）"
             5 -> "memfd 桥创建失败 (errno ${err.getOrElse(1) { 0 }})"
             6 -> "启动参数构造失败 (errno ${err.getOrElse(1) { 0 }})"
             7 -> "同步管道创建失败 (errno ${err.getOrElse(1) { 0 }})"

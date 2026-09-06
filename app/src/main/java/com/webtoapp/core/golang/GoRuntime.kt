@@ -34,7 +34,7 @@ class GoRuntime(private val context: Context) {
      */
     private fun channelNote(): String =
         if (!com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context) &&
-            !com.webtoapp.core.linux.RuntimeExecPolicy.hasMuslExecBridge(context)
+            !com.webtoapp.core.linux.RuntimeExecPolicy.hasStaticExecBridge(context)
         ) {
             com.webtoapp.core.linux.RuntimeExecPolicy.restrictionNote()
         } else ""
@@ -96,14 +96,15 @@ class GoRuntime(private val context: Context) {
         envVars: Map<String, String> = emptyMap()
     ): Int = withContext(Dispatchers.IO) {
         try {
-            // The loader's three-tier fallback (direct exec -> system linker -> memfd
-            // execveat) is fully blocked under SELinux W^X at targetSdk 29+: exec and
-            // execute_no_trans on app_data_file, and open on memfd_file are all denied
-            // (verified on an API 35 emulator). Android Go binaries are PIE with
-            // PT_DYNAMIC and no DT_NEEDED, so the patched musl linker can load them
-            // in program mode and bridge exec-mapped segments through memfds.
+            // W^X hosts (targetSdk 29+) cannot execve anything: neither the
+            // app-data binary, nor the musl bridge linker in nativeLibraryDir
+            // (entrypoint denied, verified by kernel audit), nor memfd
+            // execveat. The only working launch primitive there is the
+            // user-mode static exec loader (fork + memfd map + entry jump,
+            // zero execve), which boots static ET_EXEC as well as
+            // self-contained static-PIE (what `go build` emits for android).
             val wxRestricted = !com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(context)
-            if (wxRestricted && !com.webtoapp.core.linux.RuntimeExecPolicy.hasMuslExecBridge(context)) {
+            if (wxRestricted && !com.webtoapp.core.linux.RuntimeExecPolicy.hasStaticExecBridge(context)) {
                 _serverState.value = ServerState.Error(
                     com.webtoapp.core.linux.RuntimeExecPolicy.hostPreviewBlockedMessage("Go")
                 )
@@ -147,8 +148,11 @@ class GoRuntime(private val context: Context) {
                 return@withContext -1
             }
 
-            val command = if (wxRestricted) {
-                GoDependencyManager.buildMuslBridgeCommand(context, binaryPath, emptyList())
+            val useStaticExec = wxRestricted
+            val command = if (useStaticExec) {
+                // User-mode load the server binary itself (static ET_EXEC or
+                // self-contained static-PIE): no kernel exec anywhere.
+                listOf(binaryPath)
             } else {
                 GoDependencyManager.buildBinaryCommand(context, binaryPath, emptyList())
             }
@@ -157,10 +161,7 @@ class GoRuntime(private val context: Context) {
             AppLogger.i(TAG, "工作目录: $projectDir, 端口: $serverPort")
             ShellLogger.i(TAG, "启动 Go 服务器: ${command.joinToString(" ")}, 端口: $serverPort")
 
-            val processBuilder = ProcessBuilder(command)
-            processBuilder.directory(projDir)
-
-            val env = processBuilder.environment()
+            val env = mutableMapOf<String, String>()
             GoDependencyManager.configureGoBinaryEnvironment(
                 context = context,
                 processEnv = env,
@@ -175,6 +176,13 @@ class GoRuntime(private val context: Context) {
 
             val proxyPort = LocalDnsBridgeProxy.start()
             if (proxyPort > 0) {
+                // NOTE: this proxy env is what gives the server usable
+                // networking: stock Go binaries only consult /etc/resolv.conf
+                // (absent on Android), so plain non-HTTP dials that need raw
+                // DNS still fail on-device. HTTP(S) — including module-style
+                // fetches — flows through the JVM bridge, which resolves via
+                // Android APIs. There is no patchable resolv.conf path: the
+                // slot fits no app-controlled location.
                 LocalDnsBridgeProxy.proxyEnvFor(proxyPort).forEach { (k, v) -> env[k] = v }
                 dnsProxyStarted = true
                 AppLogger.i(TAG, "已启用 DNS 桥接代理 (port=$proxyPort) 供 Go 进程解析外部域名")
@@ -183,7 +191,26 @@ class GoRuntime(private val context: Context) {
 
             goOutputBuffer.setLength(0)
             goStderrBuffer.setLength(0)
-            goProcess = processBuilder.start()
+            val launched = if (useStaticExec) {
+                val lr = com.webtoapp.core.linux.HostProcessLauncher.start(
+                    context, command, env, projDir, "Go"
+                )
+                if (lr.process == null) {
+                    _serverState.value = ServerState.Error(
+                        lr.error ?: "Go 服务器启动失败"
+                    )
+                    return@withContext -1
+                }
+                lr.process
+            } else {
+                val processBuilder = ProcessBuilder(command)
+                processBuilder.directory(projDir)
+                val processEnv = processBuilder.environment()
+                // ProcessBuilder seeds the parent environment; overlay ours.
+                env.forEach { (k, v) -> processEnv[k] = v }
+                processBuilder.start()
+            }
+            goProcess = launched
 
             goProcess?.inputStream?.let { stream ->
                 Thread {
