@@ -17,7 +17,7 @@ Anything else fits **Custom**: any provider not in the catalog (or removed by a 
 ## API keys
 
 - **Add** provider API keys, each with an optional **alias**.
-- Custom endpoints choose an **API format** — Chat Completions (`/chat/completions`), Anthropic Messages (`/v1/messages`), or OpenAI Responses (`/responses`) — and the gateway routes the request by the declared format instead of assuming OpenAI-compat. The **chat endpoint** can be overridden per key.
+- Custom endpoints choose an **API format** — Chat Completions (`/chat/completions`), Anthropic Messages (`/v1/messages`), OpenAI Responses (`/responses`), or Google Gemini — and the gateway routes the request by the declared format instead of assuming OpenAI-compat. The **chat endpoint** can be overridden per key.
 - **Connection test** — verify a key works (connection OK / fail).
 - Keys are stored securely on-device.
 

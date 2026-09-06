@@ -1,6 +1,6 @@
 # 扩展开发
 
-WebToApp 在应用发布后仍可扩展。你可以添加三类扩展,它们都由同一个 `ExtensionManager` 管理,并由 WebView 在页面生命周期钩子处注入:
+WebToApp 在应用发布后仍可扩展。你可以添加四类扩展,它们都由同一个 `ExtensionManager` 管理,并由 WebView 在页面生命周期钩子处注入:
 
 | 类型 | 是什么 | 适用场景 |
 | --- | --- | --- |

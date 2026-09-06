@@ -19,7 +19,7 @@ Beyond generating web apps, extension modules, userscripts, MV3 Chrome extension
 ## Features
 
 - **Sessions** — each conversation has its own title and history.
-- **57 built-in tools** — grouped by domain (files, apps, lifecycle, ports/engine, hosts/runtime, stats/modifier/import, build env/Play, modules, imagery, plan mode). Read-only tools run without confirmation; write tools ask for permission first.
+- **Up to 57 built-in tools** — grouped by domain (files, apps, lifecycle, ports/engine, hosts/runtime, stats/modifier/import, build env/Play, modules, imagery, plan mode). The imagery tools only load with an image-capable model. Read-only tools run without confirmation; write tools ask for permission first.
 - **Plan mode** — proposes a plan and waits for your approval before applying changes (shown with a plan-mode badge).
 - **Resilience** — automatic retry with backoff on 429/5xx responses.
 

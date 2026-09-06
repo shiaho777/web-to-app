@@ -1,6 +1,6 @@
 # Extension Authoring
 
-WebToApp stays extensible after an app ships. You can add three kinds of extensions, all managed by a single `ExtensionManager` and injected by the WebView at page-lifecycle hooks:
+WebToApp stays extensible after an app ships. You can add four kinds of extensions, all managed by a single `ExtensionManager` and injected by the WebView at page-lifecycle hooks:
 
 | Type | What it is | Good for |
 | --- | --- | --- |

@@ -9,7 +9,8 @@
 - **启用** —— 打开启动画面(`splashEnabled`)。
 - **媒体** —— 选一张图片(`image/*`)或一个视频(`video/*`)。
 - **时长** —— 启动画面显示多久(`splashConfig.duration`)。
-- **点击跳过** —— 允许点击跳过,带倒计时(`clickToSkip`)。
+- **点击跳过** —— 允许点击跳过(`clickToSkip`)。
+- **显示倒计时** —— 独立显示剩余秒数倒计时(`showCountdown`)。
 - **方向** —— 启动画面方向(`orientation`)。
 - **铺满屏幕** —— 裁剪铺满 vs 适应(`fillScreen`)。
 - **启用音频** —— 用于视频启动画面(`enableAudio`)。

@@ -132,6 +132,6 @@ Inside `panelHtml`, use `data-wta-action` attributes wired to `window.__wta_modu
 ## Packaging & sharing
 
 - Module export extension: `.wtamod`; a bundle of modules: `.wtapkg`.
-- Share code prefix: `WTA1:` (gzip + Base64), shareable via QR.
+- Share code prefix: `WTA1:` (full gzip + Base64) or `WTA2:` (defaults-diff + max compression, emitted when V1 overflows one QR code), shareable via QR. Decoders accept V2, V1, and legacy bare Base64.
 
 See the built-in `hello-world` and `auto-scroll` modules under [`modules/`](https://github.com/shiaho777/web-to-app/tree/main/modules) for complete working examples.

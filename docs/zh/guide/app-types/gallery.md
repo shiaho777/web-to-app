@@ -20,14 +20,14 @@
 - **播放模式**(`playMode`)—— `SEQUENTIAL`、`SHUFFLE` 或 `SINGLE_LOOP`。
 - **图片间隔**(`imageInterval`)—— 幻灯片中每张图片的秒数。
 - **循环**(`loop`)与 **自动播放**(`autoPlay`)。
-- **循环时随机**(`shuffleOnLoop`)。
+- **循环时随机**(`shuffleOnLoop`)—— 每次播完一轮重新洗牌(仅开循环时有意义)。
 - **视频自动下一个**(`videoAutoNext`)—— 视频结束时前进到下一项。
-- **记忆位置**(`rememberPosition`)—— 恢复播放位置。
+- **记忆位置**(`rememberPosition`)—— 恢复播放位置(预览按画廊区分;导出包用固定槽位)。
 - **启用音频**(`enableAudio`)。
 
 ### 视图
 
-- **默认视图**(`defaultView`)—— `GRID`、`LIST` 或 `TIMELINE`。
+- **默认视图**(`defaultView`)—— `GRID`、`LIST` 或 `TIMELINE`。总览同时是播放器入口:点条目跳进翻页器,返回回到总览。
 - **网格列数**(`gridColumns`)。
 - **排序**(`sortOrder`)—— `CUSTOM`、`NAME_ASC`/`NAME_DESC`、`DATE_ASC`/`DATE_DESC` 或 `TYPE`。
 - **显示缩略图栏**(`showThumbnailBar`)。
@@ -41,4 +41,5 @@
 ## 说明
 
 - 预览直接启动画廊播放器 activity(而非 WebView)。
+- 导出包的全屏图片查看器支持双指缩放(1x–5x,围绕焦点)、缩放后平移、双击切换 1x/3x。
 - 单张图片或单个视频请用[媒体](/zh/guide/app-types/media)。

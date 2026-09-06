@@ -8,9 +8,9 @@
 | --- | --- | --- | --- |
 | [网页](/zh/guide/app-types/web) | 一个 URL | WebView APK | 落地页、工具、仪表盘、文档 |
 | [多站点](/zh/guide/app-types/multi-web) | 多个 URL | 标签/卡片/信息流/抽屉 APK | 链接枢纽、门户 |
-| [HTML](/zh/guide/app-types/html) | 本地 HTML / zip | 本地托管 APK | 静态构建、离线 Web 应用 |
+| [HTML](/zh/guide/app-types/html) | 本地 HTML / zip | 文件协议 APK(可切本地托管) | 静态构建、离线 Web 应用 |
 | [离线包](/zh/guide/app-types/offline-pack) | 一个 URL(抓取) | 自包含离线 APK | 把网站归档 |
-| [前端](/zh/guide/app-types/frontend) | 已构建的前端项目 | 本地托管 APK | React、Vue、Vite 构建 |
+| [前端](/zh/guide/app-types/frontend) | 已构建的前端项目 | 文件协议 APK(可切本地托管) | React、Vue、Vite 构建 |
 | [PHP](/zh/guide/app-types/php) | PHP 项目 | APK + 设备端 PHP | 小型 PHP 应用 |
 | [WordPress](/zh/guide/app-types/wordpress) | WordPress 站点 | APK + PHP + SQLite | 便携站点 |
 | [Node.js](/zh/guide/app-types/nodejs) | Node 项目 | APK + 设备端 Node | Express/Fastify/Koa、API |

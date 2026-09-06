@@ -122,7 +122,7 @@ fork+exec Node.js、PHP、Python、Go 原生二进制,在本地端口提供服�
 
 [**Agent**](/zh/guide/more-features/agent)
 
-内置 57 个工具的调用式助手,可以构建、编辑、操作整个应用。
+内置最多 57 个工具的调用式助手,可以构建、编辑、操作整个应用。
 
 </div>
 
@@ -174,7 +174,7 @@ Termux 风格的设备端环境,带有构建和运行项目所需的真实工具
 
 <div class="wta-stat"><b>12</b><span>种应用类型</span></div>
 
-<div class="wta-stat"><b>57</b><span>个 Agent 工具</span></div>
+<div class="wta-stat"><b>57</b><span>个 Agent 工具(上限)</span></div>
 
 <div class="wta-stat"><b>10</b><span>种界面语言</span></div>
 

@@ -9,7 +9,7 @@
 - **User-Agent 模式** —— 系统默认或自定义 UA 字符串(`userAgentMode`、`customUserAgent`)。
 - **桌面模式** —— 请求桌面版站点(`desktopMode`)。
 - **缩放** —— 启用双指缩放(`zoomEnabled`)。
-- **页面缩放** —— 构建期的按应用文字缩放百分比,可选 Chrome 式档位(50%–150%)或自由输入(`pageZoomPercent`,默认 100)。每次运行(含冷启动)通过 `textZoom` 应用,无需运行时工具栏。旧数据中的 `0` 视作 100。
+- **页面缩放** —— 构建期的按应用整页缩放百分比,可选 Chrome 式档位(50%–150%)或自由输入(`pageZoomPercent`,默认 100)。每次运行(含冷启动)通过 `setInitialScale` 应用——文字与布局/图片/画布一起缩放(不同于只缩放字形的 `textZoom`),无需运行时工具栏。旧数据中的 `0` 视作 100。
 - **视口模式** —— 默认或自定义视口宽度(`viewportMode`、`customViewportWidth`)。
 
 ## 导航与刷新

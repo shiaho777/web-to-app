@@ -17,7 +17,7 @@
 ## API 密钥
 
 - **添加** 提供商 API 密钥,每个可带一个 **别名**。
-- 自定义端点可选 **API 格式** —— Chat Completions(`/chat/completions`)、Anthropic Messages(`/v1/messages`)或 OpenAI Responses(`/responses`)—— 网关按声明的格式路由请求,而不是一律走 OpenAI 兼容路径。**聊天端点**可按密钥覆盖。
+- 自定义端点可选 **API 格式** —— Chat Completions(`/chat/completions`)、Anthropic Messages(`/v1/messages`)、OpenAI Responses(`/responses`)或 Google Gemini —— 网关按声明的格式路由请求,而不是一律走 OpenAI 兼容路径。**聊天端点**可按密钥覆盖。
 - **连接测试** —— 验证密钥是否可用(连接成功 / 失败)。
 - 密钥在设备上安全存储。
 

@@ -16,9 +16,10 @@ Coordinates the local-server ports used by runtime apps across all your generate
 
 When a runtime needs a port that's taken, the configured policy applies:
 
-- `REASSIGN` — pick another port.
 - `AUTO_KILL` — stop the conflicting service.
 - `ALERT` — notify and let you decide.
+
+(`REASSIGN` — picking another port — is the engine's internal fallback for zero/unconfigured ports, not a user-selectable policy.)
 
 ## Notes
 

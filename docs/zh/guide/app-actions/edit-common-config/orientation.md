@@ -14,6 +14,7 @@
   - `REVERSE_LANDSCAPE`(反向横屏)
   - `SENSOR_PORTRAIT`(传感器竖屏)
   - `SENSOR_LANDSCAPE`(传感器横屏)
+  - `AUTO`(自动)—— 跟随系统旋转设置。
 
 ## 说明
 

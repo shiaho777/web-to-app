@@ -10,10 +10,10 @@
 | `ApkConfig.kt` | 主配置 schema:`data class ApkConfig(meta, activation, adBlock, webView, proxy, dns, nodejs, phpApp, pythonApp, goApp, multiWeb, ...)`。导出 APK 能编码的一切。 |
 | `ApkConfigJsonFactory.kt` | 把 `ApkConfig` 序列化为 shell 读取的 assets JSON;含 `ApkConfigValidator`。 |
 | `ApkTemplate.kt` / `ShellTemplateProvider.kt` | 定位并加载 shell 模板 APK。 |
-| `ApkBuildCache.kt` | 增量重建;定义 `enum class ModifyApkMode`。 |
+| `ApkBuildCache.kt` | 增量重建;定义 `enum class IncrementalBuildMode`(`ModifyApkMode` 只覆盖 `FULL`/`CONTENT_OVERLAY`)。 |
 | `AxmlEditor` / `AxmlRebuilder` | 编辑/重建二进制 AndroidManifest(AXML)。 |
 | `ArscEditor` / `ArscRebuilder` | 编辑/重建二进制资源表(resources.arsc)。 |
-| `JarSigner.kt` | 为 APK 签名(jarsigner 路径);`apksig` 负责 V1/V2/V3。 |
+| `JarSigner.kt` | 直接用 `com.android.apksig` 库为 APK 签名(`ApkSigner`,V1/V2/V3 开关)。 |
 | `ZipAligner` / `ZipUtils` | zip 对齐与底层 zip 操作。 |
 | `ElfAligner16k.kt` | 为原生 `.so` 文件做 16KB 页 ELF 对齐。 |
 | `RuntimeAssetEmbedder.kt` | 把运行时资源(Node/PHP/Python/Go)注入 APK。 |
@@ -43,7 +43,7 @@ WebApp(编辑器模型)
 
 ## 增量重建(`ApkBuildCache`)
 
-三种模式:
+三种模式(`enum class IncrementalBuildMode`):
 
 | 模式 | 含义 |
 | --- | --- |

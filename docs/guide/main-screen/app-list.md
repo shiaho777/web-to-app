@@ -8,7 +8,7 @@ Each card shows:
 
 - **Icon** — your chosen icon, or a type-specific default.
 - **Name** and **URL** (or media path / entry file for non-web types).
-- **Type chip** — Web, Multi-Web, HTML, Frontend, PHP, WordPress, Node.js, Python, Go, Media, or Gallery.
+- **Type chip** — Web, Multi-Web, HTML, Frontend, PHP, WordPress, Node.js, Python, Go, Image, Video, or Gallery.
 - **Feature chips** — quick indicators such as activation gating, ad blocking, or announcement (one shown at a time).
 - **Health dot** — a small status dot on the icon from URL health monitoring: green (online), amber (slow), red (offline).
 - **Preview thumbnail** — a captured screenshot of the site; tap it to re-capture.

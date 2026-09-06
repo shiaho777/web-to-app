@@ -21,8 +21,8 @@ Runtime Kotlin is authored under `app/` and synced into `shell/` by `syncShellRu
 
 ## The three Gradle modules
 
-- **`:app`** — the builder. `applicationId = com.webtoapp`, `compileSdk = 36`, `minSdk = 23`, `targetSdk = 28`, `buildConfigField SHELL_RUNTIME_ONLY = false`.
-- **`:shell`** — the runtime template embedded into generated APKs. Same SDK/version as `:app`, but `SHELL_RUNTIME_ONLY = true`. Its sources are synced from `app/`.
+- **`:app`** — the builder. `applicationId = com.webtoapp`, `compileSdk = 36`, `minSdk = 23`, `targetSdk = 35`, `buildConfigField SHELL_RUNTIME_ONLY = false`.
+- **`:shell`** — the runtime template embedded into generated APKs. Same `compileSdk`/`minSdk`/version as `:app`, but `targetSdk = 28` (generated apps keep the low targetSdk for fork+exec runtimes) and `SHELL_RUNTIME_ONLY = true`. Its sources are synced from `app/`.
 - **`:clone-host`** — a minimal `com.android.library` (namespace `com.webtoapp.clone`) with no dependencies, compiled to a DEX asset for `AppCloner`.
 
 ## Package structure (`app/src/main/java/com/webtoapp`)

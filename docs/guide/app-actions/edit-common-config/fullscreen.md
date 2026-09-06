@@ -7,10 +7,10 @@ Runs the app immersive, hiding the system bars and (optionally) working together
 ## Options
 
 - **Fullscreen** — enable immersive fullscreen (`hideToolbar`).
-- **Show status bar in fullscreen** — keep the top status bar visible (`showStatusBarInFullscreen`).
+- **Always show status bar in fullscreen** — keep the top status bar persistently visible (`showStatusBarInFullscreen`). Persistent mode never auto-hides.
 - **Show navigation bar in fullscreen** — keep the bottom navigation bar visible (`showNavigationBarInFullscreen`).
 - **Fullscreen content padding** — inset content by a number of dp (`fullscreenContentPaddingDp`).
-- **Status bar style** — an expandable sub-panel (`statusBarStyleConfigLabel`) with light/dark tabs: color mode (`THEME`/`PAGE_TOP`/`TRANSPARENT`/`CUSTOM`), custom color, dark icons, and background (color/image) for each mode.
+- **Customize status bar** — an expandable sub-panel (`statusBarCustomizeLabel`) with light/dark tabs: color mode (`THEME`/`PAGE_TOP`/`TRANSPARENT`/`CUSTOM`), custom color, dark icons, and background (color/image) for each mode. `TRANSPARENT`/image bars overlay content instead of reserving space.
 
 ## Interaction with the browser toolbar
 

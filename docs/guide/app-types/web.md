@@ -13,7 +13,7 @@ The Web type's core config is the WebView behavior (backed by `WebViewConfig`).
 ### Target & engine
 
 - **Target URL** — the site to load.
-- **Browser engine** — System WebView by default; optional GeckoView (downloaded on first use, required for ECH). See [Browser Kernel](/guide/more-features/browser-kernel).
+- **Browser engine** — System WebView by default; optional GeckoView (download it in Browser Kernel before building; required for ECH). See [Browser Kernel](/guide/more-features/browser-kernel).
 
 ### User agent & display
 

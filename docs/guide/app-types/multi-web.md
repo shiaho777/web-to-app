@@ -25,7 +25,7 @@ Each site entry has:
 
 ### Layout & display
 
-- **Display mode** (`displayMode`) — `TABS`, cards, feed, or drawer.
+- **Display mode** (`displayMode`) — `TABS`, cards, feed, or drawer. New apps are created with `TABS`; there is currently no UI switch for the other layouts.
 - **Show site icons** (`showSiteIcons`).
 
 ### Refresh
@@ -39,4 +39,5 @@ Each site entry has:
 ## Notes
 
 - Each site is still a web target, so per-app networking and privacy options apply to the whole multi-web app.
+- Gallery / single-image / single-video sites have their media embedded at export and resolved at runtime, so they render instead of going black.
 - For a single site, use [Web](/guide/app-types/web) instead.
