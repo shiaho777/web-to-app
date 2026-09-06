@@ -28,15 +28,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.shared.AspectRatioSurface
+import com.webtoapp.ui.shared.ZoomableState
+import com.webtoapp.ui.shared.zoomable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -492,12 +496,43 @@ fun ShellGalleryImageViewer(
             CircularProgressIndicator(color = Color.White)
         } else {
             bitmap?.let { bmp ->
-                Image(
-                    bitmap = bmp.asImageBitmap(),
-                    contentDescription = item.name,
+                BoxWithConstraints(
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = androidx.compose.ui.layout.ContentScale.Fit
-                )
+                    contentAlignment = Alignment.Center
+                ) {
+                    val density = LocalDensity.current
+                    // Fresh zoom state per item; pinch/pan/double-tap below.
+                    val zoom = remember(item.assetPath) {
+                        ZoomableState()
+                    }
+                    val viewportPx = with(density) {
+                        Size(
+                            maxWidth.toPx(),
+                            maxHeight.toPx()
+                        )
+                    }
+                    LaunchedEffect(viewportPx, bmp.width, bmp.height) {
+                        zoom.setLayout(
+                            viewportPx,
+                            ZoomableState.fittedContentSize(
+                                bmp.width, bmp.height, viewportPx
+                            )
+                        )
+                    }
+                    Image(
+                        bitmap = bmp.asImageBitmap(),
+                        contentDescription = item.name,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .pointerInput(item.assetPath) {
+                                detectTapGestures(
+                                    onDoubleTap = { tap -> zoom.toggleZoom(tap) }
+                                )
+                            }
+                            .zoomable(zoom),
+                        contentScale = androidx.compose.ui.layout.ContentScale.Fit
+                    )
+                }
             }
         }
     }
