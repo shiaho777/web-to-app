@@ -30,6 +30,32 @@ class BgmPlayerState internal constructor(
     var currentPosition: Long by _currentPosition
 }
 
+/**
+ * Shuffle order state. Mirrors the host [com.webtoapp.core.bgm.BgmPlayer]
+ * semantics: a full permutation per cycle (no repeats), reshuffled on wrap.
+ */
+internal data class BgmShuffleOrder(
+    val order: List<Int> = emptyList(),
+    val pos: Int = 0
+) {
+    fun currentIndex(): Int = order.getOrElse(pos) { 0 }
+}
+
+internal fun initialBgmOrder(size: Int, shuffle: Boolean): BgmShuffleOrder {
+    if (size <= 0) return BgmShuffleOrder()
+    val order = if (shuffle) (0 until size).shuffled() else (0 until size).toList()
+    return BgmShuffleOrder(order, 0)
+}
+
+internal fun advanceBgmOrder(state: BgmShuffleOrder, size: Int): BgmShuffleOrder {
+    if (size <= 0) return BgmShuffleOrder()
+    val nextPos = state.pos + 1
+    if (nextPos < state.order.size && nextPos < size) {
+        return state.copy(pos = nextPos)
+    }
+    return BgmShuffleOrder((0 until size).shuffled(), 0)
+}
+
 internal fun parseLrcText(text: String): LrcData? {
     val lines = mutableListOf<LrcLine>()
 
@@ -133,9 +159,12 @@ fun rememberBgmPlayerState(
         if (!enabled) return@LaunchedEffect
         if (config.bgmEnabled && config.bgmPlaylist.isNotEmpty()) {
             try {
+                val isShuffle = config.bgmPlayMode == "SHUFFLE"
+                var shuffleOrder = initialBgmOrder(config.bgmPlaylist.size, isShuffle)
 
                 val player = MediaPlayer()
-                val firstItem = config.bgmPlaylist.first()
+                val firstIndex = shuffleOrder.currentIndex()
+                val firstItem = config.bgmPlaylist[firstIndex]
 
                 setBgmDataSource(player, firstItem.assetPath)
 
@@ -145,7 +174,10 @@ fun rememberBgmPlayerState(
                 player.setOnCompletionListener {
 
                     val nextIndex = when (config.bgmPlayMode) {
-                        "SHUFFLE" -> (0 until config.bgmPlaylist.size).random()
+                        "SHUFFLE" -> {
+                            shuffleOrder = advanceBgmOrder(shuffleOrder, config.bgmPlaylist.size)
+                            shuffleOrder.currentIndex()
+                        }
                         "SEQUENTIAL" -> if (currentBgmIndex + 1 < config.bgmPlaylist.size) currentBgmIndex + 1 else -1
                         else -> (currentBgmIndex + 1) % config.bgmPlaylist.size
                     }
@@ -174,8 +206,9 @@ fun rememberBgmPlayerState(
                 }
 
                 bgmPlayer = player
+                currentBgmIndex = firstIndex
 
-                loadLrcForCurrentBgm(0)
+                loadLrcForCurrentBgm(firstIndex)
 
                 AppLogger.d("ShellActivity", "BGM 播放器初始化成功: ${firstItem.name}")
             } catch (e: Exception) {
