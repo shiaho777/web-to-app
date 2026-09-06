@@ -27,7 +27,6 @@ class WebViewConfigDefaultsContractTest {
         "enableKernelDisguise",          // anti-bot systems may reject disguised kernels
         "allowMixedContent",             // weakens HTTPS transport security
         "acceptThirdPartyCookies",        // privacy trade-off
-        "enableNativeBridge",            // exposes window.NativeBridge to pages
         "enableCrossOriginIsolation",    // changes COOP/COEP headers
         "hideUrlPreview",                // hides information
         "failoverEnabled",               // meaningless without a user-supplied URL list
@@ -57,6 +56,11 @@ class WebViewConfigDefaultsContractTest {
         "enableCorsBypass",
         "enableBlobDownloadInterception",
         "enablePrintBridge",
+        // NativeBridge defaults ON: every capability is individually gated and
+        // fails soft, permission-backed capabilities stay inert unless the user
+        // also enables them (location needs geolocationEnabled, notifications
+        // need the notification capability + POST_NOTIFICATIONS grant), and
+        // built-in features (media download etc.) degrade without it.
         // Enable-by-default batch (experience parity without user setup):
         "decodeBase64DeepLinks",
         "javaScriptCanOpenWindows",

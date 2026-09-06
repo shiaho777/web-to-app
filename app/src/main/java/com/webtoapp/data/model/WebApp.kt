@@ -388,7 +388,7 @@ data class WebViewConfig(
     val enableOrientationPolyfill: Boolean = true,
     val enableCompatPolyfills: Boolean = true,
 
-    val enableNativeBridge: Boolean = false,
+    val enableNativeBridge: Boolean = true,
     val nativeBridgeCapabilities: NativeBridgeCapabilities = NativeBridgeCapabilities(),
 
     // Geolocation stays default-OFF: enabling it makes every exported app declare and

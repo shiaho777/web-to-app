@@ -265,7 +265,11 @@ class ExportSecurityRegressionTest {
             "com.webtoapp.WebToAppApplication",
             "com.webtoapp.ui.MainActivity",
             "com.webtoapp.ui.shell.ShellActivity",
-            "androidx.core.content.FileProvider"
+            // NativeBridge defaults ON and its scheduled-notification capability
+            // defaults ON, so the alarm receiver ships in the baseline. It is
+            // inert (manifest entry only) unless a page calls scheduleNotification.
+            "androidx.core.content.FileProvider",
+            "com.webtoapp.core.notification.BridgeAlarmReceiver"
         ).inOrder()
     }
 
