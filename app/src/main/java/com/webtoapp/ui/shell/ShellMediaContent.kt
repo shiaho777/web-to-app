@@ -300,9 +300,25 @@ fun ShellSplashOverlay(
 @Composable
 fun MediaContentDisplay(
     isVideo: Boolean,
-    mediaConfig: com.webtoapp.core.shell.MediaShellConfig
+    mediaConfig: com.webtoapp.core.shell.MediaShellConfig,
+    mediaPath: String? = null
 ) {
     val context = LocalContext.current
+
+    // mediaPath carries either an absolute host file (host-run preview) or a
+    // site-prefixed asset path (multi-web embedded site,
+    // multiweb_sites/<id>/media_content.*). Null preserves the legacy
+    // hardcoded root asset (standalone export). Same rule as the splash
+    // previewFile pattern: existing host files always win over assets.
+    val previewFile = remember(mediaPath) {
+        mediaPath?.let { java.io.File(it) }?.takeIf { it.isFile && it.canRead() }
+    }
+    // Unused when previewFile hits; otherwise the asset to open (site-prefixed
+    // for multi-web sites, legacy root asset for standalone exports).
+    val assetPath = remember(mediaPath, isVideo) {
+        mediaPath?.takeIf { it.isNotBlank() }
+            ?: if (isVideo) "media_content.mp4" else "media_content.png"
+    }
 
     val bgColor = remember(mediaConfig.backgroundColor) {
         try {
@@ -338,7 +354,6 @@ fun MediaContentDisplay(
             var tempVideoFile by remember { mutableStateOf<java.io.File?>(null) }
             var videoWidth by remember { mutableIntStateOf(0) }
             var videoHeight by remember { mutableIntStateOf(0) }
-            val assetPath = "media_content.mp4"
 
             AspectRatioSurface(
                 videoWidth = videoWidth,
@@ -347,7 +362,29 @@ fun MediaContentDisplay(
             modifier = Modifier.fillMaxSize(),
             onSurfaceCreated = { holder ->
                 try {
-                    val encryptedPath = "$assetPath.enc"
+                    // Host-run preview points at a real file: play it directly
+                    // (mirrors the splash previewFile branch).
+                    val hostFile = previewFile
+                    if (hostFile != null) {
+                        mediaPlayer = android.media.MediaPlayer().apply {
+                            setDataSource(hostFile.absolutePath)
+                            setSurface(holder.surface)
+                            val volume = if (mediaConfig.enableAudio) 1f else 0f
+                            setVolume(volume, volume)
+                            isLooping = mediaConfig.loop
+                            setOnPreparedListener { mp ->
+                                videoWidth = mp.videoWidth
+                                videoHeight = mp.videoHeight
+                                if (mediaConfig.autoPlay) start()
+                            }
+                            setOnVideoSizeChangedListener { _, width, height ->
+                                videoWidth = width
+                                videoHeight = height
+                            }
+                            prepareAsync()
+                        }
+                    } else {
+                        val encryptedPath = "$assetPath.enc"
                     val hasEncrypted = try {
                         context.assets.open(encryptedPath).use { true }
                     } catch (e: Exception) { false }
@@ -397,6 +434,7 @@ fun MediaContentDisplay(
                             prepareAsync()
                         }
                         afd.close()
+                        }
                     }
                 } catch (e: Exception) {
                     AppLogger.e("ShellActivity", "Operation failed", e)
@@ -423,11 +461,16 @@ fun MediaContentDisplay(
 
             var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
 
-            LaunchedEffect(Unit) {
+            LaunchedEffect(assetPath) {
                 bitmap = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
                     try {
-                        val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
-                        val imageBytes = decryptor.loadAsset("media_content.png")
+                        val hostFile = previewFile
+                        val imageBytes = if (hostFile != null) {
+                            hostFile.readBytes()
+                        } else {
+                            val decryptor = com.webtoapp.core.crypto.AssetDecryptor(context)
+                            decryptor.loadAsset(assetPath)
+                        }
                         com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(imageBytes)
                     } catch (e: Exception) {
                         AppLogger.e("MediaContent", "Failed to load image media", e)

@@ -109,7 +109,9 @@ class ApkBuildCache(private val context: Context) {
         errorPageMediaPath: String?,
         nativeLibsFingerprint: String? = null,
         hostVersionCode: Int = 0,
-        forceFullRebuild: Boolean
+        forceFullRebuild: Boolean,
+        multiWebSiteGalleryItems: List<com.webtoapp.data.model.GalleryItem> = emptyList(),
+        multiWebSiteMediaPaths: List<String> = emptyList()
     ): IncrementalPlan {
         val shellId = shellTemplateId(templateApk)
         val identity = identityFingerprint(
@@ -132,7 +134,9 @@ class ApkBuildCache(private val context: Context) {
             errorPageMediaPath = errorPageMediaPath,
             statusBarImage = config.statusBarBackgroundImage,
             statusBarImageDark = config.statusBarBackgroundImageDark,
-            floatingIcon = config.floatingWindowMinimizedIconPath
+            floatingIcon = config.floatingWindowMinimizedIconPath,
+            multiWebSiteGalleryItems = multiWebSiteGalleryItems,
+            multiWebSiteMediaPaths = multiWebSiteMediaPaths
         )
 
         if (forceFullRebuild) {
@@ -391,7 +395,9 @@ class ApkBuildCache(private val context: Context) {
         errorPageMediaPath: String?,
         statusBarImage: String?,
         statusBarImageDark: String?,
-        floatingIcon: String?
+        floatingIcon: String?,
+        multiWebSiteGalleryItems: List<com.webtoapp.data.model.GalleryItem> = emptyList(),
+        multiWebSiteMediaPaths: List<String> = emptyList()
     ): String {
         val parts = mutableListOf<String>()
         parts += "configJson=${ApkConfigJsonFactory.create(config)}"
@@ -412,6 +418,12 @@ class ApkBuildCache(private val context: Context) {
         }
         galleryItems.forEachIndexed { index, item ->
             parts += "gallery[$index]=${item.path}|${fileFingerprint(item.path)}|thumb=${fileFingerprint(item.thumbnailPath)}"
+        }
+        multiWebSiteGalleryItems.forEachIndexed { index, item ->
+            parts += "mwGallery[$index]=${item.path}|${fileFingerprint(item.path)}|thumb=${fileFingerprint(item.thumbnailPath)}"
+        }
+        multiWebSiteMediaPaths.forEachIndexed { index, path ->
+            parts += "mwMedia[$index]=${fileFingerprint(path)}"
         }
         return sha256(parts.joinToString("\n"))
     }

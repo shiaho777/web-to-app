@@ -45,7 +45,8 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ShellGalleryPlayer(
     galleryConfig: com.webtoapp.core.shell.GalleryShellConfig,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    positionKeySuffix: String? = null
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -93,6 +94,13 @@ fun ShellGalleryPlayer(
     val positionPrefs = remember {
         context.getSharedPreferences(SHELL_GALLERY_POSITION_PREFS, android.content.Context.MODE_PRIVATE)
     }
+    // rememberPosition: standalone galleries keep the historical fixed key;
+    // multi-web sites scope it per site so sibling galleries never restore
+    // each other's position (keys are clamped, so this was silent, not a crash).
+    val positionKey = remember(positionKeySuffix) {
+        if (positionKeySuffix.isNullOrBlank()) SHELL_GALLERY_POSITION_KEY
+        else "${SHELL_GALLERY_POSITION_KEY}_$positionKeySuffix"
+    }
     var positionRestored by remember { mutableStateOf(!galleryConfig.rememberPosition) }
     var showGrid by remember { mutableStateOf(true) }
     var enteredInPager by remember { mutableStateOf(false) }
@@ -102,7 +110,7 @@ fun ShellGalleryPlayer(
     LaunchedEffect(effectiveItems) {
         if (!positionRestored && effectiveItems.isNotEmpty()) {
             positionRestored = true
-            val saved = positionPrefs.getInt(SHELL_GALLERY_POSITION_KEY, 0)
+            val saved = positionPrefs.getInt(positionKey, 0)
                 .coerceIn(0, effectiveItems.size - 1)
             if (saved > 0) {
                 pagerState.scrollToPage(saved)
@@ -113,7 +121,7 @@ fun ShellGalleryPlayer(
     }
     LaunchedEffect(currentIndex) {
         if (galleryConfig.rememberPosition && positionRestored && currentIndex in effectiveItems.indices) {
-            positionPrefs.edit().putInt(SHELL_GALLERY_POSITION_KEY, currentIndex).apply()
+            positionPrefs.edit().putInt(positionKey, currentIndex).apply()
         }
     }
 
@@ -381,6 +389,31 @@ fun ShellGalleryPlayer(
     }
 }
 
+/**
+ * An item path is either an APK asset path (exported standalone app or
+ * multi-web site prefix like `multiweb_sites/<id>/gallery/...`) or — for
+ * host-run preview, where no APK was built — an absolute host file path
+ * mapped by buildSiteShellConfig. Absolute paths always win when readable.
+ */
+private fun isLocalMediaAssetPath(path: String) = path.startsWith("/")
+
+private fun loadGalleryAssetBytes(
+    context: android.content.Context,
+    assetDecryptor: com.webtoapp.core.crypto.AssetDecryptor,
+    assetPath: String
+): ByteArray {
+    if (isLocalMediaAssetPath(assetPath)) {
+        val file = java.io.File(assetPath)
+        if (file.isFile && file.canRead()) return file.readBytes()
+        AppLogger.w("ShellGallery", "Host media file missing, trying assets: $assetPath")
+    }
+    return try {
+        assetDecryptor.loadAsset(assetPath)
+    } catch (e: Exception) {
+        context.assets.open(assetPath).use { it.readBytes() }
+    }
+}
+
 private fun deriveGalleryItemsFromAssets(
     context: android.content.Context
 ): List<com.webtoapp.core.shell.GalleryShellItem> {
@@ -443,13 +476,7 @@ fun ShellGalleryImageViewer(
     LaunchedEffect(item.assetPath) {
         isLoading = true
         try {
-
-            val imageBytes = try {
-                assetDecryptor.loadAsset(item.assetPath)
-            } catch (e: Exception) {
-
-                context.assets.open(item.assetPath).use { it.readBytes() }
-            }
+            val imageBytes = loadGalleryAssetBytes(context, assetDecryptor, item.assetPath)
             bitmap = com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(imageBytes)
         } catch (e: Exception) {
             AppLogger.e("ShellGallery", "Failed to load image: ${item.assetPath}", e)
@@ -529,6 +556,19 @@ fun ShellGalleryVideoPlayer(
                 }
 
                 if (!isEncrypted) {
+                    // Host-run preview points at absolute host files: feed
+                    // them straight to the player instead of APK assets.
+                    val localFile = item.assetPath
+                        .takeIf { isLocalMediaAssetPath(it) }
+                        ?.let { java.io.File(it) }
+                        ?.takeIf { it.isFile && it.canRead() }
+                    if (localFile != null) {
+                        withContext(Dispatchers.Main) {
+                            mediaPlayer.setDataSource(localFile.absolutePath)
+                            mediaPlayer.prepareAsync()
+                        }
+                        return@launch
+                    }
 
                     try {
                         assetFd = context.assets.openFd(item.assetPath)
@@ -850,11 +890,7 @@ private fun ShellThumbnailCell(
         bitmap = null
         if (thumbAssetPath == null) return@LaunchedEffect
         bitmap = try {
-            val bytes = try {
-                assetDecryptor.loadAsset(thumbAssetPath)
-            } catch (_: Exception) {
-                context.assets.open(thumbAssetPath).use { it.readBytes() }
-            }
+            val bytes = loadGalleryAssetBytes(context, assetDecryptor, thumbAssetPath)
             com.webtoapp.util.BoundedBitmaps.decodeBoundedBitmapBytes(bytes)
         } catch (e: Exception) {
             AppLogger.e("ShellGallery", "Failed to load thumbnail: $thumbAssetPath", e)

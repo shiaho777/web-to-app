@@ -12,6 +12,7 @@
 
     {"key": "siteDirName", "reason": "ShellConfig field present for runtime session isolation; export payload never emits it (preview-only)."},
     {"key": "siteId", "reason": "ShellConfig field present for runtime session isolation; export payload never emits it (preview-only)."},
+    {"key": "previewMediaPath", "reason": "ShellConfig host-preview-only field: absolute host media path for IMAGE/VIDEO multi-web sites in host-run preview; export payload never emits it (like siteId/siteDirName)."},
 
     {"key": "textColor", "reason": "Nested object field of LrcTheme; serialized via bgm.lrcTheme in BgmBlock → ShellConfig.bgmLrcTheme: LrcShellTheme."},
     {"key": "highlightColor", "reason": "Nested object field of LrcTheme; see textColor."},

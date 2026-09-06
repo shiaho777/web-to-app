@@ -22,16 +22,20 @@ class EmbedContext(
     val projectDir: File?,
     val secondaryProjectDir: File?,
 
-    val fnAddMediaContent: (ZipOutputStream, String, Boolean, AssetEncryptor?, EncryptionConfig) -> Unit,
+    val fnAddMediaContent: (ZipOutputStream, String, Boolean, AssetEncryptor?, EncryptionConfig, String?) -> Unit,
     val fnAddHtmlFiles: (ZipOutputStream, List<com.webtoapp.data.model.HtmlFile>, AssetEncryptor?, EncryptionConfig) -> Int,
-    val fnAddGalleryItems: (ZipOutputStream, List<com.webtoapp.data.model.GalleryItem>, AssetEncryptor?, EncryptionConfig) -> Unit,
+    val fnAddGalleryItems: (ZipOutputStream, List<com.webtoapp.data.model.GalleryItem>, AssetEncryptor?, EncryptionConfig, String) -> Unit,
     val fnAddWordPressFiles: (ZipOutputStream, File) -> Unit,
     val fnAddNodeJsFiles: (ZipOutputStream, File) -> Unit,
     val fnAddFrontendFiles: (ZipOutputStream, File, List<com.webtoapp.data.model.HtmlFile>) -> Unit,
     val fnAddPhpAppFiles: (ZipOutputStream, File) -> Unit,
     val fnAddPythonAppFiles: (ZipOutputStream, File) -> Unit,
     val fnAddGoAppFiles: (ZipOutputStream, File) -> Unit,
-    val multiWebSiteSourceDirs: Map<String, File> = emptyMap()
+    val multiWebSiteSourceDirs: Map<String, File> = emptyMap(),
+    /** Multi-web GALLERY site id -> source host-path items (embedded under the site prefix). */
+    val multiWebSiteGalleryItems: Map<String, List<com.webtoapp.data.model.GalleryItem>> = emptyMap(),
+    /** Multi-web IMAGE/VIDEO site id -> source host media path. */
+    val multiWebSiteMediaPaths: Map<String, String> = emptyMap()
 )
 
 data class EmbedResult(
@@ -65,7 +69,7 @@ class MediaContentEmbedder : AppContentEmbedder {
         val mediaPath = ctx.mediaContentPath ?: return EmbedResult(false, message = "No media content path")
         ctx.logger.log("Embedding single media content: $mediaPath")
         val isVideo = ctx.config.appType == "VIDEO"
-        ctx.fnAddMediaContent(zipOut, mediaPath, isVideo, ctx.encryptor, ctx.encryptionConfig)
+        ctx.fnAddMediaContent(zipOut, mediaPath, isVideo, ctx.encryptor, ctx.encryptionConfig, null)
         return EmbedResult(true, 1, "Media content embedded")
     }
 }
@@ -135,7 +139,7 @@ class GalleryContentEmbedder : AppContentEmbedder {
             return EmbedResult(false, message = "No gallery items")
         }
         ctx.logger.section("Embed Gallery Items")
-        ctx.fnAddGalleryItems(zipOut, ctx.galleryItems, ctx.encryptor, ctx.encryptionConfig)
+        ctx.fnAddGalleryItems(zipOut, ctx.galleryItems, ctx.encryptor, ctx.encryptionConfig, "gallery")
         ctx.logger.logKeyValue("galleryItemsEmbeddedCount", ctx.galleryItems.size)
         return EmbedResult(true, ctx.galleryItems.size, "${ctx.galleryItems.size} gallery items embedded")
     }
@@ -245,6 +249,46 @@ class MultiWebContentEmbedder : AppContentEmbedder {
                     runtimeType = "nodejs"
                 ),
                 logger = ctx.logger
+            )
+            embedded.add(site.id)
+        }
+        // Gallery sites: standalone gallery exports live at assets/gallery/,
+        // which a multi-web APK never populates for sites. Embed each site's
+        // media under its own prefix, matching rewriteMultiWebGallerySitePaths
+        // (same order, same naming), otherwise every cell renders black.
+        sites.forEach { site ->
+            if (site.appType.uppercase() != "GALLERY") return@forEach
+            val items = ctx.multiWebSiteGalleryItems[site.id].orEmpty()
+            if (items.isEmpty()) {
+                ctx.logger.warn("Multi-web gallery site ${site.id} (${site.name}) has no embeddable items")
+                return@forEach
+            }
+            ctx.logger.section("Embed Multi-Web Gallery Site ${site.id}")
+            ctx.fnAddGalleryItems(
+                zipOut, items, ctx.encryptor, ctx.encryptionConfig,
+                multiWebSiteGalleryAssetPrefix(site.id)
+            )
+            embedded.add(site.id)
+        }
+        // Single-media (IMAGE/VIDEO) sites: same gap, same treatment. The
+        // shell media player resolves multiweb_sites/<siteId>/media_content.*
+        // (see ShellContentRouter); without embedding it renders black.
+        sites.forEach { site ->
+            val siteType = site.appType.uppercase()
+            if (siteType != "IMAGE" && siteType != "VIDEO") return@forEach
+            val mediaPath = ctx.multiWebSiteMediaPaths[site.id]?.takeIf { it.isNotBlank() }
+                ?: return@forEach
+            val mediaFile = java.io.File(mediaPath)
+            if (!mediaFile.isFile || !mediaFile.canRead()) {
+                ctx.logger.warn("Multi-web media site ${site.id} (${site.name}) file missing: $mediaPath")
+                return@forEach
+            }
+            val ext = if (siteType == "VIDEO") "mp4" else "png"
+            ctx.logger.section("Embed Multi-Web Media Site ${site.id}")
+            ctx.fnAddMediaContent(
+                zipOut, mediaFile.absolutePath, siteType == "VIDEO",
+                ctx.encryptor, ctx.encryptionConfig,
+                "multiweb_sites/${site.id}/media_content.$ext"
             )
             embedded.add(site.id)
         }

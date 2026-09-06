@@ -752,6 +752,10 @@ class ApkBuilder(private val context: Context) {
 
             logger.section("Incremental Build Plan")
             val hostVersionCode = rememberHostVersionCode()
+            // Media files of multi-web GALLERY/IMAGE/VIDEO sites are embedded
+            // under per-site prefixes; without their bytes in the key, editing
+            // a source gallery would keep serving a stale cached APK.
+            val mwSiteMedia = resolveMultiWebSiteMediaInputs(webApp)
             val incrementalPlan = buildCache.plan(
                 webApp = webApp,
                 packageName = packageName,
@@ -782,7 +786,9 @@ class ApkBuilder(private val context: Context) {
                     null
                 },
                 hostVersionCode = hostVersionCode,
-                forceFullRebuild = forceFullRebuild
+                forceFullRebuild = forceFullRebuild,
+                multiWebSiteGalleryItems = mwSiteMedia.galleryItems.values.flatten(),
+                multiWebSiteMediaPaths = mwSiteMedia.mediaPaths.values.toList()
             )
             logger.logKeyValue("incrementalMode", incrementalPlan.mode.name)
             logger.logKeyValue("incrementalReason", incrementalPlan.reason)
@@ -827,6 +833,8 @@ class ApkBuilder(private val context: Context) {
                             bgmCoverPaths = bgmCoverPaths,
                             htmlFiles = htmlFiles,
                             galleryItems = galleryItems,
+                            multiWebSiteGalleryItems = mwSiteMedia.galleryItems,
+                            multiWebSiteMediaPaths = mwSiteMedia.mediaPaths,
                             encryptionConfig = encryptionConfig,
                             encryptionKey = encryptionKey,
                             abiFilters = architecture.abiFilters,
@@ -866,6 +874,8 @@ class ApkBuilder(private val context: Context) {
                             bgmCoverPaths = bgmCoverPaths,
                             htmlFiles = htmlFiles,
                             galleryItems = galleryItems,
+                            multiWebSiteGalleryItems = mwSiteMedia.galleryItems,
+                            multiWebSiteMediaPaths = mwSiteMedia.mediaPaths,
                             encryptionConfig = encryptionConfig,
                             encryptionKey = encryptionKey,
                             abiFilters = architecture.abiFilters,
@@ -908,6 +918,8 @@ class ApkBuilder(private val context: Context) {
                         bgmCoverPaths = bgmCoverPaths,
                         htmlFiles = htmlFiles,
                         galleryItems = galleryItems,
+                        multiWebSiteGalleryItems = mwSiteMedia.galleryItems,
+                        multiWebSiteMediaPaths = mwSiteMedia.mediaPaths,
                         encryptionConfig = encryptionConfig,
                         encryptionKey = encryptionKey,
                         abiFilters = architecture.abiFilters,
@@ -1215,6 +1227,8 @@ class ApkBuilder(private val context: Context) {
         bgmCoverPaths: List<String?> = emptyList(),
         htmlFiles: List<com.webtoapp.data.model.HtmlFile> = emptyList(),
         galleryItems: List<com.webtoapp.data.model.GalleryItem> = emptyList(),
+        multiWebSiteGalleryItems: Map<String, List<com.webtoapp.data.model.GalleryItem>> = emptyMap(),
+        multiWebSiteMediaPaths: Map<String, String> = emptyMap(),
         encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED,
         encryptionKey: SecretKey? = null,
         abiFilters: List<String> = emptyList(),
@@ -1602,7 +1616,9 @@ class ApkBuilder(private val context: Context) {
                         fnAddPhpAppFiles = ::addPhpAppFilesToAssets,
                         fnAddPythonAppFiles = ::addPythonAppFilesToAssets,
                         fnAddGoAppFiles = ::addGoAppFilesToAssets,
-                        multiWebSiteSourceDirs = multiWebSiteSourceDirs
+                        multiWebSiteSourceDirs = multiWebSiteSourceDirs,
+                        multiWebSiteGalleryItems = multiWebSiteGalleryItems,
+                        multiWebSiteMediaPaths = multiWebSiteMediaPaths
                     )
                     val result = embedder.embed(zipOut, embedCtx)
                     logger.log("Content embedding [${config.appType}]: ${result.message}")
@@ -2032,12 +2048,13 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
-    private fun addMediaContentToAssets(
+    internal fun addMediaContentToAssets(
         zipOut: ZipOutputStream,
         mediaPath: String,
         isVideo: Boolean,
         encryptor: AssetEncryptor? = null,
-        encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED
+        encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED,
+        assetNameOverride: String? = null
     ) {
         AppLogger.d("ApkBuilder", "Preparing to embed media content: path=$mediaPath, isVideo=$isVideo, encrypt=${encryptionConfig.enabled}")
 
@@ -2059,7 +2076,7 @@ class ApkBuilder(private val context: Context) {
         }
 
         val extension = if (isVideo) "mp4" else "png"
-        val assetName = "media_content.$extension"
+        val assetName = assetNameOverride ?: "media_content.$extension"
 
         try {
 
@@ -2097,13 +2114,14 @@ class ApkBuilder(private val context: Context) {
         }
     }
 
-    private fun addGalleryItemsToAssets(
+    internal fun addGalleryItemsToAssets(
         zipOut: ZipOutputStream,
         galleryItems: List<com.webtoapp.data.model.GalleryItem>,
         encryptor: AssetEncryptor? = null,
-        encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED
+        encryptionConfig: EncryptionConfig = EncryptionConfig.DISABLED,
+        assetPrefix: String = "gallery"
     ) {
-        AppLogger.d("ApkBuilder", "Preparing to embed ${galleryItems.size} gallery items, encrypt=${encryptionConfig.enabled}")
+        AppLogger.d("ApkBuilder", "Preparing to embed ${galleryItems.size} gallery items at $assetPrefix, encrypt=${encryptionConfig.enabled}")
 
         galleryItems.forEachIndexed { index, item ->
             try {
@@ -2118,7 +2136,7 @@ class ApkBuilder(private val context: Context) {
                 }
 
                 val ext = if (item.type == com.webtoapp.data.model.GalleryItemType.VIDEO) "mp4" else "png"
-                val assetName = "gallery/item_$index.$ext"
+                val assetName = "$assetPrefix/item_$index.$ext"
                 val isVideo = item.type == com.webtoapp.data.model.GalleryItemType.VIDEO
                 val fileSize = mediaFile.length()
                 val largeFileThreshold = 10 * 1024 * 1024L
@@ -2145,7 +2163,7 @@ class ApkBuilder(private val context: Context) {
                 item.thumbnailPath?.let { thumbPath ->
                     val thumbFile = File(thumbPath)
                     if (thumbFile.exists() && thumbFile.canRead()) {
-                        val thumbAssetName = "gallery/thumb_$index.jpg"
+                        val thumbAssetName = "$assetPrefix/thumb_$index.jpg"
                         val thumbBytes = thumbFile.readBytes()
                         if (encryptionConfig.enabled && encryptor != null) {
                             val encryptedThumb = encryptor.encrypt(thumbBytes, thumbAssetName)
@@ -4461,12 +4479,69 @@ private fun WebApp.buildMultiWebBlock(context: android.content.Context?, package
  * (deleted app) was always tolerated; the first two used to abort the whole
  * build with "MultiWeb site source cannot be MULTI_WEB".
  */
+/**
+ * Host-side media inputs of a multi-web app's media sites (GALLERY /
+ * IMAGE / VIDEO sources), keyed by site id. Resolved once per build and
+ * shared by the incremental-cache fingerprint and the embed step, so the
+ * two can never disagree about what a site contains.
+ *
+ * Remote-URL media is skipped (same as standalone export, which only ever
+ * embedded local files); only existing readable local files qualify.
+ */
+internal data class MultiWebSiteMediaInputs(
+    val galleryItems: Map<String, List<com.webtoapp.data.model.GalleryItem>> = emptyMap(),
+    val mediaPaths: Map<String, String> = emptyMap()
+)
+
+internal fun resolveMultiWebSiteMediaInputs(webApp: WebApp): MultiWebSiteMediaInputs {
+    if (webApp.appType != com.webtoapp.data.model.AppType.MULTI_WEB) return MultiWebSiteMediaInputs()
+    val sites = webApp.multiWebConfig?.sites.orEmpty().filter { it.enabled && it.sourceAppId > 0 }
+    if (sites.isEmpty()) return MultiWebSiteMediaInputs()
+    val repo = try {
+        org.koin.java.KoinJavaComponent.get<com.webtoapp.data.repository.WebAppRepository>(
+            com.webtoapp.data.repository.WebAppRepository::class.java
+        )
+    } catch (_: Exception) {
+        return MultiWebSiteMediaInputs()
+    }
+    val gallery = mutableMapOf<String, List<com.webtoapp.data.model.GalleryItem>>()
+    val media = mutableMapOf<String, String>()
+    for (site in sites) {
+        val source = try {
+            kotlinx.coroutines.runBlocking { repo.getWebApp(site.sourceAppId) }
+        } catch (_: Exception) {
+            null
+        } ?: continue
+        when (source.appType) {
+            com.webtoapp.data.model.AppType.GALLERY -> {
+                source.galleryConfig?.items?.takeIf { it.isNotEmpty() }?.let {
+                    gallery[site.id] = it
+                }
+            }
+            com.webtoapp.data.model.AppType.IMAGE,
+            com.webtoapp.data.model.AppType.VIDEO -> {
+                val raw = source.mediaConfig?.mediaPath?.takeIf { it.isNotBlank() }
+                    ?: source.url.takeIf { it.isNotBlank() }
+                    ?: continue
+                if (raw.startsWith("http://") || raw.startsWith("https://") ||
+                    raw.startsWith("asset://")
+                ) {
+                    continue
+                }
+                val file = java.io.File(raw)
+                if (file.isFile && file.canRead()) media[site.id] = file.absolutePath
+            }
+            else -> {}
+        }
+    }
+    return MultiWebSiteMediaInputs(gallery, media)
+}
+
 internal fun resolveMultiWebSiteSource(
     sourceApp: WebApp?,
     parentAppId: Long,
     siteName: String
-): WebApp? {
-    if (sourceApp == null) return null
+): WebApp? {    if (sourceApp == null) return null
     if (sourceApp.appType == com.webtoapp.data.model.AppType.MULTI_WEB) {
         AppLogger.w(
             "ApkBuilder",
@@ -4511,13 +4586,104 @@ internal fun buildSiteShellConfig(    sourceWebApp: WebApp,
     } else {
         "multiweb_$siteId"
     }
-    return shell.copy(
+    var out = shell.copy(
         siteId = siteId,
         siteDirName = siteDirName,
         siteAssetBase = assetBase,
         packageName = sitePkg,
         multiWebConfig = com.webtoapp.core.shell.MultiWebShellConfig()
     )
+    // Gallery sites render through ShellGalleryPlayer, which resolves every
+    // item through APK assets. Standalone gallery exports live at
+    // assets/gallery/, which a multi-web APK never populates for sites —
+    // without a rewrite every item 404s into a black cell (reported bug).
+    if (sourceWebApp.appType == com.webtoapp.data.model.AppType.GALLERY) {
+        out = if (isPreview) {
+            // Host run: point items at the source host files; the shell
+            // gallery loader prefers existing absolute paths over assets.
+            out.copy(
+                galleryConfig = out.galleryConfig.copy(
+                    items = previewGallerySiteItems(sourceWebApp)
+                )
+            )
+        } else {
+            out.copy(
+                galleryConfig = out.galleryConfig.copy(
+                    items = rewriteMultiWebGallerySitePaths(out.galleryConfig.items, siteId)
+                )
+            )
+        }
+    }
+    if (isPreview && (
+        sourceWebApp.appType == com.webtoapp.data.model.AppType.IMAGE ||
+            sourceWebApp.appType == com.webtoapp.data.model.AppType.VIDEO
+        )
+    ) {
+        out = out.copy(previewMediaPath = multiWebSitePreviewMediaPath(sourceWebApp))
+    }
+    return out
+}
+
+/** Asset prefix a multi-web gallery site's media is embedded under. */
+internal fun multiWebSiteGalleryAssetPrefix(siteId: String) = "multiweb_sites/$siteId/gallery"
+
+/**
+ * Rewrite gallery item paths to the per-site prefixed location used at
+ * export time. Index-aligned with [addGalleryItemsToAssets], which embeds
+ * source items in the same order under the same prefix.
+ */
+internal fun rewriteMultiWebGallerySitePaths(
+    items: List<com.webtoapp.core.shell.GalleryShellItem>,
+    siteId: String
+): List<com.webtoapp.core.shell.GalleryShellItem> {
+    val prefix = multiWebSiteGalleryAssetPrefix(siteId)
+    return items.mapIndexed { index, item ->
+        val ext = if (item.type == "VIDEO") "mp4" else "png"
+        item.copy(
+            assetPath = "$prefix/item_$index.$ext",
+            thumbnailPath = item.thumbnailPath?.let { "$prefix/thumb_$index.jpg" }
+        )
+    }
+}
+
+/**
+ * Gallery items for host-run preview: absolute host files straight from the
+ * source app (mirrors the fields buildGalleryBlock maps, minus asset naming).
+ */
+internal fun previewGallerySiteItems(
+    sourceWebApp: WebApp
+): List<com.webtoapp.core.shell.GalleryShellItem> {
+    return sourceWebApp.galleryConfig?.items?.map { item ->
+        com.webtoapp.core.shell.GalleryShellItem(
+            id = item.id,
+            assetPath = item.path,
+            type = item.type.name,
+            name = item.name,
+            duration = item.duration,
+            thumbnailPath = item.thumbnailPath
+        )
+    } ?: emptyList()
+}
+
+/**
+ * Host media file for an IMAGE/VIDEO multi-web site in host-run preview.
+ * Remote URLs are left null (unchanged behavior); only existing local files
+ * qualify, mirroring the export preflight's media path resolution.
+ */
+internal fun multiWebSitePreviewMediaPath(sourceWebApp: WebApp): String? {
+    if (sourceWebApp.appType != com.webtoapp.data.model.AppType.IMAGE &&
+        sourceWebApp.appType != com.webtoapp.data.model.AppType.VIDEO
+    ) {
+        return null
+    }
+    val raw = sourceWebApp.mediaConfig?.mediaPath?.takeIf { it.isNotBlank() }
+        ?: sourceWebApp.url.takeIf { it.isNotBlank() }
+        ?: return null
+    if (raw.startsWith("http://") || raw.startsWith("https://") || raw.startsWith("asset://")) {
+        return null
+    }
+    val file = java.io.File(raw)
+    return if (file.isFile && file.canRead()) file.absolutePath else null
 }
 
 private fun extractHostsFromUrl(url: String, customHosts: List<String> = emptyList()): List<String> {
