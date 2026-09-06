@@ -7,7 +7,7 @@ The icon shown for your app in the app list and, after export, on the device lau
 ## Options
 
 - **Pick an image** — choose an image from your device (`image/*`). The selected image becomes the app icon.
-- **Choose from icon library** — pick a previously saved icon (`savedIconPath`).
+- **Choose from icon library** — pick a previously saved icon (`savedIconPath`). The library supports manual **Upload image**: after picking, a crop step (WeChat-avatar-style drag/pinch, square/free/circle preview) exports a 512px PNG and auto-selects it.
 - **Default** — if you set no icon, a type-specific default icon is used.
 
 ## Notes

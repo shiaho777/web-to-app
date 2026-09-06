@@ -47,3 +47,4 @@ Compatibility polyfills, bridges, and other specialized toggles. This card colle
 ## Notes
 
 - These are power-user toggles; most apps leave them at defaults.
+- **Defaults:** the safe experience features default to **ON** for new apps — clipboard / orientation / compat polyfills, media session, share, zoom and print bridges, image repair, scroll memory, back-state preservation, blob interception, JS windows, user-activation priming, base64 deep links, private-network bridge, and the native bridge. Deliberately **OFF**: notification polyfill (it would prompt `POST_NOTIFICATIONS` on every export), geolocation, mixed content, third-party cookies, autoplay, and popup blocking.

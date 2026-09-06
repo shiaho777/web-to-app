@@ -1,6 +1,6 @@
 # 本地服务运行时
 
-WebToApp 能把真实的服务运行时作为原生二进制,直接从应用存储 fork+exec —— 如同 Termux,但打包成可安装的 APK。生成应用中的 WebView 指向由运行时提供的本地端口。
+WebToApp 在设备端运行真实的服务运行时,并打包成可安装的 APK。按运行时不同,这可能是从应用存储 fork+exec 原生二进制(如同 Termux)、JNI 内嵌引擎(Node.js),或直驱构建加载通道(受限宿主上的 Go)。生成应用中的 WebView 指向由运行时提供的本地端口。
 
 ## 支持的运行时
 
@@ -12,11 +12,11 @@ WebToApp 能把真实的服务运行时作为原生二进制,直接从应用存�
 | **Go** | 1.26 | 官方 Linux arm64 工具链(国内用 USTC 镜像)。设备端 `go build` / `go mod` / `go run`、`vendor/` 离线构建、通过 `go_exec_loader` 提供静态服务。 |
 | **WordPress** | 7.x | 基于本地 PHP + SQLite(`sqlite-database-integration`)。主题与插件导入。 |
 
-**Linux 环境** 界面管理 Node、PHP、Python 的工具链与依赖。
+**Linux 环境** 界面管理 Node、PHP、Python 和 Go 的工具链与依赖。
 
 ## 运行时如何协调
 
-- **端口管理器** —— 通过广播接收器在多个生成应用间协调运行时端口,冲突策略:`REASSIGN`、`AUTO_KILL` 或 `ALERT`。运行时通过端口管理器分配端口,并在停止时清理。
+- **端口管理器** —— 通过广播接收器在多个生成应用间协调运行时端口,冲突时重分配、自动杀掉冲突方或弹窗提醒。运行时通过端口管理器分配端口,并在停止时清理。
 - **本地 DNS 桥代理** —— Android JVM 中的 HTTP CONNECT 代理,为那些 musl/打包二进制无法触达系统解析器的运行时,提供可用的 DNS 解析和出站 HTTP。
 - **下载** —— 大型运行时下载使用延长超时的下载客户端,而非默认的短超时客户端。
 
@@ -34,7 +34,7 @@ WebToApp 能把真实的服务运行时作为原生二进制,直接从应用存�
 ---
 
 ::: info 宿主预览与生成应用的区别
-Node.js 应用的宿主预览走同一套 JNI 启动器,在任何 `targetSdk` 下都可用。基于 exec 的运行时(PHP / Python / Go / WordPress)只有在宿主构建允许从应用存储 exec 时才能预览 —— 在 `targetSdk` 35 的宿主上,SELinux W^X 会拦截,这些预览会以明确提示优雅降级。生成 APK 始终以 `targetSdk` 28 发布,完全不受影响。
+Node.js 应用的宿主预览走同一套 JNI 启动器,在任何 `targetSdk` 下都可用。Go 在宿主内经直驱通道构建和预览,即使 fork+exec 被拦截也不受影响。其他基于 exec 的运行时(PHP / Python / WordPress)只有在宿主构建允许从应用存储 exec 时才能预览 —— 在 `targetSdk` 35 的宿主上,SELinux W^X 会拦截,这些预览会以明确提示优雅降级。生成 APK 始终以 `targetSdk` 28 发布,完全不受影响。
 
 ::: tip 各运行时的安装指南即将推出
 每个运行时的详细首次安装、依赖安装与故障排除正在编写中。

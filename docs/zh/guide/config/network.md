@@ -10,7 +10,7 @@
 
 这些在[高级设置](/zh/guide/app-actions/edit-common-config/advanced-settings)中:
 
-- **代理** —— 静态 HTTP/HTTPS/SOCKS5 或 PAC,带认证和绕过规则。
+- **代理** —— 静态 HTTP/HTTPS/SOCKS5 或 PAC,带认证和绕过规则。系统 WebView 过旧不支持代理覆盖的设备,子资源流量自动降级走应用内抓取桥,沿用同一套配置(无法代理的 HTTPS 上游直接 fail-closed)。
 - **TLS 指纹** —— 模拟浏览器 JA3 配置(如 `CHROME_131`)。
 - **CORS 绕过** —— 用于跨源 SPA。
 - **混合内容** 与 **私有网络桥**。

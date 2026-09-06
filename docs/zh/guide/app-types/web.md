@@ -13,7 +13,7 @@
 ### 目标与引擎
 
 - **目标 URL** —— 要加载的站点。
-- **浏览器引擎** —— 默认系统 WebView;可选 GeckoView(首次使用下载,ECH 必需)。见[浏览器内核](/zh/guide/more-features/browser-kernel)。
+- **浏览器引擎** —— 默认系统 WebView;可选 GeckoView(构建前先在浏览器内核下载,ECH 必需)。见[浏览器内核](/zh/guide/more-features/browser-kernel)。
 
 ### User-Agent 与显示
 

@@ -8,7 +8,7 @@ Plays background music in the generated app, with synced lyrics.
 
 - **Enable** — turn background music on (`bgmEnabled`).
 - **Playlists** — add music tracks; supports synced **LRC lyrics** with lyric animations.
-- **Play mode** — loop, sequential, or shuffle (`BgmPlayMode`).
+- **Play mode** — loop, sequential, or shuffle (`BgmPlayMode`). Shuffle starts on a random track, plays every track once per cycle with no repeats, and reshuffles on wrap.
 - **Lyric styling** — custom font, color, stroke, and shadow for lyrics.
 - **Online search** — search for music online.
 

@@ -10,7 +10,7 @@ You have a framework project and want to ship its build output as an app.
 
 ### Source
 
-- **Build output** (`outputPath`) — the directory of the production build to package.
+- **Build output** — the directory of the production build to package (a create-screen field; the saved config keeps the imported files, like the HTML type).
 - **Framework** — detected or selected (React, Vue, Vite, etc.).
 
 ### Toolchain

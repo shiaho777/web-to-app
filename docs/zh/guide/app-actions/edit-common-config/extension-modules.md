@@ -6,7 +6,7 @@
 
 ## 选项
 
-- **启用** —— 为此应用打开扩展(`extensionModuleEnabled`)。
+- **启用** —— 为此应用打开扩展(`extensionEnabled`)。
 - **所选模块** —— 选择在此应用中运行哪些已安装的模块(`extensionModuleIds`)。
 - **FAB 图标** —— 扩展面板的浮动按钮图标(`extensionFabIcon`)。
 

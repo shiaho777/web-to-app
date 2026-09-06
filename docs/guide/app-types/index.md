@@ -8,9 +8,9 @@ Tap [Create](/guide/main-screen/create-app) on My Apps to open the app-type pick
 | --- | --- | --- | --- |
 | [Web](/guide/app-types/web) | A URL | WebView APK | Landing pages, tools, dashboards, docs |
 | [Multi-Web](/guide/app-types/multi-web) | Several URLs | Tab/card/feed/drawer APK | Link hubs, portals |
-| [HTML](/guide/app-types/html) | Local HTML / zip | Localhost APK | Static builds, offline web apps |
+| [HTML](/guide/app-types/html) | Local HTML / zip | File-protocol APK (localhost optional) | Static builds, offline web apps |
 | [Offline Pack](/guide/app-types/offline-pack) | A URL (scraped) | Self-contained offline APK | Archiving a site |
-| [Frontend](/guide/app-types/frontend) | Built front-end project | Localhost APK | React, Vue, Vite builds |
+| [Frontend](/guide/app-types/frontend) | Built front-end project | File-protocol APK (localhost optional) | React, Vue, Vite builds |
 | [PHP](/guide/app-types/php) | PHP project | APK + on-device PHP | Small PHP apps |
 | [WordPress](/guide/app-types/wordpress) | WordPress site | APK + PHP + SQLite | Portable sites |
 | [Node.js](/guide/app-types/nodejs) | Node project | APK + on-device Node | Express/Fastify/Koa, APIs |

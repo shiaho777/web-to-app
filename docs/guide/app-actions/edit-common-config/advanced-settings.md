@@ -9,7 +9,7 @@ A broad set of browser behavior toggles. This card collects the advanced `WebVie
 - **User agent mode** — system default or a custom UA string (`userAgentMode`, `customUserAgent`).
 - **Desktop mode** — request the desktop site (`desktopMode`).
 - **Zoom** — enable pinch zoom (`zoomEnabled`).
-- **Page zoom** — build-time per-app text zoom as a percentage, chosen from Chrome-style presets (50%–150%) or entered freely (`pageZoomPercent`, default 100). Applied via `textZoom` on every run, including cold starts — no runtime toolbar needed. A stored legacy value of `0` is treated as 100.
+- **Page zoom** — build-time per-app whole-page zoom as a percentage, chosen from Chrome-style presets (50%–150%) or entered freely (`pageZoomPercent`, default 100). Applied via `setInitialScale` on every run, including cold starts — it scales text and layout/images/canvas together (unlike `textZoom`, which only scales glyphs), so no runtime toolbar needed. A stored legacy value of `0` is treated as 100.
 - **Viewport mode** — default or a custom viewport width (`viewportMode`, `customViewportWidth`).
 
 ## Navigation & refresh

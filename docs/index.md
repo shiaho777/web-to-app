@@ -122,7 +122,7 @@ Image and video players, albums, and portfolios as standalone apps.
 
 [**Agent**](/guide/more-features/agent)
 
-A tool-calling assistant with 57 built-in tools that can build, edit, and operate the whole app.
+A tool-calling assistant with up to 57 built-in tools that can build, edit, and operate the whole app.
 
 </div>
 
@@ -174,7 +174,7 @@ Clone and rebrand installed APKs, batch-import definitions, export templates.
 
 <div class="wta-stat"><b>12</b><span>app types</span></div>
 
-<div class="wta-stat"><b>57</b><span>agent tools</span></div>
+<div class="wta-stat"><b>57</b><span>agent tools max</span></div>
 
 <div class="wta-stat"><b>10</b><span>UI languages</span></div>
 

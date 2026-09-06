@@ -9,7 +9,8 @@ Shows an image or video splash screen when the app launches.
 - **Enable** — turn the splash on (`splashEnabled`).
 - **Media** — pick an image (`image/*`) or a video (`video/*`).
 - **Duration** — how long the splash shows (`splashConfig.duration`).
-- **Click to skip** — allow tapping to skip, with a countdown (`clickToSkip`).
+- **Click to skip** — allow tapping to skip (`clickToSkip`).
+- **Show countdown** — show the remaining-seconds countdown independently (`showCountdown`).
 - **Orientation** — splash orientation (`orientation`).
 - **Fill screen** — crop to fill vs fit (`fillScreen`).
 - **Enable audio** — for video splashes (`enableAudio`).

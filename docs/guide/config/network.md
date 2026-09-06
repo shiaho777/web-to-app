@@ -10,7 +10,7 @@ A thematic index of the networking capabilities. Each is configured by a card in
 
 These live under [Advanced Settings](/guide/app-actions/edit-common-config/advanced-settings):
 
-- **Proxy** — static HTTP/HTTPS/SOCKS5 or PAC, with auth and bypass rules.
+- **Proxy** — static HTTP/HTTPS/SOCKS5 or PAC, with auth and bypass rules. On devices whose system WebView predates proxy override support, subresource traffic automatically falls back to an in-app fetch bridge honoring the same settings (HTTPS upstreams that cannot be proxied fail closed).
 - **TLS fingerprint** — impersonate a browser JA3 profile (e.g. `CHROME_131`).
 - **CORS bypass** — for cross-origin SPAs.
 - **Mixed content** and **private network bridge**.

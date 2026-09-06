@@ -7,10 +7,10 @@
 ## 选项
 
 - **全屏** —— 启用沉浸式全屏(`hideToolbar`)。
-- **全屏显示状态栏** —— 保持顶部状态栏可见(`showStatusBarInFullscreen`)。
+- **全屏常驻状态栏** —— 保持顶部状态栏持续可见(`showStatusBarInFullscreen`)。常驻模式永不自动隐藏。
 - **全屏显示导航栏** —— 保持底部导航栏可见(`showNavigationBarInFullscreen`)。
 - **全屏内容内边距** —— 内容内缩若干 dp(`fullscreenContentPaddingDp`)。
-- **状态栏样式** —— 可展开子面板(`statusBarStyleConfigLabel`),含亮色/暗色两个标签页:颜色模式(`THEME`/`PAGE_TOP`/`TRANSPARENT`/`CUSTOM`)、自定义颜色、深色图标,以及各模式的背景(颜色/图片)。
+- **自定义状态栏** —— 可展开子面板(`statusBarCustomizeLabel`),含亮色/暗色两个标签页:颜色模式(`THEME`/`PAGE_TOP`/`TRANSPARENT`/`CUSTOM`)、自定义颜色、深色图标,以及各模式的背景(颜色/图片)。`TRANSPARENT`/图片栏压盖内容,不预留占位。
 
 ## 与浏览器工具栏的关系
 

@@ -132,6 +132,6 @@ window.__WTA_MODULE_UI__.register({
 ## 打包与分享
 
 - 模块导出扩展名:`.wtamod`;模块打包:`.wtapkg`。
-- 分享码前缀:`WTA1:`(gzip + Base64),可通过二维码分享。
+- 分享码前缀:`WTA1:`(全量 gzip + Base64)或 `WTA2:`(差异载荷 + 极限压缩,V1 装不进一个二维码时发射),可通过二维码分享。解码兼容 V2、V1 和远古裸 Base64。
 
 完整可工作的示例见 [`modules/`](https://github.com/shiaho777/web-to-app/tree/main/modules) 下内置的 `hello-world` 和 `auto-scroll` 模块。

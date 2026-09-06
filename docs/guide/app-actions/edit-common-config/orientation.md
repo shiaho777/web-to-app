@@ -14,6 +14,7 @@ Locks or constrains the app's screen orientation.
   - `REVERSE_LANDSCAPE`
   - `SENSOR_PORTRAIT`
   - `SENSOR_LANDSCAPE`
+  - `AUTO` — follow the system rotation setting.
 
 ## Notes
 

@@ -10,10 +10,10 @@ The export pipeline turns a `WebApp` model into a signed APK. It lives in `app/s
 | `ApkConfig.kt` | The master config schema: `data class ApkConfig(meta, activation, adBlock, webView, proxy, dns, nodejs, phpApp, pythonApp, goApp, multiWeb, ...)`. Everything an exported APK can encode. |
 | `ApkConfigJsonFactory.kt` | Serializes `ApkConfig` to the assets JSON the shell reads; includes `ApkConfigValidator`. |
 | `ApkTemplate.kt` / `ShellTemplateProvider.kt` | Locate and load the shell template APK. |
-| `ApkBuildCache.kt` | Incremental rebuild; defines `enum class ModifyApkMode`. |
+| `ApkBuildCache.kt` | Incremental rebuild; defines `enum class IncrementalBuildMode` (`ModifyApkMode` only covers `FULL`/`CONTENT_OVERLAY`). |
 | `AxmlEditor` / `AxmlRebuilder` | Edit/rebuild the binary AndroidManifest (AXML). |
 | `ArscEditor` / `ArscRebuilder` | Edit/rebuild the binary resource table (resources.arsc). |
-| `JarSigner.kt` | Signs the APK (jarsigner path); `apksig` handles V1/V2/V3. |
+| `JarSigner.kt` | Signs the APK with the `com.android.apksig` library directly (`ApkSigner`, V1/V2/V3 toggles). |
 | `ZipAligner` / `ZipUtils` | Zip alignment and low-level zip manipulation. |
 | `ElfAligner16k.kt` | 16KB-page ELF alignment for native `.so` files. |
 | `RuntimeAssetEmbedder.kt` | Injects runtime assets (Node/PHP/Python/Go) into the APK. |
@@ -43,7 +43,7 @@ The JSON field names produced by `ApkConfigJsonFactory` **must match** the `@Ser
 
 ## Incremental rebuild (`ApkBuildCache`)
 
-Three modes:
+Three modes (`enum class IncrementalBuildMode`):
 
 | Mode | Meaning |
 | --- | --- |

@@ -6,7 +6,7 @@ Attaches extensions (JS/CSS modules, userscripts, MV3 Chrome extensions) to the 
 
 ## Options
 
-- **Enable** — turn extensions on for this app (`extensionModuleEnabled`).
+- **Enable** — turn extensions on for this app (`extensionEnabled`).
 - **Selected modules** — choose which installed modules run in this app (`extensionModuleIds`).
 - **FAB icon** — the floating-button icon for the extension panel (`extensionFabIcon`).
 

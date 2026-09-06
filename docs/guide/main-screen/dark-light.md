@@ -4,7 +4,7 @@ The moon/sun button in the [My Apps](/guide/main-screen/my-apps) top bar toggles
 
 ## How it works
 
-- Tap to switch between **dark** and **light**.
+- Tap to switch between **dark** and **light**. (The underlying setting has a third `SYSTEM` value, but the top-bar button only flips between the two explicit modes.)
 - The switch plays a circular **theme reveal** animation expanding from the button, then applies the new theme.
 - Your choice is **persisted** and restored on next launch.
 
