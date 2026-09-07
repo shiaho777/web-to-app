@@ -324,6 +324,20 @@
             </intent-filter>
         </receiver>
 
+        <!--
+            BridgeAlarmReceiver - 通知调度（页内 Web Notification.scheduleNotification）。
+            NativeBridge.scheduleBridgeAlarm 通过显式 PendingIntent 广播触发；缺少此声明时
+            生成的 APK 中定时通知会被系统静默丢弃。与宿主清单保持同名同 action。
+        -->
+        <receiver
+            android:name=".core.notification.BridgeAlarmReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.webtoapp.bridge.SCHEDULED_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
+
         
         <provider
             android:name="androidx.core.content.FileProvider"

@@ -451,7 +451,9 @@
         </receiver>
 
         <!--
-            BridgeAlarmReceiver - 宿主使用：通知调度（页内 Web Notification.scheduleNotification）
+            BridgeAlarmReceiver - 通知调度（页内 Web Notification.scheduleNotification）。
+            宿主与生成的 APK 均使用（NativeBridge 为 shell 同步代码），shell 模板清单
+            必须保留同名声明，两边需同步修改。
         -->
         <receiver
             android:name=".core.notification.BridgeAlarmReceiver"
