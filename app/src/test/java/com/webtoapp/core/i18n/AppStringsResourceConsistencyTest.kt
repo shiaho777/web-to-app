@@ -1,6 +1,5 @@
 package com.webtoapp.core.i18n
 
-import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import org.junit.Test
 import java.io.File
@@ -10,101 +9,74 @@ class AppStringsResourceConsistencyTest {
 
     private companion object {
 
+        // The only keys allowed in res/values/strings.xml. Each must also carry
+        // translatable="false" — anything user-visible belongs in Strings.kt.
         val NON_LOCALIZED_STRING_KEYS = setOf(
 
             "app_name",
         )
 
-        val LOCALES = listOf("values-zh", "values-en", "values-ar")
+        // values-<lang>, values-<lang>-r<region>, values-b+<lang>… but NOT
+        // non-locale qualifiers such as values-night.
+        val LOCALE_QUALIFIER = Regex("^(?:[a-z]{2,3}(?:-r[A-Za-z]{2,3})?|b\\+.*)$")
     }
 
     @Test
-    fun `grouped app strings stay aligned across locales`() {
-        val resDir = resolveExistingDir("app/src/main/res", "src/main/res")
-        val defaultDir = File(resDir, "values")
-        val defaultFiles = defaultDir.listFiles { file ->
-            file.isFile && file.name.startsWith("app_strings_") && file.name.endsWith(".xml")
-        }?.sortedBy { it.name }.orEmpty()
-
-        assertThat(defaultFiles).isNotEmpty()
-        val expectedFileNames = defaultFiles.map { it.name }
-
-        LOCALES.forEach { localeDir ->
-            val actualNames = File(resDir, localeDir)
-                .listFiles { file ->
-                    file.isFile && file.name.startsWith("app_strings_") && file.name.endsWith(".xml")
-                }
-                ?.map { it.name }
-                ?.sorted()
-                .orEmpty()
-            assertWithMessage("Locale file set mismatch for $localeDir")
-                .that(actualNames)
-                .containsExactlyElementsIn(expectedFileNames)
-        }
-
-        defaultFiles.forEach { defaultFile ->
-            val expectedKeys = readStringKeys(defaultFile)
-            LOCALES.forEach { localeDir ->
-                val localeFile = File(resDir, "$localeDir/${defaultFile.name}")
-                val actualKeys = readStringKeys(localeFile)
-                assertWithMessage("Key mismatch for ${defaultFile.name} in $localeDir")
-                    .that(actualKeys)
-                    .containsExactlyElementsIn(expectedKeys)
-            }
-        }
-    }
-
-    @Test
-    fun `top-level strings xml stays aligned across locales`() {
+    fun `values strings xml only holds non-localised resources`() {
         val resDir = resolveExistingDir("app/src/main/res", "src/main/res")
         val defaultFile = File(resDir, "values/strings.xml")
         assertWithMessage("values/strings.xml must exist")
             .that(defaultFile.exists()).isTrue()
 
-        val defaultKeys = readStringKeys(defaultFile).toSet()
-        val translatable = defaultKeys - NON_LOCALIZED_STRING_KEYS
-
-        LOCALES.forEach { localeDir ->
-            val localeFile = File(resDir, "$localeDir/strings.xml")
-            assertWithMessage("$localeDir/strings.xml must exist")
-                .that(localeFile.exists()).isTrue()
-
-            val localeKeys = readStringKeys(localeFile).toSet()
-
-            val missing = translatable - localeKeys
-            assertWithMessage(
-                "Missing translations in $localeDir/strings.xml. " +
-                    "Add the following keys: $missing"
-            ).that(missing).isEmpty()
-
-            val orphan = localeKeys - defaultKeys
-            assertWithMessage(
-                "Orphan keys in $localeDir/strings.xml that are absent from " +
-                    "values/strings.xml: $orphan"
-            ).that(orphan).isEmpty()
-
-            val redeclaredNonLocalised = NON_LOCALIZED_STRING_KEYS.intersect(localeKeys)
-            assertWithMessage(
-                "$localeDir/strings.xml redeclares keys that are intentionally " +
-                    "non-localised in values/. Either translate them by " +
-                    "removing them from NON_LOCALIZED_STRING_KEYS, or drop the " +
-                    "locale-specific copy. Offending keys: $redeclaredNonLocalised"
-            ).that(redeclaredNonLocalised).isEmpty()
-        }
-    }
-
-    private fun readStringKeys(file: File): List<String> {
-        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(defaultFile)
         val nodes = document.getElementsByTagName("string")
-        return buildList {
-            for (index in 0 until nodes.length) {
-                val element = nodes.item(index)
-                val name = element.attributes?.getNamedItem("name")?.nodeValue
-                if (!name.isNullOrBlank()) {
-                    add(name)
-                }
+        val offenders = mutableListOf<String>()
+        for (index in 0 until nodes.length) {
+            val element = nodes.item(index)
+            val name = element.attributes?.getNamedItem("name")?.nodeValue ?: continue
+            val translatable = element.attributes?.getNamedItem("translatable")?.nodeValue
+            if (name !in NON_LOCALIZED_STRING_KEYS || translatable != "false") {
+                offenders += "$name (translatable=$translatable)"
             }
         }
+
+        assertWithMessage(
+            buildString {
+                appendLine("res/values/strings.xml must only contain translatable=\"false\"")
+                appendLine("resources from NON_LOCALIZED_STRING_KEYS.")
+                appendLine("All user-visible text belongs in Strings.kt as inline")
+                appendLine("when(Strings.lang) blocks covering all 10 languages — resource")
+                appendLine("lookups cannot cover locales that have no values-*/ directory and")
+                appendLine("silently fall back to the default values/ (Chinese).")
+                appendLine()
+                appendLine("Offending entries:")
+                offenders.forEach { appendLine("  $it") }
+            }
+        ).that(offenders).isEmpty()
+    }
+
+    @Test
+    fun `no locale values dirs or grouped app strings files exist`() {
+        val resDir = resolveExistingDir("app/src/main/res", "src/main/res")
+
+        val localeDirs = resDir.listFiles { file ->
+            file.isDirectory &&
+                file.name.startsWith("values-") &&
+                LOCALE_QUALIFIER.matches(file.name.removePrefix("values-"))
+        }?.map { it.name }?.sorted().orEmpty()
+        assertWithMessage(
+            "Locale values-*/ directories must not exist — user-visible text lives in " +
+                "Strings.kt (all 10 languages inline), and partial locale resources " +
+                "silently fall back to Chinese for the missing 7. Found: $localeDirs"
+        ).that(localeDirs).isEmpty()
+
+        val groupedFiles = File(resDir, "values").listFiles { file ->
+            file.isFile && file.name.startsWith("app_strings_") && file.name.endsWith(".xml")
+        }?.map { it.name }?.sorted().orEmpty()
+        assertWithMessage(
+            "Grouped app_strings_*.xml files must not exist — they were dead duplicates " +
+                "of Strings.kt content, referenced by no code. Found: $groupedFiles"
+        ).that(groupedFiles).isEmpty()
     }
 
     @Test
@@ -142,10 +114,10 @@ class AppStringsResourceConsistencyTest {
                 appendLine("All user-facing strings must live in Strings.kt as inline")
                 appendLine("when(Strings.lang) blocks covering all 10 languages.")
                 appendLine()
-                appendLine("R.string.* is forbidden because res/values*/ is not maintained")
-                appendLine("for all 10 locales — resource lookups silently fall back to the")
-                appendLine("default values/ (Chinese) for pt/es/fr/de/ru/ja/ko, masking")
-                appendLine("missing translations. Use Strings.xxx (or Strings.funName(arg)")
+                appendLine("R.string.* is forbidden because res/values/ only holds")
+                appendLine("translatable=\"false\" resources — any localized string there")
+                appendLine("cannot cover the 10 languages and silently falls back to the")
+                appendLine("default values/ (Chinese). Use Strings.xxx (or Strings.funName(arg)")
                 appendLine("for parameterised strings) instead.")
                 appendLine()
                 appendLine("Offending references:")
