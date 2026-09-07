@@ -296,6 +296,8 @@ class FloatingWindowService : Service() {
                             findInPage = shellConfig.webViewConfig.nativeBridgeFindInPage,
                             orientation = shellConfig.webViewConfig.nativeBridgeOrientation,
                             fullscreen = shellConfig.webViewConfig.nativeBridgeFullscreen,
+                            googleSignIn = shellConfig.webViewConfig.nativeBridgeGoogleSignIn,
+                            googleSignInClientId = shellConfig.webViewConfig.nativeBridgeGoogleSignInClientId,
                         )
                         val nativeBridge = com.webtoapp.core.webview.NativeBridge(
                             context = this@FloatingWindowService,

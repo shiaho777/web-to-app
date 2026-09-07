@@ -608,6 +608,8 @@ class ShellActivity : AppCompatActivity() {
                                 orientation = config.webViewConfig.nativeBridgeOrientation,
                                 fullscreen = config.webViewConfig.nativeBridgeFullscreen,
                                 print = config.webViewConfig.nativeBridgePrint,
+                                googleSignIn = config.webViewConfig.nativeBridgeGoogleSignIn,
+                                googleSignInClientId = config.webViewConfig.nativeBridgeGoogleSignInClientId,
                             )
                             val nativeBridge = com.webtoapp.core.webview.NativeBridge(
                                 context = this@ShellActivity,

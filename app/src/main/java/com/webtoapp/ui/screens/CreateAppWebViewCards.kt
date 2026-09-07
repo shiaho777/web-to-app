@@ -3570,6 +3570,34 @@ fun SpecialSettingsCard(
                                     label = Strings.nativeBridgeCapsPrint,
                                     showSelectedCheck = false
                                 )
+                                WtaChip(
+                                    selected = caps.googleSignIn,
+                                    onClick = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(googleSignIn = !caps.googleSignIn))) },
+                                    label = Strings.nativeBridgeCapsGoogleSignIn,
+                                    showSelectedCheck = false
+                                )
+                            }
+
+                            AnimatedVisibility(
+                                visible = caps.googleSignIn,
+                                enter = CardExpandTransition,
+                                exit = CardCollapseTransition
+                            ) {
+                                Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
+                                    Text(
+                                        text = Strings.googleSignInHint,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    PremiumTextField(
+                                        value = caps.googleSignInClientId,
+                                        onValueChange = { onConfigChange(config.copy(nativeBridgeCapabilities = caps.copy(googleSignInClientId = it))) },
+                                        label = { Text(Strings.googleSignInClientIdLabel) },
+                                        placeholder = { Text(Strings.googleSignInClientIdPlaceholder) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = true
+                                    )
+                                }
                             }
                         }
 

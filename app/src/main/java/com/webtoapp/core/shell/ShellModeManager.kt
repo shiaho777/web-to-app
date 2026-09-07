@@ -1388,6 +1388,12 @@ data class WebViewShellConfig(
     @SerializedName("nativeBridgePrint")
     val nativeBridgePrint: Boolean = true,
 
+    @SerializedName("nativeBridgeGoogleSignIn")
+    val nativeBridgeGoogleSignIn: Boolean = false,
+
+    @SerializedName("nativeBridgeGoogleSignInClientId")
+    val nativeBridgeGoogleSignInClientId: String = "",
+
     @SerializedName("javaScriptCanOpenWindows")
     val javaScriptCanOpenWindows: Boolean = false,
 

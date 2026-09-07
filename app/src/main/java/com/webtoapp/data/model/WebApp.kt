@@ -1596,6 +1596,12 @@ data class NativeBridgeCapabilities(
     val orientation: Boolean = true,
     val fullscreen: Boolean = true,
     val print: Boolean = true,
+    // Native Google sign-in via the Credential Manager. Off by default: it reads the
+    // device's Google accounts (after an explicit system UI prompt) and requires the app
+    // owner to register the generated package name + signing SHA-1 with a Google Cloud
+    // project and provide its Web client ID.
+    val googleSignIn: Boolean = false,
+    val googleSignInClientId: String = "",
 )
 
 enum class GeolocationAccuracy {
