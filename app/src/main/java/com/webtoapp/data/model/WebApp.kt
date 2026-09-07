@@ -42,6 +42,14 @@ enum class AppType {
             GO_APP,
             WORDPRESS
         )
+
+        /**
+         * Parse a persisted app-type string (e.g. [MultiWebSite.appType]) into an [AppType],
+         * null for unknown values. The multi-web site type is stored as a raw string, so
+         * gating helpers need this bridge to reuse [requiresProcessExec].
+         */
+        fun fromPersistedName(name: String?): AppType? =
+            entries.firstOrNull { it.name.equals(name, ignoreCase = true) }
     }
 }
 
@@ -876,7 +884,18 @@ data class MultiWebConfig(
     val refreshInterval: Int = 30,
     val showSiteIcons: Boolean = true,
     val projectId: String = ""
-)
+) {
+    /**
+     * True when any enabled site sources from a server-runtime app (Node/PHP/Python/Go/
+     * WordPress). Such a multi-web app must keep `targetSdk <= 28` like a standalone
+     * server app: at runtime the site is routed into the matching `*ShellMode`, which
+     * fork+execs the bundled runtime binaries — blocked by W^X from targetSdk 29 on.
+     */
+    val anySiteRequiresProcessExec: Boolean
+        get() = sites.any { site ->
+            site.enabled && (AppType.fromPersistedName(site.appType)?.requiresProcessExec == true)
+        }
+}
 
 data class MultiWebSite(
     val id: String = "",

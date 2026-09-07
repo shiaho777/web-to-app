@@ -63,7 +63,7 @@ object TlsMitmCaManager {
             val certFile = File(caDir, "mitm_ca_cert.cer")
 
             if (certFile.exists() && keyFile.exists()) {
-                val keyBytes = keyFile.readBytes()
+                val keyBytes = MitmCaKeyStore.readKey(keyFile)
                 val certBytes = certFile.readBytes()
                 val key = KeyFactory.getInstance("RSA")
                     .generatePrivate(PKCS8EncodedKeySpec(keyBytes))
@@ -130,8 +130,10 @@ object TlsMitmCaManager {
         )
         val cert = JcaX509CertificateConverter().getCertificate(holder)
 
-        File(caDir, "mitm_ca_key.bks").writeBytes(pair.private.encoded)
         File(caDir, "mitm_ca_cert.cer").writeBytes(cert.encoded)
+        // The CA key is written wrapped (see MitmCaKeyStore): a raw PKCS#8 blob readable
+        // for ten years is the single worst-compromise artifact this feature persists.
+        MitmCaKeyStore.writeKey(File(caDir, "mitm_ca_key.bks"), pair.private.encoded)
 
         caKeyPair = pair
         caCert = cert
@@ -146,8 +148,12 @@ object TlsMitmCaManager {
     fun isSignedByLocalCa(cert: X509Certificate?): Boolean {
         if (cert == null || !initialized) return false
         val ca = caCert ?: return false
+        val caKey = caKeyPair?.public ?: return false
         return try {
-            cert.issuerX500Principal == ca.subjectX500Principal
+            // Issuer DN alone is forgeable (the CA subject is public in every shipped APK);
+            // require an actual signature verification against the local CA key. Fail-closed.
+            cert.issuerX500Principal == ca.subjectX500Principal &&
+                runCatching { cert.verify(caKey); true }.getOrDefault(false)
         } catch (_: Exception) {
             false
         }

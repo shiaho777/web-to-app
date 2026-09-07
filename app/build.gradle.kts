@@ -668,11 +668,14 @@ tasks.register("checkConfigFieldDrift") {
     val apkConfigFile = file("src/main/java/com/webtoapp/core/apkbuilder/ApkConfig.kt")
     val shellConfigFile = file("src/main/java/com/webtoapp/core/shell/ShellModeManager.kt")
     val allowlist = rootProject.file("scripts/config_field_drift_allowlist.json")
+    // Configuration-cache safe: capture values at configuration time; the doLast action
+    // must not reach through Project.
+    val rootDir = rootProject.projectDir
     inputs.files(script, payloadFile, apkConfigFile, shellConfigFile, allowlist)
     outputs.upToDateWhen { false }
     doLast {
         val pb = ProcessBuilder(resolvePython3Command() + script.absolutePath)
-        pb.directory(rootProject.projectDir)
+        pb.directory(rootDir)
         pb.redirectErrorStream(true)
         val proc = pb.start()
         val log = proc.inputStream.bufferedReader().readText()

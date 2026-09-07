@@ -382,7 +382,11 @@ object GoToolchainManager {
                     entry = tar.nextTarEntry
                     continue
                 }
-                val out = File(destGoRoot, rel)
+                val out = com.webtoapp.util.SafeZip.safeChild(destGoRoot, rel) ?: run {
+                    skipped++
+                    entry = tar.nextTarEntry
+                    continue
+                }
                 when {
                     entry.isDirectory -> {
                         out.mkdirs()

@@ -18,8 +18,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages-${{ github.ref }}
@@ -62,6 +60,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Only this job touches Pages: the build job runs on pull_requests (including
+    # same-repo branches) and executes third-party dependency postinstall code, so it
+    # must not hold Pages/OIDC write capabilities.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
 
     environment:
       name: github-pages

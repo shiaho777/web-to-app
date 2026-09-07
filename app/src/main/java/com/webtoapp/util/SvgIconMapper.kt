@@ -114,41 +114,21 @@ object SvgIconMapper {
         "desktop_windows"     -> Icons.Outlined.DesktopWindows
         "visibility"          -> Icons.Outlined.Visibility
         "attachment", "📎"    -> Icons.Outlined.AttachFile
-        "pause", "⏸️"         -> Icons.Outlined.Pause
-        "thinking", "🤔"     -> Icons.Outlined.Psychology
-        "check", "✅"         -> Icons.Outlined.Check
-        "error", "❌"         -> Icons.Outlined.Error
+        "⏸️" -> Icons.Outlined.Pause
+        "❌" -> Icons.Outlined.Error
         "add_circle", "➕"   -> Icons.Outlined.AddCircle
-        "file", "📄"          -> Icons.Outlined.InsertDriveFile
-        "folder", "📁"        -> Icons.Outlined.Folder
-        "book", "📚"          -> Icons.Outlined.MenuBook
-        "help", "❓"           -> Icons.Outlined.HelpOutline
-        "warning", "⚠️"      -> Icons.Outlined.Warning
-        "heart", "❤️"         -> Icons.Outlined.Favorite
+        "📄" -> Icons.Outlined.InsertDriveFile
+        "📚" -> Icons.Outlined.MenuBook
         "home", "🏠"          -> Icons.Outlined.Home
-        "camera", "📷", "📸" -> Icons.Outlined.CameraAlt
-        "movie", "🎬"         -> Icons.Outlined.Movie
-        "lightbulb", "💡"    -> Icons.Outlined.Lightbulb
+        "📸" -> Icons.Outlined.CameraAlt
         "fast_forward", "⏩" -> Icons.Outlined.FastForward
-        "shield", "🛡️"      -> Icons.Outlined.Shield
-        "target", "🎯"       -> Icons.Outlined.GpsFixed
-        "gaming", "🎮"       -> Icons.Outlined.SportsEsports
         "phone_android", "📱" -> Icons.Outlined.PhoneAndroid
         "computer", "💻"     -> Icons.Outlined.Computer
-        "star", "⭐", "🌟"  -> Icons.Outlined.Star
-        "fire", "🔥"          -> Icons.Outlined.Whatshot
-        "diamond", "💎"      -> Icons.Outlined.Diamond
-        "gift", "🎁"          -> Icons.Outlined.CardGiftcard
+        "🌟" -> Icons.Outlined.Star
         "trophy", "🏆"       -> Icons.Outlined.EmojiEvents
         "festival", "🎪"    -> Icons.Outlined.Celebration
-        "mouse", "🖱️"        -> Icons.Outlined.Mouse
         "list", "📜"          -> Icons.Outlined.List
-        "settings", "⚙️"    -> Icons.Outlined.Settings
-        "html", "🌐"          -> Icons.Outlined.Language
-        "golang", "🔷"       -> Icons.Outlined.Code
-        "python", "🐍"       -> Icons.Outlined.Code
-        "clipboard", "📋"    -> Icons.Outlined.Assignment
-        "edit_note", "📝"    -> Icons.Outlined.EditNote
+        "⚙️" -> Icons.Outlined.Settings
         "build", "🩹"        -> Icons.Outlined.Build
 
         "tv", "📺"            -> Icons.Outlined.Tv
@@ -167,10 +147,6 @@ object SvgIconMapper {
         "translate"           -> Icons.Outlined.Translate
         "picture_in_picture"  -> Icons.Outlined.PictureInPicture
         "repeat", "🔁"       -> Icons.Outlined.Repeat
-        "block"               -> Icons.Outlined.Block
-        "radio_button"        -> Icons.Outlined.RadioButtonChecked
-        "bolt"                -> Icons.Outlined.Bolt
-        "package"             -> Icons.Outlined.Inventory2
 
         else                  -> Icons.Outlined.HelpOutline
     }

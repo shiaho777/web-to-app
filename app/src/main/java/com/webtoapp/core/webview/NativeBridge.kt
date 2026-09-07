@@ -65,7 +65,10 @@ class NativeBridge(
     private val downloadLocationMode: com.webtoapp.data.model.DownloadLocationMode =
         com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD,
 
-    private val customDownloadDirUri: String = ""
+    private val customDownloadDirUri: String = "",
+
+    /** The app's configured origin (target URL / local base) for CORS-bypass caller checks. */
+    private val appOriginUrl: String = ""
 ) {
     companion object {
         const val JS_INTERFACE_NAME = "NativeBridge"
@@ -439,6 +442,19 @@ if (NativeBridge.isFullscreen()) {
             val scheme = runCatching { URI(url).scheme }.getOrNull()?.lowercase(Locale.ROOT)
             return scheme == "http" || scheme == "https"
         }
+
+        /**
+         * Whether [pageUrl] belongs to the app's configured origin ([appOriginUrl] — the
+         * target URL, or the local server base for packaged/server app types). Same host
+         * or a subdomain counts; anything else is a foreign page riding the WebView.
+         */
+        internal fun isSameSiteOrSubdomain(pageHost: String, originHost: String): Boolean {
+            if (originHost.isBlank() || pageHost.isBlank()) return false
+            val p = pageHost.trim('[', ']').lowercase(Locale.ROOT).trimEnd('.')
+            val o = originHost.trim('[', ']').lowercase(Locale.ROOT).trimEnd('.')
+            if (p == o) return true
+            return p.endsWith(".$o")
+        }
     }
 
     private val privateNetworkHttpClient: OkHttpClient by lazy {
@@ -456,6 +472,13 @@ if (NativeBridge.isFullscreen()) {
             )
             .retryOnConnectionFailure(true)
             .build()
+    }
+
+    private fun isAppOriginCallerPage(pageUrl: String): Boolean {
+        val origin = appOriginUrl.takeIf { it.isNotBlank() } ?: return false
+        val pageHost = runCatching { URI(pageUrl).host }.getOrNull() ?: return false
+        val originHost = runCatching { URI(origin).host }.getOrNull() ?: return false
+        return isSameSiteOrSubdomain(pageHost, originHost)
     }
 
     @JavascriptInterface
@@ -1256,6 +1279,31 @@ if (NativeBridge.isFullscreen()) {
                     AppLogger.w("NativeBridge", "Blocked CORS-bypass request to non-HTTP(S) URL: $url")
                     return privateNetworkBridgeError("URL_NOT_ALLOWED", "Only HTTP(S) URLs are allowed")
                 }
+                // The CORS-bypass bridge is a full cross-origin reader — gate it on the
+                // calling page. Local pages (packaged files, local server apps) may reach
+                // anything; the app's own remote origin may bypass CORS for internet APIs
+                // but must not probe the phone's local services; anything else (random
+                // iframes / navigations) is rejected outright.
+                val pageUrl = webViewProvider()?.url.orEmpty()
+                val pageIsLocal = isPrivateNetworkUrl(pageUrl) ||
+                    pageUrl.startsWith("file:") ||
+                    pageUrl.startsWith("content://") ||
+                    pageUrl.startsWith("about:blank")
+                val pageIsAppOrigin = isAppOriginCallerPage(pageUrl)
+                if (!pageIsLocal && !pageIsAppOrigin) {
+                    AppLogger.w("NativeBridge", "Blocked CORS-bypass request from non-app page: $pageUrl -> $url")
+                    return privateNetworkBridgeError(
+                        "CALLER_NOT_ALLOWED",
+                        "Only the app's own pages can use the CORS-bypass bridge"
+                    )
+                }
+                if (!pageIsLocal && isPrivateNetworkUrl(url)) {
+                    AppLogger.w("NativeBridge", "Blocked CORS-bypass request to local network from remote page: $pageUrl -> $url")
+                    return privateNetworkBridgeError(
+                        "URL_NOT_ALLOWED",
+                        "CORS-bypass requests to local network addresses require a local page"
+                    )
+                }
             } else if (!isPrivateNetworkUrl(url)) {
                 AppLogger.w("NativeBridge", "Blocked private-network bridge request to non-private URL: $url")
                 return privateNetworkBridgeError("URL_NOT_ALLOWED", "Only private network HTTP(S) URLs are allowed")
@@ -1781,14 +1829,16 @@ class PrivateNetworkNativeBridgeAdapter(
     context: Context,
     scope: CoroutineScope,
     webViewProvider: () -> WebView? = { null },
-    corsBypass: Boolean = false
+    corsBypass: Boolean = false,
+    appOriginUrl: String = ""
 ) {
     private val delegate = NativeBridge(
         context = context,
         scope = scope,
         webViewProvider = webViewProvider,
         capabilities = privateNetworkOnlyCapabilities(),
-        corsBypass = corsBypass
+        corsBypass = corsBypass,
+        appOriginUrl = appOriginUrl
     )
 
     @JavascriptInterface

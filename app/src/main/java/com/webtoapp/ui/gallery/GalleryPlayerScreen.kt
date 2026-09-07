@@ -29,8 +29,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -38,6 +40,8 @@ import coil.request.ImageRequest
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.data.model.*
 import com.webtoapp.ui.shared.AspectRatioSurface
+import com.webtoapp.ui.shared.ZoomableState
+import com.webtoapp.ui.shared.zoomable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -456,17 +460,45 @@ fun GalleryImageViewer(
 ) {
     val context = LocalContext.current
 
-    Box(
+    BoxWithConstraints(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
+        val density = LocalDensity.current
+        // Same pinch/pan/double-tap behavior as the exported shell viewer (#801): fresh
+        // zoom state per item, content size from the loaded painter.
+        val zoom = remember(item.path) { ZoomableState() }
+        var intrinsicSizePx by remember(item.path) { mutableStateOf<Size?>(null) }
+        val viewportPx = with(density) { Size(maxWidth.toPx(), maxHeight.toPx()) }
+
+        LaunchedEffect(viewportPx, intrinsicSizePx) {
+            intrinsicSizePx?.let { size ->
+                zoom.setLayout(viewportPx, size)
+            }
+        }
+
         AsyncImage(
             model = ImageRequest.Builder(context)
                 .data(File(item.path))
                 .crossfade(true)
                 .build(),
             contentDescription = item.name,
-            modifier = Modifier.fillMaxSize(),
+            onState = { state ->
+                val painterSize = (state as? coil.compose.AsyncImagePainter.State.Success)
+                    ?.painter?.intrinsicSize
+                if (painterSize != null && painterSize.width > 0f && painterSize.height > 0f) {
+                    // intrinsicSize is already in pixels — no density conversion.
+                    intrinsicSizePx = painterSize
+                }
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(item.path) {
+                    detectTapGestures(
+                        onDoubleTap = { tap -> zoom.toggleZoom(tap) }
+                    )
+                }
+                .zoomable(zoom),
             contentScale = ContentScale.Fit
         )
     }

@@ -365,6 +365,8 @@ def _validate_registry(report: Report, registry: dict[str, Any]) -> list[dict[st
         if eid:
             if eid in seen_ids:
                 report.error(f"{where}::modules[{i}]", f"duplicate id {eid!r}")
+            if not KEBAB_CASE_RE.match(eid):
+                report.error(f"{where}::modules[{i}]", f"id {eid!r} must be kebab-case")
             seen_ids.add(eid)
 
         epath = entry.get("path") if _is_str(entry.get("path")) else None

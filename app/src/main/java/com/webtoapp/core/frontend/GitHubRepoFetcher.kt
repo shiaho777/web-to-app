@@ -184,7 +184,8 @@ class GitHubRepoFetcher(private val context: Context) {
                     }
 
                     val target = File(extractDir, entryName).canonicalFile
-                    if (!target.path.startsWith(extractDir.canonicalPath)) {
+                    // + File.separator: a bare prefix match lets sibling directories through.
+                    if (!target.path.startsWith(extractDir.canonicalPath + File.separator)) {
                         AppLogger.w(TAG, "Skip unsafe zip entry: $entryName")
                         zis.closeEntry()
                         entry = zis.nextEntry

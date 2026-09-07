@@ -165,6 +165,10 @@ class GeckoViewEngine(
 
         fun setTlsMitmActive(active: Boolean) {
             tlsMitmActive = active
+            // Gecko's network stack has no per-request callback the host can feed the MITM
+            // bridge's host allowlist from, so enforcing it here would block legitimate
+            // third-party resource CONNECTs. The WebView engine path keeps enforcement on.
+            com.webtoapp.core.webview.TlsMitmBridge.setHostAllowlistEnforcement(!active)
         }
 
         fun applyAntiCapture(active: Boolean) {
@@ -712,6 +716,13 @@ class GeckoViewEngine(
                 hasUserGesture: Boolean
             ) {
                 currentUrl = url
+                // Gecko traffic bypasses WebViewClient.shouldInterceptRequest, so the TLS
+                // MITM bridge's host allowlist is fed here instead.
+                if (com.webtoapp.core.webview.TlsMitmBridge.isRunning()) {
+                    com.webtoapp.core.webview.TlsMitmBridge.allowHost(
+                        runCatching { android.net.Uri.parse(url ?: "").host }.getOrNull()
+                    )
+                }
             }
 
             override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {

@@ -32,6 +32,8 @@ import com.webtoapp.ui.theme.ThemeManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.*
 import java.util.zip.*
@@ -57,6 +59,21 @@ class ApkBuilder(private val context: Context) {
         private val PACKAGE_NAME_REGEX = AppConstants.PACKAGE_NAME_REGEX
         private val CHARSET_REGEX = AppConstants.CHARSET_REGEX
         private const val FLOATING_WINDOW_MINIMIZED_ICON_ASSET = "floating_window_minimized_icon.png"
+
+        /**
+         * Per-package build locks, shared by every [ApkBuilder] instance. Multiple entry
+         * points (export screen, home share button, agent tools, batch export) can start
+         * builds concurrently, and a build writes to deterministic temp paths keyed by
+         * package name — without serialization two builds of the same package interleave
+         * (one build's cleanup deletes the other's in-flight template copy / aligned ELF /
+         * unsigned APK mid-sign).
+         */
+        private val buildLocks = java.util.concurrent.ConcurrentHashMap<String, Mutex>()
+
+        private fun lockFor(packageName: String): Mutex =
+            buildLocks.getOrPut(packageName.replace(Regex("[^A-Za-z0-9_.-]"), "_")) {
+                Mutex()
+            }
 
         /** Adaptive icon canvas size (108dp @ xxxhdpi) used for foreground/background layers. */
         private const val ADAPTIVE_ICON_PX = 432
@@ -232,6 +249,18 @@ class ApkBuilder(private val context: Context) {
     private val outputDir = resolveOutputDir(context)
     private val tempDir = File(context.cacheDir, "apk_build_temp").apply { mkdirs() }
 
+    /**
+     * Working directory of the in-flight build (per package). Same-package builds are
+     * serialized by the companion [buildLocks], so the deterministic paths inside it
+     * (unsigned APK, template copy, aligned-ELF outputs) can never be touched by a
+     * concurrent build; different packages get different directories.
+     */
+    @Volatile
+    private var activeWorkDir: File? = null
+
+    private fun pkgWorkDir(packageName: String): File =
+        File(tempDir, "pkg_" + packageName.replace(Regex("[^A-Za-z0-9_.-]"), "_")).apply { mkdirs() }
+
     private val originalAppName = "WebToApp"
     private val originalPackageName = "com.webtoapp"
 
@@ -294,16 +323,21 @@ class ApkBuilder(private val context: Context) {
         forceFullRebuild: Boolean = false,
         onProgress: (Int, String) -> Unit = { _, _ -> }
     ): BuildResult = withContext(Dispatchers.IO) {
-        val versioned = withInstallAwareVersion(context, webApp)
-        if (versioned !== webApp) {
-            AppLogger.i(
-                "ApkBuilder",
-                "Bumped version for ${resolvePackageName(webApp)}: " +
-                    "${webApp.apkExportConfig?.customVersionCode ?: 1} -> " +
-                    "${versioned.apkExportConfig?.customVersionCode}"
-            )
+        // Serialize builds of the same package across all entry points (export screen,
+        // home share, agent tools): the build writes deterministic temp paths keyed by
+        // package name, so two overlapping builds would corrupt each other's files.
+        lockFor(resolvePackageName(webApp)).withLock {
+            val versioned = withInstallAwareVersion(context, webApp)
+            if (versioned !== webApp) {
+                AppLogger.i(
+                    "ApkBuilder",
+                    "Bumped version for ${resolvePackageName(webApp)}: " +
+                        "${webApp.apkExportConfig?.customVersionCode ?: 1} -> " +
+                        "${versioned.apkExportConfig?.customVersionCode}"
+                )
+            }
+            buildApkInternal(versioned, forceFullRebuild, onProgress)
         }
-        buildApkInternal(versioned, forceFullRebuild, onProgress)
     }
 
     private suspend fun buildApkInternal(
@@ -399,6 +433,8 @@ class ApkBuilder(private val context: Context) {
             logger.section("Generate Package Name")
             val packageName = resolvePackageName(webApp)
             currentPackageName = packageName
+            val workDir = pkgWorkDir(packageName)
+            activeWorkDir = workDir
 
             val customPkg = webApp.apkExportConfig?.customPackageName?.takeIf {
                 it.isNotBlank() && it.matches(PACKAGE_NAME_REGEX)
@@ -421,7 +457,7 @@ class ApkBuilder(private val context: Context) {
             onProgress(10, "Checking template...")
             logger.section("Parallel Resource Preparation")
 
-            val unsignedApk = File(tempDir, "${packageName}_unsigned.apk")
+            val unsignedApk = File(workDir, "${packageName}_unsigned.apk")
             val signedApk = File(outputDir, "${sanitizeFileName(webApp.name)}_v${config.versionName}.APK")
             currentUnsignedApkPath = unsignedApk.absolutePath
             currentSignedApkPath = signedApk.absolutePath
@@ -1109,7 +1145,6 @@ class ApkBuilder(private val context: Context) {
                 }
                 val cleanupDeferred = async {
                     unsignedApk.delete()
-                    cleanTempFiles()
                 }
 
                 cleanupDeferred.await()
@@ -1145,8 +1180,6 @@ class ApkBuilder(private val context: Context) {
             )
 
         } catch (e: Exception) {
-            cleanTempFiles()
-
             failBuild(
                 stage = currentStage,
                 cause = BuildFailureCause.UNHANDLED_EXCEPTION,
@@ -1160,6 +1193,13 @@ class ApkBuilder(private val context: Context) {
                     "signedApk" to currentSignedApkPath
                 )
             )
+        } finally {
+            // Per-build artifacts live under the package work dir; drop the unsigned APK on
+            // every exit path (failBuild returns inside try leave it behind otherwise) and
+            // clear the work-dir pointer. The cached template copy and aligned-ELF outputs
+            // stay for the next build of the same package.
+            try { currentUnsignedApkPath?.let { File(it).delete() } } catch (_: Exception) {}
+            activeWorkDir = null
         }
     }
 
@@ -1196,7 +1236,10 @@ class ApkBuilder(private val context: Context) {
         return try {
             val sourceTemplate = templateProvider.getTemplateFor(config) ?: return null
             val sourceName = sourceTemplate.name
-            val templateFile = File(tempDir, "base_template_${sourceName.substringBeforeLast('.')}.apk")
+            // Inside the per-package work dir: same-package builds are mutex-serialized, so
+            // the cached copy can be reused without a concurrent build truncating it.
+            val workDir = activeWorkDir ?: pkgWorkDir(config.packageName)
+            val templateFile = File(workDir, "base_template_${sourceName.substringBeforeLast('.')}.apk")
 
             val needsCopy = !templateFile.exists() ||
                 templateFile.length() != sourceTemplate.length() ||
@@ -1322,6 +1365,13 @@ class ApkBuilder(private val context: Context) {
                                     entry.name.endsWith(".DSA") || entry.name == "META-INF/MANIFEST.MF") -> {
                             }
                             buildCache.isContentReplaceableEntry(entry.name) -> {
+                            }
+                            // The injection phase below re-embeds the runtime native libs for the
+                            // device ABI on every build regardless of mode; copying the cached
+                            // copies here too would emit each lib twice (near-2x bloat and
+                            // undefined duplicate-entry behavior).
+                            entry.name in injectedDeviceLibs -> {
+                                AppLogger.d("ApkBuilder", "Skipping cached native lib (re-injected this build): ${entry.name}")
                             }
                             else -> {
                                 ZipUtils.copyEntryPreserveMethod(zipIn, zipOut, entry)
@@ -2028,7 +2078,9 @@ class ApkBuilder(private val context: Context) {
                 displayName == "libpython3.so" ||
                 displayName == "libmusl-linker.so"
         return try {
-            val result = ElfAligner16k.ensureAligned(sourceFile, File(tempDir, "elf16k"))
+            // Per-package work dir keeps the aligned outputs (and the in-memory cache
+            // entries pointing at them) isolated from concurrent builds of other apps.
+            val result = ElfAligner16k.ensureAligned(sourceFile, File(activeWorkDir ?: tempDir, "elf16k"))
             when {
                 result.alreadyAligned -> logger.log("ELF 16KB already aligned: $displayName")
                 result.repacked -> logger.log(
@@ -2216,19 +2268,24 @@ class ApkBuilder(private val context: Context) {
         logger.logKeyValue("wordpressTotalSize", "${totalSize / 1024} KB")
 
         val phpBinary = resolvePhpBinary()
-        if (phpBinary != null && phpBinary.canRead()) {
-            try {
-                val abi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
-                val alignedPhpBinary = ensureAligned16kNativeLib(phpBinary, "libphp.so")
+        if (phpBinary == null || !phpBinary.canRead()) {
+            throw IllegalStateException(
+                "WordPress export needs the PHP runtime, but the PHP binary is missing or unreadable. " +
+                    "Download the PHP runtime in WebToApp (Linux Environment) and rebuild."
+            )
+        }
+        try {
+            val abi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
+            val alignedPhpBinary = ensureAligned16kNativeLib(phpBinary, "libphp.so")
 
-                writeEntryStoredStreaming(zipOut, "lib/$abi/libphp.so", alignedPhpBinary)
-                logger.log("PHP binary injected as native lib: lib/$abi/libphp.so (${alignedPhpBinary.length() / 1024} KB)")
-
-            } catch (e: Exception) {
-                logger.error("Failed to embed PHP binary", e)
-            }
-        } else {
-            logger.warn("PHP binary not found")
+            writeEntryStoredStreaming(zipOut, "lib/$abi/libphp.so", alignedPhpBinary)
+            logger.log("PHP binary injected as native lib: lib/$abi/libphp.so (${alignedPhpBinary.length() / 1024} KB)")
+        } catch (e: Exception) {
+            // A WordPress APK without libphp.so installs fine but crashes on launch — fail the
+            // build instead of shipping a broken app (mirrors injectNodeJsNativeLibs).
+            throw IllegalStateException(
+                "Failed to embed the PHP binary as libphp.so for the WordPress app: ${e.message}", e
+            )
         }
     }
 
@@ -2394,19 +2451,23 @@ class ApkBuilder(private val context: Context) {
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.phpConfig(), logger)
 
         val phpBinary = resolvePhpBinary()
-        if (phpBinary != null && phpBinary.canRead()) {
-            try {
-                val abi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
-                val alignedPhpBinary = ensureAligned16kNativeLib(phpBinary, "libphp.so")
+        if (phpBinary == null || !phpBinary.canRead()) {
+            throw IllegalStateException(
+                "PHP app export needs the PHP runtime, but the PHP binary is missing or unreadable. " +
+                    "Download the PHP runtime in WebToApp (Linux Environment) and rebuild."
+            )
+        }
+        try {
+            val abi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
+            val alignedPhpBinary = ensureAligned16kNativeLib(phpBinary, "libphp.so")
 
-                writeEntryStoredStreaming(zipOut, "lib/$abi/libphp.so", alignedPhpBinary)
-                logger.log("PHP binary injected as native lib: lib/$abi/libphp.so (${alignedPhpBinary.length() / 1024} KB)")
-
-            } catch (e: Exception) {
-                logger.error("Failed to embed PHP binary for PHP app", e)
-            }
-        } else {
-            logger.warn("PHP binary not found")
+            writeEntryStoredStreaming(zipOut, "lib/$abi/libphp.so", alignedPhpBinary)
+            logger.log("PHP binary injected as native lib: lib/$abi/libphp.so (${alignedPhpBinary.length() / 1024} KB)")
+        } catch (e: Exception) {
+            // Swallowing this produced "successful" builds whose APKs crash on launch.
+            throw IllegalStateException(
+                "Failed to embed the PHP binary as libphp.so for the PHP app: ${e.message}", e
+            )
         }
     }
 
@@ -2562,20 +2623,25 @@ builtins.__import__ = _w2a_import
         }
 
         val abi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
-        if (pythonBinary != null && pythonBinary.canRead()) {
-            try {
+        if (pythonBinary == null || !pythonBinary.canRead()) {
+            throw IllegalStateException(
+                "Python app export needs the Python runtime, but the interpreter is missing or unreadable " +
+                    "(looked for $versionedPythonBinaryName / python3 under $pythonHome). " +
+                    "Download the Python runtime in WebToApp (Linux Environment) and rebuild."
+            )
+        }
+        try {
+            val alignedPythonBinary = ensureAligned16kNativeLib(pythonBinary, "libpython3.so")
+            writeEntryStoredStreaming(zipOut, "lib/$abi/libpython3.so", alignedPythonBinary)
+            logger.log("Python binary embedded as native lib: lib/$abi/libpython3.so (${alignedPythonBinary.length() / 1024} KB, src=${pythonBinary.name})")
 
-                val alignedPythonBinary = ensureAligned16kNativeLib(pythonBinary, "libpython3.so")
-                writeEntryStoredStreaming(zipOut, "lib/$abi/libpython3.so", alignedPythonBinary)
-                logger.log("Python binary embedded as native lib: lib/$abi/libpython3.so (${alignedPythonBinary.length() / 1024} KB, src=${pythonBinary.name})")
-
-                writeEntryStoredSimple(zipOut, "assets/python/$abi/python3", alignedPythonBinary.readBytes())
-            } catch (e: Exception) {
-                logger.error("Failed to embed Python binary", e)
-            }
-        } else {
-            logger.error("⚠️ CRITICAL: Python binary not available! The exported APK will NOT be able to run Python apps. Please ensure Python runtime is downloaded in WebToApp settings.")
-            logger.warn("Python binary not found or too small: ${versionedPythonBinaryName}=${pythonBinaryVersioned.let { "${it.exists()}/${it.length()}" }}, python3=${pythonBinary3.let { "${it.exists()}/${it.length()}" }}")
+            writeEntryStoredSimple(zipOut, "assets/python/$abi/python3", alignedPythonBinary.readBytes())
+        } catch (e: Exception) {
+            // A Python APK without the interpreter installs fine but cannot run — fail the
+            // build instead of shipping it (mirrors injectNodeJsNativeLibs).
+            throw IllegalStateException(
+                "Failed to embed the Python binary as libpython3.so for the Python app: ${e.message}", e
+            )
         }
 
         val muslLinkerName = com.webtoapp.core.python.PythonDependencyManager.getMuslLinkerName(abi)
@@ -4440,8 +4506,15 @@ private fun WebApp.buildMultiWebBlock(context: android.content.Context?, package
         } else null
         // A site left without embedded config but still typed MULTI_WEB would hit
         // the shell's recursive-nesting guard and render blank: normalize it to a
-        // plain URL site, which the shell always knows how to display.
-        val siteAppType = if (siteShellConfig == null && site.appType == "MULTI_WEB") "WEB" else site.appType
+        // plain URL site, which the shell always knows how to display. Server-runtime
+        // types are normalized too — without embedded config the shell would route them
+        // into a *ShellMode that fork+execs an interpreter that was never packaged.
+        val siteAppType = when {
+            siteShellConfig != null -> site.appType
+            site.appType == "MULTI_WEB" -> "WEB"
+            com.webtoapp.data.model.AppType.fromPersistedName(site.appType)?.requiresProcessExec == true -> "WEB"
+            else -> site.appType
+        }
         com.webtoapp.core.shell.MultiWebSiteShellConfig(
             id = site.id,
             name = site.name,
@@ -4547,6 +4620,20 @@ internal fun resolveMultiWebSiteSource(
             "ApkBuilder",
             "MultiWeb site \"$siteName\" points at another multi-web app " +
                 "(id=${sourceApp.id}); nesting is not supported, embedding its URL instead"
+        )
+        return null
+    }
+    if (sourceApp.appType.requiresProcessExec) {
+        // Server-runtime sources cannot ship inside a multi-web APK: the per-site embedder
+        // only packages HTML/FRONTEND/gallery/media assets and the native-lib injection is
+        // keyed on the top-level app type, so a PHP/Node/Python/Go/WordPress site would
+        // route into its *ShellMode at runtime with neither the interpreter nor the project
+        // files present. Degrade to the site's URL (#792 pattern) instead of a broken export.
+        AppLogger.w(
+            "ApkBuilder",
+            "MultiWeb site \"$siteName\" sources a ${sourceApp.appType.name} app; " +
+                "server-runtime sites are not embeddable in multi-web exports, " +
+                "embedding its URL instead"
         )
         return null
     }

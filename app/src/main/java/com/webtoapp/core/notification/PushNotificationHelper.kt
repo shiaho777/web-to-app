@@ -21,19 +21,13 @@ object PushNotificationHelper {
         channelName: String,
         channelDescription: String
     ) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val manager = context.getSystemService(NotificationManager::class.java) ?: return
-        val existing = manager.getNotificationChannel(channelId)
-        if (existing != null) return
-        val channel = NotificationChannel(
-            channelId,
-            channelName,
-            NotificationManager.IMPORTANCE_DEFAULT
-        ).apply {
+        com.webtoapp.util.SafeNotificationChannels.ensure(
+            context = context,
+            id = channelId,
+            name = channelName,
+            importance = android.app.NotificationManager.IMPORTANCE_DEFAULT,
             description = channelDescription
-            setShowBadge(true)
-        }
-        manager.createNotificationChannel(channel)
+        ) { setShowBadge(true) }
     }
 
     fun canPostNotifications(context: Context): Boolean {

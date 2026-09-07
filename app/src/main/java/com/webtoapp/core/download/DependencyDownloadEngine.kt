@@ -271,7 +271,12 @@ object DependencyDownloadEngine {
                     body.use { responseBody ->
                         val contentLength = responseBody.contentLength()
                         val totalBytes = if (response.code == 206) {
-                            downloadedBytes + contentLength
+                            // A mirror may reply 206 without Content-Length (-1): the sum
+                            // would then read as downloadedBytes - 1, the final size check
+                            // would mismatch, and the resume temp would be deleted — turning
+                            // a resumable download into a from-zero restart. Keep the hint
+                            // unknown in that case instead.
+                            if (contentLength >= 0) downloadedBytes + contentLength else -1
                         } else {
                             contentLength
                         }

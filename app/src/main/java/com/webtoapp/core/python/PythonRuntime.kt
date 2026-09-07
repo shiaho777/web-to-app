@@ -20,6 +20,8 @@ import java.net.URL
 
 class PythonRuntime(private val context: Context) {
 
+    private var dnsProxyStarted = false
+
     companion object {
         private const val TAG = "PythonRuntime"
 
@@ -244,6 +246,17 @@ class PythonRuntime(private val context: Context) {
 
             envVars.forEach { (k, v) -> env[k] = v }
 
+            // The bundled Python is musl-linked and its resolver reads /etc/resolv.conf,
+            // which does not exist on Android — same situation as the Go runtime. Route
+            // its HTTP(S) through the JVM DNS bridge so on-device DNS works.
+            val proxyPort = com.webtoapp.core.linux.LocalDnsBridgeProxy.start()
+            if (proxyPort > 0) {
+                com.webtoapp.core.linux.LocalDnsBridgeProxy.proxyEnvFor(proxyPort).forEach { (k, v) -> env[k] = v }
+                dnsProxyStarted = true
+                AppLogger.i(TAG, "已启用 DNS 桥接代理 (port=$proxyPort) 供 Python 进程解析外部域名")
+                ShellLogger.i(TAG, "已启用 DNS 桥接代理: 127.0.0.1:$proxyPort")
+            }
+
             pythonOutputBuffer.setLength(0)
             pythonStderrBuffer.setLength(0)
             val readinessBudget = ReadinessBudget(
@@ -311,6 +324,10 @@ class PythonRuntime(private val context: Context) {
         } catch (e: Exception) {
             AppLogger.e(TAG, "Starting Python serverfailed", e)
             ShellLogger.e(TAG, "启动 Python 服务器失败: ${e.message}")
+            // stopServer's finally releases the allocated port and process state; without
+            // this the port lingers until the 120s stale sweep because the runtime instance
+            // dies together with the failed start.
+            runCatching { stopServer() }
             _serverState.value = ServerState.Error("启动失败: ${e.message}")
             -1
         }
@@ -330,6 +347,10 @@ class PythonRuntime(private val context: Context) {
             AppLogger.w(TAG, "Python server stop raised an exception: ${e.message}")
         } finally {
             if (currentPort > 0) PortManager.release(currentPort)
+            if (dnsProxyStarted) {
+                com.webtoapp.core.linux.LocalDnsBridgeProxy.stop()
+                dnsProxyStarted = false
+            }
             pythonProcess = null
             currentPort = 0
             _serverState.value = ServerState.Stopped

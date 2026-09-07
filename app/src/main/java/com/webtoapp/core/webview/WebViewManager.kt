@@ -1368,7 +1368,11 @@ class WebViewManager(
                     },
                     upstreamSocks = upstreamSocks
                 ),
-                caDir = context.filesDir
+                caDir = context.filesDir,
+                customCaAnchors = runCatching {
+                    CustomCaTrustStore.init(context)
+                    CustomCaTrustStore.getAnchorCertificates()
+                }.getOrDefault(emptyList())
             )
 
             if (mitmPort > 0) {
@@ -1659,10 +1663,27 @@ class WebViewManager(
                 }
             }
 
+            // Register the GM bridge only when userscripts can actually run: the interface
+            // object is exposed to every frame of every page, so an unconditional
+            // registration hands a cross-origin HTTP client to apps with zero userscripts.
+            // Global-fallback mode keeps the bridge registered because its module set is
+            // resolved dynamically per page load and a late addJavascriptInterface would
+            // not reach already-loaded pages.
+            val hasUserscriptModules = runCatching {
+                resolveActiveExtensionModules().any {
+                    it.sourceType == com.webtoapp.core.extension.ModuleSourceType.USERSCRIPT ||
+                        it.sourceType == com.webtoapp.core.extension.ModuleSourceType.GREASYFORK
+                } || embeddedModules.any { it.enabled && it.isUserscript() }
+            }.getOrDefault(false)
             gmBridge?.destroy()
-            val bridge = com.webtoapp.core.extension.GreasemonkeyBridge(context) { webView }
-            gmBridge = bridge
-            addJavascriptInterface(bridge, com.webtoapp.core.extension.GreasemonkeyBridge.JS_INTERFACE_NAME)
+            gmBridge = null
+            if (hasUserscriptModules || allowGlobalModuleFallback) {
+                val bridge = com.webtoapp.core.extension.GreasemonkeyBridge(context) { webView }
+                gmBridge = bridge
+                addJavascriptInterface(bridge, com.webtoapp.core.extension.GreasemonkeyBridge.JS_INTERFACE_NAME)
+            } else {
+                removeJavascriptInterface(com.webtoapp.core.extension.GreasemonkeyBridge.JS_INTERFACE_NAME)
+            }
 
             initChromeExtensionRuntimes(webView)
 
@@ -1864,6 +1885,13 @@ class WebViewManager(
                 request?.let {
                     val url = it.url?.toString() ?: ""
                     diagRequestCount++
+
+                    // Feed the TLS-MITM bridge's host allowlist: every request the WebView
+                    // issues passes through here before its network stack CONNECTs through
+                    // the bridge, so this is the authoritative "host actually requested" set.
+                    if (TlsMitmBridge.isRunning()) {
+                        TlsMitmBridge.allowHost(runCatching { android.net.Uri.parse(url).host }.getOrNull())
+                    }
 
                     if (com.webtoapp.core.extension.ExtensionResourceInterceptor.isChromeExtensionUrl(url)) {
                         return com.webtoapp.core.extension.ExtensionResourceInterceptor.intercept(context, url)
@@ -2076,6 +2104,9 @@ class WebViewManager(
             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                 super.onPageStarted(view, url, favicon)
                 currentMainFrameUrl = url
+                if (TlsMitmBridge.isRunning()) {
+                    TlsMitmBridge.allowHost(runCatching { android.net.Uri.parse(url ?: "").host }.getOrNull())
+                }
                 extensionPanelInjected = false
                 view?.let {
                     userscriptInjectionState.remove(it)
@@ -3186,16 +3217,11 @@ class WebViewManager(
 
     private fun isMitmSslError(error: android.net.http.SslError?): Boolean {
         if (error == null) return false
-        val cert = extractServerCert(error)
-        if (cert != null) {
-            return TlsMitmCaManager.isSignedByLocalCa(cert)
-        }
-        return TlsMitmBridge.isRunning() && (
-            error.primaryError == android.net.http.SslError.SSL_UNTRUSTED ||
-            error.primaryError == android.net.http.SslError.SSL_EXPIRED ||
-            error.primaryError == android.net.http.SslError.SSL_NOTYETVALID ||
-            error.primaryError == android.net.http.SslError.SSL_IDMISMATCH
-        )
+        if (!TlsMitmBridge.isRunning()) return false
+        // Only a certificate that cryptographically chains to the local MITM CA counts.
+        // Never fall back to error-type matching: any other SSL error (an attacker's
+        // self-signed cert on a non-tunneled connection) must surface to the user.
+        return TlsMitmCaManager.isSignedByLocalCa(extractServerCert(error))
     }
 
     private fun extractServerCert(error: android.net.http.SslError?): java.security.cert.X509Certificate? {
@@ -5643,8 +5669,11 @@ class WebViewManager(
                     extensionFileManager.getCachedResource(name, url) ?: url
                 }
 
+                // The polyfill carries a random storage alias, not the raw module id: the
+                // bridge object is reachable from every frame, so raw ids would let any
+                // embedded content read/write another script's GM storage.
                 val polyfill = com.webtoapp.core.extension.GreasemonkeyBridge.generatePolyfillScript(
-                    scriptId = module.id,
+                    scriptId = gmBridge?.storageAliasFor(module.id) ?: module.id,
                     grants = module.gmGrants,
                     scriptInfo = scriptInfo,
                     resources = resolvedResources
@@ -5819,7 +5848,7 @@ class WebViewManager(
                 )
 
                 val polyfill = com.webtoapp.core.extension.GreasemonkeyBridge.generatePolyfillScript(
-                    scriptId = module.id,
+                    scriptId = gmBridge?.storageAliasFor(module.id) ?: module.id,
                     grants = module.gmGrants,
                     scriptInfo = scriptInfo,
                     resources = module.resources

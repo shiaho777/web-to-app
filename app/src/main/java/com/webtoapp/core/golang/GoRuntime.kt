@@ -142,6 +142,9 @@ class GoRuntime(private val context: Context) {
 
             if (!wxRestricted && !GoDependencyManager.isGoExecLoaderReady(context)) {
                 val path = GoDependencyManager.getGoExecLoaderPath(context)
+                // The allocation taken two lines up must go back before bailing out.
+                PortManager.release(serverPort)
+                currentPort = 0
                 _serverState.value = ServerState.Error(
                     "Go executable loader 未就绪 ($path)。导出的 GO_APP 需包含 libgo_exec_loader.so；请用含原生 loader 的构建器重新导出。"
                 )
@@ -252,6 +255,12 @@ class GoRuntime(private val context: Context) {
         } catch (e: Exception) {
             AppLogger.e(TAG, "启动 Go 服务器失败", e)
             ShellLogger.e(TAG, "启动 Go 服务器失败: ${e.message}${channelNote()}")
+            // The port allocation from before the failure must be released too (the DNS
+            // proxy is stopped explicitly above because stopServer is process-oriented).
+            if (currentPort > 0) {
+                runCatching { PortManager.release(currentPort) }
+                currentPort = 0
+            }
             if (dnsProxyStarted) {
                 LocalDnsBridgeProxy.stop()
                 dnsProxyStarted = false

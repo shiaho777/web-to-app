@@ -19,6 +19,13 @@ class ApkBuildCacheTest {
         assertThat(cache.isContentReplaceableEntry("assets/html/index.html")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/nodejs_app/server.js")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/splash_media.png")).isTrue()
+        // Stale-content hazards: these are written conditionally at build time, so a cached
+        // copy must be dropped even when the new build does not rewrite them (removed CA,
+        // disabled dark status-bar image, cleared announcement icon...).
+        assertThat(cache.isContentReplaceableEntry("assets/wta_custom_ca/1.cer")).isTrue()
+        assertThat(cache.isContentReplaceableEntry("assets/statusbar_background_dark.png")).isTrue()
+        assertThat(cache.isContentReplaceableEntry("assets/announcement_icon.png")).isTrue()
+        assertThat(cache.isContentReplaceableEntry("assets/python/arm64-v8a/python3")).isTrue()
         assertThat(cache.isContentReplaceableEntry("AndroidManifest.xml")).isFalse()
         assertThat(cache.isContentReplaceableEntry("resources.arsc")).isFalse()
         assertThat(cache.isContentReplaceableEntry("lib/arm64-v8a/libnode.so")).isFalse()

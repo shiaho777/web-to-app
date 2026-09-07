@@ -534,13 +534,18 @@ class ShellActivity : AppCompatActivity() {
                         } catch (e: Exception) {
                             com.webtoapp.data.model.DownloadLocationMode.SYSTEM_DOWNLOAD
                         }
-                        val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
-                            this@ShellActivity,
-                            lifecycleScope,
-                            downloadLocationMode,
-                            config.webViewConfig.customDownloadDirUri
-                        )
-                        wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
+                        // Gate the JS-side download surface on the same flag that gates the
+                        // injected script: an always-registered bridge would let any page
+                        // (or embedded iframe) drop arbitrary content into public storage.
+                        if (config.webViewConfig.downloadEnabled) {
+                            val downloadBridge = com.webtoapp.core.webview.DownloadBridge(
+                                this@ShellActivity,
+                                lifecycleScope,
+                                downloadLocationMode,
+                                config.webViewConfig.customDownloadDirUri
+                            )
+                            wv.addJavascriptInterface(downloadBridge, com.webtoapp.core.webview.DownloadBridge.JS_INTERFACE_NAME)
+                        }
 
                         if (config.webViewConfig.enablePrintBridge) {
                             val printBridge = com.webtoapp.core.webview.PrintBridge(
@@ -611,7 +616,8 @@ class ShellActivity : AppCompatActivity() {
                                 capabilities = capabilities,
                                 corsBypass = config.webViewConfig.enableCorsBypass,
                                 downloadLocationMode = downloadLocationMode,
-                                customDownloadDirUri = config.webViewConfig.customDownloadDirUri
+                                customDownloadDirUri = config.webViewConfig.customDownloadDirUri,
+                                appOriginUrl = config.targetUrl
                             )
                             wv.addJavascriptInterface(nativeBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
                         } else if (config.webViewConfig.enablePrivateNetworkBridge || config.webViewConfig.enableCorsBypass) {
@@ -619,7 +625,8 @@ class ShellActivity : AppCompatActivity() {
                                 context = this@ShellActivity,
                                 scope = lifecycleScope,
                                 webViewProvider = { wv },
-                                corsBypass = config.webViewConfig.enableCorsBypass
+                                corsBypass = config.webViewConfig.enableCorsBypass,
+                                appOriginUrl = config.targetUrl
                             )
                             wv.addJavascriptInterface(privateNetworkBridge, com.webtoapp.core.webview.NativeBridge.JS_INTERFACE_NAME)
                         } else {

@@ -97,7 +97,17 @@ internal fun buildPackagedHtmlFileSchemeEntryUrl(entryFile: String): String {
 }
 
 internal fun validateDeepLinkUrl(url: String, allowedHosts: List<String>, targetUrl: String): String {
-    if (allowedHosts.isEmpty()) return url
+    // No explicit allowlist configured: default to the app's own target host so an
+    // external app/link cannot steer this WebView to an arbitrary site. A target with
+    // no parsable host (local-content apps) keeps the previous all-allowed behavior.
+    val effectiveHosts = if (allowedHosts.isEmpty()) {
+        runCatching { java.net.URL(targetUrl).host?.lowercase() }.getOrNull()
+            ?.let { listOf(it) }
+            ?: emptyList()
+    } else {
+        allowedHosts
+    }
+    if (effectiveHosts.isEmpty()) return url
 
     val urlHost = try {
         java.net.URL(url).host?.lowercase()
@@ -116,7 +126,7 @@ internal fun validateDeepLinkUrl(url: String, allowedHosts: List<String>, target
     } catch (e: Exception) { null }
 
     val allAllowed = buildSet {
-        addAll(allowedHosts.map { it.lowercase() })
+        addAll(effectiveHosts.map { it.lowercase() })
         configHost?.let { add(it) }
     }
 

@@ -211,6 +211,7 @@ object LivePreviewServerLauncher {
                 siteLanguage = config.siteLanguage.ifBlank { "en_US" },
             )
             WordPressManager.applyRuntimeConfig(
+                context = context,
                 phpBinary = runtime.getPhpBinaryPath(),
                 projectDir = projectDir,
                 siteTitle = config.siteTitle.ifBlank { "My Site" },

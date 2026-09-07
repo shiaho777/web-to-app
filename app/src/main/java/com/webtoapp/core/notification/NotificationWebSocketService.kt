@@ -677,17 +677,13 @@ class NotificationWebSocketService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                Strings.websocketNotificationChannelName,
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = Strings.websocketNotificationChannelDescription
-                setShowBadge(true)
-            }
-            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
-        }
+        com.webtoapp.util.SafeNotificationChannels.ensure(
+            context = this,
+            id = CHANNEL_ID,
+            name = Strings.websocketNotificationChannelName,
+            importance = NotificationManager.IMPORTANCE_DEFAULT,
+            description = Strings.websocketNotificationChannelDescription
+        ) { setShowBadge(true) }
     }
 
     private fun createForegroundNotification(connected: Boolean = false): Notification {

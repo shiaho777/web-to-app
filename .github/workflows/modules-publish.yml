@@ -53,9 +53,9 @@ jobs:
       - name: Generate submissions.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Comma-separated list of GitHub logins that may seed modules
-          # via a direct push (no PR). Anything else without a merged PR
-          # stays hidden from the catalog.
+          # Legacy parameter: the generator records every human direct-push
+          # author (modules only reach main via review or maintainer push)
+          # and only excludes bot identities.
           MAINTAINERS: shiaho777
         run: |
           python3 .github/scripts/ci/generate_submissions.py \
@@ -73,6 +73,7 @@ jobs:
           GH_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
           GIT_AUTH_USER: x-access-token
           GIT_AUTH_PWD: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          HAS_PAT: ${{ secrets.PAT_TOKEN != '' }}
           BRANCH: ci/regenerate-submissions
         run: |
           if git diff --quiet -- modules/submissions.json; then
@@ -91,7 +92,7 @@ jobs:
           git commit -m "chore(modules): regenerate submissions.json"
 
           REPO="github.com/${GITHUB_REPOSITORY}"
-          if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
+          if [ "$HAS_PAT" = "true" ]; then
             git push --force-with-lease "https://${GIT_AUTH_USER}:${GIT_AUTH_PWD}@${REPO}" "$BRANCH"
           else
             git push --force-with-lease origin "$BRANCH"
@@ -115,7 +116,7 @@ jobs:
           # wait for its "check" to report then enable auto-merge (GitHub merges
           # automatically once all required checks pass). With GITHUB_TOKEN there
           # is no check to wait on, so the PR is left for a manual merge.
-          if [ -n "${{ secrets.PAT_TOKEN }}" ]; then
+          if [ "$HAS_PAT" = "true" ]; then
             gh pr merge "$PR_NUMBER" --squash --auto --delete-branch \
               || echo "::warning::Auto-merge setup failed; PR #$PR_NUMBER left open for manual merge."
           else

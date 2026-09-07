@@ -224,27 +224,49 @@ class GreasemonkeyBridge(
 
     private val httpClient get() = NetworkModule.defaultClient
 
-    private fun getPrefs(scriptId: String) =
-        context.getSharedPreferences("$PREFS_PREFIX$scriptId", Context.MODE_PRIVATE)
+    /**
+     * Storage namespaces are addressed through unguessable per-script aliases instead of
+     * the raw script id: the bridge object is reachable from every page and iframe in the
+     * app, so with raw ids any embedded content could read/write another script's GM
+     * storage by simply naming it. The alias is random per script; only the pages that
+     * received the polyfill ever see it.
+     */
+    private val aliasByScriptId = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val scriptIdByAlias = java.util.concurrent.ConcurrentHashMap<String, String>()
 
-    @JavascriptInterface
-    fun getValue(scriptId: String, key: String, defaultValue: String?): String? {
-        return getPrefs(scriptId).getString(key, defaultValue)
+    fun storageAliasFor(scriptId: String): String {
+        aliasByScriptId.getOrPut(scriptId) {
+            val alias = "ns_" + java.security.SecureRandom().nextInt(Int.MAX_VALUE).toString(36) +
+                "_" + java.security.SecureRandom().nextInt(Int.MAX_VALUE).toString(36)
+            scriptIdByAlias[alias] = scriptId
+            alias
+        }
+        return aliasByScriptId[scriptId] ?: scriptId
+    }
+
+    private fun getPrefs(alias: String): android.content.SharedPreferences? {
+        val scriptId = scriptIdByAlias[alias] ?: return null
+        return context.getSharedPreferences("$PREFS_PREFIX$scriptId", Context.MODE_PRIVATE)
     }
 
     @JavascriptInterface
-    fun setValue(scriptId: String, key: String, value: String) {
-        getPrefs(scriptId).edit().putString(key, value).apply()
+    fun getValue(alias: String, key: String, defaultValue: String?): String? {
+        return getPrefs(alias)?.getString(key, defaultValue)
     }
 
     @JavascriptInterface
-    fun deleteValue(scriptId: String, key: String) {
-        getPrefs(scriptId).edit().remove(key).apply()
+    fun setValue(alias: String, key: String, value: String) {
+        getPrefs(alias)?.edit()?.putString(key, value)?.apply()
     }
 
     @JavascriptInterface
-    fun listValues(scriptId: String): String {
-        val keys = getPrefs(scriptId).all.keys
+    fun deleteValue(alias: String, key: String) {
+        getPrefs(alias)?.edit()?.remove(key)?.apply()
+    }
+
+    @JavascriptInterface
+    fun listValues(alias: String): String {
+        val keys = getPrefs(alias)?.all?.keys ?: emptySet()
         return JSONArray(keys.toList()).toString()
     }
 
@@ -258,6 +280,29 @@ class GreasemonkeyBridge(
                 val data = details.optString("data", "")
                 val headersObj = details.optJSONObject("headers")
                 val responseType = details.optString("responseType", "")
+
+                // GM_xmlhttpRequest is cross-origin by design, but only for the open
+                // internet: the bridge object is reachable from any frame of any page
+                // the app displays, so private/loopback targets are reserved for local
+                // (packaged / local-server) pages.
+                val uri = runCatching { java.net.URI(url) }.getOrNull()
+                val scheme = uri?.scheme?.lowercase()
+                if (scheme != "http" && scheme != "https") {
+                    throw IllegalArgumentException("GM_xmlhttpRequest supports HTTP(S) URLs only")
+                }
+                val targetIsPrivate = com.webtoapp.core.webview.NativeBridge.isPrivateNetworkHost(uri?.host)
+                if (targetIsPrivate) {
+                    val pageUrl = runCatching {
+                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { webViewProvider()?.url }
+                    }.getOrNull().orEmpty()
+                    val pageIsLocal = com.webtoapp.core.webview.NativeBridge.isPrivateNetworkUrl(pageUrl) ||
+                        pageUrl.startsWith("file:") || pageUrl.startsWith("content://")
+                    if (!pageIsLocal) {
+                        throw IllegalArgumentException(
+                            "GM_xmlhttpRequest to local network addresses is only allowed from local pages"
+                        )
+                    }
+                }
 
                 val requestBuilder = Request.Builder().url(url)
 
@@ -323,6 +368,14 @@ class GreasemonkeyBridge(
     @JavascriptInterface
     fun openInTab(url: String, openInBackground: Boolean): Boolean {
         return try {
+            // Scheme allowlist: GM_openInTab takes a raw URL from script/page context and an
+            // `intent://` / `file://` value here would turn into component-launch or
+            // local-file access (intent redirection). Web URLs only.
+            val scheme = runCatching { java.net.URI(url).scheme?.lowercase() }.getOrNull()
+            if (scheme != "http" && scheme != "https") {
+                AppLogger.w(TAG, "GM_openInTab blocked non-web URL: $url")
+                return false
+            }
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
@@ -339,19 +392,24 @@ class GreasemonkeyBridge(
     }
 
     private fun callbackToJs(callbackId: String, event: String, dataJson: String) {
+        // callbackId comes from page JS; quote it as a JSON string so a crafted id
+        // ('x');payload();//) cannot break out of the JS string literal and execute
+        // in whatever page is loaded when the async callback lands.
+        val quotedCallbackId = com.webtoapp.util.JsStrings.quote(callbackId ?: "")
+        val quotedEvent = com.webtoapp.util.JsStrings.quote(event)
         val escapedData = dataJson.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n").replace("\r", "\\r")
         val js = """
             (function() {
-                var cb = window.__WTA_GM_CALLBACKS__['$callbackId'];
-                if (cb && cb['$event']) {
+                var cb = window.__WTA_GM_CALLBACKS__[$quotedCallbackId];
+                if (cb && cb[$quotedEvent]) {
                     try {
-                        cb['$event'](JSON.parse('$escapedData'));
+                        cb[$quotedEvent](JSON.parse('$escapedData'));
                     } catch(e) {
                         console.error('[GM Bridge] Callback error:', e);
                     }
                 }
-                if ('$event' === 'onload' || '$event' === 'onerror' || '$event' === 'ontimeout') {
-                    delete window.__WTA_GM_CALLBACKS__['$callbackId'];
+                if ($quotedEvent === 'onload' || $quotedEvent === 'onerror' || $quotedEvent === 'ontimeout') {
+                    delete window.__WTA_GM_CALLBACKS__[$quotedCallbackId];
                 }
             })();
         """.trimIndent()
