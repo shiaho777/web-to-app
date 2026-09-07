@@ -16,6 +16,7 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicReference
 
 internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Context) : LlmProvider {
     private val gson = GsonProvider.gson
@@ -36,11 +37,19 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
 
     override fun chatStream(req: ChatRequest): Flow<LlmEvent> = callbackFlow {
         trySend(LlmEvent.Started)
-        executeCall(req, isRetry = false)
-        awaitClose { }
+        // Track the live call across retries so a cancelled/aborted collection
+        // (idle timeout, user abort) tears down the actual HTTP connection instead
+        // of leaving an orphaned request streaming into a closed channel.
+        val inFlight = AtomicReference<Call?>()
+        executeCall(req, isRetry = false, inFlight = inFlight)
+        awaitClose { inFlight.get()?.cancel() }
     }
 
-    private fun kotlinx.coroutines.channels.ProducerScope<LlmEvent>.executeCall(req: ChatRequest, isRetry: Boolean) {
+    private fun kotlinx.coroutines.channels.ProducerScope<LlmEvent>.executeCall(
+        req: ChatRequest,
+        isRetry: Boolean,
+        inFlight: AtomicReference<Call?>
+    ) {
         val url = HttpHelpers.joinUrl(HttpHelpers.baseUrl(req.apiKey), req.apiKey.getEffectiveChatEndpoint())
         val effectiveReq = if (isRetry) req.copy(temperature = 1f) else req
         val body = buildBody(effectiveReq)
@@ -48,12 +57,13 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
             .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
         HttpHelpers.applyAuth(builder, req.apiKey)
         val call = client.newCall(builder.build())
+        inFlight.set(call)
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) {
                 if (!isRetry) {
                     AppLogger.w("OpenAiCompatProvider", "Network failure, retrying once: ${e.message}")
                     try { Thread.sleep(1000) } catch (_: InterruptedException) {}
-                    executeCall(req, isRetry = true)
+                    executeCall(req, isRetry = true, inFlight = inFlight)
                 } else {
                     trySend(LlmEvent.Error(e.message ?: "Network error")); close()
                 }
@@ -64,7 +74,7 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                     response.body?.close()
                     if (!isRetry && response.code == 400 && looksLikeTemperatureConstraint(eb)) {
                         AppLogger.w("OpenAiCompatProvider", "Model rejected temperature=${req.temperature}; retrying with temperature=1")
-                        executeCall(req, isRetry = true)
+                        executeCall(req, isRetry = true, inFlight = inFlight)
                         return
                     }
                     val (msg, rec) = HttpHelpers.classifyHttpError(response.code, eb)

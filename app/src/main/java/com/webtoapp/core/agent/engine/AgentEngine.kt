@@ -16,14 +16,15 @@ import com.webtoapp.core.agent.tool.ToolRegistry
 import com.webtoapp.core.agent.tool.ToolResult
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.withTimeoutOrNull
 
 class AgentEngine(
@@ -107,6 +108,11 @@ class AgentEngine(
                     val requestMessages = if (supportsVision) baseMessages
                         else baseMessages.map { if (it.images.isEmpty()) it else it.copy(images = emptyList()) }
 
+                    // Collect the stream exactly once per request attempt. The gateway
+                    // flows are cold callbackFlows: re-collecting them re-runs the
+                    // producer block, i.e. fires a brand-new HTTP request per event,
+                    // while the previous request's response events are dropped — the
+                    // turn then hangs forever on "thinking" (the #742 regression).
                     gateway.chatStream(
                         ChatRequest(
                             apiKey = input.toolContext.textApiKey,
@@ -136,7 +142,7 @@ class AgentEngine(
                                 // prose/tools in the order they actually occurred.
                                 if (turnThinking.isEmpty()) {
                                     val segmentId = "th-turn-$turn"
-                                    val marker = "\u2063TH:$segmentId\u2063"
+                                    val marker = "⁣TH:$segmentId⁣"
                                     rebuildAccFromPrefix()
                                     accText.append(marker)
                                     send(AgentEvent.TextDelta(marker, accText.toString()))
@@ -147,7 +153,7 @@ class AgentEngine(
                             is LlmEvent.ToolCallBegin -> {
                                 pending[ev.id] = ev.name to StringBuilder()
 
-                                val marker = "\u2063TC:${ev.id}\u2063"
+                                val marker = "⁣TC:${ev.id}⁣"
                                 rebuildAccFromPrefix()
                                 accText.append(marker)
                                 send(AgentEvent.TextDelta(marker, accText.toString()))
@@ -384,8 +390,16 @@ class AgentEngine(
             }
         )
 
-        return runCatching { tool.execute(args, callCtx) }
-            .getOrElse { ToolResult.error("${call.name}: ${it.message ?: it::class.simpleName}") }
+        return try {
+            tool.execute(args, callCtx)
+        } catch (ce: CancellationException) {
+            // AgentAbortedException is a CancellationException and must reach the engine's
+            // outer catch (→ Aborted); swallowing real coroutine cancellation here would
+            // keep the loop running inside an already-cancelled coroutine.
+            throw ce
+        } catch (t: Throwable) {
+            ToolResult.error("${call.name}: ${t.message ?: t::class.simpleName}")
+        }
     }
 
     private suspend fun runParallel(
@@ -470,47 +484,52 @@ class AgentEngine(
  * read timeout (10 minutes). On idle timeout, [onTimeout] is invoked and the
  * collection ends normally so the engine's retry loop can take over.
  *
- * The deadline must live on the caller's own suspension path. A sibling-coroutine
- * watchdog would NOT work: a child `launch` throwing into a shared scope rethrows
- * the child's exception out of this function itself, bypassing the caller's
- * try/catch — which is exactly why the previous watchdog implementation left the
- * engine's idle-retry path unreachable. Here each event is awaited inside a
- * fresh [withTimeoutOrNull] window; a window expiring with no event means the
- * stream went idle, and a normal collect completion ends the loop.
+ * The flow is subscribed EXACTLY ONCE: it is turned into a [ReceiveChannel] via
+ * [produceIn], and only the wait for the next element is wrapped in a fresh
+ * [withTimeoutOrNull] window per event. Never re-collect the flow per event —
+ * the provider flows are cold `callbackFlow`s, so each repeated collect re-runs
+ * the producer block (a brand-new HTTP request per event) while the previous
+ * request's response events are dropped into a cancelled channel. That was the
+ * #742 regression: the UI sat on "thinking" forever with zero output while the
+ * client silently spammed the API with duplicate requests.
+ *
+ * Cancelling (idle timeout, abort, or completion of the surrounding scope)
+ * cancels the producer, which propagates into the provider's `awaitClose` and
+ * tears down the underlying HTTP call.
  */
-private suspend fun <T> Flow<T>.collectWithIdleTimeout(
+internal suspend fun <T> Flow<T>.collectWithIdleTimeout(
     idleTimeoutMs: Long,
     onTimeout: () -> Unit,
     action: suspend (T) -> Unit
 ) {
     val timeoutMs = idleTimeoutMs.coerceAtLeast(1L)
-    while (true) {
-        var gotEvent = false
-        val outcome = withTimeoutOrNull(timeoutMs) {
-            try {
-                collect { value ->
-                    gotEvent = true
-                    action(value)
-                    throw ElementReceived()
+    coroutineScope {
+        val events = produceIn(this)
+        try {
+            while (true) {
+                val result = withTimeoutOrNull(timeoutMs) { events.receiveCatching() }
+                when {
+                    // A whole window elapsed with no event: the stream stalled. The
+                    // finally below cancels the producer (and the HTTP call with it),
+                    // so the engine's retry loop starts from a clean slate.
+                    result == null -> {
+                        onTimeout()
+                        return@coroutineScope
+                    }
+                    result.isSuccess -> action(result.getOrThrow())
+                    else -> {
+                        // Channel closed: rethrow a producer failure, otherwise the
+                        // stream ended normally.
+                        result.exceptionOrNull()?.let { throw it }
+                        return@coroutineScope
+                    }
                 }
-                StreamEnd
-            } catch (e: ElementReceived) {
-                NoEvent
             }
-        }
-        when {
-            outcome === StreamEnd -> return
-            gotEvent -> Unit // loop re-arms a fresh window for the next event
-            else -> {
-                onTimeout()
-                return
-            }
+        } finally {
+            // coroutineScope waits for children on block exit but does NOT cancel
+            // them: a producer parked in awaitClose would hang the exit forever
+            // unless cancelled here.
+            events.cancel(null)
         }
     }
-}
-
-private object StreamEnd
-private object NoEvent
-private class ElementReceived : RuntimeException() {
-    override fun fillInStackTrace(): Throwable = this
 }
