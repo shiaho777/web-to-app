@@ -5,10 +5,14 @@ import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.security.KeyStore
+import java.security.cert.CertificateException
+import java.security.cert.X509Certificate
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocket
 import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.TrustManager
+import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509TrustManager
 
 object TlsUpstreamConnector {
@@ -28,7 +32,8 @@ object TlsUpstreamConnector {
         template: TlsFingerprintTemplate,
         customCipherSuites: List<String> = emptyList(),
         upstreamSocks: LocalHttpToSocksBridge.Upstream? = null,
-        restrictAlpnTo: String? = null
+        restrictAlpnTo: String? = null,
+        customCaAnchors: List<X509Certificate> = emptyList()
     ): TlsResult {
         val rawSocket = if (upstreamSocks != null) {
             LocalHttpToSocksBridge.Socks5Connector.connect(
@@ -47,8 +52,12 @@ object TlsUpstreamConnector {
             }
         }
 
+        // The bridge only spoofs the ClientHello (cipher/ALPN ordering); the trust decision
+        // stays with the platform: system CAs plus any anchors the user imported via the
+        // editor's custom-CA panel (corporate proxies). An accept-all manager here would
+        // turn the fingerprint feature into silent full MITM exposure.
         val sslContext = SSLContext.getInstance("TLS")
-        sslContext.init(null, arrayOf<TrustManager>(AcceptAllTrustManager()), null)
+        sslContext.init(null, arrayOf<TrustManager>(buildUpstreamTrustManager(customCaAnchors)), null)
 
         val factory = FingerprintSslSocketFactory(
             sslContext.socketFactory,
@@ -70,6 +79,15 @@ object TlsUpstreamConnector {
         }
         sslSocket.startHandshake()
 
+        // SSLSocket handshakes validate the chain but never the hostname — verify that the
+        // upstream certificate actually covers the host we dialed before tunneling anything.
+        val peerCert = sslSocket.session.peerCertificates
+            .firstOrNull { it is X509Certificate } as? X509Certificate
+        if (peerCert == null || !CertificateHostnameMatcher.matches(host, peerCert)) {
+            try { sslSocket.close() } catch (_: Exception) {}
+            throw IOException("TLS fingerprint bridge: upstream certificate does not match host '$host'")
+        }
+
         // The raw socket's connect-phase SO_TIMEOUT must not survive into tunnel
         // mode: an idle SSE/WebSocket stream would otherwise be dropped after 60s.
         try { sslSocket.soTimeout = 0 } catch (_: Exception) {}
@@ -82,6 +100,53 @@ object TlsUpstreamConnector {
 
         AppLogger.d(TAG, "TLS upstream connected to $host:$port, template=${template.id}, alpn=$negotiatedProtocol")
         return TlsResult(sslSocket, negotiatedProtocol)
+    }
+
+    private fun buildUpstreamTrustManager(anchors: List<X509Certificate>): X509TrustManager {
+        val system = defaultTrustManager()
+        if (anchors.isEmpty()) return system
+        val custom = trustManagerForAnchors(anchors) ?: return system
+        return CompositeTrustManager(listOf(custom, system))
+    }
+
+    private fun defaultTrustManager(): X509TrustManager {
+        val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+        tmf.init(null as KeyStore?)
+        return tmf.trustManagers.filterIsInstance<X509TrustManager>().first()
+    }
+
+    private fun trustManagerForAnchors(anchors: List<X509Certificate>): X509TrustManager? =
+        runCatching {
+            val ks = KeyStore.getInstance(KeyStore.getDefaultType())
+            ks.load(null, null)
+            anchors.forEachIndexed { i, cert -> ks.setCertificateEntry("wta_upstream_anchor_$i", cert) }
+            val tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm())
+            tmf.init(ks)
+            tmf.trustManagers.filterIsInstance<X509TrustManager>().first()
+        }.getOrNull()
+
+    /** Tries each delegate in order; the first one that accepts the chain wins. */
+    private class CompositeTrustManager(private val delegates: List<X509TrustManager>) : X509TrustManager {
+        override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+            delegates.first().checkClientTrusted(chain, authType)
+        }
+
+        override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+            if (chain == null) throw CertificateException("null chain")
+            var last: CertificateException? = null
+            for (tm in delegates) {
+                try {
+                    tm.checkServerTrusted(chain, authType)
+                    return
+                } catch (e: CertificateException) {
+                    last = e
+                }
+            }
+            throw last ?: CertificateException("no delegate accepted the chain")
+        }
+
+        override fun getAcceptedIssuers(): Array<X509Certificate> =
+            delegates.flatMap { it.acceptedIssuers.toList() }.toTypedArray()
     }
 
     private class FingerprintSslSocketFactory(
@@ -149,11 +214,5 @@ object TlsUpstreamConnector {
             configure(socket)
             return socket
         }
-    }
-
-    private class AcceptAllTrustManager : X509TrustManager {
-        override fun checkClientTrusted(chain: Array<out java.security.cert.X509Certificate>?, authType: String?) {}
-        override fun checkServerTrusted(chain: Array<out java.security.cert.X509Certificate>?, authType: String?) {}
-        override fun getAcceptedIssuers(): Array<java.security.cert.X509Certificate> = emptyArray()
     }
 }

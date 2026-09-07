@@ -304,7 +304,8 @@ class FloatingWindowService : Service() {
                             capabilities = capabilities,
                             corsBypass = shellConfig.webViewConfig.enableCorsBypass,
                             downloadLocationMode = downloadLocationMode,
-                            customDownloadDirUri = customDownloadDirUri
+                            customDownloadDirUri = customDownloadDirUri,
+                            appOriginUrl = shellConfig.targetUrl
                         )
                         webView.addJavascriptInterface(
                             nativeBridge,
@@ -315,7 +316,8 @@ class FloatingWindowService : Service() {
                             context = this@FloatingWindowService,
                             scope = serviceScope,
                             webViewProvider = { webView },
-                            corsBypass = shellConfig.webViewConfig.enableCorsBypass
+                            corsBypass = shellConfig.webViewConfig.enableCorsBypass,
+                            appOriginUrl = shellConfig.targetUrl
                         )
                         webView.addJavascriptInterface(
                             privateNetworkBridge,

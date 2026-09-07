@@ -236,10 +236,10 @@ The publish workflow:
 3. Asks `GET /repos/{owner}/{repo}/commits/{sha}/pulls` whether that
    commit was part of a merged PR. If yes → records PR number, URL,
    `merged_at`, and the PR author's GitHub login + avatar.
-4. Otherwise treats it as a maintainer direct-push and records the
-   commit author — but only when the GitHub login matches the
-   `MAINTAINERS` allow-list in the workflow. Anything else is left out
-   on purpose.
+4. Otherwise treats it as a direct push and records the commit author's
+   resolved GitHub login. Every human author is recorded (modules only
+   reach `main` through review or a maintainer push); only bot
+   identities are excluded.
 5. For every module, walks its full commit history, resolves each
    distinct author's GitHub login via the commit API, and records
    everyone except the original submitter (and bots) under
@@ -446,8 +446,8 @@ App 打开市场时同时拉 `registry.json` 和 `submissions.json`，**只渲�
 3. 调用 `GET /repos/{owner}/{repo}/commits/{sha}/pulls` 看这个提交是不是
    某个已合并 PR 的一部分。是的话记录 PR 编号、URL、`merged_at`、PR 作者
    的 GitHub login + 头像。
-4. 否则当作维护者直推处理，记录提交作者——但**只有当 GitHub login 在
-   workflow 的 `MAINTAINERS` 白名单里**才会被记录。其他直推故意不进。
+4. 否则当作直推处理，记录提交作者解析出的 GitHub login。任何真实作者都会
+   被记录（模块只能经评审或维护者推送进入 `main`）；只有 bot 身份被排除。
 5. 针对每个模块，遍历其完整提交历史，用 commit API 解析出每位作者的 GitHub
    login，把除原始提交者（以及 bot）之外的人都记到 `contributors` 里。
 6. 把生成的文件 commit 回 `main`。

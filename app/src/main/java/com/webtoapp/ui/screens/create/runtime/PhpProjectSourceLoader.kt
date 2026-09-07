@@ -37,9 +37,13 @@ class PhpProjectSourceLoader {
                             !name.startsWith("__MACOSX/") &&
                             !name.substringAfterLast("/").startsWith("._")
                         ) {
-                            val outFile = File(tempDir, name)
-                            outFile.parentFile?.mkdirs()
-                            outFile.outputStream().use { output -> zipStream.copyTo(output) }
+                            // User-picked zip: entries are untrusted — a `../` name must not
+                            // write outside the temp dir.
+                            val outFile = com.webtoapp.util.SafeZip.safeChild(tempDir, name)
+                            if (outFile != null) {
+                                outFile.parentFile?.mkdirs()
+                                outFile.outputStream().use { output -> zipStream.copyTo(output) }
+                            }
                         }
                         zipStream.closeEntry()
                         entry = zipStream.nextEntry

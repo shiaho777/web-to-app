@@ -364,28 +364,33 @@ class AgentService : Service() {
     }
 
     private fun ensureChannel() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (nm.getNotificationChannel(CHANNEL_ID) == null) {
-            nm.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, Strings.agentTitle, NotificationManager.IMPORTANCE_LOW)
-            )
-        }
+        com.webtoapp.util.SafeNotificationChannels.ensure(
+            context = this,
+            id = CHANNEL_ID,
+            name = Strings.agentTitle,
+            importance = android.app.NotificationManager.IMPORTANCE_LOW
+        )
     }
 
     private fun promoteToForeground(text: String) {
         if (inForeground) return
         val notification = buildNotification(text)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+            inForeground = true
+        } catch (e: Exception) {
+            // Background FGS starts are throttled from Android 12 on; failing to promote
+            // must not crash the agent loop — keep running un-promoted instead.
+            com.webtoapp.core.logging.AppLogger.w("AgentService", "startForeground failed: ${e.message}")
         }
-        inForeground = true
     }
 
     private fun buildNotification(text: String) = NotificationCompat.Builder(this, CHANNEL_ID)

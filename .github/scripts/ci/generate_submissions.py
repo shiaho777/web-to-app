@@ -14,11 +14,14 @@ introduced or last touched it, then queries the GitHub REST API for the
 PR associated with that commit. If the PR is found and merged, we record
 PR number, merge timestamp, and the merger's GitHub identity. If no PR
 is found, the commit is taken as a direct push and we record the
-commit's author timestamp instead — but only when the author is a
-known maintainer login passed via `--maintainers`. Anything else (a
-direct push by a non-maintainer that somehow got through, an orphan
-folder added without a commit) ends up unrecorded, and the in-app
-market hides it.
+commit's author timestamp and resolved GitHub login — any human author
+is recorded (modules only reach `main` through review or a maintainer
+push; hiding non-maintainer authors made real contributor modules
+disappear from the in-app market). Only bot identities
+(github-actions[bot], web-flow, dependabot[bot]) are excluded, with the
+repo owner as the fallback when a commit email maps to no GitHub
+account. An orphan folder added without a commit ends up unrecorded,
+and the in-app market hides it.
 
 Run locally (no network access — uses cache only):
 

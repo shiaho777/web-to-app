@@ -288,6 +288,8 @@ class ApkBuildCache(private val context: Context) {
         if (entryName == "assets/wta_adblock_compiled.txt") return true
         if (entryName == "assets/wta_perf_optimize.js") return true
         if (entryName == "assets/statusbar_background.png") return true
+        if (entryName == "assets/statusbar_background_dark.png") return true
+        if (entryName == "assets/announcement_icon.png") return true
         if (entryName == "assets/floating_window_minimized_icon.png") return true
         if (entryName.startsWith("assets/splash_media.")) return true
         if (entryName.startsWith("assets/error_page_media.")) return true
@@ -298,11 +300,13 @@ class ApkBuildCache(private val context: Context) {
         if (entryName.startsWith("assets/html_projects/")) return true
         if (entryName.startsWith("assets/nodejs_app/")) return true
         if (entryName.startsWith("assets/php_app/")) return true
+        if (entryName.startsWith("assets/python/")) return true
         if (entryName.startsWith("assets/python_app/")) return true
         if (entryName.startsWith("assets/go_app/")) return true
         if (entryName.startsWith("assets/frontend_app/")) return true
         if (entryName.startsWith("assets/static_pack/")) return true
         if (entryName.startsWith("assets/wordpress/")) return true
+        if (entryName.startsWith("assets/wta_custom_ca/")) return true
         if (entryName.startsWith("assets/multiweb_sites/")) return true
         if (entryName.startsWith("assets/multi_web/")) return true
         return false

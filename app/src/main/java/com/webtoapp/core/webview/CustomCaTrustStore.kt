@@ -68,6 +68,9 @@ object CustomCaTrustStore {
 
     fun hasAnchors(): Boolean = validator?.hasAnchors() == true
 
+    /** The imported anchor certificates (e.g. for the TLS-fingerprint bridge's upstream trust). */
+    fun getAnchorCertificates(): List<X509Certificate> = validator?.getAnchorCertificates() ?: emptyList()
+
     /** True iff [leaf] cryptographically validates against an imported anchor. Fail-closed. */
     fun isServerCertTrusted(leaf: X509Certificate): Boolean =
         validator?.isServerCertTrusted(leaf) == true
@@ -101,6 +104,8 @@ class CustomCaValidator(private val anchors: List<X509Certificate>) {
     private val trustManager: X509TrustManager? = buildTrustManager()
 
     fun hasAnchors(): Boolean = anchors.isNotEmpty()
+
+    fun getAnchorCertificates(): List<X509Certificate> = anchors.toList()
 
     fun isServerCertTrusted(leaf: X509Certificate): Boolean {
         if (anchors.isEmpty()) return false

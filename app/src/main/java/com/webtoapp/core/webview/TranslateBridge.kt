@@ -77,23 +77,26 @@ class TranslateBridge(
                     results.addAll(translated)
                 }
 
+                // JSONArray.toString() is a valid JS array literal — pass it unquoted so no
+                // hand-rolled string escaping is involved. callbackId comes from page JS:
+                // quote it, or a crafted id ('x');payload();//) executes in whatever page is
+                // loaded by the time the async translation call completes.
                 val resultsJson = JSONArray(results).toString()
-                    .replace("\\", "\\\\")
-                    .replace("'", "\\'")
-                    .replace("\n", "\\n")
-                    .replace("\r", "\\r")
+                val quotedCallbackId = com.webtoapp.util.JsStrings.quote(callbackId)
 
                 withContext(Dispatchers.Main) {
                     webView.evaluateJavascript(
-                        "window._translateCallback('$callbackId', '$resultsJson');",
+                        "window._translateCallback($quotedCallbackId, $resultsJson);",
                         null
                     )
                 }
             } catch (e: Exception) {
                 AppLogger.e(TAG, "翻译执行失败", e)
+                val quotedCallbackId = com.webtoapp.util.JsStrings.quote(callbackId)
+                val quotedError = com.webtoapp.util.JsStrings.quote(e.message ?: "translation failed")
                 withContext(Dispatchers.Main) {
                     webView.evaluateJavascript(
-                        "window._translateCallback('$callbackId', null, '${e.message?.replace("'", "\\'")}');",
+                        "window._translateCallback($quotedCallbackId, null, $quotedError);",
                         null
                     )
                 }

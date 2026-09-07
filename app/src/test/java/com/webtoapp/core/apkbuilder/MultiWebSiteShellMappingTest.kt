@@ -46,6 +46,21 @@ class MultiWebSiteShellMappingTest {
     }
 
     @Test
+    fun `server runtime site sources degrade to null instead of a broken embed`() {
+        // Node/PHP/Python/Go/WordPress sources cannot be packaged inside a multi-web APK
+        // (no interpreter, no project assets): the resolver must refuse them so the site
+        // falls back to a plain URL entry, exactly like nested multi-web sources.
+        val serverSource = WebApp(id = 21, name = "php-src", url = "http://localhost:8080", appType = AppType.PHP_APP)
+        assertThat(resolveMultiWebSiteSource(serverSource, parentAppId = 1, siteName = "s")).isNull()
+
+        val nodeSource = WebApp(id = 22, name = "node-src", url = "http://localhost:3000", appType = AppType.NODEJS_APP)
+        assertThat(resolveMultiWebSiteSource(nodeSource, parentAppId = 1, siteName = "s")).isNull()
+
+        val webSource = WebApp(id = 23, name = "web-src", url = "https://example.com", appType = AppType.WEB)
+        assertThat(resolveMultiWebSiteSource(webSource, parentAppId = 1, siteName = "s")).isEqualTo(webSource)
+    }
+
+    @Test
     fun `export maps gallery site items to the site asset prefix`() {
         val dir = File(context.cacheDir, "mwmap-${System.nanoTime()}").also { it.mkdirs() }
         try {

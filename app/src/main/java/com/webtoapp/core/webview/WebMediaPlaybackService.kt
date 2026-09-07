@@ -97,15 +97,23 @@ class WebMediaPlaybackService : Service() {
         val notification = MediaSessionCore.getForegroundNotification(this)
             ?: buildFallbackNotification()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            startForeground(NOTIFICATION_ID, notification)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                startForeground(NOTIFICATION_ID, notification)
+            }
+        } catch (e: Exception) {
+            // This service is driven from media-session PendingIntents and WebView JS, which
+            // can race the app going to the background — an Android 12+ background-start
+            // rejection must degrade to "no foreground notification", not crash the app.
+            com.webtoapp.core.logging.AppLogger.w("WebMediaPlaybackService", "startForeground failed: ${e.message}")
+            stopSelf()
         }
     }
 

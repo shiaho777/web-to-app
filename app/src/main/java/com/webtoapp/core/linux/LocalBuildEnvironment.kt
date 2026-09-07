@@ -852,7 +852,12 @@ object LocalBuildEnvironment {
             TarArchiveInputStream(gzip).use { tar ->
                 var entry = tar.nextTarEntry
                 while (entry != null) {
-                    val dest = File(destinationDir, entry.name.removePrefix("./"))
+                    val dest = com.webtoapp.util.SafeZip.safeChild(
+                        destinationDir, entry.name.removePrefix("./")
+                    ) ?: run {
+                        entry = tar.nextTarEntry
+                        continue
+                    }
                     if (entry.isDirectory) {
                         dest.mkdirs()
                     } else {

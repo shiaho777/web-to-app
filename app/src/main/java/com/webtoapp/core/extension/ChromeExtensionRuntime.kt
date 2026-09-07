@@ -28,6 +28,13 @@ class ChromeExtensionRuntime(
     @Volatile
     private var popupPathOverride: String? = null
 
+    /** Host URL patterns this extension declared in its manifest (host_permissions et al). */
+    private val hostPatterns: List<String> by lazy {
+        ChromeHostPermissions.declaredPatterns(manifestJson)
+    }
+
+    fun declaredHostPatterns(): List<String> = hostPatterns
+
     @SuppressLint("SetJavaScriptEnabled")
     fun initialize(mainWebView: WebView) {
         if (isInitialized) return
@@ -243,18 +250,36 @@ $polyfill
 
         @JavascriptInterface
         fun nativeFetch(url: String, method: String, headersJson: String, body: String): String {
+            if (!hostAllows(url)) return hostDenied(url, "nativeFetch")
             return performNativeFetch(url, method, headersJson, body, originUrl)
         }
 
         @JavascriptInterface
         fun getCookies(url: String): String {
+            if (!hostAllows(url)) return ""
             return CookieManager.getInstance().getCookie(url) ?: ""
         }
 
         @JavascriptInterface
         fun setCookieValue(url: String, cookie: String) {
+            if (!hostAllows(url)) return
             CookieManager.getInstance().setCookie(url, cookie)
             CookieManager.getInstance().flush()
+        }
+
+        /** The background page may only touch origins the manifest declared. */
+        private fun hostAllows(url: String): Boolean =
+            hostPatterns.any { ChromeHostPermissions.matches(it, url) }
+
+        private fun hostDenied(url: String, api: String): String {
+            AppLogger.w(TAG, "[$extensionId] $api blocked: $url matches no declared host permission")
+            return org.json.JSONObject()
+                .put("ok", false)
+                .put("status", 0)
+                .put("statusText", "Blocked: URL matches no declared host permission")
+                .put("headers", org.json.JSONObject())
+                .put("body", "")
+                .toString()
         }
 
         @JavascriptInterface
@@ -413,6 +438,10 @@ $polyfill
         @JavascriptInterface
         fun startDownload(url: String, filename: String, headersJson: String): String {
             return try {
+                if (hostPatterns.none { ChromeHostPermissions.matches(it, url) }) {
+                    AppLogger.w(TAG, "[$extensionId] startDownload blocked: $url matches no declared host permission")
+                    return "-1"
+                }
                 val request = android.app.DownloadManager.Request(android.net.Uri.parse(url))
                 if (filename.isNotEmpty()) {
                     request.setDestinationInExternalPublicDir(
@@ -448,18 +477,36 @@ class ContentExtensionBridge(
 
     @JavascriptInterface
     fun nativeFetch(url: String, method: String, headersJson: String, body: String): String {
+        // This bridge is registered on the MAIN WebView — every page and iframe reaches it,
+        // so the target must be allowed by at least one installed extension's manifest.
+        if (!ChromeHostPermissions.anyRuntimeAllows(runtimes, url)) {
+            return hostDenied(url, "nativeFetch")
+        }
         return performNativeFetch(url, method, headersJson, body, null)
     }
 
     @JavascriptInterface
     fun getCookies(url: String): String {
+        if (!ChromeHostPermissions.anyRuntimeAllows(runtimes, url)) return ""
         return android.webkit.CookieManager.getInstance().getCookie(url) ?: ""
     }
 
     @JavascriptInterface
     fun setCookieValue(url: String, cookie: String) {
+        if (!ChromeHostPermissions.anyRuntimeAllows(runtimes, url)) return
         android.webkit.CookieManager.getInstance().setCookie(url, cookie)
         android.webkit.CookieManager.getInstance().flush()
+    }
+
+    private fun hostDenied(url: String, api: String): String {
+        AppLogger.w("ChromeExtRuntime", "$api blocked: $url matches no installed extension's host permission")
+        return org.json.JSONObject()
+            .put("ok", false)
+            .put("status", 0)
+            .put("statusText", "Blocked: URL matches no installed extension's host permission")
+            .put("headers", org.json.JSONObject())
+            .put("body", "")
+            .toString()
     }
 
     @JavascriptInterface

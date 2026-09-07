@@ -42,8 +42,45 @@ object TlsMitmBridge {
     @Volatile private var listenPort: Int = 0
     @Volatile private var caDir: File? = null
 
+    /** User-imported CA anchors additionally trusted when verifying upstream certificates. */
+    @Volatile private var customCaAnchors: List<java.security.cert.X509Certificate> = emptyList()
+
+    /**
+     * Android loopback is shared by every app on the device, so the proxy must not be an
+     * open relay: only hosts the WebView actually navigated/requested may be tunneled, and
+     * leaf certificates are only minted for tunnelable hosts. WebViewManager feeds this
+     * set from onPageStarted / shouldInterceptRequest.
+     */
+    private val allowedHosts: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
+    /**
+     * Host-allowlist enforcement. Always on for the WebView engine (whose requests are
+     * observable via shouldInterceptRequest); disabled by the Gecko engine, which has no
+     * per-request callback to feed the set with.
+     */
+    @Volatile private var hostAllowlistEnforcement: Boolean = true
+
+    fun setHostAllowlistEnforcement(enabled: Boolean) {
+        hostAllowlistEnforcement = enabled
+    }
+
+    fun allowHost(host: String?) {
+        val normalized = host?.trim()?.trim('[', ']')?.lowercase(Locale.ROOT) ?: return
+        if (normalized.isNotEmpty()) allowedHosts.add(normalized)
+    }
+
+    fun isHostAllowed(host: String?): Boolean {
+        if (!hostAllowlistEnforcement) return true
+        val normalized = host?.trim()?.trim('[', ']')?.lowercase(Locale.ROOT) ?: return false
+        return allowedHosts.contains(normalized)
+    }
+
     @Synchronized
-    fun start(config: Config, caDir: File): Int {
+    fun start(
+        config: Config,
+        caDir: File,
+        customCaAnchors: List<java.security.cert.X509Certificate> = emptyList()
+    ): Int {
         TlsMitmCaManager.init(caDir)
         if (!TlsMitmCaManager.isCaInitialized()) {
             AppLogger.e(TAG, "CA manager failed to init, aborting TLS MITM bridge")
@@ -51,9 +88,11 @@ object TlsMitmBridge {
         }
 
         if (running && currentConfig == config && listenPort > 0) {
+            this.customCaAnchors = customCaAnchors
             return listenPort
         }
         stopInternal()
+        this.customCaAnchors = customCaAnchors
 
         try {
             val socket = ServerSocket(0, 64, InetAddress.getByName("127.0.0.1"))
@@ -107,6 +146,9 @@ object TlsMitmBridge {
         acceptThread = null
         listenPort = 0
         currentConfig = null
+        customCaAnchors = emptyList()
+        allowedHosts.clear()
+        hostAllowlistEnforcement = true
     }
 
     private fun acceptLoop(socket: ServerSocket) {
@@ -191,6 +233,15 @@ object TlsMitmBridge {
         val host = hostPort.substring(0, sep).trim().trim('[', ']')
         val port = hostPort.substring(sep + 1).toIntOrNull() ?: 443
 
+        if (!isHostAllowed(host)) {
+            // Another app on the device probing the shared loopback interface: without
+            // this check the bridge relays for anyone and mints locally-trusted leaf
+            // certificates for arbitrary domains.
+            AppLogger.w(TAG, "CONNECT rejected (host not requested by the WebView): $host")
+            sendStatus(clientOut, 403, "Forbidden")
+            safeClose(client); return
+        }
+
         val config = currentConfig
         if (config == null) {
             sendStatus(clientOut, 502, "Bad Gateway")
@@ -218,7 +269,8 @@ object TlsMitmBridge {
                 template = config.template,
                 customCipherSuites = config.customCipherSuites,
                 upstreamSocks = config.upstreamSocks,
-                restrictAlpnTo = clientProtocol
+                restrictAlpnTo = clientProtocol,
+                customCaAnchors = customCaAnchors
             ).sslSocket
         } catch (e: Exception) {
             AppLogger.w(TAG, "Upstream TLS connect failed for $host:$port: ${e.message}")
@@ -292,6 +344,11 @@ object TlsMitmBridge {
             requestUri?.port != null && requestUri.port > 0 -> requestUri.port
             hostHeader?.substringAfter(':', "")?.toIntOrNull() != null -> hostHeader.substringAfter(':').toInt()
             else -> 80
+        }
+        if (!isHostAllowed(host)) {
+            AppLogger.w(TAG, "Forward rejected (host not requested by the WebView): $host")
+            sendStatus(clientOut, 403, "Forbidden")
+            safeClose(client); return
         }
         val rawPath = requestUri?.rawPath
         val path = if (rawPath.isNullOrEmpty()) "/" else rawPath

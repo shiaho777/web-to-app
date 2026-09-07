@@ -888,8 +888,29 @@ sys.exit(main())
 
         extraEnv.forEach { (k, v) -> env[k] = v }
 
+        // pip needs the same DNS bridge the server does: the musl resolver cannot reach
+        // Android's resolver, and pip talks HTTPS to PyPI by hostname. Hold a proxy
+        // reference for the duration of the command and release it afterwards.
+        val proxyPort = com.webtoapp.core.linux.LocalDnsBridgeProxy.start()
+        if (proxyPort > 0) {
+            com.webtoapp.core.linux.LocalDnsBridgeProxy.proxyEnvFor(proxyPort).forEach { (k, v) -> env[k] = v }
+        }
+
         AppLogger.i(TAG, "executeCommand: starting process...")
-        val process = processBuilder.start()
+        try {
+            val process = processBuilder.start()
+            return executeCommandAwait(process, onOutput)
+        } finally {
+            if (proxyPort > 0) {
+                com.webtoapp.core.linux.LocalDnsBridgeProxy.stop()
+            }
+        }
+    }
+
+    private fun executeCommandAwait(
+        process: Process,
+        onOutput: ((String) -> Unit)?
+    ): CommandResult {
 
         val output = StringBuilder()
         val outputLock = Any()

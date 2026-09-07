@@ -298,7 +298,13 @@ private fun ExistingAppPicker(
     onAddSelected: () -> Unit
 ) {
     val accentColor = MaterialTheme.colorScheme.onSurface
-    val eligibleApps = existingApps.filter { it.appType != com.webtoapp.data.model.AppType.MULTI_WEB }
+    // Nested multi-web and server-runtime apps (Node/PHP/Python/Go/WordPress) cannot be
+    // embedded as site sources: their runtimes are not packaged into a multi-web APK, so
+    // such sites would render a broken shell mode in the export. The build degrades
+    // legacy configs to URL sites; the picker hides them so new ones are never created.
+    val eligibleApps = existingApps.filter {
+        it.appType != com.webtoapp.data.model.AppType.MULTI_WEB && !it.appType.requiresProcessExec
+    }
     val availableTypes = remember(eligibleApps) {
         eligibleApps.map { it.appType.name }.distinct()
     }
@@ -535,7 +541,7 @@ private fun getFilteredAppIds(
     filterCategoryId: Long?
 ): Set<Long> {
     return existingApps
-        .filter { it.appType != com.webtoapp.data.model.AppType.MULTI_WEB }
+        .filter { it.appType != com.webtoapp.data.model.AppType.MULTI_WEB && !it.appType.requiresProcessExec }
         .filter { app ->
             val typeMatch = filterType == null || app.appType.name == filterType
             val categoryMatch = when {

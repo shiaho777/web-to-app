@@ -452,7 +452,10 @@ object WordPressDependencyManager {
 
         var entry = tarIn.nextEntry
         while (entry != null) {
-            val outFile = File(destDir, entry.name)
+            val outFile = com.webtoapp.util.SafeZip.safeChild(destDir, entry.name) ?: run {
+                entry = tarIn.nextEntry
+                continue
+            }
             if (entry.isDirectory) {
                 outFile.mkdirs()
             } else {
@@ -474,7 +477,11 @@ object WordPressDependencyManager {
         val zipInputStream = java.util.zip.ZipInputStream(zipFile.inputStream().buffered())
         var entry = zipInputStream.nextEntry
         while (entry != null) {
-            val outFile = File(destDir, entry.name)
+            val outFile = com.webtoapp.util.SafeZip.safeChild(destDir, entry.name) ?: run {
+                zipInputStream.closeEntry()
+                entry = zipInputStream.nextEntry
+                continue
+            }
             if (entry.isDirectory) {
                 outFile.mkdirs()
             } else {

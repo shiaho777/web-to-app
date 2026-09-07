@@ -25,6 +25,20 @@ class AabExportCoordinator(private val context: Context) {
         onProgress: ((stage: AabExporter.Stage, percent: Int) -> Unit)? = null
     ): AabExporter.Result {
 
+        // The AAB pipeline rewrites targetSdk to the Play-required level (>= 29). A
+        // server-runtime app (Node/PHP/Python/Go/WordPress, directly or via a multi-web
+        // site that survived source resolution) cannot exec its bundled runtimes under the
+        // W^X that follows, so converting it would mint an AAB whose app can never start.
+        // The interactive path blocks this via PlayPolicyChecker; this guard covers
+        // programmatic callers (agent tools, future automation).
+        if (webApp.appType.requiresProcessExec) {
+            throw AabExportException(
+                FailureStage.BUILD_APK,
+                "${webApp.appType.name} apps cannot be exported as Play AABs: the required " +
+                    "targetSdk rewrite (>= 29) enables W^X, which blocks the bundled runtime binaries."
+            )
+        }
+
         val sourceApk = findMostRecentApkFor(webApp)
         val apkToConvert = if (sourceApk != null) {
             AppLogger.d(

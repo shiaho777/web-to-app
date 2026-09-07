@@ -67,17 +67,13 @@ class DownloadNotificationManager(private val context: Context) {
     }
 
     private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = Strings.notifDownloadChannelDesc
-                setShowBadge(false)
-            }
-            notificationManager.createNotificationChannel(channel)
-        }
+        SafeNotificationChannels.ensure(
+            context = context,
+            id = CHANNEL_ID,
+            name = CHANNEL_NAME,
+            importance = NotificationManager.IMPORTANCE_LOW,
+            description = Strings.notifDownloadChannelDesc
+        ) { setShowBadge(false) }
     }
 
     private fun registerDownloadReceiver() {

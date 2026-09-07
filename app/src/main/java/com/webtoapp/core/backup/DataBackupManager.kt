@@ -139,14 +139,17 @@ class DataBackupManager(private val context: Context) {
          * Signing identity lives as loose files in filesDir root (JarSigner):
          * losing them means published apps can never be updated again.
          * Restored verbatim by exact file name (no traversal possible).
+         *
+         * NOTE: the password sidecars (custom_keystore_password.txt,
+         * custom_keystore_keypass.txt, .ks_credential) are deliberately NOT backed up:
+         * a user-shared backup zip would carry the private key AND its plaintext
+         * password together. Restore keeps the keystores; passwords are re-entered
+         * the next time a build signs with them.
          */
         private val KEYSTORE_FILES = listOf(
             "webtoapp_keystore.p12",
             "custom_keystore.p12",
-            "custom_keystore_password.txt",
             "custom_keystore_alias.txt",
-            "custom_keystore_keypass.txt",
-            ".ks_credential",
             "signing_scheme_options.json"
         )
 

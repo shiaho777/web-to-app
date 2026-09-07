@@ -3,6 +3,7 @@ package com.webtoapp.core.wordpress
 import android.content.Context
 import android.net.Uri
 import com.webtoapp.core.logging.AppLogger
+import com.webtoapp.util.destroyForciblyCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -355,6 +356,7 @@ object WordPressManager {
     }
 
     suspend fun applyRuntimeConfig(
+        context: android.content.Context,
         phpBinary: String,
         projectDir: File,
         siteTitle: String,
@@ -396,12 +398,31 @@ object WordPressManager {
                 appendLine("if (function_exists('flush_rewrite_rules')) { flush_rewrite_rules(false); }")
             }
             script.writeText(phpScript)
-            val process = ProcessBuilder(phpBinary, script.absolutePath)
-                .directory(projectDir)
-                .redirectErrorStream(true)
-                .start()
+            // Route through HostProcessLauncher (W^X hosts degrade instead of throwing)
+            // with a hard timeout: a hung PHP CLI (bad plugin script) must not park the
+            // calling coroutine forever.
+            val launch = com.webtoapp.core.linux.HostProcessLauncher.start(
+                context,
+                listOf(phpBinary, script.absolutePath),
+                emptyMap(),
+                projectDir,
+                runtimeLabel = "WordPress"
+            )
+            val process = launch.process
+            if (process == null) {
+                script.delete()
+                AppLogger.w(TAG, "WordPress runtime config skipped: ${launch.error}")
+                return@withContext false
+            }
             val output = process.inputStream.bufferedReader().readText()
-            val exitCode = process.waitFor()
+            val finished = process.waitFor(60, java.util.concurrent.TimeUnit.SECONDS)
+            if (!finished) {
+                process.destroyForciblyCompat()
+                script.delete()
+                AppLogger.w(TAG, "WordPress runtime config timed out (60s), killed")
+                return@withContext false
+            }
+            val exitCode = process.exitValue()
             script.delete()
             if (exitCode == 0) {
                 AppLogger.i(TAG, "WordPress runtime config applied")
@@ -629,7 +650,9 @@ require_once ABSPATH . 'wp-settings.php';
 
                 val outFile = File(destDir, entry.name)
 
-                if (!outFile.canonicalPath.startsWith(destDir.canonicalPath)) {
+                // + File.separator: a bare prefix match lets a sibling directory
+                // (/data/destEvil pass when destDir is /data/dest) through.
+                if (!outFile.canonicalPath.startsWith(destDir.canonicalPath + File.separator)) {
                     AppLogger.w(TAG, "Skipping unsafe zip entry: ${entry.name}")
                     zipInputStream.closeEntry()
                     entry = zipInputStream.nextEntry

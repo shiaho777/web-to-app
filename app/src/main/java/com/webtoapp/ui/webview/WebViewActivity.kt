@@ -1719,6 +1719,7 @@ fun WebViewScreen(
                 siteLanguage = app.wordpressConfig?.siteLanguage?.takeIf { it.isNotBlank() } ?: "en_US"
             )
             WordPressManager.applyRuntimeConfig(
+                context = context,
                 phpBinary = phpRuntime.getPhpBinaryPath(),
                 projectDir = wpDir,
                 siteTitle = app.wordpressConfig?.siteTitle?.takeIf { it.isNotBlank() } ?: "My Site",
@@ -3288,7 +3289,8 @@ fun WebViewScreen(
                                                 capabilities = effectiveWebApp.webViewConfig.nativeBridgeCapabilities,
                                                 corsBypass = effectiveWebApp.webViewConfig.enableCorsBypass,
                                                 downloadLocationMode = effectiveWebApp.webViewConfig.downloadLocationMode,
-                                                customDownloadDirUri = effectiveWebApp.webViewConfig.customDownloadDirUri
+                                                customDownloadDirUri = effectiveWebApp.webViewConfig.customDownloadDirUri,
+                                                appOriginUrl = effectiveWebApp.url
                                             )
                                             addJavascriptInterface(
                                                 nb,
@@ -3299,7 +3301,8 @@ fun WebViewScreen(
                                                 context = context,
                                                 scope = scope,
                                                 webViewProvider = { this },
-                                                corsBypass = effectiveWebApp.webViewConfig.enableCorsBypass
+                                                corsBypass = effectiveWebApp.webViewConfig.enableCorsBypass,
+                                                appOriginUrl = effectiveWebApp.url
                                             )
                                             addJavascriptInterface(
                                                 privateNetworkBridge,

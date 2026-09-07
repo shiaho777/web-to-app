@@ -170,6 +170,9 @@ class WordPressPhpRuntime(private val context: Context) {
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "启动 PHP 服务器失败", e)
+            // Release the port allocation and DNS-bridge refcount taken before the failure;
+            // this runtime instance dies with the failed start, so nobody else would.
+            runCatching { stopServer() }
             _serverState.value = ServerState.Error("启动失败: ${e.message}")
             -1
         }

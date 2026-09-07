@@ -116,8 +116,12 @@ class NodeRuntime(private val context: Context) {
                         }, "NodePortStop")
                         stopper.isDaemon = true
                         stopper.start()
+                        // This stop handler runs on PortManager.release() from the UI's
+                        // onDispose — i.e. the main thread. The IPC stop can stall while
+                        // the :nodejs process is mid-restart; a 5s join would drop frames
+                        // or ANR. The handler thread finishes on its own either way.
                         try {
-                            stopper.join(5_000L)
+                            stopper.join(500L)
                         } catch (_: InterruptedException) {
                             Thread.currentThread().interrupt()
                         }

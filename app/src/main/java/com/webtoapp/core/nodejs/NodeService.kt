@@ -81,8 +81,13 @@ class NodeService : Service() {
                 NodeServiceProtocol.MSG_STOP_SERVER -> {
                     val replyTo = msg.replyTo
                     service.workerHandler.post {
-                        service.stopServerInternal()
+                        val engineKilled = service.stopServerInternal()
                         sendBack(replyTo, NodeServiceProtocol.MSG_SERVER_STOPPED, Bundle())
+                        if (engineKilled) {
+                            // Reply already queued; now tear down the poisoned :nodejs process
+                            // so the framework restarts a clean engine on the next start.
+                            Process.killProcess(Process.myPid())
+                        }
                     }
                 }
                 NodeServiceProtocol.MSG_KILL_ENGINE -> {
@@ -302,6 +307,9 @@ class NodeService : Service() {
 
             try { Thread.sleep(300) } catch (_: InterruptedException) {}
             if (nodeThread?.isAlive != true) {
+                // The port was reclaimed by the node thread's own finally, but the DNS
+                // bridge refcount taken above is still held — stopServerInternal releases it.
+                stopServerInternal()
                 replyFailed(replyTo, requestId, "Node.js 启动后立即退出")
                 return
             }
@@ -322,16 +330,28 @@ class NodeService : Service() {
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "handleStartServer 异常", e)
+            // Partially-started state (allocated port, DNS bridge refcount) must not leak
+            // past a failed start — the next successful start/stop pair would then never
+            // bring the shared DNS proxy back down.
+            runCatching { stopServerInternal() }
             replyFailed(replyTo, requestId, "启动失败: ${e.message}")
         }
     }
 
-    private fun stopServerInternal() {
+    /**
+     * Stop the running Node server. Returns true when the native V8 event loop survived
+     * interrupt+join and the whole :nodejs process had to be killed (the caller must send
+     * its IPC reply first, then honor this by self-terminating so the framework rebuilds
+     * a clean engine).
+     */
+    private fun stopServerInternal(): Boolean {
+        var threadStuck = false
         try {
             nodeThread?.let { thread ->
                 if (thread.isAlive) {
                     thread.interrupt()
                     thread.join(2000)
+                    threadStuck = thread.isAlive
                 }
             }
         } catch (e: Exception) {
@@ -348,6 +368,14 @@ class NodeService : Service() {
             currentPort = 0
             isRunning = false
         }
+        if (threadStuck) {
+            // Thread.interrupt() cannot break the native V8 event loop (the bootstrap keeps
+            // it alive on purpose): the port is released above but the JS server still holds
+            // the socket bound with nobody tracking it. Escalate to a full engine kill.
+            AppLogger.w(TAG, "Node 线程在 interrupt+join 后仍在运行，升级为 KILL_ENGINE 重建 :nodejs 进程")
+            ShellLogger.w(TAG, "Node 线程未能停止，正在重建 :nodejs 进程")
+        }
+        return threadStuck
     }
 
     private fun isServerRunningInternal(): Boolean = isRunning && nodeThread?.isAlive == true

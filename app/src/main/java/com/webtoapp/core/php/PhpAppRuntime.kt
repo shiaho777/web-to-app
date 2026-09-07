@@ -216,6 +216,11 @@ class PhpAppRuntime(private val context: Context) {
             }
         } catch (e: Exception) {
             AppLogger.e(TAG, "启动 PHP 服务器失败", e)
+            // The port allocation and the DNS-bridge refcount taken above this catch must
+            // not outlive the failed start (the runtime instance dies with the composable,
+            // so nothing else would release them: port purges only after the 120s stale
+            // sweep, and the proxy refcount never).
+            runCatching { stopServer() }
             _serverState.value = ServerState.Error("启动失败: ${e.message}")
             -1
         }

@@ -104,6 +104,7 @@ fun WordPressShellMode(
                     }
                     phase = "configuring"
                     com.webtoapp.core.wordpress.WordPressManager.applyRuntimeConfig(
+                        context = context,
                         phpBinary = phpRuntime.getPhpBinaryPath(),
                         projectDir = wpDir,
                         siteTitle = config.wordpressConfig.siteTitle,

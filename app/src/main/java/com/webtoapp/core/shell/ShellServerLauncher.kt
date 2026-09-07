@@ -314,6 +314,7 @@ object ShellServerLauncher {
             }
             runCatching {
                 com.webtoapp.core.wordpress.WordPressManager.applyRuntimeConfig(
+                    context = context,
                     phpBinary = runtime.getPhpBinaryPath(),
                     projectDir = wpDir,
                     siteTitle = config.wordpressConfig.siteTitle,
