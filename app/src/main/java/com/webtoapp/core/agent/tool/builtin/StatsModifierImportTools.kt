@@ -52,8 +52,13 @@ class CheckAppHealthTool : Tool {
     override val parametersSchema: JsonElement = jsonSchema {
         integer("appId", "Check a single app only.")
     }
-    override fun isReadOnly() = true
+    override fun isReadOnly() = false
+    override fun activityDescription(args: JsonObject): String? =
+        args.get("appId")?.asLong?.let { "Checking URL health of app $it" }
+            ?: "Checking URL health of all apps"
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
+        // The explicit type argument is required: with two null literals the KoinJavaComponent
+        // overloads make inference ambiguous and the compile fails.
         val repo = KoinJavaComponent.get<AppStatsRepository>(AppStatsRepository::class.java, null, null)
         val monitor = AppHealthMonitor.getInstance(ctx.androidContext, repo)
         val appId = args.get("appId")?.asLong

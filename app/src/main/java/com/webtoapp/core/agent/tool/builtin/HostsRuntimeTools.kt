@@ -114,7 +114,7 @@ class GetRuntimeStatusTool : Tool {
         output. Node.js (JNI) and every exported APK are unaffected either way.
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
-        enum("runtime", listOf("php", "node", "python", "go"), "Check a specific runtime only.")
+        enum("runtime", listOf("php", "wordpress", "node", "python", "go"), "Check a specific runtime only. `php` and `wordpress` both report the PHP/WordPress stack.")
     }
     override fun isReadOnly() = true
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
