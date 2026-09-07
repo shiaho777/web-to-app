@@ -2,12 +2,22 @@ package com.webtoapp.core.apkbuilder
 
 import com.google.common.truth.Truth.assertThat
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import java.util.zip.ZipFile
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 
+/**
+ * Pins the launcher-background rewrite done by [ArscRebuilder]: the template ships
+ * `color/ic_launcher_background` as a black color int, and a rebuild with icon
+ * replacement converts it into a drawable string reference so the generated app's
+ * adaptive icons get the patched `res/ic_launcher_bg.png`.
+ *
+ * Localization goes through [ArscRebuilder.findLauncherBackgroundEntry] — the same
+ * by-name lookup the runtime uses. An earlier revision scanned for the entry at a
+ * hardcoded index (0x71) inside the color type chunk, which silently assumed a fixed
+ * resource-merge order; adding the Credential Manager libraries shifted the indices
+ * and broke the test without any functional change.
+ */
 class ArscRebuilderLauncherBgTest {
 
     private val templateApk: File by lazy {
@@ -32,11 +42,11 @@ class ArscRebuilderLauncherBgTest {
     @Test
     fun `original launcher background entry value is a black color int`() {
         val original = readTemplateArsc()
-        val entry = findColorLauncherBackgroundEntry(original)
+        val entry = ArscRebuilder().findLauncherBackgroundEntry(original)
 
         assertThat(entry).isNotNull()
-        assertThat(entry!!.vType).isEqualTo(0x1d)
-        assertThat(entry.vData).isEqualTo(0xff000000.toInt())
+        assertThat(entry!![1]).isEqualTo(0x1d)
+        assertThat(entry[2]).isEqualTo(0xff000000.toInt())
     }
 
     @Test
@@ -47,13 +57,12 @@ class ArscRebuilderLauncherBgTest {
 
         assertThat(rebuilt.size).isGreaterThan(0)
 
-        val entry = findColorLauncherBackgroundEntry(rebuilt)
+        val entry = ArscRebuilder().findLauncherBackgroundEntry(rebuilt)
         assertThat(entry).isNotNull()
 
         entry!!.let {
-            assertThat(it.vType)
-                .isEqualTo(0x03)
-            assertThat(it.vData).isAtLeast(0)
+            assertThat(it[1]).isEqualTo(0x03)
+            assertThat(it[2]).isAtLeast(0)
         }
     }
 
@@ -63,61 +72,14 @@ class ArscRebuilderLauncherBgTest {
         val rebuilder = ArscRebuilder()
         val rebuilt = rebuilder.rebuildWithNewAppNameAndIcons(original, "TestApp", replaceIcons = true)
 
-        val entry = findColorLauncherBackgroundEntry(rebuilt)!!
+        val entry = ArscRebuilder().findLauncherBackgroundEntry(rebuilt)!!
+        // The global string pool sits right after the 12-byte table header
+        // (ResTable_header): its count is at offset 8 + 8.
         val scount = readI32(rebuilt, 8 + 8)
 
-        assertThat(entry.vData).isIn(0 until scount)
+        assertThat(entry[2]).isIn(0 until scount)
     }
 
-    private data class EntryValue(val valuePos: Int, val vType: Int, val vData: Int)
-
-    private fun findColorLauncherBackgroundEntry(arsc: ByteArray): EntryValue? {
-        val total = arsc.size
-        val buf = ByteBuffer.wrap(arsc).order(ByteOrder.LITTLE_ENDIAN)
-
-        var i = 0
-        while (i < total - 20) {
-            if (arsc[i] == 0x01.toByte() && arsc[i + 1] == 0x02.toByte()) {
-                val ch = readU16(arsc, i + 2)
-                val csz = readI32(arsc, i + 4)
-                val typeId = arsc[i + 8].toInt() and 0xFF
-                val typeFlags = arsc[i + 9].toInt() and 0xFF
-                val entryCount = readI32(arsc, i + 12)
-                val entriesStart = readI32(arsc, i + 16)
-                val configSize = readI32(arsc, i + 20)
-
-                if (isValidTypeChunk(ch, csz, total - i, typeId, typeFlags, entryCount, configSize) &&
-                    typeId == 0x05
-                ) {
-                    val targetIdx = 0x71
-                    if (targetIdx < entryCount) {
-                        val entryOff = readI32(arsc, i + ch + targetIdx * 4)
-                        if (entryOff != -1 && entryOff > 0) {
-                            val entryPos = i + entriesStart + entryOff
-                            if (entryPos + 12 <= total) {
-                                val flags = readU16(arsc, entryPos + 2)
-                                if (flags and 1 == 0) {
-                                    val valuePos = entryPos + 8
-                                    val vType = arsc[valuePos + 3].toInt() and 0xFF
-                                    val vData = readI32(arsc, valuePos + 4)
-                                    return EntryValue(valuePos, vType, vData)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            i += 1
-        }
-        return null
-    }
-
-    private fun isValidTypeChunk(
-        ch: Int, csz: Int, remaining: Int, typeId: Int, typeFlags: Int, entryCount: Int, configSize: Int
-    ): Boolean = ch in 16..96 && csz in 1..remaining && typeId in 1..0x10 &&
-        typeFlags == 0 && entryCount in 1 until 100000 && configSize in 8..128
-
-    private fun readU16(d: ByteArray, o: Int) = (d[o].toInt() and 0xFF) or ((d[o + 1].toInt() and 0xFF) shl 8)
     private fun readI32(d: ByteArray, o: Int) =
         (d[o].toInt() and 0xFF) or ((d[o + 1].toInt() and 0xFF) shl 8) or
             ((d[o + 2].toInt() and 0xFF) shl 16) or ((d[o + 3].toInt() and 0xFF) shl 24)

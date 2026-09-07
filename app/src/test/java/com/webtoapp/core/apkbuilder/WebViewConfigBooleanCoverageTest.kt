@@ -170,7 +170,7 @@ class WebViewConfigBooleanCoverageTest {
             "nativeBridgeScreenWake", "nativeBridgeOpenExternal", "nativeBridgeDeviceInfo",
             "nativeBridgeSecurityInfo", "nativeBridgeNetworkInfo", "nativeBridgeToast",
             "nativeBridgeLogging", "nativeBridgeFindInPage", "nativeBridgeOrientation",
-            "nativeBridgeFullscreen", "nativeBridgePrint",
+            "nativeBridgeFullscreen", "nativeBridgePrint", "nativeBridgeGoogleSignIn",
             "failoverTriggerNetworkError", "failoverTriggerHttp5xx",
             "failoverTriggerHttp4xx", "failoverTriggerTimeout"
         )
@@ -204,7 +204,11 @@ class WebViewConfigBooleanCoverageTest {
                 autoRefreshIntervalSec = 120,
                 blobInterceptThresholdMb = 10,
                 screenAwakeTimeoutMinutes = 15,
-                pageZoomPercent = 125
+                pageZoomPercent = 125,
+                nativeBridgeCapabilities = com.webtoapp.data.model.NativeBridgeCapabilities(
+                    googleSignIn = true,
+                    googleSignInClientId = "test-client-id.apps.googleusercontent.com"
+                )
             )
         )
         val shell = roundTrip(app)
@@ -230,6 +234,10 @@ class WebViewConfigBooleanCoverageTest {
         readShell("blobInterceptThresholdMb", 10)
         readShell("screenAwakeTimeoutMinutes", 15)
         readShell("pageZoomPercent", 125)
+        // Native Google sign-in: capability flag + the Web client ID both have to survive
+        // the export, or the generated app silently falls back to the disabled state.
+        readShell("nativeBridgeGoogleSignIn", true)
+        readShell("nativeBridgeGoogleSignInClientId", "test-client-id.apps.googleusercontent.com")
     }
 
     @Test

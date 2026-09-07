@@ -168,6 +168,105 @@ class ArscRebuilder {
     private var _lastDiscoveredIconSpecs: List<DiscoveredIconPath> = emptyList()
     fun getLastDiscoveredIconSpecs(): List<DiscoveredIconPath> = _lastDiscoveredIconSpecs
 
+    /**
+     * Locates the simple `color/ic_launcher_background` entry inside an ARSC (or a bare
+     * package chunk) **by resource name** — never by a fixed id/index: every new library
+     * with color resources shifts indices, and the launcher background's position is a
+     * build artifact of resource merging, not a contract.
+     *
+     * Returns `[valuePos, valueType, valueData]` for the entry, or null when the package,
+     * the color type, the resource, or the (complex) entry cannot be found.
+     */
+    internal fun findLauncherBackgroundEntry(arscOrPackage: ByteArray): IntArray? {
+        val packageData = locatePackageChunk(arscOrPackage) ?: return null
+        val buf = ByteBuffer.wrap(packageData).order(ByteOrder.LITTLE_ENDIAN)
+
+        val pkgType = buf.short.toInt() and 0xFFFF
+        val pkgHeaderSize = buf.short.toInt() and 0xFFFF
+        if (pkgType != 0x0200) return null
+
+        // Package chunk header: header(8) + id(4) + name(256) — typeStrings/keyStrings
+        // offsets live right after the name.
+        buf.position(8 + 4 + 256)
+        val typeStringsOffset = buf.int
+        buf.int // lastPublicType
+        val keyStringsOffset = buf.int
+
+        buf.position(typeStringsOffset)
+        val typeStrings = readStringPool(buf, packageData)
+        buf.position(keyStringsOffset)
+        val keyStrings = readStringPool(buf, packageData)
+
+        val colorTypeId = typeStrings.indexOfFirst { it == "color" } + 1
+        val launcherBgKeyIdx = keyStrings.indexOf("ic_launcher_background")
+        if (colorTypeId <= 0 || launcherBgKeyIdx < 0) return null
+
+        var pos = pkgHeaderSize
+        while (pos + 8 <= packageData.size) {
+            buf.position(pos)
+            val chunkType = buf.short.toInt() and 0xFFFF
+            val chunkHeaderSize = buf.short.toInt() and 0xFFFF
+            val chunkSize = buf.int
+            if (chunkSize <= 0 || pos + chunkSize > packageData.size) break
+
+            if (chunkType == 0x0201) {
+                val typeId = packageData[pos + 8].toInt() and 0xFF
+                val typeFlags = packageData[pos + 9].toInt() and 0xFF
+                val entryCount = readI32(packageData, pos + 12)
+                val entriesStart = readI32(packageData, pos + 16)
+
+                if (typeId == colorTypeId && typeFlags == 0) {
+                    val offsetsBase = pos + chunkHeaderSize
+                    for (entryIdx in 0 until entryCount) {
+                        val entryOff = readI32(packageData, offsetsBase + entryIdx * 4)
+                        if (entryOff == -1 || entryOff < 0) continue
+                        val entryPos = pos + entriesStart + entryOff
+                        if (entryPos + 12 > packageData.size) continue
+                        if (readI32(packageData, entryPos + 4) != launcherBgKeyIdx) continue
+                        if ((readU16(packageData, entryPos + 2) and 0x0001) != 0) continue // complex entry
+
+                        val valuePos = entryPos + 8
+                        val vType = packageData[valuePos + 3].toInt() and 0xFF
+                        val vData = readI32(packageData, valuePos + 4)
+                        return intArrayOf(valuePos, vType, vData)
+                    }
+                }
+            }
+            pos += chunkSize
+        }
+        return null
+    }
+
+    /**
+     * The caller may hand us a full resources.arsc (table header + global string pool +
+     * package) or just the package chunk. Walk the top-level chunk list until the first
+     * RES_TABLE_PACKAGE_TYPE (0x0200) chunk; a bare package chunk is returned as-is.
+     */
+    private fun locatePackageChunk(arscOrPackage: ByteArray): ByteArray? {
+        val buf = ByteBuffer.wrap(arscOrPackage).order(ByteOrder.LITTLE_ENDIAN)
+        val headType = buf.short.toInt() and 0xFFFF
+        if (headType == 0x0200) return arscOrPackage
+        if (arscOrPackage.size < 8) return null
+
+        var pos = 0
+        while (pos + 8 <= arscOrPackage.size) {
+            buf.position(pos)
+            val chunkType = buf.short.toInt() and 0xFFFF
+            val chunkHeaderSize = buf.short.toInt() and 0xFFFF
+            val chunkSize = buf.int
+            if (chunkType == 0x0200) {
+                if (chunkSize <= 0 || pos + chunkSize > arscOrPackage.size) return null
+                return arscOrPackage.copyOfRange(pos, pos + chunkSize)
+            }
+            // The table header chunk (0x0002) declares the size of the WHOLE file —
+            // walk past its header only, then keep iterating the real top-level chunks.
+            val step = if (chunkType == 0x0002) chunkHeaderSize else chunkSize
+            if (step <= 0 || pos + step > arscOrPackage.size) return null
+            pos += step
+        }
+        return null
+    }
+
     private fun convertLauncherBackgroundToDrawable(
         packageData: ByteArray,
         globalStrings: MutableList<String>
@@ -181,91 +280,19 @@ class ArscRebuilder {
                 globalStrings.size - 1
             }
 
-            val buf = ByteBuffer.wrap(packageData).order(ByteOrder.LITTLE_ENDIAN)
-
-            val pkgType = buf.short
-            val pkgHeaderSize = buf.short.toInt() and 0xFFFF
-            buf.int
-            buf.int
-
-            if (pkgType != RES_TABLE_PACKAGE_TYPE) {
-                AppLogger.w(TAG, "convertLauncherBackground: not a package chunk")
-                return
-            }
-
-            buf.position(buf.position() + 256)
-            val typeStringsOffset = buf.int
-            buf.int
-            val keyStringsOffset = buf.int
-
-            buf.position(typeStringsOffset)
-            val typeStrings = readStringPool(buf, packageData)
-
-            buf.position(keyStringsOffset)
-            val keyStrings = readStringPool(buf, packageData)
-
-            val colorTypeId = typeStrings.indexOfFirst { it == "color" } + 1
-            val launcherBgKeyIdx = keyStrings.indexOf("ic_launcher_background")
-
-            if (colorTypeId <= 0 || launcherBgKeyIdx < 0) {
-                AppLogger.d(TAG, "convertLauncherBackground: color/ic_launcher_background not found (colorTypeId=$colorTypeId, keyIdx=$launcherBgKeyIdx)")
-                return
-            }
-
-            var pos = pkgHeaderSize
-            var patched = false
-            while (pos + 8 <= packageData.size) {
-                buf.position(pos)
-                val chunkType = buf.short.toInt() and 0xFFFF
-                val chunkHeaderSize = buf.short.toInt() and 0xFFFF
-                val chunkSize = buf.int
-
-                if (chunkSize <= 0 || pos + chunkSize > packageData.size) break
-
-                if (chunkType == 0x0201) {
-                    val typeId = packageData[pos + 8].toInt() and 0xFF
-                    val typeFlags = packageData[pos + 9].toInt() and 0xFF
-                    val entryCount = readI32(packageData, pos + 12)
-                    val entriesStart = readI32(packageData, pos + 16)
-
-                    if (typeId == colorTypeId && typeFlags == 0) {
-                        val offsetsBase = pos + chunkHeaderSize
-
-                        for (entryIdx in 0 until entryCount) {
-                            val entryOff = readI32(packageData, offsetsBase + entryIdx * 4)
-                            if (entryOff == -1 || entryOff < 0) continue
-
-                            val entryPos = pos + entriesStart + entryOff
-                            if (entryPos + 12 > packageData.size) continue
-
-                            val entryKeyIndex = readI32(packageData, entryPos + 4)
-                            if (entryKeyIndex != launcherBgKeyIdx) continue
-
-                            val entryFlags = readU16(packageData, entryPos + 2)
-                            val isComplex = (entryFlags and 0x0001) != 0
-                            if (isComplex) continue
-
-                            val valuePos = entryPos + 8
-
-                            packageData[valuePos + 2] = 0
-                            packageData[valuePos + 3] = 0x03
-                            packageData[valuePos + 4] = (newStringIndex and 0xFF).toByte()
-                            packageData[valuePos + 5] = ((newStringIndex shr 8) and 0xFF).toByte()
-                            packageData[valuePos + 6] = ((newStringIndex shr 16) and 0xFF).toByte()
-                            packageData[valuePos + 7] = ((newStringIndex shr 24) and 0xFF).toByte()
-
-                            patched = true
-                            AppLogger.d(TAG, "convertLauncherBackground: patched color/ic_launcher_background -> drawable '$LAUNCHER_BACKGROUND_DRAWABLE_PATH' (strIdx=$newStringIndex) at entryPos=$entryPos")
-                            break
-                        }
-                    }
-                }
-                pos += chunkSize
-            }
-
-            if (!patched) {
+            val entry = findLauncherBackgroundEntry(packageData) ?: run {
                 AppLogger.w(TAG, "convertLauncherBackground: entry not patched")
+                return
             }
+            val valuePos = entry[0]
+
+            packageData[valuePos + 2] = 0
+            packageData[valuePos + 3] = 0x03
+            packageData[valuePos + 4] = (newStringIndex and 0xFF).toByte()
+            packageData[valuePos + 5] = ((newStringIndex shr 8) and 0xFF).toByte()
+            packageData[valuePos + 6] = ((newStringIndex shr 16) and 0xFF).toByte()
+            packageData[valuePos + 7] = ((newStringIndex shr 24) and 0xFF).toByte()
+            AppLogger.d(TAG, "convertLauncherBackground: patched color/ic_launcher_background -> drawable '$LAUNCHER_BACKGROUND_DRAWABLE_PATH' (strIdx=$newStringIndex) at valuePos=$valuePos")
         } catch (e: Exception) {
             AppLogger.e(TAG, "convertLauncherBackground failed", e)
         }

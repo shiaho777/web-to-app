@@ -28,6 +28,13 @@ import android.webkit.WebView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.webtoapp.core.background.BackgroundRunService
@@ -401,6 +408,25 @@ NativeBridge.exitFullscreen();
 if (NativeBridge.isFullscreen()) {
     // 当前是全屏模式
 }
+```
+
+#### googleSignIn(requestId)
+使用设备上已有的 Google 账户登录（需在 WebToApp 编辑器中启用"Google 原生登录"能力并配置 Web Client ID）
+- `requestId`: string - 页面自定义的请求标识
+- 结果异步回调: `window.NativeBridgeGoogleSignInResult(requestId, payload)`
+- payload: `{ ok: true, idToken, displayName, profilePictureUri, googleUserId }` 或 `{ ok: false, error, message }`
+- 错误码: `DISABLED`(能力未启用), `NO_CLIENT_ID`, `NO_ACTIVITY`(悬浮窗等上下文), `CANCELLED`(用户取消), `CREDENTIAL_ERROR`(设备无 Google 服务或配置不匹配), `UNAVAILABLE`
+- **idToken 必须由网站后端校验**（audience = 配置的 Web Client ID、签名、有效期）后才可建立会话
+```javascript
+window.NativeBridgeGoogleSignInResult = function(requestId, payload) {
+    if (payload.ok) {
+        // 把 payload.idToken 发给自己的后端验证后建立会话
+        fetch('/auth/google', { method: 'POST', body: JSON.stringify({ idToken: payload.idToken }) });
+    } else {
+        // 回退到网页版 Google 登录
+    }
+};
+NativeBridge.googleSignIn('sign-in-' + Date.now());
 ```
         """.trimIndent()
 
@@ -1397,6 +1423,110 @@ if (NativeBridge.isFullscreen()) {
             put("error", code)
             put("message", message)
         }.toString()
+    }
+
+    /**
+     * Native Google sign-in via the Jetpack Credential Manager: shows the system account
+     * picker with the device's Google accounts and returns a Google-signed ID token.
+     * The page receives the result asynchronously through
+     * `window.NativeBridgeGoogleSignInResult(requestId, payload)`; the ID token must be
+     * validated by the site's backend (audience = the configured Web client ID).
+     *
+     * Fail-soft on every path the feature cannot work on: disabled capability, missing
+     * client ID, non-Activity context (floating window / Gecko bridge), devices without
+     * Google Play Services, and user cancellation — the page always gets a JSON reply.
+     */
+    @JavascriptInterface
+    fun googleSignIn(requestId: String) {
+        if (!capabilities.googleSignIn) {
+            dispatchGoogleSignInResult(requestId, googleSignInError("DISABLED", "Native Google sign-in capability is disabled"))
+            return
+        }
+        if (capabilities.googleSignInClientId.isBlank()) {
+            dispatchGoogleSignInResult(requestId, googleSignInError("NO_CLIENT_ID", "No Google Web client ID configured in WebToApp"))
+            return
+        }
+        val activity = context as? Activity
+        if (activity == null) {
+            dispatchGoogleSignInResult(
+                requestId,
+                googleSignInError("NO_ACTIVITY", "Google sign-in is unavailable in this window context")
+            )
+            return
+        }
+
+        scope.launch(Dispatchers.Main) {
+            try {
+                val credentialManager = CredentialManager.create(activity)
+                val googleIdOption = GetGoogleIdOption.Builder()
+                    .setFilterByAuthorizedAccounts(false)
+                    .setServerClientId(capabilities.googleSignInClientId)
+                    .setAutoSelectEnabled(false)
+                    .build()
+                val request = GetCredentialRequest.Builder()
+                    .addCredentialOption(googleIdOption)
+                    .build()
+
+                val response = credentialManager.getCredential(activity, request)
+                val credential = response.credential
+                if (credential is CustomCredential &&
+                    credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                ) {
+                    val googleCredential = GoogleIdTokenCredential.createFrom(credential.data)
+                    val payload = org.json.JSONObject().apply {
+                        put("ok", true)
+                        put("idToken", googleCredential.idToken)
+                        put("displayName", googleCredential.displayName ?: "")
+                        put("profilePictureUri", googleCredential.profilePictureUri?.toString() ?: "")
+                        put("googleUserId", googleCredential.id)
+                    }
+                    dispatchGoogleSignInResult(requestId, payload)
+                } else {
+                    dispatchGoogleSignInResult(
+                        requestId,
+                        googleSignInError("UNSUPPORTED_CREDENTIAL", "Unexpected credential type: ${credential.type}")
+                    )
+                }
+            } catch (e: GetCredentialCancellationException) {
+                dispatchGoogleSignInResult(requestId, googleSignInError("CANCELLED", "The user dismissed the account picker"))
+            } catch (e: GetCredentialException) {
+                AppLogger.w("NativeBridge", "Google sign-in failed: ${e.type}", e)
+                dispatchGoogleSignInResult(
+                    requestId,
+                    googleSignInError(
+                        "CREDENTIAL_ERROR",
+                        "Google sign-in failed (${e.type}): ${e.message ?: e::class.java.simpleName}"
+                    )
+                )
+            } catch (e: Exception) {
+                AppLogger.e("NativeBridge", "Google sign-in failed", e)
+                dispatchGoogleSignInResult(
+                    requestId,
+                    googleSignInError("UNAVAILABLE", e.message ?: e::class.java.simpleName)
+                )
+            }
+        }
+    }
+
+    private fun googleSignInError(code: String, message: String): org.json.JSONObject =
+        org.json.JSONObject().apply {
+            put("ok", false)
+            put("error", code)
+            put("message", message)
+        }
+
+    private fun dispatchGoogleSignInResult(requestId: String, payload: org.json.JSONObject) {
+        val quotedRequestId = com.webtoapp.util.JsStrings.quote(requestId)
+        // JSONObject.toString() is a valid JS object literal; the requestId is quoted
+        // so a crafted id cannot break out of the call expression.
+        val js = "window.NativeBridgeGoogleSignInResult && window.NativeBridgeGoogleSignInResult($quotedRequestId, $payload);"
+        scope.launch(Dispatchers.Main) {
+            try {
+                webViewProvider()?.evaluateJavascript(js, null)
+            } catch (e: Exception) {
+                AppLogger.w("NativeBridge", "Failed to deliver Google sign-in result", e)
+            }
+        }
     }
 
     @Volatile
