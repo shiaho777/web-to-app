@@ -381,16 +381,66 @@ class ShellManifestComponentParityTest {
         return null
     }
 
+    /**
+     * Linear char-scan sanitizer: replaces string/char literals and comments with
+     * short placeholders so declaration scanning never sees code-like text inside
+     * literals. Deliberately regex-free — java.util.regex recurses per repetition
+     * on lazy/DOT_MATCHES_ALL quantifiers, and the synced set contains multi-MB
+     * sources (core/i18n/Strings.kt), which blew the CI test worker stack
+     * (StackOverflowError in StringUTF16 via Pattern) with the regex version.
+     */
     private fun stripCodeNoise(source: String): String {
-        var s = source
-        // Triple-quoted strings first (may contain // or /* */).
-        s = Regex("\"\"\".*?\"\"\"", RegexOption.DOT_MATCHES_ALL).replace(s, "\"\"")
-        // Double-quoted strings (log lines must not count as declarations).
-        s = Regex("\"(?:\\\\.|[^\"\\\\])*\"").replace(s, "\"\"")
-        // Block comments, then line comments.
-        s = Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL).replace(s, " ")
-        s = s.lines().joinToString("\n") { it.substringBefore("//") }
-        return s
+        val out = StringBuilder(source.length)
+        val n = source.length
+        var i = 0
+        while (i < n) {
+            val c = source[i]
+            when {
+                c == '"' && source.startsWith("\"\"\"", i) -> {
+                    val end = source.indexOf("\"\"\"", i + 3)
+                    i = if (end < 0) n else end + 3
+                    out.append("\"\"")
+                }
+                c == '"' -> {
+                    var j = i + 1
+                    while (j < n) {
+                        when (source[j]) {
+                            '\\' -> j += 2
+                            '"', '\n' -> { j++; break }
+                            else -> j++
+                        }
+                    }
+                    i = j.coerceAtMost(n)
+                    out.append("\"\"")
+                }
+                c == '\'' -> {
+                    var j = i + 1
+                    while (j < n) {
+                        when (source[j]) {
+                            '\\' -> j += 2
+                            '\'', '\n' -> { j++; break }
+                            else -> j++
+                        }
+                    }
+                    i = j.coerceAtMost(n)
+                    out.append("''")
+                }
+                c == '/' && i + 1 < n && source[i + 1] == '*' -> {
+                    val end = source.indexOf("*/", i + 2)
+                    i = if (end < 0) n else end + 2
+                    out.append(' ')
+                }
+                c == '/' && i + 1 < n && source[i + 1] == '/' -> {
+                    val end = source.indexOf('\n', i)
+                    i = if (end < 0) n else end
+                }
+                else -> {
+                    out.append(c)
+                    i++
+                }
+            }
+        }
+        return out.toString()
     }
 
     private fun resolveExistingDir(vararg candidates: String): File {
