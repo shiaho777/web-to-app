@@ -64,9 +64,82 @@ class AgentEngineStreamTest {
 
         assertEquals("one request attempt must subscribe the stream once", 1, producerRuns.get())
         assertEquals("Hello, world", events.filterIsInstance<AgentEvent.TextDelta>().joinToString("") { it.delta })
+        // The accumulated buffer must grow monotonically — #749 briefly rebuilt it per
+        // delta, leaving only the newest fragment (body streamed in replacing chunks
+        // and the persisted message ended up one token long).
+        assertEquals(
+            "the last delta must carry the FULL accumulated text",
+            "Hello, world",
+            events.filterIsInstance<AgentEvent.TextDelta>().last().accumulated
+        )
         val completed = events.last()
         assertTrue(completed is AgentEvent.Completed)
         assertEquals("Hello, world", (completed as AgentEvent.Completed).summary)
+    }
+
+    /**
+     * Thinking arrives first and anchors a TH marker in the accumulated text; body
+     * deltas must append AFTER the marker, keeping both intact across the stream.
+     */
+    @Test(timeout = 15_000)
+    fun `thinking marker and body text accumulate into one interleaved buffer`() = runBlocking {
+        val gateway = object : LlmGateway {
+            override fun chatStream(req: ChatRequest): Flow<LlmEvent> = callbackFlow {
+                trySend(LlmEvent.Started)
+                trySend(LlmEvent.ThinkingDelta("let me think"))
+                trySend(LlmEvent.TextDelta("Hello"))
+                trySend(LlmEvent.TextDelta(", "))
+                trySend(LlmEvent.TextDelta("world"))
+                trySend(LlmEvent.Done(FinishReason.STOP))
+                close()
+                awaitClose { }
+            }
+        }
+
+        val events = engine(gateway).run(input()).toList(mutableListOf())
+
+        val last = events.filterIsInstance<AgentEvent.TextDelta>().last()
+        assertEquals(
+            "marker must survive the body deltas that follow it",
+            "\u2063TH:th-turn-1\u2063Hello, world",
+            last.accumulated
+        )
+    }
+
+    /**
+     * A tool call that follows streamed prose must not truncate that prose: the TC
+     * marker is appended after it in the accumulated text.
+     */
+    @Test(timeout = 15_000)
+    fun `prose before a tool call marker is not truncated`() = runBlocking {
+        val producerRuns = AtomicInteger(0)
+        val gateway = object : LlmGateway {
+            override fun chatStream(req: ChatRequest): Flow<LlmEvent> = callbackFlow {
+                if (producerRuns.incrementAndGet() == 1) {
+                    trySend(LlmEvent.Started)
+                    trySend(LlmEvent.TextDelta("before the call"))
+                    trySend(LlmEvent.ToolCallBegin("call_1", "noop"))
+                    trySend(LlmEvent.ToolCallEnd("call_1", "noop", "{}"))
+                    trySend(LlmEvent.Done(FinishReason.TOOL_CALLS))
+                } else {
+                    trySend(LlmEvent.Started)
+                    trySend(LlmEvent.TextDelta("done"))
+                    trySend(LlmEvent.Done(FinishReason.STOP))
+                }
+                close()
+                awaitClose { }
+            }
+        }
+
+        val events = engine(gateway).run(input()).toList(mutableListOf())
+
+        val firstStreamAccumulated = events.filterIsInstance<AgentEvent.TextDelta>()
+            .first { it.accumulated.contains("TC:call_1") }
+            .accumulated
+        assertTrue(
+            "the marker event must still carry the prose that preceded it",
+            firstStreamAccumulated.startsWith("before the call\u2063TC:call_1\u2063")
+        )
     }
 
     @Test(timeout = 15_000)
@@ -93,6 +166,54 @@ class AgentEngineStreamTest {
         assertTrue(events.filterIsInstance<AgentEvent.Notice>().isNotEmpty())
         assertTrue(events.filterIsInstance<AgentEvent.TextDelta>().any { it.delta == "recovered" })
         assertTrue(events.last() is AgentEvent.Completed)
+    }
+
+    /**
+     * A stream that opens, completes with zero deltas, and closes is a distinct
+     * outcome from a request error. The Completed summary must say so explicitly —
+     * an empty summary previously made the whole turn vanish (nothing persisted).
+     */
+    @Test(timeout = 15_000)
+    fun `an empty stream completes with an explicit empty-response summary`() = runBlocking {
+        val gateway = object : LlmGateway {
+            override fun chatStream(req: ChatRequest): Flow<LlmEvent> = callbackFlow {
+                trySend(LlmEvent.Started)
+                trySend(LlmEvent.Done(FinishReason.STOP))
+                close()
+                awaitClose { }
+            }
+        }
+
+        val events = engine(gateway).run(input()).toList(mutableListOf())
+
+        val completed = events.last()
+        assertTrue(completed is AgentEvent.Completed)
+        assertEquals(
+            com.webtoapp.core.i18n.Strings.agentEmptyResponse,
+            (completed as AgentEvent.Completed).summary
+        )
+    }
+
+    /**
+     * A hard (non-recoverable) stream error must fail the turn with the provider's
+     * message — the UI and the session both rely on this message being present.
+     */
+    @Test(timeout = 15_000)
+    fun `a hard stream error fails the turn with the provider message`() = runBlocking {
+        val gateway = object : LlmGateway {
+            override fun chatStream(req: ChatRequest): Flow<LlmEvent> = callbackFlow {
+                trySend(LlmEvent.Started)
+                trySend(LlmEvent.Error("API key invalid or expired (401)"))
+                close()
+                awaitClose { }
+            }
+        }
+
+        val events = engine(gateway).run(input()).toList(mutableListOf())
+
+        val failed = events.last()
+        assertTrue(failed is AgentEvent.Failed)
+        assertEquals("API key invalid or expired (401)", (failed as AgentEvent.Failed).message)
     }
 
     private fun engine(gateway: LlmGateway) =

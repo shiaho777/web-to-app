@@ -117,7 +117,8 @@ import java.util.Locale
 @Composable
 fun AgentScreen(
     onBack: () -> Unit,
-    onOpenAiSettings: () -> Unit
+    onOpenAiSettings: () -> Unit,
+    onOpenApp: (Long) -> Unit = {}
 ) {
     val context = LocalContext.current
     val app = context.applicationContext as Application
@@ -338,6 +339,14 @@ fun AgentScreen(
                     onUndoOne = vm::undoChange,
                     onUndoAll = vm::undoAllChanges,
                     onClear = vm::clearChangesReview
+                )
+
+                com.webtoapp.ui.agent.components.AppChangesReviewCard(
+                    changes = state.pendingAppChanges,
+                    expanded = state.appChangesExpanded,
+                    onToggle = vm::toggleAppChangesReview,
+                    onClear = vm::clearAppChanges,
+                    onOpenApp = onOpenApp
                 )
                 if (state.editingMessageId != null) {
                     EditingHint(onCancel = vm::cancelEditing)
@@ -561,6 +570,24 @@ private fun Conversation(
         if (atBottom) followBottom = true
     }
 
+    // A fresh turn (Idle → Connecting) always re-attaches to the newest content.
+    // Without this, a followBottom left false from earlier history reading keeps
+    // the just-sent user message AND the whole streaming output off-screen —
+    // sending is an explicit action, so the view must jump to it. Manual scroll-up
+    // only detaches within a turn; the next send snaps back.
+    var wasWorking by remember { mutableStateOf(false) }
+    LaunchedEffect(state.isWorking) {
+        val working = state.isWorking
+        if (working && !wasWorking) {
+            followBottom = true
+            val target = totalContentItems - 1
+            if (target >= 0) {
+                runCatching { listState.scrollToItem(target) }
+            }
+        }
+        wasWorking = working
+    }
+
     val streamingTextLen = state.streamingText.length
     val streamingThinkingLen = state.streamingThinkingSegments.sumOf { it.content.length }
     LaunchedEffect(
@@ -579,12 +606,17 @@ private fun Conversation(
             val info = listState.layoutInfo
             val viewportBottom = info.viewportEndOffset - info.afterContentPadding
             val last = info.visibleItemsInfo.lastOrNull()
-            if (last != null) {
-                val lastBottom = last.offset + last.size
-                val gap = lastBottom - viewportBottom
+            if (last != null && last.index == info.totalItemsCount - 1) {
+                // The newest item is on screen — align its bottom edge with the viewport.
+                val gap = (last.offset + last.size) - viewportBottom
                 if (gap > 0) {
                     listState.scrollBy(gap.toFloat())
                 }
+            } else if (info.totalItemsCount > 0) {
+                // The newest item is entirely below the fold (a burst of output
+                // outgrew the viewport between pushes) — jump straight to it so
+                // following never stalls.
+                listState.scrollToItem(info.totalItemsCount - 1)
             }
 
             kotlinx.coroutines.yield()

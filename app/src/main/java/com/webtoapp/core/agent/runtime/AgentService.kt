@@ -292,7 +292,7 @@ class AgentService : Service() {
                 _activeTurn.value = null
             }
             is AgentEvent.PermissionDenied, is AgentEvent.Usage, is AgentEvent.Notice,
-            is AgentEvent.ApkBuilt,
+            is AgentEvent.ApkBuilt, is AgentEvent.AppChanged,
             AgentEvent.Started -> {
                 // No persistence impact.
             }
@@ -460,7 +460,7 @@ class AgentService : Service() {
  * persisted as a draft (and finalized) independently of any UI scope. Mirrors the
  * ViewModel's in-memory buffers but is purely data-oriented and persistence-driven.
  */
-private class TurnAccumulator(private val sessionId: String) {
+internal class TurnAccumulator(private val sessionId: String) {
     private val text = StringBuilder()
     private val thinkingSegments = mutableListOf<ThinkingSegment>()
     private val tools = LinkedHashMap<String, RecordedToolCall>()
@@ -613,8 +613,15 @@ private class TurnAccumulator(private val sessionId: String) {
         val raw = text.toString().trim()
         val joined = joinedThinking()
         val segs = buildThinkingSegmentData()
-        val hasSubstance = stripAllMarkers(raw).isNotBlank() || !joined.isNullOrBlank() || tools.isNotEmpty()
-        if (!hasSubstance) return null
+        val fallbackText = stripAllMarkers(summaryFallback.orEmpty()).trim()
+        // A turn that produced no streamed substance still owes a durable record when
+        // it ended abnormally (errorSuffix) or completed with an explicit summary
+        // (the engine's empty-response notice): returning null here is what made a
+        // fast request failure look like a silent empty response. Only a substance-less
+        // ABORT may still be dropped — the user cancelled deliberately.
+        val hasSubstance = stripAllMarkers(raw).isNotBlank() || !joined.isNullOrBlank() ||
+            tools.isNotEmpty() || fallbackText.isNotBlank()
+        if (!hasSubstance && errorSuffix == null) return null
 
         val baseText = if (stripAllMarkers(raw).isNotBlank()) raw
                        else stripAllMarkers(summaryFallback.orEmpty()).trim()

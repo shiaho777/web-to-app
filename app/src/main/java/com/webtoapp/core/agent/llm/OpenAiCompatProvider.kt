@@ -65,7 +65,9 @@ internal class OpenAiCompatProvider(@Suppress("UNUSED_PARAMETER") context: Conte
                     try { Thread.sleep(1000) } catch (_: InterruptedException) {}
                     executeCall(req, isRetry = true, inFlight = inFlight)
                 } else {
-                    trySend(LlmEvent.Error(e.message ?: "Network error")); close()
+                    // Include the endpoint so a connection-level failure is
+                    // attributable to a specific base URL, not just "network error".
+                    trySend(LlmEvent.Error("Network error: ${e.message ?: "connection failed"} [$url]")); close()
                 }
             }
             override fun onResponse(call: Call, response: Response) {

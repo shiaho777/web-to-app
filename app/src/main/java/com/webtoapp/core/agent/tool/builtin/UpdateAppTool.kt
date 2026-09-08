@@ -3,6 +3,7 @@ package com.webtoapp.core.agent.tool.builtin
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import com.webtoapp.core.agent.tool.AppChange
 import com.webtoapp.core.agent.tool.Tool
 import com.webtoapp.core.agent.tool.ToolContext
 import com.webtoapp.core.agent.tool.ToolResult
@@ -48,6 +49,18 @@ class UpdateAppTool : Tool {
             updatedAt = System.currentTimeMillis()
         )
         ctx.appRepository.updateWebApp(safe)
-        return ToolResult.ok("Updated app id=${safe.id} name=\"${safe.name}\" (type ${safe.appType}).")
+        // The patch's top-level keys are exactly what the caller asked to change —
+        // they drive the "what changed" line on the app-changes review card.
+        val changedFields = patch.takeIf { it.isJsonObject }?.asJsonObject?.keySet()?.toList().orEmpty()
+        return ToolResult(
+            text = "Updated app id=${safe.id} name=\"${safe.name}\" (type ${safe.appType}).",
+            appChange = AppChange(
+                appId = safe.id,
+                appName = safe.name,
+                appType = safe.appType.name,
+                kind = AppChange.Kind.UPDATE,
+                changedFields = changedFields
+            )
+        )
     }
 }

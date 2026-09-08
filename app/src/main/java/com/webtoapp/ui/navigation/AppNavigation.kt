@@ -663,7 +663,8 @@ fun AppNavigation() {
             composable(Routes.AGENT) {
                 AgentScreen(
                     onBack = { navController.popBackStack() },
-                    onOpenAiSettings = { navController.navigate(Routes.AI_SETTINGS) }
+                    onOpenAiSettings = { navController.navigate(Routes.AI_SETTINGS) },
+                    onOpenApp = { appId -> navController.navigate(Routes.editApp(appId)) }
                 )
             }
 

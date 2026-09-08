@@ -6,7 +6,8 @@ data class ToolResult(
     val images: List<ImageAttachment> = emptyList(),
     val fileChange: FileChange? = null,
     val planReviewPath: String? = null,
-    val builtApk: BuiltApkInfo? = null
+    val builtApk: BuiltApkInfo? = null,
+    val appChange: AppChange? = null
 ) {
     val isMultimodal: Boolean get() = images.isNotEmpty()
 
@@ -82,4 +83,21 @@ data class FileChange(
     val newContent: String? = null
 ) {
     enum class Kind { WRITE, EDIT, DELETE }
+}
+
+/**
+ * Metadata about an app created or modified by [com.webtoapp.core.agent.tool.builtin.CreateAppTool]
+ * or [com.webtoapp.core.agent.tool.builtin.UpdateAppTool]. Surfaced as an "app changes" review
+ * card below the conversation so the user sees WHAT changed after a turn and can jump straight
+ * to the app's editor — mirroring how [FileChange] powers the file-changes review card.
+ */
+data class AppChange(
+    val appId: Long,
+    val appName: String,
+    val appType: String,
+    val kind: Kind,
+    /** For UPDATE: the top-level manifest keys the patch touched, in patch order. */
+    val changedFields: List<String> = emptyList()
+) {
+    enum class Kind { CREATE, UPDATE }
 }
