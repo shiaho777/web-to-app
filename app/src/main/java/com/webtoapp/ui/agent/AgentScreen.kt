@@ -229,6 +229,11 @@ fun AgentScreen(
                         },
                         onDeleteSession = vm::deleteSession,
                         onPinSession = vm::pinSession,
+                        onRenameSession = vm::renameSession,
+                        onExportSession = { id ->
+                            scope.launch { drawerState.close() }
+                            vm.exportSession(id)
+                        },
                         onPickFile = { path ->
                             scope.launch { drawerState.close() }
                             vm.selectFile(path)
@@ -241,7 +246,8 @@ fun AgentScreen(
                         onOpenWith = { path ->
                             scope.launch { drawerState.close() }
                             vm.openWithSystemChooser(path)
-                        }
+                        },
+                        onDeleteFile = vm::deleteSessionFile
                     )
                 }
             }

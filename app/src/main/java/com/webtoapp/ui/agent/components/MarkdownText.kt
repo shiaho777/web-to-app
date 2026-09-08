@@ -1,6 +1,7 @@
 package com.webtoapp.ui.agent.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
@@ -18,12 +21,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -146,6 +151,55 @@ private fun RenderBlock(
                     .background(quoteBar)
             )
         }
+
+        is MdBlock.Table -> {
+            // Horizontally scrollable so wide tables never squash the chat column.
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+            ) {
+                TableRow(cells = block.header, header = true, zebra = false, color = color, codeBg = codeBg, codeFg = codeFg, linkColor = linkColor)
+                Box(
+                    modifier = Modifier
+                        .height(1.dp)
+                        .background(quoteBar.copy(alpha = 0.6f))
+                        .fillMaxWidth()
+                )
+                block.rows.forEachIndexed { index, row ->
+                    TableRow(cells = row, header = false, zebra = index % 2 == 1, color = color, codeBg = codeBg, codeFg = codeFg, linkColor = linkColor)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TableRow(
+    cells: List<String>,
+    header: Boolean,
+    zebra: Boolean,
+    color: Color,
+    codeBg: Color,
+    codeFg: Color,
+    linkColor: Color
+) {
+    Row(
+        modifier = Modifier.background(
+            if (zebra) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f) else Color.Transparent
+        )
+    ) {
+        cells.forEach { cell ->
+            androidx.compose.material3.Text(
+                text = inlineAnnotated(cell, codeBg, codeFg, linkColor),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = if (header) FontWeight.Bold else null,
+                color = color,
+                modifier = Modifier
+                    .widthIn(min = 64.dp, max = 260.dp)
+                    .padding(horizontal = 8.dp, vertical = 5.dp)
+            )
+        }
     }
 }
 
@@ -156,12 +210,26 @@ internal sealed class MdBlock {
     data class ListItem(val marker: String, val text: String, val indent: Int) : MdBlock()
     data class Quote(val text: String) : MdBlock()
     object Rule : MdBlock()
+
+    /** GFM pipe table: header row plus body rows; column count follows the header. */
+    data class Table(val header: List<String>, val rows: List<List<String>>) : MdBlock()
 }
 
 private val ORDERED_LIST = Regex("^(\\s*)(\\d+)[.)]\\s+(.*)$")
 private val UNORDERED_LIST = Regex("^(\\s*)[-*+]\\s+(.*)$")
 private val HEADING = Regex("^(#{1,6})\\s+(.*)$")
 private val RULE = Regex("^(-{3,}|\\*{3,}|_{3,})$")
+
+/** Table separator row like `|---|---|` or `| :--- | ---: |` (alignment colons allowed). */
+private val TABLE_SEPARATOR = Regex("^\\|?[\\s:|-]+\\|[\\s:|-]*$")
+
+private fun isTableRow(line: String): Boolean {
+    val t = line.trim()
+    return t.startsWith("|") && t.endsWith("|") && t.count { it == '|' } >= 2
+}
+
+private fun splitTableRow(line: String): List<String> =
+    line.trim().trim('|').split('|').map { it.trim() }
 
 internal fun parseMarkdownBlocks(text: String): List<MdBlock> {
     val trimmed = text.trim('\n')
@@ -179,10 +247,29 @@ internal fun parseMarkdownBlocks(text: String): List<MdBlock> {
         }
     }
 
-    for (raw in lines) {
+    var i = 0
+    while (i < lines.size) {
+        val raw = lines[i]
         val line = raw.trimEnd()
         when {
             line.isBlank() -> flushParagraph()
+
+            // GFM table: header row, separator row, then any number of body rows.
+            isTableRow(line) && i + 1 < lines.size && TABLE_SEPARATOR.matches(lines[i + 1].trimEnd().trim()) -> {
+                flushParagraph()
+                val header = splitTableRow(line)
+                val rows = mutableListOf<List<String>>()
+                var j = i + 2
+                while (j < lines.size && isTableRow(lines[j].trimEnd())) {
+                    val cells = splitTableRow(lines[j].trimEnd())
+                    // Normalise to the header width: pad or trim.
+                    rows += List(header.size) { idx -> cells.getOrElse(idx) { "" } }
+                    j++
+                }
+                out += MdBlock.Table(header, rows)
+                i = j
+                continue
+            }
 
             RULE.matches(line.trim()) -> {
                 flushParagraph()
@@ -219,6 +306,7 @@ internal fun parseMarkdownBlocks(text: String): List<MdBlock> {
                 paragraph.append(line.trim())
             }
         }
+        i++
     }
     flushParagraph()
     return out
@@ -295,12 +383,15 @@ internal fun inlineAnnotated(
                     val urlEnd = text.indexOf(')', close + 2)
                     if (urlEnd > close + 1) {
                         val label = text.substring(i + 1, close)
-                        withStyle(
-                            SpanStyle(
-                                color = linkColor,
-                                textDecoration = TextDecoration.Underline
-                            )
-                        ) { append(label) }
+                        val url = text.substring(close + 2, urlEnd).trim()
+                        withLink(LinkAnnotation.Url(url)) {
+                            withStyle(
+                                SpanStyle(
+                                    color = linkColor,
+                                    textDecoration = TextDecoration.Underline
+                                )
+                            ) { append(label) }
+                        }
                         i = urlEnd + 1
                     } else {
                         append(c); i++
@@ -308,6 +399,22 @@ internal fun inlineAnnotated(
                 } else {
                     append(c); i++
                 }
+            }
+
+            c == 'h' && (text.startsWith("https://", i) || text.startsWith("http://", i)) -> {
+                // Bare URL auto-link: consume until whitespace or a closing bracket.
+                var end = i
+                while (end < n && !text[end].isWhitespace() && text[end] != ')' && text[end] != ']') end++
+                val url = text.substring(i, end).trimEnd('.', ',', ';', ':', '!', '?')
+                withLink(LinkAnnotation.Url(url)) {
+                    withStyle(
+                        SpanStyle(
+                            color = linkColor,
+                            textDecoration = TextDecoration.Underline
+                        )
+                    ) { append(url) }
+                }
+                i += url.length
             }
 
             else -> {
