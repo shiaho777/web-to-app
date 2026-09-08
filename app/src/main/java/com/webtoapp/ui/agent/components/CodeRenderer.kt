@@ -156,14 +156,29 @@ fun CodeBlock(
             }
             Box(modifier = bodyModifier) {
                 SelectionContainer {
-                    Text(
-                        text = if (showCaret) "$code▋" else code,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = FontFamily.Monospace,
-                            fontSize = 12.sp,
-                            color = AppColors.CodeForeground
+                    // Highlight only settled blocks: while streaming, plain text
+                    // avoids re-tokenizing the buffer on every delta.
+                    val highlighted = remember(code, language, showCaret) {
+                        if (showCaret) null else SyntaxHighlight.highlight(code, language)
+                    }
+                    if (highlighted != null) {
+                        Text(
+                            text = highlighted,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 12.sp
+                            )
                         )
-                    )
+                    } else {
+                        Text(
+                            text = if (showCaret) "$code▋" else code,
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontSize = 12.sp,
+                                color = AppColors.CodeForeground
+                            )
+                        )
+                    }
                 }
             }
         }

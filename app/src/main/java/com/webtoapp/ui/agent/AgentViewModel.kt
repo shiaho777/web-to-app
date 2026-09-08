@@ -605,6 +605,59 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { sessionStore.pin(id, pinned) }
     }
 
+    fun renameSession(id: String, newTitle: String) {
+        val title = newTitle.trim()
+        if (title.isEmpty()) return
+        viewModelScope.launch { sessionStore.rename(id, title) }
+    }
+
+    /** Export a session as a Markdown transcript and open the system share sheet. */
+    fun exportSession(id: String) {
+        viewModelScope.launch {
+            val session = sessionStore.get(id) ?: return@launch
+            runCatching {
+                val markdown = com.webtoapp.ui.agent.components.SessionTranscript.render(
+                    session, Strings.agentCopyThinkingHeader
+                )
+                val dir = java.io.File(ctx.cacheDir, "agent_exports").apply { mkdirs() }
+                val safe = session.title.ifBlank { session.id }
+                    .replace(Regex("[^\\p{L}\\p{N}_-]+"), "_").take(40).trim('_')
+                    .ifBlank { "session" }
+                val file = java.io.File(dir, "$safe.md")
+                file.writeText(markdown)
+                val uri = androidx.core.content.FileProvider.getUriForFile(
+                    ctx, ctx.packageName + ".fileprovider", file
+                )
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/markdown"
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_TITLE, file.name)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                ctx.startActivity(
+                    Intent.createChooser(intent, Strings.agentSessionExport)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }.onFailure { e ->
+                AppLogger.w("AgentViewModel", "exportSession failed: ${e.message}")
+                _ui.update { it.copy(info = Strings.agentFileOpenFailed) }
+            }
+        }
+    }
+
+    /** Delete a project file inside the current session sandbox, after drawer confirmation. */
+    fun deleteSessionFile(relativePath: String) {
+        val sid = _ui.value.currentSession?.id ?: return
+        // Never allow deleting the built-APK virtual entries through this path.
+        if (relativePath.startsWith("apk:")) return
+        if (files.delete(sid, relativePath)) {
+            refreshFiles(sid)
+        } else {
+            _ui.update { it.copy(info = Strings.agentFileNotFound) }
+        }
+    }
+
     fun selectFile(path: String) {
         // "apk:<name>" is a virtual path for a built APK artifact — no file content
         // to read, just surface the path so PreviewPane renders an info card.
@@ -1302,6 +1355,27 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Text/thinking deltas arrive per token; pushing the whole accumulated
+     * buffer into UI state on every one re-parses and recomposes the entire
+     * timeline each token. Coalesce to ~15fps instead — visually identical,
+     * an order of magnitude less work. Completion paths always replace the
+     * buffers with the persisted message, so nothing is ever lost.
+     */
+    private var lastStreamUiPushAt = 0L
+
+    private fun maybePushStreamUi(force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force && now - lastStreamUiPushAt < STREAM_UI_THROTTLE_MS) return
+        lastStreamUiPushAt = now
+        _ui.update {
+            it.copy(
+                streamingText = streamText.toString(),
+                streamingThinkingSegments = streamThinkingSegments.toList()
+            )
+        }
+    }
+
     private fun observeStreams() {
         viewModelScope.launch {
             combine(sessionStore.sessionsFlow, sessionStore.currentSessionIdFlow) { all, currentId ->
@@ -1469,9 +1543,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             AgentEvent.Started -> _ui.update { it.copy(phase = AgentUiState.Phase.Streaming) }
             is AgentEvent.TextDelta -> {
                 streamText.setLength(0); streamText.append(ev.accumulated)
-                _ui.update {
-                    it.copy(streamingText = ev.accumulated)
-                }
+                maybePushStreamUi()
             }
             is AgentEvent.ThinkingDelta -> {
                 // Associate by segmentId (stable per turn, mirrors the inline marker).
@@ -1487,9 +1559,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     streamThinkingSegments[idx] =
                         streamThinkingSegments[idx].copy(content = streamThinkingSegments[idx].content + ev.delta)
                 }
-                _ui.update {
-                    it.copy(streamingThinkingSegments = streamThinkingSegments.toList())
-                }
+                maybePushStreamUi()
             }
             AgentEvent.ThinkingTurnEnded -> {
                 // Freeze any still-live segment so the next turn opens its own live block.
@@ -1641,6 +1711,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 streamingSessionId = null
                 streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
                 lastToolUiPushAt = 0L
+                lastStreamUiPushAt = 0L
                 _ui.update {
                     it.copy(
                         phase = AgentUiState.Phase.Idle,
@@ -1907,6 +1978,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         private const val MENTION_LINE_LIMIT = 1500
 
         private const val MENTION_TOTAL_CHAR_BUDGET = 60_000
+
+        private const val STREAM_UI_THROTTLE_MS = 66L
 
         private const val STREAM_PREVIEW_CHARS = 4_000
 

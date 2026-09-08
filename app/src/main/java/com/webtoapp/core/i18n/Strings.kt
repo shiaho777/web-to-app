@@ -4938,6 +4938,18 @@ object Strings {
     val buildSummaryReason: String get() = StringsE.buildSummaryReason
     val buildAgain: String get() = StringsE.buildAgain
     val shareApkReadyMode: String get() = StringsE.shareApkReadyMode
+
+    // Agent UI rework additions
+    val agentToolViewFull: String get() = StringsE.agentToolViewFull
+    val agentCopyThinkingHeader: String get() = StringsE.agentCopyThinkingHeader
+    val agentSessionRename: String get() = StringsE.agentSessionRename
+    val agentSessionRenameTitle: String get() = StringsE.agentSessionRenameTitle
+    val agentSessionRenameHint: String get() = StringsE.agentSessionRenameHint
+    val agentSessionDeleteConfirmTitle: String get() = StringsE.agentSessionDeleteConfirmTitle
+    val agentSessionDeleteConfirmMessage: String get() = StringsE.agentSessionDeleteConfirmMessage
+    val agentSessionExport: String get() = StringsE.agentSessionExport
+    val agentFileDeleteConfirmTitle: String get() = StringsE.agentFileDeleteConfirmTitle
+    val agentFileDeleteConfirmMessage: String get() = StringsE.agentFileDeleteConfirmMessage
 }
 
 object StringsA {
@@ -65609,6 +65621,138 @@ object StringsE {
         AppLanguage.RUSSIAN -> "APK готов (%s)"
         AppLanguage.JAPANESE -> "APK 準備完了 (%s)"
         AppLanguage.KOREAN -> "APK 준비됨 (%s)"
+    }
+
+    // Agent UI rework: tool viewer, copy header, session/file actions
+
+    val agentToolViewFull: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "查看完整内容"
+        AppLanguage.ENGLISH -> "View full output"
+        AppLanguage.ARABIC -> "عرض المحتوى الكامل"
+        AppLanguage.PORTUGUESE -> "Ver conteúdo completo"
+        AppLanguage.SPANISH -> "Ver contenido completo"
+        AppLanguage.FRENCH -> "Voir tout le contenu"
+        AppLanguage.GERMAN -> "Vollständigen Inhalt ansehen"
+        AppLanguage.RUSSIAN -> "Показать полностью"
+        AppLanguage.JAPANESE -> "すべて表示"
+        AppLanguage.KOREAN -> "전체 보기"
+    }
+
+    val agentCopyThinkingHeader: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "💭 思考过程"
+        AppLanguage.ENGLISH -> "💭 Thinking"
+        AppLanguage.ARABIC -> "💭 عملية التفكير"
+        AppLanguage.PORTUGUESE -> "💭 Processo de pensamento"
+        AppLanguage.SPANISH -> "💭 Proceso de pensamiento"
+        AppLanguage.FRENCH -> "💭 Réflexion"
+        AppLanguage.GERMAN -> "💭 Denkprozess"
+        AppLanguage.RUSSIAN -> "💭 Рассуждение"
+        AppLanguage.JAPANESE -> "💭 思考プロセス"
+        AppLanguage.KOREAN -> "💭 사고 과정"
+    }
+
+    val agentSessionRename: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重命名"
+        AppLanguage.ENGLISH -> "Rename"
+        AppLanguage.ARABIC -> "إعادة تسمية"
+        AppLanguage.PORTUGUESE -> "Renomear"
+        AppLanguage.SPANISH -> "Renombrar"
+        AppLanguage.FRENCH -> "Renommer"
+        AppLanguage.GERMAN -> "Umbenennen"
+        AppLanguage.RUSSIAN -> "Переименовать"
+        AppLanguage.JAPANESE -> "名前を変更"
+        AppLanguage.KOREAN -> "이름 바꾸기"
+    }
+
+    val agentSessionRenameTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "重命名会话"
+        AppLanguage.ENGLISH -> "Rename session"
+        AppLanguage.ARABIC -> "إعادة تسمية الجلسة"
+        AppLanguage.PORTUGUESE -> "Renomear sessão"
+        AppLanguage.SPANISH -> "Renombrar sesión"
+        AppLanguage.FRENCH -> "Renommer la session"
+        AppLanguage.GERMAN -> "Sitzung umbenennen"
+        AppLanguage.RUSSIAN -> "Переименовать сессию"
+        AppLanguage.JAPANESE -> "セッション名を変更"
+        AppLanguage.KOREAN -> "세션 이름 바꾸기"
+    }
+
+    val agentSessionRenameHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "会话名称"
+        AppLanguage.ENGLISH -> "Session name"
+        AppLanguage.ARABIC -> "اسم الجلسة"
+        AppLanguage.PORTUGUESE -> "Nome da sessão"
+        AppLanguage.SPANISH -> "Nombre de la sesión"
+        AppLanguage.FRENCH -> "Nom de la session"
+        AppLanguage.GERMAN -> "Sitzungsname"
+        AppLanguage.RUSSIAN -> "Название сессии"
+        AppLanguage.JAPANESE -> "セッション名"
+        AppLanguage.KOREAN -> "세션 이름"
+    }
+
+    val agentSessionDeleteConfirmTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "删除会话？"
+        AppLanguage.ENGLISH -> "Delete session?"
+        AppLanguage.ARABIC -> "حذف الجلسة؟"
+        AppLanguage.PORTUGUESE -> "Excluir sessão?"
+        AppLanguage.SPANISH -> "¿Eliminar sesión?"
+        AppLanguage.FRENCH -> "Supprimer la session ?"
+        AppLanguage.GERMAN -> "Sitzung löschen?"
+        AppLanguage.RUSSIAN -> "Удалить сессию?"
+        AppLanguage.JAPANESE -> "セッションを削除しますか?"
+        AppLanguage.KOREAN -> "세션을 삭제할까요?"
+    }
+
+    val agentSessionDeleteConfirmMessage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "将永久删除该会话及其全部消息记录，无法恢复。"
+        AppLanguage.ENGLISH -> "This session and all its messages will be permanently deleted. This cannot be undone."
+        AppLanguage.ARABIC -> "سيتم حذف هذه الجلسة وجميع رسائلها نهائياً. لا يمكن التراجع عن هذا الإجراء."
+        AppLanguage.PORTUGUESE -> "Esta sessão e todas as suas mensagens serão excluídas permanentemente. Isto não pode ser desfeito."
+        AppLanguage.SPANISH -> "Esta sesión y todos sus mensajes se eliminarán permanentemente. No se puede deshacer."
+        AppLanguage.FRENCH -> "Cette session et tous ses messages seront définitivement supprimés. Cette action est irréversible."
+        AppLanguage.GERMAN -> "Diese Sitzung und alle ihre Nachrichten werden dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden."
+        AppLanguage.RUSSIAN -> "Эта сессия и все её сообщения будут удалены безвозвратно. Действие нельзя отменить."
+        AppLanguage.JAPANESE -> "このセッションとすべてのメッセージは完全に削除されます。元に戻すことはできません。"
+        AppLanguage.KOREAN -> "이 세션과 모든 메시지가 영구적으로 삭제되며 되돌릴 수 없습니다."
+    }
+
+    val agentSessionExport: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导出"
+        AppLanguage.ENGLISH -> "Export"
+        AppLanguage.ARABIC -> "تصدير"
+        AppLanguage.PORTUGUESE -> "Exportar"
+        AppLanguage.SPANISH -> "Exportar"
+        AppLanguage.FRENCH -> "Exporter"
+        AppLanguage.GERMAN -> "Exportieren"
+        AppLanguage.RUSSIAN -> "Экспорт"
+        AppLanguage.JAPANESE -> "エクスポート"
+        AppLanguage.KOREAN -> "내보내기"
+    }
+
+    val agentFileDeleteConfirmTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "删除文件？"
+        AppLanguage.ENGLISH -> "Delete file?"
+        AppLanguage.ARABIC -> "حذف الملف؟"
+        AppLanguage.PORTUGUESE -> "Excluir arquivo?"
+        AppLanguage.SPANISH -> "¿Eliminar archivo?"
+        AppLanguage.FRENCH -> "Supprimer le fichier ?"
+        AppLanguage.GERMAN -> "Datei löschen?"
+        AppLanguage.RUSSIAN -> "Удалить файл?"
+        AppLanguage.JAPANESE -> "ファイルを削除しますか?"
+        AppLanguage.KOREAN -> "파일을 삭제할까요?"
+    }
+
+    val agentFileDeleteConfirmMessage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "将永久删除文件 %s，无法恢复。"
+        AppLanguage.ENGLISH -> "The file %s will be permanently deleted. This cannot be undone."
+        AppLanguage.ARABIC -> "سيتم حذف الملف %s نهائياً. لا يمكن التراجع عن هذا الإجراء."
+        AppLanguage.PORTUGUESE -> "O arquivo %s será excluído permanentemente. Isto não pode ser desfeito."
+        AppLanguage.SPANISH -> "El archivo %s se eliminará permanentemente. No se puede deshacer."
+        AppLanguage.FRENCH -> "Le fichier %s sera définitivement supprimé. Cette action est irréversible."
+        AppLanguage.GERMAN -> "Die Datei %s wird dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden."
+        AppLanguage.RUSSIAN -> "Файл %s будет удалён безвозвратно. Действие нельзя отменить."
+        AppLanguage.JAPANESE -> "ファイル %s は完全に削除されます。元に戻すことはできません。"
+        AppLanguage.KOREAN -> "파일 %s이(가) 영구적으로 삭제되며 되돌릴 수 없습니다."
     }
 
 }
