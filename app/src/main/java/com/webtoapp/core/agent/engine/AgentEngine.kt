@@ -80,6 +80,9 @@ class AgentEngine(
                 val pending = LinkedHashMap<String, Pair<String, StringBuilder>>()
                 // Index in accText where this attempt's output begins; a recoverable-error
                 // retry rewrites from here instead of appending a duplicate attempt.
+                // RETRY-PATH ONLY: inside the event handlers accText is append-only —
+                // rebuilding per event truncated the accumulated buffer to the turn start
+                // and left `accumulated` holding just the newest fragment (#749 regression).
                 var attemptStartedIndex = accText.length
                 fun rebuildAccFromPrefix() {
                     if (accText.length > attemptStartedIndex) {
@@ -130,8 +133,13 @@ class AgentEngine(
                         when (ev) {
                             is LlmEvent.Started -> Unit
                             is LlmEvent.TextDelta -> {
+                                // Append-only within an attempt. Calling rebuildAccFromPrefix()
+                                // here (as #749 briefly did) truncated accText back to the
+                                // turn start on EVERY delta, so `accumulated` held only the
+                                // newest fragment: the live timeline rendered the body in
+                                // replacing chunks and the persisted message ended up as the
+                                // last delta alone.
                                 turnText.append(ev.delta)
-                                rebuildAccFromPrefix()
                                 accText.append(ev.delta)
                                 send(AgentEvent.TextDelta(ev.delta, accText.toString()))
                             }
@@ -143,7 +151,6 @@ class AgentEngine(
                                 if (turnThinking.isEmpty()) {
                                     val segmentId = "th-turn-$turn"
                                     val marker = "⁣TH:$segmentId⁣"
-                                    rebuildAccFromPrefix()
                                     accText.append(marker)
                                     send(AgentEvent.TextDelta(marker, accText.toString()))
                                 }
@@ -154,7 +161,6 @@ class AgentEngine(
                                 pending[ev.id] = ev.name to StringBuilder()
 
                                 val marker = "⁣TC:${ev.id}⁣"
-                                rebuildAccFromPrefix()
                                 accText.append(marker)
                                 send(AgentEvent.TextDelta(marker, accText.toString()))
                                 send(AgentEvent.ToolCallStarted(ev.id, ev.name))
@@ -238,8 +244,14 @@ class AgentEngine(
                 )
 
                 if (assistantToolCalls.isEmpty()) {
+                    // Zero text and zero tool calls is a real outcome (some gateways
+                    // open the stream, emit Done, and close without any delta). An
+                    // empty summary made the turn LOOK successful while persisting
+                    // nothing — surface a distinct, diagnosable message instead.
                     send(AgentEvent.Completed(
-                        summary = turnText.toString().trim().ifEmpty { accText.toString().trim() },
+                        summary = turnText.toString().trim()
+                            .ifEmpty { accText.toString().trim() }
+                            .ifEmpty { Strings.agentEmptyResponse },
                         toolCallCount = totalToolCalls
                     ))
                     return@channelFlow
@@ -318,6 +330,7 @@ class AgentEngine(
     ) {
         out.send(AgentEvent.ToolFinished(call.id, call.name, call.argumentsJson, result))
         result.fileChange?.let { out.send(AgentEvent.FileChanged(it)) }
+        result.appChange?.let { out.send(AgentEvent.AppChanged(it)) }
         result.builtApk?.let { out.send(AgentEvent.ApkBuilt(it)) }
     }
 

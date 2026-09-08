@@ -5,6 +5,7 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import com.webtoapp.core.agent.export.DetectedArtifact
 import com.webtoapp.core.agent.export.SaveSessionAsAppUseCase
+import com.webtoapp.core.agent.tool.AppChange
 import com.webtoapp.core.agent.tool.Tool
 import com.webtoapp.core.agent.tool.ToolContext
 import com.webtoapp.core.agent.tool.ToolResult
@@ -93,7 +94,15 @@ class CreateAppTool : Tool {
             updatedAt = now
         )
         val id = ctx.appRepository.createWebApp(app)
-        return ToolResult.ok("Created $appType app id=$id name=\"$name\".")
+        return ToolResult(
+            text = "Created $appType app id=$id name=\"$name\".",
+            appChange = AppChange(
+                appId = id,
+                appName = name,
+                appType = appType.name,
+                kind = AppChange.Kind.CREATE
+            )
+        )
     }
 
     private suspend fun createFromSource(
@@ -145,7 +154,15 @@ class CreateAppTool : Tool {
                         ctx.appRepository.updateWebApp(app.copy(iconPath = iconPath))
                     }
                 }
-                ToolResult.ok("Created $appType app id=${result.appId} name=\"${result.name}\".")
+                ToolResult(
+                    text = "Created $appType app id=${result.appId} name=\"${result.name}\".",
+                    appChange = AppChange(
+                        appId = result.appId,
+                        appName = result.name,
+                        appType = appType.name,
+                        kind = AppChange.Kind.CREATE
+                    )
+                )
             }
             is SaveSessionAsAppUseCase.Result.Failure ->
                 ToolResult.error("CreateApp failed: ${result.message}")
@@ -189,7 +206,15 @@ class CreateAppTool : Tool {
             themeType = DEFAULT_THEME
         )
         val id = ctx.appRepository.createWebApp(app)
-        return ToolResult.ok("Created WORDPRESS app id=$id name=\"$name\" (project $projectId).")
+        return ToolResult(
+            text = "Created WORDPRESS app id=$id name=\"$name\" (project $projectId).",
+            appChange = AppChange(
+                appId = id,
+                appName = name,
+                appType = AppType.WORDPRESS.name,
+                kind = AppChange.Kind.CREATE
+            )
+        )
     }
 
     companion object {

@@ -1,5 +1,6 @@
 package com.webtoapp.core.agent.engine
 
+import com.webtoapp.core.agent.tool.AppChange
 import com.webtoapp.core.agent.tool.BuiltApkInfo
 import com.webtoapp.core.agent.tool.FileChange
 import com.webtoapp.core.agent.tool.ToolResult
@@ -40,6 +41,9 @@ sealed class AgentEvent {
     ) : AgentEvent()
 
     data class FileChanged(val change: FileChange) : AgentEvent()
+
+    /** An app was created or updated by a tool; surfaced as a review card below the chat. */
+    data class AppChanged(val change: AppChange) : AgentEvent()
 
     /** An APK was built by a tool; surfaced as a virtual file in the Files sidebar. */
     data class ApkBuilt(val info: BuiltApkInfo) : AgentEvent()

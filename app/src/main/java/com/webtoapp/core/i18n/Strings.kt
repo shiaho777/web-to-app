@@ -1543,6 +1543,11 @@ object Strings {
     val agentChangesReviewExpand: String get() = StringsB.agentChangesReviewExpand
     val agentChangesReviewCollapse: String get() = StringsB.agentChangesReviewCollapse
     val agentChangesUndoneToast: String get() = StringsB.agentChangesUndoneToast
+    val agentAppChangesHeader: String get() = StringsB.agentAppChangesHeader
+    val agentAppChangesKindCreate: String get() = StringsB.agentAppChangesKindCreate
+    val agentAppChangesKindUpdate: String get() = StringsB.agentAppChangesKindUpdate
+    val agentAppChangesOpen: String get() = StringsB.agentAppChangesOpen
+    val agentAppChangesFields: String get() = StringsB.agentAppChangesFields
     val agentPlanModeBadge: String get() = StringsB.agentPlanModeBadge
     val agentPlanModeNoPath: String get() = StringsB.agentPlanModeNoPath
     val agentPlanModeExitTooltip: String get() = StringsB.agentPlanModeExitTooltip
@@ -1601,6 +1606,7 @@ object Strings {
     val agentCodeCopy: String get() = StringsB.agentCodeCopy
     val agentTodoListHeader: String get() = StringsB.agentTodoListHeader
     val agentNoOutput: String get() = StringsB.agentNoOutput
+    val agentEmptyResponse: String get() = StringsB.agentEmptyResponse
     val agentAbortedHint: String get() = StringsB.agentAbortedHint
     val agentMissingTextModel: String get() = StringsB.agentMissingTextModel
     val agentMissingApiKey: String get() = StringsB.agentMissingApiKey
@@ -24593,6 +24599,66 @@ object StringsB {
         AppLanguage.JAPANESE -> "%d件の変更を元に戻しました"
         AppLanguage.KOREAN -> "%d개 변경 실행 취소됨"
     }
+    val agentAppChangesHeader: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "%d 个应用变更"
+        AppLanguage.ENGLISH -> "%d app changes"
+        AppLanguage.ARABIC -> "%d تغييرات على التطبيقات"
+        AppLanguage.PORTUGUESE -> "%d alterações em apps"
+        AppLanguage.SPANISH -> "%d cambios de apps"
+        AppLanguage.FRENCH -> "%d modifications d'apps"
+        AppLanguage.GERMAN -> "%d App-Änderungen"
+        AppLanguage.RUSSIAN -> "%d изменений приложений"
+        AppLanguage.JAPANESE -> "%d件のアプリ変更"
+        AppLanguage.KOREAN -> "%d개 앱 변경"
+    }
+    val agentAppChangesKindCreate: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "新建"
+        AppLanguage.ENGLISH -> "Created"
+        AppLanguage.ARABIC -> "إنشاء"
+        AppLanguage.PORTUGUESE -> "Criado"
+        AppLanguage.SPANISH -> "Creado"
+        AppLanguage.FRENCH -> "Créé"
+        AppLanguage.GERMAN -> "Erstellt"
+        AppLanguage.RUSSIAN -> "Создано"
+        AppLanguage.JAPANESE -> "作成"
+        AppLanguage.KOREAN -> "생성"
+    }
+    val agentAppChangesKindUpdate: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "更新"
+        AppLanguage.ENGLISH -> "Updated"
+        AppLanguage.ARABIC -> "تحديث"
+        AppLanguage.PORTUGUESE -> "Atualizado"
+        AppLanguage.SPANISH -> "Actualizado"
+        AppLanguage.FRENCH -> "Mis à jour"
+        AppLanguage.GERMAN -> "Aktualisiert"
+        AppLanguage.RUSSIAN -> "Обновлено"
+        AppLanguage.JAPANESE -> "更新"
+        AppLanguage.KOREAN -> "업데이트"
+    }
+    val agentAppChangesOpen: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "打开应用"
+        AppLanguage.ENGLISH -> "Open app"
+        AppLanguage.ARABIC -> "فتح التطبيق"
+        AppLanguage.PORTUGUESE -> "Abrir app"
+        AppLanguage.SPANISH -> "Abrir app"
+        AppLanguage.FRENCH -> "Ouvrir l'app"
+        AppLanguage.GERMAN -> "App öffnen"
+        AppLanguage.RUSSIAN -> "Открыть приложение"
+        AppLanguage.JAPANESE -> "アプリを開く"
+        AppLanguage.KOREAN -> "앱 열기"
+    }
+    val agentAppChangesFields: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "变更字段：%s"
+        AppLanguage.ENGLISH -> "Fields: %s"
+        AppLanguage.ARABIC -> "الحقول: %s"
+        AppLanguage.PORTUGUESE -> "Campos: %s"
+        AppLanguage.SPANISH -> "Campos: %s"
+        AppLanguage.FRENCH -> "Champs : %s"
+        AppLanguage.GERMAN -> "Felder: %s"
+        AppLanguage.RUSSIAN -> "Поля: %s"
+        AppLanguage.JAPANESE -> "フィールド: %s"
+        AppLanguage.KOREAN -> "필드: %s"
+    }
     val agentPlanModeBadge: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "Plan 模式"
         AppLanguage.ENGLISH -> "Plan Mode"
@@ -25292,6 +25358,18 @@ object StringsB {
         AppLanguage.RUSSIAN -> "(нет вывода)"
         AppLanguage.JAPANESE -> "(出力なし)"
         AppLanguage.KOREAN -> "(출력 없음)"
+    }
+    val agentEmptyResponse: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "模型返回了空响应（无文本、未调用工具）。若持续出现，请检查接口地址与模型名称是否匹配。"
+        AppLanguage.ENGLISH -> "The model returned an empty response (no text, no tool calls). If this persists, check that the endpoint and model name match."
+        AppLanguage.ARABIC -> "أعاد النموذج استجابة فارغة (لا نص ولا استدعاءات أدوات). إذا تكرر ذلك، تحقق من تطابق نقطة النهاية واسم النموذج."
+        AppLanguage.PORTUGUESE -> "O modelo retornou uma resposta vazia (sem texto e sem chamadas de ferramentas). Se persistir, verifique se o endpoint e o nome do modelo correspondem."
+        AppLanguage.SPANISH -> "El modelo devolvió una respuesta vacía (sin texto ni llamadas a herramientas). Si persiste, comprueba que el endpoint y el nombre del modelo coincidan."
+        AppLanguage.FRENCH -> "Le modèle a renvoyé une réponse vide (aucun texte, aucun appel d'outil). Si cela persiste, vérifiez que l'endpoint et le nom du modèle correspondent."
+        AppLanguage.GERMAN -> "Das Modell lieferte eine leere Antwort (kein Text, keine Tool-Aufrufe). Falls dies bestehen bleibt, prüfe, ob Endpunkt und Modellname zusammenpassen."
+        AppLanguage.RUSSIAN -> "Модель вернула пустой ответ (ни текста, ни вызовов инструментов). Если это повторяется, проверьте соответствие адреса endpoint и имени модели."
+        AppLanguage.JAPANESE -> "モデルが空の応答を返しました（テキストなし、ツール呼び出しなし）。続く場合は、エンドポイントとモデル名が一致しているか確認してください。"
+        AppLanguage.KOREAN -> "모델이 빈 응답을 반환했습니다(텍스트 없음, 도구 호출 없음). 계속되면 엔드포인트와 모델 이름이 일치하는지 확인하세요."
     }
     val agentAbortedHint: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "[已中断]"

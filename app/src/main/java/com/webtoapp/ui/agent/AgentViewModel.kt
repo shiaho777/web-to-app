@@ -244,6 +244,14 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         _ui.update { it.copy(changesReviewExpanded = !it.changesReviewExpanded) }
     }
 
+    fun toggleAppChangesReview() {
+        _ui.update { it.copy(appChangesExpanded = !it.appChangesExpanded) }
+    }
+
+    fun clearAppChanges() {
+        _ui.update { it.copy(pendingAppChanges = emptyList(), appChangesExpanded = false) }
+    }
+
     fun clearChangesReview() {
         val sid = _ui.value.currentSession?.id
         if (sid != null) {
@@ -1668,6 +1676,24 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 }
             }
+            is AgentEvent.AppChanged -> {
+                // Same shape as FileChanged but for apps created/updated by tools:
+                // one review-card entry per app, newest first; a later change to the
+                // same app replaces its earlier entry instead of piling up duplicates.
+                _ui.update { state ->
+                    val ch = ev.change
+                    val entry = PendingAppChange(
+                        appId = ch.appId,
+                        appName = ch.appName,
+                        appType = ch.appType,
+                        created = ch.kind == com.webtoapp.core.agent.tool.AppChange.Kind.CREATE,
+                        changedFields = ch.changedFields,
+                        changedAt = System.currentTimeMillis()
+                    )
+                    val rest = state.pendingAppChanges.filterNot { it.appId == ch.appId }
+                    state.copy(pendingAppChanges = listOf(entry) + rest)
+                }
+            }
             is AgentEvent.ApkBuilt -> {
                 _ui.update { state ->
                     // Replace any previous build for the same appId, keep others.
@@ -1757,7 +1783,10 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             is AgentEvent.Failed -> {
-                // Error message is persisted by AgentService; just reset UI state.
+                // The service persists an error bubble into the session, but a request
+                // that dies before the first delta would otherwise leave NO visible
+                // trace at all (spinner stops, nothing rendered, nothing shown) —
+                // surface the reason here too so every failure is locatable.
                 streamingSessionId = null
                 streamText.clear(); streamThinkingSegments.clear(); streamTools.clear(); streamToolArgs.clear(); readFilesThisTurn.clear()
                 _ui.update {
@@ -1766,7 +1795,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                         streamingText = "",
                         streamingThinkingSegments = emptyList(),
                         pendingToolCalls = emptyList(),
-                        currentActivity = null
+                        currentActivity = null,
+                        error = ev.message
                     )
                 }
             }
@@ -1950,6 +1980,8 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 pendingChanges = if (sessionChanged) emptyList() else it.pendingChanges,
                 builtApks = restoredApks,
                 changesReviewExpanded = if (sessionChanged) false else it.changesReviewExpanded,
+                pendingAppChanges = if (sessionChanged) emptyList() else it.pendingAppChanges,
+                appChangesExpanded = if (sessionChanged) false else it.appChangesExpanded,
 
                 previewFilePath = if (sessionChanged) null else it.previewFilePath,
                 drawerOpen = if (sessionChanged) false else it.drawerOpen
