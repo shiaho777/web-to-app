@@ -17,6 +17,7 @@ import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoSessionSettings
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.StorageController
+import org.mozilla.geckoview.WebRequestError
 import org.mozilla.geckoview.WebResponse
 import org.mozilla.geckoview.WebExtension
 import kotlinx.coroutines.Dispatchers
@@ -108,7 +109,7 @@ class GeckoViewEngine(
             val ech = currentDnsConfig?.echEffective == true
             val proxy = currentProxyConfig?.let { buildProxyPrefs(it) } ?: emptyMap()
             val proxyKey = proxy.entries.joinToString(",") { "${it.key}=${it.value}" }
-            return "ech=$ech|proxy=$proxyKey|tlsMitm=$tlsMitmActive|enterpriseRoots=$enterpriseRootsEnabled|antiCapture=$antiCaptureActive"
+            return "ech=$ech|proxy=$proxyKey|tlsMitm=$tlsMitmActive|enterpriseRoots=$enterpriseRootsEnabled|antiCapture=$antiCaptureActive|autoplay=$autoplayAllowed"
         }
 
         fun getRuntime(context: Context): GeckoRuntime {
@@ -174,6 +175,20 @@ class GeckoViewEngine(
         fun applyAntiCapture(active: Boolean) {
             antiCaptureActive = active
             AppLogger.d(TAG, "applyAntiCapture: active=$active")
+        }
+
+        @Volatile
+        private var autoplayAllowed: Boolean = true
+
+        /**
+         * Autoplay parity with the WebView path's `mediaPlaybackRequiresUserGesture`:
+         * mediaAutoplayEnabled=false (the default) must block un-gestured playback on
+         * Gecko too, instead of silently leaving Gecko's allow-by-default policy in place.
+         * Applied through the `media.autoplay.default` pref at runtime creation.
+         */
+        fun applyAutoplayPolicy(allowed: Boolean) {
+            autoplayAllowed = allowed
+            AppLogger.d(TAG, "applyAutoplayPolicy: allowed=$allowed")
         }
 
         fun applyEnterpriseRootsEnabled(enabled: Boolean) {
@@ -294,6 +309,10 @@ class GeckoViewEngine(
                 appProxy?.let { prefs.putAll(buildProxyPrefs(it)) }
             }
 
+            // media.autoplay.default: 0 = allow, 1 = block audible without user gesture
+            // (Firefox's own default). Mirrors WebView's mediaPlaybackRequiresUserGesture.
+            prefs["media.autoplay.default"] = if (autoplayAllowed) 0 else 1
+
             if (antiCaptureActive) {
                 prefs["security.enterprise_roots.enabled"] = false
             } else if (tlsMitmActive || enterpriseRootsEnabled) {
@@ -403,6 +422,14 @@ class GeckoViewEngine(
 
     override val engineType = EngineType.GECKOVIEW
 
+    /**
+     * The app's own origin URL (target URL / local base), set by EngineViewFactory before
+     * createView. Feeds the NativeBridge caller gate — GeckoView has no WebView whose `.url`
+     * could be consulted, so without this (plus [currentUrl] as the page-URL provider) every
+     * CORS-bypass / private-network request from the bridge WebExtension is rejected.
+     */
+    var appOriginUrl: String = ""
+
     private var geckoView: GeckoView? = null
     private var session: GeckoSession? = null
     private var callback: BrowserEngineCallback? = null
@@ -420,6 +447,8 @@ class GeckoViewEngine(
 
     private var lastConfig: WebViewConfig? = null
     private var lastGeckoUaMode: Int = GeckoSessionSettings.USER_AGENT_MODE_MOBILE
+    private var lastGeckoViewportMode: Int = GeckoSessionSettings.VIEWPORT_MODE_MOBILE
+    private var lastAllowJavascript: Boolean = true
     private var lastUserAgentOverride: String? = null
 
     private var bridgeScope: kotlinx.coroutines.CoroutineScope? = null
@@ -450,6 +479,15 @@ class GeckoViewEngine(
 
         val runtime = getRuntime(context)
 
+        if (config.clearBrowsingDataOnLaunch) {
+            try {
+                runtime.storageController.clearData(StorageController.ClearFlags.ALL)
+                AppLogger.i(TAG, "Cleared browsing data on launch (clearBrowsingDataOnLaunch)")
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "clearBrowsingDataOnLaunch failed: ${e.message}")
+            }
+        }
+
         if (config.enableCorsBypass || config.enablePrivateNetworkBridge) {
             if (bridgeScope == null) bridgeScope = kotlinx.coroutines.MainScope()
             val bridge = com.webtoapp.core.webview.NativeBridge(
@@ -459,23 +497,44 @@ class GeckoViewEngine(
                 capabilities = config.nativeBridgeCapabilities,
                 corsBypass = config.enableCorsBypass,
                 downloadLocationMode = config.downloadLocationMode,
-                customDownloadDirUri = config.customDownloadDirUri
+                customDownloadDirUri = config.customDownloadDirUri,
+                appOriginUrl = appOriginUrl,
+                callerPageUrlProvider = { currentUrl }
             )
             activeNativeBridge = bridge
             ensureNativeBridgeExtension(runtime)
         }
 
-        val geckoUaMode = when (config.userAgentMode) {
-            UserAgentMode.CHROME_DESKTOP, UserAgentMode.SAFARI_DESKTOP,
-            UserAgentMode.FIREFOX_DESKTOP, UserAgentMode.EDGE_DESKTOP -> GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
+        val geckoUaMode = when {
+            config.desktopMode -> GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
+            config.userAgentMode == UserAgentMode.CHROME_DESKTOP ||
+                config.userAgentMode == UserAgentMode.SAFARI_DESKTOP ||
+                config.userAgentMode == UserAgentMode.FIREFOX_DESKTOP ||
+                config.userAgentMode == UserAgentMode.EDGE_DESKTOP ->
+                GeckoSessionSettings.USER_AGENT_MODE_DESKTOP
             else -> GeckoSessionSettings.USER_AGENT_MODE_MOBILE
         }
         this.lastGeckoUaMode = geckoUaMode
+
+        // Parity with the WebView path's useWideViewPort/loadWithOverviewMode (FIT_SCREEN)
+        // and desktopMode. CUSTOM stays MOBILE — its meta-viewport injection is JS-based and
+        // has no Gecko counterpart yet.
+        val geckoViewportMode = when {
+            config.desktopMode -> GeckoSessionSettings.VIEWPORT_MODE_DESKTOP
+            config.viewportMode == com.webtoapp.data.model.ViewportMode.FIT_SCREEN ||
+                config.viewportMode == com.webtoapp.data.model.ViewportMode.DESKTOP ->
+                GeckoSessionSettings.VIEWPORT_MODE_DESKTOP
+            else -> GeckoSessionSettings.VIEWPORT_MODE_MOBILE
+        }
+        this.lastGeckoViewportMode = geckoViewportMode
+        this.lastAllowJavascript = config.javaScriptEnabled
 
         val sessionSettings = GeckoSessionSettings.Builder()
             .usePrivateMode(false)
             .useTrackingProtection(false)
             .userAgentMode(geckoUaMode)
+            .viewportMode(geckoViewportMode)
+            .allowJavascript(config.javaScriptEnabled)
             .build()
 
         val newSession = GeckoSession(sessionSettings)
@@ -547,6 +606,13 @@ class GeckoViewEngine(
             }
 
             override fun onExternalResponse(session: GeckoSession, response: WebResponse) {
+                // Parity with the WebView path, where setDownloadListener is only installed
+                // when downloadEnabled — a disabled download feature must not silently start
+                // serving responses to the system downloader on Gecko.
+                if (lastConfig?.downloadEnabled == false) {
+                    AppLogger.d(TAG, "Download suppressed (downloadEnabled=false): ${response.uri}")
+                    return
+                }
                 val contentType = response.headers["Content-Type"] ?: "application/octet-stream"
                 val contentDisposition = response.headers["Content-Disposition"] ?: ""
                 val contentLength = response.headers["Content-Length"]?.toLongOrNull() ?: -1L
@@ -581,6 +647,211 @@ class GeckoViewEngine(
         config: WebViewConfig
     ) {
         session.promptDelegate = object : GeckoSession.PromptDelegate {
+            /**
+             * JS window.alert(). Unhandled Gecko prompts are dismissed silently, so pages
+             * using alert() as a user-facing signal (form errors, notices) went mute on
+             * Gecko. BasePrompt.confirm() is protected on AlertPrompt; dismiss() is the
+             * public completion and carries the same meaning for an alert (no return value).
+             */
+            override fun onAlertPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.AlertPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                val activity = viewContext.findActivity()
+                if (activity == null || activity.isFinishing || activity.isDestroyed) {
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
+                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                activity.runOnUiThread {
+                    try {
+                        android.app.AlertDialog.Builder(activity)
+                            .setTitle(prompt.title)
+                            .setMessage(prompt.message)
+                            .setPositiveButton(com.webtoapp.core.i18n.Strings.confirm) { dialog, _ ->
+                                dialog.dismiss()
+                                result.complete(prompt.dismiss())
+                            }
+                            .setOnCancelListener { result.complete(prompt.dismiss()) }
+                            .show()
+                    } catch (e: Exception) {
+                        AppLogger.w(TAG, "onAlertPrompt dialog failed: ${e.message}")
+                        result.complete(prompt.dismiss())
+                    }
+                }
+                return result
+            }
+
+            /** JS window.confirm(). */
+            override fun onButtonPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.ButtonPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                val activity = viewContext.findActivity()
+                if (activity == null || activity.isFinishing || activity.isDestroyed) {
+                    return GeckoResult.fromValue(
+                        prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.NEGATIVE)
+                    )
+                }
+                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                activity.runOnUiThread {
+                    try {
+                        android.app.AlertDialog.Builder(activity)
+                            .setTitle(prompt.title)
+                            .setMessage(prompt.message)
+                            .setPositiveButton(com.webtoapp.core.i18n.Strings.confirm) { dialog, _ ->
+                                dialog.dismiss()
+                                result.complete(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE))
+                            }
+                            .setNegativeButton(com.webtoapp.core.i18n.Strings.btnCancel) { dialog, _ ->
+                                dialog.dismiss()
+                                result.complete(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.NEGATIVE))
+                            }
+                            .setOnCancelListener {
+                                result.complete(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.NEGATIVE))
+                            }
+                            .show()
+                    } catch (e: Exception) {
+                        AppLogger.w(TAG, "onButtonPrompt dialog failed: ${e.message}")
+                        result.complete(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.NEGATIVE))
+                    }
+                }
+                return result
+            }
+
+            /** JS window.prompt() — cancel maps to dismiss() (JS receives null). */
+            override fun onTextPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.TextPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                val activity = viewContext.findActivity()
+                if (activity == null || activity.isFinishing || activity.isDestroyed) {
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
+                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                activity.runOnUiThread {
+                    try {
+                        val input = android.widget.EditText(activity).apply {
+                            setText(prompt.defaultValue ?: "")
+                            setSelection(text.length)
+                            isSingleLine = true
+                        }
+                        val container = android.widget.FrameLayout(activity).apply {
+                            setPadding(64, 24, 64, 0)
+                            addView(input)
+                        }
+                        android.app.AlertDialog.Builder(activity)
+                            .setTitle(prompt.title)
+                            .setMessage(prompt.message)
+                            .setView(container)
+                            .setPositiveButton(com.webtoapp.core.i18n.Strings.confirm) { dialog, _ ->
+                                dialog.dismiss()
+                                result.complete(prompt.confirm(input.text.toString()))
+                            }
+                            .setNegativeButton(com.webtoapp.core.i18n.Strings.btnCancel) { dialog, _ ->
+                                dialog.dismiss()
+                                result.complete(prompt.dismiss())
+                            }
+                            .setOnCancelListener { result.complete(prompt.dismiss()) }
+                            .show()
+                    } catch (e: Exception) {
+                        AppLogger.w(TAG, "onTextPrompt dialog failed: ${e.message}")
+                        result.complete(prompt.dismiss())
+                    }
+                }
+                return result
+            }
+
+            /**
+             * HTTP Basic/Digest auth and proxy auth — the Gecko counterpart of
+             * onReceivedHttpAuthRequest. Mirrors the WebView path's dialog (same strings,
+             * same TextInputLayout shape); Gecko has no cached-credential store exposed
+             * here, so credentials are requested on every challenge.
+             */
+            override fun onAuthPrompt(
+                session: GeckoSession,
+                prompt: GeckoSession.PromptDelegate.AuthPrompt
+            ): GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? {
+                val activity = viewContext.findActivity()
+                if (activity == null || activity.isFinishing || activity.isDestroyed) {
+                    return GeckoResult.fromValue(prompt.dismiss())
+                }
+                val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                val options = prompt.authOptions
+                val onlyPassword = (options.flags and
+                    GeckoSession.PromptDelegate.AuthPrompt.AuthOptions.Flags.ONLY_PASSWORD) != 0
+                activity.runOnUiThread {
+                    try {
+                        val dialogView = android.widget.LinearLayout(activity).apply {
+                            orientation = android.widget.LinearLayout.VERTICAL
+                            setPadding(64, 32, 64, 0)
+
+                            if (!onlyPassword) {
+                                addView(com.google.android.material.textfield.TextInputLayout(activity).apply {
+                                    hint = com.webtoapp.core.i18n.Strings.httpAuthUsername
+                                    boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
+                                    setBoxCornerRadii(12f, 12f, 12f, 12f)
+                                    addView(com.google.android.material.textfield.TextInputEditText(activity).apply {
+                                        tag = "auth_username"
+                                        inputType = android.text.InputType.TYPE_CLASS_TEXT
+                                        isSingleLine = true
+                                        setText(options.username ?: "")
+                                    })
+                                })
+                                addView(android.view.View(activity).apply {
+                                    layoutParams = android.widget.LinearLayout.LayoutParams(
+                                        android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 24
+                                    )
+                                })
+                            }
+
+                            addView(com.google.android.material.textfield.TextInputLayout(activity).apply {
+                                hint = com.webtoapp.core.i18n.Strings.httpAuthPassword
+                                boxBackgroundMode = com.google.android.material.textfield.TextInputLayout.BOX_BACKGROUND_OUTLINE
+                                setBoxCornerRadii(12f, 12f, 12f, 12f)
+                                endIconMode = com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
+                                addView(com.google.android.material.textfield.TextInputEditText(activity).apply {
+                                    tag = "auth_password"
+                                    inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                                        android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+                                    isSingleLine = true
+                                    setText(options.password ?: "")
+                                })
+                            })
+                        }
+
+                        val hostDisplay = runCatching {
+                            android.net.Uri.parse(options.uri ?: "").host
+                        }.getOrNull() ?: options.uri ?: "server"
+
+                        android.app.AlertDialog.Builder(activity)
+                            .setTitle(com.webtoapp.core.i18n.Strings.httpAuthTitle)
+                            .setMessage(com.webtoapp.core.i18n.Strings.httpAuthMessage.format(hostDisplay))
+                            .setView(dialogView)
+                            .setPositiveButton(com.webtoapp.core.i18n.Strings.httpAuthLogin) { dialog, _ ->
+                                val username = dialogView.findViewWithTag<android.widget.EditText>("auth_username")
+                                    ?.text?.toString() ?: ""
+                                val password = dialogView.findViewWithTag<android.widget.EditText>("auth_password")
+                                    ?.text?.toString() ?: ""
+                                dialog.dismiss()
+                                result.complete(
+                                    if (onlyPassword) prompt.confirm(password)
+                                    else prompt.confirm(username, password)
+                                )
+                            }
+                            .setNegativeButton(com.webtoapp.core.i18n.Strings.btnCancel) { dialog, _ ->
+                                dialog.dismiss()
+                                result.complete(prompt.dismiss())
+                            }
+                            .setOnCancelListener { result.complete(prompt.dismiss()) }
+                            .show()
+                    } catch (e: Exception) {
+                        AppLogger.w(TAG, "onAuthPrompt dialog failed: ${e.message}")
+                        result.complete(prompt.dismiss())
+                    }
+                }
+                return result
+            }
+
             override fun onRequestCertificate(
                 session: GeckoSession,
                 request: GeckoSession.PromptDelegate.CertificateRequest
@@ -727,10 +998,34 @@ class GeckoViewEngine(
 
             override fun onCanGoBack(session: GeckoSession, canGoBack: Boolean) {
                 canGoBackFlag = canGoBack
+                callback.onNavigationStateChanged(canGoBackFlag, canGoForwardFlag)
             }
 
             override fun onCanGoForward(session: GeckoSession, canGoForward: Boolean) {
                 canGoForwardFlag = canGoForward
+                callback.onNavigationStateChanged(canGoBackFlag, canGoForwardFlag)
+            }
+
+            /**
+             * Main-frame load failure — the Gecko counterpart of WebViewClient.onReceivedError /
+             * onReceivedSslError. Without it the shell/host error UI (error card, failover,
+             * retry affordances) never fires on Gecko and a failed load leaves a blank page.
+             */
+            override fun onLoadError(
+                session: GeckoSession,
+                uri: String?,
+                error: WebRequestError
+            ): GeckoResult<String>? {
+                val description = describeWebRequestError(error)
+                AppLogger.w(TAG, "Main-frame load error: uri=$uri category=${error.category} code=${error.code}")
+                if (error.category == WebRequestError.ERROR_CATEGORY_SECURITY) {
+                    callback.onSslError(description)
+                } else {
+                    callback.onError(error.code, description)
+                }
+                // Resolve with null so GeckoView keeps its built-in error page beneath the
+                // host's own error UI, matching the default delegate behavior.
+                return GeckoResult.fromValue(null)
             }
 
             override fun onLoadRequest(
@@ -781,6 +1076,31 @@ class GeckoViewEngine(
     private fun isLoopbackHost(host: String): Boolean {
         val h = host.lowercase()
         return h == "127.0.0.1" || h == "localhost" || h == "[::1]" || h == "::1"
+    }
+
+    /**
+     * Maps Gecko's WebRequestError onto the `net::ERR_*` tokens the WebView path produces, so
+     * the shell/host error UI shows the same vocabulary on both engines.
+     */
+    private fun describeWebRequestError(error: WebRequestError): String = when (error.code) {
+        WebRequestError.ERROR_UNKNOWN_HOST -> "net::ERR_NAME_NOT_RESOLVED"
+        WebRequestError.ERROR_CONNECTION_REFUSED -> "net::ERR_CONNECTION_REFUSED"
+        WebRequestError.ERROR_NET_TIMEOUT -> "net::ERR_TIMED_OUT"
+        WebRequestError.ERROR_NET_INTERRUPT -> "net::ERR_CONNECTION_ABORTED"
+        WebRequestError.ERROR_NET_RESET -> "net::ERR_CONNECTION_RESET"
+        WebRequestError.ERROR_OFFLINE -> "net::ERR_INTERNET_DISCONNECTED"
+        WebRequestError.ERROR_PORT_BLOCKED -> "net::ERR_UNSAFE_PORT"
+        WebRequestError.ERROR_REDIRECT_LOOP -> "net::ERR_TOO_MANY_REDIRECTS"
+        WebRequestError.ERROR_UNKNOWN_PROTOCOL -> "net::ERR_UNKNOWN_URL_SCHEME"
+        WebRequestError.ERROR_MALFORMED_URI -> "net::ERR_INVALID_URL"
+        WebRequestError.ERROR_FILE_NOT_FOUND -> "net::ERR_FILE_NOT_FOUND"
+        WebRequestError.ERROR_FILE_ACCESS_DENIED -> "net::ERR_ACCESS_DENIED"
+        WebRequestError.ERROR_SECURITY_SSL -> "net::ERR_SSL_PROTOCOL_ERROR"
+        WebRequestError.ERROR_SECURITY_BAD_CERT -> "net::ERR_CERT_AUTHORITY_INVALID"
+        WebRequestError.ERROR_BAD_HSTS_CERT -> "net::ERR_CERT_AUTHORITY_INVALID"
+        WebRequestError.ERROR_PROXY_CONNECTION_REFUSED -> "net::ERR_PROXY_CONNECTION_FAILED"
+        WebRequestError.ERROR_UNKNOWN_PROXY_HOST -> "net::ERR_PROXY_NAME_NOT_RESOLVED"
+        else -> error.message ?: "net::ERR_FAILED"
     }
 
     private fun setupProgressDelegate(session: GeckoSession, callback: BrowserEngineCallback) {
@@ -884,6 +1204,8 @@ class GeckoViewEngine(
                 .usePrivateMode(false)
                 .useTrackingProtection(false)
                 .userAgentMode(lastGeckoUaMode)
+                .viewportMode(lastGeckoViewportMode)
+                .allowJavascript(lastAllowJavascript)
                 .build()
 
             val newSession = GeckoSession(sessionSettings)
@@ -990,6 +1312,49 @@ class GeckoViewEngine(
             session?.purgeHistory()
         } catch (e: Exception) {
             AppLogger.e(TAG, "Error clearing history", e)
+        }
+    }
+
+    /**
+     * Find-in-page backed by Gecko's native finder (SessionFinder). The old claim that
+     * "findAllAsync has no GeckoView equivalent" was simply wrong — session.finder offers
+     * find/findNext/clear with match counts, so the native find bar works on both engines.
+     *
+     * @param forward null starts a fresh search for [text]; true/false steps to the
+     * next/previous match of the current search.
+     */
+    fun findInPage(
+        text: String,
+        forward: Boolean?,
+        onResult: (activeMatch: Int, totalMatches: Int) -> Unit
+    ) {
+        val s = session
+        if (s == null || text.isEmpty()) {
+            onResult(-1, 0)
+            return
+        }
+        try {
+            val finder = s.finder
+            finder.displayFlags = GeckoSession.FINDER_DISPLAY_HIGHLIGHT_ALL
+            val flags = if (forward == false) GeckoSession.FINDER_FIND_BACKWARDS else 0
+            if (forward == null) finder.clear()
+            finder.find(text, flags).accept({ result ->
+                val total = result?.total ?: 0
+                onResult(if (total > 0) result?.current ?: 0 else -1, total)
+            }, { e ->
+                AppLogger.w(TAG, "findInPage failed: ${e?.message}")
+                onResult(-1, 0)
+            })
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "findInPage failed: ${e.message}")
+            onResult(-1, 0)
+        }
+    }
+
+    fun clearFindMatches() {
+        try {
+            session?.finder?.clear()
+        } catch (_: Exception) {
         }
     }
 

@@ -68,7 +68,8 @@ fun ShellContentRouter(
                 onWebViewRefUpdated = onWebViewRefUpdated,
                 swipeRefreshEnabled = swipeRefreshEnabled,
                 isRefreshing = isRefreshing,
-                onRefresh = onRefresh
+                onRefresh = onRefresh,
+                onBrowserSurfaceCreated = onBrowserSurfaceCreated
             )
         }
         appType == "NODEJS_APP" -> {
@@ -85,7 +86,8 @@ fun ShellContentRouter(
                     onWebViewRefUpdated = onWebViewRefUpdated,
                     swipeRefreshEnabled = swipeRefreshEnabled,
                     isRefreshing = isRefreshing,
-                    onRefresh = onRefresh
+                    onRefresh = onRefresh,
+                    onBrowserSurfaceCreated = onBrowserSurfaceCreated
                 )
             } else {
 
@@ -99,7 +101,8 @@ fun ShellContentRouter(
                 onWebViewRefUpdated = onWebViewRefUpdated,
                     swipeRefreshEnabled = swipeRefreshEnabled,
                     isRefreshing = isRefreshing,
-                    onRefresh = onRefresh
+                    onRefresh = onRefresh,
+                    onBrowserSurfaceCreated = onBrowserSurfaceCreated
                 )
             }
         }
@@ -114,7 +117,8 @@ fun ShellContentRouter(
                 onWebViewRefUpdated = onWebViewRefUpdated,
                 swipeRefreshEnabled = swipeRefreshEnabled,
                 isRefreshing = isRefreshing,
-                onRefresh = onRefresh
+                onRefresh = onRefresh,
+                onBrowserSurfaceCreated = onBrowserSurfaceCreated
             )
         }
         appType == "PYTHON_APP" -> {
@@ -130,7 +134,8 @@ fun ShellContentRouter(
                 onWebViewRefUpdated = onWebViewRefUpdated,
                 swipeRefreshEnabled = swipeRefreshEnabled,
                 isRefreshing = isRefreshing,
-                onRefresh = onRefresh
+                onRefresh = onRefresh,
+                onBrowserSurfaceCreated = onBrowserSurfaceCreated
             )
         }
         appType == "GO_APP" -> {
@@ -145,7 +150,8 @@ fun ShellContentRouter(
                 onWebViewRefUpdated = onWebViewRefUpdated,
                 swipeRefreshEnabled = swipeRefreshEnabled,
                 isRefreshing = isRefreshing,
-                onRefresh = onRefresh
+                onRefresh = onRefresh,
+                onBrowserSurfaceCreated = onBrowserSurfaceCreated
             )
         }
         appType == "MULTI_WEB" -> {
@@ -161,7 +167,8 @@ fun ShellContentRouter(
                     onWebViewCreated = onWebViewCreated,
                     swipeRefreshEnabled = swipeRefreshEnabled,
                     isRefreshing = isRefreshing,
-                    onRefresh = onRefresh
+                    onRefresh = onRefresh,
+                    onBrowserSurfaceCreated = onBrowserSurfaceCreated
                 )
             }
         }
@@ -176,7 +183,8 @@ fun ShellContentRouter(
                 onWebViewRefUpdated = onWebViewRefUpdated,
                 swipeRefreshEnabled = swipeRefreshEnabled,
                 isRefreshing = isRefreshing,
-                onRefresh = onRefresh
+                onRefresh = onRefresh,
+                onBrowserSurfaceCreated = onBrowserSurfaceCreated
             )
         }
         else -> {

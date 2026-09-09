@@ -59,6 +59,41 @@ class BrowserSurface private constructor(
 
     fun dispatchKeyEvent(event: KeyEvent): Boolean = view.dispatchKeyEvent(event)
 
+    /**
+     * Engine-agnostic find-in-page. `forward == null` starts a fresh search for [text];
+     * true/false steps to the next/previous match of the current search. [onResult] receives
+     * the 0-based active match ordinal (-1 when nothing matched) and the total match count,
+     * invoked once the engine finished counting for that step.
+     */
+    fun findInPage(text: String, forward: Boolean?, onResult: (activeMatch: Int, totalMatches: Int) -> Unit) {
+        val wv = webView
+        if (wv != null) {
+            try {
+                wv.setFindListener { active, total, done ->
+                    if (done) onResult(if (total > 0) active else -1, total)
+                }
+                if (forward == null) wv.findAllAsync(text) else wv.findNext(forward)
+            } catch (_: Exception) {
+                onResult(-1, 0)
+            }
+            return
+        }
+        (engine as? GeckoViewEngine)?.findInPage(text, forward, onResult) ?: onResult(-1, 0)
+    }
+
+    fun clearFindMatches() {
+        val wv = webView
+        if (wv != null) {
+            try {
+                wv.setFindListener(null)
+                wv.clearMatches()
+            } catch (_: Exception) {
+            }
+            return
+        }
+        (engine as? GeckoViewEngine)?.clearFindMatches()
+    }
+
     fun onResume() {
         webView?.onResume()
         webView?.resumeTimers()

@@ -145,6 +145,9 @@ fun ShellScreen(
     }
 
     var webViewRef by remember { mutableStateOf<WebView?>(null) }
+    var browserSurfaceRef by remember {
+        mutableStateOf<com.webtoapp.core.engine.BrowserSurface?>(null)
+    }
     var statusBarAutoColor by remember { mutableStateOf<String?>(null) }
     var statusBarColorTracker by remember { mutableStateOf<com.webtoapp.core.webview.StatusBarPageColorTracker?>(null) }
 
@@ -474,6 +477,7 @@ fun ShellScreen(
         canGoForward = canGoForward,
         webViewRecreationKey = webViewRecreationKey,
         webViewRef = webViewRef,
+        browserSurface = browserSurfaceRef,
         webViewConfig = webViewConfig,
         webViewCallbacks = webViewCallbacks,
         webViewManager = webViewManager,
@@ -483,7 +487,10 @@ fun ShellScreen(
         isRefreshing = isRefreshing,
         onRefresh = { isRefreshing = true },
         onWebViewCreated = handleWebViewCreated,
-        onBrowserSurfaceCreated = onBrowserSurfaceCreated,
+        onBrowserSurfaceCreated = { surface ->
+            browserSurfaceRef = surface
+            onBrowserSurfaceCreated(surface)
+        },
         onWebViewRefUpdated = { webViewRef = it },
         onShowActivationDialog = { showActivationDialog = true },
         onErrorDismiss = { errorMessage = null },
@@ -495,7 +502,11 @@ fun ShellScreen(
         showFindBar = showFindBar,
         onToggleFindBar = { showFindBar = !showFindBar },
         onRunScript = { script ->
-            webViewRef?.evaluateJavascript(script) { result ->
+            // Surface-first so the console also evaluates on the GeckoView kernel
+            // (webViewRef stays null there; Gecko cannot return the eval result, so
+            // the entry shows "=> null" but the script does run in the page).
+            val surface = browserSurfaceRef
+            val appendResult: (String?) -> Unit = { result ->
                 consoleMessages = consoleMessages + ConsoleLogEntry(
                     level = ConsoleLevel.LOG,
                     message = "=> $result",
@@ -503,6 +514,11 @@ fun ShellScreen(
                     lineNumber = 0,
                     timestamp = System.currentTimeMillis()
                 )
+            }
+            if (surface != null) {
+                surface.evaluateJavascript(script, appendResult)
+            } else {
+                webViewRef?.evaluateJavascript(script, appendResult)
             }
         },
         statusBarHeightDp = statusBarHeightDp

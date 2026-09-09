@@ -59,7 +59,13 @@ object EngineViewFactory {
         allowGlobalModuleFallback: Boolean = false,
         extensionEnabled: Boolean = true,
         browserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? = null,
-        deviceDisguiseConfig: com.webtoapp.core.appearance.DeviceDisguiseConfig? = null
+        deviceDisguiseConfig: com.webtoapp.core.appearance.DeviceDisguiseConfig? = null,
+        /**
+         * The app's own origin URL (target URL / local base). Only consumed by the GeckoView
+         * path, which builds its NativeBridge inside the engine; the System WebView path gets
+         * the same value from the host's own bridge construction sites.
+         */
+        appOriginUrl: String = ""
     ): BrowserSurface {
         val engineType = resolveEngineType(engineTypeName, config, context)
         AppLogger.i(
@@ -71,6 +77,7 @@ object EngineViewFactory {
             prepareGeckoNetwork(config)
             val engine = EngineManager.getInstance(context).createEngine(EngineType.GECKOVIEW, adBlocker)
             val geckoEngine = engine as GeckoViewEngine
+            geckoEngine.appOriginUrl = appOriginUrl
             val view = geckoEngine.createView(
                 context = context,
                 config = config,
@@ -113,6 +120,7 @@ object EngineViewFactory {
             )
         }
         GeckoViewEngine.applyAntiCapture(config.antiCapture)
+        GeckoViewEngine.applyAutoplayPolicy(config.mediaAutoplayEnabled)
 
         val tlsFingerprintEnabled = config.tlsFingerprintEnabled &&
             config.tlsFingerprintTemplate.isNotBlank()
@@ -199,6 +207,10 @@ fun WebViewCallbacks.toBrowserEngineCallback(): BrowserEngineCallback {
 
         override fun onConsoleMessage(level: Int, message: String, sourceId: String, lineNumber: Int) {
             source.onConsoleMessage(level, message, sourceId, lineNumber)
+        }
+
+        override fun onNavigationStateChanged(canGoBack: Boolean, canGoForward: Boolean) {
+            source.onNavigationStateChanged(canGoBack, canGoForward)
         }
 
         override fun onNewWindow(resultMsg: android.os.Message?): Boolean {

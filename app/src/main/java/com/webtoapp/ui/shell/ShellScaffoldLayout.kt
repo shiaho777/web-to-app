@@ -50,6 +50,7 @@ fun BoxScope.ShellScaffoldLayout(
     webViewRecreationKey: Int,
 
     webViewRef: WebView?,
+    browserSurface: com.webtoapp.core.engine.BrowserSurface? = null,
     webViewConfig: WebViewConfig,
     webViewCallbacks: WebViewCallbacks,
     webViewManager: com.webtoapp.core.webview.WebViewManager,
@@ -90,7 +91,9 @@ fun BoxScope.ShellScaffoldLayout(
         val controller = com.webtoapp.core.webview.AutoRefreshController(
             intervalSec = webViewConfig.autoRefreshIntervalSec.coerceAtLeast(1),
             showCountdown = webViewConfig.autoRefreshShowCountdown,
-            onReload = { webViewRef?.reload() }
+            // Surface-first: webViewRef stays null on the GeckoView kernel, where the
+            // countdown used to run against a reload that never happened.
+            onReload = { browserSurface?.reload() ?: webViewRef?.reload() }
         )
         autoRefreshController = controller
         controller.start()
@@ -103,8 +106,8 @@ fun BoxScope.ShellScaffoldLayout(
     }
 
     val toolbarCfg = config.webViewConfig
-    // Native find-in-page drives WebView.findAllAsync — system WebView only.
-    val findInPageSupported = config.engineType == "SYSTEM_WEBVIEW"
+    // Find-in-page runs on both kernels: WebView findAllAsync on the system engine,
+    // GeckoView's native SessionFinder on the Gecko engine (BrowserSurface.findInPage).
     val toolbarEnabled = toolbarCfg.browserToolbarEnabled
     val hasAnyItem = hasAnyToolbarItem(
         toolbarShowTitle = toolbarCfg.toolbarShowTitle,
@@ -113,7 +116,7 @@ fun BoxScope.ShellScaffoldLayout(
         toolbarShowForward = toolbarCfg.toolbarShowForward,
         toolbarShowRefresh = toolbarCfg.toolbarShowRefresh,
         toolbarShowConsole = toolbarCfg.toolbarShowConsole,
-        toolbarShowFind = toolbarCfg.toolbarShowFind && findInPageSupported
+        toolbarShowFind = toolbarCfg.toolbarShowFind
     )
     val showToolbar = toolbarEnabled && hasAnyItem &&
         (!hideToolbar || config.webViewConfig.showToolbarInFullscreen)
@@ -152,11 +155,12 @@ fun BoxScope.ShellScaffoldLayout(
                     canGoBack = canGoBack,
                     canGoForward = canGoForward,
                     webViewRef = webViewRef,
+                    browserSurface = browserSurface,
                     showConsoleButton = toolbarVisibility.showConsoleButton,
                     showConsole = showConsole,
                     onToggleConsole = onToggleConsole,
                     consoleErrorCount = consoleMessages.count { it.level == ConsoleLevel.ERROR },
-                    showFindButton = toolbarVisibility.showFind && findInPageSupported,
+                    showFindButton = toolbarVisibility.showFind,
                     showFindBar = showFindBar,
                     onToggleFindBar = onToggleFindBar
                 )
@@ -288,15 +292,15 @@ fun BoxScope.ShellScaffoldLayout(
                 )
             }
 
-            // Find-in-page bar (native WebView search; slides up like the console)
+            // Find-in-page bar (native engine search; slides up like the console)
             AnimatedVisibility(
-                visible = showFindBar && findInPageSupported,
+                visible = showFindBar,
                 enter = androidx.compose.animation.slideInVertically(initialOffsetY = { it }) + fadeIn(),
                 exit = androidx.compose.animation.slideOutVertically(targetOffsetY = { it }) + fadeOut(),
                 modifier = Modifier.align(Alignment.BottomCenter)
             ) {
                 FindInPageBar(
-                    webView = webViewRef,
+                    surface = browserSurface,
                     onClose = onToggleFindBar
                 )
             }
@@ -318,6 +322,7 @@ private fun ShellTopAppBar(
     canGoBack: Boolean,
     canGoForward: Boolean,
     webViewRef: WebView?,
+    browserSurface: com.webtoapp.core.engine.BrowserSurface? = null,
     showConsoleButton: Boolean = true,
     showConsole: Boolean = false,
     onToggleConsole: () -> Unit = {},
@@ -357,7 +362,13 @@ private fun ShellTopAppBar(
                 com.webtoapp.ui.design.WtaIconButton(
                     onClick = {
                         (context as? AppCompatActivity)?.let { activity ->
-                            ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
+                            // Surface-first: on the GeckoView kernel webViewRef is null and
+                            // the engine's own history must drive back navigation.
+                            if (browserSurface != null) {
+                                ShellWebViewNavigation.goBackOrFinish(activity, browserSurface)
+                            } else {
+                                ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
+                            }
                         }
                     },
                     icon = Icons.AutoMirrored.Filled.ArrowBack,
@@ -367,7 +378,7 @@ private fun ShellTopAppBar(
             }
             if (showForward) {
                 com.webtoapp.ui.design.WtaIconButton(
-                    onClick = { webViewRef?.goForward() },
+                    onClick = { browserSurface?.goForward() ?: webViewRef?.goForward() },
                     icon = Icons.AutoMirrored.Filled.ArrowForward,
                     contentDescription = "Forward",
                     enabled = canGoForward
@@ -375,7 +386,7 @@ private fun ShellTopAppBar(
             }
             if (showRefresh) {
                 com.webtoapp.ui.design.WtaIconButton(
-                    onClick = { webViewRef?.reload() },
+                    onClick = { browserSurface?.reload() ?: webViewRef?.reload() },
                     icon = Icons.Default.Refresh,
                     contentDescription = "Refresh"
                 )
@@ -397,7 +408,8 @@ private fun ShellTopAppBar(
                     )
                 }
             }
-            // Find-in-page button: opens the native bottom find bar (system WebView only).
+            // Find-in-page button: opens the native bottom find bar (works on both kernels
+            // — WebView findAllAsync and GeckoView SessionFinder via BrowserSurface).
             if (showFindButton) {
                 com.webtoapp.ui.design.WtaIconButton(
                     onClick = onToggleFindBar,
