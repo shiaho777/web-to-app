@@ -25,7 +25,11 @@ data class ToolContext(
 
     val appRepository: WebAppRepository,
 
-    val readFiles: MutableSet<String> = mutableSetOf(),
+    // Read-files bookkeeping is mutated from parallel read-only tool batches
+    // (batchToolCalls runs consecutive read-only tools concurrently) and the set is
+    // shared across ToolContext.copy() instances — a plain LinkedHashSet is not
+    // thread-safe.
+    val readFiles: MutableSet<String> = java.util.Collections.synchronizedSet(mutableSetOf()),
 
     val activePlanFile: String? = null,
 

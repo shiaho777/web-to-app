@@ -97,7 +97,23 @@ class AgentService : Service() {
     }
 
     fun start(request: AgentRequest) {
-        turnJob?.cancel()
+        // A still-running previous turn gets preempted here: finalize it exactly like
+        // cancel() would (drop/finalize the draft, no orphaned running tool cards) —
+        // turnJob.cancel() alone skips the aborted-turn finalization entirely.
+        if (turnJob?.isActive == true) {
+            abortController?.abort()
+            val prevJob = turnJob
+            val prevSessionId = currentSessionId
+            val prevStore = currentStore
+            val prevAcc = currentAccumulator
+            scope.launch {
+                kotlinx.coroutines.withTimeoutOrNull(ABORT_PERSIST_GRACE_MS) { prevJob?.join() }
+                prevJob?.cancel()
+                if (prevStore != null && prevSessionId != null && prevAcc != null) {
+                    runCatching { persistAbortedTurn(prevStore, prevSessionId, prevAcc) }
+                }
+            }
+        }
         promoteToForeground(Strings.agentNotifRunning)
         acquireWakeLock()
         _isRunning.value = true
@@ -156,6 +172,12 @@ class AgentService : Service() {
                     }
                 }
             } catch (t: Throwable) {
+                if (t is kotlinx.coroutines.CancellationException) {
+                    // Normal cancellation (user cancel / turn preemption): the abort
+                    // paths persist the turn; broadcasting Failed would reset a live
+                    // successor turn's UI state in the ViewModel.
+                    throw t
+                }
                 val ev = AgentEvent.Failed(t.message ?: "service crashed")
                 _events.emit(ev)
                 if (store != null) {

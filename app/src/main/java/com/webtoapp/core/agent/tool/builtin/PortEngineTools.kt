@@ -38,6 +38,7 @@ class KillPortTool : Tool {
         args.get("port")?.asString?.let { "Killing process on port $it" }
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
         val port = args.get("port")?.asInt ?: return ToolResult.error("KillPort: missing `port`.")
+        if (port !in 1..65535) return ToolResult.error("KillPort: port must be in 1..65535, got $port.")
         val killed = ProcessPortScanner.killProcess(port)
         return if (killed) ToolResult.ok("Killed process on port $port.")
         else ToolResult.error("KillPort: no process found on port $port or kill failed.")
@@ -67,8 +68,16 @@ class GetEngineStatusTool : Tool {
     override fun isReadOnly() = true
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
         val mgr = EngineManager.getInstance(ctx.androidContext)
-        val types = args.get("engineType")?.asString?.let { listOf(EngineType.valueOf(it)) }
-            ?: EngineType.entries
+        // The model can violate the advertised enum — degrade to an error it can recover
+        // from instead of a raw IllegalArgumentException.
+        val filter = args.get("engineType")?.asString
+        if (filter != null && runCatching { EngineType.valueOf(filter) }.getOrNull() == null) {
+            return ToolResult.error(
+                "GetEngineStatus: unknown engineType '$filter' (valid: " +
+                    EngineType.entries.joinToString("/") { it.name } + ")."
+            )
+        }
+        val types = filter?.let { listOf(EngineType.valueOf(it)) } ?: EngineType.entries
         val lines = types.joinToString("\n") { t ->
             val status = mgr.getEngineStatus(t)
             val size = mgr.getEngineSize(t) / (1024 * 1024)

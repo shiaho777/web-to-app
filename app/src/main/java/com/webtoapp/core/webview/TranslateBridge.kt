@@ -170,7 +170,10 @@ class TranslateBridge(
     private fun translateViaGoogle(texts: List<String>, targetLang: String): List<String> {
         val combined = texts.joinToString("\n")
         val encoded = URLEncoder.encode(combined, "UTF-8")
-        val urlStr = "$GOOGLE_API?client=gtx&sl=auto&tl=$targetLang&dt=t&q=$encoded"
+        // targetLang comes from the page: encode it so it cannot inject
+        // query/path structure into the fixed API endpoint.
+        val lang = URLEncoder.encode(targetLang, "UTF-8")
+        val urlStr = "$GOOGLE_API?client=gtx&sl=auto&tl=$lang&dt=t&q=$encoded"
 
         val url = URL(urlStr)
         val conn = url.openConnection() as HttpURLConnection
@@ -305,7 +308,9 @@ class TranslateBridge(
         val combined = texts.joinToString("\n")
         val encoded = URLEncoder.encode(combined, "UTF-8")
 
-        val urlStr = "$LINGVA_API/auto/$targetLang/$encoded"
+        // Path segment: encode so a crafted lang cannot walk out of /auto/<lang>/.
+        val lang = URLEncoder.encode(targetLang, "UTF-8")
+        val urlStr = "$LINGVA_API/auto/$lang/$encoded"
 
         val url = URL(urlStr)
         val conn = url.openConnection() as HttpURLConnection

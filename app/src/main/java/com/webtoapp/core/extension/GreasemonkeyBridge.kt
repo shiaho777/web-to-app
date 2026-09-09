@@ -290,18 +290,34 @@ class GreasemonkeyBridge(
                 if (scheme != "http" && scheme != "https") {
                     throw IllegalArgumentException("GM_xmlhttpRequest supports HTTP(S) URLs only")
                 }
+                val pageUrl = runCatching {
+                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { webViewProvider()?.url }
+                }.getOrNull().orEmpty()
+                val pageIsLocal = com.webtoapp.core.webview.NativeBridge.isPrivateNetworkUrl(pageUrl) ||
+                    pageUrl.startsWith("file:") || pageUrl.startsWith("content://")
                 val targetIsPrivate = com.webtoapp.core.webview.NativeBridge.isPrivateNetworkHost(uri?.host)
-                if (targetIsPrivate) {
-                    val pageUrl = runCatching {
-                        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) { webViewProvider()?.url }
-                    }.getOrNull().orEmpty()
-                    val pageIsLocal = com.webtoapp.core.webview.NativeBridge.isPrivateNetworkUrl(pageUrl) ||
-                        pageUrl.startsWith("file:") || pageUrl.startsWith("content://")
-                    if (!pageIsLocal) {
-                        throw IllegalArgumentException(
-                            "GM_xmlhttpRequest to local network addresses is only allowed from local pages"
-                        )
-                    }
+                if (targetIsPrivate && !pageIsLocal) {
+                    throw IllegalArgumentException(
+                        "GM_xmlhttpRequest to local network addresses is only allowed from local pages"
+                    )
+                }
+                // Redirect gate: when the calling page is not local, every redirect hop
+                // must stay off the private network — a public URL 302-ing into
+                // 127.0.0.1 would otherwise bypass the target gate above.
+                val client = if (pageIsLocal) {
+                    httpClient
+                } else {
+                    httpClient.newBuilder()
+                        .addNetworkInterceptor { chain ->
+                            val followUp = chain.request()
+                            if (com.webtoapp.core.webview.NativeBridge.isPrivateNetworkHost(followUp.url.host)) {
+                                throw java.io.IOException(
+                                    "Blocked redirect to local network host ${followUp.url.host}"
+                                )
+                            }
+                            chain.proceed(followUp)
+                        }
+                        .build()
                 }
 
                 val requestBuilder = Request.Builder().url(url)
@@ -326,25 +342,47 @@ class GreasemonkeyBridge(
                     else -> requestBuilder.get()
                 }
 
-                val response = httpClient.newCall(requestBuilder.build()).execute()
-                val responseText = response.body?.string() ?: ""
-                val status = response.code
-                val statusText = response.message
+                // Cap the response like NativeBridge.httpRequest does (16 MB): GM
+                // results are serialized into a JS callback payload, so a multi-GB
+                // body would OOM the WebView process instead of failing the request.
+                val maxResponseBytes = 16L * 1024 * 1024
+                client.newCall(requestBuilder.build()).execute().use { response ->
+                    val charset = response.body?.contentType()?.charset(Charsets.UTF_8)
+                        ?: Charsets.UTF_8
+                    val bytes = response.body?.byteStream()?.use { input ->
+                        val out = java.io.ByteArrayOutputStream()
+                        val buffer = ByteArray(8192)
+                        var total = 0L
+                        while (true) {
+                            val read = input.read(buffer)
+                            if (read == -1) break
+                            total += read
+                            if (total > maxResponseBytes) {
+                                throw IllegalArgumentException(
+                                    "GM_xmlhttpRequest response exceeds ${maxResponseBytes / 1024 / 1024}MB"
+                                )
+                            }
+                            out.write(buffer, 0, read)
+                        }
+                        out.toByteArray()
+                    } ?: ByteArray(0)
+                    val responseText = String(bytes, charset)
 
-                val responseHeaders = JSONObject()
-                response.headers.forEach { (name, value) ->
-                    responseHeaders.put(name.lowercase(), value)
+                    val responseHeaders = JSONObject()
+                    response.headers.forEach { (name, value) ->
+                        responseHeaders.put(name.lowercase(), value)
+                    }
+
+                    val result = JSONObject().apply {
+                        put("status", response.code)
+                        put("statusText", response.message)
+                        put("responseText", responseText)
+                        put("responseHeaders", responseHeaders.toString())
+                        put("finalUrl", response.request.url.toString())
+                    }
+
+                    callbackToJs(callbackId, "onload", result.toString())
                 }
-
-                val result = JSONObject().apply {
-                    put("status", status)
-                    put("statusText", statusText)
-                    put("responseText", responseText)
-                    put("responseHeaders", responseHeaders.toString())
-                    put("finalUrl", response.request.url.toString())
-                }
-
-                callbackToJs(callbackId, "onload", result.toString())
 
             } catch (e: Exception) {
                 AppLogger.e(TAG, "GM_xmlhttpRequest failed", e)

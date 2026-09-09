@@ -339,11 +339,15 @@ class DataBackupManager(private val context: Context) {
                 ZipInputStream(BufferedInputStream(inputStream, BUFFER_SIZE)).use { zipIn ->
                     var entry = zipIn.nextEntry
                     var totalEntries = 0
+                    // User-picked backup archive: cap entries + extracted size so a
+                    // crafted "backup" cannot fill app storage.
+                    val entryGuard = com.webtoapp.util.SafeZip.EntryGuard()
                     val extractThrottle = ProgressThrottle()
 
                     while (entry != null) {
                         coroutineContext.ensureActive()
                         totalEntries++
+                        entryGuard.onEntry()
                         if (extractThrottle.shouldEmit()) {
                             onProgress(10 + (totalEntries % 40), 100, Strings.backupExtracting.format(entry.name))
                         }
@@ -352,26 +356,29 @@ class DataBackupManager(private val context: Context) {
                             entry.name == APPS_JSON -> {
 
                                 val jsonBytes = zipIn.readBytes()
+                                entryGuard.onBytes(jsonBytes.size)
                                 val jsonStr = String(jsonBytes, Charsets.UTF_8)
                                 backupData = parseBackupData(jsonStr)
                                 AppLogger.i(TAG, "读取到 ${backupData?.appCount} 个应用")
                             }
                             entry.name == EXTENSION_MODULES_FILE -> {
                                 modulesJsonBytes = zipIn.readBytes()
+                                entryGuard.onBytes(modulesJsonBytes?.size ?: 0)
                             }
                             entry.name == EXTENSION_BUILTIN_STATES_FILE -> {
                                 builtInStatesJsonBytes = zipIn.readBytes()
+                                entryGuard.onBytes(builtInStatesJsonBytes?.size ?: 0)
                             }
                             entry.name.startsWith(RESOURCES_DIR) && !entry.isDirectory -> {
 
-                                val extractedPath = extractResourceFile(entry.name, zipIn)
+                                val extractedPath = extractResourceFile(entry.name, zipIn, entryGuard)
                                 if (extractedPath != null) {
                                     extractedResources[entry.name] = extractedPath
                                     extractedFiles.add(File(extractedPath))
                                 }
                             }
                             isLocalBackupEntry(entry.name) && !entry.isDirectory -> {
-                                stageLocalBackupEntry(entry.name, zipIn)?.let { pendingLocalEntries.add(it) }
+                                stageLocalBackupEntry(entry.name, zipIn, entryGuard)?.let { pendingLocalEntries.add(it) }
                             }
                         }
 
@@ -962,7 +969,11 @@ class DataBackupManager(private val context: Context) {
         )
     }
 
-    private fun extractResourceFile(zipPath: String, zipIn: ZipInputStream): String? {
+    private fun extractResourceFile(
+        zipPath: String,
+        zipIn: ZipInputStream,
+        guard: com.webtoapp.util.SafeZip.EntryGuard? = null
+    ): String? {
         return try {
             val (targetDir, prefix) = when {
                 zipPath.startsWith(ICONS_DIR) -> File(context.filesDir, "backup_icons") to ICONS_DIR
@@ -986,10 +997,12 @@ class DataBackupManager(private val context: Context) {
             targetFile.parentFile?.mkdirs()
 
             FileOutputStream(targetFile).use { output ->
-                zipIn.copyTo(output)
+                if (guard != null) guard.copyTo(zipIn, output) else zipIn.copyTo(output)
             }
 
             targetFile.absolutePath
+        } catch (e: com.webtoapp.util.SafeZip.ZipBombException) {
+            throw e
         } catch (e: Exception) {
             AppLogger.w(TAG, "解压资源文件失败: $zipPath", e)
             null
@@ -1019,7 +1032,11 @@ class DataBackupManager(private val context: Context) {
     )
 
     /** Visible for unit tests (zip-slip staging rules). */
-    internal fun stageLocalBackupEntry(zipPath: String, zipIn: ZipInputStream): PendingLocalEntry? {
+    internal fun stageLocalBackupEntry(
+        zipPath: String,
+        zipIn: ZipInputStream,
+        guard: com.webtoapp.util.SafeZip.EntryGuard? = null
+    ): PendingLocalEntry? {
         val targetFile = when {
             zipPath.startsWith(LOCAL_FILES_DIR) -> {
                 val relativePath = zipPath.removePrefix(LOCAL_FILES_DIR)
@@ -1067,9 +1084,11 @@ class DataBackupManager(private val context: Context) {
         val tempFile = File.createTempFile("wta_backup_", ".part", context.cacheDir)
         return try {
             FileOutputStream(tempFile).use { output ->
-                zipIn.copyTo(output, BUFFER_SIZE)
+                if (guard != null) guard.copyTo(zipIn, output) else zipIn.copyTo(output, BUFFER_SIZE)
             }
             PendingLocalEntry(zipPath, targetFile, tempFile)
+        } catch (e: com.webtoapp.util.SafeZip.ZipBombException) {
+            throw e
         } catch (e: Exception) {
             AppLogger.w(TAG, "暂存本地备份数据失败: $zipPath", e)
             tempFile.delete()

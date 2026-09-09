@@ -26,9 +26,69 @@ class ApkBuildCacheTest {
         assertThat(cache.isContentReplaceableEntry("assets/statusbar_background_dark.png")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/announcement_icon.png")).isTrue()
         assertThat(cache.isContentReplaceableEntry("assets/python/arm64-v8a/python3")).isTrue()
+        // Python stdlib is re-embedded by RuntimeAssetEmbedder on every build in both
+        // modes; without this entry CONTENT_OVERLAY duplicates it and the duplicates
+        // accumulate across incremental rebuilds.
+        assertThat(cache.isContentReplaceableEntry("assets/python_runtime/lib/os.py")).isTrue()
         assertThat(cache.isContentReplaceableEntry("AndroidManifest.xml")).isFalse()
         assertThat(cache.isContentReplaceableEntry("resources.arsc")).isFalse()
         assertThat(cache.isContentReplaceableEntry("lib/arm64-v8a/libnode.so")).isFalse()
+    }
+
+    @Test
+    fun `manifest and perf fingerprint changes force different identity fingerprints`() {
+        val context = RuntimeEnvironment.getApplication()
+        val cache = ApkBuildCache(context)
+
+        val webApp = com.webtoapp.data.model.WebApp(
+            id = 55,
+            name = "OverlayApp",
+            url = "https://example.com"
+        )
+        val template = File(context.cacheDir, "shell_overlay.apk").apply {
+            writeBytes(ByteArray(16) { 3 })
+        }
+        val config = ApkConfig(
+            meta = MetaBlock(
+                appName = "OverlayApp",
+                packageName = "com.demo.overlay",
+                targetUrl = "https://example.com",
+                versionCode = 1,
+                versionName = "1.0",
+                appType = "WEB"
+            )
+        )
+
+        fun planWith(manifest: String?, perf: String?) = cache.plan(
+            webApp = webApp,
+            packageName = "com.demo.overlay",
+            config = config,
+            templateApk = template,
+            encryptionEnabled = false,
+            abiFilters = emptyList(),
+            projectDirs = emptyList(),
+            mediaContentPath = null,
+            splashMediaPath = null,
+            bgmPlaylistPaths = emptyList(),
+            htmlFiles = emptyList(),
+            galleryItems = emptyList(),
+            errorPageMediaPath = null,
+            forceFullRebuild = false,
+            manifestFingerprint = manifest,
+            perfFingerprint = perf
+        )
+
+        val base = planWith(null, null)
+        // Enabling scheduled start adds SCHEDULE_EXACT_ALARM + ScheduledStartReceiver to
+        // the manifest set; a cached base without them must not be overlaid onto.
+        val withSched = planWith("android.permission.SCHEDULE_EXACT_ALARM|ScheduledStartReceiver", null)
+        assertThat(withSched.identityFingerprint).isNotEqualTo(base.identityFingerprint)
+
+        // Toggling export-level performance options changes output bytes without touching
+        // ApkConfig; it must not hit REUSE_UNSIGNED either.
+        val withPerf = planWith(null, "opt=true|cfg=PerformanceConfig(minify=true)")
+        assertThat(withPerf.identityFingerprint).isNotEqualTo(base.identityFingerprint)
+        assertThat(withPerf.identityFingerprint).isNotEqualTo(withSched.identityFingerprint)
     }
 
     @Test

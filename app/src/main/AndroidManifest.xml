@@ -406,7 +406,8 @@
         <!--
             BootReceiver / ScheduledStartReceiver
             宿主使用：用户在 host 内可配置"开机自启某个 webapp"和"定时启动"；
-                    BootReceiver 同时也兼容 shell 子 APK（同源代码同步过来）。
+                    BootReceiver 同时也兼容 shell 子 APK（行为等价的 java-override，
+                    含开机/更新后的通知服务恢复——改动需两侧同步）。
         -->
         <receiver
             android:name=".core.autostart.BootReceiver"

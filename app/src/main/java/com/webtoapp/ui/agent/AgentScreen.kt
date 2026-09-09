@@ -368,6 +368,7 @@ fun AgentScreen(
                     onAttachFile = { filePicker.launch("*/*") },
                     onAttachFolder = { folderPicker.launch(null) },
                     onRemoveAttachment = vm::removePendingAttachment,
+                    resolveAttachmentPreview = vm::attachmentPreviewFile,
 
                     onOpenContextPicker = vm::openContextPicker,
 

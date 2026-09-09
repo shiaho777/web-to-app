@@ -4,7 +4,6 @@ import android.content.Context
 import com.webtoapp.core.i18n.Strings
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import android.util.Base64
 import com.webtoapp.core.logging.AppLogger
 import com.android.apksig.ApkSigner
 import com.android.apksig.ApkVerifier
@@ -29,7 +28,6 @@ class JarSigner(private val context: Context) {
 
         @Suppress("unused")
         private const val CUSTOM_KEY_ALIAS = "CustomKey"
-        private const val DIGEST_ALGORITHM = "SHA-256"
         private const val SIGNATURE_ALGORITHM = "SHA256withRSA"
         private const val KEY_SIZE = 2048
         private const val VALIDITY_YEARS = 20L
@@ -1069,7 +1067,7 @@ class JarSigner(private val context: Context) {
         return wrapWithTag(0x30, out.toByteArray())
     }
 
-    fun sign(inputApk: File, outputApk: File): Boolean {
+    fun sign(inputApk: File, outputApk: File, targetSdk: Int = 28): Boolean {
 
         if (!validateInputs(inputApk, outputApk)) {
             throw IllegalStateException(Strings.signInputValidationFailed.format(inputApk.absolutePath))
@@ -1092,7 +1090,7 @@ class JarSigner(private val context: Context) {
         AppLogger.d(TAG, "Signing APK: input=${inputApk.absolutePath} (size=${inputApk.length()})")
         AppLogger.d(TAG, "Signer type: $currentSignerType")
 
-        return trySignWithRetry(inputApk, outputApk, maxRetries = 2)
+        return trySignWithRetry(inputApk, outputApk, maxRetries = 2, targetSdk = targetSdk)
     }
 
     private fun validateInputs(inputApk: File, outputApk: File): Boolean {
@@ -1127,7 +1125,7 @@ class JarSigner(private val context: Context) {
         return true
     }
 
-    private fun trySignWithRetry(inputApk: File, outputApk: File, maxRetries: Int): Boolean {
+    private fun trySignWithRetry(inputApk: File, outputApk: File, maxRetries: Int, targetSdk: Int): Boolean {
         val errorMessages = mutableListOf<String>()
         var lastException: Throwable? = null
 
@@ -1137,9 +1135,25 @@ class JarSigner(private val context: Context) {
         val v1Name = resolveV1SignerName(options.v1SignerName)
         AppLogger.d(TAG, "Signing scheme options: $options (resolved V1 name=$v1Name)")
 
+        // The shell template manifest declares minSdk 23 and generated APKs keep it, so
+        // a V1-less signature set cannot install on API 23 devices (and apksig itself
+        // refuses V1-less signing below minSdk 24). Force V1 on.
+        var v1Enabled = options.v1Enabled
+        if (!v1Enabled) {
+            v1Enabled = true
+            AppLogger.w(TAG, "V1 signing forced on: shell minSdk 23 requires a JAR signature")
+        }
+        // Android 11+ rejects apps with targetSdk >= 30 that carry only a V1 signature —
+        // the build would succeed and produce an APK that fails to install. Force V2 on.
+        var v2Enabled = options.v2Enabled
+        if (!v2Enabled && targetSdk >= 30) {
+            v2Enabled = true
+            AppLogger.w(TAG, "V2 signing forced on: targetSdk $targetSdk >= 30 requires an APK Signature Scheme v2 block")
+        }
+
         val selected = buildList {
-            if (options.v1Enabled) add(1)
-            if (options.v2Enabled) add(2)
+            if (v1Enabled) add(1)
+            if (v2Enabled) add(2)
             if (options.v3Enabled) add(3)
         }
 
@@ -1225,11 +1239,11 @@ class JarSigner(private val context: Context) {
         val key = privateKey ?: throw IllegalStateException("私钥为空")
         val cert = certificate ?: throw IllegalStateException("证书为空")
 
-        val effectiveMinSdk = when {
-            v1 -> 23
-            v2 -> 24
-            else -> 28
-        }
+        // The real manifest minSdk of every shell-based output is 23 (shell template
+        // defaultConfig). Deriving minSdk from the scheme toggles made apksig skip
+        // V1 with a V2-only config on a manifest that installs on API 23 — the
+        // previous "effectiveMinSdk 24" lied about the manifest contents.
+        val effectiveMinSdk = 23
 
         AppLogger.d(TAG, "Certificate: subject=${cert.subjectX500Principal.name}, algo=${cert.sigAlgName}")
         AppLogger.d(TAG, "Key: algo=${key.algorithm}, format=${key.format}")
@@ -1266,96 +1280,6 @@ class JarSigner(private val context: Context) {
         return verifyApkDetailed(outputApk, schemeName)
     }
 
-    private fun performApkSignerSign(inputApk: File, outputApk: File, key: PrivateKey, cert: X509Certificate): Boolean {
-        AppLogger.d(TAG, "ApkSigner: signing: ${inputApk.name}")
-
-        val signerConfig = ApkSigner.SignerConfig.Builder(
-            SIGNER_BASENAME,
-            key,
-            listOf(cert)
-        ).build()
-
-        val builder = ApkSigner.Builder(listOf(signerConfig))
-            .setInputApk(inputApk)
-            .setOutputApk(outputApk)
-            .setV1SigningEnabled(true)
-            .setV2SigningEnabled(true)
-            .setV3SigningEnabled(true)
-            .setMinSdkVersion(23)
-
-        try {
-            val apkSigner = builder.build()
-            apkSigner.sign()
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "ApkSigner exception: ${e.message}")
-            throw e
-        }
-
-        if (!outputApk.exists() || outputApk.length() == 0L) {
-            AppLogger.e(TAG, "ApkSigner: output file is invalid")
-            return false
-        }
-
-        return verifyApkDetailed(outputApk, "ApkSigner")
-    }
-
-    private fun performV1Sign(inputApk: File, outputApk: File, key: PrivateKey, cert: X509Certificate): Boolean {
-        AppLogger.d(TAG, "V1 signing: ${inputApk.name}")
-
-        try {
-            val digests = mutableMapOf<String, String>()
-            val entries = mutableMapOf<String, ByteArray>()
-
-            ZipFile(inputApk).use { zipFile ->
-                zipFile.entries().toList().forEach { entry ->
-                    if (!entry.isDirectory && !entry.name.startsWith("META-INF/")) {
-                        val content = zipFile.getInputStream(entry).readBytes()
-                        entries[entry.name] = content
-                        digests[entry.name] = computeDigest(ByteArrayInputStream(content))
-                    }
-                }
-            }
-
-            val manifest = buildManifest(digests)
-            val signatureFile = buildSignatureFile(manifest, digests)
-            val pkcs7Signature = createSignatureBlock(signatureFile)
-
-            FileOutputStream(outputApk).use { fos ->
-                ZipOutputStream(fos).use { zos ->
-                    writeZipEntry(zos, "META-INF/MANIFEST.MF", manifest)
-                    writeZipEntry(zos, "META-INF/CERT.SF", signatureFile)
-                    writeZipEntry(zos, "META-INF/CERT.RSA", pkcs7Signature)
-
-                    entries["resources.arsc"]?.let { content ->
-                        ZipUtils.writeEntryStored(zos, "resources.arsc", content)
-                    }
-
-                    entries.forEach { (name, content) ->
-                        if (name == "resources.arsc") return@forEach
-                        val entry = ZipEntry(name)
-                        zos.putNextEntry(entry)
-                        zos.write(content)
-                        zos.closeEntry()
-                    }
-                }
-            }
-
-            val verified = verifyApkDetailed(outputApk, "V1")
-
-            if (!verified) {
-                AppLogger.e(TAG, "V1 signature verification failed, APK signature is invalid")
-                if (outputApk.exists()) outputApk.delete()
-                return false
-            }
-
-            return verified
-
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "V1 signingfailed: ${e.message}")
-            if (outputApk.exists()) outputApk.delete()
-            return false
-        }
-    }
 
     private fun verifyApkDetailed(apk: File, source: String): Boolean {
         return try {
@@ -1382,8 +1306,7 @@ class JarSigner(private val context: Context) {
             }
 
             if (!result.isVerified) {
-                AppLogger.w(TAG, "[$source] ApkVerifier flagged a verification failure, but the APK file structure is intact; " +
-                    "the APK should still install on most devices. Skipping the verification gate.")
+                AppLogger.w(TAG, "[$source] ApkVerifier reported a verification failure — treating the signature as invalid")
             }
 
             result.isVerified
@@ -1391,160 +1314,6 @@ class JarSigner(private val context: Context) {
             AppLogger.w(TAG, "[$source] Verification raised an exception (build is unaffected): ${e.message}")
             false
         }
-    }
-
-    private fun computeDigest(input: InputStream): String {
-        val md = MessageDigest.getInstance(DIGEST_ALGORITHM)
-        val buffer = ByteArray(8192)
-        var read: Int
-        while (input.read(buffer).also { read = it } != -1) {
-            md.update(buffer, 0, read)
-        }
-        return Base64.encodeToString(md.digest(), Base64.NO_WRAP)
-    }
-
-    private fun buildManifest(digests: Map<String, String>): ByteArray {
-        val sb = StringBuilder()
-        sb.append("Manifest-Version: 1.0\r\n")
-        sb.append("Created-By: 1.0 (WebToApp)\r\n")
-        sb.append("\r\n")
-
-        digests.forEach { (name, digest) ->
-            sb.append("Name: $name\r\n")
-            sb.append("SHA-256-Digest: $digest\r\n")
-            sb.append("\r\n")
-        }
-
-        return sb.toString().toByteArray(Charsets.UTF_8)
-    }
-
-    private fun buildSignatureFile(manifest: ByteArray, digests: Map<String, String>): ByteArray {
-        val sb = StringBuilder()
-        sb.append("Signature-Version: 1.0\r\n")
-        sb.append("Created-By: 1.0 (WebToApp)\r\n")
-
-        val manifestDigest = Base64.encodeToString(
-            MessageDigest.getInstance(DIGEST_ALGORITHM).digest(manifest),
-            Base64.NO_WRAP
-        )
-        sb.append("SHA-256-Digest-Manifest: $manifestDigest\r\n")
-        sb.append("\r\n")
-
-        digests.forEach { (name, digest) ->
-            val entryBlock = "Name: $name\r\nSHA-256-Digest: $digest\r\n\r\n"
-            val entryDigest = Base64.encodeToString(
-                MessageDigest.getInstance(DIGEST_ALGORITHM).digest(entryBlock.toByteArray()),
-                Base64.NO_WRAP
-            )
-            sb.append("Name: $name\r\n")
-            sb.append("SHA-256-Digest: $entryDigest\r\n")
-            sb.append("\r\n")
-        }
-
-        return sb.toString().toByteArray(Charsets.UTF_8)
-    }
-
-    private fun createSignatureBlock(sfContent: ByteArray): ByteArray {
-
-        val signature = Signature.getInstance(SIGNATURE_ALGORITHM)
-        signature.initSign(privateKey)
-        signature.update(sfContent)
-        val signatureBytes = signature.sign()
-
-        return buildPkcs7SignedData(signatureBytes, certificate!!)
-    }
-
-    private fun buildPkcs7SignedData(signature: ByteArray, cert: X509Certificate): ByteArray {
-        val certBytes = cert.encoded
-
-        val contentInfo = buildContentInfo(signature, certBytes)
-
-        val signedDataOid = byteArrayOf(
-            0x06, 0x09, 0x2A, 0x86.toByte(), 0x48, 0x86.toByte(), 0xF7.toByte(),
-            0x0D, 0x01, 0x07, 0x02
-        )
-
-        val innerContent = ByteArrayOutputStream()
-        innerContent.write(signedDataOid)
-
-        val explicitTag = wrapWithTag(0xA0.toByte(), contentInfo)
-        innerContent.write(explicitTag)
-
-        return wrapWithTag(0x30, innerContent.toByteArray())
-    }
-
-    private fun buildContentInfo(signature: ByteArray, certBytes: ByteArray): ByteArray {
-        val content = ByteArrayOutputStream()
-
-        content.write(byteArrayOf(0x02, 0x01, 0x01))
-
-        val digestAlgSet = buildDigestAlgorithmSet()
-        content.write(digestAlgSet)
-
-        val dataContentInfo = buildDataContentInfo()
-        content.write(dataContentInfo)
-
-        val certsImplicit = wrapWithTag(0xA0.toByte(), certBytes)
-        content.write(certsImplicit)
-
-        val signerInfos = buildSignerInfos(signature, certificate!!)
-        content.write(signerInfos)
-
-        return wrapWithTag(0x30, content.toByteArray())
-    }
-
-    private fun buildDigestAlgorithmSet(): ByteArray {
-
-        val sha256Oid = byteArrayOf(
-            0x06, 0x09, 0x60, 0x86.toByte(), 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01
-        )
-        val algId = wrapWithTag(0x30, sha256Oid + byteArrayOf(0x05, 0x00))
-        return wrapWithTag(0x31, algId)
-    }
-
-    private fun buildDataContentInfo(): ByteArray {
-
-        val dataOid = byteArrayOf(
-            0x06, 0x09, 0x2A, 0x86.toByte(), 0x48, 0x86.toByte(), 0xF7.toByte(),
-            0x0D, 0x01, 0x07, 0x01
-        )
-        return wrapWithTag(0x30, dataOid)
-    }
-
-    private fun buildSignerInfos(signature: ByteArray, cert: X509Certificate): ByteArray {
-        val signerInfo = ByteArrayOutputStream()
-
-        signerInfo.write(byteArrayOf(0x02, 0x01, 0x01))
-
-        val issuerAndSerial = buildIssuerAndSerial(cert)
-        signerInfo.write(issuerAndSerial)
-
-        val sha256Oid = byteArrayOf(
-            0x06, 0x09, 0x60, 0x86.toByte(), 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01
-        )
-        signerInfo.write(wrapWithTag(0x30, sha256Oid + byteArrayOf(0x05, 0x00)))
-
-        val rsaOid = byteArrayOf(
-            0x06, 0x09, 0x2A, 0x86.toByte(), 0x48, 0x86.toByte(), 0xF7.toByte(),
-            0x0D, 0x01, 0x01, 0x0B
-        )
-        signerInfo.write(wrapWithTag(0x30, rsaOid + byteArrayOf(0x05, 0x00)))
-
-        signerInfo.write(wrapWithTag(0x04, signature))
-
-        val signerInfoSeq = wrapWithTag(0x30, signerInfo.toByteArray())
-        return wrapWithTag(0x31, signerInfoSeq)
-    }
-
-    private fun buildIssuerAndSerial(cert: X509Certificate): ByteArray {
-        val content = ByteArrayOutputStream()
-
-        content.write(cert.issuerX500Principal.encoded)
-
-        val serial = cert.serialNumber.toByteArray()
-        content.write(wrapWithTag(0x02, serial))
-
-        return wrapWithTag(0x30, content.toByteArray())
     }
 
     private fun wrapWithTag(tag: Byte, content: ByteArray): ByteArray {
@@ -1571,21 +1340,6 @@ class JarSigner(private val context: Context) {
             out.write((length shr 8) and 0xFF)
             out.write(length and 0xFF)
         }
-    }
-
-    private fun writeZipEntry(zos: ZipOutputStream, name: String, content: ByteArray) {
-        val entry = ZipEntry(name)
-        entry.method = ZipEntry.STORED
-        entry.size = content.size.toLong()
-        entry.compressedSize = content.size.toLong()
-
-        val crc = CRC32()
-        crc.update(content)
-        entry.crc = crc.value
-
-        zos.putNextEntry(entry)
-        zos.write(content)
-        zos.closeEntry()
     }
 
     fun isReady(): Boolean = privateKey != null && certificate != null

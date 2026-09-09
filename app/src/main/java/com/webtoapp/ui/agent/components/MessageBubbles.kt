@@ -396,15 +396,6 @@ fun StreamingBubble(
     pendingTools: List<RecordedToolCall>,
     activity: String?
 ) {
-    val hasLiveSegment = thinkingSegments.any { it.frozenDurationMs == null }
-    var nowMs by remember { mutableStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(hasLiveSegment) {
-        while (hasLiveSegment) {
-            nowMs = System.currentTimeMillis()
-            kotlinx.coroutines.delay(100)
-        }
-    }
-
     Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.Start) {
         WtaCard(
             tone = WtaCardTone.Surface,

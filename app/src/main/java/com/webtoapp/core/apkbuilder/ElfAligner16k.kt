@@ -35,7 +35,22 @@ object ElfAligner16k {
         alignCache[cacheKey]?.let { cached ->
             if (cached.outputFile.isFile) {
                 try {
-                    if (inspect(cached.outputFile).aligned || cached.alreadyAligned) return cached
+                    if (inspect(cached.outputFile).aligned || cached.alreadyAligned) {
+                        // A hit can point into a different package's work dir (the cache is
+                        // process-wide, keyed by input file identity). Per-package build
+                        // locks do not serialize different packages, so that package's
+                        // cleanTempFiles() could delete the referenced file mid-build —
+                        // copy the bytes into this call's work dir first.
+                        val livesElsewhere = cached.outputFile.absolutePath != inputFile.absolutePath &&
+                            cached.outputFile.parentFile?.absolutePath != workDir.absolutePath
+                        if (livesElsewhere) {
+                            workDir.mkdirs()
+                            val localCopy = File(workDir, cached.outputFile.name)
+                            cached.outputFile.copyTo(localCopy, overwrite = true)
+                            return cached.copy(outputFile = localCopy)
+                        }
+                        return cached
+                    }
                 } catch (_: Exception) { /* fall through and re-align */ }
                 alignCache.remove(cacheKey)
             } else {

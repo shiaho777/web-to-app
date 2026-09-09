@@ -265,16 +265,18 @@ object NodeDependencyManager {
     private fun extractNodeZip(zipFile: File, destDir: File, abi: String) {
         val zipInput = java.util.zip.ZipInputStream(zipFile.inputStream().buffered())
         var foundLib = false
+        val guard = com.webtoapp.util.SafeZip.EntryGuard()
 
         zipInput.use { zis ->
             var entry = zis.nextEntry
             while (entry != null) {
+                guard.onEntry()
 
                 if (!entry.isDirectory && entry.name.contains(abi) && entry.name.endsWith("libnode.so")) {
                     val outFile = File(destDir, NODE_BINARY_NAME)
                     outFile.parentFile?.mkdirs()
                     FileOutputStream(outFile).use { fos ->
-                        zis.copyTo(fos)
+                        guard.copyTo(zis, fos)
                     }
                     outFile.setExecutable(true, false)
                     foundLib = true
@@ -285,7 +287,7 @@ object NodeDependencyManager {
                     val outFile = File(destDir, soName)
                     outFile.parentFile?.mkdirs()
                     FileOutputStream(outFile).use { fos ->
-                        zis.copyTo(fos)
+                        guard.copyTo(zis, fos)
                     }
                 }
                 entry = zis.nextEntry

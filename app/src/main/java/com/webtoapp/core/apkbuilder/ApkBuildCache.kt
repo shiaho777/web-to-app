@@ -110,6 +110,8 @@ class ApkBuildCache(private val context: Context) {
         nativeLibsFingerprint: String? = null,
         hostVersionCode: Int = 0,
         forceFullRebuild: Boolean,
+        manifestFingerprint: String? = null,
+        perfFingerprint: String? = null,
         multiWebSiteGalleryItems: List<com.webtoapp.data.model.GalleryItem> = emptyList(),
         multiWebSiteMediaPaths: List<String> = emptyList()
     ): IncrementalPlan {
@@ -121,7 +123,9 @@ class ApkBuildCache(private val context: Context) {
             abiFilters = abiFilters,
             iconPath = webApp.iconPath,
             nativeLibsFingerprint = nativeLibsFingerprint,
-            hostVersionCode = hostVersionCode
+            hostVersionCode = hostVersionCode,
+            manifestFingerprint = manifestFingerprint,
+            perfFingerprint = perfFingerprint
         )
         val content = contentFingerprint(
             config = config,
@@ -302,6 +306,10 @@ class ApkBuildCache(private val context: Context) {
         if (entryName.startsWith("assets/php_app/")) return true
         if (entryName.startsWith("assets/python/")) return true
         if (entryName.startsWith("assets/python_app/")) return true
+        // Re-embedded by RuntimeAssetEmbedder.embedPythonStdlib on every build in both
+        // modes; without this entry CONTENT_OVERLAY copies the cached stdlib AND the
+        // embedder writes it again — duplicate entries accumulating on every rebuild.
+        if (entryName.startsWith("assets/python_runtime/")) return true
         if (entryName.startsWith("assets/go_app/")) return true
         if (entryName.startsWith("assets/frontend_app/")) return true
         if (entryName.startsWith("assets/static_pack/")) return true
@@ -352,7 +360,9 @@ class ApkBuildCache(private val context: Context) {
         abiFilters: List<String>,
         iconPath: String?,
         nativeLibsFingerprint: String? = null,
-        hostVersionCode: Int = 0
+        hostVersionCode: Int = 0,
+        manifestFingerprint: String? = null,
+        perfFingerprint: String? = null
     ): String {
         val parts = mutableListOf<String>()
         parts += "shell=$shellTemplateId"
@@ -385,6 +395,16 @@ class ApkBuildCache(private val context: Context) {
         // targetSdk override changes the manifest's <uses-sdk>; without this a cached unsigned
         // APK with targetSdk 28 would be reused after the user raises it, defeating the change.
         parts += "targetSdk=${config.targetSdkOverride ?: 28}"
+        // The derived manifest permission/component set: CONTENT_OVERLAY reuses the
+        // cached base's AndroidManifest, so a config change that alters this set without
+        // touching any other identity part (e.g. enabling scheduled start →
+        // SCHEDULE_EXACT_ALARM + ScheduledStartReceiver) must change the identity or the
+        // overlay ships a stale manifest.
+        parts += "manifest=${manifestFingerprint ?: "n/a"}"
+        // Export-level performance options change output bytes (resource stripping,
+        // asset re-optimization, wta_perf_optimize.js injection) without appearing in
+        // ApkConfig — key them explicitly or REUSE_UNSIGNED serves the old setting.
+        parts += "perf=${perfFingerprint ?: "off"}"
         return sha256(parts.joinToString("\n"))
     }
 
@@ -439,7 +459,7 @@ class ApkBuildCache(private val context: Context) {
         return "sha256=${fileSha256(file)}"
     }
 
-    private fun treeFingerprint(dir: File): String {
+    internal fun treeFingerprint(dir: File): String {
         if (!dir.isDirectory) return "missing"
         val digest = MessageDigest.getInstance("SHA-256")
         dir.walkTopDown()

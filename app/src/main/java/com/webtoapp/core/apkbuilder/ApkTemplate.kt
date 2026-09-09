@@ -116,26 +116,6 @@ class ApkTemplate(private val context: Context) {
         templateDir.mkdirs()
     }
 
-    fun getTemplateApk(): File? {
-        val templateFile = File(templateDir, "webview_shell.apk")
-
-        if (templateFile.exists()) {
-            return templateFile
-        }
-
-        return try {
-            context.assets.open(TEMPLATE_APK).use { input ->
-                FileOutputStream(templateFile).use { output ->
-                    input.copyTo(output)
-                }
-            }
-            templateFile
-        } catch (e: Exception) {
-
-            null
-        }
-    }
-
     fun hasTemplate(): Boolean {
         return try {
             context.assets.open(TEMPLATE_APK).close()

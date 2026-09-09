@@ -101,14 +101,18 @@ class ExportAppTool : Tool {
     """.trimIndent()
     override val parametersSchema: JsonElement = jsonSchema {
         integer("appId", "The app id.", required = true)
-        enum("format", listOf("template", "config"), "Export format.", required = true)
+        enum("format", listOf("template", "config"), "Export format (default: template).")
     }
     override fun isReadOnly() = false
     override fun activityDescription(args: JsonObject): String? =
         args.get("appId")?.asString?.let { "Exporting app $it" }
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
         val appId = args.get("appId")?.asLong ?: return ToolResult.error("ExportApp: missing appId.")
-        val format = args.get("format")?.asString ?: "template"
+        // Reject unknown values instead of silently falling through to "template" —
+        // a typo'd "config" would trigger a heavy Gradle-project export.
+        val format = args.get("format")?.asString
+            ?.takeIf { it == "template" || it == "config" }
+            ?: return ToolResult.error("ExportApp: unknown format '${args.get("format")}'. Use \"template\" or \"config\".")
         val app = ctx.appRepository.getWebApp(appId) ?: return ToolResult.error("ExportApp: app $appId not found.")
         val exporter = AppExporter(ctx.androidContext)
         val result = if (format == "config") exporter.exportConfig(app) else exporter.exportAsTemplate(app)
