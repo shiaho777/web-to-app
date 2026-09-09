@@ -516,36 +516,15 @@ class ExtensionFileManager(private val context: Context) {
     }
 
     private fun extractZipStream(zis: ZipInputStream, targetDir: File) {
-        var entry = zis.nextEntry
-        while (entry != null) {
-            val entryName = entry.name
-
-            val destFile = File(targetDir, entryName).canonicalFile
-            if (!destFile.path.startsWith(targetDir.canonicalPath)) {
-                AppLogger.w(TAG, "Skipping potentially unsafe zip entry: $entryName")
-                zis.closeEntry()
-                entry = zis.nextEntry
-                continue
+        // Entries are untrusted (user-imported / CRX-parsed archives): safeChild rejects
+        // traversal and the caps stop zip-bombs from filling storage.
+        com.webtoapp.util.SafeZip.extractAll(
+            zis,
+            targetDir,
+            filter = { name ->
+                !name.startsWith("__MACOSX/") && !name.endsWith(".DS_Store")
             }
-
-            if (entryName.startsWith("__MACOSX/") || entryName.endsWith(".DS_Store")) {
-                zis.closeEntry()
-                entry = zis.nextEntry
-                continue
-            }
-
-            if (entry.isDirectory) {
-                destFile.mkdirs()
-            } else {
-                destFile.parentFile?.mkdirs()
-                FileOutputStream(destFile).use { fos ->
-                    zis.copyTo(fos)
-                }
-            }
-
-            zis.closeEntry()
-            entry = zis.nextEntry
-        }
+        )
     }
 
     private fun findManifestDirectory(dir: File): File? {

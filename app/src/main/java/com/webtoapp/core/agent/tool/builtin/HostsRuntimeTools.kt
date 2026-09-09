@@ -119,20 +119,30 @@ class GetRuntimeStatusTool : Tool {
     override fun isReadOnly() = true
     override suspend fun execute(args: JsonObject, ctx: ToolContext): ToolResult {
         val c = ctx.androidContext
+        // An unrecognized runtime used to fall through and return only the
+        // localExecAllowed line — an error naming the valid values lets the model
+        // recover in one turn instead.
+        val runtime = args.get("runtime")?.asString
+        val valid = setOf("php", "wordpress", "node", "python", "go")
+        if (runtime != null && runtime !in valid) {
+            return ToolResult.error(
+                "GetRuntimeStatus: unknown runtime '$runtime' (valid: ${valid.joinToString("/")})."
+            )
+        }
         val execAllowed = com.webtoapp.core.linux.RuntimeExecPolicy.canExecAppDataBinaries(c)
         val lines = buildList {
             add("localExecAllowed=$execAllowed" + if (execAllowed) "" else " (targetSdk>=29 host: PHP/WordPress/Python/Go cannot start locally for preview; Node.js and exported APKs are unaffected)")
-            if (args.get("runtime")?.asString?.let { it == "php" || it == "wordpress" } != false) {
+            if (runtime == null || runtime == "php" || runtime == "wordpress") {
                 add("PHP: ready=${WordPressDependencyManager.isPhpReady(c)}")
                 add("WordPress: ready=${WordPressDependencyManager.isWordPressReady(c)}")
             }
-            if (args.get("runtime")?.asString?.let { it == "node" } != false || args.get("runtime") == null) {
+            if (runtime == null || runtime == "node") {
                 add("Node.js: ready=${NodeDependencyManager.isNodeReady(c)}")
             }
-            if (args.get("runtime")?.asString?.let { it == "python" } != false || args.get("runtime") == null) {
+            if (runtime == null || runtime == "python") {
                 add("Python: ready=${PythonDependencyManager.isPythonReady(c)}")
             }
-            if (args.get("runtime")?.asString?.let { it == "go" } != false || args.get("runtime") == null) {
+            if (runtime == null || runtime == "go") {
                 add("Go: ready=${GoToolchainManager.isGoReady(c)}")
             }
         }

@@ -85,6 +85,9 @@ fun Composer(
     onAttachFile: () -> Unit,
     onAttachFolder: () -> Unit,
     onRemoveAttachment: (String) -> Unit,
+    // Resolves a pending attachment's sandbox-relative path to the file Coil should
+    // load — java.io.File(att.path) resolves against the process CWD and never exists.
+    resolveAttachmentPreview: (UserAttachment) -> Any?,
 
     onOpenContextPicker: () -> Unit,
 
@@ -118,7 +121,8 @@ fun Composer(
             onAttachImage = onAttachImage,
             onAttachFile = onAttachFile,
             onAttachFolder = onAttachFolder,
-            onRemoveAttachment = onRemoveAttachment
+            onRemoveAttachment = onRemoveAttachment,
+            resolveAttachmentPreview = resolveAttachmentPreview
         )
 
         ModeChipRow(
@@ -153,7 +157,8 @@ private fun ComposerCard(
     onAttachImage: () -> Unit,
     onAttachFile: () -> Unit,
     onAttachFolder: () -> Unit,
-    onRemoveAttachment: (String) -> Unit
+    onRemoveAttachment: (String) -> Unit,
+    resolveAttachmentPreview: (UserAttachment) -> Any?
 ) {
     WtaCard(
         tone = WtaCardTone.Elevated,
@@ -169,7 +174,8 @@ private fun ComposerCard(
         if (state.pendingAttachments.isNotEmpty()) {
             PendingAttachmentsRow(
                 attachments = state.pendingAttachments,
-                onRemove = onRemoveAttachment
+                onRemove = onRemoveAttachment,
+                resolveAttachmentPreview = resolveAttachmentPreview
             )
         }
         ComposerField(
@@ -274,7 +280,8 @@ private fun AttachButton(
 @Composable
 private fun PendingAttachmentsRow(
     attachments: List<UserAttachment>,
-    onRemove: (String) -> Unit
+    onRemove: (String) -> Unit,
+    resolveAttachmentPreview: (UserAttachment) -> Any?
 ) {
     Row(
         modifier = Modifier
@@ -285,7 +292,7 @@ private fun PendingAttachmentsRow(
     ) {
         attachments.forEach { att ->
             if (att.isImage) {
-                ImageAttachmentChip(att, onRemove)
+                ImageAttachmentChip(att, onRemove, resolveAttachmentPreview(att))
             } else {
                 FileAttachmentChip(att, onRemove)
             }
@@ -295,14 +302,14 @@ private fun PendingAttachmentsRow(
 
 /** Image attachment with a real thumbnail (Coil) instead of a bare text chip. */
 @Composable
-private fun ImageAttachmentChip(att: UserAttachment, onRemove: (String) -> Unit) {
+private fun ImageAttachmentChip(att: UserAttachment, onRemove: (String) -> Unit, previewModel: Any?) {
     Box {
         Surface(
             shape = RoundedCornerShape(WtaRadius.Control),
             color = MaterialTheme.colorScheme.surfaceContainerHighest
         ) {
             coil.compose.AsyncImage(
-                model = java.io.File(att.path),
+                model = previewModel,
                 contentDescription = att.displayName,
                 contentScale = androidx.compose.ui.layout.ContentScale.Crop,
                 modifier = Modifier.size(56.dp)
@@ -614,12 +621,29 @@ private fun ModeChipRow(
             val usageLabel = formatTokenUsage(estimatedTokens, contextCapacity)
             val usageRatio = if (contextCapacity > 0) estimatedTokens.toFloat() / contextCapacity else 0f
             val usageHigh = usageRatio >= 0.75f
-            ContextChip(
-                label = usageLabel,
-                warning = usageHigh,
-                compacting = compacting,
-                onClick = { showCompactMenu = true }
-            )
+            // Box anchors the compact-context menu to this chip — emitted as a row
+            // sibling it would anchor to the column's top-start corner instead.
+            Box {
+                ContextChip(
+                    label = usageLabel,
+                    warning = usageHigh,
+                    compacting = compacting,
+                    onClick = { showCompactMenu = true }
+                )
+                androidx.compose.material3.DropdownMenu(
+                    expanded = showCompactMenu,
+                    onDismissRequest = { showCompactMenu = false }
+                ) {
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = { Text(Strings.agentCompactNow) },
+                        onClick = {
+                            showCompactMenu = false
+                            onCompactContext()
+                        },
+                        enabled = !compacting
+                    )
+                }
+            }
         }
 
         Spacer(Modifier.weight(1f))
@@ -628,22 +652,6 @@ private fun ModeChipRow(
             label = currentModelLabel.ifBlank { Strings.agentModelChipLabel },
             onClick = onOpenModelPicker
         )
-    }
-
-    if (showCompactMenu) {
-        androidx.compose.material3.DropdownMenu(
-            expanded = true,
-            onDismissRequest = { showCompactMenu = false }
-        ) {
-            androidx.compose.material3.DropdownMenuItem(
-                text = { Text(Strings.agentCompactNow) },
-                onClick = {
-                    showCompactMenu = false
-                    onCompactContext()
-                },
-                enabled = !compacting
-            )
-        }
     }
 }
 

@@ -518,6 +518,7 @@ class ContentExtensionBridge(
 
     @JavascriptInterface
     fun syncStorageGetForExt(extId: String, key: String): String {
+        if (!isKnownExtension(extId)) return ""
         return ExtensionStorageSync.get(extId, key, ExtensionStorageSync.Area.SYNC)
     }
 
@@ -530,6 +531,7 @@ class ContentExtensionBridge(
 
     @JavascriptInterface
     fun syncStorageSetForExt(extId: String, key: String, value: String) {
+        if (!isKnownExtension(extId)) return
         ExtensionStorageSync.set(extId, key, value, ExtensionStorageSync.Area.SYNC)
     }
 
@@ -542,6 +544,7 @@ class ContentExtensionBridge(
 
     @JavascriptInterface
     fun syncStorageRemoveForExt(extId: String, key: String) {
+        if (!isKnownExtension(extId)) return
         ExtensionStorageSync.remove(extId, key, ExtensionStorageSync.Area.SYNC)
     }
 
@@ -554,6 +557,7 @@ class ContentExtensionBridge(
 
     @JavascriptInterface
     fun syncStorageGetAllForExt(extId: String): String {
+        if (!isKnownExtension(extId)) return "{}"
         return ExtensionStorageSync.getAll(extId, ExtensionStorageSync.Area.SYNC)
     }
 
@@ -566,6 +570,7 @@ class ContentExtensionBridge(
 
     @JavascriptInterface
     fun syncStorageClearForExt(extId: String) {
+        if (!isKnownExtension(extId)) return
         ExtensionStorageSync.clear(extId, ExtensionStorageSync.Area.SYNC)
     }
 
@@ -578,6 +583,7 @@ class ContentExtensionBridge(
 
     @JavascriptInterface
     fun storageGetForExt(extId: String, area: String, key: String): String {
+        if (!isKnownExtension(extId)) return ""
         return ExtensionStorageSync.get(extId, key, ExtensionStorageSync.Area.fromWireName(area))
     }
 
@@ -590,6 +596,7 @@ class ContentExtensionBridge(
 
     @JavascriptInterface
     fun storageSetForExt(extId: String, area: String, key: String, value: String) {
+        if (!isKnownExtension(extId)) return
         ExtensionStorageSync.set(extId, key, value, ExtensionStorageSync.Area.fromWireName(area))
     }
 
@@ -602,6 +609,7 @@ class ContentExtensionBridge(
 
     @JavascriptInterface
     fun storageRemoveForExt(extId: String, area: String, key: String) {
+        if (!isKnownExtension(extId)) return
         ExtensionStorageSync.remove(extId, key, ExtensionStorageSync.Area.fromWireName(area))
     }
 
@@ -614,6 +622,7 @@ class ContentExtensionBridge(
 
     @JavascriptInterface
     fun storageGetAllForExt(extId: String, area: String): String {
+        if (!isKnownExtension(extId)) return "{}"
         return ExtensionStorageSync.getAll(extId, ExtensionStorageSync.Area.fromWireName(area))
     }
 
@@ -626,18 +635,29 @@ class ContentExtensionBridge(
 
     @JavascriptInterface
     fun storageClearForExt(extId: String, area: String) {
+        if (!isKnownExtension(extId)) return
         ExtensionStorageSync.clear(extId, ExtensionStorageSync.Area.fromWireName(area))
     }
 
     @JavascriptInterface
     fun registerWebRequestFilter(extId: String, urlPatternsJson: String, resourceTypesJson: String, blocking: Boolean) {
+        if (!isKnownExtension(extId)) return
         WebRequestBridge.registerFilter(extId, urlPatternsJson, resourceTypesJson, blocking)
     }
 
     @JavascriptInterface
     fun updateDnrDynamicRules(extId: String, addRulesJson: String, removeRuleIdsJson: String) {
+        if (!isKnownExtension(extId)) return
         DeclarativeNetRequestEngine.updateDynamicRules(extId, addRulesJson, removeRuleIdsJson)
     }
+
+    /**
+     * Guard for the extId-bearing entry points: only installed extensions may be
+     * addressed. Any frame can reach this bridge object, so without this check a
+     * foreign page could read/write another extension's storage or register web
+     * request filters in its name.
+     */
+    private fun isKnownExtension(extId: String): Boolean = runtimes.containsKey(extId)
 
     @JavascriptInterface
     fun updateDnrSessionRules(extId: String, addRulesJson: String, removeRuleIdsJson: String) {

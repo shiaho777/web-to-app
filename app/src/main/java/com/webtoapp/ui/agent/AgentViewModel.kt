@@ -623,30 +623,34 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     fun exportSession(id: String) {
         viewModelScope.launch {
             val session = sessionStore.get(id) ?: return@launch
+            // Rendering + writing the transcript is proportional to session size —
+            // keep it off the main thread (viewModelScope defaults to Main).
             runCatching {
-                val markdown = com.webtoapp.ui.agent.components.SessionTranscript.render(
-                    session, Strings.agentCopyThinkingHeader
-                )
-                val dir = java.io.File(ctx.cacheDir, "agent_exports").apply { mkdirs() }
-                val safe = session.title.ifBlank { session.id }
-                    .replace(Regex("[^\\p{L}\\p{N}_-]+"), "_").take(40).trim('_')
-                    .ifBlank { "session" }
-                val file = java.io.File(dir, "$safe.md")
-                file.writeText(markdown)
-                val uri = androidx.core.content.FileProvider.getUriForFile(
-                    ctx, ctx.packageName + ".fileprovider", file
-                )
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/markdown"
-                    putExtra(Intent.EXTRA_STREAM, uri)
-                    putExtra(Intent.EXTRA_TITLE, file.name)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    val markdown = com.webtoapp.ui.agent.components.SessionTranscript.render(
+                        session, Strings.agentCopyThinkingHeader
+                    )
+                    val dir = java.io.File(ctx.cacheDir, "agent_exports").apply { mkdirs() }
+                    val safe = session.title.ifBlank { session.id }
+                        .replace(Regex("[^\\p{L}\\p{N}_-]+"), "_").take(40).trim('_')
+                        .ifBlank { "session" }
+                    val file = java.io.File(dir, "$safe.md")
+                    file.writeText(markdown)
+                    val uri = androidx.core.content.FileProvider.getUriForFile(
+                        ctx, ctx.packageName + ".fileprovider", file
+                    )
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/markdown"
+                        putExtra(Intent.EXTRA_STREAM, uri)
+                        putExtra(Intent.EXTRA_TITLE, file.name)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    ctx.startActivity(
+                        Intent.createChooser(intent, Strings.agentSessionExport)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
                 }
-                ctx.startActivity(
-                    Intent.createChooser(intent, Strings.agentSessionExport)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                )
             }.onFailure { e ->
                 AppLogger.w("AgentViewModel", "exportSession failed: ${e.message}")
                 _ui.update { it.copy(info = Strings.agentFileOpenFailed) }
@@ -659,10 +663,15 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
         val sid = _ui.value.currentSession?.id ?: return
         // Never allow deleting the built-APK virtual entries through this path.
         if (relativePath.startsWith("apk:")) return
-        if (files.delete(sid, relativePath)) {
-            refreshFiles(sid)
-        } else {
-            _ui.update { it.copy(info = Strings.agentFileNotFound) }
+        viewModelScope.launch {
+            val deleted = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                files.delete(sid, relativePath)
+            }
+            if (deleted) {
+                refreshFiles(sid)
+            } else {
+                _ui.update { it.copy(info = Strings.agentFileNotFound) }
+            }
         }
     }
 
@@ -680,14 +689,28 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
         val sid = _ui.value.currentSession?.id ?: return
-        val text = files.readText(sid, path)
-        _ui.update {
-            it.copy(
-                selectedFilePath = path,
-                selectedFileContent = text,
-                previewFilePath = path
-            )
+        viewModelScope.launch {
+            val text = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                files.readText(sid, path)
+            }
+            _ui.update {
+                it.copy(
+                    selectedFilePath = path,
+                    selectedFileContent = text,
+                    previewFilePath = path
+                )
+            }
         }
+    }
+
+    /**
+     * Sandbox-absolute file backing a pending image attachment, for Coil previews.
+     * UserAttachment.path is session-sandbox-relative; java.io.File(path) would
+     * resolve it against the process CWD and never load.
+     */
+    fun attachmentPreviewFile(att: com.webtoapp.core.agent.session.UserAttachment): java.io.File? {
+        val sid = _ui.value.currentSession?.id ?: return null
+        return files.resolveSafe(sid, att.path)
     }
 
     fun setPreviewFile(path: String?) {
@@ -770,7 +793,12 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 currentActivity = null,
                 streamingText = "",
                 streamingThinkingSegments = emptyList(),
-                pendingToolCalls = emptyList()
+                pendingToolCalls = emptyList(),
+                // A permission/choice dialog still open when the turn was cancelled
+                // would otherwise stay visible, and answering it sends into a channel
+                // nobody reads anymore.
+                pendingPermission = null,
+                pendingChoice = null
             )
         }
         streamingSessionId = null
@@ -843,37 +871,59 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
+        // Flip the phase synchronously, BEFORE any suspend call: ensureActiveSession /
+        // appendMessage give a second fast tap a window in which the guard above
+        // still sees Idle — duplicating the user message and starting two turns
+        // (the second AgentService.start() cancels the first without finalizing it,
+        // leaving its tool cards stuck in a running state in the session history).
+        // Every failure path below must reset to Idle.
+        _ui.update { it.copy(phase = AgentUiState.Phase.Connecting) }
+
         viewModelScope.launch {
-            val session = ensureActiveSession() ?: return@launch
-            val pending = current.pendingAttachments
-            val mentionedPaths = extractMentionPaths(rawMessage, session.id)
+            try {
+                val session = ensureActiveSession() ?: run {
+                    resetTurnUiState(); return@launch
+                }
+                val pending = current.pendingAttachments
+                val mentionedPaths = extractMentionPaths(rawMessage, session.id)
 
-            val editingId = _ui.value.editingMessageId
-            val baseSession = if (editingId != null) {
-                sessionStore.truncateAt(session.id, editingId, keep = false) ?: session
-            } else session
+                val editingId = _ui.value.editingMessageId
+                val baseSession = if (editingId != null) {
+                    sessionStore.truncateAt(session.id, editingId, keep = false) ?: session
+                } else session
 
-            val userMsg = AgentMessage(
-                role = AgentMessage.Role.USER,
-                content = rawMessage,
-                mentionedFiles = mentionedPaths,
-                userAttachments = pending
-            )
-            val updated = sessionStore.appendMessage(baseSession.id, userMsg) ?: return@launch
-
-            _ui.update {
-                it.copy(
-                    composerText = "",
-                    editingMessageId = null,
-                    mentionPickerOpen = false,
-                    mentionQuery = "",
-                    mentionMatches = emptyList(),
-                    pendingAttachments = emptyList()
+                val userMsg = AgentMessage(
+                    role = AgentMessage.Role.USER,
+                    content = rawMessage,
+                    mentionedFiles = mentionedPaths,
+                    userAttachments = pending
                 )
-            }
+                val updated = sessionStore.appendMessage(baseSession.id, userMsg) ?: run {
+                    resetTurnUiState(); return@launch
+                }
 
-            dispatchTurn(updated, rawMessage)
+                _ui.update {
+                    it.copy(
+                        composerText = "",
+                        editingMessageId = null,
+                        mentionPickerOpen = false,
+                        mentionQuery = "",
+                        mentionMatches = emptyList(),
+                        pendingAttachments = emptyList()
+                    )
+                }
+
+                dispatchTurn(updated, rawMessage)
+            } catch (t: Throwable) {
+                resetTurnUiState()
+                throw t
+            }
         }
+    }
+
+    /** Clear the transient turn-phase UI without touching session/persisted state. */
+    private fun resetTurnUiState() {
+        _ui.update { it.copy(phase = AgentUiState.Phase.Idle, error = null, currentActivity = null) }
     }
 
     private fun extractMentionPaths(text: String, sessionId: String): List<String> {
@@ -1108,16 +1158,31 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
     fun regenerate(messageId: String) {
         val sid = _ui.value.currentSession?.id ?: return
         if (!_ui.value.canSend) return
+        // Flip synchronously like send(): truncateAt/get give a double-tap the same
+        // TOCTOU window that duplicated turns before.
+        _ui.update { it.copy(phase = AgentUiState.Phase.Connecting) }
         viewModelScope.launch {
+            try {
+                val s0 = sessionStore.get(sid) ?: run {
+                    resetTurnUiState(); return@launch
+                }
+                val idx = s0.messages.indexOfFirst { it.id == messageId }
+                if (idx < 0) {
+                    resetTurnUiState(); return@launch
+                }
+                val precedingUser = s0.messages.subList(0, idx)
+                    .lastOrNull { it.role == AgentMessage.Role.USER } ?: run {
+                    resetTurnUiState(); return@launch
+                }
 
-            val s0 = sessionStore.get(sid) ?: return@launch
-            val idx = s0.messages.indexOfFirst { it.id == messageId }
-            if (idx < 0) return@launch
-            val precedingUser = s0.messages.subList(0, idx)
-                .lastOrNull { it.role == AgentMessage.Role.USER } ?: return@launch
-
-            val truncated = sessionStore.truncateAt(sid, messageId, keep = false) ?: return@launch
-            dispatchTurn(truncated, precedingUser.content)
+                val truncated = sessionStore.truncateAt(sid, messageId, keep = false) ?: run {
+                    resetTurnUiState(); return@launch
+                }
+                dispatchTurn(truncated, precedingUser.content)
+            } catch (t: Throwable) {
+                resetTurnUiState()
+                throw t
+            }
         }
     }
 
@@ -1130,12 +1195,16 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
 
         val textModel = resolveTextModel(models)
         if (textModel == null) {
-            _ui.update { it.copy(error = Strings.agentMissingTextModel) }
+            // send()/regenerate() already flipped the phase to Connecting before
+            // launching — every pre-turn bail-out here must put it back.
+            streamingSessionId = null
+            _ui.update { it.copy(phase = AgentUiState.Phase.Idle, error = Strings.agentMissingTextModel) }
             return
         }
         val textKey = keys.firstOrNull { it.id == textModel.apiKeyId }
         if (textKey == null) {
-            _ui.update { it.copy(error = Strings.agentMissingApiKey) }
+            streamingSessionId = null
+            _ui.update { it.copy(phase = AgentUiState.Phase.Idle, error = Strings.agentMissingApiKey) }
             return
         }
         val imageModel = session.config.imageModelId?.let { id -> models.firstOrNull { it.id == id } }

@@ -57,6 +57,12 @@ class BootReceiver : BroadcastReceiver() {
                 )
             }
             autoStartManager.rescheduleAlarmIfNeeded()
+
+            try {
+                restoreNotificationChannels(context)
+            } catch (e: Exception) {
+                AppLogger.w(TAG, "恢复通知通道失败", e)
+            }
         } catch (e: Exception) {
             AppLogger.e(TAG, "开机自启动处理异常", e)
         } finally {
@@ -72,6 +78,11 @@ class BootReceiver : BroadcastReceiver() {
         } catch (e: Exception) {
             AppLogger.e(TAG, "应用更新后恢复闹钟失败", e)
         }
+        try {
+            restoreNotificationChannels(context)
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "应用更新后恢复通知通道失败", e)
+        }
     }
 
     private fun handleTimeChanged(context: Context, action: String) {
@@ -80,6 +91,72 @@ class BootReceiver : BroadcastReceiver() {
             AutoStartManager(context).rescheduleAlarmIfNeeded()
         } catch (e: Exception) {
             AppLogger.e(TAG, "时间变更后重新调度闹钟失败", e)
+        }
+    }
+
+    /**
+     * Mirrors the app-side BootReceiver restore (shell branch): rebooting or updating
+     * the app kills the polling/WebSocket/FCM foreground services — without this they
+     * only come back after the next ShellActivity launch, silently dropping every
+     * notification until then.
+     */
+    private fun restoreNotificationChannels(context: Context) {
+        try {
+            val config = try {
+                WebToAppApplication.shellMode.getConfig()
+            } catch (_: Exception) {
+                null
+            } ?: return
+            if (!config.notificationEnabled) return
+            val nc = config.notificationConfig ?: return
+            when (nc.type) {
+                "polling" -> {
+                    if (nc.pollUrl.isNotBlank()) {
+                        com.webtoapp.core.notification.NotificationPollingService.start(
+                            context = context,
+                            appName = config.appName,
+                            pollUrl = nc.pollUrl,
+                            pollIntervalMinutes = nc.pollIntervalMinutes,
+                            pollMethod = nc.pollMethod,
+                            pollHeaders = nc.pollHeaders,
+                            clickUrl = nc.clickUrl
+                        )
+                    }
+                }
+                "websocket" -> {
+                    if (nc.wsUrl.isNotBlank()) {
+                        com.webtoapp.core.notification.NotificationWebSocketService.start(
+                            context = context,
+                            appName = config.appName,
+                            wsUrl = nc.wsUrl,
+                            wsHeaders = nc.wsHeaders,
+                            registerUrl = nc.registerUrl,
+                            registerHeaders = nc.registerHeaders,
+                            authToken = nc.authToken,
+                            clickUrl = nc.clickUrl
+                        )
+                    }
+                }
+                "fcm" -> {
+                    com.webtoapp.core.notification.NotificationFcmManager.start(
+                        context = context,
+                        config = com.webtoapp.core.notification.NotificationFcmManager.FcmConfig(
+                            projectId = nc.fcmProjectId,
+                            applicationId = nc.fcmApplicationId,
+                            apiKey = nc.fcmApiKey,
+                            senderId = nc.fcmSenderId,
+                            registerUrl = nc.registerUrl,
+                            registerHeaders = nc.registerHeaders,
+                            authToken = nc.authToken,
+                            clickUrl = nc.clickUrl,
+                            appName = config.appName,
+                            googleServicesJson = nc.fcmGoogleServicesJson
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "restoreNotificationChannels failed", e)
         }
     }
 }

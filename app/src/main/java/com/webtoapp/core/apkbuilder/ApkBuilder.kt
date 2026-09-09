@@ -237,9 +237,7 @@ class ApkBuilder(private val context: Context) {
     private val template = ApkTemplate(context)
     private val templateProvider = CompositeTemplateProvider.default(context)
     private val signer = JarSigner(context)
-    private val axmlEditor = AxmlEditor()
     private val axmlRebuilder = AxmlRebuilder()
-    private val arscEditor = ArscEditor()
     private val arscRebuilder = ArscRebuilder()
     private val logger = BuildLogger(context)
     private val encryptedApkBuilder = EncryptedApkBuilder(context)
@@ -816,13 +814,19 @@ class ApkBuilder(private val context: Context) {
                 htmlFiles = htmlFiles,
                 galleryItems = galleryItems,
                 errorPageMediaPath = errorPageMediaPath,
-                nativeLibsFingerprint = if (webApp.appType == com.webtoapp.data.model.AppType.NODEJS_APP) {
-                    nativeLibsFingerprint()
-                } else {
-                    null
-                },
+                nativeLibsFingerprint = runtimeAssetsFingerprint(webApp.appType, config.engineType),
                 hostVersionCode = hostVersionCode,
                 forceFullRebuild = forceFullRebuild,
+                // The derived permission/component set is the exact manifest content:
+                // keying it keeps CONTENT_OVERLAY from reusing a cached AndroidManifest
+                // after a change that adds/removes permissions or components.
+                manifestFingerprint = buildRequiredPermissions(config).sorted().joinToString(",") +
+                    "|" + buildRequiredComponents(config).sorted().joinToString(","),
+                // Export-level performance options are not part of ApkConfig but change
+                // output bytes (resource stripping / perf script injection).
+                perfFingerprint = webApp.apkExportConfig?.let { ec ->
+                    "opt=${ec.performanceOptimization}|cfg=${ec.performanceConfig}"
+                },
                 multiWebSiteGalleryItems = mwSiteMedia.galleryItems.values.flatten(),
                 multiWebSiteMediaPaths = mwSiteMedia.mediaPaths.values.toList()
             )
@@ -1081,8 +1085,10 @@ class ApkBuilder(private val context: Context) {
             currentStage = BuildStage.SIGN
             logger.logKeyValue("signerType", signer.getSignerType().name)
 
-            val signSuccess = try {
-                signer.sign(unsignedApk, signedApk)
+            // JarSigner.sign either returns true or throws; output validity is checked
+            // right below, which is the real failure path.
+            try {
+                signer.sign(unsignedApk, signedApk, targetSdk = config.targetSdkOverride ?: 28)
             } catch (e: Exception) {
                 return@withContext failBuild(
                     stage = BuildStage.SIGN,
@@ -1112,11 +1118,6 @@ class ApkBuilder(private val context: Context) {
             }
 
             logger.logKeyValue("signedApkSize", "${signedApk.length() / 1024} KB")
-
-            if (!signSuccess) {
-
-                logger.warn("ApkVerifier reported issues, but signed APK file is valid (${signedApk.length() / 1024} KB). Continuing build.")
-            }
 
             onProgress(85, "Verifying APK...")
             currentStage = BuildStage.VERIFY
@@ -2355,16 +2356,55 @@ class ApkBuilder(private val context: Context) {
         return code
     }
 
-    private fun nativeLibsFingerprint(): String? {
-        val nativeDir = File(context.applicationInfo.nativeLibraryDir)
-        val bridge = File(nativeDir, "libnode_bridge.so")
-        val cxxShared = File(nativeDir, "libc++_shared.so")
-        val node = resolveNodeJsBinary() ?: return null
+    /**
+     * Fingerprint of every host-shipped or downloaded runtime binary the output embeds.
+     * Previously only the Node.js libs were keyed: after a PHP/Python/Gecko runtime
+     * re-download an unchanged app config kept hitting REUSE_UNSIGNED and served the
+     * stale interpreter — exactly the staleness class the Node key was added to prevent.
+     */
+    private fun runtimeAssetsFingerprint(
+        appType: com.webtoapp.data.model.AppType,
+        engineType: String?
+    ): String? {
         val parts = mutableListOf<String>()
-        parts += "bridge=${libFingerprint(bridge)}"
-        parts += "cxx=${libFingerprint(cxxShared)}"
-        parts += "node=${libFingerprint(node)}"
-        return parts.joinToString("|")
+        if (appType == com.webtoapp.data.model.AppType.NODEJS_APP) {
+            val nativeDir = File(context.applicationInfo.nativeLibraryDir)
+            val node = resolveNodeJsBinary() ?: return null
+            parts += "bridge=${libFingerprint(File(nativeDir, "libnode_bridge.so"))}"
+            parts += "cxx=${libFingerprint(File(nativeDir, "libc++_shared.so"))}"
+            parts += "node=${libFingerprint(node)}"
+        }
+        if (appType == com.webtoapp.data.model.AppType.PHP_APP ||
+            appType == com.webtoapp.data.model.AppType.WORDPRESS
+        ) {
+            resolvePhpBinary()?.let { parts += "php=${libFingerprint(it)}" }
+        }
+        if (appType == com.webtoapp.data.model.AppType.PYTHON_APP) {
+            val pythonHome = com.webtoapp.core.python.PythonDependencyManager.getPythonDir(context)
+            val bin = listOf(
+                File(pythonHome, "bin/${com.webtoapp.core.python.PythonDependencyManager.getVersionedPythonBinaryName()}"),
+                File(pythonHome, "bin/python3")
+            ).firstOrNull { it.isFile && it.length() > 1024 * 1024 }
+            if (bin != null) {
+                val abi = com.webtoapp.core.wordpress.WordPressDependencyManager.getDeviceAbi()
+                val musl = File(
+                    pythonHome,
+                    "lib/${com.webtoapp.core.python.PythonDependencyManager.getMuslLinkerName(abi)}"
+                )
+                parts += "python=${libFingerprint(bin)}"
+                parts += "musl=${libFingerprint(musl)}"
+                parts += "stdlib=${buildCache.treeFingerprint(File(pythonHome, "lib"))}"
+            }
+        }
+        if (engineType == "GECKOVIEW") {
+            val manager = com.webtoapp.core.engine.download.EngineFileManager(context)
+            val gecko = com.webtoapp.core.engine.EngineType.GECKOVIEW
+            manager.listEngineNativeLibs(gecko).forEach { (abi, files) ->
+                files.forEach { parts += "gecko[$abi/${it.name}]=${libFingerprint(it)}" }
+            }
+            parts += "omni=${libFingerprint(manager.getOmniJaFile(gecko))}"
+        }
+        return parts.takeIf { it.isNotEmpty() }?.joinToString("|")
     }
 
     private fun libFingerprint(file: File): String {

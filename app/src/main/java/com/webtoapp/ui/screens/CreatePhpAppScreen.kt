@@ -49,6 +49,11 @@ import kotlinx.coroutines.flow.first
 import java.io.File
 import java.util.zip.ZipInputStream
 
+// User-picked PHP project zips: same extraction caps as ZipProjectImporter so the
+// shared localized limit strings stay truthful.
+private const val MAX_ZIP_ENTRY_COUNT = 10_000
+private const val MAX_ZIP_TOTAL_BYTES = 1024L * 1024 * 1024
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreatePhpAppScreen(
@@ -303,20 +308,18 @@ fun CreatePhpAppScreen(
 
                         context.contentResolver.openInputStream(zipUri)?.use { inputStream ->
                             ZipInputStream(inputStream).use { zis ->
-                                var entry = zis.nextEntry
-                                while (entry != null) {
-
-                                    val name = entry.name
-                                    if (!entry.isDirectory && !name.startsWith("__MACOSX/") && !name.substringAfterLast("/").startsWith("._")) {
-                                        val outFile = File(extractDir, name)
-                                        outFile.parentFile?.mkdirs()
-                                        outFile.outputStream().use { out ->
-                                            zis.copyTo(out)
-                                        }
+                                // User-picked zip: entries are untrusted — safeChild rejects
+                                // traversal and the caps stop zip-bombs from filling storage.
+                                com.webtoapp.util.SafeZip.extractAll(
+                                    zis,
+                                    extractDir,
+                                    maxEntries = MAX_ZIP_ENTRY_COUNT,
+                                    maxTotalBytes = MAX_ZIP_TOTAL_BYTES,
+                                    filter = { name ->
+                                        !name.startsWith("__MACOSX/") &&
+                                            !name.substringAfterLast("/").startsWith("._")
                                     }
-                                    zis.closeEntry()
-                                    entry = zis.nextEntry
-                                }
+                                )
                             }
                         } ?: run {
                             errorMessage = Strings.phpZipExtractFailed
@@ -344,6 +347,14 @@ fun CreatePhpAppScreen(
 
                         extractDir.deleteRecursively()
                     }
+                } catch (e: com.webtoapp.util.SafeZip.ZipBombException) {
+                    errorMessage = when (e.kind) {
+                        com.webtoapp.util.SafeZip.ZipBombException.Kind.ENTRY_COUNT ->
+                            Strings.zipTooManyEntries.format(MAX_ZIP_ENTRY_COUNT)
+                        com.webtoapp.util.SafeZip.ZipBombException.Kind.TOTAL_SIZE ->
+                            Strings.zipSizeExceeded.format((MAX_ZIP_TOTAL_BYTES / 1024 / 1024).toInt())
+                    }
+                    errorThrowable = e
                 } catch (e: Exception) {
                     errorMessage = e.message ?: Strings.phpZipExtractFailed
                     errorThrowable = e

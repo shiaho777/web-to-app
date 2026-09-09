@@ -318,6 +318,11 @@ class AgentEngine(
         } catch (e: AgentAbortedException) {
             send(AgentEvent.Aborted)
         } catch (t: Throwable) {
+            if (t is kotlinx.coroutines.CancellationException) {
+                // Cancellation is not an engine failure; rethrow so the collector's
+                // own cancellation handling (and coroutine machinery) works normally.
+                throw t
+            }
             AppLogger.e(TAG, "engine crash: ${t.message}", t)
             send(AgentEvent.Failed(t.message ?: "engine error"))
         }
@@ -347,7 +352,13 @@ class AgentEngine(
             AgentEvent.ToolExecuting(
                 toolCallId = call.id,
                 name = call.name,
-                activity = tool.activityDescription(parseArgs(call.argumentsJson)) ?: call.name
+                // Guarded: several tools' activityDescription implementations read
+                // args.get("x")?.asString, which throws for a JSON null / wrong type
+                // (Gson never returns null from JsonNull.getAsString, it throws).
+                // The same malformed args inside execute() below degrade to an error
+                // ToolResult — an unguarded throw here instead kills the whole run.
+                activity = runCatching { tool.activityDescription(parseArgs(call.argumentsJson)) }
+                    .getOrNull() ?: call.name
             )
         )
 
@@ -411,7 +422,15 @@ class AgentEngine(
             // keep the loop running inside an already-cancelled coroutine.
             throw ce
         } catch (t: Throwable) {
-            ToolResult.error("${call.name}: ${t.message ?: t::class.simpleName}")
+            // Gson's type getters throw UnsupportedOperationException with a
+            // class-simple-name-only message (e.g. "Read: JsonNull"), which gives the
+            // model nothing actionable — add the offending raw arguments so a wrong-typed
+            // parameter is self-healing on the next turn.
+            val rawHint = rawArgsById[call.id]?.take(200)
+            ToolResult.error(
+                "${call.name}: ${t.message ?: t::class.simpleName}" +
+                    (if (rawHint != null) " (arguments: $rawHint)" else "")
+            )
         }
     }
 

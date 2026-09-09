@@ -20,6 +20,22 @@ class WebToAppApplication : Application() {
         super.onCreate()
         instance = this
 
+        com.webtoapp.core.i18n.Strings.initialize(this)
+
+        // NodeService runs in a dedicated :nodejs OS process (V8 lifecycle isolation).
+        // The host deliberately skips its heavy init there; the shell override must do
+        // the same or every Node app spawns a full runtime init (config parse,
+        // ActivationManager, AdBlocker, perf optimizer) in the Node subprocess.
+        if (isNodeJsProcess()) {
+            try {
+                AppLogger.init(this)
+                AppLogger.system("Application", ":nodejs 子进程 onCreate (跳过 shell 重型 init)")
+            } catch (e: Exception) {
+                android.util.Log.e("WebToAppApplication", ":nodejs 子进程 logger init 失败", e)
+            }
+            return
+        }
+
         shellModeManagerLocal = ShellModeManager(this)
         val fileLoggingEnabled = try {
             shellModeManagerLocal?.getConfig()?.loggingEnabled ?: false
@@ -40,6 +56,24 @@ class WebToAppApplication : Application() {
         com.webtoapp.core.perf.SystemPerfOptimizer.readaheadCriticalFiles(this)
 
         AppLogger.system("Application", "onCreate completed (shell)")
+    }
+
+    private fun isNodeJsProcess(): Boolean {
+        return try {
+            val processName = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                Application.getProcessName()
+            } else {
+                runCatching {
+                    val am = getSystemService(android.content.Context.ACTIVITY_SERVICE)
+                        as android.app.ActivityManager
+                    val pid = android.os.Process.myPid()
+                    am.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName
+                }.getOrNull()
+            }
+            processName?.endsWith(":nodejs") == true
+        } catch (_: Exception) {
+            false
+        }
     }
 
     override fun onTerminate() {

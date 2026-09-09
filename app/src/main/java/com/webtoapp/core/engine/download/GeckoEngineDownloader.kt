@@ -227,21 +227,24 @@ class GeckoEngineDownloader(
 
             val omniJaEntry = "assets/" + EngineFileManager.GECKO_OMNI_JA
 
+            val guard = com.webtoapp.util.SafeZip.EntryGuard()
+
             ZipInputStream(aarFile.inputStream().buffered()).use { zis ->
                 var entry = zis.nextEntry
                 while (entry != null) {
+                    guard.onEntry()
                     val name = entry.name
                     if (!entry.isDirectory && name.startsWith(soPrefix) && name.endsWith(".so")) {
                         val soFileName = name.substringAfterLast("/")
                         val destFile = File(abiDir, soFileName)
                         FileOutputStream(destFile).use { out ->
-                            zis.copyTo(out)
+                            guard.copyTo(zis, out)
                         }
                         AppLogger.i(TAG, "Extracted: " + soFileName)
                         extractedSoCount++
                     } else if (!entry.isDirectory && name == omniJaEntry) {
                         FileOutputStream(omniJaDest).use { out ->
-                            zis.copyTo(out)
+                            guard.copyTo(zis, out)
                         }
                         AppLogger.i(TAG, "Extracted: omni.ja (" + (omniJaDest.length() / 1024) + " KB)")
                         extractedOmniJa = true

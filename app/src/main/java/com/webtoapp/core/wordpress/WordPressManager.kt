@@ -639,39 +639,19 @@ require_once ABSPATH . 'wp-settings.php';
         var topLevelDir: String? = null
 
         context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            val zipInputStream = ZipInputStream(inputStream.buffered())
-            var entry = zipInputStream.nextEntry
-
-            while (entry != null) {
-
-                if (topLevelDir == null && entry.name.contains("/")) {
-                    topLevelDir = entry.name.substringBefore("/")
-                }
-
-                val outFile = File(destDir, entry.name)
-
-                // + File.separator: a bare prefix match lets a sibling directory
-                // (/data/destEvil pass when destDir is /data/dest) through.
-                if (!outFile.canonicalPath.startsWith(destDir.canonicalPath + File.separator)) {
-                    AppLogger.w(TAG, "Skipping unsafe zip entry: ${entry.name}")
-                    zipInputStream.closeEntry()
-                    entry = zipInputStream.nextEntry
-                    continue
-                }
-
-                if (entry.isDirectory) {
-                    outFile.mkdirs()
-                } else {
-                    outFile.parentFile?.mkdirs()
-                    FileOutputStream(outFile).use { fos ->
-                        zipInputStream.copyTo(fos)
+            ZipInputStream(inputStream.buffered()).use { zipInputStream ->
+                // User-picked archive: safeChild rejects traversal, the caps stop
+                // zip-bombs; observe captures the first top-level directory name.
+                com.webtoapp.util.SafeZip.extractAll(
+                    zipInputStream,
+                    destDir,
+                    observe = { entry ->
+                        if (topLevelDir == null && entry.name.contains("/")) {
+                            topLevelDir = entry.name.substringBefore("/")
+                        }
                     }
-                }
-
-                zipInputStream.closeEntry()
-                entry = zipInputStream.nextEntry
+                )
             }
-            zipInputStream.close()
         }
 
         return topLevelDir

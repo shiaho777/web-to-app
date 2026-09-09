@@ -263,6 +263,12 @@ val syncShellRuntimeAssets by tasks.registering(Copy::class) {
     from("../app/src/main/assets") {
 
         include("php_router_server.php")
+
+        // GeckoViewEngine installs this built-in WebExtension from
+        // resource://android/assets/web_extensions/wta_native_bridge/ when the CORS
+        // bypass / private-network bridge is enabled — without the asset in the shell
+        // template, exported Gecko apps silently fail to install it (host-only asset).
+        include("web_extensions/**")
     }
 
     into(layout.buildDirectory.dir("generated/shellRuntimeAssets"))

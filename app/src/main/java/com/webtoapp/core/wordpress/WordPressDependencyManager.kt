@@ -449,9 +449,11 @@ object WordPressDependencyManager {
     private fun extractTarGzWithCommons(archiveFile: File, destDir: File) {
         val gzIn = java.util.zip.GZIPInputStream(archiveFile.inputStream().buffered())
         val tarIn = org.apache.commons.compress.archivers.tar.TarArchiveInputStream(gzIn)
+        val guard = com.webtoapp.util.SafeZip.EntryGuard()
 
         var entry = tarIn.nextEntry
         while (entry != null) {
+            guard.onEntry()
             val outFile = com.webtoapp.util.SafeZip.safeChild(destDir, entry.name) ?: run {
                 entry = tarIn.nextEntry
                 continue
@@ -461,10 +463,10 @@ object WordPressDependencyManager {
             } else {
                 outFile.parentFile?.mkdirs()
                 FileOutputStream(outFile).use { fos ->
-                    tarIn.copyTo(fos)
+                    guard.copyTo(tarIn, fos)
                 }
 
-                if (entry.mode and 0b001_000_000 != 0) {
+                if (com.webtoapp.util.SafeZip.hasOwnerExecBit(entry.mode.toLong())) {
                     outFile.setExecutable(true, false)
                 }
             }
@@ -475,8 +477,10 @@ object WordPressDependencyManager {
 
     private fun extractZip(zipFile: File, destDir: File) {
         val zipInputStream = java.util.zip.ZipInputStream(zipFile.inputStream().buffered())
+        val guard = com.webtoapp.util.SafeZip.EntryGuard()
         var entry = zipInputStream.nextEntry
         while (entry != null) {
+            guard.onEntry()
             val outFile = com.webtoapp.util.SafeZip.safeChild(destDir, entry.name) ?: run {
                 zipInputStream.closeEntry()
                 entry = zipInputStream.nextEntry
@@ -487,7 +491,7 @@ object WordPressDependencyManager {
             } else {
                 outFile.parentFile?.mkdirs()
                 FileOutputStream(outFile).use { fos ->
-                    zipInputStream.copyTo(fos)
+                    guard.copyTo(zipInputStream, fos)
                 }
             }
             zipInputStream.closeEntry()
