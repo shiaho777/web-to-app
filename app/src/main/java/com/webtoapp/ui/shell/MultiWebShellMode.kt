@@ -51,7 +51,8 @@ fun MultiWebShellMode(
     onWebViewCreated: (WebView) -> Unit,
     swipeRefreshEnabled: Boolean = false,
     isRefreshing: Boolean = false,
-    onRefresh: () -> Unit = {}
+    onRefresh: () -> Unit = {},
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
     val multiWebConfig = config.multiWebConfig
     val sites = multiWebConfig.sites.filter { it.enabled }
@@ -76,11 +77,11 @@ fun MultiWebShellMode(
     }
 
     when (multiWebConfig.displayMode.uppercase()) {
-        "TABS" -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-        "CARDS" -> CardsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-        "FEED" -> FeedMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-        "DRAWER" -> DrawerMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
-        else -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+        "TABS" -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
+        "CARDS" -> CardsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
+        "FEED" -> FeedMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
+        "DRAWER" -> DrawerMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
+        else -> TabsMode(config, multiWebConfig, sites, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
     }
 }
 
@@ -94,7 +95,8 @@ private fun SiteContent(
     onWebViewCreated: (WebView) -> Unit,
     swipeRefreshEnabled: Boolean,
     isRefreshing: Boolean,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
     val siteCfg = site.siteShellConfig
     val effectiveConfig = siteCfg?.copy(
@@ -121,7 +123,11 @@ private fun SiteContent(
         onRefresh = onRefresh,
         onWebViewCreated = onWebViewCreated,
         onWebViewRefUpdated = { },
-        onActivityFinish = { }
+        onActivityFinish = { },
+        // Without this the activity never sees per-site surfaces: on a Gecko site the
+        // media-session adapter is never attached and back/forward/find stay dead (#593
+        // parity for MULTI_WEB).
+        onBrowserSurfaceCreated = onBrowserSurfaceCreated
     )
 }
 
@@ -137,7 +143,8 @@ private fun TabsMode(
     onWebViewCreated: (WebView) -> Unit,
     swipeRefreshEnabled: Boolean,
     isRefreshing: Boolean,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabsListState = rememberLazyListState()
@@ -280,7 +287,8 @@ private fun TabsMode(
                                 onWebViewCreated = if (isVisible) onWebViewCreated else ({ }),
                                 swipeRefreshEnabled = swipeRefreshEnabled,
                                 isRefreshing = isRefreshing,
-                                onRefresh = onRefresh
+                                onRefresh = onRefresh,
+                                onBrowserSurfaceCreated = onBrowserSurfaceCreated
                             )
                         }
                     }
@@ -302,7 +310,8 @@ private fun CardsMode(
     onWebViewCreated: (WebView) -> Unit,
     swipeRefreshEnabled: Boolean,
     isRefreshing: Boolean,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
     var openSite by remember { mutableStateOf<MultiWebSiteShellConfig?>(null) }
 
@@ -327,7 +336,7 @@ private fun CardsMode(
         ) { padding ->
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
                 key(site.id) {
-                    SiteContent(site, config, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+                    SiteContent(site, config, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
                 }
             }
         }
@@ -504,7 +513,8 @@ private fun FeedMode(
     onWebViewCreated: (WebView) -> Unit,
     swipeRefreshEnabled: Boolean,
     isRefreshing: Boolean,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
     var feedItems by remember { mutableStateOf<List<FeedItem>>(emptyList()) }
@@ -551,7 +561,8 @@ private fun FeedMode(
                         onRefresh = onRefresh,
                         onWebViewCreated = onWebViewCreated,
                         onWebViewRefUpdated = { },
-                        onActivityFinish = { }
+                        onActivityFinish = { },
+                        onBrowserSurfaceCreated = onBrowserSurfaceCreated
                     )
                 }
             }
@@ -649,7 +660,8 @@ private fun DrawerMode(
     onWebViewCreated: (WebView) -> Unit,
     swipeRefreshEnabled: Boolean,
     isRefreshing: Boolean,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
     var selectedSite by remember { mutableStateOf(sites.firstOrNull()) }
     var drawerVisible by remember { mutableStateOf(false) }
@@ -700,7 +712,7 @@ private fun DrawerMode(
             Box(modifier = Modifier.fillMaxSize().padding(padding)) {
                 currentSite?.let { site ->
                     key(site.id) {
-                        SiteContent(site, config, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh)
+                        SiteContent(site, config, webViewConfig, webViewCallbacks, webViewManager, onWebViewCreated, swipeRefreshEnabled, isRefreshing, onRefresh, onBrowserSurfaceCreated)
                     }
                 } ?: run {
                     Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {

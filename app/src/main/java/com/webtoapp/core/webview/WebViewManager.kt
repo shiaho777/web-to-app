@@ -1340,6 +1340,7 @@ class WebViewManager(
         }
 
         GeckoViewEngine.applyAntiCapture(config.antiCapture)
+        GeckoViewEngine.applyAutoplayPolicy(config.mediaAutoplayEnabled)
 
         val tlsFingerprintEnabled = config.tlsFingerprintEnabled &&
             config.tlsFingerprintTemplate.isNotBlank()

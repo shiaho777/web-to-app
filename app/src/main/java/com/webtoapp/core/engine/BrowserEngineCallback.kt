@@ -47,6 +47,14 @@ interface BrowserEngineCallback {
     fun onConsoleMessage(level: Int, message: String, sourceId: String, lineNumber: Int) {}
 
     /**
+     * History navigation state changed. GeckoView reports canGoBack/canGoForward through its
+     * NavigationDelegate; the System WebView path derives them from `onUrlChanged` instead, so
+     * this stays a no-op there. Hosts use it to enable/disable back & forward affordances —
+     * without it the Gecko toolbar buttons never leave their initial disabled state.
+     */
+    fun onNavigationStateChanged(canGoBack: Boolean, canGoForward: Boolean) {}
+
+    /**
      * A popup window was requested. Return true when the host renders the popup transport;
      * false lets the WebViewManager fall back to loading the popup URL in the same window.
      */

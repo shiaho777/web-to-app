@@ -170,6 +170,7 @@ object ShellActivityInit {
         activity: AppCompatActivity,
         getCustomView: () -> android.view.View?,
         getWebView: () -> WebView?,
+        getBrowserSurface: () -> com.webtoapp.core.engine.BrowserSurface?,
         hideCustomView: () -> Unit,
         getShellConfig: () -> ShellConfig?
     ): OnBackPressedCallback {
@@ -208,7 +209,11 @@ object ShellActivityInit {
                                 ShellWebViewNavigation.goBackOrFinish(activity, wv, useJsHistoryBack = useJsHistoryBack)
                             }
                         } else {
-                            activity.finish()
+                            // GeckoView kernel: no WebView handle — walk the engine's own
+                            // history through the surface instead of exiting the app on every
+                            // back press. The Escape-key JS probe is skipped: Gecko's
+                            // javascript: URI eval cannot return a result to consult.
+                            ShellWebViewNavigation.goBackOrFinish(activity, getBrowserSurface())
                         }
                     }
                 }

@@ -2,6 +2,7 @@ package com.webtoapp.ui.shell
 
 import android.webkit.WebView
 import androidx.appcompat.app.AppCompatActivity
+import com.webtoapp.core.engine.BrowserSurface
 
 object ShellWebViewNavigation {
 
@@ -24,6 +25,30 @@ object ShellWebViewNavigation {
             return
         }
         goBackNative(activity, wv)
+    }
+
+    /**
+     * Surface-aware back navigation. On the System WebView kernel this delegates to the
+     * WebView resolver above (history heuristics + optional JS history.back). On GeckoView
+     * there is no WebView handle and no JS-result channel (Gecko's evaluateJavascript cannot
+     * return values), so back walks the engine's own history — previously this path fell
+     * through to finish(), making the back button always exit generated Gecko apps.
+     */
+    fun goBackOrFinish(
+        activity: AppCompatActivity,
+        surface: BrowserSurface?,
+        useJsHistoryBack: Boolean = false
+    ) {
+        val wv = surface?.webView
+        if (wv != null) {
+            goBackOrFinish(activity, wv, useJsHistoryBack)
+            return
+        }
+        if (surface != null && surface.canGoBack()) {
+            surface.goBack()
+            return
+        }
+        activity.finish()
     }
 
     private fun goBackViaJsHistoryBack(activity: AppCompatActivity, webView: WebView) {

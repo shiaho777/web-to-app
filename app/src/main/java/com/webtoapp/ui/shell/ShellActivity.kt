@@ -680,6 +680,7 @@ class ShellActivity : AppCompatActivity() {
             activity = this,
             getCustomView = { customView },
             getWebView = { webView },
+            getBrowserSurface = { browserSurface },
             hideCustomView = ::hideCustomView,
             getShellConfig = { shellConfig }
         ))

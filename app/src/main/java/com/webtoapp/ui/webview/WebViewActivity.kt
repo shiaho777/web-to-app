@@ -137,6 +137,7 @@ class WebViewActivity : AppCompatActivity() {
     internal var geckoMediaAdapter: com.webtoapp.core.engine.GeckoMediaSessionAdapter? = null
 
     private var pendingPermissionRequest: PermissionRequest? = null
+    private var pendingEnginePermissionCallback: ((Boolean) -> Unit)? = null
     private var pendingGeolocationOrigin: String? = null
     private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
     private val pendingLocationAccessCallbacks = mutableListOf<(Boolean) -> Unit>()
@@ -482,6 +483,41 @@ class WebViewActivity : AppCompatActivity() {
                 request.deny()
             }
             pendingPermissionRequest = null
+        }
+    }
+
+    /**
+     * Android runtime permission requests coming from the GeckoView engine
+     * (PermissionDelegate.onAndroidPermissionsRequest). The engine must not auto-grant:
+     * without the real OS dialog, geolocation/camera/mic silently fail because Gecko is
+     * told the permission exists while it was never obtained (#344 — the shell already
+     * does this properly; the host preview used to fall through to the default grant).
+     */
+    private val enginePermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.values.all { it }
+        pendingEnginePermissionCallback?.invoke(allGranted)
+        pendingEnginePermissionCallback = null
+    }
+
+    fun handleAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
+        val notGranted = permissions.distinct().filter {
+            androidx.core.content.ContextCompat.checkSelfPermission(
+                this, it
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+        if (notGranted.isEmpty()) {
+            onResult(true)
+            return
+        }
+        pendingEnginePermissionCallback = onResult
+        try {
+            enginePermissionLauncher.launch(notGranted.toTypedArray())
+        } catch (e: Exception) {
+            AppLogger.e("WebViewActivity", "Engine permission request failed", e)
+            pendingEnginePermissionCallback = null
+            onResult(false)
         }
     }
 
@@ -940,7 +976,16 @@ class WebViewActivity : AppCompatActivity() {
                                 ShellWebViewNavigation.goBackOrFinish(this@WebViewActivity, wv, useJsHistoryBack = enableBackStatePreservation)
                             }
                         } else {
-                            finish()
+                            // GeckoView engine: no WebView handle — walk the engine's own
+                            // history through the surface. The Escape-key JS probe is skipped
+                            // (it needs an eval result, which Gecko's javascript: URI path
+                            // cannot return); back used to exit the preview outright here.
+                            val surface = browserSurface
+                            if (surface != null && surface.canGoBack()) {
+                                surface.goBack()
+                            } else {
+                                finish()
+                            }
                         }
                     }
                 }
@@ -2417,6 +2462,19 @@ fun WebViewScreen(
                 statusBarColorTracker?.scheduleSample(48L)
             }
 
+            override fun onNavigationStateChanged(newCanGoBack: Boolean, newCanGoForward: Boolean) {
+                // GeckoView engine path: history state arrives as events (the WebView path
+                // derives it from onUrlChanged). Without this the toolbar/floating back
+                // affordances never enable on Gecko.
+                canGoBack = newCanGoBack
+                canGoForward = newCanGoForward
+            }
+
+            override fun onAndroidPermissionsRequest(permissions: Array<String>, onResult: (Boolean) -> Unit) {
+                (context as? WebViewActivity)?.handleAndroidPermissionsRequest(permissions, onResult)
+                    ?: onResult(true)
+            }
+
             override fun onPageFinished(url: String?) {
                 if (url == "about:blank") return
                 isLoading = false
@@ -2850,10 +2908,8 @@ fun WebViewScreen(
     val showToolbarInPreview = !hideToolbar || webApp?.webViewConfig?.showToolbarInFullscreen == true
 
     val toolbarCfg = webApp?.webViewConfig
-    // Native find-in-page drives WebView.findAllAsync — system WebView only.
-    // Declared here (not inside the toolbar actions) so the toolbar predicate
-    // below can discount the find item on non-system engines, mirroring the shell.
-    val findInPageSupported = (webApp?.apkExportConfig?.engineType ?: "SYSTEM_WEBVIEW") == "SYSTEM_WEBVIEW"
+    // Find-in-page runs on both kernels now (WebView findAllAsync; GeckoView SessionFinder
+    // through BrowserSurface.findInPage), so no engine gate remains here or in the shell.
     val hasAnyToolbarItem = toolbarCfg?.let {
         hasAnyToolbarItem(
             toolbarShowTitle = it.toolbarShowTitle,
@@ -2862,7 +2918,7 @@ fun WebViewScreen(
             toolbarShowForward = it.toolbarShowForward,
             toolbarShowRefresh = it.toolbarShowRefresh,
             toolbarShowConsole = it.toolbarShowConsole,
-            toolbarShowFind = it.toolbarShowFind && findInPageSupported
+            toolbarShowFind = it.toolbarShowFind
         )
     } == true
     val shouldShowTopBar = showToolbarInPreview && toolbarEnabled && hasAnyToolbarItem
@@ -2928,7 +2984,13 @@ fun WebViewScreen(
                             com.webtoapp.ui.design.WtaIconButton(
                                 onClick = {
                                     (context as? AppCompatActivity)?.let { activity ->
-                                        ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
+                                        // Surface-first: on the GeckoView kernel webViewRef is
+                                        // null and the engine's own history drives back.
+                                        if (browserSurfaceRef != null) {
+                                            ShellWebViewNavigation.goBackOrFinish(activity, browserSurfaceRef)
+                                        } else {
+                                            ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
+                                        }
                                     }
                                 },
                                 icon = Icons.AutoMirrored.Filled.ArrowBack,
@@ -2938,7 +3000,7 @@ fun WebViewScreen(
                         }
                         if (isTestMode || browserToolbarVisibility?.showForward == true) {
                             com.webtoapp.ui.design.WtaIconButton(
-                                onClick = { webViewRef?.goForward() },
+                                onClick = { browserSurfaceRef?.goForward() ?: webViewRef?.goForward() },
                                 icon = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = "Forward",
                                 enabled = canGoForward
@@ -2968,9 +3030,9 @@ fun WebViewScreen(
                                 )
                             }
                         }
-                        // Find-in-page button: opens the native bottom find bar. System
-                        // WebView only — findAllAsync has no GeckoView equivalent here.
-                        if ((isTestMode || browserToolbarVisibility?.showFind == true) && (isTestMode || findInPageSupported)) {
+                        // Find-in-page button: opens the native bottom find bar (both
+                        // kernels — WebView findAllAsync and GeckoView SessionFinder).
+                        if (isTestMode || browserToolbarVisibility?.showFind == true) {
                             com.webtoapp.ui.design.WtaIconButton(
                                 onClick = { showFindBar = !showFindBar },
                                 icon = if (showFindBar) Icons.Filled.Search else Icons.Outlined.Search,
@@ -3172,6 +3234,23 @@ fun WebViewScreen(
                         onRefresh = {
                             isRefreshing = true
                             reloadBrowser()
+                        },
+                        onBrowserSurfaceCreated = { surface ->
+                            // Mirror the single-app preview wiring: keep the compose-level
+                            // and activity-level surface refs (back/forward/find/console) and
+                            // attach the Gecko media-session adapter for engine sites (#593
+                            // parity — MULTI_WEB previously never saw per-site surfaces).
+                            browserSurfaceRef = surface
+                            (context as? WebViewActivity)?.browserSurface = surface
+                            if (surface.webView == null && mwApp.webViewConfig.enableMediaSession) {
+                                val geckoEngine = surface.engine as? com.webtoapp.core.engine.GeckoViewEngine
+                                if (geckoEngine != null) {
+                                    (context as? WebViewActivity)?.let { host ->
+                                        host.geckoMediaAdapter?.runCatching { release() }
+                                        host.geckoMediaAdapter = com.webtoapp.core.engine.GeckoMediaSessionAdapter(host, geckoEngine)
+                                    }
+                                }
+                            }
                         }
                     )
                 } else {
@@ -3254,7 +3333,8 @@ fun WebViewScreen(
                                     allowGlobalModuleFallback = false,
                                     extensionEnabled = extensionMasterEnabled,
                                     browserDisguiseConfig = webApp?.browserDisguiseConfig,
-                                    deviceDisguiseConfig = webApp?.deviceDisguiseConfig
+                                    deviceDisguiseConfig = webApp?.deviceDisguiseConfig,
+                                    appOriginUrl = webApp?.url.orEmpty()
                                 )
                                 tag = surface
                                 browserSurfaceRef = surface
@@ -3384,6 +3464,12 @@ fun WebViewScreen(
                                             ViewGroup.LayoutParams.MATCH_PARENT
                                         )
                                     )
+                                    // Gecko engine preview: the WebView branch above ends with
+                                    // loadUrl(targetUrl); this branch never navigated at all, so
+                                    // plain WEB/HTML previews on Gecko/ECH showed a blank view.
+                                    if (targetUrl.isNotEmpty()) {
+                                        loadInBrowser(targetUrl)
+                                    }
                                 }
                             }
                         },
@@ -3407,7 +3493,10 @@ fun WebViewScreen(
                             onExpandToggle = { isConsoleExpanded = !isConsoleExpanded },
                             onClear = { consoleMessages = emptyList() },
                             onRunScript = { script ->
-                                webViewRef?.evaluateJavascript(script) { result ->
+                                // Surface-first so eval also runs on the GeckoView kernel
+                                // (webViewRef stays null there; Gecko cannot return the eval
+                                // result, so the entry shows "=> null" but the script runs).
+                                val appendResult: (String?) -> Unit = { result ->
                                     consoleMessages = consoleMessages + ConsoleLogEntry(
                                         level = ConsoleLevel.LOG,
                                         message = "=> $result",
@@ -3415,6 +3504,12 @@ fun WebViewScreen(
                                         lineNumber = 0,
                                         timestamp = System.currentTimeMillis()
                                     )
+                                }
+                                val surface = browserSurfaceRef
+                                if (surface != null) {
+                                    surface.evaluateJavascript(script, appendResult)
+                                } else {
+                                    webViewRef?.evaluateJavascript(script, appendResult)
                                 }
                             },
                             onClose = { showConsole = false }
@@ -3427,7 +3522,9 @@ fun WebViewScreen(
                         exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
                     ) {
                         com.webtoapp.ui.shell.FindInPageBar(
-                            webView = webViewRef,
+                            surface = browserSurfaceRef ?: webViewRef?.let {
+                                com.webtoapp.core.engine.BrowserSurface.fromWebView(it)
+                            },
                             onClose = { showFindBar = false }
                         )
                     }
@@ -3523,7 +3620,13 @@ fun WebViewScreen(
                     onClick = {
                         fadeKey++
                         (context as? AppCompatActivity)?.let { activity ->
-                            ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
+                            // Surface-first: the floating back button must walk Gecko
+                            // history too (webViewRef is null on that kernel).
+                            if (browserSurfaceRef != null) {
+                                ShellWebViewNavigation.goBackOrFinish(activity, browserSurfaceRef)
+                            } else {
+                                ShellWebViewNavigation.goBackOrFinish(activity, webViewRef)
+                            }
                         }
                     },
                     modifier = Modifier

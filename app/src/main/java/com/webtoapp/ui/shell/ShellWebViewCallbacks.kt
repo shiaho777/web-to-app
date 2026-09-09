@@ -78,6 +78,13 @@ fun createShellWebViewCallbacks(
             scheduleStatusBarAutoColorSample()
         }
 
+        override fun onNavigationStateChanged(canGoBack: Boolean, canGoForward: Boolean) {
+            // GeckoView kernel: history state arrives as engine events because there is no
+            // WebView to poll (webViewRefProvider() stays null). Without this the toolbar
+            // back/forward buttons never enable in generated Gecko apps.
+            updateNavigation(canGoBack, canGoForward)
+        }
+
         override fun onPageCommitVisible(url: String?) {
             scheduleStatusBarAutoColorSample()
         }

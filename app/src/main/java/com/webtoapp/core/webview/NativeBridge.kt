@@ -75,8 +75,21 @@ class NativeBridge(
     private val customDownloadDirUri: String = "",
 
     /** The app's configured origin (target URL / local base) for CORS-bypass caller checks. */
-    private val appOriginUrl: String = ""
+    private val appOriginUrl: String = "",
+
+    /**
+     * Page-URL source for engines without a WebView (GeckoView). Caller gates read the current
+     * page URL from [webViewProvider] on the System WebView path; GeckoView has no WebView
+     * instance, so its engine supplies the live navigation URL here — without it every caller
+     * check sees an empty URL and rejects, killing the CORS-bypass / private-network bridge on
+     * the Gecko engine.
+     */
+    private val callerPageUrlProvider: (() -> String?)? = null
 ) {
+    /** The URL of the page currently calling into the bridge, across both engines. */
+    private fun resolveCallerPageUrl(): String =
+        webViewProvider()?.url ?: callerPageUrlProvider?.invoke().orEmpty()
+
     companion object {
         const val JS_INTERFACE_NAME = "NativeBridge"
         private const val PRIVATE_NETWORK_MAX_RESPONSE_BYTES = 16 * 1024 * 1024
@@ -1310,7 +1323,7 @@ NativeBridge.googleSignIn('sign-in-' + Date.now());
                 // anything; the app's own remote origin may bypass CORS for internet APIs
                 // but must not probe the phone's local services; anything else (random
                 // iframes / navigations) is rejected outright.
-                val pageUrl = webViewProvider()?.url.orEmpty()
+                val pageUrl = resolveCallerPageUrl()
                 val pageIsLocal = isPrivateNetworkUrl(pageUrl) ||
                     pageUrl.startsWith("file:") ||
                     pageUrl.startsWith("content://") ||
@@ -1335,7 +1348,7 @@ NativeBridge.googleSignIn('sign-in-' + Date.now());
                 return privateNetworkBridgeError("URL_NOT_ALLOWED", "Only private network HTTP(S) URLs are allowed")
             }
             if (!corsBypass) {
-                val pageUrl = webViewProvider()?.url.orEmpty()
+                val pageUrl = resolveCallerPageUrl()
                 if (!isPrivateNetworkUrl(pageUrl)) {
                     AppLogger.w("NativeBridge", "Blocked private-network bridge request from non-local page: $pageUrl -> $url")
                     return privateNetworkBridgeError("CALLER_NOT_ALLOWED", "Only packaged local pages can use the private network bridge")

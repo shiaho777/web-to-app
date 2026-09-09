@@ -38,6 +38,13 @@ interface WebViewCallbacks {
     fun onUrlChanged(webView: WebView?, url: String?) {}
 
     /**
+     * History navigation state changed (canGoBack/canGoForward). Only fired by engines that
+     * track history themselves (GeckoView's NavigationDelegate); the System WebView path keeps
+     * deriving the state from [onUrlChanged] + `WebView.canGoBack()`.
+     */
+    fun onNavigationStateChanged(canGoBack: Boolean, canGoForward: Boolean) {}
+
+    /**
      * A popup window was requested (newWindowBehavior = POPUP_WINDOW). Return true when the
      * host actually renders the popup transport; false makes WebViewManager fall back to
      * loading the popup URL in the same window so the navigation is never silently dropped.

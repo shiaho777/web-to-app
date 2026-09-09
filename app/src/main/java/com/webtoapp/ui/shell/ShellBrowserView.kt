@@ -76,7 +76,8 @@ fun ShellBrowserAndroidView(
                         allowGlobalModuleFallback = false,
                         extensionEnabled = config.extensionEnabled,
                         browserDisguiseConfig = config.browserDisguiseConfig,
-                        deviceDisguiseConfig = config.deviceDisguiseConfig
+                        deviceDisguiseConfig = config.deviceDisguiseConfig,
+                        appOriginUrl = config.targetUrl
                     )
                     surfaceRef = surface
                     tag = surface

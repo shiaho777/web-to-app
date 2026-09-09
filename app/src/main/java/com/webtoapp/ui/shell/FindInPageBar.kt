@@ -1,6 +1,5 @@
 package com.webtoapp.ui.shell
 
-import android.webkit.WebView
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -17,48 +16,43 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import com.webtoapp.core.engine.BrowserSurface
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.core.logging.AppLogger
 
 /**
- * Native find-in-page bottom bar (issue #614). Drives the WebView engine directly
- * (findAllAsync / findNext / clearMatches) instead of going through the JS module
- * panel, so match counting and highlighting are handled by the engine itself.
- *
- * Android-WebView only: findAllAsync has no GeckoView equivalent here — callers
- * hide the toolbar entry for non-system kernels.
+ * Native find-in-page bottom bar (issue #614). Drives the engine's native finder through
+ * [BrowserSurface] — WebView findAllAsync on the system kernel, GeckoView's SessionFinder on
+ * the Gecko kernel — instead of going through the JS module panel, so match counting and
+ * highlighting are handled by the engine itself on both kernels.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FindInPageBar(
-    webView: WebView?,
+    surface: BrowserSurface?,
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var query by remember { mutableStateOf("") }
     var activeMatchOrdinal by remember { mutableIntStateOf(-1) }
     var numberOfMatches by remember { mutableIntStateOf(0) }
-    var doneCounting by remember { mutableStateOf(true) }
     val inputFocusRequester = remember { FocusRequester() }
     var inputFocused by remember { mutableStateOf(false) }
 
-    // Listen for engine-side counting results while the bar is up; detach (and drop
-    // the highlights) when it goes away.
-    DisposableEffect(webView) {
-        webView?.setFindListener { active, total, done ->
-            activeMatchOrdinal = if (total > 0) active else -1
-            numberOfMatches = total
-            doneCounting = done
-        }
+    fun onFindResult(active: Int, total: Int) {
+        activeMatchOrdinal = active
+        numberOfMatches = total
+    }
+
+    // Drop the highlights when the bar goes away.
+    DisposableEffect(surface) {
         onDispose {
             try {
-                webView?.clearMatches()
-                webView?.setFindListener(null)
+                surface?.clearFindMatches()
             } catch (e: Exception) {
                 AppLogger.w("FindInPageBar", "cleanup failed", e)
             }
@@ -68,8 +62,8 @@ fun FindInPageBar(
     // Cursor and IME ready as soon as the bar opens (#652): requestFocus alone leaves the
     // keyboard hidden, so wait for focus to land before raising the IME.
     val keyboard = LocalSoftwareKeyboardController.current
-    LaunchedEffect(webView) {
-        if (webView != null) {
+    LaunchedEffect(surface) {
+        if (surface != null) {
             inputFocusRequester.requestFocus()
             withFrameNanos { }
             if (inputFocused) keyboard?.show()
@@ -77,24 +71,23 @@ fun FindInPageBar(
     }
 
     // Live search as the query changes (debounced), like Chrome's find bar.
-    LaunchedEffect(query, webView) {
-        val wv = webView ?: return@LaunchedEffect
+    LaunchedEffect(query, surface) {
+        val s = surface ?: return@LaunchedEffect
         if (query.isBlank()) {
-            wv.clearMatches()
+            s.clearFindMatches()
             activeMatchOrdinal = -1
             numberOfMatches = 0
-            doneCounting = true
             return@LaunchedEffect
         }
         kotlinx.coroutines.delay(300)
         try {
-            wv.findAllAsync(query)
-            // findAllAsync makes the WebView steal view focus from this input, which
-            // swallowed the backspace key (type worked, delete did not). Re-claim it
-            // after each search unless the user moved focus away on purpose.
+            s.findInPage(query, forward = null, onResult = ::onFindResult)
+            // On the WebView kernel findAllAsync makes the WebView steal view focus from
+            // this input, which swallowed the backspace key (type worked, delete did not).
+            // Re-claim it after each search unless the user moved focus away on purpose.
             if (!inputFocused) inputFocusRequester.requestFocus()
         } catch (e: Exception) {
-            AppLogger.w("FindInPageBar", "findAllAsync failed", e)
+            AppLogger.w("FindInPageBar", "findInPage failed", e)
         }
     }
 
@@ -137,7 +130,9 @@ fun FindInPageBar(
                 keyboardActions = KeyboardActions(
                     onSearch = {
                         if (query.isNotBlank()) {
-                            try { webView?.findNext(true) } catch (e: Exception) {
+                            try {
+                                surface?.findInPage(query, forward = true, onResult = ::onFindResult)
+                            } catch (e: Exception) {
                                 AppLogger.w("FindInPageBar", "findNext failed", e)
                             }
                         }
@@ -152,8 +147,7 @@ fun FindInPageBar(
                 text = if (query.isBlank() || numberOfMatches <= 0) {
                     "0/0"
                 } else {
-                    "${(activeMatchOrdinal + 1).coerceIn(1, numberOfMatches)}/$numberOfMatches" +
-                        if (!doneCounting) "…" else ""
+                    "${(activeMatchOrdinal + 1).coerceIn(1, numberOfMatches)}/$numberOfMatches"
                 },
                 style = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.Monospace),
                 color = if (numberOfMatches > 0) {
@@ -167,8 +161,10 @@ fun FindInPageBar(
             IconButton(
                 onClick = {
                     if (query.isNotBlank()) {
-                        try { webView?.findNext(false) } catch (e: Exception) {
-                            AppLogger.w("FindInPageBar", "findNext failed", e)
+                        try {
+                            surface?.findInPage(query, forward = false, onResult = ::onFindResult)
+                        } catch (e: Exception) {
+                            AppLogger.w("FindInPageBar", "findPrev failed", e)
                         }
                     }
                 },
@@ -181,7 +177,9 @@ fun FindInPageBar(
             IconButton(
                 onClick = {
                     if (query.isNotBlank()) {
-                        try { webView?.findNext(true) } catch (e: Exception) {
+                        try {
+                            surface?.findInPage(query, forward = true, onResult = ::onFindResult)
+                        } catch (e: Exception) {
                             AppLogger.w("FindInPageBar", "findNext failed", e)
                         }
                     }
