@@ -4316,7 +4316,8 @@ private fun WebApp.buildErrorPageBlock(): ErrorPageBlock {
         showHttp5xxErrorUi = ep.showHttp5xxErrorUi,
         showNetworkErrorUi = ep.showNetworkErrorUi,
         showSslErrorUi = ep.showSslErrorUi,
-        showRenderCrashErrorUi = ep.showRenderCrashErrorUi
+        showRenderCrashErrorUi = ep.showRenderCrashErrorUi,
+        ignoreSslErrors = ep.ignoreSslErrors
     )
 }
 

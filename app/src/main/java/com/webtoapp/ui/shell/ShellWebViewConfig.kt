@@ -273,6 +273,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
             showHttp5xxErrorUi = config.webViewConfig.errorPageConfig.showHttp5xxErrorUi,
             showNetworkErrorUi = config.webViewConfig.errorPageConfig.showNetworkErrorUi,
             showSslErrorUi = config.webViewConfig.errorPageConfig.showSslErrorUi,
+            ignoreSslErrors = config.webViewConfig.errorPageConfig.ignoreSslErrors,
             showRenderCrashErrorUi = config.webViewConfig.errorPageConfig.showRenderCrashErrorUi
         ),
 

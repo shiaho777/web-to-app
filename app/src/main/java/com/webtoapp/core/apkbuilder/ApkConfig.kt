@@ -692,7 +692,8 @@ data class ErrorPageBlock(
     val showHttp5xxErrorUi: Boolean = true,
     val showNetworkErrorUi: Boolean = true,
     val showSslErrorUi: Boolean = true,
-    val showRenderCrashErrorUi: Boolean = true
+    val showRenderCrashErrorUi: Boolean = true,
+    val ignoreSslErrors: Boolean = false
 )
 
 data class SplashBlock(

@@ -56,6 +56,14 @@ data class ErrorPageConfig(
 
     val showSslErrorUi: Boolean = true,
 
+    /**
+     * Proceed past SSL certificate errors (expired, not-yet-valid, mismatched, untrusted)
+     * for both main-frame and sub-resource loads. System-WebView-engine only — GeckoView
+     * has no API to override certificate validation. Off by default: this disables TLS
+     * MITM protection for the whole app and is flagged by the Play policy checker.
+     */
+    val ignoreSslErrors: Boolean = false,
+
     val showRenderCrashErrorUi: Boolean = true,
 
     val language: String = "ENGLISH"
