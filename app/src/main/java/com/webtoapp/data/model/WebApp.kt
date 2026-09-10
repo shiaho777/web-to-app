@@ -468,6 +468,12 @@ data class WebViewConfig(
     val tlsFingerprintTemplate: String = "CHROME_131",
     val tlsFingerprintCustomCiphers: List<String> = emptyList(),
 
+    // Issue #721: forward bridged requests through Chromium's own network stack with a
+    // QUIC hint per host, so HTTP/3 is attempted from the first request. Pairs with TLS
+    // fingerprint spoofing (the h3 upstream IS genuine Chromium); inert when a SOCKS
+    // upstream proxy is configured.
+    val forceHttp3: Boolean = false,
+
     val antiCapture: Boolean = false,
 
     val dnsMode: String = "SYSTEM",

@@ -59,7 +59,7 @@
 Most "website to app" tools stop at wrapping a URL in a WebView. WebToApp is closer to a pocket-sized APK workshop, and the hard parts are exactly where it diverges:
 
 - **It runs real server runtimes on-device.** Node.js, PHP, Python, Go, and WordPress are fork+exec'd as native binaries straight from app storage — like Termux, packaged into an installable APK. URL-wrapper tools cannot do this at all.
-- **It ships a hardened, anti-censorship network stack.** DNS-over-HTTPS, TLS fingerprint spoofing (Chrome / Firefox / Safari JA3 templates) with a local MITM bridge, Encrypted Client Hello (ECH) on the GeckoView engine to encrypt the SNI, per-app proxies, and CORS bypass for locked-down SPAs.
+- **It ships a hardened, anti-censorship network stack.** DNS-over-HTTPS, TLS fingerprint spoofing (Chrome / Firefox / Safari JA3 templates) with a local MITM bridge, Encrypted Client Hello (ECH) on both engines to encrypt the SNI, per-app proxies, and CORS bypass for locked-down SPAs.
 - **The whole build is self-contained.** Binary AXML/ARSC patching, permission pruning, V1/V2/V3 signing, and Google Play-ready AAB export all happen inside the app via `apksig` — no remote build queue, no PC.
 - **It stays extensible after shipping.** Add JS/CSS modules, Tampermonkey-style userscripts, or MV3 Chrome extensions (live-searched and installed from the Chrome Web Store) without rebuilding the host.
 - **The host UI speaks 10 languages out of the box.** Chinese, English, Arabic (RTL), Portuguese, Spanish, French, German, Russian, Japanese, and Korean — switch anytime in Settings; new in-app copy is maintained for all ten.
@@ -73,7 +73,7 @@ A quick scan of what's in the box. Each links to the detailed feature map below.
 | Area | Highlights |
 | --- | --- |
 | **Build targets** | Web · HTML · Frontend · WordPress · Node.js · PHP · Python · Go · Image · Video · Gallery · Multi-Web |
-| **Browser engines** | System WebView by default; optional GeckoView (Firefox) runtime for ECH / SNI encryption |
+| **Browser engines** | System WebView by default; optional GeckoView (Firefox) runtime |
 | **Network & anti-censorship** | DoH (7 providers), TLS fingerprint spoofing + MITM bridge, ECH, static/PAC/SOCKS5 proxies, CORS bypass |
 | **Privacy & hardening** | 50+ vector browser fingerprint disguise, resource encryption (AES-256-GCM), anti-debug, activation gating |
 | **Local runtimes** | Native Node.js 18.20, PHP 8.4 + Composer 2.10, Python 3.14, official Go 1.26, WordPress 7.x over SQLite |
@@ -111,7 +111,7 @@ WebToApp has a large number of switches. The sections below group them by use ca
 - **Popup handling** — same window, external browser, popup window, or block.
 - **Proxies** — static HTTP/HTTPS/SOCKS5, PAC, authentication, bypass rules, and a local HTTP-to-SOCKS bridge.
 - **DNS-over-HTTPS** — Cloudflare, Google, AdGuard, NextDNS, CleanBrowsing, Quad9, Mullvad, plus custom endpoints; strict or automatic modes.
-- **Encrypted Client Hello (ECH)** — encrypt the SNI in the TLS handshake (GeckoView only; auto-wires DoH + GeckoView when toggled).
+- **Encrypted Client Hello (ECH)** — encrypt the SNI in the TLS handshake on **both engines**: GeckoView via TRR + its ECH prefs, the system WebView via the MITM bridge's Chromium upstream (auto-downloaded on first use, embedded in exported APKs). Auto-wires DoH when toggled; a SOCKS upstream proxy takes precedence.
 - **TLS fingerprint spoofing** — impersonate Chrome 131 / Firefox 133 / Safari 18 JA3 profiles (or custom ciphers), served through a local TLS-MITM bridge so the outgoing ClientHello matches a real browser.
 - **CORS bypass** — on by default for static SPAs that call external APIs blocked by CORS; same-origin traffic is left alone, and CORS-only apps can use a lightweight `PrivateNetworkNativeBridgeAdapter` without the full Native Bridge surface.
 - **Failover** — automatic fallback to mirror URLs when the primary target is unreachable.

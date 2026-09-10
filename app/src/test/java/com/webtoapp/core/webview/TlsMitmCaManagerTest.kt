@@ -78,6 +78,13 @@ class TlsMitmCaManagerTest {
 
         assertThat(leafCert.issuerX500Principal).isEqualTo(caCert.subjectX500Principal)
         assertThat(TlsMitmCaManager.isSignedByLocalCa(leafCert)).isTrue()
+
+        // X500Principal.equals is lenient on the JVM but byte-exact on Android
+        // (Conscrypt): an RDN-order drift between the minted leaf's issuer and the
+        // CA subject passes on the host and pops SSL error dialogs on devices.
+        // Compare the raw DER encodings so the drift fails everywhere.
+        assertThat(leafCert.issuerX500Principal.encoded)
+            .isEqualTo(caCert.subjectX500Principal.encoded)
     }
 
     @Test

@@ -1740,6 +1740,26 @@ fun BrowserAdvancedConfigCard(
                                         color = MaterialTheme.colorScheme.tertiary
                                     )
 
+                                    WtaToggleRow(
+                                        title = Strings.forceHttp3Title,
+                                        subtitle = Strings.forceHttp3Description,
+                                        icon = Icons.Outlined.Bolt,
+                                        checked = config.forceHttp3,
+                                        onCheckedChange = { onConfigChange(config.copy(forceHttp3 = it)) }
+                                    )
+
+                                    AnimatedVisibility(
+                                        visible = config.forceHttp3,
+                                        enter = CardExpandTransition,
+                                        exit = CardCollapseTransition
+                                    ) {
+                                        Text(
+                                            text = Strings.forceHttp3Note,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
                                     if (config.proxyMode == "STATIC" &&
                                         (config.proxyType == "SOCKS5" || config.proxyType == "SOCKS")) {
                                         Text(

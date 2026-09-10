@@ -109,6 +109,18 @@ class ApkBuilder(private val context: Context) {
             add("assets/omni.ja")
         }
 
+        /**
+         * Whether the exported APK needs the Cronet native lib: the h3 toggle or ECH on
+         * the system engine activates the Cronet upstream. Mirrors
+         * TlsMitmBridge.Config.cronetActive (SOCKS upstream wins and disables both).
+         */
+        internal fun cronetNeededForExport(config: ApkConfig): Boolean {
+            if (!(config.tlsFingerprint.forceHttp3 || config.dns.config.echEffective)) return false
+            val socksUpstream = config.proxyMode == "STATIC" &&
+                (config.proxyType == "SOCKS5" || config.proxyType == "SOCKS")
+            return !socksUpstream
+        }
+
         private fun injectedNativeLibNames(appType: String): Set<String> = when (appType) {
             "GO_APP" -> setOf("libgo_exec_loader.so")
             "NODEJS_APP" -> setOf("libc++_shared.so", "libnode_bridge.so", "libnode.so")
@@ -711,7 +723,11 @@ class ApkBuilder(private val context: Context) {
             val appTypeEnum = runCatching { com.webtoapp.data.model.AppType.valueOf(config.appType) }.getOrNull()
             if (appTypeEnum != null) {
                 onProgress(18, "Ensuring runtime dependencies...")
-                val ensured = ExportRuntimeEnsure.ensure(context, appTypeEnum)
+                val ensured = ExportRuntimeEnsure.ensure(
+                    context,
+                    appTypeEnum,
+                    cronetNeededForExport(config)
+                )
                 logger.logKeyValue("exportRuntimeEnsure", ensured)
                 if (!ensured) {
                     logger.warn("Export runtime ensure failed for ${config.appType}")
@@ -814,7 +830,11 @@ class ApkBuilder(private val context: Context) {
                 htmlFiles = htmlFiles,
                 galleryItems = galleryItems,
                 errorPageMediaPath = errorPageMediaPath,
-                nativeLibsFingerprint = runtimeAssetsFingerprint(webApp.appType, config.engineType),
+                nativeLibsFingerprint = runtimeAssetsFingerprint(
+                    webApp.appType,
+                    config.engineType,
+                    cronetNeededForExport(config)
+                ),
                 hostVersionCode = hostVersionCode,
                 forceFullRebuild = forceFullRebuild,
                 // The derived permission/component set is the exact manifest content:
@@ -1709,6 +1729,15 @@ class ApkBuilder(private val context: Context) {
                     logger.section("Inject GeckoView Runtime (native libs + omni.ja)")
                     injectGeckoViewRuntime(zipOut, abiFilters, checkNotNull(geckoEngineFiles))
                 }
+
+                // The Cronet upstream (forced HTTP/3 and/or ECH on the system engine)
+                // needs the native lib inside the APK; cronetNeededForExport mirrors the
+                // runtime activation condition (SOCKS wins and disables both).
+                if (mode == ModifyApkMode.FULL && cronetNeededForExport(config)) {
+                    onProgress(98, "Injecting HTTP/3 runtime...")
+                    logger.section("Inject Cronet Runtime (forced HTTP/3 / ECH)")
+                    injectCronetNativeLib(zipOut)
+                }
             }
         }
 
@@ -2364,7 +2393,8 @@ class ApkBuilder(private val context: Context) {
      */
     private fun runtimeAssetsFingerprint(
         appType: com.webtoapp.data.model.AppType,
-        engineType: String?
+        engineType: String?,
+        cronetNeeded: Boolean = false
     ): String? {
         val parts = mutableListOf<String>()
         if (appType == com.webtoapp.data.model.AppType.NODEJS_APP) {
@@ -2395,6 +2425,10 @@ class ApkBuilder(private val context: Context) {
                 parts += "musl=${libFingerprint(musl)}"
                 parts += "stdlib=${buildCache.treeFingerprint(File(pythonHome, "lib"))}"
             }
+        }
+        if (cronetNeeded) {
+            val cronet = com.webtoapp.core.webview.CronetDependencyManager.resolveCronetLib(context)
+            parts += "cronet=${libFingerprint(cronet ?: File(context.cacheDir, "cronet-missing"))}"
         }
         if (engineType == "GECKOVIEW") {
             val manager = com.webtoapp.core.engine.download.EngineFileManager(context)
@@ -2730,6 +2764,37 @@ builtins.__import__ = _w2a_import
         } catch (e: Exception) {
             logger.error("Failed to embed Go exec loader", e)
             throw IllegalStateException("Failed to embed Go exec loader: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Forced HTTP/3 embeds the Cronet native library so the generated app's bridge can
+     * route through Chromium's own QUIC stack. Mirrors injectNodeJsNativeLibs: a missing
+     * runtime fails the build instead of shipping a silently degraded app.
+     */
+    private fun injectCronetNativeLib(zipOut: ZipOutputStream) {
+        val cronet = com.webtoapp.core.webview.CronetDependencyManager
+        val lib = cronet.resolveCronetLib(context)
+        if (lib == null) {
+            val cachePath = cronet.getLibFile(context).absolutePath
+            val msg =
+                "Cronet native library missing (host nativeLibraryDir and download cache $cachePath). " +
+                    "Open the app once with 强制 HTTP/3 enabled in preview (auto-downloads it), then re-export."
+            logger.error(msg)
+            throw IllegalStateException(msg)
+        }
+        try {
+            val abi = cronet.getDeviceAbi()
+            val aligned = ensureAligned16kNativeLib(lib, cronet.LIB_FILE_NAME)
+            writeEntryStoredStreaming(zipOut, "lib/$abi/${cronet.LIB_FILE_NAME}", aligned)
+            logger.log(
+                "Cronet runtime embedded as native lib: lib/$abi/${cronet.LIB_FILE_NAME} (${aligned.length() / 1024} KB)"
+            )
+        } catch (e: IllegalStateException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error("Failed to embed Cronet native lib", e)
+            throw IllegalStateException("Failed to embed Cronet native lib: ${e.message}", e)
         }
     }
 
@@ -3732,7 +3797,7 @@ builtins.__import__ = _w2a_import
         if (translateEnabled) return true
         if (proxyMode != "NONE") return true
         if (dnsMode != "SYSTEM") return true
-        if (tlsFingerprintEnabled) return true
+        if (tlsFingerprintEnabled || tlsFingerprintForceHttp3) return true
         if (pwaOfflineEnabled) return true
         if (enablePrivateNetworkBridge) return true
         if (enableCloudflareCompat && webViewBehavior.cloudflareCompatMode == "ALWAYS_ON") return true
@@ -4232,7 +4297,8 @@ private fun WebApp.buildDnsBlock(): DnsBlock = DnsBlock(
 private fun WebApp.buildTlsFingerprintBlock(): TlsFingerprintBlock = TlsFingerprintBlock(
     enabled = webViewConfig.tlsFingerprintEnabled,
     template = webViewConfig.tlsFingerprintTemplate,
-    customCipherSuites = webViewConfig.tlsFingerprintCustomCiphers
+    customCipherSuites = webViewConfig.tlsFingerprintCustomCiphers,
+    forceHttp3 = webViewConfig.forceHttp3
 )
 
 private fun WebApp.buildErrorPageBlock(): ErrorPageBlock {

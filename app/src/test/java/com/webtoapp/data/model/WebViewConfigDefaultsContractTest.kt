@@ -39,6 +39,7 @@ class WebViewConfigDefaultsContractTest {
         "showFloatingBackButton",
         "hostsMappingEnabled",
         "tlsFingerprintEnabled",
+        "forceHttp3",                     // forced QUIC is an opt-in network mode
         "enableNotificationPolyfill",    // implies POST_NOTIFICATIONS on every export
         "geolocationEnabled"             // implies location permission on every export
     )

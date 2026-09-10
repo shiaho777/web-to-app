@@ -152,8 +152,16 @@ object TlsMitmCaManager {
         return try {
             // Issuer DN alone is forgeable (the CA subject is public in every shipped APK);
             // require an actual signature verification against the local CA key. Fail-closed.
-            cert.issuerX500Principal == ca.subjectX500Principal &&
-                runCatching { cert.verify(caKey); true }.getOrDefault(false)
+            val issuerMatches = cert.issuerX500Principal == ca.subjectX500Principal
+            val verified = runCatching { cert.verify(caKey); true }.getOrDefault(false)
+            if (!(issuerMatches && verified)) {
+                AppLogger.d(
+                    TAG,
+                    "isSignedByLocalCa rejected leaf: issuerMatches=$issuerMatches verified=$verified " +
+                        "leafIssuer=${cert.issuerX500Principal.name} caSubject=${ca.subjectX500Principal.name}"
+                )
+            }
+            issuerMatches && verified
         } catch (_: Exception) {
             false
         }
@@ -174,8 +182,13 @@ object TlsMitmCaManager {
             leafKeyGen.initialize(CA_KEY_SIZE)
             val leafPair = leafKeyGen.generateKeyPair()
 
-            val issuer = caPrincipal ?: return null
-            val issuerName = X500Name(issuer.name)
+            // Build the issuer from the CA certificate's subject DER, not from its
+            // RFC 2253 string: X500Name(String) reorders RDNs (BC style), which makes the
+            // minted leaf's issuerX500Principal differ from the CA's subjectX500Principal
+            // (DER order matters in X500Principal.equals) and isSignedByLocalCa then
+            // rejects our own leaf — the WebView pops an SSL error dialog instead of
+            // letting the MITM cert through.
+            val issuerName = X500Name.getInstance(caCertLocal.subjectX500Principal.encoded)
             val subjectName = X500Name("CN=$normalizedHost")
 
             val serial = BigInteger.valueOf(System.currentTimeMillis())

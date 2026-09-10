@@ -258,7 +258,9 @@ private fun BuildApkContent(
             }
             val ensureOk = ExportRuntimeEnsure.ensure(
                 context,
-                webAppWithConfig.appType
+                webAppWithConfig.appType,
+                webAppWithConfig.webViewConfig.forceHttp3 ||
+                    webAppWithConfig.webViewConfig.dnsConfig.echEffective
             )
             if (!ensureOk) {
                 progressText = when (webAppWithConfig.appType) {
@@ -315,7 +317,8 @@ private fun BuildApkContent(
     ) {
         if (!uiReady) return@LaunchedEffect
         val config = currentBuildConfig()
-        if (ExportRuntimeEnsure.needsEnsure(context, config.appType)) {
+        val needsCronet = config.webViewConfig.forceHttp3 || config.webViewConfig.dnsConfig.echEffective
+        if (ExportRuntimeEnsure.needsEnsure(context, config.appType, needsCronet)) {
             isEnsuringRuntime = true
             ensureRuntimeText = when (config.appType) {
                 AppType.PYTHON_APP -> Strings.preparingPythonEnv
@@ -324,7 +327,7 @@ private fun BuildApkContent(
                 AppType.WORDPRESS -> Strings.preparing
                 else -> Strings.preparing
             }
-            val ensureOk = ExportRuntimeEnsure.ensure(context, config.appType)
+            val ensureOk = ExportRuntimeEnsure.ensure(context, config.appType, needsCronet)
             if (!ensureOk) {
                 ensureRuntimeText = when (config.appType) {
                     AppType.PYTHON_APP -> Strings.pythonRuntimeDownloadFailed

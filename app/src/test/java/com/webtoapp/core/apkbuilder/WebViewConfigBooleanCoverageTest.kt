@@ -68,7 +68,7 @@ class WebViewConfigBooleanCoverageTest {
             "databaseEnabled", "primeUserActivation", "failoverEnabled",
             "hostsMappingEnabled", "autoRefreshEnabled", "autoRefreshShowCountdown",
             "allowFileAccessFromFileURLs", "allowUniversalAccessFromFileURLs",
-            "tlsFingerprintEnabled"
+            "tlsFingerprintEnabled", "forceHttp3"
         )
 
         val missing = allBooleanFields - listedFields
@@ -371,7 +371,8 @@ class WebViewConfigBooleanCoverageTest {
             autoRefreshShowCountdown = bool("autoRefreshShowCountdown"),
             allowFileAccessFromFileURLs = bool("allowFileAccessFromFileURLs"),
             allowUniversalAccessFromFileURLs = bool("allowUniversalAccessFromFileURLs"),
-            tlsFingerprintEnabled = bool("tlsFingerprintEnabled")
+            tlsFingerprintEnabled = bool("tlsFingerprintEnabled"),
+            forceHttp3 = bool("forceHttp3")
         )
     }
 }

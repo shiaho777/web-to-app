@@ -54,7 +54,6 @@ fun DnsConfigCard(
     onDnsModeChange: (String) -> Unit,
     onDnsConfigChange: (DnsConfig) -> Unit,
     engineType: String = "SYSTEM_WEBVIEW",
-    onEngineTypeChange: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val enabled = dnsMode != "SYSTEM"
@@ -65,8 +64,10 @@ fun DnsConfigCard(
             onDnsConfigChange(dnsConfig.copy(echEnabled = false))
             return
         }
+        // ECH works on both engines now: GeckoView via TRR + its own ECH prefs, the
+        // system engine via the MITM bridge's Cronet upstream (Chromium fetches HTTPS
+        // records and encrypts the ClientHello SNI itself). DoH is still preferred.
         if (dnsMode == "SYSTEM") onDnsModeChange("DOH")
-        if (!isGecko) onEngineTypeChange("GECKOVIEW")
         onDnsConfigChange(dnsConfig.copy(echEnabled = true))
     }
 

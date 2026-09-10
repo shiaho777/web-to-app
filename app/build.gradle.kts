@@ -203,6 +203,9 @@ android {
             excludes += "**/libplugin-container.so"
 
             excludes += "**/libcrypto_engine.so"
+
+            // Cronet natives are downloaded on demand / injected per-export, never bundled.
+            excludes += "**/libcronet*.so"
         }
     }
     androidResources {
@@ -615,6 +618,13 @@ dependencies {
     implementation("com.android.tools.build:apksig:8.3.0")
 
     implementation("org.mozilla.geckoview:geckoview-arm64-v8a:142.0.20250827004350")
+
+    // Forced HTTP/3 (issue #721): Chromium's own network stack as the MITM bridge's
+    // upstream leg. Java classes ship in the APK; libcronet is NEVER bundled — the host
+    // downloads it on demand (filesDir/cronet_deps) and ApkBuilder injects it into
+    // exported APKs only when the app enables 强制 HTTP/3 (libnode/GeckoView precedent).
+    // Version must match CronetDependencyManager.CRONET_ARTIFACT_VERSION.
+    implementation("org.chromium.net:cronet-embedded:143.7445.0")
 
     implementation("com.google.zxing:core:3.5.2")
 

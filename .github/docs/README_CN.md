@@ -59,7 +59,7 @@
 绝大多数「网站转 App」工具到「套一个 WebView」就结束了。WebToApp 更像一个放在手机里的 APK 工作台,而真正难的地方,正是它和那些工具的分界线:
 
 - **在设备上跑真实的服务端运行时。** Node.js、PHP、Python、Go、WordPress 以原生二进制的形式直接从 app 存储 fork+exec —— 像 Termux 那样,但被打进一个可安装的 APK。URL 套壳工具根本做不到。
-- **内置硬核、反审查的网络栈。** DNS-over-HTTPS、TLS 指纹伪装(Chrome / Firefox / Safari 的 JA3 模板,经本地 MITM 桥接)、GeckoView 引擎上的 ECH(加密 SNI)、每应用代理、以及针对受限 SPA 的 CORS 绕过。
+- **内置硬核、反审查的网络栈。** DNS-over-HTTPS、TLS 指纹伪装(Chrome / Firefox / Safari 的 JA3 模板,经本地 MITM 桥接)、双引擎 ECH(加密 SNI)、每应用代理、以及针对受限 SPA 的 CORS 绕过。
 - **整个构建自包含。** 二进制 AXML/ARSC 修补、权限裁剪、V1/V2/V3 签名、可直接上架 Google Play 的 AAB 导出,全部在 app 内通过 `apksig` 完成 —— 不排远程队列、不需要电脑。
 - **发布后仍可扩展。** 通过 JS/CSS 模块、Tampermonkey 风格油猴脚本,或 MV3 Chrome 扩展(可在应用内实时搜索 Chrome 网上应用店并安装)给应用补能力,不必重新发布宿主。
 - **宿主 UI 原生支持 10 种语言。** 中文、English、العربية(RTL)、Português、Español、Français、Deutsch、Русский、日本語、한국어 —— 设置里随时切换;新增界面文案按 10 语维护。
@@ -73,7 +73,7 @@
 | 方向 | 亮点 |
 | --- | --- |
 | **构建目标** | Web · HTML · 前端 · WordPress · Node.js · PHP · Python · Go · 图片 · 视频 · 图库 · 多网站 |
-| **浏览器引擎** | 默认系统 WebView;可选 GeckoView(Firefox)运行时,用于 ECH / SNI 加密 |
+| **浏览器引擎** | 默认系统 WebView;可选 GeckoView(Firefox)运行时 |
 | **网络与反审查** | DoH(7 个服务商)、TLS 指纹伪装 + MITM 桥、ECH、静态/PAC/SOCKS5 代理、CORS 绕过 |
 | **隐私与加固** | 50+ 维浏览器指纹伪装、资源加密(AES-256-GCM)、反调试、激活码门控 |
 | **本地运行时** | 原生 Node.js 18.20、PHP 8.4 + Composer 2.10、Python 3.14、官方 Go 1.26、WordPress 7.x over SQLite |
@@ -111,7 +111,7 @@ WebToApp 的开关非常多。下面按使用场景分组,并用可折叠区段�
 - **弹窗处理** —— 当前窗口、外部浏览器、弹窗窗口或直接拦截。
 - **代理** —— 静态 HTTP/HTTPS/SOCKS5、PAC、身份验证、绕过规则和本地 HTTP-to-SOCKS 桥。
 - **DNS-over-HTTPS** —— Cloudflare、Google、AdGuard、NextDNS、CleanBrowsing、Quad9、Mullvad,以及自定义 endpoint;支持 strict / automatic 模式。
-- **ECH(Encrypted Client Hello)** —— 加密 TLS 握手中的 SNI(仅 GeckoView;开关启用时自动联动 DoH + GeckoView)。
+- **ECH(Encrypted Client Hello)** —— 在**两种引擎**上加密 TLS 握手中的 SNI:GeckoView 经 TRR + 自身 ECH 配置;系统 WebView 经本地 MITM 桥的 Chromium 上行链路(首次使用自动下载组件,导出的 APK 内置)。开关启用时自动联动 DoH;与 SOCKS 上游代理互斥。
 - **TLS 指纹伪装** —— 模拟 Chrome 131 / Firefox 133 / Safari 18 的 JA3 指纹(或自定义密码套件),经本地 TLS-MITM 桥接,让发出的 ClientHello 与真实浏览器一致。
 - **CORS 绕过** —— 默认开启,让受限静态 SPA 能调用原本被 CORS 拦截的外部 API;同源请求不会被误拦,仅需 CORS/内网桥接时可用轻量 `PrivateNetworkNativeBridgeAdapter`,不必挂完整 Native Bridge。
 - **回退链** —— 主目标不可达时自动回退到镜像 URL。
