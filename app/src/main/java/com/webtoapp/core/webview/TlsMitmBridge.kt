@@ -28,11 +28,26 @@ object TlsMitmBridge {
     private const val MAX_HEADER_BYTES = 64 * 1024
     private const val CLIENT_READ_TIMEOUT_MS = 60_000
 
+    /** h3 forwarding buffers full request bodies; huge uploads exceed that contract. */
+    private const val MAX_H3_BODY_BYTES = 32 * 1024 * 1024
+
     data class Config(
         val template: TlsFingerprintTemplate,
         val customCipherSuites: List<String> = emptyList(),
-        val upstreamSocks: LocalHttpToSocksBridge.Upstream? = null
-    )
+        val upstreamSocks: LocalHttpToSocksBridge.Upstream? = null,
+        val forceHttp3: Boolean = false,
+        /** ECH on the system engine: the upstream leg is Cronet, whose Chromium stack
+         *  fetches HTTPS records and encrypts the ClientHello SNI natively (issue #721). */
+        val echUpstream: Boolean = false
+    ) {
+        /**
+         * Both forced HTTP/3 and ECH ride the same MITM bridge as fingerprint spoofing,
+         * but their upstream leg is Cronet — which cannot chain through a SOCKS proxy.
+         * When the user configures a SOCKS upstream the bridge stays on the classic
+         * relay and both toggles are inert.
+         */
+        val cronetActive: Boolean get() = (forceHttp3 || echUpstream) && upstreamSocks == null
+    }
 
     @Volatile private var serverSocket: ServerSocket? = null
     @Volatile private var executor: ThreadPoolExecutor? = null
@@ -41,6 +56,7 @@ object TlsMitmBridge {
     @Volatile private var currentConfig: Config? = null
     @Volatile private var listenPort: Int = 0
     @Volatile private var caDir: File? = null
+    @Volatile private var appContext: android.content.Context? = null
 
     /** User-imported CA anchors additionally trusted when verifying upstream certificates. */
     @Volatile private var customCaAnchors: List<java.security.cert.X509Certificate> = emptyList()
@@ -79,7 +95,8 @@ object TlsMitmBridge {
     fun start(
         config: Config,
         caDir: File,
-        customCaAnchors: List<java.security.cert.X509Certificate> = emptyList()
+        customCaAnchors: List<java.security.cert.X509Certificate> = emptyList(),
+        appContext: android.content.Context? = null
     ): Int {
         TlsMitmCaManager.init(caDir)
         if (!TlsMitmCaManager.isCaInitialized()) {
@@ -93,6 +110,7 @@ object TlsMitmBridge {
         }
         stopInternal()
         this.customCaAnchors = customCaAnchors
+        this.appContext = appContext
 
         try {
             val socket = ServerSocket(0, 64, InetAddress.getByName("127.0.0.1"))
@@ -114,9 +132,13 @@ object TlsMitmBridge {
             acceptThread = accept
             accept.start()
 
+            if (config.cronetActive && appContext != null) {
+                CronetForwarder.start(appContext, echUpstream = config.echUpstream)
+            }
+
             AppLogger.i(
                 TAG,
-                "TLS MITM bridge listening 127.0.0.1:$listenPort template=${config.template.id} customCiphers=${config.customCipherSuites.size} socks=${config.upstreamSocks != null}"
+                "TLS MITM bridge listening 127.0.0.1:$listenPort template=${config.template.id} customCiphers=${config.customCipherSuites.size} socks=${config.upstreamSocks != null} http3=${config.forceHttp3} ech=${config.echUpstream}"
             )
             return listenPort
         } catch (e: Exception) {
@@ -149,6 +171,8 @@ object TlsMitmBridge {
         customCaAnchors = emptyList()
         allowedHosts.clear()
         hostAllowlistEnforcement = true
+        appContext = null
+        try { CronetForwarder.stop() } catch (_: Throwable) {}
     }
 
     private fun acceptLoop(socket: ServerSocket) {
@@ -248,6 +272,14 @@ object TlsMitmBridge {
             safeClose(client); return
         }
 
+        // Missing Cronet (not yet downloaded / not embedded) degrades to the classic
+        // relay instead of failing every request with 502.
+        val cronetCtx = appContext
+        if (config.cronetActive && cronetCtx != null && CronetForwarder.isReady(cronetCtx)) {
+            handleConnectCronet(client, clientOut, host, port, config)
+            return
+        }
+
         // Handshake with the WebView FIRST and remember which ALPN protocol it picked,
         // so the upstream connection can be restricted to the same protocol. The bridge
         // relays raw bytes — if the two sides negotiated independently, a WebView on h2
@@ -299,6 +331,10 @@ object TlsMitmBridge {
     }
 
     private fun performTlsHandshake(client: Socket, host: String): SSLSocket {
+        return performTlsHandshake(client, host, arrayOf("h2", "http/1.1"))
+    }
+
+    private fun performTlsHandshake(client: Socket, host: String, alpn: Array<String>): SSLSocket {
         val kmf = TlsMitmCaManager.createKeyManagerFactory(host)
             ?: throw java.io.IOException("Failed to create key manager for $host")
 
@@ -312,7 +348,7 @@ object TlsMitmBridge {
 
         try {
             val params = sslSocket.sslParameters
-            params.applicationProtocols = arrayOf("h2", "http/1.1")
+            params.applicationProtocols = alpn
             params.endpointIdentificationAlgorithm = null
             sslSocket.sslParameters = params
         } catch (_: Exception) {
@@ -320,6 +356,283 @@ object TlsMitmBridge {
 
         sslSocket.startHandshake()
         return sslSocket
+    }
+
+    /**
+     * Cronet upstream path (forced HTTP/3 and/or ECH): the bridge terminates TLS with
+     * the WebView speaking plain HTTP/1.1 only, then re-issues every request through
+     * Cronet — Chromium's own stack, QUIC-first when h3 forcing is on, ECH when the
+     * target publishes an HTTPS record. WebSocket upgrades and other non-plain-HTTP
+     * tunnels fall back to the classic raw relay. Cronet is a request/response engine,
+     * not a byte pump — this is the only part of the bridge that speaks HTTP.
+     */
+    private fun handleConnectCronet(
+        client: Socket,
+        clientOut: OutputStream,
+        host: String,
+        port: Int,
+        config: Config
+    ) {
+        val context = appContext ?: run { safeClose(client); return }
+
+        AppLogger.d(TAG, "h3 CONNECT tunnel: $host:$port")
+
+        // Answer the CONNECT before handshaking: clients that wait for the 200
+        // before starting TLS (no ClientHello pipelining) would otherwise deadlock
+        // the tunnel until their connect timeout fires. A pipelining client simply
+        // leaves its buffered ClientHello in the socket until we read it.
+        try {
+            clientOut.write("HTTP/1.1 200 Connection Established\r\n\r\n".toByteArray(StandardCharsets.US_ASCII))
+            clientOut.flush()
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "Failed to send CONNECT 200: ${e.message}")
+            safeClose(client); return
+        }
+
+        val mitmSocket = try {
+            performTlsHandshake(client, host, arrayOf("http/1.1"))
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "MITM TLS handshake failed for $host: ${e.message}")
+            safeClose(client); return
+        }
+
+        // Keep-alive connections idle between requests; Chromium closes its side when
+        // its pool retires the socket, and loopback always delivers the FIN.
+        try { mitmSocket.soTimeout = 0 } catch (_: Exception) {}
+
+        val input = BufferedInputStream(mitmSocket.getInputStream())
+        val output = mitmSocket.getOutputStream()
+        val hostPart = if (host.contains(':') && !host.startsWith("[")) "[$host]" else host
+        val portPart = if (port == 443) "" else ":$port"
+
+        try {
+            while (true) {
+                val firstLine = readHttpLine(input) ?: break
+                if (firstLine.isEmpty()) continue
+                val parts = firstLine.split(' ', limit = 3)
+                if (parts.size < 3) {
+                    sendStatus(output, 400, "Bad Request")
+                    break
+                }
+                val method = parts[0]
+                val target = parts[1]
+
+                val headerLines = mutableListOf<String>()
+                var headerBytes = firstLine.length
+                while (true) {
+                    val line = readHttpLine(input) ?: return
+                    if (line.isEmpty()) break
+                    headerLines.add(line)
+                    headerBytes += line.length
+                    if (headerBytes > MAX_HEADER_BYTES) {
+                        sendStatus(output, 431, "Request Header Fields Too Large")
+                        return
+                    }
+                }
+
+                // Upgrades (WebSocket, h2c, ...) cannot ride a request/response engine;
+                // hand the connection to the classic raw TLS relay instead.
+                val wantsUpgrade = headerLines.any { it.startsWith("upgrade:", ignoreCase = true) }
+                if (wantsUpgrade) {
+                    fallbackToRawRelay(mitmSocket, input, host, port, config, firstLine, headerLines)
+                    return
+                }
+
+                val clientWantsClose = headerLines.any {
+                    it.startsWith("connection:", ignoreCase = true) &&
+                        it.substringAfter(':', "").contains("close", ignoreCase = true)
+                }
+
+                val body = try {
+                    readRequestBody(input, headerLines)
+                } catch (e: Exception) {
+                    AppLogger.w(TAG, "Failed to read request body for $host: ${e.message}")
+                    sendStatus(output, 413, "Payload Too Large")
+                    return
+                }
+
+                val filteredHeaders = headerLines.mapNotNull { line ->
+                    val lower = line.lowercase(Locale.ROOT)
+                    when {
+                        lower.startsWith("host:") -> null
+                        lower.startsWith("proxy-connection:") ||
+                            lower.startsWith("proxy-authorization:") -> null
+                        lower.startsWith("connection:") ||
+                            lower.startsWith("keep-alive:") -> null
+                        lower.startsWith("content-length:") ||
+                            lower.startsWith("transfer-encoding:") -> null
+                        else -> {
+                            val idx = line.indexOf(':')
+                            if (idx > 0) {
+                                line.substring(0, idx).trim() to line.substring(idx + 1).trim()
+                            } else {
+                                null
+                            }
+                        }
+                    }
+                }
+
+                val requestUrl = if (target.startsWith("http://", true) || target.startsWith("https://", true)) {
+                    target
+                } else {
+                    "https://$hostPart$portPart$target"
+                }
+
+                val forwarded = try {
+                    CronetForwarder.forward(
+                        context = context,
+                        method = method,
+                        url = requestUrl,
+                        headers = filteredHeaders,
+                        body = body,
+                        sink = output,
+                        clientWantsClose = clientWantsClose,
+                        hostForHint = host,
+                        portForHint = port
+                    )
+                } catch (e: java.io.IOException) {
+                    // Client broke mid-response; nothing left to salvage.
+                    AppLogger.d(TAG, "h3 forward client I/O error for $host: ${e.message}")
+                    return
+                }
+
+                if (!forwarded) {
+                    sendStatus(output, 502, "Bad Gateway")
+                    return
+                }
+                if (clientWantsClose) break
+            }
+        } catch (e: Exception) {
+            AppLogger.d(TAG, "h3 connect loop ended for $host: ${e.message}")
+        } finally {
+            safeClose(mitmSocket)
+        }
+    }
+
+    /**
+     * WebSocket / upgrade fallback: replay the already-parsed request head into a
+     * classic upstream TLS connection, flush anything the buffered stream pre-read,
+     * then raw-relay the rest of the session.
+     */
+    private fun fallbackToRawRelay(
+        mitmSocket: SSLSocket,
+        bufferedInput: BufferedInputStream,
+        host: String,
+        port: Int,
+        config: Config,
+        firstLine: String,
+        headerLines: List<String>
+    ) {
+        val upstreamSocket = try {
+            TlsUpstreamConnector.connect(
+                host = host,
+                port = port,
+                template = config.template,
+                customCipherSuites = config.customCipherSuites,
+                upstreamSocks = config.upstreamSocks,
+                restrictAlpnTo = "http/1.1",
+                customCaAnchors = customCaAnchors
+            ).sslSocket
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "h3 upgrade fallback upstream connect failed for $host:$port: ${e.message}")
+            safeClose(mitmSocket)
+            return
+        }
+
+        try {
+            val upstreamOut = upstreamSocket.getOutputStream()
+            val sb = StringBuilder()
+            sb.append(firstLine).append("\r\n")
+            headerLines.forEach { sb.append(it).append("\r\n") }
+            sb.append("\r\n")
+            upstreamOut.write(sb.toString().toByteArray(StandardCharsets.ISO_8859_1))
+            upstreamOut.flush()
+
+            // The buffered stream may hold pipelined bytes past the request head.
+            val preRead = ByteArray(IO_BUFFER)
+            while (bufferedInput.available() > 0) {
+                val n = bufferedInput.read(preRead)
+                if (n <= 0) break
+                upstreamOut.write(preRead, 0, n)
+            }
+            upstreamOut.flush()
+        } catch (e: Exception) {
+            AppLogger.w(TAG, "h3 upgrade fallback replay failed for $host: ${e.message}")
+            safeClose(upstreamSocket)
+            safeClose(mitmSocket)
+            return
+        }
+
+        try { mitmSocket.soTimeout = 0 } catch (_: Exception) {}
+        try { upstreamSocket.soTimeout = 0 } catch (_: Exception) {}
+        bridge(mitmSocket, upstreamSocket)
+    }
+
+    /** Reads a request body bounded by Content-Length or chunked framing. */
+    private fun readRequestBody(input: InputStream, headerLines: List<String>): ByteArray? {
+        val transferEncoding = headerLines.firstOrNull { it.startsWith("transfer-encoding:", ignoreCase = true) }
+            ?.substringAfter(':')
+            ?.trim()
+            ?.lowercase(Locale.ROOT)
+        return if (transferEncoding != null && transferEncoding.contains("chunked")) {
+            readChunkedBody(input)
+        } else {
+            val contentLength = headerLines.firstOrNull { it.startsWith("content-length:", ignoreCase = true) }
+                ?.substringAfter(':')
+                ?.trim()
+                ?.toIntOrNull()
+                ?: return null
+            if (contentLength <= 0) null else readBounded(input, contentLength)
+        }
+    }
+
+    private fun readBounded(input: InputStream, length: Int): ByteArray {
+        if (length > MAX_H3_BODY_BYTES) {
+            throw java.io.IOException("Request body too large: $length")
+        }
+        val buffer = ByteArray(length)
+        var off = 0
+        while (off < length) {
+            val read = input.read(buffer, off, length - off)
+            if (read < 0) throw java.io.EOFException("Request body truncated")
+            off += read
+        }
+        return buffer
+    }
+
+    private fun readChunkedBody(input: InputStream): ByteArray {
+        val out = java.io.ByteArrayOutputStream()
+        while (true) {
+            val sizeLine = readHttpLine(input) ?: throw java.io.EOFException("Chunked body truncated")
+            val size = sizeLine.substringBefore(';').trim().toIntOrNull(16)
+                ?: throw java.io.IOException("Bad chunk size: $sizeLine")
+            if (size == 0) {
+                // Consume trailers until the empty line.
+                while (true) {
+                    val trailer = readHttpLine(input) ?: break
+                    if (trailer.isEmpty()) break
+                }
+                break
+            }
+            if (out.size() + size > MAX_H3_BODY_BYTES) {
+                throw java.io.IOException("Chunked request body too large")
+            }
+            readBoundedInto(input, out, size)
+            // Trailing CRLF after each chunk.
+            readHttpLine(input)
+        }
+        return out.toByteArray()
+    }
+
+    private fun readBoundedInto(input: InputStream, out: java.io.ByteArrayOutputStream, length: Int) {
+        val buffer = ByteArray(minOf(length, IO_BUFFER))
+        var remaining = length
+        while (remaining > 0) {
+            val read = input.read(buffer, 0, minOf(remaining, buffer.size))
+            if (read < 0) throw java.io.EOFException("Chunk truncated")
+            out.write(buffer, 0, read)
+            remaining -= read
+        }
     }
 
     private fun handleHttpForward(

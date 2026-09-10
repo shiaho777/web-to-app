@@ -243,6 +243,7 @@ data class ApkConfig(
     val tlsFingerprintEnabled: Boolean get() = tlsFingerprint.enabled
     val tlsFingerprintTemplate: String get() = tlsFingerprint.template
     val tlsFingerprintCustomCiphers: List<String> get() = tlsFingerprint.customCipherSuites
+    val tlsFingerprintForceHttp3: Boolean get() = tlsFingerprint.forceHttp3
     val antiCaptureEnabled: Boolean get() = webView.antiCapture
 
     val dnsMode: String get() = dns.mode
@@ -674,7 +675,8 @@ data class DnsBlock(
 data class TlsFingerprintBlock(
     val enabled: Boolean = false,
     val template: String = "CHROME_131",
-    val customCipherSuites: List<String> = emptyList()
+    val customCipherSuites: List<String> = emptyList(),
+    val forceHttp3: Boolean = false
 )
 
 data class ErrorPageBlock(
@@ -946,4 +948,15 @@ data class DnsApkConfig(
     val dohMode: String = "automatic",
     val bypassSystemDns: Boolean = false,
     val echEnabled: Boolean = false
-)
+) {
+    /** Mirrors [com.webtoapp.data.model.DnsConfig.echEffective] on the export side. */
+    val echEffective: Boolean
+        get() = echEnabled && effectiveDohUrl.isNotBlank()
+
+    val effectiveDohUrl: String
+        get() = if (provider == "custom") {
+            customDohUrl
+        } else {
+            com.webtoapp.data.model.DnsProvider.entries.find { it.key == provider }?.dohUrl ?: ""
+        }
+}

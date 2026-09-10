@@ -5,14 +5,14 @@ Manage the browser engines available to your apps. Open it from [⋮ → Browser
 ## Features
 
 - **Current WebView info** — inspect the system WebView version on this device.
-- **Embedded engine** — download, manage, and delete the optional GeckoView (Firefox) runtime, used for ECH / SNI encryption. Shows download size and progress; the heavy native artifacts are fetched on first use.
+- **Embedded engine** — download, manage, and delete the optional GeckoView (Firefox) runtime. Shows download size and progress; the heavy native artifacts are fetched on first use.
 - **Change WebView provider** — switch the system WebView provider (with developer-options steps guidance).
 - **Engine descriptions** — reference info for Chrome, Edge, Brave, Firefox, and Via.
 
 ## Notes
 
 - Per-app engine selection happens in the [Build APK](/guide/app-actions/build-apk) dialog; this screen manages the engines themselves.
-- GeckoView is required for [ECH](/guide/config/network).
+- [ECH](/guide/config/network) works on both engines; GeckoView is one option, not a requirement.
 
 ## GeckoView (Firefox engine) feature support
 
@@ -20,7 +20,7 @@ GeckoView is a complete second engine independent of the system WebView, not a W
 
 ### Fully supported (native implementations, on par with the system WebView)
 
-- **ECH (encrypted SNI)** — GeckoView only; enabling ECH automatically switches the app to this engine
+- **ECH (encrypted SNI)** — available on both engines; GeckoView implements it natively via TRR + its ECH prefs, the system WebView via the MITM bridge's Chromium upstream (auto-downloaded on first use, embedded in exported APKs)
 - DoH, static / PAC / SOCKS5 proxy, anti-capture (force direct connection, ignore system proxies)
 - UA modes and custom User-Agent, desktop mode
 - JavaScript toggle, autoplay policy, viewport mode (fit screen / desktop), clear browsing data on launch, download toggle
@@ -52,7 +52,7 @@ GeckoView is a complete second engine independent of the system WebView, not a W
 
 ### Unsupported by design (trade-offs, not defects)
 
-- **TLS fingerprint spoofing (MITM bridge)** — GeckoView natively presents a genuine Firefox TLS / JA3 fingerprint, which is the strongest "disguise" in itself, and the MITM bridge would terminate TLS and directly conflict with ECH. The feature is therefore offered on the system WebView kernel only. On GeckoView, the target site sees a real Firefox.
+- **TLS fingerprint spoofing (MITM bridge) and forced HTTP/3 (QUIC)** — both ride the MITM bridge, which is a system-WebView-kernel feature; GeckoView natively presents a genuine Firefox TLS / JA3 fingerprint, which is the strongest "disguise" in itself, and the MITM bridge would terminate TLS and directly conflict with GeckoView's native ECH. On GeckoView, the target site sees a real Firefox.
 - **"Proceed anyway" on SSL certificate errors** — GeckoView cannot ignore certificate errors, and editor-imported custom CAs are not trusted by GeckoView (only user CAs installed into the Android system, via the trust-user-certificates toggle).
 - DOM storage / database cannot be disabled (always on in GeckoView).
 - Floating-window mode always uses the system WebView regardless of the per-app engine choice.
@@ -60,5 +60,6 @@ GeckoView is a complete second engine independent of the system WebView, not a W
 ### Choosing an engine
 
 - Apps that rely on ad blocking, userscripts, Chrome extensions, the NativeBridge API, or encrypted resource packaging → choose the **system WebView**.
-- Apps that need ECH / SNI encryption, a genuine Firefox fingerprint, or Gecko engine behavior → choose **GeckoView** and accept the gaps listed above.
+- Apps that want a genuine Firefox fingerprint or Gecko engine behavior → choose **GeckoView** and accept the gaps listed above.
+- ECH / SNI encryption works on both engines; if you also need TLS fingerprint spoofing or forced HTTP/3, choose the **system WebView**.
 - Download the GeckoView runtime on this page first: the Build APK dialog will not offer the engine until it is installed, and host previews silently fall back to the system WebView when the runtime is missing.

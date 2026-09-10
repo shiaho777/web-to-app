@@ -298,6 +298,7 @@ fun buildWebViewConfig(config: ShellConfig): WebViewConfig {
         tlsFingerprintEnabled = config.webViewConfig.tlsFingerprintEnabled,
         tlsFingerprintTemplate = config.webViewConfig.tlsFingerprintTemplate,
         tlsFingerprintCustomCiphers = config.webViewConfig.tlsFingerprintCustomCiphers,
+        forceHttp3 = config.webViewConfig.forceHttp3,
         antiCapture = config.webViewConfig.antiCapture,
 
         dnsMode = config.webViewConfig.dnsMode,

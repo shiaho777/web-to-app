@@ -4172,6 +4172,9 @@ object Strings {
     val tlsFingerprintCustomCiphersHint: String get() = StringsE.tlsFingerprintCustomCiphersHint
     val tlsFingerprintGeckoWarning: String get() = StringsE.tlsFingerprintGeckoWarning
     val tlsFingerprintProxyIntegration: String get() = StringsE.tlsFingerprintProxyIntegration
+    val forceHttp3Title: String get() = StringsE.forceHttp3Title
+    val forceHttp3Description: String get() = StringsE.forceHttp3Description
+    val forceHttp3Note: String get() = StringsE.forceHttp3Note
     val proxyModeNone: String get() = StringsE.proxyModeNone
     val proxyModeStatic: String get() = StringsE.proxyModeStatic
     val proxyModePac: String get() = StringsE.proxyModePac
@@ -40310,41 +40313,41 @@ object StringsC {
     }
 
     val dnsEchDesc: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "加密 TLS 握手，隐藏你访问的网站域名，防止网络中间人看到你连了哪个站。仅对支持 ECH 的网站生效。"
-        AppLanguage.ENGLISH -> "Encrypts the TLS handshake to hide which website domain you visit from on-path observers. Only effective for sites that support ECH."
-        AppLanguage.ARABIC -> "يشفّر مصافحة TLS لإخفاء اسم نطاق الموقع الذي تزوره عن المراقبين على المسار. يعمل فقط مع المواقع التي تدعم ECH."
-        AppLanguage.PORTUGUESE -> "Criptografa o handshake TLS para ocultar o domínio do site que você visita de observadores no caminho. Efetivo apenas para sites que suportam ECH."
-        AppLanguage.SPANISH -> "Cifra el handshake TLS para ocultar el dominio del sitio web que visitas a observadores en ruta. Solo efectivo para sitios que soportan ECH."
-        AppLanguage.FRENCH -> "Chiffre le handshake TLS pour cacher le domaine du site web que vous visitez aux observateurs sur le chemin. Efficace uniquement pour les sites qui supportent ECH."
-        AppLanguage.GERMAN -> "Verschlüsselt den TLS-Handshake, um die besuchte Website-Domain vor Pfad-Beobachtern zu verbergen. Nur wirksam für Sites, die ECH unterstützen."
-        AppLanguage.RUSSIAN -> "Шифрует TLS-рукопожатие, чтобы скрыть домен посещаемого сайта от наблюдателей на пути. Эффективно только для сайтов, поддерживающих ECH."
-        AppLanguage.JAPANESE -> "TLS ハンドシェイクを暗号化し、経路上の観察者から訪問先のウェブサイトドメインを隠します。ECH をサポートするサイトにのみ有効です。"
-        AppLanguage.KOREAN -> "TLS 핸드셰이크를 암호화하여 경로상 관찰자로부터 방문하는 웹사이트 도메인을 숨깁니다. ECH를 지원하는 사이트에만 유효합니다."
+        AppLanguage.CHINESE -> "加密 TLS 握手，隐藏你访问的网站域名，防止网络中间人看到你连了哪个站。两种引擎均支持；仅对支持 ECH 的网站生效。"
+        AppLanguage.ENGLISH -> "Encrypts the TLS handshake to hide which website domain you visit from on-path observers. Works on both engines; only effective for sites that support ECH."
+        AppLanguage.ARABIC -> "يشفّر مصافحة TLS لإخفاء اسم نطاق الموقع الذي تزوره عن المراقبين على المسار. يعمل على كلا المحركين؛ فعال فقط مع المواقع التي تدعم ECH."
+        AppLanguage.PORTUGUESE -> "Criptografa o handshake TLS para ocultar o domínio do site que você visita de observadores no caminho. Funciona em ambos os motores; efetivo apenas para sites que suportam ECH."
+        AppLanguage.SPANISH -> "Cifra el handshake TLS para ocultar el dominio del sitio web que visitas a observadores en ruta. Funciona en ambos motores; solo efectivo para sitios que soportan ECH."
+        AppLanguage.FRENCH -> "Chiffre le handshake TLS pour cacher le domaine du site web que vous visitez aux observateurs sur le chemin. Fonctionne sur les deux moteurs ; efficace uniquement pour les sites qui supportent ECH."
+        AppLanguage.GERMAN -> "Verschlüsselt den TLS-Handshake, um die besuchte Website-Domain vor Pfad-Beobachtern zu verbergen. Funktioniert auf beiden Engines; nur wirksam für Sites, die ECH unterstützen."
+        AppLanguage.RUSSIAN -> "Шифрует TLS-рукопожатие, чтобы скрыть домен посещаемого сайта от наблюдателей на пути. Работает на обоих движках; эффективно только для сайтов, поддерживающих ECH."
+        AppLanguage.JAPANESE -> "TLS ハンドシェイクを暗号化し、経路上の観察者から訪問先のウェブサイトドメインを隠します。両方のエンジンで動作し、ECH をサポートするサイトにのみ有効です。"
+        AppLanguage.KOREAN -> "TLS 핸드셰이크를 암호화하여 경로상 관찰자로부터 방문하는 웹사이트 도메인을 숨깁니다. 두 엔진 모두에서 작동하며 ECH를 지원하는 사이트에만 유효합니다."
     }
 
     val dnsEchGeckoBadge: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "仅 Gecko"
-        AppLanguage.ENGLISH -> "Gecko only"
-        AppLanguage.ARABIC -> "Gecko فقط"
-        AppLanguage.PORTUGUESE -> "Apenas Gecko"
-        AppLanguage.SPANISH -> "Solo Gecko"
-        AppLanguage.FRENCH -> "Gecko uniquement"
-        AppLanguage.GERMAN -> "Nur Gecko"
-        AppLanguage.RUSSIAN -> "Только Gecko"
-        AppLanguage.JAPANESE -> "Gecko のみ"
-        AppLanguage.KOREAN -> "Gecko 전용"
+        AppLanguage.CHINESE -> "SNI 加密"
+        AppLanguage.ENGLISH -> "Encrypted SNI"
+        AppLanguage.ARABIC -> "SNI مشفّر"
+        AppLanguage.PORTUGUESE -> "SNI criptografado"
+        AppLanguage.SPANISH -> "SNI cifrado"
+        AppLanguage.FRENCH -> "SNI chiffré"
+        AppLanguage.GERMAN -> "Verschlüsseltes SNI"
+        AppLanguage.RUSSIAN -> "Шифрование SNI"
+        AppLanguage.JAPANESE -> "SNI 暗号化"
+        AppLanguage.KOREAN -> "SNI 암호화"
     }
     val dnsEchEngineWarn: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "ECH 需 GeckoView 引擎才能加密 SNI。已自动切换到 GeckoView，构建后请确保已下载 GeckoView 运行时。"
-        AppLanguage.ENGLISH -> "ECH needs the GeckoView engine to encrypt SNI. Switched to GeckoView automatically — make sure the GeckoView runtime is downloaded before building."
-        AppLanguage.ARABIC -> "يحتاج ECH إلى محرك GeckoView لتشفير SNI. تم التبديل إلى GeckoView تلقائياً — تأكد من تنزيل وقت تشغيل GeckoView قبل البناء."
-        AppLanguage.PORTUGUESE -> "ECH precisa do motor GeckoView para criptografar SNI. Mudou para GeckoView automaticamente — certifique-se de baixar o runtime GeckoView antes de construir."
-        AppLanguage.SPANISH -> "ECH necesita el motor GeckoView para cifrar SNI. Se cambió a GeckoView automáticamente — asegúrate de descargar el runtime de GeckoView antes de construir."
-        AppLanguage.FRENCH -> "ECH nécessite le moteur GeckoView pour chiffrer SNI. Basculement vers GeckoView automatique — assurez-vous de télécharger le runtime GeckoView avant la construction."
-        AppLanguage.GERMAN -> "ECH benötigt die GeckoView-Engine, um SNI zu verschlüsseln. Automatisch auf GeckoView umgeschaltet — stellen Sie sicher, dass die GeckoView-Laufzeitumgebung vor dem Build heruntergeladen ist."
-        AppLanguage.RUSSIAN -> "ECH требует движок GeckoView для шифрования SNI. Автоматически переключено на GeckoView — убедитесь, что среда выполнения GeckoView загружена перед сборкой."
-        AppLanguage.JAPANESE -> "ECH は SNI を暗号化するために GeckoView エンジンが必要です。自動的に GeckoView に切り替わりました — ビルド前に GeckoView ランタイムがダウンロード済みであることを確認してください。"
-        AppLanguage.KOREAN -> "ECH는 SNI 암호화를 위해 GeckoView 엔진이 필요합니다. 자동으로 GeckoView로 전환되었습니다 — 빌드 전에 GeckoView 런타임이 다운로드되어 있는지 확인하세요."
+        AppLanguage.CHINESE -> "系统内核下 ECH 经本地桥接的 Chromium 网络组件实现：首次使用会自动下载组件（约 14MB），导出的 APK 将内置；与 SOCKS 上游代理互斥。若本地桥未启用，连接将回退为普通加密。"
+        AppLanguage.ENGLISH -> "On the system engine ECH rides the locally-bridged Chromium network component: first use auto-downloads it (~14 MB) and exported APKs embed it; mutually exclusive with a SOCKS upstream proxy. Without the component the connection falls back to ordinary encryption."
+        AppLanguage.ARABIC -> "على محرك النظام يعمل ECH عبر مكوّن شبكة Chromium المتصل محليًا: الاستخدام الأول ينزّله تلقائيًا (حوالي 14 ميغابايت) وتُدمجه ملفات APK المصدَّرة؛ وهو حصري مع وكيل SOCKS. بدونه تعود الاتصالات إلى التشفير العادي."
+        AppLanguage.PORTUGUESE -> "No motor do sistema, o ECH usa o componente de rede Chromium conectado localmente: o primeiro uso o baixa automaticamente (~14 MB) e os APKs exportados o incorporam; é mutuamente exclusivo com um proxy SOCKS upstream. Sem ele, a conexão volta à criptografia comum."
+        AppLanguage.SPANISH -> "En el motor del sistema, ECH funciona mediante el componente de red Chromium conectado localmente: el primer uso lo descarga automáticamente (~14 MB) y los APK exportados lo incorporan; es mutuamente excluyente con un proxy SOCKS. Sin él, la conexión vuelve al cifrado ordinario."
+        AppLanguage.FRENCH -> "Sur le moteur système, ECH passe par le composant réseau Chromium relié localement : le premier usage le télécharge automatiquement (~14 Mo) et les APK exportés l'intègrent ; il est mutuellement exclusif avec un proxy SOCKS. Sans lui, la connexion revient au chiffrement ordinaire."
+        AppLanguage.GERMAN -> "Auf der System-Engine läuft ECH über die lokal angebundene Chromium-Netzkomponente: Die erste Nutzung lädt sie automatisch herunter (~14 MB), exportierte APKs binden sie ein; gegenseitig ausgeschlossen mit einem SOCKS-Upstream. Ohne sie fällt die Verbindung auf gewöhnliche Verschlüsselung zurück."
+        AppLanguage.RUSSIAN -> "На системном движке ECH работает через локально подключённый сетевой компонент Chromium: первое использование скачивает его автоматически (~14 МБ), экспортируемые APK встраивают его; взаимоисключается с прокси SOCKS. Без него соединение откатывается к обычному шифрованию."
+        AppLanguage.JAPANESE -> "システムエンジンでは ECH はローカルにブリッジされた Chromium ネットワークコンポーネント経由で動作します。初回使用時に自動ダウンロード（約 14MB）され、エクスポートされた APK には組み込まれます。SOCKS 上流プロキシとは排他です。コンポーネントがない場合は通常の暗号化にフォールバックします。"
+        AppLanguage.KOREAN -> "시스템 엔진에서 ECH는 로컬로 브리지된 Chromium 네트워크 컴포넌트를 통해 작동합니다. 최초 사용 시 자동 다운로드(약 14MB)되며 내보낸 APK에는 포함됩니다. SOCKS 업스트림 프록시와는 상호 배타적입니다. 컴포넌트가 없으면 일반 암호화로 폴백합니다."
     }
 
     val browserDisguiseTitle: String get() = when (Strings.lang) {
@@ -57105,6 +57108,42 @@ object StringsE {
         AppLanguage.RUSSIAN -> "При совместном использовании с прокси SOCKS5 повторное рукопожатие TLS проходит через туннель прокси"
         AppLanguage.JAPANESE -> "SOCKS5 プロキシと組み合わせると、TLS 再ハンドシェイクはプロキシトンネルを経由します"
         AppLanguage.KOREAN -> "SOCKS5 프록시와 함께 사용하면 TLS 재핸드셰이크가 프록시 터널을 통과합니다"
+    }
+    val forceHttp3Title: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "强制 HTTP/3 (QUIC)"
+        AppLanguage.ENGLISH -> "Force HTTP/3 (QUIC)"
+        AppLanguage.ARABIC -> "فرض HTTP/3 (QUIC)"
+        AppLanguage.PORTUGUESE -> "Forçar HTTP/3 (QUIC)"
+        AppLanguage.SPANISH -> "Forzar HTTP/3 (QUIC)"
+        AppLanguage.FRENCH -> "Forcer HTTP/3 (QUIC)"
+        AppLanguage.GERMAN -> "HTTP/3 erzwingen (QUIC)"
+        AppLanguage.RUSSIAN -> "Принудительный HTTP/3 (QUIC)"
+        AppLanguage.JAPANESE -> "HTTP/3 を強制 (QUIC)"
+        AppLanguage.KOREAN -> "HTTP/3 강제 (QUIC)"
+    }
+    val forceHttp3Description: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "流量经真实 Chromium 网络栈传输，对每个站点从首个请求起优先尝试 QUIC"
+        AppLanguage.ENGLISH -> "Traffic rides the real Chromium network stack; every host tries QUIC from the first request"
+        AppLanguage.ARABIC -> "يستخدم حركة البيانات مكدس الشبكة الحقيقي لـ Chromium؛ كل موقع يجرب QUIC من الطلب الأول"
+        AppLanguage.PORTUGUESE -> "O tráfego usa a pilha de rede real do Chromium; cada host tenta QUIC desde a primeira solicitação"
+        AppLanguage.SPANISH -> "El tráfico usa la pila de red real de Chromium; cada host prueba QUIC desde la primera solicitud"
+        AppLanguage.FRENCH -> "Le trafic passe par la pile réseau réelle de Chromium ; chaque hôte tente QUIC dès la première requête"
+        AppLanguage.GERMAN -> "Der Verkehr läuft über den echten Chromium-Netzwerkstapel; jeder Host versucht QUIC ab der ersten Anfrage"
+        AppLanguage.RUSSIAN -> "Трафик идёт через настоящий сетевой стек Chromium; каждый хост пробует QUIC с первого запроса"
+        AppLanguage.JAPANESE -> "トラフィックは本物の Chromium ネットワークスタックを経由し、各ホストは最初のリクエストから QUIC を試みます"
+        AppLanguage.KOREAN -> "트래픽은 실제 Chromium 네트워크 스택을 통해 흐르며, 각 호스트는 첫 요청부터 QUIC를 시도합니다"
+    }
+    val forceHttp3Note: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "经本地桥将请求转发到内置的 Chromium 网络组件 (Cronet)：对每个目标站点从首个请求起优先建立 HTTP/3 (QUIC/UDP) 连接，不支持的站点自动回退到真实 Chrome 的 TLS 通道，出口指纹即真实 Chromium，无需另行伪装。首次使用会自动下载网络组件（约 14MB），导出的 APK 将内置该组件。与 SOCKS 上游代理互斥：配置 SOCKS 时本开关不生效。"
+        AppLanguage.ENGLISH -> "The local bridge forwards requests to the embedded Chromium network stack (Cronet): every target site is preferred over HTTP/3 (QUIC/UDP) from its first request, sites without h3 fall back to a genuine Chrome TLS path, and the outbound fingerprint is real Chromium — no spoofing needed. First use auto-downloads the network component (~14 MB); exported APKs embed it. Mutually exclusive with a SOCKS upstream: the switch is inert while SOCKS is configured."
+        AppLanguage.ARABIC -> "يعيد الجسر المحلي توجيه الطلبات إلى مكدس شبكة Chromium المدمج (Cronet): يُفضَّل HTTP/3 (QUIC/UDP) لكل موقع مستهدف من طلبه الأول، وتتراجع المواقع بدون h3 إلى مسار TLS حقيقي من Chrome، وبصمة الخروج هي Chromium حقيقي — لا حاجة للانتحال. الاستخدام الأول ينزّل مكوّن الشبكة تلقائيًا (حوالي 14 ميغابايت)؛ وتُدمج ملفات APK المصدَّرة المكوّن. حصري بشكل متبادل مع وكيل SOCKS: لا يعمل المفتاح عند تهيئة SOCKS."
+        AppLanguage.PORTUGUESE -> "A ponte local encaminha as solicitações para a pilha de rede Chromium integrada (Cronet): cada site de destino prefere HTTP/3 (QUIC/UDP) desde a primeira solicitação, sites sem h3 recuam para um caminho TLS genuíno do Chrome, e a impressão digital de saída é o Chromium real — sem necessidade de falsificação. O primeiro uso baixa automaticamente o componente de rede (~14 MB); APKs exportados o incorporam. Mutuamente exclusivo com um proxy SOCKS: a opção fica inerte com o SOCKS configurado."
+        AppLanguage.SPANISH -> "El puente local reenvía las solicitudes a la pila de red Chromium integrada (Cronet): cada sitio de destino prefiere HTTP/3 (QUIC/UDP) desde su primera solicitud, los sitios sin h3 retroceden a una ruta TLS genuina de Chrome, y la huella de salida es Chromium real, sin necesidad de suplantación. El primer uso descarga automáticamente el componente de red (~14 MB); los APK exportados lo incorporan. Mutuamente excluyente con un proxy SOCKS: la opción queda inerte con SOCKS configurado."
+        AppLanguage.FRENCH -> "Le pont local transmet les requêtes à la pile réseau Chromium intégrée (Cronet) : chaque site cible privilégie HTTP/3 (QUIC/UDP) dès sa première requête, les sites sans h3 reviennent à un chemin TLS authentique de Chrome, et l'empreinte sortante est du vrai Chromium — aucune usurpation nécessaire. La première utilisation télécharge automatiquement le composant réseau (~14 Mo) ; les APK exportés l'intègrent. Mutuellement exclusif avec un proxy SOCKS : l'option est inactive si SOCKS est configuré."
+        AppLanguage.GERMAN -> "Die lokale Bridge leitet Anfragen an den eingebetteten Chromium-Netzwerkstapel (Cronet) weiter: Jede Zielseite bevorzugt HTTP/3 (QUIC/UDP) ab der ersten Anfrage, Seiten ohne h3 fallen auf einen echten Chrome-TLS-Pfad zurück, und der ausgehende Fingerabdruck ist echtes Chromium — kein Spoofing nötig. Die erste Nutzung lädt die Netzkomponente automatisch herunter (~14 MB); exportierte APKs binden sie ein. Gegenseitig ausgeschlossen mit einem SOCKS-Upstream: Der Schalter ist wirkungslos, wenn SOCKS konfiguriert ist."
+        AppLanguage.RUSSIAN -> "Локальный мост перенаправляет запросы во встроенный сетевой стек Chromium (Cronet): каждому целевому сайту предпочтителен HTTP/3 (QUIC/UDP) с первого запроса, сайты без h3 откатываются на подлинный TLS-путь Chrome, а исходящий отпечаток — настоящий Chromium, подмена не нужна. Первый запуск автоматически скачивает сетевой компонент (~14 МБ); экспортируемые APK встраивают его. Взаимно исключается с вышестоящим SOCKS: при настроенном SOCKS переключатель не действует."
+        AppLanguage.JAPANESE -> "ローカルブリッジはリクエストを内蔵の Chromium ネットワークスタック (Cronet) へ転送します。各ターゲットサイトは最初のリクエストから HTTP/3 (QUIC/UDP) を優先し、h3 非対応サイトは本物の Chrome TLS 経路にフォールバックします。送出フィンガープリントは本物の Chromium そのものであり、偽装は不要です。初回使用時にネットワークコンポーネント（約 14MB）を自動ダウンロードし、エクスポートされた APK には組み込まれます。SOCKS 上流プロキシとは排他で、SOCKS 設定時はこのスイッチは無効になります。"
+        AppLanguage.KOREAN -> "로컬 브리지는 요청을 내장된 Chromium 네트워크 스택(Cronet)으로 전달합니다. 각 대상 사이트는 첫 요청부터 HTTP/3(QUIC/UDP)를 우선 시도하고, h3를 지원하지 않는 사이트는 진짜 Chrome TLS 경로로 폴백합니다. 송출 핑거프린트는 진짜 Chromium이므로 별도 위장이 필요 없습니다. 최초 사용 시 네트워크 컴포넌트(약 14MB)를 자동 다운로드하며, 내보낸 APK에는 포함됩니다. SOCKS 업스트림 프록시와는 상호 배타적이며 SOCKS 구성 시 이 스위치는 동작하지 않습니다."
     }
     val proxyModeNone: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "无代理"

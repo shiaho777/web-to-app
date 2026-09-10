@@ -8,7 +8,10 @@ import com.webtoapp.data.model.AppType
 
 object ExportRuntimeEnsure {
 
-    fun needsEnsure(context: Context, appType: AppType): Boolean {
+    fun needsEnsure(context: Context, appType: AppType, needsCronet: Boolean = false): Boolean {
+        if (needsCronet && !com.webtoapp.core.webview.CronetDependencyManager.isCronetReady(context)) {
+            return true
+        }
         return when (appType) {
             AppType.PYTHON_APP -> !PythonDependencyManager.isPythonReady(context)
             AppType.NODEJS_APP -> !NodeDependencyManager.isNodeReady(context)
@@ -21,7 +24,12 @@ object ExportRuntimeEnsure {
         }
     }
 
-    suspend fun ensure(context: Context, appType: AppType): Boolean {
+    suspend fun ensure(context: Context, appType: AppType, needsCronet: Boolean = false): Boolean {
+        if (needsCronet && !com.webtoapp.core.webview.CronetDependencyManager.isCronetReady(context)) {
+            if (!com.webtoapp.core.webview.CronetDependencyManager.downloadCronetRuntime(context)) {
+                return false
+            }
+        }
         return when (appType) {
             AppType.PYTHON_APP -> {
                 if (PythonDependencyManager.isPythonReady(context)) true

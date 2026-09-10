@@ -116,6 +116,28 @@ class TlsMitmBridgeTest {
     }
 
     @Test
+    fun `cronet activation matrix for http3 and ech`() {
+        val template = TlsFingerprintTemplate.CHROME_131
+        val socks = LocalHttpToSocksBridge.Upstream("127.0.0.1", 1080)
+
+        // Plain fingerprint spoofing stays on the classic raw relay.
+        assertThat(TlsMitmBridge.Config(template = template).cronetActive).isFalse()
+        // Forced HTTP/3 and ECH both activate the Cronet upstream.
+        assertThat(TlsMitmBridge.Config(template = template, forceHttp3 = true).cronetActive).isTrue()
+        assertThat(TlsMitmBridge.Config(template = template, echUpstream = true).cronetActive).isTrue()
+        assertThat(
+            TlsMitmBridge.Config(template = template, forceHttp3 = true, echUpstream = true).cronetActive
+        ).isTrue()
+        // A SOCKS upstream takes precedence and leaves both toggles inert.
+        assertThat(
+            TlsMitmBridge.Config(template = template, forceHttp3 = true, upstreamSocks = socks).cronetActive
+        ).isFalse()
+        assertThat(
+            TlsMitmBridge.Config(template = template, echUpstream = true, upstreamSocks = socks).cronetActive
+        ).isFalse()
+    }
+
+    @Test
     fun `multiple start stop cycles work correctly`() {
         for (i in 1..3) {
             val port = TlsMitmBridge.start(

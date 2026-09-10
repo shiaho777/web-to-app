@@ -1344,8 +1344,16 @@ class WebViewManager(
 
         val tlsFingerprintEnabled = config.tlsFingerprintEnabled &&
             config.tlsFingerprintTemplate.isNotBlank()
+        // ECH on the system engine rides the same MITM bridge as forced HTTP/3: the
+        // upstream leg is Cronet, whose Chromium stack fetches HTTPS records and
+        // encrypts the ClientHello SNI natively. Without DoH the record query goes out
+        // over plain DNS — echEffective still allows that; the SNI itself stays hidden.
+        val echUpstream = config.dnsConfig.echEffective
+        // Forced HTTP/3 and ECH both ride the MITM bridge (their upstream leg is
+        // Cronet), so either must be able to start the bridge alone.
+        val needsMitmBridge = tlsFingerprintEnabled || config.forceHttp3 || echUpstream
 
-        if (tlsFingerprintEnabled) {
+        if (needsMitmBridge) {
             val template = TlsFingerprintTemplate.fromId(config.tlsFingerprintTemplate)
             val upstreamSocks = if (config.proxyMode == "STATIC" &&
                 (config.proxyType == "SOCKS5" || config.proxyType == "SOCKS")) {
@@ -1358,6 +1366,12 @@ class WebViewManager(
             } else {
                 null
             }
+            if (config.forceHttp3 && upstreamSocks != null) {
+                AppLogger.w("WebViewManager", "强制 HTTP/3 ignored: SOCKS upstream proxy takes precedence")
+            }
+            if (echUpstream && upstreamSocks != null) {
+                AppLogger.w("WebViewManager", "ECH ignored on system engine: SOCKS upstream proxy takes precedence")
+            }
 
             val mitmPort = TlsMitmBridge.start(
                 config = TlsMitmBridge.Config(
@@ -1367,13 +1381,16 @@ class WebViewManager(
                     } else {
                         emptyList()
                     },
-                    upstreamSocks = upstreamSocks
+                    upstreamSocks = upstreamSocks,
+                    forceHttp3 = config.forceHttp3,
+                    echUpstream = echUpstream
                 ),
                 caDir = context.filesDir,
                 customCaAnchors = runCatching {
                     CustomCaTrustStore.init(context)
                     CustomCaTrustStore.getAnchorCertificates()
-                }.getOrDefault(emptyList())
+                }.getOrDefault(emptyList()),
+                appContext = context.applicationContext
             )
 
             if (mitmPort > 0) {

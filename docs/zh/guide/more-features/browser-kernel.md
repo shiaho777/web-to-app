@@ -5,14 +5,14 @@
 ## 功能
 
 - **当前 WebView 信息** —— 查看本设备的系统 WebView 版本。
-- **内置引擎** —— 下载、管理和删除可选的 GeckoView(Firefox)运行时,用于 ECH / SNI 加密。显示下载大小和进度;沉重的原生产物在首次使用时获取。
+- **内置引擎** —— 下载、管理和删除可选的 GeckoView(Firefox)运行时。显示下载大小和进度;沉重的原生产物在首次使用时获取。
 - **更改 WebView 提供者** —— 切换系统 WebView 提供者(带开发者选项步骤指引)。
 - **引擎说明** —— Chrome、Edge、Brave、Firefox 和 Via 的参考信息。
 
 ## 说明
 
 - 各应用的引擎选择在[构建 APK](/zh/guide/app-actions/build-apk) 对话框中进行;本界面管理引擎本身。
-- GeckoView 是 [ECH](/zh/guide/config/network) 所必需的。
+- [ECH](/zh/guide/config/network) 在两种引擎上均可用;GeckoView 只是选项之一,并非必需。
 
 ## GeckoView(Firefox 内核)功能支持说明
 
@@ -20,7 +20,7 @@ GeckoView 是独立于系统 WebView 的完整第二引擎,而不是 WebView 的
 
 ### 完整支持(原生实现,与系统 WebView 无差异)
 
-- **ECH(加密 SNI)** —— 仅 GeckoView 支持;开启 ECH 会自动切换到该内核
+- **ECH(加密 SNI)** —— 两种内核均支持;GeckoView 经 TRR + 自身 ECH 配置原生实现,系统 WebView 经本地 MITM 桥的 Chromium 上行链路(首次使用自动下载组件,导出的 APK 内置)
 - DoH、静态 / PAC / SOCKS5 代理、防抓包(强制直连、忽略系统代理)
 - UA 模式与自定义 User-Agent、桌面模式
 - JavaScript 开关、自动播放策略、视口模式(适应屏幕 / 桌面)、启动时清除浏览数据、下载开关
@@ -52,7 +52,7 @@ GeckoView 是独立于系统 WebView 的完整第二引擎,而不是 WebView 的
 
 ### 设计上不支持(属于取舍,不是缺陷)
 
-- **TLS 指纹伪装(MITM 桥)** —— GeckoView 原生携带真实的 Firefox TLS / JA3 指纹,本身就是最强"伪装";MITM 桥会终止 TLS 重签,与 ECH 直接冲突。因此该功能仅在系统 WebView 内核下提供。使用 GeckoView 时,目标网站看到的就是货真价实的 Firefox。
+- **TLS 指纹伪装(MITM 桥)与强制 HTTP/3(QUIC)** —— 两者都经 MITM 桥实现,属于系统 WebView 内核的功能;GeckoView 原生携带真实的 Firefox TLS / JA3 指纹,本身就是最强"伪装",且 MITM 桥会终止 TLS 重签、与 GeckoView 原生 ECH 直接冲突。使用 GeckoView 时,目标网站看到的就是货真价实的 Firefox。
 - **SSL 证书错误"仍要继续"** —— GeckoView 不允许忽略证书错误;编辑器导入的自定义 CA 也不会被 GeckoView 信任(仅可通过"信任用户证书"开关信任安装进 Android 系统的用户 CA)。
 - DOM 存储 / 数据库无法关闭(GeckoView 始终开启)。
 - 悬浮窗模式固定使用系统 WebView,不跟随各应用的内核选择。
@@ -60,5 +60,6 @@ GeckoView 是独立于系统 WebView 的完整第二引擎,而不是 WebView 的
 ### 选型建议
 
 - 依赖广告拦截、用户脚本、Chrome 扩展、NativeBridge API 或资源加密打包 → 选择**系统 WebView**。
-- 需要 ECH / SNI 加密、真实 Firefox 指纹或 Gecko 内核行为 → 选择 **GeckoView**,并接受上列功能缺失。
+- 需要真实 Firefox 指纹或 Gecko 内核行为 → 选择 **GeckoView**,并接受上列功能缺失。
+- ECH / SNI 加密在两种内核上均可用;如同时需要 TLS 指纹伪装或强制 HTTP/3,请选择**系统 WebView**。
 - 构建前需先在本页下载 GeckoView 运行时,否则构建对话框不允许选择该内核;宿主预览中运行时缺失时会自动回退到系统 WebView。
