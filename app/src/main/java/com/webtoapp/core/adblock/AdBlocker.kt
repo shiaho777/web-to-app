@@ -91,7 +91,9 @@ class AdBlocker {
 
         val rawRule: String = "",
         /** Body of a uBO `:style(...)` pseudo: restyle matches instead of hiding them. */
-        val styleOverride: String? = null
+        val styleOverride: String? = null,
+        /** AdGuard `#$#` payload: a complete CSS rule injected for the anchor domains. */
+        val injectedCss: String? = null
     )
 
     companion object {
@@ -1062,6 +1064,15 @@ class AdBlocker {
             .filter { it.styleOverride != null && matchesCosmeticDomain(it, pageHost) && it.selector !in exceptionSelectors }
             .map { "${it.selector} { ${it.styleOverride} }" }
 
+        // AdGuard `#$#` payloads are complete CSS rules of their own.
+        val exceptionCss = cosmeticExceptionFilters
+            .filter { matchesCosmeticDomain(it, pageHost) }
+            .mapNotNull { it.injectedCss }
+            .toSet()
+        val injectedRules = cosmeticBlockFilters
+            .filter { it.injectedCss != null && matchesCosmeticDomain(it, pageHost) && it.injectedCss !in exceptionCss }
+            .map { it.injectedCss!! }
+
         val batchSize = 50
         val hideBatches = selectors.chunked(batchSize).map { it.joinToString(",\n") }
         val css = buildString {
@@ -1070,6 +1081,7 @@ class AdBlocker {
                 append(" { display: none !important; visibility: hidden !important; height: 0 !important; min-height: 0 !important; overflow: hidden !important; }\n")
             }
             styleRules.forEach { append(it).append('\n') }
+            injectedRules.forEach { append(it).append('\n') }
         }.trimEnd()
         return css to hideBatches
     }
@@ -1473,33 +1485,43 @@ class AdBlocker {
         return decoded.ifBlank { null }
     }
 
+    /** Cosmetic / injection delimiters, longest first so `#@?#` wins over `#@`-prefixed
+     *  shorter matches when scanning. */
+    private val RULE_DELIMITERS = listOf("#@$#", "#$#", "#@?#", "#?#", "#@#", "##")
+
     private fun parseAndAddRule(rawRule: String) {
         val rule = rawRule.trim()
         if (rule.isEmpty() || rule.startsWith("!") || rule.startsWith("[")) return
 
-        val cosmeticExIdx = rule.indexOf("#@#")
-        val cosmeticIdx = if (cosmeticExIdx < 0) rule.indexOf("##") else -1
-
-        if (cosmeticExIdx >= 0) {
-            parseCosmeticFilter(rule, cosmeticExIdx, "#@#", isException = true)
-            return
-        }
-        if (cosmeticIdx >= 0 && !rule.startsWith("||")) {
-            parseCosmeticFilter(rule, cosmeticIdx, "##", isException = false)
-            return
-        }
-
-        if (rule.contains("#%#//scriptlet(")) {
+        // Scriptlets first: `##+js(...)` and `#%#//scriptlet(...)` also contain cosmetic
+        // delimiters, and parsing them as selectors yielded invalid CSS that poisoned
+        // hide batches while the scriptlet parsers below were unreachable dead code.
+        if (rule.contains("##+js(") || rule.contains("#%#//scriptlet(")) {
             parseScriptletRule(rule)
             return
         }
+        // Scriptlet exceptions are unsupported; drop them instead of letting the
+        // `+js(...)` payload reach the stylesheet as an invalid selector.
+        if (rule.contains("#@#+js(") || rule.contains("#@#//scriptlet(")) return
 
-        if (rule.contains("##+js(")) {
-            parseScriptletRule(rule)
+        if (rule.startsWith("||")) {
+            parseNetworkFilter(rule)
             return
         }
 
-        parseNetworkFilter(rule)
+        val (idx, delim) = RULE_DELIMITERS
+            .map { d -> rule.indexOf(d) to d }
+            .filter { it.first >= 0 }
+            .minByOrNull { it.first }
+            ?: run {
+                parseNetworkFilter(rule)
+                return
+            }
+
+        when (delim) {
+            "#$#", "#@$#" -> parseCssInjection(rule, idx, delim, isException = delim == "#@$#")
+            else -> parseCosmeticFilter(rule, idx, delim, isException = delim.startsWith("#@"))
+        }
     }
 
     private fun parseCosmeticFilter(rule: String, idx: Int, delimiter: String, isException: Boolean) {
@@ -1531,6 +1553,27 @@ class AdBlocker {
             excludedDomains = excludedDomains,
             rawRule = rule,
             styleOverride = styleOverride
+        )
+
+        if (isException) cosmeticExceptionFilters.add(filter)
+        else cosmeticBlockFilters.add(filter)
+    }
+
+    /** AdGuard CSS-injection rule (`domain#$#rule`, cancelled by `domain#@$#rule`). */
+    private fun parseCssInjection(rule: String, idx: Int, delimiter: String, isException: Boolean) {
+        val domainPart = rule.substring(0, idx)
+        val css = rule.substring(idx + delimiter.length).trim()
+        if (css.isEmpty() || !css.contains("{") || !css.contains("}")) return
+
+        val (domains, excludedDomains) = parseDomainList(domainPart)
+
+        val filter = CosmeticFilter(
+            selector = "",
+            isException = isException,
+            domains = domains,
+            excludedDomains = excludedDomains,
+            rawRule = rule,
+            injectedCss = css
         )
 
         if (isException) cosmeticExceptionFilters.add(filter)
