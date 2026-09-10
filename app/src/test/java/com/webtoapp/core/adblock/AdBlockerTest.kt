@@ -133,4 +133,63 @@ class AdBlockerTest {
         assertThat(adBlocker.shouldBlock("https://cdn.example.com/static/banner.js\$rev=2", resourceType = "script")).isTrue()
     }
 
+    @Test
+    fun `style override rules restyle matches and stay out of hide batches`() {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+
+        adBlocker.addRule("example.com##.banner:style(background: #121212 !important)")
+        adBlocker.addRule("example.com##.slot")
+
+        val css = adBlocker.getCosmeticFilterCss("example.com")
+        assertThat(css).contains(".banner { background: #121212 !important; }")
+
+        val hideBatches = adBlocker.getCosmeticHideBatches("example.com")
+        assertThat(hideBatches.any { it.contains(".slot") }).isTrue()
+        assertThat(hideBatches.any { it.contains(".banner") }).isFalse()
+        assertThat(hideBatches.any { it.contains(":style(") }).isFalse()
+    }
+
+    @Test
+    fun `style override rules do not poison the hide batch of sibling selectors`() {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+
+        adBlocker.addRule("example.com##.keep")
+        adBlocker.addRule("example.com##.recolor:style(color: #d5d5d5 !important)")
+
+        // The raw `:style(...)` selector used to share the comma-joined hide rule and
+        // invalidate the whole batch (#823); hide batches carry only plain selectors.
+        val hideBatch = adBlocker.getCosmeticHideBatches("example.com").first { it.contains(".keep") }
+        assertThat(hideBatch).doesNotContain(":style(")
+        assertThat(adBlocker.getCosmeticFilterCss("example.com"))
+            .contains(".recolor { color: #d5d5d5 !important; }")
+    }
+
+    @Test
+    fun `procedural pseudo-class rules are dropped instead of poisoning hide batches`() {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+
+        adBlocker.addRule("example.com##.keep")
+        adBlocker.addRule("example.com##.drop:has-text(advert)")
+        adBlocker.addRule("example.com##.gone:remove()")
+
+        val css = adBlocker.getCosmeticFilterCss("example.com")
+        assertThat(css).doesNotContain(":has-text(")
+        assertThat(css).doesNotContain(":remove(")
+        assertThat(adBlocker.getCosmeticHideBatches("example.com").any { it.contains(".keep") }).isTrue()
+    }
+
+    @Test
+    fun `style override exception cancels the matching style rule`() {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+
+        adBlocker.addRule("example.com##.banner:style(background: #121212 !important)")
+        adBlocker.addRule("example.com#@#.banner:style(background: #121212 !important)")
+
+        assertThat(adBlocker.getCosmeticFilterCss("example.com")).doesNotContain(".banner {")
+    }
+
 }
