@@ -138,6 +138,21 @@ class AdBlockerCustomSourcesTest {
     }
 
     @Test
+    fun `compiled state round-trips injected css rules`() = runBlocking {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+        adBlocker.addRule("example.com#$#body { background: #121212 !important; }")
+        adBlocker.saveHostsRules(context)
+
+        val fresh = AdBlocker()
+        fresh.loadHostsRules(context)
+        fresh.setEnabled(true)
+
+        assertThat(fresh.getCosmeticFilterCss("example.com"))
+            .contains("body { background: #121212 !important; }")
+    }
+
+    @Test
     fun `file source key is consumable through the per-app subscription path`() = runBlocking {
         val uri = Uri.parse("content://media/external/filters/block.txt")
         Shadows.shadowOf(context.contentResolver).registerInputStream(
