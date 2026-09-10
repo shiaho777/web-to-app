@@ -2782,6 +2782,20 @@ class WebViewManager(
                     }
                 }
 
+                // Explicit opt-out (Special Settings): proceed past every certificate error
+                // for main-frame AND sub-resource loads — an expired-cert site must render
+                // fully, not just its HTML. This deliberately disables TLS MITM protection
+                // for the whole app; the Play policy checker flags it for Play-bound exports.
+                if (config.errorPageConfig.ignoreSslErrors) {
+                    AppLogger.w(
+                        "WebViewManager",
+                        "Proceeding past SSL certificate error (ignoreSslErrors enabled): " +
+                            "$errorUrl primaryError=${error?.primaryError} mainFrame=$isMainFrameSslError"
+                    )
+                    handler?.proceed()
+                    return
+                }
+
                 if (!isMainFrameSslError) {
 
                     handler?.cancel()

@@ -4076,6 +4076,8 @@ object Strings {
     val showNetworkErrorUiTitle: String get() = StringsE.showNetworkErrorUiTitle
     val showNetworkErrorUiDesc: String get() = StringsE.showNetworkErrorUiDesc
     val showSslErrorUiTitle: String get() = StringsE.showSslErrorUiTitle
+    val ignoreSslErrorsTitle: String get() = StringsE.ignoreSslErrorsTitle
+    val ignoreSslErrorsDesc: String get() = StringsE.ignoreSslErrorsDesc
     val showRenderCrashErrorUiTitle: String get() = StringsE.showRenderCrashErrorUiTitle
     val showRenderCrashErrorUiDesc: String get() = StringsE.showRenderCrashErrorUiDesc
     val errorPageTitle: String get() = StringsE.errorPageTitle
@@ -4839,6 +4841,9 @@ object Strings {
     val rulePathApkEncryption: String get() = StringsE.rulePathApkEncryption
     val ruleAreaApkEncryption: String get() = StringsE.ruleAreaApkEncryption
     val ruleFixApkEncryption: String get() = StringsE.ruleFixApkEncryption
+    val rulePathSslIgnore: String get() = StringsE.rulePathSslIgnore
+    val ruleAreaSslIgnore: String get() = StringsE.ruleAreaSslIgnore
+    val ruleFixSslIgnore: String get() = StringsE.ruleFixSslIgnore
     val rulePathBrowserDisguise: String get() = StringsE.rulePathBrowserDisguise
     val ruleAreaBrowserDisguise: String get() = StringsE.ruleAreaBrowserDisguise
     val ruleFixBrowserDisguise: String get() = StringsE.ruleFixBrowserDisguise
@@ -55911,6 +55916,30 @@ object StringsE {
         AppLanguage.JAPANESE -> "SSL 証明書エラー通知"
         AppLanguage.KOREAN -> "SSL 인증서 오류 알림"
     }
+    val ignoreSslErrorsTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "忽略 SSL 证书错误"
+        AppLanguage.ENGLISH -> "Ignore SSL certificate errors"
+        AppLanguage.ARABIC -> "تجاهل أخطاء شهادة SSL"
+        AppLanguage.PORTUGUESE -> "Ignorar erros de certificado SSL"
+        AppLanguage.SPANISH -> "Ignorar errores de certificado SSL"
+        AppLanguage.FRENCH -> "Ignorer les erreurs de certificat SSL"
+        AppLanguage.GERMAN -> "SSL-Zertifikatsfehler ignorieren"
+        AppLanguage.RUSSIAN -> "Игнорировать ошибки SSL-сертификата"
+        AppLanguage.JAPANESE -> "SSL 証明書エラーを無視"
+        AppLanguage.KOREAN -> "SSL 인증서 오류 무시"
+    }
+    val ignoreSslErrorsDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "加载证书过期、不匹配或不受信任的 HTTPS 站点（含其图片与脚本）。将对该应用关闭 TLS 中间人防护，有被劫持风险；仅系统内核有效，且可能影响 Google Play 审核。"
+        AppLanguage.ENGLISH -> "Load HTTPS sites whose certificate is expired, mismatched, or untrusted (including their images and scripts). Disables TLS man-in-the-middle protection for the whole app and risks interception; system engine only, and may fail Google Play review."
+        AppLanguage.ARABIC -> "تحميل مواقع HTTPS التي انتهت شهادتها أو غير مطابقة أو غير موثوقة (بما في ذلك صورها ونصوصها البرمجية). يعطّل حماية TLS من الاعتراض للتطبيق بالكامل ويعرّضه للاختراق؛ محرك النظام فقط، وقد يفشل في مراجعة Google Play."
+        AppLanguage.PORTUGUESE -> "Carrega sites HTTPS cujo certificado está expirado, incompatível ou não confiável (incluindo suas imagens e scripts). Desativa a proteção TLS contra interceptação para todo o app e arrisca sequestro do tráfego; apenas no motor do sistema, e pode falhar na revisão do Google Play."
+        AppLanguage.SPANISH -> "Carga sitios HTTPS cuyo certificado esté caducado, no coincida o no sea de confianza (incluidas sus imágenes y scripts). Desactiva la protección TLS contra intercepción para toda la app y arriesga secuestros; solo en el motor del sistema, y puede fallar la revisión de Google Play."
+        AppLanguage.FRENCH -> "Charge les sites HTTPS dont le certificat est expiré, non concordant ou non fiable (images et scripts compris). Désactive la protection TLS contre l'interception pour toute l'application et fait courir un risque d'interception ; moteur système uniquement, et peut échouer à la vérification Google Play."
+        AppLanguage.GERMAN -> "Lädt HTTPS-Seiten mit abgelaufenem, nicht übereinstimmendem oder nicht vertrauenswürdigem Zertifikat (inkl. Bilder und Skripte). Deaktiviert den TLS-Man-in-the-Middle-Schutz für die gesamte App und birgt Abfang-Risiken; nur System-Engine, und kann die Google-Play-Prüfung verfehlen."
+        AppLanguage.RUSSIAN -> "Загружает HTTPS-сайты с просроченным, несоответствующим или недоверенным сертификатом (включая их изображения и скрипты). Отключает защиту TLS от перехвата для всего приложения и рискует перехватом трафика; только системный движок, и может не пройти проверку Google Play."
+        AppLanguage.JAPANESE -> "証明書の期限切れ・不一致・信頼できない HTTPS サイトを（画像やスクリプトを含めて）読み込みます。アプリ全体の TLS 中間者攻撃防御を無効化し、通信の傍受リスクが生じます。システムエンジン専用で、Google Play 審査で却下される可能性があります。"
+        AppLanguage.KOREAN -> "인증서가 만료되었거나 불일치 또는 신뢰할 수 없는 HTTPS 사이트(이미지와 스크립트 포함)를 로드합니다. 앱 전체의 TLS 중간자 공격 방어를 비활성화하여 가로채기 위험이 있으며, 시스템 엔진 전용이고 Google Play 심사에서 거부될 수 있습니다."
+    }
 
     val showRenderCrashErrorUiTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "渲染崩溃提示"
@@ -64321,6 +64350,45 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Отключите шифрование APK. Play требует, чтобы код приложения был проверяем; зашифрованные APK помечаются как скрывающие намерения."
         AppLanguage.JAPANESE -> "APK 暗号化を無効化してください。Play はアプリコードが監査可能であることを要求します。暗号化された APK は意図の隠蔽としてフラグ付けされます。"
         AppLanguage.KOREAN -> "APK 암호화를 비활성화하세요. Play는 앱 코드가 감사 가능해야 합니다. 암호화된 APK는 의도 은닉으로 플래그 지정됩니다."
+    }
+
+    val rulePathSslIgnore: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "应用编辑 → 特殊设置 → 忽略 SSL 证书错误"
+        AppLanguage.ENGLISH -> "App Editor → Special Settings → Ignore SSL certificate errors"
+        AppLanguage.ARABIC -> "محرر التطبيق ← الإعدادات الخاصة ← تجاهل أخطاء شهادة SSL"
+        AppLanguage.PORTUGUESE -> "Editor do App → Configurações Especiais → Ignorar erros de certificado SSL"
+        AppLanguage.SPANISH -> "Editor de App → Ajustes Especiales → Ignorar errores de certificado SSL"
+        AppLanguage.FRENCH -> "Éditeur d'app → Paramètres spéciaux → Ignorer les erreurs de certificat SSL"
+        AppLanguage.GERMAN -> "App-Editor → Spezialeinstellungen → SSL-Zertifikatsfehler ignorieren"
+        AppLanguage.RUSSIAN -> "Редактор приложения → Специальные настройки → Игнорировать ошибки SSL-сертификата"
+        AppLanguage.JAPANESE -> "アプリエディタ → 特殊設定 → SSL 証明書エラーを無視"
+        AppLanguage.KOREAN -> "앱 에디터 → 특수 설정 → SSL 인증서 오류 무시"
+    }
+
+    val ruleAreaSslIgnore: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "设备和网络滥用（不安全实现）"
+        AppLanguage.ENGLISH -> "Device and Network Abuse (Unsafe Implementation)"
+        AppLanguage.ARABIC -> "إساءة استخدام الجهاز والشبكة (تنفيذ غير آمن)"
+        AppLanguage.PORTUGUESE -> "Abuso de Dispositivo e Rede (Implementação Insegura)"
+        AppLanguage.SPANISH -> "Abuso de Dispositivo y Red (Implementación Insegura)"
+        AppLanguage.FRENCH -> "Abus d'appareil et de réseau (implémentation non sécurisée)"
+        AppLanguage.GERMAN -> "Geräte- und Netzwerkmissbrauch (unsichere Implementierung)"
+        AppLanguage.RUSSIAN -> "Злоупотребление устройством и сетью (небезопасная реализация)"
+        AppLanguage.JAPANESE -> "デバイスとネットワークの濫用（安全でない実装）"
+        AppLanguage.KOREAN -> "기기 및 네트워크 남용 (안전하지 않은 구현)"
+    }
+
+    val ruleFixSslIgnore: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "为上架 Play 关闭「忽略 SSL 证书错误」。该功能会无条件放行证书校验失败(含过期/域名不匹配/不受信任),属于 Play 政策明确列出的不安全实现,审核大概率被拒。仅侧载分发时无此限制。"
+        AppLanguage.ENGLISH -> "Disable Ignore SSL certificate errors before publishing to Play. Proceeding past all certificate failures (expired, mismatched, untrusted) is an unsafe implementation explicitly called out by Play policy and will most likely be rejected. Sideload-only distribution is unaffected."
+        AppLanguage.ARABIC -> "عطّل تجاهل أخطاء شهادة SSL قبل النشر على Play. تجاوز جميع حالات فشل الشهادة (منتهية، غير مطابقة، غير موثوقة) تنفيذ غير آمن تنص عليه سياسة Play صراحةً وسيُرفض على الأرجح. التوزيع بالتثبيت الجانبي غير متأثر."
+        AppLanguage.PORTUGUESE -> "Desative Ignorar erros de certificado SSL antes de publicar no Play. Prosseguir além de todas as falhas de certificado (expirado, incompatível, não confiável) é uma implementação insegura explicitamente citada pela política do Play e provavelmente será rejeitada. Distribuição apenas por sideload não é afetada."
+        AppLanguage.SPANISH -> "Desactiva Ignorar errores de certificado SSL antes de publicar en Play. Continuar ante cualquier fallo de certificado (caducado, no coincidente, no confiable) es una implementación insegura señalada expresamente por la política de Play y lo más probable es que se rechace. La distribución solo por instalación lateral no se ve afectada."
+        AppLanguage.FRENCH -> "Désactivez Ignorer les erreurs de certificat SSL avant de publier sur Play. Passer outre tous les échecs de certificat (expiré, non concordant, non fiable) est une implémentation non sécurisée explicitement visée par la politique Play et sera très probablement rejetée. La distribution par chargement latéral n'est pas concernée."
+        AppLanguage.GERMAN -> "Deaktivieren Sie SSL-Zertifikatsfehler ignorieren, bevor Sie bei Play veröffentlichen. Das Fortfahren trotz aller Zertifikatsfehler (abgelaufen, nicht übereinstimmend, nicht vertrauenswürdig) ist eine unsichere Implementierung, die von der Play-Richtlinie ausdrücklich genannt wird, und wird höchstwahrscheinlich abgelehnt. Reine Sideload-Verteilung ist davon nicht betroffen."
+        AppLanguage.RUSSIAN -> "Отключите «Игнорировать ошибки SSL-сертификата» перед публикацией в Play. Игнорирование всех ошибок сертификата (просрочен, не совпадает, недоверен) — небезопасная реализация, прямо названная политикой Play, и она почти наверняка будет отклонена. Распространение только через sideload не затронуто."
+        AppLanguage.JAPANESE -> "Play で公開する前に「SSL 証明書エラーを無視」を無効化してください。証明書の検証失敗(期限切れ・不一致・信頼不可)をすべて通過させるのは、Play ポリシーが明示する安全でない実装であり、審査落ちする可能性が高いです。サイドロードのみの配布には影響しません。"
+        AppLanguage.KOREAN -> "Play에 게시하기 전에 SSL 인증서 오류 무시를 비활성화하세요. 인증서 검증 실패(만료, 불일치, 신뢰 불가)를 모두 통과시키는 것은 Play 정책이 명시하는 안전하지 않은 구현이며 심사 거절 가능성이 높습니다. 사이드로드 전용 배포에는 영향이 없습니다."
     }
 
 

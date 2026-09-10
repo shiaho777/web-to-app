@@ -1698,6 +1698,9 @@ data class ErrorPageShellConfig(
     @SerializedName("showSslErrorUi")
     val showSslErrorUi: Boolean = true,
 
+    @SerializedName("ignoreSslErrors")
+    val ignoreSslErrors: Boolean = false,
+
     @SerializedName("showRenderCrashErrorUi")
     val showRenderCrashErrorUi: Boolean = true
 )

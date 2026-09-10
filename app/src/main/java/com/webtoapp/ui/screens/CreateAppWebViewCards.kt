@@ -3852,6 +3852,14 @@ fun SpecialSettingsCard(
                             )
                             WtaSectionDivider()
                             WtaToggleRow(
+                                title = Strings.ignoreSslErrorsTitle,
+                                subtitle = Strings.ignoreSslErrorsDesc,
+                                icon = Icons.Outlined.GppBad,
+                                checked = config.errorPageConfig.ignoreSslErrors,
+                                onCheckedChange = { onConfigChange(config.copy(errorPageConfig = config.errorPageConfig.copy(ignoreSslErrors = it))) }
+                            )
+                            WtaSectionDivider()
+                            WtaToggleRow(
                                 title = Strings.showRenderCrashErrorUiTitle,
                                 subtitle = Strings.showRenderCrashErrorUiDesc,
                                 icon = Icons.Outlined.BrokenImage,

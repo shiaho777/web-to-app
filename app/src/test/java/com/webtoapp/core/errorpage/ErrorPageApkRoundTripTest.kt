@@ -67,6 +67,25 @@ class ErrorPageApkRoundTripTest {
     }
 
     @Test
+    fun `ignoreSslErrors survives full ApkConfig - JSON - shell pipeline`() {
+        val apkConfig = newApkConfig().copy(
+            errorPage = ErrorPageBlock(ignoreSslErrors = true)
+        )
+
+        val errorPageBlock = extractWebViewConfig(apkConfig).getAsJsonObject("errorPageConfig")
+        assertThat(errorPageBlock.get("ignoreSslErrors").asBoolean).isTrue()
+
+        val shellConfig = Gson().fromJson(errorPageBlock, ErrorPageShellConfig::class.java)
+        assertThat(shellConfig.ignoreSslErrors).isTrue()
+    }
+
+    @Test
+    fun `ignoreSslErrors defaults to false when absent from shell JSON`() {
+        val shellConfig = Gson().fromJson("""{"mode":"BUILTIN_STYLE"}""", ErrorPageShellConfig::class.java)
+        assertThat(shellConfig.ignoreSslErrors).isFalse()
+    }
+
+    @Test
     fun `default ApkConfig still serializes empty error page custom fields`() {
         val apkConfig = newApkConfig()
         val errorPageBlock = extractWebViewConfig(apkConfig).getAsJsonObject("errorPageConfig")

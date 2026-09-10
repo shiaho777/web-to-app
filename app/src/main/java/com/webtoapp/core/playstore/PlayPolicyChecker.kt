@@ -45,6 +45,18 @@ object PlayPolicyChecker {
             )
         }
 
+        if (webApp.webViewConfig.errorPageConfig.ignoreSslErrors) {
+            violations.add(
+                Violation(
+                    ruleId = "SSL_ERRORS_IGNORED",
+                    severity = Severity.WARNING,
+                    featurePath = "rule.sslIgnore.path",
+                    policyArea = "rule.sslIgnore.area",
+                    fixHint = "rule.sslIgnore.fix"
+                )
+            )
+        }
+
         if (webApp.browserDisguiseConfig?.enabled == true) {
             violations.add(
                 Violation(
@@ -204,6 +216,9 @@ object PlayPolicyChecker {
         return when (v.ruleId) {
             "APK_ENCRYPTION_ENABLED" -> ResolvedViolation(
                 v.severity, s.rulePathApkEncryption, s.ruleAreaApkEncryption, s.ruleFixApkEncryption
+            )
+            "SSL_ERRORS_IGNORED" -> ResolvedViolation(
+                v.severity, s.rulePathSslIgnore, s.ruleAreaSslIgnore, s.ruleFixSslIgnore
             )
             "BROWSER_DISGUISE_ENABLED" -> ResolvedViolation(
                 v.severity, s.rulePathBrowserDisguise, s.ruleAreaBrowserDisguise, s.ruleFixBrowserDisguise

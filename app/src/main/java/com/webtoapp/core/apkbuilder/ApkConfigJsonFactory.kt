@@ -378,6 +378,7 @@ internal object ApkConfigJsonFactory {
         "showHttp5xxErrorUi" to errorPage.showHttp5xxErrorUi,
         "showNetworkErrorUi" to errorPage.showNetworkErrorUi,
         "showSslErrorUi" to errorPage.showSslErrorUi,
+        "ignoreSslErrors" to errorPage.ignoreSslErrors,
         "showRenderCrashErrorUi" to errorPage.showRenderCrashErrorUi
     )
 
