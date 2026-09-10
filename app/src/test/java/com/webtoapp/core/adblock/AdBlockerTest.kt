@@ -192,4 +192,51 @@ class AdBlockerTest {
         assertThat(adBlocker.getCosmeticFilterCss("example.com")).doesNotContain(".banner {")
     }
 
+    @Test
+    fun `adguard css injection rules are emitted verbatim for anchor domains`() {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+
+        adBlocker.addRule("example.com#$#body { background: #121212 !important; }")
+
+        val css = adBlocker.getCosmeticFilterCss("example.com")
+        assertThat(css).contains("body { background: #121212 !important; }")
+        // Injected rules restyle via their own CSS; they are not hide selectors.
+        assertThat(adBlocker.getCosmeticHideBatches("example.com").any { it.contains("body") }).isFalse()
+        assertThat(adBlocker.getCosmeticFilterCss("other.com")).doesNotContain("#121212")
+    }
+
+    @Test
+    fun `css injection exception cancels the matching injected rule`() {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+
+        adBlocker.addRule("example.com#$#body { background: #121212 !important; }")
+        adBlocker.addRule("example.com#@$#body { background: #121212 !important; }")
+
+        assertThat(adBlocker.getCosmeticFilterCss("example.com")).doesNotContain("#121212")
+    }
+
+    @Test
+    fun `extended hiding delimiter parses like element hiding`() {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+
+        adBlocker.addRule("example.com#?#.promo")
+
+        assertThat(adBlocker.getCosmeticHideBatches("example.com").any { it.contains(".promo") }).isTrue()
+    }
+
+    @Test
+    fun `scriptlet rules are parsed as scriptlets not cosmetic selectors`() {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+
+        adBlocker.addRule("example.com##+js(set-constant, adsEnabled, false)")
+
+        // The `+js(...)` payload must never reach the stylesheet as a selector.
+        assertThat(adBlocker.getCosmeticFilterCss("example.com")).doesNotContain("+js(")
+        assertThat(adBlocker.getAntiAdblockScript("example.com")).isNotEmpty()
+    }
+
 }
