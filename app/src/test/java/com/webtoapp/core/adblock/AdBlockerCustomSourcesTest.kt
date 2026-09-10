@@ -153,6 +153,23 @@ class AdBlockerCustomSourcesTest {
     }
 
     @Test
+    fun `compiled state round-trips procedural rules`() = runBlocking {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+        adBlocker.addRule("example.com##.item:has-text(Sponsor):upward(1)")
+        adBlocker.saveHostsRules(context)
+
+        val fresh = AdBlocker()
+        fresh.loadHostsRules(context)
+        fresh.setEnabled(true)
+
+        val js = fresh.getCosmeticProceduralRulesJs("example.com")
+        assertThat(js).contains("\"b\":\".item\"")
+        assertThat(js).contains("t:Sponsor")
+        assertThat(js).contains("u:1")
+    }
+
+    @Test
     fun `file source key is consumable through the per-app subscription path`() = runBlocking {
         val uri = Uri.parse("content://media/external/filters/block.txt")
         Shadows.shadowOf(context.contentResolver).registerInputStream(

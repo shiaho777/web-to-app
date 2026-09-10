@@ -2395,6 +2395,8 @@ class WebViewManager(
                                                 .replace("\n", "\\n")
                                                 .replace("\r", "") + "'"
                                         }
+                                    // Already a JS literal (JSON-escaped in AdBlocker).
+                                    val procJs = adBlocker.getCosmeticProceduralRulesJs(pageHost)
                                     view.evaluateJavascript("""
                                         (function() {
                                             'use strict';
@@ -2409,21 +2411,69 @@ class WebViewManager(
                                             }
 
                                             var batches = [$hideBatchesJs];
-                                            if (batches.length > 0) {
-                                                var hideMatches = function() {
-                                                    for (var b = 0; b < batches.length; b++) {
-                                                        try {
-                                                            var els = document.querySelectorAll(batches[b]);
-                                                            for (var i = 0; i < els.length; i++) {
-                                                                if (els[i].style.display !== 'none') {
-                                                                    els[i].style.setProperty('display', 'none', 'important');
-                                                                    els[i].style.setProperty('visibility', 'hidden', 'important');
+                                            var procRules = $procJs;
+
+                                            var hideMatches = function() {
+                                                for (var b = 0; b < batches.length; b++) {
+                                                    try {
+                                                        var els = document.querySelectorAll(batches[b]);
+                                                        for (var i = 0; i < els.length; i++) {
+                                                            if (els[i].style.display !== 'none') {
+                                                                els[i].style.setProperty('display', 'none', 'important');
+                                                                els[i].style.setProperty('visibility', 'hidden', 'important');
+                                                            }
+                                                        }
+                                                    } catch(e) { /* invalid selector list — skip this batch */ }
+                                                }
+                                            };
+
+                                            // Procedural rules: base selector via qSA, then the
+                                            // pseudo chain (t = text match, u = upward walk,
+                                            // r = remove) evaluated here in page JS.
+                                            var applyProc = function() {
+                                                for (var r = 0; r < procRules.length; r++) {
+                                                    var rule = procRules[r];
+                                                    try {
+                                                        var els = document.querySelectorAll(rule.b);
+                                                        for (var i = 0; i < els.length; i++) {
+                                                            var el = els[i];
+                                                            var ok = true;
+                                                            for (var o = 0; o < rule.o.length && ok; o++) {
+                                                                var op = rule.o[o];
+                                                                var kind = op.charAt(0);
+                                                                var arg = op.substring(2);
+                                                                if (kind === 't') {
+                                                                    var txt = el.textContent || '';
+                                                                    if (arg.length > 2 && arg.charAt(0) === '/' && arg.charAt(arg.length - 1) === '/') {
+                                                                        ok = new RegExp(arg.substring(1, arg.length - 1), 'i').test(txt);
+                                                                    } else {
+                                                                        ok = txt.toLowerCase().indexOf(arg.toLowerCase()) >= 0;
+                                                                    }
+                                                                } else if (kind === 'u') {
+                                                                    var steps = parseInt(arg, 10);
+                                                                    if (!isNaN(steps)) {
+                                                                        while (steps-- > 0 && el) el = el.parentElement;
+                                                                    } else if (el.closest) {
+                                                                        el = el.closest(arg);
+                                                                    } else {
+                                                                        el = null;
+                                                                    }
+                                                                    ok = !!el;
                                                                 }
                                                             }
-                                                        } catch(e) { /* invalid selector list — skip this batch */ }
-                                                    }
-                                                };
+                                                            if (!ok || !el) continue;
+                                                            if (rule.a === 1) {
+                                                                el.remove();
+                                                            } else if (el.style && el.style.display !== 'none') {
+                                                                el.style.setProperty('display', 'none', 'important');
+                                                                el.style.setProperty('visibility', 'hidden', 'important');
+                                                            }
+                                                        }
+                                                    } catch(e) { /* invalid base selector — skip rule */ }
+                                                }
+                                            };
 
+                                            if (batches.length > 0 || procRules.length > 0) {
                                                 var pending = false;
                                                 var observer = new MutationObserver(function() {
                                                     if (pending) return;
@@ -2431,6 +2481,7 @@ class WebViewManager(
                                                     (window.requestIdleCallback || setTimeout)(function() {
                                                         pending = false;
                                                         hideMatches();
+                                                        applyProc();
                                                     }, { timeout: 100 });
                                                 });
 
@@ -2442,6 +2493,7 @@ class WebViewManager(
                                                 }
 
                                                 setTimeout(function() { observer.disconnect(); }, 30000);
+                                                applyProc();
                                             }
                                         })();
                                     """.trimIndent(), null)
