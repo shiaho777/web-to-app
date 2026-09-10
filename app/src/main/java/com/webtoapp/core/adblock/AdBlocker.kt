@@ -4,13 +4,19 @@ import android.content.Context
 import android.net.Uri
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.atomic.AtomicBoolean
 
 class AdBlocker {
 
@@ -109,6 +115,27 @@ class AdBlocker {
         )
 
         private val LIST_TITLE_REGEX = Regex("(?i)^!\\s*Title\\s*:\\s*(.+)$")
+
+        private val EXPIRES_REGEX = Regex("(?i)^!\\s*Expires\\s*:\\s*(\\d+)\\s*(days?|hours?|d|h)\\b")
+
+        const val MIN_REFRESH_INTERVAL_MS = 6 * 60 * 60 * 1000L
+        const val MAX_REFRESH_INTERVAL_MS = 14 * 24 * 60 * 60 * 1000L
+        const val DEFAULT_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000L
+        private const val REFRESH_FAILURE_BACKOFF_MS = 60 * 60 * 1000L
+
+        /** Refresh interval from an ABP `! Expires: N days|hours` header, clamped so a
+         *  hostile or typo'd header cannot hot-loop or pin a subscription. */
+        fun expiresIntervalMs(content: String): Long =
+            content.lineSequence().take(25)
+                .firstNotNullOfOrNull { line ->
+                    EXPIRES_REGEX.matchEntire(line.trim())?.let { m ->
+                        val n = m.groupValues[1].toLongOrNull() ?: return@let null
+                        val hours = if (m.groupValues[2].lowercase().startsWith("d")) n * 24 else n
+                        hours * 60 * 60 * 1000L
+                    }
+                }
+                ?.coerceIn(MIN_REFRESH_INTERVAL_MS, MAX_REFRESH_INTERVAL_MS)
+                ?: DEFAULT_REFRESH_INTERVAL_MS
 
         /** Display title from an ABP/uBO list header (`! Title: ...`), if present. */
         private fun extractListTitle(content: String): String? =
@@ -720,6 +747,23 @@ class AdBlocker {
      *  sources resolve their names from [getPopularHostsSources] instead. */
     private val customSourceNames = mutableMapOf<String, String>()
 
+    /** Subscription freshness metadata (registry v3 columns): epoch ms of the last
+     *  successful download and the per-list refresh interval derived from `! Expires:`. */
+    private val sourceLastRefresh = mutableMapOf<String, Long>()
+    private val sourceIntervals = mutableMapOf<String, Long>()
+
+    /** In-memory failure backoff so a dead list URL is not re-fetched on every page load. */
+    private val sourceRefreshFailures = mutableMapOf<String, Long>()
+
+    private val engineMutex = Mutex()
+    private val refreshRunning = AtomicBoolean(false)
+    private val refreshScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    /** Parameters of the last [prepareRuntimeFilters] call, so a background refresh can
+     *  rebuild the exact same rule universe after re-downloading due sources. */
+    private var lastPrepSelected: List<String> = emptyList()
+    private var lastPrepCustomRules: List<String> = emptyList()
+
     private val networkBlockFilters = mutableListOf<NetworkFilter>()
     private val networkExceptionFilters = mutableListOf<NetworkFilter>()
 
@@ -1189,29 +1233,126 @@ class AdBlocker {
         enabled: Boolean,
         customRules: List<String> = emptyList(),
         subscriptionUrls: List<String> = emptyList()
-    ) {
+    ) = engineMutex.withLock {
         if (!enabled) {
             setEnabled(false)
-            return
+            return@withLock
         }
         val selected = subscriptionUrls.map { it.trim() }.filter { it.isNotEmpty() }
+        lastPrepSelected = selected
+        lastPrepCustomRules = customRules
         if (selected.isEmpty()) {
             loadHostsRules(context)
             customRules.forEach { parseAndAddRule(it) }
             setEnabled(true)
-            return
+            kickSourceRefresh(context, refreshableKeys(selected))
+            return@withLock
         }
-        resetEngineRules()
-        for (sourceKey in selected) {
-            val content = loadSourceContent(context, sourceKey)
-            if (content != null) {
-                ingestFilterContent(sourceKey, content)
-            } else if (sourceKey.startsWith("http://") || sourceKey.startsWith("https://")) {
-                importHostsFromUrl(sourceKey, context)
+        reingestSelected(context, selected, customRules)
+        setEnabled(true)
+        kickSourceRefresh(context, refreshableKeys(selected))
+    }
+
+    /** http(s) sources eligible for background refresh: this app's subscriptions plus
+     *  whatever Hosts Blocking has enabled, since both feed the compiled rule set. */
+    private fun refreshableKeys(selected: List<String>): List<String> =
+        (selected + enabledHostsSources)
+            .filter { it.startsWith("http://") || it.startsWith("https://") }
+            .distinct()
+
+    private fun kickSourceRefresh(context: Context, keys: List<String>) {
+        if (keys.isEmpty() || !refreshRunning.compareAndSet(false, true)) return
+        refreshScope.launch {
+            try {
+                refreshDueSources(context, keys)
+            } catch (e: Exception) {
+                com.webtoapp.core.logging.AppLogger.e("AdBlocker", "Background subscription refresh failed", e)
+            } finally {
+                refreshRunning.set(false)
             }
         }
+    }
+
+    /**
+     * Re-downloads every source whose `! Expires:` interval has elapsed and rebuilds the
+     * engine from the fresh on-disk content. Fail-soft per source: a failed download
+     * backs off for an hour and keeps the previously ingested content. Safe to call from
+     * the background [kickSourceRefresh] coroutine — the rebuild phase takes the engine
+     * mutex so it never races a concurrent [prepareRuntimeFilters].
+     *
+     * @param forceNetwork bypass the 24h URL cache; tests pass false to serve updates
+     *   from the cache instead of the network.
+     * @return true when at least one source's content changed and the engine was rebuilt.
+     */
+    suspend fun refreshDueSources(
+        context: Context,
+        keys: List<String>,
+        forceNetwork: Boolean = true
+    ): Boolean = withContext(Dispatchers.IO) {
+        val now = System.currentTimeMillis()
+        var changed = false
+        for (key in keys) {
+            val interval = sourceIntervals[key] ?: DEFAULT_REFRESH_INTERVAL_MS
+            val last = sourceLastRefresh[key] ?: 0L
+            if (now - last < interval) continue
+            val failedAt = sourceRefreshFailures[key]
+            if (failedAt != null && now - failedAt < REFRESH_FAILURE_BACKOFF_MS) continue
+
+            val before = loadSourceContent(context, key)
+            val result = importHostsFromUrl(key, context, forceNetwork = forceNetwork)
+            if (result.isSuccess) {
+                if (loadSourceContent(context, key) != before) changed = true
+            } else {
+                sourceRefreshFailures[key] = now
+                com.webtoapp.core.logging.AppLogger.w(
+                    "AdBlocker",
+                    "Subscription refresh failed for $key: ${result.exceptionOrNull()?.message}"
+                )
+            }
+        }
+        if (changed) {
+            engineMutex.withLock {
+                rebuildEngine(context)
+            }
+        }
+        changed
+    }
+
+    private suspend fun reingestSelected(context: Context, selected: List<String>, customRules: List<String>) {
+        resetEngineRules()
+        for (sourceKey in selected) {
+            ingestSourceKey(context, sourceKey)
+        }
         customRules.forEach { parseAndAddRule(it) }
-        setEnabled(true)
+        rebuildUnanchoredIndex()
+    }
+
+    /** Rebuild after a refresh: same rule universe as the last [prepareRuntimeFilters]. */
+    private suspend fun rebuildEngine(context: Context) {
+        resetEngineRules()
+        if (lastPrepSelected.isEmpty()) {
+            val legacy = File(context.filesDir, "adblock_hosts.txt")
+            if (legacy.exists()) hostsFileHosts.addAll(legacy.readLines().filter { it.isNotBlank() })
+            for (key in enabledHostsSources.toList()) {
+                ingestSourceKey(context, key)
+            }
+        } else {
+            for (key in lastPrepSelected) {
+                ingestSourceKey(context, key)
+            }
+        }
+        lastPrepCustomRules.forEach { parseAndAddRule(it) }
+        rebuildUnanchoredIndex()
+        saveCompiledStateToCache(context)
+    }
+
+    private suspend fun ingestSourceKey(context: Context, sourceKey: String) {
+        val content = loadSourceContent(context, sourceKey)
+        if (content != null) {
+            ingestFilterContent(sourceKey, content)
+        } else if (sourceKey.startsWith("http://") || sourceKey.startsWith("https://")) {
+            importHostsFromUrl(sourceKey, context)
+        }
     }
 
     suspend fun compileRulesText(
@@ -1892,12 +2033,13 @@ class AdBlocker {
         url: String,
         context: Context? = null,
         displayName: String? = null,
+        forceNetwork: Boolean = false,
         onProgress: ((DownloadProgress) -> Unit)? = null
     ): Result<Int> = withContext(Dispatchers.IO) {
         try {
 
             var content: String? = null
-            if (context != null) {
+            if (context != null && !forceNetwork) {
                 content = AdBlockFilterCache.getCachedUrlContent(context, url)
             }
 
@@ -1973,6 +2115,9 @@ class AdBlocker {
                 // subscriptions list under their real name (#823).
                 extractListTitle(content)?.let { customSourceNames[url] = it }
             }
+            sourceLastRefresh[url] = System.currentTimeMillis()
+            sourceIntervals[url] = expiresIntervalMs(content)
+            sourceRefreshFailures.remove(url)
             if (context != null) {
                 saveSourcesRegistry(context)
             }
@@ -2076,18 +2221,21 @@ class AdBlocker {
         }
     }
 
+    private fun registryLine(url: String, enabled: Boolean): String {
+        val count = sourceRuleCounts[url] ?: 0
+        val flag = if (enabled) 1 else 0
+        val name = customSourceNames[url] ?: ""
+        val lastRefresh = sourceLastRefresh[url] ?: 0
+        val interval = sourceIntervals[url] ?: 0
+        return "$url\t$count\t$flag\t$name\t$lastRefresh\t$interval"
+    }
+
     private fun saveSourcesRegistry(context: Context) {
         val sourcesFile = File(context.filesDir, "adblock_hosts_sources.txt")
         sourcesFile.writeText(
             buildString {
-                enabledHostsSources.forEach { url ->
-                    val count = sourceRuleCounts[url] ?: 0
-                    appendLine("$url\t$count\t1\t${customSourceNames[url] ?: ""}")
-                }
-                disabledHostsSources.forEach { url ->
-                    val count = sourceRuleCounts[url] ?: 0
-                    appendLine("$url\t$count\t0\t${customSourceNames[url] ?: ""}")
-                }
+                enabledHostsSources.forEach { url -> appendLine(registryLine(url, enabled = true)) }
+                disabledHostsSources.forEach { url -> appendLine(registryLine(url, enabled = false)) }
             }.trimEnd()
         )
     }
@@ -2146,6 +2294,9 @@ class AdBlocker {
                 sourceRuleCounts[url] = count
                 // Optional 4th column (registry v2): display name for custom sources.
                 parts.getOrNull(3)?.takeIf { it.isNotBlank() }?.let { customSourceNames[url] = it }
+                // Optional 5th/6th columns (registry v3): refresh timestamp and interval.
+                parts.getOrNull(4)?.toLongOrNull()?.let { sourceLastRefresh[url] = it }
+                parts.getOrNull(5)?.toLongOrNull()?.takeIf { it > 0 }?.let { sourceIntervals[url] = it }
             }
     }
 
