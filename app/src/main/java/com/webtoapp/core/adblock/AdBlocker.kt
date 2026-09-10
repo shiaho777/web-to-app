@@ -83,7 +83,9 @@ class AdBlocker {
         val domains: Set<String>,
         val excludedDomains: Set<String>,
 
-        val rawRule: String = ""
+        val rawRule: String = "",
+        /** Body of a uBO `:style(...)` pseudo: restyle matches instead of hiding them. */
+        val styleOverride: String? = null
     )
 
     companion object {
@@ -91,6 +93,29 @@ class AdBlocker {
         private val HOST_EXTRACT_REGEX = Regex("^(?:https?://)?([^/:]+)")
         private val WHITESPACE_REGEX = Regex("\\s+")
         private val ABP_SEPARATOR_REGEX = Regex("[^\\w%.\\-]")
+
+        private const val STYLE_PSEUDO = ":style("
+
+        /** uBO-only procedural pseudo-classes. They are not valid CSS and have no
+         *  DOM-equivalent here, so rules using them are dropped at parse time instead
+         *  of reaching the injected stylesheet, where one invalid selector would
+         *  invalidate the whole comma-joined batch it lands in (#823). */
+        private val PROCEDURAL_PSEUDO_CLASSES = listOf(
+            ":has-text(", ":not-text(", ":matches-css(", ":matches-css-before(", ":matches-css-after(",
+            ":matches-attr(", ":matches-media(", ":matches-path(", ":matches-prop(",
+            ":xpath(", ":remove(", ":remove-attr(", ":watch-attr(", ":watch-attrs(",
+            ":upward(", ":downward(", ":nth-ancestor(", ":min-text-length(",
+            ":others(", ":lcs(", ":lcss(", ":pattern("
+        )
+
+        private val LIST_TITLE_REGEX = Regex("(?i)^!\\s*Title\\s*:\\s*(.+)$")
+
+        /** Display title from an ABP/uBO list header (`! Title: ...`), if present. */
+        private fun extractListTitle(content: String): String? =
+            content.lineSequence().take(25)
+                .firstNotNullOfOrNull { LIST_TITLE_REGEX.matchEntire(it.trim())?.groupValues?.get(1)?.trim() }
+                ?.takeIf { it.isNotEmpty() }
+                ?.take(120)
 
         private val SAFELIST_HOSTS = setOf(
 
@@ -727,7 +752,7 @@ class AdBlocker {
     // counter keeps this correct without per-navigation rebuilds.
     @Volatile
     private var cosmeticVersion = 0
-    private data class CosmeticEntry(val version: Int, val css: String, val script: String)
+    private data class CosmeticEntry(val version: Int, val css: String, val script: String, val hideBatches: List<String>)
     private val cosmeticCache = object : LinkedHashMap<String, CosmeticEntry>(64, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CosmeticEntry>?): Boolean = size > 128
     }
@@ -915,12 +940,23 @@ class AdBlocker {
             val hit = cosmeticCache[pageHost]
             if (hit != null && hit.version == v) return hit
         }
-        val entry = CosmeticEntry(v, buildCosmeticCss(pageHost), buildAntiAdblockScript(pageHost))
+        val (css, hideBatches) = buildCosmeticRules(pageHost)
+        val entry = CosmeticEntry(v, css, buildAntiAdblockScript(pageHost), hideBatches)
         synchronized(cosmeticCache) { cosmeticCache[pageHost] = entry }
         return entry
     }
 
-    private fun buildCosmeticCss(pageHost: String): String {
+    /**
+     * Comma-joined selector batches backing the hide rules of [getCosmeticFilterCss],
+     * one entry per generated CSS rule. The DOM observer queries per batch so a single
+     * invalid selector list cannot skip hiding for the remaining batches (#823).
+     */
+    fun getCosmeticHideBatches(pageHost: String): List<String> {
+        if (!enabled) return emptyList()
+        return cosmeticEntry(pageHost).hideBatches
+    }
+
+    private fun buildCosmeticRules(pageHost: String): Pair<String, List<String>> {
 
         val exceptionSelectors = cosmeticExceptionFilters
             .filter { matchesCosmeticDomain(it, pageHost) }
@@ -928,7 +964,7 @@ class AdBlocker {
             .toSet()
 
         val selectors = cosmeticBlockFilters
-            .filter { matchesCosmeticDomain(it, pageHost) && it.selector !in exceptionSelectors }
+            .filter { it.styleOverride == null && matchesCosmeticDomain(it, pageHost) && it.selector !in exceptionSelectors }
             .map { it.selector }
             .distinct()
             .toMutableList()
@@ -976,12 +1012,22 @@ class AdBlocker {
             }
         }
 
-        if (selectors.isEmpty()) return ""
+        // Style overrides ship as standalone rules: they restyle elements, and mixing
+        // them into a hide batch would hide what the list only wants recolored.
+        val styleRules = cosmeticBlockFilters
+            .filter { it.styleOverride != null && matchesCosmeticDomain(it, pageHost) && it.selector !in exceptionSelectors }
+            .map { "${it.selector} { ${it.styleOverride} }" }
 
         val batchSize = 50
-        return selectors.chunked(batchSize).joinToString("\n") { batch ->
-            batch.joinToString(",\n") + " { display: none !important; visibility: hidden !important; height: 0 !important; min-height: 0 !important; overflow: hidden !important; }"
-        }
+        val hideBatches = selectors.chunked(batchSize).map { it.joinToString(",\n") }
+        val css = buildString {
+            hideBatches.forEach { batch ->
+                append(batch)
+                append(" { display: none !important; visibility: hidden !important; height: 0 !important; min-height: 0 !important; overflow: hidden !important; }\n")
+            }
+            styleRules.forEach { append(it).append('\n') }
+        }.trimEnd()
+        return css to hideBatches
     }
 
     fun getAntiAdblockScript(pageHost: String): String {
@@ -1317,8 +1363,23 @@ class AdBlocker {
 
     private fun parseCosmeticFilter(rule: String, idx: Int, delimiter: String, isException: Boolean) {
         val domainPart = rule.substring(0, idx)
-        val selector = rule.substring(idx + delimiter.length).trim()
+        var selector = rule.substring(idx + delimiter.length).trim()
         if (selector.isEmpty()) return
+
+        // uBO style override (`##sel:style(decl)`): restyle matches instead of hiding
+        // them. The pseudo is not valid CSS, so it must never reach the stylesheet raw.
+        var styleOverride: String? = null
+        val styleIdx = selector.lastIndexOf(STYLE_PSEUDO)
+        if (styleIdx >= 0 && selector.endsWith(")")) {
+            val body = selector.substring(styleIdx + STYLE_PSEUDO.length, selector.length - 1)
+            selector = selector.substring(0, styleIdx).trim()
+            // Braces in the body would terminate the generated CSS rule early.
+            val normalizedBody = body.replace("{", "").replace("}", "").trim()
+            styleOverride = if (normalizedBody.endsWith(";")) normalizedBody else "$normalizedBody;"
+            if (selector.isEmpty() || styleOverride.isEmpty()) return
+        } else if (PROCEDURAL_PSEUDO_CLASSES.any { selector.contains(it) }) {
+            return
+        }
 
         val (domains, excludedDomains) = parseDomainList(domainPart)
 
@@ -1327,7 +1388,8 @@ class AdBlocker {
             isException = isException,
             domains = domains,
             excludedDomains = excludedDomains,
-            rawRule = rule
+            rawRule = rule,
+            styleOverride = styleOverride
         )
 
         if (isException) cosmeticExceptionFilters.add(filter)
@@ -1906,6 +1968,10 @@ class AdBlocker {
             sourceRuleCounts[url] = 0
             if (!displayName.isNullOrBlank()) {
                 customSourceNames[url] = displayName
+            } else {
+                // ABP metadata header beats the URL-derived fallback so custom
+                // subscriptions list under their real name (#823).
+                extractListTitle(content)?.let { customSourceNames[url] = it }
             }
             if (context != null) {
                 saveSourcesRegistry(context)

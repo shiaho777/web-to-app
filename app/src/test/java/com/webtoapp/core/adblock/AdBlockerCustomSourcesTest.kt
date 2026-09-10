@@ -99,6 +99,45 @@ class AdBlockerCustomSourcesTest {
     }
 
     @Test
+    fun `url import without display name falls back to the list title header`() = runBlocking {
+        val url = "https://raw.example.test/giant-filters.txt"
+        AdBlockFilterCache.cacheUrlContent(
+            context,
+            url,
+            "! Title: Giant Pharmacy\n! Description: Dark mode rules\n" +
+                "||ads.example.test^\nexample.com##.banner:style(background: #121212 !important)"
+        )
+
+        adBlocker.importHostsFromUrl(url, context)
+        adBlocker.saveHostsRules(context)
+
+        val custom = adBlocker.getCustomHostsSources()
+        assertThat(custom).hasSize(1)
+        assertThat(custom.first().name).isEqualTo("Giant Pharmacy")
+
+        val fresh = AdBlocker()
+        fresh.hydrateSourcesMetadata(context)
+        assertThat(fresh.getCustomHostsSources().first().name).isEqualTo("Giant Pharmacy")
+    }
+
+    @Test
+    fun `compiled state round-trips style overrides`() = runBlocking {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+        adBlocker.addRule("example.com##.banner:style(background: #121212 !important)")
+        adBlocker.addRule("example.com##.slot")
+        adBlocker.saveHostsRules(context)
+
+        val fresh = AdBlocker()
+        fresh.loadHostsRules(context)
+        fresh.setEnabled(true)
+
+        val css = fresh.getCosmeticFilterCss("example.com")
+        assertThat(css).contains(".banner { background: #121212 !important; }")
+        assertThat(fresh.getCosmeticHideBatches("example.com").any { it.contains(".slot") }).isTrue()
+    }
+
+    @Test
     fun `file source key is consumable through the per-app subscription path`() = runBlocking {
         val uri = Uri.parse("content://media/external/filters/block.txt")
         Shadows.shadowOf(context.contentResolver).registerInputStream(

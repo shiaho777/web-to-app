@@ -2384,6 +2384,17 @@ class WebViewManager(
                                         .replace("'", "\\'")
                                         .replace("\n", "\\n")
                                         .replace("\r", "")
+                                    // Hide-selector batches mirror the CSS hide rules one
+                                    // entry per rule; querying per batch keeps one invalid
+                                    // selector list from skipping the remaining batches.
+                                    val hideBatchesJs = adBlocker.getCosmeticHideBatches(pageHost)
+                                        .joinToString(",") { batch ->
+                                            "'" + batch
+                                                .replace("\\", "\\\\")
+                                                .replace("'", "\\'")
+                                                .replace("\n", "\\n")
+                                                .replace("\r", "") + "'"
+                                        }
                                     view.evaluateJavascript("""
                                         (function() {
                                             'use strict';
@@ -2397,11 +2408,21 @@ class WebViewManager(
                                                 (document.head || document.documentElement).appendChild(style);
                                             }
 
-                                            var selectors = '$escapedCss'.match(/([^{]+)\{/g);
-                                            if (selectors && selectors.length > 0) {
-                                                var selectorList = selectors.map(function(s) {
-                                                    return s.replace(/\s*\{${'$'}/, '').trim();
-                                                }).join(',');
+                                            var batches = [$hideBatchesJs];
+                                            if (batches.length > 0) {
+                                                var hideMatches = function() {
+                                                    for (var b = 0; b < batches.length; b++) {
+                                                        try {
+                                                            var els = document.querySelectorAll(batches[b]);
+                                                            for (var i = 0; i < els.length; i++) {
+                                                                if (els[i].style.display !== 'none') {
+                                                                    els[i].style.setProperty('display', 'none', 'important');
+                                                                    els[i].style.setProperty('visibility', 'hidden', 'important');
+                                                                }
+                                                            }
+                                                        } catch(e) { /* invalid selector list — skip this batch */ }
+                                                    }
+                                                };
 
                                                 var pending = false;
                                                 var observer = new MutationObserver(function() {
@@ -2409,15 +2430,7 @@ class WebViewManager(
                                                     pending = true;
                                                     (window.requestIdleCallback || setTimeout)(function() {
                                                         pending = false;
-                                                        try {
-                                                            var els = document.querySelectorAll(selectorList);
-                                                            for (var i = 0; i < els.length; i++) {
-                                                                if (els[i].style.display !== 'none') {
-                                                                    els[i].style.setProperty('display', 'none', 'important');
-                                                                    els[i].style.setProperty('visibility', 'hidden', 'important');
-                                                                }
-                                                            }
-                                                        } catch(e) { /* selector parse error — skip */ }
+                                                        hideMatches();
                                                     }, { timeout: 100 });
                                                 });
 
