@@ -93,7 +93,12 @@ class AdBlocker {
         /** Body of a uBO `:style(...)` pseudo: restyle matches instead of hiding them. */
         val styleOverride: String? = null,
         /** AdGuard `#$#` payload: a complete CSS rule injected for the anchor domains. */
-        val injectedCss: String? = null
+        val injectedCss: String? = null,
+        /** Procedural pseudo-class chain (`t:text`, `u:arg`, `r`) evaluated in page JS;
+         *  [selector] then holds only the plain-CSS base part. */
+        val proceduralOps: List<String>? = null,
+        /** Full selector text including procedural pseudos, for exception matching. */
+        val proceduralRaw: String? = null
     )
 
     companion object {
@@ -798,7 +803,13 @@ class AdBlocker {
     // counter keeps this correct without per-navigation rebuilds.
     @Volatile
     private var cosmeticVersion = 0
-    private data class CosmeticEntry(val version: Int, val css: String, val script: String, val hideBatches: List<String>)
+    private data class CosmeticEntry(
+        val version: Int,
+        val css: String,
+        val script: String,
+        val hideBatches: List<String>,
+        val proceduralJs: String
+    )
     private val cosmeticCache = object : LinkedHashMap<String, CosmeticEntry>(64, 0.75f, true) {
         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, CosmeticEntry>?): Boolean = size > 128
     }
@@ -987,10 +998,44 @@ class AdBlocker {
             if (hit != null && hit.version == v) return hit
         }
         val (css, hideBatches) = buildCosmeticRules(pageHost)
-        val entry = CosmeticEntry(v, css, buildAntiAdblockScript(pageHost), hideBatches)
+        val entry = CosmeticEntry(v, css, buildAntiAdblockScript(pageHost), hideBatches, buildProceduralJs(pageHost))
         synchronized(cosmeticCache) { cosmeticCache[pageHost] = entry }
         return entry
     }
+
+    /**
+     * Page-side JS literal for procedural cosmetic rules (`:has-text()`, `:upward()`,
+     * `:remove()`): `[{"b":baseSelector,"o":["t:text","u:2","r"],"a":removeFlag}]`,
+     * evaluated by the observer script injected in WebViewManager.
+     */
+    fun getCosmeticProceduralRulesJs(pageHost: String): String {
+        if (!enabled) return "[]"
+        return cosmeticEntry(pageHost).proceduralJs
+    }
+
+    private fun buildProceduralJs(pageHost: String): String {
+        val exceptionRaws = cosmeticExceptionFilters
+            .filter { matchesCosmeticDomain(it, pageHost) }
+            .mapNotNull { it.proceduralRaw }
+            .toSet()
+        val rules = cosmeticBlockFilters.filter {
+            it.proceduralOps != null && matchesCosmeticDomain(it, pageHost) && it.proceduralRaw !in exceptionRaws
+        }
+        if (rules.isEmpty()) return "[]"
+        return rules.joinToString(",", "[", "]") { f ->
+            val ops = f.proceduralOps.orEmpty()
+            val remove = if (ops.any { it == "r" }) 1 else 0
+            """{"b":${jsonString(f.selector)},"o":[${ops.joinToString(",") { jsonString(it) }}],"a":$remove}"""
+        }
+    }
+
+    private fun jsonString(value: String): String =
+        '"' + value
+            .replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t") + '"'
 
     /**
      * Comma-joined selector batches backing the hide rules of [getCosmeticFilterCss],
@@ -1004,13 +1049,18 @@ class AdBlocker {
 
     private fun buildCosmeticRules(pageHost: String): Pair<String, List<String>> {
 
+        // Procedural exceptions cancel by full raw selector (see buildProceduralJs),
+        // not by base selector, so they must not leak into the plain-hide exception set.
         val exceptionSelectors = cosmeticExceptionFilters
-            .filter { matchesCosmeticDomain(it, pageHost) }
+            .filter { it.proceduralOps == null && matchesCosmeticDomain(it, pageHost) }
             .map { it.selector }
             .toSet()
 
         val selectors = cosmeticBlockFilters
-            .filter { it.styleOverride == null && matchesCosmeticDomain(it, pageHost) && it.selector !in exceptionSelectors }
+            .filter {
+                it.styleOverride == null && it.proceduralOps == null &&
+                    matchesCosmeticDomain(it, pageHost) && it.selector !in exceptionSelectors
+            }
             .map { it.selector }
             .distinct()
             .toMutableList()
@@ -1540,7 +1590,20 @@ class AdBlocker {
             val normalizedBody = body.replace("{", "").replace("}", "").trim()
             styleOverride = if (normalizedBody.endsWith(";")) normalizedBody else "$normalizedBody;"
             if (selector.isEmpty() || styleOverride.isEmpty()) return
-        } else if (PROCEDURAL_PSEUDO_CLASSES.any { selector.contains(it) }) {
+        }
+
+        var proceduralOps: List<String>? = null
+        var proceduralRaw: String? = null
+        val proc = parseProceduralSelector(selector)
+        if (proc != null) {
+            proceduralOps = proc.ops
+            proceduralRaw = selector
+            selector = proc.base
+        } else if (PROCEDURAL_PSEUDO_CLASSES.any { selector.contains(it) } ||
+            SUPPORTED_PROCEDURAL_PSEUDOS.any { selector.contains(it) }
+        ) {
+            // Unsupported or nested procedural syntax is not valid CSS; ingesting it
+            // raw would invalidate the whole comma-joined batch it lands in (#823).
             return
         }
 
@@ -1552,11 +1615,73 @@ class AdBlocker {
             domains = domains,
             excludedDomains = excludedDomains,
             rawRule = rule,
-            styleOverride = styleOverride
+            styleOverride = styleOverride,
+            proceduralOps = proceduralOps,
+            proceduralRaw = proceduralRaw
         )
 
         if (isException) cosmeticExceptionFilters.add(filter)
         else cosmeticBlockFilters.add(filter)
+    }
+
+    /** Procedural pseudo-classes implemented by the page-side observer script. */
+    private val SUPPORTED_PROCEDURAL_PSEUDOS = listOf(":has-text(", ":upward(", ":remove(")
+
+    private data class ProceduralParse(val base: String, val ops: List<String>)
+
+    /**
+     * Splits a selector into its plain-CSS base and a chain of top-level procedural
+     * pseudo-classes (`:has-text()`, `:upward()`, `:remove()`), encoded as `t:text`,
+     * `u:arg` and `r` ops. Returns null — i.e. "drop the rule" — when the syntax is
+     * unsupported: pseudos nested inside another pseudo (e.g. `:has(span:has-text(x))`),
+     * text between pseudos, unbalanced parens, or an empty base selector.
+     */
+    private fun parseProceduralSelector(selector: String): ProceduralParse? {
+        var depth = 0
+        var nested = false
+        val tops = mutableListOf<Pair<Int, String>>()
+        for (i in selector.indices) {
+            when {
+                selector[i] == '(' -> depth++
+                selector[i] == ')' -> depth--
+                else -> SUPPORTED_PROCEDURAL_PSEUDOS.firstOrNull { selector.startsWith(it, i) }?.let { name ->
+                    if (depth == 0) tops.add(i to name) else nested = true
+                }
+            }
+        }
+        if (nested || tops.isEmpty()) return null
+
+        val base = selector.substring(0, tops.first().first).trim()
+        if (base.isEmpty()) return null
+
+        val ops = mutableListOf<String>()
+        var cursor = tops.first().first
+        for ((idx, name) in tops) {
+            if (idx != cursor) return null
+            val open = idx + name.length - 1
+            var d = 0
+            var j = open
+            while (j < selector.length) {
+                if (selector[j] == '(') d++
+                else if (selector[j] == ')') {
+                    d--
+                    if (d == 0) break
+                }
+                j++
+            }
+            if (j >= selector.length) return null
+            val arg = selector.substring(open + 1, j).trim()
+            ops.add(
+                when (name) {
+                    ":has-text(" -> "t:$arg"
+                    ":upward(" -> "u:$arg"
+                    else -> "r"
+                }
+            )
+            cursor = j + 1
+        }
+        if (cursor != selector.length) return null
+        return ProceduralParse(base, ops)
     }
 
     /** AdGuard CSS-injection rule (`domain#$#rule`, cancelled by `domain#@$#rule`). */

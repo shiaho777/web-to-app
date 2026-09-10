@@ -239,4 +239,63 @@ class AdBlockerTest {
         assertThat(adBlocker.getAntiAdblockScript("example.com")).isNotEmpty()
     }
 
+    @Test
+    fun `procedural has-text rules are evaluated in page js not css`() {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+
+        adBlocker.addRule("example.com##.item:has-text(Sponsor)")
+
+        val js = adBlocker.getCosmeticProceduralRulesJs("example.com")
+        assertThat(js).contains("\"b\":\".item\"")
+        assertThat(js).contains("t:Sponsor")
+        // Procedural selectors must not leak into CSS or hide batches.
+        assertThat(adBlocker.getCosmeticFilterCss("example.com")).doesNotContain(":has-text(")
+        assertThat(adBlocker.getCosmeticHideBatches("example.com").any { it.contains(".item") }).isFalse()
+        assertThat(adBlocker.getCosmeticProceduralRulesJs("other.com")).isEqualTo("[]")
+    }
+
+    @Test
+    fun `upward and remove ops encode into the procedural chain`() {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+
+        adBlocker.addRule("example.com##.cell:has-text(Ad):upward(2)")
+        adBlocker.addRule("example.com##.overlay:remove()")
+
+        val js = adBlocker.getCosmeticProceduralRulesJs("example.com")
+        assertThat(js).contains("u:2")
+        assertThat(js).contains("\"b\":\".overlay\"")
+        // :remove() flips the action flag; the text+upward rule keeps hide semantics.
+        val removeRule = js.substringAfter("\"b\":\".overlay\"")
+        assertThat(removeRule.substring(0, removeRule.indexOf('}'))).contains("\"a\":1")
+        val hideRule = js.substringAfter("\"b\":\".cell\"").substringBefore(",{\"b\":")
+        assertThat(hideRule).contains("\"a\":0")
+    }
+
+    @Test
+    fun `procedural pseudos nested inside other pseudos are dropped`() {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+
+        adBlocker.addRule("example.com##div:has(span:has-text(Sponsored))")
+
+        assertThat(adBlocker.getCosmeticProceduralRulesJs("example.com")).isEqualTo("[]")
+        assertThat(adBlocker.getCosmeticFilterCss("example.com")).doesNotContain(":has-text(")
+    }
+
+    @Test
+    fun `procedural exception cancels by full raw selector only`() {
+        adBlocker.initialize(useDefaultRules = false)
+        adBlocker.setEnabled(true)
+
+        adBlocker.addRule("example.com##.item")
+        adBlocker.addRule("example.com##.item:has-text(Sponsor)")
+        adBlocker.addRule("example.com#@#.item:has-text(Sponsor)")
+
+        assertThat(adBlocker.getCosmeticProceduralRulesJs("example.com")).isEqualTo("[]")
+        // The plain hide rule for the same base selector survives the procedural exception.
+        assertThat(adBlocker.getCosmeticHideBatches("example.com").any { it.contains(".item") }).isTrue()
+    }
+
 }
