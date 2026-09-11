@@ -890,18 +890,7 @@ data class MultiWebConfig(
     val refreshInterval: Int = 30,
     val showSiteIcons: Boolean = true,
     val projectId: String = ""
-) {
-    /**
-     * True when any enabled site sources from a server-runtime app (Node/PHP/Python/Go/
-     * WordPress). Such a multi-web app must keep `targetSdk <= 28` like a standalone
-     * server app: at runtime the site is routed into the matching `*ShellMode`, which
-     * fork+execs the bundled runtime binaries — blocked by W^X from targetSdk 29 on.
-     */
-    val anySiteRequiresProcessExec: Boolean
-        get() = sites.any { site ->
-            site.enabled && (AppType.fromPersistedName(site.appType)?.requiresProcessExec == true)
-        }
-}
+)
 
 data class MultiWebSite(
     val id: String = "",
