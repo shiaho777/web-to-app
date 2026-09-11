@@ -56,7 +56,7 @@ android {
         applicationId = "com.webtoapp"
         minSdk = 23
 
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 62
         versionName = "2.6.0"
         buildConfigField("boolean", "SHELL_RUNTIME_ONLY", "false")
@@ -82,7 +82,7 @@ android {
         create("standard") {
             // Sideloaded variant (GitHub releases, keeps `com.webtoapp` for the existing
             // update path). Identical to gplay in every way except the applicationId —
-            // both inherit targetSdk 35 from defaultConfig and run the same code paths
+            // both inherit targetSdk 36 from defaultConfig and run the same code paths
             // (runtime capability gates key off the installed targetSdk, not the channel).
         }
         create("gplay") {

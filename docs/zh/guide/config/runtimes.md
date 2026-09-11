@@ -34,7 +34,7 @@ WebToApp 在设备端运行真实的服务运行时,并打包成可安装的 APK
 ---
 
 ::: info 宿主预览与生成应用的区别
-Node.js 应用的宿主预览走同一套 JNI 启动器,在任何 `targetSdk` 下都可用。Go 在宿主内经直驱通道构建和预览,即使 fork+exec 被拦截也不受影响。其他基于 exec 的运行时(PHP / Python / WordPress)只有在宿主构建允许从应用存储 exec 时才能预览 —— 在 `targetSdk` 35 的宿主上,SELinux W^X 会拦截,这些预览会以明确提示优雅降级。生成 APK 始终以 `targetSdk` 28 发布,完全不受影响。
+Node.js 应用的宿主预览走同一套 JNI 启动器,在任何 `targetSdk` 下都可用。Go 在宿主内经直驱通道构建和预览,即使 fork+exec 被拦截也不受影响。其他基于 exec 的运行时(PHP / Python / WordPress)只有在宿主构建允许从应用存储 exec 时才能预览 —— 在 `targetSdk` ≥ 29 的宿主上,SELinux W^X 会拦截,这些预览会以明确提示优雅降级。生成 APK 始终以 `targetSdk` 28 发布,完全不受影响。
 
 ::: tip 各运行时的安装指南即将推出
 每个运行时的详细首次安装、依赖安装与故障排除正在编写中。

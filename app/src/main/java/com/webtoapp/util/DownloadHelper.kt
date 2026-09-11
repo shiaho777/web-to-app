@@ -411,7 +411,7 @@ object DownloadHelper {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    /** Generated shells always target SDK 28 (fork+exec runtimes); the host app targets 35+. */
+    /** Generated shells always target SDK 28 (fork+exec runtimes); the host app targets 36+. */
     private fun runsAsGeneratedApp(context: Context): Boolean =
         context.applicationInfo.targetSdkVersion <= 28
 

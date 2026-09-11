@@ -32,7 +32,7 @@ When you export a runtime app, the required native libraries are embedded into t
 :::
 
 ::: info Host-side preview vs generated apps
-Host preview of Node.js apps goes through the same JNI launcher and works at any `targetSdk`. Go builds and previews in the host through a direct driver even where fork+exec is blocked. Other exec-based runtimes (PHP / Python / WordPress) can only be previewed when the host build permits exec from app storage — on the `targetSdk` 35 host, SELinux W^X blocks it and those previews degrade with an explicit message. Generated APKs always ship `targetSdk` 28 and are never affected.
+Host preview of Node.js apps goes through the same JNI launcher and works at any `targetSdk`. Go builds and previews in the host through a direct driver even where fork+exec is blocked. Other exec-based runtimes (PHP / Python / WordPress) can only be previewed when the host build permits exec from app storage — on the host (`targetSdk` ≥ 29), SELinux W^X blocks it and those previews degrade with an explicit message. Generated APKs always ship `targetSdk` 28 and are never affected.
 
 ---
 

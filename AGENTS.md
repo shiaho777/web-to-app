@@ -56,7 +56,7 @@ Mental model:
 ## Android and packaging constraints
 
 - Generated apps keep a low `targetSdk` (28) on the shell path because they rely on on-device fork+exec runtimes. Do not raise shell targetSdk casually.
-- The host app targets SDK 35 (antivirus reputation); SELinux W^X therefore blocks host-side exec of downloaded runtimes. `RuntimeExecPolicy` (`core/linux`) gates those previews by probing the installed targetSdk — generated APKs (always 28) pass unconditionally. Node preview (JNI via native libs) is unaffected.
+- The host app targets SDK 36 (antivirus reputation); SELinux W^X therefore blocks host-side exec of downloaded runtimes. `RuntimeExecPolicy` (`core/linux`) gates those previews by probing the installed targetSdk — generated APKs (always 28) pass unconditionally. Node preview (JNI via native libs) is unaffected.
 - Launch runtime / toolchain processes through `HostProcessLauncher` (`core/linux`): plain `ProcessBuilder` fork+exec where the platform allows it (generated APKs, targetSdk 28), the user-mode static exec loader (`StaticExecProcess`, memfd-based) on W^X hosts (targetSdk ≥ 29), or a degraded error when no static exec bridge is available. A raw `Runtime.exec` on a downloaded binary crashes the host app on W^X devices (#795).
 - Avoid new third-party dependencies unless strongly justified (`app/build.gradle.kts` / `shell/build.gradle.kts`). Prefer platform APIs and existing modules.
 - Notification push channels: Web Notification polyfill, polling, WebSocket, FCM (developer-owned Firebase config). Do not add OEM vendor push SDKs by default.
