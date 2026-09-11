@@ -53,9 +53,13 @@ Android 6.0(API 23)或更高。
 
 **构建 APK** 产生一个可安装的已签名 APK。**AAB 导出**(从 [Google Play](/zh/guide/more-features/google-play))产生 Play 级打包,并把 `targetSdk` 重写到 Play 要求的级别。见 [APK导出配置](/zh/guide/app-actions/edit-common-config/apk-export)。
 
+### 我的应用能上架 Google Play 吗?
+
+通常可以。Web、多网站、HTML、离线包、Frontend、媒体和图库应用都能导出 Play 级 AAB。两类不行:**Node.js / PHP / Python / Go / WordPress** 应用,以及任何开启**资源加密**的构建。见 [Google Play](/zh/guide/more-features/google-play)。
+
 ### 为什么生成的应用 targetSdk 是 28?
 
-较低的 `targetSdk` 是刻意为之:它让生成的应用能从应用存储 fork+exec 原生运行时(Node.js、PHP、Python、Go、WordPress)。AAB 导出器会单独为 Play 分发重写 `targetSdk`。
+较低的 `targetSdk` 是刻意为之:它让生成的应用能从应用存储 fork+exec 原生运行时(Node.js、PHP、Python、Go、WordPress)。这只是 APK 打包层面的细节 —— AAB 导出器会把 `targetSdk` 重写到 Play 要求的级别,这个低值不会带到 Play。
 
 ### 如何用自己的密钥签名?
 

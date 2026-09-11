@@ -53,9 +53,13 @@ See [Build APK](/guide/app-actions/build-apk).
 
 **Build APK** produces an installable, signed APK. **AAB export** (from [Google Play](/guide/more-features/google-play)) produces a Play-ready bundle and rewrites `targetSdk` to the Play-required level. See [APK Export Config](/guide/app-actions/edit-common-config/apk-export).
 
+### Can I publish my app to Google Play?
+
+Usually yes. Web, Multi-Web, HTML, Offline Pack, Frontend, Media, and Gallery apps all export a Play-ready AAB. Two cases cannot: **Node.js / PHP / Python / Go / WordPress** apps, and any build with **resource encryption** enabled. See [Google Play](/guide/more-features/google-play).
+
 ### Why do generated apps target SDK 28?
 
-The low `targetSdk` is deliberate: it lets generated apps fork+exec native runtimes (Node.js, PHP, Python, Go, WordPress) from app storage. The AAB exporter separately rewrites `targetSdk` for Play distribution.
+The low `targetSdk` is deliberate: it lets generated apps fork+exec native runtimes (Node.js, PHP, Python, Go, WordPress) from app storage. It is an APK-packaging detail only — the AAB exporter rewrites `targetSdk` to the Play-required level, so the low value never reaches Play.
 
 ### How do I sign with my own key?
 
