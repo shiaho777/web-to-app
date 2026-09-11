@@ -2,9 +2,7 @@ package com.webtoapp.core.extension
 
 import android.content.Context
 import com.google.common.truth.Truth.assertThat
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -40,18 +38,12 @@ class ExtensionManagerTest {
         modulesDir.deleteRecursively()
     }
 
-    private suspend fun awaitLoaded(manager: ExtensionManager) {
-        withTimeout(5_000) {
-            while (manager.isLoading.value) {
-                delay(20)
-            }
-        }
-    }
-
     @Test
     fun `addModule persists across manager reload`() = runTest {
         val manager = ExtensionManager.getInstance(context)
-        awaitLoaded(manager)
+        // Load-bearing: addModule() builds its list from _modules.value, so an async load
+        // landing after the add would clobber the module and rewrite modules.json from disk.
+        manager.awaitLoaded()
 
         val module = ExtensionModule(
             id = "user-module-1",
@@ -64,7 +56,7 @@ class ExtensionManagerTest {
 
         ExtensionManager.release()
         val reloadedManager = ExtensionManager.getInstance(context)
-        awaitLoaded(reloadedManager)
+        reloadedManager.awaitLoaded()
 
         val stored = reloadedManager.getAllModules()
             .filterNot { it.builtIn }
@@ -78,8 +70,10 @@ class ExtensionManagerTest {
 
     @Test
     fun `parseModulesJson skips malformed items`() = runTest {
+        // Pure Gson parsing on gson only, so no awaitLoaded() here on purpose: waiting inside
+        // runTest burns virtual time, not real time, which would couple this test to real
+        // Dispatchers.IO scheduling latency for no benefit.
         val manager = ExtensionManager.getInstance(context)
-        awaitLoaded(manager)
 
         val validJson = ExtensionModule(
             id = "valid-module",
@@ -96,8 +90,8 @@ class ExtensionManagerTest {
 
     @Test
     fun `parseBuiltInStatesJson skips malformed entries`() = runTest {
+        // Same as above: parseBuiltInStatesJson reads no async state, so there is nothing to wait for.
         val manager = ExtensionManager.getInstance(context)
-        awaitLoaded(manager)
 
         val decoded = manager.parseBuiltInStatesJson("""
             {
