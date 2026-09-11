@@ -2,6 +2,7 @@ package com.webtoapp.core.extension
 
 import android.content.Context
 import com.google.common.truth.Truth.assertThat
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
@@ -106,5 +107,46 @@ class ExtensionManagerTest {
             "builtin-dark-mode", true,
             "builtin-auto-scroll", false
         )
+    }
+
+    @Test
+    fun `release before the initial load lands leaves modules json untouched`() = runTest {
+        // Inline code makes loadModulesAsync take the strip-to-sidecar migration, so any
+        // load that reaches its commit step rewrites modules.json and is visible on disk.
+        // The seed is large enough that the read is still in flight when release() runs,
+        // which is what DataBackupManager.restoreExtensionFiles() guards against: it
+        // releases the manager before writing the restored file, so a load that survived
+        // the release would rewrite modules.json over the restored bytes.
+        val seeded = (1..150).map { index ->
+            ExtensionModule(
+                id = "seed-$index",
+                name = "Seed $index",
+                code = "window.__seed$index = true;".repeat(200)
+            )
+        }
+        val modulesFile = File(modulesDir, "modules.json")
+        modulesFile.writeText(seeded.joinToString(",", "[", "]") { it.toJson() })
+        val before = modulesFile.readText()
+
+        val manager = ExtensionManager.getInstance(context)
+        ExtensionManager.release()
+
+        // isLoading settles on every exit path, cancellation included, so this returns only
+        // once the released instance's load is definitively finished with the file.
+        manager.isLoading.first { !it }
+
+        assertThat(modulesFile.readText()).isEqualTo(before)
+    }
+
+    @Test
+    fun `awaitLoaded returns on a released instance instead of hanging`() = runTest {
+        // release() cancels initScope, and a coroutine cancelled before its body runs never
+        // reaches a trailing isLoading assignment. Stranding the flag at true would hang
+        // awaitLoaded() forever: AgentViewModel and the agent tools call it with no timeout
+        // (only ApkBuilder wraps it in withTimeoutOrNull).
+        val manager = ExtensionManager.getInstance(context)
+        ExtensionManager.release()
+
+        manager.awaitLoaded()
     }
 }

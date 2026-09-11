@@ -13,6 +13,7 @@ import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -52,6 +53,7 @@ class ExtensionManager private constructor(private val context: Context) {
 
         fun release() {
             synchronized(this) {
+                INSTANCE?.shutdown()
                 INSTANCE = null
             }
         }
@@ -110,6 +112,23 @@ class ExtensionManager private constructor(private val context: Context) {
 
     private val initScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    @Volatile
+    private var released = false
+
+    /**
+     * Tears this instance down before [release] drops the singleton reference.
+     *
+     * Without this the startup load outlives the instance: it keeps holding the
+     * object alive and keeps writing into `modulesDir` — the same directory the
+     * backup restore path rewrites. Restoring releases the manager and then
+     * writes the restored file, so a load that survives the release can still
+     * rewrite `modules.json` over the restored bytes.
+     */
+    private fun shutdown() {
+        released = true
+        initScope.cancel()
+    }
+
     init {
 
         loadBuiltInModules()
@@ -118,8 +137,15 @@ class ExtensionManager private constructor(private val context: Context) {
         initScope.launch {
             loadModulesAsync()
             rebuildAllModulesCache()
-            _isLoading.value = false
             AppLogger.d(TAG, "Async module loading completed")
+        }.invokeOnCompletion {
+            // Settle on every exit path, not just success. Cancelling the scope
+            // can complete this coroutine before its body ever runs, and a
+            // non-Exception Throwable from the body would skip a plain trailing
+            // assignment too. Leaving isLoading at true strands awaitLoaded()
+            // forever, and AgentViewModel / the agent tools call it without a
+            // timeout (only ApkBuilder wraps it in withTimeoutOrNull).
+            _isLoading.value = false
         }
     }
 
@@ -136,6 +162,13 @@ class ExtensionManager private constructor(private val context: Context) {
             AppLogger.d(TAG, "loadModulesAsync: path=${file.absolutePath}, exists=${file.exists()}, size=${if (file.exists()) file.length() else 0}")
             if (file.exists()) {
                 val json = file.readText()
+
+                // shutdown() cancels initScope, but everything from here on is
+                // non-suspending file IO, so cancellation cannot preempt it. Bail
+                // before writing anything back: a released instance must not
+                // rewrite modules.json out from under a backup restore.
+                if (released) return@withContext
+
                 if (json.isBlank()) {
                     AppLogger.d(TAG, "Modules file is empty")
                     _modules.value = emptyList()
@@ -181,7 +214,11 @@ class ExtensionManager private constructor(private val context: Context) {
                     m
                 }
 
-                if (needsMigration) {
+                // The migration loop below writes a sidecar file per module, so a
+                // release() landing partway through it is not caught by the check
+                // above. Re-check right before the rewrite: this is the write that
+                // would clobber modules.json.
+                if (needsMigration && !released) {
                     AppLogger.i(TAG, "Migrating ${modules.size} modules: stripping inline code to separate files")
                     file.writeText(gson.toJson(migratedModules))
                 }
