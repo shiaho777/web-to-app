@@ -591,13 +591,18 @@ class DataBackupManager(private val context: Context) {
 
     private fun restoreExtensionFiles(modulesJsonBytes: ByteArray?, builtInStatesJsonBytes: ByteArray?) {
         runCatching {
+            // Release before writing the restored bytes, not after: release() cancels the
+            // outgoing instance's startup load, and cancelling it only helps if it happens
+            // before the restored file lands. With the old order the load could still be
+            // mid-migration and rewrite modules.json on top of the bytes just restored.
+            com.webtoapp.core.extension.ExtensionManager.release()
+
             if (modulesJsonBytes != null || builtInStatesJsonBytes != null) {
                 val extensionDir = File(context.filesDir, "extension_modules").apply { mkdirs() }
                 modulesJsonBytes?.let { File(extensionDir, "modules.json").writeBytes(it) }
                 builtInStatesJsonBytes?.let { File(extensionDir, "builtin_states.json").writeBytes(it) }
             }
 
-            com.webtoapp.core.extension.ExtensionManager.release()
             com.webtoapp.core.extension.ExtensionManager.getInstance(context)
             AppLogger.i(TAG, "扩展模块配置已恢复并重新加载")
         }.onFailure { e ->
