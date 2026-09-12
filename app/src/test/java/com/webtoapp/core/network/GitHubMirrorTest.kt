@@ -14,12 +14,13 @@ class GitHubMirrorTest {
     fun `proxiedCn expands a github release asset with direct fallback`() {
         val asset = "https://github.com/oct/x/releases/download/v1/a.zip"
         val urls = GitHubMirror.proxiedCn(asset)
-        assertThat(urls).hasSize(GitHubMirror.CN_PROXIES.size + 1)
-        // No probe cache in tests: declaration order (proxies first), direct last.
-        GitHubMirror.CN_PROXIES.forEachIndexed { i, proxy ->
-            assertThat(urls[i]).isEqualTo(proxy.rewrite(asset))
-        }
-        assertThat(urls.last()).isEqualTo(asset)
+        // Order is dynamic by design: CnMirrorProbe re-sorts channels by measured
+        // latency and a background probe can land mid-suite, so assert membership
+        // rather than a fixed sequence. The plain URL must always be present —
+        // it is the fallback route when every proxy fails.
+        assertThat(urls).containsExactlyElementsIn(
+            GitHubMirror.CN_PROXIES.map { it.rewrite(asset) } + asset
+        )
     }
 
     @Test
@@ -60,8 +61,9 @@ class GitHubMirrorTest {
         ).forEach { url ->
             val urls = GitHubMirror.proxiedCnGitHubHost(url)
             assertThat(urls).hasSize(GitHubMirror.CN_PROXIES.size + 1)
-            // The plain URL is always last so there is somewhere to fall back to.
-            assertThat(urls.last()).isEqualTo(url)
+            // The plain URL is always present so there is somewhere to fall
+            // back to; its position is dynamic under a measured probe order.
+            assertThat(urls).contains(url)
         }
     }
 
