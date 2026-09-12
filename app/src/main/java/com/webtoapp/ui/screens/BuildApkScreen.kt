@@ -39,6 +39,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -155,6 +156,10 @@ private fun BuildApkContent(
     var preflightReport by remember(webApp.id) { mutableStateOf<ApkExportPreflightReport?>(null) }
     var isEnsuringRuntime by remember(webApp.id) { mutableStateOf(false) }
     var ensureRuntimeText by remember(webApp.id) { mutableStateOf<String?>(null) }
+    // Runtime downloads under the ensure step report through the shared engine;
+    // surface them so "preparing" shows real progress instead of a bare spinner.
+    val depDownloadState by com.webtoapp.core.download.DependencyDownloadEngine.state
+        .collectAsStateWithLifecycle()
     var forceFullRebuild by remember(webApp.id) { mutableStateOf(false) }
     var lastBuildMode by remember(webApp.id) { mutableStateOf<String?>(null) }
     var lastBuildReason by remember(webApp.id) { mutableStateOf<String?>(null) }
@@ -264,6 +269,9 @@ private fun BuildApkContent(
                 neededAbis = webAppWithConfig.apkExportConfig?.architecture?.abiFilters
             )
             if (!ensureOk) {
+                // Abort here: buildApk runs the same ensure again, so falling
+                // through would burn a second full runtime download attempt
+                // before the build fails on the same missing dependency.
                 progressText = when (webAppWithConfig.appType) {
                     AppType.PYTHON_APP -> Strings.pythonRuntimeDownloadFailed
                     AppType.NODEJS_APP -> Strings.njsDownloadFailed
@@ -271,6 +279,8 @@ private fun BuildApkContent(
                     AppType.WORDPRESS -> Strings.wpDownloadFailed
                     else -> Strings.preparing
                 }
+                isBuilding = false
+                return@launch
             }
             val nextPreflight = ApkExportPreflight.check(context, webAppWithConfig)
             preflightReport = nextPreflight
@@ -678,8 +688,19 @@ private fun BuildApkContent(
                                 .padding(12.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            val downloading =
+                                (depDownloadState as? com.webtoapp.core.download.DependencyDownloadEngine.State.Downloading)
+                                    ?.takeIf { isEnsuringRuntime }
                             Text(
-                                text = ensureRuntimeText ?: Strings.preparing,
+                                text = if (downloading != null) {
+                                    "$ensureRuntimeText — ${downloading.displayName} " +
+                                        "${downloading.bytesDownloaded / 1024 / 1024}MB" +
+                                        (downloading.totalBytes.takeIf { it > 0 }
+                                            ?.let { " / ${it / 1024 / 1024}MB" } ?: "") +
+                                        " · ${com.webtoapp.core.download.DependencyDownloadEngine.formatSpeed(downloading.speedBytesPerSec)}/s"
+                                } else {
+                                    ensureRuntimeText ?: Strings.preparing
+                                },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (isEnsuringRuntime) {
                                     MaterialTheme.colorScheme.onPrimaryContainer
@@ -688,7 +709,14 @@ private fun BuildApkContent(
                                 }
                             )
                             if (isEnsuringRuntime) {
-                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                if (downloading != null && downloading.totalBytes > 0) {
+                                    LinearProgressIndicator(
+                                        progress = { downloading.progress },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                } else {
+                                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                                }
                             }
                         }
                     }

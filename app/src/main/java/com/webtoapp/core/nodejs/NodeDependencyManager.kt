@@ -7,8 +7,10 @@ import com.webtoapp.core.download.DependencyDownloadEngine
 import com.webtoapp.core.download.DependencyDownloadNotification
 import com.webtoapp.core.logging.AppLogger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -136,18 +138,30 @@ object NodeDependencyManager {
         withContext(Dispatchers.IO) {
             var missing = missingExportAbis(context, neededAbis)
             if (missing.isEmpty()) return@withContext missing
-            runtimeDownloadMutex.withLock {
-                missing = missingExportAbis(context, neededAbis)
-                if (missing.isNotEmpty()) {
-                    AppLogger.i(
-                        TAG,
-                        "Node.js export needs libnode.so for $missing — re-downloading runtime zip (all ABIs)"
-                    )
-                    downloadNode(context, getMirrorConfig())
-                    missing = missingExportAbis(context, neededAbis)
-                    if (missing.isNotEmpty()) {
-                        AppLogger.e(TAG, "Still no libnode.so for $missing after re-download")
+            coroutineScope {
+                // Same live engine→manager state bridge as downloadNodeRuntime:
+                // this path re-downloads the runtime zip for missing export ABIs
+                // and must not leave callers' progress UI stuck on Idle.
+                val syncJob = launch {
+                    DependencyDownloadEngine.state.collect { syncEngineState() }
+                }
+                try {
+                    runtimeDownloadMutex.withLock {
+                        missing = missingExportAbis(context, neededAbis)
+                        if (missing.isNotEmpty()) {
+                            AppLogger.i(
+                                TAG,
+                                "Node.js export needs libnode.so for $missing — re-downloading runtime zip (all ABIs)"
+                            )
+                            downloadNode(context, getMirrorConfig())
+                            missing = missingExportAbis(context, neededAbis)
+                            if (missing.isNotEmpty()) {
+                                AppLogger.e(TAG, "Still no libnode.so for $missing after re-download")
+                            }
+                        }
                     }
+                } finally {
+                    syncJob.cancel()
                 }
             }
             missing
@@ -238,29 +252,41 @@ object NodeDependencyManager {
     }
 
     suspend fun downloadNodeRuntime(context: Context): Boolean = withContext(Dispatchers.IO) {
-        runtimeDownloadMutex.withLock {
-            DependencyDownloadNotification.getInstance(context)
-            if (isNodeReady(context)) {
-                markComplete()
-                return@withLock true
+        coroutineScope {
+            // Bridge engine progress into _downloadState for the whole call —
+            // callers' dialogs otherwise sit on Idle ("preparing") for the
+            // entire download since syncEngineState only ran once at the end.
+            val syncJob = launch {
+                DependencyDownloadEngine.state.collect { syncEngineState() }
             }
             try {
-                _downloadState.value = DownloadState.Idle
-                DependencyDownloadEngine.reset()
-                val mirror = getMirrorConfig()
+                runtimeDownloadMutex.withLock {
+                    DependencyDownloadNotification.getInstance(context)
+                    if (isNodeReady(context)) {
+                        markComplete()
+                        return@withLock true
+                    }
+                    try {
+                        _downloadState.value = DownloadState.Idle
+                        DependencyDownloadEngine.reset()
+                        val mirror = getMirrorConfig()
 
-                if (!isNodeReady(context)) {
-                    val success = downloadNode(context, mirror)
-                    if (!success) return@withLock false
+                        if (!isNodeReady(context)) {
+                            val success = downloadNode(context, mirror)
+                            if (!success) return@withLock false
+                        }
+
+                        markComplete()
+                        AppLogger.i(TAG, "Node.js runtime download complete")
+                        true
+                    } catch (e: Exception) {
+                        AppLogger.e(TAG, "Failed to download Node.js runtime", e)
+                        markError(e.message ?: "未知错误")
+                        false
+                    }
                 }
-
-                markComplete()
-                AppLogger.i(TAG, "Node.js runtime download complete")
-                true
-            } catch (e: Exception) {
-                AppLogger.e(TAG, "Failed to download Node.js runtime", e)
-                markError(e.message ?: "未知错误")
-                false
+            } finally {
+                syncJob.cancel()
             }
         }
     }

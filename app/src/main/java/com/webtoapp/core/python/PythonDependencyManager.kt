@@ -7,8 +7,10 @@ import com.webtoapp.core.download.DependencyDownloadNotification
 import com.webtoapp.core.logging.AppLogger
 import com.webtoapp.util.destroyForciblyCompat
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -250,56 +252,66 @@ object PythonDependencyManager {
     }
 
     suspend fun downloadPythonRuntime(context: Context): Boolean = withContext(Dispatchers.IO) {
-        try {
-            _downloadState.value = DownloadState.Idle
-            DependencyDownloadNotification.getInstance(context)
-            DependencyDownloadEngine.reset()
-
-            val pythonReady = resolvePythonBinary(context) != null
-            val muslReady = resolveMuslLinker(context) != null
-            if (pythonReady && muslReady) {
-                // Runtimes that persisted across an app update never received
-                // the on-device fixes (they only used to run after a fresh
-                // download) — heal them in place before declaring ready.
-                ensureRuntimePatched(context)
-                markComplete()
-                return@withContext true
+        coroutineScope {
+            // Bridge engine progress into _downloadState for the whole call —
+            // callers' dialogs otherwise sit on Idle ("preparing") for the
+            // entire download since syncEngineState only ran once at the end.
+            val syncJob = launch {
+                DependencyDownloadEngine.state.collect { syncEngineState() }
             }
+            try {
+                _downloadState.value = DownloadState.Idle
+                DependencyDownloadNotification.getInstance(context)
+                DependencyDownloadEngine.reset()
 
-            val abi = getDeviceAbi()
-            val mirror = when (getMirrorRegion()) {
-                MirrorRegion.CN -> getCnMirror(abi)
-                MirrorRegion.GLOBAL -> getGlobalMirror(abi)
-            }
-
-            val success = when {
-                !pythonReady -> downloadPython(context, mirror, abi)
-                !muslReady -> {
-                    val muslUrl = mirror.muslLinkerUrl
-                    if (muslUrl == null) {
-                        markError(String.format(com.webtoapp.core.i18n.Strings.pyRuntimeNoMuslForAbi, abi))
-                        false
-                    } else {
-                        _downloadState.value = DownloadState.Extracting("musl linker")
-                        downloadMuslLinker(context, muslUrl, abi)
-                    }
+                val pythonReady = resolvePythonBinary(context) != null
+                val muslReady = resolveMuslLinker(context) != null
+                if (pythonReady && muslReady) {
+                    // Runtimes that persisted across an app update never received
+                    // the on-device fixes (they only used to run after a fresh
+                    // download) — heal them in place before declaring ready.
+                    ensureRuntimePatched(context)
+                    markComplete()
+                    return@coroutineScope true
                 }
-                else -> true
-            }
-            if (!success) return@withContext false
 
-            if (!isPythonReady(context)) {
-                markError(com.webtoapp.core.i18n.Strings.pyRuntimeDownloadIncomplete)
-                return@withContext false
-            }
+                val abi = getDeviceAbi()
+                val mirror = when (getMirrorRegion()) {
+                    MirrorRegion.CN -> getCnMirror(abi)
+                    MirrorRegion.GLOBAL -> getGlobalMirror(abi)
+                }
 
-            markComplete()
-            AppLogger.i(TAG, "Python runtime download complete")
-            true
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Downloading Python runtimefailed", e)
-            markError(e.message ?: com.webtoapp.core.i18n.Strings.unknownError)
-            false
+                val success = when {
+                    !pythonReady -> downloadPython(context, mirror, abi)
+                    !muslReady -> {
+                        val muslUrl = mirror.muslLinkerUrl
+                        if (muslUrl == null) {
+                            markError(String.format(com.webtoapp.core.i18n.Strings.pyRuntimeNoMuslForAbi, abi))
+                            false
+                        } else {
+                            _downloadState.value = DownloadState.Extracting("musl linker")
+                            downloadMuslLinker(context, muslUrl, abi)
+                        }
+                    }
+                    else -> true
+                }
+                if (!success) return@coroutineScope false
+
+                if (!isPythonReady(context)) {
+                    markError(com.webtoapp.core.i18n.Strings.pyRuntimeDownloadIncomplete)
+                    return@coroutineScope false
+                }
+
+                markComplete()
+                AppLogger.i(TAG, "Python runtime download complete")
+                true
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Downloading Python runtimefailed", e)
+                markError(e.message ?: com.webtoapp.core.i18n.Strings.unknownError)
+                false
+            } finally {
+                syncJob.cancel()
+            }
         }
     }
 

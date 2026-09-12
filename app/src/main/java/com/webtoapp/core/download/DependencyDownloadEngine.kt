@@ -38,9 +38,15 @@ object DependencyDownloadEngine {
     // switch to the next mirror; partial bytes stay in .tmp for resume.
     private const val SLOW_THRESHOLD_BYTES_PER_SEC = 64L * 1024
     private const val SLOW_GRACE_MS = 15_000L
-    private const val SLOW_MIN_BYTES = 1L * 1024 * 1024
     private const val SLOW_MIN_TOTAL_BYTES = 2L * 1024 * 1024
     private const val SLOW_POLL_MS = 2_000L
+
+    // Stall watchdog: no bytes for this long means the source is dead even if
+    // the socket stays open — deliberately far below the OkHttp read timeout
+    // (120s) so a hung mirror fails over to the next source instead of
+    // freezing the call. The speed-window check alone cannot see this: with no
+    // new samples the window keeps reporting the pre-stall rate.
+    private const val STALL_TIMEOUT_MS = 30_000L
 
     enum class Outcome { SUCCESS, FAILED, SLOW }
 
@@ -208,6 +214,7 @@ object DependencyDownloadEngine {
             val totalHint = java.util.concurrent.atomic.AtomicLong(-1L)
             val slowAbort = java.util.concurrent.atomic.AtomicBoolean(false)
             val watchdogDone = java.util.concurrent.atomic.AtomicBoolean(false)
+            val lastProgressAt = java.util.concurrent.atomic.AtomicLong(startTime)
 
             _paused.set(false)
             _cancelled.set(false)
@@ -231,13 +238,22 @@ object DependencyDownloadEngine {
                         while (!watchdogDone.get()) {
                             Thread.sleep(SLOW_POLL_MS)
                             if (watchdogDone.get() || _paused.get() || _cancelled.get()) continue
+                            val now = System.currentTimeMillis()
+                            if (now - lastProgressAt.get() > STALL_TIMEOUT_MS) {
+                                slowAbort.set(true)
+                                AppLogger.w(
+                                    TAG,
+                                    "$displayName 源 ${(now - lastProgressAt.get()) / 1000}s 无数据，放弃该源 [task=$taskId]"
+                                )
+                                call.cancel()
+                                break
+                            }
                             val total = totalHint.get()
                             if (total in 1 until SLOW_MIN_TOTAL_BYTES) continue
-                            val elapsed = System.currentTimeMillis() - startTime
+                            val elapsed = now - startTime
                             val speed = speedTracker.calculateSpeed()
                             if (elapsed > SLOW_GRACE_MS &&
-                                speedTracker.latestBytes() > SLOW_MIN_BYTES &&
-                                speed in 1 until SLOW_THRESHOLD_BYTES_PER_SEC
+                                speed < SLOW_THRESHOLD_BYTES_PER_SEC
                             ) {
                                 slowAbort.set(true)
                                 AppLogger.w(
@@ -302,6 +318,9 @@ object DependencyDownloadEngine {
                                         if (_cancelled.get()) {
                                             throw kotlinx.coroutines.CancellationException("cancelled by user [task=$taskId]")
                                         }
+                                        // Keep the stall clock alive while paused so a
+                                        // long pause doesn't read as a dead source on resume.
+                                        lastProgressAt.set(System.currentTimeMillis())
                                         delay(PAUSE_CHECK_MS)
                                         if (!isActive) return@withLock Outcome.FAILED
                                     }
@@ -313,6 +332,7 @@ object DependencyDownloadEngine {
                                     downloadedBytes += bytesRead
 
                                     speedTracker.recordSample(downloadedBytes)
+                                    lastProgressAt.set(System.currentTimeMillis())
 
                                     val now = System.currentTimeMillis()
                                     if (now - lastThrottleTime >= THROTTLE_MS) {

@@ -7,8 +7,10 @@ import com.webtoapp.core.download.DependencyDownloadNotification
 import com.webtoapp.core.i18n.AppLanguage
 import com.webtoapp.core.logging.AppLogger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -190,7 +192,15 @@ object GoToolchainManager {
     }
 
     suspend fun installGoToolchain(context: Context): Boolean = withContext(Dispatchers.IO) {
-        installMutex.withLock {
+        coroutineScope {
+            // Bridge engine progress into _downloadState for the whole call —
+            // callers' UI otherwise sits on Idle for the entire download since
+            // syncEngineState only ran once at the end.
+            val syncJob = launch {
+                DependencyDownloadEngine.state.collect { syncEngineState() }
+            }
+            try {
+                installMutex.withLock {
             DependencyDownloadNotification.getInstance(context)
             if (isGoReady(context)) {
                 AppLogger.i(TAG, "Go 工具链已就绪，跳过下载")
@@ -267,6 +277,10 @@ object GoToolchainManager {
                 AppLogger.e(TAG, "安装 Go 工具链失败", e)
                 markError(e.message ?: "未知错误")
                 false
+            }
+                }
+            } finally {
+                syncJob.cancel()
             }
         }
     }

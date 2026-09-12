@@ -6,8 +6,10 @@ import com.webtoapp.core.download.DependencyDownloadEngine
 import com.webtoapp.core.download.DependencyDownloadNotification
 import com.webtoapp.core.logging.AppLogger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -136,55 +138,72 @@ object WordPressDependencyManager {
     }
 
     suspend fun downloadAllDependencies(context: Context): Boolean = withContext(Dispatchers.IO) {
-        try {
-            _downloadState.value = DownloadState.Idle
-
-            DependencyDownloadNotification.getInstance(context)
-            DependencyDownloadEngine.reset()
-            val mirror = getMirrorConfig()
-
-            if (!isPhpReady(context)) {
-                val success = downloadPhp(context, mirror)
-                if (!success) return@withContext false
+        coroutineScope {
+            // Bridge engine progress into _downloadState for the whole call —
+            // callers' UI otherwise sits on Idle for the entire download since
+            // syncEngineState only ran once at the end.
+            val syncJob = launch {
+                DependencyDownloadEngine.state.collect { syncEngineState() }
             }
+            try {
+                _downloadState.value = DownloadState.Idle
 
-            if (!isWordPressReady(context)) {
-                val success = downloadWordPress(context, mirror)
-                if (!success) return@withContext false
+                DependencyDownloadNotification.getInstance(context)
+                DependencyDownloadEngine.reset()
+                val mirror = getMirrorConfig()
+
+                if (!isPhpReady(context)) {
+                    val success = downloadPhp(context, mirror)
+                    if (!success) return@coroutineScope false
+                }
+
+                if (!isWordPressReady(context)) {
+                    val success = downloadWordPress(context, mirror)
+                    if (!success) return@coroutineScope false
+                }
+
+                if (!isSqlitePluginReady(context)) {
+                    val success = downloadSqlitePlugin(context, mirror)
+                    if (!success) return@coroutineScope false
+                }
+
+                markComplete()
+                AppLogger.i(TAG, "All WordPress dependencies downloaded")
+                true
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Failed to download dependency", e)
+                markError(e.message ?: "未知错误")
+                false
+            } finally {
+                syncJob.cancel()
             }
-
-            if (!isSqlitePluginReady(context)) {
-                val success = downloadSqlitePlugin(context, mirror)
-                if (!success) return@withContext false
-            }
-
-            markComplete()
-            AppLogger.i(TAG, "All WordPress dependencies downloaded")
-            true
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to download dependency", e)
-            markError(e.message ?: "未知错误")
-            false
         }
     }
 
     suspend fun downloadPhpDependency(context: Context): Boolean = withContext(Dispatchers.IO) {
-        try {
-            if (isPhpReady(context)) {
-                DependencyDownloadNotification.getInstance(context)
-                markComplete()
-                return@withContext true
+        coroutineScope {
+            val syncJob = launch {
+                DependencyDownloadEngine.state.collect { syncEngineState() }
             }
-            DependencyDownloadNotification.getInstance(context)
-            DependencyDownloadEngine.reset()
-            val mirror = getMirrorConfig()
-            val ok = downloadPhp(context, mirror)
-            if (ok) markComplete()
-            return@withContext ok
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Failed to download PHP dependency", e)
-            markError(e.message ?: "未知错误")
-            false
+            try {
+                if (isPhpReady(context)) {
+                    DependencyDownloadNotification.getInstance(context)
+                    markComplete()
+                    return@coroutineScope true
+                }
+                DependencyDownloadNotification.getInstance(context)
+                DependencyDownloadEngine.reset()
+                val mirror = getMirrorConfig()
+                val ok = downloadPhp(context, mirror)
+                if (ok) markComplete()
+                ok
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Failed to download PHP dependency", e)
+                markError(e.message ?: "未知错误")
+                false
+            } finally {
+                syncJob.cancel()
+            }
         }
     }
 
