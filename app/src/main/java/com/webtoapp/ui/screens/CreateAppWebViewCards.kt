@@ -2052,13 +2052,42 @@ fun UserAgentCard(
     onConfigChange: (WebViewConfig) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val isEnabled = config.userAgentMode != UserAgentMode.DEFAULT
+    val isCustom = config.userAgentMode == UserAgentMode.CUSTOM
+    val flavor = config.kernelFlavor
+    val isEnabled = isCustom || flavor != com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT
+
+    val currentUa = when {
+        isCustom -> config.customUserAgent
+        flavor != com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT -> flavor.profile.userAgent
+        else -> null
+    }
+
+    // Picking a flavor is the entire identity decision. It has to clear the custom mode (or a
+    // leftover UA string would keep winning) and switch the kernel disguise on, because the
+    // anti-detection JS that accompanies a flavor is gated behind that flag.
+    fun selectFlavor(choice: com.webtoapp.core.kernel.KernelFlavor) {
+        onConfigChange(
+            config.copy(
+                kernelFlavor = choice,
+                userAgentMode = UserAgentMode.DEFAULT,
+                enableKernelDisguise = if (choice == com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT) {
+                    config.enableKernelDisguise
+                } else {
+                    true
+                }
+            )
+        )
+    }
 
     WtaSettingCard {
         Column {
             WtaChoiceRow(
                 title = Strings.userAgentMode,
-                subtitle = if (isEnabled) config.userAgentMode.displayName else Strings.userAgentDefault,
+                subtitle = when {
+                    isCustom -> Strings.userAgentCustom
+                    flavor != com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT -> flavor.displayName
+                    else -> Strings.userAgentDefault
+                },
                 icon = Icons.Outlined.Language,
                 value = "",
                 isExpanded = expanded,
@@ -2095,15 +2124,16 @@ fun UserAgentCard(
                             verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                         ) {
                             listOf(
-                                UserAgentMode.DEFAULT to Strings.userAgentDefault,
-                                UserAgentMode.CHROME_MOBILE to "Chrome",
-                                UserAgentMode.SAFARI_MOBILE to "Safari",
-                                UserAgentMode.FIREFOX_MOBILE to "Firefox",
-                                UserAgentMode.EDGE_MOBILE to "Edge"
-                            ).forEach { (mode, name) ->
+                                com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT to Strings.userAgentDefault,
+                                com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME to "Chrome",
+                                com.webtoapp.core.kernel.KernelFlavor.BLINK_EDGE to "Edge",
+                                com.webtoapp.core.kernel.KernelFlavor.BLINK_SAMSUNG to "Samsung",
+                                com.webtoapp.core.kernel.KernelFlavor.GECKO_FIREFOX to "Firefox",
+                                com.webtoapp.core.kernel.KernelFlavor.WEBKIT_SAFARI to "Safari"
+                            ).forEach { (candidate, name) ->
                                 WtaChip(
-                                    selected = config.userAgentMode == mode,
-                                    onClick = { onConfigChange(config.copy(userAgentMode = mode)) },
+                                    selected = !isCustom && flavor == candidate,
+                                    onClick = { selectFlavor(candidate) },
                                     label = name,
                                     showSelectedCheck = false
                                 )
@@ -2124,14 +2154,14 @@ fun UserAgentCard(
                             verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
                         ) {
                             listOf(
-                                UserAgentMode.CHROME_DESKTOP to "Chrome",
-                                UserAgentMode.SAFARI_DESKTOP to "Safari",
-                                UserAgentMode.FIREFOX_DESKTOP to "Firefox",
-                                UserAgentMode.EDGE_DESKTOP to "Edge"
-                            ).forEach { (mode, name) ->
+                                com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME_DESKTOP to "Chrome",
+                                com.webtoapp.core.kernel.KernelFlavor.BLINK_EDGE_DESKTOP to "Edge",
+                                com.webtoapp.core.kernel.KernelFlavor.GECKO_FIREFOX_DESKTOP to "Firefox",
+                                com.webtoapp.core.kernel.KernelFlavor.WEBKIT_SAFARI_DESKTOP to "Safari"
+                            ).forEach { (candidate, name) ->
                                 WtaChip(
-                                    selected = config.userAgentMode == mode,
-                                    onClick = { onConfigChange(config.copy(userAgentMode = mode)) },
+                                    selected = !isCustom && flavor == candidate,
+                                    onClick = { selectFlavor(candidate) },
                                     label = name,
                                     showSelectedCheck = false
                                 )
@@ -2140,7 +2170,7 @@ fun UserAgentCard(
                     }
 
                     WtaChip(
-                        selected = config.userAgentMode == UserAgentMode.CUSTOM,
+                        selected = isCustom,
                         onClick = { onConfigChange(config.copy(userAgentMode = UserAgentMode.CUSTOM)) },
                         label = Strings.userAgentCustom,
                         leadingIcon = Icons.Outlined.Edit,
@@ -2148,7 +2178,7 @@ fun UserAgentCard(
                     )
 
                     AnimatedVisibility(
-                        visible = config.userAgentMode == UserAgentMode.CUSTOM,
+                        visible = isCustom,
                         enter = CardExpandTransition,
                         exit = CardCollapseTransition
                     ) {
@@ -2165,13 +2195,13 @@ fun UserAgentCard(
                     }
 
                     AnimatedVisibility(
-                        visible = config.userAgentMode != UserAgentMode.DEFAULT && config.userAgentMode != UserAgentMode.CUSTOM,
+                        visible = isEnabled && !isCustom,
                         enter = CardExpandTransition,
                         exit = CardCollapseTransition
                     ) {
                         WtaStatusBanner(
                             title = Strings.currentUserAgent,
-                            message = config.userAgentMode.userAgentString ?: "",
+                            message = currentUa ?: "",
                             tone = WtaStatusTone.Info
                         )
                     }
@@ -3329,37 +3359,6 @@ fun SpecialSettingsCard(
                                 ),
                                 selected = config.kernelDisguiseLevel,
                                 onSelect = { onConfigChange(config.copy(kernelDisguiseLevel = it)) }
-                            )
-                        }
-
-                        SpecialAdvancedRow(
-                            title = Strings.kernelFlavorTitle,
-                            subtitle = Strings.kernelFlavorDesc,
-                            icon = Icons.Outlined.Public,
-                            checked = config.kernelFlavor != com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT,
-                            onCheckedChange = { enabled ->
-                                onConfigChange(
-                                    config.copy(
-                                        kernelFlavor = if (enabled) {
-                                            com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME
-                                        } else {
-                                            com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT
-                                        }
-                                    )
-                                )
-                            }
-                        ) {
-                            ChoiceChipRow(
-                                label = Strings.kernelFlavorLabel,
-                                options = listOf(
-                                    com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME to Strings.kernelFlavorChrome,
-                                    com.webtoapp.core.kernel.KernelFlavor.BLINK_EDGE to Strings.kernelFlavorEdge,
-                                    com.webtoapp.core.kernel.KernelFlavor.BLINK_SAMSUNG to Strings.kernelFlavorSamsung,
-                                    com.webtoapp.core.kernel.KernelFlavor.GECKO_FIREFOX to Strings.kernelFlavorFirefox,
-                                    com.webtoapp.core.kernel.KernelFlavor.WEBKIT_SAFARI to Strings.kernelFlavorSafari
-                                ),
-                                selected = config.kernelFlavor,
-                                onSelect = { onConfigChange(config.copy(kernelFlavor = it)) }
                             )
                         }
 
