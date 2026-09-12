@@ -38,7 +38,6 @@ import com.webtoapp.ui.components.announcement.toUiTemplate
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.util.normalizeExternalIntentUrl
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -127,35 +126,30 @@ fun SplashLauncherScreen(
 
     LaunchedEffect(Unit) {
         if (activationEnabled) {
-            if (activationRequireEveryTime && !remoteConfig.enabled) {
-                activation.resetActivation(activationAppId)
-                isActivated = false
-                showActivationDialog = true
-            } else if (remoteConfig.enabled) {
-                val remoteRequest = activation.buildRemoteRequest(
-                    verifyUrl = remoteConfig.verifyUrl,
-                    publicKeyBase64 = remoteConfig.publicKeyBase64,
-                    offlinePolicy = remoteConfig.offlinePolicy,
-                    deliverUrl = remoteConfig.deliverUrl,
-                    encryptUrl = remoteConfig.encryptUrl,
-                    aesKeyBase64 = remoteConfig.aesKeyBase64,
-                    deviceBound = remoteConfig.deviceBound
+            // Same gate as shell/preview: remote re-verifies the remembered code
+            // (always under "every launch", else only when the cached result can't
+            // carry this launch); local codes re-check the remembered card.
+            val ok = if (remoteConfig.enabled) {
+                activation.resolveRemoteStartup(
+                    activationAppId,
+                    activation.buildRemoteRequest(
+                        verifyUrl = remoteConfig.verifyUrl,
+                        publicKeyBase64 = remoteConfig.publicKeyBase64,
+                        offlinePolicy = remoteConfig.offlinePolicy,
+                        deliverUrl = remoteConfig.deliverUrl,
+                        encryptUrl = remoteConfig.encryptUrl,
+                        aesKeyBase64 = remoteConfig.aesKeyBase64,
+                        deviceBound = remoteConfig.deviceBound
+                    ),
+                    reverifyEveryLaunch = activationRequireEveryTime
                 )
-                if (activationRequireEveryTime) {
-                    val result = activation.reverifyRemoteWithCachedCode(activationAppId, remoteRequest)
-                    isActivated = result is com.webtoapp.core.activation.ActivationResult.Success || result is com.webtoapp.core.activation.ActivationResult.AlreadyActivated
-                    showActivationDialog = !isActivated
-                } else {
-                    val ok = activation.isActivated(activationAppId).first() &&
-                        activation.isRemoteStartupAllowed(activationAppId, remoteRequest)
-                    isActivated = ok
-                    showActivationDialog = !ok
-                }
+            } else if (activationRequireEveryTime) {
+                activation.resolveRelaunchActivation(activationAppId, activationCodes)
             } else {
-                val ok = activation.resolveStartupActivation(activationAppId)
-                isActivated = ok
-                showActivationDialog = !ok
+                activation.resolveStartupActivation(activationAppId)
             }
+            isActivated = ok
+            showActivationDialog = !ok
         }
     }
 

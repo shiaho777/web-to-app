@@ -74,7 +74,8 @@ fun EnhancedActivationDialog(
                 }
 
                 AnimatedVisibility(
-                    visible = activationResult !is ActivationResult.Success,
+                    visible = activationResult !is ActivationResult.Success &&
+                        activationResult !is ActivationResult.AlreadyActivated,
                     enter = fadeIn() + expandVertically(),
                     exit = fadeOut() + shrinkVertically()
                 ) {
@@ -110,7 +111,8 @@ fun EnhancedActivationDialog(
         },
         confirmButton = {
             AnimatedVisibility(
-                visible = activationResult !is ActivationResult.Success,
+                visible = activationResult !is ActivationResult.Success &&
+                    activationResult !is ActivationResult.AlreadyActivated,
                 enter = fadeIn(),
                 exit = fadeOut()
             ) {
@@ -161,7 +163,9 @@ fun EnhancedActivationDialog(
             activationResult = result
             isLoading = false
 
-            if (result is ActivationResult.Success) {
+            if (result is ActivationResult.Success ||
+                result is ActivationResult.AlreadyActivated
+            ) {
                 kotlinx.coroutines.delay(1500)
                 onDismiss()
             }
@@ -389,9 +393,17 @@ private fun ActivationResultCard(result: ActivationResult) {
 private fun EnhancedActivationStatusCard(status: ActivationStatus) {
     val isValid = status.isValid
     val semantic = com.webtoapp.ui.design.WtaColors.semantic
-    val primaryColor = if (isValid) semantic.success else MaterialTheme.colorScheme.error
-    val bgColor = if (isValid) semantic.successContainer
-                  else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+    // A still-valid grant inside a code prompt is not "done" — the launch gate
+    // just refused it (re-verify required, card revoked, remote recheck failed).
+    // Show the record for context but label it honestly instead of "已激活".
+    val primaryColor = when {
+        isValid -> semantic.warning
+        else -> MaterialTheme.colorScheme.error
+    }
+    val bgColor = when {
+        isValid -> semantic.warningContainer
+        else -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+    }
 
     Surface(
         shape = RoundedCornerShape(16.dp),
@@ -413,13 +425,13 @@ private fun EnhancedActivationStatusCard(status: ActivationStatus) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
-                        imageVector = if (isValid) Icons.Filled.VerifiedUser else Icons.Filled.GppBad,
+                        imageVector = if (isValid) Icons.Filled.Sync else Icons.Filled.GppBad,
                         contentDescription = null,
                         tint = primaryColor,
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = if (isValid) Strings.activated else Strings.activationExpired,
+                        text = if (isValid) Strings.activationNeedsReverify else Strings.activationExpired,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = primaryColor

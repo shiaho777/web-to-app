@@ -1,6 +1,7 @@
 package com.webtoapp.core.activation
 
 import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -103,12 +104,12 @@ class RemoteActivationVerifier(private val context: Context) {
         }
 
         if (!parsed.ok) {
-            clearCache(appId)
+            clearRejectedGrant(appId, request.code)
             return ActivationResult.Invalid(parsed.message.ifBlank { remoteRejectedMessage() })
         }
 
         if (parsed.expiresAt != null && parsed.expiresAt <= System.currentTimeMillis()) {
-            clearCache(appId)
+            clearRejectedGrant(appId, request.code)
             return ActivationResult.Expired
         }
 
@@ -142,12 +143,13 @@ class RemoteActivationVerifier(private val context: Context) {
     private suspend fun handleOffline(appId: Long, request: RemoteRequest): ActivationResult {
         return when (request.offlinePolicy) {
             RemoteActivationOfflinePolicy.ALLOW -> ActivationResult.Success(getCachedRemoteUrl(appId))
-            RemoteActivationOfflinePolicy.DENY -> ActivationResult.Invalid(remoteOfflineDeniedMessage())
+            RemoteActivationOfflinePolicy.DENY ->
+                ActivationResult.Invalid(remoteOfflineDeniedMessage(), offline = true)
             RemoteActivationOfflinePolicy.ALLOW_CACHED -> {
                 if (readValidCache(appId, request) != null) {
                     ActivationResult.Success(getCachedRemoteUrl(appId))
                 } else {
-                    ActivationResult.Invalid(remoteOfflineNoCacheMessage())
+                    ActivationResult.Invalid(remoteOfflineNoCacheMessage(), offline = true)
                 }
             }
         }
@@ -357,12 +359,25 @@ class RemoteActivationVerifier(private val context: Context) {
         return url?.takeIf { it.isNotBlank() }
     }
 
-    private suspend fun clearCache(appId: Long) {
+    /**
+     * The server rejected or expired [rejectedCode]. Drop the cached remote
+     * result — but only when the rejected code is the one the cache is for, so
+     * a mistyped different code can't destroy a still-valid cached grant. When
+     * the rejected code DID back the grant, the local activated flag goes too:
+     * leaving it behind showed a stale "已激活" while the launch gate demanded
+     * a code, and let a revoked grant masquerade as valid.
+     */
+    private suspend fun clearRejectedGrant(appId: Long, rejectedCode: String) {
         context.activationDataStore.edit { prefs ->
-            prefs.remove(stringPreferencesKey("remote_code_$appId"))
-            prefs.remove(longPreferencesKey("remote_expires_$appId"))
-            prefs.remove(longPreferencesKey("remote_verified_at_$appId"))
-            prefs.remove(stringPreferencesKey("remote_url_$appId"))
+            val cachedCode = prefs[stringPreferencesKey("remote_code_$appId")]
+            if (cachedCode != null && normalize(cachedCode) == normalize(rejectedCode)) {
+                prefs.remove(stringPreferencesKey("remote_code_$appId"))
+                prefs.remove(longPreferencesKey("remote_expires_$appId"))
+                prefs.remove(longPreferencesKey("remote_verified_at_$appId"))
+                prefs.remove(stringPreferencesKey("remote_url_$appId"))
+                prefs.remove(booleanPreferencesKey("activated_$appId"))
+                prefs.remove(longPreferencesKey("activated_time_$appId"))
+            }
         }
     }
 

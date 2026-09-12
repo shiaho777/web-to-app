@@ -865,6 +865,7 @@ object Strings {
     val activationTypeCombined: String get() = StringsA.activationTypeCombined
     val activationTypeCombinedDesc: String get() = StringsA.activationTypeCombinedDesc
     val activated: String get() = StringsA.activated
+    val activationNeedsReverify: String get() = StringsA.activationNeedsReverify
     val activationExpired: String get() = StringsA.activationExpired
     val activationTime: String get() = StringsA.activationTime
     val remainingTime: String get() = StringsA.remainingTime
@@ -14644,16 +14645,16 @@ object StringsA {
     }
 
     val requireEveryLaunchHintOn: String get() = when (Strings.lang) {
-        AppLanguage.CHINESE -> "每次打开应用都需要输入激活码"
-        AppLanguage.ENGLISH -> "Enter activation code every time app opens"
-        AppLanguage.ARABIC -> "أدخل رمز التفعيل في كل مرة يفتح فيها التطبيق"
-        AppLanguage.PORTUGUESE -> "Insira o código de ativação toda vez que o app abrir"
-        AppLanguage.SPANISH -> "Introduce el código de activación cada vez que se abre la app"
-        AppLanguage.FRENCH -> "Saisir le code d'activation à chaque ouverture de l'app"
-        AppLanguage.GERMAN -> "Bei jedem Öffnen der App Aktivierungscode eingeben"
-        AppLanguage.RUSSIAN -> "Вводите код активации при каждом открытии приложения"
-        AppLanguage.JAPANESE -> "アプリを開くたびにアクティベーションコードを入力"
-        AppLanguage.KOREAN -> "앱을 열 때마다 활성화 코드 입력"
+        AppLanguage.CHINESE -> "每次启动重新验证上次的激活卡，失效或被移除才需重新输入"
+        AppLanguage.ENGLISH -> "Re-verify the last card on every launch; re-entry only if it lapsed or was revoked"
+        AppLanguage.ARABIC -> "إعادة التحقق من آخر بطاقة عند كل تشغيل؛ لا يُطلب الإدخال إلا إذا انتهت أو أُلغيت"
+        AppLanguage.PORTUGUESE -> "Reverificar o último cartão a cada abertura; só pede o código se expirar ou for revogado"
+        AppLanguage.SPANISH -> "Reverificar la última tarjeta en cada inicio; solo pide el código si caducó o fue revocada"
+        AppLanguage.FRENCH -> "Revérifie la dernière carte à chaque lancement ; ne redemande le code que si elle a expiré ou été révoquée"
+        AppLanguage.GERMAN -> "Letzte Karte bei jedem Start erneut prüfen; Eingabe nur nötig, wenn sie abgelaufen oder widerrufen ist"
+        AppLanguage.RUSSIAN -> "Перепроверять последнюю карту при каждом запуске; код запрашивается, только если она истекла или отозвана"
+        AppLanguage.JAPANESE -> "起動ごとに前回のカードを再検証。失効・削除時のみ再入力が必要"
+        AppLanguage.KOREAN -> "매번 실행 시 이전 카드를 재검증. 만료·폐기된 경우에만 다시 입력"
     }
 
     val requireEveryLaunchHintOff: String get() = when (Strings.lang) {
@@ -15906,6 +15907,22 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Активирован"
         AppLanguage.JAPANESE -> "アクティベート済み"
         AppLanguage.KOREAN -> "활성화됨"
+    }
+
+    // Shown on the activation record inside the code prompt when a valid grant
+    // exists but this launch still requires verification. Never claims "已激活"
+    // while a code is being demanded.
+    val activationNeedsReverify: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "需重新验证"
+        AppLanguage.ENGLISH -> "Re-verification required"
+        AppLanguage.ARABIC -> "يلزم إعادة التحقق"
+        AppLanguage.PORTUGUESE -> "Requer nova verificação"
+        AppLanguage.SPANISH -> "Se requiere reverificación"
+        AppLanguage.FRENCH -> "Revérification requise"
+        AppLanguage.GERMAN -> "Erneute Prüfung erforderlich"
+        AppLanguage.RUSSIAN -> "Требуется повторная проверка"
+        AppLanguage.JAPANESE -> "再検証が必要です"
+        AppLanguage.KOREAN -> "재검증 필요"
     }
 
     val activationExpired: String get() = when (Strings.lang) {

@@ -74,7 +74,6 @@ import android.content.pm.ActivityInfo
 import com.webtoapp.ui.theme.WebToAppTheme
 import com.webtoapp.util.DownloadHelper
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import com.webtoapp.ui.shared.WindowHelper
@@ -1471,38 +1470,37 @@ fun WebViewScreen(
 
                 if (app.activationEnabled) {
 
-                    if (app.activationRequireEveryTime) {
-                        activation.resetActivation(appId)
-                        isActivated = false
-                        isActivationChecked = true
-                        showActivationDialog = true
+                    // Same gate as the generated APK shell: remote re-verifies
+                    // the remembered code (always under "every launch", else only
+                    // when the cached result can't carry this launch); local codes
+                    // re-check the remembered card under "every launch".
+                    val remote = app.activationRemoteConfig?.takeIf { it.enabled }
+                    val activated = if (remote != null) {
+                        activation.resolveRemoteStartup(
+                            appId,
+                            activation.buildRemoteRequest(
+                                verifyUrl = remote.verifyUrl,
+                                publicKeyBase64 = remote.publicKeyBase64,
+                                offlinePolicy = remote.offlinePolicy,
+                                deliverUrl = remote.deliverUrl,
+                                encryptUrl = remote.encryptUrl,
+                                aesKeyBase64 = remote.aesKeyBase64,
+                                deviceBound = remote.deviceBound
+                            ),
+                            reverifyEveryLaunch = app.activationRequireEveryTime
+                        )
+                    } else if (app.activationRequireEveryTime) {
+                        activation.resolveRelaunchActivation(appId, app.activationCodeList)
                     } else {
-                        val remote = app.activationRemoteConfig?.takeIf { it.enabled }
-                        val activated = if (remote != null) {
-                            activation.isActivated(appId).first() &&
-                                activation.isRemoteStartupAllowed(
-                                    appId,
-                                    activation.buildRemoteRequest(
-                                        verifyUrl = remote.verifyUrl,
-                                        publicKeyBase64 = remote.publicKeyBase64,
-                                        offlinePolicy = remote.offlinePolicy,
-                                        deliverUrl = remote.deliverUrl,
-                                        encryptUrl = remote.encryptUrl,
-                                        aesKeyBase64 = remote.aesKeyBase64,
-                                        deviceBound = remote.deviceBound
-                                    )
-                                )
-                        } else {
-                            activation.resolveStartupActivation(appId)
-                        }
-                        isActivated = activated
-                        isActivationChecked = true
-                        if (activated && remote != null && remote.deliverUrl) {
-                            remoteDeliveredUrl = activation.getCachedRemoteUrl(appId)
-                        }
-                        if (!activated) {
-                            showActivationDialog = true
-                        }
+                        activation.resolveStartupActivation(appId)
+                    }
+                    isActivated = activated
+                    isActivationChecked = true
+                    if (activated && remote != null && remote.deliverUrl) {
+                        remoteDeliveredUrl = activation.getCachedRemoteUrl(appId)
+                    }
+                    if (!activated) {
+                        showActivationDialog = true
                     }
                 } else {
 

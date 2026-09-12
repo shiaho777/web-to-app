@@ -8,7 +8,7 @@
 
 - **启用** —— 打开激活门控(`activationEnabled`)。
 - **激活码** —— 有效码列表(`activationCodeList`)。
-- **每次验证** —— 每次启动都要求输入码,而非仅首次(`activationRequireEveryTime`)。
+- **每次验证** —— 每次启动都重新校验激活,而非仅信任一次(`activationRequireEveryTime`)。上次的卡会被静默复验:本地码必须仍在配置列表中(移除即吊销),远程码会向服务器重新校验。仅当上次的卡已失效(过期、用尽、被移除或被服务器拒绝)时才要求重新输入。
 - **对话框配置** —— 自定义激活对话框(标题、副标题、输入框标签、按钮文本)。
 - **远程激活** —— 对你自己经 EC P-256 签名的 HTTPS 端点校验,带离线策略(`activationRemoteConfig`)。
 - **设备绑定(一码一次)** —— 仅远程验证可用(`activationRemoteConfig.deviceBound`)。激活请求携带设备标识,由服务器执行每码占座:每个码默认限 1 台设备(首台激活的设备占座),即一次性/单设备码;其他设备激活会被拒绝并显示服务器消息。同一设备卸载重装不丢失占座。需要能执行绑定的验证服务器——[参考 Worker](https://github.com/shiaho777/web-to-app/blob/main/examples/remote-activation-worker/README.md) 通过 `maxDevices` 开箱即用。
