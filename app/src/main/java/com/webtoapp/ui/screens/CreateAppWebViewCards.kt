@@ -3288,6 +3288,58 @@ fun SpecialSettingsCard(
                                 checked = config.hideStatusBarInVideoFullscreen,
                                 onCheckedChange = { onConfigChange(config.copy(hideStatusBarInVideoFullscreen = it)) }
                             )
+
+                            WtaSectionDivider()
+                            WtaToggleRow(
+                                title = Strings.appReturnTitle,
+                                subtitle = Strings.appReturnDesc,
+                                icon = Icons.Outlined.Link,
+                                checked = config.enableAppReturn,
+                                onCheckedChange = { onConfigChange(config.copy(enableAppReturn = it)) }
+                            )
+
+                            AnimatedVisibility(
+                                visible = config.enableAppReturn,
+                                enter = CardExpandTransition,
+                                exit = CardCollapseTransition
+                            ) {
+                                var customSchemesText by remember(config.customAppReturnSchemes) {
+                                    mutableStateOf(config.customAppReturnSchemes.joinToString("\n"))
+                                }
+                                Column(
+                                    modifier = Modifier.padding(
+                                        horizontal = WtaSpacing.RowHorizontal,
+                                        vertical = WtaSpacing.ContentGap
+                                    )
+                                ) {
+                                    Text(
+                                        text = Strings.appReturnCustomSchemesLabel,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(bottom = 4.dp)
+                                    )
+                                    Text(
+                                        text = Strings.appReturnCustomSchemesHint,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(bottom = 4.dp)
+                                    )
+                                    PremiumTextField(
+                                        value = customSchemesText,
+                                        onValueChange = { newText ->
+                                            customSchemesText = newText
+                                            val schemes = newText.split("\n", ",", " ")
+                                                .map { it.trim() }
+                                                .filter { it.isNotBlank() }
+                                            onConfigChange(config.copy(customAppReturnSchemes = schemes))
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        singleLine = false,
+                                        minLines = 2,
+                                        maxLines = 4
+                                    )
+                                }
+                            }
                         }
                     }
 

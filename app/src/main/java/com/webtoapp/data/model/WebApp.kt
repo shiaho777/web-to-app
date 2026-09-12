@@ -375,6 +375,25 @@ data class WebViewConfig(
     val customViewportWidth: Int = 0,
     val newWindowBehavior: NewWindowBehavior = NewWindowBehavior.SAME_WINDOW,
     val enablePaymentSchemes: Boolean = true,
+
+    /**
+     * Let third-party apps hand control **back** to this app after an app-to-app hop — the
+     * return leg of an OAuth / SSO login or an app-authorised action.
+     *
+     * Without it the page can still *open* the provider app (any non-http scheme is handed to
+     * the system), but nothing is registered to receive the callback, so the provider has
+     * nowhere to return to and the system reports that no app can handle the link.
+     *
+     * Only *return* channels are declared, never launcher schemes: claiming e.g. `weixin`
+     * would make this app compete with the real WeChat for its own links.
+     */
+    val enableAppReturn: Boolean = true,
+
+    /**
+     * Extra return schemes, for providers whose callback scheme is bound to the site's own
+     * registered app id (so it cannot be shipped as a general-purpose default).
+     */
+    val customAppReturnSchemes: List<String> = emptyList(),
     val enableShareBridge: Boolean = true,
     val enableZoomPolyfill: Boolean = true,
     val enableCrossOriginIsolation: Boolean = false,

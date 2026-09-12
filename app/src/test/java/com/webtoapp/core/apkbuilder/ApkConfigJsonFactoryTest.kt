@@ -175,7 +175,7 @@ class ApkConfigJsonFactoryTest {
     }
 
     @Test
-    fun `web apk config carries dedicated oauth callback scheme to shell config`() {
+    fun `web apk config carries its package scheme and the return channels to shell config`() {
         val config = WebApp(
             name = "OAuth App",
             url = "https://example.com",
@@ -187,19 +187,27 @@ class ApkConfigJsonFactoryTest {
             ShellConfig::class.java
         )
 
-        assertThat(config.deepLinkSchemes).containsExactly("wta-com-example-oauthapp")
-        assertThat(shellConfig.deepLinkSchemes).containsExactly("wta-com-example-oauthapp")
+        // Two families travel together here: the app's own package scheme, and the app-to-app
+        // return channels that let a provider hand an OAuth callback back. Both must survive
+        // into the shell config, because the runtime allow-list is built from this list.
+        assertThat(config.deepLinkSchemes).containsAtLeast(
+            "wta-com-example-oauthapp", "mqqopensdkapi"
+        )
+        assertThat(shellConfig.deepLinkSchemes).containsExactlyElementsIn(config.deepLinkSchemes)
     }
 
     @Test
-    fun `non web apk config does not register oauth callback scheme`() {
+    fun `non web apk config registers return channels but no package scheme`() {
         val config = WebApp(
             name = "Gallery App",
             url = "",
             appType = AppType.GALLERY
         ).toApkConfig("com.example.galleryapp")
 
-        assertThat(config.deepLinkSchemes).isEmpty()
+        // The package-derived scheme stays WEB-only, but the return channels deliberately do
+        // not: an app that hops out to a provider app still needs a way back in.
+        assertThat(config.deepLinkSchemes).doesNotContain("wta-com-example-galleryapp")
+        assertThat(config.deepLinkSchemes).contains("mqqopensdkapi")
     }
 
     @Test

@@ -4531,7 +4531,12 @@ private fun WebApp.buildDeepLinkBlock(packageName: String): DeepLinkBlock = Deep
         customHosts = apkExportConfig?.customDeepLinkHosts ?: emptyList(),
         includeCustomHosts = apkExportConfig?.deepLinkEnabled == true
     ),
-    schemes = buildOAuthReturnSchemes(packageName, appType)
+    schemes = buildOAuthReturnSchemes(
+        packageName = packageName,
+        appType = appType,
+        enableAppReturn = webViewConfig.enableAppReturn,
+        customSchemes = webViewConfig.customAppReturnSchemes
+    )
 )
 
 private fun WebApp.buildWordpressBlock(): WordpressBlock = WordpressBlock(
@@ -4955,14 +4960,49 @@ private fun buildOAuthReturnHosts(
     )
 }
 
-private fun buildOAuthReturnSchemes(packageName: String, appType: com.webtoapp.data.model.AppType): List<String> {
-    if (appType != com.webtoapp.data.model.AppType.WEB) return emptyList()
-    val normalized = packageName.lowercase()
-        .map { ch -> if (ch.isLetterOrDigit()) ch else '-' }
-        .joinToString("")
-        .trim('-')
-    if (normalized.isBlank()) return emptyList()
-    return listOf("wta-$normalized")
+/**
+ * Schemes third-party apps use to hand control **back** to whoever launched them.
+ *
+ * Only return channels belong here. Launcher schemes (`weixin`, `alipays`, `taobao`, …) must
+ * stay out: declaring one makes this app a candidate for that provider's own links, so tapping
+ * "pay with WeChat" could surface this app instead of WeChat itself.
+ *
+ * `mqqopensdkapi` is QQ Connect's browser-return protocol and the app-agnostic case worth
+ * shipping by default: QQ hands the OAuth redirect back to whichever app opened it, via
+ * `mqqopensdkapi://browser?url=<redirect_uri>`. `resolveShellDeepLinkUrl` already unwraps that
+ * `url` parameter and validates it against the app's own hosts.
+ */
+private val APP_RETURN_SCHEMES = listOf(
+    "mqqopensdkapi",
+    "mqqopensdkapiV2",
+    "mqqopensdkapiV3"
+)
+
+private fun buildOAuthReturnSchemes(
+    packageName: String,
+    appType: com.webtoapp.data.model.AppType,
+    enableAppReturn: Boolean,
+    customSchemes: List<String> = emptyList()
+): List<String> {
+    val schemes = mutableListOf<String>()
+
+    if (appType == com.webtoapp.data.model.AppType.WEB) {
+        val normalized = packageName.lowercase()
+            .map { ch -> if (ch.isLetterOrDigit()) ch else '-' }
+            .joinToString("")
+            .trim('-')
+        if (normalized.isNotBlank()) schemes += "wta-$normalized"
+    }
+
+    if (enableAppReturn) schemes += APP_RETURN_SCHEMES
+
+    // Providers whose callback scheme is bound to the site's own registered app id cannot be
+    // shipped as defaults, so let the user name them.
+    schemes += customSchemes
+        .map { it.trim().lowercase().removeSuffix("://").removeSuffix(":").trim(':') }
+        .filter { it.isNotBlank() }
+
+    return schemes.distinct()
 }
 
 fun WebApp.toApkConfigWithModules(packageName: String, context: android.content.Context): ApkConfig {

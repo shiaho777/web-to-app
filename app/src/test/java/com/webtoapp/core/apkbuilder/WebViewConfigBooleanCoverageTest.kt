@@ -62,6 +62,7 @@ class WebViewConfigBooleanCoverageTest {
             "enableCloudflareCompat", "enableCookiePersistence",
             "enablePrivateNetworkBridge", "enableNativeBridge",
             "enablePaymentSchemes", "enableShareBridge", "enableZoomPolyfill",
+            "enableAppReturn",
             "enableCrossOriginIsolation", "hideUrlPreview", "decodeBase64DeepLinks",
             "javaScriptCanOpenWindows", "mediaAutoplayEnabled",
             "acceptThirdPartyCookies", "geolocationEnabled", "keepScreenOn",
@@ -98,7 +99,10 @@ class WebViewConfigBooleanCoverageTest {
         val knownDerivedOrIntentional = setOf(
             "allowFileAccess", "allowFileAccessFromFileURLs",
             "allowUniversalAccessFromFileURLs", "cacheEnabled",
-            "pwaOfflineEnabled", "staticAssetPackIncludeImages", "staticAssetPackIncludeCdn"
+            "pwaOfflineEnabled", "staticAssetPackIncludeImages", "staticAssetPackIncludeCdn",
+            // Export-time input: decides which return schemes are declared and folded into
+            // deepLinkSchemes. The runtime reads that resolved list, never this flag.
+            "enableAppReturn"
         )
 
         val wvBooleanFields = WebViewConfig::class.java.declaredFields
@@ -158,7 +162,10 @@ class WebViewConfigBooleanCoverageTest {
         val knownDerivedOrIntentional = setOf(
             "allowFileAccess", "allowFileAccessFromFileURLs",
             "allowUniversalAccessFromFileURLs", "cacheEnabled",
-            "pwaOfflineEnabled", "staticAssetPackIncludeImages", "staticAssetPackIncludeCdn"
+            "pwaOfflineEnabled", "staticAssetPackIncludeImages", "staticAssetPackIncludeCdn",
+            // Export-time input: decides which return schemes are declared and folded into
+            // deepLinkSchemes. The runtime reads that resolved list, never this flag.
+            "enableAppReturn"
         )
 
         // Shell flattens NativeBridgeCapabilities + FailoverTriggers into top-level Boolean
@@ -353,6 +360,8 @@ class WebViewConfigBooleanCoverageTest {
             enablePrivateNetworkBridge = bool("enablePrivateNetworkBridge"),
             enableNativeBridge = bool("enableNativeBridge"),
             enablePaymentSchemes = bool("enablePaymentSchemes"),
+            // Export-time input with no shell counterpart; see knownDerivedOrIntentional.
+            enableAppReturn = bool("enableAppReturn"),
             enableShareBridge = bool("enableShareBridge"),
             enableZoomPolyfill = bool("enableZoomPolyfill"),
             enableCrossOriginIsolation = bool("enableCrossOriginIsolation"),

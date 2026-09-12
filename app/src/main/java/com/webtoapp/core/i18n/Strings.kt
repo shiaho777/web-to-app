@@ -4533,6 +4533,10 @@ object Strings {
     val openBuildEnvScreen: String get() = StringsE.openBuildEnvScreen
     val noProjectSelected: String get() = StringsE.noProjectSelected
     val specialSettingsTitle: String get() = StringsE.specialSettingsTitle
+    val appReturnTitle: String get() = StringsE.appReturnTitle
+    val appReturnDesc: String get() = StringsE.appReturnDesc
+    val appReturnCustomSchemesLabel: String get() = StringsE.appReturnCustomSchemesLabel
+    val appReturnCustomSchemesHint: String get() = StringsE.appReturnCustomSchemesHint
     val decodeBase64DeepLinksTitle: String get() = StringsE.decodeBase64DeepLinksTitle
     val decodeBase64DeepLinksDesc: String get() = StringsE.decodeBase64DeepLinksDesc
     val mediaAutoplayTitle: String get() = StringsE.mediaAutoplayTitle
@@ -61474,6 +61478,54 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Специальные настройки"
         AppLanguage.JAPANESE -> "特殊設定"
         AppLanguage.KOREAN -> "특수 설정"
+    }
+    val appReturnTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "应用回跳"
+        AppLanguage.ENGLISH -> "App return"
+        AppLanguage.ARABIC -> "العودة إلى التطبيق"
+        AppLanguage.PORTUGUESE -> "Retorno de app"
+        AppLanguage.SPANISH -> "Retorno de app"
+        AppLanguage.FRENCH -> "Retour d'application"
+        AppLanguage.GERMAN -> "App-Rückkehr"
+        AppLanguage.RUSSIAN -> "Возврат в приложение"
+        AppLanguage.JAPANESE -> "アプリへの戻り"
+        AppLanguage.KOREAN -> "앱 복귀"
+    }
+    val appReturnDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "授权完成后，允许第三方应用（QQ、微博等）把控制权交回本应用。关闭后登录仍能打开对应 App，但回调无处可返，系统会提示没有可用于打开的应用。"
+        AppLanguage.ENGLISH -> "Let third-party apps (QQ, Weibo, …) hand control back after an authorization. If off, the login still opens the provider app, but the callback has nowhere to return to and the system reports that no app can handle it."
+        AppLanguage.ARABIC -> "السماح للتطبيقات الخارجية (QQ وWeibo وما شابه) بإعادة التحكم إلى هذا التطبيق بعد التفويض. عند الإيقاف، يفتح تسجيل الدخول تطبيق المزوّد لكن لا يجد الرد مسارًا للعودة."
+        AppLanguage.PORTUGUESE -> "Permitir que apps de terceiros (QQ, Weibo, …) devolvam o controle após a autorização. Se desativado, o login abre o app do provedor, mas o retorno não tem para onde ir."
+        AppLanguage.SPANISH -> "Permitir que apps de terceros (QQ, Weibo, …) devuelvan el control tras la autorización. Si se desactiva, el inicio de sesión abre el app del proveedor, pero la respuesta no tiene a dónde volver."
+        AppLanguage.FRENCH -> "Autoriser des apps tierces (QQ, Weibo, …) à rendre le contrôle après l'autorisation. Désactivé, la connexion ouvre l'app du fournisseur mais le retour n'a plus de cible."
+        AppLanguage.GERMAN -> "Drittanbieter-Apps (QQ, Weibo, …) dürfen die Kontrolle nach der Autorisierung zurückgeben. Deaktiviert öffnet die Anmeldung die Anbieter-App, aber die Rückgabe findet kein Ziel."
+        AppLanguage.RUSSIAN -> "Разрешить сторонним приложениям (QQ, Weibo, …) возвращать управление после авторизации. Если выключено, вход откроет приложение провайдера, но обратному переходу некуда вернуться."
+        AppLanguage.JAPANESE -> "認可後にサードパーティアプリ（QQ、Weibo など）が制御を戻せるようにします。オフの場合、ログインはプロバイダのアプリを開きますが、コールバックの戻り先がなく、対応アプリがないと表示されます。"
+        AppLanguage.KOREAN -> "인증 후 서드파티 앱(QQ, Weibo 등)이 제어권을 되돌려줄 수 있게 합니다. 끄면 로그인이 제공자 앱을 열 수는 있지만 콜백이 돌아갈 곳이 없어 처리할 앱이 없다고 표시됩니다."
+    }
+    val appReturnCustomSchemesLabel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "自定义回跳 scheme"
+        AppLanguage.ENGLISH -> "Custom return schemes"
+        AppLanguage.ARABIC -> "مخططات العودة المخصصة"
+        AppLanguage.PORTUGUESE -> "Esquemas de retorno personalizados"
+        AppLanguage.SPANISH -> "Esquemas de retorno personalizados"
+        AppLanguage.FRENCH -> "Schémas de retour personnalisés"
+        AppLanguage.GERMAN -> "Benutzerdefinierte Rückgabe-Schemata"
+        AppLanguage.RUSSIAN -> "Свои схемы возврата"
+        AppLanguage.JAPANESE -> "カスタム戻りスキーム"
+        AppLanguage.KOREAN -> "사용자 지정 복귀 스킴"
+    }
+    val appReturnCustomSchemesHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "部分平台（如微信）的回调 scheme 与你在该平台注册的应用绑定，需自行填写。每行或用逗号分隔一个，例如 wx1234567890abcdef。"
+        AppLanguage.ENGLISH -> "Some providers (e.g. WeChat) bind the callback scheme to the app id you registered with them, so it cannot ship as a default. One per line or comma-separated, e.g. wx1234567890abcdef."
+        AppLanguage.ARABIC -> "بعض المزوّدين (مثل WeChat) يربطون مخطط الاستجابة بمعرّف التطبيق المسجَّل لديهم، لذا يُدخَل يدويًا. واحد في كل سطر أو مفصولة بفواصل، مثل wx1234567890abcdef."
+        AppLanguage.PORTUGUESE -> "Alguns provedores (ex.: WeChat) vinculam o esquema de retorno ao app id registrado neles e ele não pode vir como padrão. Um por linha ou separados por vírgula, ex.: wx1234567890abcdef."
+        AppLanguage.SPANISH -> "Algunos proveedores (p. ej. WeChat) vinculan el esquema de retorno al app id registrado en ellos y no puede venir por defecto. Uno por línea o separados por comas, p. ej. wx1234567890abcdef."
+        AppLanguage.FRENCH -> "Certains fournisseurs (ex. WeChat) lient le schéma de retour à l'app id enregistré chez eux ; il ne peut donc pas être fourni par défaut. Un par ligne ou séparés par des virgules, ex. wx1234567890abcdef."
+        AppLanguage.GERMAN -> "Manche Anbieter (z. B. WeChat) binden das Rückgabe-Schema an die dort registrierte App-ID, daher ist es nicht als Standard möglich. Eine pro Zeile oder kommagetrennt, z. B. wx1234567890abcdef."
+        AppLanguage.RUSSIAN -> "Некоторые провайдеры (напр. WeChat) привязывают схему возврата к вашему app id, поэтому её нельзя задать по умолчанию. Укажите по одной в строке или через запятую, например wx1234567890abcdef."
+        AppLanguage.JAPANESE -> "一部のプロバイダ（WeChat など）はコールバックスキームを登録済みのアプリ ID に紐づけるため、既定値として提供できません。1 行またはカンマ区切りで入力してください（例: wx1234567890abcdef）。"
+        AppLanguage.KOREAN -> "일부 제공자(예: WeChat)는 콜백 스킴을 등록한 앱 ID에 연결하므로 기본값으로 제공할 수 없습니다. 한 줄에 하나씩 또는 쉼표로 구분해 입력하세요(예: wx1234567890abcdef)."
     }
     val decodeBase64DeepLinksTitle: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "解码 Base64 深度链接"
