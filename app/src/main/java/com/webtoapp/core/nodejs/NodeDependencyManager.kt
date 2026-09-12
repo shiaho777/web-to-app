@@ -86,8 +86,72 @@ object NodeDependencyManager {
 
     fun getNodeDir(context: Context): File {
         val abi = getDeviceAbi()
+        return getNodeDir(context, abi)
+    }
+
+    fun getNodeDir(context: Context, abi: String): File {
         return File(getDepsDir(context), "node/$abi").also { it.mkdirs() }
     }
+
+    /**
+     * Every ABI directory name that can appear inside the upstream nodejs-mobile zip.
+     * Extraction routes entries by path segment, so "x86" never swallows "x86_64" paths.
+     */
+    private val NODE_KNOWN_ABIS = setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+
+    /**
+     * ABIs the upstream v18.20.4 nodejs-mobile zip actually ships (32-bit x86 was dropped
+     * upstream). Export requires a cached libnode.so for each selected ABI in this set;
+     * any other selected ABI (e.g. x86) is skipped with a warning instead of failing.
+     */
+    val NODE_EXPORT_ABIS: Set<String> = setOf("armeabi-v7a", "arm64-v8a", "x86_64")
+
+    /** The libnode.so cached for [abi], or null when the runtime zip never provided it. */
+    fun nodeLibForAbi(context: Context, abi: String): File? {
+        val lib = File(getNodeDir(context, abi), NODE_BINARY_NAME)
+        return lib.takeIf { it.exists() && it.isFile && it.length() > 0L }
+    }
+
+    /**
+     * Selected export ABIs that are expected to have a libnode.so but currently lack one.
+     * The device ABI is also satisfied by the host's own nativeLibraryDir (bundled builds).
+     * ABIs outside [NODE_EXPORT_ABIS] can never be satisfied upstream and are not reported.
+     */
+    fun missingExportAbis(context: Context, neededAbis: Collection<String>): Set<String> {
+        val deviceAbi = getDeviceAbi()
+        return neededAbis.filter { it in NODE_EXPORT_ABIS }
+            .filterNot { abi ->
+                nodeLibForAbi(context, abi) != null ||
+                    (abi == deviceAbi && File(context.applicationInfo.nativeLibraryDir, NODE_BINARY_NAME)
+                        .let { it.exists() && it.length() > 0L })
+            }.toSet()
+    }
+
+    /**
+     * Ensure every export-requested ABI has a cached libnode.so, re-downloading the runtime
+     * zip once when some are missing (the zip carries all ABIs; older installs only ever
+     * extracted the device ABI). Returns the ABIs still missing after the attempt.
+     */
+    suspend fun ensureExportAbis(context: Context, neededAbis: Collection<String>): Set<String> =
+        withContext(Dispatchers.IO) {
+            var missing = missingExportAbis(context, neededAbis)
+            if (missing.isEmpty()) return@withContext missing
+            runtimeDownloadMutex.withLock {
+                missing = missingExportAbis(context, neededAbis)
+                if (missing.isNotEmpty()) {
+                    AppLogger.i(
+                        TAG,
+                        "Node.js export needs libnode.so for $missing — re-downloading runtime zip (all ABIs)"
+                    )
+                    downloadNode(context, getMirrorConfig())
+                    missing = missingExportAbis(context, neededAbis)
+                    if (missing.isNotEmpty()) {
+                        AppLogger.e(TAG, "Still no libnode.so for $missing after re-download")
+                    }
+                }
+            }
+            missing
+        }
 
     fun getNodeProjectsDir(context: Context): File {
         return File(context.filesDir, "nodejs_projects").also { it.mkdirs() }
@@ -239,7 +303,7 @@ object NodeDependencyManager {
         _downloadState.value = DownloadState.Extracting("Node.js")
         DependencyDownloadEngine.publishState(DependencyDownloadEngine.State.Extracting("Node.js"))
         try {
-            extractNodeZip(archiveFile, destDir, abi)
+            val extractedAbis = extractNodeZip(archiveFile, context, abi)
 
             val nodeLib = File(destDir, NODE_BINARY_NAME)
             if (nodeLib.exists()) {
@@ -251,7 +315,9 @@ object NodeDependencyManager {
                 return false
             }
 
-            ensureLibnodePageAligned(nodeLib)
+            extractedAbis.forEach { extractedAbi ->
+                ensureLibnodePageAligned(File(getNodeDir(context, extractedAbi), NODE_BINARY_NAME))
+            }
 
             archiveFile.delete()
             return true
@@ -262,42 +328,55 @@ object NodeDependencyManager {
         }
     }
 
-    private fun extractNodeZip(zipFile: File, destDir: File, abi: String) {
+    /**
+     * Extract the upstream zip into per-ABI dirs (`node/<abi>/libnode.so`) so multi-arch
+     * exports can embed libnode.so for ABIs other than the host device's. Returns the set
+     * of ABIs whose libnode.so was extracted; [deviceAbi] must be among them.
+     */
+    private fun extractNodeZip(zipFile: File, context: Context, deviceAbi: String): Set<String> {
         val zipInput = java.util.zip.ZipInputStream(zipFile.inputStream().buffered())
-        var foundLib = false
         val guard = com.webtoapp.util.SafeZip.EntryGuard()
+        val extractedAbis = mutableSetOf<String>()
 
         zipInput.use { zis ->
             var entry = zis.nextEntry
             while (entry != null) {
                 guard.onEntry()
+                val abi = nodeAbiOfEntry(entry.name)
 
-                if (!entry.isDirectory && entry.name.contains(abi) && entry.name.endsWith("libnode.so")) {
-                    val outFile = File(destDir, NODE_BINARY_NAME)
+                if (!entry.isDirectory && abi != null && entry.name.endsWith(".so")) {
+                    val soName = entry.name.substringAfterLast("/")
+                    val outFile = File(getNodeDir(context, abi), soName)
                     outFile.parentFile?.mkdirs()
                     FileOutputStream(outFile).use { fos ->
                         guard.copyTo(zis, fos)
                     }
-                    outFile.setExecutable(true, false)
-                    foundLib = true
-                    AppLogger.i(TAG, "Extracting ${entry.name} -> ${outFile.absolutePath}")
-                } else if (!entry.isDirectory && entry.name.endsWith(".so") && entry.name.contains(abi)) {
-
-                    val soName = entry.name.substringAfterLast("/")
-                    val outFile = File(destDir, soName)
-                    outFile.parentFile?.mkdirs()
-                    FileOutputStream(outFile).use { fos ->
-                        guard.copyTo(zis, fos)
+                    if (soName == NODE_BINARY_NAME) {
+                        outFile.setExecutable(true, false)
+                        extractedAbis += abi
+                        AppLogger.i(TAG, "Extracting ${entry.name} -> ${outFile.absolutePath}")
                     }
                 }
                 entry = zis.nextEntry
             }
         }
 
-        if (!foundLib) {
-            throw IllegalStateException(Strings.nodeLibNotFoundInZip.format(abi))
+        if (deviceAbi !in extractedAbis) {
+            throw IllegalStateException(Strings.nodeLibNotFoundInZip.format(deviceAbi))
         }
+        val absent = NODE_EXPORT_ABIS - extractedAbis
+        if (absent.isNotEmpty()) {
+            AppLogger.w(TAG, "Node.js zip ships no libnode.so for $absent — exports cannot target those ABIs")
+        }
+        return extractedAbis
     }
+
+    /**
+     * The ABI a zip entry belongs to, matched on whole path segments so "x86" can never
+     * capture "x86_64" paths (a plain contains("x86") check would misroute them).
+     */
+    internal fun nodeAbiOfEntry(entryName: String): String? =
+        entryName.split('/').firstOrNull { it in NODE_KNOWN_ABIS }
 
     private fun syncEngineState() {
         when (val es = DependencyDownloadEngine.state.value) {

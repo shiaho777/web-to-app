@@ -23,6 +23,14 @@ The exported APK embeds:
 
 Missing any of these causes `loadNode` / `loadJniBridge` failure at runtime.
 
+The bridge/launcher/C++ libs ship inside the shell template for all four ABIs. `libnode.so`
+is downloaded content and is embedded once per selected APK architecture — the upstream
+nodejs-mobile zip provides `arm64-v8a`, `armeabi-v7a` and `x86_64` (no 32-bit `x86`). If a
+selected ABI is missing from the local runtime cache, export re-downloads the Node.js
+runtime once and extracts every ABI; a still-missing ABI fails the build rather than
+shipping an APK that would report "libnode.so not installed" on that architecture (e.g.
+x86_64 emulators without ARM translation).
+
 ## Core config
 
 Backed by `NodeJsConfig`.

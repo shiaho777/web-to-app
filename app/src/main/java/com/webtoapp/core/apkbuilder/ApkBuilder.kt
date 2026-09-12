@@ -97,6 +97,25 @@ class ApkBuilder(private val context: Context) {
         internal fun injectedDeviceLibEntries(appType: String, deviceAbi: String): Set<String> =
             injectedNativeLibNames(appType).mapTo(mutableSetOf()) { "lib/$deviceAbi/$it" }
 
+        /**
+         * Additional lib/ entries the injection step writes for selected ABIs OTHER than the
+         * device ABI. The template ships the bridge/launcher libs for every ABI already (they
+         * are 16KB-aligned), so only libnode.so — never in the template, downloaded on demand —
+         * is injected per extra ABI. Skipping these during the copy pass keeps CONTENT_OVERLAY
+         * builds from duplicating entries already present in the cached base APK.
+         */
+        internal fun injectedMultiAbiLibEntries(
+            appType: String,
+            deviceAbi: String,
+            abiFilters: List<String>
+        ): Set<String> = if (appType == "NODEJS_APP") {
+            com.webtoapp.core.nodejs.NodeDependencyManager.NODE_EXPORT_ABIS
+                .filter { it != deviceAbi && (abiFilters.isEmpty() || it in abiFilters) }
+                .mapTo(mutableSetOf()) {
+                    "lib/$it/${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME}"
+                }
+        } else emptySet()
+
         internal fun geckoRuntimeEntryNames(
             nativeLibNamesByAbi: Map<String, List<String>>,
             abiFilters: List<String>
@@ -726,7 +745,8 @@ class ApkBuilder(private val context: Context) {
                 val ensured = ExportRuntimeEnsure.ensure(
                     context,
                     appTypeEnum,
-                    cronetNeededForExport(config)
+                    cronetNeededForExport(config),
+                    neededAbis = architecture.abiFilters
                 )
                 logger.logKeyValue("exportRuntimeEnsure", ensured)
                 if (!ensured) {
@@ -833,7 +853,8 @@ class ApkBuilder(private val context: Context) {
                 nativeLibsFingerprint = runtimeAssetsFingerprint(
                     webApp.appType,
                     config.engineType,
-                    cronetNeededForExport(config)
+                    cronetNeededForExport(config),
+                    architecture.abiFilters
                 ),
                 hostVersionCode = hostVersionCode,
                 forceFullRebuild = forceFullRebuild,
@@ -1322,12 +1343,14 @@ class ApkBuilder(private val context: Context) {
         var discoveredOldIconPaths = emptySet<String>()
         var discoveredIconSpecs = emptyList<ArscRebuilder.DiscoveredIconPath>()
 
-        // Native libs the per-app-type injection step writes for the device ABI (16KB-aligned).
-        // The template also ships them; skip the template's device-ABI copy in the loop below so
-        // the injection is the single source and we don't emit a duplicate zip entry
+        // Native libs the per-app-type injection step writes (16KB-aligned): the device-ABI
+        // set plus, for NODEJS_APP, libnode.so for every other selected ABI. The template also
+        // ships the device-ABI ones; skip the template's copies in the loop below so the
+        // injection is the single source and we don't emit a duplicate zip entry
         // ("duplicate entry: lib/<abi>/<lib>.so").
         val deviceAbi = android.os.Build.SUPPORTED_ABIS?.firstOrNull() ?: "arm64-v8a"
-        val injectedDeviceLibs = injectedDeviceLibEntries(config.appType, deviceAbi)
+        val injectedLibs = injectedDeviceLibEntries(config.appType, deviceAbi) +
+            injectedMultiAbiLibEntries(config.appType, deviceAbi, abiFilters)
 
         val geckoEngineFiles = if (mode == ModifyApkMode.FULL && config.engineType == "GECKOVIEW") {
             val manager = com.webtoapp.core.engine.download.EngineFileManager(context)
@@ -1391,7 +1414,7 @@ class ApkBuilder(private val context: Context) {
                             // device ABI on every build regardless of mode; copying the cached
                             // copies here too would emit each lib twice (near-2x bloat and
                             // undefined duplicate-entry behavior).
-                            entry.name in injectedDeviceLibs -> {
+                            entry.name in injectedLibs -> {
                                 AppLogger.d("ApkBuilder", "Skipping cached native lib (re-injected this build): ${entry.name}")
                             }
                             else -> {
@@ -1480,8 +1503,8 @@ class ApkBuilder(private val context: Context) {
 
                             when {
 
-                                injectedDeviceLibs.contains(entry.name) -> {
-                                    AppLogger.d("ApkBuilder", "Skipping template native lib (injected for device ABI): ${entry.name}")
+                                injectedLibs.contains(entry.name) -> {
+                                    AppLogger.d("ApkBuilder", "Skipping template/cached native lib (injected this build): ${entry.name}")
                                 }
 
                                 abiFilters.isNotEmpty() && !abiFilters.contains(abi) -> {
@@ -1682,7 +1705,7 @@ class ApkBuilder(private val context: Context) {
                         fnAddHtmlFiles = ::addHtmlFilesToAssets,
                         fnAddGalleryItems = ::addGalleryItemsToAssets,
                         fnAddWordPressFiles = ::addWordPressFilesToAssets,
-                        fnAddNodeJsFiles = ::addNodeJsFilesToAssets,
+                        fnAddNodeJsFiles = { zo, dir -> addNodeJsFilesToAssets(zo, dir, abiFilters) },
                         fnAddFrontendFiles = ::addFrontendFilesToAssets,
                         fnAddPhpAppFiles = ::addPhpAppFilesToAssets,
                         fnAddPythonAppFiles = ::addPythonAppFilesToAssets,
@@ -2321,11 +2344,12 @@ class ApkBuilder(private val context: Context) {
 
     private fun addNodeJsFilesToAssets(
         zipOut: ZipOutputStream,
-        projectDir: File
+        projectDir: File,
+        abiFilters: List<String>
     ) {
 
         RuntimeAssetEmbedder.embedProjectFiles(zipOut, projectDir, RuntimeAssetEmbedder.nodeJsConfig(), logger)
-        injectNodeJsNativeLibs(zipOut)
+        injectNodeJsNativeLibs(zipOut, abiFilters)
     }
 
     private fun resolveNodeJsBinary(): File? {
@@ -2394,7 +2418,8 @@ class ApkBuilder(private val context: Context) {
     private fun runtimeAssetsFingerprint(
         appType: com.webtoapp.data.model.AppType,
         engineType: String?,
-        cronetNeeded: Boolean = false
+        cronetNeeded: Boolean = false,
+        abiFilters: List<String> = emptyList()
     ): String? {
         val parts = mutableListOf<String>()
         if (appType == com.webtoapp.data.model.AppType.NODEJS_APP) {
@@ -2403,6 +2428,19 @@ class ApkBuilder(private val context: Context) {
             parts += "bridge=${libFingerprint(File(nativeDir, "libnode_bridge.so"))}"
             parts += "cxx=${libFingerprint(File(nativeDir, "libc++_shared.so"))}"
             parts += "node=${libFingerprint(node)}"
+            // Per-ABI libnode fingerprints: a Node runtime re-download that fills in
+            // previously missing ABIs must invalidate REUSE_UNSIGNED so the cached
+            // unsigned APK is rebuilt with lib/<abi>/libnode.so for every selected ABI.
+            val deviceAbi = com.webtoapp.core.nodejs.NodeDependencyManager.getDeviceAbi()
+            com.webtoapp.core.nodejs.NodeDependencyManager.NODE_EXPORT_ABIS
+                .filter { it != deviceAbi && (abiFilters.isEmpty() || it in abiFilters) }
+                .forEach { extraAbi ->
+                    val lib = File(
+                        com.webtoapp.core.nodejs.NodeDependencyManager.getNodeDir(context, extraAbi),
+                        com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME
+                    )
+                    parts += "node-$extraAbi=${libFingerprint(lib)}"
+                }
         }
         if (appType == com.webtoapp.data.model.AppType.PHP_APP ||
             appType == com.webtoapp.data.model.AppType.WORDPRESS
@@ -2456,7 +2494,7 @@ class ApkBuilder(private val context: Context) {
         return "sha256=$sha,size=${file.length()},aligned16k=$aligned"
     }
 
-    private fun injectNodeJsNativeLibs(zipOut: ZipOutputStream) {
+    private fun injectNodeJsNativeLibs(zipOut: ZipOutputStream, abiFilters: List<String>) {
         val abi = com.webtoapp.core.nodejs.NodeDependencyManager.getDeviceAbi()
         val nativeDir = File(context.applicationInfo.nativeLibraryDir)
         val bridge = File(nativeDir, "libnode_bridge.so")
@@ -2509,6 +2547,50 @@ class ApkBuilder(private val context: Context) {
             logger.log(
                 "Node.js binary embedded as native lib: lib/$abi/${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME} (${alignedNode.length() / 1024} KB)"
             )
+
+            // Multi-ABI export: the template already ships libnode_bridge.so /
+            // libnode_launcher.so / libc++_shared.so (16KB-aligned) for every ABI; only
+            // libnode.so is downloaded content, so it is embedded here per selected ABI.
+            // Without this the APK only ran on devices sharing the build host's ABI —
+            // x86_64 emulators without ARM translation reported "libnode.so not installed".
+            val selectedAbis = if (abiFilters.isEmpty()) {
+                com.webtoapp.core.nodejs.NodeDependencyManager.NODE_EXPORT_ABIS
+            } else {
+                abiFilters.toSet()
+            }
+            for (extraAbi in selectedAbis - abi) {
+                val extraLib = com.webtoapp.core.nodejs.NodeDependencyManager
+                    .nodeLibForAbi(context, extraAbi)
+                when {
+                    extraLib != null -> {
+                        // displayName must stay the bare lib name: ensureAligned16kNativeLib
+                        // decides fail-vs-warn on it, and a misaligned libnode.so is exactly
+                        // the Android-15/16KB-page breakage this path exists to prevent.
+                        val alignedExtra = ensureAligned16kNativeLib(
+                            extraLib,
+                            com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME
+                        )
+                        writeEntryStoredStreaming(
+                            zipOut,
+                            "lib/$extraAbi/${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME}",
+                            alignedExtra
+                        )
+                        logger.log(
+                            "Node.js binary embedded as native lib: lib/$extraAbi/" +
+                                "${com.webtoapp.core.nodejs.NodeDependencyManager.NODE_BINARY_NAME} (${alignedExtra.length() / 1024} KB)"
+                        )
+                    }
+                    extraAbi in com.webtoapp.core.nodejs.NodeDependencyManager.NODE_EXPORT_ABIS -> {
+                        val msg = "libnode.so for $extraAbi missing from the Node.js runtime cache. " +
+                            "Re-download Node.js in Settings → Runtime Engines (the zip carries all ABIs), then re-export."
+                        logger.error(msg)
+                        throw IllegalStateException(msg)
+                    }
+                    else -> logger.warn(
+                        "No upstream libnode.so for $extraAbi — that ABI will not run this app's Node.js runtime"
+                    )
+                }
+            }
         } catch (e: IllegalStateException) {
             throw e
         } catch (e: Exception) {
