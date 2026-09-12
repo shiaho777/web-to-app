@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit
 object CnMirrorProbe {
 
     private const val TAG = "CnMirrorProbe"
-    private const val CACHE_TTL_MS = 5L * 60 * 1000
+    private const val CACHE_TTL_MS = 30L * 60 * 1000
 
     /** Channels at or under this TTFB are considered usable. */
     const val ACCEPTABLE_LATENCY_MS = 1000L
@@ -91,6 +91,22 @@ object CnMirrorProbe {
     fun invalidate() {
         cachedOrder = emptyList()
         cachedAt = 0L
+    }
+
+    /**
+     * The best-known channel order without ever blocking: the measured order while
+     * the cache is warm, otherwise declaration order — and a stale cache fires a
+     * background refresh so the next caller sees measured results. For callers
+     * (small JSON fetches) that race several candidates and therefore must not
+     * spend up-front time on a probe round.
+     */
+    fun peekChannels(): List<MirrorChannel> {
+        val now = System.currentTimeMillis()
+        if (cachedOrder.isNotEmpty() && (now - cachedAt) < CACHE_TTL_MS) {
+            return mergeNewChannels(cachedOrder)
+        }
+        scope.launch { runCatching { probe() } }
+        return mergeNewChannels(cachedOrder)
     }
 
     /**

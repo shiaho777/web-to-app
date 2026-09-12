@@ -23,25 +23,25 @@ object GitHubMirror {
     }
 
     /**
-     * Candidate prefix accelerators. This is deliberately a wide net: the list
-     * is re-measured at runtime by [CnMirrorProbe] and anything slow or dead is
+     * Candidate prefix accelerators, curated from a live measurement pass
+     * (2026-09): ordered best-first, so the declaration order is also the
+     * fallback when a probe round finds nothing usable. The list is still
+     * re-measured at runtime by [CnMirrorProbe] and anything slow or dead is
      * dropped before the first download attempt, so a stale entry costs one
      * probe request and nothing else.
+     *
+     * Dropped from the previous wide-net pool: ghps.cc (404 on release
+     * routes), gh.con.sh (HTTP 200 serving "Suspent due to abuse report"
+     * text — a fake-200 poison), gh.jiasu.in / ghproxy.1888866.xyz /
+     * mirror.ghproxy.com (unreachable), gh.idayer.com / github.91chi.fun
+     * (429 rate-limited), gh-proxy.ygxz.in (TTFB ~2s, ~5KB/s throughput),
+     * ghfast / ghproxy.net (kept off the shortlist: slower than the three
+     * below on both TTFB and throughput).
      */
     val CN_PROXIES: List<MirrorChannel> = listOf(
-        MirrorChannel("ghfast", "https://ghfast.top/"),
         MirrorChannel("gh-proxy", "https://gh-proxy.com/"),
-        MirrorChannel("ghproxy.net", "https://ghproxy.net/"),
-        MirrorChannel("gh.llkk.cc", "https://gh.llkk.cc/"),
-        MirrorChannel("ghps.cc", "https://ghps.cc/"),
-        MirrorChannel("gh-proxy.ygxz.in", "https://gh-proxy.ygxz.in/"),
-        MirrorChannel("gh.jiasu.in", "https://gh.jiasu.in/"),
         MirrorChannel("gh.zwy.one", "https://gh.zwy.one/"),
-        MirrorChannel("gh.idayer.com", "https://gh.idayer.com/"),
-        MirrorChannel("ghproxy.1888866.xyz", "https://ghproxy.1888866.xyz/"),
-        MirrorChannel("gh.con.sh", "https://gh.con.sh/"),
-        MirrorChannel("mirror.ghproxy.com", "https://mirror.ghproxy.com/"),
-        MirrorChannel("github.91chi.fun", "https://github.91chi.fun/")
+        MirrorChannel("gh.llkk.cc", "https://gh.llkk.cc/")
     )
 
     /** Everything a download may try, direct route last in declaration order. */
