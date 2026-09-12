@@ -77,4 +77,31 @@ class ZipAlignerTest {
         assertThat(ZipAligner.align(apk, output)).isTrue()
         assertThat(ZipAligner.verifyNativeLibAlignment(output)).isTrue()
     }
+
+    /**
+     * Regression: the shell template is built with packaging.jniLibs.useLegacyPackaging=true,
+     * so every template lib/ entry is DEFLATED and the manifest ships extractNativeLibs=true.
+     * PackageManager extracts such libs to nativeLibraryDir at install — the zip data offset
+     * is never mmap'd — therefore a compressed lib has no alignment requirement. Failing on
+     * stored=false here made EVERY export abort after the central-directory verifier started
+     * actually reaching lib/ (issue: "Native lib is not 16KB zip-aligned ... stored=false").
+     * Only STORED libs (injected runtimes like libnode.so) can be mapped in place and must
+     * sit on the 16KB boundary.
+     */
+    @Test
+    fun `verify accepts deflated native libs that are extracted at install`() {
+        val apk = temp.newFile("deflated-lib.apk")
+        ZipOutputStream(apk.outputStream()).use { zipOut ->
+            // DEFLATED via java.util.zip: bit-3 data descriptor, LFH compressedSize=0 —
+            // exactly what the AGP-built template carries.
+            zipOut.putNextEntry(ZipEntry("lib/arm64-v8a/libandroidx.graphics.path.so"))
+            zipOut.write(ByteArray(4_096) { (it % 251).toByte() })
+            zipOut.closeEntry()
+            zipOut.putNextEntry(ZipEntry("lib/arm64-v8a/libc++_shared.so"))
+            zipOut.write(ByteArray(8_192) { (it % 241).toByte() })
+            zipOut.closeEntry()
+        }
+
+        assertThat(ZipAligner.verifyNativeLibAlignment(apk)).isTrue()
+    }
 }

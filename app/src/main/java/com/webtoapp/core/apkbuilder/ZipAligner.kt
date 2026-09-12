@@ -370,18 +370,26 @@ object ZipAligner {
                     return false
                 }
                 var nativeLibCount = 0
+                var storedCount = 0
                 for (entry in entries) {
                     if (!isNativeLibraryEntry(entry.name)) continue
                     nativeLibCount++
-                    val isStored = entry.method == ZipEntry.STORED
+                    // DEFLATED libs can never be mmap'd from the zip: the
+                    // manifest ships extractNativeLibs=true (the template is
+                    // packaged with jniLibs.useLegacyPackaging), so the OS
+                    // extracts them to nativeLibraryDir at install and the
+                    // data offset is irrelevant. Only STORED libs — the
+                    // injected runtime binaries like libnode.so — may be
+                    // mapped in place and must sit on a page boundary.
+                    if (entry.method != ZipEntry.STORED) continue
+                    storedCount++
                     val dataOffset = entryDataOffset(raf, entry.localHeaderOffset)
-                    val isAligned = dataOffset % alignment == 0L
-                    if (!isStored || !isAligned) {
-                        AppLogger.w(TAG, "Native lib is not ${alignment / 1024}KB zip-aligned: ${entry.name} stored=$isStored dataOffset=$dataOffset remainder=${dataOffset % alignment}")
+                    if (dataOffset % alignment != 0L) {
+                        AppLogger.w(TAG, "Native lib is not ${alignment / 1024}KB zip-aligned: ${entry.name} dataOffset=$dataOffset remainder=${dataOffset % alignment}")
                         return false
                     }
                 }
-                AppLogger.d(TAG, "Native lib zip alignment verified: $nativeLibCount entries")
+                AppLogger.d(TAG, "Native lib zip alignment verified: $storedCount stored / $nativeLibCount total entries")
                 return true
             }
         } catch (e: Exception) {
