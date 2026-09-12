@@ -201,7 +201,7 @@ entry mirrors the module manifest plus a `path` (folder name) and a
 
 `minAppVersion` lets you ship a module that needs APIs only present from a
 specific WebToApp `versionCode` onwards — older clients hide the entry.
-The current `versionCode` is **62** (`v2.6.0`); set this only if you
+The current `versionCode` is **63** (`v2.6.1`); set this only if you
 genuinely depend on a newer build.
 
 `iconUrl` is optional. Either a relative path (`"icon.png"`, `"icon.svg"`,
