@@ -730,6 +730,15 @@ class WebViewActivity : AppCompatActivity() {
     private var usageTracker: AppUsageTracker? = null
     private var trackedAppId: Long = -1
 
+    // WebView session state carried across Activity recreation (Bundle path) and
+    // cold restarts after process death (last-URL store path). Parity with
+    // ShellActivity, which already restores the WebView back-forward list.
+    private var webViewStateBundle: Bundle? = null
+    private val resumeStore by lazy { com.webtoapp.core.webview.WebViewResumeStore(this) }
+    private var sessionKey: String? = null
+    private var launchDirectUrl: String? = null
+    private var launchPreviewApp: WebApp? = null
+
 
     private fun loadInBrowser(url: String) {
         val surface = browserSurface
@@ -792,6 +801,20 @@ class WebViewActivity : AppCompatActivity() {
                 null
             }
         } else null
+
+        // savedInstanceState carries the WebView back-forward list written by
+        // onSaveInstanceState; it is consumed by the AndroidView factory once the
+        // surface's WebView exists. On a cold start (null bundle) the resume store
+        // provides the last visited URL instead.
+        savedInstanceState?.let { webViewStateBundle = it }
+        launchDirectUrl = directUrl
+        launchPreviewApp = previewApp
+        sessionKey = resumeStore.sessionKey(
+            appId = appId,
+            directUrl = directUrl,
+            previewBaseUrl = previewApp?.url,
+            isTest = !testUrl.isNullOrBlank()
+        )
 
         enableBackStatePreservation = previewApp?.webViewConfig?.enableBackStatePreservation ?: false
         activeFollowSystemDarkMode = previewApp?.webViewConfig?.followSystemDarkMode
@@ -1055,10 +1078,26 @@ class WebViewActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        val newAppId = intent.getLongExtra(EXTRA_APP_ID, -1)
-        if (newAppId <= 0 || newAppId != trackedAppId) {
+        if (shouldRecreateForNewIntent(intent, trackedAppId)) {
             recreate()
         }
+    }
+
+    /**
+     * A relaunch only rebuilds the preview when it carries a different launch
+     * target. Bare intents (task re-delivery, external bring-to-front with no
+     * extras) used to fall into `newAppId <= 0` and recreate(), destroying the
+     * live WebView session for no reason.
+     */
+    internal fun shouldRecreateForNewIntent(intent: Intent, trackedAppId: Long): Boolean {
+        val newAppId = intent.getLongExtra(EXTRA_APP_ID, -1)
+        if (newAppId > 0) {
+            return newAppId != trackedAppId
+        }
+        return intent.hasExtra(EXTRA_APP_ID) ||
+            intent.hasExtra(EXTRA_URL) ||
+            intent.hasExtra(EXTRA_TEST_URL) ||
+            intent.hasExtra(EXTRA_PREVIEW_APP_JSON)
     }
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
@@ -1086,9 +1125,58 @@ class WebViewActivity : AppCompatActivity() {
 
     override fun onPause() {
         if (trackedAppId > 0) usageTracker?.trackPause(trackedAppId)
+        persistResumeUrl()
         webView?.onPause()
         android.webkit.CookieManager.getInstance().flush()
         super.onPause()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        browserSurface?.saveState(outState) ?: webView?.saveState(outState)
+        persistResumeUrl()
+    }
+
+    /** Configured start URL of the launch target; app-id launches resolve it lazily. */
+    private fun sessionBaseUrl(): String? = when {
+        sessionKey == null -> null
+        trackedAppId > 0 -> resolvedSavedApp?.url
+        !launchDirectUrl.isNullOrBlank() -> launchDirectUrl
+        launchPreviewApp != null -> launchPreviewApp?.url
+        else -> null
+    }
+
+    private fun persistResumeUrl() {
+        resumeStore.persist(
+            sessionKey,
+            sessionBaseUrl(),
+            browserSurface?.getCurrentUrl() ?: webView?.url
+        )
+    }
+
+    private var resumeConsumed = false
+
+    /** Consume the saved-instance-state WebView bundle once (AndroidView factory). */
+    internal fun consumeWebViewState(): Bundle? {
+        val bundle = webViewStateBundle
+        webViewStateBundle = null
+        return bundle
+    }
+
+    /**
+     * Mark the resume URL as used without reading it — after a successful bundle
+     * restore, a later recreation (render-process-gone) must reload the start URL
+     * rather than the page that may have crashed the renderer.
+     */
+    internal fun markResumeConsumed() {
+        resumeConsumed = true
+    }
+
+    /** Last visited URL for this launch target after a cold restart; consumed once. */
+    internal fun consumeResumeUrl(): String? {
+        if (resumeConsumed) return null
+        resumeConsumed = true
+        return resumeStore.resumeUrl(sessionKey, sessionBaseUrl())
     }
 
     override fun onTrimMemory(level: Int) {
@@ -1108,6 +1196,11 @@ class WebViewActivity : AppCompatActivity() {
     override fun onDestroy() {
 
         if (trackedAppId > 0) usageTracker?.trackClose(trackedAppId)
+
+        // Explicit close (back/finish): forget the last page so the next preview
+        // starts fresh. System-initiated destroys and process death keep the
+        // record so a cold restart can resume on the same page.
+        if (isFinishing) resumeStore.clear(sessionKey)
 
         mediaSessionBridge?.release()
         mediaSessionBridge = null
@@ -3445,7 +3538,19 @@ fun WebViewScreen(
                                     webViewRef = this
 
                                     tracker.scheduleSample(80L)
-                                    loadUrl(targetUrl)
+                                    val host = context as? WebViewActivity
+                                    val savedState = host?.consumeWebViewState()
+                                    if (savedState != null && restoreState(savedState) != null) {
+                                        // Bundle path: back-forward list restored — load the
+                                        // current entry instead of the configured start URL
+                                        // (same contract as ShellBrowserView's state_restored tag).
+                                        host?.markResumeConsumed()
+                                        reload()
+                                    } else {
+                                        // Cold-start path: resume the last visited page after
+                                        // process death when the store still matches this target.
+                                        loadUrl(host?.consumeResumeUrl() ?: targetUrl)
+                                    }
                                     }
                                     swipeChildWebView = createdWebView
                                     addView(createdWebView)
@@ -3466,7 +3571,7 @@ fun WebViewScreen(
                                     // loadUrl(targetUrl); this branch never navigated at all, so
                                     // plain WEB/HTML previews on Gecko/ECH showed a blank view.
                                     if (targetUrl.isNotEmpty()) {
-                                        loadInBrowser(targetUrl)
+                                        loadInBrowser((context as? WebViewActivity)?.consumeResumeUrl() ?: targetUrl)
                                     }
                                 }
                             }

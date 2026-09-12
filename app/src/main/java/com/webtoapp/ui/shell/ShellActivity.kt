@@ -790,7 +790,9 @@ class ShellActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        webView?.saveState(outState)
+        // Save through the surface first: on engine-backed (GeckoView) sites the
+        // activity's webView field stays null while the surface holds the live view.
+        browserSurface?.saveState(outState) ?: webView?.saveState(outState)
         com.webtoapp.core.shell.ShellLogger.logLifecycle("ShellActivity", "onSaveInstanceState - WebView state saved")
     }
 
