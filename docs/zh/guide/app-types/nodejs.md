@@ -23,6 +23,8 @@ Express/Fastify/Koa 应用、API 和服务端演示。
 
 缺少任何一个都会在运行时导致 `loadNode` / `loadJniBridge` 失败。
 
+桥接/启动器/C++ 库由 shell 模板为全部四种 ABI 内置;`libnode.so` 属于按需下载内容,会按所选 APK 架构逐 ABI 嵌入 —— 上游 nodejs-mobile 包提供 `arm64-v8a`、`armeabi-v7a` 和 `x86_64`(不含 32 位 `x86`)。若所选 ABI 在本地运行时缓存中缺失,导出时会自动重新下载一次 Node.js 运行时并解压全部 ABI;若仍缺失,构建直接失败,避免产出在该架构上启动即报"libnode.so 未安装"的 APK(例如没有 ARM 转译的 x86_64 模拟器)。
+
 ## 核心配置
 
 由 `NodeJsConfig` 支撑。

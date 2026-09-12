@@ -65,4 +65,37 @@ class ApkBuilderInjectedLibsTest {
         assertThat(ApkBuilder.injectedDeviceLibEntries("WEB", "arm64-v8a")).isEmpty()
         assertThat(ApkBuilder.injectedDeviceLibEntries("HTML", "arm64-v8a")).isEmpty()
     }
+
+    @Test
+    fun `node app skips injected libnode for every selected non-device abi`() {
+        // Multi-ABI export injects libnode.so per selected ABI (upstream ships
+        // arm64-v8a / armeabi-v7a / x86_64 — never 32-bit x86). Only libnode.so is
+        // injected for extra ABIs: the template already carries the aligned
+        // bridge/launcher/cxx libs, so those template entries must NOT be skipped.
+        assertThat(
+            ApkBuilder.injectedMultiAbiLibEntries(
+                "NODEJS_APP", "arm64-v8a", listOf("arm64-v8a", "x86_64")
+            )
+        ).containsExactly("lib/x86_64/libnode.so")
+
+        assertThat(
+            ApkBuilder.injectedMultiAbiLibEntries(
+                "NODEJS_APP", "arm64-v8a", emptyList() // empty = all selected
+            )
+        ).containsExactly("lib/armeabi-v7a/libnode.so", "lib/x86_64/libnode.so")
+    }
+
+    @Test
+    fun `multi-abi injection never targets unsupported or non-node types`() {
+        // x86 (32-bit) has no upstream libnode.so — nothing to inject/skip for it.
+        assertThat(
+            ApkBuilder.injectedMultiAbiLibEntries("NODEJS_APP", "arm64-v8a", listOf("x86"))
+        ).isEmpty()
+        assertThat(
+            ApkBuilder.injectedMultiAbiLibEntries("PHP_APP", "arm64-v8a", emptyList())
+        ).isEmpty()
+        assertThat(
+            ApkBuilder.injectedMultiAbiLibEntries("WEB", "arm64-v8a", emptyList())
+        ).isEmpty()
+    }
 }

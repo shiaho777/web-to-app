@@ -123,4 +123,40 @@ class NodeDependencyManagerTest {
             nativeLibDir.deleteRecursively()
         }
     }
+
+    @Test
+    fun `nodeAbiOfEntry matches whole path segments and never confuses x86 with x86_64`() {
+        assertThat(
+            NodeDependencyManager.nodeAbiOfEntry("nodejs-mobile-v18.20.4-android/bin/arm64-v8a/libnode.so")
+        ).isEqualTo("arm64-v8a")
+        assertThat(NodeDependencyManager.nodeAbiOfEntry("bin/x86_64/libnode.so")).isEqualTo("x86_64")
+        assertThat(NodeDependencyManager.nodeAbiOfEntry("bin/x86/libnode.so")).isEqualTo("x86")
+        assertThat(NodeDependencyManager.nodeAbiOfEntry("bin/armeabi-v7a/libnode.so")).isEqualTo("armeabi-v7a")
+        assertThat(NodeDependencyManager.nodeAbiOfEntry("x86_64/libnode.so")).isEqualTo("x86_64")
+        assertThat(NodeDependencyManager.nodeAbiOfEntry("include/node/node_api.h")).isNull()
+        assertThat(NodeDependencyManager.nodeAbiOfEntry("libnode.so")).isNull()
+    }
+
+    @Test
+    fun `missingExportAbis reports only satisfiable abis lacking a cached libnode`() {
+        // Empty cache: every upstream ABI is missing; x86 is never reported because
+        // upstream ships no 32-bit x86 libnode and the gap can never be fixed.
+        assertThat(
+            NodeDependencyManager.missingExportAbis(context, listOf("arm64-v8a", "x86_64", "x86"))
+        ).containsExactly("arm64-v8a", "x86_64")
+
+        // A cached libnode.so satisfies that ABI.
+        File(
+            NodeDependencyManager.getNodeDir(context, "x86_64"),
+            NodeDependencyManager.NODE_BINARY_NAME
+        ).apply {
+            parentFile?.mkdirs()
+            writeBytes(byteArrayOf(1))
+        }
+
+        assertThat(NodeDependencyManager.missingExportAbis(context, listOf("x86_64"))).isEmpty()
+        assertThat(
+            NodeDependencyManager.missingExportAbis(context, listOf("arm64-v8a", "x86_64"))
+        ).containsExactly("arm64-v8a")
+    }
 }
