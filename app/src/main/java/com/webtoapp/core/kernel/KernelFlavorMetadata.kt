@@ -10,8 +10,11 @@ object KernelFlavorMetadata {
 
     private const val TAG = "KernelFlavorMetadata"
 
-    fun apply(webView: WebView, profile: KernelFlavorProfile) {
-        if (profile.isNoOp) return
+    fun apply(webView: WebView, profile: KernelFlavorProfile?) {
+        // A profile carrying no user agent is the genuine system default, whose client hints
+        // already describe the real engine. Overwriting them — with an empty brand list, say —
+        // would manufacture the exact UA/client-hint mismatch this whole path exists to avoid.
+        if (profile == null || profile.userAgent.isNullOrBlank()) return
 
         if (!WebViewFeature.isFeatureSupported(WebViewFeature.USER_AGENT_METADATA)) {
             AppLogger.d(TAG, "USER_AGENT_METADATA not supported; relying on JS-layer client hints only")

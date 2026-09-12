@@ -1285,11 +1285,7 @@ class WebViewManager(
             }
         } else null
 
-        this.cachedKernelFlavorJs = if (!config.kernelFlavor.profile.isNoOp) {
-            config.kernelFlavor.profile.buildFlavorJs().also { js ->
-                AppLogger.d("WebViewManager", "Kernel Flavor JS cached: ${config.kernelFlavor.name}, ${js.length} chars")
-            }
-        } else null
+        this.cachedKernelFlavorJs = null
 
         this.appExtensionModuleIds = extensionModuleIds
 
@@ -1301,6 +1297,25 @@ class WebViewManager(
         this.extensionMasterEnabled = extensionEnabled
 
         this.currentDeviceDisguiseConfig = deviceDisguiseConfig
+
+        // Resolve the one browser identity this app presents, after every disguise source is
+        // cached. The UA string and its client-hint metadata are produced together here and
+        // applied together below, so a page can never see a UA that contradicts `Sec-CH-UA`.
+        this.resolvedBrowserIdentity = resolveBrowserIdentityFor(config)
+
+        // The JS layer only needs a script for real flavors: a derived profile (custom UA or
+        // device disguise) is already backed by the metadata, and `navigator.userAgent` follows
+        // the overridden UA string on its own.
+        this.cachedKernelFlavorJs = resolvedBrowserIdentity.profile
+            ?.takeIf { it.flavor != com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT }
+            ?.buildFlavorJs()
+            ?.takeIf { it.isNotEmpty() }
+            ?.also { js ->
+                AppLogger.d(
+                    "WebViewManager",
+                    "Kernel Flavor JS cached: ${resolvedBrowserIdentity.profile?.flavor?.name}, ${js.length} chars"
+                )
+            }
 
         if (config.errorPageConfig.mode != ErrorPageMode.DEFAULT) {
 
@@ -1510,24 +1525,40 @@ class WebViewManager(
                     AppLogger.d("WebViewManager", "ViewportMode.CUSTOM applied: width=${config.customViewportWidth}")
                 }
 
-                val effectiveUserAgent = resolveUserAgent(config)
-                if (effectiveUserAgent != null) {
+                val identity = resolvedBrowserIdentity
+                if (identity.userAgent != null) {
 
-                    userAgentString = stripWebViewMarker(effectiveUserAgent)
-                    AppLogger.d("WebViewManager", "User-Agent set: ${userAgentString.take(80)}...")
+                    userAgentString = stripWebViewMarker(identity.userAgent)
+                    AppLogger.d(
+                        "WebViewManager",
+                        "Browser identity applied (${identity.profile?.flavor?.name ?: "derived-from-UA"}): " +
+                            "${userAgentString.take(80)}..."
+                    )
                 } else {
 
                     userAgentString = stripWebViewMarker(userAgentString)
                     AppLogger.d("WebViewManager", "User-Agent (system default, wv stripped): ${userAgentString.take(80)}...")
                 }
 
-                if (!isDesktopModeRequested && effectiveUserAgent == null) {
+                // Client hints are part of the same identity, never a separate decision: the
+                // engine would otherwise advertise its real brands in `Sec-CH-UA` while the UA
+                // above claims a different browser.
+                com.webtoapp.core.kernel.KernelFlavorMetadata.apply(webView, identity.profile)
+
+                if (!isDesktopModeRequested && identity.userAgent == null) {
                     val hasActiveChromeExt = getActiveModulesForCurrentApp().any { module ->
                         module.sourceType == com.webtoapp.core.extension.ModuleSourceType.CHROME_EXTENSION &&
                         module.chromeExtId.isNotEmpty()
                     }
                     if (hasActiveChromeExt) {
-                        userAgentString = DESKTOP_USER_AGENT ?: DESKTOP_USER_AGENT_FALLBACK
+                        val desktopUa = DESKTOP_USER_AGENT ?: DESKTOP_USER_AGENT_FALLBACK
+                        userAgentString = desktopUa
+                        // Swapping the UA here must carry its client hints along, or the same
+                        // UA/client-hint contradiction reappears for extension-bearing apps.
+                        com.webtoapp.core.kernel.KernelFlavorMetadata.apply(
+                            webView,
+                            com.webtoapp.core.kernel.UserAgentProfileDeriver.derive(desktopUa)
+                        )
                         AppLogger.d("WebViewManager", "Desktop UA auto-enabled for active Chrome extension(s)")
                     }
                 }
@@ -1718,10 +1749,6 @@ class WebViewManager(
                 com.webtoapp.core.kernel.BrowserKernel.configureWebView(webView, level)
             }
 
-            if (!config.kernelFlavor.profile.isNoOp) {
-                com.webtoapp.core.kernel.KernelFlavorMetadata.apply(webView, config.kernelFlavor.profile)
-            }
-
             isFocusable = true
             isFocusableInTouchMode = true
             requestFocus()
@@ -1836,52 +1863,6 @@ class WebViewManager(
                 }
             }
         }
-    }
-
-    private fun resolveUserAgent(config: WebViewConfig): String? {
-        AppLogger.d("WebViewManager", "resolveUserAgent: userAgentMode=${config.userAgentMode}, customUserAgent=${config.customUserAgent?.take(30)}, desktopMode=${config.desktopMode}")
-
-        val ddConfig = currentDeviceDisguiseConfig
-        if (ddConfig != null && ddConfig.enabled) {
-            val ua = ddConfig.generateUserAgent()
-            if (ua.isNotBlank()) {
-                AppLogger.d("WebViewManager", "resolveUserAgent: DeviceDisguise -> ${ua.take(80)}")
-                return ua
-            }
-        }
-
-        when (config.userAgentMode) {
-            UserAgentMode.DEFAULT -> {
-
-            }
-            UserAgentMode.CUSTOM -> {
-
-                val ua = config.customUserAgent?.takeIf { it.isNotBlank() }
-                AppLogger.d("WebViewManager", "resolveUserAgent: CUSTOM mode -> ${ua?.take(60) ?: "null"}")
-                return ua
-            }
-            else -> {
-
-                val ua = config.userAgentMode.userAgentString
-                AppLogger.d("WebViewManager", "resolveUserAgent: ${config.userAgentMode.name} mode -> ${ua?.take(60) ?: "null"}")
-                return ua
-            }
-        }
-
-        val flavorUa = config.kernelFlavor.profile.userAgent?.takeIf { it.isNotBlank() }
-        if (flavorUa != null) {
-            AppLogger.d("WebViewManager", "resolveUserAgent: KernelFlavor ${config.kernelFlavor.name} -> ${flavorUa.take(60)}")
-            return flavorUa
-        }
-
-        if (config.desktopMode) {
-            AppLogger.d("WebViewManager", "resolveUserAgent: desktopMode fallback")
-            return DESKTOP_USER_AGENT ?: DESKTOP_USER_AGENT_FALLBACK
-        }
-
-        val legacyUa = config.userAgent?.takeIf { it.isNotBlank() }
-        AppLogger.d("WebViewManager", "resolveUserAgent: DEFAULT mode, legacyUA=${legacyUa?.take(60) ?: "null"}")
-        return legacyUa
     }
 
     private fun createWebViewClient(
@@ -4178,6 +4159,14 @@ class WebViewManager(
 
     private var cachedKernelFlavorJs: String? = null
 
+    /**
+     * The single browser identity resolved for the current app: its `User-Agent` and the
+     * client-hint metadata that describes it. Kept as one value so the two can never be applied
+     * apart from each other.
+     */
+    private var resolvedBrowserIdentity: com.webtoapp.core.kernel.BrowserIdentity =
+        com.webtoapp.core.kernel.BrowserIdentity.SYSTEM_DEFAULT
+
     private var cachedBrowserDisguiseConfig: com.webtoapp.core.appearance.BrowserDisguiseConfig? = null
 
     private var currentDeviceDisguiseConfig: com.webtoapp.core.appearance.DeviceDisguiseConfig? = null
@@ -5435,10 +5424,28 @@ class WebViewManager(
         }
     }
 
+    /**
+     * Resolves the single browser identity for [config] from the currently cached disguise
+     * sources. Reading the cached device-disguise config (rather than taking it as a parameter)
+     * keeps this usable both during configuration and from deferred extension handling.
+     */
+    private fun resolveBrowserIdentityFor(config: WebViewConfig): com.webtoapp.core.kernel.BrowserIdentity =
+        com.webtoapp.core.kernel.BrowserIdentityResolver.resolve(
+            flavor = config.kernelFlavor,
+            legacyMode = config.userAgentMode,
+            customUserAgent = config.customUserAgent,
+            desktopMode = config.desktopMode,
+            desktopUserAgent = DESKTOP_USER_AGENT ?: DESKTOP_USER_AGENT_FALLBACK,
+            legacyUserAgent = config.userAgent,
+            deviceDisguiseUserAgent = currentDeviceDisguiseConfig
+                ?.takeIf { it.enabled }
+                ?.generateUserAgent()
+        )
+
     private fun ensureDesktopUaForDeferredChromeExt(webView: WebView): Boolean {
         val config = currentConfig ?: return false
         if (isDesktopUaRequested(config)) return false
-        if (resolveUserAgent(config) != null) return false
+        if (resolveBrowserIdentityFor(config).userAgent != null) return false
         val hasActiveChromeExt = getActiveModulesForCurrentApp().any { module ->
             module.sourceType == com.webtoapp.core.extension.ModuleSourceType.CHROME_EXTENSION &&
                 module.chromeExtId.isNotEmpty()
@@ -5447,6 +5454,11 @@ class WebViewManager(
         val desktopUa = DESKTOP_USER_AGENT ?: DESKTOP_USER_AGENT_FALLBACK
         if (webView.settings.userAgentString == desktopUa) return false
         webView.settings.userAgentString = desktopUa
+        // Carry the client hints along with the swapped UA, or the UA and `Sec-CH-UA` disagree.
+        com.webtoapp.core.kernel.KernelFlavorMetadata.apply(
+            webView,
+            com.webtoapp.core.kernel.UserAgentProfileDeriver.derive(desktopUa)
+        )
         AppLogger.d(
             "WebViewManager",
             "Desktop UA auto-enabled (deferred) for active Chrome extension(s); reloading"

@@ -11,12 +11,29 @@ enum class KernelFlavor(
     BLINK_EDGE("Edge (Blink)", "Blink"),
     BLINK_SAMSUNG("Samsung Internet (Blink)", "Blink"),
     GECKO_FIREFOX("Firefox (Gecko)", "Gecko"),
-    WEBKIT_SAFARI("Safari (WebKit)", "WebKit");
+    WEBKIT_SAFARI("Safari (WebKit)", "WebKit"),
+
+    BLINK_CHROME_DESKTOP("Chrome Desktop (Blink)", "Blink"),
+    BLINK_EDGE_DESKTOP("Edge Desktop (Blink)", "Blink"),
+    GECKO_FIREFOX_DESKTOP("Firefox Desktop (Gecko)", "Gecko"),
+    WEBKIT_SAFARI_DESKTOP("Safari Desktop (WebKit)", "WebKit");
+
+    /** Desktop variants present themselves as a desktop browser instead of a mobile one. */
+    val isDesktop: Boolean
+        get() = this in DESKTOP_FLAVORS
 
     val profile: KernelFlavorProfile
         get() = KernelFlavorProfile.of(this)
 
     companion object {
+
+        val DESKTOP_FLAVORS: Set<KernelFlavor> = setOf(
+            BLINK_CHROME_DESKTOP,
+            BLINK_EDGE_DESKTOP,
+            GECKO_FIREFOX_DESKTOP,
+            WEBKIT_SAFARI_DESKTOP
+        )
+
         fun fromString(value: String?): KernelFlavor {
             if (value.isNullOrBlank()) return SYSTEM_DEFAULT
             return entries.find { it.name.equals(value, ignoreCase = true) } ?: SYSTEM_DEFAULT
@@ -237,6 +254,78 @@ data class KernelFlavorProfile(
                 architecture = "",
                 bitness = "64",
                 model = "iPhone"
+            )
+
+            KernelFlavor.BLINK_CHROME_DESKTOP -> KernelFlavorProfile(
+                flavor = flavor,
+                userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${UserAgentVersions.CHROME}.0.0.0 Safari/537.36",
+                vendor = "Google Inc.",
+                hasWindowChrome = true,
+                supportsClientHints = true,
+                brands = listOf(
+                    KernelBrand("Chromium", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
+                    KernelBrand("Google Chrome", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
+                    KernelBrand("Not_A Brand", "24", "24.0.0.0")
+                ),
+                mobile = false,
+                platform = "Windows",
+                platformVersion = "10.0.0",
+                fullVersion = "${UserAgentVersions.CHROME}.0.0.0",
+                architecture = "x86",
+                bitness = "64",
+                model = ""
+            )
+
+            KernelFlavor.BLINK_EDGE_DESKTOP -> KernelFlavorProfile(
+                flavor = flavor,
+                userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/${UserAgentVersions.CHROME}.0.0.0 Safari/537.36 Edg/${UserAgentVersions.CHROME}.0.0.0",
+                vendor = "Google Inc.",
+                hasWindowChrome = true,
+                supportsClientHints = true,
+                brands = listOf(
+                    KernelBrand("Chromium", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
+                    KernelBrand("Microsoft Edge", UserAgentVersions.CHROME, "${UserAgentVersions.CHROME}.0.0.0"),
+                    KernelBrand("Not_A Brand", "24", "24.0.0.0")
+                ),
+                mobile = false,
+                platform = "Windows",
+                platformVersion = "10.0.0",
+                fullVersion = "${UserAgentVersions.CHROME}.0.0.0",
+                architecture = "x86",
+                bitness = "64",
+                model = ""
+            )
+
+            KernelFlavor.GECKO_FIREFOX_DESKTOP -> KernelFlavorProfile(
+                flavor = flavor,
+                userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:${UserAgentVersions.FIREFOX}.0) Gecko/20100101 Firefox/${UserAgentVersions.FIREFOX}.0",
+                vendor = "",
+                hasWindowChrome = false,
+                supportsClientHints = false,
+                brands = emptyList(),
+                mobile = false,
+                platform = "Windows",
+                platformVersion = "10.0.0",
+                fullVersion = "",
+                architecture = "",
+                bitness = "64",
+                model = ""
+            )
+
+            KernelFlavor.WEBKIT_SAFARI_DESKTOP -> KernelFlavorProfile(
+                flavor = flavor,
+                userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${UserAgentVersions.SAFARI}.0 Safari/605.1.15",
+                vendor = "Apple Computer, Inc.",
+                hasWindowChrome = false,
+                supportsClientHints = false,
+                brands = emptyList(),
+                mobile = false,
+                platform = "macOS",
+                platformVersion = "15.0.0",
+                fullVersion = "",
+                architecture = "",
+                bitness = "64",
+                model = ""
             )
         }
     }

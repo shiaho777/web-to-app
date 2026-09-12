@@ -263,7 +263,31 @@ enum class UserAgentMode(
         "Custom",
         "Use custom User-Agent string",
         null
-    )
+    );
+
+    /**
+     * Maps a legacy UA-mode selection onto the equivalent [KernelFlavor].
+     *
+     * UA mode and kernel flavor used to be two independent settings that both fed the request
+     * User-Agent: the mode chose the string, the flavor chose the client-hint metadata. Setting
+     * them inconsistently produced a UA that contradicted `Sec-CH-UA`, which anti-bot systems
+     * read as a spoofing tell. Kernel flavor is now the single identity selector; persisted mode
+     * values are migrated through this mapping so existing apps keep their disguise.
+     *
+     * [CUSTOM] maps to [KernelFlavor.SYSTEM_DEFAULT] because a custom UA string is applied
+     * separately, with metadata derived from the string itself.
+     */
+    fun toKernelFlavor(): com.webtoapp.core.kernel.KernelFlavor = when (this) {
+        DEFAULT, CUSTOM -> com.webtoapp.core.kernel.KernelFlavor.SYSTEM_DEFAULT
+        CHROME_MOBILE -> com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME
+        CHROME_DESKTOP -> com.webtoapp.core.kernel.KernelFlavor.BLINK_CHROME_DESKTOP
+        SAFARI_MOBILE -> com.webtoapp.core.kernel.KernelFlavor.WEBKIT_SAFARI
+        SAFARI_DESKTOP -> com.webtoapp.core.kernel.KernelFlavor.WEBKIT_SAFARI_DESKTOP
+        FIREFOX_MOBILE -> com.webtoapp.core.kernel.KernelFlavor.GECKO_FIREFOX
+        FIREFOX_DESKTOP -> com.webtoapp.core.kernel.KernelFlavor.GECKO_FIREFOX_DESKTOP
+        EDGE_MOBILE -> com.webtoapp.core.kernel.KernelFlavor.BLINK_EDGE
+        EDGE_DESKTOP -> com.webtoapp.core.kernel.KernelFlavor.BLINK_EDGE_DESKTOP
+    }
 }
 
 object UserAgentVersions {
