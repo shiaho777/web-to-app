@@ -57,8 +57,12 @@ fun ShellActivationDialog(
                     config.activationCodes
                 )
             }
-            if (result is ActivationResult.Success) {
-                onActivated(result.url)
+            // AlreadyActivated counts too: re-entering the card that already backs
+            // the grant must still let the user in, not trap them on the dialog.
+            when (result) {
+                is ActivationResult.Success -> onActivated(result.url)
+                is ActivationResult.AlreadyActivated -> onActivated(null)
+                else -> {}
             }
             result
         },

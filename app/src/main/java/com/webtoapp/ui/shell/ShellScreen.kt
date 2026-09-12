@@ -24,7 +24,6 @@ import com.webtoapp.core.webview.LongPressHandler
 import com.webtoapp.data.model.Announcement
 import com.webtoapp.util.TvUtils
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -174,38 +173,43 @@ fun ShellScreen(
 
         if (config.activationEnabled) {
 
-            if (config.activationRequireEveryTime) {
-                activation.resetActivation(-1L)
-                isActivated = false
-                isActivationChecked = true
-                showActivationDialog = true
+            // One gate for both modes: remote re-verifies the remembered code
+            // (always when "every launch" is on, otherwise only when the cached
+            // result can't carry this launch); local codes re-check the remembered
+            // card against the configured list under "every launch", or just the
+            // persisted grant otherwise. The dialog only shows when this fails.
+            val activated = if (config.activationRemoteEnabled) {
+                activation.resolveRemoteStartup(
+                    -1L,
+                    activation.buildRemoteRequest(
+                        verifyUrl = config.activationRemoteVerifyUrl,
+                        publicKeyBase64 = config.activationRemotePublicKey,
+                        offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy),
+                        deliverUrl = config.activationRemoteDeliverUrl,
+                        encryptUrl = config.activationRemoteEncryptUrl,
+                        aesKeyBase64 = config.activationRemoteAesKey,
+                        deviceBound = config.activationRemoteDeviceBound
+                    ),
+                    reverifyEveryLaunch = config.activationRequireEveryTime
+                )
+            } else if (config.activationRequireEveryTime) {
+                activation.resolveRelaunchActivation(
+                    -1L,
+                    config.activationCodes.map { raw ->
+                        com.webtoapp.core.activation.ActivationCode.fromJson(raw)
+                            ?: com.webtoapp.core.activation.ActivationCode.fromLegacyString(raw)
+                    }
+                )
             } else {
-
-                val activated = if (config.activationRemoteEnabled) {
-                    activation.isActivated(-1L).first() &&
-                        activation.isRemoteStartupAllowed(
-                            -1L,
-                            activation.buildRemoteRequest(
-                                verifyUrl = config.activationRemoteVerifyUrl,
-                                publicKeyBase64 = config.activationRemotePublicKey,
-                                offlinePolicy = parseOfflinePolicy(config.activationRemoteOfflinePolicy),
-                                deliverUrl = config.activationRemoteDeliverUrl,
-                                encryptUrl = config.activationRemoteEncryptUrl,
-                                aesKeyBase64 = config.activationRemoteAesKey,
-                                deviceBound = config.activationRemoteDeviceBound
-                            )
-                        )
-                } else {
-                    activation.resolveStartupActivation(-1L)
-                }
-                isActivated = activated
-                isActivationChecked = true
-                if (activated && config.activationRemoteEnabled && config.activationRemoteDeliverUrl) {
-                    dynamicUrl = activation.getCachedRemoteUrl(-1L)
-                }
-                if (!activated) {
-                    showActivationDialog = true
-                }
+                activation.resolveStartupActivation(-1L)
+            }
+            isActivated = activated
+            isActivationChecked = true
+            if (activated && config.activationRemoteEnabled && config.activationRemoteDeliverUrl) {
+                dynamicUrl = activation.getCachedRemoteUrl(-1L)
+            }
+            if (!activated) {
+                showActivationDialog = true
             }
         }
 

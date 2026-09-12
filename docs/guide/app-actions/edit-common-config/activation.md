@@ -8,7 +8,7 @@ Gate the generated app behind activation codes, so it runs only after a valid co
 
 - **Enable** — turn activation gating on (`activationEnabled`).
 - **Activation codes** — the list of valid codes (`activationCodeList`).
-- **Require every time** — ask for the code on every launch, not just the first (`activationRequireEveryTime`).
+- **Require every time** — re-verify the activation on every launch instead of trusting it once (`activationRequireEveryTime`). The remembered card is re-validated silently: local codes must still be listed in the config (removing a card revokes it), remote codes are re-checked against your server. The user is only asked to re-enter a code when the remembered one fails (expired, exhausted, revoked, or rejected).
 - **Dialog config** — customize the activation dialog (title, subtitle, input label, button text).
 - **Remote activation** — verify against your own HTTPS endpoint signed with EC P-256, with an offline policy (`activationRemoteConfig`).
 - **Device binding (one-time codes)** — remote-verification only (`activationRemoteConfig.deviceBound`). The verification request carries a device identifier and the server enforces per-code seats: each code is limited to 1 device by default (first device to activate claims the seat), so a code behaves as a one-time / single-device code. Other devices are rejected with the server's message. The claimed seat survives uninstall + reinstall on the same device. Requires a verification server that enforces binding — the [reference worker](https://github.com/shiaho777/web-to-app/blob/main/examples/remote-activation-worker/README.md) does this out of the box via `maxDevices`.
