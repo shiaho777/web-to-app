@@ -12,7 +12,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Request
 import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 import java.security.MessageDigest
+import java.util.concurrent.TimeUnit
 
 /**
  * States emitted by [download]. The UI renders a deterministic view per state.
@@ -37,6 +40,25 @@ object ApkUpdateInstaller {
 
     /** Directory under app-private external storage that the file manager scans. */
     const val UPDATE_APK_DIR = "update_apks"
+
+    /**
+     * Route quality floor: a mirror that sustains less than
+     * [MIN_ROUTE_SPEED_BPS] for [STALL_GRACE_MS] (after a [ROUTE_WARMUP_MS]
+     * ramp-up grace) is abandoned and the next candidate resumes the file via
+     * HTTP Range. The probe only measures TTFB — a mirror can handshake fast
+     * and then trickle — so the floor is what keeps a slow route from crawling
+     * a 36MB APK to completion. The final candidate is exempt: when nothing
+     * faster exists, a slow finish beats an outright failure.
+     */
+    private const val MIN_ROUTE_SPEED_BPS = 64L * 1024
+    private const val STALL_GRACE_MS = 10_000L
+    private const val ROUTE_WARMUP_MS = 8_000L
+
+    /** A fully hung socket (zero bytes) still dies on this read timeout. */
+    private const val ROUTE_READ_TIMEOUT_MS = 30_000L
+
+    private class RouteStallException(val speedBps: Long) :
+        IOException("route too slow (${speedBps / 1024} KB/s)")
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -83,10 +105,13 @@ object ApkUpdateInstaller {
             // attempt instead of breaking.
             val candidates = com.webtoapp.core.network.GitHubMirror.proxiedCn(url)
             var lastError: Exception? = null
-            for (candidate in candidates) {
+            candidates.forEachIndexed { index, candidate ->
+                // The final fallback route is exempt from the speed floor:
+                // when nothing faster exists, a slow finish beats a failure.
+                val enforceSpeedFloor = index < candidates.lastIndex
                 try {
                     onState(UpdateDownloadState.Downloading(0L, -1L, 0L))
-                    val file = streamToFile(appContext, candidate, version, onState)
+                    val file = streamToFile(appContext, candidate, version, enforceSpeedFloor, onState)
                     if (expectedSha256 != null) {
                         onState(UpdateDownloadState.Verifying)
                         val actual = sha256Of(file)
@@ -98,10 +123,12 @@ object ApkUpdateInstaller {
                             )
                             // A mismatch here means the route served something
                             // other than the release asset; treat it like any
-                            // other broken mirror and try the next route.
+                            // other broken mirror and try the next route. The
+                            // file is deleted so the next route restarts clean —
+                            // resuming bytes that failed integrity is unsafe.
                             file.delete()
                             lastError = IllegalStateException("sha256-mismatch")
-                            continue
+                            return@forEachIndexed
                         }
                         AppLogger.i(TAG, "APK integrity verified (sha256 match)")
                     }
@@ -129,33 +156,65 @@ object ApkUpdateInstaller {
         activeJob = null
     }
 
+    /**
+     * Streams one route into the target file. When a previous route left a partial
+     * file, the transfer resumes via `Range: bytes=<existing>-` — a 206 appends,
+     * a 200 (Range ignored) restarts from zero. [enforceSpeedFloor] is on for
+     * every route except the last fallback, which is allowed to crawl to the end.
+     */
     private suspend fun streamToFile(
         context: android.content.Context,
         url: String,
         version: String,
+        enforceSpeedFloor: Boolean,
         onState: (UpdateDownloadState) -> Unit
     ): File {
         val dir = targetDir(context)
         val fileName = "web-to-app-$version.apk"
-        // Wipe stale copies of the same name so a partial previous download never resumes silently.
-        File(dir, fileName).takeIf { it.exists() }?.delete()
         val target = File(dir, fileName)
 
-        val response = NetworkModule.downloadClient.newCall(Request.Builder().url(url).build()).execute()
+        // Per-route client: a tighter read timeout than the shared download
+        // client so a dead mid-stream socket fails in 30s, not 120s.
+        val client = NetworkModule.downloadClient.newBuilder()
+            .readTimeout(ROUTE_READ_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            .build()
+
+        fun openStream(offset: Long) = client.newCall(
+            Request.Builder().url(url).apply {
+                if (offset > 0) header("Range", "bytes=$offset-")
+            }.build()
+        ).execute()
+
+        var resumeFrom = target.takeIf { it.exists() }?.length() ?: 0L
+        var response = openStream(resumeFrom)
+        if (response.code == 416 && resumeFrom > 0) {
+            // Range not satisfiable: the partial is already at/past the asset
+            // size — either complete or corrupt. Drop it and refetch cleanly.
+            response.close()
+            target.delete()
+            resumeFrom = 0L
+            response = openStream(0L)
+        }
         if (!response.isSuccessful) {
             response.close()
             throw IllegalStateException("HTTP ${response.code}")
         }
         val body = response.body ?: throw IllegalStateException("empty response body")
-        val total = body.contentLength()
+        // 206 honours the Range; anything else (200) restarts the file.
+        val appending = resumeFrom > 0 && response.code == 206
+        val offset = if (appending) resumeFrom else 0L
+        val contentLength = body.contentLength()
+        val total = if (contentLength > 0) offset + contentLength else -1L
 
         body.byteStream().use { input ->
-            target.outputStream().buffered().use { output ->
+            FileOutputStream(target, appending).buffered().use { output ->
                 val buffer = ByteArray(64 * 1024)
-                var downloaded = 0L
-                var windowStartBytes = 0L
+                var downloaded = offset
+                var windowStartBytes = offset
                 var windowStartTime = System.currentTimeMillis()
+                val transferStart = windowStartTime
                 var lastEmit = 0L
+                var lowSpeedSince = 0L
                 while (true) {
                     // ensureActive so cancel() propagates promptly.
                     kotlinx.coroutines.coroutineScope { ensureActive() }
@@ -175,6 +234,17 @@ object ApkUpdateInstaller {
                         // reset sampling window so speed reflects the recent second, not whole run.
                         windowStartBytes = downloaded
                         windowStartTime = now
+
+                        if (enforceSpeedFloor && now - transferStart > ROUTE_WARMUP_MS) {
+                            if (speed < MIN_ROUTE_SPEED_BPS) {
+                                if (lowSpeedSince == 0L) lowSpeedSince = now
+                                if (now - lowSpeedSince >= STALL_GRACE_MS) {
+                                    throw RouteStallException(speed)
+                                }
+                            } else {
+                                lowSpeedSince = 0L
+                            }
+                        }
                     }
                 }
                 output.flush()

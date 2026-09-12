@@ -16,6 +16,12 @@ class RuntimeWarmupStartup(
             // crashed the app (issue #356). Filters are loaded lazily on first actual use
             // (preview/runtime via AdBlocker.loadHostsRules / prepareRuntimeFilters).
         }
+        // Warm the GitHub mirror probe so the first update check / module-market
+        // load / runtime download reads a hot cache instead of paying the probe
+        // round up front. Costs a few KB total (one ranged request per channel).
+        appScope.launch {
+            runCatching { com.webtoapp.core.network.CnMirrorProbe.probe() }
+        }
     }
 
     fun shutdown() {
