@@ -70,4 +70,21 @@ class ShellWebViewNavigationTest {
             )
         ).isFalse()
     }
+
+    @Test
+    fun `js back transport does not string-compare the eval result`() {
+        // Regression: the JS path used to return 'back'/'none' and compare the raw
+        // evaluateJavascript result to "back" — but evaluateJavascript JSON-encodes
+        // string results ("\"back\""), so the check never matched. history.back()
+        // had already executed, then goBackNative fired too — same-document (#)
+        // sites committed instantly and the stale list read as canGoBack=false →
+        // the Activity finished instead of stepping back.
+        val src = java.io.File("src/main/java/com/webtoapp/ui/shell/ShellWebViewNavigation.kt")
+            .takeIf { it.isFile }
+            ?: java.io.File("app/src/main/java/com/webtoapp/ui/shell/ShellWebViewNavigation.kt")
+        val body = src.readText()
+        assertThat(body).contains("resolveBackActionFor")
+        assertThat(body).doesNotContain("\"back\" == result")
+        assertThat(body).doesNotContain("return 'back'")
+    }
 }

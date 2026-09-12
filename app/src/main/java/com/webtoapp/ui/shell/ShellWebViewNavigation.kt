@@ -52,28 +52,29 @@ object ShellWebViewNavigation {
     }
 
     private fun goBackViaJsHistoryBack(activity: AppCompatActivity, webView: WebView) {
-        // Prefer JS history.back() over the native WebView.goBack(): the JS
-        // route runs through the page's own popstate/pageshow handlers and is
-        // more likely to restore the previous DOM via bfcache instead of doing
-        // a fresh load. If the page has nowhere to go back to, fall back to the
-        // native resolver (which will finish the activity when at the bottom of
-        // the history stack).
-        val js = """(function(){
-            try {
-                if (history.length > 1 && window.location.href !== 'about:blank') {
-                    history.back();
-                    return 'back';
-                }
-            } catch (e) {}
-            return 'none';
-        })();""".trimIndent()
-        webView.evaluateJavascript(js) { result ->
-            if ("back" == result) return@evaluateJavascript
-            goBackNative(activity, webView)
+        // Decide with the native back-forward list and pick the transport
+        // afterwards. history.back() and WebView.goBack() walk the SAME joint
+        // session history, so the native list is authoritative for whether a
+        // previous entry exists — while JS-side history.length also counts
+        // forward entries and cannot tell. GO_BACK goes through history.back()
+        // so the page's own popstate/pageshow handlers run and bfcache can
+        // restore the previous DOM instead of doing a fresh load.
+        when (resolveBackActionFor(webView)) {
+            BackAction.FINISH -> activity.finish()
+            BackAction.GO_BACK -> webView.evaluateJavascript("history.back();", null)
+            BackAction.SKIP_PREVIOUS -> webView.goBackOrForward(-2)
         }
     }
 
     private fun goBackNative(activity: AppCompatActivity, wv: WebView) {
+        when (resolveBackActionFor(wv)) {
+            BackAction.FINISH -> activity.finish()
+            BackAction.GO_BACK -> wv.goBack()
+            BackAction.SKIP_PREVIOUS -> wv.goBackOrForward(-2)
+        }
+    }
+
+    private fun resolveBackActionFor(wv: WebView): BackAction {
         val list = wv.copyBackForwardList()
         val currentIndex = list.currentIndex
         val currentItem = list.getItemAtIndex(currentIndex)
@@ -94,11 +95,7 @@ object ShellWebViewNavigation {
             beforePreviousItem?.originalUrl.orEmpty()
         )
 
-        when (resolveBackAction(wv.canGoBack(), currentIndex, currentUrls, previousUrls, beforePreviousUrls)) {
-            BackAction.FINISH -> activity.finish()
-            BackAction.GO_BACK -> wv.goBack()
-            BackAction.SKIP_PREVIOUS -> wv.goBackOrForward(-2)
-        }
+        return resolveBackAction(wv.canGoBack(), currentIndex, currentUrls, previousUrls, beforePreviousUrls)
     }
 
     internal fun shouldFinishInsteadOfBack(currentUrl: String, previousUrl: String): Boolean {
