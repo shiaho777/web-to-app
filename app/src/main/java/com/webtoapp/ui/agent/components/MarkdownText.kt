@@ -37,7 +37,8 @@ import androidx.compose.ui.unit.sp
 fun MarkdownText(
     text: String,
     color: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    caretAlpha: Float? = null
 ) {
     val blocks = remember(text) { parseMarkdownBlocks(text) }
     val codeBg = MaterialTheme.colorScheme.surfaceVariant
@@ -55,12 +56,20 @@ fun MarkdownText(
                     codeBg = codeBg,
                     codeFg = codeFg,
                     linkColor = linkColor,
-                    quoteBar = quoteBar
+                    quoteBar = quoteBar,
+                    caretAlpha = caretAlpha?.takeIf { index == blocks.lastIndex }
                 )
             }
         }
     }
 }
+
+/** Streaming caret appended to the last text block; alpha drives the blink. */
+private fun caretAnnotated(alpha: Float?, color: Color): AnnotatedString =
+    if (alpha == null) AnnotatedString("")
+    else buildAnnotatedString {
+        withStyle(SpanStyle(color = color.copy(alpha = alpha))) { append("▋") }
+    }
 
 private fun blockGap(block: MdBlock): androidx.compose.ui.unit.Dp = when (block) {
     is MdBlock.ListItem -> 2.dp
@@ -74,7 +83,8 @@ private fun RenderBlock(
     codeBg: Color,
     codeFg: Color,
     linkColor: Color,
-    quoteBar: Color
+    quoteBar: Color,
+    caretAlpha: Float? = null
 ) {
     when (block) {
         is MdBlock.Heading -> {
@@ -85,7 +95,8 @@ private fun RenderBlock(
                 else -> MaterialTheme.typography.bodyLarge
             }
             androidx.compose.material3.Text(
-                text = inlineAnnotated(block.text, codeBg, codeFg, linkColor),
+                text = inlineAnnotated(block.text, codeBg, codeFg, linkColor) +
+                    caretAnnotated(caretAlpha, color),
                 style = style,
                 fontWeight = FontWeight.Bold,
                 color = color,
@@ -95,7 +106,8 @@ private fun RenderBlock(
 
         is MdBlock.Paragraph -> {
             androidx.compose.material3.Text(
-                text = inlineAnnotated(block.text, codeBg, codeFg, linkColor),
+                text = inlineAnnotated(block.text, codeBg, codeFg, linkColor) +
+                    caretAnnotated(caretAlpha, color),
                 style = MaterialTheme.typography.bodyMedium,
                 color = color,
                 modifier = Modifier.fillMaxWidth()
@@ -112,7 +124,8 @@ private fun RenderBlock(
                 )
                 Spacer(Modifier.width(6.dp))
                 androidx.compose.material3.Text(
-                    text = inlineAnnotated(block.text, codeBg, codeFg, linkColor),
+                    text = inlineAnnotated(block.text, codeBg, codeFg, linkColor) +
+                        caretAnnotated(caretAlpha, color),
                     style = MaterialTheme.typography.bodyMedium,
                     color = color,
                     modifier = Modifier.fillMaxWidth()
@@ -134,7 +147,8 @@ private fun RenderBlock(
                 )
                 Spacer(Modifier.width(8.dp))
                 androidx.compose.material3.Text(
-                    text = inlineAnnotated(block.text, codeBg, codeFg, linkColor),
+                    text = inlineAnnotated(block.text, codeBg, codeFg, linkColor) +
+                        caretAnnotated(caretAlpha, color),
                     style = MaterialTheme.typography.bodyMedium,
                     fontStyle = FontStyle.Italic,
                     color = color.copy(alpha = 0.85f),

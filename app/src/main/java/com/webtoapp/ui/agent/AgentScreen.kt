@@ -651,21 +651,29 @@ private fun Conversation(
             verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
         ) {
             items(messages, key = { it.id }) { msg ->
-                MessageBubble(message = msg, actions = actions)
+                MessageBubble(
+                    message = msg,
+                    actions = actions,
+                    modifier = Modifier.animateItem()
+                )
             }
             if (state.todos.isNotEmpty()) {
                 item(key = "todos") {
-                    TodoChecklist(state.todos)
+                    Box(Modifier.animateItem()) {
+                        TodoChecklist(state.todos)
+                    }
                 }
             }
             if (state.isWorking) {
                 item(key = "streaming") {
-                    StreamingBubble(
-                        text = state.streamingText,
-                        thinkingSegments = state.streamingThinkingSegments,
-                        pendingTools = state.pendingToolCalls,
-                        activity = state.currentActivity
-                    )
+                    Box(Modifier.animateItem()) {
+                        StreamingBubble(
+                            text = state.streamingText,
+                            thinkingSegments = state.streamingThinkingSegments,
+                            pendingTools = state.pendingToolCalls,
+                            activity = state.currentActivity
+                        )
+                    }
                 }
             }
         }

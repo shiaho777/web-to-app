@@ -1,6 +1,13 @@
 package com.webtoapp.ui.agent.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -26,6 +33,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -67,6 +75,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
@@ -319,10 +328,18 @@ fun ThinkingBlock(
         if (!isLive) expanded = false
         else expanded = true
     }
+    // Live thinking blocks materialize with a small fade+rise; settled ones stay static.
+    var appeared by remember(content.hashCode()) { mutableStateOf(!isLive) }
+    LaunchedEffect(Unit) { appeared = true }
+    val appearAlpha by animateFloatAsState(if (appeared) 1f else 0f, tween(220), label = "appear-alpha")
+    val appearDy by animateDpAsState(if (appeared) 0.dp else 8.dp, tween(220), label = "appear-dy")
     WtaCard(
         tone = WtaCardTone.Elevated,
         contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-        modifier = modifier
+        modifier = modifier.graphicsLayer {
+            alpha = appearAlpha
+            translationY = appearDy.toPx()
+        }
     ) {
         Row(
             modifier = Modifier
@@ -437,17 +454,40 @@ fun StreamingBubble(
                     onSurface = MaterialTheme.colorScheme.onSurface,
                     liveTrailing = true
                 )
+                // Between a finished tool call and the next streamed chunk nothing
+                // else says "still working" — keep the typing cue alive in that gap.
+                // Suppressed while prose is live-trailing (the caret covers it) or
+                // a live thinking block is showing its own spinner.
+                val toolSettled = pendingTools.isNotEmpty() &&
+                    pendingTools.none { it.resultPreview == RecordedToolCall.RUNNING_SENTINEL }
+                val thinkingLive = thinkingSegments.any { it.frozenDurationMs == null }
+                val tail = text.trimEnd()
+                val tailIsMarker = tail.isEmpty() || tail.last() == '\u2063'
+                AnimatedVisibility(
+                    visible = toolSettled && !thinkingLive && tailIsMarker,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(top = WtaSpacing.Tiny + 2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TypingDots(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(WtaSpacing.Small + 2.dp))
+                        Text(
+                            text = activity ?: Strings.agentPhaseThinking,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
             if (text.isBlank() && pendingTools.isEmpty() && thinkingSegments.isEmpty()) {
                 Row(
                     modifier = Modifier.padding(vertical = WtaSpacing.Tiny),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(14.dp),
-                        strokeWidth = 1.6.dp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    TypingDots(color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(WtaSpacing.Small + 2.dp))
                     Text(
                         text = activity ?: Strings.agentPhaseThinking,
@@ -456,6 +496,40 @@ fun StreamingBubble(
                     )
                 }
             }
+        }
+    }
+}
+
+/** Three staggered pulsing dots — the classic "typing" cue for the connecting state. */
+@Composable
+private fun TypingDots(color: Color, modifier: Modifier = Modifier) {
+    val transition = rememberInfiniteTransition(label = "typing-dots")
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(3) { i ->
+            val alpha by transition.animateFloat(
+                initialValue = 0.25f,
+                targetValue = 1f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(durationMillis = 600, delayMillis = i * 160),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "dot-$i"
+            )
+            Box(
+                modifier = Modifier
+                    .size(5.dp)
+                    .graphicsLayer {
+                        this.alpha = alpha
+                        val s = 0.85f + alpha * 0.3f
+                        scaleX = s
+                        scaleY = s
+                    }
+                    .background(color, CircleShape)
+            )
         }
     }
 }
@@ -656,11 +730,19 @@ fun ToolCallCard(tc: RecordedToolCall, live: Boolean) {
     }
     var showFullResult by remember(tc.toolCallId) { mutableStateOf(false) }
 
+    // Live cards materialize with a small fade+rise; history rows stay static.
+    var appeared by remember(tc.toolCallId) { mutableStateOf(!live) }
+    LaunchedEffect(Unit) { appeared = true }
+    val appearAlpha by animateFloatAsState(if (appeared) 1f else 0f, tween(220), label = "appear-alpha")
+    val appearDy by animateDpAsState(if (appeared) 0.dp else 8.dp, tween(220), label = "appear-dy")
+
     Surface(
         color = if (!tc.ok && !running) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.25f)
                 else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
         shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { alpha = appearAlpha; translationY = appearDy.toPx() }
     ) {
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
             // Status stripe, stretching with the card (header + expanded body).

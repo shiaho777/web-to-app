@@ -1,5 +1,10 @@
 package com.webtoapp.ui.agent.components
 
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Box
@@ -26,8 +31,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.webtoapp.core.i18n.Strings
@@ -79,6 +87,20 @@ fun RichAssistantText(
     modifier: Modifier = Modifier
 ) {
     val segments = remember(text) { parseTextSegments(text) }
+    // Breathing caret while streaming — a static ▋ reads as frozen, a pulsing
+    // one reads as "still writing".
+    val caretAlpha = if (streamingCaret) {
+        val transition = rememberInfiniteTransition(label = "stream-caret")
+        transition.animateFloat(
+            initialValue = 0.15f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 550),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "caret-alpha"
+        ).value
+    } else 1f
     Column(modifier = modifier.fillMaxWidth()) {
         segments.forEachIndexed { idx, seg ->
             val isLast = idx == segments.lastIndex
@@ -87,15 +109,15 @@ fun RichAssistantText(
                 CodeBlock(
                     code = seg.text.trimEnd('\n'),
                     language = seg.language,
-                    showCaret = streamingCaret && isLast
+                    showCaret = streamingCaret && isLast,
+                    caretAlpha = caretAlpha
                 )
                 Spacer(Modifier.size(WtaSpacing.Tiny))
             } else if (seg.text.isNotEmpty()) {
-
-                val display = if (streamingCaret && isLast) seg.text + "▋" else seg.text
                 MarkdownText(
-                    text = display,
-                    color = onSurface
+                    text = seg.text,
+                    color = onSurface,
+                    caretAlpha = if (streamingCaret && isLast) caretAlpha else null
                 )
             }
         }
@@ -108,6 +130,7 @@ fun CodeBlock(
     code: String,
     language: String?,
     showCaret: Boolean = false,
+    caretAlpha: Float = 1f,
     maxHeightDp: Int = 320
 ) {
     val clipboard = LocalClipboardManager.current
@@ -171,7 +194,14 @@ fun CodeBlock(
                         )
                     } else {
                         Text(
-                            text = if (showCaret) "$code▋" else code,
+                            text = if (showCaret) buildAnnotatedString {
+                                append(code)
+                                withStyle(
+                                    SpanStyle(
+                                        color = AppColors.CodeForeground.copy(alpha = caretAlpha)
+                                    )
+                                ) { append("▋") }
+                            } else AnnotatedString(code),
                             style = MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = FontFamily.Monospace,
                                 fontSize = 12.sp,
