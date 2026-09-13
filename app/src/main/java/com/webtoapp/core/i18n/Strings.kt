@@ -2886,6 +2886,8 @@ object Strings {
     val categoryNamePlaceholder: String get() = StringsD.categoryNamePlaceholder
     val categoryIcon: String get() = StringsD.categoryIcon
     val moveToCategory: String get() = StringsD.moveToCategory
+    val manageCategories: String get() = StringsD.manageCategories
+    val categoriesEmptyHint: String get() = StringsD.categoriesEmptyHint
     val clearAppCacheMenu: String get() = StringsD.clearAppCacheMenu
     val clearAppCacheTitle: String get() = StringsD.clearAppCacheTitle
     val clearAppCacheConfirm: String get() = StringsD.clearAppCacheConfirm
@@ -41323,6 +41325,32 @@ object StringsD {
         AppLanguage.RUSSIAN -> "Удалить эту категорию? Приложения в ней станут без категории."
         AppLanguage.JAPANESE -> "このカテゴリを削除しますか？このカテゴリのアプリは未分類になります。"
         AppLanguage.KOREAN -> "이 카테고리를 삭제하시겠습니까? 이 카테고리의 앱은 미분류로 변경됩니다."
+    }
+
+    val manageCategories: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "管理分类"
+        AppLanguage.ENGLISH -> "Manage Categories"
+        AppLanguage.ARABIC -> "إدارة التصنيفات"
+        AppLanguage.PORTUGUESE -> "Gerenciar Categorias"
+        AppLanguage.SPANISH -> "Gestionar Categorías"
+        AppLanguage.FRENCH -> "Gérer les Catégories"
+        AppLanguage.GERMAN -> "Kategorien verwalten"
+        AppLanguage.RUSSIAN -> "Управление категориями"
+        AppLanguage.JAPANESE -> "カテゴリを管理"
+        AppLanguage.KOREAN -> "카테고리 관리"
+    }
+
+    val categoriesEmptyHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "还没有分类，点「添加分类」创建一个"
+        AppLanguage.ENGLISH -> "No categories yet — tap \"Add Category\" to create one"
+        AppLanguage.ARABIC -> "لا توجد تصنيفات بعد — اضغط \"إضافة تصنيف\" لإنشاء واحد"
+        AppLanguage.PORTUGUESE -> "Ainda não há categorias — toque em \"Adicionar Categoria\" para criar uma"
+        AppLanguage.SPANISH -> "Aún no hay categorías — toca \"Añadir Categoría\" para crear una"
+        AppLanguage.FRENCH -> "Aucune catégorie pour l'instant — touchez « Ajouter une Catégorie » pour en créer une"
+        AppLanguage.GERMAN -> "Noch keine Kategorien — tippe auf „Kategorie hinzufügen“, um eine zu erstellen"
+        AppLanguage.RUSSIAN -> "Категорий пока нет — нажмите «Добавить категорию», чтобы создать"
+        AppLanguage.JAPANESE -> "カテゴリはまだありません —「カテゴリを追加」で作成できます"
+        AppLanguage.KOREAN -> "아직 카테고리가 없습니다 — \"카테고리 추가\"를 눌러 만드세요"
     }
 
     val randomNameTooltip: String get() = when (Strings.lang) {
