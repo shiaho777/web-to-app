@@ -411,10 +411,11 @@ private fun SavedModelsSection(
                 val apiKeyMap = apiKeys.associateBy { it.id }
 
                 models.forEach { model ->
-                    val apiKeyName = apiKeyMap[model.apiKeyId]?.displayName
+                    val apiKey = apiKeyMap[model.apiKeyId]
                     SavedModelItem(
                         model = model,
-                        apiKeyName = apiKeyName,
+                        apiKey = apiKey,
+                        apiKeyName = apiKey?.displayName,
                         onEdit = { onEditClick(model) },
                         onDelete = { onDeleteClick(model) },
                         onSetDefault = { onSetDefaultClick(model) }
@@ -428,12 +429,19 @@ private fun SavedModelsSection(
 @Composable
 private fun SavedModelItem(
     model: SavedModel,
+    apiKey: ApiKeyConfig? = null,
     apiKeyName: String? = null,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onSetDefault: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var isTesting by remember { mutableStateOf(false) }
+    var testOk by remember { mutableStateOf<Boolean?>(null) }
+    var testResult by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val apiClient = remember { AiApiClient(context) }
 
     val isDark = com.webtoapp.ui.theme.LocalIsDarkTheme.current
     Surface(
@@ -481,6 +489,44 @@ private fun SavedModelItem(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    testResult?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (testOk == true) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            isTesting = true
+                            testOk = null
+                            testResult = null
+                            if (apiKey == null) {
+                                testOk = false
+                                testResult = Strings.agentMissingApiKey
+                            } else {
+                                val result = apiClient.testModel(apiKey, model.model)
+                                testOk = result.isSuccess
+                                testResult = if (result.isSuccess) Strings.connectionSuccess
+                                    else Strings.connectionFailed.format(result.exceptionOrNull()?.message ?: "")
+                            }
+                            isTesting = false
+                        }
+                    },
+                    enabled = !isTesting
+                ) {
+                    if (isTesting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    Text(Strings.test)
                 }
 
                 Box {

@@ -18,6 +18,7 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 class AiApiClient(private val context: Context) {
 
@@ -116,6 +117,31 @@ class AiApiClient(private val context: Context) {
             }
         } catch (e: Exception) {
             AppLogger.e("AiApiClient", "API connection test EXCEPTION: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    // Per-model probe: one real chat request against the saved model id.
+    // Unlike testConnection (models endpoint only), this also catches wrong
+    // model ids, missing access, and provider-side model outages.
+    suspend fun testModel(apiKey: ApiKeyConfig, model: AiModel): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val baseUrl = when {
+                !apiKey.baseUrl.isNullOrBlank() -> apiKey.baseUrl.trimEnd('/')
+                apiKey.provider.baseUrl.isNotBlank() -> apiKey.provider.baseUrl.trimEnd('/')
+                else -> return@withContext Result.failure(Exception(Strings.aiApiNotConfiguredDetail))
+            }
+            val probe = listOf(mapOf("role" to "user", "content" to "Hi"))
+            AppLogger.i("AiApiClient", "Testing model: provider=${apiKey.provider.name}, model=${model.id}")
+            when (apiKey.provider) {
+                AiProvider.GOOGLE -> chatWithGemini(baseUrl, apiKey.apiKey, model.id, probe, 0.7f)
+                AiProvider.ANTHROPIC -> chatWithAnthropic(baseUrl, apiKey.apiKey, model.id, probe, 0.7f)
+                AiProvider.GLM -> chatWithGLM(baseUrl, apiKey.apiKey, model.id, probe, 0.7f)
+                AiProvider.OLLAMA -> chatWithOllama(baseUrl, apiKey.apiKey, model.id, probe, 0.7f)
+                else -> probeOpenAICompatible(baseUrl, apiKey, model.id, probe)
+            }
+        } catch (e: Exception) {
+            AppLogger.e("AiApiClient", "Model test EXCEPTION: ${e.message}", e)
             Result.failure(e)
         }
     }
@@ -1005,6 +1031,48 @@ class AiApiClient(private val context: Context) {
             parseOpenAIChatResponse(response.body?.string() ?: "")
         } else {
             Result.failure(Exception(Strings.aiRequestFailed.format(response.code, response.body?.string())))
+        }
+    }
+
+    // Minimal chat probe for the model test: no temperature/max_tokens, because
+    // reasoning models (o1, gpt-5, …) reject those fields and would fail the
+    // test even though the model is reachable. Honors customChatEndpoint, which
+    // chatWithOpenAICompatible does not.
+    private fun probeOpenAICompatible(
+        baseUrl: String,
+        apiKey: ApiKeyConfig,
+        modelId: String,
+        messages: List<Map<String, String>>
+    ): Result<String> {
+        val messagesArray = com.google.gson.JsonArray()
+        messages.forEach { msg ->
+            messagesArray.add(JsonObject().apply {
+                addProperty("role", msg["role"])
+                addProperty("content", msg["content"])
+            })
+        }
+
+        val body = JsonObject().apply {
+            addProperty("model", modelId)
+            add("messages", messagesArray)
+        }
+
+        val request = Request.Builder()
+            .url(buildApiUrl(baseUrl, apiKey.getEffectiveChatEndpoint()))
+            .header("Authorization", "Bearer ${apiKey.apiKey.sanitize()}")
+            .header("Content-Type", "application/json")
+            .post(gson.toJson(body).toRequestBody("application/json".toMediaType()))
+            .build()
+
+        // Cap the wait: streamingClient's 10-minute read timeout is a bad fit
+        // for a manual connectivity probe.
+        val probeClient = client.newBuilder().callTimeout(45, TimeUnit.SECONDS).build()
+        val response = probeClient.newCall(request).execute()
+        val responseBody = response.body?.string() ?: ""
+        return if (response.isSuccessful) {
+            parseOpenAIChatResponse(responseBody)
+        } else {
+            Result.failure(Exception(Strings.aiRequestFailed.format(response.code, responseBody)))
         }
     }
 
