@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -21,12 +22,14 @@ import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.automirrored.outlined.Sort
 import androidx.compose.material.icons.outlined.Android
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CheckBox
 import androidx.compose.material.icons.outlined.CheckBoxOutlineBlank
 import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.Folder
@@ -35,7 +38,6 @@ import androidx.compose.material.icons.outlined.GetApp
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Share
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -67,6 +69,7 @@ import androidx.core.content.FileProvider
 import com.webtoapp.core.apkbuilder.ApkBuilder
 import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.components.formatFileSize
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaButton
 import com.webtoapp.ui.design.WtaButtonSize
 import com.webtoapp.ui.design.WtaButtonVariant
@@ -74,6 +77,7 @@ import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaFullEmptyState
+import com.webtoapp.ui.design.WtaLoadingState
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaTextField
 import kotlinx.coroutines.Dispatchers
@@ -296,27 +300,25 @@ fun FileManagerScreen(onBack: () -> Unit) {
                         expanded = showSortMenu,
                         onDismissRequest = { showSortMenu = false }
                     ) {
-                        DropdownMenuItem(
-                            text = { Text(Strings.fileManagerSortNewest) },
-                            onClick = {
-                                sortMode = FileSortMode.NEWEST.name
-                                showSortMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(Strings.fileManagerSortLargest) },
-                            onClick = {
-                                sortMode = FileSortMode.LARGEST.name
-                                showSortMenu = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(Strings.fileManagerSortName) },
-                            onClick = {
-                                sortMode = FileSortMode.NAME.name
-                                showSortMenu = false
-                            }
-                        )
+                        FileSortMode.entries.forEach { mode ->
+                            DropdownMenuItem(
+                                text = { Text(sortModeLabel(mode)) },
+                                onClick = {
+                                    sortMode = mode.name
+                                    showSortMenu = false
+                                },
+                                trailingIcon = if (sortMode == mode.name) {
+                                    {
+                                        Icon(
+                                            Icons.Outlined.Check,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                } else null
+                            )
+                        }
                     }
                 }
                 if (visibleEntries.isNotEmpty()) {
@@ -371,7 +373,7 @@ fun FileManagerScreen(onBack: () -> Unit) {
                         WtaButton(
                             onClick = { pendingDelete = selectedEntries },
                             text = Strings.btnDelete,
-                            variant = WtaButtonVariant.Primary,
+                            variant = WtaButtonVariant.Destructive,
                             size = WtaButtonSize.Small,
                             leadingIcon = Icons.Outlined.Delete,
                             modifier = Modifier.weight(1f)
@@ -382,9 +384,7 @@ fun FileManagerScreen(onBack: () -> Unit) {
         }
     ) { _ ->
         if (loading && snapshots.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            WtaLoadingState()
         } else {
             Column(modifier = Modifier.fillMaxSize()) {
                 Column(
@@ -518,19 +518,30 @@ fun FileManagerScreen(onBack: () -> Unit) {
     }
 
     pendingClear?.let { section ->
-        ConfirmDialog(
+        WtaAlertDialog(
+            onDismissRequest = { pendingClear = null },
+            icon = Icons.Outlined.DeleteSweep,
+            iconTint = MaterialTheme.colorScheme.error,
             title = Strings.fileManagerClear,
-            message = String.format(Strings.fileManagerClearConfirmDir, sectionLabel(section)),
-            onConfirm = {
-                val toClear = pendingClear ?: return@ConfirmDialog
-                pendingClear = null
-                scope.launch {
-                    withContext(Dispatchers.IO) { clearSection(context, toClear) }
-                    rescan()
-                    snackbarHostState.showSnackbar(Strings.fileManagerCleared)
+            text = String.format(Strings.fileManagerClearConfirmDir, sectionLabel(section)),
+            confirmButton = {
+                TextButton(onClick = {
+                    val toClear = pendingClear ?: return@TextButton
+                    pendingClear = null
+                    scope.launch {
+                        withContext(Dispatchers.IO) { clearSection(context, toClear) }
+                        rescan()
+                        snackbarHostState.showSnackbar(Strings.fileManagerCleared)
+                    }
+                }) {
+                    Text(Strings.confirm, color = MaterialTheme.colorScheme.error)
                 }
             },
-            onDismiss = { pendingClear = null }
+            dismissButton = {
+                TextButton(onClick = { pendingClear = null }) {
+                    Text(Strings.btnCancel)
+                }
+            }
         )
     }
 
@@ -540,37 +551,49 @@ fun FileManagerScreen(onBack: () -> Unit) {
         } else {
             String.format(Strings.fileManagerDeleteConfirmMany, entries.size)
         }
-        ConfirmDialog(
+        WtaAlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            icon = Icons.Outlined.Delete,
+            iconTint = MaterialTheme.colorScheme.error,
             title = Strings.btnDelete,
-            message = message,
-            onConfirm = {
-                val toDelete = pendingDelete ?: return@ConfirmDialog
-                pendingDelete = null
-                scope.launch {
-                    withContext(Dispatchers.IO) {
-                        toDelete.forEach { entry ->
-                            if (entry.file.isDirectory) entry.file.deleteRecursively()
-                            else entry.file.delete()
+            text = message,
+            confirmButton = {
+                TextButton(onClick = {
+                    val toDelete = pendingDelete ?: return@TextButton
+                    pendingDelete = null
+                    scope.launch {
+                        withContext(Dispatchers.IO) {
+                            toDelete.forEach { entry ->
+                                if (entry.file.isDirectory) entry.file.deleteRecursively()
+                                else entry.file.delete()
+                            }
                         }
+                        rescan()
+                        snackbarHostState.showSnackbar(Strings.deleted)
                     }
-                    rescan()
-                    snackbarHostState.showSnackbar(Strings.deleted)
+                }) {
+                    Text(Strings.confirm, color = MaterialTheme.colorScheme.error)
                 }
             },
-            onDismiss = { pendingDelete = null }
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) {
+                    Text(Strings.btnCancel)
+                }
+            }
         )
     }
 
     viewingLog?.let { entry ->
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = {
                 viewingLog = null
                 logContent = ""
                 logLoading = false
                 logTruncated = false
             },
-            title = { Text(Strings.fileManagerLogViewerTitle) },
-            text = {
+            icon = Icons.AutoMirrored.Outlined.Article,
+            title = Strings.fileManagerLogViewerTitle,
+            content = {
                 Column(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = entry.name,
@@ -645,12 +668,17 @@ private fun SummaryCard(totalSize: Long, totalCount: Int, filtered: Boolean) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                Icons.Outlined.Folder,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(28.dp)
-            )
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+            ) {
+                Icon(
+                    Icons.Outlined.Folder,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(10.dp).size(24.dp)
+                )
+            }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -703,12 +731,17 @@ private fun SectionCard(
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        sectionIcon(section),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    ) {
+                        Icon(
+                            sectionIcon(section),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(8.dp).size(20.dp)
+                        )
+                    }
                     Spacer(Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
@@ -727,7 +760,7 @@ private fun SectionCard(
                             onClick = onClear,
                             contentPadding = PaddingValues(horizontal = 8.dp)
                         ) {
-                            Icon(Icons.Outlined.Clear, Strings.fileManagerClear, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Outlined.DeleteSweep, Strings.fileManagerClear, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
                             Text(Strings.fileManagerClear, style = MaterialTheme.typography.labelMedium)
                         }
@@ -814,6 +847,7 @@ private fun FileEntryRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
+            .background(container)
             .combinedClickable(
                 onClick = {
                     if (selectionMode) onSelectToggle()
@@ -823,27 +857,9 @@ private fun FileEntryRow(
                 },
                 onLongClick = onLongPress
             )
-            .then(
-                if (selected) {
-                    Modifier
-                } else {
-                    Modifier
-                }
-            )
-            .padding(horizontal = 8.dp, vertical = 8.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Surface(
-            color = container,
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
                 if (selectionMode) {
                     Icon(
                         if (selected) Icons.Outlined.CheckBox else Icons.Outlined.CheckBoxOutlineBlank,
@@ -921,33 +937,7 @@ private fun FileEntryRow(
                         )
                     }
                 }
-            }
-        }
     }
-}
-
-@Composable
-private fun ConfirmDialog(
-    title: String,
-    message: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = { Text(message) },
-        confirmButton = {
-            TextButton(onClick = onConfirm) {
-                Text(Strings.confirm)
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(Strings.btnCancel)
-            }
-        }
-    )
 }
 
 private fun sectionLabel(section: FileSection): String = when (section) {
@@ -972,6 +962,12 @@ private fun entryIcon(entry: FileEntry): ImageVector = when {
     entry.section.isLogs -> Icons.AutoMirrored.Outlined.Article
     entry.section.canInstall -> Icons.Outlined.Android
     else -> Icons.Outlined.Folder
+}
+
+private fun sortModeLabel(sort: FileSortMode): String = when (sort) {
+    FileSortMode.NEWEST -> Strings.fileManagerSortNewest
+    FileSortMode.LARGEST -> Strings.fileManagerSortLargest
+    FileSortMode.NAME -> Strings.fileManagerSortName
 }
 
 private fun entryComparator(sort: FileSortMode): Comparator<FileEntry> = when (sort) {
