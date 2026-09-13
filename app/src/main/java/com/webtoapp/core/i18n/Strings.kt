@@ -147,6 +147,10 @@ object Strings {
     val multiWebModeDrawerDesc: String get() = StringsA.multiWebModeDrawerDesc
     val multiWebModeFeedDesc: String get() = StringsA.multiWebModeFeedDesc
     val multiWebShowSiteIcons: String get() = StringsA.multiWebShowSiteIcons
+    val multiWebFeedEmpty: String get() = StringsA.multiWebFeedEmpty
+    val multiWebFeedEmptyHint: String get() = StringsA.multiWebFeedEmptyHint
+    val multiWebFeedStats: String get() = StringsA.multiWebFeedStats
+    val multiWebNoSiteSelected: String get() = StringsA.multiWebNoSiteSelected
     val multiWebAddSite: String get() = StringsA.multiWebAddSite
     val multiWebTypeExisting: String get() = StringsA.multiWebTypeExisting
     val multiWebCustomCodeSection: String get() = StringsA.multiWebCustomCodeSection
@@ -6209,6 +6213,58 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Показывать значки сайтов на карточках"
         AppLanguage.JAPANESE -> "カードにサイトアイコンを表示"
         AppLanguage.KOREAN -> "카드에 사이트 아이콘 표시"
+    }
+
+    val multiWebFeedEmpty: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "暂无文章"
+        AppLanguage.ENGLISH -> "No articles found"
+        AppLanguage.ARABIC -> "لا توجد مقالات"
+        AppLanguage.PORTUGUESE -> "Nenhum artigo encontrado"
+        AppLanguage.SPANISH -> "No se encontraron artículos"
+        AppLanguage.FRENCH -> "Aucun article trouvé"
+        AppLanguage.GERMAN -> "Keine Artikel gefunden"
+        AppLanguage.RUSSIAN -> "Статей не найдено"
+        AppLanguage.JAPANESE -> "記事が見つかりません"
+        AppLanguage.KOREAN -> "글이 없습니다"
+    }
+
+    val multiWebFeedEmptyHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "站点暂无可聚合的内容，点右上角刷新重试"
+        AppLanguage.ENGLISH -> "Nothing to aggregate yet — tap refresh to retry"
+        AppLanguage.ARABIC -> "لا يوجد محتوى للتجميع بعد — انقر على تحديث لإعادة المحاولة"
+        AppLanguage.PORTUGUESE -> "Nada para agregar ainda — toque em atualizar para tentar de novo"
+        AppLanguage.SPANISH -> "Aún no hay contenido para agregar — toca actualizar para reintentar"
+        AppLanguage.FRENCH -> "Rien à agréger pour l'instant — touchez actualiser pour réessayer"
+        AppLanguage.GERMAN -> "Noch nichts zum Aggregieren — zum Wiederholen aktualisieren tippen"
+        AppLanguage.RUSSIAN -> "Пока нечего собирать — нажмите «Обновить» для повтора"
+        AppLanguage.JAPANESE -> "集約するコンテンツがありません — 更新をタップして再試行"
+        AppLanguage.KOREAN -> "아직 집계할 콘텐츠가 없습니다 — 새로고침을 눌러 다시 시도하세요"
+    }
+
+    val multiWebFeedStats: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "来自 %2\$d 个站点的 %1\$d 篇文章"
+        AppLanguage.ENGLISH -> "%1\$d articles from %2\$d sites"
+        AppLanguage.ARABIC -> "%1\$d مقالات من %2\$d مواقع"
+        AppLanguage.PORTUGUESE -> "%1\$d artigos de %2\$d sites"
+        AppLanguage.SPANISH -> "%1\$d artículos de %2\$d sitios"
+        AppLanguage.FRENCH -> "%1\$d articles de %2\$d sites"
+        AppLanguage.GERMAN -> "%1\$d Artikel aus %2\$d Seiten"
+        AppLanguage.RUSSIAN -> "%1\$d статей с %2\$d сайтов"
+        AppLanguage.JAPANESE -> "%2\$d サイトから %1\$d 件の記事"
+        AppLanguage.KOREAN -> "%2\$d개 사이트의 글 %1\$d개"
+    }
+
+    val multiWebNoSiteSelected: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "未选择站点"
+        AppLanguage.ENGLISH -> "No site selected"
+        AppLanguage.ARABIC -> "لم يتم اختيار موقع"
+        AppLanguage.PORTUGUESE -> "Nenhum site selecionado"
+        AppLanguage.SPANISH -> "Ningún sitio seleccionado"
+        AppLanguage.FRENCH -> "Aucun site sélectionné"
+        AppLanguage.GERMAN -> "Keine Seite ausgewählt"
+        AppLanguage.RUSSIAN -> "Сайт не выбран"
+        AppLanguage.JAPANESE -> "サイトが選択されていません"
+        AppLanguage.KOREAN -> "선택된 사이트 없음"
     }
 
     val multiWebAddSite: String get() = when (Strings.lang) {
