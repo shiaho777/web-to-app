@@ -1,0 +1,45 @@
+# Regenerates repos.json on the `author-repos-data` orphan branch twice daily.
+# The About page's "More projects" section fetches that file through the
+# raw.githubusercontent.com proxy race — unlike api.github.com, the raw host is
+# whitelisted by every mirror in the pool and never rate-limited per-IP.
+name: Update Author Repos
+
+on:
+  schedule:
+    - cron: "23 */12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate repos.json from the REST API
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api 'users/shiaho777/repos?per_page=100&type=owner&sort=pushed' --paginate \
+            | jq '[.[] | select((.fork | not) and (.name | ascii_downcase) != "web-to-app")
+                  | {name, description, stargazers_count, forks_count, language, pushed_at, html_url}]
+                  | sort_by(-.stargazers_count)' > /tmp/repos.json
+          test -s /tmp/repos.json
+
+      - name: Publish to author-repos-data branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin author-repos-data:author-repos-data 2>/dev/null \
+            && git checkout author-repos-data \
+            || { git checkout --orphan author-repos-data && git rm -rf . >/dev/null 2>&1 || true; }
+          cp /tmp/repos.json repos.json
+          git add repos.json
+          if git diff --cached --quiet; then
+            echo "no changes"
+            exit 0
+          fi
+          git commit -m "chore: update author repos data"
+          git push origin author-repos-data

@@ -228,13 +228,23 @@ object UpdateChecker {
         "https://api.github.com/users/$OWNER/repos?per_page=100&type=owner"
 
     /**
+     * Pre-generated repo list on the `author-repos-data` branch, refreshed by
+     * the Update Author Repos workflow. Serving it through raw.githubusercontent.com
+     * matters: the proxy pool is whitelisted for repo file paths (releases/raw),
+     * while `api.github.com` is rate-limited per egress IP and most shared
+     * proxy IPs are exhausted — the API alone leaves CN users with no route.
+     */
+    private const val AUTHOR_REPOS_RAW =
+        "https://raw.githubusercontent.com/$OWNER/$REPO/author-repos-data/repos.json"
+
+    /**
      * Fetches the author's public repos for the About page. Client-side sorting
      * covers both "by stars" and "latest" so the sort toggle never refetches.
      */
     suspend fun fetchAuthorRepos(context: android.content.Context): List<RepoSummary> =
         withContext(Dispatchers.IO) {
             try {
-                val json = fetchJsonRaced(AUTHOR_REPOS_API) { it.trimStart().startsWith("[") }
+                val json = fetchJsonRaced(authorReposCandidates()) { it.trimStart().startsWith("[") }
                     ?: throw IllegalStateException("Empty response from repos API")
                 AuthorReposCache.write(context, json)
                 parseAuthorRepos(json)
@@ -243,6 +253,19 @@ object UpdateChecker {
                 throw e
             }
         }
+
+    /**
+     * Race candidates for the repo list: the raw data file through every proxy
+     * channel plus direct, then the REST API through the same — first response
+     * that parses as a JSON array wins.
+     */
+    private fun authorReposCandidates(): List<String> {
+        val channels = com.webtoapp.core.network.CnMirrorProbe.peekChannels()
+        return (channels.map { it.rewrite(AUTHOR_REPOS_RAW) } +
+            AUTHOR_REPOS_RAW +
+            channels.map { it.rewrite(AUTHOR_REPOS_API) } +
+            AUTHOR_REPOS_API).distinct()
+    }
 
     internal fun parseAuthorRepos(json: String): List<RepoSummary> {
         val arr = org.json.JSONArray(json)
@@ -309,6 +332,10 @@ object UpdateChecker {
     private suspend fun fetchJsonRaced(apiUrl: String, accept: (String) -> Boolean): String? {
         val urls = (com.webtoapp.core.network.CnMirrorProbe.peekChannels()
             .map { it.rewrite(apiUrl) } + apiUrl).distinct()
+        return fetchJsonRaced(urls, accept)
+    }
+
+    private suspend fun fetchJsonRaced(urls: List<String>, accept: (String) -> Boolean): String? {
         val results = Channel<Pair<String, String?>>(urls.size)
         val jobs = urls.map { endpoint ->
             raceScope.launch {
