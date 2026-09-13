@@ -1589,6 +1589,8 @@ object Strings {
     val agentPreviewWarningsCount: String get() = StringsB.agentPreviewWarningsCount
     val agentPreviewRefresh: String get() = StringsB.agentPreviewRefresh
     val agentSessionPin: String get() = StringsB.agentSessionPin
+    val agentSessionUnpin: String get() = StringsB.agentSessionUnpin
+    val agentDrawerPinned: String get() = StringsB.agentDrawerPinned
     val agentSessionDelete: String get() = StringsB.agentSessionDelete
     val agentSessionMessagesShort: String get() = StringsB.agentSessionMessagesShort
     val agentToolDenied: String get() = StringsB.agentToolDenied
@@ -25218,6 +25220,30 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Закрепить"
         AppLanguage.JAPANESE -> "ピン留め"
         AppLanguage.KOREAN -> "고정"
+    }
+    val agentSessionUnpin: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "取消置顶"
+        AppLanguage.ENGLISH -> "Unpin"
+        AppLanguage.ARABIC -> "إلغاء التثبيت"
+        AppLanguage.PORTUGUESE -> "Desafixar"
+        AppLanguage.SPANISH -> "Desfijar"
+        AppLanguage.FRENCH -> "Désépingler"
+        AppLanguage.GERMAN -> "Loslösen"
+        AppLanguage.RUSSIAN -> "Открепить"
+        AppLanguage.JAPANESE -> "ピン留めを解除"
+        AppLanguage.KOREAN -> "고정 해제"
+    }
+    val agentDrawerPinned: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "置顶"
+        AppLanguage.ENGLISH -> "Pinned"
+        AppLanguage.ARABIC -> "مثبتة"
+        AppLanguage.PORTUGUESE -> "Fixadas"
+        AppLanguage.SPANISH -> "Fijadas"
+        AppLanguage.FRENCH -> "Épinglées"
+        AppLanguage.GERMAN -> "Angeheftet"
+        AppLanguage.RUSSIAN -> "Закреплённые"
+        AppLanguage.JAPANESE -> "ピン留め"
+        AppLanguage.KOREAN -> "고정됨"
     }
     val agentSessionDelete: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "删除"

@@ -9,9 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Android
@@ -59,17 +58,13 @@ import com.webtoapp.ui.design.WtaButtonSize
 import com.webtoapp.ui.design.WtaButtonVariant
 import com.webtoapp.ui.design.WtaColors
 import com.webtoapp.ui.design.WtaFullEmptyState
-import com.webtoapp.ui.design.WtaIconButton
-import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaSettingRow
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.design.WtaTab
 import com.webtoapp.ui.design.WtaTabRow
 import com.webtoapp.ui.design.WtaTextField
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun AgentDrawer(
@@ -110,6 +105,7 @@ fun AgentDrawer(
         when (state.drawerTab) {
             AgentUiState.DrawerTab.Sessions -> SessionsTab(
                 sessions = filterSessions(state.sessions, state.drawerSearch),
+                isSearching = state.drawerSearch.isNotBlank(),
                 currentId = state.currentSession?.id,
                 liveSessionId = if (state.isWorking) state.currentSession?.id else null,
                 onPick = onPickSession,
@@ -165,6 +161,7 @@ private fun DrawerHeader(query: String, onSearchChange: (String) -> Unit) {
 @Composable
 private fun SessionsTab(
     sessions: List<AgentSession>,
+    isSearching: Boolean,
     currentId: String?,
     liveSessionId: String?,
     onPick: (String) -> Unit,
@@ -200,22 +197,77 @@ private fun SessionsTab(
             )
             return
         }
-        LazyColumn(modifier = Modifier.fillMaxSize()) {
-            items(sessions, key = { it.id }) { session ->
-                SessionRow(
-                    session = session,
-                    isCurrent = session.id == currentId,
-                    isLive = session.id == liveSessionId,
-                    onClick = { onPick(session.id) },
-                    onPin = { onPin(session.id, !session.pinned) },
-                    onRename = onRename,
-                    onExport = onExport,
-                    onDelete = onDelete
-                )
-                WtaSectionDivider()
+        val pinned = sessions.filter { it.pinned }
+        val recent = sessions.filter { !it.pinned }
+        val grouped = !isSearching && pinned.isNotEmpty()
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                horizontal = WtaSpacing.ScreenHorizontal,
+                vertical = WtaSpacing.Tiny
+            ),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            if (grouped) {
+                item(key = "__pinned_label__") { DrawerGroupLabel(Strings.agentDrawerPinned) }
+                items(pinned, key = { it.id }) { session ->
+                    SessionRow(
+                        session = session,
+                        isCurrent = session.id == currentId,
+                        isLive = session.id == liveSessionId,
+                        onClick = { onPick(session.id) },
+                        onPin = { onPin(session.id, !session.pinned) },
+                        onRename = onRename,
+                        onExport = onExport,
+                        onDelete = onDelete
+                    )
+                }
+                if (recent.isNotEmpty()) {
+                    item(key = "__recent_label__") { DrawerGroupLabel(Strings.agentHomeRecentTitle) }
+                }
+                items(recent, key = { it.id }) { session ->
+                    SessionRow(
+                        session = session,
+                        isCurrent = session.id == currentId,
+                        isLive = session.id == liveSessionId,
+                        onClick = { onPick(session.id) },
+                        onPin = { onPin(session.id, !session.pinned) },
+                        onRename = onRename,
+                        onExport = onExport,
+                        onDelete = onDelete
+                    )
+                }
+            } else {
+                items(sessions, key = { it.id }) { session ->
+                    SessionRow(
+                        session = session,
+                        isCurrent = session.id == currentId,
+                        isLive = session.id == liveSessionId,
+                        onClick = { onPick(session.id) },
+                        onPin = { onPin(session.id, !session.pinned) },
+                        onRename = onRename,
+                        onExport = onExport,
+                        onDelete = onDelete
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+private fun DrawerGroupLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(
+            start = WtaSpacing.Small + 2.dp,
+            top = WtaSpacing.Small,
+            bottom = WtaSpacing.Tiny
+        )
+    )
 }
 
 @Composable
@@ -239,8 +291,12 @@ private fun SessionRow(
         title = titleText,
         subtitle = formatSubtitle(session),
         modifier = if (isCurrent) {
-            Modifier.background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f))
+            Modifier
+                .clip(RoundedCornerShape(WtaRadius.Control))
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f))
         } else Modifier,
+        titleMaxLines = 1,
+        subtitleMaxLines = 1,
         iconContent = {
 
             when {
@@ -261,12 +317,6 @@ private fun SessionRow(
         },
         onClick = onClick
     ) {
-        WtaIconButton(
-            onClick = onPin,
-            icon = if (session.pinned) Icons.Outlined.Star else Icons.Outlined.StarOutline,
-            contentDescription = Strings.agentSessionPin,
-            modifier = Modifier.size(WtaSize.TouchTarget)
-        )
         Box {
             IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(WtaSize.TouchTarget)) {
                 Icon(
@@ -276,6 +326,18 @@ private fun SessionRow(
                 )
             }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                DropdownMenuItem(
+                    text = {
+                        Text(if (session.pinned) Strings.agentSessionUnpin else Strings.agentSessionPin)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            if (session.pinned) Icons.Outlined.StarOutline else Icons.Outlined.Star,
+                            contentDescription = null
+                        )
+                    },
+                    onClick = { menuOpen = false; onPin() }
+                )
                 DropdownMenuItem(
                     text = { Text(Strings.agentSessionRename) },
                     leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
@@ -362,11 +424,20 @@ private fun SessionRow(
 private fun formatSubtitle(session: AgentSession): String {
     val parts = mutableListOf<String>()
     parts += Strings.agentSessionMessagesShort.format(session.messages.size)
-    parts += DRAWER_TIME.format(Date(session.updatedAt))
+    parts += relativeTime(session.updatedAt)
     return parts.joinToString(" · ")
 }
 
-private val DRAWER_TIME = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
+private fun relativeTime(timestamp: Long): String {
+    val minutes = ((System.currentTimeMillis() - timestamp) / 60_000L).coerceAtLeast(0L)
+    return when {
+        minutes < 1L -> Strings.statsJustNow
+        minutes < 60L -> Strings.statsMinutesAgo.format(minutes)
+        minutes < 60L * 24L -> Strings.statsHoursAgo.format(minutes / 60L)
+        minutes < 60L * 24L * 30L -> Strings.statsDaysAgo.format(minutes / (60L * 24L))
+        else -> Strings.statsMonthsAgo.format(minutes / (60L * 24L * 30L))
+    }
+}
 
 @Composable
 private fun FilesTab(
@@ -386,17 +457,16 @@ private fun FilesTab(
         )
         return
     }
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            horizontal = WtaSpacing.ScreenHorizontal,
+            vertical = WtaSpacing.Tiny
+        ),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
         if (builtApks.isNotEmpty()) {
-            item(key = "__apk_header__") {
-                Text(
-                    text = Strings.agentBuiltApks,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = WtaSpacing.ScreenHorizontal, vertical = WtaSpacing.Small)
-                )
-            }
+            item(key = "__apk_header__") { DrawerGroupLabel(Strings.agentBuiltApks) }
             items(builtApks, key = { "apk_${it.appId}_${it.apkName}" }) { apk ->
                 val apkVirtualPath = "apk:${apk.apkName}"
                 FileEntryRow(
@@ -408,9 +478,10 @@ private fun FilesTab(
                     onCopyPath = { onCopyPath(apk.apkPath) },
                     onDelete = null
                 )
-                WtaSectionDivider()
             }
-            item(key = "__apk_spacer__") { Spacer(Modifier.height(WtaSpacing.Small)) }
+            if (files.isNotEmpty()) {
+                item(key = "__files_header__") { DrawerGroupLabel(Strings.agentTabFiles) }
+            }
         }
         items(files, key = { it.relativePath }) { f ->
             FileEntryRow(
@@ -422,7 +493,6 @@ private fun FilesTab(
                 onCopyPath = { onCopyPath(f.relativePath) },
                 onDelete = { onDelete(f.relativePath) }
             )
-            WtaSectionDivider()
         }
     }
 }

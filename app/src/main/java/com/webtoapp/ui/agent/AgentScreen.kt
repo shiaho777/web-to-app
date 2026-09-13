@@ -74,6 +74,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -129,6 +130,7 @@ fun AgentScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+    val focusManager = LocalFocusManager.current
 
     var drawerMounted by remember { mutableStateOf(false) }
 
@@ -165,7 +167,9 @@ fun AgentScreen(
     LaunchedEffect(state.info) { state.info?.let { snackbar.showSnackbar(it); vm.dismissBanner() } }
     LaunchedEffect(state.drawerOpen) {
         if (state.drawerOpen) {
-
+            // Don't let the composer IME stay up over the drawer — opening the
+            // sidebar should dismiss the keyboard, not summon it.
+            focusManager.clearFocus()
             drawerMounted = true
             drawerState.open()
         } else {
