@@ -2891,6 +2891,12 @@ object Strings {
     val moveToCategory: String get() = StringsD.moveToCategory
     val manageCategories: String get() = StringsD.manageCategories
     val categoriesEmptyHint: String get() = StringsD.categoriesEmptyHint
+    val iconGroupCommon: String get() = StringsD.iconGroupCommon
+    val iconGroupMedia: String get() = StringsD.iconGroupMedia
+    val iconGroupWorkStudy: String get() = StringsD.iconGroupWorkStudy
+    val iconGroupLifeTravel: String get() = StringsD.iconGroupLifeTravel
+    val iconGroupTools: String get() = StringsD.iconGroupTools
+    val iconGroupFun: String get() = StringsD.iconGroupFun
     val clearAppCacheMenu: String get() = StringsD.clearAppCacheMenu
     val clearAppCacheTitle: String get() = StringsD.clearAppCacheTitle
     val clearAppCacheConfirm: String get() = StringsD.clearAppCacheConfirm
@@ -41390,6 +41396,84 @@ object StringsD {
         AppLanguage.RUSSIAN -> "Категорий пока нет — нажмите «Добавить категорию», чтобы создать"
         AppLanguage.JAPANESE -> "カテゴリはまだありません —「カテゴリを追加」で作成できます"
         AppLanguage.KOREAN -> "아직 카테고리가 없습니다 — \"카테고리 추가\"를 눌러 만드세요"
+    }
+
+    val iconGroupCommon: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "常用"
+        AppLanguage.ENGLISH -> "Common"
+        AppLanguage.ARABIC -> "شائعة"
+        AppLanguage.PORTUGUESE -> "Comuns"
+        AppLanguage.SPANISH -> "Comunes"
+        AppLanguage.FRENCH -> "Courantes"
+        AppLanguage.GERMAN -> "Häufig"
+        AppLanguage.RUSSIAN -> "Частые"
+        AppLanguage.JAPANESE -> "よく使う"
+        AppLanguage.KOREAN -> "자주 사용"
+    }
+
+    val iconGroupMedia: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "媒体"
+        AppLanguage.ENGLISH -> "Media"
+        AppLanguage.ARABIC -> "وسائط"
+        AppLanguage.PORTUGUESE -> "Mídia"
+        AppLanguage.SPANISH -> "Medios"
+        AppLanguage.FRENCH -> "Médias"
+        AppLanguage.GERMAN -> "Medien"
+        AppLanguage.RUSSIAN -> "Медиа"
+        AppLanguage.JAPANESE -> "メディア"
+        AppLanguage.KOREAN -> "미디어"
+    }
+
+    val iconGroupWorkStudy: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "工作学习"
+        AppLanguage.ENGLISH -> "Work & Study"
+        AppLanguage.ARABIC -> "عمل ودراسة"
+        AppLanguage.PORTUGUESE -> "Trabalho e Estudo"
+        AppLanguage.SPANISH -> "Trabajo y Estudio"
+        AppLanguage.FRENCH -> "Travail et Études"
+        AppLanguage.GERMAN -> "Arbeit & Studium"
+        AppLanguage.RUSSIAN -> "Работа и учёба"
+        AppLanguage.JAPANESE -> "仕事と学び"
+        AppLanguage.KOREAN -> "작업·학습"
+    }
+
+    val iconGroupLifeTravel: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "生活出行"
+        AppLanguage.ENGLISH -> "Life & Travel"
+        AppLanguage.ARABIC -> "حياة وسفر"
+        AppLanguage.PORTUGUESE -> "Vida e Viagem"
+        AppLanguage.SPANISH -> "Vida y Viajes"
+        AppLanguage.FRENCH -> "Vie et Voyages"
+        AppLanguage.GERMAN -> "Leben & Reisen"
+        AppLanguage.RUSSIAN -> "Жизнь и поездки"
+        AppLanguage.JAPANESE -> "生活と旅行"
+        AppLanguage.KOREAN -> "생활·여행"
+    }
+
+    val iconGroupTools: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "工具"
+        AppLanguage.ENGLISH -> "Tools"
+        AppLanguage.ARABIC -> "أدوات"
+        AppLanguage.PORTUGUESE -> "Ferramentas"
+        AppLanguage.SPANISH -> "Herramientas"
+        AppLanguage.FRENCH -> "Outils"
+        AppLanguage.GERMAN -> "Werkzeuge"
+        AppLanguage.RUSSIAN -> "Инструменты"
+        AppLanguage.JAPANESE -> "ツール"
+        AppLanguage.KOREAN -> "도구"
+    }
+
+    val iconGroupFun: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "趣味"
+        AppLanguage.ENGLISH -> "Fun"
+        AppLanguage.ARABIC -> "ترفيه"
+        AppLanguage.PORTUGUESE -> "Diversão"
+        AppLanguage.SPANISH -> "Diversión"
+        AppLanguage.FRENCH -> "Loisirs"
+        AppLanguage.GERMAN -> "Spaß"
+        AppLanguage.RUSSIAN -> "Развлечения"
+        AppLanguage.JAPANESE -> "趣味"
+        AppLanguage.KOREAN -> "재미"
     }
 
     val randomNameTooltip: String get() = when (Strings.lang) {

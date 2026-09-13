@@ -191,7 +191,7 @@ fun CategoryTabRow(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CategoryEditorDialog(
     category: AppCategory?,
@@ -201,10 +201,13 @@ fun CategoryEditorDialog(
     var name by remember(category) { mutableStateOf(category?.name ?: "") }
     var icon by remember(category) { mutableStateOf(category?.icon ?: "folder") }
 
-    val presetIcons = listOf(
-        "folder", "folder_open", "phone_android", "computer", "gaming", "music_note", "movie", "menu_book",
-        "newspaper", "work", "shopping_bag", "heart", "star", "fire", "lightbulb", "auto_awesome",
-        "home", "directions_car", "flight", "directions_boat", "public", "palette", "dark_mode", "light_mode"
+    val iconGroups = listOf(
+        Strings.iconGroupCommon to listOf("folder", "star", "heart", "fire", "lightbulb", "auto_awesome"),
+        Strings.iconGroupMedia to listOf("music", "movie", "tv", "camera", "image", "newspaper"),
+        Strings.iconGroupWorkStudy to listOf("menu_book", "work", "computer", "phone_android", "edit_note", "analytics"),
+        Strings.iconGroupLifeTravel to listOf("home", "directions_car", "flight", "directions_boat", "public", "explore"),
+        Strings.iconGroupTools to listOf("settings", "wrench", "code", "robot", "extension", "shield"),
+        Strings.iconGroupFun to listOf("gaming", "gift", "celebration", "science", "cocktail", "cat")
     )
 
     com.webtoapp.ui.design.WtaAlertDialog(
@@ -227,16 +230,27 @@ fun CategoryEditorDialog(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                modifier = Modifier
+                    .heightIn(max = 300.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                presetIcons.chunked(8).forEach { rowIcons ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        rowIcons.forEach { presetIcon ->
+                iconGroups.forEach { (groupLabel, groupIcons) ->
+                    Text(
+                        groupLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        groupIcons.forEach { presetIcon ->
                             val isSelected = icon == presetIcon
                             Box(
                                 modifier = Modifier
-                                    .size(36.dp)
+                                    .size(38.dp)
                                     .clip(androidx.compose.foundation.shape.RoundedCornerShape(com.webtoapp.ui.design.WtaRadius.IconPlate))
                                     .background(
                                         if (isSelected)
@@ -248,7 +262,10 @@ fun CategoryEditorDialog(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    com.webtoapp.util.SvgIconMapper.getIcon(presetIcon),
+                                    if (isSelected)
+                                        com.webtoapp.util.SvgIconMapper.getFilledIcon(presetIcon)
+                                    else
+                                        com.webtoapp.util.SvgIconMapper.getIcon(presetIcon),
                                     contentDescription = null,
                                     modifier = Modifier.size(20.dp),
                                     tint = if (isSelected)
