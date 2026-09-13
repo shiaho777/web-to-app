@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
@@ -57,6 +58,7 @@ fun DataBackupCard() {
     var progressMessage by remember { mutableStateOf("") }
     var errorThrowable by remember { mutableStateOf<Throwable?>(null) }
     var errorScope by remember { mutableStateOf("") }
+    var showRestartDialog by remember { mutableStateOf(false) }
     val isBusy = isExporting || isImporting
 
     val exportLauncher = rememberLauncherForActivityResult(
@@ -109,20 +111,25 @@ fun DataBackupCard() {
                 result.onSuccess { importResult ->
                     Toast.makeText(
                         context,
-                        Strings.backupImportSuccess.format(
-                            importResult.importedCount,
-                            importResult.totalCount
-                        ),
+                        if (importResult.duplicateCount > 0) {
+                            Strings.backupImportSuccessDupes.format(
+                                importResult.importedCount,
+                                importResult.totalCount,
+                                importResult.duplicateCount
+                            )
+                        } else {
+                            Strings.backupImportSuccess.format(
+                                importResult.importedCount,
+                                importResult.totalCount
+                            )
+                        },
                         Toast.LENGTH_LONG
                     ).show()
                     // Restored DataStore/SharedPreferences files only take effect
                     // after restart (in-memory caches would otherwise clobber them).
-                    // Room-only restores are live already: stay put, don't restart.
+                    // Ask first — silently killing the process reads as a crash.
                     if (importResult.localFilesRestored) {
-                        scope.launch {
-                            kotlinx.coroutines.delay(1200)
-                            backupManager.scheduleAppRestart()
-                        }
+                        showRestartDialog = true
                     }
                 }.onFailure { e ->
                     errorScope = "Data backup import"
@@ -138,6 +145,34 @@ fun DataBackupCard() {
             message = err.message,
             throwable = err,
             onDismiss = { errorThrowable = null }
+        )
+    }
+
+    if (showRestartDialog) {
+        com.webtoapp.ui.design.WtaAlertDialog(
+            onDismissRequest = { showRestartDialog = false },
+            icon = Icons.Outlined.RestartAlt,
+            title = Strings.backupRestartTitle,
+            text = Strings.backupRestartMessage,
+            confirmButton = {
+                WtaButton(
+                    onClick = {
+                        showRestartDialog = false
+                        backupManager.scheduleAppRestart()
+                    },
+                    text = Strings.backupRestartNow,
+                    variant = WtaButtonVariant.Primary,
+                    size = WtaButtonSize.Medium
+                )
+            },
+            dismissButton = {
+                WtaButton(
+                    onClick = { showRestartDialog = false },
+                    text = Strings.backupRestartLater,
+                    variant = WtaButtonVariant.Text,
+                    size = WtaButtonSize.Medium
+                )
+            }
         )
     }
 

@@ -4444,6 +4444,11 @@ object Strings {
     val backupImportingApp: String get() = StringsE.backupImportingApp
     val backupExportSuccess: String get() = StringsE.backupExportSuccess
     val backupImportSuccess: String get() = StringsE.backupImportSuccess
+    val backupImportSuccessDupes: String get() = StringsE.backupImportSuccessDupes
+    val backupRestartTitle: String get() = StringsE.backupRestartTitle
+    val backupRestartMessage: String get() = StringsE.backupRestartMessage
+    val backupRestartNow: String get() = StringsE.backupRestartNow
+    val backupRestartLater: String get() = StringsE.backupRestartLater
     val scrapeNoHtmlFound: String get() = StringsE.scrapeNoHtmlFound
     val scrapePackFailed: String get() = StringsE.scrapePackFailed
     val scrapePackSuccess: String get() = StringsE.scrapePackSuccess
@@ -60423,6 +60428,66 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Импортировано: %1\$d/%2\$d приложений. Некоторые настройки применятся после перезапуска."
         AppLanguage.JAPANESE -> "インポート完了: %1\$d/%2\$d アプリ。一部の設定はアプリ再起動後に反映されます。"
         AppLanguage.KOREAN -> "가져오기 완료: %1\$d/%2\$d개 앱. 일부 설정은 앱 재시작 후 적용됩니다."
+    }
+    val backupImportSuccessDupes: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "导入成功：%1\$d/%2\$d 个应用，跳过 %3\$d 个重复项。部分设置需重启应用后生效。"
+        AppLanguage.ENGLISH -> "Imported: %1\$d/%2\$d apps, skipped %3\$d duplicates. Some settings apply after restarting the app."
+        AppLanguage.ARABIC -> "تم الاستيراد: %1\$d/%2\$d تطبيقات، تم تخطي %3\$d مكررة. تُطبَّق بعض الإعدادات بعد إعادة تشغيل التطبيق."
+        AppLanguage.PORTUGUESE -> "Importados: %1\$d/%2\$d apps, %3\$d duplicados ignorados. Algumas configurações só se aplicam após reiniciar o app."
+        AppLanguage.SPANISH -> "Importados: %1\$d/%2\$d apps, %3\$d duplicados omitidos. Algunas configuraciones se aplican tras reiniciar la app."
+        AppLanguage.FRENCH -> "Importés : %1\$d/%2\$d apps, %3\$d doublons ignorés. Certains réglages s'appliquent après le redémarrage de l'app."
+        AppLanguage.GERMAN -> "Importiert: %1\$d/%2\$d Apps, %3\$d Duplikate übersprungen. Einige Einstellungen werden erst nach App-Neustart wirksam."
+        AppLanguage.RUSSIAN -> "Импортировано: %1\$d/%2\$d приложений, пропущено дубликатов: %3\$d. Некоторые настройки применятся после перезапуска."
+        AppLanguage.JAPANESE -> "インポート完了: %1\$d/%2\$d アプリ、%3\$d 件の重複をスキップ。一部の設定はアプリ再起動後に反映されます。"
+        AppLanguage.KOREAN -> "가져오기 완료: %1\$d/%2\$d개 앱, 중복 %3\$d개 건너뜀. 일부 설정은 앱 재시작 후 적용됩니다."
+    }
+    val backupRestartTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "需要重启应用"
+        AppLanguage.ENGLISH -> "Restart required"
+        AppLanguage.ARABIC -> "إعادة التشغيل مطلوبة"
+        AppLanguage.PORTUGUESE -> "Reinício necessário"
+        AppLanguage.SPANISH -> "Reinicio necesario"
+        AppLanguage.FRENCH -> "Redémarrage requis"
+        AppLanguage.GERMAN -> "Neustart erforderlich"
+        AppLanguage.RUSSIAN -> "Требуется перезапуск"
+        AppLanguage.JAPANESE -> "再起動が必要です"
+        AppLanguage.KOREAN -> "재시작 필요"
+    }
+    val backupRestartMessage: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "部分恢复的设置需要重启应用后才会生效。是否立即重启？"
+        AppLanguage.ENGLISH -> "Some restored settings only take effect after a restart. Restart now?"
+        AppLanguage.ARABIC -> "بعض الإعدادات المستعادة لا تسري إلا بعد إعادة التشغيل. هل تريد إعادة التشغيل الآن؟"
+        AppLanguage.PORTUGUESE -> "Algumas configurações restauradas só entram em vigor após reiniciar. Reiniciar agora?"
+        AppLanguage.SPANISH -> "Algunos ajustes restaurados solo se aplican tras reiniciar. ¿Reiniciar ahora?"
+        AppLanguage.FRENCH -> "Certains réglages restaurés ne prennent effet qu'après un redémarrage. Redémarrer maintenant ?"
+        AppLanguage.GERMAN -> "Einige wiederhergestellte Einstellungen werden erst nach einem Neustart wirksam. Jetzt neu starten?"
+        AppLanguage.RUSSIAN -> "Некоторые восстановленные настройки вступят в силу после перезапуска. Перезапустить сейчас?"
+        AppLanguage.JAPANESE -> "復元された設定の一部は再起動後に反映されます。今すぐ再起動しますか？"
+        AppLanguage.KOREAN -> "복원된 일부 설정은 재시작 후 적용됩니다. 지금 재시작할까요?"
+    }
+    val backupRestartNow: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "立即重启"
+        AppLanguage.ENGLISH -> "Restart now"
+        AppLanguage.ARABIC -> "إعادة التشغيل الآن"
+        AppLanguage.PORTUGUESE -> "Reiniciar agora"
+        AppLanguage.SPANISH -> "Reiniciar ahora"
+        AppLanguage.FRENCH -> "Redémarrer"
+        AppLanguage.GERMAN -> "Jetzt neu starten"
+        AppLanguage.RUSSIAN -> "Перезапустить"
+        AppLanguage.JAPANESE -> "今すぐ再起動"
+        AppLanguage.KOREAN -> "지금 재시작"
+    }
+    val backupRestartLater: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "稍后"
+        AppLanguage.ENGLISH -> "Later"
+        AppLanguage.ARABIC -> "لاحقًا"
+        AppLanguage.PORTUGUESE -> "Mais tarde"
+        AppLanguage.SPANISH -> "Más tarde"
+        AppLanguage.FRENCH -> "Plus tard"
+        AppLanguage.GERMAN -> "Später"
+        AppLanguage.RUSSIAN -> "Позже"
+        AppLanguage.JAPANESE -> "後で"
+        AppLanguage.KOREAN -> "나중에"
     }
     val scrapeNoHtmlFound: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "抓取完成但未找到有效的 HTML 文件"
