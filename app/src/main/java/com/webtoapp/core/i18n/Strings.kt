@@ -138,6 +138,15 @@ object Strings {
     val appTypeMultiWeb: String get() = StringsA.appTypeMultiWeb
     val createMultiWebApp: String get() = StringsA.createMultiWebApp
     val multiWebModeFeed: String get() = StringsA.multiWebModeFeed
+    val multiWebDisplayMode: String get() = StringsA.multiWebDisplayMode
+    val multiWebModeTabs: String get() = StringsA.multiWebModeTabs
+    val multiWebModeCards: String get() = StringsA.multiWebModeCards
+    val multiWebModeDrawer: String get() = StringsA.multiWebModeDrawer
+    val multiWebModeTabsDesc: String get() = StringsA.multiWebModeTabsDesc
+    val multiWebModeCardsDesc: String get() = StringsA.multiWebModeCardsDesc
+    val multiWebModeDrawerDesc: String get() = StringsA.multiWebModeDrawerDesc
+    val multiWebModeFeedDesc: String get() = StringsA.multiWebModeFeedDesc
+    val multiWebShowSiteIcons: String get() = StringsA.multiWebShowSiteIcons
     val multiWebAddSite: String get() = StringsA.multiWebAddSite
     val multiWebTypeExisting: String get() = StringsA.multiWebTypeExisting
     val multiWebCustomCodeSection: String get() = StringsA.multiWebCustomCodeSection
@@ -6083,6 +6092,123 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Лента"
         AppLanguage.JAPANESE -> "フィード"
         AppLanguage.KOREAN -> "피드"
+    }
+
+    val multiWebDisplayMode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "界面样式"
+        AppLanguage.ENGLISH -> "Layout Style"
+        AppLanguage.ARABIC -> "نمط العرض"
+        AppLanguage.PORTUGUESE -> "Estilo de Layout"
+        AppLanguage.SPANISH -> "Estilo de Diseño"
+        AppLanguage.FRENCH -> "Style de mise en page"
+        AppLanguage.GERMAN -> "Layout-Stil"
+        AppLanguage.RUSSIAN -> "Стиль оформления"
+        AppLanguage.JAPANESE -> "レイアウトスタイル"
+        AppLanguage.KOREAN -> "레이아웃 스타일"
+    }
+
+    val multiWebModeTabs: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "底部标签"
+        AppLanguage.ENGLISH -> "Bottom Tabs"
+        AppLanguage.ARABIC -> "ألسنة سفلية"
+        AppLanguage.PORTUGUESE -> "Abas Inferiores"
+        AppLanguage.SPANISH -> "Pestañas Inferiores"
+        AppLanguage.FRENCH -> "Onglets en bas"
+        AppLanguage.GERMAN -> "Untere Tabs"
+        AppLanguage.RUSSIAN -> "Нижние вкладки"
+        AppLanguage.JAPANESE -> "下部タブ"
+        AppLanguage.KOREAN -> "하단 탭"
+    }
+
+    val multiWebModeCards: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "卡片主页"
+        AppLanguage.ENGLISH -> "Card Home"
+        AppLanguage.ARABIC -> "بطاقات رئيسية"
+        AppLanguage.PORTUGUESE -> "Página de Cartões"
+        AppLanguage.SPANISH -> "Inicio de Tarjetas"
+        AppLanguage.FRENCH -> "Accueil en cartes"
+        AppLanguage.GERMAN -> "Karten-Startseite"
+        AppLanguage.RUSSIAN -> "Карточки"
+        AppLanguage.JAPANESE -> "カードホーム"
+        AppLanguage.KOREAN -> "카드 홈"
+    }
+
+    val multiWebModeDrawer: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "侧边抽屉"
+        AppLanguage.ENGLISH -> "Side Drawer"
+        AppLanguage.ARABIC -> "درج جانبي"
+        AppLanguage.PORTUGUESE -> "Gaveta Lateral"
+        AppLanguage.SPANISH -> "Cajón Lateral"
+        AppLanguage.FRENCH -> "Tiroir latéral"
+        AppLanguage.GERMAN -> "Seitenmenü"
+        AppLanguage.RUSSIAN -> "Боковое меню"
+        AppLanguage.JAPANESE -> "サイドドロワー"
+        AppLanguage.KOREAN -> "사이드 드로어"
+    }
+
+    val multiWebModeTabsDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "底部标签栏常驻，点击切换站点"
+        AppLanguage.ENGLISH -> "Persistent bottom bar, tap to switch sites"
+        AppLanguage.ARABIC -> "شريط سفلي دائم، انقر للتبديل بين المواقع"
+        AppLanguage.PORTUGUESE -> "Barra inferior persistente, toque para alternar sites"
+        AppLanguage.SPANISH -> "Barra inferior persistente, toca para cambiar de sitio"
+        AppLanguage.FRENCH -> "Barre inférieure persistante, touchez pour changer de site"
+        AppLanguage.GERMAN -> "Feste Leiste unten, zum Wechseln tippen"
+        AppLanguage.RUSSIAN -> "Постоянная нижняя панель для переключения сайтов"
+        AppLanguage.JAPANESE -> "常設の下部バーでサイトを切り替え"
+        AppLanguage.KOREAN -> "하단 바 상시 표시, 탭하여 사이트 전환"
+    }
+
+    val multiWebModeCardsDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "主页展示站点卡片，点进卡片浏览"
+        AppLanguage.ENGLISH -> "Home grid of site cards, tap to browse"
+        AppLanguage.ARABIC -> "شبكة بطاقات رئيسية للمواقع، انقر للتصفح"
+        AppLanguage.PORTUGUESE -> "Grade inicial de cartões, toque para navegar"
+        AppLanguage.SPANISH -> "Cuadrícula de tarjetas de sitios, toca para navegar"
+        AppLanguage.FRENCH -> "Grille d'accueil de cartes, touchez pour naviguer"
+        AppLanguage.GERMAN -> "Startseiten-Raster mit Karten, zum Öffnen tippen"
+        AppLanguage.RUSSIAN -> "Главная с карточками сайтов, нажмите для просмотра"
+        AppLanguage.JAPANESE -> "ホームにサイトカードを並べ、タップで閲覧"
+        AppLanguage.KOREAN -> "홈에 사이트 카드 표시, 탭하여 열기"
+    }
+
+    val multiWebModeDrawerDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "左上角菜单或侧滑打开站点列表"
+        AppLanguage.ENGLISH -> "Site list in a side menu, top-left button or edge swipe"
+        AppLanguage.ARABIC -> "قائمة المواقع في قائمة جانبية، زر أعلى اليسار أو سحب من الحافة"
+        AppLanguage.PORTUGUESE -> "Lista de sites em menu lateral, botão superior ou deslize da borda"
+        AppLanguage.SPANISH -> "Lista de sitios en menú lateral, botón superior o deslizamiento"
+        AppLanguage.FRENCH -> "Liste des sites dans un menu latéral, bouton ou balayage"
+        AppLanguage.GERMAN -> "Seitenliste im Seitenmenü, oben links oder Wischgeste"
+        AppLanguage.RUSSIAN -> "Список сайтов в боковом меню, кнопка или свайп от края"
+        AppLanguage.JAPANESE -> "サイドメニューでサイト一覧、左上ボタンか端スワイプ"
+        AppLanguage.KOREAN -> "사이드 메뉴의 사이트 목록, 좌상단 버튼 또는 가장자리 스와이프"
+    }
+
+    val multiWebModeFeedDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "聚合各站点文章列表，适合资讯类站点"
+        AppLanguage.ENGLISH -> "Aggregates article lists from all sites, best for news/blog sites"
+        AppLanguage.ARABIC -> "يجمع قوائم المقالات من كل المواقع، مناسب لمواقع الأخبار"
+        AppLanguage.PORTUGUESE -> "Agrega listas de artigos de todos os sites, ideal para notícias/blogs"
+        AppLanguage.SPANISH -> "Agrega listas de artículos de todos los sitios, ideal para noticias/blogs"
+        AppLanguage.FRENCH -> "Agrège les articles de tous les sites, idéal pour l'actualité/blogs"
+        AppLanguage.GERMAN -> "Aggregiert Artikellisten aller Seiten, ideal für News/Blogs"
+        AppLanguage.RUSSIAN -> "Собирает статьи со всех сайтов в ленту, для новостей/блогов"
+        AppLanguage.JAPANESE -> "全サイトの記事を集約、ニュース/ブログ向け"
+        AppLanguage.KOREAN -> "모든 사이트의 글을 모아 보여줌, 뉴스/블로그에 적합"
+    }
+
+    val multiWebShowSiteIcons: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "卡片上显示站点图标"
+        AppLanguage.ENGLISH -> "Show site icons on cards"
+        AppLanguage.ARABIC -> "إظهار أيقونات المواقع على البطاقات"
+        AppLanguage.PORTUGUESE -> "Mostrar ícones dos sites nos cartões"
+        AppLanguage.SPANISH -> "Mostrar iconos de sitios en tarjetas"
+        AppLanguage.FRENCH -> "Afficher les icônes sur les cartes"
+        AppLanguage.GERMAN -> "Seiten-Icons auf Karten anzeigen"
+        AppLanguage.RUSSIAN -> "Показывать значки сайтов на карточках"
+        AppLanguage.JAPANESE -> "カードにサイトアイコンを表示"
+        AppLanguage.KOREAN -> "카드에 사이트 아이콘 표시"
     }
 
     val multiWebAddSite: String get() = when (Strings.lang) {
