@@ -17,18 +17,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Android
+import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Cached
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.GetApp
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.SystemUpdateAlt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -81,6 +83,8 @@ import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.PremiumOutlinedButton
 import com.webtoapp.ui.components.SettingsSection
 import com.webtoapp.ui.design.WtaBadge
+import com.webtoapp.ui.design.WtaCard
+import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
 import kotlinx.coroutines.Dispatchers
@@ -487,6 +491,7 @@ private fun BuildApkContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
+                WtaCard {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     val iconPath = webApp.iconPath
                     Box(
@@ -545,9 +550,8 @@ private fun BuildApkContent(
                         )
                     }
                 }
+                }
             }
-
-            item { HorizontalDivider() }
 
             item {
                 EncryptionConfigCard(
@@ -583,15 +587,15 @@ private fun BuildApkContent(
 
             if (webApp.appType == AppType.WEB) {
                 item {
-                    EngineSelectionCard(
-                        selectedEngine = selectedEngineType,
-                        isGeckoDownloaded = isGeckoDownloaded,
-                        onEngineSelected = { selectedEngineType = it }
-                    )
+                    WtaCard {
+                        EngineSelectionCard(
+                            selectedEngine = selectedEngineType,
+                            isGeckoDownloaded = isGeckoDownloaded,
+                            onEngineSelected = { selectedEngineType = it }
+                        )
+                    }
                 }
             }
-
-            item { HorizontalDivider() }
 
             if (analysisReport == null && !isBuilding) {
                 item {
@@ -632,40 +636,56 @@ private fun BuildApkContent(
 
             if (analysisReport == null) {
                 item {
-                    Text(
-                        Strings.buildApkForApp.replace("%s", webApp.name),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Text(
-                        Strings.buildCompleteInstallHint,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    if (suggestedVersion != null) {
-                        Surface(
-                            shape = RoundedCornerShape(WtaRadius.Control),
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
-                        ) {
+                    WtaCard {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Icon(
-                                    Icons.Outlined.SystemUpdateAlt,
+                                    Icons.Outlined.Info,
                                     null,
                                     modifier = Modifier.size(18.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
-                                    Strings.updateApkGuide.replace("%s", resolvedPackageName)
-                                        .replace("%d", (suggestedVersion?.first ?: baseVersionCode).toString()),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    Strings.buildApkForApp.replace("%s", webApp.name),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
                                 )
+                            }
+
+                            Text(
+                                Strings.buildCompleteInstallHint,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            if (suggestedVersion != null) {
+                                Surface(
+                                    shape = RoundedCornerShape(WtaRadius.Control),
+                                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Outlined.SystemUpdateAlt,
+                                            null,
+                                            modifier = Modifier.size(18.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            Strings.updateApkGuide.replace("%s", resolvedPackageName)
+                                                .replace("%d", (suggestedVersion?.first ?: baseVersionCode).toString()),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -674,13 +694,9 @@ private fun BuildApkContent(
 
             if (isEnsuringRuntime || ensureRuntimeText != null) {
                 item {
-                    Surface(
-                        shape = RoundedCornerShape(WtaRadius.Control),
-                        color = if (isEnsuringRuntime) {
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
-                        } else {
-                            MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.55f)
-                        }
+                    WtaCard(
+                        tone = if (isEnsuringRuntime) WtaCardTone.Highlighted else WtaCardTone.Critical,
+                        contentPadding = PaddingValues(12.dp)
                     ) {
                         Column(
                             modifier = Modifier
@@ -733,7 +749,7 @@ private fun BuildApkContent(
 
             if (isBuilding) {
                 item {
-                    Spacer(Modifier.height(12.dp))
+                    WtaCard(tone = WtaCardTone.Highlighted) {
 
                     val animatedProgress by animateFloatAsState(
                         targetValue = progress / 100f,
@@ -792,25 +808,28 @@ private fun BuildApkContent(
                             )
                         }
                     }
+                    }
                 }
             }
 
             analysisReport?.let { report ->
-                item { HorizontalDivider() }
+                item {
+                    WtaCard {
+                        BuildSummaryCard(
+                            webApp = webApp,
+                            apkFile = report.apkFile,
+                            totalSizeFormatted = report.totalSizeFormatted,
+                            versionName = currentBuildConfig().apkExportConfig
+                                ?.customVersionName?.takeIf { it.isNotBlank() } ?: "1.0.0",
+                            versionCode = currentBuildConfig().apkExportConfig?.customVersionCode ?: 1,
+                            buildMode = lastBuildMode,
+                            buildReason = lastBuildReason
+                        )
+                    }
+                }
 
                 item {
-                    BuildSummaryCard(
-                        webApp = webApp,
-                        apkFile = report.apkFile,
-                        totalSizeFormatted = report.totalSizeFormatted,
-                        versionName = currentBuildConfig().apkExportConfig
-                            ?.customVersionName?.takeIf { it.isNotBlank() } ?: "1.0.0",
-                        versionCode = currentBuildConfig().apkExportConfig?.customVersionCode ?: 1,
-                        buildMode = lastBuildMode,
-                        buildReason = lastBuildReason
-                    )
-
-                    TextButton(
+                    PremiumOutlinedButton(
                         onClick = {
                             analysisReport = null
                             lastBuildMode = null
@@ -818,71 +837,113 @@ private fun BuildApkContent(
                             buildFailureReport = null
                             cacheMessage = null
                         },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(Strings.buildAgain)
-                    }
-
-                    HorizontalDivider()
-
-                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
                     ) {
-                        Text(
-                            "APK Analysis",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.primary
+                        Icon(
+                            Icons.Outlined.Autorenew,
+                            null,
+                            modifier = Modifier.size(18.dp)
                         )
-                        Text(
-                            report.totalSizeFormatted,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(Strings.buildAgain, maxLines = 1)
                     }
+                }
 
-                    Spacer(Modifier.height(4.dp))
+                item {
+                    WtaCard {
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Outlined.PieChart,
+                                        null,
+                                        modifier = Modifier.size(18.dp),
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Text(
+                                        Strings.apkAnalysisTitle,
+                                        style = MaterialTheme.typography.titleSmall
+                                    )
+                                }
+                                WtaBadge(
+                                    text = report.totalSizeFormatted,
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
 
-                    report.categories.forEach { cat ->
-                        val catColor = try {
-                            Color(android.graphics.Color.parseColor(cat.category.color))
-                        } catch (_: Exception) {
-                            MaterialTheme.colorScheme.primary
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
+                            Row(
                                 modifier = Modifier
-                                    .size(8.dp)
-                                    .background(catColor, RoundedCornerShape(WtaRadius.Button))
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                cat.category.displayName,
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.weight(weight = 1f, fill = true)
-                            )
-                            Text(
-                                String.format("%.1f%%", cat.percentage),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                                    .fillMaxWidth()
+                                    .height(10.dp)
+                                    .clip(RoundedCornerShape(WtaRadius.Button))
+                            ) {
+                                report.categories.forEach { cat ->
+                                    val segColor = try {
+                                        Color(android.graphics.Color.parseColor(cat.category.color))
+                                    } catch (_: Exception) {
+                                        MaterialTheme.colorScheme.primary
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(cat.percentage.coerceAtLeast(0.01f))
+                                            .fillMaxHeight()
+                                            .background(segColor)
+                                    )
+                                }
+                            }
 
-                        LinearProgressIndicator(
-                            progress = { (cat.percentage / 100f).coerceIn(0f, 1f) },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(4.dp)
-                                .padding(start = 14.dp)
-                                .clip(RoundedCornerShape(WtaRadius.Button)),
-                            color = catColor,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                        Spacer(Modifier.height(2.dp))
+                            report.categories.forEach { cat ->
+                                val catColor = try {
+                                    Color(android.graphics.Color.parseColor(cat.category.color))
+                                } catch (_: Exception) {
+                                    MaterialTheme.colorScheme.primary
+                                }
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(8.dp)
+                                                .background(catColor, RoundedCornerShape(WtaRadius.Button))
+                                        )
+                                        Spacer(Modifier.width(6.dp))
+                                        Text(
+                                            cat.category.displayName,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            modifier = Modifier.weight(weight = 1f, fill = true)
+                                        )
+                                        Text(
+                                            "${com.webtoapp.core.download.DependencyDownloadEngine.formatSize(cat.totalCompressedSize)} · " +
+                                                String.format("%.1f%%", cat.percentage),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
+                                    LinearProgressIndicator(
+                                        progress = { (cat.percentage / 100f).coerceIn(0f, 1f) },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(4.dp)
+                                            .padding(start = 14.dp)
+                                            .clip(RoundedCornerShape(WtaRadius.Button)),
+                                        color = catColor,
+                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

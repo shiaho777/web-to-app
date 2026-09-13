@@ -1059,6 +1059,7 @@ object Strings {
     val buildApkForApp: String get() = StringsA.buildApkForApp
     val buildCompleteInstallHint: String get() = StringsA.buildCompleteInstallHint
     val buildSummaryTitle: String get() = StringsA.buildSummaryTitle
+    val apkAnalysisTitle: String get() = StringsB.apkAnalysisTitle
     val buildSummaryAppSize: String get() = StringsB.buildSummaryAppSize
     val buildSummaryVersion: String get() = StringsB.buildSummaryVersion
     val buildSummaryJdk: String get() = StringsB.buildSummaryJdk
@@ -18441,6 +18442,19 @@ object StringsA {
 }
 
 object StringsB {
+    val apkAnalysisTitle: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "APK 组成分析"
+        AppLanguage.ENGLISH -> "APK Analysis"
+        AppLanguage.ARABIC -> "تحليل حزمة APK"
+        AppLanguage.PORTUGUESE -> "Análise do APK"
+        AppLanguage.SPANISH -> "Análisis del APK"
+        AppLanguage.FRENCH -> "Analyse de l'APK"
+        AppLanguage.GERMAN -> "APK-Analyse"
+        AppLanguage.RUSSIAN -> "Анализ APK"
+        AppLanguage.JAPANESE -> "APK 構成分析"
+        AppLanguage.KOREAN -> "APK 구성 분석"
+    }
+
     val buildSummaryAppSize: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "体积"
         AppLanguage.ENGLISH -> "Size"
