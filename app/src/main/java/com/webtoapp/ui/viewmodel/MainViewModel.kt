@@ -49,8 +49,27 @@ class MainViewModel(
     val categories: StateFlow<List<AppCategory>> = categoryRepository.allCategories
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    private val categoryFilterStore = com.webtoapp.core.category.CategoryFilterStore(application)
+
     private val _selectedCategoryId = MutableStateFlow<Long?>(null)
     val selectedCategoryId: StateFlow<Long?> = _selectedCategoryId.asStateFlow()
+
+    init {
+        // Restore the last category filter on cold start when the setting is on.
+        // A saved id whose category was deleted in the meantime falls back to All.
+        viewModelScope.launch {
+            if (!categoryFilterStore.rememberEnabled) return@launch
+            val saved = categoryFilterStore.loadSelection() ?: return@launch
+            _selectedCategoryId.value = when {
+                saved == -1L -> saved
+                saved > 0L -> {
+                    val existing = categoryRepository.allCategories.first()
+                    saved.takeIf { id -> existing.any { it.id == id } }
+                }
+                else -> null
+            }
+        }
+    }
 
     private val _currentApp = MutableStateFlow<WebApp?>(null)
     val currentApp: StateFlow<WebApp?> = _currentApp.asStateFlow()
@@ -1513,6 +1532,7 @@ class MainViewModel(
 
     fun selectCategory(categoryId: Long?) {
         _selectedCategoryId.value = categoryId
+        categoryFilterStore.saveSelection(categoryId)
     }
 
     fun createCategory(name: String, icon: String = "folder", color: String = "#6200EE") {
@@ -1550,7 +1570,7 @@ class MainViewModel(
                 categoryRepository.deleteCategory(category)
 
                 if (_selectedCategoryId.value == category.id) {
-                    _selectedCategoryId.value = null
+                    selectCategory(null)
                 }
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(Strings.failedDeleteCategory.replaceFirst("%s", e.message ?: ""))

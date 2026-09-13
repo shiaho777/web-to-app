@@ -67,6 +67,9 @@ object Strings {
     val moreSectionDevTools: String get() = StringsA.moreSectionDevTools
     val moreSectionBrowser: String get() = StringsA.moreSectionBrowser
     val moreSectionAppearance: String get() = StringsA.moreSectionAppearance
+    val moreSectionGeneral: String get() = StringsA.moreSectionGeneral
+    val rememberCategoryFilter: String get() = StringsA.rememberCategoryFilter
+    val rememberCategoryFilterDesc: String get() = StringsA.rememberCategoryFilterDesc
     val menuStats: String get() = StringsA.menuStats
     val statsTitle: String get() = StringsA.statsTitle
     val statsTotalLaunches: String get() = StringsA.statsTotalLaunches
@@ -5203,6 +5206,42 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Внешний вид и данные"
         AppLanguage.JAPANESE -> "外観とデータ"
         AppLanguage.KOREAN -> "외형 및 데이터"
+    }
+    val moreSectionGeneral: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "通用"
+        AppLanguage.ENGLISH -> "General"
+        AppLanguage.ARABIC -> "عام"
+        AppLanguage.PORTUGUESE -> "Geral"
+        AppLanguage.SPANISH -> "General"
+        AppLanguage.FRENCH -> "Général"
+        AppLanguage.GERMAN -> "Allgemein"
+        AppLanguage.RUSSIAN -> "Общие"
+        AppLanguage.JAPANESE -> "一般"
+        AppLanguage.KOREAN -> "일반"
+    }
+    val rememberCategoryFilter: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "记住上次分类"
+        AppLanguage.ENGLISH -> "Remember last category"
+        AppLanguage.ARABIC -> "تذكر آخر تصنيف"
+        AppLanguage.PORTUGUESE -> "Lembrar última categoria"
+        AppLanguage.SPANISH -> "Recordar última categoría"
+        AppLanguage.FRENCH -> "Mémoriser la dernière catégorie"
+        AppLanguage.GERMAN -> "Letzte Kategorie merken"
+        AppLanguage.RUSSIAN -> "Запомнить последнюю категорию"
+        AppLanguage.JAPANESE -> "前回のカテゴリを記憶"
+        AppLanguage.KOREAN -> "마지막 카테고리 기억"
+    }
+    val rememberCategoryFilterDesc: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "启动时回到上次选择的分类标签；关闭则总是进入「全部」"
+        AppLanguage.ENGLISH -> "Reopen the last selected category on launch; off always starts on \"All\""
+        AppLanguage.ARABIC -> "العودة إلى آخر تصنيف محدد عند التشغيل؛ عند الإيقاف يبدأ دائمًا على \"الكل\""
+        AppLanguage.PORTUGUESE -> "Reabrir a última categoria selecionada ao iniciar; desligado sempre inicia em \"Todos\""
+        AppLanguage.SPANISH -> "Volver a la última categoría seleccionada al iniciar; desactivado siempre inicia en \"Todos\""
+        AppLanguage.FRENCH -> "Rouvrir la dernière catégorie sélectionnée au lancement ; désactivé, démarre toujours sur « Tous »"
+        AppLanguage.GERMAN -> "Beim Start die zuletzt gewählte Kategorie öffnen; aus startet immer auf „Alle“"
+        AppLanguage.RUSSIAN -> "Открывать последнюю выбранную категорию при запуске; выкл. — всегда «Все»"
+        AppLanguage.JAPANESE -> "起動時に前回選択したカテゴリを開きます。オフでは常に「すべて」から開始"
+        AppLanguage.KOREAN -> "시작 시 마지막으로 선택한 카테고리를 엽니다. 끄면 항상 \"전체\"로 시작합니다"
     }
     val menuStats: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "使用统计"
