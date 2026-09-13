@@ -4510,6 +4510,9 @@ object Strings {
     val aiRequestFailed: String get() = StringsE.aiRequestFailed
     val aiApiNotConfigured: String get() = StringsE.aiApiNotConfigured
     val aiApiNotConfiguredDetail: String get() = StringsE.aiApiNotConfiguredDetail
+    val aiDeleteKeyConfirm: String get() = StringsE.aiDeleteKeyConfirm
+    val aiDeleteKeyCascade: String get() = StringsE.aiDeleteKeyCascade
+    val aiDeleteModelConfirm: String get() = StringsE.aiDeleteModelConfirm
     val aiModelListEmpty: String get() = StringsE.aiModelListEmpty
     val aiGetModelListError: String get() = StringsE.aiGetModelListError
     val aiGetModelListFailed: String get() = StringsE.aiGetModelListFailed
@@ -61257,6 +61260,42 @@ object StringsE {
         AppLanguage.RUSSIAN -> "Адрес API не настроен. Введите базовый URL в настройках"
         AppLanguage.JAPANESE -> "API アドレスが設定されていません。設定でベース URL を入力してください"
         AppLanguage.KOREAN -> "API 주소가 설정되지 않았습니다. 설정에서 Base URL을 입력하세요"
+    }
+    val aiDeleteKeyConfirm: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "确定要删除此 API Key 吗？"
+        AppLanguage.ENGLISH -> "Delete this API key?"
+        AppLanguage.ARABIC -> "هل تريد حذف مفتاح API هذا؟"
+        AppLanguage.PORTUGUESE -> "Excluir esta chave de API?"
+        AppLanguage.SPANISH -> "¿Eliminar esta clave de API?"
+        AppLanguage.FRENCH -> "Supprimer cette clé API ?"
+        AppLanguage.GERMAN -> "Diesen API-Schlüssel löschen?"
+        AppLanguage.RUSSIAN -> "Удалить этот ключ API?"
+        AppLanguage.JAPANESE -> "このAPIキーを削除しますか？"
+        AppLanguage.KOREAN -> "이 API 키를 삭제하시겠습니까?"
+    }
+    val aiDeleteKeyCascade: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "此 Key 正被 %d 个已保存模型使用，将一并删除。"
+        AppLanguage.ENGLISH -> "%d saved model(s) use this key and will be deleted too."
+        AppLanguage.ARABIC -> "يستخدم %d نموذجًا محفوظًا هذا المفتاح وسيتم حذفها أيضًا."
+        AppLanguage.PORTUGUESE -> "%d modelo(s) salvo(s) usam esta chave e também serão excluídos."
+        AppLanguage.SPANISH -> "%d modelo(s) guardado(s) usan esta clave y también se eliminarán."
+        AppLanguage.FRENCH -> "%d modèle(s) enregistré(s) utilisent cette clé et seront aussi supprimés."
+        AppLanguage.GERMAN -> "%d gespeicherte Modell(e) verwenden diesen Schlüssel und werden ebenfalls gelöscht."
+        AppLanguage.RUSSIAN -> "Этот ключ используют %d сохранённых моделей — они тоже будут удалены."
+        AppLanguage.JAPANESE -> "このキーは %d 個の保存済みモデルで使用されており、一緒に削除されます。"
+        AppLanguage.KOREAN -> "이 키를 사용하는 저장된 모델 %d개도 함께 삭제됩니다."
+    }
+    val aiDeleteModelConfirm: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "确定要删除该模型吗？"
+        AppLanguage.ENGLISH -> "Delete this model?"
+        AppLanguage.ARABIC -> "هل تريد حذف هذا النموذج؟"
+        AppLanguage.PORTUGUESE -> "Excluir este modelo?"
+        AppLanguage.SPANISH -> "¿Eliminar este modelo?"
+        AppLanguage.FRENCH -> "Supprimer ce modèle ?"
+        AppLanguage.GERMAN -> "Dieses Modell löschen?"
+        AppLanguage.RUSSIAN -> "Удалить эту модель?"
+        AppLanguage.JAPANESE -> "このモデルを削除しますか？"
+        AppLanguage.KOREAN -> "이 모델을 삭제하시겠습니까?"
     }
     val aiModelListEmpty: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "API 返回的模型列表为空"

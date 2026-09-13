@@ -17,9 +17,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import com.webtoapp.core.ai.CatalogModel
 import com.webtoapp.core.ai.ModelCatalogState
 import com.webtoapp.core.ai.ModelsDevRepository
@@ -48,6 +50,8 @@ import com.webtoapp.data.model.AiModel
 import com.webtoapp.data.model.ApiKeyConfig
 import com.webtoapp.data.model.ModelCapability
 import com.webtoapp.data.model.SavedModel
+import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaChip
 import com.webtoapp.ui.design.WtaSpacing
 import kotlinx.coroutines.CoroutineScope
@@ -126,6 +130,16 @@ fun ModelCatalogSection(
                 .fillMaxWidth()
                 .padding(horizontal = WtaSpacing.ScreenHorizontal),
             placeholder = { Text(Strings.aiCatalogSearchHint) },
+            leadingIcon = {
+                Icon(Icons.Outlined.Search, contentDescription = null)
+            },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Outlined.Clear, contentDescription = Strings.clear)
+                    }
+                }
+            },
             singleLine = true
         )
 
@@ -283,10 +297,9 @@ private fun CatalogModelRow(
     canAdd: Boolean,
     onAdd: () -> Unit
 ) {
-    Surface(
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier.fillMaxWidth()
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -328,7 +341,7 @@ private fun CatalogModelRow(
                 }
             }
             Spacer(Modifier.width(WtaSpacing.Small))
-            IconButton(onClick = onAdd, enabled = canAdd) {
+            FilledTonalIconButton(onClick = onAdd, enabled = canAdd) {
                 Icon(Icons.Outlined.Add, contentDescription = Strings.aiCatalogAdd)
             }
         }
@@ -360,19 +373,11 @@ private fun CatalogAddModelDialog(
     var selectedKey by remember { mutableStateOf(apiKeys.firstOrNull()) }
     var alias by remember { mutableStateOf("") }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp
-        ) {
-            Column(modifier = Modifier.padding(WtaSpacing.Medium)) {
-                Text(
-                    text = Strings.aiCatalogAddTitle,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.padding(top = WtaSpacing.Small))
+    WtaAlertDialog(
+        onDismissRequest = onDismiss,
+        title = Strings.aiCatalogAddTitle,
+        content = {
+            Column {
                 Text(
                     text = "${model.name} · ${model.providerName}",
                     style = MaterialTheme.typography.bodyMedium
@@ -415,25 +420,22 @@ private fun CatalogAddModelDialog(
                     placeholder = { Text(Strings.aiCatalogAliasHint) },
                     singleLine = true
                 )
-                Spacer(Modifier.padding(top = WtaSpacing.Medium))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) { Text(Strings.btnCancel) }
-                    Spacer(Modifier.width(WtaSpacing.Small))
-                    Button(
-                        onClick = { selectedKey?.let { onConfirm(it, alias) } },
-                        enabled = selectedKey != null
-                    ) { Text(Strings.aiCatalogAdd) }
-                }
             }
+        },
+        confirmButton = {
+            Button(
+                onClick = { selectedKey?.let { onConfirm(it, alias) } },
+                enabled = selectedKey != null
+            ) { Text(Strings.aiCatalogAdd) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(Strings.btnCancel) }
         }
-    }
+    )
 }
 
 private fun catalogCapabilityLabel(filter: CapabilityFilter): String = when (filter) {
-    CapabilityFilter.ALL -> Strings.aiCatalogAllProviders
+    CapabilityFilter.ALL -> Strings.all
     CapabilityFilter.VISION -> Strings.aiCatalogBadgeVision
     CapabilityFilter.REASONING -> Strings.aiCatalogBadgeReasoning
     CapabilityFilter.TOOL_CALL -> Strings.aiCatalogBadgeToolCall

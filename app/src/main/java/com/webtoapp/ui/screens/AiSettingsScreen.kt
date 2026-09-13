@@ -2,7 +2,6 @@ package com.webtoapp.ui.screens
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
-import androidx.compose.foundation.BorderStroke
 import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.design.WtaChip
 import androidx.compose.foundation.clickable
@@ -36,7 +35,12 @@ import com.webtoapp.data.model.*
 import com.webtoapp.ui.components.*
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextAlign
+import com.webtoapp.ui.design.WtaAlertDialog
+import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaScreen
+import com.webtoapp.ui.design.WtaSection
 import com.webtoapp.ui.design.WtaSpacing
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,6 +61,8 @@ fun AiSettingsScreen(
     var selectedApiKey by remember { mutableStateOf<ApiKeyConfig?>(null) }
     var editingApiKey by remember { mutableStateOf<ApiKeyConfig?>(null) }
     var editingModel by remember { mutableStateOf<SavedModel?>(null) }
+    var deletingApiKey by remember { mutableStateOf<ApiKeyConfig?>(null) }
+    var deletingModel by remember { mutableStateOf<SavedModel?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     var selectedTab by remember { mutableStateOf(0) }
@@ -69,10 +75,28 @@ fun AiSettingsScreen(
         onBack = onBack
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            TabRow(selectedTabIndex = selectedTab) {
-                Tab(selected = selectedTab == 0, onClick = { selectedTab = 0 }, text = { Text(Strings.apiKeys) })
-                Tab(selected = selectedTab == 1, onClick = { selectedTab = 1 }, text = { Text(Strings.savedModels) })
-                Tab(selected = selectedTab == 2, onClick = { selectedTab = 2 }, text = { Text(Strings.aiModelCatalog) })
+            SecondaryTabRow(selectedTabIndex = selectedTab) {
+                AiSettingsTab(
+                    selected = selectedTab == 0,
+                    onClick = { selectedTab = 0 },
+                    icon = Icons.Outlined.Key,
+                    label = Strings.apiKeys,
+                    count = apiKeys.size
+                )
+                AiSettingsTab(
+                    selected = selectedTab == 1,
+                    onClick = { selectedTab = 1 },
+                    icon = Icons.Outlined.SmartToy,
+                    label = Strings.savedModels,
+                    count = savedModels.size
+                )
+                AiSettingsTab(
+                    selected = selectedTab == 2,
+                    onClick = { selectedTab = 2 },
+                    icon = Icons.Outlined.GridView,
+                    label = Strings.aiModelCatalog,
+                    count = null
+                )
             }
             when (selectedTab) {
                 0 -> LazyColumn(
@@ -87,9 +111,7 @@ fun AiSettingsScreen(
                             apiKeys = apiKeys,
                             onAddClick = { showAddApiKeyDialog = true },
                             onEditClick = { editingApiKey = it },
-                            onDeleteClick = { key ->
-                                scope.launch { configManager.deleteApiKey(key.id) }
-                            },
+                            onDeleteClick = { key -> deletingApiKey = key },
                             onTestClick = { key ->
                                 scope.launch {
                                     val result = apiClient.testConnection(key)
@@ -127,9 +149,7 @@ fun AiSettingsScreen(
                                 }
                             },
                             onEditClick = { editingModel = it },
-                            onDeleteClick = { model ->
-                                scope.launch { configManager.deleteSavedModel(model.id) }
-                            },
+                            onDeleteClick = { model -> deletingModel = model },
                             onSetDefaultClick = { model ->
                                 scope.launch { configManager.setDefaultModel(model.id) }
                             }
@@ -235,8 +255,122 @@ fun AiSettingsScreen(
             }
         )
     }
+
+    deletingApiKey?.let { key ->
+        val linkedModels = savedModels.filter { it.apiKeyId == key.id }
+        WtaAlertDialog(
+            onDismissRequest = { deletingApiKey = null },
+            icon = Icons.Outlined.Delete,
+            iconTint = MaterialTheme.colorScheme.error,
+            title = Strings.deleteConfirmTitle,
+            text = if (linkedModels.isEmpty()) Strings.aiDeleteKeyConfirm
+                else Strings.aiDeleteKeyConfirm + "\n" + Strings.aiDeleteKeyCascade.format(linkedModels.size),
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            // A saved model without its key is dead weight — cascade.
+                            linkedModels.forEach { configManager.deleteSavedModel(it.id) }
+                            configManager.deleteApiKey(key.id)
+                            deletingApiKey = null
+                        }
+                    }
+                ) {
+                    Text(Strings.btnDelete, color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingApiKey = null }) {
+                    Text(Strings.btnCancel)
+                }
+            }
+        )
+    }
+
+    deletingModel?.let { model ->
+        WtaAlertDialog(
+            onDismissRequest = { deletingModel = null },
+            icon = Icons.Outlined.Delete,
+            iconTint = MaterialTheme.colorScheme.error,
+            title = Strings.deleteConfirmTitle,
+            text = Strings.aiDeleteModelConfirm,
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            configManager.deleteSavedModel(model.id)
+                            deletingModel = null
+                        }
+                    }
+                ) {
+                    Text(Strings.btnDelete, color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deletingModel = null }) {
+                    Text(Strings.btnCancel)
+                }
+            }
+        )
+    }
     }
 }
+
+@Composable
+private fun AiSettingsTab(
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: ImageVector,
+    label: String,
+    count: Int?
+) {
+    Tab(
+        selected = selected,
+        onClick = onClick,
+        text = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp))
+                Spacer(modifier = Modifier.width(5.dp))
+                Text(
+                    if (count != null) "$label ($count)" else label,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun AiEmptyCard(icon: ImageVector, text: String) {
+    WtaCard(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = WtaSpacing.Medium),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+// The "[OK] "/"[FAIL] " tags baked into the shared result strings are handy in
+// logs; on screen the color already carries the meaning.
+private fun String.stripResultTag(): String =
+    removePrefix("[OK] ").removePrefix("[FAIL] ")
 
 @Composable
 private fun ApiKeysSection(
@@ -246,26 +380,18 @@ private fun ApiKeysSection(
     onDeleteClick: (ApiKeyConfig) -> Unit,
     onTestClick: (ApiKeyConfig) -> Unit
 ) {
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(Strings.apiKeys, style = MaterialTheme.typography.titleMedium)
-                IconButton(onClick = onAddClick) {
-                    Icon(Icons.Default.Add, Strings.add)
-                }
+    WtaSection(
+        title = Strings.apiKeys,
+        trailing = {
+            IconButton(onClick = onAddClick) {
+                Icon(Icons.Default.Add, Strings.add)
             }
-
-            if (apiKeys.isEmpty()) {
-                Text(
-                    Strings.noApiKeysHint,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
+        }
+    ) {
+        if (apiKeys.isEmpty()) {
+            AiEmptyCard(icon = Icons.Outlined.KeyOff, text = Strings.noApiKeysHint)
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
                 apiKeys.forEach { key ->
                     ApiKeyItem(
                         config = key,
@@ -287,51 +413,90 @@ private fun ApiKeyItem(
     onTest: () -> Unit
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var isTesting by remember { mutableStateOf(false) }
+    var testOk by remember { mutableStateOf<Boolean?>(null) }
     var testResult by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val apiClient = remember { AiApiClient(context) }
 
-    val isDark = com.webtoapp.ui.theme.LocalIsDarkTheme.current
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        shape = RoundedCornerShape(12.dp),
-        color = if (isDark) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f),
-        border = BorderStroke(0.5.dp, if (isDark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.06f))
+    WtaCard(
+        onClick = onEdit,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(12.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.size(38.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        Icons.Outlined.Key,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(10.dp))
+
             Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                 Text(
-                    config.provider.displayName,
-                    style = MaterialTheme.typography.bodyMedium
+                    config.displayName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    "****${config.apiKey.takeLast(4)}",
+                    buildString {
+                        append(config.provider.displayName)
+                        if (config.apiKey.isNotBlank()) append(" · ****${config.apiKey.takeLast(4)}")
+                    },
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-                testResult?.let {
+                config.baseUrl?.takeIf { it.isNotBlank() }?.let {
                     Text(
                         it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                testResult?.let {
+                    Text(
+                        it.stripResultTag(),
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (it.startsWith("[OK]")) MaterialTheme.colorScheme.primary
+                        color = if (testOk == true) MaterialTheme.colorScheme.primary
                                else MaterialTheme.colorScheme.error
                     )
                 }
             }
 
-            TextButton(onClick = {
-                scope.launch {
-                    testResult = Strings.testing
-                    val result = apiClient.testConnection(config)
-                    testResult = if (result.isSuccess) Strings.connectionSuccess else Strings.connectionFailed.format(result.exceptionOrNull()?.message ?: "")
+            TextButton(
+                onClick = {
+                    scope.launch {
+                        isTesting = true
+                        testOk = null
+                        testResult = null
+                        val result = apiClient.testConnection(config)
+                        testOk = result.isSuccess
+                        testResult = if (result.isSuccess) Strings.connectionSuccess
+                            else Strings.connectionFailed.format(result.exceptionOrNull()?.message ?: "")
+                        isTesting = false
+                    }
+                },
+                enabled = !isTesting
+            ) {
+                if (isTesting) {
+                    CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(6.dp))
                 }
-            }) {
                 Text(Strings.test)
             }
 
@@ -368,48 +533,26 @@ private fun SavedModelsSection(
     onDeleteClick: (SavedModel) -> Unit,
     onSetDefaultClick: (SavedModel) -> Unit
 ) {
-    EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+    WtaSection(
+        title = Strings.savedModels,
+        description = Strings.configModelCapabilities,
+        trailing = {
+            IconButton(
+                onClick = onAddClick,
+                enabled = apiKeys.isNotEmpty()
             ) {
-                Text(Strings.savedModels, style = MaterialTheme.typography.titleMedium)
-                IconButton(
-                    onClick = onAddClick,
-                    enabled = apiKeys.isNotEmpty()
-                ) {
-                    Icon(Icons.Default.Add, Strings.add)
-                }
+                Icon(Icons.Default.Add, Strings.add)
             }
-
-            Text(
-                Strings.configModelCapabilities,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        }
+    ) {
+        if (models.isEmpty()) {
+            AiEmptyCard(
+                icon = if (apiKeys.isEmpty()) Icons.Outlined.KeyOff else Icons.Outlined.SmartToy,
+                text = if (apiKeys.isEmpty()) Strings.pleaseAddApiKeyFirst else Strings.noSavedModelsHint
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (models.isEmpty()) {
-                if (apiKeys.isEmpty()) {
-                    Text(
-                        Strings.pleaseAddApiKeyFirst,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    Text(
-                        Strings.noSavedModelsHint,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            } else {
-
-                val apiKeyMap = apiKeys.associateBy { it.id }
-
+        } else {
+            val apiKeyMap = apiKeys.associateBy { it.id }
+            Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.Small)) {
                 models.forEach { model ->
                     val apiKey = apiKeyMap[model.apiKeyId]
                     SavedModelItem(
@@ -443,27 +586,56 @@ private fun SavedModelItem(
     val context = LocalContext.current
     val apiClient = remember { AiApiClient(context) }
 
-    val isDark = com.webtoapp.ui.theme.LocalIsDarkTheme.current
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clickable { onEdit() },
-        shape = RoundedCornerShape(12.dp),
-        color = if (isDark) Color.White.copy(alpha = 0.10f) else Color.White.copy(alpha = 0.72f),
-        border = BorderStroke(0.5.dp, if (isDark) Color.White.copy(alpha = 0.10f) else Color.Black.copy(alpha = 0.06f))
+    val category = model.capabilities.firstOrNull() ?: ModelCapability.TEXT
+    val capIcon = when (category) {
+        ModelCapability.MULTIMODAL -> Icons.Outlined.Visibility
+        ModelCapability.IMAGE_GENERATION -> Icons.Outlined.Image
+        else -> Icons.Outlined.Forum
+    }
+    val capPlateColor = when (category) {
+        ModelCapability.MULTIMODAL -> MaterialTheme.colorScheme.primaryContainer
+        ModelCapability.IMAGE_GENERATION -> MaterialTheme.colorScheme.tertiaryContainer
+        else -> MaterialTheme.colorScheme.secondaryContainer
+    }
+    val capOnPlateColor = when (category) {
+        ModelCapability.MULTIMODAL -> MaterialTheme.colorScheme.onPrimaryContainer
+        ModelCapability.IMAGE_GENERATION -> MaterialTheme.colorScheme.onTertiaryContainer
+        else -> MaterialTheme.colorScheme.onSecondaryContainer
+    }
+
+    WtaCard(
+        onClick = onEdit,
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(12.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Column {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = capPlateColor,
+                    modifier = Modifier.size(38.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            capIcon,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = capOnPlateColor
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+
                 Column(modifier = Modifier.weight(weight = 1f, fill = true)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             model.alias ?: model.model.name,
-                            style = MaterialTheme.typography.bodyMedium
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         if (model.isDefault) {
                             Spacer(modifier = Modifier.width(8.dp))
@@ -491,7 +663,7 @@ private fun SavedModelItem(
                     )
                     testResult?.let {
                         Text(
-                            it,
+                            it.stripResultTag(),
                             style = MaterialTheme.typography.bodySmall,
                             color = if (testOk == true) MaterialTheme.colorScheme.primary
                                     else MaterialTheme.colorScheme.error
@@ -558,7 +730,6 @@ private fun SavedModelItem(
                 }
             }
 
-            val category = model.capabilities.firstOrNull() ?: ModelCapability.TEXT
             Spacer(modifier = Modifier.height(8.dp))
             Surface(
                 shape = MaterialTheme.shapes.extraSmall,
@@ -831,7 +1002,7 @@ private fun AddApiKeyDialog(
 
                 testResult?.let {
                     Text(
-                        it,
+                        it.stripResultTag(),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (it.startsWith("[OK]")) MaterialTheme.colorScheme.primary
                                else MaterialTheme.colorScheme.error
