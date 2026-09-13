@@ -170,7 +170,7 @@ class AgentViewModel(application: Application) : AndroidViewModel(application) {
                 val label = model?.alias?.takeIf { it.isNotBlank() }
                     ?: model?.model?.name
                     ?: Strings.agentModelChipLabel
-                _ui.update { it.copy(currentModelLabel = label) }
+                _ui.update { it.copy(currentModelLabel = label, modelMissing = model == null) }
             }
         }
     }

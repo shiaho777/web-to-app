@@ -51,6 +51,8 @@ data class AgentUiState(
     val modelProviderGroups: List<ProviderGroup> = emptyList(),
     val selectedProviderKeyId: String? = null,
     val currentModelLabel: String = "",
+    /** No usable text model is configured — the model chip highlights this. */
+    val modelMissing: Boolean = false,
 
     val mentionPickerOpen: Boolean = false,
 

@@ -32,7 +32,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.InsertDriveFile
-import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.SmartToy
 import androidx.compose.material.icons.outlined.Stop
 import androidx.compose.material.icons.outlined.Terminal
@@ -130,6 +130,7 @@ fun Composer(
             onToggleAuto = onToggleAutoApprove,
             onTriggerSlash = onTriggerSlash,
             currentModelLabel = state.currentModelLabel,
+            modelMissing = state.modelMissing,
             onOpenModelPicker = onOpenModelPicker,
             estimatedTokens = state.estimatedContextTokens,
             contextCapacity = state.contextCapacity,
@@ -573,6 +574,7 @@ private fun ModeChipRow(
     onToggleAuto: () -> Unit,
     onTriggerSlash: () -> Unit,
     currentModelLabel: String,
+    modelMissing: Boolean,
     onOpenModelPicker: () -> Unit,
     estimatedTokens: Int,
     contextCapacity: Int,
@@ -583,9 +585,11 @@ private fun ModeChipRow(
 ) {
     var showCompactMenu by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
+    // Chips can outgrow narrow screens — scroll instead of clipping the model chip.
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
             .padding(
                 horizontal = WtaSpacing.ScreenHorizontal,
                 vertical = WtaSpacing.Tiny + 2.dp
@@ -596,7 +600,7 @@ private fun ModeChipRow(
         ModeChip(
             label = if (autoApprove) Strings.agentAutoModeLabel
             else Strings.agentManualModeLabel,
-            icon = if (autoApprove) Icons.Outlined.Bolt else Icons.Outlined.Lock,
+            icon = if (autoApprove) Icons.Outlined.Bolt else Icons.Outlined.Shield,
             primary = autoApprove,
             onClick = onToggleAuto
         )
@@ -646,10 +650,10 @@ private fun ModeChipRow(
             }
         }
 
-        Spacer(Modifier.weight(1f))
-
         ModelChip(
-            label = currentModelLabel.ifBlank { Strings.agentModelChipLabel },
+            label = if (modelMissing) Strings.selectModel
+                else currentModelLabel.ifBlank { Strings.agentModelChipLabel },
+            missing = modelMissing,
             onClick = onOpenModelPicker
         )
     }
@@ -670,21 +674,27 @@ private fun formatTokenUsage(used: Int, capacity: Int): String {
 @Composable
 private fun ModelChip(
     label: String,
+    missing: Boolean,
     onClick: () -> Unit
 ) {
-    com.webtoapp.ui.design.WtaCard(
+    // No usable model is a blocking state: flag it instead of looking normal
+    // and failing only after the user hits send.
+    val tone = if (missing) WtaCardTone.Critical else WtaCardTone.Highlighted
+    val onTone = if (missing) MaterialTheme.colorScheme.onErrorContainer
+        else MaterialTheme.colorScheme.onPrimaryContainer
+    WtaCard(
         onClick = onClick,
-        tone = com.webtoapp.ui.design.WtaCardTone.Highlighted,
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+        tone = tone,
+        contentPadding = PaddingValues(
             horizontal = WtaSpacing.Small + 2.dp,
             vertical = WtaSpacing.Tiny + 2.dp
         )
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
-                imageVector = Icons.Outlined.SmartToy,
+                imageVector = if (missing) Icons.Outlined.Warning else Icons.Outlined.SmartToy,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = onTone,
                 modifier = Modifier.size(WtaSize.IconSmall - 2.dp)
             )
             Spacer(Modifier.width(WtaSpacing.Tiny + 2.dp))
@@ -697,7 +707,7 @@ private fun ModelChip(
                     text = label,
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = onTone,
                     maxLines = 1,
                     softWrap = false
                 )

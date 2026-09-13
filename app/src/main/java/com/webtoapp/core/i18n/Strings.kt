@@ -1631,6 +1631,7 @@ object Strings {
     val agentModelSwitched: String get() = StringsB.agentModelSwitched
     val agentModelPickerTitle: String get() = StringsB.agentModelPickerTitle
     val agentModelChipLabel: String get() = StringsB.agentModelChipLabel
+    val agentModelSearchHint: String get() = StringsB.agentModelSearchHint
     val agentModelPickerProviders: String get() = StringsB.agentModelPickerProviders
     val agentModelPickerModels: String get() = StringsB.agentModelPickerModels
     val agentServiceNotConnected: String get() = StringsB.agentServiceNotConnected
@@ -25722,6 +25723,18 @@ object StringsB {
         AppLanguage.RUSSIAN -> "Модель"
         AppLanguage.JAPANESE -> "モデル"
         AppLanguage.KOREAN -> "모델"
+    }
+    val agentModelSearchHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "搜索模型…"
+        AppLanguage.ENGLISH -> "Search models…"
+        AppLanguage.ARABIC -> "البحث في النماذج…"
+        AppLanguage.PORTUGUESE -> "Pesquisar modelos…"
+        AppLanguage.SPANISH -> "Buscar modelos…"
+        AppLanguage.FRENCH -> "Rechercher des modèles…"
+        AppLanguage.GERMAN -> "Modelle suchen…"
+        AppLanguage.RUSSIAN -> "Поиск моделей…"
+        AppLanguage.JAPANESE -> "モデルを検索…"
+        AppLanguage.KOREAN -> "모델 검색…"
     }
     val agentModelPickerProviders: String get() = when (Strings.lang) {
         AppLanguage.CHINESE -> "供应商"

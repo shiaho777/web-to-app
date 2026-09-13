@@ -8,6 +8,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -89,6 +90,7 @@ import com.webtoapp.ui.design.WtaInfoChip
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
 import com.webtoapp.ui.theme.AppColors
+import java.util.Date
 
 data class MessageActions(
     val onCopy: (AgentMessage, includeDetails: Boolean) -> Unit,
@@ -188,7 +190,15 @@ fun MessageBubble(
                 horizontal = WtaSpacing.Medium + 2.dp,
                 vertical = WtaSpacing.Medium - 2.dp
             ),
-            modifier = Modifier.widthIn(max = 560.dp)
+            // Long-press opens the same action menu as the ⋯ button — the
+            // standard chat affordance users reach for before discovering the
+            // tiny icon. Text long-press still selects via SelectionContainer.
+            modifier = Modifier
+                .widthIn(max = 560.dp)
+                .combinedClickable(
+                    onClick = {},
+                    onLongClick = { menuOpen = true }
+                )
         ) {
             if (isUser) {
                 if (message.userAttachmentsSafe.isNotEmpty()) {
@@ -232,55 +242,69 @@ fun MessageBubble(
             Spacer(Modifier.height(WtaSpacing.Tiny))
             AttachmentList(message.attachments)
         }
-        Spacer(Modifier.height(WtaSpacing.Tiny))
-        Box {
-            WtaIconButton(
-                onClick = { menuOpen = true },
-                icon = Icons.Outlined.MoreHoriz,
-                contentDescription = Strings.more,
-                modifier = Modifier.size(WtaSize.TouchTarget)
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Timestamp orients long sessions; the menu stays the action anchor.
+            Text(
+                text = remember(message.timestamp) {
+                    MESSAGE_TIME_FORMAT.format(Date(message.timestamp))
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = WtaAlpha.Strong)
             )
-            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                if (isUser) {
-                    DropdownMenuItem(
-                        text = { Text(Strings.agentMessageActionCopy) },
-                        leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
-                        onClick = { menuOpen = false; actions.onCopy(message, false) }
-                    )
-                } else {
-                    DropdownMenuItem(
-                        text = { Text(Strings.agentMessageActionCopyOutput) },
-                        leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
-                        onClick = { menuOpen = false; actions.onCopy(message, false) }
-                    )
-                    DropdownMenuItem(
-                        text = { Text(Strings.agentMessageActionCopyAll) },
-                        leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
-                        onClick = { menuOpen = false; actions.onCopy(message, true) }
-                    )
-                }
-                if (isUser) {
-                    DropdownMenuItem(
-                        text = { Text(Strings.agentMessageActionEdit) },
-                        leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
-                        onClick = { menuOpen = false; actions.onEdit(message) }
-                    )
-                } else {
-                    DropdownMenuItem(
-                        text = { Text(Strings.agentMessageActionRegenerate) },
-                        leadingIcon = { Icon(Icons.Outlined.Refresh, contentDescription = null) },
-                        onClick = { menuOpen = false; actions.onRegenerate(message) }
-                    )
-                }
-                DropdownMenuItem(
-                    text = { Text(Strings.agentMessageActionDelete) },
-                    leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = null) },
-                    onClick = { menuOpen = false; actions.onDeleteFromHere(message) }
+            Spacer(Modifier.width(WtaSpacing.Tiny))
+            Box {
+                WtaIconButton(
+                    onClick = { menuOpen = true },
+                    icon = Icons.Outlined.MoreHoriz,
+                    contentDescription = Strings.more,
+                    modifier = Modifier.size(32.dp)
                 )
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    if (isUser) {
+                        DropdownMenuItem(
+                            text = { Text(Strings.agentMessageActionCopy) },
+                            leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
+                            onClick = { menuOpen = false; actions.onCopy(message, false) }
+                        )
+                    } else {
+                        DropdownMenuItem(
+                            text = { Text(Strings.agentMessageActionCopyOutput) },
+                            leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
+                            onClick = { menuOpen = false; actions.onCopy(message, false) }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(Strings.agentMessageActionCopyAll) },
+                            leadingIcon = { Icon(Icons.Outlined.ContentCopy, contentDescription = null) },
+                            onClick = { menuOpen = false; actions.onCopy(message, true) }
+                        )
+                    }
+                    if (isUser) {
+                        DropdownMenuItem(
+                            text = { Text(Strings.agentMessageActionEdit) },
+                            leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
+                            onClick = { menuOpen = false; actions.onEdit(message) }
+                        )
+                    } else {
+                        DropdownMenuItem(
+                            text = { Text(Strings.agentMessageActionRegenerate) },
+                            leadingIcon = { Icon(Icons.Outlined.Refresh, contentDescription = null) },
+                            onClick = { menuOpen = false; actions.onRegenerate(message) }
+                        )
+                    }
+                    DropdownMenuItem(
+                        text = { Text(Strings.agentMessageActionDelete) },
+                        leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = null) },
+                        onClick = { menuOpen = false; actions.onDeleteFromHere(message) }
+                    )
+                }
             }
         }
     }
 }
+
+private val MESSAGE_TIME_FORMAT = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
 
 @Composable
 fun ThinkingBlock(

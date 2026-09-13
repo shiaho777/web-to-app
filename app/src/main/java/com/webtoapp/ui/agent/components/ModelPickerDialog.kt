@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -15,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.RadioButtonChecked
 import androidx.compose.material.icons.outlined.RadioButtonUnchecked
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SmartToy
 import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.Icon
@@ -42,6 +44,7 @@ import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
 import com.webtoapp.ui.design.WtaSize
 import com.webtoapp.ui.design.WtaSpacing
+import com.webtoapp.ui.design.WtaTextField
 
 @Composable
 fun ModelPickerDialog(
@@ -53,7 +56,20 @@ fun ModelPickerDialog(
     var selectedProviderKeyId by remember {
         mutableStateOf(initialSelectedProviderKeyId ?: groups.firstOrNull()?.apiKeyId)
     }
+    var query by remember { mutableStateOf("") }
     val currentGroup = groups.firstOrNull { it.apiKeyId == selectedProviderKeyId } ?: groups.firstOrNull()
+
+    // Flat matches across every provider when searching — drilling the two-pane
+    // layout provider-by-provider is the slow path when you know the model name.
+    val searchResults = remember(groups, query) {
+        if (query.isBlank()) emptyList()
+        else groups.flatMap { g ->
+            g.models.filter {
+                it.label.contains(query, ignoreCase = true) ||
+                    it.subtitle.contains(query, ignoreCase = true)
+            }.map { g.displayName to it }
+        }
+    }
 
     WtaAlertDialog(
         onDismissRequest = onDismiss,
@@ -68,23 +84,60 @@ fun ModelPickerDialog(
             )
         },
         content = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 240.dp, max = 380.dp)
-            ) {
-                ProviderColumn(
-                    groups = groups,
-                    selectedKeyId = selectedProviderKeyId,
-                    onSelect = { selectedProviderKeyId = it },
-                    modifier = Modifier.weight(1f)
+            Column(modifier = Modifier.fillMaxWidth()) {
+                WtaTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = Strings.agentModelSearchHint,
+                    leadingIcon = Icons.Outlined.Search,
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(Modifier.width(WtaSpacing.Small))
-                ModelColumn(
-                    group = currentGroup,
-                    onSelect = onSelect,
-                    modifier = Modifier.weight(1.4f)
-                )
+                Spacer(Modifier.height(WtaSpacing.Small))
+                if (query.isNotBlank()) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 240.dp, max = 380.dp),
+                        verticalArrangement = Arrangement.spacedBy(WtaSpacing.Tiny + 2.dp)
+                    ) {
+                        if (searchResults.isEmpty()) {
+                            item {
+                                Text(
+                                    text = Strings.aiCatalogEmpty,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(WtaSpacing.Medium)
+                                )
+                            }
+                        }
+                        items(searchResults, key = { it.second.id }) { (_, choice) ->
+                            ModelRow(
+                                choice = choice,
+                                onClick = { onSelect(choice.id) }
+                            )
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 240.dp, max = 380.dp)
+                    ) {
+                        ProviderColumn(
+                            groups = groups,
+                            selectedKeyId = selectedProviderKeyId,
+                            onSelect = { selectedProviderKeyId = it },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(WtaSpacing.Small))
+                        ModelColumn(
+                            group = currentGroup,
+                            onSelect = onSelect,
+                            modifier = Modifier.weight(1.4f)
+                        )
+                    }
+                }
             }
         }
     )
