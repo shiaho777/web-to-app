@@ -110,7 +110,7 @@ fun SplashScreenCard(
     }
 
     WtaSettingCard {
-        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)) {
+        Column {
 
             WtaToggleRow(
                 icon = Icons.Outlined.Wallpaper,
@@ -129,6 +129,7 @@ fun SplashScreenCard(
                   modifier = Modifier.padding(horizontal = WtaSpacing.RowHorizontal),
                   verticalArrangement = Arrangement.spacedBy(12.dp)
               ) {
+                Spacer(Modifier.height(WtaSpacing.ContentGap))
                 if (splashMediaUri != null && mediaExists) {
                     if (splashConfig.type == SplashType.VIDEO) {
 

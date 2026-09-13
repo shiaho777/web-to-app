@@ -13,6 +13,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
@@ -135,13 +137,13 @@ val CardExpandTransition: EnterTransition = expandVertically(
     animationSpec = WtaMotion.settleSpring(),
     expandFrom = androidx.compose.ui.Alignment.Top,
     clip = true
-)
+) + fadeIn(animationSpec = WtaMotion.standardTween(WtaMotion.DurationMedium))
 
 val CardCollapseTransition: ExitTransition = shrinkVertically(
     animationSpec = WtaMotion.snapSpring(),
     shrinkTowards = androidx.compose.ui.Alignment.Top,
     clip = true
-)
+) + fadeOut(animationSpec = WtaMotion.exitTween(WtaMotion.DurationQuick))
 
 data class RippleAnimState(
     val isActive: Boolean = false,

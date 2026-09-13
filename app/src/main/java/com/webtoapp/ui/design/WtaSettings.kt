@@ -94,17 +94,15 @@ fun WtaSection(
         WtaCapabilityLevel.Lab -> MaterialTheme.colorScheme.tertiary
     }
 
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(
-            when (headerStyle) {
-                WtaSectionHeaderStyle.Prominent -> WtaSpacing.CardGap
-                WtaSectionHeaderStyle.Quiet -> WtaSpacing.ContentGap
-                WtaSectionHeaderStyle.Hidden -> WtaSpacing.CardGap
-            }
-        )
-    ) {
-        if (headerStyle != WtaSectionHeaderStyle.Hidden || canToggle || description != null) {
+    val sectionGap = when (headerStyle) {
+        WtaSectionHeaderStyle.Prominent -> WtaSpacing.CardGap
+        WtaSectionHeaderStyle.Quiet -> WtaSpacing.ContentGap
+        WtaSectionHeaderStyle.Hidden -> WtaSpacing.CardGap
+    }
+    val hasHeader = headerStyle != WtaSectionHeaderStyle.Hidden || canToggle || description != null
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        if (hasHeader) {
             WtaSectionHeader(
                 title = title,
                 description = description,
@@ -126,9 +124,13 @@ fun WtaSection(
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap),
-                content = content
-            )
+                verticalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)
+            ) {
+                if (hasHeader) {
+                    Spacer(modifier = Modifier.height(sectionGap))
+                }
+                content()
+            }
         }
     }
 }

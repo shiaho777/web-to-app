@@ -1,5 +1,7 @@
 package com.webtoapp.ui.components
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.webtoapp.ui.animation.CardCollapseTransition
+import com.webtoapp.ui.animation.CardExpandTransition
 import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaBadge
 import com.webtoapp.ui.design.WtaCard
@@ -135,10 +137,7 @@ fun ExtensionModuleCard(
     var showSavePresetDialog by remember { mutableStateOf(false) }
 
     EnhancedElevatedCard(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -200,10 +199,11 @@ fun ExtensionModuleCard(
 
             AnimatedVisibility(
                 visible = enabled,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+                enter = CardExpandTransition,
+                exit = CardCollapseTransition
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Spacer(Modifier.height(14.dp))
 
                     if (selectedModules.isEmpty()) {
                         ExtensionEmptyState(

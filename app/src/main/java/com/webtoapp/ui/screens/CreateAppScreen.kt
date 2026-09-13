@@ -923,7 +923,7 @@ fun PwaAnalysisSection(
         }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column {
 
         val isAnalyzing = pwaState is PwaAnalysisState.Analyzing
 
@@ -955,12 +955,15 @@ fun PwaAnalysisSection(
             enter = fadeIn() + expandVertically(),
             exit = fadeOut() + shrinkVertically()
         ) {
-            val error = (pwaState as? PwaAnalysisState.Error)?.message ?: ""
-            WtaStatusBanner(
-                title = Strings.pwaAnalysisFailed,
-                message = error,
-                tone = WtaStatusTone.Error
-            )
+            Column {
+                Spacer(Modifier.height(8.dp))
+                val error = (pwaState as? PwaAnalysisState.Error)?.message ?: ""
+                WtaStatusBanner(
+                    title = Strings.pwaAnalysisFailed,
+                    message = error,
+                    tone = WtaStatusTone.Error
+                )
+            }
         }
 
         AnimatedVisibility(
@@ -968,20 +971,23 @@ fun PwaAnalysisSection(
             enter = CardExpandTransition,
             exit = CardCollapseTransition
         ) {
-            val result = (pwaState as? PwaAnalysisState.Success)?.result
-            if (result != null) {
-                PwaResultCard(
-                    result = result,
-                    onApply = {
-                        viewModel.applyPwaResult(result)
-                        showResultCard = false
-                        viewModel.resetPwaState()
-                    },
-                    onDismiss = {
-                        showResultCard = false
-                        viewModel.resetPwaState()
-                    }
-                )
+            Column {
+                Spacer(Modifier.height(8.dp))
+                val result = (pwaState as? PwaAnalysisState.Success)?.result
+                if (result != null) {
+                    PwaResultCard(
+                        result = result,
+                        onApply = {
+                            viewModel.applyPwaResult(result)
+                            showResultCard = false
+                            viewModel.resetPwaState()
+                        },
+                        onDismiss = {
+                            showResultCard = false
+                            viewModel.resetPwaState()
+                        }
+                    )
+                }
             }
         }
     }
@@ -1252,10 +1258,7 @@ fun TranslateCard(
     val engineOptions = TranslateEngine.entries.toList()
 
     EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -1300,6 +1303,7 @@ fun TranslateCard(
                 exit = CardCollapseTransition
             ) {
               Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Spacer(Modifier.height(12.dp))
                 Text(
                     text = Strings.autoTranslateHint,
                     style = MaterialTheme.typography.bodySmall,

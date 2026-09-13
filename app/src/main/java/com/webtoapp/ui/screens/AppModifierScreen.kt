@@ -1095,8 +1095,7 @@ private fun AppModifyBottomBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             AnimatedVisibility(
                 visible = isProcessing,
@@ -1120,6 +1119,7 @@ private fun AppModifyBottomBar(
                             overflow = TextOverflow.Ellipsis
                         )
                     }
+                    Spacer(Modifier.height(4.dp))
                 }
             }
 
@@ -1145,6 +1145,7 @@ private fun AppModifyBottomBar(
             )
 
             if (outputMode == ModifyOutputMode.CLONE && !canClone) {
+                Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Outlined.Info,

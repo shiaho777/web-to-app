@@ -455,10 +455,7 @@ fun AdBlockCard(
     val validSubscriptions = subscriptions.filter { url -> downloadedSources.any { it.url == url } }
 
     EnhancedElevatedCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -515,6 +512,7 @@ fun AdBlockCard(
                 exit = CardCollapseTransition
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Spacer(Modifier.height(14.dp))
                     if (validSubscriptions.isEmpty()) {
                         com.webtoapp.ui.design.WtaCard(
                             tone = com.webtoapp.ui.design.WtaCardTone.Surface,

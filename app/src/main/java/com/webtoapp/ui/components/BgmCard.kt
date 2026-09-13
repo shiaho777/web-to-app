@@ -36,7 +36,7 @@ fun BgmCard(
     var showSelectorDialog by remember { mutableStateOf(false) }
 
     WtaSettingCard {
-        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.ContentGap)) {
+        Column {
             WtaToggleRow(
                 title = Strings.bgmTitle,
                 subtitle = null,
@@ -57,6 +57,7 @@ fun BgmCard(
                   ),
                   verticalArrangement = Arrangement.spacedBy(12.dp)
               ) {
+                Spacer(Modifier.height(WtaSpacing.ContentGap))
                 if (config.playlist.isNotEmpty()) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
