@@ -1,13 +1,8 @@
 package com.webtoapp.ui.screens
 
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -20,16 +15,15 @@ import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.outlined.Autorenew
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Cached
-import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.material.icons.outlined.GetApp
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.PieChart
 import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.SystemUpdateAlt
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -53,7 +47,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
@@ -76,17 +69,19 @@ import com.webtoapp.data.model.withRuntimePermissionsSyncedFromFeatures
 import com.webtoapp.ui.components.ApkExportPreflightPanel
 import com.webtoapp.ui.components.BackgroundRunConfigCard
 import com.webtoapp.ui.components.EncryptionConfigCard
-import com.webtoapp.ui.components.IconSwitchCard
 import com.webtoapp.ui.components.IsolationConfigCard
 import com.webtoapp.ui.components.NotificationConfigCard
 import com.webtoapp.ui.components.PremiumButton
 import com.webtoapp.ui.components.PremiumOutlinedButton
-import com.webtoapp.ui.components.SettingsSection
+import com.webtoapp.ui.design.WtaAlertDialog
 import com.webtoapp.ui.design.WtaBadge
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaLoadingState
 import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
+import com.webtoapp.ui.design.WtaSectionDivider
+import com.webtoapp.ui.design.WtaToggleRow
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -114,9 +109,7 @@ fun BuildApkScreen(
             title = Strings.buildDialogTitle,
             onBack = onBack
         ) { _ ->
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
+            WtaLoadingState()
         }
         return
     }
@@ -414,36 +407,16 @@ private fun BuildApkContent(
                             Text("AAB", maxLines = 1)
                         }
                         Spacer(Modifier.width(8.dp))
-                        PremiumOutlinedButton(
-                            onClick = onBack,
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
-                        ) {
-                            Icon(
-                                Icons.Outlined.Close,
-                                null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(if (analysisReport != null) Strings.close else Strings.btnCancel, maxLines = 1)
-                        }
-                        Spacer(Modifier.width(8.dp))
                         PremiumButton(
                             onClick = {
                                 if (builtApk != null) {
                                     val installStarted = apkBuilderState?.installApk(builtApk) ?: false
-                                    if (installStarted) {
-                                        android.widget.Toast.makeText(
-                                            context,
-                                            "正在启动安装...",
-                                            android.widget.Toast.LENGTH_SHORT
-                                        ).show()
-                                    } else {
-                                        android.widget.Toast.makeText(
-                                            context,
-                                            "无法自动启动安装",
-                                            android.widget.Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        if (installStarted) Strings.fileManagerInstallStarted
+                                        else Strings.fileManagerInstallFailed,
+                                        android.widget.Toast.LENGTH_SHORT
+                                    ).show()
                                 } else {
                                     launchBuild()
                                 }
@@ -496,7 +469,7 @@ private fun BuildApkContent(
                     val iconPath = webApp.iconPath
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(44.dp)
                             .clip(RoundedCornerShape(WtaRadius.IconPlate)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -521,15 +494,20 @@ private fun BuildApkContent(
                                 Icon(
                                     Icons.Filled.Android,
                                     null,
-                                    modifier = Modifier.size(20.dp),
+                                    modifier = Modifier.size(24.dp),
                                     tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
                     }
                     Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text(webApp.name, style = MaterialTheme.typography.titleSmall)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            webApp.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                         Text(
                             when (webApp.appType) {
                                 AppType.IMAGE -> {
@@ -545,6 +523,14 @@ private fun BuildApkContent(
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            resolvedPackageName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -599,36 +585,46 @@ private fun BuildApkContent(
 
             if (analysisReport == null && !isBuilding) {
                 item {
-                    SettingsSection(title = Strings.clearIncrementalCache) {
-                        IconSwitchCard(
+                    WtaCard(contentPadding = PaddingValues(vertical = 4.dp)) {
+                        WtaToggleRow(
+                            icon = Icons.Outlined.Cached,
                             title = Strings.forceFullRebuild,
                             subtitle = Strings.forceFullRebuildDesc,
-                            iconPainter = rememberVectorPainter(Icons.Outlined.Cached),
                             checked = forceFullRebuild,
                             onCheckedChange = { forceFullRebuild = it }
                         )
-                        PremiumOutlinedButton(
-                            onClick = {
-                                apkBuilderState?.clearIncrementalCache(currentBuildConfig())
-                                cacheMessage = Strings.incrementalCacheCleared
-                            },
+                        WtaSectionDivider()
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Icon(
-                                Icons.Outlined.DeleteSweep,
-                                null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(Strings.clearIncrementalCache, maxLines = 1)
-                        }
-                        cacheMessage?.let { msg ->
-                            Text(
-                                msg,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                            TextButton(
+                                onClick = {
+                                    apkBuilderState?.clearIncrementalCache(currentBuildConfig())
+                                    cacheMessage = Strings.incrementalCacheCleared
+                                },
+                                contentPadding = PaddingValues(horizontal = 8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Outlined.DeleteSweep,
+                                    null,
+                                    modifier = Modifier.size(18.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text(
+                                    Strings.clearIncrementalCache,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                            cacheMessage?.let { msg ->
+                                WtaBadge(
+                                    text = msg,
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
                         }
                     }
                 }
@@ -760,21 +756,6 @@ private fun BuildApkContent(
                         label = "buildProgress"
                     )
 
-                    val pulseAlpha by rememberInfiniteTransition(label = "buildPulse").animateFloat(
-                        initialValue = 0.6f,
-                        targetValue = 1f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(1000),
-                            repeatMode = RepeatMode.Reverse
-                        ),
-                        label = "buildPulseAlpha"
-                    )
-                    val animPulse by animateFloatAsState(
-                        targetValue = pulseAlpha,
-                        animationSpec = tween(800),
-                        label = "pulseAlpha"
-                    )
-
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -784,8 +765,7 @@ private fun BuildApkContent(
                                 progress = { animatedProgress },
                                 modifier = Modifier.size(48.dp),
                                 strokeWidth = 4.dp,
-                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = animPulse)
+                                trackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                             )
                             Text(
                                 "${progress}%",
@@ -907,39 +887,26 @@ private fun BuildApkContent(
                                 } catch (_: Exception) {
                                     MaterialTheme.colorScheme.primary
                                 }
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .background(catColor, RoundedCornerShape(WtaRadius.Button))
-                                        )
-                                        Spacer(Modifier.width(6.dp))
-                                        Text(
-                                            cat.category.displayName,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            modifier = Modifier.weight(weight = 1f, fill = true)
-                                        )
-                                        Text(
-                                            "${com.webtoapp.core.download.DependencyDownloadEngine.formatSize(cat.totalCompressedSize)} · " +
-                                                String.format("%.1f%%", cat.percentage),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-
-                                    LinearProgressIndicator(
-                                        progress = { (cat.percentage / 100f).coerceIn(0f, 1f) },
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
                                         modifier = Modifier
-                                            .fillMaxWidth()
-                                            .height(4.dp)
-                                            .padding(start = 14.dp)
-                                            .clip(RoundedCornerShape(WtaRadius.Button)),
-                                        color = catColor,
-                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                            .size(8.dp)
+                                            .background(catColor, RoundedCornerShape(WtaRadius.Button))
+                                    )
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(
+                                        cat.category.displayName,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        modifier = Modifier.weight(weight = 1f, fill = true)
+                                    )
+                                    Text(
+                                        "${com.webtoapp.core.download.DependencyDownloadEngine.formatSize(cat.totalCompressedSize)} · " +
+                                            String.format("%.1f%%", cat.percentage),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -951,11 +918,11 @@ private fun BuildApkContent(
     }
 
     if (showExportAabConfirm) {
-        AlertDialog(
+        WtaAlertDialog(
             onDismissRequest = { showExportAabConfirm = false },
-            icon = { Icon(Icons.Outlined.PlayCircleOutline, null) },
-            title = { Text(Strings.playStoreExportAabConfirmTitle) },
-            text = { Text(Strings.playStoreExportAabConfirmBody) },
+            icon = Icons.Outlined.PlayCircleOutline,
+            title = Strings.playStoreExportAabConfirmTitle,
+            text = Strings.playStoreExportAabConfirmBody,
             confirmButton = {
                 TextButton(onClick = {
                     showExportAabConfirm = false
@@ -1159,10 +1126,27 @@ fun EngineSelectionCard(
     onEngineSelected: (String) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            Strings.engineSelectTitle,
-            style = MaterialTheme.typography.titleSmall
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(WtaRadius.Control))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Outlined.Language,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            Spacer(Modifier.width(10.dp))
+            Text(
+                Strings.engineSelectTitle,
+                style = MaterialTheme.typography.titleSmall
+            )
+        }
         Text(
             Strings.engineSelectDesc,
             style = MaterialTheme.typography.bodySmall,
@@ -1369,24 +1353,24 @@ internal fun BuildFailureReportDialog(
 ) {
     val clipboardManager = LocalClipboardManager.current
 
-    AlertDialog(
+    WtaAlertDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(report.title)
-                Text(
-                    report.summary,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        },
-        text = {
-            com.webtoapp.ui.components.EnhancedElevatedCard(
+        icon = Icons.Outlined.Build,
+        iconTint = MaterialTheme.colorScheme.error,
+        title = report.title,
+        content = {
+            Text(
+                report.summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.height(8.dp))
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 420.dp),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.55f)
+                shape = RoundedCornerShape(WtaRadius.Control),
+                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.55f)
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
@@ -1396,7 +1380,8 @@ internal fun BuildFailureReportDialog(
                             .padding(14.dp)
                             .padding(bottom = 48.dp)
                             .verticalScroll(androidx.compose.foundation.rememberScrollState()),
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                     )
 
                     androidx.compose.material3.FilledTonalButton(
