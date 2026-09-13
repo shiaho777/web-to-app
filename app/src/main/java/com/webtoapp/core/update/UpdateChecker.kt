@@ -210,6 +210,60 @@ object UpdateChecker {
         }
     }
 
+    /**
+     * A public repository owned by the app author, as shown by the About page's
+     * "more projects" section. Forks and this app itself are filtered out.
+     */
+    data class RepoSummary(
+        val name: String,
+        val description: String,
+        val stars: Long,
+        val pushedAt: String,
+        val url: String
+    )
+
+    private const val AUTHOR_REPOS_API =
+        "https://api.github.com/users/$OWNER/repos?per_page=100&type=owner"
+
+    /**
+     * Fetches the author's public repos for the About page. Client-side sorting
+     * covers both "by stars" and "latest" so the sort toggle never refetches.
+     */
+    suspend fun fetchAuthorRepos(): List<RepoSummary> = withContext(Dispatchers.IO) {
+        try {
+            val json = fetchJsonRaced(AUTHOR_REPOS_API) { it.trimStart().startsWith("[") }
+                ?: throw IllegalStateException("Empty response from repos API")
+            parseAuthorRepos(json)
+        } catch (e: Exception) {
+            AppLogger.e(TAG, "Fetch author repos failed", e)
+            throw e
+        }
+    }
+
+    internal fun parseAuthorRepos(json: String): List<RepoSummary> {
+        val arr = org.json.JSONArray(json)
+        val out = ArrayList<RepoSummary>(arr.length())
+        for (i in 0 until arr.length()) {
+            val repo = arr.optJSONObject(i) ?: continue
+            if (repo.optBoolean("fork", false)) continue
+            val name = repo.optString("name").trim()
+            if (name.isBlank() || name.equals(REPO, ignoreCase = true)) continue
+            // optString("description") returns the literal "null" when the field
+            // is JSON null — check the raw value instead.
+            val rawDesc = repo.opt("description")
+            out.add(
+                RepoSummary(
+                    name = name,
+                    description = if (rawDesc == null || rawDesc == JSONObject.NULL) "" else rawDesc.toString().trim(),
+                    stars = repo.optLong("stargazers_count", 0L),
+                    pushedAt = repo.optString("pushed_at").trim(),
+                    url = repo.optString("html_url").trim()
+                )
+            )
+        }
+        return out
+    }
+
     private fun pickBestApkAsset(release: JSONObject): JSONObject? {
         val assets = release.optJSONArray("assets") ?: return null
         var best: JSONObject? = null

@@ -44,10 +44,12 @@ import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.NorthEast
 import androidx.compose.material.icons.outlined.PlayCircleOutline
 import androidx.compose.material.icons.outlined.Send
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.Tag
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -58,7 +60,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -79,6 +83,7 @@ import com.webtoapp.core.i18n.Strings
 import com.webtoapp.ui.components.DataBackupCard
 import com.webtoapp.ui.design.WtaCard
 import com.webtoapp.ui.design.WtaCardTone
+import com.webtoapp.ui.design.WtaRadius
 import com.webtoapp.ui.design.WtaScreen
 import com.webtoapp.ui.design.WtaSection
 import com.webtoapp.ui.design.WtaSectionHeaderStyle
@@ -117,6 +122,8 @@ fun AboutScreen(onBack: () -> Unit) {
             )
 
             ContactGrid()
+
+            OtherProjectsSection()
 
             WtaSection(
                 title = Strings.dataBackupTitle,
@@ -1560,4 +1567,280 @@ private fun versionCopiedToast(): String = when (Strings.currentLanguage.value) 
     AppLanguage.RUSSIAN -> "Version copied"
     AppLanguage.JAPANESE -> "Version copied"
     AppLanguage.KOREAN -> "Version copied"
+}
+
+private enum class RepoSortMode { STARS, RECENT }
+
+/**
+ * "More projects" card: lists the author's public GitHub repos (forks and this
+ * app filtered out). Default order is by stars; a header toggle switches to
+ * most-recently-pushed. Sorting is client-side — the toggle never refetches.
+ */
+@Composable
+private fun OtherProjectsSection() {
+    val context = LocalContext.current
+    val scope = androidx.compose.runtime.rememberCoroutineScope()
+
+    var repos by remember { mutableStateOf<List<com.webtoapp.core.update.UpdateChecker.RepoSummary>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var sortMode by remember { mutableStateOf(RepoSortMode.STARS) }
+
+    fun load() {
+        scope.launch {
+            loading = true
+            error = null
+            try {
+                repos = com.webtoapp.core.update.UpdateChecker.fetchAuthorRepos()
+            } catch (e: Exception) {
+                error = e.message ?: e.javaClass.simpleName
+            } finally {
+                loading = false
+            }
+        }
+    }
+    LaunchedEffect(Unit) { load() }
+
+    val sorted = remember(repos, sortMode) {
+        when (sortMode) {
+            RepoSortMode.STARS -> repos.sortedByDescending { it.stars }
+            RepoSortMode.RECENT -> repos.sortedByDescending { it.pushedAt }
+        }
+    }
+
+    WtaSection(
+        title = otherProjectsTitle(),
+        headerStyle = WtaSectionHeaderStyle.Quiet,
+        trailing = {
+            FilterChip(
+                selected = sortMode == RepoSortMode.STARS,
+                onClick = { sortMode = RepoSortMode.STARS },
+                label = { Text(sortByStarsLabel(), style = MaterialTheme.typography.labelSmall) }
+            )
+            Spacer(Modifier.width(6.dp))
+            FilterChip(
+                selected = sortMode == RepoSortMode.RECENT,
+                onClick = { sortMode = RepoSortMode.RECENT },
+                label = { Text(sortByUpdatedLabel(), style = MaterialTheme.typography.labelSmall) }
+            )
+        }
+    ) {
+        WtaCard(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+        ) {
+            when {
+                loading && repos.isEmpty() -> {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            otherProjectsLoading(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                error != null && repos.isEmpty() -> {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            otherProjectsFailed(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        TextButton(onClick = { load() }) {
+                            Text(Strings.updateRetry, style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+                sorted.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            otherProjectsEmpty(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                else -> {
+                    Column {
+                        sorted.forEachIndexed { index, repo ->
+                            RepoRow(repo = repo, onClick = { context.openUrl(repo.url) })
+                            if (index < sorted.lastIndex) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(1.dp)
+                                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RepoRow(
+    repo: com.webtoapp.core.update.UpdateChecker.RepoSummary,
+    onClick: () -> Unit
+) {
+    val pushedDate = remember(repo.pushedAt) {
+        repo.pushedAt.substringBefore('T').ifBlank { repo.pushedAt }
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(WtaRadius.Control))
+            .clickable(onClick = rememberHapticClick(onClick))
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = repo.name,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (repo.description.isNotBlank()) {
+                Text(
+                    text = repo.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Outlined.Star,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = Color(0xFFE8A33D)
+                )
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    text = repo.stars.toString(),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            if (pushedDate.isNotBlank()) {
+                Text(
+                    text = pushedDate,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+        }
+        Spacer(Modifier.width(8.dp))
+        Icon(
+            Icons.Outlined.NorthEast,
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+            tint = MaterialTheme.colorScheme.outline
+        )
+    }
+}
+
+@Composable
+private fun otherProjectsTitle(): String = when (Strings.currentLanguage.value) {
+    AppLanguage.CHINESE -> "作者的其他项目"
+    AppLanguage.ENGLISH -> "More projects"
+    AppLanguage.ARABIC -> "مشاريع أخرى"
+    AppLanguage.PORTUGUESE -> "Mais projetos"
+    AppLanguage.SPANISH -> "Más proyectos"
+    AppLanguage.FRENCH -> "Plus de projets"
+    AppLanguage.GERMAN -> "Weitere Projekte"
+    AppLanguage.RUSSIAN -> "Другие проекты"
+    AppLanguage.JAPANESE -> "その他のプロジェクト"
+    AppLanguage.KOREAN -> "다른 프로젝트"
+}
+
+@Composable
+private fun sortByStarsLabel(): String = when (Strings.currentLanguage.value) {
+    AppLanguage.CHINESE -> "按星标"
+    AppLanguage.ENGLISH -> "Stars"
+    AppLanguage.ARABIC -> "بالنجوم"
+    AppLanguage.PORTUGUESE -> "Estrelas"
+    AppLanguage.SPANISH -> "Estrellas"
+    AppLanguage.FRENCH -> "Étoiles"
+    AppLanguage.GERMAN -> "Sterne"
+    AppLanguage.RUSSIAN -> "По звёздам"
+    AppLanguage.JAPANESE -> "スター順"
+    AppLanguage.KOREAN -> "별점순"
+}
+
+@Composable
+private fun sortByUpdatedLabel(): String = when (Strings.currentLanguage.value) {
+    AppLanguage.CHINESE -> "按更新"
+    AppLanguage.ENGLISH -> "Latest"
+    AppLanguage.ARABIC -> "الأحدث"
+    AppLanguage.PORTUGUESE -> "Recentes"
+    AppLanguage.SPANISH -> "Recientes"
+    AppLanguage.FRENCH -> "Récents"
+    AppLanguage.GERMAN -> "Neueste"
+    AppLanguage.RUSSIAN -> "Сначала новые"
+    AppLanguage.JAPANESE -> "更新順"
+    AppLanguage.KOREAN -> "최신순"
+}
+
+@Composable
+private fun otherProjectsLoading(): String = when (Strings.currentLanguage.value) {
+    AppLanguage.CHINESE -> "正在加载项目…"
+    AppLanguage.ENGLISH -> "Loading projects…"
+    AppLanguage.ARABIC -> "جارٍ تحميل المشاريع…"
+    AppLanguage.PORTUGUESE -> "Carregando projetos…"
+    AppLanguage.SPANISH -> "Cargando proyectos…"
+    AppLanguage.FRENCH -> "Chargement des projets…"
+    AppLanguage.GERMAN -> "Projekte werden geladen…"
+    AppLanguage.RUSSIAN -> "Загрузка проектов…"
+    AppLanguage.JAPANESE -> "プロジェクトを読み込み中…"
+    AppLanguage.KOREAN -> "프로젝트 불러오는 중…"
+}
+
+@Composable
+private fun otherProjectsFailed(): String = when (Strings.currentLanguage.value) {
+    AppLanguage.CHINESE -> "项目加载失败"
+    AppLanguage.ENGLISH -> "Failed to load projects"
+    AppLanguage.ARABIC -> "فشل تحميل المشاريع"
+    AppLanguage.PORTUGUESE -> "Falha ao carregar projetos"
+    AppLanguage.SPANISH -> "Error al cargar proyectos"
+    AppLanguage.FRENCH -> "Échec du chargement des projets"
+    AppLanguage.GERMAN -> "Projekte konnten nicht geladen werden"
+    AppLanguage.RUSSIAN -> "Не удалось загрузить проекты"
+    AppLanguage.JAPANESE -> "プロジェクトの読み込みに失敗しました"
+    AppLanguage.KOREAN -> "프로젝트를 불러오지 못했습니다"
+}
+
+@Composable
+private fun otherProjectsEmpty(): String = when (Strings.currentLanguage.value) {
+    AppLanguage.CHINESE -> "暂无其他公开项目"
+    AppLanguage.ENGLISH -> "No other public projects"
+    AppLanguage.ARABIC -> "لا توجد مشاريع عامة أخرى"
+    AppLanguage.PORTUGUESE -> "Nenhum outro projeto público"
+    AppLanguage.SPANISH -> "No hay otros proyectos públicos"
+    AppLanguage.FRENCH -> "Aucun autre projet public"
+    AppLanguage.GERMAN -> "Keine weiteren öffentlichen Projekte"
+    AppLanguage.RUSSIAN -> "Других публичных проектов нет"
+    AppLanguage.JAPANESE -> "他の公開プロジェクトはありません"
+    AppLanguage.KOREAN -> "다른 공개 프로젝트가 없습니다"
 }
