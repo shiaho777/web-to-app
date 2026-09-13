@@ -218,6 +218,8 @@ object UpdateChecker {
         val name: String,
         val description: String,
         val stars: Long,
+        val forks: Long,
+        val language: String?,
         val pushedAt: String,
         val url: String
     )
@@ -229,16 +231,18 @@ object UpdateChecker {
      * Fetches the author's public repos for the About page. Client-side sorting
      * covers both "by stars" and "latest" so the sort toggle never refetches.
      */
-    suspend fun fetchAuthorRepos(): List<RepoSummary> = withContext(Dispatchers.IO) {
-        try {
-            val json = fetchJsonRaced(AUTHOR_REPOS_API) { it.trimStart().startsWith("[") }
-                ?: throw IllegalStateException("Empty response from repos API")
-            parseAuthorRepos(json)
-        } catch (e: Exception) {
-            AppLogger.e(TAG, "Fetch author repos failed", e)
-            throw e
+    suspend fun fetchAuthorRepos(context: android.content.Context): List<RepoSummary> =
+        withContext(Dispatchers.IO) {
+            try {
+                val json = fetchJsonRaced(AUTHOR_REPOS_API) { it.trimStart().startsWith("[") }
+                    ?: throw IllegalStateException("Empty response from repos API")
+                AuthorReposCache.write(context, json)
+                parseAuthorRepos(json)
+            } catch (e: Exception) {
+                AppLogger.e(TAG, "Fetch author repos failed", e)
+                throw e
+            }
         }
-    }
 
     internal fun parseAuthorRepos(json: String): List<RepoSummary> {
         val arr = org.json.JSONArray(json)
@@ -251,11 +255,14 @@ object UpdateChecker {
             // optString("description") returns the literal "null" when the field
             // is JSON null — check the raw value instead.
             val rawDesc = repo.opt("description")
+            val rawLang = repo.opt("language")
             out.add(
                 RepoSummary(
                     name = name,
                     description = if (rawDesc == null || rawDesc == JSONObject.NULL) "" else rawDesc.toString().trim(),
                     stars = repo.optLong("stargazers_count", 0L),
+                    forks = repo.optLong("forks_count", 0L),
+                    language = if (rawLang == null || rawLang == JSONObject.NULL) null else rawLang.toString(),
                     pushedAt = repo.optString("pushed_at").trim(),
                     url = repo.optString("html_url").trim()
                 )

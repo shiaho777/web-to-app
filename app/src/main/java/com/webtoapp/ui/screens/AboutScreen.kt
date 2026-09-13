@@ -31,11 +31,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.ForkRight
 import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.History
@@ -43,13 +45,14 @@ import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.NorthEast
 import androidx.compose.material.icons.outlined.PlayCircleOutline
+import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Send
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material.icons.outlined.Tag
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -1569,37 +1572,48 @@ private fun versionCopiedToast(): String = when (Strings.currentLanguage.value) 
     AppLanguage.KOREAN -> "Version copied"
 }
 
+
 private enum class RepoSortMode { STARS, RECENT }
 
 /**
- * "More projects" card: lists the author's public GitHub repos (forks and this
- * app filtered out). Default order is by stars; a header toggle switches to
- * most-recently-pushed. Sorting is client-side — the toggle never refetches.
+ * "More projects" section: lists the author's public GitHub repos (forks and
+ * this app filtered out). Cached JSON renders instantly on revisit while a
+ * silent refresh swaps in fresh data. Default order is by stars; a header
+ * segmented toggle switches to most-recently-pushed, client-side.
  */
 @Composable
 private fun OtherProjectsSection() {
     val context = LocalContext.current
+    val appContext = context.applicationContext
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     var repos by remember { mutableStateOf<List<com.webtoapp.core.update.UpdateChecker.RepoSummary>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
+    var refreshing by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var sortMode by remember { mutableStateOf(RepoSortMode.STARS) }
 
     fun load() {
         scope.launch {
-            loading = true
+            refreshing = true
             error = null
             try {
-                repos = com.webtoapp.core.update.UpdateChecker.fetchAuthorRepos()
+                repos = com.webtoapp.core.update.UpdateChecker.fetchAuthorRepos(appContext)
             } catch (e: Exception) {
                 error = e.message ?: e.javaClass.simpleName
             } finally {
                 loading = false
+                refreshing = false
             }
         }
     }
-    LaunchedEffect(Unit) { load() }
+    LaunchedEffect(Unit) {
+        com.webtoapp.core.update.AuthorReposCache.read(appContext)?.let { cached ->
+            repos = cached
+            loading = false
+        }
+        load()
+    }
 
     val sorted = remember(repos, sortMode) {
         when (sortMode) {
@@ -1612,79 +1626,256 @@ private fun OtherProjectsSection() {
         title = otherProjectsTitle(),
         headerStyle = WtaSectionHeaderStyle.Quiet,
         trailing = {
-            FilterChip(
-                selected = sortMode == RepoSortMode.STARS,
-                onClick = { sortMode = RepoSortMode.STARS },
-                label = { Text(sortByStarsLabel(), style = MaterialTheme.typography.labelSmall) }
+            RepoSortToggle(
+                sortMode = sortMode,
+                onSortMode = { sortMode = it }
             )
-            Spacer(Modifier.width(6.dp))
-            FilterChip(
-                selected = sortMode == RepoSortMode.RECENT,
-                onClick = { sortMode = RepoSortMode.RECENT },
-                label = { Text(sortByUpdatedLabel(), style = MaterialTheme.typography.labelSmall) }
-            )
+            Spacer(Modifier.width(8.dp))
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                    .clickable(enabled = !refreshing) { load() },
+                contentAlignment = Alignment.Center
+            ) {
+                if (refreshing) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(14.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Icon(
+                        Icons.Outlined.RestartAlt,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     ) {
-        WtaCard(
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-        ) {
+        Column(verticalArrangement = Arrangement.spacedBy(WtaSpacing.CardGap)) {
             when {
                 loading && repos.isEmpty() -> {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                        Spacer(Modifier.width(10.dp))
-                        Text(
-                            otherProjectsLoading(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    repeat(3) { RepoCardSkeleton() }
                 }
                 error != null && repos.isEmpty() -> {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            otherProjectsFailed(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        TextButton(onClick = { load() }) {
-                            Text(Strings.updateRetry, style = MaterialTheme.typography.labelMedium)
-                        }
-                    }
+                    RepoLoadErrorCard(message = error, onRetry = { load() })
                 }
                 sorted.isEmpty() -> {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp),
-                        contentAlignment = Alignment.Center
+                    WtaCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 24.dp)
                     ) {
-                        Text(
-                            otherProjectsEmpty(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                otherProjectsEmpty(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
                 else -> {
-                    Column {
-                        sorted.forEachIndexed { index, repo ->
-                            RepoRow(repo = repo, onClick = { context.openUrl(repo.url) })
-                            if (index < sorted.lastIndex) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(1.dp)
-                                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                                )
-                            }
-                        }
+                    sorted.forEach { repo ->
+                        RepoCard(repo = repo, onClick = { context.openUrl(repo.url) })
+                    }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(WtaRadius.Control))
+                            .clickable { context.openUrl("https://github.com/shiaho777?tab=repositories") }
+                            .padding(vertical = 6.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            viewAllOnGitHub(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Icon(
+                            Icons.Outlined.NorthEast,
+                            contentDescription = null,
+                            modifier = Modifier.size(13.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Compact two-option segmented pill for the section header — smaller and
+ * cleaner than two FilterChips next to the title.
+ */
+@Composable
+private fun RepoSortToggle(
+    sortMode: RepoSortMode,
+    onSortMode: (RepoSortMode) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .clip(RoundedCornerShape(999.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .padding(2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RepoSortMode.entries.forEach { mode ->
+            val selected = sortMode == mode
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(
+                        if (selected) MaterialTheme.colorScheme.surface
+                        else Color.Transparent
+                    )
+                    .clickable { onSortMode(mode) }
+                    .padding(horizontal = 10.dp, vertical = 5.dp)
+            ) {
+                Text(
+                    text = if (mode == RepoSortMode.STARS) sortByStarsLabel() else sortByUpdatedLabel(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (selected) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RepoCard(
+    repo: com.webtoapp.core.update.UpdateChecker.RepoSummary,
+    onClick: () -> Unit
+) {
+    val pushedDate = remember(repo.pushedAt) {
+        repo.pushedAt.substringBefore('T').ifBlank { repo.pushedAt }
+    }
+
+    WtaCard(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Surface,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Outlined.Book,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(Modifier.width(10.dp))
+                Text(
+                    text = repo.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    Icons.Outlined.NorthEast,
+                    contentDescription = null,
+                    modifier = Modifier.size(14.dp),
+                    tint = MaterialTheme.colorScheme.outline
+                )
+            }
+
+            Text(
+                text = repo.description.ifBlank { repoNoDescription() },
+                style = MaterialTheme.typography.bodySmall,
+                color = if (repo.description.isBlank()) MaterialTheme.colorScheme.outline
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(start = 44.dp)
+            )
+
+            Row(
+                modifier = Modifier.padding(start = 44.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                repo.language?.let { lang ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(9.dp)
+                                .clip(CircleShape)
+                                .background(languageColor(lang))
+                        )
+                        Spacer(Modifier.width(5.dp))
+                        Text(
+                            lang,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Outlined.Star,
+                        contentDescription = null,
+                        modifier = Modifier.size(13.dp),
+                        tint = Color(0xFFE8A33D)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        repo.stars.toString(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (repo.forks > 0) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Outlined.ForkRight,
+                            contentDescription = null,
+                            modifier = Modifier.size(13.dp),
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            repo.forks.toString(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                if (pushedDate.isNotBlank()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Outlined.Schedule,
+                            contentDescription = null,
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.outline
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            pushedDate,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
                     }
                 }
             }
@@ -1693,72 +1884,121 @@ private fun OtherProjectsSection() {
 }
 
 @Composable
-private fun RepoRow(
-    repo: com.webtoapp.core.update.UpdateChecker.RepoSummary,
-    onClick: () -> Unit
-) {
-    val pushedDate = remember(repo.pushedAt) {
-        repo.pushedAt.substringBefore('T').ifBlank { repo.pushedAt }
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(WtaRadius.Control))
-            .clickable(onClick = rememberHapticClick(onClick))
-            .padding(vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically
+private fun RepoCardSkeleton() {
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        tone = WtaCardTone.Surface,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(14.dp)
     ) {
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        com.webtoapp.ui.components.ShimmerBrush { brush ->
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(34.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(brush)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Box(
+                        modifier = Modifier
+                            .width(120.dp)
+                            .height(15.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(brush)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .padding(start = 44.dp)
+                        .fillMaxWidth(0.85f)
+                        .height(11.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(brush)
+                )
+                Row(
+                    modifier = Modifier.padding(start = 44.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(Modifier.width(48.dp).height(9.dp).clip(RoundedCornerShape(4.dp)).background(brush))
+                    Box(Modifier.width(30.dp).height(9.dp).clip(RoundedCornerShape(4.dp)).background(brush))
+                    Box(Modifier.width(64.dp).height(9.dp).clip(RoundedCornerShape(4.dp)).background(brush))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RepoLoadErrorCard(message: String?, onRetry: () -> Unit) {
+    WtaCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             Text(
-                text = repo.name,
+                otherProjectsFailed(),
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                color = MaterialTheme.colorScheme.error
             )
-            if (repo.description.isNotBlank()) {
+            if (!message.isNullOrBlank()) {
                 Text(
-                    text = repo.description,
-                    style = MaterialTheme.typography.bodySmall,
+                    message,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
             }
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Outlined.Star,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    tint = Color(0xFFE8A33D)
+            androidx.compose.material3.FilledTonalButton(
+                onClick = onRetry,
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    horizontal = 14.dp, vertical = 6.dp
                 )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    text = repo.stars.toString(),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            if (pushedDate.isNotBlank()) {
-                Text(
-                    text = pushedDate,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.outline
-                )
+            ) {
+                Icon(Icons.Outlined.RestartAlt, null, Modifier.size(16.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(Strings.updateRetry, style = MaterialTheme.typography.labelMedium)
             }
         }
-        Spacer(Modifier.width(8.dp))
-        Icon(
-            Icons.Outlined.NorthEast,
-            contentDescription = null,
-            modifier = Modifier.size(14.dp),
-            tint = MaterialTheme.colorScheme.outline
-        )
     }
+}
+
+/**
+ * Approximate GitHub linguist colors for the language dot — the same visual
+ * cue GitHub repo lists use.
+ */
+private fun languageColor(name: String): Color = when (name) {
+    "Kotlin" -> Color(0xFFA97BFF)
+    "Java" -> Color(0xFFB07219)
+    "Python" -> Color(0xFF3572A5)
+    "JavaScript" -> Color(0xFFF1E05A)
+    "TypeScript" -> Color(0xFF3178C6)
+    "Go" -> Color(0xFF00ADD8)
+    "C++" -> Color(0xFFF34B7D)
+    "C" -> Color(0xFF555555)
+    "C#" -> Color(0xFF178600)
+    "HTML" -> Color(0xFFE34C26)
+    "CSS" -> Color(0xFF563D7C)
+    "Shell" -> Color(0xFF89E051)
+    "Swift" -> Color(0xFFF05138)
+    "Rust" -> Color(0xFFDEA584)
+    "Dart" -> Color(0xFF00B4AB)
+    "Ruby" -> Color(0xFF701516)
+    "PHP" -> Color(0xFF4F5D95)
+    "Vue" -> Color(0xFF41B883)
+    "Objective-C" -> Color(0xFF438EFF)
+    "Scala" -> Color(0xFFC22D40)
+    "Lua" -> Color(0xFF000080)
+    "R" -> Color(0xFF198CE7)
+    "Dockerfile" -> Color(0xFF384D54)
+    "Makefile" -> Color(0xFF427819)
+    "Jupyter Notebook" -> Color(0xFFDA5B0B)
+    else -> Color(0xFF8B949E)
 }
 
 @Composable
@@ -1843,4 +2083,32 @@ private fun otherProjectsEmpty(): String = when (Strings.currentLanguage.value) 
     AppLanguage.RUSSIAN -> "Других публичных проектов нет"
     AppLanguage.JAPANESE -> "他の公開プロジェクトはありません"
     AppLanguage.KOREAN -> "다른 공개 프로젝트가 없습니다"
+}
+
+@Composable
+private fun repoNoDescription(): String = when (Strings.currentLanguage.value) {
+    AppLanguage.CHINESE -> "暂无简介"
+    AppLanguage.ENGLISH -> "No description"
+    AppLanguage.ARABIC -> "بدون وصف"
+    AppLanguage.PORTUGUESE -> "Sem descrição"
+    AppLanguage.SPANISH -> "Sin descripción"
+    AppLanguage.FRENCH -> "Pas de description"
+    AppLanguage.GERMAN -> "Keine Beschreibung"
+    AppLanguage.RUSSIAN -> "Без описания"
+    AppLanguage.JAPANESE -> "説明なし"
+    AppLanguage.KOREAN -> "설명 없음"
+}
+
+@Composable
+private fun viewAllOnGitHub(): String = when (Strings.currentLanguage.value) {
+    AppLanguage.CHINESE -> "在 GitHub 查看全部"
+    AppLanguage.ENGLISH -> "View all on GitHub"
+    AppLanguage.ARABIC -> "عرض الكل على GitHub"
+    AppLanguage.PORTUGUESE -> "Ver tudo no GitHub"
+    AppLanguage.SPANISH -> "Ver todo en GitHub"
+    AppLanguage.FRENCH -> "Tout voir sur GitHub"
+    AppLanguage.GERMAN -> "Alle auf GitHub ansehen"
+    AppLanguage.RUSSIAN -> "Смотреть все на GitHub"
+    AppLanguage.JAPANESE -> "GitHub ですべて見る"
+    AppLanguage.KOREAN -> "GitHub에서 모두 보기"
 }
