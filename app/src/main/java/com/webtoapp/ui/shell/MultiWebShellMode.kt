@@ -99,15 +99,27 @@ private fun SiteContent(
     onBrowserSurfaceCreated: (com.webtoapp.core.engine.BrowserSurface) -> Unit = {}
 ) {
     val siteCfg = site.siteShellConfig
+    // App-level inject scripts apply to every site; a site's own script wins on
+    // a name collision so a more specific override is possible per site.
+    val parentScripts = config.webViewConfig.injectScripts
     val effectiveConfig = siteCfg?.copy(
         engineType = siteCfg.engineType.takeIf { it.isNotBlank() && it != "SYSTEM_WEBVIEW" }
-            ?: config.engineType
+            ?: config.engineType,
+        webViewConfig = siteCfg.webViewConfig.copy(
+            injectScripts = siteCfg.webViewConfig.injectScripts +
+                parentScripts.filter { parent ->
+                    siteCfg.webViewConfig.injectScripts.none { it.name == parent.name }
+                }
+        )
     ) ?: ShellConfig(
         appName = site.name,
         appType = "WEB",
         targetUrl = site.url,
         packageName = config.packageName,
-        engineType = config.engineType
+        engineType = config.engineType,
+        webViewConfig = com.webtoapp.core.shell.WebViewShellConfig(
+            injectScripts = parentScripts
+        )
     )
     val siteWvCfg = remember(site.id) { buildWebViewConfig(effectiveConfig) }
     ShellContentRouter(

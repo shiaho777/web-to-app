@@ -3292,6 +3292,19 @@ fun WebViewScreen(
                             showSiteIcons = multiWebConfig.showSiteIcons,
                             projectId = multiWebConfig.projectId
                         ),
+                        // App-level userscripts: MultiWebShellMode merges them into
+                        // every site's effective config (site-level scripts win on
+                        // a name collision), same as the exported shell does.
+                        webViewConfig = com.webtoapp.core.shell.WebViewShellConfig(
+                            injectScripts = mwApp.webViewConfig.injectScripts.map { s ->
+                                com.webtoapp.core.shell.ShellUserScript(
+                                    name = s.name,
+                                    code = s.code,
+                                    enabled = s.enabled,
+                                    runAt = s.runAt.name
+                                )
+                            }
+                        ),
                         extensionModuleIds = mwApp.extensionModuleIds,
                         extensionFabIcon = mwApp.extensionFabIcon.orEmpty(),
                         browserDisguiseConfig = mwApp.browserDisguiseConfig,
