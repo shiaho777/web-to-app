@@ -1561,6 +1561,25 @@ class MainViewModel(
         }
     }
 
+    fun moveCategory(category: AppCategory, delta: Int) {
+        val list = categories.value
+        val index = list.indexOfFirst { it.id == category.id }
+        val target = index + delta
+        if (index < 0 || target !in list.indices) return
+        viewModelScope.launch {
+            try {
+                val reordered = list.toMutableList().apply { add(target, removeAt(index)) }
+                reordered.forEachIndexed { i, cat ->
+                    if (cat.sortOrder != i) {
+                        categoryRepository.updateCategory(cat.copy(sortOrder = i))
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.value = UiState.Error(Strings.failedUpdateCategory.replaceFirst("%s", e.message ?: ""))
+            }
+        }
+    }
+
     fun deleteCategory(category: AppCategory) {
         viewModelScope.launch {
             try {

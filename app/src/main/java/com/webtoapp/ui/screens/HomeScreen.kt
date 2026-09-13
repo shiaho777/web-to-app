@@ -146,6 +146,7 @@ fun HomeScreen(
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val selectedCategoryId by viewModel.selectedCategoryId.collectAsStateWithLifecycle()
     var showCategoryEditor by remember { mutableStateOf(false) }
+    var showCategoryManager by remember { mutableStateOf(false) }
     var editingCategory by remember { mutableStateOf<AppCategory?>(null) }
     var showMoveToCategoryDialog by remember { mutableStateOf(false) }
     var appToMove by remember { mutableStateOf<WebAppSummary?>(null) }
@@ -422,7 +423,9 @@ fun HomeScreen(
                     editingCategory = category
                     showCategoryEditor = true
                 },
-                onDeleteCategory = { viewModel.deleteCategory(it) }
+                onDeleteCategory = { viewModel.deleteCategory(it) },
+                onMoveCategory = { category, delta -> viewModel.moveCategory(category, delta) },
+                onManageCategories = { showCategoryManager = true }
             )
 
             Box(
@@ -969,6 +972,19 @@ fun HomeScreen(
                 showCategoryEditor = false
                 editingCategory = null
             }
+        )
+    }
+
+    if (showCategoryManager) {
+        com.webtoapp.ui.components.CategoryManageDialog(
+            categories = categories,
+            onDismiss = { showCategoryManager = false },
+            onMoveCategory = { category, delta -> viewModel.moveCategory(category, delta) },
+            onEditCategory = { category ->
+                editingCategory = category
+                showCategoryEditor = true
+            },
+            onDeleteCategory = { viewModel.deleteCategory(it) }
         )
     }
 
