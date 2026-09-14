@@ -1109,6 +1109,12 @@ class WebViewActivity : AppCompatActivity() {
         } catch (e: Exception) {
             AppLogger.w("WebViewActivity", "onConfigurationChanged: refresh dark mode failed", e)
         }
+
+        // Rotating a classic-path window drops the hidden-bar flags (system
+        // re-evaluates bars for the new configuration); re-assert fullscreen.
+        if (customView != null || immersiveFullscreenEnabled) {
+            applyImmersiveFullscreen(true, isDarkTheme = currentIsDarkTheme)
+        }
     }
 
     override fun onResume() {

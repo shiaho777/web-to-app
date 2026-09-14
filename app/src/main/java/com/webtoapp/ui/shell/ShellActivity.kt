@@ -294,6 +294,13 @@ class ShellActivity : AppCompatActivity() {
         } catch (e: Exception) {
             com.webtoapp.core.shell.ShellLogger.w("ShellActivity", "onConfigurationChanged: refresh dark mode failed", e)
         }
+
+        // Rotating a classic-path window makes the system re-evaluate the bars
+        // against the new configuration and drops the hidden-bar flags — without
+        // re-applying, a status-bar strip comes back in fullscreen.
+        if (customView != null || immersiveFullscreenEnabled) {
+            applyImmersiveFullscreen(true, isDarkTheme = isSystemInDarkMode())
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
