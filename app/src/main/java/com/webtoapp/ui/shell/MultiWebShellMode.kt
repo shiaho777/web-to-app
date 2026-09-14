@@ -876,7 +876,11 @@ private fun DrawerMode(
                 }
             }
         },
-        gesturesEnabled = true
+        // Edge-swipe-to-open fights the WebView's own horizontal gestures (page
+        // carousels, image swipes, diagonal scrolls all intercepted as drawer
+        // opens). Open via the toolbar menu button only; once open the drawer
+        // still accepts swipe-to-close.
+        gesturesEnabled = drawerState.isOpen
     ) {
         val currentSite = selectedSite ?: sites.firstOrNull()
 
