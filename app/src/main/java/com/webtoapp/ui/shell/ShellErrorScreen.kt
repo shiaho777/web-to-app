@@ -62,6 +62,9 @@ fun buildShellErrorReport(
     sb.appendLine("device: ${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
     sb.appendLine("time: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.US).format(java.util.Date())}")
     sb.appendLine("message: ${message ?: throwable?.message ?: "-"}")
+    // Points whoever handles the report at the on-device log file holding the full
+    // runtime/server output that could not fit into `message`.
+    sb.appendLine("logFile: ${com.webtoapp.core.shell.ShellLogger.getLogFilePath() ?: "-"}")
     if (throwable != null) {
         sb.appendLine("exception: ${throwable.javaClass.name}")
         sb.appendLine("--- stack trace ---")
