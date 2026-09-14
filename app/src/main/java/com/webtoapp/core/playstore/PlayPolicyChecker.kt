@@ -33,7 +33,14 @@ object PlayPolicyChecker {
     fun check(webApp: WebApp): Report {
         val violations = mutableListOf<Violation>()
 
-        if (webApp.apkExportConfig?.encryptionConfig?.enabled == true) {
+        // Signature-bound resource encryption breaks under Play App Signing
+        // (the delivered cert differs from the upload cert, so the derived key
+        // no longer decrypts the config). Embedded-key mode survives re-signing
+        // and is Play-safe (#917).
+        val encryption = webApp.apkExportConfig?.encryptionConfig
+        if (encryption?.enabled == true &&
+            encryption.keyMode != com.webtoapp.data.model.ApkEncryptionConfig.KEY_MODE_EMBEDDED
+        ) {
             violations.add(
                 Violation(
                     ruleId = "APK_ENCRYPTION_ENABLED",

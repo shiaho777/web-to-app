@@ -1380,6 +1380,11 @@ data class BackgroundRunExportConfig(
 data class ApkEncryptionConfig(
     val enabled: Boolean = false,
     val customPassword: String? = null,
+    // Nullable on purpose: stored JSON predating this field deserializes to null,
+    // which must keep the signature-bound behavior existing apps were built with.
+    // "EMBEDDED" stores a build-time random key inside the APK (obfuscated), making
+    // encryption survive Play App Signing / any re-sign (#917).
+    val keyMode: String? = null,
     val threatResponse: ThreatResponse = ThreatResponse.LOG_ONLY
 ) {
     enum class ThreatResponse {
@@ -1399,11 +1404,16 @@ data class ApkEncryptionConfig(
     }
 
     companion object {
+        const val KEY_MODE_SIGNATURE = "SIGNATURE"
+        const val KEY_MODE_EMBEDDED = "EMBEDDED"
         val DISABLED = ApkEncryptionConfig(enabled = false)
     }
 
     fun toEncryptionConfig(): com.webtoapp.core.crypto.EncryptionConfig {
-        return if (enabled) com.webtoapp.core.crypto.EncryptionConfig.MAXIMUM.copy(customPassword = customPassword)
+        return if (enabled) com.webtoapp.core.crypto.EncryptionConfig.MAXIMUM.copy(
+            customPassword = customPassword,
+            keyMode = keyMode ?: KEY_MODE_SIGNATURE
+        )
         else com.webtoapp.core.crypto.EncryptionConfig.DISABLED
     }
 }

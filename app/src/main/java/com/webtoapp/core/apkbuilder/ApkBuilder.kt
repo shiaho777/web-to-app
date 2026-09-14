@@ -526,11 +526,27 @@ class ApkBuilder(private val context: Context) {
 
                 val encKeyDeferred = async {
                     if (encryptionConfig.enabled) {
-                        val signatureHash = signer.getCertificateSignatureHash()
-                        keyManager.generateKeyForPackage(
-                            packageName, signatureHash,
-                            encryptionConfig.customPassword
-                        )
+                        if (encryptionConfig.keyMode == "EMBEDDED") {
+                            // #917: random key baked into the APK — the signing
+                            // cert is never consulted, so Play App Signing /
+                            // re-signing cannot break decryption.
+                            javax.crypto.spec.SecretKeySpec(
+                                com.webtoapp.core.crypto.EmbeddedKey.generate(), "AES"
+                            )
+                        } else {
+                            // Password mode derives from the password alone — the
+                            // cert must not be mixed in or every re-signed copy
+                            // (incl. Play App Signing) would fail to decrypt.
+                            val signatureHash = if (encryptionConfig.customPassword.isNullOrBlank()) {
+                                signer.getCertificateSignatureHash()
+                            } else {
+                                ByteArray(0)
+                            }
+                            keyManager.generateKeyForPackage(
+                                packageName, signatureHash,
+                                encryptionConfig.customPassword
+                            )
+                        }
                     } else null
                 }
 
@@ -1582,7 +1598,14 @@ class ApkBuilder(private val context: Context) {
                 if (encryptionConfig.enabled) {
 
                     val signatureHash = signer.getCertificateSignatureHash()
-                    encryptedApkBuilder.writeEncryptionMetadata(zipOut, encryptionConfig, config.packageName, signatureHash)
+                    encryptedApkBuilder.writeEncryptionMetadata(
+                        zipOut, encryptionConfig, config.packageName, signatureHash,
+                        // Embedded mode: the encryption key IS the random baked key,
+                        // so SecretKeySpec.encoded carries the raw bytes to store.
+                        embeddedKey = if (encryptionConfig.keyMode == "EMBEDDED") {
+                            encryptionKey?.encoded
+                        } else null
+                    )
                     logger.log("Encryption metadata written")
                 }
 

@@ -752,6 +752,10 @@ object Strings {
     val appModifierEmptyMessage: String get() = StringsA.appModifierEmptyMessage
     val resourceEncryption: String get() = StringsA.resourceEncryption
     val encryptionEnabled: String get() = StringsA.encryptionEnabled
+    val encryptionKeyMode: String get() = StringsA.encryptionKeyMode
+    val encryptionKeyModeSignature: String get() = StringsA.encryptionKeyModeSignature
+    val encryptionKeyModeEmbedded: String get() = StringsA.encryptionKeyModeEmbedded
+    val encryptionKeyModeHint: String get() = StringsA.encryptionKeyModeHint
     val basic: String get() = StringsA.basic
     val standard: String get() = StringsA.standard
     val isolatedEnvironment: String get() = StringsA.isolatedEnvironment
@@ -14500,6 +14504,58 @@ object StringsA {
         AppLanguage.RUSSIAN -> "Защита шифрованием включена"
         AppLanguage.JAPANESE -> "暗号化保護が有効です"
         AppLanguage.KOREAN -> "암호화 보호가 활성화됨"
+    }
+
+    val encryptionKeyMode: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "密钥来源"
+        AppLanguage.ENGLISH -> "Key Source"
+        AppLanguage.ARABIC -> "مصدر المفتاح"
+        AppLanguage.PORTUGUESE -> "Origem da Chave"
+        AppLanguage.SPANISH -> "Origen de la Clave"
+        AppLanguage.FRENCH -> "Source de la clé"
+        AppLanguage.GERMAN -> "Schlüsselquelle"
+        AppLanguage.RUSSIAN -> "Источник ключа"
+        AppLanguage.JAPANESE -> "キーの生成元"
+        AppLanguage.KOREAN -> "키 소스"
+    }
+
+    val encryptionKeyModeSignature: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "签名绑定"
+        AppLanguage.ENGLISH -> "Signature-bound"
+        AppLanguage.ARABIC -> "مرتبط بالتوقيع"
+        AppLanguage.PORTUGUESE -> "Vinculado à assinatura"
+        AppLanguage.SPANISH -> "Vinculado a la firma"
+        AppLanguage.FRENCH -> "Lié à la signature"
+        AppLanguage.GERMAN -> "Signaturgebunden"
+        AppLanguage.RUSSIAN -> "Привязка к подписи"
+        AppLanguage.JAPANESE -> "署名に紐付け"
+        AppLanguage.KOREAN -> "서명 바인딩"
+    }
+
+    val encryptionKeyModeEmbedded: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "内置密钥（商店安全）"
+        AppLanguage.ENGLISH -> "Embedded key (store-safe)"
+        AppLanguage.ARABIC -> "مفتاح مضمّن (آمن للمتجر)"
+        AppLanguage.PORTUGUESE -> "Chave embutida (segura p/ loja)"
+        AppLanguage.SPANISH -> "Clave integrada (apta para tienda)"
+        AppLanguage.FRENCH -> "Clé intégrée (compatible store)"
+        AppLanguage.GERMAN -> "Eingebetteter Schlüssel (store-sicher)"
+        AppLanguage.RUSSIAN -> "Встроенный ключ (для магазина)"
+        AppLanguage.JAPANESE -> "埋め込みキー（ストア対応）"
+        AppLanguage.KOREAN -> "내장 키 (스토어 안전)"
+    }
+
+    val encryptionKeyModeHint: String get() = when (Strings.lang) {
+        AppLanguage.CHINESE -> "签名绑定模式在 Play 商店重签或手动重签名后会解密失败；发布到商店请选择内置密钥"
+        AppLanguage.ENGLISH -> "Signature-bound mode fails to decrypt after Play Store or manual re-signing; choose embedded key for store releases"
+        AppLanguage.ARABIC -> "الوضع المرتبط بالتوقيع يفشل في فك التشفير بعد إعادة التوقيع من المتجر أو يدويًا؛ اختر المفتاح المضمّن لإصدارات المتجر"
+        AppLanguage.PORTUGUESE -> "O modo vinculado à assinatura falha ao descriptografar após reassinatura pela Play Store ou manual; use a chave embutida para publicações em loja"
+        AppLanguage.SPANISH -> "El modo vinculado a la firma falla al descifrar tras refirmar en Play Store o manualmente; elige la clave integrada para publicar en tiendas"
+        AppLanguage.FRENCH -> "Le mode lié à la signature échoue après une resignature Play Store ou manuelle ; choisissez la clé intégrée pour les publications en store"
+        AppLanguage.GERMAN -> "Der signaturgebundene Modus schlägt nach Play-Store- oder manueller Neusignierung fehl; für Store-Releases den eingebetteten Schlüssel wählen"
+        AppLanguage.RUSSIAN -> "Режим привязки к подписи ломается после переподписи в Play Store или вручную; для публикации в магазине выберите встроенный ключ"
+        AppLanguage.JAPANESE -> "署名紐付けモードは Play ストアや手動での再署名後に復号に失敗します。ストア公開では埋め込みキーを選んでください"
+        AppLanguage.KOREAN -> "서명 바인딩 모드는 Play 스토어 또는 수동 재서명 후 복호화에 실패합니다. 스토어 배포에는 내장 키를 선택하세요"
     }
 
     val basic: String get() = when (Strings.lang) {

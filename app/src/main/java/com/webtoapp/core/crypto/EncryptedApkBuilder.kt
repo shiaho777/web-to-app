@@ -149,7 +149,8 @@ class EncryptedApkBuilder(private val context: Context) {
         zipOut: ZipOutputStream,
         encryptionConfig: EncryptionConfig,
         packageName: String,
-        signatureHash: ByteArray? = null
+        signatureHash: ByteArray? = null,
+        embeddedKey: ByteArray? = null
     ) {
         if (!encryptionConfig.enabled) return
 
@@ -157,13 +158,15 @@ class EncryptedApkBuilder(private val context: Context) {
             version = CryptoConstants.ENCRYPTED_HEADER_VERSION,
             packageName = packageName,
             signatureHash = "",
-            usesCustomPassword = !encryptionConfig.customPassword.isNullOrBlank()
+            usesCustomPassword = !encryptionConfig.customPassword.isNullOrBlank(),
+            keyMode = encryptionConfig.keyMode,
+            embeddedKey = embeddedKey?.let { EmbeddedKey.encode(it, packageName) } ?: ""
         )
 
         val metadataJson = gson.toJson(metadata)
         writeEntryDeflated(zipOut, "assets/encryption_meta.json", metadataJson.toByteArray(Charsets.UTF_8))
 
-        AppLogger.d(TAG, "写入加密元数据 (signatureHash 已省略, usesCustomPassword=${metadata.usesCustomPassword})")
+        AppLogger.d(TAG, "写入加密元数据 (signatureHash 已省略, keyMode=${metadata.keyMode}, usesCustomPassword=${metadata.usesCustomPassword})")
     }
 
     private fun writeEntryDeflated(zipOut: ZipOutputStream, name: String, data: ByteArray) {
@@ -211,5 +214,7 @@ data class EncryptionMetadata(
     val version: Int,
     val packageName: String,
     val signatureHash: String = "",
-    val usesCustomPassword: Boolean = false
+    val usesCustomPassword: Boolean = false,
+    val keyMode: String = "SIGNATURE",
+    val embeddedKey: String = ""
 )

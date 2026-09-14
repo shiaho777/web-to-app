@@ -111,6 +111,62 @@ fun EncryptionConfigCard(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
+                        text = Strings.encryptionKeyMode,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val keyModeOptions = listOf(
+                        ApkEncryptionConfig.KEY_MODE_SIGNATURE to Strings.encryptionKeyModeSignature,
+                        ApkEncryptionConfig.KEY_MODE_EMBEDDED to Strings.encryptionKeyModeEmbedded
+                    )
+                    var keyModeExpanded by remember { mutableStateOf(false) }
+                    val selectedKeyModeLabel = keyModeOptions
+                        .firstOrNull { it.first == (config.keyMode ?: ApkEncryptionConfig.KEY_MODE_SIGNATURE) }
+                        ?.second ?: Strings.encryptionKeyModeSignature
+
+                    ExposedDropdownMenuBox(
+                        expanded = keyModeExpanded,
+                        onExpandedChange = { keyModeExpanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedKeyModeLabel,
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = keyModeExpanded)
+                            },
+                            modifier = Modifier
+                                .menuAnchor()
+                                .fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = keyModeExpanded,
+                            onDismissRequest = { keyModeExpanded = false }
+                        ) {
+                            keyModeOptions.forEach { (mode, label) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        onConfigChange(config.copy(keyMode = mode))
+                                        keyModeExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = Strings.encryptionKeyModeHint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Text(
                         text = Strings.runtimeProtection,
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Medium

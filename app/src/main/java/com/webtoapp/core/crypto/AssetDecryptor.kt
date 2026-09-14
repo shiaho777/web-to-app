@@ -53,21 +53,41 @@ class AssetDecryptor(private val context: Context) {
                     throw CryptoException(Strings.cryptoCustomPasswordRequired)
                 }
 
-                if (metadata != null && metadata.signatureHash.isNotBlank()) {
-
-                    AppLogger.d(TAG, "旧版 APK 兼容：使用元数据中的签名哈希派生密钥")
-                    val signatureHash = metadata.signatureHash.hexToByteArray()
-                    if (signatureHash.isNotEmpty()) {
-                        keyManager.generateKeyForPackage(metadata.packageName, signatureHash)
-                    } else {
-                        keyManager.getAppKey()
+                when {
+                    // #917: embedded-key mode stores a build-time random key in the
+                    // metadata — decryption never consults the signing cert, so
+                    // Play App Signing / manual re-signing cannot break it.
+                    metadata?.keyMode == "EMBEDDED" && !metadata.embeddedKey.isNullOrBlank() -> {
+                        val raw = EmbeddedKey.decode(metadata.embeddedKey, metadata.packageName)
+                            ?: throw CryptoException("Embedded key corrupted")
+                        AppLogger.d(TAG, "使用内置密钥 (EMBEDDED)")
+                        javax.crypto.spec.SecretKeySpec(raw, "AES")
                     }
-                } else {
+                    metadata != null && metadata.signatureHash.isNotBlank() -> {
 
-                    val packageName = metadata?.packageName ?: context.packageName
-                    val signature = keyManager.getAppSignature()
-                    AppLogger.d(TAG, "使用当前 APK 签名派生密钥 (hasCustomPassword=${!customPassword.isNullOrBlank()})")
-                    keyManager.generateKeyForPackage(packageName, signature, customPassword)
+                        AppLogger.d(TAG, "旧版 APK 兼容：使用元数据中的签名哈希派生密钥")
+                        val signatureHash = metadata.signatureHash.hexToByteArray()
+                        if (signatureHash.isNotEmpty()) {
+                            keyManager.generateKeyForPackage(metadata.packageName, signatureHash)
+                        } else {
+                            keyManager.getAppKey()
+                        }
+                    }
+                    else -> {
+
+                        val packageName = metadata?.packageName ?: context.packageName
+                        // Password mode derives from the password alone: the password
+                        // is already the secret, and mixing in the install-time cert
+                        // would break every re-signed/Play-delivered copy. Signature
+                        // binding stays only for the default keyless mode.
+                        val signature = if (metadata?.usesCustomPassword == true) {
+                            ByteArray(0)
+                        } else {
+                            keyManager.getAppSignature()
+                        }
+                        AppLogger.d(TAG, "使用签名派生密钥 (hasCustomPassword=${!customPassword.isNullOrBlank()}, sigBound=${signature.isNotEmpty()})")
+                        keyManager.generateKeyForPackage(packageName, signature, customPassword)
+                    }
                 }
             } catch (e: CryptoException) {
                 throw e
@@ -268,5 +288,11 @@ data class EncryptionMetadataRuntime(
     val signatureHash: String = "",
 
     @SerializedName("usesCustomPassword")
-    val usesCustomPassword: Boolean = false
+    val usesCustomPassword: Boolean = false,
+
+    @SerializedName("keyMode")
+    val keyMode: String? = null,
+
+    @SerializedName("embeddedKey")
+    val embeddedKey: String? = null
 )

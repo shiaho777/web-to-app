@@ -68,7 +68,12 @@ class AssetEncryptor(private val secretKey: SecretKey) {
 
 data class EncryptionConfig(
     val enabled: Boolean = false,
-    val customPassword: String? = null
+    val customPassword: String? = null,
+    // "SIGNATURE" (default): key is derived from the install-time signing cert —
+    // breaks when the store re-signs (Play App Signing). "EMBEDDED": a random key
+    // is generated at build time and stored obfuscated in the APK, surviving
+    // re-signing entirely (#917).
+    val keyMode: String = "SIGNATURE"
 ) {
     companion object {
         private const val PBKDF2_ITERATIONS = CryptoConstants.PBKDF2_ITERATIONS
